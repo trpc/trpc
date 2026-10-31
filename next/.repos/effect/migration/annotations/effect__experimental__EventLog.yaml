@@ -2,8 +2,9 @@
   replacement: effect/eventlog/EventLog#group
   note: Import group from the v4 EventLog module; it now requires the shared Registry service.
 "@effect/experimental/EventLog#Handlers":
+  include: true
   replacement: effect/eventlog/EventLog#Handlers
-  note: Import Handlers from the v4 EventLog module; handlers now also receive storeId.
+  note: Import Handlers from the v4 EventLog module; handlers now also receive storeId. Remote decode or handler failures leave the entire batch uncommitted and retry it after backoff instead of logging and committing past the failure. Replay handlers must tolerate repeated execution. Conflicts are stored entries with strictly greater ids, in id order; compacted replacements use their source entry as the conflict anchor.
 "@effect/experimental/EventLog#Handlers.Error":
   replacement: effect/eventlog/EventLog#Handlers.Error
   note: Import the retained Handlers.Error type from the v4 EventLog module.
@@ -25,3 +26,11 @@
 "@effect/experimental/EventLog#SchemaTypeId":
   replacement: effect/eventlog/EventLog#SchemaTypeId
   note: Import SchemaTypeId from the v4 EventLog module.
+"@effect/experimental/EventLog#groupCompaction":
+  include: true
+  replacement: effect/eventlog/EventLog#groupCompaction
+  note: Use forward(entry) to retain an input entry unchanged rather than writing a replacement. Entries neither forwarded nor replaced are dropped; undecodable entries are preserved automatically. Replacements are anchored to the first decoded entry for the primary key and replayed in anchor-id order, then write order, with conflicts newer than that anchor. Collapsing entries across an intervening stored entry for the same event and primary key can break convergence.
+"@effect/experimental/EventLog#makeClient":
+  include: true
+  replacement: effect/eventlog/EventLog#makeClient
+  note: The returned client now takes one { event, payload } object instead of separate event and payload arguments. The payload remains paired with its event tag, and each call delegates to EventLog.write; use EventLog.writeMany for an atomic batch of events.

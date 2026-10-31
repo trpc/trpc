@@ -73,6 +73,12 @@ export * as EventLogSessionAuth from "./EventLogSessionAuth.ts"
 
 /**
  * @stability unstable
+ * @since 4.0.6
+ */
+export * as EventRow from "./EventRow.ts"
+
+/**
+ * @stability unstable
  * @since 4.0.0
  */
 export * as SqlEventJournal from "./SqlEventJournal.ts"

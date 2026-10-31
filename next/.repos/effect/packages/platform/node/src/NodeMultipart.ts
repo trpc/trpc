@@ -21,7 +21,7 @@ import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as NFS from "node:fs"
 import type { IncomingHttpHeaders } from "node:http"
-import type { Readable } from "node:stream"
+import { finished, type Readable } from "node:stream"
 import * as NodeStreamP from "node:stream/promises"
 import * as MP from "./NodeMultipartParser.ts"
 import * as NodeStream from "./NodeStream.ts"
@@ -44,6 +44,11 @@ export const stream = (
       NodeStream.fromReadable<MP.Part, Multipart.MultipartError>({
         evaluate() {
           const parser = MP.make(config)
+          // `pipe` does not forward source errors or a premature close.
+          const cleanup = finished(source, { readable: true, writable: false }, (error) => {
+            cleanup()
+            if (error) parser.destroy(error)
+          })
           source.pipe(parser)
           return parser as any
         },

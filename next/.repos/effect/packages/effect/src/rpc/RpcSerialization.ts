@@ -96,6 +96,18 @@ export class MaxBufferSizeExceeded extends Data.TaggedError("MaxBufferSizeExceed
 }
 
 /**
+ * Error raised when a non-empty NDJSON frame is not valid JSON.
+ * The `cause` field preserves the original JSON parsing error.
+ *
+ * @stability unstable
+ * @category errors
+ * @since 4.0.0
+ */
+export class NdjsonDecodeError extends Data.TaggedError("NdjsonDecodeError")<{
+  readonly cause: unknown
+}> {}
+
+/**
  * Options shared by streaming RPC serialization formats.
  *
  * @stability unstable
@@ -150,7 +162,7 @@ export const json: RpcSerialization["Service"] = RpcSerialization.of({
 export const makeNdjson = (options?: StreamOptions): RpcSerialization["Service"] => {
   const maxBufferSize = options?.maxBufferSize ?? defaultMaxBufferSize
   return RpcSerialization.of({
-    contentType: "application/ndjson",
+    contentType: "application/x-ndjson",
     includesFraming: true,
     codecFor: codecForJson,
     makeUnsafe: () => {
@@ -171,11 +183,15 @@ export const makeNdjson = (options?: StreamOptions): RpcSerialization["Service"]
             if (isBufferSizeExceeded(nlIndex - position, maxBufferSize)) {
               failMaxBufferSize(maxBufferSize)
             }
-            const line = buffer.slice(position, nlIndex)
+            const line = buffer.slice(position, buffer[nlIndex - 1] === "\r" ? nlIndex - 1 : nlIndex)
             position = nlIndex + 1
-            try {
-              items.push(JSON.parse(line))
-            } catch {
+            if (line.length > 0) {
+              try {
+                items.push(JSON.parse(line))
+              } catch (cause) {
+                buffer = ""
+                throw new NdjsonDecodeError({ cause })
+              }
             }
             nlIndex = buffer.indexOf("\n", position)
           }
@@ -214,18 +230,25 @@ export const ndjson: RpcSerialization["Service"] = makeNdjson()
  * Creates a JSON-RPC 2.0 serialization for RPC protocol messages without
  * additional message framing.
  *
+ * **Details**
+ *
+ * Set `controlMessages` to `false` for plain JSON-RPC peers, so
+ * `@effect/rpc/*` methods are not decoded as RPC control messages.
+ *
  * @stability unstable
  * @category serialization
  * @since 4.0.0
  */
 export const jsonRpc = (options?: {
   readonly contentType?: string | undefined
+  readonly controlMessages?: boolean | undefined
 }): RpcSerialization["Service"] =>
   RpcSerialization.of({
     contentType: options?.contentType ?? "application/json",
     includesFraming: false,
     codecFor: codecForJson,
     makeUnsafe: () => {
+      const controlMessages = options?.controlMessages ?? true
       const batches = new Map<string | number, {
         readonly size: number
         readonly responses: Map<string | number, RpcMessage.FromServerEncoded>
@@ -235,7 +258,7 @@ export const jsonRpc = (options?: {
           const decoded: unknown = JSON.parse(
             typeof bytes === "string" ? bytes : decodeText(bytes)
           )
-          return decodeJsonRpcRaw(decoded, batches)
+          return decodeJsonRpcRaw(decoded, batches, controlMessages)
         },
         encode: (response) => {
           const encoded = encodeJsonRpcResponse(response as any, batches)
@@ -249,6 +272,11 @@ export const jsonRpc = (options?: {
  * Creates a newline-delimited JSON-RPC 2.0 serialization for RPC protocol
  * messages.
  *
+ * **Details**
+ *
+ * Set `controlMessages` to `false` for plain JSON-RPC peers, so
+ * `@effect/rpc/*` methods are not decoded as RPC control messages.
+ *
  * @stability unstable
  * @category serialization
  * @since 4.0.0
@@ -256,6 +284,7 @@ export const jsonRpc = (options?: {
 export const ndJsonRpc = (options?: {
   readonly contentType?: string | undefined
   readonly maxBufferSize?: number | "unbounded" | undefined
+  readonly controlMessages?: boolean | undefined
 }): RpcSerialization["Service"] =>
   RpcSerialization.of({
     contentType: options?.contentType ?? "application/json-rpc",
@@ -263,6 +292,7 @@ export const ndJsonRpc = (options?: {
     codecFor: codecForJson,
     makeUnsafe: () => {
       const parser = makeNdjson({ maxBufferSize: options?.maxBufferSize }).makeUnsafe()
+      const controlMessages = options?.controlMessages ?? true
       const batches = new Map<string, {
         readonly size: number
         readonly responses: Map<string, RpcMessage.FromServerEncoded>
@@ -273,7 +303,7 @@ export const ndJsonRpc = (options?: {
           if (frames.length === 0) return []
           const messages: Array<RpcMessage.FromClientEncoded | RpcMessage.FromServerEncoded> = []
           for (let i = 0; i < frames.length; i++) {
-            messages.push(...decodeJsonRpcRaw(frames[i], batches))
+            messages.push(...decodeJsonRpcRaw(frames[i], batches, controlMessages))
           }
           return messages
         },
@@ -290,7 +320,8 @@ function decodeJsonRpcRaw(
   batches: Map<string | number, {
     readonly size: number
     readonly responses: Map<string | number, RpcMessage.FromServerEncoded>
-  }>
+  }>,
+  controlMessages: boolean
 ) {
   if (Array.isArray(decoded)) {
     const batch = {
@@ -301,7 +332,7 @@ function decodeJsonRpcRaw(
     for (let i = 0; i < decoded.length; i++) {
       const item = decoded[i]
       if (!Predicate.isObject(item)) continue
-      const message = decodeJsonRpcMessage(item as unknown as JsonRpcMessage)
+      const message = decodeJsonRpcMessage(item as unknown as JsonRpcMessage, controlMessages)
       messages.push(message)
       if (message._tag === "Request" && !message.isNotification) {
         batch.size++
@@ -310,14 +341,20 @@ function decodeJsonRpcRaw(
     }
     return messages
   }
-  return Predicate.isObject(decoded) ? [decodeJsonRpcMessage(decoded as unknown as JsonRpcMessage)] : []
+  return Predicate.isObject(decoded)
+    ? [decodeJsonRpcMessage(decoded as unknown as JsonRpcMessage, controlMessages)]
+    : []
 }
 
-function decodeJsonRpcMessage(decoded: JsonRpcMessage): RpcMessage.FromClientEncoded | RpcMessage.FromServerEncoded {
+function decodeJsonRpcMessage(
+  decoded: JsonRpcMessage,
+  controlMessages: boolean
+): RpcMessage.FromClientEncoded | RpcMessage.FromServerEncoded {
   if (Object.hasOwn(decoded, "method")) {
     const request = decoded as JsonRpcRequest
     if (
-      Predicate.isNullish(request.id) && Predicate.isString(request.method) && request.method.startsWith("@effect/rpc/")
+      controlMessages && Predicate.isNullish(request.id) && Predicate.isString(request.method) &&
+      request.method.startsWith("@effect/rpc/")
     ) {
       const tag = request.method.slice("@effect/rpc/".length) as
         | RpcMessage.FromServerEncoded["_tag"]
@@ -337,6 +374,7 @@ function decodeJsonRpcMessage(decoded: JsonRpcMessage): RpcMessage.FromClientEnc
       payload: request.params ?? null,
       headers: request.headers ?? [],
       ...(Predicate.hasProperty(request, "id") ? {} : { isNotification: true as const }),
+      ...(request.discard === true ? { discard: true as const } : {}),
       ...(request.spanId ?
         {
           traceId: request.traceId,
@@ -387,13 +425,13 @@ function encodeJsonRpcRaw(
     readonly responses: Map<string | number, RpcMessage.FromServerEncoded>
   }>
 ) {
-  if (!("requestId" in response)) {
+  if (response._tag !== "Exit") {
     return encodeJsonRpcMessage(response)
   }
   const batch = batches.get(response.requestId)
   if (batch) {
     batches.delete(response.requestId)
-    batch.responses.set(response.requestId, response as any)
+    batch.responses.set(response.requestId, response)
     if (batch.size === batch.responses.size) {
       return Array.from(batch.responses.values(), encodeJsonRpcMessage)
     }
@@ -453,6 +491,7 @@ function encodeJsonRpcMessage(response: RpcMessage.FromServerEncoded | RpcMessag
         // a JSON-RPC notification is a request without an id
         ...(response.isNotification ? {} : { id: response.id }),
         ...(response.headers?.length > 0 ? { headers: response.headers } : {}),
+        ...(response.discard ? { discard: true } : {}),
         traceId: response.traceId,
         spanId: response.spanId,
         sampled: response.sampled
@@ -523,6 +562,7 @@ interface JsonRpcRequest {
   readonly method: string
   readonly params?: unknown
   readonly headers?: ReadonlyArray<[string, string]>
+  readonly discard?: true
   readonly traceId?: string
   readonly spanId?: string
   readonly sampled?: boolean
@@ -628,6 +668,7 @@ export const layerNdjsonWith = (options?: StreamOptions): Layer.Layer<RpcSeriali
  */
 export const layerJsonRpc = (options?: {
   readonly contentType?: string | undefined
+  readonly controlMessages?: boolean | undefined
 }): Layer.Layer<RpcSerialization> => Layer.succeed(RpcSerialization)(jsonRpc(options))
 
 /**
@@ -641,6 +682,7 @@ export const layerJsonRpc = (options?: {
 export const layerNdJsonRpc = (options?: {
   readonly contentType?: string | undefined
   readonly maxBufferSize?: number | "unbounded" | undefined
+  readonly controlMessages?: boolean | undefined
 }): Layer.Layer<RpcSerialization> => Layer.succeed(RpcSerialization)(ndJsonRpc(options))
 
 /**

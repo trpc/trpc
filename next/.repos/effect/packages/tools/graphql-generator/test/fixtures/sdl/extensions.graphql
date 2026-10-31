@@ -1,0 +1,67 @@
+schema {
+  query: Root
+}
+
+type Root {
+  a: String
+}
+
+extend type Root {
+  items(filter: Filter): [Item!]!
+}
+
+extend type Root {
+  node(id: ID!): Node
+}
+
+interface Node {
+  id: ID!
+}
+
+extend interface Node {
+  title: String
+}
+
+type Book {
+  title: String
+}
+
+type Film {
+  title: String
+}
+
+extend type Film implements Node {
+  id: ID!
+}
+
+union Item = Book
+
+extend union Item = Film
+
+enum Genre {
+  DRAMA
+}
+
+extend enum Genre {
+  COMEDY
+}
+
+input Filter {
+  genre: Genre
+}
+
+extend input Filter {
+  title: String
+}
+
+scalar Url
+
+extend scalar Url @specifiedBy(url: "https://url.spec.whatwg.org/")
+
+type Changes {
+  rename(title: String!): Film
+}
+
+extend schema {
+  mutation: Changes
+}

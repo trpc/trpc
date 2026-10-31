@@ -36,9 +36,12 @@
     { "path": "packages/tools/api-diff" },
     { "path": "packages/tools/bundle" },
     { "path": "packages/tools/docgen" },
+    { "path": "packages/tools/eventlog-server" },
     { "path": "packages/tools/doctest" },
     { "path": "packages/tools/openapi-generator" },
+    { "path": "packages/tools/graphql-generator" },
     { "path": "packages/tools/jsdocs" },
+    { "path": "packages/tools/npm-promote" },
     { "path": "packages/tools/oxc" },
     { "path": "packages/tools/utils" },
     { "path": "packages/vitest" }

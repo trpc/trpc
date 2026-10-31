@@ -1,0 +1,73 @@
+{
+  "name": "@effect/graphql-generator",
+  "type": "module",
+  "version": "4.1.1",
+  "license": "MIT",
+  "description": "Generate Effect GraphQL operations and Schema types from GraphQL documents",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/graphql-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/Effect-TS/effect/issues"
+  },
+  "tags": [
+    "typescript",
+    "graphql",
+    "codegen"
+  ],
+  "keywords": [
+    "typescript",
+    "graphql",
+    "codegen"
+  ],
+  "bin": {
+    "graphqlgen": "./src/bin.ts"
+  },
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": "./src/*.ts",
+    "./bin": null,
+    "./main": null,
+    "./internal/*": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "ai-docs/**/*"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "bin": {
+      "graphqlgen": "./dist/bin.js"
+    },
+    "exports": {
+      "./package.json": "./package.json",
+      "./*": "./dist/*.js",
+      "./bin": null,
+      "./main": null,
+      "./internal/*": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "peerDependencies": {
+    "@effect/platform-node": "workspace:^",
+    "effect": "workspace:^"
+  },
+  "devDependencies": {
+    "effect": "workspace:^"
+  }
+}

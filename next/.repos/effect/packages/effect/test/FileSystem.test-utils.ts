@@ -2,6 +2,7 @@ import { assert, expect, it } from "@effect/vitest"
 import { Array, ByteSize, Cause, Option, Result } from "effect"
 import * as Effect from "effect/Effect"
 import * as Fs from "effect/FileSystem"
+import * as Glob from "effect/Glob"
 import type * as Layer from "effect/Layer"
 import * as Stream from "effect/Stream"
 
@@ -10,13 +11,17 @@ export interface TestLayerOptions {
   readonly accessOnDirectory?: boolean
   /** Whether a scoped temporary file removes its containing directory. Deno removes only the file. Defaults to `true`. */
   readonly tempFileScopedRemovesDirectory?: boolean
+  /** Whether `open` can refuse to follow a symlink at the final path component. Defaults to `true`. */
+  readonly noFollow?: boolean
 }
 
+const posix = (path: string) => path.replaceAll("\\", "/")
+
+const runWith = <E>(layer: Layer.Layer<Fs.FileSystem, E>) => <E2, A>(self: Effect.Effect<A, E2, Fs.FileSystem>) =>
+  Effect.runPromise(Effect.provide(self, layer))
+
 export const testLayer = <E>(layer: Layer.Layer<Fs.FileSystem, E>, options: TestLayerOptions = {}) => {
-  const runPromise = <E2, A>(self: Effect.Effect<A, E2, Fs.FileSystem>) =>
-    Effect.runPromise(
-      Effect.provide(self, layer)
-    )
+  const runPromise = runWith(layer)
 
   it("readFile", () =>
     runPromise(Effect.gen(function*() {
@@ -54,6 +59,28 @@ export const testLayer = <E>(layer: Layer.Layer<Fs.FileSystem, E>, options: Test
       assert(error.reason._tag === "NotFound")
     })))
 
+  it("makeTempDirectoryScoped tolerates an already removed directory", () =>
+    runPromise(Effect.gen(function*() {
+      const fs = yield* Fs.FileSystem
+      const result = yield* Effect.scoped(Effect.gen(function*() {
+        const dir = yield* fs.makeTempDirectoryScoped()
+        yield* fs.remove(dir, { recursive: true })
+        return "body succeeded"
+      }))
+      expect(result).toEqual("body succeeded")
+    })))
+
+  it("lstat does not follow symbolic links", () =>
+    runPromise(Effect.scoped(Effect.gen(function*() {
+      const fs = yield* Fs.FileSystem
+      const directory = yield* fs.makeTempDirectoryScoped()
+      const link = `${directory}/link`
+      yield* fs.writeFileString(`${directory}/target`, "")
+      yield* fs.symlink(`${directory}/target`, link)
+      expect((yield* fs.stat(link)).type).toEqual("File")
+      expect((yield* fs.lstat(link)).type).toEqual("SymbolicLink")
+    }))))
+
   it.skipIf(options.accessOnDirectory === false)(
     "access on a writable directory",
     () =>
@@ -88,6 +115,19 @@ export const testLayer = <E>(layer: Layer.Layer<Fs.FileSystem, E>, options: Test
           assert(directoryError.reason._tag === "NotFound")
         }
       }))
+    })))
+
+  it("makeTempFileScoped tolerates an already removed directory", () =>
+    runPromise(Effect.gen(function*() {
+      const fs = yield* Fs.FileSystem
+      const result = yield* Effect.scoped(Effect.gen(function*() {
+        const root = yield* fs.makeTempDirectoryScoped()
+        const file = yield* fs.makeTempFileScoped({ directory: root })
+        const separator = Math.max(file.lastIndexOf("/"), file.lastIndexOf("\\"))
+        yield* fs.remove(file.slice(0, separator), { recursive: true })
+        return "body succeeded"
+      }))
+      expect(result).toEqual("body succeeded")
     })))
 
   it("truncate", () =>
@@ -562,4 +602,555 @@ export const testLayer = <E>(layer: Layer.Layer<Fs.FileSystem, E>, options: Test
         Effect.scoped
       )
     })))
+
+  it("noFollow rejects symlinks or fails explicitly when unsupported", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const directory = yield* fs.makeTempDirectoryScoped()
+        const path = `${directory}/target`
+        yield* fs.writeFileString(path, "target")
+        if (options.noFollow !== false) {
+          yield* fs.open(path, { noFollow: true })
+          yield* fs.symlink(path, `${directory}/link`)
+        }
+        const result = yield* Effect.result(fs.open(
+          options.noFollow === false ? path : `${directory}/link`,
+          { noFollow: true }
+        ))
+        expect(result).toMatchObject({
+          _tag: "Failure",
+          failure: { reason: { _tag: options.noFollow === false ? "BadArgument" : "BadResource" } }
+        })
+      }).pipe(Effect.scoped)
+    ))
+
+  it("concurrent positional reads preserve the cursor", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const file = yield* fs.open(`${__dirname}/fixtures/text.txt`)
+        yield* file.seek(BigInt(6), "start")
+        const buffer = new Uint8Array(5)
+        const [count, allocated] = yield* Effect.all([
+          file.read(buffer, { position: BigInt(12) }),
+          file.readAlloc(4, { position: BigInt(18) }).pipe(Effect.flatMap(Effect.fromOption))
+        ], { concurrency: "unbounded" })
+        assert.strictEqual(count, 5)
+        assert.strictEqual(new TextDecoder().decode(buffer), "dolar")
+        assert.strictEqual(new TextDecoder().decode(allocated), "sit ")
+        const next = yield* file.readAlloc(5).pipe(Effect.flatMap(Effect.fromOption))
+        assert.strictEqual(new TextDecoder().decode(next), "ipsum")
+      }).pipe(Effect.scoped)
+    ))
+
+  it.each(["read", "readAlloc"] as const)(
+    "%s rejects a negative position",
+    (method) =>
+      runPromise(
+        Effect.gen(function*() {
+          const fs = yield* Fs.FileSystem
+          const file = yield* fs.open(`${__dirname}/fixtures/text.txt`)
+          const result = yield* Effect.result(
+            method === "read"
+              ? Effect.asVoid(file.read(new Uint8Array(1), { position: BigInt(-1) }))
+              : Effect.asVoid(file.readAlloc(1, { position: BigInt(-1) }))
+          )
+          expect(result).toMatchObject({
+            _tag: "Failure",
+            failure: { reason: { _tag: "BadArgument", method } }
+          })
+        }).pipe(Effect.scoped)
+      )
+  )
+
+  it("makeDirectory requires parents unless recursive", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const directory = `${root}/a/b`
+        const file = `${root}/file`
+
+        expect(yield* Effect.flip(fs.makeDirectory(directory))).toMatchObject({
+          reason: { _tag: "NotFound", method: "makeDirectory", pathOrDescriptor: directory }
+        })
+        yield* fs.makeDirectory(directory, { recursive: true })
+        yield* fs.makeDirectory(directory, { recursive: true })
+        expect(yield* Effect.flip(fs.makeDirectory(directory))).toMatchObject({
+          reason: { _tag: "AlreadyExists", method: "makeDirectory", pathOrDescriptor: directory }
+        })
+
+        yield* fs.writeFileString(file, "content")
+        expect(yield* Effect.flip(fs.makeDirectory(file, { recursive: true }))).toMatchObject({
+          reason: { _tag: "AlreadyExists", method: "makeDirectory", pathOrDescriptor: file }
+        })
+      }).pipe(Effect.scoped)
+    ))
+
+  it("remove requires recursive for non-empty directories and force for missing paths", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const directory = `${root}/directory`
+        const file = `${root}/file`
+        yield* fs.makeDirectory(directory)
+        yield* fs.writeFileString(`${directory}/file`, "content")
+        yield* fs.writeFileString(file, "content")
+
+        expect(yield* Effect.flip(fs.remove(directory))).toMatchObject({
+          reason: { method: "remove", pathOrDescriptor: directory }
+        })
+        yield* fs.remove(`${directory}/`, { recursive: true })
+        assert.isFalse(yield* fs.exists(directory))
+
+        expect(yield* Effect.flip(fs.remove(directory))).toMatchObject({
+          reason: { _tag: "NotFound", method: "remove", pathOrDescriptor: directory }
+        })
+        yield* fs.remove(directory, { force: true })
+
+        yield* Effect.flip(fs.remove(`${file}/`))
+        assert.strictEqual(yield* fs.readFileString(file), "content")
+      }).pipe(Effect.scoped)
+    ))
+
+  it("copy duplicates directory trees and replaces files when overwrite is true", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const source = `${root}/source`
+        const destination = `${root}/destination.txt`
+        yield* fs.makeDirectory(`${source}/nested`, { recursive: true })
+        yield* fs.writeFileString(`${source}/nested/file.txt`, "source")
+        yield* fs.writeFileString(destination, "destination")
+
+        yield* fs.copy(source, `${root}/copy/`)
+        yield* fs.copy(`${source}/nested/file.txt`, destination, { overwrite: true })
+        yield* fs.writeFileString(`${source}/nested/file.txt`, "changed")
+
+        assert.strictEqual(yield* fs.readFileString(`${root}/copy/nested/file.txt`), "source")
+        assert.strictEqual(yield* fs.readFileString(destination), "source")
+
+        const missing = `${root}/missing`
+        expect(yield* Effect.flip(fs.copy(missing, destination, { overwrite: true }))).toMatchObject({
+          reason: { _tag: "NotFound", method: "copy", pathOrDescriptor: missing }
+        })
+        assert.strictEqual(yield* fs.readFileString(destination), "source")
+      }).pipe(Effect.scoped)
+    ))
+
+  it("rename moves directories and replaces existing files", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        yield* fs.makeDirectory(`${root}/source`)
+        yield* fs.writeFileString(`${root}/source/file.txt`, "content")
+        yield* fs.writeFileString(`${root}/existing.txt`, "existing")
+
+        yield* fs.rename(`${root}/source/`, `${root}/moved/`)
+        yield* fs.rename(`${root}/moved/file.txt`, `${root}/existing.txt`)
+
+        assert.isFalse(yield* fs.exists(`${root}/source`))
+        assert.isFalse(yield* fs.exists(`${root}/moved/file.txt`))
+        assert.strictEqual(yield* fs.readFileString(`${root}/existing.txt`), "content")
+
+        const missing = `${root}/missing`
+        expect(yield* Effect.flip(fs.rename(missing, `${root}/existing.txt`))).toMatchObject({
+          reason: { _tag: "NotFound", method: "rename", pathOrDescriptor: missing }
+        })
+        assert.strictEqual(yield* fs.readFileString(`${root}/existing.txt`), "content")
+      }).pipe(Effect.scoped)
+    ))
+
+  it.each(
+    [
+      { flag: "r", initial: "seed", creates: false, readable: true, writable: false, expected: "seed" },
+      { flag: "r+", initial: "seed", creates: false, readable: true, writable: true, expected: "xeed" },
+      { flag: "w", initial: "", creates: true, readable: false, writable: true, expected: "x" },
+      { flag: "wx", initial: undefined, creates: true, readable: false, writable: true, expected: "x" },
+      { flag: "w+", initial: "", creates: true, readable: true, writable: true, expected: "x" },
+      { flag: "wx+", initial: undefined, creates: true, readable: true, writable: true, expected: "x" },
+      { flag: "a", initial: "seed", creates: true, readable: false, writable: true, expected: "seedx" },
+      { flag: "ax", initial: undefined, creates: true, readable: false, writable: true, expected: "x" },
+      { flag: "a+", initial: "seed", creates: true, readable: true, writable: true, expected: "seedx" },
+      { flag: "ax+", initial: undefined, creates: true, readable: true, writable: true, expected: "x" }
+    ] as const
+  )(
+    "open with the $flag flag",
+    ({ creates, expected, flag, initial, readable, writable }) =>
+      runPromise(
+        Effect.gen(function*() {
+          const fs = yield* Fs.FileSystem
+          const root = yield* fs.makeTempDirectoryScoped()
+          const existing = `${root}/existing`
+          const missing = `${root}/missing`
+          yield* fs.writeFileString(existing, "seed")
+
+          if (initial === undefined) {
+            expect(yield* Effect.flip(fs.open(existing, { flag }))).toMatchObject({
+              reason: { _tag: "AlreadyExists", method: "open", pathOrDescriptor: existing }
+            })
+          }
+          if (!creates) {
+            expect(yield* Effect.flip(fs.open(missing, { flag }))).toMatchObject({
+              reason: { _tag: "NotFound", method: "open", pathOrDescriptor: missing }
+            })
+          }
+
+          const path = initial === undefined ? missing : existing
+          const file = yield* fs.open(path, { flag })
+          assert.strictEqual(yield* fs.readFileString(path), initial ?? "")
+
+          const write = yield* Effect.result(file.writeAll(new TextEncoder().encode("x")))
+          assert.strictEqual(Result.isSuccess(write), writable)
+          assert.strictEqual(yield* fs.readFileString(path), expected)
+
+          yield* file.seek(BigInt(0), "start")
+          const read = yield* Effect.result(file.readAlloc(1))
+          assert.strictEqual(Result.isSuccess(read), readable)
+        }).pipe(Effect.scoped)
+      )
+  )
+
+  it("normalizes NotFound errors for missing paths", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const missing = `${root}/missing`
+        const destination = `${root}/destination`
+        const operations: Record<string, Effect.Effect<unknown, unknown>> = {
+          access: fs.access(missing),
+          chmod: fs.chmod(missing, 0o600),
+          chown: fs.chown(missing, 0, 0),
+          copy: fs.copy(missing, destination),
+          copyFile: fs.copyFile(missing, destination),
+          link: fs.link(missing, destination),
+          readDirectory: fs.readDirectory(missing),
+          readFile: fs.readFile(missing),
+          readLink: fs.readLink(missing),
+          realPath: fs.realPath(missing),
+          stat: fs.stat(missing),
+          truncate: fs.truncate(missing)
+        }
+
+        for (const [method, operation] of Object.entries(operations)) {
+          expect(yield* Effect.flip(operation)).toMatchObject({
+            reason: { _tag: "NotFound", method, pathOrDescriptor: missing }
+          })
+        }
+      }).pipe(Effect.scoped)
+    ))
+
+  it("reports BadResource when a file is used as a directory", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const file = `${root}/file`
+        const child = `${file}/child`
+        yield* fs.writeFileString(file, "content")
+
+        expect(yield* Effect.flip(fs.readDirectory(file))).toMatchObject({
+          reason: { _tag: "BadResource", method: "readDirectory", pathOrDescriptor: file }
+        })
+        expect(yield* Effect.flip(fs.writeFileString(child, "child"))).toMatchObject({
+          reason: { _tag: "BadResource", method: "writeFile", pathOrDescriptor: child }
+        })
+        expect(yield* Effect.flip(fs.stat(child))).toMatchObject({
+          reason: { _tag: "BadResource", method: "stat", pathOrDescriptor: child }
+        })
+        assert.strictEqual(yield* fs.readFileString(file), "content")
+      }).pipe(Effect.scoped)
+    ))
+
+  it("zero-fills files extended by truncate or writes past the end", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const path = yield* fs.makeTempFileScoped()
+        yield* fs.writeFileString(path, "abc")
+
+        yield* fs.truncate(path, 4)
+        assert.deepStrictEqual(yield* fs.readFile(path), new Uint8Array([97, 98, 99, 0]))
+
+        const file = yield* fs.open(path, { flag: "r+" })
+        yield* file.truncate(5)
+        assert.deepStrictEqual(yield* fs.readFile(path), new Uint8Array([97, 98, 99, 0, 0]))
+
+        yield* file.seek(BigInt(6), "start")
+        yield* file.writeAll(new Uint8Array([42]))
+
+        assert.deepStrictEqual(yield* fs.readFile(path), new Uint8Array([97, 98, 99, 0, 0, 0, 42]))
+      }).pipe(Effect.scoped)
+    ))
+
+  it("scoped temporary resources honor prefixes and are removed when the scope fails", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        let directory = ""
+        let file = ""
+
+        const error = yield* Effect.gen(function*() {
+          directory = yield* fs.makeTempDirectoryScoped({ directory: root, prefix: "directory-" })
+          file = yield* fs.makeTempFileScoped({ directory: root, prefix: "file-", suffix: ".txt" })
+          yield* fs.writeFileString(`${directory}/file.txt`, "content")
+          return yield* Effect.fail("boom")
+        }).pipe(Effect.scoped, Effect.flip)
+
+        assert.strictEqual(error, "boom")
+        assert.isTrue(posix(directory).startsWith(`${posix(root)}/directory-`))
+        assert.isTrue(posix(file).startsWith(`${posix(root)}/file-`))
+        assert.isTrue(file.endsWith(".txt"))
+        assert.isFalse(yield* fs.exists(directory))
+        assert.isFalse(yield* fs.exists(file))
+      }).pipe(Effect.scoped)
+    ))
+
+  it("stream emits nothing past the end and reports open failures", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const empty = `${root}/empty`
+        const populated = `${root}/populated`
+        const missing = `${root}/missing`
+        yield* fs.writeFileString(empty, "")
+        yield* fs.writeFileString(populated, "content")
+
+        assert.deepStrictEqual(yield* Stream.runCollect(fs.stream(empty)), [])
+        assert.deepStrictEqual(yield* Stream.runCollect(fs.stream(populated, { offset: ByteSize.bytes(20) })), [])
+        expect(yield* Effect.flip(Stream.runDrain(fs.stream(missing)))).toMatchObject({
+          reason: { _tag: "NotFound", method: "open", pathOrDescriptor: missing }
+        })
+      }).pipe(Effect.scoped)
+    ))
+
+  it("sink truncates by default and appends with the a flag", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const path = yield* fs.makeTempFileScoped()
+        yield* fs.writeFileString(path, "old content")
+
+        yield* Stream.run(Stream.make(new TextEncoder().encode("new")), fs.sink(path))
+        assert.strictEqual(yield* fs.readFileString(path), "new")
+
+        yield* Stream.run(Stream.make(new TextEncoder().encode(" appended")), fs.sink(path, { flag: "a" }))
+        assert.strictEqual(yield* fs.readFileString(path), "new appended")
+      }).pipe(Effect.scoped)
+    ))
+
+  it("link and symlink resolve to the target file", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const target = `${root}/target`
+        const hard = `${root}/hard`
+        const relative = `${root}/relative`
+        const absolute = `${root}/absolute`
+        const loop = `${root}/loop-a`
+        yield* fs.writeFileString(target, "content")
+
+        yield* fs.link(target, hard)
+        yield* fs.writeFileString(hard, "linked")
+        assert.strictEqual(yield* fs.readFileString(target), "linked")
+
+        yield* fs.symlink("target", relative)
+        yield* fs.symlink(target, absolute)
+        assert.strictEqual(yield* fs.readLink(relative), "target")
+        assert.strictEqual(yield* fs.readLink(absolute), target)
+        assert.strictEqual(yield* fs.realPath(relative), yield* fs.realPath(target))
+        assert.strictEqual(yield* fs.realPath(absolute), yield* fs.realPath(target))
+        assert.strictEqual(yield* fs.readFileString(relative), "linked")
+
+        yield* fs.symlink("loop-b", loop)
+        yield* fs.symlink("loop-a", `${root}/loop-b`)
+        expect(yield* Effect.flip(fs.realPath(loop))).toMatchObject({
+          reason: { method: "realPath", pathOrDescriptor: loop }
+        })
+      }).pipe(Effect.scoped)
+    ))
+
+  it("utimes sets timestamps and copy with preserveTimestamps keeps mtime", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        const source = `${root}/source`
+        const destination = `${root}/destination`
+        const atime = new Date("2001-02-03T04:05:06.000Z")
+        const mtime = new Date("2002-03-04T05:06:07.000Z")
+        yield* fs.writeFileString(source, "content")
+
+        yield* fs.utimes(source, atime, mtime)
+        const info = yield* fs.stat(source)
+        assert.deepStrictEqual(info.atime, Option.some(atime))
+        assert.deepStrictEqual(info.mtime, Option.some(mtime))
+
+        yield* fs.copy(source, destination, { preserveTimestamps: true })
+        assert.deepStrictEqual((yield* fs.stat(destination)).mtime, Option.some(mtime))
+      }).pipe(Effect.scoped)
+    ))
+
+  it("glob honors exclude patterns", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        yield* fs.makeDirectory(`${root}/src`)
+        yield* fs.writeFileString(`${root}/src/index.ts`, "")
+        yield* fs.writeFileString(`${root}/src/index.test.ts`, "")
+        yield* fs.writeFileString(`${root}/src/readme.md`, "")
+
+        const matches = yield* fs.glob("**/*.ts", { root, exclude: ["**/*.test.ts"] })
+
+        assert.strictEqual(matches.length, 1)
+        assert.isTrue(posix(matches[0]).endsWith("src/index.ts"))
+      }).pipe(Effect.scoped)
+    ))
+
+  it("readDirectoryEntries reports the type of each entry itself", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const dir = yield* fs.makeTempDirectoryScoped()
+        yield* fs.makeDirectory(`${dir}/directory`)
+        yield* fs.writeFileString(`${dir}/file`, "")
+        yield* fs.symlink(`${dir}/directory`, `${dir}/link`)
+        const entries = yield* fs.readDirectoryEntries(dir)
+        expect([...entries].sort((a, b) => a.name.localeCompare(b.name))).toEqual([
+          { name: "directory", type: "Directory" },
+          { name: "file", type: "File" },
+          { name: "link", type: "SymbolicLink" }
+        ])
+      }).pipe(Effect.scoped)
+    ))
+
+  testGlob(layer)
+}
+
+export const testGlob = <E>(layer: Layer.Layer<Fs.FileSystem, E>) => {
+  const runPromise = runWith(layer)
+
+  const globFixture = Effect.gen(function*() {
+    const fs = yield* Fs.FileSystem
+    const root = yield* fs.makeTempDirectoryScoped()
+    for (const directory of ["src/sub", "a", "b", ".hidden", "node_modules/pkg"]) {
+      yield* fs.makeDirectory(`${root}/${directory}`, { recursive: true })
+    }
+    for (
+      const file of [
+        "README.md",
+        ".env",
+        "src/index.ts",
+        "src/sub/deep.ts",
+        "src/sub/deep.js",
+        "a/x.ts",
+        "b/y.ts",
+        ".hidden/secret.ts",
+        "node_modules/pkg/index.ts"
+      ]
+    ) {
+      yield* fs.writeFileString(`${root}/${file}`, "")
+    }
+    return root
+  })
+
+  it.each<{
+    readonly pattern: string
+    readonly exclude?: ReadonlyArray<string>
+    readonly dot?: boolean
+    readonly expected: ReadonlyArray<string>
+  }>([
+    {
+      pattern: "**/*.ts",
+      expected: ["a/x.ts", "b/y.ts", "node_modules/pkg/index.ts", "src/index.ts", "src/sub/deep.ts"]
+    },
+    { pattern: ".*", expected: [".env", ".hidden"] },
+    { pattern: "src/**", expected: ["src", "src/index.ts", "src/sub", "src/sub/deep.js", "src/sub/deep.ts"] },
+    { pattern: "*/", expected: ["a", "b", "node_modules", "src"] },
+    { pattern: "{a,b}/*.ts", expected: ["a/x.ts", "b/y.ts"] },
+    { pattern: "src/index.ts", expected: ["src/index.ts"] },
+    { pattern: "readme.*", expected: [] },
+    { pattern: "**/.", expected: [] },
+    { pattern: "src/index.ts/.", expected: [] },
+    { pattern: "src/.", expected: ["src"] },
+    {
+      pattern: "**/*.ts",
+      exclude: ["node_modules"],
+      dot: true,
+      expected: [".hidden/secret.ts", "a/x.ts", "b/y.ts", "src/index.ts", "src/sub/deep.ts"]
+    },
+    { pattern: "*", exclude: ["**/src/", "**/README.md/"], expected: ["README.md", "a", "b", "node_modules"] }
+  ])("glob $pattern (exclude: $exclude, dot: $dot)", ({ dot, exclude, expected, pattern }) =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* globFixture
+        expect(yield* fs.glob(pattern, { root, exclude, dot })).toEqual(expected)
+      }).pipe(Effect.scoped)
+    ))
+
+  it("glob returns absolute paths for an absolute pattern", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = (yield* globFixture).replaceAll("\\", "/")
+        expect(yield* fs.glob(`${Glob.escape(root)}/src/**/*.ts`)).toEqual([
+          `${root}/src/index.ts`,
+          `${root}/src/sub/deep.ts`
+        ])
+      }).pipe(Effect.scoped)
+    ))
+
+  it("glob resolves .. segments against root", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* globFixture
+        expect(yield* fs.glob("../a/*.ts", { root: `${root}/src` })).toEqual(["../a/x.ts"])
+      }).pipe(Effect.scoped)
+    ))
+
+  it("glob returns an empty array for a missing root", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        expect(yield* fs.glob("**", { root: `${root}/missing` })).toEqual([])
+      }).pipe(Effect.scoped)
+    ))
+
+  it("glob includes a dangling symlink named by a literal or wildcard", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        yield* fs.symlink(`${root}/missing`, `${root}/dangling`)
+        assert.deepStrictEqual(yield* fs.glob("dangling", { root }), ["dangling"])
+        assert.deepStrictEqual(yield* fs.glob("dang*", { root }), ["dangling"])
+      }).pipe(Effect.scoped)
+    ))
+
+  it("glob follows a named symlink but not through **", () =>
+    runPromise(
+      Effect.gen(function*() {
+        const fs = yield* Fs.FileSystem
+        const root = yield* fs.makeTempDirectoryScoped()
+        yield* fs.makeDirectory(`${root}/target`)
+        yield* fs.writeFileString(`${root}/target/file.ts`, "")
+        yield* fs.symlink(`${root}/target`, `${root}/link`)
+        // a link back to the root would loop if `**` followed it
+        yield* fs.symlink(root, `${root}/target/loop`)
+        expect(yield* fs.glob("**", { root })).toEqual(["link", "target", "target/file.ts", "target/loop"])
+        expect(yield* fs.glob("link/*.ts", { root })).toEqual(["link/file.ts"])
+      }).pipe(Effect.scoped)
+    ))
 }

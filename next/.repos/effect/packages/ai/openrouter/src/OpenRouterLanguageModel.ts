@@ -16,7 +16,7 @@ import * as IdGenerator from "effect/ai/IdGenerator"
 import * as LanguageModel from "effect/ai/LanguageModel"
 import * as AiModel from "effect/ai/Model"
 import { toCodecOpenAI } from "effect/ai/OpenAiStructuredOutput"
-import type * as Prompt from "effect/ai/Prompt"
+import * as Prompt from "effect/ai/Prompt"
 import type * as Response from "effect/ai/Response"
 import { addGenAIAnnotations } from "effect/ai/Telemetry"
 import * as Tool from "effect/ai/Tool"
@@ -26,10 +26,8 @@ import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Base64 from "effect/encoding/Base64"
 import { dual } from "effect/Function"
-import type * as HttpClientRequest from "effect/http/HttpClientRequest"
 import type * as HttpClientResponse from "effect/http/HttpClientResponse"
 import * as Layer from "effect/Layer"
-import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Redactable from "effect/Redactable"
 import type * as Schema from "effect/Schema"
@@ -72,8 +70,20 @@ export class Config extends Context.Service<
       /**
        * Whether to use strict JSON schema validation for structured outputs.
        *
-       * Only applies to models that support structured outputs. Defaults to
-       * `true` when structured outputs are supported.
+       * For schema-backed response formats, defaults to `true` when the selected
+       * schema transformer is the OpenAI transformer (`openai/`, `gpt-`, `o1-`,
+       * `o3-`, and `o4-` model prefixes). Other models, including Anthropic models,
+       * send `strict: null` by default, leaving strictness unspecified. Explicit
+       * `true` or `false` overrides either default. This does not affect tool
+       * strictness.
+       *
+       * **Gotchas**
+       *
+       * Transformer selection is not an endpoint-capability check. Support and
+       * enforcement depend on the selected model and provider. For incompatible
+       * endpoints, set `false` to opt out of the strict default. Strict mode may
+       * restrict supported JSON Schema features; see OpenRouter
+       * [structured output guidance](https://openrouter.ai/docs/guides/features/structured-outputs).
        */
       readonly strictJsonSchema?: boolean | undefined
     }
@@ -527,8 +537,8 @@ declare module "effect/ai/Response" {
 export const model = (
   model: string,
   config?: Omit<typeof Config.Service, "model">
-): AiModel.Model<"openai", LanguageModel.LanguageModel, OpenRouterClient> =>
-  AiModel.make("openai", model, layer({ model, config }))
+): AiModel.Model<"openrouter", LanguageModel.LanguageModel, OpenRouterClient> =>
+  AiModel.make("openrouter", model, layer({ model, config }))
 
 /**
  * Creates an OpenRouter `LanguageModel` service from a model identifier and
@@ -845,14 +855,16 @@ const prepareMessages = Effect.fnUntraced(
         }
 
         case "assistant": {
-          let text = ""
           let reasoning = ""
+          const textParts: Array<Prompt.TextPart> = []
           const toolCalls: Array<typeof Generated.ChatToolCall.Encoded> = []
 
           for (const part of message.content) {
             switch (part.type) {
               case "text": {
-                text += part.text
+                if (part.text.length > 0) {
+                  textParts.push(part)
+                }
                 break
               }
 
@@ -902,9 +914,22 @@ const prepareMessages = Effect.fnUntraced(
             }
           }
 
+          // Tool calls cannot carry cache breakpoints; use the last text part.
+          const messageCacheControl = getCacheControl(message)
+          const content = textParts.map<typeof Generated.ChatContentText.Encoded>((part, i) => {
+            const cache_control = getCacheControl(part) ?? (i === textParts.length - 1 ? messageCacheControl : null)
+            return {
+              type: "text",
+              text: part.text,
+              ...(Predicate.isNotNull(cache_control) ? { cache_control } : undefined)
+            }
+          })
+
           messages.push({
             role: "assistant",
-            content: text,
+            content: content.some((part) => Predicate.isNotNullish(part.cache_control))
+              ? content
+              : content.map((part) => part.text).join(""),
             reasoning: reasoning.length > 0 ? reasoning : null,
             ...(Predicate.isNotNull(reasoningDetails) ? { reasoning_details: reasoningDetails } : undefined),
             ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : undefined)
@@ -914,16 +939,24 @@ const prepareMessages = Effect.fnUntraced(
         }
 
         case "tool": {
-          for (const part of message.content) {
-            // Skip tool approval parts
-            if (part.type === "tool-approval-response") {
-              continue
-            }
+          const results = message.content.filter((part) => part.type === "tool-result")
+          const messageCacheControl = getCacheControl(message)
+
+          for (let i = 0; i < results.length; i++) {
+            const part = results[i]
+            const text = Predicate.isNotUndefined(part.modelOutput)
+              ? Prompt.toolModelOutputToText(part.modelOutput)
+              : typeof part.result === "string"
+              ? part.result
+              : JSON.stringify(part.result)
+            const cache_control = getCacheControl(part) ?? (i === results.length - 1 ? messageCacheControl : null)
 
             messages.push({
               role: "tool",
               tool_call_id: part.id,
-              content: typeof part.result === "string" ? part.result : JSON.stringify(part.result)
+              content: Predicate.isNotNull(cache_control) && typeof text === "string" && text.length > 0
+                ? [{ type: "text", text, cache_control }]
+                : text
             })
           }
 
@@ -939,16 +972,6 @@ const prepareMessages = Effect.fnUntraced(
 // =============================================================================
 // HTTP Details
 // =============================================================================
-
-const buildHttpRequestDetails = (
-  request: HttpClientRequest.HttpClientRequest
-): typeof Response.HttpRequestDetails.Type => ({
-  method: request.method,
-  url: request.url,
-  urlParams: Array.from(request.urlParams),
-  hash: Option.getOrUndefined(request.hash),
-  headers: Redactable.redact(request.headers) as Record<string, string>
-})
 
 const buildHttpResponseDetails = (
   response: HttpClientResponse.HttpClientResponse
@@ -977,8 +1000,7 @@ const makeResponse = Effect.fnUntraced(
       type: "response-metadata",
       id: rawResponse.id,
       modelId: rawResponse.model,
-      timestamp: DateTime.formatIso(DateTime.fromDateUnsafe(createdAt)),
-      request: buildHttpRequestDetails(response.request)
+      timestamp: DateTime.formatIso(DateTime.fromDateUnsafe(createdAt))
     })
 
     const choice = rawResponse.choices[0]
@@ -1229,8 +1251,7 @@ const makeStreamResponse = Effect.fnUntraced(
             type: "response-metadata",
             id: event.id,
             modelId: event.model,
-            timestamp: DateTime.formatIso(timestamp),
-            request: buildHttpRequestDetails(response.request)
+            timestamp: DateTime.formatIso(timestamp)
           })
           responseMetadataEmitted = true
         }
@@ -1792,11 +1813,29 @@ const tryJsonSchema = <S extends Schema.Constraint>(
     catch: (error) => unsupportedSchemaError(error, method)
   })
 
+const toolParametersError = (tool: Tool.Any, error: unknown, method: string): AiError.AiError =>
+  unsupportedSchemaError(
+    `Tool "${tool.name}" parameters: ${error instanceof Error ? error.message : String(error)}. ` +
+      "For a tool without parameters, omit `parameters` or use `Tool.EmptyParams`",
+    method
+  )
+
 const tryToolJsonSchema = <T extends Tool.Any>(tool: T, method: string, transformer: LanguageModel.CodecTransformer) =>
   Effect.try({
     try: () => Tool.getJsonSchema(tool, { transformer }),
-    catch: (error) => unsupportedSchemaError(error, method)
-  })
+    catch: (error) => toolParametersError(tool, error, method)
+  }).pipe(Effect.filterOrFail(
+    // A raw JSON Schema given to a dynamic tool is sent unchanged
+    (jsonSchema) =>
+      jsonSchema.type === "object" || Array.isArray(jsonSchema.anyOf) ||
+      (Tool.isDynamic(tool) && tool.jsonSchema !== undefined),
+    (jsonSchema) =>
+      toolParametersError(
+        tool,
+        `expected a JSON Schema with type "object" or "anyOf", received ${JSON.stringify(jsonSchema)}`,
+        method
+      )
+  ))
 
 const getResponseFormat = Effect.fnUntraced(function*({ config, options, transformer }: {
   readonly config: typeof Config.Service
@@ -1811,7 +1850,7 @@ const getResponseFormat = Effect.fnUntraced(function*({ config, options, transfo
       json_schema: {
         name: options.responseFormat.objectName,
         schema: jsonSchema,
-        strict: config.strictJsonSchema ?? null,
+        strict: config.strictJsonSchema ?? (transformer === toCodecOpenAI ? true : null),
         ...(Predicate.isNotUndefined(description) ? { description } : undefined)
       }
     }

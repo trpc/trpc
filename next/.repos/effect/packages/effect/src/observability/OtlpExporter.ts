@@ -22,27 +22,20 @@ import * as HttpClient from "../http/HttpClient.ts"
 import * as HttpClientError from "../http/HttpClientError.ts"
 import * as HttpClientRequest from "../http/HttpClientRequest.ts"
 import * as Layer from "../Layer.ts"
-import * as Num from "../Number.ts"
-import * as Option from "../Option.ts"
+import * as Result from "../Result.ts"
 import * as Schedule from "../Schedule.ts"
 import * as Scope from "../Scope.ts"
 import * as Version from "../Version.ts"
 
+// A missing or invalid Retry-After falls back to a fixed delay.
 const retryAfterDelay = (value: string | undefined): Effect.Effect<Duration.Duration> => {
-  const seconds = Option.fromUndefinedOr(value).pipe(Option.flatMap(Num.parse))
-  if (Option.isSome(seconds)) {
-    return Effect.succeed(Duration.seconds(seconds.value))
-  }
-  if (value === undefined) {
-    return Effect.succeed(Duration.seconds(5))
-  }
-  const timestamp = Date.parse(value)
-  if (Number.isNaN(timestamp)) {
+  const retryAfter = value === undefined ? undefined : Headers.parseRetryAfter(value)
+  if (retryAfter === undefined || Result.isFailure(retryAfter)) {
     return Effect.succeed(Duration.seconds(5))
   }
   return Effect.map(
     Clock,
-    (clock) => Duration.millis(Math.max(timestamp - clock.currentTimeMillisUnsafe(), 1))
+    (clock) => Headers.retryAfterDelay(retryAfter.success, clock.currentTimeMillisUnsafe())
   )
 }
 
@@ -161,6 +154,12 @@ export const layerFlusher: Layer.Layer<Flusher> = Layer.sync(Flusher, () => {
  * after unhandled failures, and flushes during scope finalization up to
  * `shutdownTimeout`.
  *
+ * Optional gzip compression uses `HttpClientRequest.compressBody` before the
+ * retry loop, so retries reuse the compressed bytes. Bodies smaller than 1KB
+ * remain uncompressed. Compression requires runtime `CompressionStream` support;
+ * compression failures follow the same temporary-disable behavior as transport
+ * failures and do not fail flushing or shutdown.
+ *
  * @stability unstable
  * @category constructors
  * @since 4.0.0
@@ -169,6 +168,8 @@ export const make: (
   options: {
     readonly url: string
     readonly headers: Headers.Input | undefined
+    /** Gzip uses the default 1KB minimum body size; smaller batches remain uncompressed. */
+    readonly compression?: "gzip" | "none" | undefined
     readonly label: string
     readonly exportInterval: Duration.Input
     readonly maxBatchSize: number | "disabled"
@@ -218,9 +219,12 @@ export const make: (
     const items = buffer
     buffer = []
     const [body, onSuccess] = options.body(items)
-    return client.execute(
-      HttpClientRequest.setBody(request, body)
-    ).pipe(
+    const batchRequest = HttpClientRequest.setBody(request, body)
+    // Compress before client.execute so transient retries reuse the encoded bytes.
+    const response = options.compression === "gzip"
+      ? HttpClientRequest.compressBody(batchRequest, "gzip").pipe(Effect.flatMap(client.execute))
+      : client.execute(batchRequest)
+    return response.pipe(
       Effect.andThen(onSuccess),
       Effect.asVoid,
       Effect.withTracerEnabled(false)

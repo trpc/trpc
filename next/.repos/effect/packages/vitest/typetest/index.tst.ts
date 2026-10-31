@@ -76,6 +76,11 @@ describe("layer", () => {
 })
 
 describe("property testing", () => {
+  test("synchronous properties reject Effect and Promise callbacks", () => {
+    expect(it.prop).type.not.toBeCallableWith("effect", [Schema.Int], () => Effect.void)
+    expect(it.prop).type.not.toBeCallableWith("promise", { value: Schema.Int }, async () => {})
+  })
+
   test("infers Schema tuple values and accepts Arbitrary options", () => {
     it.effect.prop(
       "schema tuple",

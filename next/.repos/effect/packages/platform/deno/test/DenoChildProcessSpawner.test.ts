@@ -139,15 +139,9 @@ describe("DenoChildProcessSpawner options", () => {
       assert.strictEqual(childFinalSize, childSizeAfterKill)
     }).pipe(Effect.provide(layer)))
 
-  it.effect("emulates shell true without escaping joined arguments", () =>
-    Effect.gen(function*() {
-      const result = yield* output(ChildProcess.make("printf", ["[%s]", "a b"], { shell: true }))
-      assert.strictEqual(result, "[a][b]")
-    }))
-
   it.effect("uses a custom shell", () =>
     Effect.gen(function*() {
-      const result = yield* output(ChildProcess.make("printf", ["custom-shell"], { shell: "/bin/sh" }))
+      const result = yield* output(ChildProcess.make("printf custom-shell", { shell: "/bin/sh" }))
       assert.strictEqual(result, "custom-shell")
     }))
 })

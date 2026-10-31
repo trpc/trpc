@@ -32,6 +32,33 @@ function assertRoundtrip(
 }
 
 describe("SchemaRepresentation.toJson", () => {
+  it("round trips a string's content schema and references", () => {
+    const document = {
+      representation: {
+        _tag: "String",
+        checks: [],
+        content: {
+          mediaType: "application/json",
+          schema: { _tag: "Reference", $ref: "Content" }
+        }
+      },
+      references: {
+        Content: { _tag: "Boolean", checks: [] }
+      }
+    } satisfies SchemaRepresentation.Document
+    const json = SchemaRepresentation.toJson(document)
+
+    assert.deepStrictEqual(json, document)
+    assert.deepStrictEqual(SchemaRepresentation.fromJson(json), document)
+  })
+
+  it("round trips a content media type without a schema", () => {
+    assertRoundtrip(
+      { _tag: "String", checks: [], content: { mediaType: "text/plain" } },
+      { _tag: "String", checks: [], content: { mediaType: "text/plain" } }
+    )
+  })
+
   it("rejects invalid documents", () => {
     throws(
       () =>
@@ -596,7 +623,6 @@ describe("SchemaRepresentation.toJson", () => {
       representation: {
         _tag: "String",
         annotations: {
-          contentMediaType: "application/json",
           expected: "a string that will be decoded as JSON"
         },
         checks: []

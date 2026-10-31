@@ -18,6 +18,12 @@ export * as Base64 from "./Base64.ts"
 export * as Base64Url from "./Base64Url.ts"
 
 /**
+ * @stability unstable
+ * @since 4.1.0
+ */
+export * as Csv from "./Csv.ts"
+
+/**
  * @stability stable
  * @since 4.0.0
  */
@@ -34,6 +40,12 @@ export * as Hex from "./Hex.ts"
  * @since 4.0.0
  */
 export * as Ini from "./Ini.ts"
+
+/**
+ * @stability unstable
+ * @since 4.0.6
+ */
+export * as JsonArray from "./JsonArray.ts"
 
 /**
  * @stability unstable
@@ -55,12 +67,30 @@ export * as Sse from "./Sse.ts"
 
 /**
  * @stability unstable
+ * @since 4.0.5
+ */
+export * as Tar from "./Tar.ts"
+
+/**
+ * @stability unstable
  * @since 4.0.0
  */
 export * as Toml from "./Toml.ts"
+
+/**
+ * @stability experimental
+ * @since 4.0.6
+ */
+export * as Xml from "./Xml.ts"
 
 /**
  * @stability unstable
  * @since 4.0.0
  */
 export * as Yaml from "./Yaml.ts"
+
+/**
+ * @stability experimental
+ * @since 4.0.6
+ */
+export * as Zip from "./Zip.ts"

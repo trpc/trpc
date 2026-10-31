@@ -16,6 +16,14 @@ const failure = <E>(result: Result.Result<unknown, E>): E => {
 }
 
 describe("NetAddress", () => {
+  it("returns and checks address families", () => {
+    const ipv4 = success(NetAddress.ipv4FromString("1.2.3.4"))
+    const ipv6 = success(NetAddress.ipv6FromString("2001:db8::1"))
+    assert.strictEqual(NetAddress.familyOf(ipv4), "IPv4")
+    assert.strictEqual(NetAddress.familyOf(success(NetAddress.inetAddressFromString("[::1]:80"))), "IPv6")
+    assert.deepStrictEqual([ipv4, ipv6].filter(NetAddress.isFamily("IPv6")), [ipv6])
+  })
+
   it("returns IP address widths", () => {
     assert.strictEqual(NetAddress.width(success(NetAddress.ipv4FromString("1.2.3.4"))), 32)
     assert.strictEqual(NetAddress.width(success(NetAddress.ipv6FromString("2001:db8::1"))), 128)
@@ -462,9 +470,7 @@ describe("NetAddress", () => {
   })
 
   it("retains identity and scope for internet addresses that need no canonicalization", () => {
-    const scoped = success(
-      NetAddress.inetAddressV6(success(NetAddress.ipv6FromString("fe80::1")), 1234, { scopeId: 3 })
-    )
+    const scoped = success(NetAddress.inetAddressFromInput({ address: "fe80::1", port: 1234, scopeId: 3 }))
     for (const address of [success(NetAddress.inetAddressV4(NetAddress.ipv4Loopback, 1234)), scoped]) {
       assert.strictEqual(NetAddress.toCanonical(address), address)
     }
@@ -585,6 +591,29 @@ describe("NetAddress", () => {
       assert.strictEqual(NetAddress.formatUrlHost(success(NetAddress.ipv6FromString("::1"))), "[::1]")
     })
 
+    it("constructs frozen native addresses matching checked parsing", () => {
+      for (const host of ["127.0.0.1", "2001:db8::1", "::ffff:192.0.2.128"]) {
+        const actual = NetAddress.inetAddressFromNativeUnsafe(host, 4567)
+        assert.deepStrictEqual(actual, success(NetAddress.inetAddressFromIpString(host, 4567)))
+        assert.isTrue(Object.isFrozen(actual))
+        assert.isTrue(Object.isFrozen(actual.address))
+      }
+    })
+
+    it("resolves native IPv6 zones and rejects unknown interfaces", () => {
+      const scopeIds = new Map([["eth0", 7]])
+      for (const host of ["fe80::1%7", "fe80::1%eth0"]) {
+        assert.deepStrictEqual(
+          NetAddress.inetAddressFromNativeUnsafe(host, 4567, scopeIds),
+          NetAddress.inetAddressFromStringUnsafe("[fe80::1%7]:4567")
+        )
+      }
+      assert.throws(
+        () => NetAddress.inetAddressFromNativeUnsafe("fe80::1%missing", 4567, scopeIds),
+        /unknown IPv6 interface: missing/
+      )
+    })
+
     it("formats separate socket hosts while preserving IPv6 scope", () => {
       for (
         const [input, expected] of [
@@ -662,8 +691,8 @@ describe("NetAddress", () => {
     })
 
     it("snapshots the first positive IPv6 scope ID from each interface", () => {
-      const linkLocal = { family: "IPv6", scopeid: 7 }
-      const interfaces = {
+      const linkLocal: { family: "IPv6"; scopeid: number } = { family: "IPv6", scopeid: 7 }
+      const interfaces: Record<string, ReadonlyArray<NetAddress.NetworkInterfaceAddress> | undefined> = {
         en0: [
           { family: "IPv4", scopeid: 99 },
           { family: "IPv6" },
@@ -673,13 +702,15 @@ describe("NetAddress", () => {
           { family: "IPv6", scopeid: 9 }
         ],
         en1: undefined,
-        en2: [{ family: "IPv4" }, { family: "IPv6", scopeid: 0 }],
+        en2: [{ family: "IPv4" }, { family: "IPv6", scopeid: 0 }, { family: "IPv6", scopeid: null }],
         en3: [{ family: "IPv6", scopeid: 11 }]
       }
       const scopeIds = NetAddress.scopeIdsFromInterfaces(Object.entries(interfaces))
       linkLocal.scopeid = 12
       assert.deepStrictEqual(scopeIds, new Map([["en0", 7], ["en3", 11]]))
       assert.deepStrictEqual(NetAddress.scopeIdsFromInterfaces([]), new Map())
+      assert.deepStrictEqual(NetAddress.scopeIdFromInterface(interfaces.en0), Option.some(12))
+      assert.deepStrictEqual(NetAddress.scopeIdFromInterface(interfaces.en2), Option.none())
     })
 
     it("provides throwing counterparts for trusted construction", () => {
@@ -758,6 +789,18 @@ describe("NetAddress", () => {
     })
   })
 
+  it("normalizes scoped IPv6 literals", () => {
+    assert.strictEqual(success(NetAddress.scopedIpv6LiteralFromString("FE80::1%01")), "fe80::1%1")
+    failure(NetAddress.scopedIpv6LiteralFromString("fe80::1%4294967296"))
+    assert.isFalse(NetAddress.isScopedIpv6Literal("FE80::1%eth0"))
+  })
+
+  it("validates ports", () => {
+    assert.strictEqual(Schema.decodeUnknownSync(Schema.Port)(65535), 65535)
+    assert.throws(() => Schema.decodeUnknownSync(Schema.Port)(65536))
+    assert.throws(() => Schema.decodeUnknownSync(Schema.Port)(1.5))
+  })
+
   it("decodes and canonically encodes schemas", () => {
     assert.strictEqual(Schema.resolveAnnotations(Schema.IpAddress)?.identifier, "IpAddress")
     assert.strictEqual(Schema.resolveAnnotations(Schema.IpAddressFromString)?.identifier, "IpAddressFromString")
@@ -773,6 +816,8 @@ describe("NetAddress", () => {
     assert.strictEqual(Schema.encodeSync(Schema.UnixPathAddressFromString)(unix), "../opaque.sock")
     assert.throws(() => Schema.decodeUnknownSync(Schema.MacAddressFromString)("00-11-22-33-44-55"))
     assert.throws(() => Schema.decodeUnknownSync(Schema.Ipv4AddressFromString)("999.0.0.1"))
+    const ip = Schema.decodeUnknownSync(Schema.IpAddressFromString)("2001:DB8::1")
+    assert.strictEqual(Schema.encodeSync(Schema.IpAddressFromString)(ip), "2001:db8::1")
   })
 
   it("validates branded address schemas on decode and encode", () => {
@@ -830,5 +875,103 @@ describe("NetAddress", () => {
       () => Schema.encodeUnknownSync(Schema.IpMulticastAddressFromString)(loopback),
       /Expected a multicast address/
     )
+  })
+})
+
+describe("fromInput", () => {
+  it("parses strings and returns values unchanged", () => {
+    const ipv4 = success(NetAddress.ipv4FromString("192.0.2.1"))
+    const ipv6 = success(NetAddress.ipv6FromString("2001:db8::1"))
+    const mac = success(NetAddress.macAddressFromString("00:11:22:33:44:55"))
+    const inet = success(NetAddress.inetAddressFromString("[2001:db8::1]:443"))
+
+    assertTrue(Equal.equals(success(NetAddress.ipFromInput("192.0.2.1")), ipv4))
+    assertTrue(Equal.equals(success(NetAddress.ipv4FromInput("192.0.2.1")), ipv4))
+    assertTrue(Equal.equals(success(NetAddress.ipv6FromInput("2001:DB8::1")), ipv6))
+    assertTrue(Equal.equals(success(NetAddress.macAddressFromInput("00:11:22:33:44:55")), mac))
+    assertTrue(Equal.equals(success(NetAddress.inetAddressFromInput("[2001:db8::1]:443")), inet))
+    assert.strictEqual(success(NetAddress.scopedIpv6LiteralFromInput("FE80::1%eth0")), "fe80::1%eth0")
+
+    assert.strictEqual(success(NetAddress.ipFromInput(ipv6)), ipv6)
+    assert.strictEqual(success(NetAddress.ipv4FromInput(ipv4)), ipv4)
+    assert.strictEqual(success(NetAddress.ipv6FromInput(ipv6)), ipv6)
+    assert.strictEqual(success(NetAddress.macAddressFromInput(mac)), mac)
+    assert.strictEqual(success(NetAddress.inetAddressFromInput(inet)), inet)
+
+    failure(NetAddress.ipFromInput("example.com"))
+    failure(NetAddress.ipv4FromInput("2001:db8::1"))
+    failure(NetAddress.ipv6FromInput("192.0.2.1"))
+    failure(NetAddress.macAddressFromInput("00:11:22:33:44"))
+    failure(NetAddress.inetAddressFromInput("192.0.2.1"))
+    failure(NetAddress.scopedIpv6LiteralFromInput("fe80::1"))
+  })
+
+  it("converts octets, segments, bytes, and parts", () => {
+    const ipv4 = success(NetAddress.ipv4FromString("192.0.2.1"))
+    const ipv6 = success(NetAddress.ipv6FromString("2001:db8::1"))
+    const ipv6Bytes = new Uint8Array([0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+
+    assertTrue(Equal.equals(success(NetAddress.ipFromInput([192, 0, 2, 1])), ipv4))
+    assertTrue(Equal.equals(success(NetAddress.ipFromInput(new Uint8Array([192, 0, 2, 1]))), ipv4))
+    assertTrue(Equal.equals(success(NetAddress.ipFromInput([0x2001, 0xdb8, 0, 0, 0, 0, 0, 1])), ipv6))
+    assertTrue(Equal.equals(success(NetAddress.ipFromInput(ipv6Bytes)), ipv6))
+    assertTrue(Equal.equals(success(NetAddress.ipv4FromInput(Buffer.from([192, 0, 2, 1]))), ipv4))
+    assertTrue(Equal.equals(success(NetAddress.ipv6FromInput([0x2001, 0xdb8, 0, 0, 0, 0, 0, 1])), ipv6))
+    assertTrue(Equal.equals(success(NetAddress.ipv6FromInput(ipv6Bytes)), ipv6))
+    assertTrue(Equal.equals(
+      success(NetAddress.macAddressFromInput([0, 0x11, 0x22, 0x33, 0x44, 0x55])),
+      success(NetAddress.macAddressFromString("00:11:22:33:44:55"))
+    ))
+    assertTrue(Equal.equals(
+      success(NetAddress.inetAddressFromInput({ address: [192, 0, 2, 1], port: 53 })),
+      success(NetAddress.inetAddressFromString("192.0.2.1:53"))
+    ))
+    assertTrue(Equal.equals(
+      success(NetAddress.inetAddressFromInput({ address: "fe80::1", port: 80, scopeId: 3 })),
+      success(NetAddress.inetAddressFromString("[fe80::1%3]:80"))
+    ))
+    assertTrue(Equal.equals(
+      success(NetAddress.socketAddressFromInput({ address: ipv6Bytes, port: 443 })),
+      success(NetAddress.inetAddressFromString("[2001:db8::1]:443"))
+    ))
+    assertTrue(Equal.equals(
+      success(NetAddress.inetAddressFromInput({ address: "192.0.2.1", port: 53, scopeId: 0 })),
+      success(NetAddress.inetAddressFromString("192.0.2.1:53"))
+    ))
+
+    failure(NetAddress.ipFromInput(new Uint8Array(5)))
+    failure(NetAddress.ipFromInput([1, 2, 3] as unknown as NetAddress.IpAddressInput))
+    failure(NetAddress.ipv4FromInput([256, 0, 0, 1]))
+    failure(NetAddress.ipv4FromInput(new Uint8Array(16)))
+    failure(NetAddress.ipv6FromInput(new Uint8Array(4)))
+    failure(NetAddress.ipv6FromInput([0, 0, 0, 0, 0, 0, 0, 0x10000]))
+    failure(NetAddress.macAddressFromInput([0, 0, 0, 0, 0, 256]))
+    failure(NetAddress.ipFromInput(new Array(4) as unknown as NetAddress.IpAddressInput))
+    failure(
+      NetAddress.ipv6FromInput(
+        Object.assign(new Array(8), { 0: 0x2001, 7: 1 }) as unknown as NetAddress.Ipv6AddressInput
+      )
+    )
+    failure(NetAddress.macAddressFromInput(new Array(6) as unknown as NetAddress.MacAddressInput))
+    failure(NetAddress.inetAddressFromInput({ address: "192.0.2.1", port: 65536 }))
+    failure(NetAddress.inetAddressFromInput({ address: "192.0.2.1", port: 53, scopeId: 1 }))
+    failure(NetAddress.socketAddressFromInput({ address: null, port: 80 } as unknown as NetAddress.SocketAddress.Input))
+  })
+
+  it("has unsafe variants that throw on failure", () => {
+    const ip = NetAddress.ipFromStringUnsafe("192.0.2.1")
+    assert.strictEqual(NetAddress.ipFromInputUnsafe(ip), ip)
+    assertTrue(Equal.equals(NetAddress.ipFromInputUnsafe("192.0.2.1"), ip))
+    assertTrue(Equal.equals(
+      NetAddress.macAddressFromInputUnsafe("00:11:22:33:44:55"),
+      NetAddress.macAddressFromStringUnsafe("00:11:22:33:44:55")
+    ))
+    assertTrue(Equal.equals(
+      NetAddress.inetAddressFromInputUnsafe("192.0.2.1:53"),
+      NetAddress.inetAddressFromStringUnsafe("192.0.2.1:53")
+    ))
+    assert.throws(() => NetAddress.ipFromInputUnsafe("example.com"))
+    assert.throws(() => NetAddress.macAddressFromInputUnsafe("00:11"))
+    assert.throws(() => NetAddress.inetAddressFromInputUnsafe("192.0.2.1"))
   })
 })

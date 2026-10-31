@@ -1,26 +1,26 @@
 /**
- * The `BunCrypto` module provides Bun's `Crypto` service layer for Effect
- * programs. Provide {@link layer} at the edge of a Bun app, CLI, script, or
- * test to satisfy `effect/Crypto` with cryptographically secure random bytes,
- * UUID generation, random values, and SHA digest operations.
+ * Bun layers for the `effect/crypto` modules.
  *
- * This adapter reuses the shared Node-compatible implementation, so randomness
- * and digest behavior follow Bun's `node:crypto` compatibility layer. SHA-1 is
- * present for interoperability with existing protocols, not for new
- * security-sensitive designs.
+ * This module re-exports `NodeCrypto` from the shared Node.js package, so Bun
+ * programs take every crypto layer from one place: `layerDigest` and
+ * `layerMac` run on `node:crypto`, `layerKdf` adds Argon2id, and
+ * `layerSecureRandom`, `layerCipher`, `layerSignature`, `layerKeyAgreement`,
+ * and `layerKeyWrap` run the core WebCrypto layers. Each layer supplies its own
+ * `SecureRandom`, and `layer` provides every family at once.
+ *
+ * **Gotchas**
+ *
+ * - Bun's `node:crypto` lacks ChaCha20-Poly1305, so `layerAead` runs it on the
+ *   pure TypeScript implementation, as `Aead.layerWebCrypto` does.
+ * - `layerKdf` provides Argon2id from Bun 1.4. On older versions, deriving
+ *   with Argon2id fails with an `Unsupported` reason.
  *
  * @stability unstable
  * @since 1.0.0
  */
-import * as NodeCrypto from "@effect/platform-node-shared/NodeCrypto"
-import type * as Crypto from "effect/Crypto"
-import type * as Layer from "effect/Layer"
 
 /**
- * Layer that provides the Bun Crypto service implementation.
- *
  * @stability unstable
- * @category layers
  * @since 1.0.0
  */
-export const layer: Layer.Layer<Crypto.Crypto> = NodeCrypto.layer
+export * from "@effect/platform-node-shared/NodeCrypto"

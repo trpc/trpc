@@ -9,6 +9,7 @@
  * @since 4.0.0
  */
 import * as Context from "../Context.ts"
+import * as Base64 from "../encoding/Base64.ts"
 import * as HttpBody from "../http/HttpBody.ts"
 import * as Layer from "../Layer.ts"
 import * as otlpProtobuf from "./internal/otlpProtobuf.ts"
@@ -30,17 +31,38 @@ export class OtlpSerialization extends Context.Service<OtlpSerialization, {
   readonly logs: (data: LogsData) => HttpBody.HttpBody
 }>()("effect/observability/OtlpSerialization") {}
 
+// OTLP/JSON writes non-finite numbers as strings and bytes as base64.
+// The holder is read because Buffer#toJSON runs before the replacer.
+function jsonReplacer(this: Record<string, unknown>, key: string, value: unknown) {
+  if (typeof value === "number" && !Number.isFinite(value)) return String(value)
+  if (key === "bytesValue" && this[key] instanceof Uint8Array) return Base64.encode(this[key])
+  return value
+}
+
+const jsonBody = (data: unknown): HttpBody.HttpBody => {
+  const json = JSON.stringify(data)
+  return HttpBody.text(
+    json.includes("null") || json.includes("\"bytesValue\":") ? JSON.stringify(data, jsonReplacer) : json,
+    "application/json"
+  )
+}
+
 /**
  * Provides `OtlpSerialization` using OTLP/HTTP JSON bodies.
+ *
+ * **Details**
+ *
+ * `NaN`, `Infinity` and `-Infinity` are written as the strings OTLP/JSON
+ * expects, not as `null`. `bytesValue` data is written as a base64 string.
  *
  * @stability unstable
  * @category layers
  * @since 4.0.0
  */
 export const layerJson = Layer.succeed(OtlpSerialization, {
-  traces: (spans) => HttpBody.jsonUnsafe(spans),
-  metrics: (metrics) => HttpBody.jsonUnsafe(metrics),
-  logs: (logs) => HttpBody.jsonUnsafe(logs)
+  traces: (spans) => jsonBody(spans),
+  metrics: (metrics) => jsonBody(metrics),
+  logs: (logs) => jsonBody(logs)
 })
 
 /**

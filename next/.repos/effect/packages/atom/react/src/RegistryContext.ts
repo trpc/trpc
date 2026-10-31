@@ -78,7 +78,7 @@ export const RegistryContext = React.createContext<AtomRegistry.AtomRegistry>(At
  */
 export const RegistryProvider = (options: {
   readonly children?: React.ReactNode | undefined
-  readonly initialValues?: Iterable<readonly [Atom.Atom<any>, any]> | undefined
+  readonly initialValues?: Iterable<readonly [Atom.Atom<any>, any, Atom.InitialValueOptions?]> | undefined
   readonly scheduleTask?: ((f: () => void) => () => void) | undefined
   readonly timeoutResolution?: number | undefined
   readonly defaultIdleTTL?: number | undefined

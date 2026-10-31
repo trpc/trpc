@@ -46,6 +46,13 @@ const bigintToNumber = (value: bigint, field: string): number => {
 const bigintToNumberOption = (value: bigint | undefined): Option.Option<number> =>
   Option.flatMap(Option.fromNullishOr(value), BI.toNumber)
 
+// Node fills bigint stats from a BigInt64Array, so unsigned 64-bit values such
+// as dev_t and ino_t at or above 2^63 are reported as negative.
+const toUint64 = (value: bigint): bigint => BigInt.asUintN(64, value)
+
+const toUint64Option = (value: bigint | undefined): Option.Option<bigint> =>
+  Option.map(Option.fromNullishOr(value), toUint64)
+
 // fs.write ignores bigint positions.
 const positionToNumber = (position: bigint, method: string) =>
   Effect.try({
@@ -122,21 +129,6 @@ const chown = (() => {
   return (path: string, uid: number, gid: number) => nodeChown(path, uid, gid)
 })()
 
-// == glob
-
-const glob = ((): FileSystem.FileSystem["glob"] => {
-  const nodeGlob = effectify(
-    NFS.glob,
-    handleErrnoException("FileSystem", "glob"),
-    handleBadArgument("glob")
-  )
-  return (pattern: string, options) =>
-    nodeGlob(pattern, {
-      cwd: options?.root,
-      exclude: options?.exclude
-    })
-})()
-
 // == link
 
 const link = (() => {
@@ -207,11 +199,51 @@ const makeTempDirectoryScoped = ((): FileSystem.FileSystem["makeTempDirectorySco
   return (options) =>
     Effect.acquireRelease(
       makeDirectory(options),
-      (directory) => Effect.orDie(removeDirectory(directory, { recursive: true }))
+      (directory) => Effect.orDie(removeDirectory(directory, { recursive: true, force: true }))
     )
 })()
 
 // == open
+
+const openFlagBits = (flag: FileSystem.OpenFlag): number => {
+  const { O_APPEND, O_CREAT, O_EXCL, O_RDONLY, O_RDWR, O_TRUNC, O_WRONLY } = NFS.constants
+  switch (flag) {
+    case "r":
+      return O_RDONLY
+    case "r+":
+      return O_RDWR
+    case "w":
+      return O_TRUNC | O_CREAT | O_WRONLY
+    case "wx":
+      return O_TRUNC | O_CREAT | O_WRONLY | O_EXCL
+    case "w+":
+      return O_TRUNC | O_CREAT | O_RDWR
+    case "wx+":
+      return O_TRUNC | O_CREAT | O_RDWR | O_EXCL
+    case "a":
+      return O_APPEND | O_CREAT | O_WRONLY
+    case "ax":
+      return O_APPEND | O_CREAT | O_WRONLY | O_EXCL
+    case "a+":
+      return O_APPEND | O_CREAT | O_RDWR
+    case "ax+":
+      return O_APPEND | O_CREAT | O_RDWR | O_EXCL
+  }
+}
+
+// Reject unsupported platforms: libuv silently ignores unknown flags on Windows.
+const noFollowFlags = (method: string, flag: FileSystem.OpenFlag) =>
+  Effect.suspend(() => {
+    const { O_NOFOLLOW } = NFS.constants
+    if (process.platform === "win32" || typeof O_NOFOLLOW !== "number" || O_NOFOLLOW === 0) {
+      return Effect.fail(Error.badArgument({
+        module: "FileSystem",
+        method,
+        description: "noFollow is not supported on this platform"
+      }))
+    }
+    return Effect.succeed(openFlagBits(flag) | O_NOFOLLOW)
+  })
 
 const openFactory = (method: string): FileSystem.FileSystem["open"] => {
   const nodeOpen = effectify(
@@ -228,13 +260,22 @@ const openFactory = (method: string): FileSystem.FileSystem["open"] => {
   return (path, options) =>
     pipe(
       Effect.acquireRelease(
-        nodeOpen(path, options?.flag ?? "r", options?.mode),
+        options?.noFollow === true
+          ? Effect.flatMap(noFollowFlags(method, options.flag ?? "r"), (flags) => nodeOpen(path, flags, options.mode))
+          : nodeOpen(path, options?.flag ?? "r", options?.mode),
         (fd) => Effect.orDie(nodeClose(fd))
       ),
       Effect.map((fd) => makeFile(fd, options?.flag?.startsWith("a") ?? false))
     )
 }
 const open = openFactory("open")
+
+const negativePosition = (method: string) =>
+  Error.badArgument({
+    module: "FileSystem",
+    method,
+    description: "Cannot read before the start of the file"
+  })
 
 const makeFile = (() => {
   const nodeReadFactory = (method: string) =>
@@ -310,8 +351,14 @@ const makeFile = (() => {
       })
     }
 
-    read(buffer: Uint8Array) {
+    read(buffer: Uint8Array, options?: FileSystem.File.ReadOptions) {
       return Effect.suspend(() => {
+        const explicit = options?.position
+        if (explicit !== undefined) {
+          return explicit < BigInt(0)
+            ? Effect.fail(negativePosition("read"))
+            : nodeRead(this.fd, { buffer, position: explicit })
+        }
         const position = this.position
         return Effect.map(
           nodeRead(this.fd, { buffer, position }),
@@ -323,14 +370,18 @@ const makeFile = (() => {
       })
     }
 
-    readAlloc(size: number) {
+    readAlloc(size: number, options?: FileSystem.File.ReadOptions) {
       return Effect.suspend(() => {
         try {
           if (!Number.isInteger(size) || size < 0) {
             throw new RangeError("size must be a non-negative integer")
           }
+          const explicit = options?.position
+          if (explicit !== undefined && explicit < BigInt(0)) {
+            return Effect.fail(negativePosition("readAlloc"))
+          }
           const buffer = Buffer.allocUnsafeSlow(size)
-          const position = this.position
+          const position = explicit ?? this.position
           return Effect.map(
             nodeReadAlloc(this.fd, { buffer, position }),
             (bytesRead): Option.Option<Buffer> => {
@@ -338,7 +389,9 @@ const makeFile = (() => {
                 return Option.none()
               }
 
-              this.position = position + BigInt(bytesRead)
+              if (explicit === undefined) {
+                this.position = position + BigInt(bytesRead)
+              }
               if (bytesRead === size) {
                 return Option.some(buffer)
               }
@@ -446,7 +499,7 @@ const makeTempFileScoped = ((): FileSystem.FileSystem["makeTempFileScoped"] => {
   return (options) =>
     Effect.acquireRelease(
       makeFile(options),
-      (file) => Effect.orDie(removeDirectory(Path.dirname(file), { recursive: true }))
+      (file) => Effect.orDie(removeDirectory(Path.dirname(file), { recursive: true, force: true }))
     )
 })()
 
@@ -457,6 +510,16 @@ const readDirectory: FileSystem.FileSystem["readDirectory"] = (path, options) =>
     try: () => NFS.promises.readdir(path, options),
     catch: (err) => handleErrnoException("FileSystem", "readDirectory")(err as any, [path])
   })
+
+const readDirectoryEntries = (path: string) =>
+  Effect.tryPromise({
+    try: () => NFS.promises.readdir(path, { withFileTypes: true }),
+    catch: (err) => handleErrnoException("FileSystem", "readDirectoryEntries")(err as any, [path])
+  }).pipe(
+    Effect.map((entries) =>
+      entries.map((entry): FileSystem.DirectoryEntry => ({ name: entry.name, type: fileType(entry) }))
+    )
+  )
 
 // == readFile
 
@@ -490,7 +553,7 @@ const readLink = (() => {
 
 const realPath = (() => {
   const nodeRealPath = effectify(
-    NFS.realpath,
+    process.platform === "win32" ? NFS.realpath.native : NFS.realpath,
     handleErrnoException("FileSystem", "realPath"),
     handleBadArgument("realPath")
   )
@@ -510,48 +573,56 @@ const rename = (() => {
 
 // == stat
 
-const makeFileInfo = (stat: NFS.BigIntStats): Effect.Effect<FileSystem.File.Info, Error.PlatformError> =>
+const fileType = (stat: NFS.BigIntStats | NFS.Dirent): FileSystem.File.Type =>
+  stat.isFile() ?
+    "File" :
+    stat.isDirectory() ?
+    "Directory" :
+    stat.isSymbolicLink() ?
+    "SymbolicLink" :
+    stat.isBlockDevice() ?
+    "BlockDevice" :
+    stat.isCharacterDevice() ?
+    "CharacterDevice" :
+    stat.isFIFO() ?
+    "FIFO" :
+    stat.isSocket() ?
+    "Socket" :
+    "Unknown"
+
+const makeFileInfo = (
+  stat: NFS.BigIntStats,
+  method = "stat"
+): Effect.Effect<FileSystem.File.Info, Error.PlatformError> =>
   Effect.try({
     try: (): FileSystem.File.Info => ({
-      type: stat.isFile() ?
-        "File" :
-        stat.isDirectory() ?
-        "Directory" :
-        stat.isSymbolicLink() ?
-        "SymbolicLink" :
-        stat.isBlockDevice() ?
-        "BlockDevice" :
-        stat.isCharacterDevice() ?
-        "CharacterDevice" :
-        stat.isFIFO() ?
-        "FIFO" :
-        stat.isSocket() ?
-        "Socket" :
-        "Unknown",
+      type: fileType(stat),
       mtime: Option.fromNullishOr(stat.mtime),
       atime: Option.fromNullishOr(stat.atime),
       birthtime: Option.fromNullishOr(stat.birthtime),
-      dev: bigintToNumber(stat.dev, "dev"),
-      rdev: bigintToNumberOption(stat.rdev),
-      ino: bigintToNumberOption(stat.ino),
+      dev: toUint64(stat.dev),
+      rdev: toUint64Option(stat.rdev),
+      ino: toUint64Option(stat.ino),
       mode: bigintToNumber(stat.mode, "mode"),
-      nlink: bigintToNumberOption(stat.nlink),
+      nlink: toUint64Option(stat.nlink),
       uid: bigintToNumberOption(stat.uid),
       gid: bigintToNumberOption(stat.gid),
       size: ByteSize.bytes(stat.size),
       blksize: stat.blksize !== undefined ? Option.some(ByteSize.bytes(stat.blksize)) : Option.none(),
-      blocks: bigintToNumberOption(stat.blocks)
+      blocks: Option.fromNullishOr(stat.blocks)
     }),
-    catch: handleBadArgument("stat")
+    catch: handleBadArgument(method)
   })
-const stat = (() => {
+const statFactory = (method: string, nodeStatFn: typeof NFS.stat) => {
   const nodeStat = effectify(
-    NFS.stat,
-    handleErrnoException("FileSystem", "stat"),
-    handleBadArgument("stat")
+    nodeStatFn,
+    handleErrnoException("FileSystem", method),
+    handleBadArgument(method)
   )
-  return (path: string) => Effect.flatMap(nodeStat(path, { bigint: true }), makeFileInfo)
-})()
+  return (path: string) => Effect.flatMap(nodeStat(path, { bigint: true }), (stat) => makeFileInfo(stat, method))
+}
+const stat = statFactory("stat", NFS.stat)
+const lstat = statFactory("lstat", NFS.lstat)
 
 // == symlink
 
@@ -631,7 +702,7 @@ const watchNode = (path: string, info: FileSystem.File.Info, options?: FileSyste
         return watcher
       }),
       (watcher) => Effect.sync(() => watcher.close())
-    )
+    ).pipe(Effect.tap(() => Effect.sync(() => options?.onReady?.())))
   )
 
 const watch = (
@@ -639,9 +710,9 @@ const watch = (
   path: string,
   options?: FileSystem.WatchOptions
 ) =>
-  stat(path).pipe(
-    Effect.map((stat) =>
-      backend.pipe(
+  Effect.all([stat(path), Effect.serviceOption(FileSystem.WatchBackend)]).pipe(
+    Effect.map(([stat, callerBackend]) =>
+      Option.orElse(callerBackend, () => backend).pipe(
         Option.flatMap((_) => _.register(path, stat, options)),
         Option.getOrElse(() => watchNode(path, stat, options))
       )
@@ -677,8 +748,8 @@ const makeFileSystem = Effect.map(Effect.serviceOption(FileSystem.WatchBackend),
     chown,
     copy,
     copyFile,
-    glob,
     link,
+    lstat,
     makeDirectory,
     makeTempDirectory,
     makeTempDirectoryScoped,
@@ -686,6 +757,7 @@ const makeFileSystem = Effect.map(Effect.serviceOption(FileSystem.WatchBackend),
     makeTempFileScoped,
     open,
     readDirectory,
+    readDirectoryEntries,
     readFile,
     readLink,
     realPath,

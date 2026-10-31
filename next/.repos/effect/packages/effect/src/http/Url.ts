@@ -14,6 +14,7 @@ import * as Data from "../Data.ts"
 import { dual } from "../Function.ts"
 import * as Redacted from "../Redacted.ts"
 import * as Result from "../Result.ts"
+import * as internal from "./internal/urlParams.ts"
 import * as UrlParams from "./UrlParams.ts"
 
 /**
@@ -49,7 +50,7 @@ export const make = (
       for (let i = 0; i < params.params.length; i++) {
         const [key, value] = params.params[i]
         if (value !== undefined) {
-          urlInstance.searchParams.append(key, value)
+          urlInstance.searchParams.append(key, internal.unwrap(value))
         }
       }
       if (hash !== undefined) {
@@ -67,7 +68,12 @@ const baseUrl = (): string | undefined => {
     globalThis.location.origin !== undefined &&
     globalThis.location.pathname !== undefined
   ) {
-    return location.origin + location.pathname
+    const base = location.origin + location.pathname
+    try {
+      return new URL(base).href
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }

@@ -13,3 +13,7 @@
 "@effect/ai/Telemetry#WellKnownSystem":
   replacement: "Telemetry.WellKnownProviderName"
   note: "Values follow gen_ai.provider.name: az.ai.inference, az.ai.openai, gemini, vertex_ai and xai became azure.ai.inference, azure.ai.openai, gcp.gemini, gcp.vertex_ai and x_ai."
+"@effect/ai/Telemetry#GenAITelemetryAttributes":
+  include: true
+  replacement: "Telemetry.GenAITelemetryAttributes"
+  note: "The flat span attribute keys changed: replace gen_ai.system with gen_ai.provider.name and remove gen_ai.token.type. gen_ai.output.type records text or json. Update code constructing or indexing this attribute type."

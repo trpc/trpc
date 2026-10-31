@@ -1,10 +1,142 @@
-import { describe, it } from "@effect/vitest"
-import { assertNone, assertSome, assertTrue, deepStrictEqual, strictEqual } from "@effect/vitest/utils"
-import { ByteSize, Effect, FileSystem, Stream } from "effect"
+import { describe, expectTypeOf, it } from "@effect/vitest"
+import { assertFalse, assertNone, assertSome, assertTrue, deepStrictEqual, strictEqual } from "@effect/vitest/utils"
+import { ByteSize, Effect, FileSystem, Formatter, Redacted, Stream } from "effect"
 import { Headers, HttpBody, HttpClientRequest } from "effect/http"
 import * as Option from "effect/Option"
+import { inspect } from "node:util"
+import { gunzipSync, inflateSync } from "node:zlib"
 
 describe("HttpClientRequest", () => {
+  describe("compressBody", () => {
+    const url = "https://example.com"
+    const text = "hello compression ".repeat(100)
+    const bytes = new TextEncoder().encode(text)
+
+    it.each(
+      [
+        { name: "bytes", body: HttpBody.uint8Array(bytes, "application/custom"), expected: text, algorithm: "gzip" },
+        { name: "lazy text", body: HttpBody.text(text), expected: text, algorithm: "gzip" },
+        { name: "JSON", body: HttpBody.jsonUnsafe({ text }), expected: JSON.stringify({ text }), algorithm: "gzip" },
+        { name: "deflate", body: HttpBody.uint8Array(bytes), expected: text, algorithm: "deflate" }
+      ] as const
+    )("round-trips $name as compressed bytes", async ({ algorithm, body, expected }) => {
+      const original = HttpClientRequest.post(url).pipe(HttpClientRequest.setBody(body))
+      const effect: Effect.Effect<HttpClientRequest.HttpClientRequest> = HttpClientRequest.compressBody(
+        original,
+        algorithm
+      )
+      const request = await Effect.runPromise(effect)
+      strictEqual(request.body._tag, "Uint8Array")
+      if (request.body._tag !== "Uint8Array") {
+        throw new Error("Expected a compressed Uint8Array body")
+      }
+      const decompress = algorithm === "gzip" ? gunzipSync : inflateSync
+      strictEqual(decompress(request.body.body).toString(), expected)
+      strictEqual(request.body.text, undefined)
+      strictEqual(request.body.contentType, body.contentType)
+      strictEqual(request.body.contentLength, request.body.body.byteLength)
+      strictEqual(request.headers["content-type"], body.contentType)
+      strictEqual(request.headers["content-encoding"], algorithm)
+      strictEqual(request.headers["content-length"], String(request.body.body.byteLength))
+      const web = await Effect.runPromise(HttpClientRequest.toWeb(request))
+      strictEqual(decompress(new Uint8Array(await web.arrayBuffer())).toString(), expected)
+      strictEqual(await Effect.runPromise(HttpClientRequest.compressBody(request, algorithm)), request)
+    })
+
+    it.each([
+      { text: "a".repeat(1023), options: undefined, compressed: false },
+      { text: "a".repeat(1024), options: undefined, compressed: true },
+      { text: "éé", options: { minSize: 5 }, compressed: false },
+      { text: "éé", options: { minSize: 4 }, compressed: true }
+    ])("applies the byte threshold at $options with $text.length characters", async ({ compressed, options, text }) => {
+      const original = HttpClientRequest.post(url).pipe(HttpClientRequest.bodyText(text))
+      const request = await Effect.runPromise(original.pipe(HttpClientRequest.compressBody("gzip", options)))
+      if (compressed) {
+        strictEqual(request.headers["content-encoding"], "gzip")
+        strictEqual(request.body._tag, "Uint8Array")
+        if (request.body._tag === "Uint8Array") {
+          strictEqual(gunzipSync(request.body.body).toString(), text)
+        }
+      } else {
+        strictEqual(request, original)
+        strictEqual(request.headers["content-encoding"], undefined)
+      }
+    })
+
+    it.effect("leaves unsupported bodies and existing content encodings unchanged", () =>
+      Effect.gen(function*() {
+        for (const body of [HttpBody.empty, HttpBody.formData(new FormData()), HttpBody.raw(bytes)]) {
+          const original = HttpClientRequest.post(url).pipe(HttpClientRequest.setBody(body))
+          const request = yield* HttpClientRequest.compressBody(original, "gzip", { minSize: 0 })
+          strictEqual(request, original)
+          strictEqual(request.headers["content-encoding"], undefined)
+        }
+        for (const encoding of ["identity", "deflate", "gzip"]) {
+          const original = HttpClientRequest.post(url).pipe(
+            HttpClientRequest.bodyText(text),
+            HttpClientRequest.setHeader("Content-Encoding", encoding)
+          )
+          strictEqual(yield* HttpClientRequest.compressBody(original, "gzip"), original)
+        }
+      }))
+
+    it.each([
+      { name: "known length", text, contentLength: bytes.byteLength },
+      { name: "unknown length below minSize", text: "tiny", contentLength: undefined }
+    ])("compresses a stream with $name without a content length", async ({ contentLength, text }) => {
+      const source = new TextEncoder().encode(text)
+      const original = HttpClientRequest.post(url).pipe(
+        HttpClientRequest.bodyStream(Stream.make(source.subarray(0, 2), source.subarray(2)), {
+          contentType: "text/plain",
+          contentLength
+        })
+      )
+      const request = await Effect.runPromise(original.pipe(HttpClientRequest.compressBody("gzip")))
+      strictEqual(request.body._tag, "Stream")
+      strictEqual(request.headers["content-length"], undefined)
+      strictEqual(request.headers["content-encoding"], "gzip")
+      strictEqual(request.headers["content-type"], "text/plain")
+      if (request.body._tag === "Stream") {
+        strictEqual(request.body.contentLength, undefined)
+        const compressed = await Effect.runPromise(Stream.mkUint8Array(request.body.stream))
+        strictEqual(gunzipSync(compressed).toString(), text)
+      }
+    })
+
+    it.each([
+      { name: "bytes", body: HttpBody.uint8Array(bytes, "text/plain") },
+      { name: "stream", body: HttpBody.stream(Stream.make(bytes), "text/plain") }
+    ])("preserves an explicit Content-Type when compressing $name", async ({ body }) => {
+      const request = await Effect.runPromise(
+        HttpClientRequest.post(url).pipe(
+          HttpClientRequest.setBody(body),
+          HttpClientRequest.setHeader("content-type", "application/json"),
+          HttpClientRequest.compressBody("gzip")
+        )
+      )
+      strictEqual(request.headers["content-encoding"], "gzip")
+      strictEqual(request.headers["content-type"], "application/json")
+    })
+
+    it("does not add a Content-Type when compressing a request without one", async () => {
+      const request = await Effect.runPromise(
+        HttpClientRequest.post(url).pipe(
+          HttpClientRequest.bodyText(text),
+          HttpClientRequest.removeHeader("content-type"),
+          HttpClientRequest.compressBody("gzip")
+        )
+      )
+      strictEqual(request.headers["content-encoding"], "gzip")
+      strictEqual(request.headers["content-type"], undefined)
+    })
+  })
+
+  it("preserves an extension method from a web request without claiming it is a known method", () => {
+    const request = HttpClientRequest.fromWeb(new Request("http://localhost/", { method: "PROPFIND" }))
+    expectTypeOf(request.method).toEqualTypeOf<string>()
+    strictEqual(request.method, "PROPFIND")
+  })
+
   describe("bodyFile", () => {
     const oversized = 9007199254740993n
     const fileSystem = (size: bigint) =>
@@ -214,6 +346,31 @@ describe("HttpClientRequest", () => {
         HttpClientRequest.setUrl("http://[::1")
       )
       assertNone(HttpClientRequest.toUrl(request))
+    })
+  })
+
+  describe("toJSON", () => {
+    it("redacts sensitive query params in url and urlParams", () => {
+      const request = HttpClientRequest.get("https://api.test/path?Signature=url-secret&page=1", {
+        urlParams: { sig: "param-secret", q: "visible" }
+      })
+
+      strictEqual((request.toJSON() as { readonly url: string }).url, "https://api.test/path?Signature=REDACTED&page=1")
+      const output = Formatter.format(request)
+      assertFalse(output.includes("url-secret"))
+      assertFalse(output.includes("param-secret"))
+      assertTrue(output.includes("visible"))
+    })
+
+    it("hides Redacted url params from inspection", () => {
+      const request = HttpClientRequest.get("https://api.test/path").pipe(
+        HttpClientRequest.setUrlParam("remote", Redacted.make("param-secret")),
+        HttpClientRequest.appendUrlParam("q", "visible")
+      )
+      for (const output of [JSON.stringify(request), String(request), inspect(request)]) {
+        assertFalse(output.includes("param-secret"))
+        assertTrue(output.includes("visible"))
+      }
     })
   })
 

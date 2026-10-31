@@ -303,11 +303,15 @@ function isJsonObject(value: unknown): value is Schema.JsonObject {
  *
  * - `""` (empty pointer) refers to the root and returns `[]`
  * - Non-empty pointers must start with `/`
+ * - `~` must be followed by `0` or `1`
  */
 function tokenize(pointer: string): Array<string> {
   if (pointer === "") return []
   if (pointer.charCodeAt(0) !== 47 /* "/" */) {
     throw new Error(`Invalid JSON Pointer, it must start with "/": ${JSON.stringify(pointer)}`)
+  }
+  if (/~(?![01])/.test(pointer)) {
+    throw new Error(`Invalid JSON Pointer escape: ${JSON.stringify(pointer)}`)
   }
   return pointer.split("/").slice(1).map(unescapeToken)
 }

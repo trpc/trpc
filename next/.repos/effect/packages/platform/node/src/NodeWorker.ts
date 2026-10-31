@@ -75,7 +75,7 @@ export const layerPlatform: Layer.Layer<Worker.WorkerPlatform> = Layer.succeed(W
           deferred,
           new WorkerError({
             reason: new WorkerReceiveError({
-              message: "An messageerror event was emitted",
+              message: "A messageerror event was emitted",
               cause
             })
           })

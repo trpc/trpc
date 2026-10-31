@@ -1,8 +1,10 @@
-import { memoize } from "../../Function.ts"
+import { identity, memoize, memoizeIdempotent } from "../../Function.ts"
+import * as Option from "../../Option.ts"
 import * as Predicate from "../../Predicate.ts"
 import type * as PublicSchema from "../../Schema.ts"
 import * as SchemaAST from "../../SchemaAST.ts"
 import * as SchemaGetter from "../../SchemaGetter.ts"
+import * as SchemaParser from "../../SchemaParser.ts"
 import * as InternalTransformation from "../../SchemaTransformation.ts"
 import * as InternalMake from "./make.ts"
 
@@ -12,12 +14,29 @@ export function toCodecJson<S extends PublicSchema.Constraint>(schema: S): Publi
 }
 
 /** @internal */
-export const toCodecJsonAST = SchemaAST.applyToSelfOrLastLinkEncodingIdempotent((ast) => {
-  const out = toCodecJsonASTStep(ast, toCodecJsonAST)
-  const context = ast.context
-  if (out === ast || context === undefined) return out
-  return SchemaAST.replaceContextLastLink(out, withoutConstructorDefault(context))
-})
+export const toCodecJsonAST = makeCodecDerivation(toCodecJsonASTStep)
+
+function makeCodecDerivation(
+  step: (ast: SchemaAST.AST, recur: (ast: SchemaAST.AST) => SchemaAST.AST) => SchemaAST.AST,
+  options?: { readonly stopAt?: (link: SchemaAST.Link) => boolean }
+): (ast: SchemaAST.AST) => SchemaAST.AST {
+  // Derive each body once, independently of its own context. Child contexts remain part of the body.
+  const deriveBody = memoize((owner: SchemaAST.AST) => {
+    const body = SchemaAST.replaceContext(owner, undefined)
+    const out = step(body, recur)
+    return out === body ? null : out
+  })
+  // Follow existing encodings before sharing bodies: their encoded forms may differ.
+  const recur = SchemaAST.applyToSelfOrLastLinkEncodingIdempotent((ast) => {
+    const derived = deriveBody(SchemaAST.getContextOwner(ast))
+    if (derived === null) return ast
+    const out = SchemaAST.replaceContext(derived, ast.context)
+    return ast.context === undefined ?
+      out :
+      SchemaAST.replaceContextLastLink(out, withoutConstructorDefault(ast.context))
+  }, options)
+  return recur
+}
 
 function withoutConstructorDefault(context: SchemaAST.Context): SchemaAST.Context {
   return context.constructorDefault === undefined ?
@@ -255,15 +274,10 @@ const arrayFromSingleTransformation = new InternalTransformation.Transformation(
 const isCodecArrayFromSingleLink = (link: SchemaAST.Link): boolean =>
   link.transformation === arrayFromSingleTransformation
 
-const toCodecStringTreeAST = SchemaAST.applyToSelfOrLastLinkEncodingIdempotent((ast) => {
-  const out = toCodecStringTreeASTStep(ast, toCodecStringTreeAST, (ast) => {
+const toCodecStringTreeAST = makeCodecDerivation((ast, recur) =>
+  toCodecStringTreeASTStep(ast, recur, (ast) => {
     throw new globalThis.Error("Missing structural codec for StringTree", { cause: ast })
-  })
-  if (out !== ast && ast.context !== undefined) {
-    return SchemaAST.replaceContextLastLink(out, withoutConstructorDefault(ast.context))
-  }
-  return out
-}, { stopAt: isCodecArrayFromSingleLink })
+  }), { stopAt: isCodecArrayFromSingleLink })
 
 const toArrayFromSingleInputElement = (ast: SchemaAST.AST): SchemaAST.AST =>
   SchemaAST.isOptional(ast) ? SchemaAST.optionalKey(SchemaAST.unknown) : SchemaAST.unknown
@@ -290,6 +304,111 @@ const toCodecArrayFromSingleAST = SchemaAST.applyToSelfOrLastLinkEncodingIdempot
   }
   return out
 }, { stopAt: isCodecArrayFromSingleLink })
+
+/** @internal */
+export function toCodecGoJson<S extends PublicSchema.Constraint>(
+  schema: S
+): PublicSchema.toCodecGoJson<S> {
+  return InternalMake.make(toCodecGoJsonAST(schema.ast), { schema })
+}
+
+// Keep the canonical member first to preserve accepted nulls and union branch
+// selection. Added members (`never`, `[]`, `{}`) do not widen the decoded type.
+const toCodecGoJsonAST = memoizeIdempotent((ast: SchemaAST.AST): SchemaAST.AST =>
+  nilAsEmptyAtEncoded(goNilAST(toCodecJsonAST(ast)))
+)
+
+const goNilAST: (ast: SchemaAST.AST) => SchemaAST.AST = SchemaAST.applyToSelfOrLastLinkEncodingIdempotent((ast) => {
+  switch (ast._tag) {
+    case "Objects":
+      return ast.recur((type) => nilAsMissingOrEmptyAtEncoded(goNilAST(type)), identity)
+    case "Arrays":
+      return ast.recur((type) => nilAsEmptyAtEncoded(goNilAST(type)))
+    case "Declaration":
+    case "Union":
+    case "Suspend":
+      return ast.recur(goNilAST)
+  }
+  return ast
+})
+
+const nilAsMissingOrEmptyAtEncoded = SchemaAST.applyToSelfOrLastLinkEncoding((ast) =>
+  SchemaAST.isOptional(ast) ? nilAsMissingAtEncoded(ast) : nilAsEmptyAtEncoded(ast)
+)
+
+const nilAsMissingAtEncoded: (ast: SchemaAST.AST) => SchemaAST.AST = SchemaAST.applyToSelfOrLastLinkEncoding(
+  (ast) => {
+    if (SchemaAST.isSuspend(ast)) return ast.recur(nilAsMissingAtEncoded)
+    if (isGoNil(ast) || acceptsNull(ast)) return ast
+    return orNull(ast, decodeNull(SchemaAST.never, nullAsMissing))
+  }
+)
+
+// Only a plain `Schema.Array` or `Schema.Record` can be a Go slice or map, so
+// tuples, non-empty arrays, and structs keep rejecting `null`. The empty value
+// still has to pass the collection's checks.
+const nilAsEmptyAtEncoded: (ast: SchemaAST.AST) => SchemaAST.AST = SchemaAST.applyToSelfOrLastLinkEncoding((ast) => {
+  if (SchemaAST.isSuspend(ast)) return ast.recur(nilAsEmptyAtEncoded)
+  if (SchemaAST.isArrays(ast) && ast.elements.length === 0 && ast.rest.length === 1) {
+    return orNull(ast, decodeNull(SchemaAST.replaceChecks(emptyArray, ast.checks), nullAsEmptyArray))
+  }
+  if (SchemaAST.isObjects(ast) && ast.propertySignatures.length === 0 && ast.indexSignatures.length > 0) {
+    return orNull(ast, decodeNull(SchemaAST.replaceChecks(emptyRecord, ast.checks), nullAsEmptyRecord))
+  }
+  return ast
+})
+
+// Only skips the `null` member when the schema certainly accepts `null`, to
+// keep the JSON Schema tidy. Suspended schemas are not resolved, so recursive
+// definitions stay lazy.
+function acceptsNull(ast: SchemaAST.AST): boolean {
+  const encoded = SchemaAST.getLastEncoding(ast)
+  switch (encoded._tag) {
+    case "Union":
+      return encoded.checks === undefined && encoded.types.some(acceptsNull)
+    case "Null":
+    case "Unknown":
+    case "Any":
+    case "Declaration":
+      return SchemaParser.is(InternalMake.make(SchemaAST.replaceContext(encoded, undefined)))(null)
+  }
+  return false
+}
+
+function orNull(ast: SchemaAST.AST, member: SchemaAST.AST): SchemaAST.AST {
+  return SchemaAST.replaceContext(new SchemaAST.Union([SchemaAST.replaceContext(ast, undefined), member]), ast.context)
+}
+
+const nullTo = (decode: SchemaGetter.Getter<unknown, null>) =>
+  new InternalTransformation.Transformation(
+    decode,
+    SchemaGetter.forbidden<null, unknown>(() => "Go nil values are never encoded")
+  )
+
+const nullAsMissing = nullTo(SchemaGetter.transformOptional<unknown, null>(() => Option.none()))
+
+const nullAsEmptyArray = nullTo(SchemaGetter.transform<unknown, null>(() => []))
+
+const nullAsEmptyRecord = nullTo(SchemaGetter.transform<unknown, null>(() => ({})))
+
+const emptyArray = new SchemaAST.Arrays(false, [], [])
+
+const emptyRecord = SchemaAST.record(SchemaAST.string, SchemaAST.never)
+
+function decodeNull(
+  to: SchemaAST.AST,
+  transformation: InternalTransformation.Transformation<unknown, null>
+): SchemaAST.AST {
+  return SchemaAST.decodeTo(SchemaAST.null, to, transformation)
+}
+
+// A union this codec already built, so applying it again changes nothing.
+function isGoNil(ast: SchemaAST.AST): boolean {
+  if (!SchemaAST.isUnion(ast)) return false
+  const transformation = ast.types[ast.types.length - 1].encoding?.[0].transformation
+  return transformation === nullAsMissing || transformation === nullAsEmptyArray ||
+    transformation === nullAsEmptyRecord
+}
 
 function toCodecArrayFromSingleASTStep(ast: SchemaAST.AST): SchemaAST.AST {
   return ast._tag === "Declaration" || ast._tag === "Arrays" || ast._tag === "Objects" || ast._tag === "Union" ||

@@ -9,6 +9,8 @@ const isNode = typeof process !== "undefined" &&
   !isDeno &&
   !isBun
 const integrationTestsEnabled = process.env.EFFECT_INTEGRATION_TESTS === "1"
+// Set EFFECT_MSSQL_INTEGRATION_TESTS=0 to skip only the MSSQL integration tests.
+const mssqlIntegrationTestsDisabled = integrationTestsEnabled && process.env.EFFECT_MSSQL_INTEGRATION_TESTS === "0"
 const clusterTestsEnabled = process.env.EFFECT_CLUSTER_TESTS === "1"
 
 const project = (
@@ -86,7 +88,10 @@ const shared: ViteUserConfig = {
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    // The shared cluster storage suite runs MSSQL alongside the other databases.
+    ...(mssqlIntegrationTestsDisabled ? { testNamePattern: /^(?!.*SqlMessageStorage > mssql > )/ } : {}),
     projects: [
+      ...project("scripts", "scripts", true, {}, undefined, ["codemods/jsdoc.test.ts"]),
       ...project(
         "effect",
         "packages/effect",
@@ -176,7 +181,13 @@ export default defineConfig({
       ...project("@effect/sql-clickhouse", "packages/sql/clickhouse"),
       ...project("@effect/sql-d1", "packages/sql/d1", !isDeno),
       ...project("@effect/sql-libsql", "packages/sql/libsql"),
-      ...project("@effect/sql-mssql", "packages/sql/mssql"),
+      ...project(
+        "@effect/sql-mssql",
+        "packages/sql/mssql",
+        true,
+        {},
+        mssqlIntegrationTestsDisabled ? [...exclude, "**/*.integration.test.{ts,tsx}"] : undefined
+      ),
       // MySQL starts a fresh container per integration test suite, so avoid competing
       // with the other container-backed projects on integration-test runners.
       ...project(
@@ -205,7 +216,7 @@ export default defineConfig({
         // Miniflare needs Node/Bun; keep the in-process client tests on Deno.
         isDeno ? [...exclude, "test/Miniflare.test.ts"] : undefined
       ),
-      ...project("@effect/sql-sqlite-node", "packages/sql/sqlite-node", isNode),
+      ...project("@effect/sql-sqlite-node", "packages/sql/sqlite-node", isNode || isDeno),
       ...project("@effect/sql-sqlite-react-native", "packages/sql/sqlite-react-native"),
       ...project("@effect/sql-sqlite-wasm", "packages/sql/sqlite-wasm"),
       ...project("@effect/ai-codegen", "packages/tools/ai-codegen", isNode),
@@ -214,7 +225,9 @@ export default defineConfig({
       ...project("@effect/doctest", "packages/tools/doctest"),
       ...project("@effect/docgen", "packages/tools/docgen"),
       ...project("@effect/jsdocs", "packages/tools/jsdocs"),
+      ...project("@effect/npm-promote", "packages/tools/npm-promote"),
       ...project("@effect/openapi-generator", "packages/tools/openapi-generator"),
+      ...project("@effect/graphql-generator", "packages/tools/graphql-generator"),
       ...project("@effect/utils", "packages/tools/utils", isNode),
       ...project("@effect/oxc", "packages/tools/oxc")
     ]

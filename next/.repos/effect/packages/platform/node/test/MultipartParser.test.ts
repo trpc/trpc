@@ -349,9 +349,9 @@ const cases: ReadonlyArray<MultipartCase> = [
     ],
     boundary: "----WebKitFormBoundaryTB2MiQ36fnSJlrhY",
     expected: [
-      ["field", "cont", "some random content", "text/plain"],
-      ["field", "", "some random pass", "text/plain"]
+      ["field", "cont", "some random content", "text/plain"]
     ],
+    errors: ["InvalidDisposition"],
     name: "Empty content-type and empty content-disposition"
   },
   {
@@ -468,7 +468,8 @@ const cases: ReadonlyArray<MultipartCase> = [
       ].join("\r\n")
     ],
     boundary: "---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
-    expected: [["file", "file", 26, "%ZZ", "application/octet-stream"]],
+    expected: [],
+    errors: ["InvalidDisposition"],
     name: "Malformed encoded filenames"
   },
   {

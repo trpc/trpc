@@ -61,8 +61,7 @@ const fileUrlOps = (impl: {
  * @since 4.0.0
  */
 export const layerPosix: Layer.Layer<Path.Path> = Layer.succeed(Path.Path)(
-  Path.Path.of({
-    [Path.TypeId]: Path.TypeId,
+  Path.make({
     ...DenoPathPosix,
     sep: DenoPathPosix.SEPARATOR,
     ...fileUrlOps(DenoPathPosix)
@@ -79,8 +78,7 @@ export const layerPosix: Layer.Layer<Path.Path> = Layer.succeed(Path.Path)(
 export const layerWin32: Layer.Layer<Path.Path> = Layer.succeed(
   Path.Path
 )(
-  Path.Path.of({
-    [Path.TypeId]: Path.TypeId,
+  Path.make({
     ...DenoPathWin,
     sep: DenoPathWin.SEPARATOR,
     ...fileUrlOps(DenoPathWin)
@@ -97,8 +95,7 @@ export const layerWin32: Layer.Layer<Path.Path> = Layer.succeed(
 export const layer: Layer.Layer<Path.Path> = Layer.succeed(
   Path.Path
 )(
-  Path.Path.of({
-    [Path.TypeId]: Path.TypeId,
+  Path.make({
     ...DenoPath,
     sep: DenoPath.SEPARATOR,
     ...fileUrlOps(DenoPath)

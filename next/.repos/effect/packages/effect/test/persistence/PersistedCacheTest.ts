@@ -73,6 +73,45 @@ export const suiteWith = <R>(
         ])
       }), 30_000)
 
+    for (const outcome of ["success", "error"] as const) {
+      it.effect(`recomputes and replaces entries with stale ${outcome} schemas`, () =>
+        Effect.gen(function*() {
+          class OldRequest extends Persistable.Class<{ payload: { id: number } }>()("GetUser", {
+            primaryKey: (req) => `GetUser:${req.id}`,
+            success: Schema.Struct({ name: Schema.String }),
+            error: Schema.Struct({ message: Schema.String })
+          }) {}
+          class Request extends Persistable.Class<{ payload: { id: number } }>()("GetUser", {
+            primaryKey: (req) => `GetUser:${req.id}`,
+            success: Schema.Struct({ name: Schema.String, age: Schema.Number }),
+            error: Schema.Struct({ message: Schema.String, code: Schema.Number })
+          }) {}
+
+          const options = {
+            storeId: `${storeId}-stale-${outcome}`,
+            timeToLive: () => "1 day" as const
+          }
+          const store = yield* (yield* Persistence.Persistence).make(options)
+          yield* store.set(
+            new OldRequest({ id: 1 }),
+            outcome === "success" ? Exit.succeed({ name: "John" }) : Exit.fail({ message: "Not found" })
+          )
+
+          const request = new Request({ id: 1 })
+          const cache = yield* PersistedCache.make(
+            (_req: Request) => Effect.succeed({ name: "John", age: 42 }),
+            options
+          )
+          assert.deepStrictEqual(yield* cache.get(request), { name: "John", age: 42 })
+
+          const freshCache = yield* PersistedCache.make(
+            (_req: Request) => Effect.die("The persisted replacement should be reused"),
+            options
+          )
+          assert.deepStrictEqual(yield* freshCache.get(request), { name: "John", age: 42 })
+        }))
+    }
+
     it.effect("requireServicesAt: 'lookup' requires lookup services at get-time", () =>
       Effect.gen(function*() {
         const cache = yield* PersistedCache.make(

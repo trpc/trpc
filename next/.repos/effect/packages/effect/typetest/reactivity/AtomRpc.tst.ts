@@ -1,5 +1,5 @@
 import { Context, Effect, hole, Layer, Schema } from "effect"
-import { type Atom, AtomRpc } from "effect/reactivity"
+import { type Atom, AtomRegistry, AtomRpc } from "effect/reactivity"
 import { Rpc, RpcGroup, RpcMiddleware } from "effect/rpc"
 import { describe, expect, it } from "tstyche"
 
@@ -47,5 +47,18 @@ describe("AtomRpc", () => {
 
     expect<Atom.Success<typeof query>>().type.toBe<number | string>()
     expect<Atom.Success<typeof mutation>>().type.toBe<number | string>()
+  })
+
+  it("accepts any reactivity keys when no keys are declared", () => {
+    const GetUser = Rpc.make("GetUser", { payload: { id: Schema.Number } })
+    const client = hole<AtomRpc.AtomRpcClient<unknown, "Client", typeof GetUser>>()
+    const keys = hole<ReadonlyArray<unknown>>()
+
+    expect(client.query).type.toBeCallableWith("GetUser", { id: 1 }, { reactivityKeys: keys })
+    expect(client.query).type.toBeCallableWith("GetUser", { id: 1 }, { reactivityKeys: { anything: [{ id: 1 }] } })
+    expect(AtomRegistry.make().set).type.toBeCallableWith(client.mutation("GetUser"), {
+      payload: { id: 1 },
+      reactivityKeys: keys
+    })
   })
 })

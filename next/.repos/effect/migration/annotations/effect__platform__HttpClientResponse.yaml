@@ -27,4 +27,4 @@
   note: "TypeId remains public but is now a string constant; use typeof in type position."
 "@effect/platform/HttpClientResponse#HttpClientResponse":
   replacement: "HttpClientResponse.HttpClientResponse"
-  note: "Custom implementations must supply the required url string. It represents the resolved URL including query parameters and excluding the hash, uses the final URL after redirects, and is empty when unknown."
+  note: "Custom implementations must supply the required url string and an upgrade effect. url represents the resolved URL including query parameters and excluding the hash, uses the final URL after redirects, and is empty when unknown. upgrade returns the upgraded Socket and should fail with an HttpClientError when the backend cannot hand over the connection."

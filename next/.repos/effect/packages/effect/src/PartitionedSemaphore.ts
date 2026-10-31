@@ -59,7 +59,8 @@ export type PartitionedTypeId = "~effect/PartitionedSemaphore"
  *
  * **Details**
  *
- * Waiting permits are distributed across partitions in round-robin order.
+ * Waiters are served across partitions in round-robin order, completing each
+ * waiter's permit request before moving to the next partition.
  *
  * @stability unstable
  * @category models
@@ -150,6 +151,7 @@ export const makeUnsafe = <K = unknown>(options: {
   let iterator = partitions[Symbol.iterator]()
   let releasing = false
   let pendingPermits = 0
+  let partial: Waiter | undefined
 
   const releaseUnsafe = (permits: number): number => {
     if (permits > 0) {
@@ -162,26 +164,32 @@ export const makeUnsafe = <K = unknown>(options: {
       releasing = true
       try {
         while (pendingPermits > 0 && waitingPermits > 0) {
-          let state = iterator.next()
-          if (state.done) {
-            iterator = partitions[Symbol.iterator]()
-            state = iterator.next()
+          let waiter = partial
+          if (waiter === undefined) {
+            let state = iterator.next()
             if (state.done) {
-              break
+              iterator = partitions[Symbol.iterator]()
+              state = iterator.next()
+              if (state.done) {
+                break
+              }
+            }
+
+            waiter = state.value[1].values().next().value
+            if (waiter === undefined) {
+              continue
             }
           }
 
-          const waiter = state.value[1].values().next().value
-          if (waiter === undefined) {
-            continue
-          }
-
-          waiter.permits -= 1
-          waitingPermits -= 1
-          pendingPermits -= 1
+          const granted = Math.min(waiter.permits, pendingPermits)
+          waiter.permits -= granted
+          waitingPermits -= granted
+          pendingPermits -= granted
 
           if (waiter.permits === 0) {
             waiter.resume()
+          } else {
+            partial = waiter
           }
         }
       } finally {
@@ -249,6 +257,9 @@ export const makeUnsafe = <K = unknown>(options: {
         }
 
         const cleanup = () => {
+          if (partial === entry) {
+            partial = undefined
+          }
           if (waiters.delete(entry) && waiters.size === 0) {
             MutableHashMap.remove(partitions, key)
           }

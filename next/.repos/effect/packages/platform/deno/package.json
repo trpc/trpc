@@ -1,7 +1,7 @@
 {
   "name": "@effect/platform-deno",
   "type": "module",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "license": "MIT",
   "description": "Platform specific implementations for the Deno runtime",
   "homepage": "https://effect.website",
@@ -26,7 +26,7 @@
     "functional-programming"
   ],
   "engines": {
-    "deno": ">=2.8.3"
+    "deno": ">=2.9.3"
   },
   "sideEffects": [],
   "exports": {
@@ -61,7 +61,8 @@
   },
   "scripts": {
     "codegen": "effect-utils codegen",
-    "check": "deno check"
+    "check": "deno check",
+    "benchmark:datagram": "deno run -A --unstable-net benchmark/DatagramSocket.ts"
   },
   "dependencies": {
     "@db/redis": "jsr:^0.42.0",
@@ -76,8 +77,9 @@
   },
   "devDependencies": {
     "@std/assert": "jsr:^1.0.19",
-    "@testcontainers/redis": "^12.2.0",
+    "@testcontainers/redis": "^12.2.1",
     "@types/deno": "^2.7.0",
-    "effect": "workspace:^"
+    "effect": "workspace:^",
+    "tinybench": "^6.2.2"
   }
 }

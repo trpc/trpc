@@ -35,6 +35,29 @@ describe("OtlpResource", () => {
         )
       ))
 
+    it.effect("trims OTEL_RESOURCE_ATTRIBUTES entries and keeps empty values", () =>
+      Effect.gen(function*() {
+        const resource = yield* OtlpResource.fromConfig()
+
+        assert.deepStrictEqual(attributesRecord(resource), {
+          ...sdk,
+          "service.name": "env-service",
+          message: "hello world",
+          empty: "",
+          a: "1"
+        })
+      }).pipe(
+        Effect.provideService(
+          ConfigProvider.ConfigProvider,
+          ConfigProvider.fromEnv({
+            env: {
+              OTEL_SERVICE_NAME: "env-service",
+              OTEL_RESOURCE_ATTRIBUTES: "message = hello%20world ,empty=,novalue, =ignored,a=1"
+            }
+          })
+        )
+      ))
+
     it.effect("uses explicit service options before attributes and environment variables", () =>
       Effect.gen(function*() {
         const resource = yield* OtlpResource.fromConfig({
@@ -174,6 +197,21 @@ describe("OtlpResource", () => {
       const output = OtlpResource.unknownToAttributeValue(input)
 
       assert.strictEqual(String(output.intValue), input.toString())
+    })
+
+    it("keeps integers outside the int64 range out of intValue", () => {
+      assert.deepStrictEqual(OtlpResource.unknownToAttributeValue(2 ** 63), { doubleValue: 2 ** 63 })
+      assert.deepStrictEqual(OtlpResource.unknownToAttributeValue(-9_223_372_036_854_778_000), {
+        doubleValue: -9_223_372_036_854_778_000
+      })
+      assert.deepStrictEqual(
+        OtlpResource.unknownToAttributeValue(9_223_372_036_854_775_808n),
+        { stringValue: "9223372036854775808" }
+      )
+      assert.deepStrictEqual(
+        OtlpResource.unknownToAttributeValue(-9_223_372_036_854_775_809n),
+        { stringValue: "-9223372036854775809" }
+      )
     })
   })
 })

@@ -113,6 +113,51 @@ const ProtoTimeZoneOffset = {
   }
 }
 
+type CacheKey = "partsUtc" | "adjustedEpochMilliseconds" | "partsAdjusted"
+
+type Caches = { [K in CacheKey]?: DateTime.Zoned[K] }
+
+const cacheSlot: PropertyDescriptor = { value: undefined, enumerable: false, writable: true }
+
+// Instances sealed or frozen before their first cache write cannot receive own
+// slots, so their caches live here instead.
+const sealedCaches = new WeakMap<object, Caches>()
+
+// Until an instance has its own slots, every cache read and write, including
+// writes through the public fields from other copies of effect, reaches these
+// accessors. The first write defines all of the instance's slots at once and in
+// a fixed order, so construction avoids `Object.defineProperty` and instances
+// keep few shapes.
+const cacheAccessor = <K extends CacheKey>(key: K, slots: ReadonlyArray<CacheKey>): PropertyDescriptor => ({
+  get(this: object): Caches[K] {
+    return Object.isExtensible(this) ? undefined : sealedCaches.get(this)?.[key]
+  },
+  set(this: Caches, value: Caches[K]) {
+    if (Object.isExtensible(this)) {
+      for (const slot of slots) {
+        Object.defineProperty(this, slot, cacheSlot)
+      }
+      this[key] = value
+    } else {
+      let caches = sealedCaches.get(this)
+      if (caches === undefined) {
+        caches = {}
+        sealedCaches.set(this, caches)
+      }
+      caches[key] = value
+    }
+  }
+})
+
+const zonedSlots: ReadonlyArray<CacheKey> = ["partsUtc", "adjustedEpochMilliseconds", "partsAdjusted"]
+
+Object.defineProperty(ProtoUtc, "partsUtc", cacheAccessor("partsUtc", ["partsUtc"]))
+Object.defineProperties(ProtoZoned, {
+  partsUtc: cacheAccessor("partsUtc", zonedSlots),
+  adjustedEpochMilliseconds: cacheAccessor("adjustedEpochMilliseconds", zonedSlots),
+  partsAdjusted: cacheAccessor("partsAdjusted", zonedSlots)
+})
+
 /** @internal */
 export const makeZonedProto = (
   epochMillis: number,
@@ -122,21 +167,9 @@ export const makeZonedProto = (
   const self = Object.create(ProtoZoned)
   self.epochMilliseconds = epochMillis
   self.zone = zone
-  Object.defineProperty(self, "partsUtc", {
-    value: partsUtc,
-    enumerable: false,
-    writable: true
-  })
-  Object.defineProperty(self, "adjustedEpochMillis", {
-    value: undefined,
-    enumerable: false,
-    writable: true
-  })
-  Object.defineProperty(self, "partsAdjusted", {
-    value: undefined,
-    enumerable: false,
-    writable: true
-  })
+  if (partsUtc !== undefined) {
+    self.partsUtc = partsUtc
+  }
   return self
 }
 
@@ -196,11 +229,6 @@ export const clamp: {
 const makeUtc = (epochMillis: number): DateTime.Utc => {
   const self = Object.create(ProtoUtc)
   self.epochMilliseconds = epochMillis
-  Object.defineProperty(self, "partsUtc", {
-    value: undefined,
-    enumerable: false,
-    writable: true
-  })
   return self
 }
 
@@ -238,8 +266,12 @@ export const makeUnsafe = <A extends DateTime.DateTime.Input>(input: A): DateTim
  * so `makeUnsafe` appends "Z" to force UTC interpretation.
  * This check prevents appending "Z" to strings that already have a zone
  * (e.g. "2024-01-01T12:00:00Z", "...+05:30", "...GMT"), which would produce invalid dates.
+ * `Date.parse` also accepts a trailing `z` or `gmt` in any case. Only that trailing
+ * match is case-insensitive, so lowercase letters in a comment like "(xyz)" do not
+ * count as a zone.
  */
-const hasZone = (input: string): boolean => /Z|GMT|[+-]\d{2}$|[+-]\d{2}:?\d{2}$|\]$/.test(input)
+const hasZone = (input: string): boolean =>
+  /Z|GMT|[+-]\d{2}$|[+-]\d{2}:?\d{2}$|\]$/.test(input) || /z$|gmt$/i.test(input)
 
 const minEpochMillis = -8640000000000000 + (12 * 60 * 60 * 1000)
 const maxEpochMillis = 8640000000000000 - (14 * 60 * 60 * 1000)
@@ -364,6 +396,7 @@ const formatOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "numeric",
   year: "numeric",
+  era: "short",
   hour: "numeric",
   minute: "numeric",
   second: "numeric",
@@ -428,7 +461,7 @@ export const zoneMakeNamedEffect = (zoneId: string): Effect.Effect<DateTime.Time
 export const zoneMakeLocal = (): DateTime.TimeZone.Named =>
   zoneMakeIntl(new Intl.DateTimeFormat("en-US", formatOptions))
 
-const offsetZoneRegExp = /^(?:GMT|[+-])/
+const offsetZoneRegExp = /^(?:GMT)?[+-]/
 
 /** @internal */
 export const zoneFromString = (zone: string): Option.Option<DateTime.TimeZone> => {
@@ -564,10 +597,18 @@ export const toDate = (self: DateTime.DateTime): Date => {
   } else if (self.adjustedEpochMilliseconds !== undefined) {
     return new Date(self.adjustedEpochMilliseconds)
   }
-  const parts = self.zone.format.formatToParts(self.epochMilliseconds).filter((_) => _.type !== "literal")
+  let bc = false
+  const parts = self.zone.format.formatToParts(self.epochMilliseconds).filter((_) => {
+    if (_.type === "era") {
+      bc = _.value === "BC"
+      return false
+    }
+    return _.type !== "literal"
+  })
+  const year = Number(parts[2].value)
   const date = new Date(0)
   date.setUTCFullYear(
-    Number(parts[2].value),
+    bc ? 1 - year : year,
     Number(parts[0].value) - 1,
     Number(parts[1].value)
   )
@@ -641,8 +682,9 @@ export const toParts = (self: DateTime.DateTime): DateTime.DateTime.PartsWithWee
   } else if (self.partsAdjusted !== undefined) {
     return self.partsAdjusted
   }
-  self.partsAdjusted = withDate(self, dateToParts)
-  return self.partsAdjusted
+  const parts = withDate(self, dateToParts)
+  self.partsAdjusted = parts
+  return parts
 }
 
 /** @internal */
@@ -650,8 +692,9 @@ export const toPartsUtc = (self: DateTime.DateTime): DateTime.DateTime.PartsWith
   if (self.partsUtc !== undefined) {
     return self.partsUtc
   }
-  self.partsUtc = withDateUtc(self, dateToParts)
-  return self.partsUtc
+  const parts = withDateUtc(self, dateToParts)
+  self.partsUtc = parts
+  return parts
 }
 
 /** @internal */
@@ -814,7 +857,7 @@ const makeZonedFromAdjusted = (
   return makeZonedProto(adjustedMillis - afterOffset, zone)
 }
 
-const offsetRegExp = /([+-])(\d{2}):(\d{2})$/
+const offsetRegExp = /([+-])(\d{2}):?(\d{2})$/
 const parseOffset = (offset: string): number | null => {
   const match = offsetRegExp.exec(offset)
   if (match === null) {
@@ -934,10 +977,6 @@ export const subtractDuration: {
     mapEpochMillis(self, (millis) => millis - Duration.toMillis(Duration.fromInputUnsafe(duration)))
 )
 
-const addMillis = (date: Date, amount: number): void => {
-  date.setTime(date.getTime() + amount)
-}
-
 /** @internal */
 export const add: {
   (
@@ -949,20 +988,26 @@ export const add: {
   ): A
 } = dual(
   2,
-  (self: DateTime.DateTime, parts: Partial<DateTime.DateTime.PartsForMath>): DateTime.DateTime =>
-    mutate(self, (date) => {
+  (self: DateTime.DateTime, parts: Partial<DateTime.DateTime.PartsForMath>): DateTime.DateTime => {
+    // time units move the instant, calendar units move the wall clock
+    const shifted = mutateUtc(self, (date) => {
       if (parts.milliseconds) {
-        addMillis(date, parts.milliseconds)
+        date.setTime(date.getTime() + parts.milliseconds)
       }
       if (parts.seconds) {
-        addMillis(date, parts.seconds * 1000)
+        date.setTime(date.getTime() + parts.seconds * 1000)
       }
       if (parts.minutes) {
-        addMillis(date, parts.minutes * 60 * 1000)
+        date.setTime(date.getTime() + parts.minutes * 60 * 1000)
       }
       if (parts.hours) {
-        addMillis(date, parts.hours * 60 * 60 * 1000)
+        date.setTime(date.getTime() + parts.hours * 60 * 60 * 1000)
       }
+    })
+    if (!parts.days && !parts.weeks && !parts.months && !parts.years) {
+      return shifted
+    }
+    return mutate(shifted, (date) => {
       if (parts.days) {
         date.setUTCDate(date.getUTCDate() + parts.days)
       }
@@ -989,6 +1034,7 @@ export const add: {
         }
       }
     })
+  }
 )
 
 /** @internal */
@@ -1258,10 +1304,10 @@ export const formatIntl: {
 export const formatIso = (self: DateTime.DateTime): string => toDateUtc(self).toISOString()
 
 /** @internal */
-export const formatIsoDate = (self: DateTime.DateTime): string => toDate(self).toISOString().slice(0, 10)
+export const formatIsoDate = (self: DateTime.DateTime): string => toDate(self).toISOString().split("T")[0]
 
 /** @internal */
-export const formatIsoDateUtc = (self: DateTime.DateTime): string => toDateUtc(self).toISOString().slice(0, 10)
+export const formatIsoDateUtc = (self: DateTime.DateTime): string => toDateUtc(self).toISOString().split("T")[0]
 
 /** @internal */
 export const formatIsoOffset = (self: DateTime.DateTime): string => {

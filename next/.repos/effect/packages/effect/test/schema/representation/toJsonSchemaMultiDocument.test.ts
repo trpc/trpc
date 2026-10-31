@@ -41,9 +41,18 @@ describe("SchemaRepresentation.toJsonSchemaMultiDocument", () => {
           { $ref: "#/$defs/Tool.ContentEncoded" }
         ],
         definitions: {
+          "Tool.Content": {
+            type: "object",
+            properties: {
+              text: { type: "string" }
+            },
+            required: ["text"],
+            additionalProperties: true
+          },
           "Tool.ContentEncoded": {
             type: "string",
-            contentMediaType: "application/json"
+            contentMediaType: "application/json",
+            contentSchema: { $ref: "#/$defs/Tool.Content" }
           }
         }
       })
@@ -126,9 +135,11 @@ describe("SchemaRepresentation.toJsonSchemaMultiDocument", () => {
         { $ref: "#/$defs/ParentEncoded" }
       ])
       assert.deepStrictEqual(output.definitions, {
+        Child: { type: "string" },
         ChildEncoded: {
           type: "string",
-          contentMediaType: "application/json"
+          contentMediaType: "application/json",
+          contentSchema: { $ref: "#/$defs/Child" }
         },
         ParentEncoded: {
           type: "object",
@@ -154,9 +165,11 @@ describe("SchemaRepresentation.toJsonSchemaMultiDocument", () => {
         { $ref: "#/$defs/Child~1~0Encoded" }
       ])
       assert.deepStrictEqual(output.definitions, {
+        "Child/~": { type: "string" },
         "Child/~Encoded": {
           type: "string",
-          contentMediaType: "application/json"
+          contentMediaType: "application/json",
+          contentSchema: { $ref: "#/$defs/Child~1~0" }
         }
       })
     })

@@ -161,6 +161,21 @@
           "file": "suites/httpapi/fixtures/builder-handle-all-two-batches-count-500.ts"
         }
       ]
+    },
+    {
+      "name": "graphql-selections",
+      "baseline": "suites/graphql-selections/baseline.ts",
+      "thresholds": "suites/graphql-selections/thresholds.json",
+      "fixtures": [
+        {
+          "name": "opaque-class-count-5",
+          "file": "suites/graphql-selections/fixtures/opaque-class-count-5.ts"
+        },
+        {
+          "name": "struct-interface-count-5",
+          "file": "suites/graphql-selections/fixtures/struct-interface-count-5.ts"
+        }
+      ]
     }
   ]
 }

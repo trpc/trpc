@@ -34,6 +34,10 @@
 "@effect/platform/HttpClient#TypeId":
   replacement: "HttpClient.isHttpClient"
   note: "The brand key is private in v4; use the public runtime refinement."
+"@effect/platform/HttpClient#withCookiesRef":
+  include: true
+  replacement: "HttpClient.withCookiesRef"
+  note: "Pass a Ref<ReadonlyArray<Cookies.Cookie>> instead of a Ref<Cookies>. Stored cookies are sent only to a matching host, path and scheme, and a cookie without a domain is never sent; seed the ref with Cookies.mergeIntoArray for the target URL or with cookies that set a domain."
 "@effect/platform/HttpClient#withSpanNameGenerator":
   replacement: "HttpClient.transformResponse(Effect.provideService(HttpClient.SpanNameGenerator, f))"
   note: "The convenience combinator was removed; provide the reference around response effects."

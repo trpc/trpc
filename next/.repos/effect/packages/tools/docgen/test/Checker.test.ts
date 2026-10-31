@@ -50,24 +50,22 @@ const makeSource = (source: string | ast.SourceFile) => {
   })
 }
 
-const expectFailure = <A>(
+const expectFailure = Effect.fnUntraced(function*<A>(
   config: Partial<Configuration.ConfigurationShape>,
   sourceText: string,
   parser: Effect.Effect<A, never, Parser.Source | Configuration.Configuration | Path.Path>,
   checker: (a: A) => Effect.Effect<Array<string>, never, Configuration.Configuration | Parser.Source>,
   failure: ReadonlyArray<string>
-) => {
-  return Effect.gen(function*() {
-    const actual = yield* Effect.exit(parser.pipe(
-      Effect.flatMap(checker),
-      Effect.provideService(Parser.Source, makeSource(sourceText)),
-      Effect.provideService(Configuration.Configuration, { ...defaultConfig, ...config }),
-      Effect.provide(Path.layer)
-    ))
-    assert.ok(actual._tag === "Success")
-    assert.deepStrictEqual(actual.value, failure)
-  })
-}
+) {
+  const actual = yield* Effect.exit(parser.pipe(
+    Effect.flatMap(checker),
+    Effect.provideService(Parser.Source, makeSource(sourceText)),
+    Effect.provideService(Configuration.Configuration, { ...defaultConfig, ...config }),
+    Effect.provide(Path.layer)
+  ))
+  assert.ok(actual._tag === "Success")
+  assert.deepStrictEqual(actual.value, failure)
+})
 
 describe("Checker", () => {
   describe("checkFunctions", () => {

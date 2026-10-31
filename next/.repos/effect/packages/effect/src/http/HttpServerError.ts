@@ -23,6 +23,7 @@ import { hasProperty } from "../Predicate.ts"
 import type * as Request from "./HttpServerRequest.ts"
 import * as Respondable from "./HttpServerRespondable.ts"
 import * as Response from "./HttpServerResponse.ts"
+import * as internalUrlParams from "./internal/urlParams.ts"
 
 const TypeId = "~effect/http/HttpServerError"
 
@@ -85,7 +86,8 @@ export class HttpServerError extends Data.TaggedError("HttpServerError")<{
  *
  * **Details**
  *
- * When converted to a response it produces an empty `400` response.
+ * When converted to a response it produces an empty `413` response for
+ * `BodyTooLarge`, or an empty `400` response for other parse failures.
  *
  * @stability unstable
  * @category errors
@@ -93,21 +95,23 @@ export class HttpServerError extends Data.TaggedError("HttpServerError")<{
  */
 export class RequestParseError extends Data.TaggedError("RequestParseError")<{
   readonly request: Request.HttpServerRequest
+  readonly reason?: "Parse" | "BodyTooLarge"
   readonly description?: string
   readonly cause?: unknown
 }> implements Respondable.Respondable {
   /**
-   * Converts the request error into a `400 Bad Request` response.
+   * Converts the request error into a `413 Content Too Large` response for body
+   * size breaches, or a `400 Bad Request` response for other parse failures.
    *
    * @stability unstable
    * @since 4.0.0
    */
   [Respondable.symbol]() {
-    return Effect.succeed(Response.empty({ status: 400 }))
+    return Effect.succeed(Response.empty({ status: this.reason === "BodyTooLarge" ? 413 : 400 }))
   }
 
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   override get message() {
@@ -139,7 +143,7 @@ export class RouteNotFound extends Data.TaggedError("RouteNotFound")<{
   override readonly [ErrorReporter.ignore] = true
 
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   override get message() {
@@ -174,7 +178,7 @@ export class InternalError extends Data.TaggedError("InternalError")<{
   }
 
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   override get message() {
@@ -214,7 +218,7 @@ export class ResponseError extends Data.TaggedError("ResponseError")<{
   }
 
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   override get message() {
@@ -274,6 +278,9 @@ export class ClientAbort extends Context.Service<ClientAbort, true>()("effect/ht
     })
   )
 }
+
+const formatMethodAndUrl = (request: Request.HttpServerRequest) =>
+  `${request.method} ${internalUrlParams.toPath(request.url)}`
 
 const formatRequestMessage = (reason: string, description: string | undefined, info: string) => {
   const prefix = `${reason} (${info})`

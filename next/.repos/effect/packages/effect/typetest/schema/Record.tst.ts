@@ -75,6 +75,23 @@ describe("Record", () => {
       >()
     })
 
+    it("Record(Literals, optional(Number))", () => {
+      const schema = Schema.Record(Schema.Literals(["a", "b"]), Schema.optional(Schema.FiniteFromString))
+      expect(Schema.revealCodec(schema)).type.toBe<
+        Schema.Codec<
+          { readonly "a"?: number | undefined; readonly "b"?: number | undefined },
+          { readonly "a"?: string | undefined; readonly "b"?: string | undefined },
+          never
+        >
+      >()
+      expect(schema).type.toBe<
+        Schema.$Record<Schema.Literals<readonly ["a", "b"]>, Schema.optional<typeof Schema.FiniteFromString>>
+      >()
+      expect(schema.annotate({})).type.toBe<
+        Schema.$Record<Schema.Literals<readonly ["a", "b"]>, Schema.optional<typeof Schema.FiniteFromString>>
+      >()
+    })
+
     it("Record(Literals, mutableKey(Number))", () => {
       const schema = Schema.Record(Schema.Literals(["a", "b"]), Schema.mutableKey(Schema.FiniteFromString))
       expect(Schema.revealCodec(schema)).type.toBe<
@@ -111,16 +128,16 @@ describe("Record", () => {
     })
   })
 
-  describe("field mutability and optionality", () => {
-    // Note: `Record(String, optional(Number))` throws at runtime
-
-    it("Record(String, optional(Number))", () => {
-      const schema = Schema.Record(Schema.String, Schema.optional(Schema.NumberFromString))
+  describe("field mutability and undefined values", () => {
+    it("Record(String, UndefinedOr(Number))", () => {
+      const schema = Schema.Record(Schema.String, Schema.UndefinedOr(Schema.NumberFromString))
       expect(Schema.revealCodec(schema)).type.toBe<
         Schema.Codec<{ readonly [x: string]: number | undefined }, { readonly [x: string]: string | undefined }, never>
       >()
-      expect(schema).type.toBe<Schema.$Record<Schema.String, Schema.optional<Schema.NumberFromString>>>()
-      expect(schema.annotate({})).type.toBe<Schema.$Record<Schema.String, Schema.optional<Schema.NumberFromString>>>()
+      expect(schema).type.toBe<Schema.$Record<Schema.String, Schema.UndefinedOr<Schema.NumberFromString>>>()
+      expect(schema.annotate({})).type.toBe<
+        Schema.$Record<Schema.String, Schema.UndefinedOr<Schema.NumberFromString>>
+      >()
     })
 
     it("Record(String, mutableKey(Number))", () => {

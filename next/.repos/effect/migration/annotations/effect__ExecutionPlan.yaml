@@ -1,9 +1,9 @@
 effect/ExecutionPlan#ExecutionPlan:
   replacement: "ExecutionPlan.ExecutionPlan"
-  note: "The plan type remains; withRequirements was renamed to captureRequirements."
+  note: "The plan type remains; withRequirements was renamed to captureRequirements. Step schedules use Schedule<Output, Input, Error, Requirements>; captureRequirements supplies captured services to schedule initialization and execution."
 effect/ExecutionPlan#make:
   replacement: "ExecutionPlan.make"
-  note: "The variadic execution-plan constructor remains unchanged."
+  note: "The constructor remains variadic. Its inferred error channel includes failures from step layers, predicates, and schedules; requirements include services needed by all three across every step."
 effect/ExecutionPlan#TypesBase:
   replacement: "ExecutionPlan.ConfigBase"
   note: "The base type for execution-plan step configuration was renamed."

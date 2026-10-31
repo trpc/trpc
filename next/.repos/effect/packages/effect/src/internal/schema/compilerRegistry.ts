@@ -58,6 +58,7 @@ export interface Entry {
   readonly is?: Is | undefined
   readonly decode?: Decode | undefined
   readonly make?: Make | undefined
+  readonly compiledMakeEffect?: Parser | undefined
   readonly decodeEffect: Parser
   readonly parser: Parser
   readonly makeEffect: Parser
@@ -117,6 +118,10 @@ class CompilerEntry extends InterpretedEntry {
     return this.save("make", this.operation("make"))
   }
 
+  get compiledMakeEffect(): Parser | undefined {
+    return this.save("compiledMakeEffect", this.operation("makeEffect"))
+  }
+
   override get decodeEffect(): Parser {
     return this.save(
       "decodeEffect",
@@ -132,7 +137,7 @@ class CompilerEntry extends InterpretedEntry {
   }
 
   override get makeEffect(): Parser {
-    const makeEffect = this.operation("makeEffect")
+    const makeEffect = this.compiledMakeEffect
     if (makeEffect !== undefined) return this.save("makeEffect", makeEffect)
     const child = (ast: SchemaAST.AST): Parser => lazyParser(this.resolve, ast, "makeEffect")
     return this.save(

@@ -11,19 +11,21 @@
  */
 import * as Context from "../Context.ts"
 import * as Effect from "../Effect.ts"
+import * as Exit from "../Exit.ts"
 import type { FileSystem } from "../FileSystem.ts"
 import type { Generator } from "../http/Etag.ts"
 import * as HttpClient from "../http/HttpClient.ts"
+import * as HttpEffect from "../http/HttpEffect.ts"
 import type { HttpPlatform } from "../http/HttpPlatform.ts"
 import * as HttpRouter from "../http/HttpRouter.ts"
 import * as HttpServerRequest from "../http/HttpServerRequest.ts"
 import * as HttpServerResponse from "../http/HttpServerResponse.ts"
-import * as preResponseHandler from "../http/internal/preResponseHandler.ts"
+import { CurrentRequestState, RequestState } from "../http/internal/requestState.ts"
 import * as Layer from "../Layer.ts"
 import type { Path } from "../Path.ts"
-import type { Scope } from "../Scope.ts"
+import * as Scope from "../Scope.ts"
 import type * as HttpApi from "./HttpApi.ts"
-import type { HandlerRuntime } from "./HttpApiBuilder.ts"
+import type { GroupService, HandlerRuntime } from "./HttpApiBuilder.ts"
 import * as HttpApiBuilder from "./HttpApiBuilder.ts"
 import * as HttpApiClient from "./HttpApiClient.ts"
 import type * as HttpApiEndpoint from "./HttpApiEndpoint.ts"
@@ -36,6 +38,17 @@ import type * as HttpApiGroup from "./HttpApiGroup.ts"
  *
  * Handlers for the selected groups are taken from the environment; unselected
  * groups are wired with placeholder handlers that fail if called.
+ *
+ * Each call runs its handler in a request scope that is a child of the
+ * `Scope` the client was created in. A streaming response keeps that scope
+ * open until its body ends, and a body that is never read is closed with the
+ * owning `Scope`.
+ *
+ * A `Stream` payload reaches the handler unbuffered: each element is pulled
+ * from the caller's stream as the handler reads it. If the caller's stream
+ * fails, reading the request body fails with it. Client aborts and socket
+ * behavior such as draining unread bodies, closing the connection, or
+ * answering with `499` are not emulated.
  *
  * @stability unstable
  * @category testing
@@ -62,7 +75,7 @@ export const groups = Effect.fnUntraced(function*<
   | Generator
   | HttpPlatform
   | Path
-  | Scope
+  | Scope.Scope
 > {
   let context = yield* Effect.context<HttpApiGroup.ToService<ApiId, SelectedGroups>>()
 
@@ -85,7 +98,8 @@ export const groups = Effect.fnUntraced(function*<
       handlers.set(endpointIdentifier, handler)
       routes.push(HttpApiBuilder.handlerToRoute(api, group as any, handler, context))
     }
-    context = Context.add(context, group as any, { handlers, routes })
+    const service: GroupService = { handlers, routes }
+    context = Context.add(context, group as any, service)
   }
 
   const layer: Layer.Layer<
@@ -100,18 +114,29 @@ export const groups = Effect.fnUntraced(function*<
     Layer.provide(Layer.succeedContext(context))
   ) as any
   const handler = yield* HttpRouter.toHttpEffect(layer)
-  const httpClient = HttpClient.make(Effect.fnUntraced(function*(request) {
+  const scope = yield* Effect.scope
+  const httpClient = HttpClient.make((request) => {
+    const requestScope = Scope.forkUnsafe(scope)
     const serverRequest = HttpServerRequest.fromClientRequest(request)
-    const response = yield* handler.pipe(
+    const state = new RequestState()
+    let transferred = false
+    return handler.pipe(
       Effect.flatMap((response) => {
-        const preResponse = preResponseHandler.requestPreResponseHandlers.get(serverRequest.source)
+        const preResponse = state.preResponseHandler
         return preResponse === undefined ? Effect.succeed(response) : preResponse(serverRequest, response)
       }),
+      Effect.map((response) => {
+        const transfer = HttpEffect.scopeTransferToStream(response)
+        transferred = transfer !== response
+        return HttpServerResponse.toClientResponse(transfer, { request })
+      }),
       Effect.provideService(HttpServerRequest.HttpServerRequest, serverRequest),
-      Effect.orDie
+      Effect.provideService(CurrentRequestState, state),
+      Effect.provideService(Scope.Scope, requestScope),
+      Effect.orDie,
+      Effect.onExit((exit) => transferred && Exit.isSuccess(exit) ? Effect.void : Scope.close(requestScope, exit))
     )
-    return HttpServerResponse.toClientResponse(response, { request })
-  }, Effect.scoped))
+  })
 
   return yield* HttpApiClient.makeWith(api, {
     httpClient,

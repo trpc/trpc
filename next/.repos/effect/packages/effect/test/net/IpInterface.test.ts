@@ -107,3 +107,48 @@ describe("IpInterface", () => {
     assert.strictEqual(Schema.encodeSync(Schema.IpInterfaceFromString)(value), "192.0.2.1/24")
   })
 })
+
+describe("fromInput", () => {
+  it("parses strings with options and returns values unchanged", () => {
+    const ipv4 = interfaceAddress("192.0.2.1/24") as IpInterface.Ipv4Interface
+    const ipv6 = interfaceAddress("2001:db8::1/64") as IpInterface.Ipv6Interface
+
+    assertTrue(Equal.equals(success(IpInterface.fromInput("192.0.2.1/24")), ipv4))
+    assertTrue(Equal.equals(success(IpInterface.ipv4FromInput("192.0.2.1/24")), ipv4))
+    assertTrue(Equal.equals(success(IpInterface.ipv6FromInput("2001:DB8::1/64")), ipv6))
+    assert.strictEqual(success(IpInterface.fromInput("192.0.2.1")).prefixLength, 32)
+
+    assert.strictEqual(success(IpInterface.fromInput(ipv6)), ipv6)
+    assert.strictEqual(success(IpInterface.ipv4FromInput(ipv4)), ipv4)
+    assert.strictEqual(success(IpInterface.ipv6FromInput(ipv6)), ipv6)
+
+    failure(IpInterface.fromInput("192.0.2.1", { prefix: "required" }))
+    failure(IpInterface.ipv4FromInput("2001:db8::1/64"))
+    failure(IpInterface.ipv6FromInput("192.0.2.1/24"))
+  })
+
+  it("converts an address and prefix length", () => {
+    const ipv4 = interfaceAddress("192.0.2.1/24")
+    const ipv6 = interfaceAddress("2001:db8::1/64")
+
+    assertTrue(Equal.equals(success(IpInterface.fromInput({ address: [192, 0, 2, 1], prefixLength: 24 })), ipv4))
+    assertTrue(Equal.equals(success(IpInterface.ipv4FromInput({ address: "192.0.2.1", prefixLength: 24 })), ipv4))
+    assertTrue(
+      Equal.equals(
+        success(IpInterface.ipv6FromInput({ address: ip("2001:db8::1") as NetAddress.Ipv6Address, prefixLength: 64 })),
+        ipv6
+      )
+    )
+
+    failure(IpInterface.fromInput({ address: "192.0.2.1", prefixLength: 33 }))
+    failure(IpInterface.ipv4FromInput({ address: "2001:db8::1", prefixLength: 64 }))
+    failure(IpInterface.ipv6FromInput({ address: "192.0.2.1", prefixLength: 24 }))
+  })
+
+  it("has an unsafe variant that throws on failure", () => {
+    const address = interfaceAddress("192.0.2.1/24")
+    assert.strictEqual(IpInterface.fromInputUnsafe(address), address)
+    assert.strictEqual(IpInterface.fromInputUnsafe("192.0.2.1").prefixLength, 32)
+    assert.throws(() => IpInterface.fromInputUnsafe("192.0.2.1", { prefix: "required" }))
+  })
+})

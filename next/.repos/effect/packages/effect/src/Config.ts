@@ -706,7 +706,6 @@ const toConfigCursorAST = memoize((root: SchemaAST.AST): SchemaAST.AST => {
     seen.add(ast)
     switch (ast._tag) {
       case "Objects": {
-        const matchesIndex = ast.indexSignatures.map((is) => SchemaParser._is(is.parameter))
         const materialize = Effect.fnUntraced(function*(cursor: ConfigCursor) {
           if (cursor.node?._tag !== "Record") {
             return undefined
@@ -716,9 +715,15 @@ const toConfigCursorAST = memoize((root: SchemaAST.AST): SchemaAST.AST => {
           for (const property of ast.propertySignatures) {
             if (typeof property.name === "string") keys.add(property.name)
           }
-          if (matchesIndex.length > 0) {
+          if (ast.indexSignatures.length > 0) {
+            const input: Record<string, undefined> = {}
             for (const key of node.keys) {
-              if (matchesIndex.some((matches) => matches(key))) keys.add(key)
+              InternalRecord.assignProperty(input, key, undefined)
+            }
+            for (const is of ast.indexSignatures) {
+              for (const key of SchemaAST.getIndexSignatureKeys(input, is.parameter)) {
+                if (typeof key === "string") keys.add(key)
+              }
             }
           }
           const out: Record<string, ConfigCursor> = {}
@@ -889,6 +894,8 @@ interface ArrayOptions {
 interface RecordOptions {
   readonly separator?: string | undefined
   readonly keyValueSeparator?: string | undefined
+  readonly trim?: boolean | undefined
+  readonly keepEmptyValues?: boolean | undefined
 }
 
 const isPath = (u: unknown): u is string | Path => Predicate.isString(u) || globalThis.Array.isArray(u)
@@ -1197,7 +1204,11 @@ export function Array<V extends Schema.ConstraintCodec<unknown, unknown>>(
  *
  * Pass a string or `ConfigProvider.Path` as the third argument to set the lookup
  * path. When no path is needed, pass the options object directly. The `separator`
- * defaults to `","` and `keyValueSeparator` defaults to `"="`.
+ * defaults to `","` and `keyValueSeparator` defaults to `"="`. For string input,
+ * set `trim: true` to trim keys and values before entries with an empty key are
+ * skipped, and `keepEmptyValues: true` to keep entries with an empty value as
+ * `""` instead of skipping them. Entries without a `keyValueSeparator` are
+ * always skipped.
  *
  * **Example** (Reading a comma-separated record)
  *

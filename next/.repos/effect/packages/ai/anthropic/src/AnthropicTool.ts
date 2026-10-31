@@ -1342,7 +1342,7 @@ const ComputerUse_20251124_Actions = Schema.Union([
 export const ComputerUse_20241022 = Tool.providerDefined({
   id: "anthropic.computer_use_20241022",
   customName: "AnthropicComputerUse",
-  providerName: "computer_use",
+  providerName: "computer",
   requiresHandler: true,
   args: ComputerUse_20241022_Args,
   parameters: ComputerUse_20241022_Actions,
@@ -1874,6 +1874,13 @@ export type TextEditorStrReplaceCommand = typeof TextEditorStrReplaceCommand.Typ
  * Inserts the new text after the specified line number. Use `0` to insert at
  * the beginning of the file; other values are 1-indexed.
  *
+ * **Gotchas**
+ *
+ * Used by `text_editor_20241022` and `text_editor_20250124`. Later versions
+ * send `insert_text` instead.
+ *
+ * @see {@link TextEditorInsertTextCommand} for the `insert_text` variant
+ *
  * @stability unstable
  * @category schemas
  * @since 4.0.0
@@ -1901,6 +1908,40 @@ export const TextEditorInsertCommand = Schema.Struct({
  * @since 4.0.0
  */
 export type TextEditorInsertCommand = typeof TextEditorInsertCommand.Type
+
+/**
+ * Inserts text at a specific line number in a file. Used by
+ * `text_editor_20250429` and `text_editor_20250728`, which send `insert_text`.
+ *
+ * @see {@link TextEditorInsertCommand} for the `new_str` variant
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.1.1
+ */
+export const TextEditorInsertTextCommand = Schema.Struct({
+  command: Schema.Literal("insert"),
+  /**
+   * Path to the file to modify.
+   */
+  path: Schema.String,
+  /**
+   * The line number after which to insert (0 = beginning, 1-indexed).
+   */
+  insert_line: Schema.Int,
+  /**
+   * The text to insert.
+   */
+  insert_text: Schema.String
+})
+/**
+ * Text editor command payload for inserting text after a specific line number in a file.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.1.1
+ */
+export type TextEditorInsertTextCommand = typeof TextEditorInsertTextCommand.Type
 
 /**
  * Undoes the last edit made to a file.
@@ -1953,7 +1994,7 @@ const TextEditor_StrReplaceBasedEdit_Commands = Schema.Union([
   TextEditorViewCommand,
   TextEditorCreateCommand,
   TextEditorStrReplaceCommand,
-  TextEditorInsertCommand
+  TextEditorInsertTextCommand
 ])
 
 // -----------------------------------------------------------------------------

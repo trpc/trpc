@@ -225,7 +225,10 @@ const release = <A, E>(self: RcRefImpl<A, E>, state: State.Acquired<A>): Effect.
     Effect.flatMap(restore(Effect.sleep(idleTimeToLive)), () => {
       if (self.state === state && state.refCount === 0) {
         self.state = stateEmpty
-        return Scope.close(state.scope, Exit.void)
+        return Effect.ignoreCause(Scope.close(state.scope, Exit.void), {
+          log: "Unhandled",
+          message: "Unhandled error in RcRef finalizer"
+        })
       }
       return Effect.void
     })

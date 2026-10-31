@@ -8,6 +8,7 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
 import * as Layer from "effect/Layer"
+import * as Queue from "effect/Queue"
 import { initializeHttpSession, makeHttpHarness } from "../TestUtils/McpHttpHarness.ts"
 import { makeMcpSseReader } from "../TestUtils/McpHttpResponse.ts"
 import { makeServerLayer } from "../TestUtils/McpServerLayer.ts"
@@ -404,6 +405,7 @@ export const statefulLegacySuite = (protocol: McpProtocol.ProtocolAdapter, layer
           assert.isFalse(yield* Deferred.isDone(otherInterrupted))
         }))
 
+      // https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#sending-messages-to-the-server
       it.effect("should close without a reply when a tool is cancelled before emitting HTTP output", () =>
         Effect.gen(function*() {
           const entered = yield* Deferred.make<void>()
@@ -436,6 +438,8 @@ export const statefulLegacySuite = (protocol: McpProtocol.ProtocolAdapter, layer
           assert.strictEqual(cancelled.status, 202)
           yield* Deferred.await(interrupted).pipe(Effect.timeout("1 second"))
           const response = yield* Fiber.join(pending).pipe(Effect.timeout("1 second"))
+          assert.strictEqual(response.status, 200)
+          assert.strictEqual(response.headers.get("content-type"), "text/event-stream")
           assert.strictEqual(yield* Effect.promise(() => response.text()), "")
         }))
 
@@ -509,6 +513,38 @@ export const statefulLegacySuite = (protocol: McpProtocol.ProtocolAdapter, layer
               assert.strictEqual(yield* Deferred.isDone(otherInterrupted), cancelled === "all")
             }))
         }
+
+        it.effect("should close without a reply when every batch request is cancelled before emitting HTTP output", () =>
+          Effect.gen(function*() {
+            const entered = yield* Queue.unbounded<void>()
+            const registration = Layer.effectDiscard(McpServer.McpServer.use((server) =>
+              server.addTool({
+                tool: new McpSchema.Tool({ name: "Wait", inputSchema: { type: "object" } }),
+                annotations: Context.empty(),
+                handle: () => Queue.offer(entered, void 0).pipe(Effect.andThen(Effect.never))
+              })
+            ))
+            const harness = yield* makeHttpHarness(registration.pipe(Layer.provideMerge(serverLayer)))
+            const headers = yield* initializeHttpSession(harness, protocol)
+            const pending = yield* harness.post(
+              [1, 2].map((id) => ({
+                jsonrpc: "2.0",
+                id,
+                method: "tools/call",
+                params: { name: "Wait", arguments: {} }
+              })),
+              headers
+            ).pipe(Effect.forkChild)
+            yield* Queue.takeN(entered, 2)
+            yield* harness.post(
+              [1, 2].map((requestId) => ({ jsonrpc: "2.0", method: "notifications/cancelled", params: { requestId } })),
+              headers
+            )
+            const response = yield* Fiber.join(pending).pipe(Effect.timeout("1 second"))
+            assert.strictEqual(response.status, 200)
+            assert.strictEqual(response.headers.get("content-type"), "text/event-stream")
+            assert.strictEqual(yield* Effect.promise(() => response.text()), "")
+          }))
       }
     })
   })

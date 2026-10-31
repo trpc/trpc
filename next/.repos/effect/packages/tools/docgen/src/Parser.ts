@@ -118,24 +118,23 @@ const shouldIgnore = (doc: Domain.Doc): boolean => {
   return Record.has(doc.tags, "internal") || Record.has(doc.tags, "ignore")
 }
 
-const parseInterfaceDeclaration = (id: ast.InterfaceDeclaration) =>
-  Effect.gen(function*() {
-    const doc = parseDoc(getJSDocText(id.getJsDocs()))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = id.getName()
-    const signature = id.getText()
-    const position = yield* parsePosition(id)
-    return [
-      new Domain.Interface(
-        name,
-        doc,
-        signature,
-        position
-      )
-    ]
-  })
+const parseInterfaceDeclaration = Effect.fnUntraced(function*(id: ast.InterfaceDeclaration) {
+  const doc = parseDoc(getJSDocText(id.getJsDocs()))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = id.getName()
+  const signature = id.getText()
+  const position = yield* parsePosition(id)
+  return [
+    new Domain.Interface(
+      name,
+      doc,
+      signature,
+      position
+    )
+  ]
+})
 
 const parseInterfaceDeclarations = (interfaces: ReadonlyArray<ast.InterfaceDeclaration>) => {
   const exportedInterfaces = Array.filter(
@@ -198,48 +197,46 @@ const parsePosition = (node: ast.Node): Effect.Effect<Domain.Position, never, So
   })
 }
 
-const parseFunctionDeclaration = (fd: ast.FunctionDeclaration) =>
-  Effect.gen(function*() {
-    const doc = parseDoc(getJSDocText(getFunctionDeclarationJSDocs(fd)))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = fd.getName()
-    const type = parseType(fd)
-    const signature = `declare const ${name}: ${type}`
-    const position = yield* parsePosition(fd)
-    return [
-      new Domain.Function(
-        name ?? "",
-        doc,
-        signature,
-        position
-      )
-    ]
-  })
+const parseFunctionDeclaration = Effect.fnUntraced(function*(fd: ast.FunctionDeclaration) {
+  const doc = parseDoc(getJSDocText(getFunctionDeclarationJSDocs(fd)))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = fd.getName()
+  const type = parseType(fd)
+  const signature = `declare const ${name}: ${type}`
+  const position = yield* parsePosition(fd)
+  return [
+    new Domain.Function(
+      name ?? "",
+      doc,
+      signature,
+      position
+    )
+  ]
+})
 
-const parseFunctionVariableDeclaration = (vd: ast.VariableDeclaration) =>
-  Effect.gen(function*() {
-    const vs: any = vd.getParent().getParent()
-    const doc = parseDoc(getJSDocText(vs.getJsDocs()))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = vd.getName()
-    const type = parseType(vd)
-    const signature = `declare const ${name}: ${type}`
-    const startPos = vd.getStart()
-    const source = yield* Source
-    const position = source.sourceFile.getLineAndColumnAtPos(startPos)
-    return [
-      new Domain.Function(
-        name ?? "",
-        doc,
-        signature,
-        position
-      )
-    ]
-  })
+const parseFunctionVariableDeclaration = Effect.fnUntraced(function*(vd: ast.VariableDeclaration) {
+  const vs: any = vd.getParent().getParent()
+  const doc = parseDoc(getJSDocText(vs.getJsDocs()))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = vd.getName()
+  const type = parseType(vd)
+  const signature = `declare const ${name}: ${type}`
+  const startPos = vd.getStart()
+  const source = yield* Source
+  const position = source.sourceFile.getLineAndColumnAtPos(startPos)
+  return [
+    new Domain.Function(
+      name ?? "",
+      doc,
+      signature,
+      position
+    )
+  ]
+})
 
 const getFunctionDeclarations = Effect.gen(function*() {
   const source = yield* Source
@@ -285,26 +282,25 @@ export const parseFunctions = Effect.gen(function*() {
   return [...functionDeclarations, ...functionVariableDeclarations]
 })
 
-const parseTypeAliasDeclaration = (ta: ast.TypeAliasDeclaration) =>
-  Effect.gen(function*() {
-    const doc = parseDoc(getJSDocText(ta.getJsDocs()))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = ta.getName()
-    const typeParameters = ta.getTypeParameters().map((parameter) => parameter.getText()).join(", ")
-    const definition = ta.getTypeNode()?.getText()
-    const signature = `type ${name}${typeParameters.length > 0 ? `<${typeParameters}>` : ""} = ${definition}`
-    const position = yield* parsePosition(ta)
-    return [
-      new Domain.TypeAlias(
-        name,
-        doc,
-        signature,
-        position
-      )
-    ]
-  })
+const parseTypeAliasDeclaration = Effect.fnUntraced(function*(ta: ast.TypeAliasDeclaration) {
+  const doc = parseDoc(getJSDocText(ta.getJsDocs()))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = ta.getName()
+  const typeParameters = ta.getTypeParameters().map((parameter) => parameter.getText()).join(", ")
+  const definition = ta.getTypeNode()?.getText()
+  const signature = `type ${name}${typeParameters.length > 0 ? `<${typeParameters}>` : ""} = ${definition}`
+  const position = yield* parsePosition(ta)
+  return [
+    new Domain.TypeAlias(
+      name,
+      doc,
+      signature,
+      position
+    )
+  ]
+})
 
 const parseTypeAliasDeclarations = (typeAliases: ReadonlyArray<ast.TypeAliasDeclaration>) => {
   const exportedTypeAliases = Array.filter(
@@ -325,26 +321,25 @@ export const parseTypeAliases = Effect.flatMap(
   (source) => parseTypeAliasDeclarations(source.sourceFile.getTypeAliases())
 )
 
-const parseConstantVariableDeclaration = (vd: ast.VariableDeclaration) =>
-  Effect.gen(function*() {
-    const vs: any = vd.getParent().getParent()
-    const doc = parseDoc(getJSDocText(vs.getJsDocs()))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = vd.getName()
-    const type = parseType(vd)
-    const signature = `declare const ${name}: ${type}`
-    const position = yield* parsePosition(vd)
-    return [
-      new Domain.Constant(
-        name,
-        doc,
-        signature,
-        position
-      )
-    ]
-  })
+const parseConstantVariableDeclaration = Effect.fnUntraced(function*(vd: ast.VariableDeclaration) {
+  const vs: any = vd.getParent().getParent()
+  const doc = parseDoc(getJSDocText(vs.getJsDocs()))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = vd.getName()
+  const type = parseType(vd)
+  const signature = `declare const ${name}: ${type}`
+  const position = yield* parsePosition(vd)
+  return [
+    new Domain.Constant(
+      name,
+      doc,
+      signature,
+      position
+    )
+  ]
+})
 
 /**
  * Parses exported non-function constants from the current source file.
@@ -377,42 +372,40 @@ export const parseConstants = Effect.gen(function*() {
   )
 })
 
-const parseExportSpecifier = (es: ast.ExportSpecifier) =>
-  Effect.gen(function*() {
-    const name = es.compilerNode.name.text
-    const type = parseType(es)
-    const oDocComment = getDocComment(es.getLeadingCommentRanges())
-    const doc = Option.isSome(oDocComment) ? parseDoc(oDocComment.value.getText()) : parseDoc("")
-    const signature = `declare const ${name}: ${type}`
-    const position = yield* parsePosition(es)
-    return new Domain.Export(
-      name,
-      doc,
-      signature,
-      position,
-      false
-    )
-  })
+const parseExportSpecifier = Effect.fnUntraced(function*(es: ast.ExportSpecifier) {
+  const name = es.compilerNode.name.text
+  const type = parseType(es)
+  const oDocComment = getDocComment(es.getLeadingCommentRanges())
+  const doc = Option.isSome(oDocComment) ? parseDoc(oDocComment.value.getText()) : parseDoc("")
+  const signature = `declare const ${name}: ${type}`
+  const position = yield* parsePosition(es)
+  return new Domain.Export(
+    name,
+    doc,
+    signature,
+    position,
+    false
+  )
+})
 
-const parseExportStar = (ed: ast.ExportDeclaration) =>
-  Effect.gen(function*() {
-    const es = ed.getModuleSpecifier()!
-    const name = es.getText()
-    const namespace = ed.getNamespaceExport()?.getName()
-    const signature = `export *${namespace === undefined ? "" : ` as ${namespace}`} from ${name}`
-    const oDocComment = getDocComment(ed.getLeadingCommentRanges())
-    const doc = Option.isSome(oDocComment) ? parseDoc(oDocComment.value.getText()) : parseDoc("")
-    const position = yield* parsePosition(ed)
-    return new Domain.Export(
-      namespace ?? name,
-      doc.modifyDescription(
-        `Re-exports all named exports from the ${name} module${namespace === undefined ? "" : ` as \`${namespace}\``}.`
-      ),
-      signature,
-      position,
-      true
-    )
-  })
+const parseExportStar = Effect.fnUntraced(function*(ed: ast.ExportDeclaration) {
+  const es = ed.getModuleSpecifier()!
+  const name = es.getText()
+  const namespace = ed.getNamespaceExport()?.getName()
+  const signature = `export *${namespace === undefined ? "" : ` as ${namespace}`} from ${name}`
+  const oDocComment = getDocComment(ed.getLeadingCommentRanges())
+  const doc = Option.isSome(oDocComment) ? parseDoc(oDocComment.value.getText()) : parseDoc("")
+  const position = yield* parsePosition(ed)
+  return new Domain.Export(
+    namespace ?? name,
+    doc.modifyDescription(
+      `Re-exports all named exports from the ${name} module${namespace === undefined ? "" : ` as \`${namespace}\``}.`
+    ),
+    signature,
+    position,
+    true
+  )
+})
 
 const parseNamedExports = (ed: ast.ExportDeclaration) => {
   const namedExports = ed.getNamedExports()
@@ -487,56 +480,54 @@ export const parseNamespaces = Effect.gen(function*() {
 const getTypeParameters = (tps: ReadonlyArray<ast.TypeParameterDeclaration>): string =>
   tps.length === 0 ? "" : `<${tps.map((p) => p.getName()).join(", ")}>`
 
-const parseMethod = (md: ast.MethodDeclaration) =>
-  Effect.gen(function*() {
-    const name = md.getName()
-    const jsdocs = Array.matchLeft(md.getOverloads(), {
-      onEmpty: () => md.getJsDocs(),
-      onNonEmpty: (head) => head.getJsDocs()
-    })
-    const doc = parseDoc(getJSDocText(jsdocs))
-    if (shouldIgnore(doc)) {
-      return Option.none()
-    }
-    const type = parseType(md)
-    const signature = `declare const ${name}: ${type}`
-    const position = yield* parsePosition(md)
-    return Option.some(
-      new Domain.DocEntry(
-        name,
-        doc,
-        signature,
-        position
-      )
-    )
+const parseMethod = Effect.fnUntraced(function*(md: ast.MethodDeclaration) {
+  const name = md.getName()
+  const jsdocs = Array.matchLeft(md.getOverloads(), {
+    onEmpty: () => md.getJsDocs(),
+    onNonEmpty: (head) => head.getJsDocs()
   })
+  const doc = parseDoc(getJSDocText(jsdocs))
+  if (shouldIgnore(doc)) {
+    return Option.none()
+  }
+  const type = parseType(md)
+  const signature = `declare const ${name}: ${type}`
+  const position = yield* parsePosition(md)
+  return Option.some(
+    new Domain.DocEntry(
+      name,
+      doc,
+      signature,
+      position
+    )
+  )
+})
 
-const parseProperty = (pd: ast.PropertyDeclaration) =>
-  Effect.gen(function*() {
-    const doc = parseDoc(getJSDocText(pd.getJsDocs()))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = pd.getName()
-    const type = parseType(pd)
-    const readonly = pipe(
-      Option.fromNullishOr(pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword)),
-      Option.match({
-        onNone: () => "",
-        onSome: () => "readonly "
-      })
+const parseProperty = Effect.fnUntraced(function*(pd: ast.PropertyDeclaration) {
+  const doc = parseDoc(getJSDocText(pd.getJsDocs()))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = pd.getName()
+  const type = parseType(pd)
+  const readonly = pipe(
+    Option.fromNullishOr(pd.getFirstModifierByKind(ast.ts.SyntaxKind.ReadonlyKeyword)),
+    Option.match({
+      onNone: () => "",
+      onSome: () => "readonly "
+    })
+  )
+  const signature = `${readonly}${name}: ${type}`
+  const position = yield* parsePosition(pd)
+  return [
+    new Domain.DocEntry(
+      name,
+      doc,
+      signature,
+      position
     )
-    const signature = `${readonly}${name}: ${type}`
-    const position = yield* parsePosition(pd)
-    return [
-      new Domain.DocEntry(
-        name,
-        doc,
-        signature,
-        position
-      )
-    ]
-  })
+  ]
+})
 
 const parseProperties = (c: ast.ClassDeclaration) => {
   const properties = Array.filter(
@@ -589,38 +580,37 @@ const getClassDeclarationSignature = (c: ast.ClassDeclaration) => {
   )
 }
 
-const parseClass = (c: ast.ClassDeclaration) =>
-  Effect.gen(function*() {
-    const doc = parseDoc(getJSDocText(c.getJsDocs()))
-    if (shouldIgnore(doc)) {
-      return []
-    }
-    const name = c.getName() ?? ""
-    const signature = yield* getClassDeclarationSignature(c)
-    const methods = yield* pipe(
-      c.getInstanceMethods(),
-      Effect.forEach(parseMethod),
-      Effect.map(Array.getSomes)
+const parseClass = Effect.fnUntraced(function*(c: ast.ClassDeclaration) {
+  const doc = parseDoc(getJSDocText(c.getJsDocs()))
+  if (shouldIgnore(doc)) {
+    return []
+  }
+  const name = c.getName() ?? ""
+  const signature = yield* getClassDeclarationSignature(c)
+  const methods = yield* pipe(
+    c.getInstanceMethods(),
+    Effect.forEach(parseMethod),
+    Effect.map(Array.getSomes)
+  )
+  const staticMethods = yield* pipe(
+    c.getStaticMethods(),
+    Effect.forEach(parseMethod),
+    Effect.map(Array.getSomes)
+  )
+  const properties = yield* parseProperties(c)
+  const position = yield* parsePosition(c)
+  return [
+    new Domain.Class(
+      name,
+      doc,
+      signature,
+      position,
+      methods,
+      staticMethods,
+      properties
     )
-    const staticMethods = yield* pipe(
-      c.getStaticMethods(),
-      Effect.forEach(parseMethod),
-      Effect.map(Array.getSomes)
-    )
-    const properties = yield* parseProperties(c)
-    const position = yield* parsePosition(c)
-    return [
-      new Domain.Class(
-        name,
-        doc,
-        signature,
-        position,
-        methods,
-        staticMethods,
-        properties
-      )
-    ]
-  })
+  ]
+})
 
 /**
  * Parses exported classes and their documented members from the current source file.
@@ -699,33 +689,32 @@ export const parseFile =
     })
   }
 
-const createProject = (files: ReadonlyArray<Domain.File>) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    const process = yield* Domain.Process
-    const cwd = yield* process.cwd
-    // Convert the raw config into a format that TS/TS-Morph expects
-    const parsed = ast.ts.parseJsonConfigFileContent(
-      {
-        compilerOptions: {
-          strict: true,
-          moduleResolution: "node",
-          ...config.parseCompilerOptions
-        }
-      },
-      ast.ts.sys,
-      cwd
-    )
+const createProject = Effect.fnUntraced(function*(files: ReadonlyArray<Domain.File>) {
+  const config = yield* Configuration.Configuration
+  const process = yield* Domain.Process
+  const cwd = yield* process.cwd
+  // Convert the raw config into a format that TS/TS-Morph expects
+  const parsed = ast.ts.parseJsonConfigFileContent(
+    {
+      compilerOptions: {
+        strict: true,
+        moduleResolution: "node",
+        ...config.parseCompilerOptions
+      }
+    },
+    ast.ts.sys,
+    cwd
+  )
 
-    const options: ast.ProjectOptions = {
-      compilerOptions: parsed.options
-    }
-    const project = new ast.Project(options)
-    for (const file of files) {
-      project.addSourceFileAtPath(file.path)
-    }
-    return project
-  })
+  const options: ast.ProjectOptions = {
+    compilerOptions: parsed.options
+  }
+  const project = new ast.Project(options)
+  for (const file of files) {
+    project.addSourceFileAtPath(file.path)
+  }
+  return project
+})
 
 /**
  * Parses source files into module documentation models sorted by path.

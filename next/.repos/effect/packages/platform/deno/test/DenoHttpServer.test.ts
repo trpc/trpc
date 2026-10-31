@@ -1,9 +1,11 @@
 import * as DenoHttpServer from "@effect/platform-deno/DenoHttpServer"
 import { assert, describe, it } from "@effect/vitest"
 import * as ByteSize from "effect/ByteSize"
+import * as Cause from "effect/Cause"
 import * as Deferred from "effect/Deferred"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
 import * as HttpApiError from "effect/http-api/HttpApiError"
 import * as Cookies from "effect/http/Cookies"
@@ -13,6 +15,7 @@ import * as HttpBody from "effect/http/HttpBody"
 import * as HttpClient from "effect/http/HttpClient"
 import * as HttpClientRequest from "effect/http/HttpClientRequest"
 import * as HttpClientResponse from "effect/http/HttpClientResponse"
+import * as HttpIncomingMessage from "effect/http/HttpIncomingMessage"
 import * as HttpPlatform from "effect/http/HttpPlatform"
 import * as HttpRouter from "effect/http/HttpRouter"
 import * as HttpServer from "effect/http/HttpServer"
@@ -26,13 +29,21 @@ import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import type * as NetAddress from "effect/net/NetAddress"
+import * as Option from "effect/Option"
 import * as Queue from "effect/Queue"
 import * as References from "effect/References"
 import * as Schema from "effect/Schema"
-import type * as Scope from "effect/Scope"
+import * as Scope from "effect/Scope"
 import type * as Socket from "effect/socket/Socket"
 import * as Stream from "effect/Stream"
 import * as Tracer from "effect/Tracer"
+import * as Http from "node:http"
+import * as Http2 from "node:http2"
+import {
+  describeHttpServerProtocol,
+  http2Get,
+  layerTestClient
+} from "../../node-shared/test/HttpServerHttp2.test-utils.ts"
 
 const Todo = Schema.Struct({
   id: Schema.Number,
@@ -44,7 +55,120 @@ const IdParams = Schema.Struct({
 const todoResponse = HttpServerResponse.schemaJson(Todo)
 const fixture = `${import.meta.dirname}/fixtures/text.txt`
 
+const ca = Deno.readTextFileSync(new URL("./fixtures/tls/ca.pem", import.meta.url))
+const cert = Deno.readTextFileSync(new URL("./fixtures/tls/cert.pem", import.meta.url))
+const key = Deno.readTextFileSync(new URL("./fixtures/tls/key.pem", import.meta.url))
+
+// Deno's fetch client speaks HTTP/2 with prior knowledge over cleartext
+const layerHttp2Client = (options?: Omit<Deno.CreateHttpClientOptions, "http1" | "http2">) =>
+  FetchHttpClient.layer.pipe(Layer.provide(
+    Layer.effect(FetchHttpClient.RequestInit)(
+      Effect.acquireRelease(
+        Effect.sync(() => Deno.createHttpClient({ ...options, http1: false, http2: true })),
+        (client) => Effect.sync(() => client.close())
+      ).pipe(Effect.map((client) => ({ client }) as RequestInit))
+    )
+  ))
+
 describe("DenoHttpServer", () => {
+  describe("serve scope ownership", { concurrent: false }, () => {
+    it.live("closes the request scope when a streaming body is cancelled synchronously during construction", () =>
+      Effect.gen(function*() {
+        let finalized = false
+        let pulled = false
+        let cancellation: Promise<void> | undefined
+        const OriginalResponse = globalThis.Response
+        yield* Effect.acquireRelease(
+          Effect.sync(() => {
+            // Intercept construction: awaiting a response over HTTP lets the first pull run already.
+            globalThis.Response = class extends OriginalResponse {
+              constructor(body?: BodyInit | null, init?: ResponseInit) {
+                if (body instanceof ReadableStream) {
+                  cancellation = body.cancel()
+                  super(null, init)
+                } else {
+                  super(body, init)
+                }
+              }
+            }
+          }),
+          () =>
+            Effect.sync(() => {
+              globalThis.Response = OriginalResponse
+            })
+        )
+        yield* HttpServer.serveEffect(Effect.gen(function*() {
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              finalized = true
+            })
+          )
+          return HttpServerResponse.stream(Stream.fromEffect(Effect.sync(() => {
+            pulled = true
+            return new Uint8Array([1])
+          })))
+        }))
+        const response = yield* HttpClient.get("/")
+        assert.strictEqual(response.status, 200)
+        yield* response.text
+        assert.isDefined(cancellation)
+        yield* Effect.promise(() => cancellation!)
+        assert.strictEqual(pulled, false)
+        assert.strictEqual(finalized, true)
+      }).pipe(Effect.timeout("2 seconds"), Effect.provide(DenoHttpServer.layerTest)))
+
+    it.live("interrupts a streaming body suspended during startup when the serve scope closes", () =>
+      Effect.gen(function*() {
+        let finalized = false
+        const started = yield* Deferred.make<void>()
+        const release = yield* Deferred.make<void>()
+        const server = yield* DenoHttpServer.make({ hostname: "127.0.0.1", port: 0, disablePreemptiveShutdown: true })
+        // Let the body finish on teardown so the server can stop if it was never interrupted.
+        yield* Effect.addFinalizer(() => Deferred.succeed(release, undefined))
+        const serveScope = yield* Scope.fork(yield* Effect.scope)
+        yield* server.serve(Effect.gen(function*() {
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              finalized = true
+            })
+          )
+          // The body suspends during startup, before it can serve a pull.
+          return HttpServerResponse.stream(
+            Stream.transformPull(
+              Stream.empty,
+              (pull) =>
+                Deferred.succeed(started, undefined).pipe(Effect.andThen(Deferred.await(release)), Effect.as(pull))
+            )
+          )
+        })).pipe(Scope.provide(serveScope))
+        // Not awaited: headers may not be sent while the body is suspended.
+        fetch(`http://127.0.0.1:${(server.address as NetAddress.InetAddress).port}/`, {
+          headers: { connection: "close" }
+        }).catch(() => undefined)
+        yield* Deferred.await(started)
+        assert.strictEqual(finalized, false)
+        yield* Scope.close(serveScope, Exit.void)
+        assert.strictEqual(finalized, true)
+      }).pipe(Effect.timeout("2 seconds")))
+  })
+
+  // After the sequential block above, which replaces `globalThis.Response` and cancels streaming bodies
+  describeHttpServerProtocol("HTTP/1.1", DenoHttpServer.layerTest)
+  describeHttpServerProtocol(
+    "h2c",
+    layerTestClient("http").pipe(
+      Layer.provide(layerHttp2Client()),
+      Layer.provideMerge(DenoHttpServer.layerServer({ hostname: "127.0.0.1", port: 0, onListen: () => {} }))
+    )
+  )
+  describeHttpServerProtocol(
+    "HTTP/2 over TLS",
+    layerTestClient("https").pipe(
+      Layer.provide(layerHttp2Client({ caCerts: [ca] })),
+      Layer.provideMerge(DenoHttpServer.layerServer({ hostname: "127.0.0.1", port: 0, cert, key, onListen: () => {} }))
+    )
+  )
+
   describe("body omission", () => {
     for (const status of [204, 205, 304]) {
       for (const bodyKind of ["text", "stream"]) {
@@ -84,6 +208,35 @@ describe("DenoHttpServer", () => {
       }
     }
 
+    // Deno strips the header itself over HTTP/1.1, so only HTTP/2 shows it.
+    for (const status of [204, 205]) {
+      for (const raw of [false, true]) {
+        it.live(
+          `drops content-length for ${raw ? "a raw Response with " : ""}status ${status} over HTTP/2`,
+          () =>
+            Effect.gen(function*() {
+              const client = Deno.createHttpClient({ http1: false, http2: true })
+              yield* Effect.addFinalizer(() => Effect.sync(() => client.close()))
+              yield* HttpServer.serveEffect(Effect.sync(() =>
+                raw
+                  ? HttpServerResponse.raw(new Response(null, { status, headers: { "content-length": "4" } }))
+                  : HttpServerResponse.text("body", { status })
+              ))
+              const response = yield* HttpClient.get("/").pipe(
+                Effect.provideService(FetchHttpClient.RequestInit, { client } as RequestInit)
+              )
+              assert.strictEqual(response.status, status)
+              assert.strictEqual(response.headers["content-length"], undefined)
+              assert.strictEqual(yield* response.text, "")
+            }).pipe(
+              Effect.timeout("2 seconds"),
+              Effect.provide(DenoHttpServer.layerTest)
+            ),
+          5000
+        )
+      }
+    }
+
     for (const [method, status] of [["HEAD", 200], ["GET", 204], ["GET", 205], ["GET", 304]] as const) {
       it.live(`cancels raw streams for ${method} status ${status}`, () =>
         Effect.gen(function*() {
@@ -118,6 +271,59 @@ describe("DenoHttpServer", () => {
           Effect.provide(DenoHttpServer.layerTest)
         ), 5000)
     }
+  })
+
+  describe("when the Response can't be built", () => {
+    it.live("answers 500 and preserves the header defect when raw body cancellation rejects", () =>
+      Effect.gen(function*() {
+        let cancelled = false
+        const body = new ReadableStream<Uint8Array>({
+          cancel() {
+            cancelled = true
+            return Promise.reject(new Error("cancellation failed"))
+          }
+        })
+        const observed = yield* Deferred.make<Exit.Exit<unknown, unknown>>()
+        yield* HttpServer.serveEffect(
+          Effect.succeed(HttpServerResponse.raw(body, { headers: { "x-invalid": "a\nb" } })),
+          (app) => Effect.onExit(app, (exit) => Deferred.succeed(observed, exit))
+        )
+        const response = yield* HttpClient.get("/")
+        assert.strictEqual(response.status, 500)
+        assert.strictEqual(yield* response.text, "")
+        assert.isTrue(cancelled)
+        const exit = yield* Deferred.await(observed)
+        assert(Exit.isFailure(exit))
+        assert.strictEqual(exit.cause.reasons.length, 1)
+        const reason = exit.cause.reasons[0]
+        assert(Cause.isDieReason(reason))
+        assert(reason.defect instanceof TypeError)
+      }).pipe(Effect.timeout("2 seconds"), Effect.provide(DenoHttpServer.layerTest)))
+
+    it.live("answers 500 and reports the status defect before stream scope cleanup completes", () =>
+      Effect.gen(function*() {
+        const finalized = yield* Latch.make()
+        const release = yield* Latch.make()
+        const observed = yield* Deferred.make<Exit.Exit<unknown, unknown>>()
+        yield* HttpServer.serveEffect(
+          Effect.gen(function*() {
+            yield* Effect.addFinalizer(() => finalized.open.pipe(Effect.andThen(release.await)))
+            return HttpServerResponse.stream(Stream.never, { status: 103 })
+          }),
+          (app) => Effect.onExit(app, (exit) => Deferred.succeed(observed, exit))
+        )
+        yield* Effect.addFinalizer(() => release.open)
+        const response = yield* HttpClient.get("/")
+        assert.strictEqual(response.status, 500)
+        assert.strictEqual(yield* response.text, "")
+        yield* finalized.await
+        const exit = yield* Deferred.await(observed)
+        assert(Exit.isFailure(exit))
+        assert.strictEqual(exit.cause.reasons.length, 1)
+        const reason = exit.cause.reasons[0]
+        assert(Cause.isDieReason(reason))
+        assert(reason.defect instanceof RangeError)
+      }).pipe(Effect.timeout("2 seconds"), Effect.provide(DenoHttpServer.layerTest)))
   })
 
   it.effect("schema", () =>
@@ -272,12 +478,62 @@ describe("DenoHttpServer", () => {
       )
       assert.strictEqual(yield* HttpClient.get("/child/1").pipe(Effect.flatMap((_) => _.text)), "/1")
       assert.strictEqual(yield* HttpClient.get("/child").pipe(Effect.flatMap((_) => _.text)), "/")
-      assert.strictEqual(yield* HttpClient.get("/child?foo=bar").pipe(Effect.flatMap((_) => _.text)), "?foo=bar")
+      assert.strictEqual(yield* HttpClient.get("/child?foo=bar").pipe(Effect.flatMap((_) => _.text)), "/?foo=bar")
       assert.strictEqual(yield* HttpClient.get("/child/").pipe(Effect.flatMap((_) => _.text)), "/")
       assert.strictEqual(
         yield* HttpClient.get("/child1/", { urlParams: { foo: "bar" } }).pipe(Effect.map((_) => _.status)),
         404
       )
+    }).pipe(Effect.provide(DenoHttpServer.layerTest)))
+
+  it.effect("returns 413 for a body over MaxBodySize", () =>
+    Effect.gen(function*() {
+      yield* HttpRouter.add(
+        "POST",
+        "/body",
+        HttpServerRequest.HttpServerRequest.use((request) => Effect.as(request.text, HttpServerResponse.empty())).pipe(
+          Effect.provideService(HttpIncomingMessage.MaxBodySize, ByteSize.bytes(4))
+        )
+      ).pipe(HttpRouter.serve, Layer.build)
+      const response = yield* HttpClient.post("/body", { body: HttpBody.text("12345") })
+      assert.strictEqual(response.status, 413)
+    }).pipe(Effect.provide(DenoHttpServer.layerTest)))
+
+  it.effect("answers CONNECT with 501 without running the app", () =>
+    Effect.gen(function*() {
+      let calls = 0
+      yield* HttpRouter.add(
+        "*",
+        "*",
+        Effect.sync(() => {
+          calls++
+          return HttpServerResponse.empty()
+        })
+      ).pipe(HttpRouter.serve, Layer.build)
+      const server = yield* HttpServer.HttpServer
+      const port = (server.address as NetAddress.InetAddress).port
+      // fetch cannot send CONNECT.
+      const statusLine = yield* Effect.acquireUseRelease(
+        Effect.promise(() => Deno.connect({ hostname: "127.0.0.1", port })),
+        (conn) =>
+          Effect.promise(async () => {
+            await conn.write(
+              new TextEncoder().encode("CONNECT example.test:443 HTTP/1.1\r\nHost: example.test:443\r\n\r\n")
+            )
+            const decoder = new TextDecoder()
+            const buffer = new Uint8Array(1024)
+            let received = ""
+            while (!received.includes("\r\n")) {
+              const read = await conn.read(buffer)
+              if (read === null) break
+              received += decoder.decode(buffer.subarray(0, read), { stream: true })
+            }
+            return received.split("\r\n")[0]
+          }),
+        (conn) => Effect.sync(() => conn.close())
+      )
+      assert.strictEqual(statusLine.split(" ")[1], "501")
+      assert.strictEqual(calls, 0)
     }).pipe(Effect.provide(DenoHttpServer.layerTest)))
 
   it.effect("file", () =>
@@ -622,6 +878,95 @@ describe("DenoHttpServer", () => {
       }).pipe(Effect.provide(DenoHttpServer.layerTest)))
   })
 
+  it.effect("takes the host header from the HTTP/2 authority", () =>
+    Effect.gen(function*() {
+      yield* HttpServer.serveEffect(
+        HttpServerRequest.HttpServerRequest.use((request) =>
+          Effect.succeed(HttpServerResponse.text(
+            `${request.headers.host} ${Option.getOrThrow(HttpServerRequest.toURL(request)).href}`
+          ))
+        )
+      )
+      const server = yield* HttpServer.HttpServer
+      const port = (server.address as NetAddress.InetAddress).port
+
+      for (const host of [undefined, "client.test"]) {
+        assert.strictEqual(
+          yield* http2Get(port, { ":path": "/info", ":authority": "example.test:4573", host }),
+          "example.test:4573 http://example.test:4573/info"
+        )
+      }
+    }).pipe(Effect.provide(DenoHttpServer.layerTest)))
+
+  // Deno 2.8.3 to 2.9.2 panic when a cancelled HTTP/2 request is answered (denoland/deno#36053).
+  it.live("keeps serving after an HTTP/2 client cancels a request in flight", () =>
+    Effect.gen(function*() {
+      const started = Latch.makeUnsafe()
+      const interrupted = Latch.makeUnsafe()
+      yield* HttpRouter.use((router) =>
+        Effect.andThen(
+          router.add(
+            "GET",
+            "/slow",
+            Effect.andThen(started.open, Effect.never).pipe(Effect.onInterrupt(() => interrupted.open))
+          ),
+          router.add("GET", "/", Effect.succeed(HttpServerResponse.text("ok")))
+        )
+      ).pipe(HttpRouter.serve, Layer.build)
+      const server = yield* HttpServer.HttpServer
+      const port = (server.address as NetAddress.InetAddress).port
+
+      yield* Effect.acquireUseRelease(
+        Effect.sync(() => Http2.connect(`http://127.0.0.1:${port}`)),
+        (session) =>
+          Effect.gen(function*() {
+            const stream = session.request({ ":path": "/slow" }).end()
+            stream.on("error", () => {})
+            yield* started.await
+            stream.close(Http2.constants.NGHTTP2_CANCEL)
+            yield* interrupted.await
+          }),
+        (session) => Effect.sync(() => session.destroy())
+      )
+
+      assert.strictEqual(yield* http2Get(port, { ":path": "/" }), "ok")
+    }).pipe(
+      Effect.timeout("2 seconds"),
+      Effect.provide(DenoHttpServer.layerTest)
+    ), 5000)
+
+  it.effect("excludes a query from the host of an absolute-form HTTP/1.1 target", () =>
+    Effect.gen(function*() {
+      yield* HttpServer.serveEffect(
+        HttpServerRequest.HttpServerRequest.use((request) =>
+          Effect.succeed(HttpServerResponse.text(request.headers.host))
+        )
+      )
+      const server = yield* HttpServer.HttpServer
+      const port = (server.address as NetAddress.InetAddress).port
+      const host = yield* Effect.callback<string, Error>((resume) => {
+        const request = Http.get({
+          hostname: "127.0.0.1",
+          port,
+          path: "http://Target.TEST:80?q=/info",
+          headers: { host: "client.test" }
+        }, (response) => {
+          let body = ""
+          response.setEncoding("utf8")
+          response.on("data", (chunk: string) => {
+            body += chunk
+          })
+          response.on("end", () => resume(Effect.succeed(body)))
+          response.on("error", (error) => resume(Effect.fail(error)))
+        })
+        request.on("error", (error) => resume(Effect.fail(error)))
+        return Effect.sync(() => {
+          request.destroy()
+        })
+      })
+      assert.strictEqual(host, "Target.TEST:80")
+    }).pipe(Effect.provide(DenoHttpServer.layerTest)))
+
   it.effect("RouterConfig", () =>
     Effect.gen(function*() {
       yield* HttpRouter.add("GET", "/:param", Effect.succeed(HttpServerResponse.empty())).pipe(
@@ -754,6 +1099,28 @@ describe("DenoHttpServer", () => {
       const messages = yield* connectWebSocket(`ws://127.0.0.1:${port}/ws`, (socket) => socket.send("hello"), 1)
       assert.deepStrictEqual(messages, ["hello"])
       assert.strictEqual(yield* Deferred.await(logged), 101)
+    }).pipe(Effect.provide(DenoHttpServer.layerTest)))
+
+  it.effect("fails upgrades to protocols other than WebSocket", () =>
+    Effect.gen(function*() {
+      // Deno.serve answers upgrade requests with a body method with 400 itself
+      yield* HttpRouter.add(
+        "GET",
+        "/attach",
+        Effect.gen(function*() {
+          const request = yield* HttpServerRequest.HttpServerRequest
+          const error = yield* Effect.flip(request.upgrade)
+          return HttpServerResponse.text(error.reason.message, { status: 501 })
+        })
+      ).pipe(HttpRouter.serve, Layer.build)
+      const server = yield* HttpServer.HttpServer
+      const port = (server.address as NetAddress.InetAddress).port
+      // Deno's fetch sends the upgrade headers that the Effect fetch client refuses
+      const response = yield* Effect.promise(() =>
+        fetch(`http://127.0.0.1:${port}/attach`, { headers: { connection: "Upgrade", upgrade: "tcp" } })
+      )
+      assert.strictEqual(response.status, 501)
+      assert.include(yield* Effect.promise(() => response.text()), "Deno.serve only supports WebSocket upgrades")
     }).pipe(Effect.provide(DenoHttpServer.layerTest)))
 
   it.effect("preserves eager WebSocket frames across an async boundary", () =>

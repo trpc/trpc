@@ -6,7 +6,7 @@
   note: "The accessor was removed; read the service and pass its Address to the callback."
 "@effect/platform/HttpServer#HttpServer":
   replacement: "HttpServer.HttpServer"
-  note: "The interface and tag became one Context.Service class; use its Service member for implementations."
+  note: "The interface and tag became one Context.Service class; use its Service member for implementations. The service-level serve method derives requirements from the middleware-transformed application, so services added by middleware must also be provided."
 "@effect/platform/HttpServer#layerContext":
   replacement: "HttpServer.layerServices"
   note: "Renamed; it provides the standard HTTP platform services."

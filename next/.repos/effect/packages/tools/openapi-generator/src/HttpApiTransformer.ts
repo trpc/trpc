@@ -308,6 +308,13 @@ const renderMediaSchema = (media: ParsedOperationMediaTypeSchema): string => {
     return `HttpApiSchema.StreamUint8Array({ contentType: ${JSON.stringify(media.contentType)} })`
   }
 
+  if (media.effectStream === "ndjson") {
+    if (media.contentType === "application/x-ndjson") {
+      return `HttpApiSchema.StreamNdjson({ schema: ${media.schema} })`
+    }
+    return `HttpApiSchema.StreamNdjson({ schema: ${media.schema}, contentType: ${JSON.stringify(media.contentType)} })`
+  }
+
   switch (media.encoding) {
     case "json": {
       if (media.contentType === "application/json") {

@@ -1,6 +1,6 @@
 {
   "name": "@effect/sql-sqlite-do",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "description": "A SQLite toolkit for Effect",
@@ -61,7 +61,7 @@
     "check": "tsc -b tsconfig.json"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261003.1",
+    "@cloudflare/workers-types": "^5.20261016.1",
     "effect": "workspace:^",
     "esbuild": "^0.28.2",
     "miniflare": "5.20260925.0-alpha"

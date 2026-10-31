@@ -9,7 +9,7 @@
   note: The v4 persistence error identifier is private; narrow with the exported error classes.
 "@effect/experimental/Persistence#layerKeyValueStore":
   replacement: effect/persistence/Persistence#layerBackingKvs
-  note: The KeyValueStore backing layer was renamed to layerBackingKvs.
+  note: The KeyValueStore backing layer was renamed to layerBackingKvs. Entries are now stored under `<storeId>:<key>` with the store id percent-encoded, so entries written by v3 under `<storeId><key>` are not read back and are recomputed; clearing a store removes only its own entries.
 "@effect/experimental/Persistence#layerMemory":
   replacement: effect/persistence/Persistence#layerBackingMemory
   note: Use layerBackingMemory for the old backing service; v4 layerMemory creates the higher-level Persistence service.
@@ -18,7 +18,7 @@
   note: The ResultPersistence service layer was renamed to layer.
 "@effect/experimental/Persistence#layerResultKeyValueStore":
   replacement: effect/persistence/Persistence#layerKvs
-  note: The combined KeyValueStore-backed result layer was renamed to layerKvs.
+  note: The combined KeyValueStore-backed result layer was renamed to layerKvs. Entries are now stored under `<storeId>:<key>` with the store id percent-encoded, so entries written by v3 under `<storeId><key>` are not read back and are recomputed.
 "@effect/experimental/Persistence#layerResultMemory":
   replacement: effect/persistence/Persistence#layerMemory
   note: The combined memory-backed result layer was renamed to layerMemory.

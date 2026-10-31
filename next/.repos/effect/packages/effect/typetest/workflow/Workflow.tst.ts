@@ -13,4 +13,15 @@ describe("Workflow", () => {
     expect<typeof ClassWorkflow>().type.toBeAssignableTo<Workflow.Any>()
     expect(ClassWorkflow.payloadSchema).type.toBe<Schema.Struct<{ value: Schema.Number }>>()
   })
+
+  it("accepts detached only alongside discard", () => {
+    const Notify = Workflow.make("Notify", {
+      payload: {},
+      idempotencyKey: () => "notify"
+    })
+
+    expect(Notify.execute).type.toBeCallableWith({}, { discard: true, detached: true })
+    expect(Notify.execute).type.not.toBeCallableWith({}, { detached: true })
+    expect(Notify.execute).type.not.toBeCallableWith({}, { discard: false, detached: true })
+  })
 })

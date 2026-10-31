@@ -13,6 +13,9 @@
 "@effect/platform/HttpLayerRouter#make":
   replacement: "HttpRouter.make"
   note: "The layer-oriented router became the sole v4 HttpRouter implementation."
+"@effect/platform/HttpLayerRouter#Middleware":
+  replacement: "HttpRouter.Middleware"
+  note: "Moved with the layer-oriented router into the consolidated HttpRouter module. McpServer.Middleware is a separate type for MCP request middleware."
 "@effect/platform/HttpLayerRouter#MiddlewareTypeId":
   replacement: "none"
   note: "The middleware type id is internal in v4; use HttpRouter.Middleware."
@@ -67,3 +70,12 @@
 "@effect/platform/HttpLayerRouter#toHttpEffect":
   replacement: "HttpRouter.toHttpEffect"
   note: "Moved to the consolidated HttpRouter; route-not-found failures now use HttpServerError.HttpServerError."
+"@effect/platform/HttpLayerRouter#middleware.Fn":
+  replacement: "HttpRouter.middleware.Fn"
+  note: "Moved with the layer-oriented router into the consolidated HttpRouter module. McpServer.middleware.Fn is a separate type for MCP request middleware."
+"@effect/platform/HttpLayerRouter#middleware.Make":
+  replacement: "HttpRouter.middleware.Make"
+  note: "Moved with the layer-oriented router into the consolidated HttpRouter module. McpServer.middleware.Make is a separate type for MCP request middleware."
+"@effect/platform/HttpLayerRouter#Request.Without":
+  replacement: "HttpRouter.Request.Without"
+  note: "Moved with the layer-oriented router into the consolidated HttpRouter module. McpServer.McpRequest.Without is the MCP counterpart."

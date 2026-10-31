@@ -37,11 +37,8 @@ export const runMain: {
   let receivedSignal = false
 
   fiber.addObserver((exit) => {
-    if (!receivedSignal) {
-      Deno.removeSignalListener("SIGINT", onSigint)
-      Deno.removeSignalListener("SIGTERM", onSigint)
-    }
-
+    Deno.removeSignalListener("SIGINT", onSigint)
+    Deno.removeSignalListener("SIGTERM", onSigint)
     teardown(exit, (code) => {
       if (receivedSignal || code !== 0) {
         Deno.exit(code)
@@ -51,8 +48,6 @@ export const runMain: {
 
   function onSigint(): void {
     receivedSignal = true
-    Deno.removeSignalListener("SIGINT", onSigint)
-    Deno.removeSignalListener("SIGTERM", onSigint)
     fiber.interruptUnsafe(fiber.id)
   }
 

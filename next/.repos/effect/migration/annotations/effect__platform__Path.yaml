@@ -1,3 +1,6 @@
+"@effect/platform/Path#Path":
+  replacement: "Path.Path"
+  note: "The module moved to effect/Path. Custom service implementations must now provide resolveWithin as well. Prefer Path.make with the existing platform operations: it adds the type marker and derives resolveWithin, which returns an Option and checks lexical containment without following symlinks."
 "@effect/platform/Path#TypeId":
   replacement: "typeof Path.TypeId"
   note: "The module moved to effect/Path; the runtime marker remains exported but the separate type alias was removed."

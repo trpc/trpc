@@ -16,11 +16,10 @@ describe("Uuid", () => {
     assert.strictEqual(Uuid.v4String(bytes()), "00010203-0405-4607-8809-0a0b0c0d0e0f")
   })
 
-  it("generates UUID v7 bytes and strings", () => {
+  it("generates UUID v7 bytes", () => {
     assert.deepStrictEqual(
       Uuid.v7Bytes(0x0123456789ab, bytes()),
       Uint8Array.of(1, 0x23, 0x45, 0x67, 0x89, 0xab, 0x76, 7, 0x88, 9, 10, 11, 12, 13, 14, 15)
     )
-    assert.strictEqual(Uuid.v7String(0x0123456789ab, bytes()), "01234567-89ab-7607-8809-0a0b0c0d0e0f")
   })
 })

@@ -153,6 +153,25 @@ describe("PrometheusMetrics", () => {
           assert.include(output, "labeled_histogram_sum{service=\"api\"} 250")
           assert.include(output, "labeled_histogram_count{service=\"api\"} 1")
         }))
+
+      it.effect("writes a single +Inf bucket when the boundaries end with Infinity", () =>
+        Effect.gen(function*() {
+          const histogram = Metric.histogram("linear_histogram", {
+            boundaries: Metric.linearBoundaries({ start: 0, width: 100, count: 4 })
+          })
+
+          yield* Metric.update(histogram, 50)
+          yield* Metric.update(histogram, 500)
+
+          const output = yield* PrometheusMetrics.format()
+          const buckets = output.split("\n").filter((line) => line.startsWith("linear_histogram_bucket"))
+
+          assert.deepStrictEqual(buckets, [
+            "linear_histogram_bucket{le=\"100\"} 1",
+            "linear_histogram_bucket{le=\"200\"} 1",
+            "linear_histogram_bucket{le=\"+Inf\"} 2"
+          ])
+        }))
     })
 
     describe("Summary", () => {

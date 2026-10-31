@@ -509,6 +509,35 @@ describe("Layer", () => {
         assert.isFalse(resource.live)
       }).pipe(Effect.scoped))
 
+    it.effect("memoizes composed layers by identity", () =>
+      Effect.gen(function*() {
+        const Probe = Context.Service<string>("Probe")
+        const Dep = Context.Service<number>("Dep")
+        // fromBuild is not memoized itself, so this counts how many times the
+        // composed parent was walked
+        let builds = 0
+        const probe = Layer.fromBuild(() =>
+          Effect.sync(() => {
+            builds++
+            return Context.make(Probe, "x")
+          })
+        )
+        const dep = Layer.succeed(Dep)(1)
+
+        const provided = probe.pipe(Layer.provide(dep))
+        yield* Effect.scoped(Layer.build(Layer.mergeAll(provided, provided)))
+        assert.strictEqual(builds, 1)
+
+        builds = 0
+        const merged = Layer.mergeAll(probe, dep)
+        yield* Effect.scoped(Layer.build(Layer.mergeAll(merged, merged)))
+        assert.strictEqual(builds, 1)
+
+        builds = 0
+        yield* Effect.scoped(Layer.build(Layer.mergeAll(provided, Layer.fresh(provided))))
+        assert.strictEqual(builds, 2)
+      }))
+
     class Shared extends Context.Service<Shared, { readonly n: number }>()("Shared") {}
 
     const releaseCounted = (released: Ref.Ref<number>) =>

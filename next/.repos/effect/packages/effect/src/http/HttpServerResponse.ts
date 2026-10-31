@@ -25,6 +25,7 @@ import { hasProperty } from "../Predicate.ts"
 import { redact } from "../Redactable.ts"
 import type * as Schema from "../Schema.ts"
 import type { ParseOptions } from "../SchemaAST.ts"
+import type * as Socket from "../socket/Socket.ts"
 import * as Stream from "../Stream.ts"
 import type { Mutable } from "../Types.ts"
 import * as Cookies from "./Cookies.ts"
@@ -37,6 +38,7 @@ import * as HttpIncomingMessage from "./HttpIncomingMessage.ts"
 import type { HttpPlatform } from "./HttpPlatform.ts"
 import * as headersInternal from "./internal/headers.ts"
 import * as bodyInternal from "./internal/httpBody.ts"
+import * as internalUrlParams from "./internal/urlParams.ts"
 import * as Template from "./Template.ts"
 import * as UrlParams from "./UrlParams.ts"
 
@@ -76,6 +78,9 @@ export interface Options {
   readonly headers?: Headers.Input | undefined
   readonly cookies?: Cookies.Cookies | undefined
   readonly contentType?: string | undefined
+  /**
+   * Sent as `content-length`, so it must equal the body's byte length.
+   */
   readonly contentLength?: number | undefined
 }
 
@@ -1028,23 +1033,38 @@ export const setStatus: {
 export const omitsBody = (response: HttpServerResponse, withoutBody = false): boolean =>
   withoutBody || response.status === 204 || response.status === 205 || response.status === 304
 
+// HEAD and 304 retain the representation length; 204 and 205 omit it.
+const omitsContentLength = (status: number): boolean => status === 204 || status === 205
+
+const mergeHeaders = (target: globalThis.Headers, headers: globalThis.Headers): globalThis.Headers => {
+  for (const [key, value] of headers as any) {
+    if (key === "set-cookie") {
+      target.append(key, value)
+    } else {
+      target.set(key, value)
+    }
+  }
+  return target
+}
+
 /**
  * Converts an `HttpServerResponse` to a Web `Response`.
  *
  * **Details**
  *
  * Cookies are appended as `Set-Cookie` headers. Stream bodies are converted using
- * the supplied context.
+ * the supplied context, and are interrupted when `signal` aborts.
  *
  * Bodies are omitted for statuses 204, 205, and 304, or when `withoutBody` is true
- * (for example, for HEAD responses). Omitted raw `ReadableStream` bodies are
- * cancelled without awaiting completion, and cancellation errors are ignored.
+ * (for example, for HEAD responses). Statuses 204 and 205 also omit
+ * `content-length`. Omitted raw `ReadableStream` bodies are cancelled without
+ * awaiting completion, and cancellation errors are ignored.
  *
- * A raw `Response` body is returned as-is after the outer headers are merged
- * into it: outer headers replace native ones, and cookies are appended. When
- * its body is omitted, the bodyless `Response` keeps those merged headers and
- * uses the outer status for 204, 205 and 304, or the raw `Response` status
- * otherwise.
+ * A raw `Response` is returned as-is unless its body or `content-length` must
+ * be omitted, or outer headers or cookies must be merged. Copies leave the
+ * original unchanged: outer headers replace native ones, and cookies append.
+ * Bodyless copies use the outer status for 204, 205 and 304; otherwise they keep
+ * the raw status.
  *
  * @stability unstable
  * @category converting
@@ -1055,6 +1075,7 @@ export const toWeb = (
   options?: {
     readonly withoutBody?: boolean | undefined
     readonly context?: Context.Context<never> | undefined
+    readonly signal?: AbortSignal | undefined
   }
 ): Response => {
   const headers = new globalThis.Headers(response.headers)
@@ -1069,29 +1090,28 @@ export const toWeb = (
   const withoutBody = outerOmitsBody || options?.withoutBody === true
   if (body._tag === "Raw" && body.body instanceof Response) {
     const raw = body.body
-    for (const [key, value] of headers as any) {
-      if (key === "set-cookie") {
-        raw.headers.append(key, value)
-      } else {
-        raw.headers.set(key, value)
-      }
-    }
-    if (!withoutBody) {
+    // HEAD preserves the raw status; an explicit bodyless status overrides it.
+    const source = outerOmitsBody ? response : raw
+    const omitContentLength = omitsContentLength(source.status)
+    if (!withoutBody && headers.keys().next().done && !(omitContentLength && raw.headers.has("content-length"))) {
       return raw
     }
-    // A bodyless outer status is what the caller chose to send; otherwise the
-    // body is only omitted for HEAD and the raw Response describes the resource.
-    const source = outerOmitsBody ? response : raw
-    return new Response(undefined, {
-      status: source.status,
-      statusText: source.statusText as string,
-      headers: raw.headers
-    })
+    const copy = withoutBody
+      ? new Response(undefined, {
+        status: source.status,
+        statusText: source.statusText as string,
+        headers: raw.headers
+      })
+      : new Response(raw.body, raw)
+    mergeHeaders(copy.headers, headers)
+    if (omitContentLength) copy.headers.delete("content-length")
+    return copy
   }
   if (withoutBody) {
     if (body._tag === "Raw" && isReadableStream(body.body)) {
       body.body.cancel().catch(constVoid)
     }
+    if (omitsContentLength(response.status)) headers.delete("content-length")
     return new Response(undefined, {
       status: response.status,
       statusText: response.statusText as string,
@@ -1131,7 +1151,8 @@ export const toWeb = (
       return new Response(
         Stream.toReadableStreamWith(
           body.stream,
-          options?.context ?? Context.empty()
+          options?.context ?? Context.empty(),
+          { signal: options?.signal }
         ),
         {
           status: response.status,
@@ -1315,9 +1336,9 @@ class ServerHttpClientResponse extends Inspectable.Class implements HttpClientRe
   }
 
   get urlParamsBody(): Effect.Effect<UrlParams.UrlParams, HttpClientError.HttpClientError> {
-    return Effect.flatMap(this.text, (_) =>
+    return Effect.flatMap(this.bytes, (bytes) =>
       Effect.try({
-        try: () => UrlParams.fromInput(new URLSearchParams(_)),
+        try: () => UrlParams.fromInput(internalUrlParams.fromBody(bytes)),
         catch: (cause) =>
           new HttpClientError.HttpClientError({
             reason: new HttpClientError.DecodeError({
@@ -1364,6 +1385,18 @@ class ServerHttpClientResponse extends Inspectable.Class implements HttpClientRe
   private formDataResponse?: Response
   private getFormDataResponse(): Response {
     return this.formDataResponse ??= new Response((this.response.body as Body.FormData).formData)
+  }
+
+  get upgrade(): Effect.Effect<Socket.Socket, HttpClientError.HttpClientError> {
+    return Effect.fail(
+      new HttpClientError.HttpClientError({
+        reason: new HttpClientError.StatusCodeError({
+          request: this.request,
+          response: this,
+          description: "a server response has no connection to hand over"
+        })
+      })
+    )
   }
 
   pipe() {
@@ -1473,6 +1506,12 @@ const makeResponse = (options: {
  *
  * `Set-Cookie` headers are parsed into the response cookie collection and removed
  * from the header map. A present Web body is exposed as a stream body.
+ *
+ * **Gotchas**
+ *
+ * Preserves `content-length`, which must match the body. When proxying a
+ * compressed response decoded by `fetch`, remove the stale length from a copy
+ * (`new Response(response.body, response)`) before converting it.
  *
  * @stability unstable
  * @category converting

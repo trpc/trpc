@@ -6,7 +6,7 @@ import * as OpenAiClientGenerated from "@effect/ai-openai/OpenAiClientGenerated"
 import * as OpenAiConfig from "@effect/ai-openai/OpenAiConfig"
 import * as OpenAiLanguageModel from "@effect/ai-openai/OpenAiLanguageModel"
 import { assert, describe, it } from "@effect/vitest"
-import { Config, ConfigProvider, Context, Effect, Layer, Redacted, Schema, Stream } from "effect"
+import { Config, ConfigProvider, Context, Duration, Effect, Layer, Redacted, Schema, Stream } from "effect"
 import { Chat } from "effect/ai"
 import * as HttpClient from "effect/http/HttpClient"
 import * as HttpClientError from "effect/http/HttpClientError"
@@ -235,13 +235,10 @@ describe("OpenAiClient", () => {
         }).pipe(Effect.flip)
 
         assert.strictEqual(result.reason._tag, "InvalidRequestError")
-        if (result.reason._tag !== "InvalidRequestError" || result.reason.http === undefined) {
-          return yield* Effect.die(new Error("Expected InvalidRequestError with HTTP context"))
-        }
-        const headers = result.reason.http.request.headers
-        assert.strictEqual(String(headers["authorization"]), "<redacted>")
-        assert.strictEqual(String(headers["openai-organization"]), "<redacted>")
-        assert.strictEqual(String(headers["openai-project"]), "<redacted>")
+        const output = JSON.stringify(result)
+        assert.notInclude(output, "test-key")
+        assert.notInclude(output, "org-secret")
+        assert.notInclude(output, "proj-secret")
       }).pipe(Effect.provide(makeTestLayer({
         apiKey: Redacted.make("test-key"),
         organizationId: Redacted.make("org-secret"),
@@ -254,8 +251,9 @@ describe("OpenAiClient", () => {
   })
 
   describe("error mapping", () => {
-    it.effect("maps TransportError to NetworkError reason", () =>
-      Effect.gen(function*() {
+    it.effect("maps TransportError to NetworkError reason", () => {
+      const failures: Array<HttpClientError.HttpClientError> = []
+      return Effect.gen(function*() {
         const client = yield* OpenAiClient.make({
           apiKey: Redacted.make("test-key")
         })
@@ -267,7 +265,26 @@ describe("OpenAiClient", () => {
         assert.strictEqual(result.module, "OpenAiClient")
         assert.strictEqual(result.method, "createResponse")
         assert.strictEqual(result.reason._tag, "NetworkError")
-      }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, makeTransportErrorHttpClient()))))
+        if (result.reason._tag !== "NetworkError") return
+        assert.strictEqual(result.reason.cause, failures[0])
+        assert.isUndefined(result.reason.description)
+      }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, makeTransportErrorHttpClient(failures))))
+    })
+
+    it.effect("keeps the HttpClientError as the NetworkError cause when it has no cause", () => {
+      const failures: Array<HttpClientError.HttpClientError> = []
+      return Effect.gen(function*() {
+        const client = yield* OpenAiClient.make({
+          apiKey: Redacted.make("test-key")
+        })
+        const result = yield* client.createResponse({ model: "gpt-4o", input: "test" }).pipe(
+          Effect.flip
+        )
+
+        assert.isUndefined(failures[0].cause)
+        assert.strictEqual(result.reason._tag === "NetworkError" && result.reason.cause, failures[0])
+      }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, makeTransportErrorHttpClient(failures, {}))))
+    })
 
     it.effect("maps 400 status to InvalidRequestError reason", () =>
       Effect.gen(function*() {
@@ -309,11 +326,14 @@ describe("OpenAiClient", () => {
     it("preserves and truncates a fallback HTTP response", () => {
       const body = `${"a".repeat(200)}b`
       const reason = Errors.mapStatusCodeToReason({
+        now: 0,
         status: 400,
         headers: {},
         message: undefined,
         metadata: { errorCode: null, errorType: null, requestId: null },
-        http: makeHttpContext("https://api.openai.com/v1/responses", body)
+        method: "POST",
+        url: "https://api.openai.com/v1/responses",
+        http: { body }
       })
 
       assert.strictEqual(reason._tag, "InvalidRequestError")
@@ -355,6 +375,28 @@ describe("OpenAiClient", () => {
       }).pipe(Effect.provide(makeTestLayer(undefined, {
         _tag: "Json",
         status: 429,
+        body: { error: { message: "Rate limit exceeded", type: "rate_limit_error", code: null } }
+      }))))
+
+    it.effect.each([
+      { name: "ignores a negative Retry-After", header: "-5", expected: undefined },
+      { name: "ignores a non-finite Retry-After", header: "Infinity", expected: undefined },
+      { name: "honors an HTTP-date Retry-After", header: "Thu, 01 Jan 1970 00:00:30 GMT", expected: 30_000 }
+    ])("$name", ({ expected, header }) =>
+      Effect.gen(function*() {
+        const client = yield* OpenAiClient.OpenAiClient
+        const result = yield* client.createResponse({ model: "gpt-4o", input: "test" }).pipe(Effect.flip)
+
+        assert.strictEqual(result.reason._tag, "RateLimitError")
+        if (result.reason._tag !== "RateLimitError") return
+        assert.strictEqual(
+          result.reason.retryAfter === undefined ? undefined : Duration.toMillis(result.reason.retryAfter),
+          expected
+        )
+      }).pipe(Effect.provide(makeTestLayer(undefined, {
+        _tag: "Json",
+        status: 429,
+        headers: { "retry-after": header },
         body: { error: { message: "Rate limit exceeded", type: "rate_limit_error", code: null } }
       }))))
 
@@ -407,17 +449,11 @@ describe("OpenAiClient", () => {
       }))))
 
     it("mapStatusCodeToReason detects insufficient_quota as QuotaExhaustedError", () => {
-      const http = {
-        request: {
-          method: "POST" as const,
-          url: "https://api.openai.com",
-          urlParams: [],
-          hash: undefined,
-          headers: {}
-        }
-      }
       const reason = Errors.mapStatusCodeToReason({
+        now: 0,
         status: 429,
+        method: "POST",
+        url: "https://api.openai.com",
         headers: {},
         message: "You exceeded your current quota",
         metadata: {
@@ -425,7 +461,7 @@ describe("OpenAiClient", () => {
           errorType: "insufficient_quota",
           requestId: null
         },
-        http
+        http: {}
       })
       assert.strictEqual(reason._tag, "QuotaExhaustedError")
     })
@@ -458,14 +494,15 @@ describe("OpenAiClient", () => {
         body: { error: { message: "Internal server error" } }
       }))))
 
-    it.effect("maps schema error to InvalidOutputError reason", () =>
+    it.effect("maps a malformed successful response envelope to a non-retryable InvalidResponseError reason", () =>
       Effect.gen(function*() {
         const client = yield* OpenAiClient.OpenAiClient
         const result = yield* client.createResponse({ model: "gpt-4o", input: "test" }).pipe(Effect.flip)
 
         assert.strictEqual(result._tag, "AiError")
         assert.strictEqual(result.method, "createResponse")
-        assert.strictEqual(result.reason._tag, "InvalidOutputError")
+        assert.strictEqual(result.reason._tag, "InvalidResponseError")
+        assert.isFalse(result.isRetryable)
       }).pipe(Effect.provide(makeTestLayer(undefined, {
         _tag: "Json",
         body: { invalid: "response" } as any
@@ -508,6 +545,23 @@ describe("OpenAiClient", () => {
   })
 
   describe("createResponseStream", () => {
+    it.effect("emits response.completed before [DONE] in the same SSE chunk", () =>
+      Effect.gen(function*() {
+        const client = yield* OpenAiClient.OpenAiClient
+        const [, stream] = yield* client.createResponseStream({ model: "gpt-4o", input: "test" })
+        const events = yield* Stream.runCollect(stream)
+
+        assert.deepStrictEqual(events.map((event) => event.type), ["response.completed"])
+      }).pipe(Effect.provide(makeTestLayer(undefined, {
+        _tag: "Sse",
+        events: [{
+          type: "response.completed",
+          sequence_number: 1,
+          response: makeResponseBody({ status: "completed" })
+        }],
+        trailer: "data: [DONE]\n\n"
+      }))))
+
     it.live("terminates an SSE stream at response.failed", () =>
       Effect.gen(function*() {
         const client = yield* OpenAiClient.OpenAiClient
@@ -944,6 +998,52 @@ describe("OpenAiClient", () => {
         ]
       }))))
 
+    it.effect("maps a malformed stream event to a non-retryable InvalidResponseError", () =>
+      Effect.gen(function*() {
+        const client = yield* OpenAiClient.OpenAiClient
+        const result = yield* client.createResponseStream({
+          model: "gpt-4o",
+          input: "test"
+        }).pipe(
+          Effect.andThen(([_, stream]) => Stream.runDrain(stream)),
+          Effect.flip
+        )
+
+        assert.strictEqual(result.reason._tag, "InvalidResponseError")
+        assert.isFalse(result.isRetryable)
+      }).pipe(Effect.provide(makeTestLayer(undefined, {
+        _tag: "Sse",
+        events: [
+          {
+            type: "response.output_text.delta",
+            output_index: "zero",
+            item_id: "msg_123",
+            content_index: 0,
+            delta: "hello"
+          }
+        ]
+      }))))
+
+    it.effect("maps an oversized SSE event to a non-retryable InvalidResponseError", () =>
+      Effect.gen(function*() {
+        const client = yield* OpenAiClient.OpenAiClient
+        const result = yield* client.createResponseStream({
+          model: "gpt-4o",
+          input: "test"
+        }).pipe(
+          Effect.andThen(([_, stream]) => Stream.runDrain(stream)),
+          Effect.flip
+        )
+
+        assert.strictEqual(result.reason._tag, "InvalidResponseError")
+        assert.isFalse(result.isRetryable)
+      }).pipe(Effect.provide(makeTestLayer(undefined, {
+        _tag: "Sse",
+        events: [],
+        // Exceed the default 10 MiB SSE limit without completing an event.
+        trailer: `data: ${"x".repeat(10 * 1024 * 1024 + 1)}`
+      }))))
+
     it.effect("maps HTTP error before stream starts", () =>
       Effect.gen(function*() {
         const client = yield* OpenAiClient.OpenAiClient
@@ -1128,6 +1228,7 @@ type MockResponse =
   | {
     readonly _tag: "Sse"
     readonly events: ReadonlyArray<typeof OpenAiSchema.ResponseStreamEvent.Encoded>
+    readonly trailer?: string | undefined
     readonly keepOpen?: boolean | undefined
     readonly status?: number | undefined
     readonly headers?: Record<string, string> | undefined
@@ -1200,18 +1301,19 @@ const makeConfigTestLayer = (configProvider: ConfigProvider.ConfigProvider) =>
     Layer.provide(ConfigProvider.layer(configProvider))
   )
 
-const makeTransportErrorHttpClient = (): HttpClient.HttpClient =>
+const makeTransportErrorHttpClient = (
+  failures: Array<HttpClientError.HttpClientError> = [],
+  reason: { readonly cause?: unknown } = { cause: new Error("Connection refused") }
+): HttpClient.HttpClient =>
   HttpClient.makeWith<HttpClientError.HttpClientError, never, HttpClientError.HttpClientError, never>(
     (requestEffect) =>
-      Effect.flatMap(requestEffect, (request) =>
-        Effect.fail(
-          new HttpClientError.HttpClientError({
-            reason: new HttpClientError.TransportError({
-              request,
-              cause: new Error("Connection refused")
-            })
-          })
-        )),
+      Effect.flatMap(requestEffect, (request) => {
+        const error = new HttpClientError.HttpClientError({
+          reason: new HttpClientError.TransportError({ request, ...reason })
+        })
+        failures.push(error)
+        return Effect.fail(error)
+      }),
     Effect.succeed
   )
 
@@ -1247,7 +1349,7 @@ const makeResponse = (
     : "text/event-stream"
   const body = response._tag === "Json"
     ? JSON.stringify(response.body)
-    : response.events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join("")
+    : response.events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join("") + (response.trailer ?? "")
 
   const httpResponse = HttpClientResponse.fromWeb(
     request,
@@ -1274,14 +1376,3 @@ const makeResponse = (
     }
   })
 }
-
-const makeHttpContext = (url: string, body: string) => ({
-  request: {
-    method: "POST" as const,
-    url,
-    urlParams: [],
-    hash: undefined,
-    headers: {}
-  },
-  body
-})

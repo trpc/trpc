@@ -695,7 +695,10 @@ export const offer: {
 )
 
 /**
- * Adds a message to the queue synchronously. Returns `false` if the queue is done.
+ * Adds a message to the queue synchronously. Returns `false` without adding the
+ * message if the queue is closing or done, or if it is full with a non-sliding
+ * strategy (`"suspend"` or `"dropping"`). A queue with non-positive capacity can
+ * still accept a message when a taker is waiting.
  *
  * **When to use**
  *

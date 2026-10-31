@@ -55,6 +55,68 @@ export const suite = (
   name: string,
   layer: Layer.Layer<RateLimiter.RateLimiterStore, unknown>
 ) => {
+  it.layer(layer, { timeout: "30 seconds", concurrent: false })(`RateLimiter fixed-window (${name})`, (it) => {
+    for (
+      const [tokens, expected] of [
+        [1, [0, "RateLimitExceeded", "RateLimitExceeded"]],
+        [0.75, [0.25, "RateLimitExceeded", "RateLimitExceeded"]]
+      ] as const
+    ) {
+      it.effect(`preserves remaining capacity and rejects excess requests with cost ${tokens}`, () =>
+        Effect.gen(function*() {
+          const limiter = yield* RateLimiter.make
+          const opts = {
+            algorithm: "fixed-window",
+            key: `fixed-window-fail-${tokens}`,
+            limit: 1,
+            window: "1 minute",
+            tokens
+          } as const
+          const results = yield* Effect.forEach([0, 1, 2], () =>
+            limiter.consume(opts).pipe(Effect.match({
+              onSuccess: (result) => result.remaining,
+              onFailure: (error) => error.reason._tag
+            })))
+
+          assert.deepStrictEqual(results, [...expected])
+          const available = yield* limiter.consume({ ...opts, tokens: 0 })
+          assert.strictEqual(available.remaining, expected[0])
+        }))
+    }
+
+    it.effect("preserves fractional delay reservations", () =>
+      Effect.gen(function*() {
+        const limiter = yield* RateLimiter.make
+        const results = yield* Effect.forEach([0, 1, 2], () =>
+          limiter.consume({
+            algorithm: "fixed-window",
+            onExceeded: "delay",
+            key: "fixed-window-fractional-delay",
+            limit: 1,
+            window: "1 minute",
+            tokens: 0.75
+          }))
+
+        assert.deepStrictEqual(results.slice(0, 2).map((result) => Duration.toMillis(result.delay)), [0, 0])
+        // Redis TTLs use wall time rather than TestClock.
+        assert.approximately(Duration.toMillis(results[2].delay), 60_000, 1_000)
+        assert.deepStrictEqual(results.map((result) => result.remaining), [0.25, -0.5, -1.25])
+      }))
+
+    it.effect("store caps a zero limit and leaves an undefined limit uncapped", () =>
+      Effect.gen(function*() {
+        const store = yield* RateLimiter.RateLimiterStore
+        const opts = { key: "fixed-window-zero-limit", tokens: 1, refillRate: Duration.minutes(1), limit: 0 }
+
+        assert.deepStrictEqual(yield* store.fixedWindow(opts), [1, 0])
+        assert.deepStrictEqual(yield* store.fixedWindow(opts), [1, 0])
+        assert.deepStrictEqual(
+          yield* store.fixedWindow({ ...opts, key: "fixed-window-undefined-limit", limit: undefined }),
+          [1, 60_000]
+        )
+      }))
+  })
+
   it.layer(layer, { timeout: "30 seconds", concurrent: false })(`RateLimiter token-bucket timing (${name})`, (it) => {
     for (const onExceeded of ["fail", "delay"] as const) {
       for (

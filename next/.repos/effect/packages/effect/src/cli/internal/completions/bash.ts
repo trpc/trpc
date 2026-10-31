@@ -7,6 +7,7 @@
  * @internal
  */
 import type * as Completions from "../../Completions.ts"
+import { negatedName, takesSeparateValue } from "./descriptor.ts"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -21,8 +22,9 @@ const flagNamesForWordlist = (flag: Completions.FlagDescriptor): Array<string> =
   for (const alias of flag.aliases) {
     names.push(alias.length === 1 ? `-${alias}` : `--${alias}`)
   }
-  if (flag.type._tag === "Boolean") {
-    names.push(`--no-${flag.name}`)
+  const negation = negatedName(flag)
+  if (negation !== undefined) {
+    names.push(`--${negation}`)
   }
   return names
 }
@@ -49,6 +51,10 @@ const buildFlagGroupDeclarations = (
   lines.push(``)
 }
 
+// Quoting these substitutions breaks quote matching on Bash 3.2.
+const removeQuotes = (variable: string): string =>
+  [`\\\\`, `\\"`, `\\'`].map((quote) => `${variable}=\${${variable}//${quote}/}`).join("; ")
+
 /**
  * Complete choices without `compgen -W`, which reparses quoted values. Escape
  * only the portion readline replaces for the active quote context.
@@ -69,9 +75,8 @@ const choicesHelper = (helperName: string, lines: Array<string>): void => {
   lines.push(`  esac`)
   lines.push(``)
   lines.push(`  local _prefix="$_cur" _committed="$_head"`)
-  // Quoting these substitutions breaks quote matching on Bash 3.2.
-  lines.push(`  _prefix=\${_prefix//\\\\/}; _prefix=\${_prefix//\\"/}; _prefix=\${_prefix//\\'/}`)
-  lines.push(`  _committed=\${_committed//\\\\/}; _committed=\${_committed//\\"/}; _committed=\${_committed//\\'/}`)
+  lines.push(`  ${removeQuotes("_prefix")}`)
+  lines.push(`  ${removeQuotes("_committed")}`)
   lines.push(``)
   lines.push(`  COMPREPLY=()`)
   lines.push(`  local _choice _rest _match`)
@@ -109,30 +114,76 @@ const choicesHelper = (helperName: string, lines: Array<string>): void => {
   lines.push(``)
 }
 
-const choiceCompletion = (helperName: string, values: ReadonlyArray<string>): string =>
-  `${helperName} "$cur" "$_comp_word" ${values.map((value) => `'${escapeForBash(value)}'`).join(" ")}`
-
-const flagValueCompletion = (type: Completions.FlagType, helperName: string): string | undefined => {
-  switch (type._tag) {
-    case "Boolean":
-      return undefined
-    case "Choice":
-      return choiceCompletion(helperName, type.values)
-    case "Path":
-      if (type.pathType === "directory") return `COMPREPLY=( $(compgen -d -- "$cur") )`
-      return `COMPREPLY=( $(compgen -f -- "$cur") )`
-    default:
-      return undefined
-  }
+interface Helpers {
+  readonly choices: string
+  readonly paths: string
 }
 
-const argCompletion = (type: Completions.ArgumentType, helperName: string): string | undefined => {
+/**
+ * Complete paths through the choice helper, one `compgen` line per candidate.
+ * The typed directory is kept as written so expansions in it still apply; only
+ * the completed name is quoted.
+ */
+const pathsHelper = (helpers: Helpers, lines: Array<string>): void => {
+  lines.push(`${helpers.paths}()`)
+  lines.push(`{`)
+  lines.push(`  local _kind="$1" _cur="$2" _word="$3"`)
+  lines.push(``)
+  lines.push(`  local _prefix="$_cur" _committed="\${_cur%"$_word"}"`)
+  lines.push(`  ${removeQuotes("_prefix")}`)
+  lines.push(`  ${removeQuotes("_committed")}`)
+  lines.push(``)
+  // Track a quote the typed directory leaves open.
+  lines.push(`  local _typed="" _dir="$_committed" _open="" _i`)
+  lines.push(`  if [[ "$_word" == */* ]]; then`)
+  lines.push(`    _typed="\${_word%/*}/"`)
+  lines.push(`    _dir="\${_prefix%/*}/"`)
+  lines.push(`    if [[ "$_cur" == "$_word" ]]; then`)
+  lines.push(`      for ((_i = 0; _i < \${#_typed}; _i++)); do`)
+  lines.push(`        case "$_open\${_typed:_i:1}" in`)
+  lines.push(`          \\\\|\\"\\\\) ((_i += 1)) ;;`)
+  lines.push(`          \\"|\\') _open="\${_typed:_i:1}" ;;`)
+  lines.push(`          \\"\\"|\\'\\') _open="" ;;`)
+  lines.push(`        esac`)
+  lines.push(`      done`)
+  lines.push(`    fi`)
+  lines.push(`  fi`)
+  lines.push(``)
+  lines.push(`  local _path _names=() _rest="\${_word#"$_typed"}"`)
+  lines.push(`  while IFS= read -r _path; do`)
+  lines.push(`    if [[ "$_path" == "$_dir"* ]]; then`)
+  lines.push(`      _names+=("$_committed\${_path#"$_dir"}")`)
+  lines.push(`    elif [[ -z "$_committed" ]]; then`)
+  // Bash 3.2 returns expanded paths, which replace the whole word.
+  lines.push(`      _names+=("$_path")`)
+  lines.push(`      _typed="" _rest="" _open=""`)
+  lines.push(`    fi`)
+  lines.push(`  done < <(compgen "$_kind" -- "$_prefix")`)
+  // Close the quote before the name so a common prefix stays balanced.
+  lines.push(`  if [[ -n "$_open" ]]; then`)
+  lines.push(`    _typed+="$_open"`)
+  lines.push(`    _rest="\${_prefix##*/}"`)
+  lines.push(`  fi`)
+  lines.push(``)
+  lines.push(`  ${helpers.choices} "\${_cur%"$_word"}$_rest" "$_rest" "\${_names[@]}"`)
+  lines.push(`  for ((_i = 0; _i < \${#COMPREPLY[@]}; _i++)); do`)
+  lines.push(`    COMPREPLY[_i]="$_typed\${COMPREPLY[_i]}"`)
+  lines.push(`  done`)
+  lines.push(`}`)
+  lines.push(``)
+}
+
+const valueCompletion = (
+  type: Completions.FlagType | Completions.ArgumentType,
+  helpers: Helpers
+): string | undefined => {
   switch (type._tag) {
-    case "Choice":
-      return choiceCompletion(helperName, type.values)
+    case "Choice": {
+      const values = type.values.map((value) => `'${escapeForBash(value)}'`).join(" ")
+      return `${helpers.choices} "$cur" "$_comp_word" ${values}`
+    }
     case "Path":
-      if (type.pathType === "directory") return `COMPREPLY=( $(compgen -d -- "$cur") )`
-      return `COMPREPLY=( $(compgen -f -- "$cur") )`
+      return `${helpers.paths} ${type.pathType === "directory" ? "-d" : "-f"} "$cur" "$_comp_word"`
     default:
       return undefined
   }
@@ -146,7 +197,7 @@ const generateFunction = (
   descriptor: Completions.CommandDescriptor,
   parentPath: ReadonlyArray<string>,
   lines: Array<string>,
-  helperName: string
+  helpers: Helpers
 ): void => {
   const currentPath = [...parentPath, descriptor.name]
   const funcName = `_${currentPath.map(sanitizeFunctionName).join("_")}`
@@ -164,7 +215,7 @@ const generateFunction = (
   lines.push(``)
 
   // Build flag-value dispatch
-  const flagsWithValues = descriptor.flags.filter((f) => f.type._tag !== "Boolean")
+  const flagsWithValues = descriptor.flags.filter(takesSeparateValue)
   if (flagsWithValues.length > 0) {
     lines.push(`  # Flag value completions`)
     lines.push(`  case "$prev" in`)
@@ -173,7 +224,7 @@ const generateFunction = (
       for (const alias of flag.aliases) {
         longNames.push(alias.length === 1 ? `-${alias}` : `--${alias}`)
       }
-      const completion = flagValueCompletion(flag.type, helperName)
+      const completion = valueCompletion(flag.type, helpers)
       if (completion) {
         lines.push(`    ${longNames.join("|")})`)
         lines.push(`      ${completion}`)
@@ -196,7 +247,7 @@ const generateFunction = (
     lines.push(`    fi`)
     lines.push(`    case "\${words[i]}" in`)
     for (const flag of descriptor.flags) {
-      if (flag.type._tag === "Boolean") continue
+      if (!takesSeparateValue(flag)) continue
       const forms = flagNamesForWordlist(flag)
       lines.push(`      ${forms.join("|")}) _skip_next=1 ;;`)
       lines.push(`      ${forms.map((form) => `${form}=*`).join("|")}) ;;`)
@@ -229,7 +280,7 @@ const generateFunction = (
 
   // Positional argument completion
   const argsWithCompletions = descriptor.arguments.flatMap((argument, index) => {
-    const completion = argCompletion(argument.type, helperName)
+    const completion = valueCompletion(argument.type, helpers)
     return completion === undefined ? [] : [{ argument, completion, index }]
   })
   if (argsWithCompletions.length > 0) {
@@ -248,7 +299,7 @@ const generateFunction = (
     lines.push(`      --) _end_of_options=1 ;;`)
     for (const flag of descriptor.flags) {
       const forms = flagNamesForWordlist(flag)
-      if (flag.type._tag === "Boolean") {
+      if (!takesSeparateValue(flag)) {
         lines.push(`      ${forms.join("|")}) ;;`)
       } else {
         lines.push(`      ${forms.join("|")}) _skip_next=1 ;;`)
@@ -285,7 +336,7 @@ const generateFunction = (
 
   // Recurse into subcommands
   for (const sub of descriptor.subcommands) {
-    generateFunction(sub, currentPath, lines, helperName)
+    generateFunction(sub, currentPath, lines, helpers)
   }
 }
 
@@ -299,7 +350,7 @@ export const generate = (
   const lines: Array<string> = []
   const safeName = sanitizeFunctionName(executableName)
   // Sanitized command names cannot contain `-`.
-  const helperName = `_${safeName}--choices`
+  const helpers: Helpers = { choices: `_${safeName}--choices`, paths: `_${safeName}--paths` }
 
   lines.push(`###-begin-${escapeForBash(executableName)}-completions-###`)
   lines.push(`#`)
@@ -339,8 +390,9 @@ export const generate = (
   lines.push(`fi`)
   lines.push(``)
 
-  choicesHelper(helperName, lines)
-  generateFunction(descriptor, [], lines, helperName)
+  choicesHelper(helpers.choices, lines)
+  pathsHelper(helpers, lines)
+  generateFunction(descriptor, [], lines, helpers)
 
   lines.push(`complete -F _${safeName} ${escapeForBash(executableName)}`)
   lines.push(`###-end-${escapeForBash(executableName)}-completions-###`)

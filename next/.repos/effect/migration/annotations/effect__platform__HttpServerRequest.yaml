@@ -25,3 +25,10 @@
 "@effect/platform/HttpServerRequest#TypeId":
   replacement: "typeof HttpServerRequest.TypeId"
   note: "TypeId remains public but is now a string constant; use typeof in type position."
+"@effect/platform/HttpServerRequest#upgrade":
+  replacement: "HttpServerRequest.HttpServerRequest.use((request) => request.upgrade)"
+  note: "The top-level accessor was removed; read upgrade from the request service. It fails with HttpServerError instead of RequestError. HttpServerRequest.upgradeChannel remains for channel-based WebSocket handling."
+"@effect/platform/HttpServerRequest#HttpServerRequest":
+  include: true
+  replacement: "HttpServerRequest.HttpServerRequest"
+  note: "Custom implementations must also supply upgradeWith({ headers }), which upgrades the connection and sends the given headers on the 101 response; upgrade is equivalent to upgradeWith({}). WebSocket upgrades fail when headers are given. method is now typed as string because received methods such as PROPFIND are kept as is; exhaustive matches need a fallback or an HttpMethod.isHttpMethod guard."

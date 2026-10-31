@@ -318,7 +318,7 @@ export const make = Effect.fnUntraced(
     > =>
       client.betaMessagesPost({ ...options, config: { includeResponse: true } }).pipe(
         Effect.catchTags({
-          BetaMessagesPost4XX: (error) => Effect.fail(Errors.mapClientError(error, "createMessage")),
+          BetaMessagesPost4XX: (error) => Errors.mapClientError(error, "createMessage"),
           HttpClientError: (error) => Errors.mapHttpClientError(error, "createMessage"),
           SchemaError: (error) => Effect.fail(Errors.mapSchemaError(error, "createMessage"))
         }),

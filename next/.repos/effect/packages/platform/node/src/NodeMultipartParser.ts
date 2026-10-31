@@ -6,6 +6,7 @@
  */
 // oxlint-disable typescript/no-unsafe-declaration-merging
 /// <reference types="node" />
+import { constVoid } from "effect/Function"
 import type { BaseConfig, MultipartError, Parser, PartInfo } from "effect/http/MultipartParser"
 import { make as makeParser } from "effect/http/MultipartParser"
 import type { IncomingHttpHeaders } from "node:http"
@@ -83,11 +84,12 @@ export class MultipartStream extends Duplex {
   private _parser: Parser
   _canWrite = true
   private _writeCallback: (() => void) | undefined
+  private _currentFile: FileStream | undefined
 
   constructor(config: NodeConfig) {
     super({ readableObjectMode: true })
     let currentError: MultipartError | undefined
-    let currentFile: FileStream | undefined
+    let initialized = false
     this._parser = makeParser({
       ...(config as any),
       onField: (info, value) => {
@@ -99,27 +101,33 @@ export class MultipartStream extends Duplex {
       onFile: (info) => {
         if (currentError !== undefined) return (_) => {}
         const file = new FileStream(info, this)
-        currentFile = file
+        this._currentFile = file
         this.push(file)
         this.emit("file", file)
         return (chunk) => {
           if (currentError !== undefined) return
           this._canWrite = file.push(chunk)
           if (chunk === null && !this._canWrite) {
-            currentFile = undefined
+            this._currentFile = undefined
             this._resume()
           }
         }
       },
       onError: (error) => {
-        this.emit("error", error)
-        currentFile?.emit("error", error)
         currentError = error
+        if (!initialized) return
+        this.emit("error", error)
+        this._failCurrentFile(error)
       },
       onDone: () => {
         this.push(null)
       }
     })
+    initialized = true
+    if (currentError !== undefined) {
+      // destroy defers the error event so callers can attach their listeners.
+      this.destroy(currentError as any)
+    }
   }
 
   _resume() {
@@ -132,6 +140,21 @@ export class MultipartStream extends Duplex {
   }
 
   override _read(_size: number) {}
+
+  override _destroy(error: Error | null, callback: (error?: Error | null) => void): void {
+    if (error) this._failCurrentFile(error)
+    callback(error)
+  }
+
+  private _failCurrentFile(error: unknown) {
+    const file = this._currentFile
+    if (file === undefined) return
+    this._currentFile = undefined
+    // The file keeps the error for a late reader; the listener stops it from
+    // being thrown while nobody is reading yet.
+    file.on("error", constVoid)
+    file.destroy(error as any)
+  }
 
   override _write(
     chunk: any,

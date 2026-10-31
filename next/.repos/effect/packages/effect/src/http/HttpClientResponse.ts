@@ -17,6 +17,7 @@ import * as Option from "../Option.ts"
 import { type Pipeable, pipeArguments } from "../Pipeable.ts"
 import * as Schema from "../Schema.ts"
 import type { ParseOptions } from "../SchemaAST.ts"
+import type * as Socket from "../socket/Socket.ts"
 import * as Stream from "../Stream.ts"
 import type { Unify } from "../Unify.ts"
 import * as Cookies from "./Cookies.ts"
@@ -24,6 +25,8 @@ import * as Headers from "./Headers.ts"
 import * as Error from "./HttpClientError.ts"
 import * as HttpClientRequest from "./HttpClientRequest.ts"
 import * as HttpIncomingMessage from "./HttpIncomingMessage.ts"
+import * as internalUrlParams from "./internal/urlParams.ts"
+import { getWebSource, WebSourceSymbol } from "./internal/webResponse.ts"
 import * as UrlParams from "./UrlParams.ts"
 
 /**
@@ -83,6 +86,23 @@ export interface HttpClientResponse extends HttpIncomingMessage.HttpIncomingMess
   readonly status: number
   readonly cookies: Cookies.Cookies
   readonly formData: Effect.Effect<FormData, Error.HttpClientError>
+  /**
+   * Hands over the connection of a `101 Switching Protocols` response as a
+   * `Socket`.
+   *
+   * **Details**
+   *
+   * Ask for an upgrade with `HttpClientRequest.upgrade`. Bytes the server
+   * sent after the response head come first on the reader. Releasing the
+   * writer's scope half-closes the connection, and releasing the reader's
+   * scope closes it. Closing the request's scope (see `HttpClient.withScope`)
+   * also closes it.
+   *
+   * Fails with a `StatusCodeError` for any other status, so a refusal can be
+   * read from the response body as usual. Backends that cannot hand over a
+   * connection, such as fetch, never produce a `101` and fail the same way.
+   */
+  readonly upgrade: Effect.Effect<Socket.Socket, Error.HttpClientError>
 }
 
 /**
@@ -94,6 +114,42 @@ export interface HttpClientResponse extends HttpIncomingMessage.HttpIncomingMess
  */
 export const fromWeb = (request: HttpClientRequest.HttpClientRequest, source: Response): HttpClientResponse =>
   new WebHttpClientResponse(request, source)
+
+/**
+ * Returns the original Web `Response` of a fetch-backed `HttpClientResponse`.
+ *
+ * **When to use**
+ *
+ * Use to hand a response body to a Web API without copying it, such as
+ * writing a fetched file to Cloudflare R2. The original body keeps runtime
+ * capabilities, such as workerd's known length, that a stream converted from
+ * `stream` does not.
+ *
+ * **Details**
+ *
+ * Returns `Some` for responses created with `fromWeb`, which includes every
+ * response from `FetchHttpClient`, and `None` for other backends.
+ *
+ * Calling `toWeb` hands the body over: the response is no longer aborted when
+ * the `HttpClientResponse` is garbage collected, so read or cancel the body
+ * through the returned `Response`.
+ *
+ * **Gotchas**
+ *
+ * The body can be read once. After converting, read it from the returned
+ * `Response`, not from the `HttpClientResponse`.
+ *
+ * After the hand-off, Effect aborts the request only when the scope of
+ * `HttpClient.withScope` closes. When the request streams its body, finishing
+ * or cancelling the returned body does not stop the upload; execute the
+ * request with `HttpClient.withScope` and close the scope to stop it.
+ *
+ * @stability unstable
+ * @category converting
+ * @since 4.0.0
+ */
+export const toWeb = (self: HttpClientResponse): Option.Option<globalThis.Response> =>
+  Option.fromUndefinedOr(getWebSource(self))
 
 /**
  * Creates a decoder for a response's status, headers, and JSON body using the supplied schema.
@@ -324,6 +380,10 @@ class WebHttpClientResponse extends Inspectable.Class implements HttpClientRespo
     return Option.none()
   }
 
+  [WebSourceSymbol](): globalThis.Response {
+    return this.source
+  }
+
   get stream(): Stream.Stream<Uint8Array, Error.HttpClientError> {
     return this.source.body
       ? Stream.fromReadableStream({
@@ -369,9 +429,9 @@ class WebHttpClientResponse extends Inspectable.Class implements HttpClientRespo
   }
 
   get urlParamsBody(): Effect.Effect<UrlParams.UrlParams, Error.HttpClientError> {
-    return Effect.flatMap(this.text, (_) =>
+    return Effect.flatMap(this.arrayBuffer, (bytes) =>
       Effect.try({
-        try: () => UrlParams.fromInput(new URLSearchParams(_)),
+        try: () => UrlParams.fromInput(internalUrlParams.fromBody(bytes)),
         catch: (cause) =>
           new Error.HttpClientError({
             reason: new Error.DecodeError({
@@ -415,6 +475,18 @@ class WebHttpClientResponse extends Inspectable.Class implements HttpClientRespo
         })
     }).pipe(Effect.cached, Effect.runSync)
     return this.arrayBufferBody
+  }
+
+  get upgrade(): Effect.Effect<Socket.Socket, Error.HttpClientError> {
+    return Effect.fail(
+      new Error.HttpClientError({
+        reason: new Error.StatusCodeError({
+          request: this.request,
+          response: this,
+          description: "fetch cannot hand over the connection of an HTTP upgrade"
+        })
+      })
+    )
   }
 
   pipe() {

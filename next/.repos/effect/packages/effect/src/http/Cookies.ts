@@ -7,6 +7,10 @@
  * `Set-Cookie` headers, and provides helpers for adding, removing, merging, and
  * expiring cookies.
  *
+ * For client-side storage, `mergeIntoArray` and `toRequestCookieHeader`
+ * work on a plain array of cookies scoped by domain, path and scheme, following
+ * RFC 6265.
+ *
  * @stability unstable
  * @since 4.0.0
  */
@@ -51,6 +55,12 @@ const CookieTypeId = "~effect/http/Cookies/Cookie"
  * HTTP cookie value with its decoded value, encoded value, and optional cookie
  * attributes such as domain, path, expiration, security, and same-site settings.
  *
+ * **Details**
+ *
+ * `hostOnly` marks a stored client cookie that is sent only to the exact
+ * `domain`, not its subdomains. It is not serialized, and `serializeCookie`
+ * omits `Domain` when it is set.
+ *
  * @stability unstable
  * @category cookies
  * @since 4.0.0
@@ -70,6 +80,7 @@ export interface Cookie extends Inspectable.Inspectable {
     readonly secure?: boolean | undefined
     readonly partitioned?: boolean | undefined
     readonly sameSite?: "lax" | "strict" | "none" | undefined
+    readonly hostOnly?: boolean | undefined
   } | undefined
 }
 
@@ -226,12 +237,12 @@ function parseSetCookie(header: string): Cookie | undefined {
   if (firstEqual === -1) {
     return undefined
   }
-  const name = parts[0].slice(0, firstEqual)
+  const name = parts[0].slice(0, firstEqual).replace(cookieWhitespaceRegExp, "")
   if (!cookieNameRegExp.test(name)) {
     return undefined
   }
 
-  const valueEncoded = parts[0].slice(firstEqual + 1)
+  const valueEncoded = parts[0].slice(firstEqual + 1).replace(cookieWhitespaceRegExp, "")
   const value = tryDecodeURIComponent(valueEncoded)
 
   if (parts.length === 1) {
@@ -272,13 +283,10 @@ function parseSetCookie(header: string): Cookie | undefined {
         break
       }
       case "max-age": {
-        if (value === undefined) {
+        if (value === undefined || !maxAgeRegExp.test(value)) {
           break
         }
-        const maxAge = parseInt(value, 10)
-        if (!isNaN(maxAge)) {
-          options.maxAge = Duration.seconds(maxAge)
-        }
+        options.maxAge = Duration.seconds(parseInt(value, 10))
         break
       }
       case "path": {
@@ -368,6 +376,9 @@ export const isEmpty = (self: Cookies): boolean => Record.isEmptyRecord(self.coo
 // oxlint-disable-next-line no-control-regex
 const fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/
 const cookieNameRegExp = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/
+const cookieWhitespaceRegExp = /^[\t ]+|[\t ]+$/g
+// RFC 6265 section 5.2.2
+const maxAgeRegExp = /^-?[0-9]+$/
 // oxlint-disable-next-line no-control-regex
 const cookieDomainRegExp = /^[\u0009\u0020-\u003a\u003c-\u007e\u0080-\u00ff]+$/
 const cookiePathRegExp = /^[\u0020-\u003a\u003c-\u007e]+$/
@@ -761,7 +772,7 @@ export function serializeCookie(self: Cookie): string {
     str += "; Max-Age=" + Math.trunc(maxAge)
   }
 
-  if (options.domain !== undefined) {
+  if (options.domain !== undefined && !options.hostOnly) {
     str += "; Domain=" + options.domain
   }
 
@@ -855,6 +866,173 @@ export const toRecord = (self: Cookies): Record<string, string> => {
 export const toSetCookieHeaders = (self: Cookies): Array<string> => Object.values(self.cookies).map(serializeCookie)
 
 /**
+ * Merges cookies set by `url` into an array of client cookies, returning a new
+ * array.
+ *
+ * **When to use**
+ *
+ * Use to record the cookies of a response, or to seed an array of client
+ * cookies from `Set-Cookie` values for a base URL.
+ *
+ * **Details**
+ *
+ * A cookie without a `Domain` attribute is scoped as `hostOnly` to the exact
+ * host of `url`. A `Domain` attribute is accepted only when the host of `url`
+ * domain-matches it. Without a `Path` attribute the cookie uses the default
+ * path of `url`. `Max-Age` takes precedence over `Expires`, and both are
+ * converted to an absolute `expires` computed from `now` (epoch milliseconds).
+ *
+ * A cookie replaces the existing cookie with the same name, domain and path,
+ * keeping its position. A cookie that is already expired removes that existing
+ * cookie instead. The array is returned unchanged when `url` is not a valid
+ * absolute URL.
+ *
+ * **Gotchas**
+ *
+ * - There is no public suffix list. A `Domain` attribute is accepted whenever
+ *   the request host domain-matches it, unless the host is an IP address or the
+ *   domain is a single label such as `com`, so `foo.co.uk` can set
+ *   `Domain=co.uk`.
+ *
+ * @stability unstable
+ * @category client storage
+ * @since 4.0.0
+ */
+export const mergeIntoArray: {
+  (url: string, cookies: Cookies, now: number): (self: ReadonlyArray<Cookie>) => ReadonlyArray<Cookie>
+  (self: ReadonlyArray<Cookie>, url: string, cookies: Cookies, now: number): ReadonlyArray<Cookie>
+} = dual(4, (self: ReadonlyArray<Cookie>, url: string, cookies: Cookies, now: number): ReadonlyArray<Cookie> => {
+  const parsed = parseUrl(url)
+  if (parsed === undefined) {
+    return self
+  }
+  const stored = self.slice()
+  for (const cookie of Object.values(cookies.cookies)) {
+    const scoped = scopeCookie(parsed, cookie, now)
+    if (scoped === undefined) {
+      continue
+    }
+    const domain = cookieDomain(scoped)
+    const path = cookiePath(scoped)
+    const index = stored.findIndex((existing) =>
+      existing.name === scoped.name && cookieDomain(existing) === domain && cookiePath(existing) === path
+    )
+    if (scoped.options!.expires !== undefined && scoped.options!.expires.getTime() <= now) {
+      if (index !== -1) stored.splice(index, 1)
+    } else if (index === -1) {
+      stored.push(scoped)
+    } else {
+      stored[index] = scoped
+    }
+  }
+  return stored
+})
+
+/**
+ * Serializes the client cookies to send with a request to `url` into a
+ * `Cookie` header value.
+ *
+ * **Details**
+ *
+ * Selects cookies that have not expired at `now` (epoch milliseconds) and whose
+ * domain and path match `url`, skipping `Secure` cookies unless `url` uses
+ * `https`. Every matching cookie is kept, including cookies with the same name,
+ * ordered by longest path first. Returns `undefined` when no cookie matches.
+ *
+ * A leading dot and letter case in `domain` are ignored. A cookie without a
+ * `domain` is never sent, and a cookie without a `path` matches every path.
+ *
+ * @stability unstable
+ * @category client storage
+ * @since 4.0.0
+ */
+export const toRequestCookieHeader: {
+  (url: string, now: number): (self: ReadonlyArray<Cookie>) => string | undefined
+  (self: ReadonlyArray<Cookie>, url: string, now: number): string | undefined
+} = dual(3, (self: ReadonlyArray<Cookie>, url: string, now: number): string | undefined => {
+  const parsed = parseUrl(url)
+  if (parsed === undefined) {
+    return undefined
+  }
+  const host = parsed.hostname
+  const secure = parsed.protocol === "https:"
+  const matching = self.filter((cookie) => {
+    const domain = cookieDomain(cookie)
+    return domain !== undefined &&
+      (cookie.options?.hostOnly ? host === domain : domainMatches(host, domain)) &&
+      pathMatches(parsed.pathname, cookiePath(cookie)) &&
+      (cookie.options?.expires === undefined || cookie.options.expires.getTime() > now) &&
+      (secure || !cookie.options?.secure)
+  })
+  return matching.length === 0
+    ? undefined
+    : matching
+      .sort((a, b) => cookiePath(b).length - cookiePath(a).length)
+      .map((cookie) => `${cookie.name}=${cookie.valueEncoded}`)
+      .join("; ")
+})
+
+const parseUrl = (url: string): URL | undefined => {
+  try {
+    return new URL(url)
+  } catch {
+    return undefined
+  }
+}
+
+const cookieDomain = (cookie: Cookie): string | undefined =>
+  cookie.options?.domain?.replace(/^\./, "").toLowerCase() || undefined
+
+const cookiePath = (cookie: Cookie): string => cookie.options?.path?.startsWith("/") ? cookie.options.path : "/"
+
+const isIpAddress = (host: string): boolean => host.startsWith("[") || /^\d+\.\d+\.\d+\.\d+$/.test(host)
+
+const domainMatches = (host: string, domain: string): boolean =>
+  host === domain || (host.endsWith("." + domain) && !isIpAddress(host))
+
+const pathMatches = (requestPath: string, cookiePath: string): boolean =>
+  requestPath === cookiePath ||
+  (requestPath.startsWith(cookiePath) &&
+    (cookiePath.endsWith("/") || requestPath[cookiePath.length] === "/"))
+
+const defaultPath = (pathname: string): string => {
+  const index = pathname.lastIndexOf("/")
+  return index <= 0 ? "/" : pathname.slice(0, index)
+}
+
+const scopeCookie = (url: URL, cookie: Cookie, now: number): Cookie | undefined => {
+  const host = url.hostname
+  let domain = host
+  let hostOnly = true
+  const attribute = cookieDomain(cookie)
+  if (attribute !== undefined) {
+    if (isIpAddress(host) || !domainMatches(host, attribute)) {
+      return undefined
+    }
+    if (attribute.includes(".")) {
+      domain = attribute
+      hostOnly = false
+    } else if (attribute !== host) {
+      // a single-label domain such as "com" is treated like a public suffix
+      return undefined
+    }
+  }
+  const { maxAge, ...options } = cookie.options ?? {}
+  return Object.assign(Object.create(CookieProto), {
+    name: cookie.name,
+    value: cookie.value,
+    valueEncoded: cookie.valueEncoded,
+    options: {
+      ...options,
+      domain,
+      hostOnly: hostOnly || undefined,
+      path: options.path?.startsWith("/") ? options.path : defaultPath(url.pathname),
+      expires: maxAge !== undefined ? new Date(now + Duration.toMillis(maxAge)) : options.expires
+    }
+  })
+}
+
+/**
  * Parses a cookie header into a record of key-value pairs
  *
  * **Details**
@@ -887,14 +1065,13 @@ export function parseHeader(header: string): Record<string, string> {
 
     const key = header.substring(pos, eqIdx++).trim()
     if (!Object.hasOwn(result, key)) {
-      const val = header.charCodeAt(eqIdx) === 0x22
-        ? header.substring(eqIdx + 1, terminatorPos - 1).trim()
-        : header.substring(eqIdx, terminatorPos).trim()
+      let value = header.substring(eqIdx, terminatorPos).trim()
+      if (value.charCodeAt(0) === 0x22) value = value.slice(1, -1).trim()
 
       InternalRecord.assignProperty(
         result,
         key,
-        !(val.indexOf("%") === -1) ? tryDecodeURIComponent(val) : val
+        !(value.indexOf("%") === -1) ? tryDecodeURIComponent(value) : value
       )
     }
 

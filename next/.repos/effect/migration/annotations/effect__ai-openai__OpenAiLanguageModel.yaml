@@ -1,9 +1,9 @@
 "@effect/ai-openai/OpenAiLanguageModel#Config":
   replacement: "OpenAiLanguageModel.Config"
-  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."
+  note: "Still exported in v4; update imports and adapt to the revised service and schema types. Unrecognized model names now default to reasoning models, sending system prompts as developer messages and requesting reasoning.encrypted_content when item references are disabled or WebSockets are used. Set reasoningModel: false in config for deployments that do not support these defaults."
 "@effect/ai-openai/OpenAiLanguageModel#Config.Service":
   replacement: "OpenAiLanguageModel.Config.Service"
-  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."
+  note: "Still exported in v4 with revised configuration fields. Set reasoningModel: false for custom deployments that need system messages rather than developer messages and do not support automatic encrypted reasoning requests; unrecognized model names otherwise default to reasoning models. Fine-tuned ft: names follow their base model."
 "@effect/ai-openai/OpenAiLanguageModel#layerWithTokenizer":
   replacement: "OpenAiLanguageModel.layer"
   note: "The tokenizer-combining layer was removed; provide the language model and any Tokenizer service separately."

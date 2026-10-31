@@ -1,9 +1,17 @@
-import { Effect, Layer, SubscriptionRef } from "effect"
+import { Effect, hole, Layer, Schema, SubscriptionRef } from "effect"
 import type { AsyncResult } from "effect/reactivity"
 import { Atom } from "effect/reactivity"
 import { describe, expect, it } from "tstyche"
 
 describe("Atom", () => {
+  describe("serializable", () => {
+    it("rejects Date values as JSON-encoded input", () => {
+      const atom = Atom.serializable(Atom.make(new Date()), { key: "date", schema: Schema.Date })
+
+      expect(atom[Atom.SerializableTypeId].decode).type.not.toBeCallableWith(new Date())
+    })
+  })
+
   describe("context", () => {
     it("returns a registry runtime factory by default", () => {
       expect(Atom.context()).type.toBe<Atom.RegistryRuntimeFactory>()
@@ -38,6 +46,35 @@ describe("Atom", () => {
         .type.toBe<Atom.Writable<AsyncResult.AsyncResult<number, "ref-failed" | "setup-failed">, number>>()
       expect(runtime.subscriptionRef(() => ref))
         .type.toBe<Atom.Writable<AsyncResult.AsyncResult<number, "ref-failed" | "setup-failed">, number>>()
+    })
+  })
+
+  describe("initialValue", () => {
+    it("accepts options only in the data-first form", () => {
+      const seed = Atom.make(1)
+
+      expect(Atom.initialValue).type.not.toBeCallableWith(seed, { skipInitialRun: true })
+    })
+  })
+
+  describe("reactivity keys", () => {
+    it("accepts any keys when no keys are declared", () => {
+      const keys = hole<ReadonlyArray<unknown>>()
+      const runtime = Atom.runtime(Layer.empty)
+
+      expect(Atom.withReactivity).type.toBeCallableWith(keys)
+      expect(Atom.withReactivity).type.toBeCallableWith({ anything: [1, { id: 1 }] })
+      expect(runtime.fn).type.toBeCallableWith(() => Effect.void, { reactivityKeys: keys })
+    })
+  })
+
+  describe("serializable", () => {
+    it("encodes to and decodes from the JSON representation", () => {
+      const atom = Atom.serializable(Atom.make(1n), { key: "bigint", schema: Schema.BigInt })
+      const serializable = atom[Atom.SerializableTypeId]
+
+      expect(serializable.encode).type.toBe<(value: bigint) => Schema.Json>()
+      expect(serializable.decode).type.toBe<(value: Schema.Json) => bigint>()
     })
   })
 })

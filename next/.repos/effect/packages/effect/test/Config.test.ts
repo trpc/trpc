@@ -1565,6 +1565,29 @@ Expected "Infinity" | "-Infinity" | "NaN"
       )
     })
 
+    it("loads matching numeric record keys", async () => {
+      const provider = ConfigProvider.fromUnknown({ a: { 80: "http", 1.5: "fractional", abc: "skipped" } })
+
+      await assertSuccess(
+        Config.schema(Schema.Record(Schema.Int, Schema.String), "a"),
+        provider,
+        { 80: "http" }
+      )
+      await assertSuccess(
+        Config.schema(Schema.Record(Schema.Number, Schema.String), "a"),
+        provider,
+        { 80: "http", 1.5: "fractional" }
+      )
+    })
+
+    it("preserves __proto__ record keys", async () => {
+      await assertSuccess(
+        Config.schema(Schema.Record(Schema.String, Schema.String), "a"),
+        ConfigProvider.fromUnknown({ a: { ["__proto__"]: "value" } }),
+        { ["__proto__"]: "value" }
+      )
+    })
+
     describe("built-in schema-backed constructors", () => {
       it("decodes supported boolean spellings", async () => {
         const provider = ConfigProvider.fromUnknown({
@@ -1753,6 +1776,17 @@ Expected "Infinity" | "-Infinity" | "NaN"
             Config.Record(Schema.String, Schema.String, "OTEL_RESOURCE_ATTRIBUTES", options),
             ConfigProvider.fromUnknown({ OTEL_RESOURCE_ATTRIBUTES: input }),
             expected
+          )
+        })
+
+        it("trims and keeps empty values when requested", async () => {
+          await assertSuccess(
+            Config.Record(Schema.String, Schema.String, "OTEL_RESOURCE_ATTRIBUTES", {
+              trim: true,
+              keepEmptyValues: true
+            }),
+            ConfigProvider.fromEnv({ env: { OTEL_RESOURCE_ATTRIBUTES: " b = x ,empty=, =ignored" } }),
+            { b: "x", empty: "" }
           )
         })
       })

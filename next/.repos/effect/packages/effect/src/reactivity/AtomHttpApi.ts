@@ -22,7 +22,6 @@ import type * as HttpApiMiddleware from "../http-api/HttpApiMiddleware.ts"
 import type * as HttpClient from "../http/HttpClient.ts"
 import * as HttpClientError from "../http/HttpClientError.ts"
 import * as Layer from "../Layer.ts"
-import type { ReadonlyRecord } from "../Record.ts"
 import * as Schema from "../Schema.ts"
 import type { SchemaError } from "../Schema.ts"
 import type { Mutable, Simplify } from "../Types.ts"
@@ -81,7 +80,7 @@ export interface AtomHttpApiClient<Self, Id extends string, Groups extends HttpA
   ] ? Atom.AtomResultFn<
       Simplify<
         HttpApiEndpoint.ClientRequest<_Params, _Query, _Payload, _Headers, "decoded-only"> & {
-          readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+          readonly reactivityKeys?: Reactivity.KeysInput | undefined
         }
       >,
       ResponseByMode<Endpoint, ResponseMode>,
@@ -115,16 +114,11 @@ export interface AtomHttpApiClient<Self, Id extends string, Groups extends HttpA
         infer _R,
         infer _RE
       >
-    ] ? Simplify<
-        HttpApiEndpoint.ClientRequest<_Params, _Query, _Payload, _Headers, ResponseMode> & {
-          readonly reactivityKeys?:
-            | ReadonlyArray<unknown>
-            | ReadonlyRecord<string, ReadonlyArray<unknown>>
-            | undefined
-          readonly timeToLive?: Duration.Input | undefined
-          readonly serializationKey?: string | undefined
-        }
-      >
+    ] ? HttpApiEndpoint.ClientRequest<_Params, _Query, _Payload, _Headers, ResponseMode> & {
+        readonly reactivityKeys?: Reactivity.KeysInput | undefined
+        readonly timeToLive?: Duration.Input | undefined
+        readonly serializationKey?: string | undefined
+      }
       : never
   ) => [Endpoint] extends [
     HttpApiEndpoint.HttpApiEndpoint<
@@ -227,7 +221,7 @@ export const Service =
         headers: any
         payload: any
         sseOptions?: Sse.DecodeOptions | undefined
-        reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+        reactivityKeys?: Reactivity.KeysInput | undefined
       }>()(
         Effect.fnUntraced(function*(opts) {
           const client = (yield* self) as any
@@ -244,7 +238,7 @@ export const Service =
       if (responseMode === "decoded-only") {
         const definition = groups[group].endpoints[endpoint]
         return Atom.serializable(atom, {
-          key: `AtomHttpApi:mutation:${group}:${endpoint}`,
+          key: `AtomHttpApi:mutation:${JSON.stringify([id, group, endpoint])}`,
           schema: AsyncResult.Schema({
             success: Schema.Union(HttpApiEndpoint.getSuccessSchemas(definition)),
             error: Schema.Union(HttpApiEndpoint.getErrorSchemas(definition))
@@ -303,7 +297,7 @@ export const Service =
         readonly headers?: any
         readonly responseMode?: HttpApiEndpoint.ClientResponseMode
         readonly sseOptions?: Sse.DecodeOptions | undefined
-        readonly reactivityKeys?: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+        readonly reactivityKeys?: Reactivity.KeysInput | undefined
         readonly timeToLive?: Duration.Input | undefined
         readonly serializationKey?: string | undefined
       }
@@ -343,7 +337,7 @@ interface QueryKey {
   headers: any
   payload: any
   responseMode: HttpApiEndpoint.ClientResponseMode
-  reactivityKeys: ReadonlyArray<unknown> | ReadonlyRecord<string, ReadonlyArray<unknown>> | undefined
+  reactivityKeys: Reactivity.KeysInput | undefined
   sseOptions: Sse.DecodeOptions | undefined
   timeToLive: Duration.Duration | undefined
   serializationKey: string | undefined

@@ -1,6 +1,6 @@
 "@effect/platform/HttpApiClient#Client.Method":
   replacement: "effect/http-api/HttpApiClient#Client.Method"
-  note: "The type remains without GroupError. Requests use params/query and responseMode instead of path/urlParams and withResponse."
+  note: "The type remains without GroupError. Requests use params/query and responseMode instead of path/urlParams and withResponse. Omitting responseMode returns the decoded value; a union-valued mode returns the corresponding union of decoded values, responses, or [value, response] tuples."
 "@effect/platform/HttpApiClient#endpoint":
   replacement: "effect/http-api/HttpApiClient#endpoint"
   note: "The endpoint client remains, selected by group and endpoint identifiers and using v4 request and responseMode fields."

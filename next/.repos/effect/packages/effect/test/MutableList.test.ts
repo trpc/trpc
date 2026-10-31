@@ -3,6 +3,17 @@ import { deepStrictEqual, strictEqual } from "@effect/vitest/utils"
 import { MutableList } from "effect"
 
 describe("MutableList", () => {
+  it("appendAll and prependAll copy the input array", () => {
+    const list = MutableList.make<number>()
+    const appended = [3, 4]
+    const prepended = [1, 2]
+    MutableList.appendAll(list, appended)
+    MutableList.prependAll(list, prepended)
+    appended[0] = 0
+    prepended[0] = 0
+    deepStrictEqual(MutableList.takeAll(list), [1, 2, 3, 4])
+  })
+
   it("prependAll with no values preserves existing elements", () => {
     const list = MutableList.make<number>()
     MutableList.appendAll(list, [1, 2])

@@ -17,10 +17,13 @@ import * as Effectable from "../Effectable.ts"
 import { dual } from "../Function.ts"
 import type * as PlatformError from "../PlatformError.ts"
 import * as Predicate from "../Predicate.ts"
+import type * as Redacted from "../Redacted.ts"
+import * as Result from "../Result.ts"
 import type * as Scope from "../Scope.ts"
 import type * as Sink from "../Sink.ts"
 import type * as Stream from "../Stream.ts"
 import { type ChildProcessHandle, ChildProcessSpawner } from "./ChildProcessSpawner.ts"
+import * as CommandLine from "./CommandLine.ts"
 
 const TypeId = "~effect/process/ChildProcess"
 
@@ -51,7 +54,7 @@ export interface StandardCommand extends
 {
   readonly _tag: "StandardCommand"
   readonly command: string
-  readonly args: ReadonlyArray<string>
+  readonly args: ReadonlyArray<CommandLine.Word>
   readonly options: CommandOptions
 }
 
@@ -144,7 +147,8 @@ export interface PipeOptions {
    * **Details**
    *
    * - `"stdin"` (default): Pipe to stdin of the destination
-   * - `"fd3"`, `"fd4"`, etc.: Pipe to a custom file descriptor
+   * - `"fd3"`, `"fd4"`, etc.: Pipe to a custom file descriptor. A descriptor
+   *   configured as `"duplex"` stays duplex.
    */
   readonly to?: PipeToOption | undefined
 }
@@ -259,7 +263,8 @@ export interface KillOptions {
   /**
    * The duration of time to wait after the child process has been terminated
    * before forcefully killing the child process by sending it the `"SIGKILL"`
-   * signal. Defaults to `undefined`, so `"SIGKILL"` is never sent.
+   * signal. Defaults to `undefined`, so `"SIGKILL"` is never sent and termination
+   * waits for the process to exit with no time limit.
    *
    * **Details**
    *
@@ -318,10 +323,17 @@ export interface StdoutConfig {
    * Can be a string indicating how the operating system should configure the
    * pipe established between the child process `stdout` and the parent process.
    *
-   * A `Sink` can also be passed, which will receive all elements produced by
-   * the `stdout` of the child process.
+   * A `Sink` can also be passed. The output is transduced through the sink as
+   * `handle.stdout` is consumed, and `handle.stdout` emits the results produced by
+   * the sink instead of the raw output.
    *
    * Defaults to "pipe".
+   *
+   * **Gotchas**
+   *
+   * A `Sink` only receives data while `handle.stdout` is being consumed. If
+   * it is never consumed, the sink receives nothing and a child process that
+   * writes more than the pipe buffer can block before it exits.
    */
   readonly stream?: CommandOutput | undefined
 }
@@ -342,10 +354,17 @@ export interface StderrConfig {
    * Can be a string indicating how the operating system should configure the
    * pipe established between the child process `stderr` and the parent process.
    *
-   * A `Sink` can also be passed, which will receive all elements produced by
-   * the `stderr` of the child process.
+   * A `Sink` can also be passed. The output is transduced through the sink as
+   * `handle.stderr` is consumed, and `handle.stderr` emits the results produced by
+   * the sink instead of the raw output.
    *
    * Defaults to "pipe".
+   *
+   * **Gotchas**
+   *
+   * A `Sink` only receives data while `handle.stderr` is being consumed. If
+   * it is never consumed, the sink receives nothing and a child process that
+   * writes more than the pipe buffer can block before it exits.
    */
   readonly stream?: CommandOutput | undefined
 }
@@ -381,6 +400,35 @@ export type AdditionalFdConfig =
     /**
      * For output file descriptors, an optional sink which receives data from
      * the file descriptor.
+     *
+     * **Details**
+     *
+     * The data is transduced through the sink as `handle.getOutputFd(fd)` is
+     * consumed, and that stream emits the results produced by the sink
+     * instead of the raw output.
+     *
+     * **Gotchas**
+     *
+     * The sink only receives data while `handle.getOutputFd(fd)` is being
+     * consumed. If it is never consumed, the sink receives nothing and a child
+     * process that writes more than the pipe buffer can block before it exits.
+     */
+    readonly sink?: Sink.Sink<Uint8Array, Uint8Array, never, PlatformError.PlatformError> | undefined
+  }
+  | {
+    /**
+     * The direction of data flow for this file descriptor.
+     * - "duplex": Data flows in both directions over the same file descriptor
+     *   (writable and readable by parent)
+     */
+    readonly type: "duplex"
+    /**
+     * An optional stream to write into the file descriptor. The write side is
+     * ended when the stream completes.
+     */
+    readonly stream?: Stream.Stream<Uint8Array, PlatformError.PlatformError> | undefined
+    /**
+     * An optional sink which receives data read from the file descriptor.
      */
     readonly sink?: Sink.Sink<Uint8Array, Uint8Array, never, PlatformError.PlatformError> | undefined
   }
@@ -404,14 +452,18 @@ export interface CommandOptions extends KillOptions {
    *
    * If `extendEnv` is set to `true`, the value of `env` will be merged with
    * the value of `globalThis.process.env`, prioritizing the values in `env`
-   * when conflicts exist.
+   * when conflicts exist. A variable set to `undefined` is then removed from
+   * the child environment.
+   *
+   * `Redacted` values are passed to the child unchanged and are never shown in
+   * errors.
    *
    * **Gotchas**
    *
    * Without `extendEnv: true`, providing `env` replaces the inherited child
    * environment. The child will not receive `PATH` unless `env` includes it.
    */
-  readonly env?: Record<string, string | undefined> | undefined
+  readonly env?: Record<string, string | Redacted.Redacted<string> | undefined> | undefined
   /**
    * If set to `true`, the child process uses both the values in `env` as well
    * as the values in `globalThis.process.env`, prioritizing the values in `env`
@@ -425,17 +477,45 @@ export interface CommandOptions extends KillOptions {
    */
   readonly extendEnv?: boolean | undefined
   /**
-   * If set to `true`, runs the command inside of a shell, defaulting to `/bin/sh`
-   * on UNIX systems and `cmd.exe` on Windows.
+   * If set to `true`, runs the command as a script inside of a shell,
+   * defaulting to `/bin/sh` on UNIX systems and `cmd.exe` on Windows.
    *
    * **Details**
    *
    * Can also be set to a string representing the absolute path to a shell to
-   * use on the system.
+   * use on the system. The command is the whole script; build it with
+   * `CommandLine.join` or `CommandLine.quote` when it contains values.
+   *
+   * This is also the way to run a command configured as shell text, such as
+   * the `EDITOR` environment variable. The setting is trusted shell text and
+   * runs as written, so use it as the start of the script and quote the values
+   * that follow it. Name a POSIX shell, because `shell: true` runs `cmd.exe` on
+   * Windows, which POSIX quoting does not protect.
    *
    * **Gotchas**
    *
-   * It is generally disadvised to use this option.
+   * - Running a command with both `shell` and arguments fails with a
+   *   `BadArgument` error, because shells would join the arguments into the
+   *   script without quoting them.
+   * - On Windows the script runs in `cmd.exe`, which no `CommandLine` format
+   *   quotes for. `CommandLine.join` with `format: "windows"` is only safe for
+   *   arguments without `%`, `^`, `&`, `|`, `<` or `>`.
+   * - It is generally disadvised to use this option.
+   *
+   * **Example** (Running a configured editor)
+   *
+   * ```ts import.meta.vitest
+   * import { Result } from "effect"
+   * import { ChildProcess, CommandLine } from "effect/process"
+   *
+   * const editor = "code --wait" // for example, process.env.EDITOR
+   * const file = "notes from today.txt"
+   *
+   * const command = ChildProcess.make(`${editor} ${Result.getOrThrow(CommandLine.quote(file))}`, {
+   *   shell: "/bin/sh"
+   * })
+   * command.command // => "code --wait 'notes from today.txt'"
+   * ```
    */
   readonly shell?: boolean | string | undefined
   /**
@@ -481,11 +561,21 @@ export interface CommandOptions extends KillOptions {
    *
    * **Details**
    *
-   * Keys must be in the format `"fd3"`, `"fd4"`, etc. with a file descriptor
-   * index >= 3.
+   * Keys use the descriptor index: `"fd3"`, `"fd4"`, etc. (index >= 3).
    *
-   * The file descriptor index is determined by the numeric suffix (i.e. `fd3`
-   * has a file descriptor index of 3).
+   * For `"duplex"`, use `getInputFd` to write and `getOutputFd` to read the same
+   * descriptor. `pipeTo` preserves duplex targets, replacing only their input.
+   *
+   * Duplex request/response and half-close are verified on Linux with Node.js
+   * and raw Deno `node:child_process` (not Effect's spawner). The same behavior
+   * is expected on macOS; Windows request/response is expected but unverified.
+   * Half-close is unsupported on Windows and Bun: keep the input open until
+   * all responses are read. Bun extra descriptors on Windows are unverified.
+   * Native `DenoChildProcessSpawner` does not support additional descriptors.
+   *
+   * Node.js and Deno children can use `new net.Socket({ fd: 3 })`. Deno children
+   * cannot use `node:fs` on the raw descriptor; Bun children cannot use
+   * `net.Socket` on it.
    *
    * **Example** (Configuring additional file descriptors)
    *
@@ -505,30 +595,22 @@ export interface CommandOptions extends KillOptions {
    *     fd3: { type: "input" }
    *   }
    * })
-   * const result = [cmd1.options.additionalFds?.fd3?.type, cmd2.options.additionalFds?.fd3?.type]
-   * result // => ["output", "input"]
+   * // Duplex fd3 - write and read over the same descriptor
+   * const cmd3 = ChildProcess.make("my-program", [], {
+   *   additionalFds: {
+   *     fd3: { type: "duplex" }
+   *   }
+   * })
+   * const result = [
+   *   cmd1.options.additionalFds?.fd3?.type,
+   *   cmd2.options.additionalFds?.fd3?.type,
+   *   cmd3.options.additionalFds?.fd3?.type
+   * ]
+   * result // => ["output", "input", "duplex"]
    * ```
    */
   readonly additionalFds?: Record<`fd${number}`, AdditionalFdConfig> | undefined
 }
-
-/**
- * Valid template expression item types.
- *
- * @stability unstable
- * @category models
- * @since 4.0.0
- */
-export type TemplateExpressionItem = string | number | boolean
-
-/**
- * Template expression type for interpolated values.
- *
- * @stability unstable
- * @category models
- * @since 4.0.0
- */
-export type TemplateExpression = TemplateExpressionItem | ReadonlyArray<TemplateExpressionItem>
 
 // =============================================================================
 // Constructors
@@ -573,7 +655,7 @@ export const isPipedCommand = (command: Command): command is PipedCommand => com
 
 const makeStandardCommand = (
   command: string,
-  args: ReadonlyArray<string>,
+  args: ReadonlyArray<CommandLine.Word>,
   options: CommandOptions
 ): StandardCommand =>
   Object.assign(Object.create(Proto), {
@@ -605,16 +687,33 @@ const makePipedCommand = (
  * 2. Options + template literal: `make({ cwd: "/app" })\`npm run build\``
  * 3. Array form: `make("npm", ["run", "build"], options?)`
  *
- * Template literals are not parsed until execution time, allowing parsing
- * errors to flow through Effect's error channel.
+ * Templates are split with `CommandLine.template`: quotes group words, each
+ * `${}` value is one literal argument, and an argument that contains a
+ * `Redacted` value stays `Redacted`. Arguments in the array form can be
+ * `Redacted` too.
+ *
+ * With the `shell` option, the template text is the shell script and is kept
+ * as written.
+ *
+ * **Gotchas**
+ *
+ * - A template is parsed when `make` is called. Shell syntax such as `|`,
+ *   `$HOME`, `*` or `~` throws a `CommandLine.CommandLineError`: quote it, or
+ *   pass the value with `${}`.
+ * - A template with the `shell` option cannot contain `${}` values, because
+ *   their quoting depends on the shell. Build the script with
+ *   `CommandLine.quote` and pass it as a string.
+ * - The program name, the first word, cannot be `Redacted`.
+ * - A NUL character in the command, an argument or an `env` value fails with
+ *   a `BadArgument` error when the command is spawned.
  *
  * **Example** (Creating commands)
  *
  * ```ts import.meta.vitest
  * import { ChildProcess } from "effect/process"
  *
- * // Template literal form
- * const cmd1 = ChildProcess.make`echo "hello"`
+ * // Template literal form; quotes group words
+ * const cmd1 = ChildProcess.make`echo "hello world"`
  *
  * // With options
  * const cmd2 = ChildProcess.make({ cwd: "/tmp" })`ls -la`
@@ -622,7 +721,7 @@ const makePipedCommand = (
  * // Array form
  * const cmd3 = ChildProcess.make("git", ["status"])
  *
- * const result = [cmd1.command, cmd2.options.cwd, cmd3.args[0]] // => ["echo", "/tmp", "status"]
+ * const result = [cmd1.args[0], cmd2.options.cwd, cmd3.args[0]] // => ["hello world", "/tmp", "status"]
  * ```
  *
  * @stability unstable
@@ -636,25 +735,25 @@ export const make: {
   ): StandardCommand
   (
     command: string,
-    args: ReadonlyArray<string>,
+    args: ReadonlyArray<CommandLine.Word>,
     options?: CommandOptions
   ): StandardCommand
   (
     options: CommandOptions
   ): (
     templates: TemplateStringsArray,
-    ...expressions: ReadonlyArray<TemplateExpression>
+    ...expressions: ReadonlyArray<CommandLine.TemplateExpression>
   ) => StandardCommand
   (
     templates: TemplateStringsArray,
-    ...expressions: ReadonlyArray<TemplateExpression>
+    ...expressions: ReadonlyArray<CommandLine.TemplateExpression>
   ): StandardCommand
 } = function make(...args: Array<unknown>): any {
   // Template literal form: make`command`
   if (isTemplateString(args[0])) {
-    const [templates, ...expressions] = args as [TemplateStringsArray, ...ReadonlyArray<TemplateExpression>]
-    const tokens = parseTemplates(templates, expressions)
-    return makeStandardCommand(tokens[0] ?? "", tokens.slice(1), {})
+    const [templates, ...expressions] = args as [TemplateStringsArray, ...ReadonlyArray<CommandLine.TemplateExpression>]
+    const [command, cmdArgs] = parseTemplate(templates, expressions)
+    return makeStandardCommand(command, cmdArgs, {})
   }
 
   // Options form: make({ cwd: "/tmp" })`command`
@@ -662,10 +761,13 @@ export const make: {
     const options = args[0] as CommandOptions
     return function(
       templates: TemplateStringsArray,
-      ...expressions: ReadonlyArray<TemplateExpression>
+      ...expressions: ReadonlyArray<CommandLine.TemplateExpression>
     ): StandardCommand {
-      const tokens = parseTemplates(templates, expressions)
-      return makeStandardCommand(tokens[0] ?? "", tokens.slice(1), options)
+      if (options.shell !== undefined && options.shell !== false) {
+        return makeStandardCommand(shellScript(templates, expressions), [], options)
+      }
+      const [command, cmdArgs] = parseTemplate(templates, expressions)
+      return makeStandardCommand(command, cmdArgs, options)
     }
   }
 
@@ -678,7 +780,7 @@ export const make: {
   // Standard form with arguments: make("command", ["arg1", "arg2"], options?)
   const [command, cmdArgs = [], options = {}] = args as [
     string,
-    ReadonlyArray<string>?,
+    ReadonlyArray<CommandLine.Word>?,
     CommandOptions?
   ]
   return makeStandardCommand(command, cmdArgs, options)
@@ -740,7 +842,7 @@ export const pipeTo: {
  * ```ts import.meta.vitest
  * import { ChildProcess } from "effect/process"
  *
- * const command = ChildProcess.make`echo "foo"`
+ * const command = ChildProcess.make`echo foo`
  *
  * const prefixed = command.pipe(
  *   ChildProcess.prefix`time`
@@ -756,9 +858,12 @@ export const pipeTo: {
  * @since 4.0.0
  */
 export const prefix: {
-  (command: string, args?: ReadonlyArray<string>): (self: Command) => Command
-  (templates: TemplateStringsArray, ...expressions: ReadonlyArray<TemplateExpression>): (self: Command) => Command
-  (self: Command, command: string, args?: ReadonlyArray<string>): Command
+  (command: string, args?: ReadonlyArray<CommandLine.Word>): (self: Command) => Command
+  (
+    templates: TemplateStringsArray,
+    ...expressions: ReadonlyArray<CommandLine.TemplateExpression>
+  ): (self: Command) => Command
+  (self: Command, command: string, args?: ReadonlyArray<CommandLine.Word>): Command
 } = function prefix(...args: Array<unknown>): any {
   if (isCommand(args[0]) && args.length > 1) {
     const [self, ...rest] = args as [Command, ...Array<unknown>]
@@ -771,16 +876,16 @@ export const prefix: {
 
 type PrefixSpec = {
   readonly command: string
-  readonly args: ReadonlyArray<string>
+  readonly args: ReadonlyArray<CommandLine.Word>
 }
 
 const parsePrefixArgs = (args: ReadonlyArray<unknown>): PrefixSpec => {
   if (isTemplateString(args[0])) {
-    const [templates, ...expressions] = args as [TemplateStringsArray, ...ReadonlyArray<TemplateExpression>]
-    const tokens = parseTemplates(templates, expressions)
-    return { command: tokens[0] ?? "", args: tokens.slice(1) }
+    const [templates, ...expressions] = args as [TemplateStringsArray, ...ReadonlyArray<CommandLine.TemplateExpression>]
+    const [command, cmdArgs] = parseTemplate(templates, expressions)
+    return { command, args: cmdArgs }
   }
-  const [command, cmdArgs = []] = args as [string, ReadonlyArray<string>?]
+  const [command, cmdArgs = []] = args as [string, ReadonlyArray<CommandLine.Word>?]
   return { command, args: cmdArgs }
 }
 
@@ -862,11 +967,11 @@ export const setCwd: {
  * @since 4.0.0
  */
 export const setEnv: {
-  (env: Record<string, string>): (self: Command) => Command
-  (self: Command, env: Record<string, string>): Command
+  (env: Record<string, string | Redacted.Redacted<string>>): (self: Command) => Command
+  (self: Command, env: Record<string, string | Redacted.Redacted<string>>): Command
 } = dual(
   2,
-  (self: Command, env: Record<string, string>): Command => {
+  (self: Command, env: Record<string, string | Redacted.Redacted<string>>): Command => {
     switch (self._tag) {
       case "StandardCommand": {
         const nextEnv = self.options.env === undefined
@@ -916,188 +1021,36 @@ export const fdName = (fd: number): string => `fd${fd}`
 // Template Parsing
 // =============================================================================
 
-const parseTemplates = (
-  templates: TemplateStringsArray,
-  expressions: ReadonlyArray<TemplateExpression>
-): ReadonlyArray<string> => {
-  let tokens: ReadonlyArray<string> = []
-  for (const [index, template] of templates.entries()) {
-    tokens = parseTemplate(templates, expressions, tokens, template, index)
-  }
-  return tokens
-}
-
 const parseTemplate = (
   templates: TemplateStringsArray,
-  expressions: ReadonlyArray<TemplateExpression>,
-  prevTokens: ReadonlyArray<string>,
-  template: string,
-  index: number
-): ReadonlyArray<string> => {
-  const rawTemplate = templates.raw[index]
-
-  if (rawTemplate === undefined) {
-    throw new Error(`Invalid backslash sequence: ${templates.raw[index]}`)
+  expressions: ReadonlyArray<CommandLine.TemplateExpression>
+): [command: string, args: Array<CommandLine.Word>] => {
+  const [program = "", ...args] = Result.getOrThrow(CommandLine.template(templates, ...expressions))
+  if (typeof program !== "string") {
+    throw new CommandLine.CommandLineError({
+      reason: "InvalidArgument",
+      message: "The program name of a command cannot be Redacted"
+    })
   }
-
-  const { hasLeadingWhitespace, hasTrailingWhitespace, tokens } = splitByWhitespaces(template, rawTemplate)
-  const nextTokens = concatTokens(prevTokens, tokens, hasLeadingWhitespace)
-
-  if (index === expressions.length) {
-    return nextTokens
-  }
-
-  const expression = expressions[index]
-  const expressionTokens = Array.isArray(expression)
-    ? expression.map((expression: TemplateExpressionItem) => parseExpression(expression))
-    : [parseExpression(expression as TemplateExpressionItem)]
-
-  return concatTokens(nextTokens, expressionTokens, hasTrailingWhitespace)
+  return [program, args]
 }
 
-/**
- * Convert valid expressions defined in a template string command (i.e. using
- * `${expression}` into strings.
- */
-const parseExpression = (expression: TemplateExpression): string => {
-  const type = typeof expression
-  if (type === "string") {
-    return expression as string // Return strings directly
+const shellScript = (
+  templates: TemplateStringsArray,
+  expressions: ReadonlyArray<CommandLine.TemplateExpression>
+): string => {
+  if (expressions.length > 0) {
+    throw new CommandLine.CommandLineError({
+      reason: "UnsupportedSyntax",
+      message: "A shell template cannot interpolate values; build the script with CommandLine.quote"
+    })
   }
-  return String(expression) // Convert numbers to strings
+  const script = templates[0]
+  if (script === undefined) {
+    throw new CommandLine.CommandLineError({
+      reason: "InvalidEscape",
+      message: "Template part 0 contains an invalid escape sequence"
+    })
+  }
+  return script
 }
-
-const DELIMITERS = new Set([" ", "\t", "\r", "\n"])
-
-/**
- * Number of characters in backslash escape sequences: \0 \xXX or \uXXXX
- * \cX is allowed in RegExps but not in strings
- * Octal sequences are not allowed in strict mode
- */
-const ESCAPE_LENGTH: Record<string, number> = { x: 3, u: 5 }
-
-/**
- * Splits a template string by whitespace while also properly handling escape
- * sequences.
- *
- * As an example, let's review the following valid commands:
- *
- * ```ts
- * ChildProcess.exec`echo foo\n bar`
- * // We should run `["echo", "foo\n", "bar"]`
- *
- * ChildProcess.exec`echo foo
- *  bar`
- * // We should run `["echo", "foo", "bar]`
- * ```
- *
- * The problem is that when we evaluate the template string for both of the above
- * commands, we will end up with the same string "echo foo\n bar".
- *
- * What we really want is to include the escaped character in the arguments for
- * the first command, since it was written explicitly by the user.
- *
- * This is why also having access to the raw template string is useful - in a
- * template string, there are two representations of the same string:
- * 1. `template`     - The processed string (escape sequences are evaluated).
- * 2. `template.raw` - The raw string (escape sequences are literal).
- */
-const splitByWhitespaces = (template: string, rawTemplate: string): {
-  readonly tokens: ReadonlyArray<string>
-  readonly hasLeadingWhitespace: boolean
-  readonly hasTrailingWhitespace: boolean
-} => {
-  if (rawTemplate.length === 0) {
-    return {
-      tokens: [],
-      hasLeadingWhitespace: false,
-      hasTrailingWhitespace: false
-    }
-  }
-
-  const hasLeadingWhitespace = DELIMITERS.has(rawTemplate[0])
-  const tokens: Array<string> = []
-
-  // Given that escape sequences will have different lengths in the template
-  // versus the raw template, we must maintain two indices:
-  // - One for the index into the template string
-  // - One for the index into the raw template string
-  // We also maintain the current cursor position for where we are in the template
-  let templateCursor = 0
-  for (
-    let templateIndex = 0, rawIndex = 0;
-    templateIndex < template.length;
-    templateIndex += 1, rawIndex += 1
-  ) {
-    // Use the raw template character to check for actual whitespace
-    const rawCharacter = rawTemplate[rawIndex]
-
-    if (DELIMITERS.has(rawCharacter)) {
-      // Whitespace found, extract token from template if necessary
-      if (templateCursor !== templateIndex) {
-        tokens.push(template.slice(templateCursor, templateIndex))
-      }
-      // Advance the template start index to the current position
-      templateCursor = templateIndex + 1
-    } else if (rawCharacter === "\\") {
-      // Escape sequence detected, check the next raw character
-      const nextRawCharacter = rawTemplate[rawIndex + 1]
-
-      if (nextRawCharacter === "\n") {
-        // Handle `\` character followed by a newline (i.e. a line continuation) by:
-        // - Reversing the template index (backslash-newline is erased in template)
-        // - Advancing the raw template index past the line continuation
-        templateIndex -= 1
-        rawIndex += 1
-      } else if (nextRawCharacter === "u" && rawTemplate[rawIndex + 2] === "{") {
-        // Handle variable-length unicode escape sequences (i.e. `\u{1F600}`) by:
-        // - Advancing the template index an extra code unit for astral code points
-        // - Advancing the raw template index past the unicode escape sequence
-        const end = rawTemplate.indexOf("}", rawIndex + 3)
-        if (parseInt(rawTemplate.slice(rawIndex + 3, end), 16) > 0xffff) {
-          templateIndex += 1
-        }
-        rawIndex = end
-      } else {
-        // Advance raw template index past fixed-length escape sequences:
-        // - \n    → 2 chars (backslash + n)
-        // - \t    → 2 chars (backslash + t)
-        // - \xHH  → 4 chars (backslash + x + H + H)
-        // - \uHHHH → 6 chars (backslash + u + H + H + H + H)
-        rawIndex += ESCAPE_LENGTH[nextRawCharacter] ?? 1
-      }
-    }
-  }
-
-  // Trailing whitespace only exists if the template cursor is equivalent to the
-  // length of the template
-  const hasTrailingWhitespace = templateCursor === template.length
-
-  // If we did not end with trailing whitespace, ensure the final token is added
-  if (!hasTrailingWhitespace) {
-    tokens.push(template.slice(templateCursor))
-  }
-
-  return {
-    tokens,
-    hasLeadingWhitespace,
-    hasTrailingWhitespace
-  }
-}
-
-/**
- * Concatenates two separate sets of string tokens together.
- *
- * If either set is empty or `isSeparated=false`, the last element of `prevTokens`
- * and the first element of `nextTokens` will be joined into a single token.
- */
-const concatTokens = (
-  prevTokens: ReadonlyArray<string>,
-  nextTokens: ReadonlyArray<string>,
-  isSeparated: boolean
-): ReadonlyArray<string> =>
-  isSeparated || prevTokens.length === 0 || nextTokens.length === 0
-    // Keep the previous and next tokens separate from one another
-    ? [...prevTokens, ...nextTokens]
-    // Join the last token from the previous set and the first token from the next set
-    : [...prevTokens.slice(0, -1), `${prevTokens.at(-1)}${nextTokens.at(0)}`, ...nextTokens.slice(1)]

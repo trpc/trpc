@@ -67,8 +67,6 @@ const formatSpecSource = (source: ProviderDiscovery.DiscoveredProvider["specSour
       return source.url
     case "File":
       return source.path
-    case "StainlessStats":
-      return `stainless-stats(${source.statsUrl})`
   }
 }
 

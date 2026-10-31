@@ -6,7 +6,7 @@ import * as HttpClient from "effect/http/HttpClient"
 import * as HttpClientError from "effect/http/HttpClientError"
 import * as HttpClientRequest from "effect/http/HttpClientRequest"
 import * as HttpClientResponse from "effect/http/HttpClientResponse"
-import { vi } from "vitest"
+import { TestClock } from "effect/testing"
 const systemOneRequest = {
   state: "My card was charged twice.",
   model: "jev-latest",
@@ -53,6 +53,23 @@ describe("TypeSafeClient", () => {
         assert.strictEqual(response.model, "jev-latest")
         assert.deepStrictEqual(response.usage, { input_tokens: 360, output_tokens: 39 })
       }).pipe(Effect.provide(makeTestLayer())))
+
+    for (
+      const [name, extra, header] of [
+        ["text-only requests", {}, undefined],
+        ["image assets", { assets: { "image-0-abc": { format: "png", data_base64: "iVBORw0KGgo=" } } }, "true"],
+        ["a box question", { questions: { mug: { type: "box", instructions: "the mug" } } }, "true"]
+      ] as const
+    ) {
+      it.effect("sets the images header for " + name, () =>
+        Effect.gen(function*() {
+          const client = yield* TypeSafeClient.TypeSafeClient
+          yield* client.systemOne({ ...systemOneRequest, ...extra })
+
+          const requests = yield* MockHttpClient.requests
+          assert.strictEqual(requests[0]?.headers["typesafe-danger-zone-images"], header)
+        }).pipe(Effect.provide(makeTestLayer())))
+    }
 
     it.effect("uses custom apiUrl when provided", () =>
       Effect.gen(function*() {
@@ -204,7 +221,7 @@ describe("TypeSafeClient", () => {
         if (result.reason._tag !== "InvalidRequestError" || result.reason.http === undefined) {
           return yield* Effect.die(new Error("Expected InvalidRequestError with HTTP context"))
         }
-        assert.strictEqual(String(result.reason.http.request.headers["authorization"]), "<redacted>")
+        assert.notInclude(JSON.stringify(result), "secret-key")
         assert.strictEqual(result.reason.http.response?.status, 422)
       }).pipe(Effect.provide(makeTestLayer({
         apiKey: Redacted.make("secret-key")
@@ -259,18 +276,14 @@ describe("TypeSafeClient", () => {
       ) {
         it.effect("honors a " + name + " HTTP-date Retry-After", () =>
           Effect.gen(function*() {
-            const now = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-09-18T12:00:00Z"))
-            try {
-              const client = yield* TypeSafeClient.TypeSafeClient
-              const result = yield* client.systemOne(systemOneRequest).pipe(Effect.flip)
+            yield* TestClock.setTime(Date.parse("2026-09-18T12:00:00Z"))
+            const client = yield* TypeSafeClient.TypeSafeClient
+            const result = yield* client.systemOne(systemOneRequest).pipe(Effect.flip)
 
-              assert.strictEqual(result.reason._tag, "RateLimitError")
-              if (result.reason._tag === "RateLimitError") {
-                assert.isDefined(result.reason.retryAfter)
-                assert.strictEqual(Duration.toMillis(result.reason.retryAfter!), expected)
-              }
-            } finally {
-              now.mockRestore()
+            assert.strictEqual(result.reason._tag, "RateLimitError")
+            if (result.reason._tag === "RateLimitError") {
+              assert.isDefined(result.reason.retryAfter)
+              assert.strictEqual(Duration.toMillis(result.reason.retryAfter!), expected)
             }
           }).pipe(Effect.provide(makeTestLayer(undefined, {
             status: 429,
@@ -280,8 +293,9 @@ describe("TypeSafeClient", () => {
       }
     })
 
-    it.effect("maps TransportError to NetworkError reason", () =>
-      Effect.gen(function*() {
+    it.effect("maps TransportError to NetworkError reason", () => {
+      const failures: Array<HttpClientError.HttpClientError> = []
+      return Effect.gen(function*() {
         const client = yield* TypeSafeClient.make({
           apiKey: Redacted.make("test-key")
         })
@@ -291,7 +305,9 @@ describe("TypeSafeClient", () => {
         assert.strictEqual(result.module, "TypeSafeClient")
         assert.strictEqual(result.method, "systemOne")
         assert.strictEqual(result.reason._tag, "NetworkError")
-      }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, makeTransportErrorHttpClient()))))
+        assert.strictEqual(result.reason._tag === "NetworkError" && result.reason.cause, failures[0])
+      }).pipe(Effect.provide(Layer.succeed(HttpClient.HttpClient, makeTransportErrorHttpClient(failures))))
+    })
 
     it.effect("maps 400 status to InvalidRequestError reason", () =>
       Effect.gen(function*() {
@@ -435,14 +451,14 @@ describe("TypeSafeClient", () => {
         body: { message: "Internal error" }
       }))))
 
-    it.effect("maps a malformed success body to InvalidOutputError reason", () =>
+    it.effect("maps a malformed success body to a non-retryable InvalidResponseError reason", () =>
       Effect.gen(function*() {
         const client = yield* TypeSafeClient.TypeSafeClient
         const result = yield* client.systemOne(systemOneRequest).pipe(Effect.flip)
 
         assert.strictEqual(result._tag, "AiError")
         assert.strictEqual(result.method, "systemOne")
-        assert.strictEqual(result.reason._tag, "InvalidOutputError")
+        assert.strictEqual(result.reason._tag, "InvalidResponseError")
       }).pipe(Effect.provide(makeTestLayer(undefined, {
         status: 200,
         body: { model: "jev-latest", answers: { urgent: { type: "noul" } } }
@@ -527,18 +543,19 @@ const makeConfigTestLayer = (configProvider: ConfigProvider.ConfigProvider) =>
     Layer.provide(ConfigProvider.layer(configProvider))
   )
 
-const makeTransportErrorHttpClient = (): HttpClient.HttpClient =>
+const makeTransportErrorHttpClient = (
+  failures: Array<HttpClientError.HttpClientError> = [],
+  reason: { readonly cause?: unknown } = { cause: new Error("Connection refused") }
+): HttpClient.HttpClient =>
   HttpClient.makeWith<HttpClientError.HttpClientError, never, HttpClientError.HttpClientError, never>(
     (requestEffect) =>
-      Effect.flatMap(requestEffect, (request) =>
-        Effect.fail(
-          new HttpClientError.HttpClientError({
-            reason: new HttpClientError.TransportError({
-              request,
-              cause: new Error("Connection refused")
-            })
-          })
-        )),
+      Effect.flatMap(requestEffect, (request) => {
+        const error = new HttpClientError.HttpClientError({
+          reason: new HttpClientError.TransportError({ request, ...reason })
+        })
+        failures.push(error)
+        return Effect.fail(error)
+      }),
     Effect.succeed
   )
 
@@ -557,12 +574,11 @@ const makeResponse = (
     })
   )
 
-const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
-  Effect.gen(function*() {
-    const body = request.body
-    if (body._tag === "Uint8Array") {
-      const text = new TextDecoder().decode(body.body)
-      return JSON.parse(text)
-    }
-    return yield* Effect.die(new Error("Expected Uint8Array body"))
-  })
+const getRequestBody = Effect.fnUntraced(function*(request: HttpClientRequest.HttpClientRequest) {
+  const body = request.body
+  if (body._tag === "Uint8Array") {
+    const text = new TextDecoder().decode(body.body)
+    return JSON.parse(text)
+  }
+  return yield* Effect.die(new Error("Expected Uint8Array body"))
+})

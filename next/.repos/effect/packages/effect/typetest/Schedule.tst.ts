@@ -77,8 +77,8 @@ describe("Schedule", () => {
   it("while", () => {
     const self = hole<Schedule.Schedule<number | string, boolean | Date, "error", "service">>()
     const refinement = (
-      metadata: Schedule.Metadata<number | string, boolean | Date>
-    ): metadata is Schedule.Metadata<number, Date> => true
+      _metadata: Schedule.Metadata<number | string, boolean | Date>
+    ): _metadata is Schedule.Metadata<number, Date> => true
 
     expect(Schedule.while(refinement)(self)).type.toBe<Schedule.Schedule<number, Date, "error", "service">>()
     expect(Schedule.while(self, refinement)).type.toBe<Schedule.Schedule<number, Date, "error", "service">>()

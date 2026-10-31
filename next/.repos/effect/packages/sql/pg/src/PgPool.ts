@@ -8,9 +8,14 @@ import * as Clock from "effect/Clock"
 import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Option from "effect/Option"
 import * as Pool from "effect/Pool"
-import type * as Scope from "effect/Scope"
-import type { SqlError } from "effect/sql/SqlError"
+import { TracerTimingEnabled } from "effect/References"
+import * as Scope from "effect/Scope"
+import { ConnectionError, SqlError } from "effect/sql/SqlError"
+import { SpanPropagationEnabled } from "effect/sql/Statement"
+import * as Tracer from "effect/Tracer"
 import { connectionInternals } from "./internal/connection.ts"
 import * as PgConnection from "./PgConnection.ts"
 
@@ -42,6 +47,8 @@ export type TypeId = "~@effect/sql-pg/PgPool"
  * The defaults are 0 to 10 connections and a 60-second idle timeout.
  * `connectionTTL` replaces connections that exceed the configured lifetime.
  * Every connection is used at least once, so a TTL of zero disables reuse.
+ * `acquireTimeout` bounds how long a checkout takes to acquire a connection,
+ * including opening a new one; by default it waits indefinitely.
  *
  * With `multiplex` enabled, fibers may share pooled connections for pipelined
  * queries. Reserved connections remain exclusive. Without multiplexing, every
@@ -56,6 +63,15 @@ export interface Config extends PgConnection.Config {
   readonly maxConnections?: number | undefined
   readonly minConnections?: number | undefined
   readonly connectionTTL?: Duration.Input | undefined
+  /**
+   * How long a checkout may take to acquire a connection before failing with
+   * a `ConnectionError`. Acquisition includes waiting for a free connection
+   * and opening a new one when the pool needs it. With `multiplex` on,
+   * `reserve` also waits for statements already sent on the shared connection
+   * to finish, and that wait counts too. Work done with the connection after
+   * it is acquired is not bounded. Unbounded by default.
+   */
+  readonly acquireTimeout?: Duration.Input | undefined
   /**
    * How many statements may share one connection when `multiplex` is on.
    * Defaults to `32`. Statements are pipelined into one write, so a higher
@@ -104,6 +120,12 @@ export interface PgPool {
     f: (connection: PgConnection.PgConnection) => Effect.Effect<A, E, R>
   ) => Effect.Effect<A, E | SqlError, R>
   readonly invalidate: (connection: PgConnection.PgConnection) => Effect.Effect<void>
+  /**
+   * Returns a snapshot of session occupancy. Counts sessions rather than
+   * statements, so a multiplexed session shared by many fibers counts once. A
+   * session that has just failed can show as idle until the pool removes it.
+   */
+  readonly stats: Effect.Effect<Pool.Stats>
 }
 
 /**
@@ -124,6 +146,9 @@ export const PgPool = Context.Service<PgPool>("@effect/sql-pg/PgPool")
  * `minConnections` after `idleTimeout` without use. Closing the scope shuts
  * the pool down and releases every session.
  *
+ * With `SpanPropagationEnabled`, a statement that waited for a new session gets
+ * a `db.connect` child span covering the part of the connect it waited for.
+ *
  * @stability unstable
  * @category constructors
  * @since 4.0.0
@@ -136,28 +161,75 @@ export const make = Effect.fnUntraced(function*(options: Config): Effect.fn.Retu
   const connectionTTL = options.connectionTTL !== undefined
     ? Duration.toMillis(Duration.fromInputUnsafe(options.connectionTTL))
     : undefined
+  const acquireTimeout = options.acquireTimeout !== undefined
+    ? Duration.fromInputUnsafe(options.acquireTimeout)
+    : undefined
   const deadConnections = new Set<PgConnection.PgConnection>()
   const createdAt = new WeakMap<PgConnection.PgConnection, number>()
   const checkedOut = new WeakSet<PgConnection.PgConnection>()
 
+  // The pool opens sessions on its own fiber, where a span would have no
+  // statement parent. Each connect is recorded here instead and reported on the
+  // session's first checkout, under the statement that waited for it.
+  const connects = new WeakMap<PgConnection.PgConnection, readonly [startTime: bigint, endTime: bigint]>()
+
+  const reportConnect = (connection: PgConnection.PgConnection): Effect.Effect<void> =>
+    Effect.withFiber((fiber) => {
+      const opened = connects.get(connection)
+      if (opened === undefined) return Effect.void
+      connects.delete(connection)
+      const statement = fiber.cache.span
+      // Without span timing the statement span has no start time to measure from.
+      if (
+        !fiber.cache.tracerEnabled || statement?._tag !== "Span" || !fiber.getRef(SpanPropagationEnabled) ||
+        !fiber.getRef(TracerTimingEnabled)
+      ) {
+        return Effect.void
+      }
+      const [startTime, endTime] = opened
+      const waitedFrom = statement.status.startTime
+      if (endTime < waitedFrom) return Effect.void
+      const span = fiber.getRef(Tracer.Tracer).span({
+        name: "db.connect",
+        parent: Option.some(statement),
+        annotations: Context.empty(),
+        links: [],
+        startTime: startTime > waitedFrom ? startTime : waitedFrom,
+        kind: "client",
+        root: false,
+        sampled: statement.sampled
+      })
+      span.attribute("db.system.name", "postgresql")
+      span.attribute("db.client.connection.connect_time_ms", Number(endTime - startTime) / 1e6)
+      span.end(endTime, Exit.void)
+      return Effect.void
+    })
+
+  const handOut = (connection: PgConnection.PgConnection) =>
+    connects.has(connection) ? Effect.as(reportConnect(connection), connection) : Effect.succeed(connection)
+
   // Assigned below, once the pool exists. `acquire` only runs when the pool
   // opens a connection, which is always after that.
   let pool: Pool.Pool<PgConnection.PgConnection, SqlError>
-  const acquire = Effect.tap(PgConnection.make(options), (connection) =>
-    Effect.sync(() => {
-      createdAt.set(connection, clock.currentTimeMillisUnsafe())
-      const internals = connectionInternals(connection)
-      internals.retireHooks.add(() => {
-        deadConnections.add(connection)
-        // `deadConnections` is only read by the next checkout, and a checkout
-        // already waiting for this connection would never get that far. Tell
-        // the pool now so it can replace the connection and admit them.
-        runFork(Pool.invalidate(pool, connection))
-      })
-      // Pinning a shared session has to take it out of circulation, or a
-      // second checkout lands on the connection its own stream is holding.
-      if (multiplex) internals.reserve = Pool.reserve(pool, connection)
-    }))
+  const acquire = Effect.suspend(() => {
+    const startTime = clock.currentTimeNanosUnsafe()
+    return Effect.tap(PgConnection.make(options), (connection) =>
+      Effect.sync(() => {
+        connects.set(connection, [startTime, clock.currentTimeNanosUnsafe()])
+        createdAt.set(connection, clock.currentTimeMillisUnsafe())
+        const internals = connectionInternals(connection)
+        internals.retireHooks.add(() => {
+          deadConnections.add(connection)
+          // `deadConnections` is only read by the next checkout, and a checkout
+          // already waiting for this connection would never get that far. Tell
+          // the pool now so it can replace the connection and admit them.
+          runFork(Pool.invalidate(pool, connection))
+        })
+        // Pinning a shared session has to take it out of circulation, or a
+        // second checkout lands on the connection its own stream is holding.
+        if (multiplex) internals.reserve = Pool.reserve(pool, connection)
+      }))
+  })
 
   const maxConnections = options.maxConnections ?? 10
   pool = yield* Pool.makeWithTTL({
@@ -201,25 +273,65 @@ export const make = Effect.fnUntraced(function*(options: Config): Effect.fn.Retu
     }
   })
 
-  const get: Effect.Effect<PgConnection.PgConnection, SqlError, Scope.Scope> = Effect.suspend(() =>
+  const checkout: Effect.Effect<PgConnection.PgConnection, SqlError, Scope.Scope> = Effect.suspend(() =>
     deadConnections.size > 0 ? retry : Effect.flatMap(Pool.get(pool), (connection) =>
       expired(connection)
         ? Effect.andThen(Pool.invalidate(pool, connection), retry)
         : Effect.succeed(connection))
   )
 
-  // `pin` reserves the pool item itself, so this needs no help.
-  const reserve = Effect.flatMap(get, (connection) => connection.pin)
+  const acquireTimedOut = () =>
+    Effect.fail(
+      new SqlError({
+        reason: new ConnectionError({
+          cause: new Error("Timed out waiting for a pooled connection"),
+          message: "PgPool: Timed out waiting for a pooled connection",
+          operation: "acquireConnection"
+        })
+      })
+    )
 
-  // `Pool.use` cannot pre-check a session. Use it only when no TTL applies and
-  // no connection awaits retirement. Checking inside its callback can deadlock
-  // a size-one pool while acquiring a replacement.
+  // The acquisition runs in a child scope, so a timeout or failure gives back
+  // any lease or reservation it already took instead of leaving them to the
+  // caller's scope. On success the child scope closes with the caller's.
+  const withAcquireTimeout = <A>(
+    effect: Effect.Effect<A, SqlError, Scope.Scope>
+  ): Effect.Effect<A, SqlError, Scope.Scope> =>
+    acquireTimeout === undefined ?
+      effect :
+      Effect.uninterruptibleMask((restore) =>
+        Effect.flatMap(Effect.scope, (parent) =>
+          Effect.flatMap(Scope.fork(parent), (scope) =>
+            Effect.onError(
+              restore(Effect.timeoutOrElse(Scope.provide(effect, scope), {
+                duration: acquireTimeout,
+                orElse: acquireTimedOut
+              })),
+              (cause) => Scope.close(scope, Exit.failCause(cause))
+            )))
+      )
+
+  const handedOut = Effect.flatMap(checkout, handOut)
+  const get = withAcquireTimeout(handedOut)
+
+  // `pin` reserves the pool item itself. On a multiplexed pool it also waits
+  // for shared statements to drain, so the acquire timeout covers it too.
+  const reserve = withAcquireTimeout(Effect.flatMap(handedOut, (connection) => connection.pin))
+
+  // `Pool.use` cannot pre-check a session or bound its wait. Use it only when
+  // no TTL or acquire timeout applies and no connection awaits retirement.
+  // Checking inside its callback can deadlock a size-one pool while acquiring
+  // a replacement.
   const use = <A, E, R>(
     f: (connection: PgConnection.PgConnection) => Effect.Effect<A, E, R>
   ): Effect.Effect<A, E | SqlError, R> =>
     Effect.suspend(() =>
-      connectionTTL === undefined && deadConnections.size === 0
-        ? Pool.use(pool, f)
+      connectionTTL === undefined && acquireTimeout === undefined && deadConnections.size === 0
+        ? Pool.use(
+          pool,
+          (connection) =>
+            connects.has(connection) ? Effect.andThen(reportConnect(connection), f(connection)) : f(connection)
+        )
         : Effect.scoped(Effect.flatMap(get, f))
     )
 
@@ -229,7 +341,9 @@ export const make = Effect.fnUntraced(function*(options: Config): Effect.fn.Retu
     get,
     reserve,
     use,
-    invalidate: (connection) => Pool.invalidate(pool, connectionInternals(connection).base as PgConnection.PgConnection)
+    invalidate: (connection) =>
+      Pool.invalidate(pool, connectionInternals(connection).base as PgConnection.PgConnection),
+    stats: Pool.stats(pool)
   }
   return pgPool
 })

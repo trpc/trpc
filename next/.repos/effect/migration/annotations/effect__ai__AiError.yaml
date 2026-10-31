@@ -5,14 +5,14 @@
   replacement: "AiError.make + AiError.NetworkError"
   note: "Replace the old top-level request error with an AiError whose reason is NetworkError. NetworkError.fromRequestError converts a v4 HttpClientError.RequestError."
 "@effect/ai/AiError#HttpResponseError":
-  replacement: "AiError.make + AiError.reasonFromHttpStatus / AiError.InvalidOutputError"
-  note: "There is no single v4 response-error class. Wrap a semantic reason with AiError.make: use reasonFromHttpStatus for status failures and InvalidOutputError for decode or empty-body failures."
+  replacement: "AiError.make + AiError.reasonFromHttpStatus / AiError.InvalidResponseError / AiError.InvalidOutputError"
+  note: "There is no single v4 response-error class. Wrap a semantic reason with AiError.make: use reasonFromHttpStatus for status failures. Provider response-schema and SSE decoding failures use non-retryable InvalidResponseError. Lower-level HTTP client DecodeError and EmptyBodyError still map to retryable InvalidOutputError in provider adapters."
 "@effect/ai/AiError#MalformedInput":
   replacement: "AiError.make + AiError.InvalidUserInputError"
   note: "Replace the old top-level input error with an AiError whose reason is InvalidUserInputError. Use InvalidRequestError when the provider request parameters themselves are malformed."
 "@effect/ai/AiError#MalformedOutput":
-  replacement: "AiError.make + AiError.InvalidOutputError"
-  note: "Replace the old top-level output error with an AiError whose reason is InvalidOutputError. The old fromParseError helper becomes InvalidOutputError.fromSchemaError."
+  replacement: "AiError.make + AiError.InvalidOutputError / AiError.InvalidResponseError"
+  note: "Replace the old top-level output error with an AiError wrapper. Use retryable InvalidOutputError for invalid model-generated output and non-retryable InvalidResponseError for incompatible provider response formats, including response-schema and SSE decoding failures. Replace fromParseError with InvalidOutputError.fromSchemaError or InvalidResponseError.fromSchemaError according to what was being decoded; pass module and method to AiError.make."
 "@effect/ai/AiError#TypeId":
   replacement: "AiError.isAiError"
   note: "The AiError brand is private in v4. Use isAiError for runtime narrowing, or isAiErrorReason for a reason, instead of inspecting or constructing the type id."
@@ -20,5 +20,5 @@
   replacement: "AiError.make + AiError.UnknownError"
   note: "UnknownError is now a semantic reason rather than a top-level error. Put module and method on AiError.make and inspect reason._tag when handling the outer AiError."
 "@effect/ai/AiError#HttpRequestDetails":
-  replacement: "AiError.HttpRequestDetails"
-  note: "Retained in effect/ai/AiError and also re-exported as Response.HttpRequestDetails. Hash is an optional string instead of Option, headers may contain Redacted strings, and method includes TRACE."
+  replacement: none
+  note: "Removed. NetworkError carries only the request method and url, and HttpContext and response metadata parts no longer record the request."

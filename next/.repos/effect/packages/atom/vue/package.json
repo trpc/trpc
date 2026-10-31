@@ -1,6 +1,6 @@
 {
   "name": "@effect/atom-vue",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "description": "Vue bindings for the Effect Atom modules",
@@ -61,7 +61,7 @@
   },
   "devDependencies": {
     "effect": "workspace:^",
-    "vue": "^3.5.43"
+    "vue": "^3.5.44"
   },
   "peerDependencies": {
     "effect": "workspace:^",

@@ -19,6 +19,11 @@ describe("Mime", () => {
     assert.deepStrictEqual(Mime.getType("model.glb"), Option.some("model/gltf-binary"))
   })
 
+  it("looks up script source types", () => {
+    assert.deepStrictEqual(Mime.getType("scripts/check.py"), Option.some("text/x-python"))
+    assert.deepStrictEqual(Mime.getType("scripts/check.sh"), Option.some("text/x-shellscript"))
+  })
+
   it("returns none for unknown and missing extensions", () => {
     assert.deepStrictEqual(Mime.getType("file.unknown"), Option.none())
     assert.deepStrictEqual(Mime.getType("/directory/file"), Option.none())

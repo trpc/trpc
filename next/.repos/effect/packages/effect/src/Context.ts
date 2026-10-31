@@ -489,6 +489,7 @@ interface ContextImpl<in Services> extends Context<Services> {
   overlay: Overlay | undefined
   depth: number
   _flat: ReadonlyMap<string, any> | undefined
+  maxDepth: number
 }
 
 interface Overlay {
@@ -497,7 +498,6 @@ interface Overlay {
   readonly parent: Overlay | undefined
 }
 
-const MaxDepth = 8
 // Keep small bases cheap to read; larger bases are worth copying only after
 // enough fall-throughs to amortize the copy.
 const FlattenAfterBaseHits = 8
@@ -506,7 +506,8 @@ const makeImpl = <Services>(
   cacheRoot: ContextImpl<any> | undefined,
   base: ReadonlyMap<string, any>,
   overlay: Overlay | undefined,
-  depth: number
+  depth: number,
+  maxDepth: number
 ): ContextImpl<Services> => {
   const self: ContextImpl<Services> = Object.create(Proto)
   self.cacheRoot = cacheRoot ?? self
@@ -515,6 +516,7 @@ const makeImpl = <Services>(
   self.depth = depth
   self._flat = undefined
   self.baseHits = 0
+  self.maxDepth = maxDepth
   return self
 }
 
@@ -535,7 +537,7 @@ const flatten = (self: ContextImpl<any>): ReadonlyMap<string, any> => {
 const withFlat = <B>(self: Context<any>, f: (map: Map<string, any>) => void): Context<B> => {
   const map = new Map(self.mapUnsafe)
   f(map)
-  return makeUnsafe(map)
+  return makeImpl(undefined, map, undefined, 0, (self as ContextImpl<any>).maxDepth)
 }
 
 // A private symbol so user code cannot forge a value that reads as absent
@@ -567,7 +569,22 @@ const lookup = (self: Context<any>, key: string): unknown => {
  * Use when constructing a low-level `Context` from a trusted map whose lifecycle
  * you control.
  *
+ * **Details**
+ *
+ * `options.maxDepth` sets how many `add` calls are kept as overlays before the
+ * context is rebased into a flat map (default `8`). Lower values make lookups
+ * cheaper, higher values make additions to a large base cheaper. Invalid
+ * values fall back to the default.
+ *
+ * Contexts derived with `add`, `pick`, `omit`, and `merge` keep the setting
+ * (`merge` from its first non-empty argument). `make`, `empty`, and `mergeAll`
+ * use the default. Layers are combined with `mergeAll`, so apply it to the
+ * final context rather than inside a layer.
+ *
  * **Gotchas**
+ *
+ * Excessively large `maxDepth` values can cause stack overflow when overlays
+ * are materialized or rebased. Choose a modest value.
  *
  * The provided map is retained without copying and must not be mutated after
  * construction. Prefer `empty`, `make`, `add`, or `merge` for normal Context
@@ -591,12 +608,18 @@ const lookup = (self: Context<any>, key: string): unknown => {
  * @category constructors
  * @since 4.0.0
  */
-export const makeUnsafe = <Services = never>(mapUnsafe: ReadonlyMap<string, any>): Context<Services> =>
-  makeImpl(undefined, mapUnsafe, undefined, 0)
+export const makeUnsafe = <Services = never>(
+  mapUnsafe: ReadonlyMap<string, any>,
+  options?: { readonly maxDepth?: number }
+): Context<Services> => {
+  const maxDepth = options?.maxDepth
+  // NaN or Infinity would never trigger a rebase, so fall back to the default
+  return makeImpl(undefined, mapUnsafe, undefined, 0, Number.isInteger(maxDepth) && maxDepth! >= 0 ? maxDepth! : 8)
+}
 
 const Proto: Omit<
   ContextImpl<never>,
-  "cacheRoot" | "base" | "overlay" | "depth" | "_flat" | "baseHits"
+  "cacheRoot" | "base" | "overlay" | "depth" | "_flat" | "baseHits" | "maxDepth"
 > = {
   get mapUnsafe() {
     return flatten(this as any as ContextImpl<any>)
@@ -812,19 +835,20 @@ export const addUnsafe = <Services, I, S>(
 ): Context<Services | I> => {
   const impl = self as ContextImpl<Services>
   const cacheRoot = cacheKeys.has(key) ? undefined : impl.cacheRoot
-  if (impl.depth >= MaxDepth) {
-    // Rebase the overlay chain into a flat map, keeping the cacheRoot so a
-    // rebase on an ordinary key does not invalidate fiber caches
-    const map = new Map(impl.mapUnsafe)
+  if (impl.depth >= impl.maxDepth) {
+    // Avoid mapUnsafe: it would flatten the parent before copying.
+    const map = new Map(impl._flat ?? impl.base)
+    if (!impl._flat) applyOverlays(map, impl.overlay)
     map.set(key, service)
-    return makeImpl(cacheRoot, map, undefined, 0)
+    return makeImpl(cacheRoot, map, undefined, 0, impl.maxDepth)
   }
 
   return makeImpl(
     cacheRoot,
     impl.base,
     { key, value: service, parent: impl.overlay },
-    impl.depth + 1
+    impl.depth + 1,
+    impl.maxDepth
   )
 }
 
@@ -1258,6 +1282,15 @@ export const pick = <S extends ReadonlyArray<Key<any, any>>>(
   ...services: S
 ) =>
 <Services>(self: Context<Services>): Context<Services & Service.Identifier<S[number]>> => {
+  if (services.length <= 1) {
+    const map = new Map<string, unknown>()
+    if (services.length === 1) {
+      const key = services[0].key
+      const value = lookup(self, key)
+      if (value !== notFound) map.set(key, value)
+    }
+    return makeImpl(undefined, map, undefined, 0, (self as ContextImpl<any>).maxDepth)
+  }
   const keep = new Set(services.map((key) => key.key))
   return withFlat(self, (map) =>
     map.forEach((_, key) => {

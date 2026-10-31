@@ -463,7 +463,7 @@ export const isFailure: <A, E>(self: Exit<A, E>) => self is Failure<A, E> = effe
  * @category guards
  * @since 4.0.0
  */
-export const hasFails: <A, E>(self: Exit<A, E>) => self is Failure<A, E> = effect.exitHasFails
+export const hasFails: <A, E>(self: Exit<A, E>) => boolean = effect.exitHasFails
 
 /**
  * Checks whether a failed Exit contains defects (Die reasons).
@@ -494,7 +494,7 @@ export const hasFails: <A, E>(self: Exit<A, E>) => self is Failure<A, E> = effec
  * @category guards
  * @since 4.0.0
  */
-export const hasDies: <A, E>(self: Exit<A, E>) => self is Failure<A, E> = effect.exitHasDies
+export const hasDies: <A, E>(self: Exit<A, E>) => boolean = effect.exitHasDies
 
 /**
  * Checks whether a failed Exit contains interruptions (Interrupt reasons).
@@ -525,7 +525,7 @@ export const hasDies: <A, E>(self: Exit<A, E>) => self is Failure<A, E> = effect
  * @category guards
  * @since 4.0.0
  */
-export const hasInterrupts: <A, E>(self: Exit<A, E>) => self is Failure<A, E> = effect.exitHasInterrupts
+export const hasInterrupts: <A, E>(self: Exit<A, E>) => boolean = effect.exitHasInterrupts
 
 /**
  * Extracts the Success variant from an Exit as a Result.
@@ -835,8 +835,10 @@ export const map: {
  *
  * **Gotchas**
  *
- * Only transforms typed errors (Fail reasons). If the Cause contains only
- * defects or interruptions, the failure passes through unchanged.
+ * Maps every typed error in the cause, preserving defects, interrupts and
+ * reason order. Unlike typed recovery, mapping does not convert errors to defects.
+ *
+ * If the Cause contains only defects or interruptions, no mapper is called.
  *
  * **Example** (Mapping over an error)
  *
@@ -868,10 +870,13 @@ export const mapError: {
  * **Details**
  *
  * `onSuccess` transforms the value if the Exit is a Success. `onFailure`
- * transforms the typed error if the Exit is a Failure with a Fail reason.
+ * transforms each typed error if the Exit is a Failure with Fail reasons.
  * Allocates a new Exit.
  *
  * **Gotchas**
+ *
+ * Maps every typed error in the cause, preserving defects, interrupts and
+ * reason order. Unlike typed recovery, mapping does not convert errors to defects.
  *
  * If the Cause contains only defects or interruptions, the failure passes
  * through unchanged.

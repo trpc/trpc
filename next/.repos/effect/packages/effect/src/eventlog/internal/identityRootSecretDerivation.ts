@@ -1,29 +1,15 @@
+import * as Aead from "../../crypto/Aead.ts"
+import * as Digest from "../../crypto/Digest.ts"
+import * as KeyFormat from "../../crypto/KeyFormat.ts"
+import * as SecureRandom from "../../crypto/SecureRandom.ts"
+import * as Signature from "../../crypto/Signature.ts"
+import * as WebCrypto from "../../crypto/WebCrypto.ts"
 import * as Effect from "../../Effect.ts"
+import * as Layer from "../../Layer.ts"
 import * as Redacted from "../../Redacted.ts"
 import type { Identity } from "../EventLog.ts"
 
 const textEncoder = new TextEncoder()
-
-const Ed25519PublicKeyLength = 32
-
-const Ed25519Pkcs8SeedPrefix = Uint8Array.from([
-  0x30,
-  0x2e,
-  0x02,
-  0x01,
-  0x00,
-  0x30,
-  0x05,
-  0x06,
-  0x03,
-  0x2b,
-  0x65,
-  0x70,
-  0x04,
-  0x22,
-  0x04,
-  0x20
-])
 
 /**
  * @internal
@@ -40,124 +26,108 @@ export const SigningDerivationLabelV1 = "effect/eventlog/identity/v1/signing"
  */
 export interface IdentityRootSecretMaterial {
   readonly encryptionKeyMaterial: Uint8Array<ArrayBuffer>
-  readonly encryptionKey: CryptoKey
+  readonly encryptionKey: Aead.Key<Aead.AesGcm>
   readonly signingPublicKey: Uint8Array<ArrayBuffer>
+  /**
+   * The PKCS#8 encoding of the Ed25519 signing key.
+   */
   readonly signingPrivateKey: Redacted.Redacted<Uint8Array<ArrayBuffer>>
 }
 
-const toArrayBuffer = (data: Uint8Array): ArrayBuffer => {
-  const copy = new Uint8Array(data.byteLength)
-  copy.set(data)
-  return copy.buffer
-}
+// The crypto services return fresh arrays over an `ArrayBuffer`.
+const toArrayBufferBytes = (bytes: Uint8Array) => bytes as Uint8Array<ArrayBuffer>
 
-const decodeBase64Url = (value: string): Uint8Array<ArrayBuffer> => {
-  const normalized = value.replaceAll("-", "+").replaceAll("_", "/")
-  const remainder = normalized.length % 4
-  const padded = remainder === 0 ? normalized : `${normalized}${"=".repeat(4 - remainder)}`
-  const decoded = atob(padded)
-  const bytes = new Uint8Array(decoded.length)
-  for (let i = 0; i < decoded.length; i++) {
-    bytes[i] = decoded.charCodeAt(i)
-  }
-  return bytes
-}
+// Each secret is SHA-256(label || 0x00 || root secret).
+const deriveSecretBytes = (rootSecret: Uint8Array, label: string): Effect.Effect<Uint8Array, never, Digest.Digest> =>
+  Digest.Digest.use((digest) => {
+    const labelBytes = textEncoder.encode(label)
+    const derivationInput = new Uint8Array(labelBytes.byteLength + 1 + rootSecret.byteLength)
+    derivationInput.set(labelBytes, 0)
+    derivationInput.set(rootSecret, labelBytes.byteLength + 1)
+    return digest.digest(Digest.sha256, derivationInput)
+  })
 
-const makeEd25519Pkcs8FromSeed = (seed: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const key = new Uint8Array(Ed25519Pkcs8SeedPrefix.byteLength + seed.byteLength)
-  key.set(Ed25519Pkcs8SeedPrefix, 0)
-  key.set(seed, Ed25519Pkcs8SeedPrefix.byteLength)
-  return key
-}
-
-const deriveSecretBytes = Effect.fnUntraced(function*(options: {
-  readonly crypto: Crypto
-  readonly rootSecret: Uint8Array
-  readonly label: string
-}) {
-  const labelBytes = textEncoder.encode(options.label)
-  const derivationInput = new Uint8Array(labelBytes.byteLength + 1 + options.rootSecret.byteLength)
-  derivationInput.set(labelBytes, 0)
-  derivationInput[labelBytes.byteLength] = 0
-  derivationInput.set(options.rootSecret, labelBytes.byteLength + 1)
-
-  const digest = yield* Effect.promise(() => options.crypto.subtle.digest("SHA-256", toArrayBuffer(derivationInput)))
-
-  return new Uint8Array(digest)
+/**
+ * Derives the AES-256-GCM key that encrypts an identity's entries.
+ *
+ * @internal
+ */
+export const deriveEncryptionKey = Effect.fnUntraced(function*(rootSecret: Uint8Array) {
+  const encryptionKeyMaterial = yield* deriveSecretBytes(rootSecret, EncryptionDerivationLabelV1)
+  const encryptionKey = yield* Effect.orDie(Aead.key(Aead.aes256Gcm, encryptionKeyMaterial))
+  return { encryptionKeyMaterial: toArrayBufferBytes(encryptionKeyMaterial), encryptionKey }
 })
 
 /**
+ * Derives the Ed25519 key an identity signs session authentication payloads
+ * with.
+ *
  * @internal
  */
-export const deriveIdentityRootSecretMaterial = Effect.fnUntraced(function*(options: {
-  readonly crypto: Crypto
-  readonly rootSecret: Uint8Array
-}) {
-  const encryptionKeyMaterial = yield* deriveSecretBytes({
-    crypto: options.crypto,
-    rootSecret: options.rootSecret,
-    label: EncryptionDerivationLabelV1
-  })
-  const signingSeed = yield* deriveSecretBytes({
-    crypto: options.crypto,
-    rootSecret: options.rootSecret,
-    label: SigningDerivationLabelV1
-  })
-
-  const signingPrivateKeyBytes = makeEd25519Pkcs8FromSeed(signingSeed)
-
-  const encryptionKey = yield* Effect.promise(() =>
-    options.crypto.subtle.importKey("raw", toArrayBuffer(encryptionKeyMaterial), "AES-GCM", true, [
-      "encrypt",
-      "decrypt"
-    ])
-  )
-  const signingPrivateKey = yield* Effect.promise(() =>
-    options.crypto.subtle.importKey("pkcs8", toArrayBuffer(signingPrivateKeyBytes), "Ed25519", true, ["sign"])
-  )
-  const signingJwk = yield* Effect.promise(() => options.crypto.subtle.exportKey("jwk", signingPrivateKey))
-
-  if (typeof signingJwk.x !== "string") {
-    return yield* Effect.die(new Error("Unable to export deterministic Ed25519 public key"))
-  }
-
-  const signingPublicKey = decodeBase64Url(signingJwk.x)
-
-  if (signingPublicKey.byteLength !== Ed25519PublicKeyLength) {
-    return yield* Effect.die(
-      new Error(`Expected derived signing public key to be ${Ed25519PublicKeyLength} bytes`)
-    )
-  }
-
+const deriveSigningKey = Effect.fnUntraced(function*(rootSecret: Uint8Array) {
+  const signature = yield* Signature.Signature
+  const seed = yield* deriveSecretBytes(rootSecret, SigningDerivationLabelV1)
+  const privateKey = yield* Signature.privateKey(Signature.ed25519, seed)
+  const signingPublicKey = yield* Effect.flatMap(signature.publicKeyOf(privateKey), Signature.toBytes)
+  const signingPrivateKey = yield* KeyFormat.encode(KeyFormat.pkcs8, privateKey)
   return {
-    encryptionKeyMaterial,
-    encryptionKey,
-    signingPublicKey,
-    signingPrivateKey: Redacted.make(signingPrivateKeyBytes)
-  } satisfies IdentityRootSecretMaterial
-})
+    signingPublicKey: toArrayBufferBytes(signingPublicKey),
+    signingPrivateKey: Redacted.make(toArrayBufferBytes(signingPrivateKey))
+  }
+}, Effect.orDie)
 
 /**
  * @internal
  */
-export const makeGetIdentityRootSecretMaterial = (crypto: Crypto) => {
-  const cache = new WeakMap<Identity["Service"], IdentityRootSecretMaterial>()
+export const deriveIdentityRootSecretMaterial = (
+  rootSecret: Uint8Array
+): Effect.Effect<IdentityRootSecretMaterial, never, Digest.Digest | Signature.Signature> =>
+  Effect.zipWith(deriveEncryptionKey(rootSecret), deriveSigningKey(rootSecret), (encryption, signing) => ({
+    ...encryption,
+    ...signing
+  }))
 
-  return Effect.fnUntraced(function*(identity: Identity["Service"]) {
-    const cached = cache.get(identity)
-    if (cached !== undefined) {
-      return cached
-    }
-
-    const derived = yield* deriveIdentityRootSecretMaterial({
-      crypto,
-      rootSecret: Redacted.value(identity.privateKey)
+/**
+ * Memoizes a derivation from an identity's root secret per identity instance.
+ *
+ * @internal
+ */
+export const cachedByIdentity = <A, R>(
+  derive: (rootSecret: Uint8Array) => Effect.Effect<A, never, R>
+) => {
+  const cache = new WeakMap<Identity["Service"], A>()
+  return (identity: Identity["Service"]): Effect.Effect<A, never, R> =>
+    Effect.suspend(() => {
+      const cached = cache.get(identity)
+      if (cached !== undefined) {
+        return Effect.succeed(cached)
+      }
+      return Effect.tap(derive(Redacted.value(identity.privateKey)), (derived) =>
+        Effect.sync(() => {
+          cache.set(identity, derived)
+        }))
     })
-
-    yield* Effect.sync(() => {
-      cache.set(identity, derived)
-    })
-
-    return derived
-  })
 }
+
+const layerWebCrypto = Layer.mergeAll(Digest.layerWebCrypto, Signature.layerWebCrypto).pipe(
+  Layer.provide(SecureRandom.layerWebCrypto)
+)
+
+/**
+ * Derives identity material on the Web Crypto layers, using `crypto` when it
+ * is given and the `WebCrypto` reference otherwise.
+ *
+ * @internal
+ */
+export const makeGetIdentityRootSecretMaterial = (crypto?: Crypto) =>
+  cachedByIdentity((rootSecret) =>
+    crypto === undefined
+      ? Effect.provide(deriveIdentityRootSecretMaterial(rootSecret), layerWebCrypto)
+      // `local` keeps enclosing Web Crypto layers, built on another `Crypto`,
+      // from being reused.
+      : Effect.provide(
+        deriveIdentityRootSecretMaterial(rootSecret),
+        Layer.provideMerge(layerWebCrypto, WebCrypto.layer(crypto)),
+        { local: true }
+      )
+  )

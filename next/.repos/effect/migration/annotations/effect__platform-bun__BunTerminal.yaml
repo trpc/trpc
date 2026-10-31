@@ -1,0 +1,8 @@
+"@effect/platform-bun/BunTerminal#make":
+  include: true
+  replacement: "BunTerminal.make"
+  note: "V4 ends key input on bare Esc as well as Ctrl+C and Ctrl+D. Pass a custom shouldQuit predicate to make if your application needs to receive Esc; the v3 default quit only on Ctrl+C and Ctrl+D."
+"@effect/platform-bun/BunTerminal#layer":
+  include: true
+  replacement: "BunTerminal.layer"
+  note: "The default layer now ends key input on bare Esc as well as Ctrl+C and Ctrl+D. To keep Esc as input, build a layer with Layer.effect(Terminal.Terminal, BunTerminal.make(shouldQuit)) using a custom quit predicate."

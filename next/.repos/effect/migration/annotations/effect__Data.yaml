@@ -19,6 +19,9 @@
 "effect/Data#TaggedEnum":
   replacement: "Data.TaggedEnum"
   note: "Still exported with the same record-to-discriminated-union role."
+"effect/Data#TaggedEnum.Constructor":
+  replacement: "Data.TaggedEnum.Constructor"
+  note: "Still the type of the object Data.taggedEnum returns for a non-generic enum, now a named intersection instead of a flattened object type. $match no longer rejects extra case keys at compile time. Annotate constructors for generic enums with Data.TaggedEnum.GenericConstructor."
 "effect/Data#TaggedEnum.GenericMatchers":
   replacement: "Data.TaggedEnum.GenericMatchers"
   note: "Still exported with $is and $match helpers."

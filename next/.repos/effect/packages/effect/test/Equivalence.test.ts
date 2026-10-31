@@ -64,6 +64,12 @@ describe("Equivalence", () => {
     assertFalse(eqE0E1E2(["a", 1, true], ["a", 1, false]))
   })
 
+  it("combineAll reuses finite criteria across comparisons", () => {
+    const eq = Equivalence.combineAll([Equivalence.Number].values())
+    assertFalse(eq(1, 2))
+    assertFalse(eq(1, 2))
+  })
+
   it("Tuple", () => {
     const eq = Equivalence.Tuple([Equivalence.strictEqual<string>(), Equivalence.strictEqual<number>()])
 

@@ -4,13 +4,56 @@ import { assert, describe, it } from "@effect/vitest"
 import { ValueType } from "@opentelemetry/api"
 import { resourceFromAttributes } from "@opentelemetry/resources"
 import { MetricReader } from "@opentelemetry/sdk-metrics"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Metric from "effect/Metric"
 
 const findMetric = (metrics: any, name: string) =>
   metrics.resourceMetrics.scopeMetrics[0].metrics.find((_: any) => _.descriptor.name === name)
 
+class ShutdownTrackingReader extends MetricReader {
+  shutdowns = 0
+
+  constructor(private readonly rejectShutdown = false) {
+    super()
+  }
+
+  protected onShutdown(): Promise<void> {
+    this.shutdowns++
+    return this.rejectShutdown ? Promise.reject(new Error("shutdown failed")) : Promise.resolve()
+  }
+
+  protected onForceFlush(): Promise<void> {
+    return Promise.resolve()
+  }
+}
+
 describe("Metrics", () => {
+  it.effect.each([false, true])(
+    "rolls back bound readers and preserves the binding defect (shutdown rejects: %s)",
+    (rejectShutdown) =>
+      Effect.gen(function*() {
+        const services = yield* Effect.context<never>()
+        const producer = new internal.MetricProducerImpl(resourceFromAttributes({}), services)
+        const fresh = new ShutdownTrackingReader(rejectShutdown)
+        const alreadyBound = new ShutdownTrackingReader()
+        alreadyBound.setMetricProducer(producer)
+
+        const exit = yield* OtelMetrics.registerProducer(producer, () => [fresh, alreadyBound]).pipe(
+          Effect.scoped,
+          Effect.exit
+        )
+
+        assert.isTrue(Exit.isFailure(exit) && Cause.hasDies(exit.cause))
+        assert.strictEqual(alreadyBound.shutdowns, 0)
+        assert.strictEqual(fresh.shutdowns, 1)
+        if (Exit.isFailure(exit)) {
+          assert.include(Cause.pretty(exit.cause), "MetricReader can not be bound to a MeterProvider again.")
+        }
+      })
+  )
+
   it.effect("gauge", () =>
     Effect.gen(function*() {
       const services = yield* Effect.context<never>()
@@ -341,19 +384,10 @@ describe("Metrics", () => {
 
   it.effect("reports the same delta to every registered reader", () =>
     Effect.gen(function*() {
-      class Reader extends MetricReader {
-        protected onShutdown(): Promise<void> {
-          return Promise.resolve()
-        }
-        protected onForceFlush(): Promise<void> {
-          return Promise.resolve()
-        }
-      }
-
       const services = yield* Effect.context<never>()
       const producer = new internal.MetricProducerImpl(resourceFromAttributes({}), services, "delta")
-      const first = new Reader()
-      const second = new Reader()
+      const first = new ShutdownTrackingReader()
+      const second = new ShutdownTrackingReader()
       yield* OtelMetrics.registerProducer(producer, () => [first, second])
       yield* Metric.update(Metric.counter("requests", { incremental: true }), 1)
 
@@ -362,6 +396,29 @@ describe("Metrics", () => {
       const firstValue = (firstResult.resourceMetrics.scopeMetrics[0]!.metrics[0] as any).dataPoints[0].value
       const secondValue = (secondResult.resourceMetrics.scopeMetrics[0]!.metrics[0] as any).dataPoints[0].value
       assert.deepStrictEqual([firstValue, secondValue], [1, 1])
+    }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())))
+
+  it.effect("reports a removed and recreated series from zero with delta temporality", () =>
+    Effect.gen(function*() {
+      const services = yield* Effect.context<never>()
+      const producer = new internal.MetricProducerImpl(resourceFromAttributes({}), services, "delta")
+      const collect = Effect.promise(() => producer.collect())
+      const counter = Metric.counter("requests")
+      const histogram = Metric.histogram("latency", { boundaries: [10] })
+
+      yield* Metric.update(counter, 5)
+      yield* Metric.update(histogram, 5)
+      yield* collect
+      yield* Metric.remove(counter)
+      yield* Metric.remove(histogram)
+      yield* collect
+      yield* Metric.update(counter, 7)
+      yield* Metric.update(histogram, 7)
+      const result = yield* collect
+
+      assert.strictEqual(findMetric(result, "requests").dataPoints[0].value, 7)
+      const histogramValue = findMetric(result, "latency").dataPoints[0].value
+      assert.deepStrictEqual([histogramValue.count, histogramValue.sum], [1, 7])
     }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())))
 
   it.effect.each(["delta", "cumulative"] as const)(
@@ -406,4 +463,17 @@ describe("Metrics", () => {
         )
       }).pipe(Effect.provideService(Metric.MetricRegistry, new Map()))
   )
+
+  it.effect("histogram buckets above the last custom boundary", () =>
+    Effect.gen(function*() {
+      const services = yield* Effect.context<never>()
+      const producer = new internal.MetricProducerImpl(resourceFromAttributes({}), services)
+      const histogram = Metric.histogram("latency", { boundaries: [10, 50, 100] })
+
+      yield* Metric.update(histogram, 25)
+      yield* Metric.update(histogram, 75)
+      yield* Metric.update(histogram, 500)
+      const value = findMetric(yield* Effect.promise(() => producer.collect()), "latency").dataPoints[0].value
+      assert.deepStrictEqual(value.buckets, { boundaries: [10, 50, 100], counts: [0, 1, 1, 1] })
+    }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())))
 })

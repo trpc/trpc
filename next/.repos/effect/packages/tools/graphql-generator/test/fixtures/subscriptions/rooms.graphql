@@ -1,0 +1,25 @@
+query Room($by: RoomBy!) {
+  room(by: $by) {
+    id
+    name
+  }
+}
+
+subscription RoomEvents($room: RoomBy!) {
+  events(room: $room) {
+    id
+    at
+    ... on MemberEvent {
+      member {
+        name
+        role
+      }
+    }
+    ... on MessagePosted {
+      body
+    }
+    ... on RoomRenamed {
+      name
+    }
+  }
+}

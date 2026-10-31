@@ -1,0 +1,30 @@
+"Tags a definition for documentation tooling."
+directive @tag(name: String!) repeatable on OBJECT | FIELD_DEFINITION
+
+type Query {
+  pet(by: PetBy!): String
+  now: DateTime!
+  search(
+    term: String
+    query: String @deprecated(reason: "Use `term`.")
+    limit: Int = 10 @deprecated
+    filter: SearchFilter = { kind: "all" }
+  ): [String!]!
+}
+
+type Subscription {
+  messageAdded(room: ID!): String!
+}
+
+input PetBy @oneOf {
+  id: ID
+  name: String
+}
+
+"An RFC 3339 timestamp."
+scalar DateTime @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc3339")
+
+input SearchFilter {
+  kind: String
+  legacyKind: String @deprecated(reason: "Use `kind`.")
+}

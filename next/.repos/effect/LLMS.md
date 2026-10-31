@@ -370,6 +370,30 @@ Build http clients with the `HttpClient` module.
   Test handlers through an in-memory typed client with `HttpApiTest`, without
   starting an HTTP server or touching a real database.
 
+## Typed GraphQL clients with `effect/graphql`
+
+Use the `effect/graphql` modules to call GraphQL APIs with typed
+operations. Run `graphqlgen` from `@effect/graphql-generator` to generate
+operations from `.graphql` documents, then build a client with
+`GraphQLClient.make` and provide a transport from `GraphQLProtocol`.
+
+- **[Getting started with GraphQL clients](./ai-docs/src/52_graphql/10_basics.ts)**:
+  Define a query, build a typed client service over HTTP with an auth
+  middleware, and page through a cursor connection.
+- **[Testing code that uses a GraphQL client](./ai-docs/src/52_graphql/20_testing.ts)**:
+  Replace a client service with `GraphQLClient.layerTest`, answering each
+  operation from a handler instead of a server.
+- **[Batching lookups with GraphQLResolver](./ai-docs/src/52_graphql/30_batching.ts)**:
+  Collect concurrent lookups by id into one `nodes(ids:)` request with
+  `GraphQLResolver`, instead of one request per id.
+- **[Batching single-item lookups with aliases](./ai-docs/src/52_graphql/40_aliased-batching.ts)**:
+  When an API has no field that takes a list of keys, `GraphQLResolver.aliased`
+  repeats a generated operation under aliases, so concurrent lookups share one
+  request and keep their generated types.
+- **[Handling GraphQL errors, retries and rate limits](./ai-docs/src/52_graphql/50_errors-and-retries.ts)**:
+  Read rate-limit headers in a middleware, tell GraphQL errors apart by their
+  fields, and retry timeouts and rate limits with `Effect.retry`.
+
 ## Working with child processes
 
 Use the `effect/process` modules to define child processes and run them with `ChildProcessSpawner`.

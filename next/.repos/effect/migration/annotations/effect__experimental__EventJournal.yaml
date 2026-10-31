@@ -5,8 +5,9 @@
   replacement: none
   note: The v4 error marker is private; narrow with EventJournalError instead.
 "@effect/experimental/EventJournal#makeEntryId":
+  include: true
   replacement: effect/eventlog/EventJournal#makeEntryIdUnsafe
-  note: The unchecked EntryId constructor was renamed to makeEntryIdUnsafe.
+  note: The unchecked EntryId constructor was renamed to makeEntryIdUnsafe. Without explicit msecs, ids advance monotonically within the process using a logical millisecond and counter, so their timestamp can exceed wall-clock time when the clock stalls or moves backwards. Explicit msecs bypasses this sequence.
 "@effect/experimental/EventJournal#makeRemoteId":
   replacement: effect/eventlog/EventJournal#makeRemoteIdUnsafe
   note: The unchecked RemoteId constructor was renamed to makeRemoteIdUnsafe.
@@ -16,3 +17,7 @@
 "@effect/experimental/EventJournal#makeMemory":
   replacement: effect/eventlog/EventJournal#makeMemory
   note: The in-memory constructor moved into core Effect and now returns the Context.Service implementation through its Service projection.
+"@effect/experimental/EventJournal#EventJournal":
+  include: true
+  replacement: effect/eventlog/EventJournal#EventJournal
+  note: Custom journal services must implement entriesById, writeMany, and writeRemoteAcks. writeFromRemote.effect now receives one array of entry/conflicts pairs per batch, not one pair per callback. Read conflicts before invoking it and commit the batch only after it succeeds. Replay entries in entry-id order; conflicts are stored entries with strictly greater ids, also in id order. Compaction replacements use the source entry as their ordering and conflict anchor.

@@ -151,6 +151,13 @@ export const useAtomMount = <A>(atom: () => Atom.Atom<A>): void => {
 /**
  * Returns a setter for a writable atom without subscribing to its value.
  *
+ * **Gotchas**
+ *
+ * In `promise` and `promiseExit` modes, the setter observes the atom's next
+ * settled result, not a result correlated with that write. Overlapping writes
+ * can resolve with another write's result. Serialize writes when each caller
+ * needs its own result.
+ *
  * @stability unstable
  * @category hooks
  * @since 4.0.0
@@ -205,6 +212,13 @@ export const useAtomRefresh = <A>(atom: () => Atom.Atom<A>): () => void => {
  * The setter accepts either a write value or an updater function. For
  * `AsyncResult` atoms, `promise` and `promiseExit` modes return promises for the
  * success value or full `Exit`.
+ *
+ * **Gotchas**
+ *
+ * In `promise` and `promiseExit` modes, the setter observes the atom's next
+ * settled result, not a result correlated with that write. Overlapping writes
+ * can resolve with another write's result. Serialize writes when each caller
+ * needs its own result.
  *
  * @see {@link useAtomValue} for subscribing to an atom without a setter
  * @see {@link useAtomSet} for updating a writable atom without subscribing to its value

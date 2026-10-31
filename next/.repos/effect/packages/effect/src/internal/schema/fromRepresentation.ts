@@ -18,7 +18,8 @@ export function fromRepresentations(
   return revivePersisted(document.representations, document.references, makeReviverMap(revivers), false)
 }
 
-class ReferenceSlot {
+/** @internal */
+export class ReferenceSlot {
   body: Schema.Top | undefined
   resolving = false
   readonly wrapper: Schema.Top

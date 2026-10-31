@@ -1,6 +1,7 @@
 import { LibsqlClient } from "@effect/sql-libsql"
 import { assert, describe, layer } from "@effect/vitest"
 import { Cause, Effect } from "effect"
+import * as Arr from "effect/Array"
 import * as Schema from "effect/Schema"
 import { SqlError, SqlResolver } from "effect/sql"
 import { LibsqlContainer } from "./util.ts"
@@ -31,7 +32,7 @@ layer(LibsqlContainer.layerClient, { timeout: "30 seconds" })("Resolver", (it) =
           Result: Schema.Struct({ id: Schema.Number, name: Schema.String }),
           execute: (names) => {
             batches.push(names)
-            return sql`INSERT INTO test ${sql.insert(names.map((name) => ({ name })))} RETURNING *`
+            return sql`INSERT INTO test ${sql.insert(Arr.map(names, (name) => ({ name })))} RETURNING *`
           }
         })
         const execute = SqlResolver.request(Insert)

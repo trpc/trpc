@@ -271,13 +271,12 @@ describe("RpcServer", () => {
         const TestEntityRpcs = EntityProxy.toRpcGroup(TestEntity)
         const called = yield* Deferred.make<void>()
         const testClient = (entityId: string) => ({
-          NoPayload: (payload: void, options?: { readonly discard?: boolean }) =>
-            Effect.gen(function*() {
-              assert.strictEqual(entityId, "id")
-              assert.strictEqual(payload, undefined)
-              assert.strictEqual(options?.discard, true)
-              yield* Deferred.succeed(called, undefined)
-            })
+          NoPayload: Effect.fnUntraced(function*(payload: void, options?: { readonly discard?: boolean }) {
+            assert.strictEqual(entityId, "id")
+            assert.strictEqual(payload, undefined)
+            assert.strictEqual(options?.discard, true)
+            yield* Deferred.succeed(called, undefined)
+          })
         })
         const sharding = Sharding.Sharding.of({
           ...({} as Sharding.Sharding["Service"]),
@@ -316,7 +315,7 @@ describe("RpcServer", () => {
     Layer.provide(RpcSerialization.layerNdjson)
   )
 
-  const assertTickerSurvives = <E, R>(
+  const assertTickerSurvives = Effect.fnUntraced(function*<E, R>(
     setup: Effect.Effect<
       {
         readonly ticker: Stream.Stream<number, E>
@@ -326,40 +325,39 @@ describe("RpcServer", () => {
       R
     >,
     label: string
-  ) =>
-    Effect.gen(function*() {
-      const { failingCall, ticker } = yield* setup
+  ) {
+    const { failingCall, ticker } = yield* setup
 
-      const received = yield* Ref.make<Array<number>>([])
+    const received = yield* Ref.make<Array<number>>([])
 
-      const tickerFiber = yield* ticker.pipe(
-        Stream.runForEach((value) => Ref.update(received, (xs) => [...xs, value])),
-        Effect.forkChild
-      )
+    const tickerFiber = yield* ticker.pipe(
+      Stream.runForEach((value) => Ref.update(received, (xs) => [...xs, value])),
+      Effect.forkChild
+    )
 
-      yield* Effect.retry(
-        Effect.flatMap(
-          Ref.get(received),
-          (xs) => xs.length >= 2 ? Effect.void : Effect.fail("not enough ticks yet")
-        ),
-        { schedule: Schedule.spaced("50 millis"), times: 200 }
-      )
+    yield* Effect.retry(
+      Effect.flatMap(
+        Ref.get(received),
+        (xs) => xs.length >= 2 ? Effect.void : Effect.fail("not enough ticks yet")
+      ),
+      { schedule: Schedule.spaced("50 millis"), times: 200 }
+    )
 
-      const ticksBefore = (yield* Ref.get(received)).length
-      assert.isAtLeast(ticksBefore, 2)
+    const ticksBefore = (yield* Ref.get(received)).length
+    assert.isAtLeast(ticksBefore, 2)
 
-      yield* failingCall
+    yield* failingCall
 
-      yield* Effect.sleep("300 millis")
+    yield* Effect.sleep("300 millis")
 
-      const ticksAfter = (yield* Ref.get(received)).length
-      const tickerStatus = tickerFiber.pollUnsafe()
+    const ticksAfter = (yield* Ref.get(received)).length
+    const tickerStatus = tickerFiber.pollUnsafe()
 
-      yield* Fiber.interrupt(tickerFiber)
+    yield* Fiber.interrupt(tickerFiber)
 
-      assert.isUndefined(tickerStatus, `Ticker stream must still be running after ${label}`)
-      assert.isAbove(ticksAfter, ticksBefore, `Ticker stream must keep emitting after ${label}`)
-    })
+    assert.isUndefined(tickerStatus, `Ticker stream must still be running after ${label}`)
+    assert.isAbove(ticksAfter, ticksBefore, `Ticker stream must keep emitting after ${label}`)
+  })
 
   describe("unknown-tag isolation", () => {
     const Ghost = Rpc.make("Ghost", {

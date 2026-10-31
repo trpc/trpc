@@ -4,17 +4,17 @@ import { Effect } from "effect"
 import * as Reactivity from "effect/reactivity/Reactivity"
 import type * as SqlError from "effect/sql/SqlError"
 
-const queryFailureReason = (cause: unknown) =>
-  Effect.gen(function*() {
+const queryFailureReason = Effect.fnUntraced(
+  function*(cause: unknown) {
     const client = yield* PgliteClient.fromClient({
       liveClient: makeFailingClient(cause) as any
     })
     const error = yield* Effect.flip(client`SELECT 1`)
     return error.reason
-  }).pipe(
-    Effect.scoped,
-    Effect.provide(Reactivity.layer)
-  )
+  },
+  (_) => Effect.scoped(_),
+  Effect.provide(Reactivity.layer)
+)
 
 const queryFailureReasonTag = (cause: unknown) => Effect.map(queryFailureReason(cause), (reason) => reason._tag)
 

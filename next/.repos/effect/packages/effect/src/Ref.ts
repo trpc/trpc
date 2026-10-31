@@ -12,7 +12,9 @@
  * @since 2.0.0
  */
 import * as Effect from "./Effect.ts"
+import * as Equal from "./Equal.ts"
 import { dual, identity } from "./Function.ts"
+import * as Hash from "./Hash.ts"
 import { PipeInspectableProto } from "./internal/core.ts"
 import * as MutableRef from "./MutableRef.ts"
 import type * as Option from "./Option.ts"
@@ -110,6 +112,12 @@ const RefProto = {
     _A: identity
   },
   ...PipeInspectableProto,
+  [Equal.symbol](that: unknown): boolean {
+    return this === that
+  },
+  [Hash.symbol](): number {
+    return Hash.random(this)
+  },
   toJSON(this: Ref<any>) {
     return {
       _id: "Ref",

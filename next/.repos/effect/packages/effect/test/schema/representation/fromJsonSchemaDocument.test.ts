@@ -294,11 +294,46 @@ describe("fromJsonSchemaDocument", () => {
       },
       {
         codes: makeCode(
-          `Schema.Union([Schema.StructWithRest(Schema.Struct({ "a": Schema.String, "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]), Schema.StructWithRest(Schema.Struct({ "b": Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })), "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))])])`,
+          `Schema.Union([Schema.StructWithRest(Schema.Struct({ "a": Schema.String, "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]), Schema.StructWithRest(Schema.Struct({ "b": Schema.Finite, "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))])])`,
           `{ readonly "a": string, readonly "id": string } & { readonly [x: string]: Schema.Json } | { readonly "b": number, readonly "id": string } & { readonly [x: string]: Schema.Json }`
         )
       }
     )
+  })
+
+  it("anyOf with siblings redeclaring an enum property (#10047)", () => {
+    const schema = SchemaRepresentation.fromJsonSchemaDocument(JsonSchema.fromSchemaDraft07({
+      type: "object",
+      properties: { name: { type: "string" }, kind: { enum: ["direct", "all"] } },
+      anyOf: [
+        { properties: { name: { type: "string" } }, required: ["name"] },
+        { properties: { kind: { enum: ["direct", "all"] } }, required: ["kind"] }
+      ]
+    }))
+    const is = Schema.is(schema)
+    assert.isTrue(is({ name: "a" }))
+    assert.isTrue(is({ kind: "direct" }))
+    assert.isTrue(is({ name: "a", kind: "all" }))
+    assert.isFalse(is({}))
+    assert.isFalse(is({ kind: "other" }))
+    assert.isFalse(is({ name: 1 }))
+    assert.isFalse(is({ name: "a", kind: "other" }))
+  })
+
+  it("intersects sibling and branch enums", () => {
+    const schema = SchemaRepresentation.fromJsonSchemaDocument(JsonSchema.fromSchemaDraft07({
+      type: "object",
+      properties: { kind: { enum: ["direct", "all"] } },
+      anyOf: [
+        { properties: { kind: { enum: ["direct", "other"] } }, required: ["kind"] },
+        { required: ["name"] }
+      ]
+    }))
+    const is = Schema.is(schema)
+    assert.isTrue(is({ kind: "direct" }))
+    assert.isFalse(is({ kind: "all" }))
+    assert.isFalse(is({ kind: "other" }))
+    assert.isTrue(is({ name: "a", kind: "all" }))
   })
 
   it("oneOf", () => {
@@ -328,7 +363,7 @@ describe("fromJsonSchemaDocument", () => {
       },
       {
         codes: makeCode(
-          `Schema.Union([Schema.StructWithRest(Schema.Struct({ "a": Schema.String, "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]), Schema.StructWithRest(Schema.Struct({ "b": Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })), "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))])], { mode: "oneOf" })`,
+          `Schema.Union([Schema.StructWithRest(Schema.Struct({ "a": Schema.String, "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]), Schema.StructWithRest(Schema.Struct({ "b": Schema.Finite, "id": Schema.String }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))])], { mode: "oneOf" })`,
           `{ readonly "a": string, readonly "id": string } & { readonly [x: string]: Schema.Json } | { readonly "b": number, readonly "id": string } & { readonly [x: string]: Schema.Json }`
         )
       }
@@ -382,7 +417,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "string", pattern: "a*" } },
           {
             codes: makeCode(
-              `Schema.String.check(Schema.isPattern(new RegExp("a*", "u")).annotate({ "expected": "a string matching the RegExp a*" }))`,
+              `Schema.String.check(Schema.isPattern(new globalThis.RegExp("a*", "u")).annotate({ "expected": "a string matching the RegExp a*" }))`,
               `string`
             )
           }
@@ -392,7 +427,7 @@ describe("fromJsonSchemaDocument", () => {
       it("pattern only constrains strings", () => {
         assertFromJsonSchema({ schema: { pattern: "^a+$" } }, {
           codes: makeCode(
-            `Schema.Union([Schema.Null, Schema.String.check(Schema.isPattern(new RegExp("^a+$", "u")).annotate({ "expected": "a string matching the RegExp ^a+$" })), Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })), Schema.Boolean, Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" })), Schema.Array(Schema.Json.annotate({ "expected": "JSON value" }))])`,
+            `Schema.Union([Schema.Null, Schema.String.check(Schema.isPattern(new globalThis.RegExp("^a+$", "u")).annotate({ "expected": "a string matching the RegExp ^a+$" })), Schema.Finite, Schema.Boolean, Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" })), Schema.Array(Schema.Json.annotate({ "expected": "JSON value" }))])`,
             `null | string | number | boolean | { readonly [x: string]: Schema.Json } | ReadonlyArray<Schema.Json>`
           )
         })
@@ -406,7 +441,7 @@ describe("fromJsonSchemaDocument", () => {
         { schema: { type: "number" } },
         {
           codes: makeCode(
-            `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" }))`,
+            `Schema.Finite`,
             `number`
           )
         }
@@ -419,7 +454,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "number", minimum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }))`,
+              `Schema.Finite.check(Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }))`,
               `number`
             )
           }
@@ -431,7 +466,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "number", maximum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isLessThanOrEqualTo(1).annotate({ "expected": "a value less than or equal to 1" }))`,
+              `Schema.Finite.check(Schema.isLessThanOrEqualTo(1).annotate({ "expected": "a value less than or equal to 1" }))`,
               `number`
             )
           }
@@ -443,7 +478,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "number", exclusiveMinimum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isGreaterThan(1).annotate({ "expected": "a value greater than 1" }))`,
+              `Schema.Finite.check(Schema.isGreaterThan(1).annotate({ "expected": "a value greater than 1" }))`,
               `number`
             )
           }
@@ -455,7 +490,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "number", exclusiveMaximum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isLessThan(1).annotate({ "expected": "a value less than 1" }))`,
+              `Schema.Finite.check(Schema.isLessThan(1).annotate({ "expected": "a value less than 1" }))`,
               `number`
             )
           }
@@ -467,7 +502,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "number", multipleOf: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isMultipleOf(1).annotate({ "expected": "a value that is a multiple of 1" }))`,
+              `Schema.Finite.check(Schema.isMultipleOf(1).annotate({ "expected": "a value that is a multiple of 1" }))`,
               `number`
             )
           }
@@ -480,7 +515,7 @@ describe("fromJsonSchemaDocument", () => {
     it("type only", () => {
       assertFromJsonSchema(
         { schema: { type: "integer" } },
-        { codes: makeCode(`Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" }))`, `number`) }
+        { codes: makeCode(`Schema.Int`, `number`) }
       )
     })
 
@@ -490,7 +525,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "integer", minimum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }))`,
+              `Schema.Int.check(Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }))`,
               `number`
             )
           }
@@ -502,7 +537,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "integer", maximum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isLessThanOrEqualTo(1).annotate({ "expected": "a value less than or equal to 1" }))`,
+              `Schema.Int.check(Schema.isLessThanOrEqualTo(1).annotate({ "expected": "a value less than or equal to 1" }))`,
               `number`
             )
           }
@@ -514,7 +549,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "integer", exclusiveMinimum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThan(1).annotate({ "expected": "a value greater than 1" }))`,
+              `Schema.Int.check(Schema.isGreaterThan(1).annotate({ "expected": "a value greater than 1" }))`,
               `number`
             )
           }
@@ -526,7 +561,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "integer", exclusiveMaximum: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isLessThan(1).annotate({ "expected": "a value less than 1" }))`,
+              `Schema.Int.check(Schema.isLessThan(1).annotate({ "expected": "a value less than 1" }))`,
               `number`
             )
           }
@@ -538,7 +573,7 @@ describe("fromJsonSchemaDocument", () => {
           { schema: { type: "integer", multipleOf: 1 } },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isMultipleOf(1).annotate({ "expected": "a value that is a multiple of 1" }))`,
+              `Schema.Int.check(Schema.isMultipleOf(1).annotate({ "expected": "a value that is a multiple of 1" }))`,
               `number`
             )
           }
@@ -592,7 +627,7 @@ describe("fromJsonSchemaDocument", () => {
         },
         {
           codes: makeCode(
-            `Schema.TupleWithRest(Schema.Tuple([Schema.optionalKey(Schema.String), Schema.optionalKey(Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })))]), [Schema.Json.annotate({ "expected": "JSON value" })]).check(Schema.isMaxLength(1).annotate({ "expected": "a value with a length of at most 1" }))`,
+            `Schema.TupleWithRest(Schema.Tuple([Schema.optionalKey(Schema.String), Schema.optionalKey(Schema.Finite)]), [Schema.Json.annotate({ "expected": "JSON value" })]).check(Schema.isMaxLength(1).annotate({ "expected": "a value with a length of at most 1" }))`,
             `readonly [(string)?, (number)?, ...Array<Schema.Json>]`
           )
         }
@@ -670,7 +705,7 @@ describe("fromJsonSchemaDocument", () => {
         },
         {
           codes: makeCode(
-            `Schema.TupleWithRest(Schema.Tuple([Schema.String]), [Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" }))])`,
+            `Schema.TupleWithRest(Schema.Tuple([Schema.String]), [Schema.Finite])`,
             `readonly [string, ...Array<number>]`
           )
         }
@@ -962,7 +997,7 @@ describe("fromJsonSchemaDocument", () => {
           }, {
             $ref: `Values`,
             code: makeCode(
-              `Schema.Record(Schema.String.check(Schema.isPattern(new RegExp("a", "u")).annotate({ "expected": "a string matching the RegExp a" })), Value).annotate({ "identifier": "Values" })`,
+              `Schema.Record(Schema.String.check(Schema.isPattern(new globalThis.RegExp("a", "u")).annotate({ "expected": "a string matching the RegExp a" })), Value).annotate({ "identifier": "Values" })`,
               `{ readonly [x: string]: Value }`
             )
           }]
@@ -979,7 +1014,7 @@ describe("fromJsonSchemaDocument", () => {
         }
       }, {
         codes: makeCode(
-          `Schema.Record(Schema.String.check(Schema.isPattern(new RegExp("^a", "u")).annotate({ "expected": "a string matching the RegExp ^a" })), Schema.Never)`,
+          `Schema.Record(Schema.String.check(Schema.isPattern(new globalThis.RegExp("^a", "u")).annotate({ "expected": "a string matching the RegExp ^a" })), Schema.Never)`,
           `{ readonly [x: string]: never }`
         )
       })
@@ -1059,7 +1094,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" })).check(Schema.isPropertyNames(Schema.String.check(Schema.isPattern(new RegExp("^[A-Z]", "u")).annotate({ "expected": "a string matching the RegExp ^[A-Z]" }))).annotate({ "expected": "an object with property names matching the schema" }))`,
+              `Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" })).check(Schema.isPropertyNames(Schema.String.check(Schema.isPattern(new globalThis.RegExp("^[A-Z]", "u")).annotate({ "expected": "a string matching the RegExp ^[A-Z]" }))).annotate({ "expected": "an object with property names matching the schema" }))`,
               `{ readonly [x: string]: Schema.Json }`
             )
           }
@@ -1095,7 +1130,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" })).check(Schema.isPropertyNames(Schema.String.check(Schema.isPattern(new RegExp("^[A-Z]", "u")).annotate({ "expected": "a string matching the RegExp ^[A-Z]" }))).annotate({ "expected": "an object with property names matching the schema" })).check(Schema.isPropertyNames(Schema.String.check(Schema.isMinCodePoints(2).annotate({ "expected": "a string with at least 2 code points" }))).annotate({ "expected": "an object with property names matching the schema" }))`,
+              `Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" })).check(Schema.isPropertyNames(Schema.String.check(Schema.isPattern(new globalThis.RegExp("^[A-Z]", "u")).annotate({ "expected": "a string matching the RegExp ^[A-Z]" }))).annotate({ "expected": "an object with property names matching the schema" })).check(Schema.isPropertyNames(Schema.String.check(Schema.isMinCodePoints(2).annotate({ "expected": "a string with at least 2 code points" }))).annotate({ "expected": "an object with property names matching the schema" }))`,
               `{ readonly [x: string]: Schema.Json }`
             )
           }
@@ -1209,7 +1244,7 @@ describe("fromJsonSchemaDocument", () => {
         }
       }, {
         codes: makeCode(
-          `Schema.StructWithRest(Schema.Struct({ "child": Schema.optionalKey(Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" }))), "value": Schema.optionalKey(X) }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))])`,
+          `Schema.StructWithRest(Schema.Struct({ "child": Schema.optionalKey(Schema.Finite), "value": Schema.optionalKey(X) }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))])`,
           `{ readonly "child"?: number, readonly "value"?: X } & { readonly [x: string]: Schema.Json }`
         ),
         references: {
@@ -1271,28 +1306,459 @@ describe("fromJsonSchemaDocument", () => {
       )
     })
 
-    it("rejects a reference below a definition instead of resolving its final token", () => {
+    it("resolves references below a definition to the pointed subschema", () => {
+      const schema = toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+        type: "object",
+        properties: {
+          copy: { $ref: "#/$defs/outer/properties/inner", minLength: 2 },
+          item: { $ref: "#/$defs/either/anyOf/1" }
+        },
+        $defs: {
+          inner: { type: "number" },
+          outer: { type: "object", properties: { inner: { type: "string" } } },
+          either: { anyOf: [{ type: "string" }, { type: "number" }] }
+        }
+      }))
+      const is = Schema.is(schema)
+      assert.isTrue(is({ copy: "ab", item: 1 }))
+      assert.isFalse(is({ copy: 1 }))
+      assert.isFalse(is({ copy: "a" }))
+      assert.isFalse(is({ item: "a" }))
+    })
+
+    it("reports a reference below a definition that leads nowhere", () => {
       throws(
         () =>
-          toSchemaFromJsonSchemaDocument(
-            JsonSchema.fromSchemaDraft07({
-              definitions: {
-                inner: { type: "number" },
-                outer: {
+          toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+            $ref: "#/$defs/outer/properties/missing",
+            $defs: {
+              outer: { type: "object", properties: { name: { type: "string" } } }
+            }
+          })),
+        `Unresolvable $ref "#/$defs/outer/properties/missing". Nothing exists at that location.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("resolves a recursive reference below a definition", () => {
+      const schema = toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Tree/properties/node",
+        $defs: {
+          Tree: {
+            type: "object",
+            properties: {
+              node: { type: "object", properties: { next: { $ref: "#/$defs/Tree/properties/node" } } }
+            }
+          }
+        }
+      }))
+      const is = Schema.is(schema)
+      assert.isTrue(is({ next: { next: {} } }))
+      assert.isFalse(is({ next: { next: 1 } }))
+    })
+
+    it("rejects a pointer that refers directly to itself", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Container: {
+            properties: {
+              value: { $ref: "#/$defs/Container/properties/value" }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Container/properties/value" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a pointer that refers back to itself through a definition", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Alias: { $ref: "#/$defs/Container/properties/value" },
+          Container: {
+            properties: {
+              value: { $ref: "#/$defs/Alias" }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Alias" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a circular pointer alias wrapped in anyOf", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Container: {
+            properties: {
+              value: {
+                anyOf: [{ $ref: "#/$defs/Container/properties/value" }]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Container/properties/value" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a circular pointer alias wrapped in oneOf", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Container: {
+            properties: {
+              value: {
+                oneOf: [{ $ref: "#/$defs/Container/properties/value" }]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Container/properties/value" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a circular alias chain through singleton unions", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Alias: {
+            oneOf: [{ $ref: "#/$defs/Container/properties/value" }]
+          },
+          Container: {
+            properties: {
+              value: {
+                anyOf: [{ $ref: "#/$defs/Alias" }]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Alias" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a circular pointer alias alongside another anyOf branch", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Container: {
+            properties: {
+              value: {
+                anyOf: [
+                  { $ref: "#/$defs/Container/properties/value" },
+                  { type: "string" }
+                ]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Container/properties/value" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a circular pointer alias in a later oneOf branch", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Container: {
+            properties: {
+              value: {
+                oneOf: [
+                  { type: "string" },
+                  { $ref: "#/$defs/Container/properties/value" }
+                ]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Container/properties/value" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("rejects a circular alias chain through unions with multiple branches", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Alias: {
+            oneOf: [
+              { type: "number" },
+              { $ref: "#/$defs/Container/properties/value" }
+            ]
+          },
+          Container: {
+            properties: {
+              value: {
+                anyOf: [
+                  { type: "string" },
+                  { $ref: "#/$defs/Alias" }
+                ]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Alias" is a circular alias.\n  at ["schema"]["$ref"]`
+      )
+    })
+
+    it("allows union branches to share the same alias", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: {
+          Alias: { $ref: "#/$defs/Text" },
+          Text: { type: "string" },
+          Container: {
+            properties: {
+              value: {
+                anyOf: [
+                  { $ref: "#/$defs/Alias" },
+                  { oneOf: [{ $ref: "#/$defs/Alias" }, { type: "number" }] }
+                ]
+              }
+            }
+          }
+        }
+      })
+      const schema = toSchemaFromJsonSchemaDocument(document)
+      const is = Schema.is(schema)
+
+      assert.isTrue(is("text"))
+      assert.isTrue(is(123))
+      assert.isFalse(is(false))
+    })
+
+    it("imports a deeply shared union graph", () => {
+      const definitions: Record<string, JsonSchema.JsonSchema> = {
+        Text: { type: "string" }
+      }
+      const levelCount = 20
+      for (let level = levelCount - 1; level >= 0; level--) {
+        const next = level === levelCount - 1 ? "Text" : `Level${level + 1}`
+        definitions[`Level${level}`] = {
+          anyOf: [{ $ref: `#/$defs/${next}` }, { $ref: `#/$defs/${next}` }]
+        }
+      }
+      definitions.Container = {
+        properties: { value: { $ref: "#/$defs/Level0" } }
+      }
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Container/properties/value",
+        $defs: definitions
+      })
+      const schema = toSchemaFromJsonSchemaDocument(document)
+
+      assert.isTrue(Schema.is(schema)("text"))
+    })
+
+    it("rejects a circular alias after validating a shared branch", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        anyOf: [
+          { $ref: "#/$defs/Container/properties/shared" },
+          { $ref: "#/$defs/Container/properties/circular" }
+        ],
+        $defs: {
+          Text: { type: "string" },
+          Container: {
+            properties: {
+              shared: { $ref: "#/$defs/Text" },
+              circular: {
+                anyOf: [
+                  { $ref: "#/$defs/Text" },
+                  { $ref: "#/$defs/Container/properties/circular" }
+                ]
+              }
+            }
+          }
+        }
+      })
+
+      throws(
+        () => toSchemaFromJsonSchemaDocument(document),
+        `Definition "Container/properties/circular" is a circular alias.\n  at ["schema"]["anyOf"][1]["$ref"]`
+      )
+    })
+
+    it("allows union branches to recurse through object properties and array items", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Tree/properties/node",
+        $defs: {
+          Tree: {
+            properties: {
+              node: {
+                anyOf: [
+                  {
+                    type: "object",
+                    properties: {
+                      next: { $ref: "#/$defs/Tree/properties/node" }
+                    }
+                  },
+                  { type: "array", items: { $ref: "#/$defs/Tree/properties/node" } },
+                  { type: "null" }
+                ]
+              }
+            }
+          }
+        }
+      })
+      const schema = toSchemaFromJsonSchemaDocument(document)
+      const is = Schema.is(schema)
+
+      assert.isTrue(is({ next: [{ next: null }] }))
+      assert.isTrue(is([{ next: [] }]))
+      assert.isFalse(is({ next: [123] }))
+      assert.isFalse(is([{ next: "invalid" }]))
+    })
+
+    it("allows a singleton union around a recursive object", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Tree/properties/node",
+        $defs: {
+          Tree: {
+            properties: {
+              node: {
+                anyOf: [{
                   type: "object",
                   properties: {
-                    inner: { type: "string" }
+                    next: { $ref: "#/$defs/Tree/properties/node" }
                   }
-                }
-              },
-              type: "object",
-              properties: {
-                copy: { $ref: "#/definitions/outer/properties/inner" }
+                }]
               }
-            })
-          ),
-        `Unsupported $ref "#/$defs/outer/properties/inner". Use "#/$defs/Name".\n  at ["schema"]["properties"]["copy"]["$ref"]`
+            }
+          }
+        }
+      })
+      const schema = toSchemaFromJsonSchemaDocument(document)
+      const is = Schema.is(schema)
+
+      assert.isTrue(is({ next: { next: {} } }))
+      assert.isFalse(is({ next: { next: 1 } }))
+    })
+
+    it("allows aliases that recurse through object properties", () => {
+      const document = JsonSchema.fromSchemaDraft2020_12({
+        $ref: "#/$defs/Alias",
+        $defs: {
+          Alias: { $ref: "#/$defs/Tree/properties/node" },
+          Tree: {
+            properties: {
+              node: {
+                type: "object",
+                properties: {
+                  next: { $ref: "#/$defs/Alias" }
+                }
+              }
+            }
+          }
+        }
+      })
+      const schema = toSchemaFromJsonSchemaDocument(document)
+      const is = Schema.is(schema)
+
+      assert.isTrue(is({ next: { next: {} } }))
+      assert.isFalse(is({ next: { next: 1 } }))
+    })
+
+    it("exports a reference below a definition as one shared definition", () => {
+      const schema = toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+        type: "object",
+        properties: {
+          a: { $ref: "#/$defs/O/properties/v" },
+          b: { $ref: "#/$defs/O/properties/v" }
+        },
+        $defs: { O: { type: "object", properties: { v: { type: "string" } } } }
+      }))
+      const hoisted = toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+        type: "object",
+        properties: {
+          a: { $ref: "#/$defs/O~1properties~1v" },
+          b: { $ref: "#/$defs/O~1properties~1v" }
+        },
+        $defs: { "O/properties/v": { type: "string" } }
+      }))
+      deepStrictEqual(Schema.toJsonSchemaDocument(schema), Schema.toJsonSchemaDocument(hoisted))
+    })
+
+    it("rejects a reference below a definition whose derived key is already a definition", () => {
+      throws(
+        () =>
+          toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+            $ref: "#/$defs/O/properties/v",
+            $defs: {
+              O: { type: "object", properties: { v: { type: "string" } } },
+              "O/properties/v": { type: "number" }
+            }
+          })),
+        `Pointer $ref "#/$defs/O/properties/v" conflicts with definition "O/properties/v".\n  at ["schema"]["$ref"]`
       )
+    })
+
+    it("rejects references below a pointer that passes through a definition with its own id", () => {
+      throws(
+        () =>
+          toSchemaFromJsonSchemaDocument(JsonSchema.fromSchemaDraft2020_12({
+            $ref: "#/$defs/Outer/properties/value",
+            $defs: {
+              X: { type: "string" },
+              Outer: {
+                $id: "https://example.com/child",
+                $defs: { X: { type: "number" } },
+                type: "object",
+                properties: { value: { $ref: "#/$defs/X" } }
+              }
+            }
+          })),
+        `Cannot resolve $ref under a nested "$id". Resolve or flatten it first.\n  at ["definitions"]["Outer"]["properties"]["value"]["$ref"]`
+      )
+    })
+
+    it("determines the resource scope of a pointer below a definition from onEnter results", () => {
+      const schema = toSchemaFromJsonSchemaDocument(
+        JsonSchema.fromSchemaDraft2020_12({
+          $ref: "#/$defs/Outer/properties/value",
+          $defs: {
+            X: { type: "string" },
+            Outer: {
+              $id: "https://example.com/child",
+              type: "object",
+              properties: { value: { $ref: "#/$defs/X" } }
+            }
+          }
+        }),
+        { onEnter: (schema) => ({ ...schema, $id: undefined }) }
+      )
+      const is = Schema.is(schema)
+      assert.isTrue(is("a"))
+      assert.isFalse(is(1))
     })
 
     it("rejects an empty reference", () => {
@@ -1582,6 +2048,43 @@ describe("fromJsonSchemaDocument", () => {
   })
 
   describe("allOf", () => {
+    it.each([
+      {
+        annotations: { description: "name" },
+        options: {},
+        annotationCode: `{ "description": "name" }`
+      },
+      {
+        annotations: { "x-sensitive": true },
+        options: { includeAnnotationKey: (key: string) => key === "x-sensitive" },
+        annotationCode: `{ "x-sensitive": true }`
+      }
+    ])("intersects union members containing annotated references: $annotationCode", ({
+      annotationCode,
+      annotations,
+      options
+    }) => {
+      const unconstrained = { $ref: "#/$defs/Any", ...annotations }
+      const name = { $ref: "#/$defs/Name" }
+      for (const allOf of [[unconstrained, name], [name, unconstrained]]) {
+        assertFromJsonSchema({
+          schema: {
+            allOf: [
+              { anyOf: [{ allOf }, { type: "number" }] },
+              { enum: ["a", "b"] }
+            ],
+            $defs: { Any: {}, Name: { type: "string" } }
+          },
+          options
+        }, {
+          codes: makeCode(
+            `Schema.Union([Schema.Literal("a").annotate(${annotationCode}), Schema.Literal("b").annotate(${annotationCode})])`,
+            `"a" | "b"`
+          )
+        })
+      }
+    })
+
     it("prunes disjoint lanes before intersecting unions", () => {
       assertFromJsonSchema({
         schema: {
@@ -1591,7 +2094,7 @@ describe("fromJsonSchemaDocument", () => {
           ]
         }
       }, {
-        codes: makeCode(`Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" }))`, `number`)
+        codes: makeCode(`Schema.Finite`, `number`)
       })
     })
 
@@ -1620,7 +2123,10 @@ describe("fromJsonSchemaDocument", () => {
       )
     })
 
-    it("rejects distributions that duplicate a nested choice", () => {
+    it.each([
+      { title: "non-literal anyOf", schema: { anyOf: [{ type: "string" }, { type: "number" }] } },
+      { title: "literal oneOf", schema: { oneOf: [{ const: "a" }, { const: "b" }] } }
+    ])("rejects distributions that duplicate a nested $title", ({ schema }) => {
       throws(
         () =>
           toSchemaFromJsonSchemaDocument(
@@ -1635,7 +2141,7 @@ describe("fromJsonSchemaDocument", () => {
                 {
                   type: "object",
                   properties: {
-                    value: { anyOf: [{ type: "string" }, { type: "number" }] }
+                    value: schema
                   }
                 }
               ]
@@ -2205,7 +2711,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isInt().annotate({ "expected": "an integer" }))`,
+              `Schema.Finite.check(Schema.isInt().annotate({ "expected": "an integer" }))`,
               `number`
             )
           }
@@ -2225,7 +2731,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThanOrEqualTo(2).annotate({ "expected": "a value greater than or equal to 2" })).check(Schema.isLessThanOrEqualTo(2).annotate({ "expected": "a value less than or equal to 2" }))`,
+              `Schema.Finite.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThanOrEqualTo(2).annotate({ "expected": "a value greater than or equal to 2" })).check(Schema.isLessThanOrEqualTo(2).annotate({ "expected": "a value less than or equal to 2" }))`,
               `number`
             )
           }
@@ -2244,7 +2750,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isFinite().annotate({ "expected": "a finite number" }))`,
+              `Schema.Int.check(Schema.isFinite().annotate({ "expected": "a finite number" }))`,
               `number`
             )
           }
@@ -2263,7 +2769,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.makeFilterGroup([Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }), Schema.isLessThanOrEqualTo(2).annotate({ "expected": "a value less than or equal to 2", "description": "c" })]).annotate({ "description": "b" }))`,
+              `Schema.Finite.check(Schema.makeFilterGroup([Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }), Schema.isLessThanOrEqualTo(2).annotate({ "expected": "a value less than or equal to 2", "description": "c" })]).annotate({ "description": "b" }))`,
               `number`
             )
           }
@@ -2283,7 +2789,7 @@ describe("fromJsonSchemaDocument", () => {
           },
           {
             codes: makeCode(
-              `Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" })).check(Schema.makeFilterGroup([Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }), Schema.isLessThanOrEqualTo(2).annotate({ "expected": "a value less than or equal to 2" })]).annotate({ "description": "range" })).check(Schema.isInt().annotate({ "expected": "an integer" }))`,
+              `Schema.Finite.check(Schema.makeFilterGroup([Schema.isGreaterThanOrEqualTo(1).annotate({ "expected": "a value greater than or equal to 1" }), Schema.isLessThanOrEqualTo(2).annotate({ "expected": "a value less than or equal to 2" })]).annotate({ "description": "range" })).check(Schema.isInt().annotate({ "expected": "an integer" }))`,
               `number`
             )
           }
@@ -2970,7 +3476,7 @@ describe("fromJsonSchemaDocument", () => {
         }
       }, {
         codes: makeCode(
-          `Schema.Struct({ "a": Schema.optionalKey(Schema.Number.check(Schema.isFinite().annotate({ "expected": "a finite number" }))), "b": Schema.optionalKey(Schema.Never) })`,
+          `Schema.Struct({ "a": Schema.optionalKey(Schema.Finite), "b": Schema.optionalKey(Schema.Never) })`,
           `{ readonly "a"?: number, readonly "b"?: never }`
         )
       })
@@ -3120,7 +3626,7 @@ describe("fromJsonSchemaDocument", () => {
       it("applies patterns explicitly", () => {
         assertFromJsonSchema({ schema: { type: "string", pattern: "^a+$" }, options: { patterns: "apply" } }, {
           codes: makeCode(
-            `Schema.String.check(Schema.isPattern(new RegExp("^a+$", "u")).annotate({ "expected": "a string matching the RegExp ^a+$" }))`,
+            `Schema.String.check(Schema.isPattern(new globalThis.RegExp("^a+$", "u")).annotate({ "expected": "a string matching the RegExp ^a+$" }))`,
             `string`
           )
         })

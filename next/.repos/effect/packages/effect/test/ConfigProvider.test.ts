@@ -851,10 +851,37 @@ DB_PASS=\${PASSWORD}
         `
 SOURCE=a$&b$'c$\`d
 TARGET=\${SOURCE}
+ESCAPED=\\$SOURCE/$SOURCE
 `,
         { expandVariables: true }
       )
       await assertSuccess(provider, ["TARGET"], ConfigProvider.makeValue("a$&b$'c$`d"))
+      await assertSuccess(provider, ["ESCAPED"], ConfigProvider.makeValue("$SOURCE/a$&b$'c$`d"))
+    })
+
+    it("expands adjacent braced references", async () => {
+      const provider = ConfigProvider.fromDotEnvContents(
+        `
+A=first
+B=second
+VALUE=\${A}\${B}
+`,
+        { expandVariables: true }
+      )
+      await assertSuccess(provider, ["VALUE"], ConfigProvider.makeValue("firstsecond"))
+    })
+
+    it("preserves escaped references after backslashes and inside defaults", async () => {
+      const provider = ConfigProvider.fromDotEnvContents(
+        `
+SOURCE=value
+BACKSLASH=before/\\\\$SOURCE/$SOURCE
+DEFAULT=\${UNSET:-\\$SOURCE}/$SOURCE
+`,
+        { expandVariables: true }
+      )
+      await assertSuccess(provider, ["BACKSLASH"], ConfigProvider.makeValue("before/\\$SOURCE/value"))
+      await assertSuccess(provider, ["DEFAULT"], ConfigProvider.makeValue("$SOURCE/value"))
     })
 
     it("expansion defaults are used only for empty or unset variables", async () => {
@@ -862,15 +889,21 @@ TARGET=\${SOURCE}
         `
 SET=actual
 EMPTY=
+EXPANDS_EMPTY=$EMPTY
+BRACED=a}b
 FROM_SET=\${SET:-fallback}
 FROM_EMPTY=\${EMPTY:-fallback}
 FROM_UNSET=\${UNSET:-fallback}
+FROM_EXPANDS_EMPTY=\${EXPANDS_EMPTY:-fallback}
+NESTED=\${UNSET:-\${BRACED}}
 `,
         { expandVariables: true }
       )
       await assertSuccess(provider, ["FROM_SET"], ConfigProvider.makeValue("actual"))
       await assertSuccess(provider, ["FROM_EMPTY"], ConfigProvider.makeValue("fallback"))
       await assertSuccess(provider, ["FROM_UNSET"], ConfigProvider.makeValue("fallback"))
+      await assertSuccess(provider, ["FROM_EXPANDS_EMPTY"], ConfigProvider.makeValue("fallback"))
+      await assertSuccess(provider, ["NESTED"], ConfigProvider.makeValue("a}b"))
     })
 
     it("does not expand missing inherited variables", async () => {
@@ -878,6 +911,45 @@ FROM_UNSET=\${UNSET:-fallback}
         expandVariables: true
       })
       await assertMissing(provider, ["VALUE"])
+    })
+
+    it("expands self and circular references to empty values", async () => {
+      const provider = ConfigProvider.fromDotEnvContents(
+        `
+PATH=$PATH:/opt/bin
+A=$B
+B=$A
+SELF_DEFAULT=\${SELF_DEFAULT:-fallback}
+`,
+        { expandVariables: true }
+      )
+      await assertSuccess(provider, ["PATH"], ConfigProvider.makeValue(":/opt/bin"))
+      await assertMissing(provider, ["A"])
+      await assertSuccess(provider, ["SELF_DEFAULT"], ConfigProvider.makeValue("fallback"))
+    })
+
+    it("does not scan expanded text again", async () => {
+      const provider = ConfigProvider.fromDotEnvContents(
+        `
+USER=app
+HOME_DIR=/home/$USER
+LOG_DIR=\${HOME_DIR}_logs
+NAME=$USER\${SUFFIX:-_v1}
+LITERAL=$USER/$
+`,
+        { expandVariables: true }
+      )
+      await assertSuccess(provider, ["LOG_DIR"], ConfigProvider.makeValue("/home/app_logs"))
+      await assertSuccess(provider, ["NAME"], ConfigProvider.makeValue("app_v1"))
+      await assertSuccess(provider, ["LITERAL"], ConfigProvider.makeValue("app/$"))
+    })
+
+    it("expands long sequences of adjacent references without overflowing", async () => {
+      const provider = ConfigProvider.fromDotEnvContents(
+        `A=a\nVALUE=${"$A".repeat(20_000)}`,
+        { expandVariables: true }
+      )
+      await assertSuccess(provider, ["VALUE"], ConfigProvider.makeValue("a".repeat(20_000)))
     })
   })
 
@@ -1092,11 +1164,10 @@ DB_PASS=$PASSWORD`)
   })
 
   describe("layers", () => {
-    const loadFromContext = (path: ConfigProvider.Path) =>
-      Effect.gen(function*() {
-        const provider = yield* ConfigProvider.ConfigProvider
-        return yield* provider.load(path)
-      })
+    const loadFromContext = Effect.fnUntraced(function*(path: ConfigProvider.Path) {
+      const provider = yield* ConfigProvider.ConfigProvider
+      return yield* provider.load(path)
+    })
 
     it("layer installs a provider", async () => {
       const result = await Effect.runPromise(

@@ -32,6 +32,7 @@ export const layer: Layer.Layer<Stdio.Stdio> = Layer.succeed(
     args: Effect.sync(() => process.argv.slice(2)),
     stdinIsTerminal: Effect.sync(() => process.stdin.isTTY === true),
     stdoutIsTerminal: Effect.sync(() => process.stdout.isTTY === true),
+    stderrIsTerminal: Effect.sync(() => process.stderr.isTTY === true),
     stdout: (options) =>
       fromWritable({
         evaluate: () => process.stdout,

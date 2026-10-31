@@ -1,0 +1,36 @@
+query RepoIssues(
+  $owner: String!
+  $name: String!
+  $states: [IssueState!]
+  $first: Int = 20
+  $orderBy: IssueOrder
+  $filterBy: IssueFilters
+) {
+  repository(owner: $owner, name: $name) {
+    id
+    nameWithOwner
+    issues(first: $first, states: $states, orderBy: $orderBy, filterBy: $filterBy) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        ...IssueSummary
+        isPinned
+      }
+    }
+  }
+}
+
+mutation AddComment($input: AddCommentInput!) {
+  addComment(input: $input) {
+    commentEdge {
+      node {
+        id
+        url
+        createdAt
+      }
+    }
+  }
+}

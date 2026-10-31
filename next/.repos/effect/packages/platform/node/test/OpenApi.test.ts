@@ -445,10 +445,7 @@ describe("OpenAPI spec", () => {
               name: "optional",
               in: "query",
               schema: {
-                "anyOf": [
-                  { "type": "string" },
-                  { "type": "null" }
-                ]
+                "type": "string"
               },
               required: false
             }
@@ -1072,6 +1069,47 @@ describe("OpenAPI spec", () => {
               }
             }
           })
+        })
+
+        it("Upgrade", () => {
+          const Api = HttpApi.make("api")
+            .add(
+              HttpApiGroup.make("group")
+                .add(
+                  HttpApiEndpoint.post("a", "/a", {
+                    payload: Schema.Struct({ tty: Schema.Boolean }),
+                    success: HttpApiSchema.Upgrade({
+                      protocol: "tcp",
+                      headers: { "x-stream": Schema.Literals(["raw", "multiplexed"]) }
+                    })
+                  })
+                )
+            )
+          const spec = OpenApi.fromApi(Api)
+          assert.deepStrictEqual(spec.paths["/a"].post?.responses["101"], {
+            description: "Switching Protocols",
+            headers: {
+              connection: { schema: { type: "string", enum: ["Upgrade"] }, required: true },
+              upgrade: { schema: { type: "string", enum: ["tcp"] }, required: true },
+              "x-stream": { schema: { type: "string", enum: ["raw", "multiplexed"] }, required: true }
+            }
+          })
+          assert.deepStrictEqual(Object.keys(spec.paths["/a"].post?.requestBody?.content ?? {}), ["application/json"])
+          assert.strictEqual(spec.paths["/a"].post?.responses["200"], undefined)
+        })
+
+        it("Upgrade with an ordinary success", () => {
+          const Api = HttpApi.make("api")
+            .add(
+              HttpApiGroup.make("group")
+                .add(
+                  HttpApiEndpoint.post("a", "/a", {
+                    success: [HttpApiSchema.Upgrade({ protocol: "tcp" }), HttpApiSchema.Empty(200)]
+                  })
+                )
+            )
+          const spec = OpenApi.fromApi(Api)
+          assert.deepStrictEqual(Object.keys(spec.paths["/a"].post?.responses ?? {}).sort(), ["101", "200"])
         })
 
         it("StreamUint8Array with annotated status", () => {

@@ -228,7 +228,18 @@ describe("SchemaRepresentation built-in string revivers", () => {
       payload: null,
       reviver: SchemaRepresentation.isULIDReviver,
       valid: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-      invalid: "not-a-ulid"
+      invalid: "80000000000000000000000000"
+    })
+  })
+
+  it("revives isAscii", () => {
+    assertFilterReviver({
+      schema: Schema.String.check(Schema.isAscii()),
+      id: "effect/schema/isAscii",
+      payload: null,
+      reviver: SchemaRepresentation.isAsciiReviver,
+      valid: "ascii only",
+      invalid: "caf\u00e9"
     })
   })
 
@@ -978,6 +989,24 @@ describe("SchemaRepresentation built-in declaration revivers", () => {
       id: "effect/schema/BigDecimal",
       payload: null,
       reviver: SchemaRepresentation.BigDecimalReviver
+    })
+  })
+
+  it("revives SemVer", () => {
+    assertDeclarationReviver({
+      schema: Schema.SemVer,
+      id: "effect/schema/SemVer",
+      payload: null,
+      reviver: SchemaRepresentation.SemVerReviver
+    })
+  })
+
+  it("revives SemVerRange", () => {
+    assertDeclarationReviver({
+      schema: Schema.SemVerRange,
+      id: "effect/schema/SemVerRange",
+      payload: null,
+      reviver: SchemaRepresentation.SemVerRangeReviver
     })
   })
 

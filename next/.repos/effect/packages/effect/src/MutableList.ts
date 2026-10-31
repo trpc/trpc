@@ -9,7 +9,6 @@
  * @stability stable
  * @since 4.0.0
  */
-import * as Arr from "./Array.ts"
 import * as Count from "./internal/count.ts"
 
 /**
@@ -259,7 +258,8 @@ export const prepend = <A>(self: MutableList<A>, message: A): void => {
 /**
  * Prepends all elements from an iterable to the beginning of the MutableList.
  * The elements are added in order, so the first element in the iterable becomes
- * the new head of the list.
+ * the new head of the list. The elements are copied, so the input can be reused
+ * afterward. Use `prependAllUnsafe` to transfer ownership of an array instead.
  *
  * **Example** (Prepending multiple elements)
  *
@@ -279,7 +279,7 @@ export const prepend = <A>(self: MutableList<A>, message: A): void => {
  * @since 4.0.0
  */
 export const prependAll = <A>(self: MutableList<A>, messages: Iterable<A>): void =>
-  prependAllUnsafe(self, Arr.fromIterable(messages), !Array.isArray(messages))
+  prependAllUnsafe(self, Array.from(messages), true)
 
 /**
  * Prepends all elements from a ReadonlyArray to the beginning of the MutableList.
@@ -328,7 +328,9 @@ export const prependAllUnsafe = <A>(self: MutableList<A>, messages: ReadonlyArra
 
 /**
  * Appends all elements from an iterable to the end of the MutableList.
- * Returns the number of elements added.
+ * Returns the number of elements added. The elements are copied, so the input
+ * can be reused afterward. Use `appendAllUnsafe` to transfer ownership of an
+ * array instead.
  *
  * **Example** (Appending multiple elements)
  *
@@ -349,7 +351,7 @@ export const prependAllUnsafe = <A>(self: MutableList<A>, messages: ReadonlyArra
  * @since 4.0.0
  */
 export const appendAll = <A>(self: MutableList<A>, messages: Iterable<A>): number =>
-  appendAllUnsafe(self, Arr.fromIterable(messages), !Array.isArray(messages))
+  appendAllUnsafe(self, Array.from(messages), true)
 
 /**
  * Appends all elements from a ReadonlyArray to the end of the MutableList.

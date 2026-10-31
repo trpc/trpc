@@ -15,6 +15,7 @@ import * as Yaml from "effect/encoding/Yaml"
 import * as FileSystem from "effect/FileSystem"
 import { constFalse, constUndefined } from "effect/Function"
 import * as JsonPatch from "effect/JsonPatch"
+import * as JsonPointer from "effect/JsonPointer"
 import * as Path from "effect/Path"
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
@@ -250,21 +251,49 @@ export const JsonPatchReplace: Schema.Codec<
 })
 
 /**
- * Schema for a single JSON Patch operation.
+ * A JSON Patch "move" operation, which removes the value at `from` and adds it at `path`.
  *
- * **Details**
- *
- * Supports the subset of RFC 6902 operations that Effect's JsonPatch module
- * implements: `add`, `remove`, and `replace`.
+ * @category models
+ * @since 4.0.0
+ */
+export interface JsonPatchMoveOperation {
+  readonly op: "move"
+  readonly from: string
+  readonly path: string
+  readonly description?: string
+}
+
+/**
+ * Schema for a JSON Patch "move" operation.
  *
  * @category schemas
  * @since 4.0.0
  */
-export const JsonPatchOperation: Schema.Codec<JsonPatch.JsonPatchOperation> = Schema.Union([
-  JsonPatchAdd,
-  JsonPatchRemove,
-  JsonPatchReplace
-])
+export const JsonPatchMove: Schema.Codec<JsonPatchMoveOperation> = Schema.Struct({
+  op: Schema.Literal("move"),
+  from: Schema.String,
+  path: Schema.String,
+  description: Schema.optionalKey(Schema.String)
+})
+
+/**
+ * Schema for a single JSON Patch operation.
+ *
+ * **Details**
+ *
+ * Supports the RFC 6902 operations `add`, `remove`, `replace`, and `move`.
+ * `move` is applied as a `remove` followed by an `add` of the moved value.
+ *
+ * @category schemas
+ * @since 4.0.0
+ */
+export const JsonPatchOperation: Schema.Codec<JsonPatch.JsonPatchOperation | JsonPatchMoveOperation> = Schema
+  .Union([
+    JsonPatchAdd,
+    JsonPatchRemove,
+    JsonPatchReplace,
+    JsonPatchMove
+  ])
 
 /**
  * Schema for a JSON Patch document (array of operations).
@@ -294,6 +323,23 @@ export const JsonPatchOperation: Schema.Codec<JsonPatch.JsonPatchOperation> = Sc
  * @since 4.0.0
  */
 export const JsonPatchDocument = Schema.Array(JsonPatchOperation)
+
+// RFC 6902 defines `move` as removing the value at `from` and adding it at `path`
+const expandMove = (op: JsonPatchMoveOperation, document: Schema.Json): JsonPatch.JsonPatch => {
+  if (op.path.startsWith(`${op.from}/`)) {
+    throw new Error(`Cannot move ${op.from} into its own child ${op.path}`)
+  }
+  let value: unknown = document
+  for (const token of op.from.split("/").slice(1).map(JsonPointer.unescapeToken)) {
+    if (!Predicate.isObjectOrArray(value) || !Object.hasOwn(value, token)) {
+      throw new Error(`Path ${op.from} does not exist`)
+    }
+    value = (value as Record<string, unknown>)[token]
+  }
+  // Moving a location onto itself leaves the document unchanged, once the source is known to exist
+  if (op.from === op.path) return []
+  return [{ op: "remove", path: op.from }, { op: "add", path: op.path, value: value as Schema.Json }]
+}
 
 /**
  * Type for a JSON Patch document.
@@ -510,7 +556,7 @@ export const applyPatches = Effect.fn("applyPatches")(function*(
       const op = patch[i]
       yield* Effect.ignore(Effect.try({
         try: () => {
-          result = JsonPatch.apply([op], result)
+          result = JsonPatch.apply(op.op === "move" ? expandMove(op, result) : [op], result)
         },
         catch: (error) =>
           errors.push(

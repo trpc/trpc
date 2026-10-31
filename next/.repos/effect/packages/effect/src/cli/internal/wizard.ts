@@ -34,8 +34,9 @@ export const run: (
     const commandPath = options?.commandPath ?? [command.name]
     const selected = getCommandAtPath(command, commandPath)
     const commandLine = (options?.prefix ?? commandPath).map((value) => commandLineArg(value))
-    yield* logCurrentCommand(commandLine)
-    yield* promptCommand(selected, commandLine, selected === command ? "ROOT" : selected.name)
+    const { colors } = yield* Prompt.Theme
+    yield* logCurrentCommand(commandLine, colors)
+    yield* promptCommand(selected, commandLine, selected === command ? "ROOT" : selected.name, colors)
     return {
       args: commandLine.map((arg) => arg.value),
       displayArgs: commandLine.map((arg) => arg.displayValue)
@@ -63,30 +64,31 @@ const getCommandAtPath = (
 const promptCommand: (
   command: Command.Command.Any,
   commandLine: Array<CommandLineArg>,
-  sectionName: string
+  sectionName: string,
+  colors: boolean
 ) => Effect.Effect<void, CliError.CliError | Terminal.QuitError, Command.Environment> = Effect.fnUntraced(
-  function*(command, commandLine, sectionName) {
+  function*(command, commandLine, sectionName, colors) {
     const impl = toImpl(command)
     const visibleSubcommands = command.subcommands.flatMap((group) => group.commands.filter((child) => !child.unlisted))
     const config = visibleSubcommands.length === 0 ? impl.config : impl.contextConfig
 
     if (config.flags.length > 0) {
-      yield* Console.log(renderSection(sectionName, "FLAGS"))
+      yield* Console.log(renderSection(sectionName, "FLAGS", colors))
       for (const param of config.flags) {
         commandLine.push(...yield* promptParam(param))
       }
       if (config.arguments.length > 0 || visibleSubcommands.length > 0) {
-        yield* logCurrentCommand(commandLine)
+        yield* logCurrentCommand(commandLine, colors)
       }
     }
 
     if (config.arguments.length > 0) {
-      yield* Console.log(renderSection(sectionName, "ARGUMENTS"))
+      yield* Console.log(renderSection(sectionName, "ARGUMENTS", colors))
       for (const param of config.arguments) {
         commandLine.push(...yield* promptParam(param))
       }
       if (visibleSubcommands.length > 0) {
-        yield* logCurrentCommand(commandLine)
+        yield* logCurrentCommand(commandLine, colors)
       }
     }
 
@@ -109,9 +111,9 @@ const promptCommand: (
     yield* Console.log()
     commandLine.push(commandLineArg(child.name))
     if (hasWizardSteps(child)) {
-      yield* logCurrentCommand(commandLine)
+      yield* logCurrentCommand(commandLine, colors)
     }
-    yield* promptCommand(child, commandLine, child.name)
+    yield* promptCommand(child, commandLine, child.name, colors)
   }
 )
 
@@ -169,8 +171,9 @@ const promptParam = Effect.fnUntraced(
       return values
     }
     // Inline option-looking values so the lexer cannot interpret them as flags or the -- delimiter.
+    // Flags with an optional value only accept an inline value.
     return values.flatMap((value) =>
-      value.value.startsWith("-") && value.value.length > 1
+      single.optionalValue !== undefined || (value.value.startsWith("-") && value.value.length > 1)
         ? [commandLineArg(`--${single.name}=${value.value}`, `--${single.name}=${value.displayValue}`)]
         : [commandLineArg(`--${single.name}`), value]
     )
@@ -244,41 +247,47 @@ const humanize = (name: string): string => {
   return [words[0][0].toUpperCase() + words[0].slice(1), ...words.slice(1)].join(" ")
 }
 
-const logCurrentCommand = (commandLine: ReadonlyArray<CommandLineArg>): Effect.Effect<void> =>
-  Console.log(renderCommandBlock("Current command", commandLine.map((arg) => arg.displayValue), Ansi.magenta))
+const logCurrentCommand = (commandLine: ReadonlyArray<CommandLineArg>, colors: boolean): Effect.Effect<void> =>
+  Console.log(renderCommandBlock("Current command", commandLine.map((arg) => arg.displayValue), colors, Ansi.magenta))
 
-const renderSection = (commandName: string, section: string): string =>
-  `${Ansi.annotate(commandName.toUpperCase(), Ansi.bold, Ansi.cyanBright)} ${Ansi.annotate("·", Ansi.blackBright)} ${
-    Ansi.annotate(section, Ansi.bold, Ansi.white)
-  }`
+const renderSection = (commandName: string, section: string, colors: boolean): string =>
+  `${Ansi.annotate(colors, commandName.toUpperCase(), Ansi.bold, Ansi.cyanBright)} ${
+    Ansi.annotate(colors, "·", Ansi.blackBright)
+  } ${Ansi.annotate(colors, section, Ansi.bold, Ansi.white)}`
 
-export const renderIntroduction = (name: string, version: string, summary: string | undefined): string => {
-  const title = `${Ansi.annotate(name, Ansi.bold, Ansi.cyanBright)} ${Ansi.annotate(`v${version}`, Ansi.white)} ${
-    Ansi.annotate("· Command wizard", Ansi.bold, Ansi.white)
-  }`
+export const renderIntroduction = (
+  name: string,
+  version: string,
+  summary: string | undefined,
+  colors: boolean
+): string => {
+  const title = `${Ansi.annotate(colors, name, Ansi.bold, Ansi.cyanBright)} ${
+    Ansi.annotate(colors, `v${version}`, Ansi.white)
+  } ${Ansi.annotate(colors, "· Command wizard", Ansi.bold, Ansi.white)}`
   return [
     title,
     ...(summary === undefined || summary.length === 0 ? [] : [summary]),
-    Ansi.annotate("Build a command interactively. Press Ctrl+C to cancel.", Ansi.blackBright),
+    Ansi.annotate(colors, "Build a command interactively. Press Ctrl+C to cancel.", Ansi.blackBright),
     ""
   ].join("\n")
 }
 
-export const renderCompletion = (commandLine: ReadonlyArray<string>): string =>
-  renderCommandBlock("Command ready", commandLine, Ansi.cyanBright, Ansi.green)
+export const renderCompletion = (commandLine: ReadonlyArray<string>, colors: boolean): string =>
+  renderCommandBlock("Command ready", commandLine, colors, Ansi.cyanBright, Ansi.green)
 
-export const renderQuit = (): string => `\n${Ansi.annotate("Wizard cancelled.", Ansi.red)}`
+export const renderQuit = (colors: boolean): string => `\n${Ansi.annotate(colors, "Wizard cancelled.", Ansi.red)}`
 
 const renderCommandBlock = (
   label: string,
   commandLine: ReadonlyArray<string>,
+  colors: boolean,
   commandColor: string,
   labelColor: string = Ansi.white
 ): string => {
   const lines = wrapCommand(commandLine)
   return [
-    Ansi.annotate(label, Ansi.bold, labelColor),
-    ...lines.map((line) => Ansi.annotate(line, commandColor)),
+    Ansi.annotate(colors, label, Ansi.bold, labelColor),
+    ...lines.map((line) => Ansi.annotate(colors, line, commandColor)),
     ""
   ].join("\n")
 }

@@ -1,5 +1,5 @@
-import { Schema } from "effect"
-import { type Response, Tool } from "effect/ai"
+import { Context, hole, Schema } from "effect"
+import { Response, Tool, Toolkit } from "effect/ai"
 import { describe, expect, it } from "tstyche"
 
 const BooleanTool = Tool.make("BooleanTool", {
@@ -13,6 +13,18 @@ const TransformTool = Tool.make("TransformTool", {
   success: Schema.Number,
   failure: Schema.Struct({ message: Schema.String })
 })
+
+class ParamsDecoder extends Context.Service<ParamsDecoder, {}>()("test/ResponseParamsDecoder") {}
+class ParamsEncoder extends Context.Service<ParamsEncoder, {}>()("test/ResponseParamsEncoder") {}
+class ResultDecoder extends Context.Service<ResultDecoder, {}>()("test/ResponseResultDecoder") {}
+class ResultEncoder extends Context.Service<ResultEncoder, {}>()("test/ResponseResultEncoder") {}
+
+const ServiceToolkit = Toolkit.make(
+  Tool.make("ServiceTool", {
+    parameters: hole<Schema.Codec<string, string, ParamsDecoder, ParamsEncoder>>(),
+    success: hole<Schema.Codec<string, string, ResultDecoder, ResultEncoder>>()
+  })
+)
 
 type Tools = {
   readonly BooleanTool: typeof BooleanTool
@@ -67,5 +79,32 @@ describe("Response", () => {
     } else {
       expect(result.result).type.toBe<number>()
     }
+  })
+
+  it("requires tool parameter and result services in toolkit schemas", () => {
+    const allParts = Response.AllParts(ServiceToolkit)
+    const part = Response.Part(ServiceToolkit)
+    const streamPart = Response.StreamPart(ServiceToolkit)
+
+    expect<typeof allParts["DecodingServices"]>().type.toBe<ParamsDecoder | ResultDecoder>()
+    expect<typeof allParts["EncodingServices"]>().type.toBe<ParamsEncoder | ResultEncoder>()
+    expect<typeof part["DecodingServices"]>().type.toBe<ParamsDecoder | ResultDecoder>()
+    expect<typeof part["EncodingServices"]>().type.toBe<ParamsEncoder | ResultEncoder>()
+    expect<typeof streamPart["DecodingServices"]>().type.toBe<ParamsDecoder | ResultDecoder>()
+    expect<typeof streamPart["EncodingServices"]>().type.toBe<ParamsEncoder | ResultEncoder>()
+  })
+
+  it("requires tool parameter and result services in handled toolkit schemas", () => {
+    const toolkit = hole<Toolkit.WithHandler<typeof ServiceToolkit.tools>>()
+    const allParts = Response.AllParts(toolkit)
+    const part = Response.Part(toolkit)
+    const streamPart = Response.StreamPart(toolkit)
+
+    expect<typeof allParts["DecodingServices"]>().type.toBe<ParamsDecoder | ResultDecoder>()
+    expect<typeof allParts["EncodingServices"]>().type.toBe<ParamsEncoder | ResultEncoder>()
+    expect<typeof part["DecodingServices"]>().type.toBe<ParamsDecoder | ResultDecoder>()
+    expect<typeof part["EncodingServices"]>().type.toBe<ParamsEncoder | ResultEncoder>()
+    expect<typeof streamPart["DecodingServices"]>().type.toBe<ParamsDecoder | ResultDecoder>()
+    expect<typeof streamPart["EncodingServices"]>().type.toBe<ParamsEncoder | ResultEncoder>()
   })
 })

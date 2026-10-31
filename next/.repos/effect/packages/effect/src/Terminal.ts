@@ -43,6 +43,12 @@ export interface Terminal {
 
   readonly rows: Effect.Effect<number>
   /**
+   * Subscribes to terminal size changes. The queue starts with the current
+   * dimensions, receives each resize until the scope closes, and keeps only the
+   * latest size.
+   */
+  readonly size: Effect.Effect<Queue.Dequeue<Size, Cause.Done>, never, Scope.Scope>
+  /**
    * Reads input events from the default standard input.
    */
   readonly readInput: Effect.Effect<Queue.Dequeue<UserInput, Cause.Done>, never, Scope.Scope>
@@ -54,6 +60,18 @@ export interface Terminal {
    * Displays text to the default standard output.
    */
   readonly display: (text: string) => Effect.Effect<void, PlatformError>
+}
+
+/**
+ * Terminal dimensions measured in character cells.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export interface Size {
+  readonly columns: number
+  readonly rows: number
 }
 
 /**
@@ -183,7 +201,7 @@ export const Terminal: Context.Service<Terminal, Terminal> = Context.Service("ef
  *
  * **Details**
  *
- * The implementation object supplies `columns`, `rows`, `readInput`,
+ * The implementation object supplies `columns`, `rows`, `size`, `readInput`,
  * `readLine`, and `display`; `make` attaches the `Terminal` service marker so
  * the result can be provided through the `Terminal` context service.
  *

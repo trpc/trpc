@@ -1,8 +1,11 @@
 import * as DenoRedis from "@effect/platform-deno/DenoRedis"
 import { assert, it } from "@effect/vitest"
 import { RedisContainer } from "@testcontainers/redis"
-import { Deferred, Effect, Fiber, Layer, Queue, Schema } from "effect"
-import { PersistedQueue, Persistence, Redis } from "effect/persistence"
+import { Deferred, Effect, Exit, Fiber, Layer, Queue, Schema } from "effect"
+import { CircuitBreaker, PersistedQueue, Persistence, Redis } from "effect/persistence"
+import { TestClock } from "effect/testing"
+import * as CircuitBreakerRedisTest from "../../../effect/test/persistence/CircuitBreakerRedisTest.ts"
+import * as CircuitBreakerTest from "../../../effect/test/persistence/CircuitBreakerTest.ts"
 import * as PersistedCacheTest from "../../../effect/test/persistence/PersistedCacheTest.ts"
 import * as PersistedQueueTest from "../../../effect/test/persistence/PersistedQueueTest.ts"
 
@@ -35,6 +38,15 @@ PersistedQueueTest.suite(
   }).pipe(Layer.provide(RedisLayer))
 )
 
+CircuitBreakerTest.suite(
+  "DenoRedis",
+  (options) => CircuitBreaker.layerStoreRedis(options).pipe(Layer.provide(RedisLayer)),
+  // the store reads Redis TIME, so time only moves on the wall clock
+  (duration) => TestClock.withLive(Effect.sleep(duration))
+)
+
+CircuitBreakerRedisTest.suite("DenoRedis", RedisLayer)
+
 const PersistedQueueRedisLayer = Layer.mergeAll(
   RedisLayer,
   PersistedQueue.layer.pipe(
@@ -59,6 +71,48 @@ it.layer(PersistedQueueRedisLayer, { timeout: "30 seconds" })(
           channel: "effect-test",
           message: "hello"
         })
+      }))
+
+    it.effect("runs blocking reads on a reserved connection without delaying shared commands", () =>
+      Effect.gen(function*() {
+        const redis = yield* Redis.Redis
+        const read = yield* redis.reserve.pipe(
+          Effect.flatMap((connection) =>
+            connection.send("XREAD", "BLOCK", "5000", "STREAMS", "effect-test-reserve", "$")
+          ),
+          Effect.scoped,
+          Effect.forkChild
+        )
+        // XREAD with "$" only sees entries added after it starts blocking
+        yield* redis.send<string>("CLIENT", "LIST").pipe(
+          Effect.repeat({ until: (clients) => clients.includes("cmd=xread") })
+        )
+        yield* redis.send("XADD", "effect-test-reserve", "*", "key", "value")
+
+        assert.include(JSON.stringify(yield* Fiber.join(read)), "value")
+      }))
+
+    it.effect("fails a reserved command when its connection drops instead of replaying it", () =>
+      Effect.gen(function*() {
+        const redis = yield* Redis.Redis
+        const list = "effect-test-reserve-drop"
+        const exit = yield* Effect.scoped(Effect.gen(function*() {
+          const connection = yield* redis.reserve
+          const id = yield* connection.send<number>("CLIENT", "ID")
+          const pop = yield* connection.send("BLPOP", list, "0").pipe(Effect.forkChild)
+          yield* redis.send<string>("CLIENT", "LIST").pipe(
+            Effect.repeat({
+              until: (clients) =>
+                clients.split("\n").some((client) => client.startsWith(`id=${id} `) && client.includes("cmd=blpop"))
+            })
+          )
+          yield* redis.send("CLIENT", "KILL", "ID", String(id))
+          yield* redis.send("LPUSH", list, "item")
+          return yield* Fiber.await(pop)
+        }))
+
+        assert.isTrue(Exit.isFailure(exit))
+        assert.strictEqual(yield* redis.send<number>("LLEN", list), 1)
       }))
 
     it.effect("moves exhausted elements to the failed list", () =>

@@ -8,6 +8,26 @@ const waitUntil = (predicate: () => boolean) =>
   Effect.repeat(Effect.andThen(Effect.yieldNow, Effect.sync(predicate)), { until: (done) => done })
 
 describe("Pool", () => {
+  it.effect("admits requests in FIFO order when a borrower immediately reacquires", () =>
+    Effect.gen(function*() {
+      const pool = yield* Pool.make({ acquire: Effect.succeed("connection"), size: 1 })
+      let asked = 0
+      const admitted: Array<number> = []
+      const use = Effect.scoped(Effect.gen(function*() {
+        const ticket = asked++
+        yield* Pool.get(pool)
+        admitted.push(ticket)
+        yield* Effect.sleep("10 millis")
+      }))
+      const chained = yield* Effect.forkChild(Effect.repeat(use, { times: 2 }))
+      const others = yield* Effect.forEach([1, 2, 3], (at) => Effect.forkChild(Effect.delay(use, at)))
+
+      yield* TestClock.adjust("100 millis")
+      yield* Fiber.join(chained)
+      yield* Fiber.joinAll(others)
+      deepStrictEqual(admitted, [0, 1, 2, 3, 4, 5])
+    }))
+
   it.effect("preallocates pool items", () =>
     Effect.gen(function*() {
       const count = yield* Ref.make(0)
@@ -66,6 +86,32 @@ describe("Pool", () => {
       yield* Scope.close(borrower, Exit.void)
       yield* Fiber.join(closing)
       deepStrictEqual(events, ["resource-released", "owner-dependency-released"])
+    }))
+
+  it.effect("a later finalizer of the pool's scope can get an item after idle items expire", () =>
+    Effect.gen(function*() {
+      let acquired = 0
+      const scope = yield* Scope.make()
+      const pool = yield* Pool.makeWithTTL({
+        acquire: Effect.sync(() => ++acquired),
+        min: 0,
+        max: 1,
+        timeToLive: "1 second"
+      }).pipe(Scope.provide(scope))
+      let result: Exit.Exit<number> | undefined
+      yield* Scope.addFinalizer(
+        scope,
+        Effect.scoped(Pool.get(pool)).pipe(Effect.exit, Effect.map((exit) => (result = exit)))
+      )
+      yield* Effect.scoped(Pool.get(pool))
+      yield* TestClock.adjust("2 seconds")
+
+      // Finalizers are uninterruptible: bound the wait by polling, and detach
+      // the close so a hang cannot block the test's cleanup.
+      const closing = yield* Effect.forkDetach(Scope.close(scope, Exit.void))
+      for (let i = 0; i < 100 && closing.pollUnsafe() === undefined; i++) yield* Effect.yieldNow
+      assert.isDefined(closing.pollUnsafe(), "Scope.close did not return")
+      deepStrictEqual(result, Exit.succeed(2))
     }))
 
   it.effect("defects don't prevent cleanup", () =>
@@ -830,6 +876,142 @@ describe("Pool", () => {
       strictEqual(pool.state.usage, 0)
     }))
 
+  it.effect("serves a waiter before a later borrower takes the released item", () =>
+    Effect.gen(function*() {
+      const pool = yield* Pool.make({ acquire: Effect.succeed("resource"), size: 1 })
+      let busyBorrows = 0
+      const busy = yield* Effect.forkChild(Effect.gen(function*() {
+        for (let i = 0; i < 100; i++) {
+          yield* Pool.use(pool, () => Effect.yieldNow)
+          busyBorrows++
+        }
+      }))
+      yield* Effect.yieldNow
+      const waitedBorrows = yield* Pool.use(pool, () => Effect.sync(() => busyBorrows))
+      yield* Fiber.join(busy)
+      assert.isAtMost(waitedBorrows, 1)
+    }))
+
+  it.effect("wakes the next waiter when a woken waiter interrupts another", () =>
+    Effect.gen(function*() {
+      const pool = yield* Pool.make({ acquire: Effect.succeed("resource"), size: 1, concurrency: 3 })
+      const owner = yield* Scope.make()
+      yield* Pool.get(pool).pipe(Scope.provide(owner))
+      const reservation = yield* Scope.make()
+      yield* Pool.reserve(pool, "resource").pipe(Scope.provide(reservation))
+      let b: Fiber.Fiber<void> | undefined
+      const a = yield* Effect.forkChild(
+        Pool.use(pool, () => Effect.andThen(Effect.suspend(() => Fiber.interrupt(b!)), Effect.never)),
+        { startImmediately: true }
+      )
+      b = yield* Effect.forkChild(Pool.use(pool, () => Effect.void), { startImmediately: true })
+      const c = yield* Effect.forkChild(Pool.use(pool, Effect.succeed), { startImmediately: true })
+      // Frees two slots: one for `a`, and one for `c` once `a` interrupts `b`.
+      yield* Scope.close(reservation, Exit.void)
+      strictEqual(yield* Fiber.join(c), "resource")
+      assert.isTrue(Exit.hasInterrupts(yield* Fiber.await(b)))
+      yield* Fiber.interrupt(a)
+      yield* Scope.close(owner, Exit.void)
+      strictEqual(pool.state.usage, 0)
+    }))
+
+  it.effect("serves a waiter while another acquisition is still pending", () =>
+    Effect.gen(function*() {
+      const acquisitions = [yield* Deferred.make<void>(), yield* Deferred.make<void>()]
+      let acquired = 0
+      const pool = yield* Pool.make({
+        acquire: Effect.suspend(() => {
+          const index = acquired++
+          return Effect.as(Deferred.await(acquisitions[index]), index)
+        }),
+        size: 2
+      })
+      const waiter = yield* Effect.forkChild(Pool.use(pool, Effect.succeed), { startImmediately: true })
+      yield* Deferred.succeed(acquisitions[0], undefined)
+      strictEqual(yield* Fiber.join(waiter), 0)
+      strictEqual(pool.state.usage, 0)
+    }))
+
+  it.effect("wakes the next waiter when a woken waiter is interrupted before it takes the item", () =>
+    Effect.gen(function*() {
+      const pool = yield* Pool.make({ acquire: Effect.succeed("resource"), size: 1 })
+      const owner = yield* Scope.make()
+      yield* Pool.get(pool).pipe(Scope.provide(owner))
+      // Lets `first` yield once, as soon as it is woken.
+      let yieldOnce = false
+      const scheduler = yield* Scheduler.Scheduler
+      const first = yield* Effect.forkChild(
+        Pool.use(pool, Effect.succeed).pipe(Effect.provideService(Scheduler.Scheduler, {
+          executionMode: scheduler.executionMode,
+          makeDispatcher: () => scheduler.makeDispatcher(),
+          shouldYield: (fiber) => {
+            if (!yieldOnce) return scheduler.shouldYield(fiber)
+            yieldOnce = false
+            return true
+          }
+        })),
+        { startImmediately: true }
+      )
+      const second = yield* Effect.forkChild(Pool.use(pool, Effect.succeed), { startImmediately: true })
+      yield* Scope.close(owner, Exit.void)
+      yieldOnce = true
+      yield* Effect.yieldNow
+      yield* Fiber.interrupt(first)
+      strictEqual(yield* Fiber.join(second), "resource")
+      assert.isTrue(Exit.hasInterrupts(yield* Fiber.await(first)))
+      strictEqual(pool.state.usage, 0)
+    }))
+
+  it.effect("wakes the next waiter when a woken waiter has yet to take its item", () =>
+    Effect.gen(function*() {
+      let acquired = 0
+      const pool = yield* Pool.make({ acquire: Effect.sync(() => ++acquired), size: 2 })
+      const owners = [yield* Scope.make(), yield* Scope.make()]
+      for (const owner of owners) yield* Pool.get(pool).pipe(Scope.provide(owner))
+      // Keeps `first` yielding, once woken, until `hold` is cleared.
+      let hold = false
+      const scheduler = yield* Scheduler.Scheduler
+      const first = yield* Effect.forkChild(
+        Pool.use(pool, () => Effect.never).pipe(Effect.provideService(Scheduler.Scheduler, {
+          executionMode: scheduler.executionMode,
+          makeDispatcher: () => scheduler.makeDispatcher(),
+          shouldYield: (fiber) => hold || scheduler.shouldYield(fiber)
+        })),
+        { startImmediately: true }
+      )
+      const second = yield* Effect.forkChild(Pool.use(pool, Effect.succeed), { startImmediately: true })
+      hold = true
+      yield* Scope.close(owners[0], Exit.void)
+      yield* Effect.yieldNow
+      // `first` is awake but has not taken its item, so this wake is `second`'s.
+      yield* Scope.close(owners[1], Exit.void)
+      yield* Effect.yieldNow
+      hold = false
+      assert.isNumber(yield* Fiber.join(second))
+      yield* Fiber.interrupt(first)
+      strictEqual(pool.state.usage, 0)
+    }))
+
+  it.effect("wakes the next waiter when a waiter is woken during its interruption", () =>
+    Effect.gen(function*() {
+      // Each budget makes the interrupted waiter yield at a different point of
+      // its cleanup, so the wake lands while that cleanup is in progress.
+      for (let budget = 3; budget <= 10; budget++) {
+        const pool = yield* Pool.make({ acquire: Effect.succeed("resource"), size: 1 })
+        const owner = yield* Scope.make()
+        yield* Pool.get(pool).pipe(Scope.provide(owner))
+        const first = yield* Effect.forkChild(
+          Pool.use(pool, Effect.succeed).pipe(Effect.provideService(Scheduler.MaxOpsBeforeYield, budget)),
+          { startImmediately: true }
+        )
+        yield* waitUntil(() => pool.state.waiters.size === 1)
+        const second = yield* Effect.forkChild(Pool.use(pool, Effect.succeed), { startImmediately: true })
+        yield* Scope.close(owner, Exit.void)
+        first.interruptUnsafe()
+        strictEqual(yield* Fiber.join(second), "resource", `MaxOpsBeforeYield ${budget}`)
+      }
+    }))
+
   it.effect("use reports acquire failures", () =>
     Effect.gen(function*() {
       const pool = yield* Pool.makeWithTTL({
@@ -886,11 +1068,10 @@ describe("Pool", () => {
         strategy: {
           run: () => Effect.void,
           reclaim: () => Effect.undefined,
-          onAcquire: (item) =>
-            Effect.gen(function*() {
-              callbacks++
-              if (Exit.isSuccess(item.exit)) yield* Deferred.succeed(replacementAcquired, undefined)
-            })
+          onAcquire: Effect.fnUntraced(function*(item) {
+            callbacks++
+            if (Exit.isSuccess(item.exit)) yield* Deferred.succeed(replacementAcquired, undefined)
+          })
         }
       })
       yield* Effect.addFinalizer(() => Deferred.succeed(resumeCleanup, undefined))
@@ -901,6 +1082,46 @@ describe("Pool", () => {
       strictEqual(acquired, 2)
       strictEqual(callbacks, 1)
       yield* Deferred.succeed(resumeCleanup, undefined)
+    }))
+
+  it.effect("serves a waiter from capacity a strategy reclaims", () =>
+    Effect.gen(function*() {
+      const reclaim = yield* Deferred.make<void>()
+      const pool = yield* Pool.makeWithStrategy({
+        acquire: Effect.succeed("resource"),
+        min: 1,
+        max: 1,
+        concurrency: 2,
+        strategy: {
+          run: () => Effect.void,
+          onAcquire: () => Effect.void,
+          // Revive an invalidated item instead of acquiring a replacement.
+          reclaim: (pool) =>
+            Effect.suspend(() => {
+              const item = pool.state.invalidated.values().next().value
+              if (item === undefined) return Effect.undefined
+              return Effect.andThen(
+                Deferred.await(reclaim),
+                Effect.sync(() => {
+                  pool.state.invalidated.delete(item)
+                  return item
+                })
+              )
+            })
+        }
+      })
+      const owner = yield* Scope.make()
+      const borrower = yield* Scope.make()
+      yield* Pool.get(pool).pipe(Scope.provide(owner))
+      yield* Pool.get(pool).pipe(Scope.provide(borrower))
+      const waiter = yield* Effect.forkChild(Pool.use(pool, Effect.succeed), { startImmediately: true })
+      yield* Pool.invalidate(pool, "resource")
+      yield* Scope.close(borrower, Exit.void)
+      // Reclaiming the item frees the slot `borrower` returned.
+      yield* Deferred.succeed(reclaim, undefined)
+      strictEqual(yield* Fiber.join(waiter), "resource")
+      yield* Scope.close(owner, Exit.void)
+      strictEqual(pool.state.usage, 0)
     }))
 
   it.effect("admits one waiter per released lease", () =>
@@ -1146,4 +1367,69 @@ describe("Pool", () => {
         }
       }))
   }
+
+  describe("stats", () => {
+    it.effect("counts leased items rather than borrowers, and parked waiters as pending", () =>
+      Effect.gen(function*() {
+        let acquired = 0
+        const pool = yield* Pool.make({ acquire: Effect.sync(() => ++acquired), size: 2, concurrency: 2 })
+        yield* waitUntil(() => acquired === 2)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 2, used: 0, pending: 0, min: 2, max: 2 })
+
+        const leases = yield* Scope.fork(yield* Effect.scope)
+        yield* Scope.provide(Pool.get(pool), leases)
+        yield* Scope.provide(Pool.get(pool), leases)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 1, used: 1, pending: 0, min: 2, max: 2 })
+        yield* Scope.provide(Pool.get(pool), leases)
+        yield* Scope.provide(Pool.get(pool), leases)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 0, used: 2, pending: 0, min: 2, max: 2 })
+
+        const waiter = yield* Scope.fork(yield* Effect.scope)
+        const fiber = yield* Scope.provide(Pool.get(pool), waiter).pipe(Effect.forkChild({ startImmediately: true }))
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 0, used: 2, pending: 1, min: 2, max: 2 })
+
+        yield* Scope.close(leases, Exit.void)
+        yield* Fiber.join(fiber)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 1, used: 1, pending: 0, min: 2, max: 2 })
+        yield* Scope.close(waiter, Exit.void)
+      }))
+
+    it.effect("counts a reserved item as used after its borrowers return", () =>
+      Effect.gen(function*() {
+        const pool = yield* Pool.make({ acquire: Effect.succeed("resource"), size: 1, concurrency: 2 })
+        const lease = yield* Scope.fork(yield* Effect.scope)
+        const reservation = yield* Scope.fork(yield* Effect.scope)
+        yield* Scope.provide(Pool.get(pool), lease)
+        yield* Scope.provide(Pool.reserve(pool, "resource"), reservation)
+        yield* Scope.close(lease, Exit.void)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 0, used: 1, pending: 0, min: 1, max: 1 })
+        yield* Scope.close(reservation, Exit.void)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 1, used: 0, pending: 0, min: 1, max: 1 })
+      }))
+
+    it.effect("counts an invalidated item as used until its last borrower returns", () =>
+      Effect.gen(function*() {
+        let acquired = 0
+        const pool = yield* Pool.make({ acquire: Effect.sync(() => ++acquired), size: 1 })
+        const lease = yield* Scope.fork(yield* Effect.scope)
+        const item = yield* Scope.provide(Pool.get(pool), lease)
+        yield* Pool.invalidate(pool, item)
+        yield* waitUntil(() => acquired === 2)
+        // The invalidated session is still open, so both count against `max`.
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 1, used: 1, pending: 0, min: 1, max: 1 })
+        yield* Scope.close(lease, Exit.void)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 1, used: 0, pending: 0, min: 1, max: 1 })
+      }))
+
+    it.effect("does not count failed acquisitions", () =>
+      Effect.gen(function*() {
+        let attempts = 0
+        const pool = yield* Pool.make({
+          acquire: Effect.suspend(() => ++attempts === 2 ? Effect.fail("boom") : Effect.succeed(attempts)),
+          size: 2
+        })
+        yield* waitUntil(() => pool.state.items.size === 2)
+        deepStrictEqual(yield* Pool.stats(pool), { idle: 1, used: 0, pending: 0, min: 2, max: 2 })
+      }))
+  })
 })

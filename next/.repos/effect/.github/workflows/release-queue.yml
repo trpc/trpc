@@ -10,16 +10,7 @@ on:
 permissions: {}
 
 jobs:
-  approval-gate:
-    if: github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-latest
-    environment: fork
-    steps:
-      - run: echo "Fork PR approved by maintainer."
-
   update:
-    needs: [approval-gate]
-    if: always() && (needs.approval-gate.result == 'success' || needs.approval-gate.result == 'skipped')
     name: Update
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -31,11 +22,20 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.EFFECT_BOT_GH }}
+      # Non-cone mode excludes root files too. Git preserves this restriction across gh pr checkout.
+      # Keep full checkouts for same-repo PRs, pushes, and comments used by release/rebase paths.
+      - name: Limit fork checkout to changesets
+        if: github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository
+        run: git sparse-checkout set --no-cone '/.changeset/'
+      # This checks out untrusted fork code with privileged bot credentials available to subsequent steps.
+      # Sparse checkout reduces exposed files; it is not a security boundary.
+      # No step may execute code from the working tree (including installs, builds, or repo scripts).
+      # The pinned release action only reads changeset files on the fork PR path.
       - run: gh pr checkout ${{ github.event.pull_request.number }}
         if: github.event.pull_request
         env:
           GITHUB_TOKEN: ${{ secrets.EFFECT_BOT_GH }}
-      - uses: Effect-TS/next-release-action@63daaa626282bc42fad44dcb89c7f7db9c53b786
+      - uses: Effect-TS/next-release-action@2c03239f3fa0d648a88eb6c5e4f266275f7658a8 # Restore automatic release branch rebasing
         with:
           github_token: ${{ secrets.EFFECT_BOT_GH }}
           base_branch: main

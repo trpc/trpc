@@ -78,11 +78,30 @@ export interface Workflow<
 
   /**
    * Execute the workflow with the given payload.
+   *
+   * **Details**
+   *
+   * `discard: true` returns the execution ID without waiting for the result.
+   * The child remains linked to its parent for completion wakes and interruption.
+   *
+   * With `discard: true, detached: true`, the child neither wakes its parent
+   * nor gets interrupted with it. The cluster engine retains the parent for
+   * observability.
+   *
+   * Inside a workflow, an awaited child that is interrupted fails the parent
+   * with a defect rather than an interrupt, so the parent can recover with
+   * `Effect.catchDefect` or `Effect.exit`.
+   *
+   * **Gotchas**
+   *
+   * Do not await a detached execution later. Executing the same payload joins
+   * it, but its completion will not wake the awaiting workflow.
    */
   readonly execute: <const Discard extends boolean = false>(
     payload: Payload["~type.make.in"],
     options?: {
       readonly discard?: Discard
+      readonly detached?: [Discard] extends [true] ? boolean | undefined : undefined
     }
   ) => Effect.Effect<
     Discard extends true ? string : Success["Type"],
@@ -248,7 +267,7 @@ export interface AnyWithProps extends Any {
   readonly errorSchema: Schema.Top
   readonly execute: (
     payload: any,
-    options?: { readonly discard?: boolean }
+    options?: { readonly discard?: boolean; readonly detached?: boolean | undefined }
   ) => Effect.Effect<any, any, any>
   readonly resume: (
     executionId: string
@@ -352,7 +371,7 @@ const Proto = {
   execute<const Discard extends boolean = false>(
     this: AnyWithProps,
     fields: any,
-    opts?: { readonly discard?: Discard } | undefined
+    opts?: { readonly discard?: Discard; readonly detached?: boolean | undefined } | undefined
   ) {
     return Effect.suspend(() => {
       const payload = this.payloadSchema.make(fields)
@@ -366,6 +385,7 @@ const Proto = {
                 executionId,
                 payload,
                 discard: opts?.discard,
+                detached: opts?.detached,
                 suspendedRetrySchedule: this.suspendedRetrySchedule
               })
             ))
@@ -617,6 +637,11 @@ export class Complete<A, E> extends Data.TaggedClass("Complete")<{
  * Represents a suspended workflow execution, optionally carrying the cause that
  * triggered suspension.
  *
+ * **Details**
+ *
+ * `failed` marks this execution's own `SuspendOnFailure` and requires explicit
+ * `resume` or `interrupt`. Inherited child failures do not set it.
+ *
  * @stability unstable
  * @category schemas
  * @since 4.0.0
@@ -625,7 +650,8 @@ export class Suspended extends Schema.Class<Suspended>(
   "effect/workflow/Workflow/Suspended"
 )({
   _tag: Schema.tag("Suspended"),
-  cause: Schema.optional(Schema.Cause(Schema.Never, Schema.Defect()))
+  cause: Schema.optional(Schema.Cause(Schema.Never, Schema.Defect())),
+  failed: Schema.optional(Schema.Boolean)
 }) {
   /**
    * Marks this value as a workflow result for runtime guards.
@@ -697,11 +723,13 @@ export const intoResult = <A, E, R>(
       Effect.interruptible,
       suspendOnFailure
         ? Effect.catchCause((cause) => {
-          if (instance.abandoned) {
+          if (instance.abandoned || instance.interrupted) {
             return Effect.failCause(cause)
           }
           instance.suspended = true
+          // Ordinary suspension is a self-interrupt and also reaches here.
           if (!Cause.hasInterruptsOnly(cause)) {
+            instance.failed = true
             instance.cause = Cause.die(Cause.squash(cause))
           }
           return Effect.interrupt
@@ -720,7 +748,9 @@ export const intoResult = <A, E, R>(
           const abandoned = instance.abandoned && !instance.interrupted && hasInterruptsOnly
           instance.abandoned = abandoned
           if (instance.suspended && hasInterruptsOnly && !abandoned) {
-            return Effect.succeed(new Suspended({ cause: instance.cause }))
+            return Effect.succeed(
+              new Suspended(instance.failed ? { cause: instance.cause, failed: true } : { cause: instance.cause })
+            )
           }
           if (!instance.interrupted && hasInterruptsOnly) {
             // External interrupts exit without a result. When the cluster has

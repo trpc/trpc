@@ -46,8 +46,9 @@ export const encode: (input: Uint8Array | string) => string = (input) =>
  * coercion rules.
  *
  * This function uses `Math.random()` and is not cryptographically secure. For
- * security-sensitive values, use the `Crypto.Crypto` service's `randomBytes`
- * method and encode the result with {@link encode}.
+ * security-sensitive values, draw bytes with the `randomBytes` method of the
+ * `SecureRandom` service from `effect/crypto/SecureRandom`, and encode them with
+ * {@link encode}.
  *
  * @stability stable
  * @category encoding

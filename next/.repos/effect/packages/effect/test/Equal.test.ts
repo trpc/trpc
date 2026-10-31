@@ -154,6 +154,16 @@ describe("Equal.equals", () => {
       expect(Equal.equals(obj1, obj2)).toBe(false)
     })
 
+    // The protocol keys are strings, so data can carry them without implementing the protocols.
+    it("should compare non-callable protocol keys as data", () => {
+      for (const key of [Equal.symbol, Hash.symbol]) {
+        assert.isTrue(Equal.equals({ [key]: "v1" }, { [key]: "v1" }), key)
+        assert.isFalse(Equal.equals({ [key]: "v1" }, { [key]: "v2" }), key)
+      }
+      assert.isFalse(Equal.isEqual({ [Equal.symbol]: "v1" }))
+      assert.isTrue(Equal.isEqual(new Key("a")))
+    })
+
     describe("symbol properties", () => {
       it("should return true for objects with identical symbol keys and values", () => {
         const sym1 = Symbol("test")
@@ -413,6 +423,37 @@ describe("Equal.equals", () => {
 
     it("should compare invalid dates without throwing", () => {
       expect(Equal.equals(new Date(NaN), new Date(NaN))).toBe(true)
+    })
+  })
+
+  describe("ArrayBuffer objects", () => {
+    const make = (Buffer: typeof ArrayBuffer | typeof SharedArrayBuffer, bytes: ReadonlyArray<number>) => {
+      const buffer = new Buffer(bytes.length)
+      new Uint8Array(buffer).set(bytes)
+      return buffer
+    }
+
+    it("should compare bytes", () => {
+      for (const Buffer of [ArrayBuffer, SharedArrayBuffer]) {
+        expect(Equal.equals(make(Buffer, [1, 2]), make(Buffer, [1, 2]))).toBe(true)
+        expect(Equal.equals(make(Buffer, [1, 2]), make(Buffer, [9, 9]))).toBe(false)
+      }
+    })
+
+    it("should not equal views or other buffer kinds with the same bytes", () => {
+      const buffer = make(ArrayBuffer, [1, 2])
+      for (const other of [new Uint8Array(buffer), make(SharedArrayBuffer, [1, 2])]) {
+        expect(Equal.equals(buffer, other)).toBe(false)
+        expect(Equal.equals(other, buffer)).toBe(false)
+      }
+    })
+
+    it("should compare detached buffers by reference", () => {
+      const self = new ArrayBuffer(2)
+      const that = new ArrayBuffer(2)
+      structuredClone(self, { transfer: [self] })
+      structuredClone(that, { transfer: [that] })
+      expect(Equal.equals(self, that)).toBe(false)
     })
   })
 

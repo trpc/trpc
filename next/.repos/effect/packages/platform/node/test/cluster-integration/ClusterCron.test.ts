@@ -17,13 +17,12 @@ const addressString = (address: { readonly host: string; readonly port: number }
 const recordTick = (ticks: Array<Tick>) =>
   Effect.contextWith((context: Context.Context<never>) =>
     Effect.gen(function*() {
-      const address = Context.getUnsafe(context, Entity.CurrentAddress)
       const runner = Context.getUnsafe(context, Entity.CurrentRunnerAddress)
       const at = yield* Clock.currentTimeMillis
       const tick = {
         at,
         runner: addressString(runner),
-        scheduled: String(address.entityId)
+        scheduled: DateTime.formatIso(Context.getUnsafe(context, ClusterCron.CurrentScheduledTime))
       }
       const isFirst = ticks.length === 0
       ticks.push(tick)
@@ -48,8 +47,7 @@ const assertScheduledFromExecutionTime = (
 }
 
 const assertScheduledFromPrevious = (cron: Cron.Cron, ticks: ReadonlyArray<Tick>) => {
-  assert.strictEqual(ticks[0].scheduled, "initial")
-  for (let index = 2; index < ticks.length; index++) {
+  for (let index = 1; index < ticks.length; index++) {
     assert.strictEqual(ticks[index].scheduled, nextScheduled(cron, ticks[index - 1].scheduled))
   }
 }
@@ -99,9 +97,13 @@ describe("cluster cron integration", () => {
         const previousTicks: Array<Tick> = []
         const currentTicks: Array<Tick> = []
         const gate = Latch.makeUnsafe()
+        // Hold an execution only once the assignments are stable, as a held
+        // execution on a moving shard would keep that shard from being released.
+        let armed = false
         let entered = 0
         const blockedExecution = Effect.fnUntraced(
           function*(ticks: Array<Tick>) {
+            if (!armed) return
             if (yield* recordTick(ticks)) {
               entered++
               yield* gate.await
@@ -127,6 +129,7 @@ describe("cluster cron integration", () => {
         })
         yield* cluster.start(3)
         yield* cluster.waitForStableAssignments()
+        armed = true
         yield* cluster.waitUntil(
           "Both cron executions did not enter their first run",
           Effect.sync(() => entered === 2)

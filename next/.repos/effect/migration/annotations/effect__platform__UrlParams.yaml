@@ -51,4 +51,4 @@
   note: "Retained and broadened to accept any UrlParams.Input."
 "@effect/platform/UrlParams#UrlParams":
   replacement: "UrlParams.UrlParams"
-  note: "Import UrlParams from effect/http. It is now a branded iterable object with a params field rather than a ReadonlyArray; construct it with UrlParams.make or UrlParams.fromInput."
+  note: "Import UrlParams from effect/http. It is now a branded iterable object with a params field rather than a ReadonlyArray; construct it with UrlParams.make or UrlParams.fromInput. Iteration and params values are string | Redacted.Redacted, not just string. getAll, getFirst, getLast and toRecord unwrap values; toString also serializes unwrapped values and can expose secrets."

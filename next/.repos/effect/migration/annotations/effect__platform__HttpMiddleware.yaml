@@ -25,3 +25,6 @@
 "@effect/platform/HttpMiddleware#withTracerDisabledWhenEffect":
   replacement: "Effect.provideService(effect, HttpMiddleware.TracerDisabledWhen, predicate)"
   note: "Provide the TracerDisabledWhen reference locally to the effect."
+"@effect/platform/HttpMiddleware#xForwardedHeaders":
+  replacement: "HttpMiddleware.xForwardedHeaders({ trustedProxies })"
+  note: "Now requires a trusted proxy policy; headers from untrusted peers are ignored and X-Forwarded-For is read from the right. HttpServerRequest.toURL no longer reads x-forwarded-proto directly."

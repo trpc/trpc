@@ -1,15 +1,15 @@
 "@effect/ai/McpServer#layer":
   replacement: "McpServer.layer"
-  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai; it still runs over a caller-provided RpcServer.Protocol."
+  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai; it still runs over a caller-provided RpcServer.Protocol. Pass registration layers as the registrations option to build them before the server starts."
 "@effect/ai/McpServer#layerHttp":
   replacement: "McpServer.layerHttp"
-  note: "Moved to effect/ai/McpServer and the unified HttpRouter. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai."
+  note: "Moved to effect/ai/McpServer and the unified HttpRouter. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai. Pass registration layers as the registrations option; request-level dependencies it doesn't supply become HttpRouter request requirements that HttpRouter.middleware can provide."
 "@effect/ai/McpServer#layerHttpRouter":
   replacement: "McpServer.layerHttp"
-  note: "Renamed and consolidated. V4 layerHttp registers the Streamable HTTP endpoint in the unified HttpRouter; pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai."
+  note: "Renamed and consolidated. V4 layerHttp registers the Streamable HTTP endpoint in the unified HttpRouter; pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai, and registration layers as the registrations option."
 "@effect/ai/McpServer#layerStdio":
   replacement: "McpServer.layerStdio"
-  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai."
+  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai, and registration layers as the registrations option."
 "@effect/ai/McpServer#run":
   replacement: "McpServer.run"
   note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai; it remains the Effect-level runner over RpcServer.Protocol."
@@ -18,19 +18,19 @@
   note: "The service is now a Context.Service. initializedClients and notificationsMailbox are no longer exposed. Registration callbacks use McpSchema.McpRequestContext; McpServerClient is only supplied for initialized stateful requests. Prefer registerToolkit, registerResource, and registerPrompt over implementing the registry shape directly."
 "@effect/ai/McpServer#registerToolkit":
   replacement: "McpServer.registerToolkit"
-  note: "Moved to effect/ai/McpServer. Handler requirements now exclude McpSchema.McpRequestContext instead of McpServerClient. Strict tools reject excess input properties; raw JSON Schema dynamic tools cannot use strict mode. Declared handler failures produce isError results, while parameter validation fails with InvalidParams."
+  note: "Moved to effect/ai/McpServer. Services a tool declares with dependencies or Tool.addDependency are request-level: provide them per request with McpServer.middleware instead of at registration. Parameter decoding and result encoding services are still required at registration. Strict tools reject excess input properties; raw JSON Schema dynamic tools cannot use strict mode. Declared handler failures produce isError results, while parameter validation fails with InvalidParams."
 "@effect/ai/McpServer#toolkit":
   replacement: "McpServer.toolkit"
-  note: "Moved to effect/ai/McpServer. The registration layer supplies McpSchema.McpRequestContext to handlers instead of excluding McpServerClient from requirements. Strict tools reject excess properties and require an Effect Schema rather than raw dynamic JSON Schema."
+  note: "Moved to effect/ai/McpServer. The layer now requires McpServer; pass it to a transport through the registrations option. Services a tool declares with dependencies are request-level and are provided with McpServer.middleware. Strict tools reject excess properties and require an Effect Schema rather than raw dynamic JSON Schema."
 "@effect/ai/McpServer#registerResource":
   replacement: "McpServer.registerResource"
-  note: "Moved to effect/ai/McpServer. Resource and completion handler requirements now exclude McpSchema.McpRequestContext instead of McpServerClient; use the request context for protocol-neutral client metadata."
+  note: "Moved to effect/ai/McpServer. Services read by resource and completion handlers are request-level, provided per request with McpServer.middleware; read construction-time services in the enclosing effect and close over them. McpSchema.McpRequestContext is always provided."
 "@effect/ai/McpServer#resource":
   replacement: "McpServer.resource"
-  note: "Moved to effect/ai/McpServer. The registration layer excludes McpSchema.McpRequestContext from resource and completion handler requirements instead of McpServerClient."
+  note: "Moved to effect/ai/McpServer. The layer now requires McpServer. Services read by resource and completion handlers are request-level, provided with McpServer.middleware; read construction-time services in Layer.unwrap and close over them instead of using Layer.provide."
 "@effect/ai/McpServer#registerPrompt":
   replacement: "McpServer.registerPrompt"
-  note: "Moved to effect/ai/McpServer. Prompt decoding and handler requirements now exclude McpSchema.McpRequestContext instead of McpServerClient; use the request context for protocol-neutral client metadata."
+  note: "Moved to effect/ai/McpServer. Services read by prompt and completion handlers are request-level, provided per request with McpServer.middleware; parameter decoding services are still required at registration. McpSchema.McpRequestContext is always provided."
 "@effect/ai/McpServer#prompt":
   replacement: "McpServer.prompt"
-  note: "Moved to effect/ai/McpServer. The registration layer excludes McpSchema.McpRequestContext from prompt decoding and handler requirements instead of McpServerClient."
+  note: "Moved to effect/ai/McpServer. The layer now requires McpServer. Services read by prompt and completion handlers are request-level, provided with McpServer.middleware; read construction-time services in Layer.unwrap and close over them."

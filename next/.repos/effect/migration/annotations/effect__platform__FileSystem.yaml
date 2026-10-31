@@ -7,6 +7,9 @@
 "@effect/platform/FileSystem#File.Descriptor":
   replacement: "none"
   note: "Native file descriptors are no longer part of the portable File interface; use the File methods and keep any platform handle private in custom implementations."
+"@effect/platform/FileSystem#File.Info":
+  replacement: "FileSystem.File.Info"
+  note: "The module moved to effect/FileSystem. dev is now bigint; ino, rdev, nlink, and blocks are Option<bigint>. Update custom stat results, comparisons, arithmetic, and serialization rather than converting these values to number and losing precision. mode, uid, and gid remain numeric; size and blksize use ByteSize. Node and Bun preserve the 64-bit metadata exactly, while Deno may round large values before converting them to bigint."
 "@effect/platform/FileSystem#FileDescriptor":
   replacement: "none"
   note: "The descriptor branding constructor was removed with the public fd field; use File operations instead of exposing a native descriptor."
@@ -27,7 +30,7 @@
   note: "The helper remains after moving the module to effect/FileSystem."
 "@effect/platform/FileSystem#make":
   replacement: "FileSystem.make"
-  note: "The constructor remains after moving the module to effect/FileSystem; adapt the implementation to the v4 service shape."
+  note: "The constructor remains after moving the module to effect/FileSystem; adapt the implementation to the v4 service shape, which also requires lstat to return File.Info without following symbolic links and readDirectoryEntries to list { name, type } entries (map readDirectory names to type \"Unknown\" if types are unavailable). glob is derived and cannot be passed; override it afterward with FileSystem.of({ ...fs, glob })."
 "@effect/platform/FileSystem#MakeDirectoryOptions":
   replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"makeDirectory\"]>[1]>"
   note: "Operation option interfaces are inline in the v4 FileSystem service."

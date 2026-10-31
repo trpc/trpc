@@ -6,6 +6,12 @@
 // @barrel: Auto-generated exports. Do not edit manually.
 
 /**
+ * @stability experimental
+ * @since 4.0.0
+ */
+export * as NodeAddressResolver from "./NodeAddressResolver.ts"
+
+/**
  * @stability unstable
  * @since 4.0.0
  */
@@ -22,6 +28,18 @@ export * as NodeClusterSocket from "./NodeClusterSocket.ts"
  * @since 1.0.0
  */
 export * as NodeCrypto from "./NodeCrypto.ts"
+
+/**
+ * @stability experimental
+ * @since 4.0.0
+ */
+export * as NodeDatagramSocket from "./NodeDatagramSocket.ts"
+
+/**
+ * @stability experimental
+ * @since 4.0.0
+ */
+export * as NodeDns from "./NodeDns.ts"
 
 /**
  * @stability unstable
@@ -82,3 +100,9 @@ export * as NodeStream from "./NodeStream.ts"
  * @since 4.0.0
  */
 export * as NodeTerminal from "./NodeTerminal.ts"
+
+/**
+ * @stability unstable
+ * @since 4.1.0
+ */
+export * as NodeWS from "./NodeWS.ts"

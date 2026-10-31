@@ -1,6 +1,7 @@
 import { type Effect, hole, Schema, type Stream, Struct } from "effect"
 import { HttpApiEndpoint, HttpApiError, HttpApiMiddleware, HttpApiSchema } from "effect/http-api"
 import type { HttpServerResponse } from "effect/http/HttpServerResponse"
+import type * as Socket from "effect/socket/Socket"
 import { describe, expect, it } from "tstyche"
 
 describe("HttpApiEndpoint", () => {
@@ -228,6 +229,18 @@ describe("HttpApiEndpoint", () => {
         expect(HttpApiEndpoint.options).type.not.toBeCallableWith("a", "/a", {
           payload: Schema.Struct({ id: Schema.String })
         })
+      })
+    })
+
+    describe("streaming", () => {
+      it("rejects stream payloads on no-body methods", () => {
+        const payload = HttpApiSchema.StreamUint8Array()
+        expect(HttpApiEndpoint.get).type.not.toBeCallableWith("a", "/a", { payload })
+      })
+
+      it("rejects StreamSse as a payload", () => {
+        const payload = HttpApiSchema.StreamSse({ data: Schema.String })
+        expect(HttpApiEndpoint.post).type.not.toBeCallableWith("a", "/a", { payload })
       })
     })
   })
@@ -562,6 +575,31 @@ describe("HttpApiEndpoint", () => {
       >()
       expect<ReturnType<HttpApiEndpoint.HandlerRaw<typeof endpoint, never, never>>>().type.toBe<
         Effect.Effect<Success | HttpServerResponse, never>
+      >()
+    })
+
+    it("passes an upgrade function to handlers that return void", () => {
+      const endpoint = HttpApiEndpoint.post("a", "/a", {
+        success: HttpApiSchema.Upgrade({ protocol: "tcp" })
+      })
+
+      expect<HttpApiEndpoint.Request<typeof endpoint>["upgrade"]>().type.toBe<() => Effect.Effect<Socket.Socket>>()
+      expect<HttpApiEndpoint.RequestRaw<typeof endpoint>["upgrade"]>().type.toBe<() => Effect.Effect<Socket.Socket>>()
+      expect<ReturnType<HttpApiEndpoint.Handler<typeof endpoint, never, never>>>().type.toBe<
+        Effect.Effect<void | HttpServerResponse, never>
+      >()
+      const plain = HttpApiEndpoint.post("b", "/b")
+      expect<"upgrade" extends keyof HttpApiEndpoint.Request<typeof plain> ? true : false>().type.toBe<false>()
+    })
+
+    it("passes an upgrade function to handlers that may return an ordinary success", () => {
+      const endpoint = HttpApiEndpoint.post("a", "/a", {
+        success: [HttpApiSchema.Upgrade({ protocol: "tcp" }), Schema.String]
+      })
+
+      expect<HttpApiEndpoint.Request<typeof endpoint>["upgrade"]>().type.toBe<() => Effect.Effect<Socket.Socket>>()
+      expect<ReturnType<HttpApiEndpoint.Handler<typeof endpoint, never, never>>>().type.toBe<
+        Effect.Effect<void | string | HttpServerResponse, never>
       >()
     })
 

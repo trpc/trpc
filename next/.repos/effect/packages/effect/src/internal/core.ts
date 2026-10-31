@@ -154,7 +154,7 @@ export class CauseImpl<E> implements Cause.Cause<E> {
   toJSON(): unknown {
     return {
       _id: "Cause",
-      failures: this.reasons.map((f) => f.toJSON())
+      reasons: this.reasons.map((f) => f.toJSON())
     }
   }
   toString() {
@@ -216,6 +216,8 @@ export abstract class ReasonBase<Tag extends string> implements Cause.Cause.Reas
       if (options?.overwrite !== true && newAnnotations.has(key)) return
       newAnnotations.set(key, value)
     })
+    // Keep the reason when nothing was added, so interrupts still match by identity.
+    if (options?.overwrite !== true && newAnnotations.size === this.annotations.size) return this
     const self = Object.assign(Object.create(Object.getPrototypeOf(this)), this)
     self.annotations = newAnnotations
     return self
@@ -320,6 +322,26 @@ export const causeCombine: {
     return Equal.equals(self, newCause) ? self : newCause
   }
 )
+
+/**
+ * Appends the interrupts from `interrupts` that `self` does not contain yet.
+ * Unlike `causeCombine`, it never calls hash or equality methods, which can be
+ * user-defined, random, or throwing.
+ *
+ * @internal
+ */
+export const causeAddInterrupts = <E>(self: Cause.Cause<E>, interrupts: Cause.Cause<never>): Cause.Cause<E> => {
+  const reasons: Array<Cause.Reason<E>> = self.reasons.slice()
+  for (const reason of interrupts.reasons) {
+    if (
+      isInterruptReason(reason) &&
+      !reasons.some((r) => isInterruptReason(r) && r.fiberId === reason.fiberId && r.annotations === reason.annotations)
+    ) {
+      reasons.push(reason)
+    }
+  }
+  return reasons.length === self.reasons.length ? self : new CauseImpl(reasons)
+}
 
 /** @internal */
 export const causeEmpty: Cause.Cause<never> = new CauseImpl([])
@@ -600,7 +622,7 @@ export const exitFailCause: <E>(cause: Cause.Cause<E>) => Exit.Exit<never, E> = 
       if (skippedHandler) {
         cause = causeFromReasons(cause.reasons.filter((reason) => reason._tag !== "Fail"))
       }
-      cause = causeCombine(cause, interruptedCause)
+      cause = causeAddInterrupts(cause, interruptedCause)
       annotated = true
     }
     return cont

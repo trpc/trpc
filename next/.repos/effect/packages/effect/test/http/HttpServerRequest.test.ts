@@ -1,10 +1,39 @@
-import { assert, describe, it } from "@effect/vitest"
+import { assert, describe, expectTypeOf, it } from "@effect/vitest"
 import { assertNone, assertSome, deepStrictEqual, strictEqual } from "@effect/vitest/utils"
 import { Effect, Schema, Stream } from "effect"
-import { HttpBody, HttpClientRequest, HttpServerRequest } from "effect/http"
+import { HttpBody, HttpClientRequest, HttpClientResponse, HttpServerRequest, HttpServerResponse } from "effect/http"
 import * as Option from "effect/Option"
 
 describe("HttpServerRequest", () => {
+  it.effect("urlParamsBody preserves leading question marks", () =>
+    Effect.gen(function*() {
+      const body = "??name=value"
+      const clientRequest = HttpClientRequest.post("http://localhost/", {
+        body: HttpBody.text(body, "application/x-www-form-urlencoded")
+      })
+      for (
+        const message of [
+          HttpServerRequest.fromWeb(new Request("http://localhost/", { method: "POST", body })),
+          HttpServerRequest.fromClientRequest(clientRequest),
+          HttpClientResponse.fromWeb(clientRequest, new Response(body)),
+          HttpServerResponse.toClientResponse(HttpServerResponse.text(body))
+        ]
+      ) {
+        deepStrictEqual([...yield* message.urlParamsBody], [["??name", "value"]])
+      }
+    }))
+
+  it("preserves an extension method through web-server-client conversion", () => {
+    const request = HttpServerRequest.fromWeb(new Request("http://localhost/", { method: "PROPFIND" }))
+    expectTypeOf(request.method).toEqualTypeOf<string>()
+    strictEqual(request.method, "PROPFIND")
+
+    const forwarded = HttpServerRequest.toClientRequest(request)
+    expectTypeOf(forwarded.method).toEqualTypeOf<string>()
+    strictEqual(forwarded.method, "PROPFIND")
+    strictEqual(HttpServerRequest.fromClientRequest(forwarded).method, "PROPFIND")
+  })
+
   it.effect("preserves FormData through client-server-client conversion", () =>
     Effect.gen(function*() {
       const formData = new FormData()
@@ -177,6 +206,14 @@ describe("HttpServerRequest", () => {
       assert.strictEqual(yield* server.stream.pipe(Stream.decodeText(), Stream.mkString), "a=1&b=two")
     }))
 
+  it.effect("urlParamsBody preserves a leading BOM", () =>
+    Effect.gen(function*() {
+      const request = HttpServerRequest.fromWeb(
+        new Request("http://localhost/", { method: "POST", body: "\uFEFFname=value" })
+      )
+      deepStrictEqual([...yield* request.urlParamsBody], [["\uFEFFname", "value"]])
+    }))
+
   it.effect("schemaBodyJson applies parse options", () =>
     Effect.gen(function*() {
       const request = HttpServerRequest.fromWeb(
@@ -209,6 +246,19 @@ describe("HttpServerRequest", () => {
       assert.isFalse("sha" in decoded)
       assert.isFalse("version" in decoded)
     }))
+
+  describe("toURL", () => {
+    const cases: ReadonlyArray<[url: string, headers: Record<string, string>, expected: string]> = [
+      ["https://example.test/a?b=1", { host: "example.test" }, "https://example.test/a?b=1"],
+      ["http://example.test/a", { host: "example.test", "x-forwarded-proto": "https" }, "http://example.test/a"]
+    ]
+    for (const [url, headers, expected] of cases) {
+      it(`${url} ${JSON.stringify(headers)} -> ${expected}`, () => {
+        const request = HttpServerRequest.fromWeb(new Request(url, { headers }))
+        strictEqual(Option.getOrThrow(HttpServerRequest.toURL(request)).href, expected)
+      })
+    }
+  })
 
   it("remoteAddress defaults to none for web requests", () => {
     const request = HttpServerRequest.fromWeb(new Request("http://example.com"))

@@ -111,6 +111,13 @@ const useAtomValueRef = <A extends Atom.Atom<any>>(atom: () => A) => {
 /**
  * Returns a reactive atom value and a setter with the requested write mode.
  *
+ * **Gotchas**
+ *
+ * In `promise` and `promiseExit` modes, the setter observes the atom's next
+ * settled result, not a result correlated with that write. Overlapping writes
+ * can resolve with another write's result. Serialize writes when each caller
+ * needs its own result.
+ *
  * @stability unstable
  * @category composables
  * @since 4.0.0
@@ -193,6 +200,13 @@ function setAtom<R, W, Mode extends "value" | "promise" | "promiseExit" = never>
 
 /**
  * Returns a setter for an atom, mounting it for the lifetime of the composable.
+ *
+ * **Gotchas**
+ *
+ * In `promise` and `promiseExit` modes, the setter observes the atom's next
+ * settled result, not a result correlated with that write. Overlapping writes
+ * can resolve with another write's result. Serialize writes when each caller
+ * needs its own result.
  *
  * @stability unstable
  * @category composables

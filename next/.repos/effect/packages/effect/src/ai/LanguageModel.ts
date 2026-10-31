@@ -122,7 +122,7 @@ export interface LanguageModel {
     <Options extends NoExcessProperties<GenerateTextOptionsWithoutToolkit, Options>>(
       options: Options & GenerateTextOptionsWithoutToolkit
     ): Effect.Effect<
-      GenerateTextResponse<{}>,
+      GenerateTextResponse<{}, ExtractToolParametersModeWithoutToolkit<Options>>,
       ExtractError<Options>,
       ExtractServices<Options>
     >
@@ -181,7 +181,7 @@ export interface LanguageModel {
     <Options extends NoExcessProperties<GenerateTextOptionsWithoutToolkit, Options>>(
       options: Options & GenerateTextOptionsWithoutToolkit
     ): Stream.Stream<
-      Response.StreamPart<{}>,
+      Response.StreamPart<{}, ExtractToolParametersModeWithoutToolkit<Options>>,
       ExtractError<Options>,
       ExtractServices<Options>
     >
@@ -312,6 +312,22 @@ export interface GenerateTextOptions<Tools extends Record<string, Tool.Any>> {
    * resolver execution yourself.
    */
   readonly disableToolCallResolution?: boolean | undefined
+
+  /**
+   * Controls tool call validation when `disableToolCallResolution` is `true`.
+   * Defaults to `"strict"`, which validates tool names and encoded parameters.
+   *
+   * **Details**
+   *
+   * `"deferred"` returns model-generated calls with `unknown` parameters for
+   * the caller to validate, including undeclared names and calls without a
+   * toolkit. Provider-executed calls and other response parts remain validated.
+   * Providers must support this option to return undeclared tool calls.
+   *
+   * Has no effect when resolution is enabled; `Toolkit` validates parameters
+   * according to each tool's `failureMode`.
+   */
+  readonly toolCallValidation?: "strict" | "deferred" | undefined
 }
 
 type GenerateTextOptionsWithoutToolkit = Omit<GenerateTextOptions<{}>, "toolkit"> & {
@@ -589,17 +605,31 @@ export type ExtractTools<Options> = Options extends {
   : {}
 
 /**
- * Resolves to `"encoded"` when tool call resolution is
- * disabled, otherwise `"opaque"`.
+ * Resolves to `"deferred"` when tool call resolution may be disabled with
+ * deferred tool call validation. Otherwise resolves to `"encoded"` when tool
+ * call resolution is disabled and `"opaque"` when it may be enabled.
  *
  * @stability unstable
  * @category utility types
  * @since 4.0.0
  */
-export type ExtractToolParametersMode<Options> = Options extends {
-  readonly disableToolCallResolution: true
-} ? "encoded"
+export type ExtractToolParametersMode<Options> = "deferred" extends Options["toolCallValidation" & keyof Options] ?
+  true extends Options["disableToolCallResolution" & keyof Options] ? "deferred" : "opaque"
+  : Options extends { readonly disableToolCallResolution: true } ? "encoded"
   : "opaque"
+
+/**
+ * Resolves the tool parameters mode for requests without a toolkit:
+ * `"deferred"` when tool call validation may be deferred, otherwise
+ * `"decoded"`.
+ *
+ * @stability unstable
+ * @category utility types
+ * @since 4.0.4
+ */
+export type ExtractToolParametersModeWithoutToolkit<Options> = "deferred" extends ExtractToolParametersMode<Options>
+  ? "deferred"
+  : "decoded"
 
 type ExtractErrorFromToolkitOption<ToolkitValue, DisableToolCallResolution extends boolean> = ToolkitValue extends
   Toolkit.WithHandler<infer Tools> ?
@@ -785,6 +815,12 @@ export interface ProviderOptions {
    * prompt after the provider rejected the incremental request.
    */
   readonly incrementalFallback?: boolean | undefined
+
+  /**
+   * Defaults to `"strict"`. With `"deferred"`, return calls to tools absent
+   * from `tools` with unchanged parameters instead of `ToolNotFoundError`.
+   */
+  readonly toolCallValidation?: "strict" | "deferred" | undefined
 }
 
 /**
@@ -857,13 +893,20 @@ export const make: (params: {
     Effect.map(Option.getOrElse(() => defaultIdGenerator))
   )
 
+  const contentDecoderFor = makeResponseDecoder((toolkit, deferred) =>
+    Schema.decodeEffect(Schema.mutable(Schema.Array(withUndeclaredToolCalls(Response.Part(toolkit), deferred))))
+  )
+  const streamDecoderFor = makeResponseDecoder((toolkit, deferred) =>
+    Schema.decodeEffect(Schema.NonEmptyArray(withUndeclaredToolCalls(Response.StreamPart(toolkit), deferred)))
+  )
+
   const generateText = <
     Options extends NoExcessProperties<GenerateTextOptions<any>, Options>,
     Tools extends Record<string, Tool.Any> = {}
   >(
     options: Options & GenerateTextOptions<Tools>
   ): Effect.Effect<
-    GenerateTextResponse<Tools>,
+    GenerateTextResponse<Tools, Response.ToolParametersMode>,
     ExtractError<Options>,
     ExtractServices<Options>
   > =>
@@ -1071,6 +1114,10 @@ export const make: (params: {
     const toolChoice = options.toolChoice ?? "auto"
     const concurrency = options.concurrency ?? "unbounded"
     annotateRequestOptions(providerOptions, toolChoice, concurrency)
+    const deferToolCallValidation = isToolCallValidationDeferred(options)
+    if (deferToolCallValidation) {
+      providerOptions.toolCallValidation = "deferred"
+    }
 
     const generateWithNonIncrementalFallback = () => {
       const requestOptions: ProviderOptions = {
@@ -1092,10 +1139,8 @@ export const make: (params: {
     }
 
     // Check for pending approvals that need resolution
-    const { approved, denied } = collectToolApprovals(
-      providerOptions.prompt.content,
-      { excludeResolved: true }
-    )
+    const { approved: allResolved, denied: allDenied, pendingApproved: approved, pendingDenied: denied } =
+      collectToolApprovals(providerOptions.prompt.content)
     const hasPendingApprovals = approved.length > 0 || denied.length > 0
 
     // If there is no toolkit, the generated content can be returned immediately
@@ -1120,7 +1165,7 @@ export const make: (params: {
         }
       }
       const ResponseSchema = Schema.mutable(
-        Schema.Array(Response.Part(Toolkit.empty))
+        Schema.Array(withUndeclaredToolCalls(Response.Part(Toolkit.empty), deferToolCallValidation))
       )
       const rawContent = yield* generateWithNonIncrementalFallback()
       const content = yield* Schema.decodeEffect(ResponseSchema)(rawContent)
@@ -1158,7 +1203,7 @@ export const make: (params: {
         }
       }
       const ResponseSchema = Schema.mutable(
-        Schema.Array(Response.Part(Toolkit.empty))
+        Schema.Array(withUndeclaredToolCalls(Response.Part(Toolkit.empty), deferToolCallValidation))
       )
       const rawContent = yield* generateWithNonIncrementalFallback()
       const content = yield* Schema.decodeEffect(ResponseSchema)(rawContent)
@@ -1205,17 +1250,12 @@ export const make: (params: {
 
     // Strip all resolved approval artifacts (both current and from previous
     // rounds) in a single pass before sending to the provider.
-    {
-      const { approved: allResolved, denied: allDenied } = collectToolApprovals(
-        providerOptions.prompt.content
+    if (allResolved.length > 0 || allDenied.length > 0) {
+      providerOptions.prompt = stripResolvedApprovals(
+        providerOptions.prompt,
+        allResolved,
+        allDenied
       )
-      if (allResolved.length > 0 || allDenied.length > 0) {
-        providerOptions.prompt = stripResolvedApprovals(
-          providerOptions.prompt,
-          allResolved,
-          allDenied
-        )
-      }
     }
 
     const tools = typeof toolChoice === "object" && "oneOf" in toolChoice
@@ -1232,17 +1272,20 @@ export const make: (params: {
       }
     }
 
-    const ResponseSchema = Schema.mutable(Schema.Array(Response.Part(
-      options.disableToolCallResolution === true
-        ? makeToolkitWithEncodedParameters(toolkit)
-        : makeToolkitWithOpaqueParameters(toolkit)
-    )))
+    const decodeContent = contentDecoderFor(
+      toolkit,
+      options.disableToolCallResolution === true && !deferToolCallValidation,
+      deferToolCallValidation
+    )
 
     // If tool call resolution is disabled, return the response without
     // resolving the tool calls that were generated
     if (options.disableToolCallResolution === true) {
       const rawContent = yield* generateWithNonIncrementalFallback()
-      const content = yield* Schema.decodeEffect(ResponseSchema)(rawContent)
+      const content = yield* decodeContent(rawContent)
+      if (deferToolCallValidation) {
+        yield* validateProviderExecutedToolCalls(makeToolkitWithEncodedParameters(toolkit), rawContent)
+      }
       if (tracker) {
         const responseMetadata = content.find((part) => part.type === "response-metadata")
         if (Predicate.isNotUndefined(responseMetadata) && Predicate.isNotUndefined(responseMetadata.id)) {
@@ -1255,7 +1298,7 @@ export const make: (params: {
     const rawContent = yield* generateWithNonIncrementalFallback()
 
     // Validate before running tool handlers.
-    const content = yield* Schema.decodeEffect(ResponseSchema)(rawContent)
+    const content = yield* decodeContent(rawContent)
     yield* validateProviderExecutedToolCalls(toolkit, rawContent)
 
     // Resolve the generated tool calls. When the finish reason indicates an
@@ -1324,6 +1367,10 @@ export const make: (params: {
     const toolChoice = options.toolChoice ?? "auto"
     const concurrency = options.concurrency ?? "unbounded"
     annotateRequestOptions(providerOptions, toolChoice, concurrency)
+    const deferToolCallValidation = isToolCallValidationDeferred(options)
+    if (deferToolCallValidation) {
+      providerOptions.toolCallValidation = "deferred"
+    }
 
     const streamWithNonIncrementalFallback = () => {
       const requestOptions: ProviderOptions = {
@@ -1357,9 +1404,9 @@ export const make: (params: {
     }
 
     // Check for pending approvals that need resolution
-    const { approved: pendingApproved, denied: pendingDenied } = collectToolApprovals(providerOptions.prompt.content, {
-      excludeResolved: true
-    })
+    const { approved: allResolved, denied: allDenied, pendingApproved, pendingDenied } = collectToolApprovals(
+      providerOptions.prompt.content
+    )
     const hasPendingApprovals = pendingApproved.length > 0 || pendingDenied.length > 0
 
     // If there is no toolkit, return immediately
@@ -1383,7 +1430,9 @@ export const make: (params: {
           providerOptions.incrementalPrompt = prepared.value.prompt
         }
       }
-      const schema = Schema.NonEmptyArray(Response.StreamPart(Toolkit.empty))
+      const schema = Schema.NonEmptyArray(
+        withUndeclaredToolCalls(Response.StreamPart(Toolkit.empty), deferToolCallValidation)
+      )
       const decodeParts = Schema.decodeEffect(schema)
       return pipe(
         streamWithNonIncrementalFallback(),
@@ -1432,7 +1481,9 @@ export const make: (params: {
           providerOptions.incrementalPrompt = prepared.value.prompt
         }
       }
-      const schema = Schema.NonEmptyArray(Response.StreamPart(Toolkit.empty))
+      const schema = Schema.NonEmptyArray(
+        withUndeclaredToolCalls(Response.StreamPart(Toolkit.empty), deferToolCallValidation)
+      )
       const decodeParts = Schema.decodeEffect(schema)
       return pipe(
         streamWithNonIncrementalFallback(),
@@ -1502,6 +1553,7 @@ export const make: (params: {
             preliminary: false,
             result: r.encodedResult,
             encodedResult: r.encodedResult,
+            ...modelOutputField(r.modelOutput),
             isFailure: r.isFailure
           }) as Response.StreamPart<Tools>
         )
@@ -1510,9 +1562,6 @@ export const make: (params: {
 
     // Strip all resolved approval artifacts (both current and from previous
     // rounds) in a single pass before sending to the provider.
-    const { approved: allResolved, denied: allDenied } = collectToolApprovals(
-      providerOptions.prompt.content
-    )
     if (allResolved.length > 0 || allDenied.length > 0) {
       providerOptions.prompt = stripResolvedApprovals(
         providerOptions.prompt,
@@ -1535,19 +1584,22 @@ export const make: (params: {
       }
     }
 
-    const ResponseSchema = Schema.NonEmptyArray(Response.StreamPart(
-      options.disableToolCallResolution === true
-        ? makeToolkitWithEncodedParameters(toolkit)
-        : makeToolkitWithOpaqueParameters(toolkit)
-    ))
-    const decodeParts = Schema.decodeEffect(ResponseSchema)
+    const decodeParts = streamDecoderFor(
+      toolkit,
+      options.disableToolCallResolution === true && !deferToolCallValidation,
+      deferToolCallValidation
+    )
 
     // If tool call resolution is disabled, return the response without
     // resolving the tool calls that were generated
     if (options.disableToolCallResolution === true) {
+      const encodedToolkit = deferToolCallValidation ? makeToolkitWithEncodedParameters(toolkit) : undefined
       return streamWithNonIncrementalFallback().pipe(
         Stream.mapArrayEffect((parts) =>
           decodeParts(parts).pipe(
+            encodedToolkit
+              ? Effect.tap(() => validateProviderExecutedToolCalls(encodedToolkit, parts))
+              : identity,
             tracker ?
               Effect.tap((decodedParts) => {
                 for (const part of decodedParts) {
@@ -1577,8 +1629,7 @@ export const make: (params: {
     const deferredFinishParts: Array<Response.StreamPart<Tools>> = []
 
     // Emit pre-resolved tool results so Chat.streamText persists them to
-    // history. This ensures collectToolApprovals({ excludeResolved }) can
-    // find the corresponding tool-results on future rounds.
+    // history, where collectToolApprovals finds them on future rounds.
     if (preResolvedStreamParts.length > 0) {
       yield* Queue.offerAll(queue, preResolvedStreamParts)
     }
@@ -1630,6 +1681,7 @@ export const make: (params: {
             providerExecuted: false,
             result: result.result,
             encodedResult: result.encodedResult,
+            ...modelOutputField(result.modelOutput),
             isFailure: result.isFailure,
             preliminary: result.preliminary
           }) as Response.StreamPart<Tools>
@@ -1812,7 +1864,7 @@ export const generateText: {
   >(
     options: Options & GenerateTextOptionsWithoutToolkit
   ): Effect.Effect<
-    GenerateTextResponse<{}>,
+    GenerateTextResponse<{}, ExtractToolParametersModeWithoutToolkit<Options>>,
     ExtractError<Options>,
     LanguageModel | ExtractServices<Options>
   >
@@ -1962,7 +2014,7 @@ export const streamText: {
   >(
     options: Options & GenerateTextOptionsWithoutToolkit
   ): Stream.Stream<
-    Response.StreamPart<{}>,
+    Response.StreamPart<{}, ExtractToolParametersModeWithoutToolkit<Options>>,
     ExtractError<Options>,
     ExtractServices<Options> | LanguageModel
   >
@@ -2011,16 +2063,13 @@ interface ApprovalResult {
   readonly toolCall?: Prompt.ToolCallPart | undefined
 }
 
-interface CollectToolApprovalsOptions {
-  readonly excludeResolved?: boolean
-}
-
 const collectToolApprovals = (
-  messages: ReadonlyArray<Prompt.Message>,
-  options?: CollectToolApprovalsOptions
+  messages: ReadonlyArray<Prompt.Message>
 ): {
   readonly approved: Array<ApprovalResult>
   readonly denied: Array<ApprovalResult>
+  readonly pendingApproved: Array<ApprovalResult>
+  readonly pendingDenied: Array<ApprovalResult>
 } => {
   const requests = new Map<
     string,
@@ -2063,15 +2112,12 @@ const collectToolApprovals = (
 
   const approved: Array<ApprovalResult> = []
   const denied: Array<ApprovalResult> = []
+  const pendingApproved: Array<ApprovalResult> = []
+  const pendingDenied: Array<ApprovalResult> = []
 
   for (const response of responses) {
     const request = requests.get(response.approvalId)
     if (Predicate.isNotUndefined(request)) {
-      // Skip if already resolved
-      if (options?.excludeResolved && toolResultIds.has(request.toolCallId)) {
-        continue
-      }
-
       const result: ApprovalResult = {
         ...response,
         toolCallId: request.toolCallId,
@@ -2080,13 +2126,15 @@ const collectToolApprovals = (
 
       if (response.approved) {
         approved.push(result)
+        if (!toolResultIds.has(request.toolCallId)) pendingApproved.push(result)
       } else {
         denied.push(result)
+        if (!toolResultIds.has(request.toolCallId)) pendingDenied.push(result)
       }
     }
   }
 
-  return { approved, denied }
+  return { approved, denied, pendingApproved, pendingDenied }
 }
 
 /**
@@ -2222,6 +2270,7 @@ const executeApprovedToolCalls = <Tools extends Record<string, Tool.Any>>(
       name: toolCall.name,
       result: terminalResult.result,
       encodedResult: terminalResult.encodedResult,
+      ...modelOutputField(terminalResult.modelOutput),
       isFailure: terminalResult.isFailure,
       preliminary: terminalResult.preliminary,
       providerExecuted: false
@@ -2301,6 +2350,10 @@ const makeInterruptedToolResult = (
   })
 }
 
+// Omits the key entirely so unmapped tool result parts keep their shape.
+const modelOutputField = (modelOutput: ReadonlyArray<Prompt.ToolModelOutputPart> | undefined) =>
+  modelOutput === undefined ? undefined : { modelOutput }
+
 type ToolResolutionResult<Tools extends Record<string, Tool.Any>> =
   | Response.ToolResultPart<
     Tool.Name<Tools[keyof Tools]>,
@@ -2371,6 +2424,7 @@ const resolveToolCalls = <Tools extends Record<string, Tool.Any>>(
                 providerExecuted: false,
                 result: result.result,
                 encodedResult: result.encodedResult,
+                ...modelOutputField(result.modelOutput),
                 isFailure: result.isFailure,
                 preliminary: result.preliminary
               }) as ToolResolutionResult<Tools>
@@ -2400,6 +2454,7 @@ const resolveToolCalls = <Tools extends Record<string, Tool.Any>>(
               providerExecuted: false,
               result: result.result,
               encodedResult: result.encodedResult,
+              ...modelOutputField(result.modelOutput),
               isFailure: result.isFailure,
               preliminary: result.preliminary
             }) as ToolResolutionResult<Tools>
@@ -2414,6 +2469,27 @@ const resolveToolCalls = <Tools extends Record<string, Tool.Any>>(
 // =============================================================================
 // Utilities
 // =============================================================================
+
+// Cache one decoder per model and response kind, keyed by validation mode
+// and tool names and schema identities in insertion order.
+const makeResponseDecoder = <Decode>(make: (toolkit: Toolkit.Any, deferred: boolean) => Decode) => {
+  let cached: { readonly key: ReadonlyArray<unknown>; readonly decode: Decode } | undefined
+  return (toolkit: Toolkit.WithHandler<any>, encoded: boolean, deferred: boolean): Decode => {
+    const key: Array<unknown> = [encoded, deferred]
+    for (const tool of Object.values(toolkit.tools as Record<string, Tool.Any>)) {
+      key.push(tool.name, tool.parametersSchema, tool.successSchema, tool.failureSchema)
+    }
+    if (cached !== undefined && cached.key.length === key.length && cached.key.every((part, i) => part === key[i])) {
+      return cached.decode
+    }
+    const decode = make(
+      encoded ? makeToolkitWithEncodedParameters(toolkit) : makeToolkitWithOpaqueParameters(toolkit),
+      deferred
+    )
+    cached = { key, decode }
+    return decode
+  }
+}
 
 // Stable parameter-mode copies let Response reuse each tool's part schemas.
 const parameterModeTools = new WeakMap<Tool.Any, { encoded?: Tool.Any; opaque?: Tool.Any }>()
@@ -2443,9 +2519,20 @@ const makeToolkitWithOpaqueParameters = <Tools extends Record<string, Tool.Any>>
     ...Object.values(toolkit.tools).map((tool) => withParameterMode(tool, "opaque"))
   )
 
+const isToolCallValidationDeferred = (options: GenerateTextOptions<any>): boolean =>
+  options.disableToolCallResolution === true && options.toolCallValidation === "deferred"
+
+const UndeclaredToolCallPart = Response.ToolCallPart("", Schema.Unknown).mapFields((fields) => ({
+  ...fields,
+  name: Schema.String
+}))
+
+const withUndeclaredToolCalls = <S extends Schema.Top>(partSchema: S, deferToolCallValidation: boolean): S =>
+  deferToolCallValidation ? Schema.Union([partSchema, UndeclaredToolCallPart]) as any : partSchema
+
 // Provider-executed tools bypass Toolkit, so validate their parameters here.
-const validateProviderExecutedToolCalls = <Tools extends Record<string, Tool.Any>>(
-  toolkit: Toolkit.WithHandler<Tools>,
+const validateProviderExecutedToolCalls = (
+  toolkit: { readonly tools: Record<string, Tool.Any> },
   parts: ReadonlyArray<Response.PartEncoded | Response.StreamPartEncoded>
 ): Effect.Effect<void, Schema.SchemaError> =>
   Effect.forEach(

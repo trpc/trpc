@@ -261,7 +261,7 @@ const PackageJsonSchema = Schema.Struct({
 })
 
 /** @internal */
-export const load = (args: {
+export const load = Effect.fnUntraced(function*(args: {
   readonly projectHomepage: Option.Option<string>
   readonly srcLink: Option.Option<string>
   readonly srcDir: string
@@ -275,87 +275,86 @@ export const load = (args: {
   readonly exclude: ReadonlyArray<string>
   readonly parseCompilerOptions: Option.Option<string | Record<string, unknown>>
   readonly examplesCompilerOptions: Option.Option<string | Record<string, unknown>>
-}) =>
-  Effect.gen(function*() {
-    // Extract the requisite services
-    const process = yield* Domain.Process
-    const cwd = yield* process.cwd
-    const path = yield* Path.Path
+}) {
+  // Extract the requisite services
+  const process = yield* Domain.Process
+  const cwd = yield* process.cwd
+  const path = yield* Path.Path
 
-    // Read and parse the required fields from the `package.json`
-    const packageJsonPath = path.join(cwd, PACKAGE_JSON_FILE_NAME)
-    const packageJson = yield* validateJsonFile(PackageJsonSchema, packageJsonPath)
-    const projectName = packageJson.name
-    const projectHomepage = Option.getOrElse(args.projectHomepage, () => packageJson.homepage)
-    const srcLink = Option.getOrElse(args.srcLink, () => `${projectHomepage}/blob/main/src/`)
+  // Read and parse the required fields from the `package.json`
+  const packageJsonPath = path.join(cwd, PACKAGE_JSON_FILE_NAME)
+  const packageJson = yield* validateJsonFile(PackageJsonSchema, packageJsonPath)
+  const projectName = packageJson.name
+  const projectHomepage = Option.getOrElse(args.projectHomepage, () => packageJson.homepage)
+  const srcLink = Option.getOrElse(args.srcLink, () => `${projectHomepage}/blob/main/src/`)
 
-    // Read the `docgen.json` configuration file to gain access to the TypeScript
-    // configuration options
-    const configPath = path.join(cwd, CONFIG_FILE_NAME)
-    const config = yield* readDocgenConfig(configPath)
+  // Read the `docgen.json` configuration file to gain access to the TypeScript
+  // configuration options
+  const configPath = path.join(cwd, CONFIG_FILE_NAME)
+  const config = yield* readDocgenConfig(configPath)
 
-    // Resolve the excluded files
-    const exclude = yield* Array.match(args.exclude, {
-      onEmpty: () =>
-        Effect.result(Config.Array(Schema.String, "exclude")).pipe(
-          Effect.map((configured) =>
-            Result.isSuccess(configured)
-              ? configured.success
-              : Option.match(config, {
-                onNone: () => Array.empty<string>(),
-                onSome: ({ exclude }) => exclude || Array.empty<string>()
-              })
-          )
-        ),
-      onNonEmpty: (exclude) => Effect.succeed(exclude)
-    })
-
-    // Resolve the TypeScript configuration options
-    const examplesCompilerOptions = yield* resolveCompilerOptions(
-      "examplesCompilerOptions",
-      args.examplesCompilerOptions,
-      Option.flatMap(config, (config) => Option.fromNullishOr(config.examplesCompilerOptions))
-    )
-    const parseCompilerOptions = yield* resolveCompilerOptions(
-      "parseCompilerOptions",
-      args.parseCompilerOptions,
-      Option.flatMap(config, (config) => Option.fromNullishOr(config.parseCompilerOptions))
-    )
-
-    const srcDir = config.pipe(
-      Option.flatMapNullishOr((config) => config.srcDir),
-      Option.getOrElse(() => args.srcDir)
-    )
-
-    const outDir = config.pipe(
-      Option.flatMapNullishOr((config) => config.outDir),
-      Option.getOrElse(() => args.outDir)
-    )
-
-    const runExamples = config.pipe(
-      Option.flatMapNullishOr((config) => config.runExamples),
-      Option.getOrElse(() => args.runExamples)
-    )
-
-    const tscExecutable = config.pipe(
-      Option.flatMapNullishOr((config) => config.tscExecutable),
-      Option.getOrElse(() => "tsc")
-    )
-
-    return Configuration.of({
-      ...args,
-      srcDir,
-      outDir,
-      projectName,
-      projectHomepage,
-      srcLink,
-      exclude,
-      examplesCompilerOptions,
-      parseCompilerOptions,
-      runExamples,
-      tscExecutable
-    })
+  // Resolve the excluded files
+  const exclude = yield* Array.match(args.exclude, {
+    onEmpty: () =>
+      Effect.result(Config.Array(Schema.String, "exclude")).pipe(
+        Effect.map((configured) =>
+          Result.isSuccess(configured)
+            ? configured.success
+            : Option.match(config, {
+              onNone: () => Array.empty<string>(),
+              onSome: ({ exclude }) => exclude || Array.empty<string>()
+            })
+        )
+      ),
+    onNonEmpty: (exclude) => Effect.succeed(exclude)
   })
+
+  // Resolve the TypeScript configuration options
+  const examplesCompilerOptions = yield* resolveCompilerOptions(
+    "examplesCompilerOptions",
+    args.examplesCompilerOptions,
+    Option.flatMap(config, (config) => Option.fromNullishOr(config.examplesCompilerOptions))
+  )
+  const parseCompilerOptions = yield* resolveCompilerOptions(
+    "parseCompilerOptions",
+    args.parseCompilerOptions,
+    Option.flatMap(config, (config) => Option.fromNullishOr(config.parseCompilerOptions))
+  )
+
+  const srcDir = config.pipe(
+    Option.flatMapNullishOr((config) => config.srcDir),
+    Option.getOrElse(() => args.srcDir)
+  )
+
+  const outDir = config.pipe(
+    Option.flatMapNullishOr((config) => config.outDir),
+    Option.getOrElse(() => args.outDir)
+  )
+
+  const runExamples = config.pipe(
+    Option.flatMapNullishOr((config) => config.runExamples),
+    Option.getOrElse(() => args.runExamples)
+  )
+
+  const tscExecutable = config.pipe(
+    Option.flatMapNullishOr((config) => config.tscExecutable),
+    Option.getOrElse(() => "tsc")
+  )
+
+  return Configuration.of({
+    ...args,
+    srcDir,
+    outDir,
+    projectName,
+    projectHomepage,
+    srcLink,
+    exclude,
+    examplesCompilerOptions,
+    parseCompilerOptions,
+    runExamples,
+    tscExecutable
+  })
+})
 
 /** @internal */
 export const configProviderLayer = Layer.effect(ConfigProvider.ConfigProvider)(Effect.gen(function*() {

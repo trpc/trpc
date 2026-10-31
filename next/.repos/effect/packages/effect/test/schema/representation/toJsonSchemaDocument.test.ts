@@ -71,6 +71,24 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
   })
 
   describe("representation nodes", () => {
+    it("compiles string content with another media type", () => {
+      assert.deepStrictEqual(
+        compile({
+          _tag: "String",
+          checks: [],
+          content: {
+            mediaType: "application/example",
+            schema: { _tag: "Boolean", checks: [] }
+          }
+        }),
+        {
+          type: "string",
+          contentMediaType: "application/example",
+          contentSchema: { type: "boolean" }
+        }
+      )
+    })
+
     const keywords = [
       ["Any", { _tag: "Any", checks: [] }, {}],
       ["Unknown", { _tag: "Unknown", checks: [] }, {}],
@@ -172,21 +190,6 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
       )
     })
 
-    it("rejects non-finite numeric Enum values", () => {
-      expectError(
-        () =>
-          compile({
-            _tag: "Enum",
-            enums: [
-              ["StringNaN", "NaN"],
-              ["NumberNaN", Number.NaN]
-            ],
-            checks: []
-          }),
-        `Invalid numeric enum value NaN\n  at ["representation"]["enums"][1][1]`
-      )
-    })
-
     it("compiles a TemplateLiteral", () => {
       assert.deepStrictEqual(
         compile({
@@ -240,16 +243,15 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
       )
     })
 
-    it("rejects multiple tuple rest elements", () => {
-      expectError(
-        () =>
-          compile({
-            _tag: "Arrays",
-            elements: [],
-            rest: [StringRepresentation, NumberRepresentation],
-            checks: []
-          }),
-        `Invalid schema representation document\n  at ["representation"]["rest"]`
+    it("approximates multiple tuple rest elements", () => {
+      assert.deepStrictEqual(
+        compile({
+          _tag: "Arrays",
+          elements: [],
+          rest: [StringRepresentation, NumberRepresentation],
+          checks: []
+        }),
+        { type: "array", minItems: 1 }
       )
     })
 
@@ -267,7 +269,7 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
             indexSignatures: [],
             checks: []
           }),
-        `Invalid schema representation document\n  at ["representation"]["propertySignatures"][0]["name"]`
+        `Objects property names must be strings\n  at ["representation"]["propertySignatures"][0]["name"]`
       )
     })
 
@@ -603,16 +605,36 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
       )
     })
 
-    it("rejects an unsupported index-signature parameter", () => {
+    it("compiles a Number index-signature parameter", () => {
+      assert.deepStrictEqual(
+        compile({
+          _tag: "Objects",
+          propertySignatures: [],
+          indexSignatures: [{ parameter: NumberRepresentation, type: StringRepresentation }],
+          checks: []
+        }),
+        {
+          type: "object",
+          patternProperties: {
+            "^(?:[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[Ee][+-]?\\d+)?|Infinity|-Infinity|NaN)$": {
+              type: "string"
+            }
+          },
+          additionalProperties: false
+        }
+      )
+    })
+
+    it("reports an invalid index-signature parameter", () => {
       expectError(
         () =>
           compile({
             _tag: "Objects",
             propertySignatures: [],
-            indexSignatures: [{ parameter: NumberRepresentation, type: StringRepresentation }],
+            indexSignatures: [{ parameter: { _tag: "Boolean", checks: [] }, type: StringRepresentation }],
             checks: []
           }),
-        `Invalid schema representation document\n  at ["representation"]["indexSignatures"][0]["parameter"]`
+        `Invalid index signature parameter Boolean\n  at ["representation"]["indexSignatures"][0]["parameter"]`
       )
     })
 
@@ -657,7 +679,8 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
 
       assert.deepStrictEqual(SchemaRepresentation.toJsonSchemaDocument(document).schema, {
         type: "integer",
-        minimum: 0
+        minimum: 0,
+        maximum: globalThis.Number.MAX_SAFE_INTEGER
       })
       assert.strictEqual(receivedType, "integer")
     })
@@ -983,7 +1006,38 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
             },
             references: {}
           }),
-        "Invalid schema representation document"
+        "Invalid TemplateLiteral part Boolean"
+      )
+    })
+
+    it.each(["Missing", "toString"])("rejects missing template-literal references: %s", ($ref) => {
+      expectError(
+        () =>
+          SchemaRepresentation.toJsonSchemaDocument({
+            representation: {
+              _tag: "TemplateLiteral",
+              parts: [{ _tag: "Reference", $ref }],
+              checks: []
+            },
+            references: {}
+          }),
+        `Invalid reference ${$ref}`
+      )
+    })
+
+    it("rejects recursive template-literal references", () => {
+      const template: SchemaRepresentation.Representation = {
+        _tag: "TemplateLiteral",
+        parts: [{ _tag: "Reference", $ref: "Segment" }],
+        checks: []
+      }
+      expectError(
+        () =>
+          SchemaRepresentation.toJsonSchemaDocument({
+            representation: template,
+            references: { Segment: template }
+          }),
+        "Invalid recursive TemplateLiteral part Segment"
       )
     })
   })
@@ -1008,16 +1062,30 @@ describe("SchemaRepresentation.toJsonSchemaDocument", () => {
         })
       }
 
-      it("keeps colliding keywords in separate schema objects", () => {
+      it("tightens colliding bounds in place", () => {
         assert.deepStrictEqual(
           compile({
             _tag: "String",
-            checks: [check({ minLength: 1 }), check({ minLength: 2 })]
+            checks: [check({ minLength: 1 }), check({ minLength: 2 }), check({ maxLength: 5 }), check({ maxLength: 9 })]
           }),
           {
             type: "string",
-            minLength: 1,
-            allOf: [{ minLength: 2 }]
+            minLength: 2,
+            maxLength: 5
+          }
+        )
+      })
+
+      it("keeps other colliding keywords in separate schema objects", () => {
+        assert.deepStrictEqual(
+          compile({
+            _tag: "String",
+            checks: [check({ pattern: "a" }), check({ pattern: "b" })]
+          }),
+          {
+            type: "string",
+            pattern: "a",
+            allOf: [{ pattern: "b" }]
           }
         )
       })

@@ -1,8 +1,10 @@
 import { assert, it } from "@effect/vitest"
 import { Duration, Effect, Fiber, Latch, Layer, Schema } from "effect"
 import * as PersistedCacheTest from "effect-test/persistence/PersistedCacheTest"
+import * as PersistedQueueSqlTest from "effect-test/persistence/PersistedQueueSqlTest"
 import * as PersistedQueueTest from "effect-test/persistence/PersistedQueueTest"
 import * as SqlCleanupTest from "effect-test/persistence/SqlCleanupTest"
+import * as Arr from "effect/Array"
 import { PersistedQueue, Persistence } from "effect/persistence"
 import { SqlClient } from "effect/sql"
 import { TestClock } from "effect/testing"
@@ -22,6 +24,8 @@ PersistedQueueTest.suite(
   "sql-pg",
   PersistedQueue.layerStoreSql().pipe(Layer.provide(PgContainer.layerClient))
 )
+
+it.layer(PgContainer.layerClient, { timeout: "30 seconds" })((it) => PersistedQueueSqlTest.suiteWith(it))
 
 it.layer(PgContainer.layerClient, { timeout: "30 seconds" })("PersistedQueue SQL locks", (it) => {
   it.effect("refreshes locks for acquired elements", () =>
@@ -222,13 +226,12 @@ it.layer(PgContainer.layerClient, { timeout: "30 seconds" })("PersistedQueue SQL
 })
 
 // polls a condition on the live clock until it holds or the rounds run out
-const waitFor = <E>(condition: () => Effect.Effect<boolean, E>) =>
-  Effect.gen(function*() {
-    for (let i = 0; i < 100; i++) {
-      if (yield* condition()) return
-      yield* Effect.sleep(100)
-    }
-  })
+const waitFor = Effect.fnUntraced(function*<E>(condition: () => Effect.Effect<boolean, E>) {
+  for (let i = 0; i < 100; i++) {
+    if (yield* condition()) return
+    yield* Effect.sleep(100)
+  }
+})
 
 it.layer(PgContainer.layerClient, { timeout: "30 seconds" })("Persistence SQL cleanup", (it) => {
   it.effect("deletes expired entries in batches", () =>
@@ -254,6 +257,7 @@ it.layer(PgContainer.layerClient, { timeout: "30 seconds" })("Persistence SQL cl
         value: "{}",
         expires: SqlCleanupTest.expiredAtEpoch
       }))
+      assert(Arr.isArrayNonEmpty(entries))
       yield* sql`INSERT INTO ${table} ${sql.insert(entries)}`.unprepared
       yield* sql`
         INSERT INTO ${table} (store_id, id, value, expires)

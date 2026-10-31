@@ -59,6 +59,27 @@ const assertEntries = (
   assert.deepStrictEqual(rows.map((row) => row.entry.idString), expected.map((entry) => entry.idString))
 }
 
+/**
+ * Writes `entries` in a caller-owned transaction whose earlier after-commit
+ * callback holds it between COMMIT and the storage's publication until
+ * `release` runs.
+ */
+const writeWithHeldPublication = Effect.fnUntraced(function*(
+  storage: EventLogServerUnencrypted.Storage["Service"],
+  storeId: StoreId,
+  entries: ReadonlyArray<EventJournal.Entry>
+) {
+  const sql = yield* SqlClient.SqlClient
+  const committed = yield* Deferred.make<void>()
+  const released = yield* Deferred.make<void>()
+  const writer = yield* sql.withTransaction(Effect.gen(function*() {
+    yield* sql.afterCommit(Deferred.succeed(committed, undefined).pipe(Effect.andThen(Deferred.await(released))))
+    yield* storage.write(storeId, entries)
+  })).pipe(Effect.forkChild)
+  yield* Deferred.await(committed)
+  return Deferred.succeed(released, undefined).pipe(Effect.andThen(Fiber.join(writer)))
+})
+
 export const suite = (name: string, layer: Layer.Layer<SqlClient.SqlClient, unknown>) =>
   it.layer(
     Layer.mergeAll(Reactivity.layer, layer),
@@ -74,6 +95,51 @@ export const suite = (name: string, layer: Layer.Layer<SqlClient.SqlClient, unkn
         const idB = yield* storageB.getId
 
         assert.deepStrictEqual(idA, idB)
+      }))
+
+    it.effect("starts over existing entries with long primary keys", () =>
+      Effect.gen(function*() {
+        const sql = yield* SqlClient.SqlClient
+        const options = makeOptions("long_keys")
+        const table = sql(options.entryTablePrefix)
+        // The entries table as created before any secondary index existed.
+        yield* sql.onDialectOrElse({
+          pg: () =>
+            sql`CREATE TABLE ${table} (
+              store_id TEXT NOT NULL, sequence BIGINT NOT NULL, entry_id BYTEA NOT NULL, event TEXT NOT NULL,
+              primary_key TEXT NOT NULL, payload BYTEA NOT NULL,
+              PRIMARY KEY (store_id, sequence), UNIQUE (store_id, entry_id)
+            )`,
+          mysql: () =>
+            sql`CREATE TABLE ${table} (
+              store_id VARCHAR(191) NOT NULL, sequence BIGINT NOT NULL, entry_id BINARY(16) NOT NULL,
+              event TEXT NOT NULL, primary_key TEXT NOT NULL, payload BLOB NOT NULL,
+              PRIMARY KEY (store_id, sequence), UNIQUE (store_id, entry_id)
+            )`,
+          orElse: () =>
+            sql`CREATE TABLE ${table} (
+              store_id TEXT NOT NULL, sequence INTEGER NOT NULL, entry_id BLOB NOT NULL, event TEXT NOT NULL,
+              primary_key TEXT NOT NULL, payload BLOB NOT NULL,
+              PRIMARY KEY (store_id, sequence), UNIQUE (store_id, entry_id)
+            )`
+        })
+        const longKey = () => Array.from({ length: 125 }, () => crypto.randomUUID()).join("")
+        const existing = makeEntry("Ada", { primaryKey: longKey() })
+        yield* sql`INSERT INTO ${table} ${
+          sql.insert({
+            store_id: makeStoreId("long_keys_existing"),
+            sequence: 1,
+            entry_id: existing.id,
+            event: existing.event,
+            primary_key: existing.primaryKey,
+            payload: existing.payload
+          })
+        }`
+
+        const storage = yield* makeStorage(options)
+        const written = yield* storage.write(makeStoreId("long_keys"), [makeEntry("Grace", { primaryKey: longKey() })])
+
+        assert.deepStrictEqual(written.map((entry) => entry.remoteSequence), [1])
       }))
 
     it.effect("replays backlog and then streams live changes without startup duplication", () =>
@@ -335,5 +401,54 @@ export const suite = (name: string, layer: Layer.Layer<SqlClient.SqlClient, unkn
 
         const persisted = yield* Queue.takeAll(yield* openChanges(storage, storeId))
         assertEntries(persisted, [backlog, sentinel], 1)
+      }))
+
+    it.effect("publishes writes made in an enclosing SQL transaction only after it commits", () =>
+      Effect.gen(function*() {
+        const sql = yield* SqlClient.SqlClient
+        const storage = yield* makeStorage(makeOptions("sql_outer_commit"))
+        const storeId = makeStoreId("sql_outer_commit")
+        const backlog = makeEntry("Ada")
+        const rolledBack = makeEntry("Grace")
+        const committed = makeEntry("Margaret")
+        yield* storage.write(storeId, [backlog])
+        const changes = yield* openChanges(storage, storeId)
+        assertEntries([yield* Queue.take(changes)], [backlog], 1)
+
+        yield* Effect.exit(sql.withTransaction(
+          Effect.andThen(storage.write(storeId, [rolledBack]), Effect.fail("rollback"))
+        ))
+        yield* sql.withTransaction(Effect.gen(function*() {
+          yield* storage.write(storeId, [committed])
+          yield* Effect.yieldNow
+          assert.strictEqual(Option.isNone(yield* Queue.poll(changes)), true)
+        }))
+        assertEntries([yield* Queue.take(changes)], [committed], 2)
+      }))
+
+    it.effect("does not redeliver entries removed by backlog compaction when startup publication resumes", () =>
+      Effect.gen(function*() {
+        const storage = yield* makeStorage(makeOptions("compacted_startup"))
+        const storeId = makeStoreId("compacted_startup")
+        const folded = makeEntry("Ada")
+        const sentinel = makeEntry("Grace")
+        const compacted = yield* Deferred.make<void>()
+        const release = yield* writeWithHeldPublication(storage, storeId, [folded])
+        const changes = yield* storage.changes({
+          storeId,
+          startSequence: 0,
+          compactors: new Map([["UserNameSet", {
+            events: new Set(["UserNameSet"]),
+            effect: ({ entries }) =>
+              Effect.sync(() => {
+                assert.deepStrictEqual(entries.map((entry) => entry.idString), [folded.idString])
+              }).pipe(Effect.andThen(Deferred.succeed(compacted, undefined)))
+          }]])
+        }).pipe(Stream.toQueue({ capacity: "unbounded" }))
+        yield* Deferred.await(compacted)
+
+        yield* release
+        yield* storage.write(storeId, [sentinel])
+        assertEntries([yield* Queue.take(changes)], [sentinel], 2)
       }))
   })

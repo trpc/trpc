@@ -151,7 +151,7 @@ describe("Scope", () => {
           })
           return yield* Effect.fail("error")
         }).pipe(Effect.scoped, Effect.exit)
-        expect(reasons(exit)).toEqual(["fail:error", "die:release"])
+        expect(reasons(exit)).toEqual(["die:error", "die:release"])
       }))
   })
 

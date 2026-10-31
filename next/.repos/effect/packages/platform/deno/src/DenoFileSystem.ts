@@ -4,7 +4,7 @@
  * @stability unstable
  * @since 4.0.0
  */
-import { copy as denoCopy, expandGlob, walk } from "@std/fs"
+import { copy as denoCopy, walk } from "@std/fs"
 import { relative } from "@std/path"
 import * as ByteSize from "effect/ByteSize"
 import * as Effect from "effect/Effect"
@@ -77,16 +77,6 @@ const chmod: FileSystem.FileSystem["chmod"] = (path, mode) => tryPromise("chmod"
 const chown: FileSystem.FileSystem["chown"] = (path, uid, gid) =>
   tryPromise("chown", path, () => Deno.chown(path, uid, gid))
 
-const glob: FileSystem.FileSystem["glob"] = (pattern, options) =>
-  Effect.map(
-    collectAsyncIterable("glob", pattern, () =>
-      expandGlob(pattern, {
-        root: options?.root ?? Deno.cwd(),
-        exclude: options?.exclude ? [...options.exclude] : []
-      })),
-    (entries) => entries.map((entry) => entry.path)
-  )
-
 const link: FileSystem.FileSystem["link"] = (existingPath, newPath) =>
   tryPromise("link", existingPath, () => Deno.link(existingPath, newPath))
 
@@ -122,7 +112,7 @@ const remove = removeFactory("remove")
 const makeTempDirectoryScoped: FileSystem.FileSystem["makeTempDirectoryScoped"] = (options) =>
   Effect.acquireRelease(
     makeTempDirectoryFactory("makeTempDirectoryScoped")(options),
-    (directory) => Effect.orDie(removeFactory("makeTempDirectoryScoped")(directory, { recursive: true }))
+    (directory) => Effect.orDie(removeFactory("makeTempDirectoryScoped")(directory, { recursive: true, force: true }))
   )
 
 const openOptions = (flag: FileSystem.OpenFlag = "r", mode?: number): Deno.OpenOptions => {
@@ -151,44 +141,55 @@ const openOptions = (flag: FileSystem.OpenFlag = "r", mode?: number): Deno.OpenO
   }
 }
 
-const makeFileInfo = (info: Deno.FileInfo): FileSystem.File.Info => ({
-  type: info.isFile ?
+// `Deno.DirEntry` only reports the first three flags
+const fileType = (info: Deno.DirEntry | Deno.FileInfo): FileSystem.File.Type => {
+  const flags: Partial<Deno.FileInfo> = info
+  return info.isFile ?
     "File" :
     info.isDirectory ?
     "Directory" :
     info.isSymlink ?
     "SymbolicLink" :
-    info.isBlockDevice ?
+    flags.isBlockDevice ?
     "BlockDevice" :
-    info.isCharDevice ?
+    flags.isCharDevice ?
     "CharacterDevice" :
-    info.isFifo ?
+    flags.isFifo ?
     "FIFO" :
-    info.isSocket ?
+    flags.isSocket ?
     "Socket" :
-    "Unknown",
+    "Unknown"
+}
+
+const makeFileInfo = (info: Deno.FileInfo): FileSystem.File.Info => ({
+  type: fileType(info),
   mtime: Option.fromNullishOr(info.mtime),
   atime: Option.fromNullishOr(info.atime),
   birthtime: Option.fromNullishOr(info.birthtime),
-  dev: info.dev,
-  rdev: Option.fromNullishOr(info.rdev),
-  ino: Option.fromNullishOr(info.ino),
+  dev: BigInt(info.dev),
+  rdev: Option.map(Option.fromNullishOr(info.rdev), BigInt),
+  ino: Option.map(Option.fromNullishOr(info.ino), BigInt),
   mode: info.mode ?? 0,
-  nlink: Option.fromNullishOr(info.nlink),
+  nlink: Option.map(Option.fromNullishOr(info.nlink), BigInt),
   uid: Option.fromNullishOr(info.uid),
   gid: Option.fromNullishOr(info.gid),
   size: ByteSize.bytes(BigInt(info.size)),
   blksize: Option.map(Option.fromNullishOr(info.blksize), (size) => ByteSize.bytes(BigInt(size))),
-  blocks: Option.fromNullishOr(info.blocks)
+  blocks: Option.map(Option.fromNullishOr(info.blocks), BigInt)
 })
 
-/** A file handle is stateful and must not be used concurrently. */
+/**
+ * Deno lacks positional reads, so `native` serializes seek + I/O. Cancelled
+ * entries are skipped; started I/O holds the queue until it settles, even
+ * after interruption. Cursor operations must not run concurrently.
+ */
 class FileImpl implements FileSystem.File {
   readonly [FileSystem.FileTypeId]: typeof FileSystem.FileTypeId = FileSystem.FileTypeId
   private readonly file: Deno.FsFile
   private readonly append: boolean
   private position = BigInt(0)
   private nativePosition: bigint | undefined = undefined
+  private nativeQueue: Promise<unknown> = Promise.resolve()
 
   constructor(
     file: Deno.FsFile,
@@ -224,41 +225,59 @@ class FileImpl implements FileSystem.File {
     })
   }
 
-  private readChunk(method: string, buffer: Uint8Array) {
+  private native<A>(signal: AbortSignal, evaluate: () => Promise<A>): Promise<A> {
+    const result = this.nativeQueue.then(() => signal.aborted ? Promise.reject(signal.reason) : evaluate())
+    this.nativeQueue = result.catch(() => undefined)
+    return result
+  }
+
+  private readChunk(method: string, buffer: Uint8Array, explicit: bigint | undefined) {
     return Effect.suspend(() => {
-      const position = this.position
+      if (explicit !== undefined && explicit < BigInt(0)) {
+        return Effect.fail(PlatformError.badArgument({
+          module: "FileSystem",
+          method,
+          description: "Cannot read before the start of the file"
+        }))
+      }
+      const position = explicit ?? this.position
       return Effect.map(
         tryPromise(
           method,
           undefined,
-          async () => {
-            if (this.nativePosition !== position) {
-              this.file.seekSync(position, Deno.SeekMode.Start)
-            }
-            this.nativePosition = undefined
-            return await this.file.read(buffer)
-          }
+          (signal) =>
+            this.native(signal, async () => {
+              if (this.nativePosition !== position) {
+                this.file.seekSync(position, Deno.SeekMode.Start)
+              }
+              this.nativePosition = undefined
+              const bytesRead = (await this.file.read(buffer)) ?? 0
+              this.nativePosition = position + BigInt(bytesRead)
+              return bytesRead
+            })
         ),
         (bytesRead) => {
-          this.position = this.nativePosition = position + BigInt(bytesRead ?? 0)
-          return bytesRead ?? 0
+          if (explicit === undefined) {
+            this.position = position + BigInt(bytesRead)
+          }
+          return bytesRead
         }
       )
     })
   }
 
-  read(buffer: Uint8Array) {
-    return this.readChunk("read", buffer)
+  read(buffer: Uint8Array, options?: FileSystem.File.ReadOptions) {
+    return this.readChunk("read", buffer, options?.position)
   }
 
-  readAlloc(size: number) {
+  readAlloc(size: number, options?: FileSystem.File.ReadOptions) {
     return Effect.suspend(() => {
       try {
         if (!Number.isInteger(size) || size < 0) {
           throw new RangeError("size must be a non-negative integer")
         }
         const buffer = new Uint8Array(size)
-        return Effect.map(this.readChunk("readAlloc", buffer), (bytesRead) => {
+        return Effect.map(this.readChunk("readAlloc", buffer, options?.position), (bytesRead) => {
           if (bytesRead === 0) {
             return Option.none()
           }
@@ -294,19 +313,22 @@ class FileImpl implements FileSystem.File {
         tryPromise(
           method,
           undefined,
-          async () => {
-            if (!this.append && this.nativePosition !== position) {
-              this.file.seekSync(position, Deno.SeekMode.Start)
-            }
-            this.nativePosition = undefined
-            return await this.file.write(buffer)
-          }
+          (signal) =>
+            this.native(signal, async () => {
+              if (!this.append && this.nativePosition !== position) {
+                this.file.seekSync(position, Deno.SeekMode.Start)
+              }
+              this.nativePosition = undefined
+              const bytesWritten = await this.file.write(buffer)
+              if (!this.append) {
+                this.nativePosition = position + BigInt(bytesWritten)
+              }
+              return bytesWritten
+            })
         ),
         (bytesWritten) => {
-          if (this.append) {
-            this.nativePosition = undefined
-          } else {
-            this.position = this.nativePosition = position + BigInt(bytesWritten)
+          if (!this.append) {
+            this.position = position + BigInt(bytesWritten)
           }
           return bytesWritten
         }
@@ -340,6 +362,13 @@ class FileImpl implements FileSystem.File {
 }
 
 const open: FileSystem.FileSystem["open"] = (path, options) => {
+  if (options?.noFollow === true) {
+    return Effect.fail(PlatformError.badArgument({
+      module: "FileSystem",
+      method: "open",
+      description: "noFollow is not supported by Deno"
+    }))
+  }
   const append = options?.flag?.startsWith("a") ?? false
   return Effect.map(
     Effect.acquireRelease(
@@ -379,6 +408,12 @@ const readDirectory: FileSystem.FileSystem["readDirectory"] = (path, options) =>
   )
 }
 
+const readDirectoryEntries = (path: string) =>
+  Effect.map(
+    collectAsyncIterable("readDirectoryEntries", path, () => Deno.readDir(path)),
+    (entries) => entries.map((entry): FileSystem.DirectoryEntry => ({ name: entry.name, type: fileType(entry) }))
+  )
+
 const readFile: FileSystem.FileSystem["readFile"] = (path) =>
   tryPromise("readFile", path, (signal) => Deno.readFile(path, { signal }))
 
@@ -388,6 +423,12 @@ const realPath: FileSystem.FileSystem["realPath"] = (path) => tryPromise("realPa
 
 const rename: FileSystem.FileSystem["rename"] = (oldPath, newPath) =>
   tryPromise("rename", oldPath, () => Deno.rename(oldPath, newPath))
+
+const lstat: FileSystem.FileSystem["lstat"] = (path) =>
+  Effect.map(
+    tryPromise("lstat", path, () => Deno.lstat(path)),
+    makeFileInfo
+  )
 
 const stat: FileSystem.FileSystem["stat"] = (path) =>
   Effect.map(
@@ -414,8 +455,9 @@ const watchNative = (
         try: () => Deno.watchFs(path, { recursive: options?.recursive ?? false }),
         catch: handleError("FileSystem", "watch", path)
       }),
-      (watcher) =>
-        Stream.fromAsyncIterable(watcher, handleError("FileSystem", "watch", path)).pipe(
+      (watcher) => {
+        options?.onReady?.()
+        return Stream.fromAsyncIterable(watcher, handleError("FileSystem", "watch", path)).pipe(
           Stream.flatMap((event): Stream.Stream<FileSystem.WatchEvent, PlatformError.PlatformError> => {
             switch (event.kind) {
               case "create":
@@ -435,6 +477,7 @@ const watchNative = (
             }
           })
         )
+      }
     )
   )
 
@@ -443,9 +486,9 @@ const watch = (
   path: string,
   options?: FileSystem.WatchOptions
 ) =>
-  stat(path).pipe(
-    Effect.map((info) =>
-      backend.pipe(
+  Effect.all([stat(path), Effect.serviceOption(FileSystem.WatchBackend)]).pipe(
+    Effect.map(([info, callerBackend]) =>
+      Option.orElse(callerBackend, () => backend).pipe(
         Option.flatMap((backend) => backend.register(path, info, options)),
         Option.getOrElse(() => watchNative(path, options))
       )
@@ -484,8 +527,8 @@ const makeFileSystem = Effect.map(Effect.serviceOption(FileSystem.WatchBackend),
     chown,
     copy,
     copyFile,
-    glob,
     link,
+    lstat,
     makeDirectory,
     makeTempDirectory,
     makeTempDirectoryScoped,
@@ -493,6 +536,7 @@ const makeFileSystem = Effect.map(Effect.serviceOption(FileSystem.WatchBackend),
     makeTempFileScoped,
     open,
     readDirectory,
+    readDirectoryEntries,
     readFile,
     readLink,
     realPath,

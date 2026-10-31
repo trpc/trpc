@@ -17,11 +17,12 @@ import type * as Layer from "../Layer.ts"
 import type * as HttpApi from "./HttpApi.ts"
 import type * as HttpApiGroup from "./HttpApiGroup.ts"
 import * as Html from "./internal/html.ts"
-import * as internal from "./internal/httpApiSwagger.ts"
 import * as OpenApi from "./OpenApi.ts"
 
 const makeHandler = <Id extends string, Groups extends HttpApiGroup.Constraint>(options: {
   readonly api: HttpApi.HttpApi<Id, Groups>
+  readonly javascript: string
+  readonly css: string
 }) => {
   const makeResponse = Function.memoize((api: HttpApi.HttpApi<Id, Groups>) => {
     const spec = OpenApi.fromApi(api)
@@ -31,7 +32,7 @@ const makeHandler = <Id extends string, Groups extends HttpApiGroup.Constraint>(
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${Html.escape(spec.info.title)} Documentation</title>
-  <style>${internal.css}</style>
+  <style>${options.css}</style>
 </head>
 <body>
   <div id="swagger-ui"></div>
@@ -39,7 +40,7 @@ const makeHandler = <Id extends string, Groups extends HttpApiGroup.Constraint>(
     ${Html.escapeJson(spec)}
   </script>
   <script>
-    ${internal.javascript}
+    ${options.javascript}
     window.onload = () => {
       window.ui = SwaggerUIBundle({
         spec: JSON.parse(document.getElementById("swagger-spec").textContent),
@@ -57,6 +58,11 @@ const makeHandler = <Id extends string, Groups extends HttpApiGroup.Constraint>(
  * Mounts Swagger UI for an `HttpApi` at the configured path, defaulting to
  * `/docs`, using the OpenAPI specification generated from the API.
  *
+ * **Details**
+ *
+ * The bundled Swagger UI assets are loaded when the layer is built, not when
+ * this module is imported.
+ *
  * @stability unstable
  * @category layers
  * @since 4.0.0
@@ -68,6 +74,7 @@ export const layer = <Id extends string, Groups extends HttpApiGroup.Constraint>
   }
 ): Layer.Layer<never, never, HttpRouter.HttpRouter> =>
   HttpRouter.use(Effect.fnUntraced(function*(router) {
-    const handler = makeHandler({ api })
+    const { css, javascript } = yield* Effect.promise(() => import("./internal/httpApiSwagger.ts"))
+    const handler = makeHandler({ api, javascript, css })
     yield* router.add("GET", options?.path ?? "/docs", handler)
   }))

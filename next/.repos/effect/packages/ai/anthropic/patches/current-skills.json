@@ -1,0 +1,122 @@
+[
+  {
+    "op": "move",
+    "from": "/components/schemas/Skill",
+    "path": "/components/schemas/SkillResource"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/SkillVersion",
+    "path": "/components/schemas/SkillVersionResource"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/BetaSkill",
+    "path": "/components/schemas/BetaSkillResource"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/BetaSkillVersion",
+    "path": "/components/schemas/BetaSkillVersionResource"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/ListSkillsResponse",
+    "path": "/components/schemas/ListSkillResourcesResponse"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/ListSkillVersionsResponse",
+    "path": "/components/schemas/ListSkillVersionResourcesResponse"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/BetaListSkillsResponse",
+    "path": "/components/schemas/BetaListSkillResourcesResponse"
+  },
+  {
+    "op": "move",
+    "from": "/components/schemas/BetaListSkillVersionsResponse",
+    "path": "/components/schemas/BetaListSkillVersionResourcesResponse"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills/post/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/SkillResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/ListSkillResourcesResponse"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/SkillResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}~1versions/post/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/SkillVersionResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}~1versions/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/ListSkillVersionResourcesResponse"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}~1versions~1{version}/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/SkillVersionResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills?beta=true/post/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/BetaSkillResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills?beta=true/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/BetaListSkillResourcesResponse"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}?beta=true/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/BetaSkillResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}~1versions?beta=true/post/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/BetaSkillVersionResource"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}~1versions?beta=true/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/BetaListSkillVersionResourcesResponse"
+  },
+  {
+    "op": "replace",
+    "path": "/paths/~1v1~1skills~1{skill_id}~1versions~1{version}?beta=true/get/responses/200/content/application~1json/schema/$ref",
+    "value": "#/components/schemas/BetaSkillVersionResource"
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/BetaListSkillVersionResourcesResponse/properties/data/items/$ref",
+    "value": "#/components/schemas/BetaSkillVersionResource"
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/BetaListSkillResourcesResponse/properties/data/items/$ref",
+    "value": "#/components/schemas/BetaSkillResource"
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/ListSkillVersionResourcesResponse/properties/data/items/$ref",
+    "value": "#/components/schemas/SkillVersionResource"
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/ListSkillResourcesResponse/properties/data/items/$ref",
+    "value": "#/components/schemas/SkillResource"
+  }
+]

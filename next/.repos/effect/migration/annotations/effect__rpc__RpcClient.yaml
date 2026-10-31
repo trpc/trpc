@@ -7,6 +7,9 @@
 "@effect/rpc/RpcClient#make":
   replacement: "effect/rpc/RpcClient#make"
   note: "Retained; generated calls can now take per-request headers and Context, and include RpcClientError in their error channel."
+"@effect/rpc/RpcClient#makeNoSerialization":
+  replacement: "effect/rpc/RpcClient#makeNoSerialization"
+  note: "Retained, but onFromClient no longer receives a discard flag; a discarded call is a Request message with discard: true. Discarded calls now complete when the server acknowledges them rather than when the request is written."
 "@effect/rpc/RpcClient#makeProtocolHttp":
   replacement: "effect/rpc/RpcClient#makeProtocolHttp"
   note: "Retained; it creates the Protocol service implementation from an HttpClient."

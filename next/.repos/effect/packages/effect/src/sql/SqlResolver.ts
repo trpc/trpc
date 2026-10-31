@@ -8,6 +8,19 @@
  * grouped, id-based, and side-effect-only resolver constructors, and keeps
  * batches separated by the active SQL transaction connection.
  *
+ * The active transaction is found through the `SqlClient` in each request's
+ * context, and otherwise through the innermost transaction started with
+ * `SqlClient.makeWithTransaction`.
+ *
+ * Only the transaction connection separates batches. Other differences in
+ * caller services do not: `execute` and result decoding are provided with the
+ * first entry's context, while request encoding uses each entry's own context.
+ * In particular, callers outside a transaction can share one batch even when
+ * they provide different tenant or authorization services. Do not rely on
+ * per-caller services to isolate such SQL operations; use separate resolver
+ * instances for different tenants or authorization settings, or include those
+ * values in the request payload and handle them explicitly in `execute`.
+ *
  * @stability unstable
  * @since 4.0.0
  */
@@ -18,6 +31,7 @@ import * as Effect from "../Effect.ts"
 import * as Equal from "../Equal.ts"
 import * as Exit from "../Exit.ts"
 import * as Hash from "../Hash.ts"
+import { CurrentTransactionService } from "../internal/sql.ts"
 import * as MutableHashMap from "../MutableHashMap.ts"
 import * as Option from "../Option.ts"
 import * as Request from "../Request.ts"
@@ -123,7 +137,7 @@ export const ordered = <Req extends Schema.Constraint, Res extends Schema.Constr
       E | ResultLengthMismatch,
       Req["EncodingServices"] | Res["DecodingServices"] | R
     >,
-    SqlClient.TransactionConnection.Service | undefined
+    object | undefined
   >({
     key: transactionKey,
     resolver: Effect.fnUntraced(function*(entries) {
@@ -181,7 +195,7 @@ export const grouped = <Req extends Schema.Constraint, Res extends Schema.Constr
       E | Schema.SchemaError | Cause.NoSuchElementError,
       Req["EncodingServices"] | Res["DecodingServices"] | R
     >,
-    SqlClient.TransactionConnection.Service | undefined
+    object | undefined
   >({
     key: transactionKey,
     resolver: Effect.fnUntraced(function*(entries) {
@@ -251,7 +265,7 @@ export const findById = <Id extends Schema.Constraint, Res extends Schema.Constr
       E | Schema.SchemaError | Cause.NoSuchElementError,
       Id["EncodingServices"] | Res["DecodingServices"] | R
     >,
-    SqlClient.TransactionConnection.Service | undefined
+    object | undefined
   >({
     key: transactionKey,
     resolver: Effect.fnUntraced(function*(entries) {
@@ -305,7 +319,7 @@ const void_ = <Req extends Schema.Constraint, _, E, R>(
       E | Schema.SchemaError,
       Req["EncodingServices"] | R
     >,
-    SqlClient.TransactionConnection.Service | undefined
+    object | undefined
   >({
     key: transactionKey,
     resolver: Effect.fnUntraced(function*(entries) {
@@ -406,10 +420,19 @@ const partitionRequestsById = function*<In, A, E, R, InE>(
   return [inputs, byIdMap] as const
 }
 
-function transactionKey<A>(entry: Request.Entry<A>): SqlClient.TransactionConnection.Service | undefined {
+function transactionKey<A>(entry: Request.Entry<A>): object | undefined {
+  // The transaction of the request's `SqlClient`, and the innermost transaction
+  // started with `SqlClient.makeWithTransaction` by any client.
   const client = Context.getOrUndefined(entry.context, SqlClient.SqlClient)
-  if (!client) return undefined
-  const conn = Context.getOrUndefined(entry.context, client.transactionService)
-  if (!conn) return undefined
-  return Equal.byReferenceUnsafe(conn)
+  const clientTransaction = client && Context.getOrUndefined(entry.context, client.transactionService)
+  const currentService = Context.get(entry.context, CurrentTransactionService)
+  const currentTransaction = currentService && Context.getOrUndefined(entry.context, currentService)
+  if (clientTransaction === undefined || clientTransaction === currentTransaction) {
+    return currentTransaction && Equal.byReferenceUnsafe(currentTransaction)
+  }
+  if (currentTransaction === undefined) {
+    return Equal.byReferenceUnsafe(clientTransaction)
+  }
+  // Two different transactions are active, so neither identifies the request on its own.
+  return [Equal.byReferenceUnsafe(clientTransaction), Equal.byReferenceUnsafe(currentTransaction)]
 }

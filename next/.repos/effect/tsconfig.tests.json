@@ -14,7 +14,14 @@
     "./packages/**/typetest/**/*.ts",
     "./packages/**/benchmark/**/*.ts"
   ],
-  "exclude": ["**/node_modules/**", "**/dist/**", "./packages/platform/deno/**"],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "./packages/platform/deno/**",
+    // Declares `Reactivity.Keys`, which would make reactivity keys strict for every test in this program.
+    // TSTyche still checks it in its own program.
+    "./packages/effect/typetest/reactivity/ReactivityKeys.tst.ts"
+  ],
   "compilerOptions": {
     "rootDir": ".",
     "noEmit": true,
@@ -26,6 +33,8 @@
       // that would otherwise be considered cyclic dependencies (e.g. loading `@effect/sql-sqlite-node` in the test
       // suite of `@effect/platform-node` which itself depends on `@effect/platform-node`).
       "effect": ["./packages/effect/src/index.ts"],
+      "effect/graphql": ["./packages/effect/src/graphql/index.ts"],
+      "effect/jose": ["./packages/effect/src/jose/index.ts"],
       "effect/schema": ["./packages/effect/src/schema/index.ts"],
       "effect/*": ["./packages/effect/src/*.ts"],
       "@effect/ai-anthropic": ["./packages/ai/anthropic/src/index.ts"],
@@ -89,8 +98,11 @@
       "@effect/bundle/*": ["./packages/tools/bundle/src/*.ts"],
       "@effect/docgen": ["./packages/tools/docgen/src/index.ts"],
       "@effect/docgen/*": ["./packages/tools/docgen/src/*.ts"],
+      "@effect/npm-promote": ["./packages/tools/npm-promote/src/NpmPromote.ts"],
+      "@effect/npm-promote/*": ["./packages/tools/npm-promote/src/*.ts"],
       "@effect/openapi-generator": ["./packages/tools/openapi-generator/src/index.ts"],
       "@effect/openapi-generator/*": ["./packages/tools/openapi-generator/src/*.ts"],
+      "@effect/graphql-generator/*": ["./packages/tools/graphql-generator/src/*.ts"],
       "@effect/oxc": ["./packages/tools/oxc/src/index.ts"],
       "@effect/oxc/*": ["./packages/tools/oxc/src/*.ts"],
       "@effect/tools-utils": ["./packages/tools/utils/src/index.ts"],
@@ -102,10 +114,11 @@
     },
     "plugins": [{
       "name": "@effect/language-service",
+      "effectFn": ["untraced"],
       "namespaceImportPackages": [],
       "includeSuggestionsInTsc": false,
       "ignoreEffectWarningsInTscExitCode": true,
-      "ignoreEffectErrorsInTscExitCode": true,
+      "ignoreEffectErrorsInTscExitCode": false,
       "overrides": [
         {
           "include": ["**/typetest/**/*.ts"],
@@ -119,7 +132,8 @@
       "diagnosticSeverity": {
         "unknownInEffectCatch": "off",
         "multipleEffectProvide": "off",
-        "unstableApiUsage": "off"
+        "unstableApiUsage": "off",
+        "effectFnOpportunity": "error"
       }
     }]
   }

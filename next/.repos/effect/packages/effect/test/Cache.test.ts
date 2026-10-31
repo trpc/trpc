@@ -439,12 +439,11 @@ describe("Cache", () => {
           const lookupComplete = yield* Latch.make()
           const cache = yield* Cache.make<string, number>({
             capacity: 10,
-            lookup: () =>
-              Effect.gen(function*() {
-                yield* lookupStarted.open
-                yield* lookupComplete.await
-                return 42
-              })
+            lookup: Effect.fnUntraced(function*() {
+              yield* lookupStarted.open
+              yield* lookupComplete.await
+              return 42
+            })
           })
 
           const first = yield* Cache.get(cache, "K1").pipe(Effect.forkChild({ startImmediately: true }))
@@ -467,13 +466,12 @@ describe("Cache", () => {
           let lookups = 0
           const cache = yield* Cache.make<string, number>({
             capacity: 10,
-            lookup: () =>
-              Effect.gen(function*() {
-                lookups++
-                yield* started.open
-                yield* finish.await
-                return 42
-              })
+            lookup: Effect.fnUntraced(function*() {
+              lookups++
+              yield* started.open
+              yield* finish.await
+              return 42
+            })
           })
 
           const first = yield* Cache.get(cache, "key").pipe(Effect.forkChild({ startImmediately: true }))
@@ -1865,28 +1863,27 @@ describe("PersistedCache", () => {
     }).pipe(Effect.provide(Persistence.layerMemory)))
 })
 
-const makeTestCache = (capacity: number, ttl?: Duration.Input) =>
-  Effect.gen(function*() {
-    let lookupCount = 0
-    const lookupResults = new Map<string, Effect.Effect<number, string>>()
+const makeTestCache = Effect.fnUntraced(function*(capacity: number, ttl?: Duration.Input) {
+  let lookupCount = 0
+  const lookupResults = new Map<string, Effect.Effect<number, string>>()
 
-    const cache = yield* Cache.make<string, number, string>({
-      capacity,
-      lookup: (key) => {
-        lookupCount++
-        return lookupResults.get(key) ?? Effect.fail(`Key not found: ${key}`)
-      },
-      timeToLive: ttl
-    })
-
-    return {
-      cache,
-      lookupCount: () => lookupCount,
-      resetLookupCount: () => {
-        lookupCount = 0
-      },
-      setLookupResult: (key: string, result: Effect.Effect<number, string>) => {
-        lookupResults.set(key, result)
-      }
-    }
+  const cache = yield* Cache.make<string, number, string>({
+    capacity,
+    lookup: (key) => {
+      lookupCount++
+      return lookupResults.get(key) ?? Effect.fail(`Key not found: ${key}`)
+    },
+    timeToLive: ttl
   })
+
+  return {
+    cache,
+    lookupCount: () => lookupCount,
+    resetLookupCount: () => {
+      lookupCount = 0
+    },
+    setLookupResult: (key: string, result: Effect.Effect<number, string>) => {
+      lookupResults.set(key, result)
+    }
+  }
+})

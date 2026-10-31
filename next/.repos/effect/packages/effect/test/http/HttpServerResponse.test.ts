@@ -1,8 +1,21 @@
 import { assert, describe, it } from "@effect/vitest"
+import { assertNone } from "@effect/vitest/utils"
 import { Context, Effect, Stream } from "effect"
 import { Cookies, HttpBody, HttpClientRequest, HttpClientResponse, HttpServerResponse } from "effect/http"
 
 const TestValue = Context.Reference<number>("test/TestValue", { defaultValue: () => 0 })
+
+// Bun leaves `Response.redirect` headers mutable, unlike Node, Deno and workerd
+const immutableHeaders = (response: Response): Response => {
+  for (const method of ["append", "set"]) {
+    Object.defineProperty(response.headers, method, {
+      value: () => {
+        throw new TypeError("immutable")
+      }
+    })
+  }
+  return response
+}
 
 describe("HttpServerResponse", () => {
   describe("toWeb", () => {
@@ -44,13 +57,22 @@ describe("HttpServerResponse", () => {
     )
 
     it("preserves raw Response metadata for HEAD", () => {
-      const native = new Response("body", {
-        status: 202,
-        statusText: "Accepted by upstream",
-        headers: { "x-probe": "native", "set-cookie": "sid=abc" }
-      })
+      const native = immutableHeaders(
+        new Response("body", {
+          status: 202,
+          statusText: "Accepted by upstream",
+          headers: { "x-probe": "native", "x-shared": "native", "set-cookie": "sid=abc" }
+        })
+      )
+      // A locked body fails the test if HEAD copies the response
+      native.body!.getReader()
       const web = HttpServerResponse.toWeb(
-        HttpServerResponse.raw(native, { status: 200, statusText: "Outer status" }),
+        HttpServerResponse.raw(native, {
+          status: 200,
+          statusText: "Outer status",
+          headers: { "x-shared": "outer" },
+          cookies: Cookies.setAllUnsafe(Cookies.empty, [["a", "1", {}]])
+        }),
         { withoutBody: true }
       )
 
@@ -58,10 +80,11 @@ describe("HttpServerResponse", () => {
       assert.strictEqual(web.status, 202)
       assert.strictEqual(web.statusText, "Accepted by upstream")
       assert.strictEqual(web.headers.get("x-probe"), "native")
-      assert.deepStrictEqual(web.headers.getSetCookie(), ["sid=abc"])
+      assert.strictEqual(web.headers.get("x-shared"), "outer")
+      assert.deepStrictEqual(web.headers.getSetCookie(), ["sid=abc", "a=1"])
     })
 
-    it("returns the raw Response with merged headers for GET", async () => {
+    it("merges headers for GET without modifying the raw Response", async () => {
       const native = new Response("body", {
         status: 202,
         statusText: "Accepted by upstream",
@@ -74,14 +97,32 @@ describe("HttpServerResponse", () => {
         })
       )
 
-      assert.strictEqual(web, native)
       assert.strictEqual(web.status, 202)
       assert.strictEqual(web.statusText, "Accepted by upstream")
       assert.strictEqual(web.headers.get("x-probe"), "native")
       assert.strictEqual(web.headers.get("x-outer"), "outer")
       assert.strictEqual(web.headers.get("x-shared"), "outer")
       assert.deepStrictEqual(web.headers.getSetCookie(), ["sid=abc; Path=/; HttpOnly", "a=1", "b=2"])
+      assert.strictEqual(native.headers.get("x-probe"), "native")
+      assert.strictEqual(native.headers.get("x-outer"), null)
+      assert.strictEqual(native.headers.get("x-shared"), "native")
+      assert.deepStrictEqual(native.headers.getSetCookie(), ["sid=abc; Path=/; HttpOnly"])
       assert.strictEqual(await web.text(), "body")
+    })
+
+    it("merges outer headers into a raw Response with immutable headers", () => {
+      const native = immutableHeaders(Response.redirect("http://localhost/target", 302))
+      const web = HttpServerResponse.toWeb(
+        HttpServerResponse.raw(native, {
+          headers: { "x-outer": "outer" },
+          cookies: Cookies.setAllUnsafe(Cookies.empty, [["a", "1", {}]])
+        })
+      )
+
+      assert.strictEqual(web.status, 302)
+      assert.strictEqual(web.headers.get("location"), "http://localhost/target")
+      assert.strictEqual(web.headers.get("x-outer"), "outer")
+      assert.deepStrictEqual(web.headers.getSetCookie(), ["a=1"])
     })
 
     it.each([
@@ -97,6 +138,25 @@ describe("HttpServerResponse", () => {
         assert.strictEqual(web.headers.get("content-type"), "text/plain")
       }
     )
+
+    it.each([
+      HttpServerResponse.text("body", { status: 204 }),
+      HttpServerResponse.raw(new Response("body", { headers: { "content-length": "4" } }), { status: 205 })
+    ])("drops content-length for status $status", (response) => {
+      assert.strictEqual(HttpServerResponse.toWeb(response).headers.get("content-length"), null)
+    })
+
+    it.each([
+      { status: 204, headers: undefined },
+      { status: 205, headers: { "x-outer": "outer" } }
+    ])("drops content-length from a raw Response with status $status", ({ status, headers }) => {
+      const raw = new Response(null, { status, headers: { "content-length": "4" } })
+      const web = HttpServerResponse.toWeb(HttpServerResponse.raw(raw, { headers }))
+
+      assert.strictEqual(web.status, status)
+      assert.strictEqual(web.headers.get("content-length"), null)
+      assert.strictEqual(raw.headers.get("content-length"), "4")
+    })
 
     it.each([
       { status: 200, withoutBody: true },
@@ -178,6 +238,10 @@ describe("HttpServerResponse", () => {
         assert.strictEqual(yield* HttpServerResponse.toClientResponse(response).text, "hello")
         assert.strictEqual(yield* Effect.promise(() => HttpServerResponse.toWeb(response).text()), "hello")
       }))
+
+    it("has no Web Response for HttpClientResponse.toWeb", () => {
+      assertNone(HttpClientResponse.toWeb(HttpServerResponse.toClientResponse(HttpServerResponse.text("hello"))))
+    })
   })
 
   it.effect("fromClientResponse preserves status, headers, cookies, and json", () =>

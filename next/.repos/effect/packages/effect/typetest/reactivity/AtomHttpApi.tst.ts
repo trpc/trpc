@@ -53,6 +53,28 @@ type InnerError = HttpClientError.HttpClientError | Schema.SchemaError | Sse.Ret
 type SseStream = Stream.Stream<string, InnerError>
 
 describe("AtomHttpApi", () => {
+  it("infers query successes from literal response modes", () => {
+    const defaults = Client.query("group", "get", {})
+    const decoded = Client.query("group", "get", { responseMode: "decoded-only" })
+    const paired = Client.query("group", "get", { responseMode: "decoded-and-response" })
+    const response = Client.query("group", "get", { responseMode: "response-only" })
+
+    expect<Atom.Success<typeof defaults>>().type.toBe<string>()
+    expect<Atom.Success<typeof decoded>>().type.toBe<string>()
+    expect<Atom.Success<typeof paired>>().type.toBe<[string, HttpClientResponse.HttpClientResponse]>()
+    expect<Atom.Success<typeof response>>().type.toBe<HttpClientResponse.HttpClientResponse>()
+    expect(Client.query).type.not.toBeCallableWith("group", "get", { responseMode: "invalid" })
+  })
+
+  it("infers query successes from union response modes", () => {
+    const responseMode = hole<"decoded-only" | "decoded-and-response" | "response-only">()
+    const query = Client.query("group", "get", { responseMode })
+
+    expect<Atom.Success<typeof query>>().type.toBe<
+      string | [string, HttpClientResponse.HttpClientResponse] | HttpClientResponse.HttpClientResponse
+    >()
+  })
+
   it("accepts SSE decode options in query and mutation requests", () => {
     const StreamingClient = AtomHttpApi.Service()("StreamingClient", {
       api: HttpApi.make("StreamingApi").add(
@@ -149,5 +171,14 @@ describe("AtomHttpApi", () => {
     expect<Atom.Success<typeof query>>().type.toBe<
       HttpApiSchema.withHeaders<SseStream, { readonly "x-count": number }>
     >()
+  })
+
+  it("accepts any reactivity keys when no keys are declared", () => {
+    const keys = hole<ReadonlyArray<unknown>>()
+    const mutation = Client.mutation("group", "get")
+
+    expect(Client.query).type.toBeCallableWith("group", "get", { reactivityKeys: keys })
+    expect(Client.query).type.toBeCallableWith("group", "get", { reactivityKeys: { anything: [1, { id: 1 }] } })
+    expect(AtomRegistry.make().set).type.toBeCallableWith(mutation, { reactivityKeys: keys })
   })
 })

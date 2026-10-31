@@ -205,13 +205,17 @@ export class McpConformance extends Context.Service<McpConformance, McpConforman
 
 export type McpConformanceLayer = Layer.Layer<McpConformance, unknown>
 
-export const layer = (protocol: McpProtocol.ProtocolAdapter) =>
+export const layer = (
+  protocol: McpProtocol.ProtocolAdapter,
+  options?: { readonly mode?: "server" | "request" | undefined }
+) =>
   Layer.effect(
     McpConformance,
     Effect.gen(function*() {
       const defaultHarness = yield* makeHttpHarness(makeServerLayer({
         name: SERVER_NAME,
-        protocols: [protocol]
+        protocols: [protocol],
+        mode: options?.mode
       }))
       const observations = yield* Ref.make<Observations>({
         toolInvocations: 0,
@@ -219,7 +223,7 @@ export const layer = (protocol: McpProtocol.ProtocolAdapter) =>
         resourceTemplateInvocations: 0
       })
       const requestCount = yield* Ref.make(0)
-      const featuresHarness = yield* makeHttpHarness(makeFeaturesServerLayer(protocol, observations))
+      const featuresHarness = yield* makeHttpHarness(makeFeaturesServerLayer(protocol, observations, options?.mode))
       const post = (
         harness: typeof defaultHarness,
         body: unknown,

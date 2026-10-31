@@ -683,6 +683,11 @@ const maxDuration = (results: ReadonlyArray<Duration.Duration | undefined>): Dur
  * Returns a new `Schedule` that recurs on the specified `Cron` schedule and
  * outputs the duration between recurrences.
  *
+ * **Details**
+ *
+ * A string expression is parsed with `Cron.parse`, using the optional time zone
+ * and `onDstOverlap` policy. A pre-parsed `Cron` value keeps its own policy.
+ *
  * **Example** (Scheduling work with cron expressions)
  *
  * ```ts import.meta.vitest
@@ -698,9 +703,13 @@ const maxDuration = (results: ReadonlyArray<Duration.Duration | undefined>): Dur
  */
 export const cron: {
   (expression: Cron.Cron): Schedule<Duration.Duration, unknown, Cron.CronParseError>
-  (expression: string, tz?: string | DateTime.TimeZone): Schedule<Duration.Duration, unknown, Cron.CronParseError>
-} = (expression: string | Cron.Cron, tz?: string | DateTime.TimeZone) => {
-  const parsed = Cron.isCron(expression) ? Result.succeed(expression) : Cron.parse(expression, tz)
+  (expression: string, tz?: string | DateTime.TimeZone, options?: {
+    readonly onDstOverlap?: Cron.DstOverlapPolicy | undefined
+  }): Schedule<Duration.Duration, unknown, Cron.CronParseError>
+} = (expression: string | Cron.Cron, tz?: string | DateTime.TimeZone, options?: {
+  readonly onDstOverlap?: Cron.DstOverlapPolicy | undefined
+}) => {
+  const parsed = Cron.isCron(expression) ? Result.succeed(expression) : Cron.parse(expression, tz, options)
   return fromStep(effect.map(effect.fromResult(parsed), (cron) => (now, _) => {
     if (now === Number.POSITIVE_INFINITY) {
       return Cause.done(Duration.zero)
@@ -911,10 +920,10 @@ export const fibonacci = (one: Duration.Input): Schedule<Duration.Duration> => {
     let a = 0
     let b = oneMillis
     return constant(effect.sync(() => {
+      const duration = Duration.millis(b)
       const next = a + b
       a = b
       b = next
-      const duration = Duration.millis(next)
       return [duration, duration]
     }))
   }))

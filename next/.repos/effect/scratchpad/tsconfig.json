@@ -13,7 +13,9 @@
     "plugins": [
       {
         "name": "@effect/language-service",
-        "namespaceImportPackages": []
+        "effectFn": ["untraced"],
+        "namespaceImportPackages": [],
+        "diagnosticSeverity": { "effectFnOpportunity": "error" }
       }
     ]
   }

@@ -39,6 +39,21 @@ describe("NetAddress", () => {
     void NetAddress.ipv4Loopback.bytes
   })
 
+  it("accepts the forms of the checked constructors as inputs", () => {
+    expect(NetAddress.ipFromInput([127, 0, 0, 1])).type.toBe<
+      Result.Result<NetAddress.IpAddress, NetAddress.NetAddressError>
+    >()
+    expect(NetAddress.ipFromInput).type.toBeCallableWith([0, 0, 0, 0, 0, 0, 0, 1])
+    expect(NetAddress.ipFromInput).type.toBeCallableWith(new Uint8Array(16))
+    expect(NetAddress.ipFromInput).type.not.toBeCallableWith([127, 0, 1])
+    expect(NetAddress.ipv4FromInput).type.not.toBeCallableWith([0, 0, 0, 0, 0, 0, 0, 1])
+    expect(NetAddress.ipv6FromInput).type.not.toBeCallableWith([127, 0, 0, 1])
+    expect(NetAddress.macAddressFromInput).type.toBeCallableWith([0, 0, 0, 0, 0, 0])
+    expect(NetAddress.inetAddressFromInput).type.toBeCallableWith({ address: [127, 0, 0, 1], port: 80 })
+    expect(NetAddress.inetAddressFromInput).type.toBeCallableWith({ address: "fe80::1", port: 80, scopeId: 1 })
+    expect(NetAddress.socketAddressFromInput).type.toBeCallableWith({ address: new Uint8Array(4), port: 80 })
+  })
+
   it("requires canonical socket addresses at consumer constructors", () => {
     const server = HttpServer.make({
       address: NetAddress.inetAddressUnsafe(NetAddress.ipv4Loopback, 8080),
@@ -244,6 +259,19 @@ describe("NetAddress", () => {
 
     expect(bind({ localAddress: localV4, remote: remoteV4 })).type.toBe<NetAddress.Ipv4Address>()
     expect(bind).type.not.toBeCallableWith({ localAddress: localV4, remote: remoteV6 })
+  })
+
+  it("narrows by family only for literal families", () => {
+    const addresses: ReadonlyArray<NetAddress.IpAddress> = []
+    expect(addresses.filter(NetAddress.isFamily("IPv4"))).type.toBe<Array<NetAddress.Ipv4Address>>()
+    expect(addresses.filter((address) => NetAddress.isFamily(address, "IPv6"))).type.toBe<
+      Array<NetAddress.Ipv6Address>
+    >()
+    const family = "IPv4" as NetAddress.IpFamily
+    expect(addresses.filter((address) => !NetAddress.isFamily(address, family))).type.toBe<
+      Array<NetAddress.IpAddress>
+    >()
+    expect(addresses.filter(NetAddress.isFamily(family))).type.toBe<Array<NetAddress.IpAddress>>()
   })
 
   it("preserves named schema types when annotating codecs", () => {

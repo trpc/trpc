@@ -229,9 +229,20 @@ export const annotations: (
   transform: Transform
 })
 
-const defaultOptions: SchemaRepresentation.ToRepresentationOptions = {}
+/**
+ * Options for {@link fromApi}.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.6
+ */
+export interface FromApiOptions
+  extends SchemaRepresentation.ToRepresentationOptions, Pick<Schema.ToJsonSchemaOptions, "includeAnnotationKey">
+{}
+
+const defaultOptions: FromApiOptions = {}
 const apiCache = new WeakMap<
-  SchemaRepresentation.ToRepresentationOptions,
+  FromApiOptions,
   WeakMap<HttpApi.Constraint, OpenAPISpec>
 >()
 
@@ -285,7 +296,8 @@ function processAnnotation<Services, S, I>(
  * integrates annotations like descriptions, summaries, external documentation,
  * and overrides. The optional reference policy receives canonical JSON encoded
  * ASTs and controls which schemas are extracted into components. By default, only candidates with resolved identifiers
- * become references; anonymous non-recursive schemas remain inline.
+ * become references; anonymous non-recursive schemas remain inline. The optional `includeAnnotationKey` predicate selects
+ * custom schema annotation keys, such as `x-*` vendor extensions, to include in the generated schemas.
  *
  * **Gotchas**
  *
@@ -299,7 +311,7 @@ function processAnnotation<Services, S, I>(
  */
 export function fromApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
   api: HttpApi.HttpApi<Id, Groups>,
-  options?: SchemaRepresentation.ToRepresentationOptions
+  options?: FromApiOptions
 ): OpenAPISpec {
   const resolvedOptions = options ?? defaultOptions
   let cache = apiCache.get(resolvedOptions)
@@ -329,7 +341,7 @@ type SchemaOp =
 
 function makeOpenApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
   api: HttpApi.HttpApi<Id, Groups>,
-  options: SchemaRepresentation.ToRepresentationOptions
+  options: FromApiOptions
 ): OpenAPISpec {
   let spec: OpenAPISpec = {
     openapi: "3.1.0",
@@ -423,10 +435,7 @@ function makeOpenApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
       }
 
       const paramNames = HttpApiPath.getParamNames(endpoint.params)
-      const path = endpoint.path.replace(
-        /:(\w+)\??/g,
-        (match, key: string) => paramNames === undefined || paramNames.has(key) ? `{${key}}` : match
-      )
+      const path = HttpApiPath.replaceParams(endpoint.path, paramNames, (key) => `{${key}}`)
       const method = endpoint.method.toLowerCase() as Lowercase<HttpMethod.HttpMethod>
       const isQuery = method === "query"
       const operationKey = isQuery ? "QUERY" : method
@@ -467,28 +476,40 @@ function makeOpenApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
           if (streamContent !== undefined) {
             streamContent.forEach((stream, contentType) => {
               op.responses[status].content ??= {}
-              if (HttpApiSchema.isStreamSse(stream)) {
-                InternalRecord.assignProperty(op.responses[status].content, contentType, {
-                  schema: registerSchema(stream.events.ast),
-                  "x-effect-stream": {
-                    encoding: "sse",
-                    causeSchema: registerSchema(Schema.Cause(stream.error, Schema.Defect()).ast),
-                    errorSchema: registerSchema(stream.error.ast),
-                    failureEvent: reservedStreamFailureEvent
-                  }
-                })
-              } else {
-                InternalRecord.assignProperty(op.responses[status].content, contentType, {
-                  schema: {
-                    type: "string",
-                    format: "binary"
-                  },
-                  "x-effect-stream": {
-                    encoding: "uint8array"
-                  }
-                })
-              }
+              InternalRecord.assignProperty(op.responses[status].content, contentType, makeStreamMediaType(stream))
             })
+          }
+        }
+      }
+
+      function makeStreamMediaType(stream: HttpApiSchema.StreamSchema): OpenApiSpecMediaType {
+        if (HttpApiSchema.isStreamSse(stream)) {
+          return {
+            schema: registerSchema(stream.events.ast),
+            "x-effect-stream": {
+              encoding: "sse",
+              causeSchema: registerSchema(Schema.Cause(stream.error, Schema.Defect()).ast),
+              errorSchema: registerSchema(stream.error.ast),
+              failureEvent: reservedStreamFailureEvent
+            }
+          }
+        }
+        if (HttpApiSchema.isStreamNdjson(stream)) {
+          // Each line is one element, so the media type documents the element schema.
+          return {
+            schema: registerSchema(stream.schema.ast),
+            "x-effect-stream": {
+              encoding: "ndjson"
+            }
+          }
+        }
+        return {
+          schema: {
+            type: "string",
+            format: "binary"
+          },
+          "x-effect-stream": {
+            encoding: "uint8array"
           }
         }
       }
@@ -527,10 +548,13 @@ function makeOpenApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
         if (!HttpApiMiddleware.isSecurity(middleware)) {
           return
         }
-        for (const [name, security] of Object.entries(middleware.security)) {
-          processHttpApiSecurity(name, security)
-          op.security.push({ [name]: [] })
+        const names = Object.keys(middleware.security)
+        for (const name of names) {
+          processHttpApiSecurity(name, middleware.security[name])
         }
+        // Stacked middleware must all pass (AND); schemes within one middleware are alternatives (OR).
+        const requirements = op.security.length === 0 ? [{}] : op.security
+        op.security = requirements.flatMap((requirement) => names.map((name) => ({ ...requirement, [name]: [] })))
       })
 
       function processHttpApiSecurity(
@@ -554,27 +578,41 @@ function makeOpenApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
 
       const hasBody = HttpMethod.hasBody(endpoint.method)
       if (hasBody) {
-        const schemasByContentType = new Map<string, {
-          readonly encoding: HttpApiSchema.PayloadEncoding
-          readonly schemas: Array<Schema.Top>
-        }>()
+        const schemasByContentType = new Map<
+          string,
+          {
+            readonly encoding: HttpApiSchema.PayloadEncoding
+            readonly schemas: Array<Schema.Top>
+          } | HttpApiSchema.StreamSchema
+        >()
         for (const schema of HttpApiEndpoint.getPayloadSchemas(endpoint)) {
+          if (HttpApiSchema.isStreamSchema(schema)) {
+            // Endpoint construction rejects a buffered payload sharing a streaming payload's media type.
+            for (const contentType of schema.contentTypes) {
+              schemasByContentType.set(contentType, schema)
+            }
+            continue
+          }
           if (HttpApiSchema.isNoContent(schema.ast)) continue
           const encoding = HttpApiSchema.getPayloadEncoding(schema.ast, endpoint.method)
           const existing = schemasByContentType.get(encoding.contentType)
           if (existing === undefined) {
             schemasByContentType.set(encoding.contentType, { encoding, schemas: [schema] })
-          } else {
+          } else if (!HttpApiSchema.isStreamSchema(existing)) {
             existing.schemas.push(schema)
           }
         }
         if (schemasByContentType.size > 0) {
           const content: OpenApiSpecContent = {}
-          for (const [contentType, { encoding, schemas }] of schemasByContentType) {
-            const asts = schemas.map(SchemaAST.getAST)
+          for (const [contentType, entry] of schemasByContentType) {
+            if (HttpApiSchema.isStreamSchema(entry)) {
+              InternalRecord.assignProperty(content, contentType, makeStreamMediaType(entry))
+              continue
+            }
+            const asts = entry.schemas.map(SchemaAST.getAST)
             const ast = asts.length === 1 ? asts[0] : new SchemaAST.Union(asts)
             InternalRecord.assignProperty(content, contentType, {
-              schema: registerSchema(ast, encoding._tag)
+              schema: registerSchema(ast, entry.encoding._tag)
             })
           }
           op.requestBody = { content, required: true }
@@ -678,7 +716,7 @@ function makeOpenApi<Id extends string, Groups extends HttpApiGroup.Constraint>(
 
 function compileSchemaOps(
   schemaOps: Array<SchemaOp>,
-  options: SchemaRepresentation.ToRepresentationOptions,
+  options: FromApiOptions,
   components: JsonSchema.Definitions
 ): void {
   if (!Arr.isArrayNonEmpty(schemaOps)) return
@@ -697,7 +735,7 @@ function compileSchemaOps(
   const jsonSchemaMultiDocument = JsonSchema.toMultiDocumentOpenApi3_1(
     InternalToJsonSchemaDocument.toJsonSchemaMultiDocument(
       { representations, references },
-      { onExcessProperty: "error" }
+      { onExcessProperty: "error", includeAnnotationKey: options.includeAnnotationKey }
     )
   )
 
@@ -792,6 +830,9 @@ function selectReferences(
 
     pushChecks(representation.checks)
     switch (representation._tag) {
+      case "String":
+        if (representation.content?.schema !== undefined) stack.push(representation.content.schema)
+        break
       case "Declaration":
         stack.push(...representation.typeParameters)
         break
@@ -861,7 +902,13 @@ function extractResponseBodies(
     const headers = HttpApiSchema.isWithHeaders(schema) ? schema.headers : annotation?.headersCodec
     const status = getStatus(schema)
     const ast = body.ast
-    if (HttpApiSchema.isStreamSchema(body)) {
+    if (HttpApiSchema.isUpgrade(body)) {
+      addNoContent(status, getDescription(ast) ?? "Switching Protocols")
+      map.get(status)!.headers.push(
+        Schema.Struct({ connection: Schema.Literal("Upgrade"), upgrade: Schema.Literal(body.protocol) })
+      )
+      if (body.headers !== undefined) map.get(status)!.headers.push(body.headers)
+    } else if (HttpApiSchema.isStreamSchema(body)) {
       addStreamContent(body, status)
     } else if (HttpApiSchema.isNoContent(ast)) {
       addNoContent(status, getDescription(schema.ast) ?? getDescription(ast) ?? "<No Content>")
@@ -937,20 +984,14 @@ function extractResponseBodies(
     stream: HttpApiSchema.StreamSchema,
     status: number
   ) {
-    const statusMap = map.get(status)
+    let statusMap = map.get(status)
     if (statusMap === undefined) {
-      map.set(status, {
-        descriptions: new Set(),
-        content: undefined,
-        headers: [],
-        streamContent: new Map([[stream.contentType, stream]])
-      })
-    } else {
-      if (statusMap.streamContent === undefined) {
-        statusMap.streamContent = new Map([[stream.contentType, stream]])
-      } else {
-        statusMap.streamContent.set(stream.contentType, stream)
-      }
+      statusMap = { descriptions: new Set(), content: undefined, headers: [], streamContent: undefined }
+      map.set(status, statusMap)
+    }
+    const streamContent = statusMap.streamContent ??= new Map()
+    for (const contentType of stream.contentTypes) {
+      streamContent.set(contentType, stream)
     }
   }
 }
@@ -1259,7 +1300,8 @@ export interface OpenApiSpecMediaType {
 }
 
 /**
- * Effect-specific metadata for generated streaming response media types.
+ * Effect-specific metadata for generated streaming request and response media
+ * types.
  *
  * @stability unstable
  * @category models
@@ -1274,6 +1316,9 @@ export type OpenApiSpecEffectStream =
   }
   | {
     encoding: "uint8array"
+  }
+  | {
+    encoding: "ndjson"
   }
 
 /**

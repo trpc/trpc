@@ -3409,6 +3409,149 @@
           ]
         }
       ]
+    },
+    {
+      "name": "datetime",
+      "fixtures": [
+        {
+          "file": "suites/datetime/fixtures/cases.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "datetime",
+            "implementation": "effect",
+            "astTags": [],
+            "operation": "construct",
+            "path": "valid",
+            "size": 1
+          },
+          "cases": [
+            {
+              "name": "make-number",
+              "export": "makeNumber",
+              "scenario": "datetime-make-number"
+            },
+            {
+              "name": "make-iso",
+              "export": "makeIso",
+              "scenario": "datetime-make-iso"
+            },
+            {
+              "name": "make-zoned-named",
+              "export": "makeZonedNamed",
+              "scenario": "datetime-make-zoned-named"
+            },
+            {
+              "name": "add-zoned-offset",
+              "export": "addZonedOffset",
+              "scenario": "datetime-add-zoned-offset",
+              "operation": "add"
+            },
+            {
+              "name": "parts-utc-first",
+              "export": "partsUtcFirst",
+              "scenario": "datetime-parts-utc-first",
+              "operation": "parts"
+            },
+            {
+              "name": "parts-offset-first",
+              "export": "partsOffsetFirst",
+              "scenario": "datetime-parts-offset-first",
+              "operation": "parts"
+            },
+            {
+              "name": "parts-named-first",
+              "export": "partsNamedFirst",
+              "scenario": "datetime-parts-named-first",
+              "operation": "parts"
+            },
+            {
+              "name": "get-parts-utc-first",
+              "export": "getPartsUtcFirst",
+              "scenario": "datetime-get-parts-utc-first",
+              "operation": "parts"
+            },
+            {
+              "name": "parts-utc-cached",
+              "export": "partsUtcCached",
+              "scenario": "datetime-parts-utc-cached",
+              "operation": "parts-cached"
+            },
+            {
+              "name": "parts-named-cached",
+              "export": "partsNamedCached",
+              "scenario": "datetime-parts-named-cached",
+              "operation": "parts-cached"
+            },
+            {
+              "name": "parts-mixed-cached",
+              "export": "partsMixedCached",
+              "scenario": "datetime-parts-mixed-cached",
+              "operation": "parts-cached"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "encoding",
+      "fixtures": [
+        {
+          "file": "suites/encoding/fixtures/base64url.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "base64url",
+            "implementation": "effect",
+            "astTags": [],
+            "operation": "decode",
+            "path": "valid",
+            "size": 150
+          },
+          "cases": [
+            {
+              "name": "decode-small",
+              "export": "decodeSmall",
+              "scenario": "base64url-decode-small",
+              "size": 16
+            },
+            {
+              "name": "decode-jwt-signature",
+              "export": "decodeJwtSignature",
+              "scenario": "base64url-decode-jwt-signature",
+              "size": 86
+            },
+            {
+              "name": "decode-jwt-payload",
+              "export": "decodeJwtPayload",
+              "scenario": "base64url-decode-jwt-payload"
+            },
+            {
+              "name": "decode-large",
+              "export": "decodeLarge",
+              "scenario": "base64url-decode-large",
+              "size": 65536
+            },
+            {
+              "name": "decode-padded-crlf",
+              "export": "decodePaddedCrlf",
+              "scenario": "base64url-decode-padded-crlf",
+              "size": 1404
+            },
+            {
+              "name": "decode-string-jwt-payload",
+              "export": "decodeStringJwtPayload",
+              "scenario": "base64url-decode-string-jwt-payload",
+              "size": 168,
+              "operation": "decodeString"
+            },
+            {
+              "name": "decode-invalid",
+              "export": "decodeInvalid",
+              "scenario": "base64url-decode-invalid",
+              "path": "invalid"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

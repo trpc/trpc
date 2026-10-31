@@ -17,7 +17,7 @@ npm install effect
 ## Requirements
 
 - **TypeScript 5.9 or newer.** TypeScript 7 is recommended for the best performance and compatibility with [Effect's TypeScript tooling](https://github.com/Effect-TS/tsgo#installation).
-- **Node.js 18 or newer** is the general minimum for running Effect on Node.js. Some integration packages require newer runtimes; for example, `@effect/sql-sqlite-node` requires Node.js 22.16 or newer.
+- **Node.js 22.19 or newer** is the general minimum for running Effect on Node.js.
 - **Strict type-checking:** the `strict` flag must be enabled in your `tsconfig.json`.
 
 ## Links
@@ -91,6 +91,7 @@ This monorepo contains the core `effect` package alongside integration packages 
 | [`@effect/docgen`](packages/tools/docgen)                             | Documentation generator for Effect projects              | [docs](https://effect.website/docs/v4/api/docgen)                  |
 | [`@effect/doctest`](packages/tools/doctest)                           | Runs JSDoc examples as Vitest tests                      | [docs](https://effect.website/docs/v4/api/doctest)                 |
 | [`@effect/openapi-generator`](packages/tools/openapi-generator)       | Generate Effect code from OpenAPI specifications         | [docs](https://effect.website/docs/v4/api/openapi-generator)       |
+| [`@effect/graphql-generator`](packages/tools/graphql-generator)       | Generate Effect code from GraphQL documents              | [docs](https://effect.website/docs/v4/api/graphql-generator)       |
 
 ## License
 

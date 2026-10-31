@@ -160,6 +160,15 @@ class PriorityBuckets {
  * operation counts to decide when fibers should yield, and is the default
  * scheduler implementation.
  *
+ * **Gotchas**
+ *
+ * On Cloudflare Workers, request-owned scheduler timers can be discarded,
+ * leaving shared fibers suspended. Use `new MixedScheduler("sync")` for the
+ * whole application; see `HttpRouter.toWebHandler` for a recipe.
+ * Sync mode does not yield to the event loop: CPU-heavy work delays other
+ * requests, and I/O-polling loops can exhaust the CPU limit. It does not fix
+ * request-owned timers (such as `Effect.sleep`) or request-bound async contexts.
+ *
  * @stability stable
  * @category models
  * @since 2.0.0

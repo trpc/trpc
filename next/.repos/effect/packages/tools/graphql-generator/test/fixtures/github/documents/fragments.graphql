@@ -1,0 +1,16 @@
+fragment IssueSummary on Issue {
+  number
+  title
+  state
+  stateReason
+  createdAt
+  url
+}
+
+fragment ActorFields on Actor {
+  login
+  avatarUrl(size: 64)
+  ... on User {
+    name
+  }
+}

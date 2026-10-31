@@ -1,102 +1,178 @@
 /**
- * Browser-backed implementation of Effect's Crypto service.
+ * Browser layers for the `effect/crypto` modules.
  *
- * This module provides a `Crypto.Crypto` layer backed by the Web Crypto API.
- * The {@link WebCrypto} context reference defaults to `globalThis.crypto`, so
- * browser programs can use the standard implementation while tests or embedded
- * runtimes can provide their own `Crypto` object.
+ * Every layer here runs the core WebCrypto layer of its family, so that browser
+ * programs take every crypto layer from `BrowserCrypto`. They use the
+ * `WebCrypto` reference, which defaults to the browser's `globalThis.crypto`. Layers
+ * that need `SecureRandom` get it from {@link layerSecureRandom}, so no layer
+ * here has requirements. {@link layer} provides every family at once; provide
+ * a family's own layer to pick services selectively.
  *
  * @stability unstable
  * @since 1.0.0
  */
-import * as Context from "effect/Context"
-import * as EffectCrypto from "effect/Crypto"
-import * as Effect from "effect/Effect"
+import * as Aead from "effect/crypto/Aead"
+import * as Cipher from "effect/crypto/Cipher"
+import * as Digest from "effect/crypto/Digest"
+import * as Kdf from "effect/crypto/Kdf"
+import * as KeyAgreement from "effect/crypto/KeyAgreement"
+import * as KeyWrap from "effect/crypto/KeyWrap"
+import * as Mac from "effect/crypto/Mac"
+import * as SecureRandom from "effect/crypto/SecureRandom"
+import * as Signature from "effect/crypto/Signature"
 import * as Layer from "effect/Layer"
-import * as PlatformError from "effect/PlatformError"
 
 /**
- * Provides Browser Web Crypto APIs used by the Crypto service implementation.
- *
- * **When to use**
- *
- * Use to override the browser `Crypto` object used by the platform crypto
- * layer.
- *
- * @stability unstable
- * @category services
- * @since 1.0.0
- */
-export const WebCrypto = Context.Reference<Crypto>("@effect/platform-browser/Crypto/WebCrypto", {
-  defaultValue: () => globalThis.crypto
-})
-
-/**
- * Layer that directly interfaces with the Web Crypto API.
- *
- * **When to use**
- *
- * Use to provide cryptographic randomness, UUID generation, and digest
- * operations in browser runtimes backed by `globalThis.crypto`.
+ * Layer that provides `SecureRandom` on the `WebCrypto` reference.
  *
  * **Details**
  *
- * Random bytes are produced with `crypto.getRandomValues`. Digests are computed
- * with `crypto.subtle.digest` and returned as `Uint8Array` values.
- *
- * **Gotchas**
- *
- * The layer dies if the Web Crypto object is unavailable. Digest operations
- * fail with `PlatformError` when `crypto.subtle.digest` is unavailable or the
- * browser rejects the digest request.
+ * This is `SecureRandom.layerWebCrypto`, re-exported for browser programs.
  *
  * @stability unstable
  * @category layers
- * @since 1.0.0
+ * @since 4.0.0
  */
-export const layer: Layer.Layer<EffectCrypto.Crypto> = Layer.effect(
-  EffectCrypto.Crypto,
-  Effect.gen(function*() {
-    const crypto = yield* WebCrypto
-    if (!crypto) {
-      return yield* Effect.die(new Error("Web Crypto API is not available"))
-    }
-    const randomBytes = (size: number): Uint8Array => {
-      const bytes = new Uint8Array(size)
-      for (let i = 0; i < bytes.length; i += 65_536) {
-        crypto.getRandomValues(bytes.subarray(i, i + 65_536))
-      }
-      return bytes
-    }
+export const layerSecureRandom: Layer.Layer<SecureRandom.SecureRandom> = SecureRandom.layerWebCrypto
 
-    const digest: EffectCrypto.Crypto["digest"] = (algorithm, data) => {
-      if (typeof crypto.subtle?.digest !== "function") {
-        return Effect.fail(PlatformError.systemError({
-          module: "Crypto",
-          method: "digest",
-          _tag: "Unknown",
-          description: "crypto.subtle.digest is not available"
-        }))
-      }
-      return Effect.map(
-        Effect.tryPromise({
-          try: () => crypto.subtle.digest(algorithm, new Uint8Array(data)),
-          catch: (cause) =>
-            PlatformError.systemError({
-              module: "Crypto",
-              method: "digest",
-              _tag: "Unknown",
-              description: "Could not compute digest",
-              cause
-            })
-        }),
-        (buffer) => new Uint8Array(buffer)
-      )
-    }
+/**
+ * Layer that provides `Digest` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `Digest.layerWebCrypto`, re-exported for browser programs.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerDigest: Layer.Layer<Digest.Digest> = Digest.layerWebCrypto
 
-    return EffectCrypto.make({
-      randomBytes,
-      digest
-    })
-  })
+/**
+ * Layer that provides `Mac` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `Mac.layerWebCrypto` with {@link layerSecureRandom}.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerMac: Layer.Layer<Mac.Mac> = Mac.layerWebCrypto.pipe(Layer.provide(layerSecureRandom))
+
+/**
+ * Layer that provides `Kdf` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `Kdf.layerWebCrypto`, re-exported for browser programs.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerKdf: Layer.Layer<Kdf.Kdf> = Kdf.layerWebCrypto
+
+/**
+ * Layer that provides `Aead` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `Aead.layerWebCrypto` with {@link layerSecureRandom}.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerAead: Layer.Layer<Aead.Aead> = Aead.layerWebCrypto.pipe(Layer.provide(layerSecureRandom))
+
+/**
+ * Layer that provides `Cipher` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `Cipher.layerWebCrypto` with {@link layerSecureRandom}.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerCipher: Layer.Layer<Cipher.Cipher> = Cipher.layerWebCrypto.pipe(Layer.provide(layerSecureRandom))
+
+/**
+ * Layer that provides `Signature` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `Signature.layerWebCrypto` with {@link layerSecureRandom}.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerSignature: Layer.Layer<Signature.Signature> = Signature.layerWebCrypto.pipe(
+  Layer.provide(layerSecureRandom)
+)
+
+/**
+ * Layer that provides `KeyAgreement` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `KeyAgreement.layerWebCrypto` with {@link layerSecureRandom}.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerKeyAgreement: Layer.Layer<KeyAgreement.KeyAgreement> = KeyAgreement.layerWebCrypto.pipe(
+  Layer.provide(layerSecureRandom)
+)
+
+/**
+ * Layer that provides `KeyWrap` on the `WebCrypto` reference.
+ *
+ * **Details**
+ *
+ * This is `KeyWrap.layerWebCrypto` with {@link layerSecureRandom}.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layerKeyWrap: Layer.Layer<KeyWrap.KeyWrap> = KeyWrap.layerWebCrypto.pipe(Layer.provide(layerSecureRandom))
+
+/**
+ * Layer that provides every `effect/crypto` service on the `WebCrypto`
+ * reference.
+ *
+ * **Details**
+ *
+ * This merges the family layers of this module, so it requires nothing.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.0
+ */
+export const layer: Layer.Layer<
+  | SecureRandom.SecureRandom
+  | Digest.Digest
+  | Mac.Mac
+  | Kdf.Kdf
+  | Aead.Aead
+  | Cipher.Cipher
+  | Signature.Signature
+  | KeyAgreement.KeyAgreement
+  | KeyWrap.KeyWrap
+> = Layer.mergeAll(
+  layerSecureRandom,
+  layerDigest,
+  layerMac,
+  layerKdf,
+  layerAead,
+  layerCipher,
+  layerSignature,
+  layerKeyAgreement,
+  layerKeyWrap
 )

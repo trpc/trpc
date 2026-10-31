@@ -1,6 +1,19 @@
 import { describe, it } from "@effect/vitest"
-import { assertFalse, assertTrue, deepStrictEqual, strictEqual } from "@effect/vitest/utils"
-import { Context, DateTime, Effect, Fiber, identity, Latch, Schema, SchemaGetter, Stream } from "effect"
+import { assertFalse, assertTrue, deepStrictEqual, strictEqual, throws } from "@effect/vitest/utils"
+import {
+  Cause,
+  Context,
+  DateTime,
+  Effect,
+  Exit,
+  Fiber,
+  identity,
+  Latch,
+  References,
+  Schema,
+  SchemaGetter,
+  Stream
+} from "effect"
 import { AiError, LanguageModel, Response, Tool, Toolkit } from "effect/ai"
 import { TestClock } from "effect/testing"
 import * as TestUtils from "./utils.ts"
@@ -215,6 +228,33 @@ describe("Tool", () => {
         )
 
         deepStrictEqual(response, toolResult)
+      }))
+
+    it.effect("should preserve every reason and its annotations when failure mode is error", () =>
+      Effect.gen(function*() {
+        const toolkit = Toolkit.make(Tool.make("Lookup", { failure: Schema.String }))
+        const failAt = (error: string) =>
+          Effect.fail(error).pipe(
+            Effect.provideService(References.CurrentStackFrame, { name: error, stack: () => "", parent: undefined })
+          )
+        const handlers = yield* toolkit.pipe(Effect.provide(toolkit.toLayer({
+          Lookup: () => Effect.race(failAt("first"), failAt("second"))
+        })))
+
+        const exit = yield* handlers.handle("Lookup", {}).pipe(Effect.flatMap(Stream.runCollect), Effect.exit)
+
+        assertTrue(Exit.isFailure(exit))
+        deepStrictEqual(
+          exit.cause.reasons.map((reason) => {
+            const annotations = Cause.reasonAnnotations(reason)
+            return [
+              Cause.isFailReason(reason) ? reason.error : reason._tag,
+              Context.getUnsafe(annotations, Cause.StackTrace).name,
+              Context.get(annotations, Toolkit.FailureOrigin)
+            ]
+          }),
+          [["first", "first", "handler"], ["second", "second", "handler"]]
+        )
       }))
 
     it.effect("should return a failed tool result when tool call parameters are invalid and failure mode is return", () =>
@@ -436,6 +476,66 @@ describe("Tool", () => {
       }))
 
     describe("Preliminary Results", () => {
+      it.effect("should interrupt the handler when the consumer stops early", () =>
+        Effect.gen(function*() {
+          const toolkit = Toolkit.make(Tool.make("Progress", { success: Schema.Number }))
+          const interrupted = yield* Latch.make()
+          const handlers = yield* toolkit.pipe(Effect.provide(toolkit.toLayer({
+            Progress: Effect.fnUntraced(function*(_, ctx) {
+              yield* ctx.preliminary(0)
+              return yield* Effect.never
+            }, Effect.onInterrupt(() => interrupted.open))
+          })))
+
+          const results = yield* handlers.handle("Progress", {}).pipe(
+            Effect.flatMap((stream) => stream.pipe(Stream.take(1), Stream.runCollect))
+          )
+          strictEqual(results.length, 1)
+          assertTrue(Latch.isOpen(interrupted))
+        }))
+
+      it.effect("should buffer preliminary results without limit by default", () =>
+        Effect.gen(function*() {
+          const { done, handlers, state } = yield* makeProgressHandlers
+          const stream = yield* handlers.handle("Progress", {})
+          yield* done.await
+          strictEqual(state.accepted, 64)
+          strictEqual((yield* Stream.runCollect(stream)).length, 65)
+        }))
+
+      it.effect("should backpressure preliminary results with a PreliminaryBuffer capacity", () =>
+        Effect.gen(function*() {
+          const { handlers, started, state } = yield* makeProgressHandlers
+          const stream = yield* handlers.handle("Progress", {}).pipe(
+            Effect.provideService(Toolkit.PreliminaryBuffer, 16)
+          )
+          yield* started.await
+          yield* Effect.yieldNow
+          strictEqual(state.accepted, 16)
+
+          const results = yield* Stream.runCollect(stream)
+          deepStrictEqual(
+            results.map(({ isFailure, preliminary, result }) => ({ isFailure, preliminary, result })),
+            [
+              ...Array.from({ length: 64 }, (_, result) => ({ isFailure: false, preliminary: true, result })),
+              { isFailure: true, preliminary: false, result: "failed" }
+            ]
+          )
+        }))
+
+      it.effect.each([0, -1, 1.5, NaN])(
+        "should die when the PreliminaryBuffer capacity is %s",
+        (capacity) =>
+          Effect.gen(function*() {
+            const { handlers } = yield* makeProgressHandlers
+            const exit = yield* handlers.handle("Progress", {}).pipe(
+              Effect.provideService(Toolkit.PreliminaryBuffer, capacity),
+              Effect.exit
+            )
+            assertTrue(Exit.isFailure(exit) && String(Cause.squash(exit.cause)).includes("PreliminaryBuffer"))
+          })
+      )
+
       it.effect("should not have preliminary results when generateText is used", () =>
         Effect.gen(function*() {
           const toolkit = Toolkit.make(IncrementalTool)
@@ -1174,6 +1274,29 @@ const IncrementalToolWithFailure = Tool.make("IncrementalToolWithFailure", {
   })
 })
 
+const makeProgressHandlers = Effect.gen(function*() {
+  const toolkit = Toolkit.make(Tool.make("Progress", {
+    success: Schema.Number,
+    failure: Schema.String,
+    failureMode: "return"
+  }))
+  const started = yield* Latch.make()
+  const done = yield* Latch.make()
+  const state = { accepted: 0 }
+  const handlers = yield* toolkit.pipe(Effect.provide(toolkit.toLayer({
+    Progress: Effect.fnUntraced(function*(_, ctx) {
+      yield* started.open
+      for (let i = 0; i < 64; i++) {
+        yield* ctx.preliminary(i)
+        state.accepted++
+      }
+      yield* done.open
+      return yield* Effect.fail("failed")
+    })
+  })))
+  return { done, handlers, started, state }
+})
+
 const NoHandlerRequired = Tool.providerDefined({
   id: "test.no_handler_required",
   customName: "NoHandlerRequired",
@@ -1412,11 +1535,10 @@ describe("Dynamic", () => {
         const toolkit = Toolkit.make(SearchTool)
 
         const layer = toolkit.toLayer({
-          SearchTool: (params: unknown) =>
-            Effect.gen(function*() {
-              const { query, limit } = params as { query: string; limit: number }
-              return Array.from({ length: limit }, (_, i) => `${query}-${i}`)
-            })
+          SearchTool: Effect.fnUntraced(function*(params: unknown) {
+            const { query, limit } = params as { query: string; limit: number }
+            return Array.from({ length: limit }, (_, i) => `${query}-${i}`)
+          })
         })
 
         const response = yield* LanguageModel.generateText({
@@ -1502,5 +1624,17 @@ describe("Dynamic", () => {
       })().annotate(Tool.Strict, false)
       strictEqual(Tool.getStrictMode(tool), false)
     })
+  })
+})
+
+describe("unsafeSecureJsonParse", () => {
+  it("rejects Unicode-escaped prototype keys", () => {
+    const error = new SyntaxError("Object contains forbidden prototype property")
+    throws(() => Tool.unsafeSecureJsonParse(`{"\\u005f_proto__":{"polluted":true}}`), error)
+    throws(() => Tool.unsafeSecureJsonParse(`{"\\u0063onstructor":{"prototype":{"polluted":true}}}`), error)
+  })
+
+  it("accepts Unicode-escaped constructor keys with null values", () => {
+    deepStrictEqual(Tool.unsafeSecureJsonParse(`{"\\u0063onstructor":null}`), { constructor: null })
   })
 })

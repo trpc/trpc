@@ -1009,6 +1009,9 @@
 "@effect/ai-anthropic/Generated#URLPDFSource":
   replacement: "Generated.URLPDFSource"
   note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Usage":
+  replacement: "Generated.Usage"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
 "@effect/ai-anthropic/Generated#UsageServiceTierEnum":
   replacement: "none"
   note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."

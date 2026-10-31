@@ -10,6 +10,7 @@ import * as FileSystem from "effect/FileSystem"
 import * as HttpClient from "effect/http/HttpClient"
 import * as Layer from "effect/Layer"
 import * as Match from "effect/Match"
+import * as Zlib from "node:zlib"
 import * as Yaml from "yaml"
 import type { SpecSource } from "./Config.ts"
 
@@ -75,13 +76,13 @@ export const layer: Layer.Layer<
   FileSystem.FileSystem | HttpClient.HttpClient
 > = Effect.gen(function*() {
   const fs = yield* FileSystem.FileSystem
-  const httpClient = yield* HttpClient.HttpClient
+  const httpClient = HttpClient.filterStatusOk(yield* HttpClient.HttpClient)
 
   const fetchFromFile = Effect.fn("fetchFromFile")(function*(
     path: string,
     provider: string
   ) {
-    return yield* fs.readFileString(path).pipe(
+    return yield* fs.readFile(path).pipe(
       Effect.mapError((cause) => new SpecFetchError({ provider, source: path, cause }))
     )
   })
@@ -91,58 +92,29 @@ export const layer: Layer.Layer<
     provider: string
   ) {
     return yield* httpClient.get(url).pipe(
-      Effect.flatMap((response) => response.text),
+      Effect.flatMap((response) => response.arrayBuffer),
+      Effect.map((buffer) => new Uint8Array(buffer)),
       Effect.mapError((cause) => new SpecFetchError({ provider, source: url, cause }))
     )
   })
 
-  const parseSpec = (content: string, sourceUrl: string, provider: string) => {
-    const isYaml = sourceUrl.endsWith(".yaml") || sourceUrl.endsWith(".yml")
-    return Effect.try({
-      try: () => isYaml ? Yaml.parse(content) : JSON.parse(content),
-      catch: (cause) => new SpecFetchError({ provider, source: sourceUrl, cause })
+  const parseSpec = (content: Uint8Array, source: string, provider: string) =>
+    Effect.try({
+      try: () => {
+        // Gzipped specs are parsed by the extension that precedes `.gz`
+        const isGzip = source.endsWith(".gz")
+        const path = isGzip ? source.slice(0, -".gz".length) : source
+        const text = new TextDecoder().decode(isGzip ? Zlib.gunzipSync(content) : content)
+        const isYaml = path.endsWith(".yaml") || path.endsWith(".yml")
+        return isYaml ? Yaml.parse(text) : JSON.parse(text)
+      },
+      catch: (cause) => new SpecFetchError({ provider, source, cause })
     })
-  }
-
-  const fetchViaStainlessStats = Effect.fn("fetchViaStainlessStats")(function*(
-    statsUrl: string,
-    provider: string
-  ) {
-    // Fetch stats.yml
-    const statsContent = yield* httpClient.get(statsUrl).pipe(
-      Effect.flatMap((response) => response.text),
-      Effect.mapError((cause) => new SpecFetchError({ provider, source: `stats:${statsUrl}`, cause }))
-    )
-
-    // Parse YAML and extract openapi_spec_url
-    const stats = yield* Effect.try({
-      try: () => Yaml.parse(statsContent),
-      catch: (cause) => new SpecFetchError({ provider, source: `stats:${statsUrl}`, cause })
-    })
-
-    const specUrl = stats?.openapi_spec_url
-    if (typeof specUrl !== "string") {
-      return yield* new SpecFetchError({
-        provider,
-        source: `stats:${statsUrl}`,
-        cause: new Error("Missing or invalid openapi_spec_url in stats file")
-      })
-    }
-
-    // Fetch and parse the actual spec
-    const content = yield* fetchFromUrl(specUrl, provider)
-    return yield* parseSpec(content, specUrl, provider)
-  })
 
   const fetch = Effect.fn("fetch")(function*(
     source: SpecSource,
     provider: string
   ) {
-    // StainlessStats handles its own parsing since the URL is resolved dynamically
-    if (source._tag === "StainlessStats") {
-      return yield* fetchViaStainlessStats(source.statsUrl, provider)
-    }
-
     const content = yield* Match.value(source).pipe(
       Match.tag("File", ({ path }) => fetchFromFile(path, provider)),
       Match.tag("Url", ({ url }) => fetchFromUrl(url, provider)),

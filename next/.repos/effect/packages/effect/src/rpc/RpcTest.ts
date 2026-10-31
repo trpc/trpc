@@ -29,6 +29,7 @@ export const makeClient: <Rpcs extends Rpc.Any, const Flatten extends boolean = 
   group: RpcGroup.RpcGroup<Rpcs>,
   options?: {
     readonly flatten?: Flatten | undefined
+    readonly disableFatalDefects?: boolean | undefined
   }
 ) => Effect.Effect<
   Flatten extends true ? RpcClient.RpcClient.Flat<Rpcs> : RpcClient.RpcClient<Rpcs>,
@@ -38,11 +39,13 @@ export const makeClient: <Rpcs extends Rpc.Any, const Flatten extends boolean = 
   group: RpcGroup.RpcGroup<Rpcs>,
   options?: {
     readonly flatten?: Flatten | undefined
+    readonly disableFatalDefects?: boolean | undefined
   }
 ) {
   // oxlint-disable-next-line prefer-const
   let client!: Effect.Success<ReturnType<typeof RpcClient.makeNoSerialization<Rpcs, never, Flatten>>>
   const server = yield* RpcServer.makeNoSerialization(group, {
+    disableFatalDefects: options?.disableFatalDefects,
     onFromServer(response) {
       return client.write(response)
     }

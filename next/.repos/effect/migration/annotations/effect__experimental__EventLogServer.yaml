@@ -14,4 +14,8 @@
 "@effect/experimental/EventLogServer#Storage":
   include: true
   replacement: effect/eventlog/EventLogServerEncrypted#Storage
-  note: Use the encrypted server Storage service, which is storeId- and session-aware.
+  note: Use the storeId- and session-aware encrypted server Storage service. write and changes now operate on encrypted batches. write returns newly stored batches and skips a batch only when all its entry ids are already known. Custom storage must implement entrySequences to look up acknowledgements for skipped batches; each batch owns consecutive sequences starting at its sequence.
+"@effect/experimental/EventLogServer#PersistedEntry":
+  include: true
+  replacement: effect/eventlog/EventLogEncryption#EncryptedBatch
+  note: The per-entry class was removed; encrypted storage now accepts batch records containing entryIds, iv, and encryptedBatch. The class encoding helpers and entryIdString getter are not retained. Old per-entry ciphertext cannot be reused as an encrypted batch.

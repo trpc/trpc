@@ -17,6 +17,7 @@ interface MockConnection extends EventEmitter {
 
 const state = vi.hoisted(() => ({
   cancelCalls: 0,
+  acknowledgeCancel: true,
   completeRequests: true,
   type: {},
   connections: [] as Array<MockConnection>,
@@ -76,18 +77,27 @@ vi.mock("tedious", async (importOriginal) => {
     close() {
       if (!this.closed) {
         this.closed = true
-        this.emit("end")
+        // Like tedious, emit end on the next tick, after the request callback.
+        process.nextTick(() => this.emit("end"))
       }
+      const pending = this.pending
+      this.pending = undefined
+      pending?.callback(new Error("Connection closed before request completed."), 0, [])
       Effect.runSync(Deferred.succeed(this.closedSignal, undefined))
     }
 
     cancel() {
-      // MssqlClient also calls cancel before each request. Count only an actual
-      // in-flight cancellation, so that cannot satisfy the interruption assertion.
       state.cancelCalls++
       if (this.pending) {
         this.cancellations++
-        this.pending = undefined
+        if (state.acknowledgeCancel) {
+          // Like tedious, call the request back once the server acknowledges.
+          const pending = this.pending
+          this.pending = undefined
+          Fiber.getCurrent()!.currentDispatcher.scheduleTask(() => {
+            pending.callback(new Error("Canceled."), 0, [])
+          }, 0)
+        }
       }
     }
 
@@ -173,7 +183,7 @@ describe("mssql", () => {
       )
     }`.compile()
     expect(query).toEqual(
-      `UPDATE people SET name = data.name FROM (values (@1),(@2)) AS data([name])`
+      `UPDATE people SET name = data.name FROM (values (@1),(@2)) AS [data]([name])`
     )
     expect(params).toEqual(["Tim", "John"])
   })
@@ -186,7 +196,7 @@ describe("mssql", () => {
       ).returning("*")
     }`.compile()
     expect(query).toEqual(
-      `UPDATE people SET name = data.name OUTPUT INSERTED.* FROM (values (@1),(@2)) AS data([name])`
+      `UPDATE people SET name = data.name OUTPUT INSERTED.* FROM (values (@1),(@2)) AS [data]([name])`
     )
     expect(params).toEqual(["Tim", "John"])
   })
@@ -231,7 +241,7 @@ describe("mssql", () => {
       }`.compile()
 
       assert.deepStrictEqual(result, [
-        `UPDATE people SET name = data.name OUTPUT [INSERTED].[name] FROM (values (@1),(@2)) AS data([name])`,
+        `UPDATE people SET name = data.name OUTPUT [INSERTED].[name] FROM (values (@1),(@2)) AS [data]([name])`,
         ["Rowan", "Mira"]
       ])
     })
@@ -300,6 +310,7 @@ describe("mssql", () => {
 
 const reset = () => {
   state.cancelCalls = 0
+  state.acknowledgeCancel = true
   state.completeRequests = true
   state.connections = []
   state.pendingStarted = Deferred.makeUnsafe<void>()
@@ -317,6 +328,47 @@ const makeClient = MssqlClient.make({
 const bounded = <A, E, R>(effect: Effect.Effect<A, E, R>) => effect.pipe(Effect.timeout("2 seconds"))
 
 describe("MssqlClient connection lifecycle", { concurrent: false }, () => {
+  for (const operation of ["withoutTransforms", "call"] as const) {
+    it.live(`${operation} reuses the transaction connection with a single-connection pool`, () =>
+      Effect.gen(function*() {
+        reset()
+        const client = yield* bounded(MssqlClient.make({
+          server: "localhost",
+          minConnections: 0,
+          maxConnections: 1,
+          transformResultNames: (name) => name.toUpperCase()
+        }))
+        const definition = Procedure.outputParam<number>()("answer", state.type as any)(Procedure.make("get_answer"))
+        yield* bounded(client.withTransaction(Effect.gen(function*() {
+          if (operation === "withoutTransforms") {
+            const rows = yield* client.withoutTransforms()`SELECT value`
+            assert.deepStrictEqual(rows, [{ value: 42 }])
+          } else {
+            const result = yield* client.call(Procedure.compile(definition)({}))
+            assert.deepStrictEqual(result, { output: { answer: 42 }, rows: [] })
+          }
+        })))
+      }).pipe(Effect.provide(Reactivity.layer)))
+  }
+  it.live("handles a late error after an ended connection is discarded and recovers", () =>
+    Effect.gen(function*() {
+      reset()
+      const client = yield* bounded(makeClient)
+      const connection = state.connections[0]
+
+      // Model a dropped socket: tedious enters its Final state and emits end
+      // before delivering the queued socket error. Wait for pool cleanup, not time.
+      connection.closed = true
+      connection.emit("end")
+      yield* bounded(Deferred.await(connection.closedSignal))
+      assert.doesNotThrow(() =>
+        connection.emit("error", Object.assign(new Error("Connection lost - read ECONNRESET"), { code: "ESOCKET" }))
+      )
+
+      const rows = yield* bounded(client.unsafe("SELECT recovered"))
+      assert.deepStrictEqual(rows, [{ value: 42 }])
+    }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)))
+
   it.live("replaces a connection that ends without error after query cancellation", () =>
     Effect.gen(function*() {
       reset()
@@ -324,12 +376,15 @@ describe("MssqlClient connection lifecycle", { concurrent: false }, () => {
       const connection = state.connections[0]
       const query = yield* Effect.forkScoped(client.unsafe("SELECT pending"))
       yield* bounded(Deferred.await(state.pendingStarted!))
-      yield* bounded(Fiber.interrupt(query))
+      state.acknowledgeCancel = false
+      const interrupted = yield* Effect.forkScoped(Fiber.interrupt(query))
+      yield* Effect.yieldNow
       assert.strictEqual(connection.cancellations, 1)
+      assert.isUndefined(interrupted.pollUnsafe())
 
       // Model tedious' cancel timeout: Final state and end, with no error event.
       connection.close()
-      yield* Effect.yieldNow
+      yield* bounded(Fiber.join(interrupted))
       const rows = yield* bounded(client.unsafe("SELECT recovered"))
       assert.deepStrictEqual(rows, [{ value: 42 }])
       assert.strictEqual(state.connections.length, 2)

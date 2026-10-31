@@ -137,6 +137,20 @@ describe("Hash", () => {
     it("does not collide for 10k multiples of 0.001", () => {
       assertNoHashCollisions(range(10_000).map((i) => i * 0.001))
     })
+
+    it("does not collide for ArrayBuffers with different bytes", () => {
+      assert.notStrictEqual(Hash.hash(Uint8Array.of(1, 2).buffer), Hash.hash(Uint8Array.of(9, 9).buffer))
+    })
+  })
+
+  // The protocol key is a string, so data can carry it without implementing the protocol.
+  it("hashes a non-callable protocol key as data", () => {
+    assert.isFalse(Hash.isHash({ [Hash.symbol]: "v1" }))
+    assert.strictEqual(Hash.hash({ [Hash.symbol]: "v1" }), Hash.hash({ [Hash.symbol]: "v1" }))
+    assert.notStrictEqual(Hash.hash({ [Hash.symbol]: "v1" }), Hash.hash({ [Hash.symbol]: "v2" }))
+    // Distinct functions hash differently as data, so equal hashes mean the protocol ran.
+    assert.isTrue(Hash.isHash({ [Hash.symbol]: () => 42 }))
+    assert.strictEqual(Hash.hash({ [Hash.symbol]: () => 42 }), Hash.hash({ [Hash.symbol]: () => 42 }))
   })
 
   describe("floats", () => {

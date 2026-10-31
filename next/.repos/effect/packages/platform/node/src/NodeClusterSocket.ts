@@ -118,7 +118,7 @@ export const layer = <
         ? MessageStorage.layerNoop
         : options?.storage === "byo"
         ? Layer.empty
-        : Layer.orDie(SqlMessageStorage.layer).pipe(Layer.provide(NodeCrypto.layer))
+        : SqlMessageStorage.layer.pipe(Layer.provide(NodeCrypto.layerDigest))
     ),
     Layer.provide(
       options?.storage === "local"

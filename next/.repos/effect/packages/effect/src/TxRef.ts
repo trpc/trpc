@@ -13,6 +13,7 @@
  * @since 4.0.0
  */
 import * as Effect from "./Effect.ts"
+import type { TransactionMetaInner } from "./Effect.ts"
 import { dual } from "./Function.ts"
 import { pipeArguments } from "./Pipeable.ts"
 import type { Pipeable } from "./Pipeable.ts"
@@ -140,10 +141,11 @@ export const makeUnsafe = <A>(initial: A): TxRef<A> => ({
 })
 
 const journalEntry = <A>(state: Effect.Transaction["Service"], self: TxRef<A>) => {
-  let entry = state.journal.get(self)
+  const journal = (state as TransactionMetaInner).journal
+  let entry = journal.get(self)
   if (entry === undefined) {
     entry = { version: self.version, value: self.value, written: false }
-    state.journal.set(self, entry)
+    journal.set(self, entry)
   }
   return entry
 }

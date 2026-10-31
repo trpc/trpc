@@ -1,3 +1,4 @@
+import { assert as runtimeAssert } from "@effect/vitest"
 import * as Cause from "effect/Cause"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
@@ -8,9 +9,21 @@ import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
 import * as Result from "effect/Result"
 import assert from "node:assert/strict"
+import { inspect } from "node:util"
 import { describe, it } from "vitest"
 
 describe("Cause", () => {
+  it("uses reasons in runtime JSON and Node inspection", () => {
+    const cause = Cause.combine(Cause.fail("boom"), Cause.die("bad"))
+    const json = {
+      _id: "Cause",
+      reasons: [{ _tag: "Fail", error: "boom" }, { _tag: "Die", defect: "bad" }]
+    }
+    runtimeAssert.deepStrictEqual(cause.toJSON(), json)
+    runtimeAssert.strictEqual(JSON.stringify(cause), JSON.stringify(json))
+    runtimeAssert.strictEqual(inspect(cause), inspect(json))
+  })
+
   describe("TypeId", () => {
     it("is a string constant", () => {
       assert.strictEqual(Cause.TypeId, "~effect/Cause")
@@ -595,6 +608,18 @@ describe("Cause", () => {
       assert.ok(Array.isArray(errors))
     })
 
+    it("preserves falsy Error causes", () => {
+      for (const value of [0, false, "", null]) {
+        const [error] = Cause.prettyErrors(Cause.fail(new Error("outer", { cause: value })))
+        assert.ok(error.cause instanceof Error)
+        assert.strictEqual(error.cause.message, `Unknown error: ${value}`)
+      }
+      for (const original of [new Error("outer"), new Error("outer", { cause: undefined })]) {
+        const [error] = Cause.prettyErrors(Cause.fail(original))
+        assert.strictEqual(error.cause, undefined)
+      }
+    })
+
     it("restores Error.stackTraceLimit when formatting a reason throws", () => {
       const limit = Error.stackTraceLimit
       const error = new Error("boom")
@@ -605,6 +630,17 @@ describe("Cause", () => {
       })
       assert.throws(() => Cause.prettyErrors(Cause.fail(error)), /stack getter/)
       assert.strictEqual(Error.stackTraceLimit, limit)
+    })
+
+    it("stops at a cyclic Error cause", () => {
+      const a = new Error("a")
+      const b = new Error("b", { cause: a })
+      a.cause = b
+      const [error] = Cause.prettyErrors(Cause.fail(a))
+      assert.strictEqual(error.message, "a")
+      assert.ok(error.cause instanceof Error)
+      assert.strictEqual(error.cause.message, "b")
+      assert.strictEqual(error.cause.cause, undefined)
     })
   })
 
@@ -667,6 +703,13 @@ describe("Cause", () => {
 
     it("does not render internal frames from map", () => {
       assertCleanStack(Effect.map(Effect.succeed(1), userCode))
+    })
+
+    // Bun's Suspend tail call drops the frame the cleaner cuts at, so only V8
+    // runtimes are covered
+    it.skipIf(process.versions.bun !== undefined)("keeps the throw location of defects from sync and suspend", () => {
+      assertCleanStack(Effect.sync(userCode))
+      assertCleanStack(Effect.suspend(userCode))
     })
   })
 

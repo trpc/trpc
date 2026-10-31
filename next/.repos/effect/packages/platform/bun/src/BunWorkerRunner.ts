@@ -64,7 +64,6 @@ export const layer: Layer.Layer<WorkerRunner.WorkerRunnerPlatform> = Layer.succe
               trackFiber(fiber)
             }
           } else {
-            port.close()
             Deferred.doneUnsafe(closeLatch, Exit.void)
           }
         }

@@ -81,10 +81,19 @@ export class ShardingConfig extends Context.Service<ShardingConfig, {
   readonly shardLockRefreshInterval: Duration.Input
   /**
    * Shard lock expiration duration.
+   *
+   * With PostgreSQL (14+) or MySQL advisory locks, this also bounds how long a
+   * runner that stops refreshing, for example because its process is frozen,
+   * keeps its shards: the server ends its idle lock session after this
+   * duration, releasing the locks. On MySQL it is rounded up to whole
+   * seconds. Vitess ignores the MySQL session timeout, so behind Vitess the
+   * locks stay held until the runner's connection closes.
    */
   readonly shardLockExpiration: Duration.Input
   /**
    * Disable the use of advisory locks for shard locking.
+   *
+   * PGlite clients never use advisory locks.
    */
   readonly shardLockDisableAdvisory: boolean
   /**
@@ -97,6 +106,14 @@ export class ShardingConfig extends Context.Service<ShardingConfig, {
    * The default capacity of the mailbox for entities.
    */
   readonly entityMailboxCapacity: number | "unbounded"
+  /**
+   * Report the mailbox size of each resident entity with the
+   * `effect_cluster_entity_mailbox_size` gauge, unless overridden by the
+   * `mailboxMetrics` entity option.
+   *
+   * Defaults to `false`.
+   */
+  readonly entityMailboxMetrics: boolean
   /**
    * The maximum number of entities that can be resident on this runner at the
    * same time.
@@ -151,6 +168,37 @@ export class ShardingConfig extends Context.Service<ShardingConfig, {
    */
   readonly refreshAssignmentsInterval: Duration.Input
   /**
+   * How long the healthy runners must stay unchanged before runners that
+   * joined are added to shard assignments. A burst of joins, such as a
+   * scale-up or a deployment with a large surge, is then published as one
+   * assignment and each shard is handed off once instead of once per join.
+   * In a rolling update that replaces one runner at a time, each departure is
+   * still published immediately, so shards still move at every step.
+   *
+   * Only joins wait. The initial assignment, departures and unhealthy runners
+   * are published immediately, together with any pending joins. A pending
+   * runner that leaves has no shards to move, so it only restarts the quiet
+   * period.
+   *
+   * While joins are pending, shards keep running where they are, the new
+   * runners stay idle and no runner takes shards it does not already hold.
+   * Runners publish on their own polls, so a shard released by one runner can
+   * stay unlocked until its new owner publishes, usually within two
+   * `refreshAssignmentsInterval`s. A runner that does not observe the joins,
+   * for example because it cannot read membership, can still take shards from
+   * its outdated assignment and hand them off again, as with `0`.
+   *
+   * Pending joins are published at most four times this duration after the
+   * first one, even if runners keep joining. The quiet period is checked once
+   * per `refreshAssignmentsInterval`, so the worst case delay is four times
+   * this duration plus one interval, and values shorter than the interval
+   * behave like a single quiet poll.
+   *
+   * Defaults to `0`, which publishes every change immediately. Leave it at
+   * `0` for scale-ups driven by load, where idle new runners are costly.
+   */
+  readonly runnerJoinDebounce: Duration.Input
+  /**
    * The interval to retry a send if EntityNotAssignedToRunner is returned.
    */
   readonly sendRetryInterval: Duration.Input
@@ -188,6 +236,7 @@ export const defaults: ShardingConfig["Service"] = {
   shardLockExpiration: Duration.seconds(35),
   shardLockDisableAdvisory: false,
   entityMailboxCapacity: 4096,
+  entityMailboxMetrics: false,
   maxResidentEntities: 10_000,
   unprocessedMessageBatchSize: 1024,
   entityMaxIdleTime: Duration.minutes(1),
@@ -197,6 +246,7 @@ export const defaults: ShardingConfig["Service"] = {
   entityReplyPollInterval: Duration.millis(200),
   sendRetryInterval: Duration.millis(100),
   refreshAssignmentsInterval: Duration.seconds(3),
+  runnerJoinDebounce: Duration.zero,
   runnerHealthCheckInterval: Duration.minutes(1),
   simulateRemoteSerialization: true
 }
@@ -307,6 +357,10 @@ export const config: Config.Config<ShardingConfig["Service"]> = Config.all({
     Config.withDefault(defaults.entityMailboxCapacity)
     // Config.withDescription("The default capacity of the mailbox for entities.")
   ),
+  entityMailboxMetrics: Config.Boolean("entityMailboxMetrics").pipe(
+    Config.withDefault(defaults.entityMailboxMetrics)
+    // Config.withDescription("Report the mailbox size of each resident entity.")
+  ),
   maxResidentEntities: Config.schema(
     Schema.Int.check(Schema.isGreaterThan(0)),
     "maxResidentEntities"
@@ -350,6 +404,10 @@ export const config: Config.Config<ShardingConfig["Service"]> = Config.all({
   refreshAssignmentsInterval: Config.Duration("refreshAssignmentsInterval").pipe(
     Config.withDefault(defaults.refreshAssignmentsInterval)
     // Config.withDescription("The interval at which to refresh shard assignments.")
+  ),
+  runnerJoinDebounce: Config.Duration("runnerJoinDebounce").pipe(
+    Config.withDefault(defaults.runnerJoinDebounce)
+    // Config.withDescription("How long the healthy runners must stay unchanged before joining runners are assigned shards.")
   ),
   runnerHealthCheckInterval: Config.Duration("runnerHealthCheckInterval").pipe(
     Config.withDefault(defaults.runnerHealthCheckInterval)

@@ -152,6 +152,12 @@ export type ParsedOperationMediaTypeSchema =
     readonly schema?: undefined
     readonly effectStream: "uint8array"
   }
+  | {
+    readonly contentType: string
+    readonly encoding: "json"
+    readonly schema: string
+    readonly effectStream: "ndjson"
+  }
 
 /**
  * Parsed response metadata together with generated schema references.
@@ -219,6 +225,11 @@ export interface ParsedOperation {
   readonly params?: string
   readonly paramsOptional: boolean
   readonly urlParams: ReadonlyArray<string>
+  /**
+   * Query parameters declared with `style: "form"` and `explode: false`, whose
+   * arrays are sent as one comma-separated value.
+   */
+  readonly commaUrlParams: ReadonlyArray<string>
   readonly headers: ReadonlyArray<string>
   readonly cookies: ReadonlyArray<string>
   readonly payload?: string
@@ -269,6 +280,7 @@ export const makeDeepMutable = (options: {
   defaultResponse: undefined,
   effectiveSecurity: [],
   urlParams: [],
+  commaUrlParams: [],
   headers: [],
   cookies: [],
   payloadFormData: false,

@@ -1,17 +1,22 @@
 import * as NodeSdk from "@effect/opentelemetry/NodeSdk"
 import * as OtelLogger from "@effect/opentelemetry/OtelLogger"
+import * as OtelTracer from "@effect/opentelemetry/OtelTracer"
 import * as Resource from "@effect/opentelemetry/Resource"
 import { assert, describe, it } from "@effect/vitest"
+import * as OtelApi from "@opentelemetry/api"
 import { SeverityNumber } from "@opentelemetry/api-logs"
+import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks"
 import { InMemoryLogRecordExporter, type LogRecordProcessor, SimpleLogRecordProcessor } from "@opentelemetry/sdk-logs"
 import { InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base"
 import * as Cause from "effect/Cause"
 import * as Clock from "effect/Clock"
 import * as ConfigProvider from "effect/ConfigProvider"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as References from "effect/References"
 import { TestClock } from "effect/testing"
+import * as Tracer from "effect/Tracer"
 import * as Version from "effect/Version"
 
 describe("Logger", () => {
@@ -106,6 +111,10 @@ describe("Logger", () => {
           Effect.repeat({ times: 9 })
         )
         assert.lengthOf(exporter.getFinishedLogRecords(), 10)
+        const log = exporter.getFinishedLogRecords()[0]!
+        assert.isUndefined(log.spanContext)
+        assert.isUndefined(log.attributes.traceId)
+        assert.isUndefined(log.attributes.spanId)
       }).pipe(Effect.provide(TracingLayer)))
 
     it.effect("maps Effect LogLevel to OTel SeverityNumber spec values", () => {
@@ -206,7 +215,65 @@ describe("Logger", () => {
         const span = spanExporter.getFinishedSpans()[0]!
         assert.strictEqual(log.attributes.traceId, span.spanContext().traceId)
         assert.strictEqual(log.attributes.spanId, span.spanContext().spanId)
+        assert.deepStrictEqual(log.spanContext, span.spanContext())
       }).pipe(Effect.provide(TracingLayer))
+    })
+
+    it.effect("correlates a log with an external parent span", () => {
+      const logExporter = new InMemoryLogRecordExporter()
+      const traceId = "ab".repeat(16)
+      const spanId = "cd".repeat(8)
+
+      return Effect.gen(function*() {
+        yield* Effect.log("test").pipe(
+          Effect.withParentSpan(Tracer.externalSpan({
+            traceId,
+            spanId,
+            sampled: false,
+            annotations: OtelTracer.OtelTraceFlags.context(0x02 as OtelApi.TraceFlags).pipe(
+              Context.add(OtelTracer.OtelTraceState, OtelApi.createTraceState("vendor=value"))
+            )
+          }))
+        )
+        const log = logExporter.getFinishedLogRecords()[0]!
+        assert.strictEqual(log.spanContext?.traceId, traceId)
+        assert.strictEqual(log.spanContext?.spanId, spanId)
+        assert.strictEqual(log.spanContext?.traceFlags, 0x02)
+        assert.strictEqual(log.spanContext?.traceState?.serialize(), "vendor=value")
+        assert.isTrue(log.spanContext?.isRemote)
+      }).pipe(Effect.provide(makeTestLayer(logExporter)))
+    })
+
+    it("uses ambient context only when there is no Effect parent span", async () => {
+      const contextManager = new AsyncHooksContextManager()
+      OtelApi.context.setGlobalContextManager(contextManager.enable())
+      try {
+        const logExporter = new InMemoryLogRecordExporter()
+        const ambientSpan: OtelApi.SpanContext = {
+          traceId: "ab".repeat(16),
+          spanId: "cd".repeat(8),
+          traceFlags: OtelApi.TraceFlags.SAMPLED
+        }
+        const effectSpan = Tracer.externalSpan({ traceId: "ef".repeat(16), spanId: "12".repeat(8) })
+        const active = OtelApi.trace.setSpanContext(OtelApi.ROOT_CONTEXT, ambientSpan)
+        await OtelApi.context.with(active, () =>
+          Effect.runPromise(
+            Effect.gen(function*() {
+              yield* Effect.log("ambient")
+              yield* Effect.log("effect").pipe(Effect.withParentSpan(effectSpan))
+              const logs = logExporter.getFinishedLogRecords()
+              assert.lengthOf(logs, 2)
+              assert.deepStrictEqual(logs[0]!.spanContext, ambientSpan)
+              assert.isUndefined(logs[0]!.attributes.traceId)
+              assert.isUndefined(logs[0]!.attributes.spanId)
+              assert.strictEqual(logs[1]!.spanContext?.traceId, effectSpan.traceId)
+              assert.strictEqual(logs[1]!.spanContext?.spanId, effectSpan.spanId)
+            }).pipe(Effect.provide(makeTestLayer(logExporter)))
+          ))
+      } finally {
+        OtelApi.context.disable()
+        contextManager.disable()
+      }
     })
   })
 

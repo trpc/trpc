@@ -103,4 +103,12 @@ describe("IpNetwork", () => {
     expect<Schema.Schema.Type<typeof Schema.IpNetworkFromString>>().type.toBe<IpNetwork.IpNetwork>()
     expect<Schema.Codec.Encoded<typeof Schema.IpNetworkFromString>>().type.toBe<string>()
   })
+
+  it("checks address families in object inputs", () => {
+    expect(IpNetwork.ipv4FromInput({ address: [10, 0, 0, 0], prefixLength: 8 })).type.toBe<
+      Result.Result<IpNetwork.Ipv4Network, NetAddress.NetAddressError>
+    >()
+    expect(IpNetwork.ipv4FromInput).type.not.toBeCallableWith({ address: [0, 0, 0, 0, 0, 0, 0, 0], prefixLength: 0 })
+    expect(IpNetwork.ipv6FromInput).type.not.toBeCallableWith({ address: [10, 0, 0, 0], prefixLength: 8 })
+  })
 })

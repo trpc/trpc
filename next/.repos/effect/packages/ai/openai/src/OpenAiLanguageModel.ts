@@ -22,7 +22,6 @@ import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Base64 from "effect/encoding/Base64"
 import { dual } from "effect/Function"
-import type * as HttpClientRequest from "effect/http/HttpClientRequest"
 import type * as HttpClientResponse from "effect/http/HttpClientResponse"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
@@ -75,6 +74,8 @@ type PromptCacheBreakpoint = { readonly mode: "explicit" }
  *
  * Config values are merged with the config object passed to `model`, `make`, or
  * `layer`, with scoped context values taking precedence.
+ *
+ * Explicit `include` values are merged with automatic entries without duplicates.
  *
  * @see {@link withConfigOverride} for scoping language model request overrides
  *
@@ -130,6 +131,19 @@ export class Config extends Context.Service<
        * Defaults to `true` when `store` is `true`.
        */
       readonly useItemReferences?: boolean | undefined
+      /**
+       * Override reasoning model detection. Reasoning models use the `developer`
+       * role for system prompts and request `reasoning.encrypted_content` when
+       * item references are disabled or a WebSocket connection is used.
+       *
+       * Defaults to `true` except for `gpt-3*`, `gpt-4*`, `chatgpt-*`,
+       * `chat-latest`, and `gpt-<version>-chat*`. Fine-tuned `ft:` models follow
+       * their base model.
+       *
+       * Set to `false` for deployments that do not support these defaults.
+       * Explicit `include` values are still preserved.
+       */
+      readonly reasoningModel?: boolean | undefined
     }
   >
 >()("@effect/ai-openai/OpenAiLanguageModel/Config") {}
@@ -177,6 +191,13 @@ declare module "effect/ai/Prompt" {
        * The detail level of the image to be sent to the model. One of `high`, `low`, or `auto`. Defaults to `auto`.
        */
       readonly imageDetail?: ImageDetail | null
+      /**
+       * Marks the input image or file as the end of a reusable prompt prefix.
+       *
+       * Requires GPT-5.6 or later. OpenAI may reject requests that use this
+       * option with earlier models.
+       */
+      readonly promptCacheBreakpoint?: PromptCacheBreakpoint | null
     } | null
   }
 
@@ -197,9 +218,8 @@ declare module "effect/ai/Prompt" {
        */
       readonly itemId?: string | null
       /**
-       * The encrypted content of the reasoning item - populated when a response
-       * is generated with `reasoning.encrypted_content` in the `include`
-       * parameter.
+       * Encrypted reasoning returned by OpenAI for `store: false` or when
+       * `include` contains `reasoning.encrypted_content`.
        */
       readonly encryptedContent?: string | null
     } | null
@@ -576,7 +596,7 @@ declare module "effect/ai/Response" {
       /**
        * The service tier reported by OpenAI for the response.
        */
-      readonly serviceTier?: "default" | "auto" | "flex" | "scale" | "priority" | null
+      readonly serviceTier?: "default" | "auto" | "flex" | "scale" | "priority" | "ultrafast" | null
       /**
        * Prompt cache diagnostics for `prompt_cache_options.comparison_response_id`.
        */
@@ -662,12 +682,11 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
       readonly options: LanguageModel.ProviderOptions
       readonly toolNameMapper: Tool.NameMapper<Tools>
     }): Effect.fn.Return<typeof OpenAiSchema.CreateResponse.Encoded, AiError.AiError> {
-      const include = new Set<typeof OpenAiSchema.IncludeEnum.Encoded>()
-      const capabilities = getModelCapabilities(config.model as string)
+      const include = new Set<typeof OpenAiSchema.IncludeEnum.Encoded>(config.include)
       const messages = yield* prepareMessages({
         config,
         options,
-        capabilities,
+        isReasoningModel: resolveReasoningModel(config),
         include,
         toolNameMapper
       })
@@ -684,6 +703,7 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
         fileIdPrefixes: _fip,
         strictJsonSchema: _sjs,
         useItemReferences: _uir,
+        reasoningModel: _rm,
         ...apiConfig
       } = config
       const request: Mutable<typeof OpenAiSchema.CreateResponse.Encoded> = {
@@ -821,26 +841,18 @@ export const withConfigOverride: {
 // Prompt Conversion
 // =============================================================================
 
-const getSystemMessageMode = (model: string): "system" | "developer" =>
-  model.startsWith("o") ||
-    model.startsWith("gpt-5") ||
-    model.startsWith("codex-") ||
-    model.startsWith("computer-use")
-    ? "developer"
-    : "system"
-
 const prepareMessages = Effect.fnUntraced(
   function*<Tools extends ReadonlyArray<Tool.Any>>({
     config,
     options,
-    capabilities,
+    isReasoningModel,
     include,
     toolNameMapper
   }: {
     readonly config: typeof Config.Service
     readonly options: LanguageModel.ProviderOptions
     readonly include: Set<typeof OpenAiSchema.IncludeEnum.Encoded>
-    readonly capabilities: ModelCapabilities
+    readonly isReasoningModel: boolean
     readonly toolNameMapper: Tool.NameMapper<Tools>
   }): Effect.fn.Return<ReadonlyArray<typeof OpenAiSchema.InputItem.Encoded>, AiError.AiError> {
     const processedApprovalIds = new Set<string>()
@@ -875,7 +887,7 @@ const prepareMessages = Effect.fnUntraced(
     if (Predicate.isNotUndefined(config.top_logprobs)) {
       include.add("message.output_text.logprobs")
     }
-    if ((websocketMode || !useItemReferences) && capabilities.isReasoningModel) {
+    if ((websocketMode || !useItemReferences) && isReasoningModel) {
       include.add("reasoning.encrypted_content")
     }
     if (codeInterpreterTool) {
@@ -892,7 +904,7 @@ const prepareMessages = Effect.fnUntraced(
       switch (message.role) {
         case "system": {
           messages.push({
-            role: getSystemMessageMode(config.model as string),
+            role: isReasoningModel ? "developer" : "system",
             content: [{
               type: "input_text",
               text: message.content,
@@ -919,46 +931,8 @@ const prepareMessages = Effect.fnUntraced(
               }
 
               case "file": {
-                if (part.mediaType.startsWith("image/")) {
-                  const detail = getImageDetail(part)
-                  const mediaType = part.mediaType === "image/*" ? "image/jpeg" : part.mediaType
-
-                  if (typeof part.data === "string" && isFileId(part.data, config)) {
-                    content.push({ type: "input_image", file_id: part.data, detail })
-                  } else {
-                    const imageUrl = part.data instanceof URL
-                      ? part.data.toString()
-                      : part.data instanceof Uint8Array
-                      ? `data:${mediaType};base64,${Base64.encode(part.data)}`
-                      : /^(data:|https?:\/\/)/i.test(part.data)
-                      ? part.data
-                      : `data:${mediaType};base64,${part.data}`
-                    content.push({ type: "input_image", image_url: imageUrl, detail })
-                  }
-                } else if (part.mediaType === "application/pdf") {
-                  if (typeof part.data === "string" && isFileId(part.data, config)) {
-                    content.push({ type: "input_file", file_id: part.data })
-                  }
-
-                  if (part.data instanceof URL) {
-                    content.push({ type: "input_file", file_url: part.data.toString() })
-                  }
-
-                  if (part.data instanceof Uint8Array) {
-                    const base64 = Base64.encode(part.data)
-                    const fileName = part.fileName ?? `part-${index}.pdf`
-                    const fileData = `data:application/pdf;base64,${base64}`
-                    content.push({ type: "input_file", filename: fileName, file_data: fileData })
-                  }
-                } else {
-                  return yield* AiError.make({
-                    module: "OpenAiLanguageModel",
-                    method: "prepareMessages",
-                    reason: new AiError.InvalidRequestError({
-                      description: `Detected unsupported media type for file: '${part.mediaType}'`
-                    })
-                  })
-                }
+                content.push(yield* prepareFilePart(part, index, config))
+                break
               }
             }
           }
@@ -1351,7 +1325,9 @@ const prepareMessages = Effect.fnUntraced(
             messages.push({
               type: "function_call_output",
               call_id: part.id,
-              output: typeof part.result === "string" ? part.result : JSON.stringify(part.result),
+              output: Predicate.isUndefined(part.modelOutput)
+                ? typeof part.result === "string" ? part.result : JSON.stringify(part.result)
+                : yield* prepareToolResultOutput(part.modelOutput, config),
               ...(Predicate.isNotNull(status) ? { status } : {})
             })
           }
@@ -1368,16 +1344,6 @@ const prepareMessages = Effect.fnUntraced(
 // =============================================================================
 // HTTP Details
 // =============================================================================
-
-const buildHttpRequestDetails = (
-  request: HttpClientRequest.HttpClientRequest
-): typeof Response.HttpRequestDetails.Type => ({
-  method: request.method,
-  url: request.url,
-  urlParams: Array.from(request.urlParams),
-  hash: Option.getOrUndefined(request.hash),
-  headers: Redactable.redact(request.headers) as Record<string, string>
-})
 
 const buildHttpResponseDetails = (
   response: HttpClientResponse.HttpClientResponse
@@ -1475,8 +1441,7 @@ const makeResponse = Effect.fnUntraced(
       type: "response-metadata",
       id: rawResponse.id,
       modelId: rawResponse.model as string,
-      timestamp: DateTime.formatIso(DateTime.fromDateUnsafe(createdAt)),
-      request: buildHttpRequestDetails(response.request)
+      timestamp: DateTime.formatIso(DateTime.fromDateUnsafe(createdAt))
     })
 
     for (const part of rawResponse.output) {
@@ -1556,7 +1521,7 @@ const makeResponse = Effect.fnUntraced(
               })
           })
 
-          const params = yield* transformToolCallParams(options.tools, part.name, toolParams)
+          const params = yield* transformToolCallParams(options, part.name, toolParams)
 
           parts.push({
             type: "tool-call",
@@ -1977,8 +1942,7 @@ const makeStreamResponse = Effect.fnUntraced(
               type: "response-metadata",
               id: event.response.id,
               modelId: event.response.model,
-              timestamp: DateTime.formatIso(DateTime.fromDateUnsafe(createdAt)),
-              request: buildHttpRequestDetails(response.request)
+              timestamp: DateTime.formatIso(DateTime.fromDateUnsafe(createdAt))
             })
             break
           }
@@ -2343,7 +2307,7 @@ const makeStreamResponse = Effect.fnUntraced(
                     })
                 })
 
-                const params = yield* transformToolCallParams(options.tools, toolName, toolParams)
+                const params = yield* transformToolCallParams(options, toolName, toolParams)
 
                 parts.push({
                   type: "tool-params-end",
@@ -2651,7 +2615,7 @@ const makeStreamResponse = Effect.fnUntraced(
                   })
               })
 
-              const params = yield* transformToolCallParams(options.tools, toolCall.name, toolParams)
+              const params = yield* transformToolCallParams(options, toolCall.name, toolParams)
 
               parts.push({
                 type: "tool-params-end",
@@ -3100,6 +3064,81 @@ const prepareTools = Effect.fnUntraced(function*<Tools extends ReadonlyArray<Too
   return { tools, toolChoice }
 })
 
+const prepareToolResultOutput = Effect.fnUntraced(function*(
+  modelOutput: ReadonlyArray<Prompt.ToolModelOutputPart>,
+  config: typeof Config.Service
+): Effect.fn.Return<string | Array<typeof OpenAiSchema.InputContent.Encoded>, AiError.AiError> {
+  if (modelOutput.length === 0) {
+    return ""
+  }
+  const output: Array<typeof OpenAiSchema.InputContent.Encoded> = []
+  for (let index = 0; index < modelOutput.length; index++) {
+    const part = modelOutput[index]
+    output.push(
+      part.type === "text"
+        ? { type: "input_text", text: part.text, ...getPromptCacheBreakpoint(part) }
+        : yield* prepareFilePart(part, index, config)
+    )
+  }
+  return output
+})
+
+const prepareFilePart = Effect.fnUntraced(function*(
+  part: Prompt.FilePart,
+  index: number,
+  config: typeof Config.Service
+): Effect.fn.Return<typeof OpenAiSchema.InputContent.Encoded, AiError.AiError> {
+  const promptCacheBreakpoint = getPromptCacheBreakpoint(part)
+
+  if (part.mediaType.startsWith("image/")) {
+    const detail = getImageDetail(part)
+    const mediaType = part.mediaType === "image/*" ? "image/jpeg" : part.mediaType
+
+    if (typeof part.data === "string" && isFileId(part.data, config)) {
+      return { type: "input_image", file_id: part.data, detail, ...promptCacheBreakpoint }
+    }
+
+    const imageUrl = part.data instanceof URL
+      ? part.data.toString()
+      : part.data instanceof Uint8Array
+      ? `data:${mediaType};base64,${Base64.encode(part.data)}`
+      : /^(data:|https?:\/\/)/i.test(part.data)
+      ? part.data
+      : `data:${mediaType};base64,${part.data}`
+    return { type: "input_image", image_url: imageUrl, detail, ...promptCacheBreakpoint }
+  }
+
+  if (part.mediaType === "application/pdf") {
+    if (typeof part.data === "string" && isFileId(part.data, config)) {
+      return { type: "input_file", file_id: part.data, ...promptCacheBreakpoint }
+    }
+
+    if (part.data instanceof URL || (typeof part.data === "string" && /^https?:\/\//i.test(part.data))) {
+      return { type: "input_file", file_url: part.data.toString(), ...promptCacheBreakpoint }
+    }
+
+    const fileData = part.data instanceof Uint8Array
+      ? `data:application/pdf;base64,${Base64.encode(part.data)}`
+      : /^data:/i.test(part.data)
+      ? part.data
+      : `data:application/pdf;base64,${part.data}`
+    return {
+      type: "input_file",
+      filename: part.fileName ?? `part-${index}.pdf`,
+      file_data: fileData,
+      ...promptCacheBreakpoint
+    }
+  }
+
+  return yield* AiError.make({
+    module: "OpenAiLanguageModel",
+    method: "prepareMessages",
+    reason: new AiError.InvalidRequestError({
+      description: `Detected unsupported media type for file: '${part.mediaType}'`
+    })
+  })
+})
+
 // =============================================================================
 // Utilities
 // =============================================================================
@@ -3127,7 +3166,7 @@ const getEncryptedContent = (
 const getImageDetail = (part: Prompt.FilePart): ImageDetail => part.options.openai?.imageDetail ?? "auto"
 
 const getPromptCacheBreakpoint = (
-  input: Prompt.SystemMessage | Prompt.TextPart
+  input: Prompt.SystemMessage | Prompt.TextPart | Prompt.FilePart
 ) => {
   const promptCacheBreakpoint = input.options.openai?.promptCacheBreakpoint
   return Predicate.isNotNullish(promptCacheBreakpoint) ? { prompt_cache_breakpoint: promptCacheBreakpoint } : undefined
@@ -3159,10 +3198,17 @@ const tryJsonSchema = <S extends Schema.Constraint>(schema: S, method: string) =
     catch: (error) => unsupportedSchemaError(error, method)
   })
 
+const toolParametersError = (tool: Tool.Any, error: unknown, method: string): AiError.AiError =>
+  unsupportedSchemaError(
+    `Tool "${tool.name}" parameters: ${error instanceof Error ? error.message : String(error)}. ` +
+      "For a tool without parameters, omit `parameters` or use `Tool.EmptyParams`",
+    method
+  )
+
 const tryToolJsonSchema = <T extends Tool.Any>(tool: T, method: string) =>
   Effect.try({
     try: () => Tool.getJsonSchema(tool, { transformer: toCodecOpenAI }),
-    catch: (error) => unsupportedSchemaError(error, method)
+    catch: (error) => toolParametersError(tool, error, method)
   })
 
 const prepareResponseFormat = Effect.fnUntraced(function*({ config, options }: {
@@ -3184,52 +3230,16 @@ const prepareResponseFormat = Effect.fnUntraced(function*({ config, options }: {
   return { type: "text" }
 })
 
-interface ModelCapabilities {
-  readonly isReasoningModel: boolean
-  readonly systemMessageMode: "remove" | "system" | "developer"
-  readonly supportsFlexProcessing: boolean
-  readonly supportsPriorityProcessing: boolean
-  /**
-   * Allow temperature, topP, logProbs when reasoningEffort is none.
-   */
-  readonly supportsNonReasoningParameters: boolean
-}
+// Default new model names to reasoning without extending an allowlist.
+const nonReasoningModelPattern = /^(?:gpt-[34]|chatgpt-|chat-latest|gpt-\d+(?:\.\d+)?-chat)/
 
-const getModelCapabilities = (modelId: string): ModelCapabilities => {
-  const supportsFlexProcessing = modelId.startsWith("o3") ||
-    modelId.startsWith("o4-mini") ||
-    (modelId.startsWith("gpt-5") && !modelId.startsWith("gpt-5-chat"))
-
-  const supportsPriorityProcessing = modelId.startsWith("gpt-4") ||
-    modelId.startsWith("gpt-5-mini") ||
-    (modelId.startsWith("gpt-5") &&
-      !modelId.startsWith("gpt-5-nano") &&
-      !modelId.startsWith("gpt-5-chat")) ||
-    modelId.startsWith("o3") ||
-    modelId.startsWith("o4-mini")
-
-  // Use allowlist approach: only known reasoning models should use 'developer' role
-  // This prevents issues with fine-tuned models, third-party models, and custom models
-  const isReasoningModel = modelId.startsWith("o1") ||
-    modelId.startsWith("o3") ||
-    modelId.startsWith("o4-mini") ||
-    modelId.startsWith("codex-mini") ||
-    modelId.startsWith("computer-use-preview") ||
-    (modelId.startsWith("gpt-5") && !modelId.startsWith("gpt-5-chat"))
-
-  // https://platform.openai.com/docs/guides/latest-model#gpt-5-1-parameter-compatibility
-  // GPT-5.1 and GPT-5.2 support temperature, topP, logProbs when reasoningEffort is none
-  const supportsNonReasoningParameters = modelId.startsWith("gpt-5.1") || modelId.startsWith("gpt-5.2")
-
-  const systemMessageMode = isReasoningModel ? "developer" : "system"
-
-  return {
-    supportsFlexProcessing,
-    supportsPriorityProcessing,
-    isReasoningModel,
-    systemMessageMode,
-    supportsNonReasoningParameters
+const resolveReasoningModel = (config: typeof Config.Service): boolean => {
+  if (Predicate.isNotUndefined(config.reasoningModel)) {
+    return config.reasoningModel
   }
+  const model = config.model ?? ""
+  const baseModel = model.startsWith("ft:") ? model.slice(3) : model
+  return !nonReasoningModelPattern.test(baseModel)
 }
 
 const getApprovalRequestIdMapping = (prompt: Prompt.Prompt): ReadonlyMap<string, string> => {
@@ -3328,7 +3338,7 @@ const getUsage = (usage: OpenAiSchema.ResponseUsage | null | undefined): Respons
   }
 }
 
-type ServiceTier = "default" | "auto" | "flex" | "scale" | "priority" | null
+type ServiceTier = "default" | "auto" | "flex" | "scale" | "priority" | "ultrafast" | null
 
 const toFinishMetadata = (response: OpenAiSchema.Response): {
   readonly metadata: Response.FinishPartMetadata
@@ -3340,6 +3350,7 @@ const toFinishMetadata = (response: OpenAiSchema.Response): {
     case "flex":
     case "scale":
     case "priority":
+    case "ultrafast":
       serviceTier = response.service_tier
       break
   }
@@ -3362,20 +3373,23 @@ const toFinishMetadata = (response: OpenAiSchema.Response): {
 const getUsageTokenDetail = (details: unknown, key: string): number | undefined =>
   Predicate.hasProperty(details, key) && typeof details[key] === "number" ? details[key] : undefined
 
-const transformToolCallParams = Effect.fnUntraced(function*<Tools extends ReadonlyArray<Tool.Any>>(
-  tools: Tools,
+const transformToolCallParams = Effect.fnUntraced(function*(
+  options: LanguageModel.ProviderOptions,
   toolName: string,
   toolParams: unknown
 ): Effect.fn.Return<unknown, AiError.AiError> {
-  const tool = tools.find((tool) => tool.name === toolName)
+  const tool = options.tools.find((tool) => tool.name === toolName)
 
   if (Predicate.isUndefined(tool)) {
+    if (options.toolCallValidation === "deferred") {
+      return toolParams
+    }
     return yield* AiError.make({
       module: "OpenAiLanguageModel",
       method: "makeResponse",
       reason: new AiError.ToolNotFoundError({
         toolName,
-        availableTools: tools.map((tool) => tool.name)
+        availableTools: options.tools.map((tool) => tool.name)
       })
     })
   }

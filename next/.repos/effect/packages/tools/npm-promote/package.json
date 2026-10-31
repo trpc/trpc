@@ -1,0 +1,29 @@
+{
+  "name": "@effect/npm-promote",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://effect.website",
+  "type": "module",
+  "exports": {
+    ".": "./src/NpmPromote.ts",
+    "./*": "./src/*.ts",
+    "./bin": null
+  },
+  "bin": {
+    "effect-npm-promote": "./src/bin.ts"
+  },
+  "scripts": {
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@effect/platform-node": "workspace:^",
+    "effect": "workspace:^",
+    "semver": "^7.8.5"
+  },
+  "devDependencies": {
+    "@effect/vitest": "workspace:^",
+    "@types/node": "^26.6.5",
+    "@types/semver": "^7.8.0",
+    "vitest": "^5.0.5"
+  }
+}

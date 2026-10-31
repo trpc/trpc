@@ -1,6 +1,12 @@
 "@effect/sql/SqlEventLogServer#layerStorage":
+  include: true
   replacement: "effect/eventlog/SqlEventLogServerEncrypted#layerStorage"
-  note: "Moved to the encrypted server module with the same options and EventLogEncryption requirement."
+  note: "Moved to the encrypted server module; remove insertBatchSize. entryTablePrefix and remoteIdTable remain. It requires the `Digest` service from `effect/crypto/Digest` instead of EventLogEncryption, which hashed the table names in v3. Storage uses encrypted batch tables and entry-id lookup tables, not the old per-entry ciphertext schema; existing encrypted tables are not automatically converted."
 "@effect/sql/SqlEventLogServer#makeStorage":
+  include: true
   replacement: "effect/eventlog/SqlEventLogServerEncrypted#makeStorage"
-  note: "Moved to the encrypted server module with the same SQL, encryption, and scope requirements."
+  note: "Moved to the encrypted server module; remove insertBatchSize. SQL and scope requirements remain; the EventLogEncryption requirement is replaced by the `Digest` service from `effect/crypto/Digest`. Storage uses encrypted batch tables and entry-id lookup tables, not the old per-entry ciphertext schema; existing encrypted tables are not automatically converted."
+"@effect/sql/SqlEventLogServer#layerStorageSubtle":
+  include: true
+  replacement: "effect/eventlog/SqlEventLogServerEncrypted#layerStorageSubtle"
+  note: "Moved to the encrypted server module; remove insertBatchSize. The layer supplies the Web Crypto `Digest` layer. Storage now uses encrypted batch tables and entry-id lookup tables; existing per-entry ciphertext tables are not automatically converted."

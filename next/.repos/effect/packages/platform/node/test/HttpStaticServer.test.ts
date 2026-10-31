@@ -27,7 +27,7 @@ const staticFilesLayer = Layer.mergeAll(
 
 const makeHandler = (
   root: string,
-  options: Omit<Parameters<typeof HttpStaticServer.make>[0], "root"> = {}
+  options: Omit<Parameters<typeof HttpStaticServer.layer>[0], "root"> = {}
 ) =>
   HttpRouter.toWebHandler(
     HttpStaticServer.layer({
@@ -43,7 +43,7 @@ const withStaticFiles = async (
     readonly root: string
     readonly outsideFile: string
   }) => Promise<void>,
-  options: Omit<Parameters<typeof HttpStaticServer.make>[0], "root"> = {}
+  options: Omit<Parameters<typeof HttpStaticServer.layer>[0], "root"> = {}
 ) => {
   const temporaryRoot = await mkdtemp(NodePath.join(tmpdir(), "effect-http-static-server-"))
   const root = NodePath.join(temporaryRoot, "root")
@@ -75,16 +75,33 @@ describe("HttpStaticServer", { concurrent: false }, () => {
 
   it("serves default index file for directory paths", async () => {
     await withStaticFiles(async ({ handler }) => {
-      const response = await handler(new Request("http://localhost/guide"))
+      const response = await handler(new Request("http://localhost/guide/"))
       assert.strictEqual(response.status, 200)
       assert.strictEqual(response.headers.get("content-type"), "text/html; charset=utf-8")
       assert.strictEqual((await response.text()).trimEnd(), "<html><body>guide index</body></html>")
     })
   })
 
+  for (const prefix of ["", "/static"]) {
+    it(`redirects directory URLs with their query string under ${prefix || "/"}`, async () => {
+      await withStaticFiles(async ({ handler }) => {
+        const response = await handler(new Request(`http://localhost${prefix}/guide?x=1&next=%2Fdocs`))
+        assert.strictEqual(response.status, 301)
+        assert.strictEqual(response.headers.get("location"), `${prefix}/guide/?x=1&next=%2Fdocs`)
+
+        const index = await handler(
+          new Request(new URL(response.headers.get("location")!, "http://localhost"))
+        )
+        assert.strictEqual(index.status, 200)
+        assert.strictEqual(index.headers.get("location"), null)
+        assert.strictEqual((await index.text()).trimEnd(), "<html><body>guide index</body></html>")
+      }, { prefix: prefix || undefined })
+    })
+  }
+
   it("supports custom index file and disabled index fallback", async () => {
     await withStaticFiles(async ({ handler }) => {
-      const response = await handler(new Request("http://localhost/custom"))
+      const response = await handler(new Request("http://localhost/custom/"))
       assert.strictEqual(response.status, 200)
       assert.strictEqual((await response.text()).trimEnd(), "<html><body>custom home</body></html>")
     }, { index: "home.html" })

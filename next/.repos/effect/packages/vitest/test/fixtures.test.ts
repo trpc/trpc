@@ -1,4 +1,4 @@
-import { assert, describe, makeMethods, test } from "@effect/vitest"
+import { assert, beforeEach, describe, makeMethods, test } from "@effect/vitest"
 import { Effect, Layer, Schema } from "effect"
 
 describe("makeMethods fixtures", () => {
@@ -21,6 +21,15 @@ describe("makeMethods fixtures", () => {
       it.effect("nested it.effect", ({ value }) => Effect.sync(() => assert.strictEqual(value, 1)))
     })
   })
+})
+
+describe("Effect hook fixtures", () => {
+  const it = makeMethods(test.extend("value", () => 1))
+  let hookValue: number | undefined
+
+  beforeEach<{ value: number }>(({ value }) => Effect.sync(() => (hookValue = value)))
+
+  it.effect("beforeEach can destructure fixtures", () => Effect.sync(() => assert.strictEqual(hookValue, 1)))
 })
 
 describe("makeMethods registers through the given test API", { concurrent: false }, () => {

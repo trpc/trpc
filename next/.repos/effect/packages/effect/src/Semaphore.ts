@@ -13,10 +13,11 @@
  */
 import type * as Effect from "./Effect.ts"
 import type { Fiber } from "./Fiber.ts"
-import { dual } from "./Function.ts"
+import { dual, identity } from "./Function.ts"
 import * as core from "./internal/core.ts"
 import * as internal from "./internal/effect.ts"
 import type * as Option from "./Option.ts"
+import type * as Scope from "./Scope.ts"
 
 /**
  * A counting semaphore that coordinates concurrent access with permits.
@@ -135,6 +136,24 @@ export interface Semaphore {
   take(this: Semaphore, permits: number): Effect.Effect<number>
 
   /**
+   * Acquires the specified number of permits for the lifetime of the current
+   * scope, suspending the task if they are not yet available.
+   *
+   * **When to use**
+   *
+   * Use to hold permits until a scope closes, such as while a scoped resource
+   * is leased.
+   *
+   * **Details**
+   *
+   * Waiting can be interrupted unless the caller is uninterruptible. The
+   * permits are taken and their release is added to the scope in one
+   * uninterruptible step, so acquired permits are always returned when the
+   * scope closes.
+   */
+  takeScoped(this: Semaphore, permits: number): Effect.Effect<void, never, Scope.Scope>
+
+  /**
    * Acquires the specified number of permits only if they are immediately
    * available.
    *
@@ -214,26 +233,58 @@ export interface Semaphore {
  */
 export const makeUnsafe = (permits: number): Semaphore => new SemaphoreImpl(permits)
 
-const waitForPermits = <A, E, R>(
+interface Waiter {
+  readonly permits: number
+  resume: ((effect: Effect.Effect<void>) => void) | undefined
+}
+
+// The first queued request that fits in the free permits. Larger requests
+// ahead of it keep their place but are overtaken, as documented on `take`.
+const firstAvailableWaiter = (self: SemaphoreImpl): Waiter | undefined => {
+  for (const waiter of self.waiters) {
+    if (waiter.permits <= self.free) return waiter
+  }
+}
+
+const takePermits = <A, E, R>(
   self: SemaphoreImpl,
   n: number,
-  effect: Effect.Effect<A, E, R>
+  onAcquire: () => Effect.Effect<A, E, R>,
+  restore: <AX, EX, RX>(effect: Effect.Effect<AX, EX, RX>) => Effect.Effect<AX, EX, RX> = identity
 ): Effect.Effect<A, E, R> =>
-  internal.callback((resume) => {
-    if (self.free >= n) return resume(effect)
-    const observer = () => {
-      if (self.free < n) return
-      self.waiters.delete(observer)
-      resume(effect)
+  core.withFiber((fiber) => {
+    if (self.free >= n && firstAvailableWaiter(self) === undefined) {
+      self.taken += n
+      return onAcquire()
     }
-    self.waiters.add(observer)
-    return internal.sync(() => {
-      self.waiters.delete(observer)
+    // A wake does not reserve permits: the waiter keeps its queue entry until
+    // it acquires or is interrupted, and re-checks eligibility when it runs.
+    const waiter: Waiter = { permits: n, resume: undefined }
+    const remove = () => {
+      if (self.waiters.delete(waiter)) self.releaseUnsafe(fiber, 0)
+      return undefined
+    }
+    self.waiters.add(waiter)
+    internal.onExitUnsafe(fiber, remove)
+    const wait = restore(internal.callback<void>((resume) => {
+      // The fiber may have yielded since the last check, missing a wake.
+      if (firstAvailableWaiter(self) === waiter) {
+        resume(internal.void)
+      } else {
+        waiter.resume = resume
+      }
+    }))
+    const loop: Effect.Effect<A, E, R> = internal.flatMap(wait, () => {
+      if (firstAvailableWaiter(self) !== waiter) return loop
+      self.taken += n
+      remove()
+      return onAcquire()
     })
+    return loop
   })
 
 class SemaphoreImpl implements Semaphore {
-  public waiters = new Set<() => void>()
+  public waiters = new Set<Waiter>()
   public taken = 0
   public permits: number
 
@@ -246,14 +297,16 @@ class SemaphoreImpl implements Semaphore {
   }
 
   take(n: number): Effect.Effect<number> {
-    const take: Effect.Effect<number> = internal.suspend(() => {
-      if (this.free < n) {
-        return waitForPermits(this, n, take)
-      }
-      this.taken += n
-      return internal.succeed(n)
-    })
-    return take
+    return takePermits(this, n, () => internal.succeed(n))
+  }
+
+  takeScoped(n: number): Effect.Effect<void, never, Scope.Scope> {
+    return internal.uninterruptibleMask((restore) =>
+      internal.flatMap(
+        internal.scope,
+        (scope) => takePermits(this, n, () => internal.scopeAddFinalizer(scope, this.release(n)), restore)
+      )
+    )
   }
 
   takeIfAvailable(n: number): Effect.Effect<boolean> {
@@ -268,9 +321,17 @@ class SemaphoreImpl implements Semaphore {
     this.taken -= n
     if (this.waiters.size > 0) {
       fiber.currentDispatcher.scheduleTask(() => {
-        for (const observer of this.waiters) {
-          if (this.free <= 0) break
-          observer()
+        // Wake every queued request that fits in the free permits. Waiters
+        // that were already woken still count against the budget, since they
+        // keep their place until they acquire. Resumed fibers run inline and
+        // can add or remove waiters, so iterate over a snapshot.
+        let remaining = this.free
+        for (const waiter of Array.from(this.waiters)) {
+          if (!this.waiters.has(waiter) || waiter.permits > remaining) continue
+          remaining -= waiter.permits
+          const resume = waiter.resume
+          waiter.resume = undefined
+          resume?.(internal.void)
         }
       }, 0)
     }
@@ -296,24 +357,18 @@ class SemaphoreImpl implements Semaphore {
 
   withPermits(n: number) {
     return <A, E, R>(self: Effect.Effect<A, E, R>) =>
-      internal.uninterruptibleMask((restore) => {
-        const acquire: Effect.Effect<A, E, R> = internal.suspend(() => {
-          if (this.free < n) {
-            const wait = waitForPermits(this, n, internal.void)
-            return internal.flatMap(restore(wait), () => acquire)
-          }
-          this.taken += n
-          return internal.onExitPrimitive(
-            restore(self),
-            () => {
+      internal.uninterruptibleMask((restore) =>
+        takePermits(
+          this,
+          n,
+          () =>
+            internal.onExitPrimitive(restore(self), () => {
               this.releaseUnsafe(internal.getCurrentFiber()!, n)
               return undefined
-            },
-            true
-          )
-        })
-        return acquire
-      })
+            }, true),
+          restore
+        )
+      )
   }
 
   readonly withPermit = this.withPermits(1)
@@ -511,6 +566,47 @@ export const take: {
   (permits: number): (self: Semaphore) => Effect.Effect<number>
   (self: Semaphore, permits: number): Effect.Effect<number>
 } = dual(2, (self: Semaphore, permits: number) => self.take(permits))
+
+/**
+ * Acquires the specified number of permits until the current scope closes.
+ *
+ * **When to use**
+ *
+ * Use when permits should be held for the lifetime of a scope, such as while a
+ * scoped resource is leased.
+ *
+ * **Details**
+ *
+ * The effect waits until enough permits are available. The wait can be
+ * interrupted unless the caller is uninterruptible. The permits are taken and
+ * their release is added to the scope in one uninterruptible step, so acquired
+ * permits are always returned when the scope closes.
+ *
+ * **Example** (Holding a permit for a scope)
+ *
+ * ```ts import.meta.vitest
+ * import { Effect, Semaphore } from "effect"
+ *
+ * const program = Effect.gen(function*() {
+ *   const semaphore = yield* Semaphore.make(1)
+ *   yield* Effect.scoped(Semaphore.takeScoped(semaphore, 1))
+ *   return yield* Semaphore.takeIfAvailable(semaphore, 1)
+ * })
+ *
+ * Effect.runSync(program) // => true
+ * ```
+ *
+ * @see {@link take} for acquiring permits that are released manually
+ * @see {@link withPermits} for holding permits while one effect runs
+ *
+ * @stability stable
+ * @category combinators
+ * @since 4.0.7
+ */
+export const takeScoped: {
+  (permits: number): (self: Semaphore) => Effect.Effect<void, never, Scope.Scope>
+  (self: Semaphore, permits: number): Effect.Effect<void, never, Scope.Scope>
+} = dual(2, (self: Semaphore, permits: number) => self.takeScoped(permits))
 
 /**
  * Acquires the specified number of permits only if they are immediately

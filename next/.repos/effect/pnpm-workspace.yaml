@@ -12,6 +12,10 @@ packages:
 
 verifyDepsBeforeRun: error
 enableGlobalVirtualStore: false
+# pnpm 11 aborts a tarball download that has not finished within fetchTimeout (default 60s),
+# however fast it is still progressing. @op-engineering/op-sqlite is a 115 MB tarball and times
+# out when registry throughput drops below ~1.9 MB/s; 180s covers sustained rates down to ~0.64 MB/s.
+fetchTimeout: 180000
 
 allowBuilds:
   core-js: false
@@ -27,6 +31,7 @@ allowBuilds:
   workerd: false
 
 patchedDependencies:
+  '@changesets/cli@3.0.3': patches/@changesets__cli@3.0.3.patch
   '@changesets/get-github-info@1.0.1': patches/@changesets__get-github-info@1.0.1.patch
 
 overrides:
@@ -34,13 +39,7 @@ overrides:
   # Remove after a later jsdom release passes the Atom React and Solid suites under Bun.
   # Upstream changes: https://github.com/jsdom/jsdom/compare/v30.0.1...v30.1.0
   jsdom: ~30.0.1
-
-minimumReleaseAgeExclude:
-  - '@effect/tsgo-darwin-arm64@0.51.0'
-  - '@effect/tsgo-darwin-x64@0.51.0'
-  - '@effect/tsgo-linux-arm64@0.51.0'
-  - '@effect/tsgo-linux-arm@0.51.0'
-  - '@effect/tsgo-linux-x64@0.51.0'
-  - '@effect/tsgo-win32-arm64@0.51.0'
-  - '@effect/tsgo-win32-x64@0.51.0'
-  - '@effect/tsgo@0.51.0'
+  # fake-indexeddb 6.2.6 stores in-line keyPath keys without normalizing them, so
+  # binary (Uint8Array) keys throw DataError during comparison in EventJournal.makeIndexedDb.
+  # Remove after a later fake-indexeddb release passes the EventJournal IndexedDB suite.
+  fake-indexeddb: 6.2.5

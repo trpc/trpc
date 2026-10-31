@@ -1,5 +1,6 @@
 /**
- * Standard MIME type data copied from mime 4.1.0.
+ * Standard MIME type data copied from mime 4.1.0, plus `text/x-python` and
+ * `text/x-shellscript` for `py` and `sh` scripts.
  *
  * MIT License
  *
@@ -370,6 +371,8 @@ const types = {
   "text/vcard": ["vcard"],
   "text/vtt": ["vtt"],
   "text/wgsl": ["wgsl"],
+  "text/x-python": ["py"],
+  "text/x-shellscript": ["sh"],
   "text/xml": ["*xml"],
   "text/yaml": ["yaml", "yml"],
   "video/3gpp": ["3gp", "3gpp"],

@@ -21,6 +21,7 @@ type TraversalFilter<K, V> = (k: K, v: V) => boolean
 /** @internal */
 export interface TrieImpl<in out V> extends TR.Trie<V> {
   readonly _root: Node<V> | undefined
+  readonly _empty: Entry<V> | undefined
   readonly _count: number
 }
 
@@ -70,16 +71,17 @@ const TrieProto: TR.Trie<unknown> = {
   }
 }
 
-const makeImpl = <V>(root: Node<V> | undefined): TrieImpl<V> => {
+const makeImpl = <V>(root: Node<V> | undefined, emptyEntry: Entry<V> | undefined): TrieImpl<V> => {
   const trie = Object.create(TrieProto)
   trie._root = root
-  trie._count = root?.count ?? 0
+  trie._empty = emptyEntry
+  trie._count = (root?.count ?? 0) + (emptyEntry === undefined ? 0 : 1)
   return trie
 }
 
 class TrieIterator<in out V, out T> implements IterableIterator<T> {
   stack: Array<[Node<V>, string, boolean]> = []
-  readonly trie: TrieImpl<V>
+  emptyEntry: Entry<V> | undefined
   readonly f: TraversalMap<string, V, T>
   readonly filter: TraversalFilter<string, V>
 
@@ -88,9 +90,9 @@ class TrieIterator<in out V, out T> implements IterableIterator<T> {
     f: TraversalMap<string, V, T>,
     filter: TraversalFilter<string, V>
   ) {
-    this.trie = trie
     this.f = f
     this.filter = filter
+    this.emptyEntry = trie._empty
     const root = trie._root !== undefined ? trie._root : undefined
     if (root !== undefined) {
       this.stack.push([root, "", false])
@@ -98,6 +100,13 @@ class TrieIterator<in out V, out T> implements IterableIterator<T> {
   }
 
   next(): IteratorResult<T> {
+    const emptyEntry = this.emptyEntry
+    if (emptyEntry !== undefined) {
+      this.emptyEntry = undefined
+      if (this.filter("", emptyEntry.value)) {
+        return { done: false, value: this.f("", emptyEntry.value) }
+      }
+    }
     while (this.stack.length > 0) {
       const [node, keyString, isAdded] = this.stack.pop()!
 
@@ -131,7 +140,7 @@ class TrieIterator<in out V, out T> implements IterableIterator<T> {
   }
 
   [Symbol.iterator](): IterableIterator<T> {
-    return new TrieIterator(this.trie, this.f, this.filter)
+    return this
   }
 }
 
@@ -142,7 +151,7 @@ export const isTrie: {
 } = (u: unknown): u is TR.Trie<unknown> => hasProperty(u, TrieTypeId)
 
 /** @internal */
-export const empty = <V = never>(): TR.Trie<V> => makeImpl<V>(undefined)
+export const empty = <V = never>(): TR.Trie<V> => makeImpl<V>(undefined, undefined)
 
 /** @internal */
 export const fromIterable = <V>(entries: Iterable<readonly [string, V]>) => {
@@ -165,7 +174,7 @@ export const insert = dual<
   <V>(key: string, value: V) => (self: TR.Trie<V>) => TR.Trie<V>,
   <V>(self: TR.Trie<V>, key: string, value: V) => TR.Trie<V>
 >(3, <V>(self: TR.Trie<V>, key: string, value: V) => {
-  if (key.length === 0) return self
+  if (key.length === 0) return makeImpl((self as TrieImpl<V>)._root, { value })
 
   // -1:left | 0:mid | 1:right
   const dStack: Array<Ordering.Ordering> = []
@@ -257,11 +266,11 @@ export const insert = dual<
   }
 
   nStack[0].count = count
-  return makeImpl(nStack[0])
+  return makeImpl(nStack[0], (self as TrieImpl<V>)._empty)
 })
 
 /** @internal */
-export const size = <V>(self: TR.Trie<V>): number => (self as TrieImpl<V>)._root?.count ?? 0
+export const size = <V>(self: TR.Trie<V>): number => (self as TrieImpl<V>)._count
 
 /** @internal */
 export const isEmpty = <V>(self: TR.Trie<V>): boolean => size(self) === 0
@@ -396,8 +405,12 @@ export const get = dual<
 >(
   2,
   <V>(self: TR.Trie<V>, key: string) => {
+    if (key.length === 0) {
+      const emptyEntry = (self as TrieImpl<V>)._empty
+      return emptyEntry === undefined ? Option.none() : Option.some(emptyEntry.value)
+    }
     let n: Node<V> | undefined = (self as TrieImpl<V>)._root
-    if (n === undefined || key.length === 0) return Option.none()
+    if (n === undefined) return Option.none()
     let cIndex = 0
     while (cIndex < key.length) {
       const c = key[cIndex]
@@ -455,8 +468,11 @@ export const remove = dual<
 >(
   2,
   <V>(self: TR.Trie<V>, key: string) => {
+    if (key.length === 0) {
+      return (self as TrieImpl<V>)._empty === undefined ? self : makeImpl((self as TrieImpl<V>)._root, undefined)
+    }
     let n: Node<V> | undefined = (self as TrieImpl<V>)._root
-    if (n === undefined || key.length === 0) return self
+    if (n === undefined) return self
 
     const count = n.count - 1
     // -1:left | 0:mid | 1:right
@@ -556,7 +572,7 @@ export const remove = dual<
     }
 
     nStack[0].count = count
-    return makeImpl(nStack[0])
+    return makeImpl(nStack[0], (self as TrieImpl<V>)._empty)
   }
 )
 
@@ -591,8 +607,12 @@ export const modify = dual<
 >(
   3,
   <V>(self: TR.Trie<V>, key: string, f: (v: V) => V): TR.Trie<V> => {
+    if (key.length === 0) {
+      const emptyEntry = (self as TrieImpl<V>)._empty
+      return emptyEntry === undefined ? self : makeImpl((self as TrieImpl<V>)._root, { value: f(emptyEntry.value) })
+    }
     let n: Node<V> | undefined = (self as TrieImpl<V>)._root
-    if (n === undefined || key.length === 0) return self
+    if (n === undefined) return self
 
     // -1:left | 0:mid | 1:right
     const dStack: Array<Ordering.Ordering> = []
@@ -691,7 +711,7 @@ export const modify = dual<
       }
     }
 
-    return makeImpl(nStack[0])
+    return makeImpl(nStack[0], (self as TrieImpl<V>)._empty)
   }
 )
 
@@ -702,9 +722,12 @@ export const longestPrefixOf = dual<
 >(
   2,
   <V>(self: TR.Trie<V>, key: string): Option.Option<[string, V]> => {
+    const emptyEntry = (self as TrieImpl<V>)._empty
+    let longestPrefixNode: Option.Option<[string, V]> = emptyEntry === undefined
+      ? Option.none()
+      : Option.some(["", emptyEntry.value])
     let n: Node<V> | undefined = (self as TrieImpl<V>)._root
-    if (n === undefined || key.length === 0) return Option.none()
-    let longestPrefixNode: Option.Option<[string, V]> = Option.none()
+    if (n === undefined || key.length === 0) return longestPrefixNode
     let cIndex = 0
     while (cIndex < key.length) {
       const c = key[cIndex]
@@ -737,10 +760,14 @@ export const longestPrefixOf = dual<
   }
 )
 
+interface Entry<V> {
+  readonly value: V
+}
+
 interface Node<V> {
   key: string
   count: number
-  value?: { readonly value: V } | undefined
+  value?: Entry<V> | undefined
   left?: Node<V> | undefined
   mid?: Node<V> | undefined
   right?: Node<V> | undefined

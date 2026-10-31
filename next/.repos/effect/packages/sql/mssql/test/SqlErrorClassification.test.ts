@@ -91,18 +91,18 @@ vi.mock("tedious", () => ({
   }
 }))
 
-const queryFailureReason = (cause: unknown) =>
-  Effect.gen(function*() {
+const queryFailureReason = Effect.fnUntraced(
+  function*(cause: unknown) {
     state.connectCause = null
     state.requestCauses = [null, cause]
     const { MssqlClient } = yield* Effect.promise(() => import("@effect/sql-mssql"))
     const client = yield* MssqlClient.make({ server: "localhost" })
     const error = yield* Effect.flip(client`SELECT 1`)
     return error.reason
-  }).pipe(
-    Effect.scoped,
-    Effect.provide(Reactivity.layer)
-  )
+  },
+  (_) => Effect.scoped(_),
+  Effect.provide(Reactivity.layer)
+)
 
 const queryFailureReasonTag = (number: number) => Effect.map(queryFailureReason({ number }), (reason) => reason._tag)
 

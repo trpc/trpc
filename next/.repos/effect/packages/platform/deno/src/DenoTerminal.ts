@@ -15,8 +15,9 @@ import type { Scope } from "effect/Scope"
 import type { Terminal, UserInput } from "effect/Terminal"
 
 /**
- * Creates a scoped `Terminal` service backed by process stdin/stdout, using the
- * optional predicate to decide when key input should end the input stream.
+ * Creates a scoped `Terminal` service backed by process stdin/stdout.
+ * By default, Esc, Ctrl+C, and Ctrl+D end key input. Supply `shouldQuit` to
+ * override these quit keys.
  *
  * @stability unstable
  * @category constructors
@@ -26,7 +27,7 @@ export const make: (shouldQuit?: (input: UserInput) => boolean) => Effect<Termin
 
 /**
  * Provides the default process-backed `Terminal` service, ending key input on
- * the default quit keys.
+ * bare Esc, Ctrl+C, or Ctrl+D.
  *
  * @stability unstable
  * @category layers

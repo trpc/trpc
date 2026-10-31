@@ -15,7 +15,7 @@ npm install effect
 ## Requirements
 
 - **TypeScript 5.9 or newer.** TypeScript 7 is recommended for the best performance and compatibility with [Effect's TypeScript tooling](https://github.com/Effect-TS/tsgo#installation).
-- **Node.js 18 or newer** when running Effect on Node.js.
+- **Node.js 22.19 or newer** when running Effect on Node.js.
 - **Strict type-checking:** the `strict` flag must be enabled in your `tsconfig.json`:
 
   ```json
@@ -58,3 +58,33 @@ The `effect` package is a collection of modules. Some of the core ones:
 | Schema   | A powerful library for defining, validating, and transforming structured data with type-safe encoding and decoding.        |
 
 In v4, functionality that previously lived in separate packages ships inside `effect` under the `effect/*` namespaces, including `http`, `http-api`, `rpc`, `cluster`, `workflow`, `cli`, `ai`, `sql`, and `reactivity`.
+
+## JOSE
+
+`effect/jose` provides unstable APIs for algorithm-bound JWKs, compact JWS and JWE, schema-typed signed and encrypted JWTs, and local or remote JWKS resolution, built on `effect/crypto`. Signatures use HS256/384/512, RS256/384/512, PS256/384/512, ES256/384/512 (P-256/P-384/P-521), or EdDSA (Ed25519); encryption uses `dir` with `A256GCM`. `Jwk` also generates symmetric keys, computes JWK thumbprints and thumbprint URIs, and imports and exports SPKI and PKCS#8 keys in DER or PEM form.
+
+Apply an application-specific limit to untrusted token lengths before verification, decryption, or unverified decoding. These APIs decode tokens in memory and do not impose a global token-size limit.
+
+```ts
+import { Effect, Layer, Schema } from "effect"
+import { Mac, SecureRandom, Signature } from "effect/crypto"
+import { Jwk, Jwt } from "effect/jose"
+
+const Claims = Schema.Struct({ sub: Schema.String })
+
+const program = Effect.gen(function*() {
+  const pair = yield* Jwk.generateKeyPair({ algorithm: "ES256", kid: "signing-key" })
+  const signingKey = yield* Jwk.importPrivate(pair.privateKey, "ES256")
+  const verificationKey = yield* Jwk.importPublic(pair.publicKey, "ES256")
+  const token = yield* Jwt.sign(Claims, { sub: "user_1" }, signingKey, { typ: "JWT" })
+  return yield* Jwt.verify(Claims, token, verificationKey, { typ: "JWT" })
+}).pipe(
+  Effect.provide(
+    Layer.mergeAll(Mac.layerWebCrypto, Signature.layerWebCrypto).pipe(Layer.provide(SecureRandom.layerWebCrypto))
+  )
+)
+```
+
+For encrypted JWTs, use `Jwt.encrypt` and `Jwt.decrypt`. Both `Jwe.decrypt` and `Jwt.decrypt` accept effectful key resolvers for key rotation; resolver headers are unauthenticated and must be used only to select a key.
+
+See [third-party notices](THIRD_PARTY_NOTICES.md) for test attribution.

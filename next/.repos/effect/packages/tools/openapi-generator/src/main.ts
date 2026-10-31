@@ -76,7 +76,7 @@ const root = Command.make("openapigen", { spec, format, name, patch }).pipe(
     })
     yield* Effect.forEach(
       warnings,
-      (warning) => Console.error(formatWarning(warning)),
+      (warning) => Console.error(OpenApiGenerator.formatWarning(warning)),
       { discard: true }
     )
     return yield* Console.log(source)
@@ -103,14 +103,3 @@ const root = Command.make("openapigen", { spec, format, name, patch }).pipe(
 export const run: Effect.Effect<void, CliError.CliError, Command.Environment> = Command.run(root, {
   version: "0.0.0"
 })
-
-const formatWarning = (warning: OpenApiGenerator.OpenApiGeneratorWarning): string => {
-  const context = [
-    warning.method?.toUpperCase(),
-    warning.path,
-    warning.operationId ? `(${warning.operationId})` : undefined
-  ].filter((value): value is string => value !== undefined)
-  return context.length > 0
-    ? `WARNING [${warning.code}] ${context.join(" ")}: ${warning.message}`
-    : `WARNING [${warning.code}] ${warning.message}`
-}

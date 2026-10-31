@@ -22,7 +22,8 @@ export * from "@effect/platform-node-shared/NodeSocket"
 
 /**
  * Provides a `Socket.WebSocketConstructor` backed by Bun's global
- * `WebSocket` implementation.
+ * `WebSocket` implementation, supporting handshake headers and subprotocols
+ * together in client options objects.
  *
  * @stability unstable
  * @category layers
@@ -31,15 +32,32 @@ export * from "@effect/platform-node-shared/NodeSocket"
 export const layerWebSocketConstructor: Layer.Layer<
   Socket.WebSocketConstructor
 > = Layer.succeed(Socket.WebSocketConstructor)(
-  (url, options) =>
-    // Bun accepts `WebSocketOptions`, but `bun-types` selects the DOM overload
-    // when `lib.dom` is loaded and hides those constructor options.
-    new globalThis.WebSocket(url, options as string | Array<string> | undefined)
+  (url, options) => {
+    if (options === undefined || typeof options === "string" || Array.isArray(options)) {
+      return new globalThis.WebSocket(url, options)
+    }
+    // Bun accepts `WebSocketOptions`, but `bun-types` selects the DOM
+    // overload when `lib.dom` is loaded and hides those constructor options.
+    const WebSocket = globalThis.WebSocket as unknown as {
+      new(
+        url: string,
+        options: {
+          protocols?: Array<string> | undefined
+          headers?: Readonly<Record<string, string>> | undefined
+        }
+      ): globalThis.WebSocket
+    }
+    return new WebSocket(url, {
+      // Bun requires a sequence for `protocols` in its options object.
+      protocols: typeof options.protocols === "string" ? [options.protocols] : options.protocols,
+      headers: options.headers
+    })
+  }
 )
 
 /**
  * Creates a `Socket.Socket` layer for a WebSocket URL using Bun's global
- * `WebSocket` constructor, honoring protocol, open-timeout, and
+ * `WebSocket` constructor, honoring protocol, handshake-header, open-timeout, and
  * high-water-mark options.
  *
  * @stability unstable
@@ -51,6 +69,7 @@ export const layerWebSocket: (
   options?: {
     readonly openTimeout?: Duration.Input | undefined
     readonly protocols?: string | Array<string> | undefined
+    readonly headers?: Readonly<Record<string, string>> | undefined
     readonly highWaterMark?: number | undefined
   } | undefined
 ) => Layer.Layer<Socket.Socket, never, never> = flow(

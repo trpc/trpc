@@ -5,31 +5,29 @@
  * queries only, or `storage` for transactions and migrations. SQLite blobs are
  * returned as `Uint8Array`; `updateValues` is unsupported.
  *
- * The outer transaction holds the connection semaphore until storage completes.
- * Nested `withTransaction` calls reuse that connection and call
- * `storage.transaction()` without emitting transaction SQL. Child failures and
- * interruptions roll back the child; uncaught failures also roll back the parent.
+ * Transactions use `storage.transaction()` instead of transaction SQL, and
+ * hold the connection until storage completes. A failed or interrupted nested
+ * transaction rolls back only itself, unless the failure reaches the parent.
  *
- * Concurrent sibling transactions are unsupported. Fibers inheriting the
- * transaction context must finish their transaction work before the enclosing
- * transaction exits; later use can bypass the connection semaphore.
+ * Fibers that inherit the transaction context must finish their transaction
+ * work before the transaction exits; later use can bypass the connection
+ * semaphore.
  *
  * @stability unstable
  * @since 4.0.0
  */
-import type { DurableObjectStorage, SqlStorage } from "@cloudflare/workers-types"
+import type { DurableObjectStorage, DurableObjectTransaction, SqlStorage } from "@cloudflare/workers-types"
 import * as Cause from "effect/Cause"
 import * as Config from "effect/Config"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
-import * as Fiber from "effect/Fiber"
 import { identity } from "effect/Function"
 import * as Layer from "effect/Layer"
 import * as Reactivity from "effect/reactivity/Reactivity"
 import * as Rec from "effect/Record"
 import * as Scheduler from "effect/Scheduler"
-import * as Scope from "effect/Scope"
+import type * as Scope from "effect/Scope"
 import * as Semaphore from "effect/Semaphore"
 import * as Client from "effect/sql/SqlClient"
 import type { Connection } from "effect/sql/SqlConnection"
@@ -123,63 +121,83 @@ const makeUnsupportedWithTransaction =
   <R, E, A>(_effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | SqlError, R> =>
     Effect.fail(unsupportedTransaction(message, "transaction"))
 
+interface StorageLevel {
+  readonly txn: DurableObjectTransaction
+  readonly resolve: () => void
+  readonly done: Promise<Exit.Exit<void, SqlError>>
+}
+
 const makeStorageBackedWithTransaction = (
   storage: DurableObjectStorage,
   connection: Connection,
-  semaphore: Semaphore.Semaphore
-): Client.SqlClient["withTransaction"] =>
-<R, E, A>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | SqlError, R> =>
-  Effect.withFiber((fiber) => {
-    const services = fiber.context
-    const connOption = Context.getOption(services, SqliteTransaction)
-    if (connOption._tag === "Some" && connOption.value[0] !== connection) {
-      return Effect.fail(
-        unsupportedTransaction(
-          "Transactions cannot use a connection from a different SQLite client",
-          "transaction"
-        )
-      )
-    }
-    const depth = connOption._tag === "Some" ? connOption.value[1] + 1 : 0
+  acquirer: Effect.Effect<Connection, never, Scope.Scope>,
+  spanAttributes: ReadonlyArray<readonly [string, unknown]>
+): Client.SqlClient["withTransaction"] => {
+  // The open storage transaction at each depth. Transactions at the same depth
+  // never overlap.
+  const levels: Array<StorageLevel> = []
 
-    const effectWithTxn = Effect.provideContext(
-      effect,
-      Context.add(services, SqliteTransaction, [connection, depth] as const)
-    )
-
-    const transaction = Effect.callback<A, E | SqlError, R>((resume) => {
-      let interrupted = false
-      const promise = storage.transaction((txn) =>
+  // Parks the storage callback so the body runs on the fiber.
+  const open = (id: number) =>
+    Effect.callback<void, SqlError>((resume) => {
+      const done: Promise<Exit.Exit<void, SqlError>> = storage.transaction((txn) =>
         new Promise<void>((resolve) => {
-          if (interrupted) return resolve()
-          resume(Effect.onExit(effectWithTxn, (exit) => {
-            if (Exit.isFailure(exit)) {
-              txn.rollback()
-            }
-            // Throwing from a child callback can abort its parent.
-            resolve()
-            return Effect.flatten(Effect.promise(() => promise))
+          resume(Effect.sync(() => {
+            levels[id] = { txn, resolve, done }
           }))
         })
       ).then(
         () => Exit.void,
         (cause) => {
           const exit = Exit.fail(new SqlError({ reason: classifyError(cause, "Failed transaction", "transaction") }))
-          // Report rejection before the transaction callback starts; later resumes are ignored.
+          // Only takes effect if storage rejects before the callback starts.
           resume(exit)
           return exit
         }
       )
-      return Effect.suspend(() => {
-        interrupted = true
-        return Effect.asVoid(Effect.promise(() => promise))
-      })
     })
-    return connOption._tag === "Some" ? transaction : semaphore.withPermits(1)(transaction)
-  }).pipe(
-    // The storage transaction closes the input gate, blocking dispatcher tasks until it completes.
-    Effect.provideService(Scheduler.PreventSchedulerYield, true)
-  )
+
+  const close = (id: number) =>
+    Effect.suspend(() => {
+      const level = levels[id]
+      levels.length = id
+      level.resolve()
+      return Effect.flatten(Effect.promise(() => level.done))
+    })
+
+  // Uses `txn.rollback()` because rejecting a nested callback can abort its parent.
+  const rollback = (id: number) => Effect.sync(() => levels[id].txn.rollback())
+
+  const withTransaction = Client.makeWithTransaction({
+    transactionService: SqliteTransaction,
+    spanAttributes,
+    acquireConnection: (restore) => restore(acquirer),
+    begin: () => open(0),
+    savepoint: (_, id) => open(id),
+    releaseSavepoint: (_, id) => close(id),
+    commit: () => close(0),
+    rollback: () => Effect.andThen(rollback(0), close(0)),
+    // `releaseSavepoint` runs next and closes the level.
+    rollbackSavepoint: (_, id) => rollback(id)
+  })
+
+  return <R, E, A>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | SqlError, R> =>
+    Effect.withFiber((fiber) => {
+      const conn = Context.getOrUndefined(fiber.context, SqliteTransaction)
+      if (conn !== undefined && conn[0] !== connection) {
+        return Effect.fail(
+          unsupportedTransaction(
+            "Transactions cannot use a connection from a different SQLite client",
+            "transaction"
+          )
+        )
+      }
+      return withTransaction(effect)
+    }).pipe(
+      // The storage transaction closes the input gate, blocking dispatcher tasks until it completes.
+      Effect.provideService(Scheduler.PreventSchedulerYield, true)
+    )
+}
 
 /**
  * Creates a scoped Cloudflare Durable Object SQLite client around Durable Object SQLite storage, serializing access and converting returned `ArrayBuffer` values to `Uint8Array`.
@@ -289,28 +307,24 @@ export const make = (
     const semaphore = yield* Semaphore.make(1)
     const connection = yield* makeConnection
 
-    const acquirer = semaphore.withPermits(1)(Effect.succeed(connection))
-    const transactionAcquirer = Effect.uninterruptibleMask((restore) => {
-      const fiber = Fiber.getCurrent()!
-      const scope = Context.getUnsafe(fiber.context, Scope.Scope)
-      return Effect.as(
-        Effect.tap(
-          restore(semaphore.take(1)),
-          () => Scope.addFinalizer(scope, semaphore.release(1))
-        ),
-        connection
-      )
-    })
+    // Streams and reservations hold the permit until their scope closes.
+    const acquirer = Effect.as(
+      Effect.acquireRelease(semaphore.take(1), () => semaphore.release(1), { interruptible: true }),
+      connection
+    )
+
+    const spanAttributes: ReadonlyArray<readonly [string, unknown]> = [
+      ...(options.spanAttributes ? Object.entries(options.spanAttributes) : []),
+      [ATTR_DB_SYSTEM_NAME, "sqlite"]
+    ]
 
     const client = (yield* Client.make({
+      driver: "sqlite-do",
       acquirer,
+      borrower: (f) => semaphore.withPermit(f(connection)),
       compiler,
-      transactionAcquirer,
       transactionService: SqliteTransaction,
-      spanAttributes: [
-        ...(options.spanAttributes ? Object.entries(options.spanAttributes) : []),
-        [ATTR_DB_SYSTEM_NAME, "sqlite"]
-      ],
+      spanAttributes,
       transformRows
     })) as SqliteClient
 
@@ -318,7 +332,7 @@ export const make = (
       [TypeId]: TypeId as TypeId,
       config: options,
       withTransaction: options.storage
-        ? makeStorageBackedWithTransaction(options.storage, connection, semaphore)
+        ? makeStorageBackedWithTransaction(options.storage, connection, acquirer, spanAttributes)
         : makeUnsupportedWithTransaction(
           "Transactions require Durable Object storage; pass ctx.storage as the storage option"
         )

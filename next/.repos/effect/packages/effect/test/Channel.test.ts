@@ -17,22 +17,65 @@ import * as Stream from "effect/Stream"
 
 describe("Channel", () => {
   describe("repetition", () => {
-    for (const kind of ["repeat", "forever"] as const) {
-      const repeated = (source: Channel.Channel<Arr.NonEmptyArray<number>>) =>
-        kind === "repeat" ? Channel.repeat(source, Schedule.forever) : Channel.forever(source)
-
+    const source = Channel.succeed(Arr.make(1))
+    for (
+      const [kind, channel] of Object.entries({
+        repeat: Channel.repeat(source, Schedule.forever),
+        forever: Channel.forever(source),
+        retry: Channel.retry(Channel.concat(source, Channel.fail("boom")), Schedule.forever)
+      })
+    ) {
       it.effect(kind + " work per repetition does not grow", () =>
         Effect.gen(function*() {
-          const stream = Stream.fromChannel(repeated(Channel.succeed(Arr.make(1))))
+          const stream = Stream.fromChannel(channel)
           const ops = (n: number) => countOps(stream.pipe(Stream.take(n), Stream.runDrain))
           const small = yield* ops(1_000)
           const large = yield* ops(2_000)
           assert.isBelow(large / small, 2.5)
         }))
     }
+
+    it.effect("retry closes schedule resources with the channel", () =>
+      Effect.gen(function*() {
+        const events: Array<string> = []
+        let attempts = 0
+        const flaky = Channel.suspend(() => {
+          if (attempts++ === 0) return Channel.fail("boom")
+          events.push("second attempt")
+          return Channel.succeed(1)
+        })
+        const schedule = Schedule.tap(
+          Schedule.forever,
+          () => Effect.addFinalizer(() => Effect.sync(() => events.push("schedule finalizer")))
+        )
+        const result = yield* Channel.runCollect(Channel.retry(flaky, schedule))
+        events.push("run completed")
+        assert.deepStrictEqual(result, [1])
+        assert.deepStrictEqual(events, ["second attempt", "schedule finalizer", "run completed"])
+      }))
   })
 
   describe("constructors", () => {
+    it.live("fromAsyncIterable awaits idle iterator cleanup on early close", () =>
+      Effect.gen(function*() {
+        let finalized = false
+        async function* source() {
+          try {
+            yield [1] as const
+            yield [2] as const
+          } finally {
+            await new Promise((resolve) => setTimeout(resolve, 10))
+            finalized = true
+          }
+        }
+        yield* Channel.fromAsyncIterable(source(), (error) => error).pipe(
+          Stream.fromChannel,
+          Stream.take(1),
+          Stream.runDrain
+        )
+        assert.strictEqual(finalized, true)
+      }))
+
     for (
       const [name, constructor] of [["callback", Channel.callback], ["callbackArray", Channel.callbackArray]] as const
     ) {
@@ -196,6 +239,30 @@ describe("Channel", () => {
         assert.deepStrictEqual(result, [[1], [2]])
       }))
 
+    it.effect("fromReadableStream - surfaces cancellation failures and releases the lock", () =>
+      Effect.gen(function*() {
+        const error = new Error("cancel failed")
+        const readable = new ReadableStream<number>({
+          start(controller) {
+            controller.enqueue(1)
+          },
+          cancel() {
+            return Promise.reject(error)
+          }
+        })
+        const exit = yield* Channel.fromReadableStream({
+          evaluate: () => readable,
+          onError: (error) => error
+        }).pipe(
+          Channel.mapEffect(() => Effect.fail("downstream failed")),
+          Channel.runDrain,
+          Effect.exit
+        )
+
+        assertExitFailure(exit, Cause.combine(Cause.die("downstream failed"), Cause.die(error)))
+        assert.isFalse(readable.locked)
+      }))
+
     it.effect("fromTransformStream - surfaces write-side errors through the read side", () =>
       Effect.gen(function*() {
         const error = new Error("write failed")
@@ -215,6 +282,21 @@ describe("Channel", () => {
         )
 
         assertExitFailure(exit, Cause.fail(error))
+      }))
+
+    it.effect("fromTransformStream - preserves upstream errors while a read is pending", () =>
+      Effect.gen(function*() {
+        const channel = Channel.fromTransformStream<string, number, number, Error>({
+          evaluate: () => new TransformStream<number, number>(),
+          onError: () => new Error("transform failed")
+        })
+        const exit = yield* Channel.fail("upstream failed").pipe(
+          Channel.pipeTo(channel),
+          Channel.runDrain,
+          Effect.exit
+        )
+
+        assertExitFailure(exit, Cause.fail("upstream failed"))
       }))
 
     it.effect("acquireRelease", () =>
@@ -264,7 +346,7 @@ describe("Channel", () => {
         ).pipe(Channel.runDrain, Effect.exit)
         assert.deepStrictEqual(
           result,
-          Exit.failCause(Cause.combine(Cause.fail("usage failure"), Cause.die("release failure")))
+          Exit.failCause(Cause.combine(Cause.die("usage failure"), Cause.die("release failure")))
         )
       }))
 
@@ -409,6 +491,25 @@ describe("Channel", () => {
           Channel.runCollect
         )
         assert.strictEqual(result.flat().join(""), "a🌍b")
+      }))
+
+    it.effect("decodeText decodes a truncated character at the end of the input", () =>
+      Effect.gen(function*() {
+        const result = yield* Channel.fromArray([[Uint8Array.of(0xC3)]] as const).pipe(
+          Channel.pipeTo(Channel.decodeText()),
+          Channel.runCollect
+        )
+        assert.strictEqual(result.flat().join(""), "\uFFFD")
+      }))
+
+    it.effect("decodeText dies on a truncated final character with fatal enabled", () =>
+      Effect.gen(function*() {
+        const exit = yield* Channel.fromArray([[Uint8Array.of(0xC3)]] as const).pipe(
+          Channel.pipeTo(Channel.decodeText(undefined, { fatal: true })),
+          Channel.runCollect,
+          Effect.exit
+        )
+        assert.isTrue(Exit.hasDies(exit))
       }))
   })
 
@@ -724,6 +825,80 @@ describe("Channel", () => {
           Channel.runCollect
         )
         assert.deepStrictEqual(result, ["fallback: RateLimitError"])
+      }))
+  })
+
+  describe("typed recovery with mixed causes", () => {
+    class MixedError extends Data.TaggedError("MixedError") {}
+    const error = new MixedError()
+    const defect = new Error("boom")
+    const recovered = Channel.succeed("recovered")
+    const failOnce = (self: Channel.Channel<never, MixedError, never>) => {
+      let attempts = 0
+      return Channel.suspend(() => attempts++ === 0 ? self : Channel.succeed("retried"))
+    }
+    const recoveries: Record<
+      string,
+      (self: Channel.Channel<never, MixedError, never>) => Channel.Channel<unknown, unknown, unknown>
+    > = {
+      catch: (self) => Channel.catch(self, () => recovered),
+      catchTag: (self) => Channel.catchTag(self, "MixedError", () => recovered),
+      catchIf: (self) => Channel.catchIf(self, () => true, () => recovered),
+      catchFilter: (self) => Channel.catchFilter(self, Result.succeed, () => recovered),
+      ignore: (self) => Channel.ignore(self),
+      retry: (self) => Channel.retry(failOnce(self), Schedule.recurs(1))
+    }
+    const failWith = (...reasons: Array<Cause.Reason<MixedError>>) => Channel.failCause(Cause.fromReasons(reasons))
+    const reasonsOf = (exit: Exit.Exit<unknown, unknown>) =>
+      Exit.isSuccess(exit) ? exit : exit.cause.reasons.map((reason) =>
+        reason._tag === "Fail"
+          ? ["Fail", reason.error]
+          : reason._tag === "Die"
+          ? ["Die", reason.defect]
+          : ["Interrupt", reason.fiberId]
+      )
+
+    it.effect("defects take precedence over typed errors", () =>
+      Effect.gen(function*() {
+        for (const [name, recover] of Object.entries({ ...recoveries, orDie: Channel.orDie })) {
+          const failAndDie = yield* recover(failWith(Cause.makeFailReason(error), Cause.makeDieReason(defect))).pipe(
+            Channel.runDrain,
+            Effect.exit
+          )
+          assert.deepStrictEqual(reasonsOf(failAndDie), [["Die", error], ["Die", defect]], name)
+
+          const failInterruptAndDie = yield* recover(failWith(
+            Cause.makeFailReason(error),
+            Cause.makeInterruptReason(1),
+            Cause.makeDieReason(defect)
+          )).pipe(Channel.runDrain, Effect.exit)
+          assert.deepStrictEqual(
+            reasonsOf(failInterruptAndDie),
+            [["Die", error], ["Interrupt", 1], ["Die", defect]],
+            name
+          )
+        }
+      }))
+
+    it.effect("interrupts beside a typed error do not block recovery", () =>
+      Effect.gen(function*() {
+        for (const [name, recover] of Object.entries(recoveries)) {
+          const exit = yield* recover(failWith(Cause.makeFailReason(error), Cause.makeInterruptReason(1))).pipe(
+            Channel.runDrain,
+            Effect.exit
+          )
+          assert.isTrue(Exit.isSuccess(exit), name)
+        }
+      }))
+
+    it.effect("error mapping keeps defects and interrupts", () =>
+      Effect.gen(function*() {
+        const exit = yield* failWith(
+          Cause.makeFailReason(error),
+          Cause.makeInterruptReason(1),
+          Cause.makeDieReason(defect)
+        ).pipe(Channel.mapError(() => "mapped"), Channel.runDrain, Effect.exit)
+        assert.deepStrictEqual(reasonsOf(exit), [["Fail", "mapped"], ["Interrupt", 1], ["Die", defect]])
       }))
   })
 

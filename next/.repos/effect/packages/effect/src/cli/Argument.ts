@@ -405,6 +405,11 @@ export const withFallbackConfig: {
 /**
  * Adds a fallback prompt that is shown when a required argument is missing.
  *
+ * **Gotchas**
+ *
+ * When `TerminalCapabilities.canPrompt` is `false`, the prompt is skipped and
+ * the original `MissingArgument` error is returned.
+ *
  * **Example** (Showing a fallback prompt)
  *
  * ```ts import.meta.vitest
@@ -501,6 +506,7 @@ export const map: {
  *   Layer.succeed(Terminal.Terminal, Terminal.make({
  *     columns: Effect.succeed(80),
  *     rows: Effect.succeed(24),
+ *     size: Effect.die("unused"),
  *     readInput: Effect.die("unused"),
  *     readLine: Effect.die("unused"),
  *     display: () => Effect.void
@@ -564,6 +570,7 @@ export const mapEffect: {
  *   Layer.succeed(Terminal.Terminal, Terminal.make({
  *     columns: Effect.succeed(80),
  *     rows: Effect.succeed(24),
+ *     size: Effect.die("unused"),
  *     readInput: Effect.die("unused"),
  *     readLine: Effect.die("unused"),
  *     display: () => Effect.void

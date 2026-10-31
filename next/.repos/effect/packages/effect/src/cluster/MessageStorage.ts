@@ -119,6 +119,13 @@ export class MessageStorage extends Context.Service<MessageStorage, {
 
   /**
    * For locally sent messages, register a handler to process the replies.
+   *
+   * **Details**
+   *
+   * The handler must be registered as soon as the effect starts, before it
+   * first suspends. Callers fork it with `startImmediately` before saving or
+   * notifying the request, and rely on it to see every reply saved after that
+   * point. The effect completes when a `WithExit` reply arrives.
    */
   readonly registerReplyHandler: <R extends Rpc.Any>(
     message: Message.OutgoingRequest<R> | Message.IncomingRequest<R>
@@ -126,8 +133,15 @@ export class MessageStorage extends Context.Service<MessageStorage, {
 
   /**
    * Unregister the reply handler for the specified message.
+   *
+   * By default the waiters are resumed with `EntityNotAssignedToRunner`. With
+   * `interrupt: true` they are interrupted with a cluster-abandon annotation
+   * instead, for when the request will not be served by this runner.
    */
-  readonly unregisterReplyHandler: (requestId: Snowflake.Snowflake) => Effect.Effect<void>
+  readonly unregisterReplyHandler: (
+    requestId: Snowflake.Snowflake,
+    options?: { readonly interrupt?: boolean | undefined }
+  ) => Effect.Effect<void>
 
   /**
    * Unregister the reply handlers for the specified ShardId.
@@ -207,7 +221,12 @@ export class MessageStorage extends Context.Service<MessageStorage, {
   ) => Effect.Effect<void, PersistenceError>
 
   /**
-   * Used to wrap requests with transactions.
+   * Wraps requests in storage transactions.
+   *
+   * `WithExit` replies saved in a transaction notify callers after the outermost
+   * commit; stream chunks notify immediately. Replies saved in a failed
+   * transaction must be discarded. The wrapper may fail only with the wrapped
+   * effect's own failure or a defect.
    */
   readonly withTransaction: <A, E, R>(
     effect: Effect.Effect<A, E, R>
@@ -513,6 +532,10 @@ export type EncodedRepliesOptions<A> = {
   readonly cursor: Option.Option<A>
 }
 
+const TransactionNotifications = Context.Reference<
+  Array<Effect.Effect<void, PersistenceError | MalformedMessage>> | undefined
+>("effect/cluster/MessageStorage/TransactionNotifications", { defaultValue: () => undefined })
+
 /**
  * Wraps a concrete message storage implementation with reply-handler management.
  *
@@ -553,8 +576,30 @@ export const make = (
     }
     const replyHandlers = new Map<Snowflake.Snowflake, Array<ReplyHandler>>()
     const replyHandlersShard = new Map<string, Set<ReplyHandler>>()
+    const resumeUnregistered = (handler: ReplyHandler, options?: { readonly interrupt?: boolean | undefined }) =>
+      handler.resume(
+        options?.interrupt ? ClusterAbandon.interrupt : Effect.fail(
+          new EntityNotAssignedToRunner({
+            address: handler.message.envelope.address
+          })
+        )
+      )
     return MessageStorage.of({
       ...storage,
+      // Nested transactions defer notifications to the outermost commit.
+      withTransaction: (effect) =>
+        TransactionNotifications.use((outer) => {
+          const notifications: Array<Effect.Effect<void, PersistenceError | MalformedMessage>> = []
+          return storage.withTransaction(Effect.provideService(effect, TransactionNotifications, notifications)).pipe(
+            Effect.tap(() =>
+              outer
+                ? Effect.sync(() => {
+                  outer.push(...notifications)
+                })
+                : Effect.orDie(Effect.forEach(notifications, identity, { discard: true }))
+            )
+          )
+        }),
       registerReplyHandler: (message) => {
         const requestId = message.envelope.requestId
         return Effect.callback<void, EntityNotAssignedToRunner>((resume) => {
@@ -584,7 +629,7 @@ export const make = (
           })
         })
       },
-      unregisterReplyHandler: (requestId) =>
+      unregisterReplyHandler: (requestId, options) =>
         Effect.sync(() => {
           const handlers = replyHandlers.get(requestId)
           if (!handlers) return
@@ -592,11 +637,7 @@ export const make = (
           for (let i = 0; i < handlers.length; i++) {
             const handler = handlers[i]
             handler.shardSet.delete(handler)
-            handler.resume(Effect.fail(
-              new EntityNotAssignedToRunner({
-                address: handler.message.envelope.address
-              })
-            ))
+            resumeUnregistered(handler, options)
           }
         }),
       unregisterShardReplyHandlers: (shardId, options) =>
@@ -607,32 +648,34 @@ export const make = (
           replyHandlersShard.delete(id)
           shardSet.forEach((handler) => {
             replyHandlers.delete(handler.message.envelope.requestId)
-            handler.resume(
-              options?.interrupt ? ClusterAbandon.interrupt : Effect.fail(
-                new EntityNotAssignedToRunner({
-                  address: handler.message.envelope.address
-                })
-              )
-            )
+            resumeUnregistered(handler, options)
           })
         }),
       saveReply(reply) {
         const requestId = reply.reply.requestId
         return Effect.flatMap(storage.saveReply(reply), (persisted) => {
-          const handlers = replyHandlers.get(requestId)
-          if (!handlers) {
-            return Effect.void
-          } else if (persisted.reply._tag === "WithExit") {
-            replyHandlers.delete(requestId)
-            for (let i = 0; i < handlers.length; i++) {
-              const handler = handlers[i]
-              handler.shardSet.delete(handler)
-              handler.resume(Effect.void)
+          const notify = Effect.suspend(() => {
+            const handlers = replyHandlers.get(requestId)
+            if (!handlers) {
+              return Effect.void
+            } else if (persisted.reply._tag === "WithExit") {
+              replyHandlers.delete(requestId)
+              for (let i = 0; i < handlers.length; i++) {
+                const handler = handlers[i]
+                handler.shardSet.delete(handler)
+                handler.resume(Effect.void)
+              }
             }
-          }
-          return handlers.length === 1
-            ? handlers[0].respond(persisted)
-            : Effect.forEach(handlers, (handler) => handler.respond(persisted))
+            return handlers.length === 1
+              ? handlers[0].respond(persisted)
+              : Effect.forEach(handlers, (handler) => handler.respond(persisted), { discard: true })
+          })
+          if (persisted.reply._tag !== "WithExit") return notify
+          return TransactionNotifications.use((notifications) =>
+            notifications === undefined ? notify : Effect.sync(() => {
+              notifications.push(notify)
+            })
+          )
         })
       }
     })
@@ -1055,8 +1098,8 @@ export class MemoryDriver extends Context.Service<MemoryDriver>()("effect/cluste
           journal.push(envelope)
           return SaveResultEncoded.Success()
         }),
-      saveReply: (reply_) =>
-        Effect.sync(() => {
+      saveReply: (reply_) => {
+        const save = Effect.sync(() => {
           const reply = JSON.parse(JSON.stringify(reply_)) as Reply.Encoded
           const entry = requests.get(reply.requestId)
           if (!entry || replyIds.has(reply.id)) return
@@ -1067,7 +1110,18 @@ export class MemoryDriver extends Context.Service<MemoryDriver>()("effect/cluste
           entry.replies.push(reply)
           replyIds.add(reply.id)
           replyLatch.openUnsafe()
-        }),
+        })
+        // Memory has no transaction isolation. Publish terminal replies at the
+        // outer commit boundary, before their queued handler notifications, so
+        // reply readers cannot deliver a success that may still be rolled back.
+        return TransactionNotifications.use((notifications) =>
+          reply_._tag === "WithExit" && notifications
+            ? Effect.sync(() => {
+              notifications.push(save)
+            })
+            : save
+        )
+      },
       clearReplies: (id, options) =>
         Effect.sync(() => {
           const entry = requests.get(String(id))

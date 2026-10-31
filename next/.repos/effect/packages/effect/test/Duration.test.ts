@@ -8,7 +8,7 @@ import {
   strictEqual,
   throws
 } from "@effect/vitest/utils"
-import { Duration, Equal, Hash, HashSet, pipe } from "effect"
+import { Duration, Equal, Hash, HashSet, Option, pipe } from "effect"
 
 describe("Duration", () => {
   it("fromInputUnsafe", () => {
@@ -111,6 +111,41 @@ describe("Duration", () => {
         Duration.sum(Duration.minutes(30), Duration.seconds(15))
       )
     )
+  })
+
+  it("fromInputUnsafe preserves nanoseconds in large decimal second strings", () => {
+    strictEqual(
+      Duration.toNanosUnsafe(Duration.fromInputUnsafe("17280000.000000001 seconds")),
+      17_280_000_000_000_001n
+    )
+    strictEqual(
+      Duration.toNanosUnsafe(Duration.fromInputUnsafe("-17280000.000000001 seconds")),
+      -17_280_000_000_000_001n
+    )
+  })
+
+  it.each([1, -1])("converts large finite millisecond strings without overflow (sign %s)", (sign) => {
+    const input = `${sign < 0 ? "-" : ""}1${"0".repeat(302)}1 millis` as Duration.Input
+    assertTrue(Duration.isFinite(Duration.fromInputUnsafe(input)))
+    deepStrictEqual([Duration.toMillis(input), Duration.toSeconds(input)], [sign * 1e303, sign * 1e300])
+  })
+
+  it("fromInputUnsafe preserves integer nanoseconds in large tuple and object inputs", () => {
+    deepStrictEqual(Duration.fromInputUnsafe([10_368_000, 123_456_789]), Duration.nanos(10_368_000_123_456_789n))
+    deepStrictEqual(Duration.fromInputUnsafe({ days: 200, nanoseconds: 1 }), Duration.nanos(17_280_000_000_000_001n))
+    deepStrictEqual(
+      Duration.fromInputUnsafe({ days: 200_000_000, milliseconds: 1, nanoseconds: 1 }),
+      Duration.nanos(17_280_000_000_000_001_000_001n)
+    )
+    deepStrictEqual(
+      Duration.fromInputUnsafe({ days: 200_000_000, milliseconds: 1 }),
+      Duration.nanos(17_280_000_000_000_001_000_000n)
+    )
+  })
+
+  it("fromInputUnsafe normalizes infinite nanosecond totals", () => {
+    deepStrictEqual(Duration.fromInputUnsafe([1e300, 1]), Duration.infinity)
+    deepStrictEqual(Duration.fromInputUnsafe({ seconds: -Infinity, nanoseconds: 1 }), Duration.negativeInfinity)
   })
 
   it("fromInput", () => {
@@ -240,6 +275,7 @@ describe("Duration", () => {
     assertFalse(Equal.equals(Duration.infinity, Duration.negativeInfinity))
 
     assertTrue(HashSet.has(HashSet.make(millisTagged), nanosTagged))
+    assertTrue(Equal.equals(Duration.millis(2 ** 1023), Duration.nanos(1_000_000n << 1023n)))
   })
 
   it("Hash.symbol handles finite millis too large to convert to nanos", () => {
@@ -345,6 +381,18 @@ describe("Duration", () => {
   it("times", () => {
     deepStrictEqual(Duration.times(Duration.seconds(1), 60), Duration.minutes(1))
     deepStrictEqual(Duration.times(Duration.nanos(2n), 10), Duration.nanos(20n))
+    deepStrictEqual(Duration.times(Duration.nanos(3n), 1.5), Duration.nanos(5n))
+    deepStrictEqual(
+      Duration.times(Duration.nanos(5_000_000n), 0.0000003),
+      Duration.times(Duration.millis(5), 0.0000003)
+    )
+    deepStrictEqual(Duration.times(Duration.nanos(3n), -0.5), Duration.nanos(-2n))
+    deepStrictEqual(Duration.times(Duration.nanos(9007199254740993n), 0.5), Duration.nanos(4503599627370497n))
+    deepStrictEqual(Duration.times(Duration.nanos(9007199254740991n), 1.5), Duration.nanos(13510798882111487n))
+    deepStrictEqual(Duration.times(Duration.nanos(3002399751580334n), 1.5), Duration.nanos(4503599627370501n))
+    deepStrictEqual(Duration.times(Duration.nanos(10n ** 400n), 0.5), Duration.nanos(10n ** 400n / 2n))
+    deepStrictEqual(Duration.times(Duration.nanos(1n), Infinity), Duration.infinity)
+    deepStrictEqual(Duration.times(Duration.nanos(1n), NaN), Duration.zero)
     deepStrictEqual(Duration.times(Duration.infinity, 60), Duration.infinity)
   })
 
@@ -458,6 +506,89 @@ describe("Duration", () => {
     strictEqual(Duration.format(Duration.zero), `0`)
   })
 
+  describe("ISO 8601", () => {
+    it("formatIso", () => {
+      assertSome(Duration.formatIso(Duration.zero), "PT0S")
+      assertSome(Duration.formatIso(Duration.millis(-0)), "PT0S")
+      assertSome(Duration.formatIso(Duration.weeks(1)), "P7D")
+      assertSome(Duration.formatIso(Duration.hours(26)), "P1DT2H")
+      assertSome(Duration.formatIso(Duration.minutes(90)), "PT1H30M")
+      assertSome(Duration.formatIso(Duration.millis(1500)), "PT1.5S")
+      assertSome(Duration.formatIso(Duration.millis(86_400_001)), "P1DT0.001S")
+      assertSome(Duration.formatIso(Duration.nanos(1n)), "PT0.000000001S")
+      assertSome(Duration.formatIso(Duration.millis(-93_784_500)), "-P1DT2H3M4.5S")
+      assertNone(Duration.formatIso(Duration.infinity))
+      assertNone(Duration.formatIso(Duration.negativeInfinity))
+    })
+
+    it("fromIso", () => {
+      const valid: ReadonlyArray<readonly [string, Duration.Duration]> = [
+        ["PT0S", Duration.zero],
+        ["P0D", Duration.zero],
+        ["-PT0S", Duration.zero],
+        ["+P1D", Duration.days(1)],
+        ["-P1D", Duration.days(-1)],
+        ["P1W2D", Duration.days(9)],
+        ["PT1.5H", Duration.minutes(90)],
+        ["PT1H0.5M", Duration.seconds(3630)],
+        ["PT1,5S", Duration.millis(1500)],
+        ["PT1.123456789S", Duration.nanos(1_123_456_789n)],
+        ["-P1DT2H3M4.5S", Duration.millis(-93_784_500)],
+        ["P400D", Duration.days(400)]
+      ]
+      for (const [input, expected] of valid) {
+        const result = Duration.fromIso(input)
+        assertTrue(Option.isSome(result) && Duration.equals(result.value, expected), input)
+      }
+      const invalid = [
+        "",
+        "P",
+        "PT",
+        "-P",
+        "P1DT",
+        "P1.5D",
+        "P1.5W",
+        "PT1.5H1M",
+        "PT.5S",
+        "PT1.S",
+        "PT1.1234567891S",
+        "P1D1W",
+        "PT1S1M",
+        "P-1D",
+        " P1D",
+        "pt1s",
+        "P1Y",
+        "P1M",
+        "P1MT1H",
+        "-P1M"
+      ]
+      for (const input of invalid) {
+        assertNone(Duration.fromIso(input))
+      }
+      deepStrictEqual(Duration.fromIso("PT1.5S"), Option.some(Duration.millis(1500)))
+      deepStrictEqual(Duration.fromIso("PT0.000000001S"), Option.some(Duration.nanos(1n)))
+      deepStrictEqual(
+        Duration.fromIso("PT9007199254740.993S"),
+        Option.some(Duration.nanos(9_007_199_254_740_993_000_000n))
+      )
+    })
+
+    it("formatIso / fromIso round trip", () => {
+      const durations = [
+        Duration.nanos(1n),
+        Duration.millis(0.5),
+        Duration.minutes(90),
+        Duration.days(400),
+        Duration.millis(-1500),
+        Duration.nanos(123_456_789_012_345_678n)
+      ]
+      for (const duration of durations) {
+        const result = Duration.formatIso(duration).pipe(Option.flatMap(Duration.fromIso))
+        assertTrue(Option.isSome(result) && Duration.equals(result.value, duration), String(duration))
+      }
+    })
+  })
+
   it("parts", () => {
     deepStrictEqual(Duration.parts(Duration.infinity), {
       days: Infinity,
@@ -520,6 +651,12 @@ describe("Duration", () => {
     assertFalse(Equal.equals(Duration.weeks(1), Duration.days(1)))
   })
 
+  it("toMicros", () => {
+    strictEqual(Duration.millis(1).pipe(Duration.toMicros), 1000)
+    strictEqual(Duration.nanos(1n).pipe(Duration.toMicros), 0.001)
+    strictEqual(Duration.infinity.pipe(Duration.toMicros), Infinity)
+  })
+
   it("toMillis", () => {
     strictEqual(Duration.millis(1).pipe(Duration.toMillis), 1)
     strictEqual(Duration.nanos(1n).pipe(Duration.toMillis), 0.000001)
@@ -547,6 +684,8 @@ describe("Duration", () => {
     strictEqual(Duration.millis(0.0000015).pipe(Duration.toNanosUnsafe), 2n)
     strictEqual(Duration.millis(-0.0000015).pipe(Duration.toNanosUnsafe), -2n)
     strictEqual(Duration.millis(100).pipe(Duration.toNanosUnsafe), 100_000_000n)
+    strictEqual(Duration.millis(2 ** 1023).pipe(Duration.toNanosUnsafe), 1_000_000n << 1023n)
+    strictEqual(Duration.millis(1_760_450_000_123).pipe(Duration.toNanosUnsafe), 1_760_450_000_123_000_000n)
   })
 
   it("toHrTime", () => {

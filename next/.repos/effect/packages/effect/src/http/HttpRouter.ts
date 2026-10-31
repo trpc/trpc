@@ -24,6 +24,7 @@ import * as Scope from "../Scope.ts"
 import * as Tracer from "../Tracer.ts"
 import type * as Types from "../Types.ts"
 import * as FindMyWay from "./FindMyWay.ts"
+import { getClosingParenthensePosition, getMaxParamLengthExceeded } from "./FindMyWay/internal/router.ts"
 import * as HttpEffect from "./HttpEffect.ts"
 import * as HttpIncomingMessage from "./HttpIncomingMessage.ts"
 import type * as HttpMethod from "./HttpMethod.ts"
@@ -123,7 +124,12 @@ export const HttpRouter: Context.Service<HttpRouter, HttpRouter> = Context.Servi
  * @since 4.0.0
  */
 export const make = Effect.gen(function*() {
-  const router = FindMyWay.make<Route<any, never>>(yield* RouterConfig)
+  const config = yield* RouterConfig
+  const ignoreDuplicateSlashes = config.ignoreDuplicateSlashes ?? true
+  const router = FindMyWay.make<{
+    readonly route: Route<any, never>
+    readonly prefixSegments: number | undefined
+  }>(config)
   const middleware = new Set<middleware.Fn>()
 
   const addAll = <const Routes extends ReadonlyArray<Route<any, any>>>(
@@ -147,19 +153,25 @@ export const make = Effect.gen(function*() {
           ...routes[i],
           handler: applyMiddleware(routes[i].handler as Effect.Effect<HttpServerResponse.HttpServerResponse>)
         })
+        const handler = {
+          route: route as Route<any, never>,
+          prefixSegments: Option.isSome(route.prefix)
+            ? countSegments(route.prefix.value, ignoreDuplicateSlashes)
+            : undefined
+        }
         if (route.method === "*") {
           if (route.path.endsWith("/*")) {
-            router.all(route.path, route as any)
-            router.all(route.path.slice(0, -2) as any, route as any)
+            router.all(route.path, handler)
+            router.all(route.path.slice(0, -2) as any, handler)
           } else {
-            router.all(route.path, route as any)
+            router.all(route.path, handler)
           }
         } else {
           if (route.path.endsWith("/*")) {
-            router.on(route.method, route.path, route as any)
-            router.on(route.method, route.path.slice(0, -2) as any, route as any)
+            router.on(route.method, route.path, handler)
+            router.on(route.method, route.path.slice(0, -2) as any, handler)
           } else {
-            router.on(route.method, route.path, route as any)
+            router.on(route.method, route.path, handler)
           }
         }
       }
@@ -201,22 +213,28 @@ export const make = Effect.gen(function*() {
         let context = fiber.context
         const request = Context.getUnsafe(context, HttpServerRequest.HttpServerRequest)
         let result = router.find(request.method, request.url)
+        let paramLimit = result === undefined ? getMaxParamLengthExceeded(router) : undefined
         if (result === undefined && request.method === "HEAD") {
           result = router.find("GET", request.url)
+          paramLimit ??= getMaxParamLengthExceeded(router)
         }
         if (result === undefined) {
           return Effect.fail(
             new HttpServerError.HttpServerError({
-              reason: new HttpServerError.RouteNotFound({ request })
+              reason: new HttpServerError.RouteNotFound(
+                paramLimit === undefined
+                  ? { request }
+                  : { request, description: `path parameter is longer than maxParamLength (${paramLimit})` }
+              )
             })
           )
         }
-        const route = result.handler
-        if (Option.isSome(route.prefix)) {
+        const { route, prefixSegments } = result.handler
+        if (prefixSegments !== undefined) {
           context = Context.add(
             context,
             HttpServerRequest.HttpServerRequest,
-            sliceRequestUrl(request, route.prefix.value)
+            sliceRequestUrl(request, prefixSegments, ignoreDuplicateSlashes)
           )
         }
         context = Context.add(context, HttpServerRequest.ParsedSearchParams, result.searchParams)
@@ -251,9 +269,45 @@ export const make = Effect.gen(function*() {
   })
 })
 
-function sliceRequestUrl(request: HttpServerRequest.HttpServerRequest, prefix: string) {
-  const prefexLen = prefix.length
-  return request.modify({ url: request.url.length <= prefexLen ? "/" : request.url.slice(prefexLen) })
+function sliceRequestUrl(
+  request: HttpServerRequest.HttpServerRequest,
+  prefixSegments: number,
+  ignoreDuplicateSlashes: boolean
+) {
+  const url = request.url
+  let index = 0
+  for (let segments = prefixSegments; segments > 0; segments--) {
+    if (ignoreDuplicateSlashes) {
+      while (url[index] === "/") index++
+    } else if (url[index] === "/") {
+      index++
+    }
+    while (index < url.length && !"/?;#".includes(url[index])) index++
+  }
+  const rest = url.slice(index)
+  return request.modify({ url: rest.startsWith("/") ? rest : "/" + rest })
+}
+
+function countSegments(prefix: string, ignoreDuplicateSlashes: boolean) {
+  let count = 0
+  let inParamName = false
+  for (let i = 0; i < prefix.length; i++) {
+    const char = prefix[i]
+    if (char === "/") {
+      if (!ignoreDuplicateSlashes || prefix[i - 1] !== "/") count++
+      inParamName = false
+    } else if (char === ":") {
+      if (prefix[i + 1] === ":") i++
+      else inParamName = true
+    } else if (char === "-" || char === ".") {
+      inParamName = false
+    } else if (char === "(" && inParamName) {
+      // Slashes inside parameter regexes are not segment boundaries.
+      i = getClosingParenthensePosition(prefix, i)
+      inParamName = false
+    }
+  }
+  return count
 }
 
 /**
@@ -1359,6 +1413,41 @@ export const serve = <A, E, R, HE, HR = Request.Only<"Requires", R> | Request.On
  * asynchronous work while building may still be in progress when the first
  * request arrives, in which case that request waits for the build to finish.
  * If the build fails, every request rejects with the build error.
+ *
+ * **Gotchas**
+ *
+ * On Cloudflare Workers, build the handler at module scope: fibers started
+ * inside `fetch` capture that request's async context. Layer construction
+ * must not require request-time I/O; bindings are available from
+ * `cloudflare:workers` via its `env` export.
+ * Prefer request-local work or a Durable Object's supported lifecycle APIs,
+ * not indefinite background execution. For shared fibers, provide a sync
+ * scheduler to both layers and requests as below; see `Scheduler.MixedScheduler`
+ * for its limitations. Bound waits for shared work with request-local timeouts.
+ *
+ * **Example** (Opting in to the sync scheduler on Workers)
+ *
+ * ```ts
+ * import { Effect, Layer, Scheduler } from "effect"
+ * import { HttpRouter, HttpServer, HttpServerResponse } from "effect/http"
+ *
+ * const SyncScheduler = Layer.succeed(
+ *   Scheduler.Scheduler,
+ *   new Scheduler.MixedScheduler("sync")
+ * )
+ * const AppLive = HttpRouter.add(
+ *   "GET",
+ *   "/ping",
+ *   Effect.succeed(HttpServerResponse.text("pong"))
+ * ).pipe(Layer.provide(HttpServer.layerServices))
+ *
+ * // Build once at module scope. The scheduler is also retained for requests.
+ * const app = HttpRouter.toWebHandler(
+ *   AppLive.pipe(Layer.provideMerge(SyncScheduler))
+ * )
+ *
+ * export default { fetch: (request: Request) => app.handler(request) }
+ * ```
  *
  * @stability unstable
  * @category converting

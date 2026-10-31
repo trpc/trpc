@@ -7,6 +7,8 @@
 import * as Schema from "effect/Schema"
 import * as Generated from "./Generated.ts"
 
+const Entry = Schema.Union([Schema.String, Schema.JsonObject, Schema.Array(Schema.Json)])
+
 /**
  * A choice question with descriptions keyed by choice label.
  *
@@ -16,8 +18,8 @@ import * as Generated from "./Generated.ts"
  */
 export const ChoiceQuestion = Schema.Struct({
   type: Schema.Literal("choice"),
-  instructions: Schema.String,
-  criteria: Schema.Record(Schema.String, Schema.String)
+  instructions: Entry,
+  criteria: Schema.Record(Schema.String, Schema.NullOr(Entry))
 })
 
 /**
@@ -29,8 +31,8 @@ export const ChoiceQuestion = Schema.Struct({
  */
 export const ScoreQuestion = Schema.Struct({
   type: Schema.Literal("score"),
-  instructions: Schema.String,
-  criteria: Schema.Array(Schema.String)
+  instructions: Entry,
+  criteria: Schema.Array(Entry)
 })
 
 /**
@@ -42,12 +44,13 @@ export const ScoreQuestion = Schema.Struct({
  */
 export const NoulQuestion = Schema.Struct({
   type: Schema.Literal("noul"),
-  instructions: Schema.String,
-  criteria: Schema.optional(Schema.Struct({ true: Schema.String, false: Schema.String }))
+  instructions: Entry,
+  criteria: Schema.optional(Schema.Struct({ true: Entry, false: Entry }))
 })
 
 /**
- * A choice, ordered score, or probability question.
+ * A choice, score, or probability question with string, JSON object, or JSON array
+ * instructions and descriptions. Choice descriptions also accept `null`.
  *
  * @stability unstable
  * @category schemas
@@ -78,7 +81,7 @@ export const Answer = Schema.Union([
     score: Schema.Finite,
     confidence: Schema.optional(Schema.Finite),
     probabilities: Schema.optional(Schema.Record(Schema.String, Schema.Finite)),
-    legend: Schema.optional(Schema.Record(Schema.String, Schema.String))
+    legend: Schema.optional(Schema.Record(Schema.String, Schema.Json))
   }),
   Schema.Struct({ type: Schema.Literal("noul"), noul: Schema.Finite })
 ])

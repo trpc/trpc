@@ -83,6 +83,53 @@ describe("AnthropicLanguageModel", () => {
         assert.strictEqual(span.attributes.get("gen_ai.usage.output_tokens"), 5)
       }))
 
+    it.effect("accepts minimal usage and preserves input and cache tokens omitted from message_delta", () =>
+      Effect.gen(function*() {
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(sseResponse(request, [
+                {
+                  type: "message_start",
+                  message: {
+                    id: "msg_test_1",
+                    type: "message",
+                    role: "assistant",
+                    model: "claude-sonnet-4-20250514",
+                    content: [],
+                    stop_reason: null,
+                    stop_sequence: null,
+                    usage: {
+                      cache_creation_input_tokens: 20,
+                      cache_read_input_tokens: 30,
+                      input_tokens: 10,
+                      output_tokens: 1
+                    }
+                  }
+                },
+                {
+                  type: "message_delta",
+                  delta: { stop_reason: "end_turn", stop_sequence: null },
+                  usage: { output_tokens: 5 }
+                },
+                { type: "message_stop" }
+              ]))
+            )
+          ))
+        )
+
+        const parts = yield* LanguageModel.streamText({ prompt: "Hello" }).pipe(
+          Stream.runCollect,
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(layer)
+        )
+        const finish = parts.find((part) => part.type === "finish")
+        assertDefined(finish)
+        assert.deepStrictEqual(finish.usage.inputTokens, { uncached: 10, total: 60, cacheRead: 30, cacheWrite: 20 })
+        assert.strictEqual(finish.usage.outputTokens.total, 5)
+      }))
+
     for (
       const [label, geo] of [
         ["missing", {}],
@@ -147,6 +194,67 @@ describe("AnthropicLanguageModel", () => {
           )
         }))
     }
+
+    it.effect("decodes thinking deltas without the beta token estimate", () =>
+      Effect.gen(function*() {
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(sseResponse(request, [
+                {
+                  type: "message_start",
+                  message: {
+                    id: "msg_test_1",
+                    type: "message",
+                    role: "assistant",
+                    model: "claude-sonnet-4-20250514",
+                    content: [],
+                    stop_reason: null,
+                    stop_sequence: null,
+                    usage: {
+                      cache_creation: null,
+                      cache_creation_input_tokens: null,
+                      cache_read_input_tokens: null,
+                      input_tokens: 10,
+                      output_tokens: 0,
+                      service_tier: null
+                    }
+                  }
+                },
+                {
+                  type: "content_block_start",
+                  index: 0,
+                  content_block: { type: "thinking", thinking: "", signature: "" }
+                },
+                // The documented thinking delta, without `estimated_tokens` from the token-count beta
+                { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "Thinking..." } },
+                { type: "content_block_stop", index: 0 },
+                {
+                  type: "message_delta",
+                  delta: { stop_reason: "end_turn", stop_sequence: null },
+                  usage: {
+                    cache_creation_input_tokens: null,
+                    cache_read_input_tokens: null,
+                    input_tokens: null,
+                    output_tokens: 5
+                  }
+                },
+                { type: "message_stop" }
+              ]))
+            )
+          ))
+        )
+
+        const parts = yield* LanguageModel.streamText({ prompt: "Hello" }).pipe(
+          Stream.runCollect,
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(layer)
+        )
+        assert.isTrue(
+          globalThis.Array.from(parts).some((part) => part.type === "reasoning-delta" && part.delta === "Thinking...")
+        )
+      }))
 
     it.effect("decodes tool call params in content_block_stop", () =>
       Effect.gen(function*() {
@@ -252,6 +360,84 @@ describe("AnthropicLanguageModel", () => {
 
         assert.strictEqual(toolCall.name, "GlobTool")
         assert.deepStrictEqual(toolCall.params, toolParams)
+      }))
+
+    it.effect("streams undeclared tool calls when tool call validation is deferred", () =>
+      Effect.gen(function*() {
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(sseResponse(request, [
+                {
+                  type: "message_start",
+                  message: {
+                    id: "msg_test_1",
+                    type: "message",
+                    role: "assistant",
+                    model: "claude-sonnet-4-20250514",
+                    content: [],
+                    stop_reason: null,
+                    stop_sequence: null,
+                    usage: {
+                      cache_creation: null,
+                      cache_creation_input_tokens: null,
+                      cache_read_input_tokens: null,
+                      inference_geo: null,
+                      input_tokens: 10,
+                      output_tokens: 0,
+                      service_tier: null
+                    }
+                  }
+                },
+                {
+                  type: "content_block_start",
+                  index: 0,
+                  content_block: { type: "tool_use", id: "toolu_test_1", name: "Write", input: {} }
+                },
+                {
+                  type: "content_block_delta",
+                  index: 0,
+                  delta: { type: "input_json_delta", partial_json: JSON.stringify({ path: "a" }) }
+                },
+                { type: "content_block_stop", index: 0 },
+                {
+                  type: "message_delta",
+                  delta: { stop_reason: "tool_use", stop_sequence: null },
+                  usage: {
+                    cache_creation_input_tokens: null,
+                    cache_read_input_tokens: null,
+                    input_tokens: null,
+                    output_tokens: 5
+                  }
+                },
+                { type: "message_stop" }
+              ]))
+            )
+          ))
+        )
+        const Read = Tool.make("Read", {
+          parameters: Schema.Struct({ path: Schema.String }),
+          success: Schema.String
+        })
+        const toolkit = Toolkit.make(Read)
+
+        const parts = yield* LanguageModel.streamText({
+          prompt: "use the tools",
+          toolkit,
+          disableToolCallResolution: true,
+          toolCallValidation: "deferred"
+        }).pipe(
+          Stream.runCollect,
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(toolkit.toLayer({ Read: () => Effect.succeed("") })),
+          Effect.provide(layer)
+        )
+
+        assert.deepStrictEqual(
+          parts.filter((part) => part.type === "tool-call").map(({ name, params }) => ({ name, params })),
+          [{ name: "Write", params: { path: "a" } }]
+        )
       }))
 
     for (const blockType of ["tool_use", "server_tool_use"] as const) {
@@ -660,6 +846,72 @@ describe("AnthropicLanguageModel", () => {
 
         assert.strictEqual(text.delta, "Hello")
       }))
+
+    it.effect("emits response metadata for a fallback block", () =>
+      Effect.gen(function*() {
+        const fallback = {
+          type: "fallback",
+          from: { model: "claude-opus-5-5" },
+          to: { model: "claude-opus-4-8" },
+          trigger: { type: "refusal", category: "cyber" }
+        } as const
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(sseResponse(request, [
+                {
+                  type: "message_start",
+                  message: {
+                    id: "msg_test_1",
+                    type: "message",
+                    role: "assistant",
+                    model: "claude-opus-4-8",
+                    content: [],
+                    stop_reason: null,
+                    stop_sequence: null,
+                    usage: {
+                      cache_creation: null,
+                      cache_creation_input_tokens: null,
+                      cache_read_input_tokens: null,
+                      input_tokens: 10,
+                      output_tokens: 0,
+                      service_tier: null
+                    }
+                  }
+                },
+                { type: "content_block_start", index: 0, content_block: fallback },
+                { type: "content_block_stop", index: 0 },
+                {
+                  type: "message_delta",
+                  delta: { stop_reason: "end_turn", stop_sequence: null },
+                  usage: {
+                    cache_creation_input_tokens: null,
+                    cache_read_input_tokens: null,
+                    input_tokens: null,
+                    output_tokens: 5
+                  }
+                },
+                { type: "message_stop" }
+              ]))
+            )
+          ))
+        )
+
+        const parts = yield* LanguageModel.streamText({ prompt: "Hello" }).pipe(
+          Stream.runCollect,
+          Effect.provide(AnthropicLanguageModel.model("claude-opus-5-5")),
+          Effect.provide(layer)
+        )
+        const metadata = globalThis.Array.from(parts).find((part) =>
+          part.type === "response-metadata" && part.metadata.anthropic?.fallback !== undefined
+        )
+        assert.strictEqual(metadata?.type === "response-metadata" ? metadata.modelId : undefined, "claude-opus-4-8")
+        assert.deepStrictEqual(
+          metadata?.type === "response-metadata" ? metadata.metadata.anthropic?.fallback : undefined,
+          fallback
+        )
+      }))
   })
 
   describe("generateText", () => {
@@ -705,6 +957,140 @@ describe("AnthropicLanguageModel", () => {
           assert.isTrue(response.content.some((part) => part.type === "text" && part.text === "Hello"))
         }))
     }
+
+    it.effect("accepts minimal usage in a message response", () =>
+      Effect.gen(function*() {
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(jsonResponse(request, {
+                id: "msg_test_1",
+                type: "message",
+                role: "assistant",
+                model: "claude-sonnet-4-20250514",
+                content: [{ type: "text", text: "Hello" }],
+                stop_reason: "end_turn",
+                stop_sequence: null,
+                usage: { input_tokens: 3, output_tokens: 1 }
+              }))
+            )
+          ))
+        )
+
+        const response = yield* LanguageModel.generateText({ prompt: "Hello" }).pipe(
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(layer)
+        )
+        assert.deepStrictEqual(response.usage.inputTokens, { uncached: 3, total: 3, cacheRead: 0, cacheWrite: 0 })
+      }))
+
+    it.effect("emits response metadata for a fallback block and keeps fallback usage iterations", () =>
+      Effect.gen(function*() {
+        const fallback = {
+          type: "fallback",
+          from: { model: "claude-opus-5-5" },
+          to: { model: "claude-opus-4-8" },
+          trigger: { type: "refusal", category: "cyber" }
+        } as const
+        const iterations = [
+          {
+            type: "message",
+            model: "claude-opus-5-5",
+            cache_creation: null,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
+            input_tokens: 10,
+            output_tokens: 0
+          },
+          {
+            type: "fallback_message",
+            model: "claude-opus-4-8",
+            cache_creation: null,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
+            input_tokens: 10,
+            output_tokens: 5
+          }
+        ] as const
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(jsonResponse(request, {
+                id: "msg_test_1",
+                type: "message",
+                role: "assistant",
+                model: "claude-opus-4-8",
+                content: [fallback, { type: "text", text: "Hello" }],
+                stop_reason: "end_turn",
+                stop_sequence: null,
+                usage: {
+                  cache_creation: null,
+                  cache_creation_input_tokens: null,
+                  cache_read_input_tokens: null,
+                  input_tokens: 10,
+                  output_tokens: 5,
+                  service_tier: null,
+                  iterations
+                }
+              }))
+            )
+          ))
+        )
+
+        const response = yield* LanguageModel.generateText({ prompt: "Hello" }).pipe(
+          Effect.provide(AnthropicLanguageModel.model("claude-opus-5-5")),
+          Effect.provide(layer)
+        )
+        const metadata = response.content.find((part) =>
+          part.type === "response-metadata" && part.metadata.anthropic?.fallback !== undefined
+        )
+        assert.strictEqual(metadata?.type === "response-metadata" ? metadata.modelId : undefined, "claude-opus-4-8")
+        assert.deepStrictEqual(
+          metadata?.type === "response-metadata" ? metadata.metadata.anthropic?.fallback : undefined,
+          fallback
+        )
+        const finish = response.content.find((part) => part.type === "finish")
+        assert.deepStrictEqual(
+          finish?.type === "finish" ? finish.metadata.anthropic?.usage?.iterations : undefined,
+          iterations
+        )
+      }))
+
+    it.effect("reports length when the model context window is exceeded", () =>
+      Effect.gen(function*() {
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(jsonResponse(request, {
+                id: "msg_test_1",
+                type: "message",
+                role: "assistant",
+                model: "claude-sonnet-4-20250514",
+                content: [{ type: "text", text: "Hello" }],
+                stop_reason: "model_context_window_exceeded",
+                stop_sequence: null,
+                usage: {
+                  cache_creation: null,
+                  cache_creation_input_tokens: null,
+                  cache_read_input_tokens: null,
+                  input_tokens: 10,
+                  output_tokens: 5,
+                  service_tier: null
+                }
+              }))
+            )
+          ))
+        )
+
+        const response = yield* LanguageModel.generateText({ prompt: "Hello" }).pipe(
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(layer)
+        )
+        assert.strictEqual(response.finishReason, "length")
+      }))
 
     it.effect("reports total input tokens and cache usage on the span", () =>
       Effect.gen(function*() {
@@ -880,6 +1266,102 @@ describe("AnthropicLanguageModel", () => {
         assert.strictEqual(toolResult.content, "PLAIN_TEXT_SENTINEL\n")
       }))
 
+    const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII="
+    const pdf = "JVBERi0xLjcK"
+    const modelOutputCases = [
+      {
+        label: "as native content blocks",
+        modelOutput: [
+          Prompt.textPart({ text: "Screenshot of /home" }),
+          Prompt.filePart({ mediaType: "image/png", data: png }),
+          Prompt.filePart({ mediaType: "application/pdf", data: `data:application/pdf;base64,${pdf}` })
+        ],
+        content: [
+          { type: "text", text: "Screenshot of /home" },
+          { type: "image", source: { type: "base64", media_type: "image/png", data: png } },
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf }, title: null }
+        ]
+      },
+      { label: "without the result when it is empty", modelOutput: [], content: "" }
+    ]
+
+    for (const { content, label, modelOutput } of modelOutputCases) {
+      it.effect(`sends tool result model output ${label}`, () =>
+        Effect.gen(function*() {
+          let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+          const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+            Layer.provide(Layer.succeed(
+              HttpClient.HttpClient,
+              makeHttpClient((request) => {
+                capturedRequest = request
+                return Effect.succeed(jsonResponse(request, {
+                  id: "msg_test_1",
+                  type: "message",
+                  role: "assistant",
+                  model: "claude-sonnet-4-20250514",
+                  content: [{ type: "text", text: "Done" }],
+                  stop_reason: "end_turn",
+                  stop_sequence: null,
+                  usage: {
+                    cache_creation: null,
+                    cache_creation_input_tokens: null,
+                    cache_read_input_tokens: null,
+                    inference_geo: null,
+                    input_tokens: 1,
+                    output_tokens: 1,
+                    service_tier: null
+                  }
+                }))
+              })
+            ))
+          )
+
+          yield* LanguageModel.generateText({
+            prompt: Prompt.make([
+              { role: "user", content: "Take a screenshot" },
+              {
+                role: "assistant",
+                content: [Prompt.toolCallPart({
+                  id: "call_screenshot",
+                  name: "screenshot",
+                  params: {},
+                  providerExecuted: false
+                })]
+              },
+              {
+                role: "tool",
+                content: [Prompt.toolResultPart({
+                  id: "call_screenshot",
+                  name: "screenshot",
+                  result: { path: "/home", png },
+                  modelOutput,
+                  isFailure: false,
+                  providerExecuted: false
+                })]
+              }
+            ]),
+            disableToolCallResolution: true
+          }).pipe(
+            Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+            Effect.provide(layer)
+          )
+
+          assert.isDefined(capturedRequest)
+          const body = yield* getRequestBody(capturedRequest)
+          const toolResult = body.messages
+            .flatMap((message: any) => Array.isArray(message.content) ? message.content : [])
+            .find((block: any) => block.type === "tool_result")
+
+          assert.strictEqual(toolResult.tool_use_id, "call_screenshot")
+          assert.deepStrictEqual(
+            Array.isArray(toolResult.content)
+              ? toolResult.content.map(({ cache_control: _, ...block }: any) => block)
+              : toolResult.content,
+            content
+          )
+        }))
+    }
+
     it.effect("preserves base64 image string payloads", () =>
       Effect.gen(function*() {
         const base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII="
@@ -956,13 +1438,9 @@ describe("AnthropicLanguageModel", () => {
         )
 
         const inputSchema = {
-          type: "object",
           properties: {
-            query: { type: "string" },
-            limit: { type: "number" }
-          },
-          required: ["query"],
-          additionalProperties: false
+            query: { type: "string" }
+          }
         } as const
 
         const DynamicTool = Tool.dynamic("DynamicTool", {
@@ -994,6 +1472,24 @@ describe("AnthropicLanguageModel", () => {
 
         assert.strictEqual(dynamicTool.description, "A dynamic tool")
         assert.deepStrictEqual(dynamicTool.input_schema, inputSchema)
+      }))
+
+    it.effect("names the tool when its parameters are not an object schema", () =>
+      Effect.gen(function*() {
+        const error = yield* LanguageModel.generateText({
+          prompt: "Use the tool",
+          toolkit: Toolkit.make(Tool.make("NoParams", { parameters: Schema.Struct({}) })),
+          disableToolCallResolution: true
+        }).pipe(
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") })),
+          Effect.provideService(HttpClient.HttpClient, makeHttpClient(() => Effect.die("unexpected request"))),
+          Effect.flip
+        )
+
+        assert.strictEqual(error.reason._tag, "UnsupportedSchemaError")
+        assert.include(error.message, `"NoParams"`)
+        assert.include(error.message, "Tool.EmptyParams")
       }))
 
     it.effect("serializes provider-executed web_search parts from the assistant message", () =>
@@ -1148,56 +1644,55 @@ describe("AnthropicLanguageModel", () => {
   })
 
   describe("generateObject", () => {
-    const getRequest = (
+    const getRequest = Effect.fnUntraced(function*(
       model: string,
       config?: { readonly structuredOutputs?: boolean | undefined }
-    ) =>
-      Effect.gen(function*() {
-        let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
-        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
-          Layer.provide(Layer.succeed(
-            HttpClient.HttpClient,
-            makeHttpClient((request) => {
-              capturedRequest = request
-              return Effect.succeed(jsonResponse(request, {
-                id: "msg_test_1",
-                type: "message",
-                role: "assistant",
-                model,
-                content: [{ type: "text", text: JSON.stringify({ name: "John", age: 30 }) }],
-                stop_reason: "end_turn",
-                stop_sequence: null,
-                usage: {
-                  cache_creation: null,
-                  cache_creation_input_tokens: null,
-                  cache_read_input_tokens: null,
-                  inference_geo: null,
-                  input_tokens: 10,
-                  output_tokens: 5,
-                  service_tier: null
-                }
-              }))
-            })
-          ))
-        )
+    ) {
+      let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+      const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+        Layer.provide(Layer.succeed(
+          HttpClient.HttpClient,
+          makeHttpClient((request) => {
+            capturedRequest = request
+            return Effect.succeed(jsonResponse(request, {
+              id: "msg_test_1",
+              type: "message",
+              role: "assistant",
+              model,
+              content: [{ type: "text", text: JSON.stringify({ name: "John", age: 30 }) }],
+              stop_reason: "end_turn",
+              stop_sequence: null,
+              usage: {
+                cache_creation: null,
+                cache_creation_input_tokens: null,
+                cache_read_input_tokens: null,
+                inference_geo: null,
+                input_tokens: 10,
+                output_tokens: 5,
+                service_tier: null
+              }
+            }))
+          })
+        ))
+      )
 
-        // Assert the request shape; the response outcome is irrelevant here.
-        yield* LanguageModel.generateObject({
-          prompt: "Give me a person",
-          schema: Schema.Struct({ name: Schema.String, age: Schema.Number })
-        }).pipe(
-          Effect.provide(AnthropicLanguageModel.model(model, config)),
-          Effect.provide(layer),
-          Effect.ignore
-        )
+      // Assert the request shape; the response outcome is irrelevant here.
+      yield* LanguageModel.generateObject({
+        prompt: "Give me a person",
+        schema: Schema.Struct({ name: Schema.String, age: Schema.Number })
+      }).pipe(
+        Effect.provide(AnthropicLanguageModel.model(model, config)),
+        Effect.provide(layer),
+        Effect.ignore
+      )
 
-        assert.isDefined(capturedRequest)
-        if (capturedRequest === undefined) {
-          return yield* Effect.die(new Error("Expected a captured request"))
-        }
+      assert.isDefined(capturedRequest)
+      if (capturedRequest === undefined) {
+        return yield* Effect.die(new Error("Expected a captured request"))
+      }
 
-        return yield* getRequestBody(capturedRequest)
-      })
+      return yield* getRequestBody(capturedRequest)
+    })
 
     it.effect("uses native structured output and 128K for Claude 4.6", () =>
       Effect.gen(function*() {
@@ -1331,50 +1826,49 @@ describe("AnthropicLanguageModel", () => {
   })
 
   describe("system messages", () => {
-    const getRequest = (
+    const getRequest = Effect.fnUntraced(function*(
       model: string,
       prompt: Prompt.RawInput,
       config?: { readonly midConversationSystemMessages?: boolean | undefined }
-    ) =>
-      Effect.gen(function*() {
-        let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
-        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
-          Layer.provide(Layer.succeed(
-            HttpClient.HttpClient,
-            makeHttpClient((request) => {
-              capturedRequest = request
-              return Effect.succeed(jsonResponse(request, {
-                id: "msg_test_1",
-                type: "message",
-                role: "assistant",
-                model,
-                content: [{ type: "text", text: "Done" }],
-                stop_reason: "end_turn",
-                stop_sequence: null,
-                usage: {
-                  cache_creation: null,
-                  cache_creation_input_tokens: null,
-                  cache_read_input_tokens: null,
-                  inference_geo: null,
-                  input_tokens: 1,
-                  output_tokens: 1,
-                  service_tier: null
-                }
-              }))
-            })
-          ))
-        )
+    ) {
+      let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+      const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+        Layer.provide(Layer.succeed(
+          HttpClient.HttpClient,
+          makeHttpClient((request) => {
+            capturedRequest = request
+            return Effect.succeed(jsonResponse(request, {
+              id: "msg_test_1",
+              type: "message",
+              role: "assistant",
+              model,
+              content: [{ type: "text", text: "Done" }],
+              stop_reason: "end_turn",
+              stop_sequence: null,
+              usage: {
+                cache_creation: null,
+                cache_creation_input_tokens: null,
+                cache_read_input_tokens: null,
+                inference_geo: null,
+                input_tokens: 1,
+                output_tokens: 1,
+                service_tier: null
+              }
+            }))
+          })
+        ))
+      )
 
-        yield* LanguageModel.generateText({ prompt, disableToolCallResolution: true }).pipe(
-          Effect.provide(AnthropicLanguageModel.model(model, config)),
-          Effect.provide(layer)
-        )
+      yield* LanguageModel.generateText({ prompt, disableToolCallResolution: true }).pipe(
+        Effect.provide(AnthropicLanguageModel.model(model, config)),
+        Effect.provide(layer)
+      )
 
-        if (capturedRequest === undefined) {
-          return yield* Effect.die(new Error("Expected a captured request"))
-        }
-        return yield* getRequestBody(capturedRequest)
-      })
+      if (capturedRequest === undefined) {
+        return yield* Effect.die(new Error("Expected a captured request"))
+      }
+      return yield* getRequestBody(capturedRequest)
+    })
 
     const conversation = Prompt.make([
       { role: "system", content: "A" },
@@ -1442,6 +1936,154 @@ describe("AnthropicLanguageModel", () => {
         Effect.provide(AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") })),
         Effect.provide(Layer.succeed(HttpClient.HttpClient, makeHttpClient(() => Effect.die("unexpected request"))))
       ))
+  })
+
+  describe("assistant cache control", () => {
+    const ephemeral = { type: "ephemeral" } as const
+    const cached = { anthropic: { cacheControl: ephemeral } }
+
+    const getAssistantContent = Effect.fnUntraced(function*(prompt: Prompt.RawInput) {
+      let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+      const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+        Layer.provide(Layer.succeed(
+          HttpClient.HttpClient,
+          makeHttpClient((request) => {
+            capturedRequest = request
+            return Effect.succeed(jsonResponse(request, {
+              id: "msg_test_1",
+              type: "message",
+              role: "assistant",
+              model: "claude-sonnet-4-20250514",
+              content: [{ type: "text", text: "Done" }],
+              stop_reason: "end_turn",
+              stop_sequence: null,
+              usage: {
+                cache_creation: null,
+                cache_creation_input_tokens: null,
+                cache_read_input_tokens: null,
+                inference_geo: null,
+                input_tokens: 1,
+                output_tokens: 1,
+                service_tier: null
+              }
+            }))
+          })
+        ))
+      )
+
+      yield* LanguageModel.generateText({ prompt, disableToolCallResolution: true }).pipe(
+        Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+        Effect.provide(layer)
+      )
+
+      if (capturedRequest === undefined) {
+        return yield* Effect.die(new Error("Expected a captured request"))
+      }
+      const body = yield* getRequestBody(capturedRequest)
+      return body.messages.find((message: any) => message.role === "assistant").content as Array<any>
+    })
+
+    const thinking = {
+      type: "reasoning",
+      text: "Thinking",
+      options: { anthropic: { info: { type: "thinking", signature: "sig" } } }
+    } as const
+
+    const redactedThinking = {
+      type: "reasoning",
+      text: "",
+      options: { anthropic: { info: { type: "redacted_thinking", redactedData: "hidden" } } }
+    } as const
+
+    it.effect("places part and message breakpoints without overriding a part's TTL", () =>
+      Effect.gen(function*() {
+        const oneHour = { type: "ephemeral", ttl: "1h" } as const
+        const content = yield* getAssistantContent([
+          { role: "user", content: "Question" },
+          {
+            role: "assistant",
+            content: [
+              { type: "text", text: "Answer", options: { anthropic: { cacheControl: oneHour } } },
+              { type: "tool-call", id: "toolu_1", name: "lookup", params: {} },
+              {
+                type: "tool-call",
+                id: "toolu_2",
+                name: "lookup",
+                params: {},
+                options: { anthropic: { cacheControl: oneHour } }
+              }
+            ],
+            options: cached
+          },
+          {
+            role: "assistant",
+            content: [{ type: "tool-call", id: "toolu_3", name: "lookup", params: {} }],
+            options: cached
+          },
+          { role: "user", content: "Thanks" }
+        ])
+
+        assert.deepStrictEqual(content, [
+          { type: "text", text: "Answer", cache_control: oneHour },
+          { type: "tool_use", id: "toolu_1", name: "lookup", input: {} },
+          { type: "tool_use", id: "toolu_2", name: "lookup", input: {}, cache_control: oneHour },
+          { type: "tool_use", id: "toolu_3", name: "lookup", input: {}, cache_control: ephemeral }
+        ])
+      }))
+
+    it.effect("places a message breakpoint before trailing thinking and skipped parts", () =>
+      Effect.gen(function*() {
+        const content = yield* getAssistantContent([
+          { role: "user", content: "Question" },
+          {
+            role: "assistant",
+            content: [
+              { type: "text", text: "Answer" },
+              thinking,
+              redactedThinking,
+              { type: "file", mediaType: "image/png", data: "aGVsbG8=" }
+            ],
+            options: cached
+          },
+          { role: "user", content: "Thanks" }
+        ])
+
+        assert.deepStrictEqual(content, [
+          { type: "text", text: "Answer", cache_control: ephemeral },
+          { type: "thinking", thinking: "Thinking", signature: "sig" },
+          { type: "redacted_thinking", data: "hidden" }
+        ])
+      }))
+
+    it.effect("drops thinking-only breakpoints without marking other parts or messages", () =>
+      Effect.gen(function*() {
+        const content = yield* getAssistantContent([
+          { role: "user", content: "Question" },
+          { role: "assistant", content: "Unmarked" },
+          {
+            role: "assistant",
+            content: [
+              { type: "text", text: "Answer" },
+              { ...thinking, options: { anthropic: { ...thinking.options.anthropic, ...cached.anthropic } } },
+              {
+                ...redactedThinking,
+                options: { anthropic: { ...redactedThinking.options.anthropic, ...cached.anthropic } }
+              }
+            ]
+          },
+          { role: "assistant", content: [thinking, redactedThinking], options: cached },
+          { role: "user", content: "Thanks" }
+        ])
+
+        assert.deepStrictEqual(content, [
+          { type: "text", text: "Unmarked" },
+          { type: "text", text: "Answer" },
+          { type: "thinking", thinking: "Thinking", signature: "sig" },
+          { type: "redacted_thinking", data: "hidden" },
+          { type: "thinking", thinking: "Thinking", signature: "sig" },
+          { type: "redacted_thinking", data: "hidden" }
+        ])
+      }))
   })
 
   // The packaged `Memory_20250818` tool ships `customName: "AnthropicMemory"` /
@@ -1551,6 +2193,115 @@ describe("AnthropicLanguageModel", () => {
       }))
   })
 
+  describe("Text editor tool", () => {
+    it("decodes insert_text for the insert command", () => {
+      const input = { command: "insert", path: "notes.md", insert_line: 0, insert_text: "# Notes\n" } as const
+      const tool = AnthropicTool.TextEditor_20250728({})
+      assert.deepStrictEqual(Schema.decodeUnknownSync(tool.parametersSchema)(input), input)
+    })
+
+    it("decodes new_str for the legacy insert command", () => {
+      const input = { command: "insert", path: "notes.md", insert_line: 0, new_str: "# Notes\n" } as const
+      const tool = AnthropicTool.TextEditor_20250124({})
+      assert.deepStrictEqual(Schema.decodeUnknownSync(tool.parametersSchema)(input), input)
+      assert.deepStrictEqual(Schema.decodeUnknownSync(AnthropicTool.TextEditorInsertCommand)(input), input)
+    })
+  })
+
+  describe("provider tool names", () => {
+    const toolkit = Toolkit.make(
+      AnthropicTool.Memory_20250818({}),
+      AnthropicTool.ComputerUse_20241022({ displayWidthPx: 800, displayHeightPx: 600 })
+    )
+
+    const generate = Effect.fnUntraced(function*(
+      options: Omit<LanguageModel.GenerateTextOptions<typeof toolkit.tools>, "toolkit">,
+      content: ReadonlyArray<unknown> = [{ type: "text", text: "Done" }]
+    ) {
+      let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+      const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+        Layer.provide(Layer.succeed(
+          HttpClient.HttpClient,
+          makeHttpClient((request) => {
+            capturedRequest = request
+            return Effect.succeed(jsonResponse(request, {
+              id: "msg_test_1",
+              type: "message",
+              role: "assistant",
+              model: "claude-sonnet-4-20250514",
+              content,
+              stop_reason: "end_turn",
+              stop_sequence: null,
+              usage: {
+                cache_creation: null,
+                cache_creation_input_tokens: null,
+                cache_read_input_tokens: null,
+                inference_geo: null,
+                input_tokens: 1,
+                output_tokens: 1,
+                service_tier: null
+              }
+            }))
+          })
+        ))
+      )
+
+      const response = yield* LanguageModel.generateText({
+        ...options,
+        toolkit,
+        disableToolCallResolution: true
+      }).pipe(
+        Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+        Effect.provide(layer)
+      )
+
+      assertDefined(capturedRequest)
+      return { body: yield* getRequestBody(capturedRequest), response }
+    })
+
+    it.effect("sends provider names for an explicit tool choice and replayed tool calls", () =>
+      Effect.gen(function*() {
+        const { body } = yield* generate({
+          prompt: Prompt.make([
+            { role: "user", content: "what do you remember?" },
+            {
+              role: "assistant",
+              content: [{
+                type: "tool-call",
+                id: "toolu_mem_1",
+                name: "AnthropicMemory",
+                params: { command: "view", path: "/memories" },
+                providerExecuted: false
+              }]
+            }
+          ]),
+          toolChoice: { tool: "AnthropicMemory" }
+        })
+
+        assert.deepStrictEqual(body.tool_choice, { type: "tool", name: "memory" })
+        assert.strictEqual(body.messages[1].content[0].name, "memory")
+      }))
+
+    it.effect("keeps provider tools selected by a oneOf tool choice", () =>
+      Effect.gen(function*() {
+        const { body } = yield* generate({
+          prompt: "remember this",
+          toolChoice: { oneOf: ["AnthropicMemory"] }
+        })
+
+        assert.deepStrictEqual(body.tools.map((tool: any) => tool.name), ["memory"])
+      }))
+
+    it.effect("decodes ComputerUse_20241022 calls named computer", () =>
+      Effect.gen(function*() {
+        const { response } = yield* generate({ prompt: "take a screenshot" }, [
+          { type: "tool_use", id: "toolu_cu_1", name: "computer", input: { action: "screenshot" } }
+        ])
+
+        assert.strictEqual(response.toolCalls[0]?.name, "AnthropicComputerUse")
+      }))
+  })
+
   // Client-executed (`requiresHandler`) provider tools have their `parameters`
   // decoded via `toCodecAnthropic` when the model calls them. Optional
   // parameters must use `Schema.optionalKey` (not `Schema.optional`), otherwise
@@ -1620,14 +2371,13 @@ const jsonResponse = (
     })
   )
 
-const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
-  Effect.gen(function*() {
-    const body = request.body
-    if (body._tag !== "Uint8Array") {
-      return yield* Effect.die(new Error("Expected Uint8Array body"))
-    }
-    return JSON.parse(new TextDecoder().decode(body.body))
-  })
+const getRequestBody = Effect.fnUntraced(function*(request: HttpClientRequest.HttpClientRequest) {
+  const body = request.body
+  if (body._tag !== "Uint8Array") {
+    return yield* Effect.die(new Error("Expected Uint8Array body"))
+  }
+  return JSON.parse(new TextDecoder().decode(body.body))
+})
 
 const toSseBody = (events: ReadonlyArray<unknown>): string =>
   events.map((event) => `event: message_stream\ndata: ${JSON.stringify(event)}\n\n`).join("")

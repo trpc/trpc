@@ -85,6 +85,34 @@ const normalizeSuccessStatus = (
   return successCount === 1 && status.startsWith("2") ? "2xx" : status
 }
 
+const paramsToPipeline = (operation: ParsedOperation): Array<string> => {
+  const pipeline: Array<string> = []
+  if (!operation.params) {
+    return pipeline
+  }
+  const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
+  if (operation.urlParams.length > 0) {
+    const props = operation.urlParams.map((param) => {
+      const value = `${paramsAccessor}["${param}"]`
+      return `"${param}": ${operation.commaUrlParams.includes(param) ? `__joinComma(${value})` : value} as any`
+    })
+    pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
+  }
+  if (operation.headers.length > 0) {
+    const props = operation.headers.map(
+      (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
+    )
+    pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
+  }
+  if (operation.cookies.length > 0) {
+    const props = operation.cookies.map(
+      (param) => `"${param}": ${paramsAccessor}["${param}"]`
+    )
+    pipeline.push(`HttpClientRequest.setHeaders({ "cookie": __cookieHeader({ ${props.join(", ")} }) })`)
+  }
+  return pipeline
+}
+
 const requestToImpl = (operation: ParsedOperation, pipeline: Array<string>, streaming = false): string => {
   const request = `HttpClientRequest.${operation.method}`
   const pipe = `.pipe(\n      ${pipeline.join(",\n      ")}\n    )`
@@ -127,8 +155,8 @@ export const makeTransformerSchema = () => {
         methods.push(operationToBinaryMethod(name, op))
       }
     }
-    return `export interface ${name} {
-  readonly httpClient: HttpClient.HttpClient
+    return `export interface ${name}<E = HttpClientError.HttpClientError, R = never> {
+  readonly httpClient: HttpClient.HttpClient.With<E, R>
   ${methods.join("\n  ")}
 }
 
@@ -155,7 +183,7 @@ ${clientErrorSource(name)}`
     }
     const hasOptions = (operation.params && !operation.paramsOptional) || operation.payload
 
-    const successTypes = new Set(Array.from(responses.successSchemas.values(), (schema) => `typeof ${schema}.Type`))
+    const successTypes = new Set(responses.successSchemas.values())
     if (responses.binarySuccessStatuses.size > 0) {
       successTypes.add("Uint8Array")
     }
@@ -163,11 +191,11 @@ ${clientErrorSource(name)}`
       successTypes.add("void")
     }
     const success = successTypes.size > 0 ? Array.from(successTypes).join(" | ") : "void"
-    const errors = ["HttpClientError.HttpClientError", "SchemaError"]
+    const errors = ["E", "HttpClientError.HttpClientError", "SchemaError"]
     if (responses.errorSchemas.size > 0) {
       Utils.spreadElementsInto(
         Array.from(responses.errorSchemas.values()).map(
-          (schema) => `${name}Error<"${schema}", typeof ${schema}.Type>`
+          (schema) => `${name}Error<"${schema}", ${schema}>`
         ),
         errors
       )
@@ -209,10 +237,10 @@ ${clientErrorSource(name)}`
     const methodKey = `readonly "${operation.id}Sse"`
     const parameters = args.join(", ")
     const value = responses.sseSchemaMode === "event"
-      ? `typeof ${responses.sseSchema}.Type`
-      : `{ readonly event: string; readonly id: string | undefined; readonly data: typeof ${responses.sseSchema}.Type }`
+      ? responses.sseSchema
+      : `{ readonly event: string; readonly id: string | undefined; readonly data: ${responses.sseSchema} }`
     const returnType =
-      `Stream.Stream<${value}, HttpClientError.HttpClientError | SchemaError | Sse.Retry | Sse.SseError, typeof ${responses.sseSchema}.DecodingServices>`
+      `Stream.Stream<${value}, E | HttpClientError.HttpClientError | SchemaError | Sse.Retry | Sse.SseError, R | typeof ${responses.sseSchema}.DecodingServices>`
     return `${jsdoc}${methodKey}: (${parameters}) => ${returnType}`
   }
 
@@ -242,7 +270,7 @@ ${clientErrorSource(name)}`
     const jsdoc = Utils.toComment(operation.description)
     const methodKey = `readonly "${operation.id}Stream"`
     const parameters = args.join(", ")
-    const returnType = `Stream.Stream<Uint8Array, HttpClientError.HttpClientError>`
+    const returnType = `Stream.Stream<Uint8Array, E | HttpClientError.HttpClientError, R>`
     return `${jsdoc}${methodKey}: (${parameters}) => ${returnType}`
   }
 
@@ -264,8 +292,14 @@ ${clientErrorSource(name)}`
     }
 
     const helpers: Array<string> = [commonSource]
+    if (operations.some((operation) => operation.commaUrlParams.length > 0)) {
+      helpers.push(commaUrlParamsSource)
+    }
     if (operations.some((operation) => operation.pathIds.length > 0)) {
       helpers.push(pathRequestSource)
+    }
+    if (operations.some((operation) => operation.cookies.length > 0)) {
+      helpers.push(cookieHeaderSource)
     }
     if (requiresStreaming(requirements)) {
       helpers.push(executeStreamRequestSource)
@@ -282,6 +316,10 @@ ${clientErrorSource(name)}`
     }
     if (operations.some((operation) => operation.httpClientResponses.voidErrorStatuses.size > 0)) {
       helpers.push(decodeVoidErrorSource(name))
+    }
+    helpers.push(decodeSuccessSource(importName))
+    if (operations.some((operation) => operation.httpClientResponses.errorSchemas.size > 0)) {
+      helpers.push(decodeErrorSource(importName, name))
     }
     return `export interface OperationConfig {
   /**
@@ -307,24 +345,13 @@ export type WithOptionalResponse<A, Config extends OperationConfig | undefined> 
   : Config extends { readonly includeResponse?: false | undefined } | undefined ? A
   : A | [A, HttpClientResponse.HttpClientResponse]
 
-export const make = (
-  httpClient: HttpClient.HttpClient,
+export const make = <E, R>(
+  httpClient: HttpClient.HttpClient.With<E, R>,
   options: {
-    readonly transformClient?: ((client: HttpClient.HttpClient) => Effect.Effect<HttpClient.HttpClient>) | undefined
+    readonly transformClient?: ((client: HttpClient.HttpClient.With<E, R>) => Effect.Effect<HttpClient.HttpClient.With<E, R>>) | undefined
   } = {}
-): ${name} => {
+): ${name}<E, R> => {
   ${helpers.join("\n  ")}
-  const decodeSuccess =
-    <Schema extends ${importName}.Constraint>(schema: Schema) =>
-    (response: HttpClientResponse.HttpClientResponse) =>
-      HttpClientResponse.schemaBodyJson(schema)(response)
-  const decodeError =
-    <const Tag extends string, Schema extends ${importName}.Constraint>(tag: Tag, schema: Schema) =>
-    (response: HttpClientResponse.HttpClientResponse) =>
-      Effect.flatMap(
-        HttpClientResponse.schemaBodyJson(schema)(response),
-        (cause) => Effect.fail(${name}Error(tag, cause, response)),
-      )
   return {
     httpClient,
     ${implMethods.join(",\n    ")}
@@ -341,22 +368,7 @@ export const make = (
 
     const pipeline: Array<string> = []
 
-    if (operation.params) {
-      const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
-
-      if (operation.urlParams.length > 0) {
-        const props = operation.urlParams.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] as any`
-        )
-        pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
-      }
-      if (operation.headers.length > 0) {
-        const props = operation.headers.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
-        )
-        pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
-      }
-    }
+    pipeline.push(...paramsToPipeline(operation))
 
     const payloadVarName = "options.payload"
     if (operation.payloadFormData) {
@@ -407,21 +419,7 @@ export const make = (
 
     const pipeline: Array<string> = []
 
-    if (operation.params) {
-      const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
-      if (operation.urlParams.length > 0) {
-        const props = operation.urlParams.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] as any`
-        )
-        pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
-      }
-      if (operation.headers.length > 0) {
-        const props = operation.headers.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
-        )
-        pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
-      }
-    }
+    pipeline.push(...paramsToPipeline(operation))
 
     if (operation.payloadFormData) {
       pipeline.push(`HttpClientRequest.bodyFormDataRecord(options.payload as any)`)
@@ -449,21 +447,7 @@ export const make = (
 
     const pipeline: Array<string> = []
 
-    if (operation.params) {
-      const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
-      if (operation.urlParams.length > 0) {
-        const props = operation.urlParams.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] as any`
-        )
-        pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
-      }
-      if (operation.headers.length > 0) {
-        const props = operation.headers.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
-        )
-        pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
-      }
-    }
+    pipeline.push(...paramsToPipeline(operation))
 
     if (operation.payloadFormData) {
       pipeline.push(`HttpClientRequest.bodyFormDataRecord(options.payload as any)`)
@@ -560,8 +544,8 @@ export const makeTransformerTs = () => {
         methods.push(operationToBinaryMethod(op))
       }
     }
-    return `export interface ${name} {
-  readonly httpClient: HttpClient.HttpClient
+    return `export interface ${name}<E = HttpClientError.HttpClientError, R = never> {
+  readonly httpClient: HttpClient.HttpClient.With<E, R>
   ${methods.join("\n  ")}
 }
 
@@ -595,7 +579,7 @@ ${clientErrorSource(name)}`
     }
     const success = successTypes.size > 0 ? Array.from(successTypes).join(" | ") : "void"
 
-    const errors = ["HttpClientError.HttpClientError"]
+    const errors = ["E", "HttpClientError.HttpClientError"]
     if (responses.errorSchemas.size > 0) {
       for (const schema of responses.errorSchemas.values()) {
         errors.push(`${name}Error<"${schema}", ${schema}>`)
@@ -637,7 +621,7 @@ ${clientErrorSource(name)}`
     const jsdoc = Utils.toComment(operation.description)
     const methodKey = `readonly "${operation.id}Sse"`
     const parameters = args.join(", ")
-    const returnType = `Stream.Stream<${responses.sseSchema}, HttpClientError.HttpClientError>`
+    const returnType = `Stream.Stream<${responses.sseSchema}, E | HttpClientError.HttpClientError, R>`
     return `${jsdoc}${methodKey}: (${parameters}) => ${returnType}`
   }
 
@@ -667,7 +651,7 @@ ${clientErrorSource(name)}`
     const jsdoc = Utils.toComment(operation.description)
     const methodKey = `readonly "${operation.id}Stream"`
     const parameters = args.join(", ")
-    const returnType = `Stream.Stream<Uint8Array, HttpClientError.HttpClientError>`
+    const returnType = `Stream.Stream<Uint8Array, E | HttpClientError.HttpClientError, R>`
     return `${jsdoc}${methodKey}: (${parameters}) => ${returnType}`
   }
 
@@ -689,8 +673,14 @@ ${clientErrorSource(name)}`
     }
 
     const helpers: Array<string> = [commonSource]
+    if (operations.some((operation) => operation.commaUrlParams.length > 0)) {
+      helpers.push(commaUrlParamsSource)
+    }
     if (operations.some((operation) => operation.pathIds.length > 0)) {
       helpers.push(pathRequestSource)
+    }
+    if (operations.some((operation) => operation.cookies.length > 0)) {
+      helpers.push(cookieHeaderSource)
     }
     if (requiresStreaming(requirements)) {
       helpers.push(executeStreamRequestSource)
@@ -731,12 +721,12 @@ export type WithOptionalResponse<A, Config extends OperationConfig | undefined> 
   : Config extends { readonly includeResponse?: false | undefined } | undefined ? A
   : A | [A, HttpClientResponse.HttpClientResponse]
 
-export const make = (
-  httpClient: HttpClient.HttpClient,
+export const make = <E, R>(
+  httpClient: HttpClient.HttpClient.With<E, R>,
   options: {
-    readonly transformClient?: ((client: HttpClient.HttpClient) => Effect.Effect<HttpClient.HttpClient>) | undefined
+    readonly transformClient?: ((client: HttpClient.HttpClient.With<E, R>) => Effect.Effect<HttpClient.HttpClient.With<E, R>>) | undefined
   } = {}
-): ${name} => {
+): ${name}<E, R> => {
   ${helpers.join("\n  ")}
   const decodeSuccess = <A>(response: HttpClientResponse.HttpClientResponse) =>
     response.json as Effect.Effect<A, HttpClientError.HttpClientError>
@@ -771,22 +761,7 @@ export const make = (
 
     const pipeline: Array<string> = []
 
-    if (operation.params) {
-      const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
-
-      if (operation.urlParams.length > 0) {
-        const props = operation.urlParams.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] as any`
-        )
-        pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
-      }
-      if (operation.headers.length > 0) {
-        const props = operation.headers.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
-        )
-        pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
-      }
-    }
+    pipeline.push(...paramsToPipeline(operation))
 
     const payloadAccessor = "options.payload"
     if (operation.payloadFormData) {
@@ -836,21 +811,7 @@ export const make = (
 
     const pipeline: Array<string> = []
 
-    if (operation.params) {
-      const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
-      if (operation.urlParams.length > 0) {
-        const props = operation.urlParams.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] as any`
-        )
-        pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
-      }
-      if (operation.headers.length > 0) {
-        const props = operation.headers.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
-        )
-        pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
-      }
-    }
+    pipeline.push(...paramsToPipeline(operation))
 
     if (operation.payloadFormData) {
       pipeline.push(`HttpClientRequest.bodyFormDataRecord(options.payload as any)`)
@@ -878,21 +839,7 @@ export const make = (
 
     const pipeline: Array<string> = []
 
-    if (operation.params) {
-      const paramsAccessor = resolveParamsAccessor(operation, "options", "params")
-      if (operation.urlParams.length > 0) {
-        const props = operation.urlParams.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] as any`
-        )
-        pipeline.push(`HttpClientRequest.setUrlParams({ ${props.join(", ")} })`)
-      }
-      if (operation.headers.length > 0) {
-        const props = operation.headers.map(
-          (param) => `"${param}": ${paramsAccessor}["${param}"] ?? undefined`
-        )
-        pipeline.push(`HttpClientRequest.setHeaders({ ${props.join(", ")} })`)
-      }
-    }
+    pipeline.push(...paramsToPipeline(operation))
 
     if (operation.payloadFormData) {
       pipeline.push(`HttpClientRequest.bodyFormDataRecord(options.payload as any)`)
@@ -985,6 +932,17 @@ const pathRequestSource = `const __encodePathParam = encodeURIComponent
     return Effect.succeed(method(path))
   })`
 
+const commaUrlParamsSource =
+  `const __joinComma = (value: unknown) => Array.isArray(value) && value.length > 0 ? value.join(",") : value`
+
+const cookieHeaderSource = `const __cookieHeader = (cookies: Record<string, unknown>) => {
+    const header = Object.entries(cookies)
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([name, value]) => \`\${name}=\${encodeURIComponent(String(value))}\`)
+      .join("; ")
+    return header === "" ? undefined : header
+  }`
+
 const commonSource = `const unexpectedStatus = (response: HttpClientResponse.HttpClientResponse) =>
     Effect.flatMap(
       Effect.orElseSucceed(response.json, () => "Unexpected status code"),
@@ -1001,7 +959,7 @@ const commonSource = `const unexpectedStatus = (response: HttpClientResponse.Htt
     )
   const withResponse = <Config extends OperationConfig>(config: Config | undefined) => (
     f: (response: HttpClientResponse.HttpClientResponse) => Effect.Effect<any, any>,
-  ): (request: HttpClientRequest.HttpClientRequest) => Effect.Effect<any, any> => {
+  ): (request: HttpClientRequest.HttpClientRequest) => Effect.Effect<any, any, R> => {
     const withOptionalResponse = (
       config?.includeResponse
         ? (response: HttpClientResponse.HttpClientResponse) => Effect.map(f(response), (a) => [a, response])
@@ -1018,6 +976,21 @@ const commonSource = `const unexpectedStatus = (response: HttpClientResponse.Htt
 
 const decodeBinarySource = `const decodeBinary = (response: HttpClientResponse.HttpClientResponse) =>
     Effect.map(response.arrayBuffer, (buffer) => new Uint8Array(buffer))`
+
+const decodeSuccessSource = (importName: string) =>
+  `const decodeSuccess =
+    <Schema extends ${importName}.Constraint>(schema: Schema) =>
+    (response: HttpClientResponse.HttpClientResponse) =>
+      HttpClientResponse.schemaBodyJson(schema)(response)`
+
+const decodeErrorSource = (importName: string, name: string) =>
+  `const decodeError =
+    <const Tag extends string, Schema extends ${importName}.Constraint>(tag: Tag, schema: Schema) =>
+    (response: HttpClientResponse.HttpClientResponse) =>
+      Effect.flatMap(
+        HttpClientResponse.schemaBodyJson(schema)(response),
+        (cause) => Effect.fail(${name}Error(tag, cause, response)),
+      )`
 
 const decodeVoidErrorSource = (name: string) =>
   `const decodeVoidError = <const Tag extends string>(tag: Tag) =>
@@ -1086,8 +1059,8 @@ const sseRequestSource = (_importName: string) =>
       request: HttpClientRequest.HttpClientRequest
     ): Stream.Stream<
       { readonly event: string; readonly id: string | undefined; readonly data: Type },
-      HttpClientError.HttpClientError | SchemaError | Sse.Retry | Sse.SseError,
-      DecodingServices
+      E | HttpClientError.HttpClientError | SchemaError | Sse.Retry | Sse.SseError,
+      R | DecodingServices
     > =>
       executeStreamRequest(request).pipe(
         Effect.map((response) => response.stream),
@@ -1101,8 +1074,8 @@ const sseEventRequestSource = `const sseEventRequest = <S extends Sse.EventCodec
       request: HttpClientRequest.HttpClientRequest
     ): Stream.Stream<
       S["Type"],
-      HttpClientError.HttpClientError | SchemaError | Sse.Retry | Sse.SseError,
-      S["DecodingServices"]
+      E | HttpClientError.HttpClientError | SchemaError | Sse.Retry | Sse.SseError,
+      R | S["DecodingServices"]
     > =>
       executeStreamRequest(request).pipe(
         Effect.map((response) => response.stream),
@@ -1112,7 +1085,7 @@ const sseEventRequestSource = `const sseEventRequest = <S extends Sse.EventCodec
       )`
 
 const binaryRequestSource =
-  `const binaryRequest = (request: HttpClientRequest.HttpClientRequest): Stream.Stream<Uint8Array, HttpClientError.HttpClientError> =>
+  `const binaryRequest = (request: HttpClientRequest.HttpClientRequest): Stream.Stream<Uint8Array, E | HttpClientError.HttpClientError, R> =>
     executeStreamRequest(request).pipe(
       Effect.map((response) => response.stream),
       Stream.unwrap
@@ -1120,7 +1093,7 @@ const binaryRequestSource =
 
 // Type-only mode helpers (no schema decoding)
 const sseRequestSourceTs =
-  `const sseRequest = (request: HttpClientRequest.HttpClientRequest): Stream.Stream<unknown, HttpClientError.HttpClientError> =>
+  `const sseRequest = (request: HttpClientRequest.HttpClientRequest): Stream.Stream<unknown, E | HttpClientError.HttpClientError, R> =>
     executeStreamRequest(request).pipe(
       Effect.map((response) => response.stream),
       Stream.unwrap,
@@ -1131,7 +1104,7 @@ const sseRequestSourceTs =
     )`
 
 const binaryRequestSourceTs =
-  `const binaryRequest = (request: HttpClientRequest.HttpClientRequest): Stream.Stream<Uint8Array, HttpClientError.HttpClientError> =>
+  `const binaryRequest = (request: HttpClientRequest.HttpClientRequest): Stream.Stream<Uint8Array, E | HttpClientError.HttpClientError, R> =>
     executeStreamRequest(request).pipe(
       Effect.map((response) => response.stream),
       Stream.unwrap
@@ -1179,7 +1152,7 @@ const operationSignatures = (
     const parameters = [...args, `options: { ${fields} }${configOptional && !optionsRequired ? " | undefined" : ""}`]
     return `    <Config extends OperationConfig | undefined = undefined>(${
       parameters.join(", ")
-    }): Effect.Effect<WithOptionalResponse<${success}, ${config}>, ${errors.join(" | ")}>;`
+    }): Effect.Effect<WithOptionalResponse<${success}, ${config}>, ${errors.join(" | ")}, R>;`
   }
   // Infer the whole config from a required property before allowing omitted config.
   // An optional property would otherwise discard undefined during inference.

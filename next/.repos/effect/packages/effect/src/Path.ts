@@ -14,6 +14,7 @@ import * as Context from "./Context.ts"
 import * as Effect from "./Effect.ts"
 import { identity } from "./Function.ts"
 import * as Layer from "./Layer.ts"
+import * as Option from "./Option.ts"
 import { BadArgument } from "./PlatformError.ts"
 
 /**
@@ -47,10 +48,17 @@ export const TypeId = "~effect/Path"
  * formatting, and converting file system paths. URL conversion methods return
  * `Effect`s because invalid file URLs or paths can fail with `BadArgument`.
  *
+ * `resolveWithin(root, input)` resolves a relative `input` beneath `root` and
+ * returns `Option.none()` when the result would leave the root or when `input`
+ * has its own root (an absolute path, or a Windows drive or UNC prefix). The
+ * root itself is allowed. The check is lexical: it does not follow symlinks,
+ * so it is not a sandbox on its own. A relative `root` is resolved against the
+ * current working directory, as with `resolve`.
+ *
  * **Example** (Using path operations)
  *
  * ```ts import.meta.vitest
- * import { Effect, Path } from "effect"
+ * import { Effect, Option, Path } from "effect"
  *
  * const program = Effect.gen(function*() {
  *   const path = yield* Path.Path
@@ -64,7 +72,8 @@ export const TypeId = "~effect/Path"
  *     isAbsolute: path.isAbsolute("/absolute/path"),
  *     name: path.parse("/path/to/file.txt").name,
  *     relative: path.relative("/from/path", "/to/path"),
- *     resolved: path.resolve("/base", "relative", "path")
+ *     resolved: path.resolve("/base", "relative", "path"),
+ *     within: path.resolveWithin("/base", "../outside")
  *   }
  * })
  *
@@ -78,6 +87,7 @@ export const TypeId = "~effect/Path"
  * result.name // => "file"
  * result.relative // => "../../to/path"
  * result.resolved // => "/base/relative/path"
+ * result.within // => Option.none()
  * ```
  *
  * @stability unstable
@@ -98,6 +108,7 @@ export interface Path {
   readonly parse: (path: string) => Path.Parsed
   readonly relative: (from: string, to: string) => string
   readonly resolve: (...pathSegments: ReadonlyArray<string>) => string
+  readonly resolveWithin: (root: string, input: string) => Option.Option<string>
   readonly toFileUrl: (path: string) => Effect.Effect<URL, BadArgument>
   readonly toNamespacedPath: (path: string) => string
 }
@@ -204,8 +215,7 @@ export declare namespace Path {
  * import { Effect, Layer, Path } from "effect"
  *
  * // Create a custom path implementation
- * const customPath: Path.Path = {
- *   [Path.TypeId]: Path.TypeId,
+ * const customPath = Path.make({
  *   sep: "/",
  *   basename: (path: string, suffix?: string) => {
  *     const base = path.split("/").pop() || ""
@@ -239,7 +249,7 @@ export declare namespace Path {
  *   resolve: (...pathSegments: ReadonlyArray<string>) => pathSegments.join("/"),
  *   toFileUrl: (path: string) => Effect.succeed(new URL(`file://${path}`)),
  *   toNamespacedPath: (path: string) => path
- * }
+ * })
  *
  * // Provide the path service
  * const customPathLayer = Layer.succeed(Path.Path)(customPath)
@@ -258,6 +268,42 @@ export declare namespace Path {
  * @since 4.0.0
  */
 export const Path: Context.Service<Path, Path> = Context.Service("effect/Path")
+
+/**
+ * Creates a `Path` service from platform path operations.
+ *
+ * **When to use**
+ *
+ * Use to build a `Path` implementation, such as a platform layer or a test
+ * double, without implementing the operations that can be derived from the
+ * others.
+ *
+ * **Details**
+ *
+ * Adds the `Path` type marker and derives `resolveWithin` from the provided
+ * `parse`, `resolve`, `relative`, `isAbsolute`, and `sep`, so containment
+ * follows the same platform rules as those operations.
+ *
+ * @see {@link layer} for the built-in POSIX `Path` service layer
+ *
+ * @stability unstable
+ * @category constructors
+ * @since 4.0.0
+ */
+export const make = (impl: Omit<Path, typeof TypeId | "resolveWithin">): Path =>
+  Path.of({
+    ...impl,
+    [TypeId]: TypeId,
+    resolveWithin(root, input) {
+      if (impl.parse(input).root !== "") return Option.none()
+      const base = impl.resolve(root)
+      const candidate = impl.resolve(base, input)
+      const relative = impl.relative(base, candidate)
+      return relative === ".." || relative.startsWith(`..${impl.sep}`) || impl.isAbsolute(relative)
+        ? Option.none()
+        : Option.some(candidate)
+    }
+  })
 
 /**
  * The following functions are adapted from the Node.js source code:
@@ -339,9 +385,14 @@ function normalizeStringPosix(path: string, allowAboveRoot: boolean) {
   return res
 }
 
+function formatExt(ext: string | undefined) {
+  if (!ext) return ""
+  return ext.startsWith(".") ? ext : `.${ext}`
+}
+
 function _format(sep: string, pathObject: Partial<Path.Parsed>) {
   const dir = pathObject.dir || pathObject.root
-  const base = pathObject.base || (pathObject.name || "") + (pathObject.ext || "")
+  const base = pathObject.base || (pathObject.name || "") + formatExt(pathObject.ext)
   if (!dir) {
     return base
   }
@@ -384,7 +435,15 @@ function fromFileUrl(url: URL): Effect.Effect<string, BadArgument> {
       }
     }
   }
-  return Effect.succeed(decodeURIComponent(pathname))
+  return Effect.try({
+    try: () => decodeURIComponent(pathname),
+    catch: (cause) =>
+      new BadArgument({
+        module: "Path",
+        method: "fromFileUrl",
+        cause
+      })
+  })
 }
 
 const resolve: Path["resolve"] = function resolve() {
@@ -479,8 +538,7 @@ function encodePathChars(filepath: string) {
   return filepath
 }
 
-const posixImpl = Path.of({
-  [TypeId]: TypeId,
+const posixImpl = make({
   resolve,
   normalize(path) {
     if (path.length === 0) return "."

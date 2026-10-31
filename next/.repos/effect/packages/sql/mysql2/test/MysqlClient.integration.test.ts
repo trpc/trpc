@@ -1,6 +1,7 @@
 import { MysqlClient } from "@effect/sql-mysql2"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Stream } from "effect"
+import * as Arr from "effect/Array"
 import * as Mysql from "mysql2"
 import { vi } from "vitest"
 
@@ -17,6 +18,7 @@ describe("MysqlClient", () => {
       yield* sql`CREATE TABLE stream_regression_test (id INT PRIMARY KEY AUTO_INCREMENT, value VARCHAR(255))`
 
       const testData = Array.from({ length: 100 }, (_, i) => ({ value: `row_${i}` }))
+      assert(Arr.isArrayNonEmpty(testData))
       yield* sql`INSERT INTO stream_regression_test ${sql.insert(testData)}`
 
       const directResults = yield* sql`SELECT * FROM stream_regression_test`

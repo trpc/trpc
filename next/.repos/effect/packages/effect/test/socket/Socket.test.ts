@@ -112,6 +112,38 @@ describe("Socket", () => {
 
         assert.strictEqual(message, "hello")
       }))
+
+    it.effect("readerString decodes characters split across pulls", () =>
+      Effect.gen(function*() {
+        const pulls: Array<[Uint8Array]> = [[new Uint8Array([0x61, 0xe2, 0x98])], [new Uint8Array([0x95])]]
+        const { socket } = stubSocket(Effect.sync(() => pulls.shift()!))
+
+        const pull = yield* Socket.readerString(socket)
+        assert.deepStrictEqual(yield* pull, ["a"])
+        assert.deepStrictEqual(yield* pull, ["☕"])
+      }))
+
+    it.effect("readerString flushes an incomplete character before a string frame", () =>
+      Effect.gen(function*() {
+        const { socket } = stubSocket(Effect.succeed([new Uint8Array([0x61, 0xe2]), "b"]))
+
+        const pull = yield* Socket.readerString(socket)
+        assert.deepStrictEqual(yield* pull, ["a", "\ufffdb"])
+      }))
+
+    it.effect("readerString flushes an incomplete character on a normal close", () =>
+      Effect.gen(function*() {
+        const close = new Socket.SocketError({ reason: new Socket.SocketCloseError({ code: 1000 }) })
+        const pulls: Array<Socket.Reader["pull"]> = [
+          Effect.succeed([new Uint8Array([0x61, 0xe2, 0x98])])
+        ]
+        const { socket } = stubSocket(Effect.suspend(() => pulls.shift() ?? Effect.fail(close)))
+
+        const pull = yield* Socket.readerString(socket)
+        assert.deepStrictEqual(yield* pull, ["a"])
+        assert.deepStrictEqual(yield* pull, ["\ufffd"])
+        assert.deepStrictEqual(yield* Effect.flip(pull), close)
+      }))
   })
 
   describe("fromWebSocket", () => {

@@ -321,7 +321,7 @@ const WebSearchSuccess = Schema.Struct({
 
 const WebSearchFailure = Schema.Struct({
   action: Generated.WebSearchToolCall.fields.action,
-  status: Schema.Literals(Generated.WebSearchToolCall.fields.status.literals.filter((status) => status !== "completed"))
+  status: Schema.Literals(Generated.WebSearchCallStatus.literals.filter((status) => status !== "completed"))
 })
 
 /**

@@ -1,9 +1,10 @@
-import { Context, Effect, Layer, Schema } from "effect"
+import { Context, Effect, hole, Layer, Schema, Stream } from "effect"
 import type { FileSystem } from "effect/FileSystem"
 import {
   HttpApi,
   HttpApiBuilder,
   HttpApiEndpoint,
+  type HttpApiError,
   HttpApiGroup,
   HttpApiMiddleware,
   HttpApiSchema,
@@ -176,6 +177,42 @@ describe("HttpApiBuilder", () => {
         )
 
         expect(handlers).type.toBe<Layer.Layer<HttpApiGroup.Service<"api", "users">>>()
+      })
+
+      it("passes streaming payloads with their errors and element decoding services", () => {
+        type Item = { readonly n: number }
+        type PayloadErrors = HttpApiError.HttpApiSchemaError | HttpApiError.HttpApiPayloadTooLarge
+        const Item = hole<Schema.Codec<Item, Item, "ItemDecoding", never>>()
+        const Api = HttpApi.make("api").add(
+          HttpApiGroup.make("uploads").add(
+            HttpApiEndpoint.post("bytes", "/bytes", { payload: HttpApiSchema.StreamUint8Array() }),
+            HttpApiEndpoint.post("ndjson", "/ndjson", { payload: HttpApiSchema.StreamNdjson({ schema: Item }) }),
+            HttpApiEndpoint.post("mixed", "/mixed", {
+              payload: [Schema.Array(Item), HttpApiSchema.StreamNdjson({ schema: Item })]
+            })
+          )
+        )
+
+        const handlers = HttpApiBuilder.group(
+          Api,
+          "uploads",
+          (handlers) =>
+            handlers
+              .handle("bytes", ({ payload }) => {
+                expect(payload).type.toBe<Stream.Stream<Uint8Array, HttpApiError.HttpApiPayloadTooLarge>>()
+                return Stream.runDrain(payload)
+              })
+              .handle("ndjson", ({ payload }) => {
+                expect(payload).type.toBe<Stream.Stream<Item, PayloadErrors>>()
+                return Stream.runDrain(payload)
+              })
+              .handle("mixed", ({ payload }) => {
+                expect(payload).type.toBe<ReadonlyArray<Item> | Stream.Stream<Item, PayloadErrors>>()
+                return Stream.isStream(payload) ? Stream.runDrain(payload) : Effect.void
+              })
+        )
+
+        expect<Layer.Services<typeof handlers>>().type.toBe<HttpRouterRequest<"Requires", "ItemDecoding">>()
       })
 
       it("propagates handler service requirements", () => {

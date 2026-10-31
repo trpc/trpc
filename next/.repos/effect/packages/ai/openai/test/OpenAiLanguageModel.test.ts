@@ -82,6 +82,40 @@ describe("OpenAiLanguageModel", () => {
     )
   })
 
+  describe("web search find_in_page", () => {
+    it.effect.each(["generateText", "streamText"] as const)(
+      "preserves actions without a URL with %s",
+      (method) =>
+        Effect.gen(function*() {
+          const action = { type: "find_in_page", pattern: "og:image" } as const
+          const item = { type: "web_search_call", id: "ws_123", status: "completed", action }
+          const event = { type: "response.output_item.done", sequence_number: 1, output_index: 0, item }
+          const body = method === "generateText"
+            ? JSON.stringify({ ...makeDefaultResponse(), output: [item] })
+            : `data: ${JSON.stringify(event)}\n\n`
+          const client = makeRawResponseClient(
+            body,
+            method === "generateText" ? "application/json" : "text/event-stream"
+          )
+          const options = { prompt: "Search the page", toolkit: Toolkit.make(OpenAiTool.WebSearch({})) }
+          const parts = yield* Effect.gen(function*() {
+            if (method === "generateText") return (yield* LanguageModel.generateText(options)).content
+            return yield* LanguageModel.streamText(options).pipe(Stream.runCollect)
+          }).pipe(
+            Effect.provide(OpenAiLanguageModel.model("gpt-5.4")),
+            Effect.provide(OpenAiClient.layer({ apiKey: Redacted.make("sk-test-key") })),
+            Effect.provideService(HttpClient.HttpClient, client)
+          )
+
+          deepStrictEqual(parts.filter((part) => part.type === "tool-call").map((part) => part.params), [{ action }])
+          deepStrictEqual<unknown>(
+            parts.filter((part) => part.type === "tool-result").map((part) => part.result),
+            [{ action, status: "completed" }]
+          )
+        })
+    )
+  })
+
   describe("web search without an action", () => {
     it.effect.each(
       [
@@ -125,7 +159,7 @@ describe("OpenAiLanguageModel", () => {
       }))
 
     it.effect("rejects null and malformed actions when present", () =>
-      Effect.forEach([null, { type: "find_in_page", url: "https://example.com" }], (action) => {
+      Effect.forEach([null, { type: "find_in_page", url: "https://example.com", pattern: null }], (action) => {
         const event = {
           type: "response.output_item.done",
           sequence_number: 1,
@@ -150,7 +184,7 @@ describe("OpenAiLanguageModel", () => {
 
   describe("generateText", () => {
     describe("message preparation", () => {
-      it.effect("forwards prompt cache configuration and text breakpoints", () =>
+      it.effect("forwards prompt cache, safety configuration and text breakpoints", () =>
         Effect.gen(function*() {
           const breakpoint = { mode: "explicit" } as const
           yield* LanguageModel.generateText({
@@ -169,7 +203,9 @@ describe("OpenAiLanguageModel", () => {
           }).pipe(
             Effect.provide(OpenAiLanguageModel.model("gpt-5.6", {
               prompt_cache_key: "assistant:v1",
-              prompt_cache_options: { mode: "explicit", ttl: "30m", comparison_response_id: "resp_baseline" }
+              prompt_cache_options: { mode: "explicit", ttl: "30m", comparison_response_id: "resp_baseline" },
+              prompt_cache_retention: "24h",
+              safety_identifier: "user-hash-123"
             }))
           )
 
@@ -177,6 +213,8 @@ describe("OpenAiLanguageModel", () => {
           const body = yield* getRequestBody(requests[0])
 
           strictEqual(body.prompt_cache_key, "assistant:v1")
+          strictEqual(body.prompt_cache_retention, "24h")
+          strictEqual(body.safety_identifier, "user-hash-123")
           deepStrictEqual(body.prompt_cache_options, {
             mode: "explicit",
             ttl: "30m",
@@ -194,6 +232,46 @@ describe("OpenAiLanguageModel", () => {
             content: [{
               type: "input_text",
               text: "Stable context",
+              prompt_cache_breakpoint: breakpoint
+            }]
+          }])
+        }).pipe(Effect.provide(makeTestLayer({ body: { model: "gpt-5.6" as any } }))))
+
+      it.effect("forwards image and file breakpoints", () =>
+        Effect.gen(function*() {
+          const breakpoint = { mode: "explicit" } as const
+          yield* LanguageModel.generateText({
+            prompt: Prompt.make([
+              Prompt.userMessage({
+                content: [
+                  Prompt.filePart({
+                    mediaType: "image/png",
+                    data: new URL("https://example.com/image.png"),
+                    options: { openai: { promptCacheBreakpoint: breakpoint } }
+                  }),
+                  Prompt.filePart({
+                    mediaType: "application/pdf",
+                    data: new URL("https://example.com/document.pdf"),
+                    options: { openai: { promptCacheBreakpoint: breakpoint } }
+                  })
+                ]
+              })
+            ])
+          }).pipe(Effect.provide(OpenAiLanguageModel.model("gpt-5.6")))
+
+          const requests = yield* MockHttpClient.requests
+          const body = yield* getRequestBody(requests[0])
+
+          deepStrictEqual(body.input, [{
+            role: "user",
+            content: [{
+              type: "input_image",
+              image_url: "https://example.com/image.png",
+              detail: "auto",
+              prompt_cache_breakpoint: breakpoint
+            }, {
+              type: "input_file",
+              file_url: "https://example.com/document.pdf",
               prompt_cache_breakpoint: breakpoint
             }]
           }])
@@ -483,6 +561,50 @@ describe("OpenAiLanguageModel", () => {
             strictEqual(userMessage.content[0].filename, "document.pdf")
             assert.isTrue(userMessage.content[0].file_data.startsWith("data:application/pdf;base64,"))
           }).pipe(Effect.provide(makeTestLayer())))
+
+        const pdfStringCases = [
+          {
+            label: "base64",
+            data: "JVBERi0xLjcK",
+            content: {
+              type: "input_file",
+              filename: "part-0.pdf",
+              file_data: "data:application/pdf;base64,JVBERi0xLjcK"
+            }
+          },
+          {
+            label: "data URL",
+            data: "data:application/pdf;base64,JVBERi0xLjcK",
+            content: {
+              type: "input_file",
+              filename: "part-0.pdf",
+              file_data: "data:application/pdf;base64,JVBERi0xLjcK"
+            }
+          },
+          {
+            label: "HTTPS URL",
+            data: "https://example.com/document.pdf",
+            content: { type: "input_file", file_url: "https://example.com/document.pdf" }
+          }
+        ]
+
+        for (const { content, data, label } of pdfStringCases) {
+          it.effect(`handles PDF ${label} strings`, () =>
+            Effect.gen(function*() {
+              yield* LanguageModel.generateText({
+                prompt: Prompt.make([{
+                  role: "user",
+                  content: [Prompt.filePart({ mediaType: "application/pdf", data })]
+                }])
+              }).pipe(Effect.provide(OpenAiLanguageModel.model("gpt-4o-mini")))
+
+              const requests = yield* MockHttpClient.requests
+              const body = yield* getRequestBody(requests[0])
+
+              const userMessage = body.input.find((m: any) => m.role === "user")
+              deepStrictEqual(userMessage.content, [content])
+            }).pipe(Effect.provide(makeTestLayer())))
+        }
       })
 
       describe("assistant messages", () => {
@@ -572,6 +694,45 @@ describe("OpenAiLanguageModel", () => {
               encrypted_content: "encrypted-reasoning"
             })
           }).pipe(Effect.provide(makeTestLayer({ body: { model: "o1" } }))))
+
+        it.effect("replays encrypted reasoning statelessly for an unknown model", () =>
+          Effect.gen(function*() {
+            const history = Prompt.fromResponseParts([
+              AiResponse.makePart("reasoning-start", {
+                id: "reasoning_123:0",
+                metadata: { openai: { itemId: "reasoning_123" } }
+              }),
+              AiResponse.makePart("reasoning-delta", {
+                id: "reasoning_123:0",
+                delta: "Let me think..."
+              }),
+              AiResponse.makePart("reasoning-end", {
+                id: "reasoning_123:0",
+                metadata: {
+                  openai: {
+                    itemId: "reasoning_123",
+                    encryptedContent: "encrypted-reasoning"
+                  }
+                }
+              })
+            ])
+
+            yield* LanguageModel.generateText({
+              prompt: Prompt.concat(history, Prompt.make("Continue"))
+            }).pipe(Effect.provide(OpenAiLanguageModel.model("custom-model", { store: false })))
+
+            const requests = yield* MockHttpClient.requests
+            const body = yield* getRequestBody(requests[0])
+            const reasoningItem = body.input.find((item: any) => item.type === "reasoning")
+
+            assert.isDefined(reasoningItem)
+            deepStrictEqual(reasoningItem, {
+              type: "reasoning",
+              id: "reasoning_123",
+              summary: [{ type: "summary_text", text: "Let me think..." }],
+              encrypted_content: "encrypted-reasoning"
+            })
+          }).pipe(Effect.provide(makeTestLayer({ body: { model: "custom-model" } }))))
 
         it.effect("serializes stored assistant history according to item reference config", () =>
           Effect.gen(function*() {
@@ -855,6 +1016,70 @@ describe("OpenAiLanguageModel", () => {
             strictEqual(toolOutput.output, "PLAIN_TEXT_SENTINEL\n")
           }).pipe(Effect.provide([makeTestLayer(), TestToolkitLayer])))
 
+        const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII="
+        const modelOutputCases = [
+          {
+            label: "as native input items",
+            modelOutput: [
+              Prompt.textPart({ text: "Screenshot" }),
+              Prompt.filePart({ mediaType: "image/png", data: png })
+            ],
+            output: [
+              { type: "input_text", text: "Screenshot" },
+              { type: "input_image", image_url: `data:image/png;base64,${png}` }
+            ]
+          },
+          { label: "without the result when it is empty", modelOutput: [], output: "" }
+        ]
+
+        for (const { label, modelOutput, output } of modelOutputCases) {
+          it.effect(`sends tool result model output ${label}`, () =>
+            Effect.gen(function*() {
+              yield* LanguageModel.generateText({
+                prompt: Prompt.make([
+                  { role: "user", content: "Use the tool" },
+                  {
+                    role: "assistant",
+                    content: [
+                      Prompt.toolCallPart({
+                        id: "call_image",
+                        name: "TestTool",
+                        params: { input: "test" },
+                        providerExecuted: false
+                      })
+                    ]
+                  },
+                  {
+                    role: "tool",
+                    content: [
+                      Prompt.toolResultPart({
+                        id: "call_image",
+                        name: "TestTool",
+                        isFailure: false,
+                        result: { output: png },
+                        modelOutput,
+                        providerExecuted: false
+                      })
+                    ]
+                  }
+                ]),
+                toolkit: TestToolkit
+              }).pipe(Effect.provide(OpenAiLanguageModel.model("gpt-4o-mini")))
+
+              const requests = yield* MockHttpClient.requests
+              const body = yield* getRequestBody(requests[0])
+              const toolOutput = body.input.find((item: any) => item.type === "function_call_output")
+
+              strictEqual(toolOutput.call_id, "call_image")
+              deepStrictEqual(
+                Array.isArray(toolOutput.output)
+                  ? toolOutput.output.map(({ detail: _, ...item }: any) => item)
+                  : toolOutput.output,
+                output
+              )
+            }).pipe(Effect.provide([makeTestLayer(), TestToolkitLayer])))
+        }
+
         it.effect("emits only the specialized output for apply_patch results", () =>
           Effect.gen(function*() {
             const toolkit = Toolkit.make(OpenAiTool.ApplyPatch({}))
@@ -1074,6 +1299,19 @@ describe("OpenAiLanguageModel", () => {
           deepStrictEqual(tool.parameters, inputSchema)
         }).pipe(Effect.provide(makeTestLayer())))
 
+      it.effect("names the tool when its parameters are not an object schema", () =>
+        Effect.gen(function*() {
+          const error = yield* LanguageModel.generateText({
+            prompt: "Use the tool",
+            toolkit: Toolkit.make(Tool.make("NoParams", { parameters: Schema.Struct({}) })),
+            disableToolCallResolution: true
+          }).pipe(Effect.provide(OpenAiLanguageModel.model("gpt-4o-mini")), Effect.flip)
+
+          strictEqual(error.reason._tag, "UnsupportedSchemaError")
+          assert.include(error.message, `"NoParams"`)
+          assert.include(error.message, "Tool.EmptyParams")
+        }).pipe(Effect.provide(makeTestLayer())))
+
       it.effect("empty object on properties for empty parameters", () =>
         Effect.gen(function*() {
           const EmptyTool = Tool.make("EmptyParamsTool", {
@@ -1247,7 +1485,7 @@ describe("OpenAiLanguageModel", () => {
     })
 
     describe("response handling", () => {
-      it.effect("preserves prompt cache diagnostics alongside the service tier", () =>
+      it.effect("preserves ultrafast service tier alongside prompt cache diagnostics", () =>
         Effect.gen(function*() {
           const diagnostics = {
             type: "cache_miss",
@@ -1256,7 +1494,7 @@ describe("OpenAiLanguageModel", () => {
             comparison_reusable_tokens: 2048
           } as const
           const body = JSON.stringify({
-            ...makeDefaultResponse({ service_tier: "priority" }),
+            ...makeDefaultResponse({ service_tier: "ultrafast" }),
             prompt_cache_diagnostics: diagnostics
           })
           const result = yield* LanguageModel.generateText({ prompt: "test" }).pipe(
@@ -1268,7 +1506,7 @@ describe("OpenAiLanguageModel", () => {
           const finish = result.content.find((part) => part.type === "finish")
           assert.isDefined(finish)
           deepStrictEqual(finish.metadata.openai, {
-            serviceTier: "priority",
+            serviceTier: "ultrafast",
             promptCacheDiagnostics: diagnostics
           })
         }))
@@ -1721,6 +1959,31 @@ describe("OpenAiLanguageModel", () => {
           ])
         ))
 
+      it.effect("reports length and interrupts tool calls when max_output_tokens truncates the response", () =>
+        Effect.gen(function*() {
+          const result = yield* LanguageModel.generateText({
+            prompt: "Use the tool",
+            toolkit: TestToolkit
+          }).pipe(Effect.provide(OpenAiLanguageModel.model("gpt-4o-mini")))
+
+          strictEqual(result.finishReason, "length")
+          deepStrictEqual(result.toolResults.map((part) => part.result), [{
+            type: "execution-interrupted",
+            reason: "Tool call execution was interrupted because the response finished with reason \"length\""
+          }])
+        }).pipe(
+          Effect.provide([
+            makeTestLayer({
+              body: {
+                status: "incomplete",
+                output: [makeFunctionCall("TestTool", { input: "test" })],
+                incomplete_details: { reason: "max_output_tokens" }
+              }
+            }),
+            TestToolkitLayer
+          ])
+        ))
+
       it.effect("extracts url citations as source parts", () =>
         Effect.gen(function*() {
           const result = yield* LanguageModel.generateText({
@@ -1759,9 +2022,27 @@ describe("OpenAiLanguageModel", () => {
   })
 
   describe("streamText", () => {
-    it.effect.each(["completed", "failed"] as const)(
-      "preserves prompt cache diagnostics in response.%s",
-      (status) =>
+    it.effect.each(
+      [
+        {
+          status: "completed",
+          serviceTier: "fast",
+          expectedMetadata: { promptCacheDiagnostics: { type: "cache_hit" } }
+        },
+        {
+          status: "completed",
+          serviceTier: "ultrafast",
+          expectedMetadata: { serviceTier: "ultrafast", promptCacheDiagnostics: { type: "cache_hit" } }
+        },
+        {
+          status: "failed",
+          serviceTier: "ultrafast",
+          expectedMetadata: { serviceTier: "ultrafast", promptCacheDiagnostics: { type: "cache_hit" } }
+        }
+      ] as const
+    )(
+      "preserves supported tiers and prompt cache diagnostics in response.$status with $serviceTier",
+      ({ status, serviceTier, expectedMetadata }) =>
         Effect.gen(function*() {
           const event = {
             type: `response.${status}`,
@@ -1771,7 +2052,7 @@ describe("OpenAiLanguageModel", () => {
                 status,
                 error: status === "failed" ? { code: "server_error", message: "generation failed" } : null
               }),
-              service_tier: "fast",
+              service_tier: serviceTier,
               prompt_cache_diagnostics: { type: "cache_hit" }
             }
           }
@@ -1790,7 +2071,7 @@ describe("OpenAiLanguageModel", () => {
 
           const finish = parts.find((part) => part.type === "finish")
           assert.isDefined(finish)
-          deepStrictEqual(finish.metadata.openai, { promptCacheDiagnostics: { type: "cache_hit" } })
+          deepStrictEqual(finish.metadata.openai, expectedMetadata)
         })
     )
 
@@ -2050,6 +2331,51 @@ describe("OpenAiLanguageModel", () => {
           strictEqual(result.reason._tag, "ToolParameterValidationError")
         }
         assert.isDefined(parts.find((part) => part.type === "finish"))
+      }))
+
+    it.effect("streams undeclared tool calls when tool call validation is deferred", () =>
+      Effect.gen(function*() {
+        const streamEvents = [
+          {
+            type: "response.created",
+            sequence_number: 1,
+            response: makeDefaultResponse({ status: "in_progress" })
+          },
+          {
+            type: "response.output_item.added",
+            sequence_number: 2,
+            output_index: 0,
+            item: makeFunctionCall("Write", {}, { arguments: "", status: "in_progress" })
+          },
+          {
+            type: "response.output_item.done",
+            sequence_number: 3,
+            output_index: 0,
+            item: makeFunctionCall("Write", { path: "a" })
+          },
+          {
+            type: "response.completed",
+            sequence_number: 4,
+            response: makeDefaultResponse()
+          }
+        ] as unknown as ReadonlyArray<typeof Generated.ResponseStreamEvent.Type>
+
+        const parts = yield* LanguageModel.streamText({
+          prompt: "Use the tools",
+          toolkit: TestToolkit,
+          disableToolCallResolution: true,
+          toolCallValidation: "deferred"
+        }).pipe(
+          Stream.runCollect,
+          Effect.provide(OpenAiLanguageModel.model("gpt-4o-mini")),
+          Effect.provide(makeStreamTestLayer(streamEvents)),
+          Effect.provide(TestToolkitLayer)
+        )
+
+        deepStrictEqual(
+          parts.filter((part) => part.type === "tool-call").map(({ name, params }) => ({ name, params })),
+          [{ name: "Write", params: { path: "a" } }]
+        )
       }))
 
     it.effect("waits for the stable streamed web search action before emitting the tool call", () =>
@@ -2408,6 +2734,7 @@ describe("OpenAiLanguageModel", () => {
             fileIdPrefixes: ["file-"],
             strictJsonSchema: false,
             useItemReferences: false,
+            reasoningModel: true,
             temperature: 0.5
           }))
         )
@@ -2418,10 +2745,93 @@ describe("OpenAiLanguageModel", () => {
         strictEqual(body.fileIdPrefixes, undefined)
         strictEqual(body.strictJsonSchema, undefined)
         strictEqual(body.useItemReferences, undefined)
+        strictEqual(body.reasoningModel, undefined)
         strictEqual(body.temperature, 0.5)
       }).pipe(Effect.provide(makeTestLayer())))
   })
+
+  describe("reasoning capabilities", () => {
+    it.effect("merges explicit include values with generated values", () =>
+      Effect.gen(function*() {
+        yield* LanguageModel.generateText({ prompt: "test" }).pipe(
+          Effect.provide(OpenAiLanguageModel.model("custom-model", {
+            store: false,
+            include: ["message.input_image.image_url", "reasoning.encrypted_content"],
+            top_logprobs: 2
+          }))
+        )
+
+        const requests = yield* MockHttpClient.requests
+        const body = yield* getRequestBody(requests[0])
+
+        deepStrictEqual(body.include, [
+          "message.input_image.image_url",
+          "reasoning.encrypted_content",
+          "message.output_text.logprobs"
+        ])
+      }).pipe(Effect.provide(makeTestLayer())))
+
+    for (const { name, model, config, include, role } of reasoningCapabilityCases) {
+      it.effect(name, () =>
+        Effect.gen(function*() {
+          yield* LanguageModel.generateText({
+            prompt: Prompt.make([
+              { role: "system", content: "You are a helpful assistant" },
+              { role: "user", content: "Hello" }
+            ])
+          }).pipe(Effect.provide(OpenAiLanguageModel.model(model, config)))
+
+          const requests = yield* MockHttpClient.requests
+          const body = yield* getRequestBody(requests[0])
+
+          deepStrictEqual(body.include, include)
+          strictEqual(body.input[0].role, role)
+        }).pipe(Effect.provide(makeTestLayer({ body: { model } }))))
+    }
+
+    it.effect("prefers the reasoningModel override from withConfigOverride", () =>
+      Effect.gen(function*() {
+        yield* LanguageModel.generateText({
+          prompt: Prompt.make([
+            { role: "system", content: "You are a helpful assistant" },
+            { role: "user", content: "Hello" }
+          ])
+        }).pipe(
+          OpenAiLanguageModel.withConfigOverride({ reasoningModel: true }),
+          Effect.provide(OpenAiLanguageModel.model("gpt-4.1", { store: false, reasoningModel: false }))
+        )
+
+        const requests = yield* MockHttpClient.requests
+        const body = yield* getRequestBody(requests[0])
+
+        deepStrictEqual(body.include, ["reasoning.encrypted_content"])
+        strictEqual(body.input[0].role, "developer")
+      }).pipe(Effect.provide(makeTestLayer({ body: { model: "gpt-4.1" } }))))
+  })
 })
+
+const reasoningCapabilityCases: ReadonlyArray<{
+  readonly name: string
+  readonly model: string
+  readonly config: Omit<typeof OpenAiLanguageModel.Config.Service, "model">
+  readonly include: ReadonlyArray<OpenAiSchema.IncludeEnum> | undefined
+  readonly role: "system" | "developer"
+}> = [
+  {
+    name: "defaults an unknown model to reasoning",
+    model: "custom-model",
+    config: { store: false },
+    include: ["reasoning.encrypted_content"],
+    role: "developer"
+  },
+  {
+    name: "disables automatic reasoning without dropping explicit includes",
+    model: "custom-model",
+    config: { store: false, reasoningModel: false, include: ["message.input_image.image_url"] },
+    include: ["message.input_image.image_url"],
+    role: "system"
+  }
+]
 
 // =============================================================================
 // Test Infrastructure
@@ -2491,6 +2901,7 @@ const makeStreamTestLayer = (events: ReadonlyArray<typeof Generated.ResponseStre
     OpenAiClient.OpenAiClient,
     OpenAiClient.OpenAiClient.of({
       client: undefined as any,
+      createDecisions: () => Effect.die(new Error("unexpected createDecisions call")),
       createResponse: () => Effect.die(new Error("unexpected createResponse call")),
       createResponseStream: () => Effect.succeed([response, Stream.fromIterable(events)]),
       createEmbedding: () => Effect.die(new Error("unexpected createEmbedding call"))
@@ -2533,15 +2944,14 @@ const makeTestLayer = (options: {
     }))
   )
 
-const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
-  Effect.gen(function*() {
-    const body = request.body
-    if (body._tag === "Uint8Array") {
-      const text = new TextDecoder().decode(body.body)
-      return JSON.parse(text)
-    }
-    return yield* Effect.die(new Error("Expected Uint8Array body"))
-  })
+const getRequestBody = Effect.fnUntraced(function*(request: HttpClientRequest.HttpClientRequest) {
+  const body = request.body
+  if (body._tag === "Uint8Array") {
+    const text = new TextDecoder().decode(body.body)
+    return JSON.parse(text)
+  }
+  return yield* Effect.die(new Error("Expected Uint8Array body"))
+})
 
 const decodeToolParamsFromStream = (
   parts: ReadonlyArray<any>,

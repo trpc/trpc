@@ -512,6 +512,101 @@ describe("HttpApiClient", () => {
         }
       >()
     })
+
+    it("infers services but not source errors from streaming payloads", () => {
+      type Item = { readonly n: number }
+
+      const Item = hole<Schema.Codec<Item, Item, never, "ItemEncoding">>()
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.post("bytes", "/bytes", {
+                payload: HttpApiSchema.StreamUint8Array()
+              }),
+              HttpApiEndpoint.post("ndjson", "/ndjson", {
+                payload: HttpApiSchema.StreamNdjson({ schema: Item })
+              })
+            )
+        )
+      const client = Effect.runSync(
+        HttpApiClient.make(Api).pipe(Effect.provide(FetchHttpClient.layer))
+      )
+
+      expect(client.group.bytes({ payload: hole<Stream.Stream<Uint8Array, "BytesError", "BytesSource">>() })).type
+        .toBe<
+          Effect.Effect<void, HttpClientError.HttpClientError | Schema.SchemaError, "BytesSource">
+        >()
+      expect(client.group.ndjson({ payload: hole<Stream.Stream<Item, "ItemError", "ItemSource">>() })).type.toBe<
+        Effect.Effect<
+          void,
+          HttpClientError.HttpClientError | Schema.SchemaError,
+          "ItemSource" | "ItemEncoding"
+        >
+      >()
+    })
+
+    it("infers services from streaming payloads with constraint-only schemas", () => {
+      type Item = { readonly n: number }
+
+      const Item = hole<Schema.ConstraintCodec<Item, Item, never, "ItemEncoding">>()
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.post("ndjson", "/ndjson", {
+                disableCodecs: true,
+                payload: HttpApiSchema.StreamNdjson({ schema: Item })
+              })
+            )
+        )
+      const client = Effect.runSync(
+        HttpApiClient.make(Api).pipe(Effect.provide(FetchHttpClient.layer))
+      )
+
+      expect(client.group.ndjson({ payload: hole<Stream.Stream<Item, "ItemError", "ItemSource">>() })).type.toBe<
+        Effect.Effect<
+          void,
+          HttpClientError.HttpClientError | Schema.SchemaError,
+          "ItemSource" | "ItemEncoding"
+        >
+      >()
+    })
+
+    it("infers payload services only from the payload argument", () => {
+      type Item = { readonly n: number }
+
+      const Item = hole<Schema.Codec<Item, Item, never, "ItemEncoding">>()
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.get("a", "/a", {
+                success: Schema.String
+              }),
+              HttpApiEndpoint.post("ndjson", "/ndjson", {
+                payload: HttpApiSchema.StreamNdjson({ schema: Item })
+              })
+            )
+        )
+      const client = Effect.runSync(
+        HttpApiClient.make(Api).pipe(Effect.provide(FetchHttpClient.layer))
+      )
+
+      expect(
+        Effect.all([
+          client.group.a(),
+          client.group.ndjson({ payload: hole<Stream.Stream<Item, "ItemError", "ItemSource">>() })
+        ])
+      ).type.toBe<
+        Effect.Effect<
+          [string, void],
+          HttpClientError.HttpClientError | Schema.SchemaError,
+          "ItemSource" | "ItemEncoding"
+        >
+      >()
+      expect<Effect.Services<ReturnType<typeof client.group.a>>>().type.toBe<never>()
+    })
   })
 
   describe("success", () => {
@@ -874,6 +969,57 @@ describe("HttpApiClient", () => {
       >()
     })
 
+    it("returns the response headers and socket for Upgrade successes", () => {
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.post("a", "/a", {
+                success: HttpApiSchema.Upgrade({ protocol: "tcp" })
+              })
+            )
+        )
+      const client = Effect.runSync(
+        HttpApiClient.make(Api).pipe(Effect.provide(FetchHttpClient.layer))
+      )
+
+      expect(client.group.a()).type.toBe<
+        Effect.Effect<HttpApiClient.Upgraded, HttpClientError.HttpClientError | Schema.SchemaError>
+      >()
+    })
+
+    it("returns either an upgrade or an ordinary success for mixed Upgrade successes", () => {
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.post("a", "/a", {
+                success: [
+                  HttpApiSchema.Upgrade({ protocol: "tcp", headers: { "x-id": Schema.String } }),
+                  Schema.String
+                ]
+              })
+            )
+        )
+      const client = Effect.runSync(
+        HttpApiClient.make(Api).pipe(Effect.provide(FetchHttpClient.layer))
+      )
+
+      expect(client.group.a()).type.toBe<
+        Effect.Effect<
+          HttpApiClient.Upgraded<{ readonly "x-id": string }> | string,
+          HttpClientError.HttpClientError | Schema.SchemaError
+        >
+      >()
+
+      const result = hole<HttpApiClient.Upgraded<{ readonly "x-id": string }> | string>()
+      if (HttpApiClient.isUpgraded(result)) {
+        expect(result).type.toBe<HttpApiClient.Upgraded<{ readonly "x-id": string }>>()
+      } else {
+        expect(result).type.toBe<string>()
+      }
+    })
+
     it("returns decoded streams for StreamUint8Array successes", () => {
       const Api = HttpApi.make("Api")
         .add(
@@ -899,6 +1045,34 @@ describe("HttpApiClient", () => {
           [ClientStream, HttpClientResponse.HttpClientResponse],
           HttpClientError.HttpClientError | Schema.SchemaError
         >
+      >()
+      expect(f({ responseMode: "response-only" })).type.toBe<
+        Effect.Effect<HttpClientResponse.HttpClientResponse, HttpClientError.HttpClientError>
+      >()
+    })
+
+    it("returns decoded streams with element decoding services for StreamNdjson successes", () => {
+      type Item = { readonly text: string }
+
+      const Item = hole<Schema.Codec<Item, Item, "ItemDecoding", never>>()
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.get("a", "/a", {
+                success: HttpApiSchema.StreamNdjson({ schema: Item })
+              })
+            )
+        )
+      const client = Effect.runSync(
+        HttpApiClient.make(Api).pipe(Effect.provide(FetchHttpClient.layer))
+      )
+      const f = client.group.a
+
+      type ClientStream = Stream.Stream<Item, HttpClientError.HttpClientError | Schema.SchemaError>
+
+      expect(f()).type.toBe<
+        Effect.Effect<ClientStream, HttpClientError.HttpClientError | Schema.SchemaError, "ItemDecoding">
       >()
       expect(f({ responseMode: "response-only" })).type.toBe<
         Effect.Effect<HttpClientResponse.HttpClientResponse, HttpClientError.HttpClientError>
@@ -985,6 +1159,62 @@ describe("HttpApiClient", () => {
           | Schema.SchemaError
         >
       >()
+    })
+  })
+
+  describe("decodeResponse", () => {
+    const Success = hole<Schema.Codec<{ readonly a: number }, unknown, "SuccessDecoding", never>>()
+    const Error = hole<Schema.Codec<{ readonly b: string }, unknown, "ErrorDecoding", never>>()
+    const Api = HttpApi.make("Api")
+      .add(
+        HttpApiGroup.make("group")
+          .add(
+            HttpApiEndpoint.get("a", "/a", { success: Success, error: Error })
+          )
+      )
+
+    it("infers the decoded endpoint success, errors and services", () => {
+      const decode = HttpApiClient.decodeResponse(Api, { group: "group", endpoint: "a" })
+      const response = hole<HttpClientResponse.HttpClientResponse>()
+
+      expect(decode(response)).type.toBe<
+        Effect.Effect<
+          { readonly a: number },
+          { readonly b: string } | HttpClientError.HttpClientError | Schema.SchemaError,
+          "SuccessDecoding" | "ErrorDecoding"
+        >
+      >()
+      expect(decode).type.toBeCallableWith(response, { sseOptions: hole<Sse.DecodeOptions>() })
+    })
+
+    it("requires the decoding services of middleware error schemas but not client middleware", () => {
+      class ClientError extends Schema.TaggedError<ClientError>()("ClientError", {}) {}
+      class Middleware extends HttpApiMiddleware.Service<Middleware, {
+        clientError: ClientError
+      }>()("Middleware", {
+        error: hole<Schema.Codec<{ readonly c: string }, unknown, "MiddlewareErrorDecoding", never>>(),
+        requiredForClient: true
+      }) {}
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("group")
+            .add(
+              HttpApiEndpoint.get("a", "/a", { success: Success, error: Error }).middleware(Middleware)
+            )
+        )
+      const decode = HttpApiClient.decodeResponse(Api, { group: "group", endpoint: "a" })
+
+      expect(decode(hole<HttpClientResponse.HttpClientResponse>())).type.toBe<
+        Effect.Effect<
+          { readonly a: number },
+          { readonly b: string } | { readonly c: string } | HttpClientError.HttpClientError | Schema.SchemaError,
+          "SuccessDecoding" | "ErrorDecoding" | "MiddlewareErrorDecoding"
+        >
+      >()
+    })
+
+    it("rejects unknown endpoint identifiers", () => {
+      expect(HttpApiClient.decodeResponse).type.not.toBeCallableWith(Api, { group: "group", endpoint: "missing" })
     })
   })
 

@@ -1278,7 +1278,7 @@ export const mergeAll = <Layers extends [Layer<never, any, any>, ...Array<Layer<
   Success<Layers[number]>,
   Error<Layers[number]>,
   Services<Layers[number]>
-> => fromBuild((memoMap, scope) => mergeAllEffect(layers, memoMap, scope))
+> => fromBuildMemo((memoMap, scope) => mergeAllEffect(layers, memoMap, scope))
 
 /**
  * Merges this layer with another layer concurrently, producing a new layer with
@@ -1366,7 +1366,7 @@ const provideWith = (
     thatContext: Context.Context<any>
   ) => Context.Context<any>
 ) =>
-  fromBuild((memoMap, scope) =>
+  fromBuildMemo((memoMap, scope) =>
     internalEffect.flatMap(
       Array.isArray(that)
         ? mergeAllEffect(that as NonEmptyArray<Layer<any, any, any>>, memoMap, scope)

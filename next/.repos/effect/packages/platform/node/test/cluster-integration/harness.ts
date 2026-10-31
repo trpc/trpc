@@ -434,7 +434,7 @@ export const make = Effect.fnUntraced(function*(options: MakeOptions) {
   const database = yield* Layer.buildWithScope(databaseLayer, parentScope)
   const sql = Context.get(database, SqlClient.SqlClient).withoutTransforms()
   const messageStorage = yield* SqlMessageStorage.layerWith({ prefix }).pipe(
-    Layer.provide(NodeCrypto.layer),
+    Layer.provide(NodeCrypto.layerDigest),
     Layer.provide(ShardingConfig.layer(config)),
     Layer.buildWithScope(parentScope),
     Effect.provide(database)

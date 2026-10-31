@@ -1116,56 +1116,53 @@ function dotEnvExpand(parsed: Record<string, string>): Record<string, string> {
 
   for (const configKey of Object.keys(parsed)) {
     // resolve escape sequences
-    newParsed[configKey] = interpolate(parsed[configKey], parsed).replace(/\\\$/g, "$")
+    newParsed[configKey] = interpolate(parsed[configKey], parsed, new Set([configKey])).replace(/\\\$/g, "$")
   }
 
   return newParsed
 }
 
-function interpolate(envValue: string, parsed: Record<string, string>): string {
-  // find the last unescaped dollar sign in the
-  // value so that we can evaluate it
-  const lastUnescapedDollarSignIndex = searchLast(envValue, /(?!(?<=\\))\$/g)
+function interpolate(
+  envValue: string,
+  parsed: Record<string, string>,
+  seen: ReadonlySet<string>
+): string {
+  const reference = /\${?(\w+)/g
+  let result = ""
+  let cursor = 0
+  let match: RegExpExecArray | null
+  while ((match = reference.exec(envValue)) != null) {
+    if (match.index > 0 && envValue[match.index - 1] === "\\") continue
+    const [, name] = match
+    let end = reference.lastIndex
+    let defaultValue = ""
+    if (envValue.startsWith(":-", end)) {
+      end += 2
+      const start = end
+      let depth = 0
+      // Match default braces in the source, not in substituted values.
+      for (; end < envValue.length; end++) {
+        if (envValue.startsWith("${", end)) {
+          depth++
+          end++
+        } else if (envValue[end] === "}") {
+          if (depth === 0) break
+          depth--
+        }
+      }
+      defaultValue = envValue.slice(start, end)
+    }
+    if (envValue[end] === "}") end++
 
-  // If we couldn't match any unescaped dollar sign
-  // let's return the string as is
-  if (lastUnescapedDollarSignIndex === -1) return envValue
-
-  // This is the right-most group of variables in the string
-  const rightMostGroup = envValue.slice(lastUnescapedDollarSignIndex)
-
-  /**
-   * This finds the inner most variable/group divided
-   * by variable name and default value (if present)
-   * (
-   *   (?!(?<=\\))\$        // only match dollar signs that are not escaped
-   *   {?                   // optional opening curly brace
-   *     ([\w]+)            // match the variable name
-   *     (?::-([^}\\]*))?   // match an optional default value
-   *   }?                   // optional closing curly brace
-   * )
-   */
-  const matchGroup = /((?!(?<=\\))\${?([\w]+)(?::-([^}\\]*))?}?)/
-  const match = rightMostGroup.match(matchGroup)
-
-  if (match !== null) {
-    const [_, group, variableName, defaultValue] = match
-    const value = Object.hasOwn(parsed, variableName) && parsed[variableName] !== ""
-      ? parsed[variableName]
-      : defaultValue ?? ""
-
-    return interpolate(
-      envValue.replace(group, () => value),
-      parsed
-    )
+    // References already being expanded resolve as unset.
+    const expanded = Object.hasOwn(parsed, name) && !seen.has(name)
+      ? interpolate(parsed[name], parsed, new Set([...seen, name]))
+      : ""
+    result += envValue.slice(cursor, match.index) + (expanded || interpolate(defaultValue, parsed, seen))
+    cursor = end
+    reference.lastIndex = end
   }
-
-  return envValue
-}
-
-function searchLast(str: string, rgx: RegExp): number {
-  const matches = Array.from(str.matchAll(rgx))
-  return matches.length > 0 ? matches.slice(-1)[0].index : -1
+  return result + envValue.slice(cursor)
 }
 
 /**

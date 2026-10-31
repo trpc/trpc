@@ -12,7 +12,7 @@
   note: "The inferred Channel.fromChunk match is not equivalent. Rebuild the buffered upstream-pull transform with Channel.fromTransform and Channel.toTransform."
 "effect/Channel#catchAll":
   replacement: "Channel.catch"
-  note: "Renamed to catch for typed-error recovery."
+  note: "Rename to Channel.catch. Causes containing defects skip typed recovery and convert typed errors to defects; interruptions alongside typed errors do not block recovery. Use Channel.catchCause for full-cause handling."
 "effect/Channel#catchAllCause":
   replacement: "Channel.catchCause"
   note: "Renamed to catchCause for full-cause recovery."
@@ -114,7 +114,7 @@
   note: "Use Channel.mapInput(self, (value) => Effect.succeed(f(value))); v4 consolidated pure and effectful input mapping."
 "effect/Channel#mapInputInEffect":
   replacement: "Channel.mapInput"
-  note: "Renamed to mapInput; the mapper remains effectful."
+  note: "Renamed to mapInput; the mapper remains effectful. Both overloads retain mapper service requirements in the resulting channel, so provide those services before running it."
 "effect/Channel#mapOut":
   replacement: "Channel.map"
   note: "Renamed to map; the v4 mapper also receives the element index."
@@ -146,11 +146,11 @@
   replacement: "Channel.merge"
   note: "Use Channel.merge with haltStrategy left, right, both, or either for standard policies. Custom MergeDecision effects require a Pull-level redesign."
 "effect/Channel#orDieWith":
-  replacement: "Channel.catch"
-  note: "Use Channel.catch(self, (error) => Channel.die(f(error))); v4 Channel.orDie has no mapping callback."
+  replacement: "Channel.mapError + Channel.orDie"
+  note: "Use self.pipe(Channel.mapError(f), Channel.orDie). Mapping transforms every typed error while preserving existing defects and interruptions; Channel.catch skips the mapper for causes containing defects."
 "effect/Channel#orElse":
   replacement: "Channel.catch"
-  note: "Use Channel.catch(self, () => that()) and keep the fallback lazy."
+  note: "Use Channel.catch(self, () => that()) and keep the fallback lazy. Causes containing defects skip the fallback and convert typed errors to defects; interruptions alongside typed errors do not block recovery."
 "effect/Channel#provideLayer":
   replacement: "Channel.provide"
   note: "Both collapse into provide. V4 removes services supplied by the layer and retains remaining requirements; use options.local when a fresh layer instance is needed."
@@ -217,3 +217,12 @@
 "effect/Channel#zipRight":
   replacement: "Channel.concat"
   note: "Use concat for the sequential form; it preserves the right done value. Concurrent mode has no exact replacement."
+effect/Channel#mapError:
+  include: true
+  replacement: "Channel.mapError"
+  note: "Maps every typed error in the cause, preserving defects, interruptions and reason order. Unlike typed recovery, mapping does not convert errors to defects."
+
+effect/Channel#orDie:
+  include: true
+  replacement: "Channel.orDie"
+  note: "Converts typed errors to defects. If a defect is already present, every typed error is converted to a defect, preserving reason order and interruptions."

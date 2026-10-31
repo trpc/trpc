@@ -1,3 +1,4 @@
+import { getClosingParenthensePosition } from "../../http/FindMyWay/internal/router.ts"
 import type * as Schema from "../../Schema.ts"
 import * as SchemaAST from "../../SchemaAST.ts"
 
@@ -24,17 +25,8 @@ export function toRouterPath(path: string, schema: Schema.Constraint | undefined
   if (paramNames === undefined) return path
 
   let out = ""
-  let depth = 0
-  let regexStart = -1
   for (let i = 0; i < path.length; i++) {
     const char = path[i]
-    if (depth > 0 || i === regexStart) {
-      out += char
-      if (char === "\\") out += path[++i] ?? ""
-      else if (char === "(") depth++
-      else if (char === ")") depth--
-      continue
-    }
     if (char !== ":") {
       out += char
       continue
@@ -50,12 +42,48 @@ export function toRouterPath(path: string, schema: Schema.Constraint | undefined
       out += param[0]
       i += param[0].length - 1
       const next = path[i + 1]
-      if (next === "(") regexStart = i + 1
-      // FindMyWay needs a regex to end the parameter name here.
-      else if (next !== undefined && !"/.-?".includes(next)) out += "(.*?)"
+      if (next === "(") {
+        const end = getClosingParenthensePosition(path, i + 1)
+        out += path.slice(i + 1, end + 1)
+        i = end
+      } else if (next !== undefined && !"/.-?".includes(next)) {
+        // FindMyWay needs a regex to end the parameter name here.
+        out += "(.*?)"
+      }
     } else {
       out += "::"
     }
   }
   return out
+}
+
+/**
+ * Replaces declared `:name` params, including any regex constraint and `?`.
+ * Returning `undefined` also removes a preceding `/`.
+ *
+ * @internal
+ */
+export function replaceParams(
+  path: string,
+  paramNames: ReadonlySet<string> | undefined,
+  replace: (name: string, optional: boolean) => string | undefined
+): string {
+  const params = /::|:(\w+)/g
+  let out = ""
+  let last = 0
+  for (let param = params.exec(path); param !== null; param = params.exec(path)) {
+    const name = param[1]
+    if (name === undefined || (paramNames !== undefined && !paramNames.has(name))) continue
+    let end = params.lastIndex
+    if (path[end] === "(") end = getClosingParenthensePosition(path, end) + 1
+    const optional = path[end] === "?"
+    if (optional) end++
+    const value = replace(name, optional)
+    let start = param.index
+    if (value === undefined && path[start - 1] === "/") start--
+    out += path.slice(last, start) + (value ?? "")
+    params.lastIndex = end
+    last = end
+  }
+  return out + path.slice(last)
 }

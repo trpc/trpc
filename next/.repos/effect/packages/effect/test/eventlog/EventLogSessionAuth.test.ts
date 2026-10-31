@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Effect } from "effect"
+import * as WebCrypto from "effect/crypto/WebCrypto"
 import * as EventLogSessionAuth from "effect/eventlog/EventLogSessionAuth"
 
 const makeSigningKeyPair = Effect.promise(async () => {
@@ -126,5 +127,20 @@ describe("EventLogSessionAuth", () => {
 
       assert.strictEqual(error._tag, "EventLogSessionAuthError")
       assert.strictEqual(error.reason, "InvalidPayload")
+    }))
+
+  it.effect("fails with CryptoUnavailable when the WebCrypto object has no subtle", () =>
+    Effect.gen(function*() {
+      const keyPair = yield* makeSigningKeyPair
+      const error = yield* EventLogSessionAuth.signSessionAuthPayload({
+        ...makePayload(keyPair.signingPublicKey),
+        signingPrivateKey: keyPair.signingPrivateKey
+      }).pipe(
+        Effect.provide(WebCrypto.layer({} as Crypto)),
+        Effect.flip
+      )
+
+      assert.strictEqual(error._tag, "EventLogSessionAuthError")
+      assert.strictEqual(error.reason, "CryptoUnavailable")
     }))
 })

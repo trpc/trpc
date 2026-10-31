@@ -1,0 +1,12 @@
+"@effect/experimental/EventLogEncryption#EncryptedEntry":
+  include: true
+  replacement: effect/eventlog/EventLogEncryption#EncryptedBatch
+  note: Replace per-entry encrypted records with batches containing entryIds, iv, and encryptedBatch. Each batch encrypts multiple entries as one message and authenticates the store id and ordered entry ids; existing per-entry ciphertext is not compatible with this format.
+"@effect/experimental/EventLogEncryption#EncryptedRemoteEntry":
+  include: true
+  replacement: effect/eventlog/EventLogEncryption#EncryptedRemoteBatch
+  note: Remote encrypted records are now batches with entryIds, iv, and encryptedBatch. sequence is the first entry sequence; subsequent entries have consecutive sequences. Existing per-entry ciphertext is not compatible with the batch format.
+"@effect/experimental/EventLogEncryption#EventLogEncryption":
+  include: true
+  replacement: effect/eventlog/EventLogEncryption#EventLogEncryption
+  note: Use the Context.Service and its Service projection. encrypt and decrypt now take storeId after identity. encrypt returns EncryptedBatch records rather than an iv/encryptedEntries object; decrypt takes EncryptedRemoteBatch records and returns RemoteEntry records. Encryption authenticates the store id and ordered entry ids, so old per-entry ciphertext cannot be supplied as a batch.

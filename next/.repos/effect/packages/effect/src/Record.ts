@@ -1181,12 +1181,29 @@ export const isSubrecord: {
 /**
  * Reduces a record to a single value by combining its entries with a specified function.
  *
+ * **Details**
+ *
+ * The reducer function receives the accumulator, the current value, and the
+ * key of the current entry.
+ *
  * **Example** (Reducing record values)
  *
  * ```ts import.meta.vitest
  * import { Record } from "effect"
  *
  * Record.reduce({ a: 1, b: 2, c: 3 }, 0, (acc, value) => acc + value) // => 6
+ * ```
+ *
+ * **Example** (Using the key in the reducer)
+ *
+ * ```ts import.meta.vitest
+ * import { Record } from "effect"
+ *
+ * Record.reduce(
+ *   { a: 1, b: 2, c: 3 },
+ *   "",
+ *   (acc, value, key) => (acc === "" ? `${key}${value}` : `${acc}-${key}${value}`)
+ * ) // => "a1-b2-c3"
  * ```
  *
  * @stability stable

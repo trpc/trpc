@@ -423,6 +423,21 @@ function markNamespaceReference(
   markUsed(getExports(fileInfos, importedFile, name.text), name)
 }
 
+function markDynamicImport(
+  fileInfos: ReadonlyMap<string, FileInfo>,
+  fileInfo: FileInfo,
+  workspacePackages: ReadonlyMap<string, string>,
+  importCall: ts.CallExpression
+) {
+  const specifier = importCall.arguments[0]
+  if (specifier === undefined || !ts.isStringLiteralLike(specifier)) return
+  const importedFile = resolveModule(specifier.text, fileInfo.sourceFile.fileName, workspacePackages)
+  if (importedFile === undefined) return
+  for (const exports of fileInfos.get(importedFile)?.internalExports.values() ?? []) {
+    markUsed(exports, importCall)
+  }
+}
+
 function scanUsage(
   fileInfos: ReadonlyMap<string, FileInfo>,
   fileInfo: FileInfo,
@@ -431,6 +446,8 @@ function scanUsage(
   const visit = (node: ts.Node) => {
     if (ts.isExportSpecifier(node)) {
       markUsed(getReExportedInternals(fileInfos, fileInfo, workspacePackages, node), node)
+    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      markDynamicImport(fileInfos, fileInfo, workspacePackages, node)
     } else if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && ts.isIdentifier(node.name)) {
       markNamespaceReference(fileInfos, fileInfo, node.expression, node.name)
     } else if (ts.isQualifiedName(node) && ts.isIdentifier(node.left)) {

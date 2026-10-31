@@ -44,6 +44,7 @@ export const layer: Layer.Layer<Stdio.Stdio> = Layer.succeed(
     args: Effect.sync(() => Deno.args),
     stdinIsTerminal: Effect.sync(() => Deno.stdin.isTerminal()),
     stdoutIsTerminal: Effect.sync(() => Deno.stdout.isTerminal()),
+    stderrIsTerminal: Effect.sync(() => Deno.stderr.isTerminal()),
     stdout: (options) => output(() => Deno.stdout.writable, "stdout", options),
     stderr: (options) => output(() => Deno.stderr.writable, "stderr", options),
     stdin: Stream.fromReadableStream({

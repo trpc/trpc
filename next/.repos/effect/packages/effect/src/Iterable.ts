@@ -647,15 +647,18 @@ export const takeWhile: {
   <A>(self: Iterable<A>, predicate: (a: A, i: number) => boolean): Iterable<A>
 } = dual(2, <A>(self: Iterable<A>, predicate: (a: A, i: number) => boolean): Iterable<A> => ({
   [Symbol.iterator]() {
-    const iterator = self[Symbol.iterator]()
+    let iterator: Iterator<A> | undefined = self[Symbol.iterator]()
     let i = 0
     return {
       next() {
-        const result = iterator.next()
-        if (result.done || !predicate(result.value, i++)) {
-          return { done: true, value: undefined }
+        if (iterator !== undefined) {
+          const result = iterator.next()
+          if (!result.done && predicate(result.value, i++)) {
+            return result
+          }
+          iterator = undefined
         }
-        return result
+        return { done: true, value: undefined }
       }
     }
   }
@@ -2282,21 +2285,22 @@ export const dedupeAdjacentWith: {
     let first = true
     let last: A
     function next(): IteratorResult<A> {
-      const result = iterator.next()
-      if (result.done) {
-        return { done: true, value: undefined }
+      while (true) {
+        const result = iterator.next()
+        if (result.done) {
+          return { done: true, value: undefined }
+        }
+        if (first) {
+          first = false
+          last = result.value
+          return result
+        }
+        const current = result.value
+        if (!isEquivalent(last, current)) {
+          last = current
+          return result
+        }
       }
-      if (first) {
-        first = false
-        last = result.value
-        return result
-      }
-      const current = result.value
-      if (isEquivalent(last, current)) {
-        return next()
-      }
-      last = current
-      return result
     }
     return { next }
   }

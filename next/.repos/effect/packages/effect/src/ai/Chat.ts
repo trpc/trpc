@@ -18,8 +18,7 @@ import * as Duration from "../Duration.ts"
 import * as Effect from "../Effect.ts"
 import * as Layer from "../Layer.ts"
 import * as Option from "../Option.ts"
-import type { PersistenceError } from "../persistence/Persistence.ts"
-import { BackingPersistence } from "../persistence/Persistence.ts"
+import { BackingPersistence, PersistenceError } from "../persistence/Persistence.ts"
 import * as Predicate from "../Predicate.ts"
 import * as Ref from "../Ref.ts"
 import * as Schema from "../Schema.ts"
@@ -228,7 +227,7 @@ export interface Chat {
     <Options extends NoExcessProperties<LanguageModel.GenerateTextOptions<{}>, Options>>(
       options: Options & { readonly toolkit?: undefined } & LanguageModel.GenerateTextOptions<{}>
     ): Effect.Effect<
-      LanguageModel.GenerateTextResponse<{}>,
+      LanguageModel.GenerateTextResponse<{}, LanguageModel.ExtractToolParametersModeWithoutToolkit<Options>>,
       LanguageModel.ExtractError<Options>,
       LanguageModel.LanguageModel | LanguageModel.ExtractServices<Options>
     >
@@ -310,7 +309,7 @@ export interface Chat {
     <Options extends NoExcessProperties<LanguageModel.GenerateTextOptions<{}>, Options>>(
       options: Options & { readonly toolkit?: undefined } & LanguageModel.GenerateTextOptions<{}>
     ): Stream.Stream<
-      Response.StreamPart<{}>,
+      Response.StreamPart<{}, LanguageModel.ExtractToolParametersModeWithoutToolkit<Options>>,
       LanguageModel.ExtractError<Options>,
       LanguageModel.LanguageModel | LanguageModel.ExtractServices<Options>
     >
@@ -926,13 +925,19 @@ export const makePersisted = Effect.fnUntraced(function*(options: {
         return yield* new ChatNotFoundError({ chatId })
       }
       // Decode the encoded previous history
-      const history = yield* decodeHistory(previousHistory)
+      const history = yield* decodeHistory(previousHistory).pipe(
+        Effect.mapError((cause) =>
+          new PersistenceError({
+            message: `Failed to decode persisted history for chat "${chatId}"`,
+            cause
+          })
+        )
+      )
       // Hydrate the chat history
       yield* Ref.set(chat.history, history)
       // Convert the chat to a persisted chat
       return yield* toPersisted(chatId, chat, ttl)
-    },
-    Effect.catchTag("SchemaError", Effect.die)
+    }
   )
 
   const get = Effect.fnUntraced(

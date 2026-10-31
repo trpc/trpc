@@ -47,6 +47,34 @@ describe("Sink", () => {
         deepStrictEqual(Cause.squash(abortReason as Cause.Cause<Error>), error)
       }))
 
+    it.effect("fromWritableStream - pipeThrough aborts with the upstream failure", () =>
+      Effect.gen(function*() {
+        const error = new Error("upstream failed")
+        let abortReason: unknown = undefined
+        let closes = 0
+        const writable = new WritableStream<number>({
+          close() {
+            closes++
+          },
+          abort(reason) {
+            abortReason = reason
+          }
+        })
+        const exit = yield* Stream.make(1).pipe(
+          Stream.concat(Stream.fail(error)),
+          Stream.pipeThrough(Sink.fromWritableStream({
+            evaluate: () => writable,
+            onError: (cause) => cause
+          })),
+          Stream.runDrain,
+          Effect.exit
+        )
+
+        assertExitFailure(exit, Cause.fail(error))
+        strictEqual(closes, 0)
+        deepStrictEqual(abortReason, Cause.fail(error))
+      }))
+
     it.effect("fromWritableStream - aborts instead of closing on interruption", () =>
       Effect.gen(function*() {
         const started = yield* Deferred.make<void>()
@@ -204,7 +232,23 @@ describe("Sink", () => {
       }))
   })
 
+  describe("collect", () => {
+    it.effect("collects a large input chunk", () =>
+      Effect.gen(function*() {
+        const values = Array.makeBy(200000, (i) => i)
+        const result = yield* Stream.fromArray(values).pipe(Stream.run(Sink.collect<number>()))
+        deepStrictEqual(result, values)
+      }))
+  })
+
   describe("take", () => {
+    it.effect("collects a large input chunk", () =>
+      Effect.gen(function*() {
+        const values = Array.makeBy(200000, (i) => i)
+        const result = yield* Stream.fromArray(values).pipe(Stream.run(Sink.take<number>(values.length)))
+        deepStrictEqual(result, values)
+      }))
+
     it.effect("normalizes the element count", () =>
       Effect.gen(function*() {
         const results = yield* Effect.all([
@@ -300,6 +344,40 @@ describe("Sink", () => {
           Stream.runCollect
         )
         deepStrictEqual(result, [[1, 2], [], []])
+      }))
+  })
+
+  describe("takeUntil", () => {
+    it.effect("takeUntil preserves leftovers and stops at the match", () =>
+      Effect.gen(function*() {
+        const result = yield* Stream.make(1, 2, 3, 4).pipe(
+          Stream.concat(Stream.fail("pulled past the match")),
+          Stream.transduce(Sink.takeUntil((n) => n % 2 === 0)),
+          Stream.take(2),
+          Stream.runCollect
+        )
+        deepStrictEqual(result, [[1, 2], [3, 4]])
+      }))
+
+    it.effect("takeUntilEffect preserves leftovers and stops at the match", () =>
+      Effect.gen(function*() {
+        for (const chunkSize of [1, 4]) {
+          const inputs: Array<number> = []
+          const result = yield* Stream.make(1, 2, 3, 4).pipe(
+            Stream.rechunk(chunkSize),
+            Stream.concat(Stream.fail("pulled past the match")),
+            Stream.transduce(Sink.takeUntilEffect((n) =>
+              Effect.sync(() => {
+                inputs.push(n)
+                return n % 2 === 0
+              })
+            )),
+            Stream.take(2),
+            Stream.runCollect
+          )
+          deepStrictEqual(result, [[1, 2], [3, 4]])
+          deepStrictEqual(inputs, [1, 2, 3, 4])
+        }
       }))
   })
 

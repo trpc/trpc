@@ -44,7 +44,7 @@ const fileInfo: FileSystem.File.Info = {
   mtime: Option.some(new Date(lastModified)),
   atime: Option.none(),
   birthtime: Option.none(),
-  dev: 0,
+  dev: 0n,
   ino: Option.none(),
   mode: 0,
   nlink: Option.none(),
@@ -73,8 +73,12 @@ const makeHandler = async () => {
       Effect.succeed(HttpServerResponse.text(fileBody, {
         status: options?.status,
         headers: {
+          "Content-Location": "/file.txt",
+          Date: lastModified,
           ETag: "\"etag-value\"",
-          "Last-Modified": lastModified
+          Expires: "Thu, 02 Jan 2025 00:00:00 GMT",
+          "Last-Modified": lastModified,
+          Vary: "Accept-Encoding"
         }
       })),
     fileWebResponse: () => Effect.die("not implemented")
@@ -189,6 +193,10 @@ describe("HttpStaticServer", () => {
     assert.strictEqual(exact.headers.get("etag"), "\"etag-value\"")
     assert.strictEqual(exact.headers.get("cache-control"), "public, max-age=60")
     assert.strictEqual(exact.headers.get("last-modified"), lastModified)
+    assert.strictEqual(exact.headers.get("content-location"), "/file.txt")
+    assert.strictEqual(exact.headers.get("date"), lastModified)
+    assert.strictEqual(exact.headers.get("expires"), "Thu, 02 Jan 2025 00:00:00 GMT")
+    assert.strictEqual(exact.headers.get("vary"), "Accept-Encoding")
     assert.strictEqual(exact.headers.get("content-type"), null)
     assert.strictEqual(exact.headers.get("content-length"), null)
   })

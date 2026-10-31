@@ -31,17 +31,16 @@ const snapshot = <A, E>(exit: Exit.Exit<A, E>) =>
       )
     }
 
-const observeFatalDefect = (disableFatalDefects: boolean | undefined, defecting: boolean, separateIds = false) =>
-  Effect.gen(function*() {
+const observeFatalDefect = Effect.fnUntraced(
+  function*(disableFatalDefects: boolean | undefined, defecting: boolean, separateIds = false) {
     const entered = yield* Deferred.make<void>()
     const release = yield* Deferred.make<void>()
     const layer = FatalDefectEntity.toLayer({
-      Hold: () =>
-        Effect.gen(function*() {
-          yield* Deferred.succeed(entered, undefined)
-          yield* Deferred.await(release)
-          return 42
-        }),
+      Hold: Effect.fnUntraced(function*() {
+        yield* Deferred.succeed(entered, undefined)
+        yield* Deferred.await(release)
+        return 42
+      }),
       Bad: () => defecting ? Effect.die("fixture defect") : Effect.fail("typed failure")
     }, {
       concurrency: "unbounded",
@@ -57,7 +56,10 @@ const observeFatalDefect = (disableFatalDefects: boolean | undefined, defecting:
     yield* Deferred.succeed(release, undefined)
     const goodExit = yield* Fiber.await(good)
     return { badExit: snapshot(badExit), goodExit: snapshot(goodExit) }
-  }).pipe(Effect.provide(ShardingConfig.layerDefaults), Effect.timeout("5 seconds"))
+  },
+  Effect.provide(ShardingConfig.layerDefaults),
+  Effect.timeout("5 seconds")
+)
 
 describe.concurrent("Entity", () => {
   describe("makeTestClient", () => {

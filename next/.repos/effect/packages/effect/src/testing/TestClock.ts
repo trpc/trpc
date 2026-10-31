@@ -13,14 +13,15 @@
  */
 import * as Arr from "../Array.ts"
 import * as Clock from "../Clock.ts"
+import * as Console from "../Console.ts"
+import * as Context from "../Context.ts"
 import * as Data from "../Data.ts"
 import * as Duration from "../Duration.ts"
 import * as Effect from "../Effect.ts"
 import * as Fiber from "../Fiber.ts"
-import { flow } from "../Function.ts"
 import * as Latch from "../Latch.ts"
 import * as Layer from "../Layer.ts"
-import * as Order from "../Order.ts"
+import * as Scheduler from "../Scheduler.ts"
 import * as Semaphore from "../Semaphore.ts"
 
 /**
@@ -40,6 +41,9 @@ import * as Semaphore from "../Semaphore.ts"
  * the time is set to on or after the time they are scheduled to run. Fork the
  * effect being tested, then adjust the clock time, and finally verify that the
  * expected effects have been performed.
+ * The ordered execution of sleeps registered after multiple scheduler hops
+ * requires fibers running under {@link layer}; providing a clock from
+ * {@link make} by hand does not install the tracking scheduler.
  *
  * **Example** (Testing timeouts deterministically)
  *
@@ -142,7 +146,8 @@ export declare namespace TestClock {
   /**
    * Options used when constructing a `TestClock`. `warningDelay` controls how
    * long the live clock waits before logging a warning when a test uses time
-   * without advancing the test clock.
+   * without advancing the test clock, or when a fiber woken by the test clock
+   * keeps running without suspending.
    *
    * **Example** (Configuring the warning delay)
    *
@@ -170,7 +175,8 @@ export declare namespace TestClock {
   export interface Options {
     /**
      * The amount of time to wait before displaying a warning message when a
-     * test is using time but is not advancing the `TestClock`.
+     * test is using time but is not advancing the `TestClock`, or when a fiber
+     * woken by `adjust` or `setTime` keeps running without suspending.
      */
     readonly warningDelay?: Duration.Input
   }
@@ -197,14 +203,29 @@ const warningMessage = "A test is using time, but is not advancing the test " +
   "clock, which may result in the test hanging. Use TestClock.adjust to " +
   "manually advance the time."
 
+/**
+ * The warning message that will be displayed if a fiber woken by the
+ * `TestClock` does not suspend within the warning delay.
+ */
+const busyWarningMessage = "A fiber woken by the test clock is still running " +
+  "without suspending, so the test clock stopped waiting for it. Sleeps it " +
+  "starts later may be scheduled relative to a later time."
+
+/**
+ * The live clock of each `TestClock`, so a `TestClock` constructed while
+ * another one is the current clock uses the outer clock's live clock instead
+ * of the outer `TestClock`, which only advances when adjusted.
+ */
+const liveClocks = new WeakMap<Clock.Clock, Clock.Clock>()
+
+interface WakeTracker {
+  pending: number
+  onIdle: (() => void) | undefined
+}
+
 const defaultOptions: Required<TestClock.Options> = {
   warningDelay: "1 second"
 }
-
-const SleepOrder = Order.flip(Order.Struct({
-  timestamp: Order.Number,
-  sequence: Order.Number
-}))
 
 const nanosPerMilli = BigInt(1_000_000)
 
@@ -216,6 +237,14 @@ const millisToNanos = (millis: number): bigint => {
 
 /**
  * Creates a `TestClock` with optional configuration.
+ *
+ * **Gotchas**
+ *
+ * The guarantee that sleeps registered after multiple scheduler hops run in
+ * order applies only to fibers running under {@link layer}, which
+ * `@effect/vitest`'s `it.effect` uses. Providing a clock from `make` by hand
+ * waits only one scheduler turn after each woken sleep. Prefer `layer` when
+ * forked fibers sleep.
  *
  * **Example** (Creating a test clock)
  *
@@ -245,18 +274,22 @@ const millisToNanos = (millis: number): bigint => {
  * @category constructors
  * @since 4.0.0
  */
-export const make = Effect.fnUntraced(function*(
+export const make = (options?: TestClock.Options) => Effect.map(makeWithScheduler(options), ([testClock]) => testClock)
+
+const makeWithScheduler = Effect.fnUntraced(function*(
   options?: TestClock.Options
 ) {
   const config = { ...defaultOptions, ...options }
-  let sequence = 0
+  // Sorted by descending timestamp, so `pop` wakes the earliest sleep first
   const sleeps: Array<{
-    readonly sequence: number
     readonly timestamp: number
     readonly latch: Latch.Latch
   }> = []
-  const liveClock = yield* Clock.clockWith(Effect.succeed)
+  const currentClock = yield* Clock.clockWith(Effect.succeed)
+  const liveClock = liveClocks.get(currentClock) ?? currentClock
+  const liveConsole = yield* Console.Console
   const warningSemaphore = yield* Semaphore.make(1)
+  const parentScheduler = yield* Scheduler.Scheduler
 
   let currentTimestamp: number = new Date(0).getTime()
   let currentWallNanos = BigInt(0)
@@ -291,6 +324,7 @@ export const make = Effect.fnUntraced(function*(
     Effect.suspend(() => {
       if (warningState._tag === "Start") {
         return Effect.logWarning(warningMessage).pipe(
+          Effect.provideService(Console.Console, liveConsole),
           Effect.delay(config.warningDelay),
           withLive,
           Effect.forkChild,
@@ -332,16 +366,96 @@ export const make = Effect.fnUntraced(function*(
     const millis = Duration.toMillis(duration)
     const end = currentTimestamp + millis
     if (end <= currentTimestamp) return
-    const latch = Latch.makeUnsafe()
-    sleeps.push({
-      sequence: sequence++,
-      timestamp: end,
-      latch
-    })
-    sleeps.sort(SleepOrder)
-    yield* warningStart
-    yield* latch.await
+    yield* Effect.acquireUseRelease(
+      Effect.sync(() => {
+        const entry = { timestamp: end, latch: Latch.makeUnsafe() }
+        // Insert before entries with an equal timestamp, so they wake in
+        // registration order
+        let low = 0
+        let high = sleeps.length
+        while (low < high) {
+          const mid = (low + high) >>> 1
+          if (sleeps[mid].timestamp > end) low = mid + 1
+          else high = mid
+        }
+        sleeps.splice(low, 0, entry)
+        return entry
+      }),
+      (entry) => Effect.andThen(warningStart, entry.latch.await),
+      (entry) =>
+        Effect.sync(() => {
+          // The entry is already gone if `run` popped it
+          const index = sleeps.indexOf(entry)
+          if (index !== -1) sleeps.splice(index, 1)
+        })
+    )
   })
+
+  /**
+   * Tasks scheduled while waking a sleeper, and tasks scheduled by those tasks,
+   * are counted by that wake's tracker so `run` can wait for the woken fiber,
+   * and any fibers it resumes or forks, to suspend before checking the next
+   * sleep.
+   */
+  let currentTracker: WakeTracker | undefined = undefined
+
+  function runTracked(tracker: WakeTracker, f: () => void): void {
+    const previous = currentTracker
+    currentTracker = tracker
+    try {
+      f()
+    } finally {
+      currentTracker = previous
+    }
+  }
+
+  const scheduler: Scheduler.Scheduler = {
+    executionMode: parentScheduler.executionMode,
+    shouldYield: (fiber) => parentScheduler.shouldYield(fiber),
+    makeDispatcher() {
+      const dispatcher = parentScheduler.makeDispatcher()
+      return {
+        scheduleTask(task, priority) {
+          const tracker = currentTracker
+          if (tracker === undefined) {
+            return dispatcher.scheduleTask(task, priority)
+          }
+          tracker.pending++
+          dispatcher.scheduleTask(() => {
+            try {
+              runTracked(tracker, task)
+            } finally {
+              if (--tracker.pending === 0) tracker.onIdle?.()
+            }
+          }, priority)
+        },
+        flush() {
+          dispatcher.flush()
+        }
+      }
+    }
+  }
+
+  const wake = (latch: Latch.Latch) =>
+    Effect.suspend(() => {
+      const tracker: WakeTracker = { pending: 0, onIdle: undefined }
+      runTracked(tracker, () => latch.openUnsafe())
+      if (tracker.pending === 0) return Effect.yieldNow
+      return Effect.callback<void>((resume) => {
+        if (tracker.pending === 0) return resume(Effect.void)
+        tracker.onIdle = () => resume(Effect.void)
+        return Effect.sync(() => {
+          tracker.onIdle = undefined
+        })
+      }).pipe(
+        Effect.timeoutOrElse({
+          duration: config.warningDelay,
+          orElse: () => Effect.provideService(Effect.logWarning(busyWarningMessage), Console.Console, liveConsole)
+        }),
+        withLive,
+        Effect.andThen(Effect.yieldNow)
+      )
+    })
 
   const runSemaphore = yield* Semaphore.make(1)
   const run = Effect.fnUntraced(function*(
@@ -366,8 +480,7 @@ export const make = Effect.fnUntraced(function*(
       if (Arr.lastNonEmpty(sleeps).timestamp > endTimestamp) break
       const entry = sleeps.pop()!
       advanceTo(entry.timestamp)
-      entry.latch.openUnsafe()
-      yield* Effect.yieldNow
+      yield* wake(entry.latch)
     }
     advanceTo(endTimestamp)
     if (adjustmentNanos !== undefined && Number.isFinite(endTimestamp)) {
@@ -391,7 +504,7 @@ export const make = Effect.fnUntraced(function*(
 
   yield* Effect.addFinalizer(() => warningDone)
 
-  return {
+  const testClock = {
     currentTimeMillisUnsafe,
     currentTimeNanosUnsafe,
     monotonicTimeNanosUnsafe,
@@ -403,6 +516,8 @@ export const make = Effect.fnUntraced(function*(
     sleep,
     withLive
   }
+  liveClocks.set(testClock, liveClock)
+  return [testClock, scheduler] as const
 })
 
 /**
@@ -438,10 +553,13 @@ export const make = Effect.fnUntraced(function*(
  * @category layers
  * @since 4.0.0
  */
-export const layer: (options?: TestClock.Options) => Layer.Layer<TestClock> = flow(
-  make,
-  Layer.effect(Clock.Clock)
-) as any
+export const layer = (options?: TestClock.Options): Layer.Layer<TestClock> =>
+  Layer.effectContext(
+    Effect.map(makeWithScheduler(options), ([testClock, scheduler]) =>
+      Context.make(Clock.Clock, testClock).pipe(
+        Context.add(Scheduler.Scheduler, scheduler)
+      ))
+  ) as any
 
 /**
  * Retrieves the `TestClock` service for this test and uses it to run the

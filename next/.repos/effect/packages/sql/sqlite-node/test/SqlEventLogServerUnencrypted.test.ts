@@ -1,6 +1,7 @@
 import { SqliteClient } from "@effect/sql-sqlite-node"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer, Redacted } from "effect"
+import * as RegressionTest from "effect-test/eventlog/EventLogServerUnencryptedRegressionTest"
 import * as SqlEventLogServerUnencryptedStorageTest from "effect-test/eventlog/SqlEventLogServerUnencryptedStorageTest"
 import * as EventJournal from "effect/eventlog/EventJournal"
 import * as EventLog from "effect/eventlog/EventLog"
@@ -13,12 +14,21 @@ import * as SqlEventLogServerUnencrypted from "effect/eventlog/SqlEventLogServer
 import { Reactivity } from "effect/reactivity"
 import * as RpcTest from "effect/rpc/RpcTest"
 import * as SqlClient from "effect/sql/SqlClient"
+import * as Statement from "effect/sql/Statement"
 
 SqlEventLogServerUnencryptedStorageTest.suite(
   "sql-sqlite-node",
   SqliteClient.layer({
     filename: ":memory:"
   })
+)
+
+RegressionTest.suite(
+  "SQLite",
+  SqlEventLogServerUnencrypted.layerStorage().pipe(
+    Layer.provide(SqliteClient.layer({ filename: ":memory:" })),
+    Layer.provide(Reactivity.layer)
+  )
 )
 
 const getIdentityRootSecretMaterial = makeGetIdentityRootSecretMaterial(globalThis.crypto)
@@ -164,4 +174,38 @@ describe("SqlEventLogServerUnencrypted (sql-sqlite-node)", () => {
       assert.strictEqual(error.code, "Forbidden")
       assert.strictEqual(error.message, "Session auth signature verification failed")
     }).pipe(Effect.provide([Reactivity.layer, EventLogEncryption.layerSubtle])))
+
+  it.effect("reads batch history through id and primary key lookups", () => {
+    const statements: Array<readonly [string, ReadonlyArray<unknown>]> = []
+    return Effect.gen(function*() {
+      const sql = yield* SqlClient.SqlClient
+      const { write } = yield* RegressionTest.makeClient("plan")
+      yield* write([yield* RegressionTest.makeEntry(2_000, "a"), yield* RegressionTest.makeEntry(3_000, "b")])
+      statements.length = 0
+      yield* write([yield* RegressionTest.makeEntry(1_000, "a")])
+
+      const reads = statements.filter(([text]) => /^\s*SELECT\b/i.test(text) && text.includes(`"effect_events"`))
+      assert.isNotEmpty(reads)
+      for (const [text, params] of reads) {
+        const plan = yield* sql.unsafe<{ readonly detail: string }>(`EXPLAIN QUERY PLAN ${text}`, params)
+        for (const { detail } of plan.filter(({ detail }) => detail.includes("effect_events"))) {
+          // A range on entry_id alone reads every entry after the batch.
+          assert.match(detail, /^SEARCH effect_events USING (COVERING )?INDEX \S+ \(.*\b(entry_id|primary_key)=\?/)
+        }
+      }
+    }).pipe(
+      Effect.provide(
+        SqlEventLogServerUnencrypted.layerStorage().pipe(
+          Layer.provideMerge(SqliteClient.layer({ filename: ":memory:" })),
+          Layer.provide(Reactivity.layer)
+        )
+      ),
+      Effect.provide(EventLogEncryption.layerSubtle),
+      Effect.provideService(Statement.CurrentTransformer, (statement) =>
+        Effect.sync(() => {
+          statements.push(statement.compile())
+          return statement
+        }))
+    )
+  })
 })

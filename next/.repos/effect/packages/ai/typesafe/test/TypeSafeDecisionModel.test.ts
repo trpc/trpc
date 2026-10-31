@@ -67,6 +67,16 @@ const systemOneResponse = {
   usage: { input_tokens: 312, output_tokens: 48 }
 }
 
+const Structured = Decision.make({
+  input: Schema.String,
+  decisions: {
+    severity: Decision.rate({
+      instructions: ["How severe?"],
+      criteria: ["Minor", { label: "Critical", description: { impact: "outage" } }]
+    })
+  }
+})
+
 describe("TypeSafeDecisionModel", () => {
   it.effect("accepts rounded choice probabilities that total 0.99", () =>
     Effect.gen(function*() {
@@ -142,11 +152,12 @@ describe("TypeSafeDecisionModel", () => {
     }))
 
   for (
-    const [name, probabilities] of [
-      ["out-of-range", { a: 1.01, b: -0.02 }],
-      ["all-zero", { a: 0, b: 0 }],
-      ["missing label", { a: 0.5 }],
-      ["non-finite", { a: Infinity, b: 0.5 }]
+    const [name, probabilities, reason] of [
+      ["out-of-range", { a: 1.01, b: -0.02 }, "InvalidOutputError"],
+      ["all-zero", { a: 0, b: 0 }, "InvalidOutputError"],
+      ["missing label", { a: 0.5 }, "InvalidOutputError"],
+      // `Infinity` serializes as `null`, which the client response schema rejects
+      ["non-finite", { a: Infinity, b: 0.5 }, "InvalidResponseError"]
     ] as const
   ) {
     it.effect("rejects " + name + " choice probabilities", () =>
@@ -165,7 +176,7 @@ describe("TypeSafeDecisionModel", () => {
           )),
           Effect.flip
         )
-        assert.strictEqual(error.reason._tag, "InvalidOutputError")
+        assert.strictEqual(error.reason._tag, reason)
       }))
   }
 
@@ -593,7 +604,7 @@ describe("TypeSafeDecisionModel", () => {
       assert.strictEqual(error.reason._tag, "InvalidOutputError")
     }))
 
-  it.effect("fails with InvalidOutputError when a score answer omits probabilities", () =>
+  it.effect("fails with a non-retryable InvalidResponseError when a score answer omits probabilities", () =>
     Effect.gen(function*() {
       const { probabilities: _probabilities, ...frustration } = systemOneResponse.answers.frustration
       const error = yield* DecisionModel.decide(TicketTriage, { input: ticket }).pipe(
@@ -608,7 +619,7 @@ describe("TypeSafeDecisionModel", () => {
       )
 
       assert.strictEqual(error._tag, "AiError")
-      assert.strictEqual(error.reason._tag, "InvalidOutputError")
+      assert.strictEqual(error.reason._tag, "InvalidResponseError")
     }))
 
   it.effect("fails with InvalidOutputError when a score distribution skips a level index", () =>
@@ -655,8 +666,124 @@ describe("TypeSafeDecisionModel", () => {
       assert.strictEqual(error._tag, "AiError")
       assert.strictEqual(error.reason._tag, "RateLimitError")
     }))
-})
 
+  it.effect("sends structured descriptions and maps score indices to labels", () =>
+    Effect.gen(function*() {
+      const result = yield* DecisionModel.decide(Structured, { input: "Checkout is down" })
+      assert.strictEqual(result.answers.severity.label, "Critical")
+      assert.deepStrictEqual({ ...result.answers.severity.probabilities }, { Minor: 0.1, Critical: 0.9 })
+    }).pipe(
+      Effect.provide(TypeSafeDecisionModel.layer({ model: "jev-latest" })),
+      Effect.provide(makeClientLayer((request) =>
+        Effect.gen(function*() {
+          const body = yield* getRequestBody(request)
+          assert.deepStrictEqual(body.questions, {
+            severity: { type: "score", instructions: ["How severe?"], criteria: ["Minor", { impact: "outage" }] }
+          })
+          return jsonResponse(request, {
+            model: "jev-latest",
+            answers: {
+              severity: {
+                type: "score",
+                score: 0.9,
+                probabilities: { "0": 0.1, "1": 0.9 },
+                confidence: 0.9,
+                legend: { "0": "Minor", "1": { impact: "outage" } }
+              }
+            }
+          })
+        })
+      ))
+    ))
+
+  describe("images", () => {
+    const Listing = Schema.Struct({
+      message: Schema.String,
+      photo: Decision.Image,
+      gallery: Schema.Array(Decision.Image)
+    })
+
+    const FindMug = Decision.make({
+      input: Listing,
+      decisions: {
+        present: Decision.probability({ instructions: "`photo` shows a coffee mug" }),
+        mug: Decision.locate({ image: "photo", instructions: "the coffee mug" })
+      }
+    })
+
+    it.effect("sends images as assets keyed by their state references and maps box answers onto locate answers", () => {
+      const requests: Array<HttpClientRequest.HttpClientRequest> = []
+      const input = {
+        message: "Kitchen counter",
+        photo: { mediaType: "image/png", data: new Uint8Array([137, 80, 78, 71]) },
+        gallery: [
+          { mediaType: "image/jpeg", data: "/9j/4AAQ" },
+          {
+            mediaType: "application/octet-stream",
+            data: new URL("data:image/png;base64,iVBORw0KGgo%2B%2FA%3D%3D#preview")
+          }
+        ]
+      }
+
+      return Effect.gen(function*() {
+        const { answers } = yield* DecisionModel.decide(FindMug, { input })
+
+        assert.deepStrictEqual(answers, {
+          present: { probability: 0.97 },
+          mug: { box: { left: 0.44, top: 0.25, right: 0.84, bottom: 0.82 }, confidence: 0.92 }
+        })
+        const body = yield* getRequestBody(requests[0])
+        const [photo, jpeg, dataUrl] = [body.state.photo, ...body.state.gallery]
+        assert.deepStrictEqual(body, {
+          model: "jev-preview",
+          state: { message: "Kitchen counter", photo, gallery: [jpeg, dataUrl] },
+          questions: {
+            present: { type: "noul", instructions: "`photo` shows a coffee mug" },
+            mug: { type: "box", instructions: "the coffee mug in `photo`" }
+          },
+          assets: {
+            [photo]: { type: "image", format: "png", data_base64: "iVBORw==" },
+            [jpeg]: { type: "image", format: "jpg", data_base64: "/9j/4AAQ" },
+            [dataUrl]: { type: "image", format: "png", data_base64: "iVBORw0KGgo+/A==" }
+          }
+        })
+      }).pipe(
+        Effect.provide(TypeSafeDecisionModel.layer({ model: "jev-preview" })),
+        Effect.provide(makeClientLayer((request) => {
+          requests.push(request)
+          return Effect.succeed(jsonResponse(request, {
+            model: "jev-1.14.0",
+            answers: {
+              present: { type: "noul", noul: 0.97 },
+              mug: { type: "box", box: { top: 0.25, bottom: 0.82, left: 0.44, right: 0.84 }, confidence: 0.92 }
+            },
+            usage: { input_tokens: 290, output_tokens: 21 }
+          }))
+        }))
+      )
+    })
+
+    for (
+      const [name, image] of [
+        ["a remote URL", { mediaType: "image/png", data: new URL("https://example.com/mug.png") }],
+        ["a data URL without base64", { mediaType: "image/png", data: new URL("data:image/png,%89PNG") }],
+        ["a WebP image", { mediaType: "image/webp", data: "UklGRg==" }]
+      ] as const
+    ) {
+      it.effect("rejects " + name + " with InvalidUserInputError before sending", () =>
+        Effect.gen(function*() {
+          const error = yield* DecisionModel.decide(FindMug, { input: { message: "", photo: image, gallery: [] } })
+            .pipe(
+              Effect.flip
+            )
+          assert.strictEqual(error.reason._tag, "InvalidUserInputError")
+        }).pipe(
+          Effect.provide(TypeSafeDecisionModel.layer({ model: "jev-preview" })),
+          Effect.provide(makeClientLayer(() => Effect.die(new Error("Invalid images must not be sent"))))
+        ))
+    }
+  })
+})
 const makeClientLayer = (
   handler: (
     request: HttpClientRequest.HttpClientRequest
@@ -693,15 +820,14 @@ const jsonResponse = (
     })
   )
 
-const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
-  Effect.gen(function*() {
-    const body = request.body
-    if (body._tag === "Uint8Array") {
-      const text = new TextDecoder().decode(body.body)
-      return JSON.parse(text)
-    }
-    return yield* Effect.die(new Error("Expected Uint8Array body"))
-  })
+const getRequestBody = Effect.fnUntraced(function*(request: HttpClientRequest.HttpClientRequest) {
+  const body = request.body
+  if (body._tag === "Uint8Array") {
+    const text = new TextDecoder().decode(body.body)
+    return JSON.parse(text)
+  }
+  return yield* Effect.die(new Error("Expected Uint8Array body"))
+})
 
 const noopTypeSafeClient: TypeSafeClient.Service = {
   client: undefined as unknown as TypeSafeClient.Service["client"],

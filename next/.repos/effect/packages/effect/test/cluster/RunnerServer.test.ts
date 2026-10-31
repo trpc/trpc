@@ -83,29 +83,28 @@ const holeCodecHandlers = makeHandlers(
 )
 
 // A request for `entity`'s single RPC, addressed the way a sending runner would.
-const makeRequest = (
+const makeRequest = Effect.fnUntraced(function*(
   entity: Pick<Entity.Any, "type" | "getShardGroup">,
   entityId: string,
   options?: { readonly tag?: string; readonly payload?: unknown }
-) =>
-  Effect.gen(function*() {
-    const sharding = yield* Sharding.Sharding
-    const snowflake = yield* Snowflake.Generator
-    const id = EntityId.make(entityId)
-    const request: Envelope.PartialRequest = {
-      _tag: "Request",
-      requestId: snowflake.nextUnsafe(),
-      address: EntityAddress.make({
-        shardId: sharding.getShardId(id, entity.getShardGroup(id)),
-        entityType: EntityType.make(entity.type),
-        entityId: id
-      }),
-      tag: options?.tag ?? "ReproStream",
-      payload: options?.payload ?? { id: 1 },
-      headers: Headers.empty
-    }
-    return request
-  })
+) {
+  const sharding = yield* Sharding.Sharding
+  const snowflake = yield* Snowflake.Generator
+  const id = EntityId.make(entityId)
+  const request: Envelope.PartialRequest = {
+    _tag: "Request",
+    requestId: snowflake.nextUnsafe(),
+    address: EntityAddress.make({
+      shardId: sharding.getShardId(id, entity.getShardGroup(id)),
+      entityType: EntityType.make(entity.type),
+      entityId: id
+    }),
+    tag: options?.tag ?? "ReproStream",
+    payload: options?.payload ?? { id: 1 },
+    headers: Headers.empty
+  }
+  return request
+})
 
 // A runner RPC server whose replies are discarded.
 const makeServer = RpcServer.makeNoSerialization(Runners.Rpcs, { onFromServer: () => Effect.void })

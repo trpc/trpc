@@ -15,7 +15,6 @@
  * @since 4.0.0
  */
 import * as assert from "node:assert"
-import { isDeepStrictEqual } from "node:util"
 import * as Arbitrary from "../Arbitrary.ts"
 import * as Cause from "../Cause.ts"
 import type * as Context from "../Context.ts"
@@ -242,7 +241,7 @@ export class Asserts<S extends Schema.Constraint> {
     }
   }
   /**
-   * Runs a property-based test that encodes arbitrary values and then decodes them, asserting the decoded value equals the original.
+   * Runs a property-based test that encodes arbitrary values and then decodes them, asserting the decoded value is equivalent to the original.
    *
    * **When to use**
    *
@@ -253,6 +252,9 @@ export class Asserts<S extends Schema.Constraint> {
    *
    * The native Schema arbitrary generates values matching the schema's `Type`. The assertion fails with the minimized
    * shrunk input and replay token if any generated value does not round-trip.
+   *
+   * Uses {@link Schema.toEquivalence}, including custom equivalence annotations,
+   * to compare each decoded value with the original.
    *
    * **Example** (Verifying round trips)
    *
@@ -284,6 +286,9 @@ export class Asserts<S extends Schema.Constraint> {
    *
    * **Details**
    *
+   * Uses {@link Schema.toEquivalence}, including custom equivalence annotations,
+   * to compare each decoded value with the original.
+   *
    * Assertion mismatches are defects containing the shrunk input and replay token.
    * Schema defects and interruption propagate without becoming assertion failures.
    *
@@ -310,6 +315,7 @@ export class Asserts<S extends Schema.Constraint> {
     return Effect.suspend(() => {
       const decodeUnknownEffect = SchemaParser.decodeUnknownEffect(this.schema)
       const encodeEffect = SchemaParser.encodeEffect(this.schema)
+      const equivalence = Schema.toEquivalence(this.schema as unknown as Schema.Schema<S["Type"]>)
       const arbitrary = Arbitrary.schema(this.schema)
       return Arbitrary.checkEffect(
         arbitrary,
@@ -317,7 +323,7 @@ export class Asserts<S extends Schema.Constraint> {
           Effect.suspend(() => encodeEffect(value)).pipe(
             Effect.flatMapEager((encoded) => decodeUnknownEffect(encoded)),
             schemaResult,
-            Effect.mapEager((result) => isDeepStrictEqual(result, Result.succeed(value)))
+            Effect.mapEager((result) => Result.isSuccess(result) && equivalence(result.success, value))
           ),
         options
       ).pipe(Effect.mapEager(assertPropertyPassed))

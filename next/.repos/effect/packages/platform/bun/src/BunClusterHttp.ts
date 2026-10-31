@@ -9,6 +9,7 @@
  * @stability unstable
  * @since 4.0.0
  */
+import * as NodeCrypto from "@effect/platform-node-shared/NodeCrypto"
 import * as HttpRunner from "effect/cluster/HttpRunner"
 import * as MessageStorage from "effect/cluster/MessageStorage"
 import * as RunnerHealth from "effect/cluster/RunnerHealth"
@@ -30,7 +31,6 @@ import * as Option from "effect/Option"
 import * as RpcSerialization from "effect/rpc/RpcSerialization"
 import type { SqlClient } from "effect/sql/SqlClient"
 import { layerK8sHttpClient } from "./BunClusterSocket.ts"
-import * as BunCrypto from "./BunCrypto.ts"
 import * as BunFileSystem from "./BunFileSystem.ts"
 import * as BunHttpServer from "./BunHttpServer.ts"
 import type { BunServices } from "./BunServices.ts"
@@ -163,7 +163,7 @@ export const layer = <
         ? MessageStorage.layerNoop
         : options?.storage === "byo"
         ? Layer.empty
-        : Layer.orDie(SqlMessageStorage.layer).pipe(Layer.provide(BunCrypto.layer))
+        : SqlMessageStorage.layer.pipe(Layer.provide(NodeCrypto.layerDigest))
     ),
     Layer.provide(
       options?.storage === "local"

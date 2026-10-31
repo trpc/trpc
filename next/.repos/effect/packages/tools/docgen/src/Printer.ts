@@ -57,19 +57,17 @@ function removeFenceMetadata(markdown: string): string {
   })
 }
 
-const printOptionalDescription = (description: string | undefined) => {
-  return Effect.gen(function*() {
-    if (description === undefined) {
-      return ""
-    }
-    const config = yield* Configuration.Configuration
-    const descriptionWithoutLinks = replaceJSDocLinks(description)
-    const out = config.theme === Configuration.DEFAULT_THEME
-      ? removeFenceMetadata(descriptionWithoutLinks)
-      : descriptionWithoutLinks
-    return `\n\n${out}`
-  })
-}
+const printOptionalDescription = Effect.fnUntraced(function*(description: string | undefined) {
+  if (description === undefined) {
+    return ""
+  }
+  const config = yield* Configuration.Configuration
+  const descriptionWithoutLinks = replaceJSDocLinks(description)
+  const out = config.theme === Configuration.DEFAULT_THEME
+    ? removeFenceMetadata(descriptionWithoutLinks)
+    : descriptionWithoutLinks
+  return `\n\n${out}`
+})
 
 const printArray = (title: string, ss?: ReadonlyArray<string>): string => {
   if (ss === undefined || ss.length === 0) {
@@ -132,37 +130,33 @@ const printSeesArray = (sees?: ReadonlyArray<string>): string => {
   return `\n\n${Markdown.bold("See")}\n\n${sees.map((see) => `- ${replaceJSDocLinks(see)}`).join("\n")}`
 }
 
-const printOptionalSourceLink = (position?: Domain.Position) => {
-  return Effect.gen(function*() {
-    if (position === undefined) {
-      return ""
-    }
-    const config = yield* Configuration.Configuration
-    const source = yield* Parser.Source
-    const name = source.sourceFile.getBaseName()
-    return `\n\n[Source](${config.srcLink}${name}#L${position.line})`
-  })
-}
+const printOptionalSourceLink = Effect.fnUntraced(function*(position?: Domain.Position) {
+  if (position === undefined) {
+    return ""
+  }
+  const config = yield* Configuration.Configuration
+  const source = yield* Parser.Source
+  const name = source.sourceFile.getBaseName()
+  return `\n\n[Source](${config.srcLink}${name}#L${position.line})`
+})
 
-const printModel = (name: string, doc: Domain.Doc, options: {
+const printModel = Effect.fnUntraced(function*(name: string, doc: Domain.Doc, options: {
   readonly signature?: string | undefined
   readonly position?: Domain.Position | undefined
   readonly indentation?: number | undefined
   readonly postfix?: string | undefined
-}) => {
-  return Effect.gen(function*() {
-    const sourceLink = yield* printOptionalSourceLink(options.position)
-    const description = yield* printOptionalDescription(doc.description)
-    return printHeaderByIndentation(options.indentation ?? 0) + printTitle(name, doc.deprecated, options.postfix) +
-      description +
-      printThrowsArray(doc.throws) +
-      printExamplesArray(doc.examples) +
-      printSeesArray(doc.sees) +
-      printOptionalSignature(options.signature) +
-      sourceLink +
-      printOptionalSince(doc.since)
-  })
-}
+}) {
+  const sourceLink = yield* printOptionalSourceLink(options.position)
+  const description = yield* printOptionalDescription(doc.description)
+  return printHeaderByIndentation(options.indentation ?? 0) + printTitle(name, doc.deprecated, options.postfix) +
+    description +
+    printThrowsArray(doc.throws) +
+    printExamplesArray(doc.examples) +
+    printSeesArray(doc.sees) +
+    printOptionalSignature(options.signature) +
+    sourceLink +
+    printOptionalSince(doc.since)
+})
 
 const printEntry = (model: Domain.DocEntry, options: {
   readonly indentation?: number | undefined
@@ -197,20 +191,18 @@ const printProperty = (model: Domain.DocEntry) => {
   })
 }
 
-const printClass = (model: Domain.Class) => {
-  return Effect.gen(function*() {
-    const header = yield* printEntry(model, {
-      postfix: "(class)"
-    })
-    const staticMethods = yield* Effect.forEach(model.staticMethods, (method) => printStaticMethod(method))
-    const methods = yield* Effect.forEach(model.methods, (method) => printMethod(method))
-    const properties = yield* Effect.forEach(model.properties, (property) => printProperty(property))
-    return header +
-      staticMethods.map((s) => "\n\n" + s).join("") +
-      methods.map((s) => "\n\n" + s).join("") +
-      properties.map((s) => "\n\n" + s).join("")
+const printClass = Effect.fnUntraced(function*(model: Domain.Class) {
+  const header = yield* printEntry(model, {
+    postfix: "(class)"
   })
-}
+  const staticMethods = yield* Effect.forEach(model.staticMethods, (method) => printStaticMethod(method))
+  const methods = yield* Effect.forEach(model.methods, (method) => printMethod(method))
+  const properties = yield* Effect.forEach(model.properties, (property) => printProperty(property))
+  return header +
+    staticMethods.map((s) => "\n\n" + s).join("") +
+    methods.map((s) => "\n\n" + s).join("") +
+    properties.map((s) => "\n\n" + s).join("")
+})
 
 const printConstant = (model: Domain.Constant) => {
   return printEntry(model, {})

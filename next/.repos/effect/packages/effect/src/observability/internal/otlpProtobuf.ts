@@ -368,14 +368,14 @@ export const encodeTracesData = (tracesData: TraceData): Uint8Array =>
  */
 export const encodeNumberDataPoint = (point: {
   readonly attributes: ReadonlyArray<KeyValue>
-  readonly startTimeUnixNano: string
+  readonly startTimeUnixNano?: string | undefined
   readonly timeUnixNano: string
   readonly asDouble?: number | undefined
   readonly asInt?: string | number | bigint | undefined
   readonly flags?: number | undefined
 }): Uint8Array =>
   Proto.concat(
-    Proto.fixed64Field(2, BigInt(point.startTimeUnixNano)),
+    Proto.optionalFixed64Field(2, point.startTimeUnixNano),
     Proto.fixed64Field(3, BigInt(point.timeUnixNano)),
     point.asDouble !== undefined
       ? Proto.doubleField(4, point.asDouble)
@@ -407,7 +407,7 @@ export const encodeNumberDataPoint = (point: {
  */
 export const encodeHistogramDataPoint = (point: {
   readonly attributes: ReadonlyArray<KeyValue>
-  readonly startTimeUnixNano: string
+  readonly startTimeUnixNano?: string | undefined
   readonly timeUnixNano: string
   readonly count: string | number | bigint
   readonly sum?: number | undefined
@@ -426,7 +426,7 @@ export const encodeHistogramDataPoint = (point: {
     ...point.explicitBounds.map((bound) => Proto.doubleField(7, bound))
   )
   return Proto.concat(
-    Proto.fixed64Field(2, BigInt(point.startTimeUnixNano)),
+    Proto.optionalFixed64Field(2, point.startTimeUnixNano),
     Proto.fixed64Field(3, BigInt(point.timeUnixNano)),
     Proto.fixed64Field(4, BigInt(point.count)),
     point.sum !== undefined ? Proto.doubleField(5, point.sum) : new Uint8Array(0),
@@ -515,7 +515,7 @@ export const encodeHistogram = (histogram: {
  */
 export const encodeSummaryDataPoint = (point: {
   readonly attributes: ReadonlyArray<KeyValue>
-  readonly startTimeUnixNano: string
+  readonly startTimeUnixNano?: string | undefined
   readonly timeUnixNano: string
   readonly count: string | number | bigint
   readonly sum: number
@@ -523,7 +523,7 @@ export const encodeSummaryDataPoint = (point: {
   readonly flags?: number | undefined
 }): Uint8Array =>
   Proto.concat(
-    Proto.fixed64Field(2, BigInt(point.startTimeUnixNano)),
+    Proto.optionalFixed64Field(2, point.startTimeUnixNano),
     Proto.fixed64Field(3, BigInt(point.timeUnixNano)),
     Proto.fixed64Field(4, BigInt(point.count)),
     Proto.doubleField(5, point.sum),

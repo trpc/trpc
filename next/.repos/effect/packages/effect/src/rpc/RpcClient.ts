@@ -15,6 +15,7 @@ import type { NonEmptyReadonlyArray } from "../Array.ts"
 import * as Cause from "../Cause.ts"
 import * as Clock from "../Clock.ts"
 import * as Context from "../Context.ts"
+import * as Deferred from "../Deferred.ts"
 import * as Duration from "../Duration.ts"
 import * as Effect from "../Effect.ts"
 import * as Exit from "../Exit.ts"
@@ -47,7 +48,14 @@ import * as RpcTracing from "./internal/tracing.ts"
 import * as Rpc from "./Rpc.ts"
 import { RpcClientDefect, RpcClientError } from "./RpcClientError.ts"
 import type * as RpcGroup from "./RpcGroup.ts"
-import type { FromClient, FromClientEncoded, FromServer, FromServerEncoded, Request } from "./RpcMessage.ts"
+import type {
+  FromClient,
+  FromClientEncoded,
+  FromServer,
+  FromServerEncoded,
+  Request,
+  RequestEncoded
+} from "./RpcMessage.ts"
 import { constPing, isTerminalResponse, RequestId } from "./RpcMessage.ts"
 import type * as RpcMiddleware from "./RpcMiddleware.ts"
 import * as RpcSchema from "./RpcSchema.ts"
@@ -99,6 +107,15 @@ export declare namespace RpcClient {
         {
           readonly headers?: Headers.Input | undefined
           readonly context?: Context.Context<never> | undefined
+          /**
+           * Completes once the server acknowledges the call as its handler starts,
+           * after the middleware has run, instead of waiting for the result. The
+           * handler's result and error are not returned, but transport errors,
+           * middleware errors and failures before the handler starts still fail the
+           * call. Over HTTP and workers the call completes after the handler has
+           * finished. A protocol that only delivers requests acknowledges the call
+           * itself once it has delivered the request.
+           */
           readonly discard?: Discard | undefined
         }
     ) => Current extends Rpc.Rpc<
@@ -166,6 +183,15 @@ export declare namespace RpcClient {
       {
         readonly headers?: Headers.Input | undefined
         readonly context?: Context.Context<never> | undefined
+        /**
+         * Completes once the server acknowledges the call as its handler starts,
+         * after the middleware has run, instead of waiting for the result. The
+         * handler's result and error are not returned, but transport errors,
+         * middleware errors and failures before the handler starts still fail the
+         * call. Over HTTP and workers the call completes after the handler has
+         * finished. A protocol that only delivers requests acknowledges the call
+         * itself once it has delivered the request.
+         */
         readonly discard?: Discard | undefined
       }
   ) => Rpcs extends Rpc.Rpc<
@@ -234,7 +260,6 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
       options: {
         readonly message: FromClient<Rpcs>
         readonly context: Context.Context<never>
-        readonly discard: boolean
       }
     ) => Effect.Effect<void, E>
     readonly supportsAck?: boolean | undefined
@@ -258,7 +283,6 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
       options: {
         readonly message: FromClient<Rpcs>
         readonly context: Context.Context<never>
-        readonly discard: boolean
       }
     ) => Effect.Effect<void, E>
     readonly supportsAck?: boolean | undefined
@@ -301,8 +325,11 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
   )
 
   const clearEntries = Effect.fnUntraced(function*(exit: Exit.Exit<never>) {
-    for (const [id, entry] of entries) {
-      entries.delete(id)
+    // Resuming callers can synchronously start new requests.
+    const pending = Array.from(entries.values())
+    entries.clear()
+    // Once detached, every entry must complete even if delivery is interrupted.
+    for (const entry of pending) {
       if (entry._tag === "Queue") {
         yield* (exit._tag === "Success"
           ? Queue.end(entry.queue as any)
@@ -311,7 +338,7 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
         entry.resume(exit)
       }
     }
-  })
+  }, Effect.uninterruptible)
 
   const onRequest = (rpc: Rpc.AnyWithProps) => {
     const isStream = RpcSchema.isStreamSchema(rpc.successSchema)
@@ -373,12 +400,7 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
       }
       const id = generateRequestId()
       const send = middleware(
-        (message) =>
-          options.onFromClient({
-            message,
-            context,
-            discard
-          }),
+        (message) => options.onFromClient({ message, context }),
         {
           _tag: "Request",
           id,
@@ -391,20 +413,27 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
               sampled: span.sampled
             } :
             {}),
-          headers: Headers.merge(parentFiber.getRef(CurrentHeaders), headers)
+          headers: Headers.merge(parentFiber.getRef(CurrentHeaders), headers),
+          ...(discard ? { discard: true as const } : {})
         }
       )
-      if (discard) {
-        return send
-      }
       let fiber: Fiber.Fiber<any, any>
       return Effect.onInterrupt(
         Effect.callback<any, any>((resume) => {
+          let acked = false
           const entry: ClientEntry = {
             _tag: "Effect",
             rpc,
             context,
             resume(exit) {
+              if (discard && exit._tag === "Success") {
+                // A successful acknowledgement waits for the send to finish, as
+                // interrupting the send could cancel the call: an HTTP handler
+                // is scoped to its request. Failures complete the call at once.
+                acked = true
+                if (fiber?.pollUnsafe()) resume(Exit.void)
+                return
+              }
               resume(exit)
               if (fiber && !fiber.pollUnsafe()) {
                 parentFiber.currentDispatcher.scheduleTask(() => {
@@ -420,7 +449,10 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
           )
           fiber.addObserver((exit) => {
             if (exit._tag === "Failure") {
+              entries.delete(id)
               return resume(exit)
+            } else if (acked) {
+              return resume(Exit.void)
             }
           })
         }),
@@ -483,12 +515,7 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
     })
 
     yield* middleware(
-      (message) =>
-        options.onFromClient({
-          message,
-          context,
-          discard: false
-        }),
+      (message) => options.onFromClient({ message, context }),
       {
         _tag: "Request",
         id,
@@ -505,7 +532,10 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
       }
     ).pipe(
       span ? Effect.withParentSpan(span, { captureStackTrace: false }) : identity,
-      Effect.onError((cause) => Queue.failCause(queue, cause)),
+      Effect.onError((cause) => {
+        if (!Cause.hasInterruptsOnly(cause)) entries.delete(id)
+        return Queue.failCause(queue, cause)
+      }),
       Effect.interruptible,
       Effect.forkIn(scope, { startImmediately: true })
     )
@@ -557,8 +587,7 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
       const parentFiber = Fiber.getCurrent()!
       const fiber = options.onFromClient({
         message: { _tag: "Interrupt", requestId, interruptors },
-        context,
-        discard: false
+        context
       }).pipe(
         Effect.timeout(1000),
         Effect.runForkWith(parentFiber.context)
@@ -576,11 +605,12 @@ export const makeNoSerialization: <Rpcs extends Rpc.Any, E, const Flatten extend
         if (!entry || entry._tag !== "Queue") return Effect.void
         return Queue.offerAll(entry.queue, message.values).pipe(
           supportsAck
-            ? Effect.flatMap(() =>
-              options.onFromClient({
+            ? Effect.flatMap((dropped) =>
+              // values are dropped when the queue was shutdown by an interrupted
+              // consumer, so the server should not be asked for more
+              dropped.length > 0 ? Effect.void : options.onFromClient({
                 message: { _tag: "Ack", requestId: message.requestId },
-                context: entry.context,
-                discard: false
+                context: entry.context
               })
             )
             : identity,
@@ -672,8 +702,12 @@ export const make: <Rpcs extends Rpc.Any, const Flatten extends boolean = false>
     readonly rpc: Rpc.AnyWithProps
     readonly context: Context.Context<never>
     readonly schemas: RpcSchemas
+    readonly discard: boolean
   }
   const entries = new Map<RequestId, ClientEntry>()
+  // Completed before the protocol stops running this client, so requests made
+  // while it shuts down are not handed to a transport that is being torn down.
+  const closing = Deferred.makeUnsafe<void>()
 
   const interruptRequest = (requestId: RequestId): Effect.Effect<void, RpcClientError> => {
     if (!entries.has(requestId)) return Effect.void
@@ -695,20 +729,31 @@ export const make: <Rpcs extends Rpc.Any, const Flatten extends boolean = false>
           const entry: ClientEntry = {
             rpc,
             context: collector ? Context.add(fiber.context, Transferable.Collector, collector) : fiber.context,
-            schemas: rpcSchemas(rpc)
+            schemas: rpcSchemas(rpc),
+            discard: message.discard === true
           }
           entries.set(message.id, entry)
 
           return entry.schemas.encodePayload(message.payload).pipe(
             Effect.provideContext(entry.context),
             Effect.orDie,
-            Effect.flatMap((payload) =>
-              send(clientId, {
+            Effect.flatMap((payload) => {
+              // Checked after encoding, which can suspend while the client
+              // starts shutting down.
+              if (Deferred.isDoneUnsafe(closing)) {
+                entries.delete(message.id)
+                return Effect.interrupt
+              }
+              return send(clientId, {
                 ...message,
                 id: message.id,
                 payload,
                 headers: Object.entries(message.headers)
               }, collector && collector.readUnsafe())
+            }),
+            // An interrupted request keeps its entry until the interrupt is sent.
+            Effect.onError((cause) =>
+              Cause.hasInterruptsOnly(cause) ? Effect.void : Effect.sync(() => entries.delete(message.id))
             )
           ) as Effect.Effect<void, RpcClientError>
         }
@@ -747,7 +792,14 @@ export const make: <Rpcs extends Rpc.Any, const Flatten extends boolean = false>
           ).pipe(
             Effect.onError((cause) =>
               write({ _tag: "Exit", clientId: 0, requestId, exit: Exit.failCause(cause) }).pipe(
-                Effect.andThen(Cause.hasInterrupts(cause) ? Effect.void : Effect.ignore(interruptRequest(requestId)))
+                Effect.andThen(
+                  Cause.hasInterrupts(cause) ? Effect.void : Effect.raceFirst(
+                    Effect.ignore(interruptRequest(requestId)),
+                    // Best-effort once the client closes: a disconnected transport
+                    // can wait for a reconnect that never comes.
+                    Deferred.await(closing)
+                  )
+                )
               )
             ),
             // a decode failure only ends its own request; interruption still propagates
@@ -760,7 +812,13 @@ export const make: <Rpcs extends Rpc.Any, const Flatten extends boolean = false>
         const entry = entries.get(requestId)
         if (!entry) return Effect.void
         entries.delete(requestId)
-        return entry.schemas.decodeExit(message.exit).pipe(
+        // the success of a discarded call is its acknowledgement, which has no
+        // value, and an older server may send the handler result instead
+        if (entry.discard && message.exit._tag === "Success") {
+          return write({ _tag: "Exit", clientId: 0, requestId, exit: Exit.void as any })
+        }
+        const decodeExit = entry.discard ? entry.schemas.decodeDiscardExit : entry.schemas.decodeExit
+        return decodeExit(message.exit).pipe(
           Effect.provideContext(entry.context),
           Effect.orDie,
           Effect.matchCauseEffect({
@@ -769,15 +827,21 @@ export const make: <Rpcs extends Rpc.Any, const Flatten extends boolean = false>
           })
         ) as Effect.Effect<void>
       }
+      // Clear entries before resuming callers, as they can start new requests
       case "Defect": {
+        entries.clear()
         return write({ _tag: "Defect", clientId: 0, defect: decodeDefect(message.defect as any) })
       }
       case "ClientProtocolError": {
         const exit = Exit.fail(message.error)
+        const requestIds = message.requestIds === undefined
+          ? Array.from(entries.keys())
+          : message.requestIds.map(RequestId).filter((requestId) => entries.has(requestId))
+        for (const requestId of requestIds) entries.delete(requestId)
         return Effect.forEach(
-          Array.from(entries.keys()),
+          requestIds,
           (requestId) => write({ _tag: "Exit", clientId: 0, requestId, exit: exit as any })
-        )
+        ).pipe(Effect.uninterruptible)
       }
       default: {
         return Effect.void
@@ -788,6 +852,8 @@ export const make: <Rpcs extends Rpc.Any, const Flatten extends boolean = false>
     Effect.interruptible,
     Effect.forkScoped
   )
+  // Finalizers run in reverse order, so this runs before `run` is interrupted.
+  yield* Effect.addFinalizer(() => Deferred.succeed(closing, void 0))
 
   return client
 })
@@ -798,6 +864,7 @@ interface RpcSchemas {
   >
   readonly encodePayload: (payload: any) => Effect.Effect<any, Schema.SchemaError, unknown>
   readonly decodeExit: (encoded: unknown) => Effect.Effect<Exit.Exit<any, any>, Schema.SchemaError, unknown>
+  readonly decodeDiscardExit: (encoded: unknown) => Effect.Effect<Exit.Exit<any, any>, Schema.SchemaError, unknown>
 }
 // Codecs are compiled per client, because two protocols can fill the message
 // holes with different codecs.
@@ -809,13 +876,23 @@ const makeRpcSchemas = (codecFor: RpcSerialization.CodecFor) => {
       return entry
     }
     const streamSchemas = RpcSchema.getStreamSchemas(rpc.successSchema)
+    const parseOptions = Context.get(rpc.annotations, Rpc.ParseOptions)
+    const exitSchema = Rpc.exitSchema(rpc as any)
+    let decodeDiscardExit: RpcSchemas["decodeDiscardExit"] | undefined
     entry = {
       decodeChunk: Option.map(
         streamSchemas,
-        (streamSchemas) => Schema.decodeUnknownEffect(codecFor(Schema.NonEmptyArray(streamSchemas.success)))
+        (streamSchemas) =>
+          Schema.decodeUnknownEffect(codecFor(Schema.NonEmptyArray(streamSchemas.success)), parseOptions)
       ),
-      encodePayload: Schema.encodeEffect(codecFor(rpc.payloadSchema)),
-      decodeExit: Schema.decodeUnknownEffect(codecFor(Rpc.exitSchema(rpc as any)))
+      encodePayload: Schema.encodeEffect(codecFor(rpc.payloadSchema), parseOptions),
+      decodeExit: Schema.decodeUnknownEffect(codecFor(exitSchema), parseOptions),
+      // the server encodes the Exits of a discarded call with a void success
+      decodeDiscardExit: (encoded) =>
+        (decodeDiscardExit ??= Schema.decodeUnknownEffect(
+          codecFor(Schema.Exit(Schema.Void, exitSchema.error, exitSchema.defect)),
+          parseOptions
+        ))(encoded)
     }
     cache.set(rpc, entry)
     return entry
@@ -865,6 +942,16 @@ export const withHeaders: {
  * Use to provide the transport boundary for RPC clients over HTTP, WebSocket,
  * workers, sockets, or custom protocols.
  *
+ * **Details**
+ *
+ * A `Request` that `send` accepts stays pending until a reply names its id: an
+ * `Exit`, or a `ClientProtocolError` that lists it in `requestIds`. Until then
+ * the client keeps the request and the caller's context, unless the caller is
+ * interrupted, the client closes or the connection fails. A transport that
+ * only delivers requests, such as a message queue, writes a void `Exit` for a
+ * `discard` request once the request is delivered, and fails `send` with an
+ * `RpcClientError` for any other request.
+ *
  * @stability unstable
  * @category services
  * @since 4.0.0
@@ -897,118 +984,239 @@ export class Protocol extends Context.Service<Protocol, {
 }
 
 /**
- * Creates a client `Protocol` that sends each RPC request through the supplied
+ * Creates a client `Protocol` that sends RPC requests through the supplied
  * `HttpClient` and decodes responses with the current `RpcSerialization`.
+ *
+ * **Details**
+ *
+ * Each request is sent as its own HTTP request unless `batch` is set. With
+ * `batch`, the first request for a client opens a batch. Requests from the
+ * same client made before `window` elapses join it, and the batch is sent once
+ * the window elapses or it reaches `maxSize` requests, whichever comes first.
  *
  * @stability unstable
  * @category protocols
  * @since 4.0.0
  */
-export const makeProtocolHttp = (client: HttpClient.HttpClient): Effect.Effect<
+export const makeProtocolHttp = (client: HttpClient.HttpClient, options?: {
+  readonly batch?: {
+    readonly window: Duration.Input
+    readonly maxSize?: number | undefined
+  } | undefined
+}): Effect.Effect<
   Protocol["Service"],
   never,
   RpcSerialization.RpcSerialization
-> =>
+> => options?.batch ? makeProtocolHttpBatched(client, options.batch) : makeProtocolHttpUnbatched(client)
+
+const makeProtocolHttpUnbatched = (client: HttpClient.HttpClient) =>
   Protocol.make(Effect.fnUntraced(function*(writeResponse) {
     const serialization = yield* RpcSerialization.RpcSerialization
-    const isFramed = serialization.includesFraming
-    const httpClientError = (cause: any) =>
-      new RpcClientError({
-        reason: HttpClientErrorSchema.fromHttpClientError(cause)
-      })
-    const protocolDefect = (message: string, cause: unknown) =>
-      new RpcClientError({
-        reason: new RpcClientDefect({ message, cause })
-      })
-    const emptyResponseError = (request: FromClientEncoded) =>
-      protocolDefect("Received empty HTTP response from RPC server", request)
-    const incompleteResponseError = (request: FromClientEncoded) =>
-      protocolDefect("HTTP response ended before RPC request completed", request)
-
-    const send = Effect.fnUntraced(function*(clientId: number, request: FromClientEncoded) {
-      if (request._tag !== "Request") {
-        return
-      }
-
-      const parser = serialization.makeUnsafe()
-
-      const encoded = parser.encode(request)!
-      const body = typeof encoded === "string" ?
-        HttpBody.text(encoded, serialization.contentType) :
-        HttpBody.uint8Array(encoded, serialization.contentType)
-
-      const response = yield* client.post("", { body }).pipe(Effect.mapError(httpClientError))
-
-      if (!isFramed) {
-        const text = yield* response.text.pipe(Effect.mapError(httpClientError))
-        const responses = yield* Effect.try({
-          try: () => parser.decode(text),
-          catch: (cause) => protocolDefect("Error decoding HTTP response", cause)
-        })
-        if (!Array.isArray(responses)) {
-          return yield* protocolDefect("Expected an array of responses", responses)
-        }
-        if (responses.length === 0) {
-          return yield* emptyResponseError(request)
-        }
-        let completed = false
-        for (let i = 0; i < responses.length; i++) {
-          const response = responses[i]
-          if (isTerminalResponse(response)) {
-            completed = true
-          }
-          yield* writeResponse(clientId, response)
-        }
-        if (!completed) {
-          return yield* incompleteResponseError(request)
-        }
-        return
-      }
-
-      let hasResponse = false
-      let completed = false
-      yield* Stream.runForEachArray(response.stream, (chunk) =>
-        Effect.try({
-          try: () => chunk.flatMap(parser.decode) as Array<FromServerEncoded>,
-          catch: (cause) => protocolDefect("Error decoding HTTP response", cause)
-        }).pipe(
-          Effect.flatMap((responses) => {
-            if (responses.length === 0) return Effect.void
-            hasResponse = true
-            let i = 0
-            return Effect.whileLoop({
-              while: () => i < responses.length,
-              body: () => {
-                const response = responses[i++]
-                if (isTerminalResponse(response)) {
-                  completed = true
-                }
-                return writeResponse(clientId, response)
-              },
-              step: constVoid
-            })
-          })
-        )).pipe(
-          Effect.mapError((cause) => isRpcClientError(cause) ? cause : httpClientError(cause))
-        )
-      if (!hasResponse) {
-        return yield* emptyResponseError(request)
-      } else if (!completed) {
-        return yield* incompleteResponseError(request)
-      }
-    })
-
+    const exchange = makeHttpExchange(client, serialization, writeResponse)
     return {
-      send,
+      send: (clientId, request) =>
+        request._tag === "Request"
+          ? Effect.flatMap(exchange.send(clientId, [request]), (pending) => exchange.requestExit(request, pending))
+          : Effect.void,
       supportsAck: false,
       supportsTransferables: false,
       codecFor: serialization.codecFor
     }
   }))
 
+const makeProtocolHttpBatched = Effect.fnUntraced(function*(client: HttpClient.HttpClient, options: {
+  readonly window: Duration.Input
+  readonly maxSize?: number | undefined
+}) {
+  const { maxSize, window } = options
+
+  // Batches of a client run in its own scope, which is closed when the client
+  // stops running.
+  const scopes = new Map<number, Scope.Closeable>()
+  const closeScope = (clientId: number) => {
+    const scope = scopes.get(clientId)
+    if (scope === undefined) return Effect.void
+    scopes.delete(clientId)
+    return Scope.close(scope, Exit.void)
+  }
+
+  const protocol = yield* Protocol.make(Effect.fnUntraced(function*(writeResponse) {
+    const serialization = yield* RpcSerialization.RpcSerialization
+    const exchange = makeHttpExchange(client, serialization, writeResponse)
+
+    interface Batch {
+      readonly requests: Array<RequestEncoded>
+      readonly full: Latch.Latch
+      readonly done: Deferred.Deferred<ReadonlySet<string> | undefined, RpcClientError>
+    }
+    const batches = new Map<number, Batch>()
+    const closeBatch = (clientId: number, batch: Batch) => {
+      if (batches.get(clientId) === batch) {
+        batches.delete(clientId)
+      }
+    }
+    // Runs in the client scope rather than in a caller, so interrupting one
+    // caller does not cancel the HTTP request for the rest of the batch.
+    const runBatch = (clientId: number, batch: Batch) =>
+      Effect.raceFirst(Effect.sleep(window), batch.full.await).pipe(
+        Effect.andThen(Effect.suspend(() => {
+          closeBatch(clientId, batch)
+          return exchange.send(clientId, batch.requests)
+        })),
+        Effect.onExit((exit) => {
+          closeBatch(clientId, batch)
+          return Deferred.done(batch.done, exit)
+        })
+      )
+    const send = Effect.fnUntraced(function*(clientId: number, request: RequestEncoded) {
+      let batch = batches.get(clientId)
+      if (batch === undefined) {
+        batch = { requests: [request], full: Latch.makeUnsafe(), done: Deferred.makeUnsafe() }
+        batches.set(clientId, batch)
+        let scope = scopes.get(clientId)
+        if (scope === undefined) {
+          scope = Scope.makeUnsafe()
+          scopes.set(clientId, scope)
+        }
+        yield* Effect.forkIn(runBatch(clientId, batch), scope, { startImmediately: true })
+      } else {
+        batch.requests.push(request)
+      }
+      if (batch.requests.length === maxSize) {
+        closeBatch(clientId, batch)
+        batch.full.openUnsafe()
+      }
+      return yield* exchange.requestExit(request, yield* Deferred.await(batch.done))
+    })
+
+    return {
+      send: (clientId, request) => request._tag === "Request" ? send(clientId, request) : Effect.void,
+      supportsAck: false,
+      supportsTransferables: false,
+      codecFor: serialization.codecFor
+    }
+  }))
+
+  return Protocol.of({
+    ...protocol,
+    run: (clientId, f) => Effect.onExit(protocol.run(clientId, f), () => closeScope(clientId))
+  })
+})
+
+// Sends RPC requests in one HTTP request, shared by the batched and unbatched
+// HTTP protocols.
+const makeHttpExchange = (
+  client: HttpClient.HttpClient,
+  serialization: RpcSerialization.RpcSerialization["Service"],
+  writeResponse: (clientId: number, response: FromServerEncoded) => Effect.Effect<void>
+) => {
+  const isFramed = serialization.includesFraming
+  const httpClientError = (cause: any) =>
+    new RpcClientError({
+      reason: HttpClientErrorSchema.fromHttpClientError(cause)
+    })
+  const protocolDefect = (message: string, cause: unknown) =>
+    new RpcClientError({
+      reason: new RpcClientDefect({ message, cause })
+    })
+
+  // Writes each response as it is decoded. Returns the ids of the requests left
+  // without a terminal response, or `undefined` when the server sent no
+  // responses.
+  const send = Effect.fnUntraced(function*(
+    clientId: number,
+    requests: ReadonlyArray<RequestEncoded>
+  ) {
+    const parser = serialization.makeUnsafe()
+
+    const encoded = parser.encode(requests.length === 1 ? requests[0] : requests)!
+    const body = typeof encoded === "string" ?
+      HttpBody.text(encoded, serialization.contentType) :
+      HttpBody.uint8Array(encoded, serialization.contentType)
+
+    const response = yield* client.post("", { body }).pipe(Effect.mapError(httpClientError))
+
+    const pending = new Set<string>()
+    for (let i = 0; i < requests.length; i++) {
+      pending.add(String(requests[i].id))
+    }
+    const onResponse = (response: FromServerEncoded) => {
+      if (response._tag === "Exit") {
+        pending.delete(String(response.requestId))
+      } else if (isTerminalResponse(response)) {
+        // defects and protocol errors end every request of the client
+        pending.clear()
+      }
+      return writeResponse(clientId, response)
+    }
+
+    if (!isFramed) {
+      const text = yield* response.text.pipe(Effect.mapError(httpClientError))
+      const responses = yield* Effect.try({
+        try: () => parser.decode(text),
+        catch: (cause) => protocolDefect("Error decoding HTTP response", cause)
+      })
+      if (!Array.isArray(responses)) {
+        return yield* protocolDefect("Expected an array of responses", responses)
+      }
+      if (responses.length === 0) {
+        return undefined
+      }
+      for (let i = 0; i < responses.length; i++) {
+        yield* onResponse(responses[i])
+      }
+      return pending
+    }
+
+    let hasResponse = false
+    yield* Stream.runForEachArray(response.stream, (chunk) =>
+      Effect.try({
+        try: () => chunk.flatMap(parser.decode) as Array<FromServerEncoded>,
+        catch: (cause) => protocolDefect("Error decoding HTTP response", cause)
+      }).pipe(
+        Effect.flatMap((responses) => {
+          if (responses.length === 0) return Effect.void
+          hasResponse = true
+          let i = 0
+          return Effect.whileLoop({
+            while: () => i < responses.length,
+            body: () => onResponse(responses[i++]),
+            step: constVoid
+          })
+        })
+      )).pipe(
+        Effect.mapError((cause) => isRpcClientError(cause) ? cause : httpClientError(cause))
+      )
+    return hasResponse ? pending : undefined
+  })
+
+  // Completes one request from the result of the exchange that carried it.
+  const requestExit = (
+    request: RequestEncoded,
+    pending: ReadonlySet<string> | undefined
+  ): Exit.Exit<void, RpcClientError> => {
+    if (pending === undefined) {
+      return Exit.fail(protocolDefect("Received empty HTTP response from RPC server", request))
+    } else if (pending.has(String(request.id))) {
+      return Exit.fail(protocolDefect("HTTP response ended before RPC request completed", request))
+    }
+    return Exit.void
+  }
+
+  return { send, requestExit } as const
+}
+
 /**
  * Provides a client `Protocol` backed by `HttpClient`, targeting the configured
  * URL and optionally transforming the client before use.
+ *
+ * **Details**
+ *
+ * Set `batch` to send concurrent requests from the same client in a single
+ * HTTP request. The first request for a client opens a batch. Requests from
+ * the same client made before `window` elapses join it, and the batch is sent
+ * once the window elapses or it reaches `maxSize` requests, whichever comes
+ * first.
  *
  * @stability unstable
  * @category layers
@@ -1017,13 +1225,19 @@ export const makeProtocolHttp = (client: HttpClient.HttpClient): Effect.Effect<
 export const layerProtocolHttp = (options: {
   readonly url: string
   readonly transformClient?: <E, R>(client: HttpClient.HttpClient.With<E, R>) => HttpClient.HttpClient.With<E, R>
+  readonly batch?: {
+    readonly window: Duration.Input
+    readonly maxSize?: number | undefined
+  } | undefined
 }): Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | HttpClient.HttpClient> =>
   Layer.effect(Protocol)(
     Effect.flatMap(
       HttpClient.HttpClient,
       (client) => {
         client = HttpClient.mapRequest(client, HttpClientRequest.prependUrl(options.url))
-        return makeProtocolHttp(options.transformClient ? options.transformClient(client) : client)
+        return makeProtocolHttp(options.transformClient ? options.transformClient(client) : client, {
+          batch: options.batch
+        })
       }
     )
   )
@@ -1050,11 +1264,19 @@ export const makeProtocolSocket = (options?: {
   readonly retryPolicy?: Schedule.Schedule<any, Socket.SocketError> | undefined
   /**
    * Runs for each retried `SocketOpenError` when `retryTransientErrors` is enabled.
-   * A ping timeout fails in-flight calls and is not reported through this hook.
-   * The returned `Effect<void>` cannot fail with a typed error or require
-   * services; defects are logged and ignored so retries can continue.
+   * A ping timeout fails in-flight calls and is reported through `onPingTimeout`
+   * instead. The returned `Effect<void>` cannot fail with a typed error or
+   * require services; defects are logged and ignored so retries can continue.
    */
   readonly onTransientError?: ((error: RpcClientError) => Effect.Effect<void>) | undefined
+  /**
+   * Runs when an open connection is dropped because no server frame arrived
+   * within `pingTimeout`, before `ConnectionHooks.onDisconnect` and before
+   * in-flight calls fail with a `SocketReadError`. Defects are logged and ignored.
+   *
+   * @since 4.0.3
+   */
+  readonly onPingTimeout?: Effect.Effect<void> | undefined
 }): Effect.Effect<
   Protocol["Service"],
   never,
@@ -1070,14 +1292,21 @@ export const makeProtocolSocket = (options?: {
 
     let parser = serialization.makeUnsafe()
 
-    // `parser` is replaced on every connect, and a stateful serialization
-    // encodes against the connection it is writing to, so the ping is encoded
-    // when it is sent rather than once up front.
+    // Encode each ping with the current connection's parser.
     const pinger = yield* makePinger(Effect.suspend(() => writer.write(parser.encode(constPing)!)), options)
+    const onPingTimeout = Effect.ignoreCause(options?.onPingTimeout ?? Effect.void, {
+      log: true,
+      message: "RpcClient onPingTimeout hook failed"
+    })
     let currentError: RpcClientError | undefined
 
-    const broadcast = (response: FromServerEncoded) =>
-      Effect.forEach(clientIds, (clientId) => writeResponse(clientId, response))
+    const broadcast = (response: FromServerEncoded) => {
+      const deliver = Effect.forEach(Array.from(clientIds), (clientId) => writeResponse(clientId, response))
+      if (response._tag !== "Defect" && response._tag !== "ClientProtocolError") return deliver
+      // A terminal response ends every request; clear routing before callers can start new ones
+      requestClientMap.clear()
+      return Effect.uninterruptible(deliver)
+    }
     const broadcastError = (error: RpcClientError) => {
       currentError = error
       return broadcast({
@@ -1127,9 +1356,11 @@ export const makeProtocolSocket = (options?: {
     yield* Effect.suspend(() => {
       parser = serialization.makeUnsafe()
       pinger.reset()
+      let connected = false
       return Effect.gen(function*() {
         const { pull } = yield* socket.reader
         currentError = undefined
+        connected = true
         if (Option.isSome(hooks)) {
           yield* hooks.value.onConnect
         }
@@ -1141,17 +1372,19 @@ export const makeProtocolSocket = (options?: {
         }
       }).pipe(
         Effect.scoped,
-        Effect.raceFirst(Effect.flatMap(
-          pinger.timeout,
-          () =>
-            Effect.fail(
-              new Socket.SocketError({
-                reason: new Socket.SocketReadError({
-                  cause: new Error("ping timeout")
-                })
+        // The read loop never succeeds, so the race only succeeds on a ping
+        // timeout, after the socket has been cleaned up.
+        Effect.raceFirst(pinger.timeout),
+        Effect.andThen(() => connected ? onPingTimeout : Effect.void),
+        Effect.andThen(() =>
+          Effect.fail(
+            new Socket.SocketError({
+              reason: new Socket.SocketReadError({
+                cause: new Error("ping timeout")
               })
-            )
-        ))
+            })
+          )
+        )
       )
     }).pipe(
       Option.isSome(hooks) ? Effect.ensuring(hooks.value.onDisconnect) : identity,
@@ -1188,17 +1421,21 @@ export const makeProtocolSocket = (options?: {
       Effect.forkScoped
     )
 
+    const write = (request: FromClientEncoded) =>
+      Effect.suspend(() => {
+        const encoded = parser.encode(request)
+        return encoded === undefined ? Effect.void : Effect.orDie(writer.write(encoded))
+      })
+
     return {
       send(clientId, request) {
         if (currentError) {
           return Effect.fail(currentError)
         }
-        if (request._tag === "Request") {
-          requestClientMap.set(request.id, clientId)
-        }
-        const encoded = parser.encode(request)
-        if (encoded === undefined) return Effect.void
-        return Effect.orDie(writer.write(encoded))
+        if (request._tag === "Interrupt") requestClientMap.delete(request.requestId)
+        if (request._tag !== "Request") return write(request)
+        requestClientMap.set(request.id, clientId)
+        return Effect.onError(write(request), () => Effect.sync(() => requestClientMap.delete(request.id)))
       },
       supportsAck: true,
       supportsTransferables: false,
@@ -1219,16 +1456,21 @@ const makePinger = Effect.fnUntraced(function*<A, E, R>(writePing: Effect.Effect
   const interval = options?.pingInterval ?? "5 seconds"
   const timeoutMillis = Duration.toMillis(options?.pingTimeout ?? interval)
   let lastSeen = clock.currentTimeMillisUnsafe()
+  let awaitingResponse = false
   const latch = Latch.makeUnsafe()
   const onFrame = () => {
     lastSeen = clock.currentTimeMillisUnsafe()
+    awaitingResponse = false
   }
   const reset = () => {
     onFrame()
     latch.closeUnsafe()
   }
   yield* Effect.suspend((): Effect.Effect<void, E, R> => {
-    if (clock.currentTimeMillisUnsafe() - lastSeen > timeoutMillis) return latch.open
+    // A late tick must send a ping before it can declare the connection silent.
+    // Keep the timeout measured from the last frame, including for custom timeouts.
+    if (awaitingResponse && clock.currentTimeMillisUnsafe() - lastSeen > timeoutMillis) return latch.open
+    awaitingResponse = true
     return writePing
   }).pipe(
     Effect.delay(interval),
@@ -1262,11 +1504,19 @@ export const layerProtocolSocket = (options?: {
   readonly retryPolicy?: Schedule.Schedule<any, Socket.SocketError> | undefined
   /**
    * Runs for each retried `SocketOpenError` when `retryTransientErrors` is enabled.
-   * A ping timeout fails in-flight calls and is not reported through this hook.
-   * The returned `Effect<void>` cannot fail with a typed error or require
-   * services; defects are logged and ignored so retries can continue.
+   * A ping timeout fails in-flight calls and is reported through `onPingTimeout`
+   * instead. The returned `Effect<void>` cannot fail with a typed error or
+   * require services; defects are logged and ignored so retries can continue.
    */
   readonly onTransientError?: ((error: RpcClientError) => Effect.Effect<void>) | undefined
+  /**
+   * Runs when an open connection is dropped because no server frame arrived
+   * within `pingTimeout`, before `ConnectionHooks.onDisconnect` and before
+   * in-flight calls fail with a `SocketReadError`. Defects are logged and ignored.
+   *
+   * @since 4.0.3
+   */
+  readonly onPingTimeout?: Effect.Effect<void> | undefined
 }): Layer.Layer<
   Protocol,
   never,
@@ -1348,21 +1598,26 @@ export const makeProtocolWorker = (
           undefined
       }).pipe(
         Effect.tapCause((cause) => {
+          const requestIdsByClient = new Map<number, Array<string | number>>()
           for (const [requestId, entry] of entries) {
             if (entry.worker !== backing) continue
             entries.delete(requestId)
             entry.latch.openUnsafe()
+            const requestIds = requestIdsByClient.get(entry.clientId)
+            if (requestIds) requestIds.push(requestId)
+            else requestIdsByClient.set(entry.clientId, [requestId])
           }
-          const error = Cause.findError(cause)
-          return broadcast({
-            _tag: "ClientProtocolError",
-            error: new RpcClientError({
-              reason: Result.isSuccess(error) ? error.success.reason : new RpcClientDefect({
-                message: "Error in worker",
-                cause: Cause.squash(cause)
-              })
+          const found = Cause.findError(cause)
+          const error = new RpcClientError({
+            reason: Result.isSuccess(found) ? found.success.reason : new RpcClientDefect({
+              message: "Error in worker",
+              cause: Cause.squash(cause)
             })
           })
+          return Effect.forEach(
+            requestIdsByClient,
+            ([clientId, requestIds]) => writeResponse(clientId, { _tag: "ClientProtocolError", error, requestIds })
+          )
         }),
         Effect.retry(Schedule.spaced(1000)),
         Effect.annotateLogs({
@@ -1413,7 +1668,14 @@ export const makeProtocolWorker = (
             Effect.flatMap((worker) => {
               const latch = Latch.makeUnsafe(false)
               entries.set(request.id, { clientId, worker, latch })
-              return Effect.flatMap(worker.send(request, transferables), () => latch.await)
+              // the pool counts a worker as busy until the Exit arrives, so a
+              // discarded call is sent without its marker to get the handler Exit
+              let message = request
+              if (request.discard === true) {
+                const { discard: _, ...rest } = request
+                message = rest
+              }
+              return Effect.flatMap(worker.send(message, transferables), () => latch.await)
             }),
             Effect.scoped,
             Effect.orDie

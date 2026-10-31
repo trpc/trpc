@@ -10,6 +10,10 @@
 "@effect/platform/HttpClientRequest#head":
   replacement: "HttpClientRequest.head"
   note: "Retained; options now use Options.NoUrl and no longer exclude body."
+"@effect/platform/HttpClientRequest#HttpClientRequest":
+  include: true
+  replacement: "HttpClientRequest.HttpClientRequest"
+  note: "method is now typed as string because requests converted from Web or server requests can carry methods outside the HttpMethod literals; exhaustive matches need a fallback or an HttpMethod.isHttpMethod guard."
 "@effect/platform/HttpClientRequest#make":
   replacement: "HttpClientRequest.make"
   note: "Retained; all methods now accept Options.NoUrl without the GET/HEAD body restriction."

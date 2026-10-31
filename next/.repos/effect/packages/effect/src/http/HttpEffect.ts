@@ -28,7 +28,7 @@ import { HttpServerRequest } from "./HttpServerRequest.ts"
 import * as Request from "./HttpServerRequest.ts"
 import type { HttpServerResponse } from "./HttpServerResponse.ts"
 import * as Response from "./HttpServerResponse.ts"
-import * as preResponseHandler from "./internal/preResponseHandler.ts"
+import * as requestState from "./internal/requestState.ts"
 
 /**
  * Runs an HTTP server effect, sends the produced response with the supplied handler, and converts failures into HTTP responses.
@@ -55,7 +55,7 @@ export const toHandled = <E, R, EH, RH>(
     return Effect.flatMapEager(causeResponse(cause), ([response, cause]) => {
       const fiber = Fiber.getCurrent()!
       reportCauseUnsafe(fiber, cause)
-      const handler = preResponseHandler.requestPreResponseHandlers.get(request.source)
+      const handler = frame.preResponseHandler
       const cont = cause.reasons.length === 0 ? Effect.succeed(response) : Effect.failCause(cause)
       if (handler === undefined) {
         ;(request as any)[handledSymbol] = true
@@ -78,10 +78,11 @@ export const toHandled = <E, R, EH, RH>(
   // Writes the response, applying any registered pre-response handler first.
   // Returns an `Exit` when the write completes synchronously.
   const sendResponse = (
-    request: HttpServerRequest,
+    frame: RequestFrame,
     response: HttpServerResponse
   ): Effect.Effect<HttpServerResponse, EH | HttpServerError, RH> => {
-    const handler = preResponseHandler.requestPreResponseHandlers.get(request.source)
+    const request = frame.request
+    const handler = frame.preResponseHandler
     if (handler === undefined) {
       ;(request as any)[handledSymbol] = true
       return Effect.mapEager(
@@ -105,7 +106,7 @@ export const toHandled = <E, R, EH, RH>(
   > => {
     const request = frame.request
     const responded = Effect.matchCauseEffect(self, {
-      onSuccess: (response) => sendResponse(request, response),
+      onSuccess: (response) => sendResponse(frame, response),
       onFailure: (cause) => handleCause(frame, cause)
     })
     return middleware === undefined ?
@@ -152,18 +153,19 @@ export const toHandled = <E, R, EH, RH>(
       return Scope.closeUnsafe(frame.scope, frame.cause === undefined ? exit : Exit.failCause(frame.cause))
     }, true)
 
-  class RequestFrame {
+  class RequestFrame extends requestState.RequestState {
     readonly scope: Scope.Closeable
     readonly prev: Context.Context<never>
     readonly request: HttpServerRequest
     cause: Cause.Cause<E | EH | HttpServerError> | undefined
     constructor(scope: Scope.Closeable, prev: Context.Context<never>, request: HttpServerRequest) {
+      super()
       this.scope = scope
       this.prev = prev
       this.request = request
     }
     [contA](response: HttpServerResponse, fiber: Fiber.Fiber<unknown, unknown>) {
-      const sent = sendResponse(this.request, response)
+      const sent = sendResponse(this, response)
       // Most response writes complete synchronously.
       if (effectIsExit(sent) && sent._tag === "Success") {
         fiber.setContext(this.prev)
@@ -182,7 +184,7 @@ export const toHandled = <E, R, EH, RH>(
     fiberEnterUninterruptibleUnsafe(fiber)
     const scope = Scope.makeUnsafe()
     const frame = new RequestFrame(scope, fiber.context, Context.getUnsafe(fiber.context, HttpServerRequest))
-    fiber.setContext(Context.add(frame.prev, Scope.Scope, scope))
+    fiber.setContext(Context.add(Context.add(frame.prev, Scope.Scope, scope), requestState.CurrentRequestState, frame))
     // The native tracer has no backend, so its spans are unobservable.
     const currentTracer = fiber.cache.tracer
     if (
@@ -262,22 +264,20 @@ export type PreResponseHandler = (
  * @since 4.0.0
  */
 export const appendPreResponseHandler = (handler: PreResponseHandler): Effect.Effect<void, never, HttpServerRequest> =>
-  HttpServerRequest.use((request) => {
-    appendPreResponseHandlerUnsafe(request, handler)
-    return Effect.void
-  })
+  withPreResponseHandler(Effect.void, handler)
 
 /**
- * Registers a pre-response handler for the supplied HTTP server request.
+ * Registers a pre-response handler for the HTTP server request that owns the
+ * supplied fiber context. Does nothing outside a server request.
  *
  * @stability unstable
  * @category unsafe
  * @since 4.0.0
  */
 export const appendPreResponseHandlerUnsafe: (
-  request: HttpServerRequest,
+  context: Context.Context<never>,
   handler: PreResponseHandler
-) => void = preResponseHandler.appendPreResponseHandlerUnsafe
+) => void = requestState.appendPreResponseHandlerUnsafe
 
 /**
  * Runs an effect after registering a pre-response handler for the current HTTP server request.
@@ -295,8 +295,8 @@ export const withPreResponseHandler: {
   ) => <A, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | HttpServerRequest>,
   <A, E, R>(self: Effect.Effect<A, E, R>, handler: PreResponseHandler) => Effect.Effect<A, E, R | HttpServerRequest>
 >(2, (self, handler) =>
-  HttpServerRequest.use((request) => {
-    appendPreResponseHandlerUnsafe(request, handler)
+  Effect.withFiber((fiber) => {
+    appendPreResponseHandlerUnsafe(fiber.context, handler)
     return self
   }))
 
@@ -321,10 +321,11 @@ export const toWebHandlerWith = <Provided, R = never, ReqR = Exclude<R, Provided
   const httpApp = toHandled(self, (request, response) => {
     const withoutBody = request.method === "HEAD"
     if (!Response.omitsBody(response, withoutBody)) {
+      // The transferred request scope closes when an abort interrupts the body, even if it is no longer read.
       response = scopeTransferToStream(response)
     }
     ;(request as any)[resolveSymbol](
-      Response.toWeb(response, { withoutBody, context })
+      Response.toWeb(response, { withoutBody, context, signal: (request.source as globalThis.Request).signal })
     )
     return Effect.void
   }, middleware)
@@ -340,10 +341,15 @@ export const toWebHandlerWith = <Provided, R = never, ReqR = Exclude<R, Provided
       reqContext = Context.add(reqContext, HttpServerRequest, httpServerRequest)
       ;(httpServerRequest as any)[resolveSymbol] = resolve
       const fiber = Effect.runForkWith(reqContext)(httpApp as any)
-      if (fiber.pollUnsafe() === undefined) {
-        request.signal?.addEventListener("abort", () => {
-          fiber.interruptUnsafe(undefined, ClientAbort.annotation)
-        }, { once: true })
+      const signal = request.signal
+      if (fiber.pollUnsafe() === undefined && signal) {
+        const onAbort = () => fiber.interruptUnsafe(undefined, ClientAbort.annotation)
+        if (signal.aborted) {
+          onAbort()
+        } else {
+          signal.addEventListener("abort", onAbort, { once: true })
+          fiber.addObserver(() => signal.removeEventListener("abort", onAbort))
+        }
       }
     })
 }
@@ -365,6 +371,9 @@ export const toWebHandler: <E>(
  * Builds a Web `Request` handler from a layer and handler factory, returning the handler with a `dispose` function for the layer scope.
  *
  * **Details**
+ *
+ * Every call to `dispose` returns the same promise, which resolves once the
+ * layer resources have been released.
  *
  * The layer is built immediately, so the cost is paid when the handler is
  * created rather than on the first request. A layer that performs asynchronous
@@ -403,7 +412,8 @@ export const toWebHandlerLayerWith = <
     ) => Promise<globalThis.Response>
 } => {
   const scope = Scope.makeUnsafe()
-  const dispose = () => Effect.runPromise(Scope.close(scope, Exit.void))
+  let disposing: Promise<void> | undefined
+  const dispose = () => disposing ??= Effect.runPromise(Scope.close(scope, Exit.void))
 
   let handlerCache:
     | ((request: Request, context?: Context.Context<ReqR> | undefined) => Promise<globalThis.Response>)

@@ -4,7 +4,7 @@
  * This module opens `node:net` or `node:tls` connections, or wraps existing
  * Node `Duplex` streams, and presents them as `Socket.Socket` values, socket
  * channels, or layers. It also exposes the `NetSocket` service tag for the
- * underlying Node socket and re-exports the `ws` package namespace.
+ * underlying Node socket.
  *
  * @stability unstable
  * @since 4.0.0
@@ -29,13 +29,6 @@ import * as Tls from "node:tls"
 const isDeno = "Deno" in globalThis
 
 /**
- * @stability unstable
- * @category re-exports
- * @since 4.0.0
- */
-export * as NodeWS from "ws"
-
-/**
  * Service tag for the underlying Node `net.Socket` associated with the current
  * socket connection.
  *
@@ -48,15 +41,15 @@ export class NetSocket extends Context.Service<NetSocket, Net.Socket>()(
 ) {}
 
 const readAvailable = (
-  conn: Duplex
+  conn: Duplex,
+  chunkSize: number
 ): Arr.NonEmptyReadonlyArray<Uint8Array | string> | undefined => {
   const first = conn.read() as Uint8Array | string | null
   if (first === null) return undefined
-  const second = conn.read() as Uint8Array | string | null
-  if (second === null) return [first]
-  const out: [Uint8Array | string, ...Array<Uint8Array | string>] = [first, second]
+  const out: [Uint8Array | string, ...Array<Uint8Array | string>] = [first]
   let chunk: Uint8Array | string | null
-  while ((chunk = conn.read() as Uint8Array | string | null) !== null) {
+  // read() may synchronously refill the buffer; leave further reads to the next pull.
+  while (out.length < chunkSize && (chunk = conn.read() as Uint8Array | string | null) !== null) {
     out.push(chunk)
   }
   return out
@@ -94,6 +87,11 @@ const closeSocket = (conn: Net.Socket, isOpen: boolean) => {
 export const makeNet = (
   options: Net.NetConnectOpts & {
     readonly openTimeout?: Duration.Input | undefined
+    /**
+     * Maximum chunks per pull. Defaults to 4096 unless a positive safe integer or Infinity is supplied.
+     * Use Infinity for unbounded batching.
+     */
+    readonly chunkSize?: number | undefined
   }
 ): Effect.Effect<Socket.Socket> =>
   fromDuplex(
@@ -133,9 +131,9 @@ export const makeNet = (
  *
  * **Details**
  *
- * Reader acquisition opens the duplex and keeps it paused: each pull drains
- * Node's internal buffer with `stream.read()`. On Node 26+ that yields each
- * buffered chunk as a separate batch element with no copy. Earlier Node
+ * Reader acquisition opens the duplex and keeps it paused: each pull reads at
+ * most `chunkSize` chunks (default 4096) with `stream.read()`. On Node 26+ that
+ * yields each buffered chunk as a separate batch element with no copy. Earlier Node
  * concatenates the buffer into one chunk. The stream is never resumed, so once
  * Node's buffer reaches its `highWaterMark` the kernel receive window closes
  * and the peer blocks: backpressure is end-to-end with no buffering above
@@ -153,6 +151,11 @@ export const fromDuplex = <RO>(
   open: Effect.Effect<Duplex, Socket.SocketError, RO>,
   options?: {
     readonly openTimeout?: Duration.Input | undefined
+    /**
+     * Maximum chunks per pull. Defaults to 4096 unless a positive safe integer or Infinity is supplied.
+     * Use Infinity for unbounded batching.
+     */
+    readonly chunkSize?: number | undefined
     readonly tlsServer?: boolean | undefined
   }
 ): Effect.Effect<Socket.Socket, never, Exclude<RO, Scope.Scope>> =>
@@ -161,6 +164,11 @@ export const fromDuplex = <RO>(
     const latch = Latch.makeUnsafe(false)
     const openServices = fiber.context as Context.Context<RO>
     const isServer = options?.tlsServer === true
+    const requestedChunkSize = options?.chunkSize ?? 4096
+    const chunkSize = requestedChunkSize === Infinity ||
+        (Number.isSafeInteger(requestedChunkSize) && requestedChunkSize > 0)
+      ? requestedChunkSize
+      : 4096
     const secureEvent = isServer ? "secure" : "secureConnect"
 
     const reader: Socket.Socket["reader"] = Effect.gen(function*() {
@@ -202,7 +210,7 @@ export const fromDuplex = <RO>(
           // The replacement must wait for this read to preserve byte order.
           reading = true
           try {
-            chunk = readAvailable(conn)
+            chunk = readAvailable(conn, chunkSize)
           } finally {
             reading = false
           }
@@ -355,7 +363,7 @@ export const fromDuplex = <RO>(
               }
               tls = isServer
                 ? new Tls.TLSSocket(raw as Net.Socket, { ...tlsOptions, isServer: true })
-                : Tls.connect({ ...tlsOptions, socket: raw as Net.Socket })
+                : Tls.connect({ ...tlsOptions, servername: upgradeOptions.servername, socket: raw as Net.Socket })
             } catch (cause) {
               attachReadListeners(raw)
               resume(Effect.fail(
@@ -519,7 +527,7 @@ export const fromDuplex = <RO>(
  * @since 4.0.0
  */
 export const makeNetChannel = <IE = never>(
-  options: Net.NetConnectOpts
+  options: Parameters<typeof makeNet>[0]
 ): Channel.Channel<
   Arr.NonEmptyReadonlyArray<Uint8Array>,
   Socket.SocketError | IE,
@@ -539,7 +547,7 @@ export const makeNetChannel = <IE = never>(
  * @category layers
  * @since 4.0.0
  */
-export const layerNet: (options: Net.NetConnectOpts) => Layer.Layer<
+export const layerNet: (options: Parameters<typeof makeNet>[0]) => Layer.Layer<
   Socket.Socket,
   Socket.SocketError
 > = Function.flow(makeNet, Layer.effect(Socket.Socket))
@@ -567,6 +575,11 @@ export const layerNet: (options: Net.NetConnectOpts) => Layer.Layer<
 export const makeTls = (
   options: Tls.ConnectionOptions & {
     readonly openTimeout?: Duration.Input | undefined
+    /**
+     * Maximum chunks per pull. Defaults to 4096 unless a positive safe integer or Infinity is supplied.
+     * Use Infinity for unbounded batching.
+     */
+    readonly chunkSize?: number | undefined
   }
 ): Effect.Effect<Socket.Socket> =>
   fromDuplex(
@@ -610,7 +623,7 @@ export const makeTls = (
  * @since 4.0.0
  */
 export const makeTlsChannel = <IE = never>(
-  options: Tls.ConnectionOptions
+  options: Parameters<typeof makeTls>[0]
 ): Channel.Channel<
   Arr.NonEmptyReadonlyArray<Uint8Array>,
   Socket.SocketError | IE,
@@ -630,7 +643,7 @@ export const makeTlsChannel = <IE = never>(
  * @category layers
  * @since 4.0.0
  */
-export const layerTls: (options: Tls.ConnectionOptions) => Layer.Layer<
+export const layerTls: (options: Parameters<typeof makeTls>[0]) => Layer.Layer<
   Socket.Socket,
   Socket.SocketError
 > = Function.flow(makeTls, Layer.effect(Socket.Socket))

@@ -14,6 +14,7 @@ import {
 import * as HttpServerRequest from "effect/http/HttpServerRequest"
 import * as Respondable from "effect/http/HttpServerRespondable"
 import * as HttpServerResponse from "effect/http/HttpServerResponse"
+import * as UrlParams from "effect/http/UrlParams"
 
 const makeRequest = (method: string, url: string) => HttpServerRequest.fromWeb(new Request(url, { method }))
 const makeResponse = (status: number) => HttpServerResponse.empty({ status })
@@ -30,6 +31,24 @@ describe("HttpServerError", () => {
 
       assert.strictEqual(parseError.message, "RequestParseError (POST /widgets): invalid body")
       assert.strictEqual(routeNotFound.message, "RouteNotFound (POST /widgets)")
+    })
+
+    it.effect("omits the query string", () =>
+      Effect.gen(function*() {
+        const request = makeRequest("GET", "http://example.com/widgets?token=token-secret&sig=sig-visible")
+
+        assert.strictEqual(
+          new RouteNotFound({ request }).message,
+          "RouteNotFound (GET /widgets)"
+        )
+      }).pipe(Effect.provideService(UrlParams.CurrentRedactedNames, ["token"])))
+
+    it("formats an absolute request URL as its path", () => {
+      const request = makeRequest("GET", "http://example.com/").modify({
+        url: "https://user:password@api.test/path?token=secret"
+      })
+
+      assert.strictEqual(new RouteNotFound({ request }).message, "RouteNotFound (GET /path)")
     })
 
     it("formats response reason messages", () => {

@@ -9,7 +9,6 @@
  * @stability unstable
  * @since 4.0.0
  */
-import * as Cause from "../Cause.ts"
 import * as Context from "../Context.ts"
 import * as Deferred from "../Deferred.ts"
 import * as Effect from "../Effect.ts"
@@ -18,6 +17,7 @@ import * as Fiber from "../Fiber.ts"
 import * as Layer from "../Layer.ts"
 import * as Metric from "../Metric.ts"
 import * as Queue from "../Queue.ts"
+import * as Schedule from "../Schedule.ts"
 import * as Schema from "../Schema.ts"
 import type * as Scope from "../Scope.ts"
 import * as Socket from "../socket/Socket.ts"
@@ -49,7 +49,20 @@ const makeEffect = Effect.gen(function*() {
   const socket = yield* Socket.Socket
   const services = yield* Effect.context<never>()
   const requests = yield* Queue.unbounded<DevToolsSchema.Request>()
+  yield* Queue.offer(requests, { _tag: "Ping" })
   const connected = yield* Deferred.make<void>()
+  let closing = false
+  let writable = false
+  const setWritable = (value: boolean) =>
+    Effect.sync(() => {
+      writable = value
+    })
+  // Tracks whether the current connection has a writer that can drain the
+  // queue on shutdown.
+  const transport = Socket.make({
+    reader: socket.reader,
+    writer: Effect.tap(socket.writer, Effect.acquireRelease(setWritable(true), () => setWritable(false)))
+  })
 
   const offerMetricsSnapshot = Effect.sync(() => {
     Queue.offerUnsafe(requests, toMetricsSnapshot(services))
@@ -70,24 +83,28 @@ const makeEffect = Effect.gen(function*() {
 
   const fiber = yield* Stream.fromQueue(requests).pipe(
     Stream.pipeThroughChannel(
-      Ndjson.duplexSchemaString(Socket.toChannelString(socket), {
+      Ndjson.duplexSchemaString(Socket.toChannelString(transport), {
         inputSchema: RequestSchema,
         outputSchema: ResponseSchema
       })
     ),
     Stream.onFirst(() => Deferred.completeWith(connected, Effect.void)),
+    // Each run closes its stream scope, including the socket reader and writer,
+    // before retrying with a fresh connection and the same request queue.
     Stream.runForEach(handleResponse),
+    Effect.tapError((error) => Effect.logDebug("DevTools connection failed", error)),
+    Effect.retry({ schedule: Schedule.spaced("1 second"), while: () => !closing }),
     Effect.forkDetach
   )
 
-  yield* Effect.addFinalizer(() =>
-    offerMetricsSnapshot.pipe(
-      Effect.andThen(
-        Effect.flatMap(Effect.fiberId, (id) => Queue.failCause(requests, Cause.interrupt(id)))
-      ),
-      Effect.andThen(Fiber.await(fiber))
-    )
-  )
+  yield* Effect.addFinalizer(Effect.fnUntraced(function*() {
+    closing = true
+    yield* offerMetricsSnapshot
+    yield* Queue.interrupt(requests)
+    // A ready writer drains the queue before stopping. Failed or pending
+    // acquisition cannot observe the queue interruption, so stop it directly.
+    yield* writable ? Fiber.await(fiber) : Fiber.interrupt(fiber)
+  }))
 
   yield* Effect.suspend(() => Queue.offer(requests, { _tag: "Ping" })).pipe(
     Effect.delay("3 seconds"),
@@ -202,6 +219,7 @@ const makeTracerEffect = Effect.gen(function*() {
       client.sendUnsafe(spanSnapshot(span))
       const oldEvent = span.event
       span.event = function(this: Tracer.Span, name, startTime, attributes) {
+        if (span.status._tag === "Ended") return
         client.sendUnsafe({
           _tag: "SpanEvent",
           traceId: span.traceId,
@@ -215,6 +233,7 @@ const makeTracerEffect = Effect.gen(function*() {
 
       const oldEnd = span.end
       span.end = function(this: Tracer.Span, endTime, exit) {
+        if (span.status._tag === "Ended") return
         oldEnd.call(this, endTime, exit)
         client.sendUnsafe(spanSnapshot(span))
       }

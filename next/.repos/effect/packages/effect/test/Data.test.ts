@@ -2,6 +2,10 @@ import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { dirname, join, relative } from "node:path"
+import { fileURLToPath } from "node:url"
 import { describe, it } from "vitest"
 
 describe("Data", () => {
@@ -41,6 +45,23 @@ describe("Data", () => {
     it("fields are enumerable", () => {
       const p = new Person({ name: "D", age: 2 })
       assert.deepStrictEqual(Object.keys(p).sort(), ["age", "name"])
+    })
+
+    it("copies own enumerable string and symbol keys only", () => {
+      const sym = Symbol("sym")
+      const args: any = { name: "E", age: 3, [sym]: "value" }
+      Object.defineProperty(args, "hidden", { value: 1, enumerable: false })
+      const p: any = new Person(args)
+      assert.strictEqual(p[sym], "value")
+      assert.deepStrictEqual(Reflect.ownKeys(p), ["name", "age", sym])
+    })
+
+    it("keeps the class prototype when args has an own __proto__ key", () => {
+      const args = JSON.parse(`{"name":"F","age":4,"__proto__":{"polluted":true}}`)
+      const p = new Person(args)
+      assert.strictEqual(Object.getPrototypeOf(p), Person.prototype)
+      assert.strictEqual(Object.getOwnPropertyDescriptor(p, "__proto__")?.value, args.__proto__)
+      assert.strictEqual(p.name, "F")
     })
   })
 
@@ -171,6 +192,70 @@ describe("Data", () => {
         assert.strictEqual(show(Option.Some({ value: 42 })), "some(42)")
       })
     })
+
+    it("declarations reference the named constructor types", () => {
+      const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
+      const directory = mkdtempSync(join(packageRoot, "test", ".taggedEnum-declarations-"))
+      try {
+        writeFileSync(
+          join(directory, "fixture.ts"),
+          `import * as Data from "effect/Data"
+
+export type Plain = Data.TaggedEnum<{
+  CaseA: { readonly name: string; readonly count: number; readonly active: boolean }
+  CaseB: { readonly message: string; readonly retry: boolean }
+}>
+export const Plain = Data.taggedEnum<Plain>()
+
+export type TE<T> = Data.TaggedEnum<{
+  A: { a: T }
+  B: { b?: T }
+}>
+export interface TEDefinition extends Data.TaggedEnum.WithGenerics<1> {
+  readonly taggedEnum: TE<this["A"]>
+}
+export const TE = Data.taggedEnum<TEDefinition>()
+`
+        )
+        writeFileSync(
+          join(directory, "tsconfig.json"),
+          JSON.stringify({
+            extends: join(packageRoot, "../../tsconfig.base.json"),
+            compilerOptions: {
+              composite: false,
+              incremental: false,
+              declaration: true,
+              declarationMap: false,
+              emitDeclarationOnly: true,
+              sourceMap: false,
+              rootDir: packageRoot,
+              outDir: join(directory, "out"),
+              types: ["node"]
+            },
+            files: ["fixture.ts"]
+          })
+        )
+        const repositoryRoot = join(packageRoot, "../..")
+        const result = spawnSync(
+          join(repositoryRoot, "node_modules/.bin/tsc"),
+          ["-p", join(directory, "tsconfig.json"), "--pretty", "false"],
+          { cwd: repositoryRoot, encoding: "utf8" }
+        )
+        assert.strictEqual(result.status, 0, `${result.stdout}${result.stderr}`)
+        const declarations = readFileSync(
+          join(directory, "out", relative(packageRoot, directory), "fixture.d.ts"),
+          "utf8"
+        )
+        const [plain = "", ...rest] = declarations.match(/^export declare const .*$/gm) ?? []
+        // the plain union alias is not preserved, only the named constructor
+        assert.match(plain, /^export declare const Plain: Data\.TaggedEnum\.Constructor</)
+        assert.deepStrictEqual(rest, [
+          "export declare const TE: Data.TaggedEnum.GenericConstructor<TEDefinition>;"
+        ])
+      } finally {
+        rmSync(directory, { recursive: true, force: true })
+      }
+    }, 60_000)
   })
 
   describe("Error", () => {

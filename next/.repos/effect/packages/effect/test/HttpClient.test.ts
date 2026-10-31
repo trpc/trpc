@@ -127,6 +127,20 @@ const TestServerLayer = Layer.unwrap(Effect.promise(() =>
         expect(yield* response.text).toBe("test")
       }).pipe(Effect.provide(testLayer)))
 
+    it.effect("followRedirects with manual fetch redirects", () =>
+      Effect.gen(function*() {
+        const client = (yield* HttpClient.HttpClient).pipe(
+          HttpClient.followRedirects()
+        )
+        const response = yield* client.get("/redirect")
+        expect(new URL(response.request.url).pathname).toBe("/")
+        assert.strictEqual(new URL(response.url).search, "?value=a%23b")
+        expect(yield* response.text).toBe("test")
+      }).pipe(
+        Effect.provide(testLayer),
+        Effect.provideService(FetchHttpClient.RequestInit, { redirect: "manual" })
+      ))
+
     it.effect("stream", () =>
       Effect.gen(function*() {
         const client = yield* HttpClient.HttpClient

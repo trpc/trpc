@@ -1,6 +1,6 @@
 {
   "name": "@effect/atom-react",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "description": "React bindings for the Effect Atom modules",
@@ -62,7 +62,7 @@
   "peerDependencies": {
     "effect": "workspace:^",
     "react": ">=19.0.0 <20.0.0",
-    "scheduler": ">=0.25.0 <0.28.0"
+    "scheduler": ">=0.25.0 <0.29.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
@@ -73,8 +73,8 @@
     "@types/scheduler": "^0.28.0",
     "effect": "workspace:^",
     "jsdom": "~30.0.1",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-error-boundary": "^6.1.6",
     "scheduler": "^0.28.0"
   }

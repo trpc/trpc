@@ -413,10 +413,13 @@ describe("nextPow2", () => {
   it("rounds non-powers of two up to the next power of two", () => {
     assert.strictEqual(N.nextPow2(5), 8)
     assert.strictEqual(N.nextPow2(17), 32)
+    assert.strictEqual(N.nextPow2(2 ** 52 + 1), 2 ** 53)
   })
 
   it("returns the same value for powers of two and a minimum of two otherwise", () => {
     assert.strictEqual(N.nextPow2(8), 8)
+    assert.strictEqual(N.nextPow2(2 ** 29), 2 ** 29)
+    assert.strictEqual(N.nextPow2(2 ** 1023), 2 ** 1023)
     assert.strictEqual(N.nextPow2(1), 2)
     assert.strictEqual(N.nextPow2(0), 2)
     assert.strictEqual(N.nextPow2(1.5), 2)

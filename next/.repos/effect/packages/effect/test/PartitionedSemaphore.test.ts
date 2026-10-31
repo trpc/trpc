@@ -2,6 +2,22 @@ import { assert, describe, it } from "@effect/vitest"
 import { Effect, Exit, Fiber, Option, PartitionedSemaphore, Scheduler } from "effect"
 
 describe("PartitionedSemaphore", () => {
+  it.effect("multi-permit waiters in different partitions do not deadlock", () =>
+    Effect.gen(function*() {
+      const sem = yield* PartitionedSemaphore.make<string>({ permits: 2 })
+      const completed: Array<string> = []
+      yield* sem.take("holder", 2)
+      for (const key of ["x", "y"]) {
+        yield* sem.withPermits(key, 2)(Effect.sync(() => completed.push(key))).pipe(
+          Effect.forkDetach({ startImmediately: true })
+        )
+      }
+
+      yield* sem.release(2)
+      assert.deepStrictEqual(completed, ["x", "y"])
+      assert.strictEqual(yield* sem.available, 2)
+    }))
+
   it.effect("a resumed waiter can immediately reacquire released permits", () =>
     Effect.gen(function*() {
       const sem = yield* PartitionedSemaphore.make<string>({ permits: 1 })

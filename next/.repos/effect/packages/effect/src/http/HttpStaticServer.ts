@@ -10,11 +10,15 @@
  * @stability unstable
  * @since 4.0.0
  */
+import * as DateTime from "../DateTime.ts"
 import * as Effect from "../Effect.ts"
 import * as FileSystem from "../FileSystem.ts"
 import * as Layer from "../Layer.ts"
+import * as Option from "../Option.ts"
 import * as Path from "../Path.ts"
 import type { PlatformError } from "../PlatformError.ts"
+import * as Result from "../Result.ts"
+import * as Headers from "./Headers.ts"
 import * as HttpPlatform from "./HttpPlatform.ts"
 import * as HttpRouter from "./HttpRouter.ts"
 import * as HttpServerError from "./HttpServerError.ts"
@@ -117,7 +121,9 @@ export const make: (options: {
   ) => Effect.Effect<HttpServerResponse.HttpServerResponse, HttpServerError.HttpServerError> = Effect.fnUntraced(
     function*(request, filePath, fileSize) {
       const rangeHeader = request.method === "GET" ? request.headers["range"] : undefined
-      const shouldEvaluateConditionals = request.headers["if-none-match"] !== undefined ||
+      const shouldEvaluateConditionals = request.headers["if-match"] !== undefined ||
+        request.headers["if-unmodified-since"] !== undefined ||
+        request.headers["if-none-match"] !== undefined ||
         request.headers["if-modified-since"] !== undefined
 
       let fullResponse: HttpServerResponse.HttpServerResponse | undefined
@@ -206,6 +212,20 @@ export const make: (options: {
           return serveFile(request, resolvedPath, info.size)
         }
         if (info.type === "Directory" && index !== undefined) {
+          let originalUrl = request.originalUrl
+          if (!originalUrl.startsWith("/")) {
+            const url = new URL(originalUrl)
+            originalUrl = url.pathname + url.search
+          }
+          const pathname = stripQueryString(originalUrl)
+          if (!pathname.endsWith("/")) {
+            // Keep the redirect local even when the path starts with multiple separators.
+            const location = pathname.replace(/^\/+/, "/").replace(/\\/g, "%5C")
+            return Effect.succeed(HttpServerResponse.redirect(
+              `${location}/${originalUrl.slice(pathname.length)}`,
+              { status: 301 }
+            ))
+          }
           return serveFile(request, path.join(resolvedPath, index))
         }
         return Effect.fail(toRouteNotFoundError(request))
@@ -398,16 +418,9 @@ const resolveFilePath = (path: Path.Path, root: string, url: string): string | u
   if (decodedPath.includes("\u0000")) {
     return undefined
   }
-  const normalizedPath = path.normalize(decodedPath.startsWith("/") ? decodedPath.slice(1) : decodedPath)
-  if (normalizedPath === ".." || normalizedPath.startsWith(`..${path.sep}`)) {
-    return undefined
-  }
-  const resolvedPath = path.join(root, normalizedPath)
-  const rootPrefix = root.endsWith(path.sep) ? root : `${root}${path.sep}`
-  if (resolvedPath !== root && !resolvedPath.startsWith(rootPrefix)) {
-    return undefined
-  }
-  return resolvedPath
+  // every leading separator is part of the URL, not a filesystem root
+  const relativePath = decodedPath.replace(path.sep === "\\" ? /^[/\\]+/ : /^\/+/, "")
+  return Option.getOrUndefined(path.resolveWithin(root, relativePath))
 }
 
 const toRouteNotFoundError = (request: HttpServerRequest.HttpServerRequest) =>
@@ -435,6 +448,22 @@ const stripWeakEtagPrefix = (value: string): string => {
   return /^w\//i.test(trimmed) ? trimmed.slice(2) : trimmed
 }
 
+// If-Match uses strong comparison (RFC 9110 §13.1.1), so weak tags never
+// match. Tags may contain commas, so the list is validated whole rather than
+// split, and a malformed list matches nothing.
+const entityTagList = /^[\s,]*(?:(?:W\/)?"[^"]*"\s*(?:,[\s,]*|$))*$/
+const entityTag = /(?:W\/)?"[^"]*"/g
+
+const matchesIfMatch = (ifMatch: string, etag: string | undefined): boolean => {
+  if (ifMatch.trim() === "*") {
+    return true
+  }
+  if (etag === undefined || !etag.startsWith("\"") || !entityTagList.test(ifMatch)) {
+    return false
+  }
+  return ifMatch.match(entityTag)?.includes(etag) ?? false
+}
+
 const matchesIfNoneMatch = (ifNoneMatch: string, etag: string | undefined): boolean => {
   const normalizedEtag = etag === undefined ? undefined : stripWeakEtagPrefix(etag)
   for (const candidate of ifNoneMatch.split(",")) {
@@ -452,19 +481,19 @@ const matchesIfNoneMatch = (ifNoneMatch: string, etag: string | undefined): bool
   return false
 }
 
-const isNotModifiedSince = (ifModifiedSince: string, lastModified: string | undefined): boolean => {
+// An invalid date on either side disables the precondition (RFC 9110 §13.1.3–4).
+const isModifiedSince = (since: string, lastModified: string | undefined): boolean | undefined => {
   if (lastModified === undefined) {
-    return false
+    return undefined
   }
-  const ifModifiedSinceMs = Date.parse(ifModifiedSince)
-  if (Number.isNaN(ifModifiedSinceMs)) {
-    return false
+  const sinceDate = Headers.parseHttpDate(since)
+  if (Result.isFailure(sinceDate)) {
+    return undefined
   }
-  const lastModifiedMs = Date.parse(lastModified)
-  if (Number.isNaN(lastModifiedMs)) {
-    return false
-  }
-  return lastModifiedMs <= ifModifiedSinceMs
+  const lastModifiedDate = Headers.parseHttpDate(lastModified)
+  return Result.isSuccess(lastModifiedDate)
+    ? DateTime.toEpochMillis(lastModifiedDate.success) > DateTime.toEpochMillis(sinceDate.success)
+    : undefined
 }
 
 // Only a strong entity-tag can match (RFC 9110 §13.1.5). Weak tags start
@@ -475,21 +504,18 @@ const matchesIfRange = (ifRange: string, etag: string | undefined): boolean => {
   return value.startsWith("\"") && value === etag
 }
 
+// Headers a 304 must repeat from the 200 response (RFC 9110 §15.4.5), plus Last-Modified for revalidation.
+const notModifiedHeaders = ["cache-control", "content-location", "date", "etag", "expires", "last-modified", "vary"]
+
 const notModifiedResponse = (
   response: HttpServerResponse.HttpServerResponse
 ): HttpServerResponse.HttpServerResponse => {
   const headers: Record<string, string> = {}
-  const etag = response.headers["etag"]
-  if (etag !== undefined) {
-    headers["ETag"] = etag
-  }
-  const cacheControl = response.headers["cache-control"]
-  if (cacheControl !== undefined) {
-    headers["Cache-Control"] = cacheControl
-  }
-  const lastModified = response.headers["last-modified"]
-  if (lastModified !== undefined) {
-    headers["Last-Modified"] = lastModified
+  for (const name of notModifiedHeaders) {
+    const value = response.headers[name]
+    if (value !== undefined) {
+      headers[name] = value
+    }
   }
   return HttpServerResponse.empty({
     status: 304,
@@ -501,12 +527,25 @@ const evaluateConditionalRequest = (
   request: HttpServerRequest.HttpServerRequest,
   response: HttpServerResponse.HttpServerResponse
 ): HttpServerResponse.HttpServerResponse | undefined => {
+  const etag = response.headers["etag"]
+  const lastModified = response.headers["last-modified"]
+  const ifMatch = request.headers["if-match"]
+  if (ifMatch !== undefined) {
+    if (!matchesIfMatch(ifMatch, etag)) {
+      return HttpServerResponse.empty({ status: 412 })
+    }
+  } else {
+    const ifUnmodifiedSince = request.headers["if-unmodified-since"]
+    if (ifUnmodifiedSince !== undefined && isModifiedSince(ifUnmodifiedSince, lastModified) === true) {
+      return HttpServerResponse.empty({ status: 412 })
+    }
+  }
   const ifNoneMatch = request.headers["if-none-match"]
   if (ifNoneMatch !== undefined) {
-    return matchesIfNoneMatch(ifNoneMatch, response.headers["etag"]) ? notModifiedResponse(response) : undefined
+    return matchesIfNoneMatch(ifNoneMatch, etag) ? notModifiedResponse(response) : undefined
   }
   const ifModifiedSince = request.headers["if-modified-since"]
-  if (ifModifiedSince !== undefined && isNotModifiedSince(ifModifiedSince, response.headers["last-modified"])) {
+  if (ifModifiedSince !== undefined && isModifiedSince(ifModifiedSince, lastModified) === false) {
     return notModifiedResponse(response)
   }
   return undefined

@@ -43,6 +43,50 @@ describe("Resource", () => {
       assert.strictEqual(result2, 1)
     }))
 
+  it.effect("automatic refresh waits for the first scheduled delay", () =>
+    Effect.gen(function*() {
+      const acquisitions = yield* Ref.make(0)
+      const resource = yield* Resource.auto(
+        Ref.updateAndGet(acquisitions, (n) => n + 1),
+        Schedule.spaced(Duration.hours(1))
+      )
+      assert.strictEqual(yield* Ref.get(acquisitions), 1)
+      assert.strictEqual(yield* Resource.get(resource), 1)
+      yield* TestClock.adjust(Duration.minutes(30))
+      assert.strictEqual(yield* Ref.get(acquisitions), 1)
+      assert.strictEqual(yield* Resource.get(resource), 1)
+      yield* TestClock.adjust(Duration.minutes(31))
+      assert.strictEqual(yield* Ref.get(acquisitions), 2)
+      assert.strictEqual(yield* Resource.get(resource), 2)
+    }))
+
+  it.effect("a finite schedule acquires once initially and once per recurrence", () =>
+    Effect.gen(function*() {
+      const acquisitions = yield* Ref.make(0)
+      const resource = yield* Resource.auto(
+        Ref.updateAndGet(acquisitions, (n) => n + 1),
+        Schedule.recurs(2)
+      )
+      yield* TestClock.adjust(Duration.seconds(1))
+      assert.strictEqual(yield* Ref.get(acquisitions), 3)
+      assert.strictEqual(yield* Resource.get(resource), 3)
+    }))
+
+  it.effect("scheduled refresh continues after a failed refresh", () =>
+    Effect.gen(function*() {
+      const ref = yield* Ref.make<Effect.Effect<number, string>>(Effect.succeed(0))
+      const resource = yield* Resource.auto(Effect.flatMap(Ref.get(ref), identity), Schedule.spaced(Duration.millis(4)))
+      yield* Ref.set(ref, Effect.succeed(1))
+      yield* TestClock.adjust(Duration.millis(5))
+      assert.strictEqual(yield* Resource.get(resource), 1)
+      yield* Ref.set(ref, Effect.fail("Uh oh!"))
+      yield* TestClock.adjust(Duration.millis(5))
+      assert.strictEqual(yield* Resource.get(resource), 1)
+      yield* Ref.set(ref, Effect.succeed(2))
+      yield* TestClock.adjust(Duration.millis(40))
+      assert.strictEqual(yield* Resource.get(resource), 2)
+    }))
+
   it.effect("failed refresh doesn't affect cached value", () =>
     Effect.gen(function*() {
       const ref = yield* Ref.make<Effect.Effect<number, string>>(Effect.succeed(0))

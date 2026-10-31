@@ -702,8 +702,8 @@ const empty = (type: number): Uint8Array => {
 
 const targetByte = (target: DescribeTarget): number => target === "statement" ? 0x53 : 0x50
 
-const requireInt16Count = (count: number, name: string): number => {
-  if (count > 0x7fff) throw new EncodeError({ message: `${name} count exceeds 32767: ${count}` })
+const requireUint16Count = (count: number, name: string): number => {
+  if (count > 0xffff) throw new EncodeError({ message: `${name} count exceeds 65535: ${count}` })
   return count
 }
 
@@ -718,7 +718,7 @@ const encodeResult = <A>(evaluate: () => A): Result.Result<A, EncodeError> => {
 
 /**
  * Encodes a `Parse` message, returning `EncodeError` when its parameter count
- * is outside the signed int16 wire range.
+ * is outside the unsigned int16 wire range.
  *
  * @category encoding
  * @since 4.0.0
@@ -728,7 +728,7 @@ const encodeParseUnsafe = (options: Omit<Parse, "_tag">): Uint8Array => {
   writer.cString(options.name)
   writer.cString(options.query)
   const parameterTypes = options.parameterTypes
-  const count = requireInt16Count(parameterTypes.length, "Parse parameter type")
+  const count = requireUint16Count(parameterTypes.length, "Parse parameter type")
   writer.reserve(2 + count * 4)
   const bytes = writer.bytes
   let offset = writer.offset
@@ -760,7 +760,7 @@ export const encodeParse = (options: Omit<Parse, "_tag">): Result.Result<Uint8Ar
 /**
  * Encodes a `Bind` message using the binary format code for parameters and
  * results, returning `EncodeError` when its parameter count is outside the
- * signed int16 wire range.
+ * unsigned int16 wire range.
  *
  * @category encoding
  * @since 4.0.0
@@ -770,7 +770,7 @@ const encodeBindUnsafe = (options: Omit<Bind, "_tag">): Uint8Array => {
   writer.cString(options.portal)
   writer.cString(options.statement)
   const parameters = options.parameters
-  const count = requireInt16Count(parameters.length, "Bind parameter")
+  const count = requireUint16Count(parameters.length, "Bind parameter")
   // Sizing the rest of the frame up front turns every remaining write into a
   // plain store: one bounds check for the message instead of one per field.
   let size = 10 + count * 4
@@ -899,7 +899,7 @@ export const makeBindEncoder = <A, E = never>(
     writer.cString(options.portal)
     writer.cString(options.statement)
     const parameters = options.parameters
-    const count = requireInt16Count(parameters.length, "Bind parameter")
+    const count = requireUint16Count(parameters.length, "Bind parameter")
     let textCount = 0
     if (textFormat !== undefined) {
       for (let index = 0; index < count; index++) {

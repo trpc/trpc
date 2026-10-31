@@ -1,0 +1,10 @@
+{
+  "opaque-class-count-5": {
+    "maxInstantiationsDelta": 8756,
+    "maxTypesDelta": 2011
+  },
+  "struct-interface-count-5": {
+    "maxInstantiationsDelta": 2671,
+    "maxTypesDelta": 541
+  }
+}

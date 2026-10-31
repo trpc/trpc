@@ -4,11 +4,13 @@ import * as Resource from "@effect/opentelemetry/Resource"
 import { assert, describe, it } from "@effect/vitest"
 import * as OtelApi from "@opentelemetry/api"
 import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks"
-import { InMemorySpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base"
+import { InMemorySpanExporter, SimpleSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base"
 import * as Cause from "effect/Cause"
 import * as EffectContext from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
+import * as HttpRouter from "effect/http/HttpRouter"
+import * as HttpServerResponse from "effect/http/HttpServerResponse"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as EffectTracer from "effect/Tracer"
@@ -36,6 +38,32 @@ describe("Tracer", () => {
       assert.strictEqual(scope.name, "effect")
       assert.strictEqual(scope.version, Version.getCurrentVersion())
     }).pipe(Effect.provide(layer))
+  })
+
+  it("exports the HTTP server span when disposed right after the response", async () => {
+    const exported: Array<string> = []
+    const exporter: SpanExporter = {
+      export: (spans, done) => {
+        exported.push(...spans.map((span) => span.name))
+        done({ code: 0 })
+      },
+      shutdown: () => Promise.resolve()
+    }
+    const { dispose, handler } = HttpRouter.toWebHandler(
+      HttpRouter.add("GET", "/", Effect.succeed(HttpServerResponse.text("ok"))).pipe(
+        Layer.provideMerge(NodeSdk.layer(() => ({
+          resource: { serviceName: "test" },
+          spanProcessor: new SimpleSpanProcessor(exporter)
+        })))
+      ),
+      { disableLogger: true }
+    )
+
+    const response = await handler(new Request("http://localhost/"))
+    assert.strictEqual(await response.text(), "ok")
+    await dispose()
+
+    assert.deepStrictEqual(exported, ["GET"])
   })
 
   describe("provided", () => {
@@ -194,7 +222,7 @@ describe("Tracer", () => {
         Effect.provide(TracingLayer)
       ))
 
-    it("preserves trace state and locality on an active OpenTelemetry parent", () => {
+    it("preserves identity, trace state and locality on an active OpenTelemetry parent", () => {
       const parent: OtelApi.SpanContext = {
         traceId: "1".repeat(32),
         spanId: "2".repeat(16),
@@ -206,6 +234,7 @@ describe("Tracer", () => {
       let receivedParent: OtelApi.SpanContext | undefined
       const tracer = {
         startSpan(_name: string, _options: unknown, context: OtelApi.Context) {
+          assert.strictEqual(OtelApi.trace.getSpan(context), OtelApi.trace.getSpan(active))
           receivedParent = OtelApi.trace.getSpanContext(context)
           return {
             spanContext: () => ({
@@ -239,6 +268,41 @@ describe("Tracer", () => {
         ["vendor=value", false]
       )
     })
+
+    it.effect.each([OtelApi.TraceFlags.SAMPLED, OtelApi.TraceFlags.NONE])(
+      "inherits getter-based OpenTelemetry parent ids with trace flags %s",
+      (traceFlags) =>
+        Effect.gen(function*() {
+          class GetterSpanContext implements OtelApi.SpanContext {
+            get traceId() {
+              return "1".repeat(32)
+            }
+            get spanId() {
+              return "2".repeat(16)
+            }
+            get traceFlags() {
+              return OtelApi.TraceFlags.SAMPLED
+            }
+          }
+          const parent = new GetterSpanContext()
+          const active = OtelApi.trace.setSpanContext(OtelApi.ROOT_CONTEXT, parent)
+          const services = yield* Effect.context<never>()
+          const child = yield* Effect.promise(() =>
+            OtelApi.context.with(active, () =>
+              Effect.runPromise(Effect.currentSpan.pipe(
+                Effect.withSpan("child", {
+                  annotations: traceFlags === OtelApi.TraceFlags.NONE
+                    ? OtelTracer.OtelTraceFlags.context(traceFlags)
+                    : EffectContext.empty()
+                }),
+                Effect.provideContext(services)
+              )))
+          )
+          assert.strictEqual(child.traceId, parent.traceId)
+          assert.strictEqual(Option.getOrThrow(child.parent).spanId, parent.spanId)
+          assert.strictEqual((child as OtelTracer.OtelSpan).span.spanContext().traceFlags, traceFlags)
+        }).pipe(Effect.provide(TracingLayer))
+    )
 
     it.effect("records every pretty error", () =>
       Effect.gen(function*() {

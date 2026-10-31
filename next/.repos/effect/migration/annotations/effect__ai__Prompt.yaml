@@ -1,9 +1,9 @@
 "@effect/ai/Prompt#FilePart":
   replacement: "Prompt.FilePart"
-  note: "Moved to effect/ai/Prompt with the same file-part model and schema; update the module import."
+  note: "Moved to effect/ai/Prompt with the same file-part model; update the module import. Encoding now writes Uint8Array and URL data as JSON-safe { _tag: \"Uint8Array\", base64 } and { _tag: \"URL\", href } objects; decoding still accepts strings, raw Uint8Array, and URL values."
 "@effect/ai/Prompt#FilePartEncoded":
   replacement: "Prompt.FilePartEncoded"
-  note: "Moved to effect/ai/Prompt with the same encoded file-part shape; update the module import."
+  note: "Moved to effect/ai/Prompt; update the module import. data additionally accepts the tagged { _tag: \"Uint8Array\", base64 } and { _tag: \"URL\", href } forms, which the schema now produces when encoding byte arrays and URLs."
 "@effect/ai/Prompt#FromJson":
   replacement: "Schema.fromJsonString(Prompt.Prompt)"
   note: "The module-specific JSON schema was removed. Compose the general v4 JSON-string codec with the public Prompt codec."

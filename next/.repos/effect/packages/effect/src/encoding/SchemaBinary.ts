@@ -13,6 +13,7 @@
  */
 import * as Arr from "../Array.ts"
 import * as BigDecimal from "../BigDecimal.ts"
+import * as Bytes from "../Bytes.ts"
 import * as Cause from "../Cause.ts"
 import * as Channel from "../Channel.ts"
 import * as Chunk from "../Chunk.ts"
@@ -43,7 +44,7 @@ import * as SchemaTransformation from "../SchemaTransformation.ts"
  *
  * The default mode supports compatible schema evolution. `fingerprint: true`
  * uses positional layouts and an 8-byte layout hash for smaller frames, but
- * requires peers to use the same schema definition.
+ * requires peers to use an identical encoded layout.
  *
  * @stability unstable
  * @category models
@@ -79,6 +80,7 @@ const codecCache = new WeakMap<Schema.Constraint, toCodec<any>>()
 const fingerprintCodecCache = new WeakMap<Schema.Constraint, toCodec<any>>()
 const directCodecCache = new WeakMap<Schema.Constraint, toCodec<any>>()
 const directFingerprintCodecCache = new WeakMap<Schema.Constraint, toCodec<any>>()
+const strictCodecCache = new WeakMap<Schema.Constraint, toCodec<any>>()
 
 /**
  * Derives a compact binary codec from a schema.
@@ -91,6 +93,14 @@ const directFingerprintCodecCache = new WeakMap<Schema.Constraint, toCodec<any>>
  *
  * Encoded results are arena-backed views and may share a larger buffer. Use
  * `bytes.slice()` when independent ownership is required.
+ *
+ * **Gotchas**
+ *
+ * Bytes carry the layout of the schema that wrote them. In the default mode,
+ * decode them with that schema or a compatible evolution of it; fingerprint
+ * mode requires an identical encoded layout. Most union codecs prefix values
+ * with a member selector, so they cannot read bytes written by a member's own
+ * codec.
  *
  * **Example** (Deriving a binary codec)
  *
@@ -123,6 +133,27 @@ export function toCodec<S extends Schema.Constraint>(schema: S, options?: Option
     trusted
   )
   cache.set(schema, codec)
+  return codec
+}
+
+/**
+ * Derives the default-mode {@link toCodec} codec, except that decoding rejects
+ * struct fields the schema does not know instead of skipping them.
+ *
+ * @internal
+ */
+export function toCodecStrict<S extends Schema.Constraint>(schema: S): toCodec<S> {
+  const cached = strictCodecCache.get(schema)
+  if (cached !== undefined) return cached
+  const { exact, layout, recursive, target } = compileTarget(schema)
+  const trusted: Trusted | undefined = exact ? { value: undefined } : undefined
+  const codec = assembleCodec<S>(
+    trusted === undefined ? target : withTrustedDecode(target, trusted, !recursive),
+    layout,
+    strictMode,
+    trusted
+  )
+  strictCodecCache.set(schema, codec)
   return codec
 }
 
@@ -248,16 +279,7 @@ export function encodeManyUnknownSync<S extends Schema.Constraint>(
 }
 
 function concatFrames(frames: ReadonlyArray<Uint8Array<ArrayBuffer>>): Uint8Array<ArrayBuffer> {
-  if (frames.length === 1) return frames[0]
-  let length = 0
-  for (const frame of frames) length += frame.length
-  const out = new Uint8Array(length)
-  let offset = 0
-  for (const frame of frames) {
-    out.set(frame, offset)
-    offset += frame.length
-  }
-  return out
+  return frames.length === 1 ? frames[0] : Bytes.concat(frames)
 }
 
 /**
@@ -571,7 +593,7 @@ function makeParser<T>(
           issuePathLen = 0
           const bodyStart = pos + headerLen
           indexSignatures.beginFrame()
-          body.reset(buf, bodyStart, bodyStart + frameLen, parseOptions, indexSignatures, mode.positional, dict)
+          body.reset(buf, bodyStart, bodyStart + frameLen, parseOptions, indexSignatures, mode, dict)
           const value = decodeFrameBody(layout, body, mode)
           out.push((decodeEncoded === undefined ? value : decodeEncoded(value)) as T)
         } catch (e) {
@@ -1074,14 +1096,6 @@ function pushU64(out: Array<number>, n: bigint) {
   }
 }
 
-function compareBytes(a: Uint8Array, b: Uint8Array): number {
-  const len = Math.min(a.length, b.length)
-  for (let i = 0; i < len; i++) {
-    if (a[i] !== b[i]) return a[i] - b[i]
-  }
-  return a.length - b.length
-}
-
 class IssueError extends Error {
   readonly issue: SchemaIssue.Issue
   constructor(issue: SchemaIssue.Issue) {
@@ -1523,6 +1537,7 @@ class Reader {
   options: SchemaAST.ParseOptions = SchemaAST.defaultParseOptions
   indexSignatures: IndexSignatureCache | undefined
   positional = false
+  rejectUnknownFields = false
   // Handed to the row-run field's immediate consumer, then cleared.
   intern: Array<unknown> | undefined
   // String tables shared by every frame on one connection; `undefined` for a
@@ -1534,7 +1549,7 @@ class Reader {
     end: number,
     options: SchemaAST.ParseOptions,
     indexSignatures: IndexSignatureCache | undefined,
-    positional: boolean,
+    mode: Mode,
     dict: DictRead | undefined
   ) {
     this.nesting = 0
@@ -1544,7 +1559,8 @@ class Reader {
     this.end = end
     this.options = options
     this.indexSignatures = indexSignatures
-    this.positional = positional
+    this.positional = mode.positional
+    this.rejectUnknownFields = mode.rejectUnknownFields
     this.intern = undefined
     this.dict = dict
   }
@@ -1558,6 +1574,7 @@ class Reader {
     this.options = SchemaAST.defaultParseOptions
     this.indexSignatures = undefined
     this.positional = false
+    this.rejectUnknownFields = false
     this.intern = undefined
     this.dict = undefined
   }
@@ -2050,7 +2067,7 @@ function sentinelSetHash(sentinels: ReadonlyArray<SchemaAST.Sentinel>): number {
     const bn = typeof b.key === "number"
     if (an !== bn) return an ? -1 : 1
     if (an) return (a.key as number) - (b.key as number)
-    return compareBytes(utf8Encode.encode(a.key as string), utf8Encode.encode(b.key as string))
+    return Bytes.Order(utf8Encode.encode(a.key as string), utf8Encode.encode(b.key as string))
   })
   const out: Array<number> = []
   for (const sentinel of sorted) {
@@ -2890,6 +2907,7 @@ function fingerprintBytes(lo: number, hi: number): Uint8Array {
 
 interface Mode {
   readonly positional: boolean
+  readonly rejectUnknownFields: boolean
   readonly envelope: number
   readonly expectedEnvelope: string
   readonly fingerprint: Uint8Array
@@ -2897,15 +2915,19 @@ interface Mode {
 
 const defaultMode: Mode = {
   positional: false,
+  rejectUnknownFields: false,
   envelope: ENVELOPE,
   expectedEnvelope: "version 2 envelope, flags 0",
   fingerprint: new Uint8Array(8)
 }
 
+const strictMode: Mode = { ...defaultMode, rejectUnknownFields: true }
+
 function fingerprintMode(layout: Layout): Mode {
   const fingerprint = layoutFingerprint(layout)
   return {
     positional: true,
+    rejectUnknownFields: false,
     envelope: ENVELOPE_FINGERPRINT,
     expectedEnvelope: "version 2 envelope, flags 1",
     fingerprint: fingerprintBytes(
@@ -3171,7 +3193,7 @@ function extraPairs(ctx: EncodeContext, layout: StructLayout, obj: Record<string
     pairs.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)
   } else {
     for (const pair of pairs) pair[2] = utf8Encode.encode(pair[0])
-    pairs.sort((a, b) => compareBytes(a[2]!, b[2]!))
+    pairs.sort((a, b) => Bytes.Order(a[2]!, b[2]!))
   }
   if (persistent) {
     for (const pair of pairs) pair[2] ??= utf8Encode.encode(pair[0])
@@ -4257,6 +4279,7 @@ function decodeExtraPair(
   const signature = layout.extraAll ??
     (r.indexSignatures ??= new IndexSignatureCache(r.options)).find(layout, key)
   if (signature === undefined) {
+    if (r.rejectUnknownFields) invalid("a key matching an index signature", key, r.options)
     skipFieldPayload(kind, r)
     return
   }
@@ -4353,6 +4376,7 @@ function decodeScalarField(kind: number, r: Reader): unknown {
 
 function decodeFieldPayload(layout: Layout, wireMask: number, kind: number, r: Reader): unknown {
   if ((wireMask & (1 << kind)) === 0) {
+    if (r.rejectUnknownFields) invalid("matching field wire kind", kind, r.options)
     skipFieldPayload(kind, r)
     return ABSENT
   }
@@ -4409,6 +4433,7 @@ function decodeStruct(layout: StructLayout, r: Reader): unknown {
       if (field !== undefined) cursor = field.index + 1
     }
     if (field === undefined) {
+      if (r.rejectUnknownFields) invalid("a known field id", id, r.options)
       if (seenUnknown === undefined) seenUnknown = new Set()
       else if (seenUnknown.has(id)) invalid("unique field ids", undefined, r.options)
       seenUnknown.add(id)
@@ -4628,6 +4653,7 @@ function decodeRunRow(
       } else {
         slot = struct.byId.get(id)
         if (slot === undefined) {
+          if (r.rejectUnknownFields) invalid("a known field id", id, r.options)
           if (seenIds === undefined) seenIds = new Set([id])
           else if (seenIds.has(id)) invalid("unique field ids", undefined, r.options)
           else seenIds.add(id)
@@ -4825,6 +4851,7 @@ function decodeUnion(layout: UnionLayout, r: Reader): unknown {
     const tag = r.u32le()
     const variant = layout.byTag.get(tag)
     if (variant === undefined) {
+      if (r.rejectUnknownFields) invalid("known union member", tag, r.options)
       r.take(r.remaining)
       return ABSENT
     }
@@ -4839,6 +4866,7 @@ function decodeUnion(layout: UnionLayout, r: Reader): unknown {
   }
   const member = layout.byKind.get(kind)
   if (member === undefined) {
+    if (r.rejectUnknownFields) invalid("known union member", kind, r.options)
     r.take(r.remaining)
     return ABSENT
   }
@@ -5072,7 +5100,7 @@ function decodeOneShot(
   const r = pooledReader ?? new Reader()
   const pooled = r === pooledReader
   if (pooled) pooledReader = undefined
-  r.reset(bytes, 0, bytes.length, options, undefined, mode.positional, undefined)
+  r.reset(bytes, 0, bytes.length, options, undefined, mode, undefined)
   const savedPathLen = issuePathLen
   issuePathLen = 0
   try {

@@ -1,6 +1,6 @@
 {
   "name": "@effect/sql-mssql",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "description": "A Microsoft SQL Server toolkit for Effect",
@@ -61,13 +61,13 @@
     "check": "tsc -b tsconfig.json"
   },
   "devDependencies": {
-    "@testcontainers/mssqlserver": "^12.2.0",
+    "@testcontainers/mssqlserver": "^12.2.1",
     "effect": "workspace:^"
   },
   "peerDependencies": {
     "effect": "workspace:^"
   },
   "dependencies": {
-    "tedious": "^20.3.3"
+    "tedious": "^20.3.8"
   }
 }

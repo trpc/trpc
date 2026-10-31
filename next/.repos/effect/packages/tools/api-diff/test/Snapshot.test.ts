@@ -47,7 +47,9 @@ export declare namespace merged {
 export declare function merged(value: string): string
 `
 
-describe("canonical snapshot", () => {
+// Each extraction builds a fresh TypeScript program. Concurrent CI workers can
+// push these compiler-backed tests past Vitest's default five-second timeout.
+describe("canonical snapshot", { timeout: 30_000 }, () => {
   it.effect("preserves stability from both current and historical JSDoc tags", () =>
     Effect.gen(function*() {
       const fs = yield* FileSystem.FileSystem

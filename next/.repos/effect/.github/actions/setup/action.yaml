@@ -1,6 +1,9 @@
 name: Setup
 description: Perform standard setup and install dependencies using pnpm.
 inputs:
+  node-version:
+    description: The version of Node to install
+    required: false
   deno-version:
     description: The version of Deno to install
     required: false
@@ -16,11 +19,15 @@ runs:
       env:
         npm_config_audit: "false"
         npm_config_fund: "false"
+        # `pnpm self-update` downloads the 47 MB @pnpm/linux-x64 tarball; keep in sync with pnpm-workspace.yaml
+        pnpm_config_fetch_timeout: "180000"
     - name: Install node
       uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
       with:
-        node-version: 26.4.0
+        node-version: ${{ inputs.node-version || '26.12.1' }}
         package-manager-cache: ${{ env.NSC_CONTAINER_REGISTRY == '' }}
+        cache: ${{ env.NSC_CONTAINER_REGISTRY == '' && 'pnpm' || '' }}
+        cache-dependency-path: pnpm-lock.yaml
     - name: Configure pnpm cache
       if: ${{ env.NSC_CONTAINER_REGISTRY != '' }}
       uses: namespacelabs/nscloud-cache-action@c5f8dab7560444c4bf8dbc64f1b203431873c547 # v1.6.1

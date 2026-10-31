@@ -31,8 +31,11 @@ const httpLayer = (
     )
   )
 
-const clientLayer = (response: (request: HttpClientRequest.HttpClientRequest) => Response) =>
-  CloudflareClient.layer({ accountId: "test-account", apiKey: Redacted.make("test-token") }).pipe(
+const clientLayer = (
+  response: (request: HttpClientRequest.HttpClientRequest) => Response,
+  options?: Partial<CloudflareClient.Options>
+) =>
+  CloudflareClient.layer({ accountId: "test-account", apiKey: Redacted.make("test-token"), ...options }).pipe(
     Layer.provide(httpLayer((request) => Effect.succeed(HttpClientResponse.fromWeb(request, response(request)))))
   )
 
@@ -53,6 +56,7 @@ describe("CloudflareClient", () => {
         "https://api.cloudflare.com/client/v4/accounts/test-account/ai/run/@cf/cloudflare/clef-flash"
       )
       assert.strictEqual(request.headers.authorization, "Bearer test-token")
+      assert.strictEqual(request.headers["cf-aig-gateway-id"], undefined)
       assert.strictEqual(request.body._tag, "Uint8Array")
       if (request.body._tag === "Uint8Array") {
         assert.deepStrictEqual(JSON.parse(new TextDecoder().decode(request.body.body)), payload)
@@ -60,7 +64,15 @@ describe("CloudflareClient", () => {
       return Response.json({ success: true, result, errors: [], messages: [] })
     }))))
 
-  it.effect("layerConfig reads Cloudflare credentials from the environment", () =>
+  it.effect("routes requests through the configured AI Gateway", () =>
+    createDecisions.pipe(
+      Effect.provide(clientLayer((request) => {
+        assert.strictEqual(request.headers["cf-aig-gateway-id"], "test-gateway")
+        return Response.json({ success: true, result })
+      }, { gatewayId: "test-gateway" }))
+    ))
+
+  it.effect("layerConfig reads Cloudflare credentials and AI Gateway configuration from the environment", () =>
     createDecisions.pipe(
       Effect.provide(CloudflareClient.layerConfig({
         apiUrl: Config.String("TEST_API_URL"),
@@ -70,6 +82,7 @@ describe("CloudflareClient", () => {
         env: {
           CLOUDFLARE_ACCOUNT_ID: "configured-account",
           CLOUDFLARE_API_TOKEN: "configured-token",
+          CLOUDFLARE_AI_GATEWAY_ID: "configured-gateway",
           TEST_API_URL: "https://example.com/api"
         }
       }))),
@@ -79,6 +92,7 @@ describe("CloudflareClient", () => {
           "https://example.com/api/accounts/configured-account/ai/run/@cf/cloudflare/clef-flash"
         )
         assert.strictEqual(request.headers.authorization, "Bearer configured-token")
+        assert.strictEqual(request.headers["cf-aig-gateway-id"], "configured-gateway")
         assert.strictEqual(request.headers["x-test"], "configured")
         return Effect.succeed(HttpClientResponse.fromWeb(request, Response.json({ success: true, result })))
       }))
@@ -101,7 +115,7 @@ describe("CloudflareClient", () => {
           assert.strictEqual(error.reason._tag, tag)
           if ("http" in error.reason) {
             assert.strictEqual(error.reason.http?.response?.status, status)
-            assert.notInclude(JSON.stringify(error.reason.http?.request), "test-token")
+            assert.notInclude(JSON.stringify(error.reason), "test-token")
           }
           if ("description" in error.reason) {
             assert.include(error.reason.description, "Request failed")
@@ -148,25 +162,28 @@ describe("CloudflareClient", () => {
         }
       }).pipe(Effect.provide(clientLayer(() => new Response("Bad gateway", { status: 502 })))))
 
-    it.effect("maps a success body without a result envelope to InvalidOutputError", () =>
+    it.effect("maps a success body without a result envelope to a non-retryable InvalidResponseError", () =>
       Effect.gen(function*() {
         const error = yield* Effect.flip(createDecisions)
-        assert.strictEqual(error.reason._tag, "InvalidOutputError")
+        assert.strictEqual(error.reason._tag, "InvalidResponseError")
       }).pipe(Effect.provide(clientLayer(() => Response.json(result)))))
 
-    it.effect("maps TransportError to NetworkError", () =>
-      Effect.gen(function*() {
+    it.effect("maps TransportError to NetworkError", () => {
+      const failures: Array<HttpClientError.HttpClientError> = []
+      return Effect.gen(function*() {
         const error = yield* Effect.flip(createDecisions)
         assert.strictEqual(error.reason._tag, "NetworkError")
+        assert.strictEqual(error.reason._tag === "NetworkError" && error.reason.cause, failures[0])
       }).pipe(
         Effect.provide(CloudflareClient.layer({ accountId: "test-account", apiKey: Redacted.make("test-token") })),
-        Effect.provide(httpLayer((request) =>
-          Effect.fail(
-            new HttpClientError.HttpClientError({
-              reason: new HttpClientError.TransportError({ request, cause: new Error("Connection refused") })
-            })
-          )
-        ))
-      ))
+        Effect.provide(httpLayer((request) => {
+          const error = new HttpClientError.HttpClientError({
+            reason: new HttpClientError.TransportError({ request, cause: new Error("Connection refused") })
+          })
+          failures.push(error)
+          return Effect.fail(error)
+        }))
+      )
+    })
   })
 })

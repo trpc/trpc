@@ -56,14 +56,14 @@
     "check": "tsc -b tsconfig.json"
   },
   "dependencies": {
-    "@oxlint/plugins": "^1.86.0"
+    "@oxlint/plugins": "^1.88.0"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0 <7.0.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   }
 }

@@ -51,7 +51,7 @@ This library was inspired by the following projects:
 ```
 
 > [!WARNING]
-> To use "@effect/docgen", Node.js v18 or above is required.
+> To use "@effect/docgen", Node.js v22.19 or above is required.
 
 ### Example Configuration
 

@@ -445,6 +445,81 @@ describe("Formatter", () => {
       Object.defineProperty(array, "0", { get: () => data })
       strictEqual(formatJson(array), `[{"secret":"[REDACTED]"}]`)
     })
+
+    it("should ignore an own keys property on arrays with getters", () => {
+      const array: Array<unknown> = []
+      Object.defineProperty(array, "0", { get: () => 1 })
+      Object.defineProperty(array, "keys", { value: null })
+      strictEqual(formatJson(array), `[1]`)
+    })
+
+    it("should read getters after earlier siblings are serialized", () => {
+      let state = 0
+      strictEqual(
+        formatJson({
+          first: {
+            toJSON() {
+              state = 2
+              return 1
+            }
+          },
+          get second() {
+            return state
+          }
+        }),
+        `{"first":1,"second":2}`
+      )
+    })
+
+    it("should redact data properties replaced by an earlier getter", () => {
+      const value = {
+        get first() {
+          this.secret = data
+          return 1
+        },
+        secret: "my-secret-key" as unknown
+      }
+      strictEqual(formatJson(value), `{"first":1,"secret":{"secret":"[REDACTED]"}}`)
+    })
+
+    it("should keep a __proto__ getter as an own key", () => {
+      strictEqual(
+        formatJson({
+          get __proto__() {
+            return { keep: true }
+          }
+        }),
+        `{"__proto__":{"keep":true}}`
+      )
+    })
+
+    it("should format and redact getters on engines without Proxy", () => {
+      const descriptor = Object.getOwnPropertyDescriptor(globalThis, "Proxy")!
+      // Simulate an engine without Proxy (e.g. Chrome < 49)
+      delete (globalThis as { Proxy?: ProxyConstructor }).Proxy
+      try {
+        strictEqual(
+          formatJson({
+            nested: {
+              get a() {
+                return 1
+              }
+            }
+          }),
+          `{"nested":{"a":1}}`
+        )
+        strictEqual(
+          formatJson({
+            get a() {
+              return data
+            }
+          }),
+          `{"a":{"secret":"[REDACTED]"}}`
+        )
+      } finally {
+        Object.defineProperty(globalThis, "Proxy", descriptor)
+      }
+    })
   })
 
   describe("Inspectable.toJson", () => {

@@ -18,4 +18,8 @@ describe("Reply", () => {
     expect<typeof codec.DecodingServices>().type.toBe<Decoder>()
     expect<typeof codec.EncodingServices>().type.toBe<never>()
   })
+
+  it("leaves Chunk.Any values unvalidated", () => {
+    expect<typeof Reply.Chunk.Any.Type["values"][number]>().type.toBe<unknown>()
+  })
 })

@@ -12,6 +12,7 @@ describe("Schema built-in revivers", () => {
       SchemaRepresentation.isUUIDReviver,
       SchemaRepresentation.isGUIDReviver,
       SchemaRepresentation.isULIDReviver,
+      SchemaRepresentation.isAsciiReviver,
       SchemaRepresentation.isBase64Reviver,
       SchemaRepresentation.isBase64UrlReviver,
       SchemaRepresentation.isStartingWithReviver,

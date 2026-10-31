@@ -95,7 +95,9 @@ export const fromCommand = (
         name: single.name,
         aliases: single.aliases,
         description: Option.getOrUndefined(single.description),
-        type: toFlagType(single as Param.Single<"flag", unknown>)
+        type: toFlagType(single as Param.Single<"flag", unknown>),
+        optionalValue: single.optionalValue !== undefined,
+        negation: single.negation
       })
     }
   }
@@ -139,3 +141,20 @@ export const fromCommand = (
     subcommands
   }
 }
+
+/**
+ * Whether the flag reads its value from the next word.
+ *
+ * @internal
+ */
+export const takesSeparateValue = (flag: Completions.FlagDescriptor): boolean =>
+  flag.type._tag !== "Boolean" && flag.optionalValue !== true
+
+/**
+ * Long name that sets a boolean flag to `false`, or `undefined` when the flag
+ * has no negated form.
+ *
+ * @internal
+ */
+export const negatedName = (flag: Completions.FlagDescriptor): string | undefined =>
+  flag.type._tag !== "Boolean" || flag.negation === false ? undefined : flag.negation ?? `no-${flag.name}`

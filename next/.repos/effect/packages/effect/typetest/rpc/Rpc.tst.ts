@@ -30,6 +30,7 @@ const AuthedGetUser = Rpc.make("AuthedGetUser", { success: Schema.String })
 const MultiMiddleware = Rpc.make("MultiMiddleware", { success: Schema.String, stream: true })
   .middleware(AuthMiddleware)
   .middleware(DbMiddleware)
+const Fails = Rpc.make("Fails", { success: Schema.Never, error: Schema.String })
 
 type Mixed = typeof GetUser | typeof StreamEvents
 type MixedWithMiddleware = typeof GetUser | typeof AuthedStream
@@ -69,6 +70,16 @@ describe("Rpc", () => {
 
     it("returns never for non-middleware RPC in mixed group", () => {
       expect<Rpc.ExtractProvides<MixedWithMiddleware, "GetUser">>().type.toBe<never>()
+    })
+  })
+
+  describe("SuccessChunk", () => {
+    it("extracts stream elements from a mixed group", () => {
+      expect<Rpc.SuccessChunk<Mixed>>().type.toBe<string>()
+    })
+
+    it("ignores never-returning RPCs in a group", () => {
+      expect<Rpc.SuccessChunk<typeof StreamEvents | typeof Fails>>().type.toBe<string>()
     })
   })
 })

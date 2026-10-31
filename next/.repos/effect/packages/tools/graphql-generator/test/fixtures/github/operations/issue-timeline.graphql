@@ -1,0 +1,48 @@
+# Timeline items on one issue: a union with inline fragments and a nested union.
+query IssueTimeline($owner: String!, $name: String!, $number: Int!, $first: Int!) {
+  repository(owner: $owner, name: $name) {
+    issue(number: $number) {
+      id
+      title
+      state
+      timelineItems(first: $first, itemTypes: [LABELED_EVENT, CLOSED_EVENT, ISSUE_COMMENT]) {
+        totalCount
+        nodes {
+          ... on LabeledEvent {
+            createdAt
+            label {
+              name
+              color
+            }
+            actor {
+              ...ActorInfo
+            }
+          }
+          ... on ClosedEvent {
+            createdAt
+            closer {
+              ... on PullRequest {
+                number
+                title
+              }
+              ... on Commit {
+                oid
+              }
+            }
+          }
+          ... on IssueComment {
+            body
+            author {
+              ...ActorInfo
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment ActorInfo on Actor {
+  login
+  avatarUrl
+}

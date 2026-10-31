@@ -1,0 +1,16 @@
+type Query {
+  pet(by: PetBy!): String
+  pets(filter: PetFilter): [String!]
+}
+
+"""
+Exactly one way to identify a pet.
+"""
+input PetBy @oneOf {
+  id: ID
+  name: String
+}
+
+input PetFilter {
+  species: String
+}

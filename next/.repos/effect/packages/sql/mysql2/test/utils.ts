@@ -43,6 +43,16 @@ export class MysqlContainer extends Context.Service<
 
   static layerClient = this.client.pipe(Layer.provide(this.layer))
 
+  // Root can inspect other connections' lock waits.
+  static layerClientRoot = Layer.unwrap(
+    Effect.gen(function*() {
+      const container = yield* MysqlContainer
+      return MysqlClient.layer({
+        url: Redacted.make(container.getConnectionUri(true))
+      })
+    })
+  ).pipe(Layer.provide(this.layer))
+
   static clientWithTransforms = Layer.unwrap(
     Effect.gen(function*() {
       const container = yield* MysqlContainer

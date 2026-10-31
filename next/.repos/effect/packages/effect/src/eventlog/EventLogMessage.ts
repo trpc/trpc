@@ -11,16 +11,18 @@
  */
 import type { NonEmptyArray, NonEmptyReadonlyArray } from "../Array.ts"
 import type { Brand } from "../Brand.ts"
+import * as Effect from "../Effect.ts"
 import * as SchemaBinary from "../encoding/SchemaBinary.ts"
 import * as Predicate from "../Predicate.ts"
 import * as Rpc from "../rpc/Rpc.ts"
 import * as RpcGroup from "../rpc/RpcGroup.ts"
 import * as RpcMiddleware from "../rpc/RpcMiddleware.ts"
 import * as Schema from "../Schema.ts"
+import type * as SchemaAST from "../SchemaAST.ts"
 import * as Transferable from "../workers/Transferable.ts"
-import { Entry, RemoteEntry, RemoteId } from "./EventJournal.ts"
+import { Entry, EntryFields, entryFromFields, EntryId, RemoteEntry, RemoteId } from "./EventJournal.ts"
 import type { Identity } from "./EventLog.ts"
-import { EncryptedEntry, EncryptedRemoteEntry } from "./EventLogEncryption.ts"
+import { EncryptedBatch, EncryptedRemoteBatch } from "./EventLogEncryption.ts"
 
 /**
  * Type-level identifier used to brand event-log store ids.
@@ -109,8 +111,9 @@ export class EventLogAuthentication extends RpcMiddleware.Service<EventLogAuthen
  *
  * **Details**
  *
- * It contains the server remote id and a challenge that must be signed by the
- * client.
+ * Contains the remote id, a challenge for the client to sign, and the lowest
+ * assigned sequence (default 0) for initializing acknowledgement cursors.
+ * `compaction` is `true` when the server serves `EventLogCompactionRpcs`.
  *
  * @stability unstable
  * @category protocols
@@ -118,7 +121,9 @@ export class EventLogAuthentication extends RpcMiddleware.Service<EventLogAuthen
  */
 export class HelloResponse extends Schema.Class<HelloResponse>("effect/eventlog/EventLogRemote/HelloResponse")({
   remoteId: RemoteId,
-  challenge: Transferable.Uint8Array
+  challenge: Transferable.Uint8Array,
+  firstSequence: Schema.optional(Schema.Natural),
+  compaction: Schema.optional(Schema.Literal(true))
 }) {}
 
 /**
@@ -272,7 +277,36 @@ export class ChunkedMessage
 }
 
 /**
+ * Schema for a written entry's id and a sequence at which the server stores
+ * it. Entries the server already held keep their stored sequence. When a write
+ * stores an entry again, as part of a partly known batch, it is acknowledged at
+ * its new position.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.6
+ */
+export const WriteAck = Schema.Struct({
+  entryId: EntryId,
+  sequence: Schema.Natural
+})
+
+/**
+ * Acknowledgement of one written entry.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.6
+ */
+export type WriteAck = typeof WriteAck.Type
+
+/**
  * RPC used to send one chunk of a large encoded write payload.
+ *
+ * **Details**
+ *
+ * The completing chunk returns acknowledgements in request order; earlier
+ * chunks return an empty array.
  *
  * @stability unstable
  * @category protocols
@@ -280,6 +314,7 @@ export class ChunkedMessage
  */
 export class WriteChunkedRpc extends Rpc.make("EventLog.WriteChunked", {
   payload: ChunkedMessage,
+  success: Schema.Array(WriteAck),
   error: EventLogProtocolError
 }).middleware(EventLogAuthentication) {}
 
@@ -288,8 +323,8 @@ export class WriteChunkedRpc extends Rpc.make("EventLog.WriteChunked", {
  *
  * **Details**
  *
- * It includes the client public key, target store id, and encrypted entries
- * with their AES-GCM initialization vectors.
+ * It includes the client public key, target store id, and the entries
+ * encrypted as batches.
  *
  * @stability unstable
  * @category protocols
@@ -298,7 +333,7 @@ export class WriteChunkedRpc extends Rpc.make("EventLog.WriteChunked", {
 export class WriteEntries extends Schema.Class<WriteEntries>("effect/eventlog/EventLogRemote/WriteEntries")({
   publicKey: Schema.String,
   storeId: StoreId,
-  encryptedEntries: Schema.Array(EncryptedEntry)
+  batches: Schema.Array(EncryptedBatch)
 }) {
   static FromSchemaBinary = SchemaBinary.toCodec(WriteEntries)
   static encode = Schema.encodeEffect(this.FromSchemaBinary)
@@ -324,14 +359,31 @@ export class WriteEntriesUnencrypted
 {
   static FromSchemaBinary = SchemaBinary.toCodec(WriteEntriesUnencrypted)
   static encode = Schema.encodeEffect(this.FromSchemaBinary)
-  static decode = Schema.decodeEffect(this.FromSchemaBinary)
+  static decode = (
+    data: Uint8Array<ArrayBuffer>,
+    options?: SchemaAST.ParseOptions
+  ): Effect.Effect<WriteEntriesUnencrypted, Schema.SchemaError> =>
+    Effect.map(
+      decodeWriteEntriesUnencryptedFields(data, options),
+      (fields) =>
+        Schema.makeClassTrusted(WriteEntriesUnencrypted, { ...fields, entries: fields.entries.map(entryFromFields) })
+    )
   get encoded() {
     return WriteEntriesUnencrypted.encode(this)
   }
 }
 
+const decodeWriteEntriesUnencryptedFields = Schema.decodeEffect(SchemaBinary.toCodec(Schema.Struct({
+  ...WriteEntriesUnencrypted.fields,
+  entries: Schema.Array(EntryFields)
+})))
+
 /**
  * RPC used to send an encoded write payload that fits in one message.
+ *
+ * **Details**
+ *
+ * The response acknowledges every written entry, in request order.
  *
  * @stability unstable
  * @category protocols
@@ -341,6 +393,7 @@ export class WriteSingleRpc extends Rpc.make("EventLog.WriteSingle", {
   payload: {
     data: Transferable.Uint8Array
   },
+  success: Schema.Array(WriteAck),
   error: EventLogProtocolError
 }).middleware(EventLogAuthentication) {}
 
@@ -351,7 +404,7 @@ export class WriteSingleRpc extends Rpc.make("EventLog.WriteSingle", {
  * **Details**
  *
  * Responses are encoded as either `SingleMessage` values or `ChunkedMessage`
- * parts.
+ * parts. Entries written on this connection are acknowledged, not echoed.
  *
  * @stability unstable
  * @category protocols
@@ -367,7 +420,7 @@ export class ChangesRpc extends Rpc.make("EventLog.Changes", {
   error: EventLogProtocolError,
   stream: true
 }).middleware(EventLogAuthentication) {
-  static EncryptedFromSchemaBinary = SchemaBinary.toCodec(Schema.NonEmptyArray(EncryptedRemoteEntry))
+  static EncryptedFromSchemaBinary = SchemaBinary.toCodec(Schema.NonEmptyArray(EncryptedRemoteBatch))
   static UnencryptedFromSchemaBinary = SchemaBinary.toCodec(Schema.NonEmptyArray(RemoteEntry))
   static encodeEncrypted = Schema.encodeEffect(ChangesRpc.EncryptedFromSchemaBinary)
   static decodeEncrypted = Schema.decodeEffect(ChangesRpc.EncryptedFromSchemaBinary)
@@ -389,4 +442,274 @@ export class EventLogRemoteRpcs extends RpcGroup.make(
   WriteChunkedRpc,
   WriteSingleRpc,
   ChangesRpc
+) {}
+
+const compactionScope = {
+  publicKey: Schema.String,
+  storeId: StoreId
+}
+
+const compactionStage = {
+  ...compactionScope,
+  stageId: Schema.String
+}
+
+/**
+ * The compaction state of a store, as reported to clients.
+ *
+ * **Details**
+ *
+ * `wanted` is `true` when the server would open a compaction stage. `head` is
+ * the highest stored sequence.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionStatus
+  extends Schema.Class<CompactionStatus>("effect/eventlog/EventLogRemote/CompactionStatus")({
+    wanted: Schema.Boolean,
+    head: Schema.Int
+  })
+{}
+
+/**
+ * RPC that reports a store's compaction state.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionStatusRpc extends Rpc.make("EventLog.CompactionStatus", {
+  payload: compactionScope,
+  success: CompactionStatus,
+  error: EventLogProtocolError
+}).middleware(EventLogAuthentication) {}
+
+/**
+ * Schema for the result of opening a compaction stage.
+ *
+ * **Details**
+ *
+ * `Started` pins the stage to the active generation and to the last input
+ * sequence. `Busy` means another stage is open on the store. `NotWanted` means
+ * the store doesn't need compacting.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export const CompactionBeginResult = Schema.Union([
+  Schema.TaggedStruct("Started", {
+    stageId: Schema.String
+  }),
+  Schema.TaggedStruct("Busy", {}),
+  Schema.TaggedStruct("NotWanted", {})
+])
+
+/**
+ * The result of opening a compaction stage.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export type CompactionBeginResult = typeof CompactionBeginResult.Type
+
+/**
+ * RPC that opens a compaction stage.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionBeginRpc extends Rpc.make("EventLog.CompactionBegin", {
+  payload: compactionScope,
+  success: CompactionBeginResult,
+  error: EventLogProtocolError
+}).middleware(EventLogAuthentication) {}
+
+/**
+ * Schema for the header of one compaction input batch.
+ *
+ * **Details**
+ *
+ * An entry's input sequence is the batch `sequence` plus its position in
+ * `entryIds`.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export const CompactionInputHeader = Schema.Struct({
+  sequence: Schema.Natural,
+  entryIds: Schema.NonEmptyArray(EntryId)
+})
+
+/**
+ * The header of one compaction input batch.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export type CompactionInputHeader = typeof CompactionInputHeader.Type
+
+/**
+ * RPC that streams a stage's input batch headers in input order.
+ *
+ * **Details**
+ *
+ * The input is the pinned snapshot, then the originals up to the stage's
+ * `through`. Headers are framed as `SingleMessage` values or `ChunkedMessage`
+ * parts, as in `ChangesRpc`. It fails with a `NotFound` error once the stage
+ * or its pin is gone.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionInputRpc extends Rpc.make("EventLog.CompactionInput", {
+  payload: compactionStage,
+  success: Schema.Union([SingleMessage, ChunkedMessage]),
+  error: EventLogProtocolError,
+  stream: true
+}).middleware(EventLogAuthentication) {
+  static HeadersFromSchemaBinary = SchemaBinary.toCodec(Schema.NonEmptyArray(CompactionInputHeader))
+  static encodeHeaders = Schema.encodeEffect(CompactionInputRpc.HeadersFromSchemaBinary)
+  static decodeHeaders = Schema.decodeEffect(CompactionInputRpc.HeadersFromSchemaBinary)
+}
+
+/**
+ * RPC that streams the encrypted input batches at the given input sequences.
+ *
+ * **Details**
+ *
+ * `batches` holds the input sequence of each batch to fetch. Batches are framed
+ * and encoded as in `ChangesRpc`. It fails with a `NotFound` error once the
+ * stage or its pin is gone.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionFetchRpc extends Rpc.make("EventLog.CompactionFetch", {
+  payload: {
+    ...compactionStage,
+    batches: Schema.Array(Schema.Natural)
+  },
+  success: Schema.Union([SingleMessage, ChunkedMessage]),
+  error: EventLogProtocolError,
+  stream: true
+}).middleware(EventLogAuthentication) {}
+
+/**
+ * RPC that uploads one piece of a compaction snapshot segment.
+ *
+ * **Details**
+ *
+ * A segment is an encoded non-empty array of encrypted batches, indexed by
+ * `chunk.id`, and is split into pieces when larger than
+ * `ChunkedMessage.chunkSize`. Re-uploading a stored segment is acknowledged
+ * without storing it again. A segment that fails validation aborts the stage
+ * with an `InvalidRequest` error.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionPartRpc extends Rpc.make("EventLog.CompactionPart", {
+  payload: {
+    ...compactionStage,
+    chunk: ChunkedMessage
+  },
+  error: EventLogProtocolError
+}).middleware(EventLogAuthentication) {
+  static SegmentFromSchemaBinary = SchemaBinary.toCodec(Schema.NonEmptyArray(EncryptedBatch))
+  static encodeSegment = Schema.encodeEffect(CompactionPartRpc.SegmentFromSchemaBinary)
+  static decodeSegment = Schema.decodeEffect(CompactionPartRpc.SegmentFromSchemaBinary)
+}
+
+/**
+ * RPC that releases an open compaction stage. A late abort is a no-op.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionAbortRpc extends Rpc.make("EventLog.CompactionAbort", {
+  payload: compactionStage,
+  error: EventLogProtocolError
+}).middleware(EventLogAuthentication) {}
+
+/**
+ * Schema for the outcome of a compaction run reported at commit.
+ *
+ * **Details**
+ *
+ * `Snapshot` activates the `segmentCount` uploaded segments. `NoOp` reports a
+ * run that dropped nothing.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export const CompactionResult = Schema.Union([
+  Schema.TaggedStruct("Snapshot", { segmentCount: Schema.Natural }),
+  Schema.TaggedStruct("NoOp", {})
+])
+
+/**
+ * The outcome of a compaction run reported at commit.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export type CompactionResult = typeof CompactionResult.Type
+
+/**
+ * RPC that commits a compaction stage.
+ *
+ * **Details**
+ *
+ * Answers `Superseded` when the stage's pinned generation is no longer active.
+ * Fails with `InvalidRequest`, aborting the stage, when the segments are
+ * incomplete or the kept ids are not a non-empty, repeat-free subsequence of
+ * the pinned input. Fails with `NotFound` when the stage expired, was aborted
+ * or committed, or is unknown, so a retried commit fails too.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class CompactionCommitRpc extends Rpc.make("EventLog.CompactionCommit", {
+  payload: {
+    ...compactionStage,
+    result: CompactionResult
+  },
+  success: Schema.Literals(["Committed", "Superseded"]),
+  error: EventLogProtocolError
+}).middleware(EventLogAuthentication) {}
+
+/**
+ * RPC group for encrypted remote compaction.
+ *
+ * **Details**
+ *
+ * Served by the encrypted server alongside `EventLogRemoteRpcs`. Clients call
+ * it only when `HelloResponse.compaction` is set.
+ *
+ * @stability unstable
+ * @category protocols
+ * @since 4.0.0
+ */
+export class EventLogCompactionRpcs extends RpcGroup.make(
+  CompactionStatusRpc,
+  CompactionBeginRpc,
+  CompactionInputRpc,
+  CompactionFetchRpc,
+  CompactionPartRpc,
+  CompactionAbortRpc,
+  CompactionCommitRpc
 ) {}

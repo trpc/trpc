@@ -10,6 +10,7 @@
  * @since 4.0.0
  */
 import * as Arr from "../Array.ts"
+import * as Context from "../Context.ts"
 import * as Equal from "../Equal.ts"
 import * as Equ from "../Equivalence.ts"
 import { dual } from "../Function.ts"
@@ -21,7 +22,11 @@ import * as Option from "../Option.ts"
 import type { Pipeable } from "../Pipeable.ts"
 import { hasProperty } from "../Predicate.ts"
 import type { ReadonlyRecord } from "../Record.ts"
+import * as Redactable from "../Redactable.ts"
+import * as Redacted from "../Redacted.ts"
 import * as Tuple from "../Tuple.ts"
+import * as Headers from "./Headers.ts"
+import * as internal from "./internal/urlParams.ts"
 
 const TypeId = "~effect/http/UrlParams"
 
@@ -30,16 +35,19 @@ const TypeId = "~effect/http/UrlParams"
  *
  * **Details**
  *
- * Parameters are stored as ordered string key-value pairs and can contain multiple
- * values for the same key.
+ * Parameters are ordered key-value pairs, and a key can repeat. Each value is a
+ * string or a `Redacted` string, which is sent unwrapped. Inspection redacts
+ * `Redacted` values and values whose names match `CurrentRedactedNames`.
  *
  * @stability unstable
  * @category models
  * @since 4.0.0
  */
-export interface UrlParams extends Pipeable, Inspectable, Iterable<readonly [string, string]> {
+export interface UrlParams
+  extends Pipeable, Inspectable, Redactable.Redactable, Iterable<readonly [string, string | Redacted.Redacted]>
+{
   readonly [TypeId]: typeof TypeId
-  readonly params: ReadonlyArray<readonly [string, string]>
+  readonly params: ReadonlyArray<readonly [string, string | Redacted.Redacted]>
 }
 
 /**
@@ -74,7 +82,11 @@ type CoercibleRecordInput = CoercibleRecord & {
 }
 
 /**
- * Primitive value that can be converted into a URL parameter string.
+ * Value that can be converted into a URL parameter string.
+ *
+ * **Details**
+ *
+ * `Redacted` values are stored wrapped and sent unwrapped.
  *
  * **Gotchas**
  *
@@ -84,7 +96,7 @@ type CoercibleRecordInput = CoercibleRecord & {
  * @category models
  * @since 4.0.0
  */
-export type Coercible = string | number | bigint | boolean | null | undefined
+export type Coercible = string | number | bigint | boolean | null | undefined | Redacted.Redacted
 
 /**
  * @stability unstable
@@ -118,11 +130,14 @@ const Proto = {
   [Symbol.iterator](this: UrlParams) {
     return this.params[Symbol.iterator]()
   },
-  toJSON(this: UrlParams): unknown {
+  [Redactable.symbolRedactable](this: UrlParams, context: Context.Context<never>): unknown {
     return {
       _id: "UrlParams",
-      params: Object.fromEntries(this.params)
+      params: Object.fromEntries(redact(this, Context.get(context, CurrentRedactedNames)))
     }
+  },
+  toJSON(this: UrlParams): unknown {
+    return Redactable.redact(this)
   },
   [Equal.symbol](this: UrlParams, that: UrlParams): boolean {
     return Equivalence(this, that)
@@ -133,7 +148,7 @@ const Proto = {
 }
 
 /**
- * Creates `UrlParams` from ordered string key-value pairs.
+ * Creates `UrlParams` from ordered key-value pairs.
  *
  * **Details**
  *
@@ -143,7 +158,7 @@ const Proto = {
  * @category constructors
  * @since 4.0.0
  */
-export const make = (params: ReadonlyArray<readonly [string, string]>): UrlParams => {
+export const make = (params: ReadonlyArray<readonly [string, string | Redacted.Redacted]>): UrlParams => {
   const self = Object.create(Proto)
   self.params = params
   return self
@@ -156,6 +171,7 @@ export const make = (params: ReadonlyArray<readonly [string, string]>): UrlParam
  *
  * Primitive values are converted to strings, arrays produce repeated parameters,
  * nested records use bracket notation, and `undefined` values are omitted.
+ * `Redacted` values are kept as-is.
  *
  * @stability unstable
  * @category constructors
@@ -166,41 +182,43 @@ export const fromInput = (input: Input): UrlParams => {
     return input
   }
   const parsed = fromInputNested(input)
-  const out: Array<[string, string]> = []
+  const out: Array<[string, string | Redacted.Redacted]> = []
   for (let i = 0; i < parsed.length; i++) {
     if (Array.isArray(parsed[i][0])) {
-      const [keys, value] = parsed[i] as [Array<string>, string]
+      const [keys, value] = parsed[i] as [Array<string>, string | Redacted.Redacted]
       out.push([`${keys[0]}[${keys.slice(1).join("][")}]`, value])
     } else {
-      out.push(parsed[i] as [string, string])
+      out.push(parsed[i] as [string, string | Redacted.Redacted])
     }
   }
   return make(out)
 }
 
-const fromInputNested = (input: Input): Array<[string | Array<string>, any]> => {
+const fromInputNested = (input: Input): Array<[string | Array<string>, string | Redacted.Redacted]> => {
   const entries = typeof (input as any)[Symbol.iterator] === "function"
     ? Arr.fromIterable(input as Iterable<readonly [string, Coercible]>)
     : Object.entries(input)
-  const out: Array<[string | Array<string>, string]> = []
+  const out: Array<[string | Array<string>, string | Redacted.Redacted]> = []
   for (const [key, value] of entries) {
     if (Array.isArray(value)) {
       for (let i = 0; i < value.length; i++) {
         if (value[i] !== undefined) {
-          out.push([key, String(value[i])])
+          out.push([key, coerce(value[i])])
         }
       }
-    } else if (value !== null && typeof value === "object") {
+    } else if (value !== null && typeof value === "object" && !Redacted.isRedacted(value)) {
       const nested = fromInputNested(value as CoercibleRecord)
       for (const [k, v] of nested) {
         out.push([[key, ...(typeof k === "string" ? [k] : k)], v])
       }
     } else if (value !== undefined) {
-      out.push([key, String(value)])
+      out.push([key, coerce(value)])
     }
   }
   return out
 }
+
+const coerce = (value: Coercible): string | Redacted.Redacted => Redacted.isRedacted(value) ? value : String(value)
 
 /**
  * Provides an order-sensitive `Equivalence` instance for `UrlParams`.
@@ -219,7 +237,7 @@ export const Equivalence: Equ.Equivalence<UrlParams> = Equ.make<UrlParams>((a, b
 )
 
 const arrayEquivalence = Arr.makeEquivalence(
-  Tuple.makeEquivalence([Equ.strictEqual<string>(), Equ.strictEqual<string>()])
+  Tuple.makeEquivalence([Equ.strictEqual<string>(), Equal.asEquivalence<string | Redacted.Redacted>()])
 )
 
 /**
@@ -250,7 +268,7 @@ export const getAll: {
   (self: UrlParams, key: string): ReadonlyArray<string> =>
     Arr.reduce(self.params, [] as Array<string>, (acc, [k, value]) => {
       if (k === key) {
-        acc.push(value)
+        acc.push(internal.unwrap(value))
       }
       return acc
     })
@@ -279,7 +297,7 @@ export const getFirst: {
   2,
   (self: UrlParams, key: string): Option.Option<string> =>
     Arr.findFirst(self.params, ([k]) => k === key).pipe(
-      Option.map(([, value]) => value)
+      Option.map(([, value]) => internal.unwrap(value))
     )
 )
 
@@ -304,7 +322,7 @@ export const getLast: {
   (self: UrlParams, key: string): Option.Option<string>
 } = dual(2, (self: UrlParams, key: string): Option.Option<string> =>
   Arr.findLast(self.params, ([k]) => k === key).pipe(
-    Option.map(([, value]) => value)
+    Option.map(([, value]) => internal.unwrap(value))
   ))
 
 /**
@@ -326,7 +344,7 @@ export const set: {
   make(
     Arr.append(
       Arr.filter(self.params, ([k]) => k !== key),
-      [key, String(value)]
+      [key, coerce(value)]
     )
   ))
 
@@ -390,7 +408,7 @@ export const append: {
 } = dual(3, (self: UrlParams, key: string, value: Coercible): UrlParams =>
   make(Arr.append(
     self.params,
-    [key, String(value)]
+    [key, coerce(value)]
   )))
 
 /**
@@ -424,11 +442,16 @@ export const remove: {
 /**
  * Serializes `UrlParams` to a URL query string without a leading question mark.
  *
+ * **Gotchas**
+ *
+ * The output contains the unwrapped values of `Redacted` parameters.
+ *
  * @stability unstable
  * @category converting
  * @since 4.0.0
  */
-export const toString = (input: Input): string => new URLSearchParams(fromInput(input).params as any).toString()
+export const toString = (input: Input): string =>
+  new URLSearchParams(fromInput(input).params.map(([key, value]) => [key, internal.unwrap(value)])).toString()
 
 /**
  * Builds a `Record` containing all the key-value pairs in the given `UrlParams`
@@ -455,7 +478,8 @@ export const toString = (input: Input): string => new URLSearchParams(fromInput(
  */
 export const toRecord = (self: UrlParams): Record<string, string | Arr.NonEmptyArray<string>> => {
   const out: Record<string, string | Arr.NonEmptyArray<string>> = {}
-  for (const [k, value] of self.params) {
+  for (const [k, v] of self.params) {
+    const value = internal.unwrap(v)
     if (!Object.hasOwn(out, k)) {
       InternalRecord.assignProperty(out, k, value)
     } else {
@@ -484,3 +508,164 @@ export const toRecord = (self: UrlParams): Record<string, string | Arr.NonEmptyA
  */
 export const toReadonlyRecord: (self: UrlParams) => ReadonlyRecord<string, string | Arr.NonEmptyReadonlyArray<string>> =
   toRecord as any
+
+/**
+ * Returns the parameter pairs with selected values wrapped in `Redacted`.
+ *
+ * **Details**
+ *
+ * Keeps `Redacted` values and wraps values whose names match `isRedactedName`,
+ * preserving order and repeated names.
+ *
+ * @stability unstable
+ * @category combinators
+ * @since 4.0.0
+ */
+export const redact: {
+  (
+    key: string | RegExp | ReadonlyArray<string | RegExp>
+  ): (self: UrlParams) => Array<[string, string | Redacted.Redacted<string>]>
+  (
+    self: UrlParams,
+    key: string | RegExp | ReadonlyArray<string | RegExp>
+  ): Array<[string, string | Redacted.Redacted<string>]>
+} = dual(
+  2,
+  (
+    self: UrlParams,
+    key: string | RegExp | ReadonlyArray<string | RegExp>
+  ): Array<[string, string | Redacted.Redacted<string>]> => {
+    const patterns: ReadonlyArray<string | RegExp> = Array.isArray(key) ? key : [key as string | RegExp]
+    return self.params.map(([name, value]) => [
+      name,
+      typeof value === "string" && isRedactedName(name, patterns) ? Redacted.make(value) : value
+    ])
+  }
+)
+
+/**
+ * Checks whether a parameter name matches one of the redaction patterns.
+ *
+ * **Details**
+ *
+ * String patterns match case-insensitively; regular expressions test the name.
+ *
+ * @stability unstable
+ * @category combinators
+ * @since 4.0.0
+ */
+export const isRedactedName: (name: string, patterns: ReadonlyArray<string | RegExp>) => boolean =
+  Headers.isRedactedName
+
+/**
+ * Redacts URL userinfo and the values of matching query parameters.
+ *
+ * **Details**
+ *
+ * Replaces userinfo with `REDACTED:REDACTED` and query values with `REDACTED`
+ * when their decoded names match `isRedactedName`. Preserves all other text.
+ * When names are omitted, uses the current fiber's `CurrentRedactedNames`,
+ * falling back to the defaults outside a fiber.
+ *
+ * **Example** (Redacting a signed URL)
+ *
+ * ```ts import.meta.vitest
+ * import { UrlParams } from "effect/http"
+ *
+ * const url = UrlParams.redactUrl("https://bucket.test/file?Signature=abc&size=1")
+ * url // => "https://bucket.test/file?Signature=REDACTED&size=1"
+ * ```
+ *
+ * @stability unstable
+ * @category combinators
+ * @since 4.0.0
+ */
+export const redactUrl = (
+  url: string,
+  redactedNames: ReadonlyArray<string | RegExp> = currentRedactedNames()
+): string => {
+  if (url.includes("@")) url = redactUserinfo(url)
+  const queryStart = url.indexOf("?")
+  if (queryStart === -1 || redactedNames.length === 0) return url
+  const hashStart = url.indexOf("#")
+  if (hashStart !== -1 && hashStart < queryStart) return url
+  const queryEnd = hashStart === -1 ? url.length : hashStart
+  return url.slice(0, queryStart + 1) + redactQuery(url.slice(queryStart + 1, queryEnd), redactedNames) +
+    url.slice(queryEnd)
+}
+
+const authorityStart = /^(?:(https?|ftp|wss?):[/\\]*|[a-z][a-z\d+.-]*:\/\/|[/\\]{2,})/i
+const specialAuthorityEnd = /[/\\?#]/
+const authorityEnd = /[/?#]/
+
+// Normalize only to locate userinfo; offsets preserve the original URL spelling.
+const redactUserinfo = (url: string): string => {
+  let normalized = ""
+  const offsets: Array<number> = []
+  for (let i = 0; i < url.length; i++) {
+    const code = url.charCodeAt(i)
+    if (code === 9 || code === 10 || code === 13 || (normalized === "" && code <= 32)) continue
+    normalized += url[i]
+    offsets.push(i)
+  }
+  const authority = authorityStart.exec(normalized)
+  if (authority === null) return url
+  const start = authority[0].length
+  const special = authority[1] !== undefined || !authority[0].includes(":")
+  const rest = normalized.slice(start)
+  const end = rest.search(special ? specialAuthorityEnd : authorityEnd)
+  const userinfoEnd = (end === -1 ? rest : rest.slice(0, end)).lastIndexOf("@")
+  return userinfoEnd === -1
+    ? url
+    : url.slice(0, offsets[start]) + "REDACTED:REDACTED" + url.slice(offsets[start + userinfoEnd])
+}
+
+const redactQuery = (query: string, redactedNames: ReadonlyArray<string | RegExp>): string =>
+  query.split("&").map((part) => {
+    const index = part.indexOf("=")
+    return index !== -1 && isRedactedName(decodeQueryKey(part.slice(0, index)), redactedNames)
+      ? part.slice(0, index + 1) + "REDACTED"
+      : part
+  }).join("&")
+
+const decodeQueryKey = (key: string): string => {
+  if (!key.includes("%") && !key.includes("+")) return key
+  try {
+    return decodeURIComponent(key.replace(/\+/g, " "))
+  } catch {
+    return key
+  }
+}
+
+const currentRedactedNames = (): ReadonlyArray<string | RegExp> =>
+  Context.get((globalThis as any)[Redactable.currentFiberTypeId]?.context ?? Context.empty(), CurrentRedactedNames)
+
+/**
+ * Query parameter names or patterns to redact in inspection, spans and errors.
+ *
+ * **Details**
+ *
+ * Defaults match the OpenTelemetry `url.full` list: `X-Amz-Signature`,
+ * `X-Amz-Credential`, `X-Amz-Security-Token`, `AWSAccessKeyId`, `Signature`,
+ * `sig` and `X-Goog-Signature`.
+ * A custom list replaces the defaults. Matching uses `isRedactedName`.
+ * Redaction leaves request URLs and parameter values unchanged. `Redacted`
+ * values are redacted regardless of this list.
+ *
+ * @stability unstable
+ * @category services
+ * @since 4.0.0
+ */
+export const CurrentRedactedNames = Context.Reference<
+  ReadonlyArray<string | RegExp>
+>("effect/http/UrlParams/CurrentRedactedNames", {
+  defaultValue: () => [
+    "X-Amz-Signature",
+    "X-Amz-Credential",
+    "X-Amz-Security-Token",
+    "AWSAccessKeyId",
+    "Signature",
+    "sig",
+    "X-Goog-Signature"
+  ]
+})

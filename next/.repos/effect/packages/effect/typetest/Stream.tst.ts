@@ -127,6 +127,27 @@ describe("Stream.catchIf", () => {
     )
     expect(_s).type.toBe<Stream.Stream<string, never, "dep-1">>()
   })
+
+  it("supports unknown refinement input in data-first usage", () => {
+    const result = Stream.catchIf(
+      stream,
+      (error: unknown): error is ErrorA => error instanceof ErrorA,
+      () => Stream.succeed(12 as const)
+    )
+    expect(result).type.toBe<Stream.Stream<string | 12, ErrorB, "dep-1">>()
+  })
+
+  it("does not widen to unknown with unrelated refinement in data-first usage", () => {
+    const result = Stream.catchIf(
+      stream,
+      (error: unknown): error is { _tag: "Whatever" } => (error as { _tag: string })._tag === "Whatever",
+      (error) => {
+        expect(error).type.toBe<ErrorA | ErrorB>()
+        return Stream.succeed(12 as const)
+      }
+    )
+    expect(result).type.toBe<Stream.Stream<string | 12, ErrorA | ErrorB, "dep-1">>()
+  })
 })
 
 describe("Stream.catchFilter", () => {

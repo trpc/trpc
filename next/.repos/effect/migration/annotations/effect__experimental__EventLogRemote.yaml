@@ -1,9 +1,11 @@
 "@effect/experimental/EventLogRemote#Ack":
-  replacement: none
-  note: A write acknowledgement is now the void success of EventLogMessage.WriteSingleRpc or WriteChunkedRpc.
+  include: true
+  replacement: effect/eventlog/EventLogMessage#WriteAck
+  note: Write RPCs now return arrays of entryId/sequence acknowledgements in request order. WriteSingleRpc returns them directly; WriteChunkedRpc returns them on the completing chunk, with empty arrays for earlier chunks.
 "@effect/experimental/EventLogRemote#Changes":
+  include: true
   replacement: effect/eventlog/EventLogMessage#ChangesRpc
-  note: ChangesRpc replaces the separate request and response models with one streaming RPC.
+  note: ChangesRpc replaces the separate request and response models with one streaming RPC. Encrypted changes carry EncryptedRemoteBatch records. Built-in servers acknowledge writes from this connection instead of echoing them through changes.
 "@effect/experimental/EventLogRemote#decodeRequest":
   replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
   note: Generic RPC framing and RpcSerialization.layerSchemaBinary replace the module-specific request decoder.
@@ -17,8 +19,9 @@
   replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
   note: Generic RPC framing and RpcSerialization.layerSchemaBinary replace the module-specific response encoder.
 "@effect/experimental/EventLogRemote#EventLogRemote":
+  include: true
   replacement: effect/eventlog/EventLogRemote#EventLogRemote
-  note: Use the v4 Context.Service; methods now take storeId-aware options.
+  note: Use the v4 Context.Service; methods now take storeId-aware options. write may return entryId/sequence acknowledgement arrays; custom remotes can still return void when confirming uploads through changes instead.
 "@effect/experimental/EventLogRemote#fromSocket":
   replacement: effect/eventlog/EventLogRemote#makeEncrypted + effect/rpc/RpcClient#makeProtocolSocket
   note: Construct the encrypted remote separately from its generic RPC socket protocol.
@@ -55,3 +58,7 @@
 "@effect/experimental/EventLogRemote#StopChanges":
   replacement: none
   note: Interrupt the ChangesRpc stream instead of sending a StopChanges message.
+"@effect/experimental/EventLogRemote#WriteEntries":
+  include: true
+  replacement: effect/eventlog/EventLogMessage#WriteEntries
+  note: Use the storeId-aware write payload with batches of EncryptedBatch instead of iv and encryptedEntries. Each batch contains entryIds, iv, and encryptedBatch; it is not compatible with the old per-entry ciphertext format.

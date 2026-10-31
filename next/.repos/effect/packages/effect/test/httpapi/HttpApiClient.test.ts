@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { strictEqual } from "@effect/vitest/utils"
-import { Cause, Effect, Exit, Schema, Stream } from "effect"
+import { Cause, Effect, Exit, Fiber, Schema, Stream } from "effect"
 import { Sse } from "effect/encoding"
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http"
 import { HttpApi, HttpApiClient, HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/http-api"
@@ -498,6 +498,31 @@ describe("HttpApiClient", () => {
         assert.deepStrictEqual(first.map((chunk) => Array.from(chunk)), [[1, 2]])
       }))
 
+    it.effect("decodes a stream with listed content types regardless of the received content type", () =>
+      Effect.gen(function*() {
+        const Api = HttpApi.make("Api").add(
+          HttpApiGroup.make("test").add(
+            HttpApiEndpoint.get("events", "/events", {
+              success: HttpApiSchema.StreamNdjson({
+                schema: Schema.Struct({ id: Schema.Number }),
+                contentType: ["application/jsonl", "application/json"]
+              })
+            })
+          )
+        )
+        for (const contentType of ["application/json", "text/plain"]) {
+          const client = yield* HttpApiClient.makeWith(Api, {
+            baseUrl: "http://test",
+            httpClient: clientFromResponse(() =>
+              new Response(textStream([`{"id":1}\n`]), { status: 200, headers: { "content-type": contentType } })
+            )
+          })
+
+          const items = yield* client.test.events().pipe(Effect.flatMap(Stream.runCollect))
+          assert.deepStrictEqual(items, [{ id: 1 }])
+        }
+      }))
+
     it.effect("decodes WithHeaders StreamUint8Array bodies and headers", () =>
       Effect.gen(function*() {
         const Api = HttpApi.make("Api").add(
@@ -739,6 +764,59 @@ describe("HttpApiClient", () => {
       }))
   })
 
+  describe("StreamNdjson responses", () => {
+    const Item = Schema.Struct({ text: Schema.String })
+    const NdjsonApi = HttpApi.make("NdjsonApi").add(
+      HttpApiGroup.make("test").add(
+        HttpApiEndpoint.get("items", "/items", {
+          success: HttpApiSchema.StreamNdjson({ schema: Item })
+        }),
+        HttpApiEndpoint.get("limited", "/limited", {
+          success: HttpApiSchema.StreamNdjson({ schema: Item, maxElementBytes: 13 })
+        })
+      )
+    )
+    const makeClient = (body: () => ReadableStream<Uint8Array>) =>
+      HttpApiClient.makeWith(NdjsonApi, {
+        baseUrl: "http://test",
+        httpClient: clientFromResponse(() =>
+          new Response(body(), { status: 200, headers: { "content-type": "application/x-ndjson" } })
+        )
+      })
+    const collectUntilFailure = Effect.fnUntraced(function*<A, E>(stream: Stream.Stream<A, E>) {
+      const delivered: Array<A> = []
+      const error = yield* stream.pipe(
+        Stream.runForEach((item) => Effect.sync(() => delivered.push(item))),
+        Effect.flip
+      )
+      return { delivered, error }
+    })
+
+    it.effect("fails with a SchemaError on malformed JSON after delivering the earlier lines", () =>
+      Effect.gen(function*() {
+        const client = yield* makeClient(() => textStream(["{\"text\":\"a\"}\nnope\n{\"text\":\"c\"}\n"]))
+
+        const result = yield* client.test.items().pipe(Effect.flatMap(collectUntilFailure))
+
+        assert.deepStrictEqual(result.delivered, [{ text: "a" }])
+        assert.instanceOf(result.error, Schema.SchemaError)
+      }))
+
+    it.effect("fails with a DecodeError when a line exceeds maxElementBytes in UTF-8 bytes", () =>
+      Effect.gen(function*() {
+        // 13 bytes plus a terminator, then 13 characters encoded as 15 bytes
+        const client = yield* makeClient(() =>
+          textStream(["{\"text\":\"é\"}\r\n{\"text\":\"éé\"}\n{\"text\":\"a\"}\n"])
+        )
+
+        const result = yield* client.test.limited().pipe(Effect.flatMap(collectUntilFailure))
+
+        assert.deepStrictEqual(result.delivered, [{ text: "é" }])
+        assert.instanceOf(result.error, HttpClientError.HttpClientError)
+        assert.strictEqual(result.error.reason._tag, "DecodeError")
+      }))
+  })
+
   describe("error responses", () => {
     const makeClient = (response: () => Response) =>
       HttpApiClient.makeWith(ErrorContentTypeApi, {
@@ -807,6 +885,22 @@ describe("HttpApiClient", () => {
         assert.strictEqual(error, "NoContentError")
       }))
 
+    it.effect("describes undeclared statuses in the DecodeError", () =>
+      Effect.gen(function*() {
+        const client = yield* makeClient(() =>
+          new Response(JSON.stringify({ message: "valid but undeclared" }), {
+            status: 418,
+            headers: { "content-type": "application/json" }
+          })
+        )
+
+        const error = yield* Effect.flip(client.test.textFirst({}))
+        assert.ok(HttpClientError.isHttpClientError(error))
+        assert.strictEqual(error.reason._tag, "DecodeError")
+        assert.strictEqual(error.reason.description, "undeclared status code")
+        assert.strictEqual(error.response?.status, 418)
+      }))
+
     it.effect("groups schemas by normalized declared content type", () =>
       Effect.gen(function*() {
         const client = yield* makeClient(() =>
@@ -818,6 +912,48 @@ describe("HttpApiClient", () => {
 
         const error = yield* Effect.flip(client.test.equivalentJson({}))
         assert.deepStrictEqual(error, { _tag: "SecondJsonError", message: "bad request" })
+      }))
+  })
+
+  describe("decodeResponse", () => {
+    it.effect("decodes a response-only body that arrives after the head", () =>
+      Effect.gen(function*() {
+        let body!: ReadableStreamDefaultController<Uint8Array>
+        const client = yield* HttpApiClient.makeWith(WaitApi, {
+          baseUrl: "http://test",
+          httpClient: clientFromResponse(() =>
+            new Response(
+              new ReadableStream({
+                start(controller) {
+                  body = controller
+                }
+              }),
+              { headers: { "content-type": "application/json" } }
+            )
+          )
+        })
+
+        const response = yield* client.containers.wait({ params: { id: "1" }, responseMode: "response-only" })
+        const decode = HttpApiClient.decodeResponse(WaitApi, { group: "containers", endpoint: "wait" })
+        const fiber = yield* Effect.forkChild(decode(response))
+        body.enqueue(textEncoder.encode(JSON.stringify({ StatusCode: 0 })))
+        body.close()
+        assert.deepStrictEqual(yield* Fiber.join(fiber), { StatusCode: 0 })
+      }))
+
+    it.effect("fails with declared errors like decoded-only", () =>
+      Effect.gen(function*() {
+        const response = HttpClientResponse.fromWeb(
+          HttpClientRequest.post("http://test/containers/1/wait"),
+          new Response(JSON.stringify({ _tag: "EndpointError", message: "no such container" }), {
+            status: 400,
+            headers: { "content-type": "application/json" }
+          })
+        )
+
+        const decode = HttpApiClient.decodeResponse(WaitApi, { group: "containers", endpoint: "wait" })
+        const error = yield* Effect.flip(decode(response))
+        assert.deepStrictEqual(error, new EndpointError({ message: "no such container" }))
       }))
   })
 
@@ -1145,6 +1281,41 @@ describe("HttpApiClient", () => {
       strictEqual(urls[0], "https://api.example.com/files")
       strictEqual(urls[1], "https://api.example.com/files/a%2Fb")
     }))
+
+  it.effect("rejects dot segment path parameters before sending requests", () =>
+    Effect.gen(function*() {
+      const Api = HttpApi.make("Api")
+        .add(
+          HttpApiGroup.make("users")
+            .add(
+              HttpApiEndpoint.delete("remove", "/users/:id", {
+                params: {
+                  id: Schema.String
+                }
+              })
+            )
+        )
+      const urls: Array<string> = []
+      const httpClient = HttpClient.make((request, url) =>
+        Effect.sync(() => {
+          urls.push(url.toString())
+          return HttpClientResponse.fromWeb(request, new Response(null, { status: 204 }))
+        })
+      )
+      const client = yield* HttpApiClient.makeWith(Api, {
+        httpClient,
+        baseUrl: "https://api.example.com/api/v1"
+      })
+
+      const exits = yield* Effect.forEach([".", ".."], (id) =>
+        client.users.remove({
+          params: { id },
+          responseMode: "response-only"
+        }).pipe(Effect.exit))
+
+      assert.deepStrictEqual(urls, [])
+      assert.isTrue(exits.every(Exit.hasDies))
+    }))
 })
 
 const textEncoder = new TextEncoder()
@@ -1204,6 +1375,16 @@ const MixedSuccessApi = HttpApi.make("MixedSuccessApi").add(
         ]
       })
     )
+)
+
+const WaitApi = HttpApi.make("WaitApi").add(
+  HttpApiGroup.make("containers").add(
+    HttpApiEndpoint.post("wait", "/containers/:id/wait", {
+      params: { id: Schema.String },
+      success: Schema.Struct({ StatusCode: Schema.Number }),
+      error: EndpointError
+    })
+  )
 )
 
 const JsonResponseError = Schema.Struct({

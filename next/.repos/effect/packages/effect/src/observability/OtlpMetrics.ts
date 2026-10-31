@@ -12,7 +12,6 @@
  * @stability unstable
  * @since 4.0.0
  */
-import * as Arr from "../Array.ts"
 import { Clock } from "../Clock.ts"
 import * as Config from "../Config.ts"
 import * as Duration from "../Duration.ts"
@@ -90,6 +89,11 @@ export const make: (options: {
     readonly attributes?: Record<string, unknown>
   } | undefined
   readonly headers?: Headers.Input | undefined
+  /**
+   * Request compression. Defaults to "none". Gzip uses
+   * HttpClientRequest's default minimum body size of 1KB.
+   */
+  readonly compression?: "gzip" | "none" | undefined
   readonly exportInterval?: Duration.Input | undefined
   readonly shutdownTimeout?: Duration.Input | undefined
   readonly temporality?: AggregationTemporality | undefined
@@ -124,9 +128,11 @@ export const make: (options: {
     const currentSnapshotSequence = snapshotSequence++
     const nowNanos = clock.currentTimeNanosUnsafe()
     const nowTime = String(nowNanos)
-    const nextCounterState = new Map(previousCounterState)
-    const nextHistogramState = new Map(previousHistogramState)
-    const nextFrequencyState = new Map(previousFrequencyState)
+    // Only series in this snapshot carry their delta state forward, so removed
+    // series do not leak state or report a negative delta when recreated.
+    const nextCounterState = new Map<string, number | bigint>()
+    const nextHistogramState = new Map<string, PreviousHistogramState>()
+    const nextFrequencyState = new Map<string, Map<string, number>>()
     const metricData: Array<IMetric> = []
     const metricDataByName = new Map<string, IMetric>()
     const addMetricData = (data: IMetric) => {
@@ -228,27 +234,24 @@ export const make: (options: {
           break
         }
         case "Histogram": {
-          const size = state.state.buckets.length
           const currentBuckets = {
-            boundaries: Arr.allocate(size - 1) as Array<number>,
-            counts: Arr.allocate(size) as Array<number>
+            boundaries: [] as Array<number>,
+            counts: [] as Array<number>
           }
-          let idx = 0
           let prev = 0
           for (const [boundary, value] of state.state.buckets) {
-            if (idx < size - 1) {
-              currentBuckets.boundaries[idx] = boundary
-            }
-            currentBuckets.counts[idx] = value - prev
+            if (boundary === Number.POSITIVE_INFINITY) break
+            currentBuckets.boundaries.push(boundary)
+            currentBuckets.counts.push(value - prev)
             prev = value
-            idx++
           }
+          // Derive overflow from the total count, whether or not boundaries include Infinity.
+          currentBuckets.counts.push(state.state.count - prev)
 
           let reportCount = state.state.count
           let reportSum = state.state.sum
           let reportBucketCounts = currentBuckets.counts
-          const reportMin = state.state.min
-          const reportMax = state.state.max
+          let reportExtrema = true
 
           if (isDelta) {
             const previousState = previousHistogramState.get(metricKey)
@@ -258,17 +261,13 @@ export const make: (options: {
               reportBucketCounts = currentBuckets.counts.map((c, i) =>
                 Math.max(0, c - (previousState.bucketCounts[i] ?? 0))
               )
-              // For delta, min/max represent the interval's min/max
-              // We can't compute these from cumulative state, so we use current values
-              // Note: This is a limitation - true delta min/max would require tracking
-              // observations within each interval
+              // Cumulative extrema cannot describe a later delta interval.
+              reportExtrema = false
             }
             nextHistogramState.set(metricKey, {
               count: state.state.count,
               sum: state.state.sum,
-              bucketCounts: currentBuckets.counts.slice(),
-              min: state.state.min,
-              max: state.state.max
+              bucketCounts: currentBuckets.counts.slice()
             })
           }
 
@@ -277,8 +276,7 @@ export const make: (options: {
             startTimeUnixNano: intervalStartTime,
             timeUnixNano: nowTime,
             count: reportCount,
-            min: reportMin,
-            max: reportMax,
+            ...(reportExtrema ? { min: state.state.min, max: state.state.max } : undefined),
             sum: reportSum,
             bucketCounts: reportBucketCounts,
             explicitBounds: currentBuckets.boundaries
@@ -396,6 +394,7 @@ export const make: (options: {
     label: "OtlpMetrics",
     url: options.url,
     headers: options.headers,
+    compression: options.compression,
     maxBatchSize: "disabled",
     exportEmpty: true,
     exportInterval: options.exportInterval ?? Duration.seconds(10),
@@ -419,6 +418,11 @@ export const layer = (options: {
     readonly attributes?: Record<string, unknown>
   } | undefined
   readonly headers?: Headers.Input | undefined
+  /**
+   * Request compression. Defaults to "none". Gzip uses
+   * HttpClientRequest's default minimum body size of 1KB.
+   */
+  readonly compression?: "gzip" | "none" | undefined
   readonly exportInterval?: Duration.Input | undefined
   readonly shutdownTimeout?: Duration.Input | undefined
   readonly temporality?: AggregationTemporality | undefined
@@ -427,6 +431,13 @@ export const layer = (options: {
 
 /**
  * Creates an OTLP metrics layer from OpenTelemetry configuration.
+ *
+ * **Details**
+ *
+ * Compression accepts "gzip" or "none".
+ * `OTEL_EXPORTER_OTLP_METRICS_COMPRESSION` takes precedence over
+ * `OTEL_EXPORTER_OTLP_COMPRESSION`, defaulting to "none". Gzip uses
+ * HttpClientRequest's default minimum body size of 1KB.
  *
  * @stability unstable
  * @category layers
@@ -450,7 +461,17 @@ export const layerFromConfig = (options?: {
       return Exporter.layerFlusher
     }
 
-    const { baseTimeout, metricsTimeout, exportTimeout, exportInterval, temporalityPreference } = yield* Config.all({
+    const {
+      baseCompression,
+      compression,
+      baseTimeout,
+      metricsTimeout,
+      exportTimeout,
+      exportInterval,
+      temporalityPreference
+    } = yield* Config.all({
+      baseCompression: Config.option(Config.Literals(["gzip", "none"], "OTEL_EXPORTER_OTLP_COMPRESSION")),
+      compression: Config.option(Config.Literals(["gzip", "none"], "OTEL_EXPORTER_OTLP_METRICS_COMPRESSION")),
       baseTimeout: Config.option(Config.Int("OTEL_EXPORTER_OTLP_TIMEOUT")),
       metricsTimeout: Config.option(Config.Int("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT")),
       exportTimeout: Config.option(Config.Int("OTEL_METRIC_EXPORT_TIMEOUT")),
@@ -472,6 +493,7 @@ export const layerFromConfig = (options?: {
       url: endpoint.toString(),
       resource: options?.resource,
       headers: options?.headers ?? (yield* OtlpEnv.headers("METRICS")),
+      compression: Option.getOrElse(Option.firstSomeOf([compression, baseCompression]), () => "none" as const),
       exportInterval: Option.getOrUndefined(exportInterval),
       shutdownTimeout: Option.getOrUndefined(shutdownTimeout),
       temporality: Option.getOrUndefined(temporalityPreference)
@@ -519,8 +541,6 @@ interface PreviousHistogramState {
   readonly count: number
   readonly sum: number
   readonly bucketCounts: Array<number>
-  readonly min: number
-  readonly max: number
 }
 
 /** Properties of an InstrumentationScope. */

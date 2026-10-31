@@ -425,6 +425,7 @@ const formatHistogram = (
   // Effect buckets are [boundary, cumulativeCount] pairs
   for (let i = 0; i < state.buckets.length; i++) {
     const [boundary, cumulativeCount] = state.buckets[i]
+    if (boundary === Number.POSITIVE_INFINITY) continue
     const bucketLabels = formatLabels(metric.attributes, [["le", boundary.toString()]])
     lines.push(`${name}_bucket${bucketLabels} ${cumulativeCount}`)
   }

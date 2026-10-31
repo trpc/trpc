@@ -29,3 +29,20 @@ export const byReferenceInstances = new WeakSet<object>()
 
 /** @internal */
 export const viewBytes = (view: DataView): Uint8Array => new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
+
+/** @internal */
+export const isArrayBufferLike = (u: unknown): u is ArrayBufferLike =>
+  u instanceof ArrayBuffer || (typeof SharedArrayBuffer !== "undefined" && u instanceof SharedArrayBuffer)
+
+/**
+ * Returns `undefined` for detached buffers, which can no longer be read.
+ *
+ * @internal
+ */
+export const bufferBytes = (buffer: ArrayBufferLike): Uint8Array | undefined => {
+  try {
+    return new Uint8Array(buffer)
+  } catch {
+    return undefined
+  }
+}

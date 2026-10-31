@@ -768,8 +768,8 @@ const schema = Schema.Struct({ password: Schema.String, confirmPassword: Schema.
 )
 
 console.log(String(Schema.decodeUnknownExit(schema)({ password: "123456", confirmPassword: "1234567" })))
-// Failure(Cause([Fail(SchemaError: password and confirmPassword must match
-//   at ["password"])]))
+// Failure(Cause([Fail(SchemaError(password and confirmPassword must match
+//   at ["password"]))]))
 ```
 
 **Example** (Reporting multiple failures at once)
@@ -789,10 +789,10 @@ const schema = Schema.Struct({ a: Schema.Finite, b: Schema.Finite, c: Schema.Fin
 )
 
 console.log(String(Schema.decodeUnknownExit(schema)({ a: 1, b: 0, c: 0 })))
-// Failure(Cause([Fail(SchemaError: b must be greater than 0
+// Failure(Cause([Fail(SchemaError(b must be greater than 0
 //   at ["b"]
 // c must be greater than 0
-//   at ["c"])]))
+//   at ["c"]))]))
 ```
 
 ### filterEffect
@@ -897,17 +897,16 @@ const NumberFromString = Schema.transformOrFail(Schema.String, Schema.Number, {
 v4
 
 ```ts
-import { Effect, Number, Schema, SchemaGetter, SchemaIssue } from "effect"
+import { Effect, Number, Option, Schema, SchemaGetter, SchemaIssue } from "effect"
 
 const NumberFromString = Schema.String.pipe(
   Schema.decodeTo(Schema.Number, {
-    decode: SchemaGetter.transformEffect((s) => {
-      const n = Number.parse(s)
-      if (n === undefined) {
-        return Effect.fail(new SchemaIssue.InvalidValue())
-      }
-      return Effect.succeed(n)
-    }),
+    decode: SchemaGetter.transformEffect((s) =>
+      Option.match(Number.parse(s), {
+        onNone: () => Effect.fail(new SchemaIssue.InvalidValue()),
+        onSome: Effect.succeed
+      })
+    ),
     encode: SchemaGetter.String()
   })
 )

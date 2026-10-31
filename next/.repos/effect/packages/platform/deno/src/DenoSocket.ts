@@ -64,6 +64,8 @@ export class Conn extends Context.Service<Conn, Deno.Conn>()(
  * Readers over TCP connections can upgrade in place with `Deno.startTls`.
  * Deno exposes only the client side of this transition; Unix connections fail
  * the upgrade with a `SocketUpgradeError`.
+ * `servername` supplies the TLS hostname; when omitted, the remote address
+ * hostname is used.
  *
  * `Deno.startTls` does not support client certificates, so `key`, `cert`,
  * `passphrase`, and `requestCert` do not affect Deno upgrades. Setting
@@ -163,7 +165,7 @@ export const fromConn = <RO>(
           return Effect.tryPromise({
             try: async () => {
               const tls = await Deno.startTls(raw, {
-                hostname: raw.remoteAddr.hostname,
+                hostname: options.servername ?? raw.remoteAddr.hostname,
                 caCerts: options.ca === undefined ? [] : toStrings(options.ca),
                 unsafelyDisableHostnameVerification: options.rejectUnauthorized === false,
                 ...(options.alpnProtocols === undefined ? {} : { alpnProtocols: [...options.alpnProtocols] })
@@ -404,5 +406,5 @@ const close = (conn: Deno.Conn): Effect.Effect<void> =>
 
 const closeWrite = (conn: Deno.Conn): Effect.Effect<void> =>
   Effect.tryPromise(() => conn.closeWrite()).pipe(
-    Effect.catch((error) => isBadResource(error) ? Effect.void : Effect.die(error))
+    Effect.catch(({ cause }) => isBadResource(cause) ? Effect.void : Effect.die(cause))
   )

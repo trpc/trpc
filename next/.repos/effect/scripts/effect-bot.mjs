@@ -2,7 +2,8 @@ import { createHmac } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { pathToFileURL } from "node:url"
 
-export const isCommand = (body) => /^\/effect-bot(?:\s|$)/u.test(body)
+export const botLogin = "effect-bot"
+export const isCommand = (body) => /^@effect-bot(?![\w-])/iu.test(body)
 export const deliveryKey = (eventName, event) =>
   `${event.repository.full_name}:${eventName}:${event.comment.id}`
 
@@ -13,6 +14,8 @@ export async function relayComment(options) {
   const keyFor = options.deliveryKey ?? deliveryKey
   if (eventName !== "issue_comment" ||
     event?.action !== "created" || typeof event.comment?.body !== "string" ||
+    // Never let the bot's own comments re-trigger it.
+    String(event.comment.user?.login).toLowerCase() === botLogin ||
     !matches(event.comment.body)) return { status: "ignored" }
 
   const repo = event.repository?.full_name
@@ -48,8 +51,11 @@ export async function relayComment(options) {
   })
   if (!permission.ok) throw new Error(`Permission lookup failed: HTTP ${permission.status}`)
   const { role_name: role } = await permission.json()
-  // No author_association, permission fallback, or custom-role inference.
-  if (role !== "admin" && role !== "maintain") return { status: "rejected" }
+  // The live role is authoritative. author_association only narrows write
+  // access to outside collaborators, and reflects affiliation when the comment
+  // was created; no permission fallback or custom-role inference.
+  const outsideWriter = role === "write" && comment.author_association === "COLLABORATOR"
+  if (role !== "admin" && role !== "maintain" && !outsideWriter) return { status: "rejected" }
 
   const payload = {
     action: "created",

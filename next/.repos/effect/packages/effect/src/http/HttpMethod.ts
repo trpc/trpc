@@ -57,12 +57,20 @@ export declare namespace HttpMethod {
 /**
  * Returns `true` when a method can carry a request body and narrows it to `HttpMethod.WithBody`.
  *
+ * **Details**
+ *
+ * Methods outside the known `HttpMethod` literals, such as a received
+ * `"PROPFIND"`, are treated as capable of carrying a body but are not narrowed.
+ *
  * @stability unstable
  * @category guards
  * @since 4.0.0
  */
-export const hasBody = (method: HttpMethod): method is HttpMethod.WithBody =>
-  method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE"
+export function hasBody(method: HttpMethod): method is HttpMethod.WithBody
+export function hasBody(method: string): boolean
+export function hasBody(method: string): boolean {
+  return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE"
+}
 
 /**
  * Provides a readonly set containing every supported `HttpMethod` literal.

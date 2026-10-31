@@ -96,7 +96,7 @@ const collectDeclaredGlobalFlags = (command: Command.Any): ReadonlyArray<GlobalF
   return dedupeGlobalFlags(collected)
 }
 
-const getSharedFlagsForCommandPath = (
+const getInheritedFlagsForCommandPath = (
   commands: ReadonlyArray<Command.Any>,
   currentFlags: ReadonlyArray<FlagDoc>
 ): ReadonlyArray<FlagDoc> => {
@@ -105,7 +105,7 @@ const getSharedFlagsForCommandPath = (
   }
 
   const seen = new Set(currentFlags.map((flag) => flag.name))
-  const sharedFlags: Array<FlagDoc> = []
+  const inheritedFlags: Array<FlagDoc> = []
 
   for (const ancestor of commands.slice(0, -1)) {
     const ancestorImpl = toImpl(ancestor)
@@ -116,19 +116,16 @@ const getSharedFlagsForCommandPath = (
         if (seen.has(single.name)) {
           continue
         }
-        // Hidden ancestor flags are excluded from the shared-flags section
-        // of subcommand help, the same way they're excluded from the owning
-        // command's own help output.
         if (single.hidden) {
           continue
         }
         seen.add(single.name)
-        sharedFlags.push(toFlagDoc(single, metadata))
+        inheritedFlags.push(toFlagDoc(single, metadata))
       }
     }
   }
 
-  return sharedFlags
+  return inheritedFlags
 }
 
 /**
@@ -160,7 +157,7 @@ export const getHelpForCommandPath = <Name extends string, Input, E, R, ContextI
 
     const baseDoc = toImpl(currentCommand).buildHelpDoc(commandPath)
 
-    const sharedFlags = getSharedFlagsForCommandPath(commands, baseDoc.flags)
+    const inheritedFlags = getInheritedFlagsForCommandPath(commands, baseDoc.flags)
 
     const flags = getGlobalFlagsForCommandPath(command, commandPath, builtIns)
     const globalFlagDocs: Array<FlagDoc> = []
@@ -179,5 +176,20 @@ export const getHelpForCommandPath = <Name extends string, Input, E, R, ContextI
       }
     }
 
-    return { ...baseDoc, flags: [...sharedFlags, ...baseDoc.flags], globalFlags: globalFlagDocs }
+    // Globals accumulate along the path, so the deepest declaring scope lists them all.
+    let scopeLength = 1
+    for (let i = commands.length - 1; i > 0; i--) {
+      if (toImpl(commands[i]).globalFlags.length > 0) {
+        scopeLength = i + 1
+        break
+      }
+    }
+
+    return {
+      ...baseDoc,
+      inheritedFlags,
+      globalFlags: globalFlagDocs,
+      globalFlagsScope: commandPath.slice(0, scopeLength),
+      commandPath
+    }
   })

@@ -220,7 +220,7 @@ export class Chunk<R extends Rpc.Any> extends Data.TaggedClass("Chunk")<{
    * @stability unstable
    * @since 4.0.0
    */
-  static readonly Any = Schema.declare((u): u is Chunk<never> => isReply(u) && u._tag === "Chunk")
+  static readonly Any = Schema.declare((u): u is Chunk<Rpc.Any> => isReply(u) && u._tag === "Chunk")
 
   /**
    * Transformation between encoded chunk records and `Chunk` instances.

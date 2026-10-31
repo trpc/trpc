@@ -687,6 +687,27 @@ describe("Struct", () => {
 })
 
 describe("StructWithRest", () => {
+  it("requires an object-shaped encoded base", () => {
+    const base = Schema.Record(Schema.Literals(["bash", "sh"]), Schema.NonEmptyString)
+    const records = [Schema.Record(Schema.NonEmptyString, Schema.NonEmptyString)] as const
+    const jsonBase = Schema.fromJsonString(base, { space: 2 })
+
+    expect(Schema.StructWithRest).type.toBeCallableWith(base, records)
+    expect(Schema.StructWithRest).type.toBeCallableWith(base, [])
+    expect(Schema.StructWithRest).type.not.toBeCallableWith(jsonBase, records)
+    expect(Schema.StructWithRest).type.not.toBeCallableWith(jsonBase, [])
+
+    const schema = Schema.fromJsonString(Schema.StructWithRest(base, records), { space: 2 })
+    expect(Schema.revealCodec(schema)).type.toBe<
+      Schema.Codec<
+        { readonly bash: string; readonly sh: string; readonly [x: string]: string },
+        string,
+        never,
+        never
+      >
+    >()
+  })
+
   it("Record(String, Number)", async () => {
     const schema = Schema.StructWithRest(
       Schema.Struct({ a: Schema.Number }),
@@ -753,12 +774,12 @@ describe("StructWithRest", () => {
     }>()
   })
 
-  it("records mutability and optionality", () => {
+  it("records mutability and undefined values", () => {
     const schema = Schema.StructWithRest(
       Schema.Struct({ a: Schema.Number }),
       [
         Schema.Record(Schema.String, Schema.mutableKey(Schema.Number)),
-        Schema.Record(Schema.Symbol, Schema.optional(Schema.Number))
+        Schema.Record(Schema.Symbol, Schema.UndefinedOr(Schema.Number))
       ]
     )
     expect(Schema.revealCodec(schema)).type.toBe<
@@ -774,7 +795,7 @@ describe("StructWithRest", () => {
         Schema.Struct<{ readonly a: Schema.Number }>,
         readonly [
           Schema.$Record<Schema.String, Schema.mutableKey<Schema.Number>>,
-          Schema.$Record<Schema.Symbol, Schema.optional<Schema.Number>>
+          Schema.$Record<Schema.Symbol, Schema.UndefinedOr<Schema.Number>>
         ]
       >
     >()
@@ -783,7 +804,7 @@ describe("StructWithRest", () => {
         Schema.Struct<{ readonly a: Schema.Number }>,
         readonly [
           Schema.$Record<Schema.String, Schema.mutableKey<Schema.Number>>,
-          Schema.$Record<Schema.Symbol, Schema.optional<Schema.Number>>
+          Schema.$Record<Schema.Symbol, Schema.UndefinedOr<Schema.Number>>
         ]
       >
     >()

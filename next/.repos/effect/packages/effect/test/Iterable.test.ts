@@ -91,6 +91,36 @@ describe("Iterable", () => {
       deepStrictEqual(pipe(new Set([2, 4]), Iter.takeWhile(f), toArray), [2, 4])
     })
 
+    it("takeWhile stays done after completion", () => {
+      let pulls = 0
+      const source = {
+        [Symbol.iterator]() {
+          const iterator = [2, 3, 4][Symbol.iterator]()
+          return {
+            next() {
+              pulls++
+              return iterator.next()
+            }
+          }
+        }
+      }
+
+      const failed = Iter.takeWhile(source, (n) => n % 2 === 0)[Symbol.iterator]()
+      deepStrictEqual(failed.next(), { done: false, value: 2 })
+      deepStrictEqual(failed.next(), { done: true, value: undefined })
+      deepStrictEqual(failed.next(), { done: true, value: undefined })
+      strictEqual(pulls, 2)
+
+      pulls = 0
+      const exhausted = Iter.takeWhile(source, () => true)[Symbol.iterator]()
+      for (const value of [2, 3, 4]) {
+        deepStrictEqual(exhausted.next(), { done: false, value })
+      }
+      deepStrictEqual(exhausted.next(), { done: true, value: undefined })
+      deepStrictEqual(exhausted.next(), { done: true, value: undefined })
+      strictEqual(pulls, 4)
+    })
+
     it("drop", () => {
       deepStrictEqual(pipe(Iter.empty(), Iter.drop(0), toArray), [])
       deepStrictEqual(pipe([1, 2], Iter.drop(0), toArray), [1, 2])
@@ -406,6 +436,13 @@ describe("Iterable", () => {
     input.push([1])
 
     deepStrictEqual(toArray(Iter.flatten(input)), [1])
+  })
+
+  it("dedupeAdjacent is stack safe across long runs of duplicates", () => {
+    const input = Array.from({ length: 20_000 }, () => 1)
+    input.push(2)
+
+    deepStrictEqual(toArray(Iter.dedupeAdjacent(input)), [1, 2])
   })
 
   it("cartesianWith", () => {

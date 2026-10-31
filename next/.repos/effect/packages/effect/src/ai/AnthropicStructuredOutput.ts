@@ -14,8 +14,8 @@ import type * as JsonSchema from "../JsonSchema.ts"
 import * as Rec from "../Record.ts"
 import * as Schema from "../Schema.ts"
 import * as InternalStructuredOutput from "./internal/structured-output.ts"
-import * as LanguageModel from "./LanguageModel.ts"
-import * as OpenAiStructuredOutput from "./OpenAiStructuredOutput.ts"
+import type * as LanguageModel from "./LanguageModel.ts"
+import type * as OpenAiStructuredOutput from "./OpenAiStructuredOutput.ts"
 
 /**
  * Converts a `Schema.Codec` to Anthropic structured-output JSON Schema and a

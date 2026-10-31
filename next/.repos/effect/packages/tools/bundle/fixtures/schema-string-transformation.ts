@@ -6,11 +6,10 @@ import * as SchemaTransformation from "effect/SchemaTransformation"
 const schema = Schema.String.pipe(Schema.decodeTo(
   Schema.String,
   SchemaTransformation.transformEffect({
-    decode: (s) =>
-      Effect.gen(function*() {
-        yield* Effect.clockWith((clock) => clock.sleep(Duration.millis(300)))
-        return s
-      }),
+    decode: Effect.fnUntraced(function*(s) {
+      yield* Effect.clockWith((clock) => clock.sleep(Duration.millis(300)))
+      return s
+    }),
     encode: (_) => Effect.succeed(_)
   })
 ))

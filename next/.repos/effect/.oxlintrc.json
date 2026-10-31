@@ -10,6 +10,7 @@
     "**/CHANGELOG.md",
     "packages/effect/typeperf/**/*",
     "packages/effect/src/StandardSchema.ts",
+    "packages/tools/graphql-generator/test/generated/**/*.graphql.ts",
     "!scratchpad/**/*",
     "**/.*",
     "!.agents",
@@ -31,6 +32,11 @@
       "effect/no-bigint-literals": "off",
       "eslint/no-console": "off",
       "effect/no-import-from-barrel-package": "off"
+    }
+  }, {
+    "files": ["packages/ai/*/src/Generated.ts"],
+    "rules": {
+      "eslint/no-control-regex": "off"
     }
   }]
 }

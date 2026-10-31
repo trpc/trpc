@@ -1,20 +1,14 @@
 import * as AiError from "effect/ai/AiError"
+import * as Clock from "effect/Clock"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Headers from "effect/http/Headers"
 import type * as HttpClientError from "effect/http/HttpClientError"
-import type * as HttpClientRequest from "effect/http/HttpClientRequest"
 import * as Num from "effect/Number"
 import * as Option from "effect/Option"
 import * as Redactable from "effect/Redactable"
+import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
-
-const requestDetails = (request: HttpClientRequest.HttpClientRequest) => ({
-  method: request.method,
-  url: request.url,
-  urlParams: Array.from(request.urlParams),
-  hash: Option.getOrUndefined(request.hash),
-  headers: Redactable.redact(request.headers) as Record<string, string>
-})
 
 const ErrorBody = Schema.Struct({
   message: Schema.optional(Schema.String),
@@ -30,22 +24,22 @@ const nonNegative = (value: string | undefined): number | undefined => {
   return parsed !== undefined && Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined
 }
 
-const retryAfter = (headers: Readonly<Record<string, string>>) => {
+// `retry-after-ms` is TypeSafe-specific and wins over the standard header;
+// an invalid Retry-After is treated as absent
+const retryAfter = (headers: Readonly<Record<string, string>>, now: number) => {
   const ms = nonNegative(headers["retry-after-ms"])
   if (ms !== undefined) return Duration.millis(ms)
   const raw = headers["retry-after"]
-  if (raw === undefined || raw.trim() === "") return undefined
-  const seconds = nonNegative(raw)
-  if (seconds !== undefined) return Duration.seconds(seconds)
-  const date = Date.parse(raw)
-  return Number.isNaN(date) ? undefined : Duration.millis(Math.max(0, date - Date.now()))
+  if (raw === undefined) return undefined
+  const retryAfter = Headers.parseRetryAfter(raw)
+  return Result.isSuccess(retryAfter) ? Headers.retryAfterDelay(retryAfter.success, now) : undefined
 }
 
 export const mapSchemaError = (error: Schema.SchemaError, method: string): AiError.AiError =>
   AiError.make({
     module: "TypeSafeClient",
     method,
-    reason: AiError.InvalidOutputError.fromSchemaError(error)
+    reason: AiError.InvalidResponseError.fromSchemaError(error)
   })
 
 export const mapHttpClientError = Effect.fnUntraced(
@@ -56,11 +50,9 @@ export const mapHttpClientError = Effect.fnUntraced(
       case "TransportError":
       case "EncodeError":
       case "InvalidUrlError":
-        reason = new AiError.NetworkError({
-          reason: source._tag,
-          description: source.description,
-          request: requestDetails(source.request)
-        })
+        reason = AiError.NetworkError.fromHttpClientError(
+          error as HttpClientError.HttpClientError & { readonly reason: typeof source }
+        )
         break
       case "DecodeError":
       case "EmptyBodyError":
@@ -74,7 +66,6 @@ export const mapHttpClientError = Effect.fnUntraced(
         const parsed = yield* Effect.try(() => JSON.parse(body ?? "")).pipe(Effect.orElseSucceed(() => undefined))
         const details = Option.getOrUndefined(decodeErrorBody(parsed))
         const http = {
-          request: requestDetails(request),
           response: { status: response.status, headers: Redactable.redact(response.headers) as Record<string, string> },
           body
         }
@@ -90,7 +81,7 @@ export const mapHttpClientError = Effect.fnUntraced(
         })
         if (response.status === 429) {
           reason = new AiError.RateLimitError({
-            retryAfter: retryAfter(response.headers),
+            retryAfter: retryAfter(response.headers, yield* Clock.currentTimeMillis),
             http,
             metadata: {
               typesafe: {

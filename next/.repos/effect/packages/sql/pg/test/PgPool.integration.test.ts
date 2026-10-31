@@ -1,44 +1,16 @@
 import { PgConnection, PgPool, PgTypes } from "@effect/sql-pg"
 import { assert, it } from "@effect/vitest"
-import { Effect, Fiber, Queue, Redacted, Result, Stream } from "effect"
+import { Effect, Exit, Fiber, Latch, Queue, Redacted, Result, Scope, Stream } from "effect"
 import * as Net from "node:net"
 import { Duplex } from "node:stream"
-import { PgContainer } from "./utils.ts"
+import { PgContainer, realSleep, waitUntilActive, waitUntilAdvisoryLock } from "./utils.ts"
 
-// `it.effect` runs under the TestClock, so poll loops sleep in real time.
-const realSleep = Effect.promise(() => new Promise((resolve) => setTimeout(resolve, 10)))
-const activeTimeoutMs = 10_000
 const cancellationTestTimeout = 20_000
 
 const poolConfig = Effect.gen(function*() {
   const container = yield* PgContainer
   return { url: Redacted.make(container.getConnectionUri()) }
 })
-
-const waitUntilActive = (observer: PgConnection.PgConnection, pid: number, advisoryLock = false) =>
-  Effect.gen(function*() {
-    const startedAt = Date.now()
-    while (Date.now() - startedAt < activeTimeoutMs) {
-      const active = yield* observer.query(
-        `SELECT count(*)::int4 AS active FROM pg_stat_activity
-         WHERE pid = $1 AND state = 'active'
-           AND (NOT $2::boolean OR (wait_event_type = 'Lock' AND wait_event = 'advisory'))`,
-        [pid, advisoryLock]
-      )
-      if (active.rows[0].active === 1) return
-      yield* realSleep
-    }
-    return yield* Effect.fail(
-      new Error(
-        `PostgreSQL backend ${pid} did not become ${
-          advisoryLock ? "blocked on an advisory lock" : "active"
-        } within 10 seconds`
-      )
-    )
-  })
-
-// Parse can report active before Execute starts. Cancellation needs the query to be waiting on the lock.
-const waitUntilAdvisoryLock = (observer: PgConnection.PgConnection, pid: number) => waitUntilActive(observer, pid, true)
 
 const cancelRequestCode = 80877102
 
@@ -130,17 +102,16 @@ class CancelRequestGate {
   }
 }
 
-const lateCancelPoolConfig = (gate: CancelRequestGate) =>
-  Effect.gen(function*() {
-    const container = yield* PgContainer
-    const host = container.getHost()
-    const port = container.getMappedPort(5432)
-    return {
-      ...(yield* poolConfig),
-      maxConnections: 1,
-      stream: () => new LateCancelProxy(host, port, gate)
-    }
-  })
+const lateCancelPoolConfig = Effect.fnUntraced(function*(gate: CancelRequestGate) {
+  const container = yield* PgContainer
+  const host = container.getHost()
+  const port = container.getMappedPort(5432)
+  return {
+    ...(yield* poolConfig),
+    maxConnections: 1,
+    stream: () => new LateCancelProxy(host, port, gate)
+  }
+})
 
 const blockedStream = `
   SELECT n FROM generate_series(1, 1000) AS g(n)
@@ -207,6 +178,22 @@ it.layer(PgContainer.layer, { timeout: "30 seconds", concurrent: false })("PgPoo
       assert.strictEqual(notification.channel, "test_channel")
       assert.strictEqual(notification.payload, "hello")
       assert.strictEqual(notification.processId, notifier.processId)
+    }))
+
+  it.effect("does not hand on a listener registered through a released pin", () =>
+    Effect.gen(function*() {
+      const pool = yield* PgPool.make({ ...(yield* poolConfig), maxConnections: 1 })
+      const pinScope = yield* Scope.make()
+      const listenScope = yield* Scope.make()
+      const pinned = yield* Scope.provide(pool.reserve, pinScope)
+      yield* Scope.provide(pinned.listen("released_pin_listener"), listenScope)
+      yield* Scope.close(pinScope, Exit.void)
+      yield* Scope.close(listenScope, Exit.void)
+
+      const channels = yield* Effect.scoped(
+        Effect.flatMap(pool.reserve, (connection) => connection.query("SELECT pg_listening_channels() AS channel"))
+      )
+      assert.deepStrictEqual(channels.rows, [])
     }))
 
   it.effect("reports listener registration failure during acquisition", () =>
@@ -279,6 +266,37 @@ it.layer(PgContainer.layer, { timeout: "30 seconds", concurrent: false })("PgPoo
 
       const second = yield* Effect.scoped(Effect.map(pool.get, (connection) => connection.processId))
       assert.strictEqual(second, first)
+    }), cancellationTestTimeout)
+
+  it.effect("replaces a session whose pin is released with a statement in flight", () =>
+    Effect.gen(function*() {
+      const config = yield* poolConfig
+      const pool = yield* PgPool.make({ ...config, maxConnections: 1 })
+      const blocker = yield* PgConnection.make(config)
+      const observer = yield* PgConnection.make(config)
+      const scope = yield* Scope.make()
+      const pinned = yield* Scope.provide(pool.reserve, scope)
+
+      yield* Effect.gen(function*() {
+        yield* blocker.query("BEGIN")
+        yield* blocker.query("SELECT pg_advisory_xact_lock($1::int4)", [pinned.processId])
+        const leaked = yield* Effect.forkScoped(
+          pinned.query("SELECT pg_advisory_xact_lock($1::int4)", [pinned.processId])
+        )
+        yield* waitUntilAdvisoryLock(observer, pinned.processId)
+        yield* Scope.close(scope, Exit.void)
+        // Freeing the lock lets the leaked statement finish if it still has a session.
+        yield* blocker.query("ROLLBACK")
+        assert.isTrue(Exit.isFailure(yield* Fiber.await(leaked)))
+      }).pipe(Effect.ensuring(Effect.ignore(blocker.query("ROLLBACK"))))
+
+      const next = yield* Effect.scoped(Effect.gen(function*() {
+        const connection = yield* pool.reserve
+        const result = yield* connection.query("SELECT 1 AS ok")
+        return { processId: connection.processId, rows: result.rows }
+      }))
+      assert.notStrictEqual(next.processId, pinned.processId)
+      assert.deepStrictEqual(next.rows, [{ ok: 1 }])
     }), cancellationTestTimeout)
 
   it.effect("replaces a pooled session after an unconfirmed query cancel", () =>
@@ -685,10 +703,20 @@ it.layer(PgContainer.layer, { timeout: "30 seconds", concurrent: false })("PgPoo
         multiplex: true,
         multiplexConcurrency: 2
       })
+      // Every checkout stays held until all eight are in, so a slot freed on
+      // an early connection can't serve a waiter while a slow connect is
+      // still in flight.
+      const allHeld = yield* Latch.make()
+      let held = 0
       const processIds = yield* Effect.all(
         Array.from({ length: 8 }, () =>
-          Effect.scoped(Effect.flatMap(pool.get, (connection) =>
-            Effect.as(connection.query("SELECT pg_sleep(0.05)"), connection.processId)))),
+          Effect.scoped(Effect.gen(function*() {
+            const connection = yield* pool.get
+            yield* connection.query("SELECT 1")
+            if (++held === 8) yield* allHeld.open
+            yield* allHeld.await
+            return connection.processId
+          }))),
         { concurrency: "unbounded" }
       )
       assert.strictEqual(new Set(processIds).size, 4)

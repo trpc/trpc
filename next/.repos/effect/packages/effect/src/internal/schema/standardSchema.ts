@@ -53,18 +53,31 @@ export function toStandardSchemaV1<S extends Schema.ConstraintDecoder<unknown>>(
       })
     })
   }
-  if (Object.hasOwn(self, "~standard")) {
-    const out = self as any
-    if ("validate" in out["~standard"]) return out
-    Object.assign(out["~standard"], { validate })
-    return out
+  return attach(self, { validate })
+}
+
+function attach(self: any, members: object): any {
+  const standard = {
+    version: 1,
+    vendor: "effect",
+    // Only an own adapter describes `self`; an inherited one describes a parent class.
+    ...(Object.hasOwn(self, "~standard") ? self["~standard"] : undefined),
+    ...members
   }
-  return Object.assign(self, {
+  // A bound function preserves construction; private static brands are not copied.
+  const out = typeof self === "function"
+    ? Function.prototype.bind.call(self, undefined)
+    : Object.create(Object.getPrototypeOf(self))
+  return Object.defineProperties(out, {
+    ...Object.getOwnPropertyDescriptors(self),
+    // Initialize a class's lazy AST with the original constructor as its receiver.
+    ast: { value: self.ast, enumerable: true, configurable: true },
     "~standard": {
-      version: 1,
-      vendor: "effect",
-      validate
-    } as const
+      value: standard,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    }
   })
 }
 
@@ -81,14 +94,14 @@ function toBaseStandardJSONSchemaV1(
 ): JsonSchema.JsonSchema {
   const doc2020_12 = toJsonSchemaDocument(ast)
   if (target === "draft-2020-12") {
-    const schema = doc2020_12.schema
+    const schema: JsonSchema.JsonSchema = { $schema: JsonSchema.META_SCHEMA_URI_DRAFT_2020_12, ...doc2020_12.schema }
     if (Object.keys(doc2020_12.definitions).length > 0) {
       schema.$defs = doc2020_12.definitions
     }
     return schema
   } else if (target === "draft-07") {
     const doc07 = JsonSchema.toDocumentDraft07(doc2020_12)
-    const schema = doc07.schema
+    const schema: JsonSchema.JsonSchema = { $schema: JsonSchema.META_SCHEMA_URI_DRAFT_07, ...doc07.schema }
     if (Object.keys(doc07.definitions).length > 0) {
       schema.definitions = doc07.definitions
     }
@@ -101,25 +114,14 @@ function toBaseStandardJSONSchemaV1(
 export function toStandardJSONSchemaV1<S extends Schema.Constraint>(
   self: S
 ): StandardJSONSchemaV1<S["Encoded"], S["Type"]> & S {
-  const jsonSchema: StandardJSONSchemaV1.Props<S["Encoded"], S["Type"]>["jsonSchema"] = {
-    input(options) {
-      return toBaseStandardJSONSchemaV1(self.ast, options.target)
-    },
-    output(options) {
-      return toBaseStandardJSONSchemaV1(SchemaAST.toType(self.ast), options.target)
-    }
-  }
-  if (Object.hasOwn(self, "~standard")) {
-    const out = self as any
-    if ("jsonSchema" in out["~standard"]) return out
-    Object.assign(out["~standard"], { jsonSchema })
-    return out
-  }
-  return Object.assign(self, {
-    "~standard": {
-      version: 1,
-      vendor: "effect",
-      jsonSchema
-    } as const
+  return attach(self, {
+    jsonSchema: {
+      input(options) {
+        return toBaseStandardJSONSchemaV1(self.ast, options.target)
+      },
+      output(options) {
+        return toBaseStandardJSONSchemaV1(SchemaAST.toType(self.ast), options.target)
+      }
+    } satisfies StandardJSONSchemaV1.Converter
   })
 }

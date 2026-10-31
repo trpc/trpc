@@ -363,6 +363,20 @@ describe("Command errors", () => {
     })
   })
 
+  describe("ValidationError", () => {
+    it("renders its message like other parse errors and can be carried by ShowHelp", () => {
+      const formatter = CliOutput.defaultFormatter({ colors: false })
+      const error = new CliError.ValidationError({ message: "--use-api and --use-docker are mutually exclusive" })
+      const help = new CliError.ShowHelp({ commandPath: ["download"], errors: [error] })
+
+      assert.strictEqual(error.message, "--use-api and --use-docker are mutually exclusive")
+      assert.strictEqual(
+        formatter.formatErrors(help.errors),
+        "\nERROR\n  --use-api and --use-docker are mutually exclusive"
+      )
+    })
+  })
+
   describe("InvalidValue", () => {
     it("labels a bare expected description", () => {
       const error = new CliError.InvalidValue({
@@ -430,6 +444,14 @@ describe("Command errors", () => {
 
       assert.strictEqual(single.message, `Unexpected positional argument: "extra"`)
       assert.strictEqual(multiple.message, `Unexpected positional arguments: "first", "second"`)
+    })
+  })
+
+  describe("userMessage", () => {
+    it("getUserMessage reads UserError messages and ignores values without the annotation", () => {
+      assert.strictEqual(CliError.getUserMessage(new CliError.UserError({ cause: "failed" })), "failed")
+      assert.isUndefined(CliError.getUserMessage({ userMessage: "nope" }))
+      assert.isUndefined(CliError.getUserMessage(new Error("nope")))
     })
   })
 })

@@ -4,7 +4,7 @@ import { PersistedQueue } from "effect/persistence"
 import { TestClock } from "effect/testing"
 import * as PersistedQueueTest from "./PersistedQueueTest.ts"
 
-PersistedQueueTest.suite("memory", PersistedQueue.layerStoreMemory)
+PersistedQueueTest.suite("memory", PersistedQueue.layerStoreMemory, { virtualTime: true })
 
 const Item = Schema.Struct({
   n: Schema.BigInt

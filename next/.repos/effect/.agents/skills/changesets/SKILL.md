@@ -18,8 +18,8 @@ focused validation are complete.
 4. Record a reason no changeset is required, or update the PR's existing
    changeset. Create one only when the PR does not have one. When required, read
    [authoring.md](authoring.md).
-5. Validate package names, frontmatter, bump policy, and a concise
-   consumer-facing description.
+5. Validate package names, frontmatter, bump policy, and a one-sentence
+   consumer-facing description, longer only for breaks or required migration.
 
 Do not include unrelated worktree changes.
 
@@ -71,5 +71,6 @@ output is mechanical evidence, not a semantic-version decision.
 
 The task is complete when every affected contract and published package is
 accounted for and either the no-changeset decision is explicit or the PR has one
-consolidated, valid changeset by default. Its release note describes the consumer
-impact and migration for every break without repeating the PR description.
+consolidated, valid changeset by default. Its release note is one sentence of
+consumer impact, plus migration steps for every break, with no implementation
+detail.

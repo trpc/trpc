@@ -112,16 +112,16 @@ effect/Micro#exitInterrupt:
   note: "MicroExit was replaced by the unified effect/Exit module in v4. Takes an optional fiber id."
 effect/Micro#exitIsDie:
   replacement: "Exit.hasDies"
-  note: "v4 exits carry a multi-reason Cause, so tag refinements become reason queries: Exit.hasDies checks the failure cause for Die reasons."
+  note: "v4 exits carry a multi-reason Cause, so tag refinements become reason queries: Exit.hasDies checks the failure cause for Die reasons. It returns boolean and does not narrow the Exit; check Exit.isFailure first to read the cause."
 effect/Micro#exitIsFail:
   replacement: "Exit.hasFails"
-  note: "v4 exits carry a multi-reason Cause, so tag refinements become reason queries: Exit.hasFails checks the failure cause for Fail reasons."
+  note: "v4 exits carry a multi-reason Cause, so tag refinements become reason queries: Exit.hasFails checks the failure cause for Fail reasons. It returns boolean and does not narrow the Exit; check Exit.isFailure first to read the cause."
 effect/Micro#exitIsFailure:
   replacement: "Exit.isFailure"
   note: "Same refinement in the unified effect/Exit module."
 effect/Micro#exitIsInterrupt:
   replacement: "Exit.hasInterrupts"
-  note: "v4 exits carry a multi-reason Cause, so tag refinements become reason queries: Exit.hasInterrupts checks the failure cause for Interrupt reasons."
+  note: "v4 exits carry a multi-reason Cause, so tag refinements become reason queries: Exit.hasInterrupts checks the failure cause for Interrupt reasons. It returns boolean and does not narrow the Exit; check Exit.isFailure first to read the cause."
 effect/Micro#exitIsSuccess:
   replacement: "Exit.isSuccess"
   note: "Same refinement in the unified effect/Exit module."

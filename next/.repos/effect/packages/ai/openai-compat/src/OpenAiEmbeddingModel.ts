@@ -18,6 +18,7 @@ import * as Layer from "effect/Layer"
 import type { Simplify } from "effect/Types"
 import type { CreateEmbedding200, CreateEmbeddingRequestJson } from "./OpenAiClient.ts"
 import { OpenAiClient } from "./OpenAiClient.ts"
+import { OpenAiConfig } from "./OpenAiConfig.ts"
 
 /**
  * A model identifier accepted by an OpenAI-compatible embeddings endpoint.
@@ -108,6 +109,10 @@ export const model = (
  *
  * **Gotchas**
  *
+ * Concurrent `embed` calls share a request when their `Config` and
+ * `OpenAiConfig` values are equal. Other per-call context, such as
+ * `FetchHttpClient.RequestInit`, takes the first caller's value for the batch.
+ *
  * Provider responses must contain one numeric vector for every requested input
  * with unique, in-range `index` values; otherwise embedding operations fail with
  * `AiError.InvalidOutputError`.
@@ -131,6 +136,7 @@ export const make = Effect.fnUntraced(function*({ model, config: providerConfig 
   )
 
   return yield* EmbeddingModel.make({
+    batchKey: (context) => [Context.getOrUndefined(context, Config), Context.getOrUndefined(context, OpenAiConfig)],
     embedMany: Effect.fnUntraced(function*({ inputs }) {
       const config = yield* makeConfig
       const response = yield* client.createEmbedding({ ...config, input: inputs })

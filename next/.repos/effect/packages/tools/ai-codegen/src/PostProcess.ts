@@ -149,7 +149,7 @@ export const layer: Layer.Layer<
   })
 
   const lint = Effect.fn("lint")(function*(filePath: string) {
-    yield* runCommand("pnpm", ["exec", "oxlint", "--silent", "--quiet", "--fix", filePath], "lint", filePath)
+    yield* runCommand("pnpm", ["exec", "oxlint", "--quiet", "--fix", filePath], "lint", filePath)
   })
 
   const format = Effect.fn("format")(function*(filePath: string) {

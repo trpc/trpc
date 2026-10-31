@@ -65,9 +65,16 @@ export const make = Effect.gen(function*() {
 
   const readInput: MockTerminal["readInput"] = Effect.succeed(Queue.asDequeue(queue))
 
+  const size: MockTerminal["size"] = Effect.gen(function*() {
+    const queue = yield* Queue.make<Terminal.Size, Cause.Done>()
+    yield* Queue.offer(queue, { columns: 80, rows: 24 })
+    return queue
+  })
+
   const terminal = Terminal.make({
     columns: Effect.succeed(80),
     rows: Effect.succeed(24),
+    size,
     display,
     readInput,
     readLine: Effect.succeed("")

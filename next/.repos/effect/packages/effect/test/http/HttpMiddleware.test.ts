@@ -10,7 +10,10 @@ import * as HttpMiddleware from "effect/http/HttpMiddleware"
 import * as HttpServerError from "effect/http/HttpServerError"
 import * as HttpServerRequest from "effect/http/HttpServerRequest"
 import * as HttpServerResponse from "effect/http/HttpServerResponse"
+import * as UrlParams from "effect/http/UrlParams"
 import * as Logger from "effect/Logger"
+import * as IpNetwork from "effect/net/IpNetwork"
+import * as Option from "effect/Option"
 import * as References from "effect/References"
 import * as Scheduler from "effect/Scheduler"
 import * as Tracer from "effect/Tracer"
@@ -357,6 +360,35 @@ describe("HttpMiddleware", () => {
         assert.strictEqual(serverSpan.attributes.get("http.response.header.x-response-secret"), undefined)
       }))
 
+    it.effect("redacts sensitive query params in url attributes", () =>
+      Effect.gen(function*() {
+        let serverSpan: Tracer.NativeSpan | undefined
+        let handlerUrl: string | undefined
+        const tracer = Tracer.make({
+          span(options) {
+            serverSpan = new Tracer.NativeSpan(options)
+            return serverSpan
+          }
+        })
+        const request = HttpServerRequest.fromWeb(
+          new Request("http://localhost/todos?sig=sig-secret&foo=bar")
+        )
+
+        yield* HttpMiddleware.tracer(Effect.gen(function*() {
+          handlerUrl = (yield* HttpServerRequest.HttpServerRequest).url
+          return HttpServerResponse.empty()
+        })).pipe(
+          Effect.provideService(HttpServerRequest.HttpServerRequest, request),
+          Effect.provideService(Tracer.Tracer, tracer)
+        )
+        yield* Effect.yieldNow
+
+        assert(serverSpan !== undefined)
+        assert.strictEqual(serverSpan.attributes.get("url.full"), "http://localhost/todos?sig=REDACTED&foo=bar")
+        assert.strictEqual(serverSpan.attributes.get("url.query"), "sig=REDACTED&foo=bar")
+        assert.strictEqual(handlerUrl, "/todos?sig=sig-secret&foo=bar")
+      }))
+
     it.effect("skips attributes for unsampled spans", () =>
       Effect.gen(function*() {
         let serverSpan: Tracer.NativeSpan | undefined
@@ -475,6 +507,34 @@ describe("HttpMiddleware", () => {
       }
     })
 
+    it.effect("keeps a synthesized 5xx span failure redacted after the request completes", () =>
+      Effect.gen(function*() {
+        let serverSpan: Tracer.NativeSpan | undefined
+        const tracer = Tracer.make({
+          span(options) {
+            serverSpan = new Tracer.NativeSpan(options)
+            return serverSpan
+          }
+        })
+        const request = HttpServerRequest.fromWeb(new Request("http://localhost/failure?token=s3cret"))
+
+        yield* HttpMiddleware.tracer(Effect.succeed(HttpServerResponse.empty({ status: 500 }))).pipe(
+          Effect.provideService(HttpServerRequest.HttpServerRequest, request),
+          Effect.provideService(UrlParams.CurrentRedactedNames, ["token"]),
+          Effect.provideService(Tracer.Tracer, tracer)
+        )
+        yield* Effect.yieldNow
+
+        assert(serverSpan !== undefined && serverSpan.status._tag === "Ended")
+        assert.strictEqual(serverSpan.attributes.get("url.full"), "http://localhost/failure?token=REDACTED")
+        const exit = serverSpan.status.exit
+        assert(Exit.isFailure(exit))
+        const error = Cause.squash(exit.cause)
+        assert(error instanceof HttpServerError.HttpServerError)
+        // The message is path-only, so query values never reach exporters through it.
+        assert.strictEqual(error.message, "ResponseError (500 GET /failure)")
+      }))
+
     it.effect("preserves the stream failure when the sent response is 500", () =>
       Effect.gen(function*() {
         let serverSpan: Tracer.NativeSpan | undefined
@@ -510,6 +570,81 @@ describe("HttpMiddleware", () => {
         if (serverSpan.status._tag === "Ended") {
           assert.deepStrictEqual(serverSpan.status.exit, Exit.fail(streamError))
         }
+      }))
+  })
+
+  describe("forwarded headers", () => {
+    const trustedProxies = [IpNetwork.fromStringUnsafe("10.0.0.0/8")]
+    const observe = Effect.fnUntraced(
+      function*(middleware: HttpMiddleware.HttpMiddleware, peer: string, headers: Record<string, string>) {
+        const app = middleware(
+          HttpServerRequest.HttpServerRequest.use((request) =>
+            Effect.succeed(HttpServerResponse.jsonUnsafe({
+              remoteAddress: Option.getOrUndefined(request.remoteAddress),
+              host: request.headers.host,
+              url: Option.getOrUndefined(HttpServerRequest.toURL(request))?.href
+            }))
+          )
+        )
+        const request = HttpServerRequest.fromWeb(
+          new Request("http://app.test/a", { headers: { host: "app.test", ...headers } })
+        ).modify({ remoteAddress: Option.some(peer) })
+        const response = yield* app.pipe(Effect.provideService(HttpServerRequest.HttpServerRequest, request))
+        return yield* Effect.promise(() => HttpServerResponse.toWeb(response).json())
+      }
+    )
+
+    it.effect.each([
+      {
+        name: "ignores forwarded metadata from an untrusted peer",
+        peer: "203.0.113.9",
+        headers: { "x-forwarded-for": "6.6.6.6", "x-forwarded-host": "evil.test", "x-forwarded-proto": "https" },
+        expected: { remoteAddress: "203.0.113.9", host: "app.test", url: "http://app.test/a" }
+      },
+      {
+        name: "selects the rightmost untrusted hop and its aligned host and proto",
+        peer: "10.0.0.1",
+        headers: {
+          "x-forwarded-for": "6.6.6.6, 198.51.100.7, 10.0.0.2",
+          "x-forwarded-host": "evil.test, b.test, internal.test",
+          "x-forwarded-proto": "http, https, http"
+        },
+        expected: { remoteAddress: "198.51.100.7", host: "b.test", url: "https://b.test/a" }
+      },
+      {
+        name: "keeps the transport host when X-Forwarded-Host does not align with X-Forwarded-For",
+        peer: "10.0.0.1",
+        headers: { "x-forwarded-for": "198.51.100.7", "x-forwarded-host": "a.test, b.test" },
+        expected: { remoteAddress: "198.51.100.7", host: "app.test", url: "http://app.test/a" }
+      },
+      {
+        name: "stops at an invalid entry instead of skipping to attacker-controlled entries",
+        peer: "10.0.0.1",
+        headers: { "x-forwarded-for": "6.6.6.6, unknown, 10.0.0.2", "x-forwarded-host": "a.test, b.test, c.test" },
+        expected: { remoteAddress: "10.0.0.1", host: "app.test", url: "http://app.test/a" }
+      }
+    ])("xForwardedHeaders $name", ({ expected, headers, peer }) =>
+      Effect.gen(function*() {
+        assert.deepStrictEqual(
+          yield* observe(HttpMiddleware.xForwardedHeaders({ trustedProxies }), peer, headers),
+          expected
+        )
+      }))
+
+    it.effect("authorizes against the transport peer, not an address resolved by earlier middleware", () =>
+      Effect.gen(function*() {
+        const outer = HttpMiddleware.xForwardedHeaders({ trustedProxies })
+        const inner = HttpMiddleware.xForwardedHeaders({
+          trustedProxies: [IpNetwork.fromStringUnsafe("198.51.100.0/24")]
+        })
+        assert.deepStrictEqual(
+          yield* observe((app) => outer(inner(app)), "10.0.0.1", {
+            "x-forwarded-for": "6.6.6.6, 198.51.100.7",
+            "x-forwarded-host": "evil.test, b.test",
+            "x-forwarded-proto": "https, http"
+          }),
+          { remoteAddress: "198.51.100.7", host: "b.test", url: "http://b.test/a" }
+        )
       }))
   })
 })

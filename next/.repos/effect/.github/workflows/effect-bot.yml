@@ -10,7 +10,8 @@ jobs:
   relay:
     if: >-
       github.repository == 'Effect-TS/effect' &&
-      startsWith(github.event.comment.body, '/effect-bot')
+      github.event.comment.user.login != 'effect-bot' &&
+      startsWith(github.event.comment.body, '@effect-bot')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -31,7 +32,7 @@ jobs:
           node-version: 24
       # No dependency install, local actions, build, or PR-controlled code.
       # GITHUB_EVENT_PATH is read as JSON by the trusted helper.
-      - name: Relay maintainer command
+      - name: Relay maintainer mention
         run: node scripts/effect-bot.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}

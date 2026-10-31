@@ -1,6 +1,6 @@
 {
   "name": "@effect/sql-sqlite-bun",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "description": "A SQLite toolkit for Effect",
@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@effect/platform-bun": "workspace:^",
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.3",
     "effect": "workspace:^"
   },
   "peerDependencies": {

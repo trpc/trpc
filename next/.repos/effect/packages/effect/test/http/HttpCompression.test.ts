@@ -190,6 +190,11 @@ describe("HttpCompression", () => {
     assert.strictEqual(await response.text(), bigJson)
   })
 
+  it("ignores empty Accept-Encoding members", async () => {
+    const response = await get(makeHandler(bigJsonApp), { "accept-encoding": " , gzip, , " })
+    assert.strictEqual(response.headers.get("content-encoding"), "gzip")
+  })
+
   it("treats a malformed Accept-Encoding as absent", async () => {
     const response = await get(makeHandler(bigJsonApp), { "accept-encoding": "gzip;q=oops" })
     assert.strictEqual(response.headers.get("content-encoding"), null)

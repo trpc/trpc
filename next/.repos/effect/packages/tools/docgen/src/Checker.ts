@@ -25,52 +25,50 @@ type Entry = {
   readonly position: Domain.Position
 }
 
-function checkEntry(model: Entry, options: {
+const checkEntry = Effect.fnUntraced(function*(model: Entry, options: {
   readonly enforceVersion: boolean
 }) {
-  return Effect.gen(function*() {
-    const source = yield* Parser.Source
-    const config = yield* Configuration.Configuration
+  const source = yield* Parser.Source
+  const config = yield* Configuration.Configuration
 
-    let errors: Array<string> = []
+  let errors: Array<string> = []
 
-    // description
-    if (config.enforceDescriptions) {
-      if (model.doc.description === undefined) {
-        errors = errors.concat(makeError(
-          source,
-          model.position,
-          (filePath, frame) => `Missing description in file ${filePath}:\n\n${frame}`
-        ))
-      }
+  // description
+  if (config.enforceDescriptions) {
+    if (model.doc.description === undefined) {
+      errors = errors.concat(makeError(
+        source,
+        model.position,
+        (filePath, frame) => `Missing description in file ${filePath}:\n\n${frame}`
+      ))
     }
+  }
 
-    // @example tags
-    if (config.enforceExamples) {
-      if (model.doc.examples.length === 0) {
-        errors = errors.concat(makeError(
-          source,
-          model.position,
-          (filePath, frame) => `Missing examples in file ${filePath}:\n\n${frame}`
-        ))
-      }
+  // @example tags
+  if (config.enforceExamples) {
+    if (model.doc.examples.length === 0) {
+      errors = errors.concat(makeError(
+        source,
+        model.position,
+        (filePath, frame) => `Missing examples in file ${filePath}:\n\n${frame}`
+      ))
     }
+  }
 
-    // @since tags
-    if (config.enforceVersion && options.enforceVersion !== false) {
-      const since = model.doc.since
-      if (since.length === 0) {
-        errors = errors.concat(makeError(
-          source,
-          model.position,
-          (filePath, frame) => `Missing \`@since\` tag in file ${filePath}:\n\n${frame}`
-        ))
-      }
+  // @since tags
+  if (config.enforceVersion && options.enforceVersion !== false) {
+    const since = model.doc.since
+    if (since.length === 0) {
+      errors = errors.concat(makeError(
+        source,
+        model.position,
+        (filePath, frame) => `Missing \`@since\` tag in file ${filePath}:\n\n${frame}`
+      ))
     }
+  }
 
-    return errors
-  })
-}
+  return errors
+})
 
 function checkEntries(models: ReadonlyArray<Entry>, options: {
   readonly enforceVersion: boolean
@@ -94,23 +92,21 @@ export function checkFunctions(models: ReadonlyArray<Domain.Function>) {
   return Effect.forEach(models, checkFunction).pipe(Effect.map(Array.flatten))
 }
 
-function checkClass(model: Domain.Class) {
-  return Effect.gen(function*() {
-    const docErrors = yield* checkEntry(model, {
-      enforceVersion: true
-    })
-    const staticMethodsErrors = yield* checkEntries(model.staticMethods, {
-      enforceVersion: false
-    })
-    const methodsErrors = yield* checkEntries(model.methods, {
-      enforceVersion: false
-    })
-    const propertiesErrors = yield* checkEntries(model.properties, {
-      enforceVersion: false
-    })
-    return Array.flatten([docErrors, staticMethodsErrors, methodsErrors, propertiesErrors])
+const checkClass = Effect.fnUntraced(function*(model: Domain.Class) {
+  const docErrors = yield* checkEntry(model, {
+    enforceVersion: true
   })
-}
+  const staticMethodsErrors = yield* checkEntries(model.staticMethods, {
+    enforceVersion: false
+  })
+  const methodsErrors = yield* checkEntries(model.methods, {
+    enforceVersion: false
+  })
+  const propertiesErrors = yield* checkEntries(model.properties, {
+    enforceVersion: false
+  })
+  return Array.flatten([docErrors, staticMethodsErrors, methodsErrors, propertiesErrors])
+})
 
 /**
  * Validates documentation for class declarations and their documented members.

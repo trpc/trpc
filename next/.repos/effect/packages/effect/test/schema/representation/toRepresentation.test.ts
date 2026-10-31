@@ -169,6 +169,45 @@ describe("SchemaRepresentation.toRepresentation", () => {
   })
 
   describe("encoded and type projections", () => {
+    it("preserves JSON content despite conflicting annotations", () => {
+      const schema = Schema.fromJsonString(Schema.Boolean).pipe(
+        Schema.annotateEncoded({ contentMediaType: "text/plain", contentSchema: { type: "string" } })
+      )
+
+      assert.deepStrictEqual(SchemaRepresentation.toRepresentation(schema.ast), {
+        representation: {
+          _tag: "String",
+          annotations: {
+            expected: "a string that will be decoded as JSON",
+            contentMediaType: "text/plain",
+            contentSchema: { type: "string" }
+          },
+          checks: [],
+          content: {
+            mediaType: "application/json",
+            schema: { _tag: "Boolean", checks: [] }
+          }
+        },
+        references: {}
+      })
+    })
+
+    it("retains only the media type when a reviver changes the content", () => {
+      const schema = Schema.fromJsonString(Schema.Boolean, { reviver: (_key, value) => value })
+
+      assert.deepStrictEqual(SchemaRepresentation.toRepresentation(schema.ast), {
+        representation: {
+          _tag: "String",
+          annotations: {
+            expected: "a string that will be decoded as JSON"
+          },
+          checks: [],
+          content: { mediaType: "application/json" }
+        },
+        references: {}
+      })
+    })
+
     it("uses the encoded side of a transformation", () => {
       assert.deepStrictEqual(SchemaRepresentation.toRepresentation(Schema.NumberFromString.ast), {
         representation: {
@@ -482,7 +521,6 @@ describe("SchemaRepresentation.toRepresentation", () => {
         representation: {
           _tag: "String",
           annotations: {
-            contentMediaType: "application/json",
             expected: "a string that will be decoded as JSON"
           },
           checks: []

@@ -41,13 +41,13 @@
     "@rollup/plugin-terser": "^1.0.0",
     "effect": "workspace:^",
     "glob": "^13.0.6",
-    "rollup": "^4.64.0",
+    "rollup": "^4.64.9",
     "rollup-plugin-esbuild": "^6.2.1",
     "rollup-plugin-visualizer": "^7.1.1"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.6",
-    "@types/node": "^26.6.4",
+    "@babel/core": "^8.0.7",
+    "@types/node": "^26.6.5",
     "babel-plugin-annotate-pure-calls": "^0.5.0",
     "esbuild": "^0.28.2"
   }

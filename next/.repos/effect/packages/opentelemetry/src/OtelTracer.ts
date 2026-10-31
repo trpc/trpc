@@ -432,9 +432,8 @@ export class OtelSpan implements Tracer.Span {
     this.links = options.links
     this.kind = options.kind
     const active = contextApi.active()
-    this.parent = options.root !== true
-      ? Option.orElse(options.parent, () => getOtelParent(traceApi, active, options.annotations))
-      : options.parent
+    const fromActive = options.root !== true && Option.isNone(options.parent)
+    this.parent = fromActive ? getOtelParent(traceApi, active, options.annotations) : options.parent
     this.span = tracer.startSpan(
       options.name,
       {
@@ -447,9 +446,12 @@ export class OtelSpan implements Tracer.Span {
           : undefined as any,
         kind: kindMap[this.kind]
       },
-      Option.isSome(this.parent) ?
-        populateContext(active, this.parent.value, options.annotations) :
-        Otel.trace.deleteSpan(active)
+      Option.isNone(this.parent) ?
+        Otel.trace.deleteSpan(active) :
+        // Keep the active span object: some SDKs, such as Sentry, record children on it.
+        fromActive && !overridesTraceContext(options.annotations) ?
+        active :
+        populateContext(active, this.parent.value, options.annotations)
     )
     const spanContext = this.span.spanContext()
     this.spanId = spanContext.spanId
@@ -462,11 +464,13 @@ export class OtelSpan implements Tracer.Span {
   }
 
   attribute(key: string, value: unknown) {
+    if (this.status._tag === "Ended") return
     this.span.setAttribute(key, unknownToAttributeValue(value))
     this.attributes.set(key, value)
   }
 
   addLinks(links: ReadonlyArray<Tracer.SpanLink>): void {
+    if (this.status._tag === "Ended") return
     // oxlint-disable-next-line no-restricted-syntax
     this.links.push(...links)
     this.span.addLinks(links.map((link) => ({
@@ -476,6 +480,7 @@ export class OtelSpan implements Tracer.Span {
   }
 
   end(endTime: bigint, exit: Exit.Exit<unknown, unknown>) {
+    if (this.status._tag === "Ended") return
     const hrTime = nanosToHrTime(endTime)
     this.status = {
       _tag: "Ended",
@@ -510,6 +515,7 @@ export class OtelSpan implements Tracer.Span {
   }
 
   event(name: string, startTime: bigint, attributes?: Record<string, unknown>) {
+    if (this.status._tag === "Ended") return
     this.span.addEvent(
       name,
       attributes ? recordToAttributes(attributes) : undefined,
@@ -546,6 +552,10 @@ const getOtelParent = (
   }))
 }
 
+const overridesTraceContext = (annotations: Context.Context<never>): boolean =>
+  Context.getOrUndefined(annotations, OtelTraceFlags) !== undefined ||
+  Context.getOrUndefined(annotations, OtelTraceState) !== undefined
+
 const makeSpanContext = (
   span: Tracer.AnySpan,
   annotations?: Context.Context<never>
@@ -555,8 +565,11 @@ const makeSpanContext = (
     if (annotations === undefined) return otelParent
     const traceFlags = extractTraceService(span, annotations, OtelTraceFlags)
     const traceState = extractTraceService(span, annotations, OtelTraceState)
+    // Read fields explicitly because object spread skips prototype getters.
     return {
-      ...otelParent,
+      traceId: otelParent.traceId,
+      spanId: otelParent.spanId,
+      isRemote: otelParent.isRemote!,
       traceFlags: traceFlags ?? otelParent.traceFlags,
       traceState: traceState ?? otelParent.traceState!
     }
@@ -619,7 +632,8 @@ const getPropagatedSpan = (span: Tracer.AnySpan | undefined): Tracer.AnySpan | u
   return span
 }
 
-const populateContext = (
+/** @internal */
+export const populateContext = (
   context: Otel.Context,
   span: Tracer.AnySpan,
   annotations?: Context.Context<never> | undefined

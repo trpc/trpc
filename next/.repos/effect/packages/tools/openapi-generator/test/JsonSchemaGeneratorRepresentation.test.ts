@@ -8,7 +8,7 @@ describe("JsonSchemaGenerator representation", () => {
 
     const output = generator.generate("openapi-3.1", {}, false)
 
-    assert.include(output, `Schema.isPattern(new RegExp("^a+$", "u"))`)
+    assert.include(output, `Schema.isPattern(new globalThis.RegExp("^a+$", "u"))`)
   })
 
   it("emits only reachable definitions", () => {

@@ -227,14 +227,16 @@ export const make = (
       })
     })
 
-    const { acquirer, onCommitFailure, transactionAcquirer } = Client.makeSqliteAcquirers({
+    const { acquirer, borrower, onCommitFailure, transactionAcquirer } = Client.makeSqliteAcquirers({
       connection: Effect.succeed(yield* makeConnection),
       semaphore: yield* Semaphore.make(1)
     })
 
     return Object.assign(
       (yield* Client.make({
+        driver: "sqlite-react-native",
         acquirer,
+        borrower,
         compiler,
         transactionAcquirer,
         onCommitFailure,

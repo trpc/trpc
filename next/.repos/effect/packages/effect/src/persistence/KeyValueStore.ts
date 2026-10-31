@@ -65,9 +65,19 @@ export interface KeyValueStore {
   readonly clear: Effect.Effect<void, KeyValueStoreError>
 
   /**
+   * Removes all entries whose key starts with the specified prefix.
+   */
+  readonly clearPrefix: (prefix: string) => Effect.Effect<void, KeyValueStoreError>
+
+  /**
    * Returns the number of entries.
    */
   readonly size: Effect.Effect<number, KeyValueStoreError>
+
+  /**
+   * Returns a snapshot of the keys in the store. The order is unspecified.
+   */
+  readonly keys: Effect.Effect<ReadonlyArray<string>, KeyValueStoreError>
 
   /**
    * Updates the value of the specified key if it exists.
@@ -138,6 +148,11 @@ export type MakeOptions = Partial<KeyValueStore> & {
    * Returns the number of entries.
    */
   readonly size: Effect.Effect<number, KeyValueStoreError>
+
+  /**
+   * Returns a snapshot of the keys in the store. The order is unspecified.
+   */
+  readonly keys: Effect.Effect<ReadonlyArray<string>, KeyValueStoreError>
 }
 
 /**
@@ -173,6 +188,11 @@ export type MakeStringOptions = Partial<Omit<KeyValueStore, "set">> & {
    * Returns the number of entries.
    */
   readonly size: Effect.Effect<number, KeyValueStoreError>
+
+  /**
+   * Returns a snapshot of the keys in the store. The order is unspecified.
+   */
+  readonly keys: Effect.Effect<ReadonlyArray<string>, KeyValueStoreError>
 }
 
 const ErrorTypeId = "~effect/persistence/KeyValueStore/KeyValueStoreError" as const
@@ -222,8 +242,12 @@ export const KeyValueStore: Context.Service<
  *
  * **Details**
  *
- * Default implementations are derived for `has`, `isEmpty`, `modify`, and
- * `modifyUint8Array` unless they are provided in the options.
+ * Default implementations are derived for `has`, `isEmpty`, `clearPrefix`,
+ * `modify`, and `modifyUint8Array` unless they are provided in the options.
+ *
+ * If `clearPrefix` is not provided, it delegates to `clear` for an empty prefix
+ * and otherwise removes each key returned by `keys` that starts with the
+ * prefix.
  *
  * @stability unstable
  * @category constructors
@@ -234,6 +258,12 @@ export const make = (options: MakeOptions): KeyValueStore =>
     [TypeId]: TypeId,
     has: (key) => Effect.map(options.get(key), Predicate.isNotUndefined),
     isEmpty: Effect.map(options.size, (size) => size === 0),
+    clearPrefix: (prefix) =>
+      prefix.length === 0 ? options.clear : Effect.flatMap(
+        options.keys,
+        (keys) =>
+          Effect.forEach(keys, (key) => key.startsWith(prefix) ? options.remove(key) : Effect.void, { discard: true })
+      ),
     modify: (key, f) =>
       Effect.flatMap(
         options.get(key),
@@ -300,6 +330,13 @@ export const makeStringOnly = (
  * Returns a view of a `KeyValueStore` that prepends the given prefix to every
  * key.
  *
+ * **Details**
+ *
+ * `keys`, `size`, `isEmpty`, and `clear` only see entries whose key starts
+ * with the prefix, and `keys` returns them with the prefix removed. `keys`,
+ * `size`, and `isEmpty` list every key in the underlying store and filter the
+ * result, while `clear` delegates to `clearPrefix`.
+ *
  * @stability unstable
  * @category combinators
  * @since 4.0.0
@@ -307,16 +344,27 @@ export const makeStringOnly = (
 export const prefix: {
   (prefix: string): (self: KeyValueStore) => KeyValueStore
   (self: KeyValueStore, prefix: string): KeyValueStore
-} = dual(2, (self: KeyValueStore, prefix: string): KeyValueStore => ({
-  ...self,
-  get: (key) => self.get(`${prefix}${key}`),
-  getUint8Array: (key) => self.getUint8Array(`${prefix}${key}`),
-  set: (key, value) => self.set(`${prefix}${key}`, value),
-  remove: (key) => self.remove(`${prefix}${key}`),
-  has: (key) => self.has(`${prefix}${key}`),
-  modify: (key, f) => self.modify(`${prefix}${key}`, f),
-  modifyUint8Array: (key, f) => self.modifyUint8Array(`${prefix}${key}`, f)
-}))
+} = dual(2, (self: KeyValueStore, prefix: string): KeyValueStore => {
+  const keys = Effect.map(
+    self.keys,
+    (keys) => keys.flatMap((key) => key.startsWith(prefix) ? [key.slice(prefix.length)] : [])
+  )
+  return {
+    ...self,
+    get: (key) => self.get(`${prefix}${key}`),
+    getUint8Array: (key) => self.getUint8Array(`${prefix}${key}`),
+    set: (key, value) => self.set(`${prefix}${key}`, value),
+    remove: (key) => self.remove(`${prefix}${key}`),
+    clear: self.clearPrefix(prefix),
+    clearPrefix: (key) => self.clearPrefix(`${prefix}${key}`),
+    keys,
+    size: Effect.map(keys, (keys) => keys.length),
+    isEmpty: Effect.map(keys, (keys) => keys.length === 0),
+    has: (key) => self.has(`${prefix}${key}`),
+    modify: (key, f) => self.modify(`${prefix}${key}`, f),
+    modifyUint8Array: (key, f) => self.modifyUint8Array(`${prefix}${key}`, f)
+  }
+})
 
 /**
  * Provides a process-local in-memory `KeyValueStore` backed by a `Map`.
@@ -343,7 +391,14 @@ export const layerMemory: Layer.Layer<KeyValueStore> = Layer.sync(KeyValueStore)
     set: (key: string, value: string | Uint8Array) => Effect.sync(() => store.set(key, value)),
     remove: (key: string) => Effect.sync(() => store.delete(key)),
     clear: Effect.sync(() => store.clear()),
-    size: Effect.sync(() => store.size)
+    clearPrefix: (prefix: string) =>
+      Effect.sync(() => {
+        for (const key of store.keys()) {
+          if (key.startsWith(prefix)) store.delete(key)
+        }
+      }),
+    size: Effect.sync(() => store.size),
+    keys: Effect.sync(() => Array.from(store.keys()))
   })
 })
 
@@ -433,13 +488,16 @@ export const layerFileSystem = (
           )),
       remove: (key: string) =>
         withKeyPath("remove", key, (path) =>
-          Effect.mapError(fs.remove(path), (cause) =>
-            new KeyValueStoreError({
-              method: "remove",
-              key,
-              message: `Unable to remove item with key ${key}`,
-              cause
-            }))),
+          Effect.mapError(
+            fs.remove(path, { force: true }),
+            (cause) =>
+              new KeyValueStoreError({
+                method: "remove",
+                key,
+                message: `Unable to remove item with key ${key}`,
+                cause
+              })
+          )),
       has: (key: string) =>
         withKeyPath("has", key, (path) =>
           Effect.mapError(fs.exists(path), (cause) =>
@@ -461,6 +519,29 @@ export const layerFileSystem = (
             cause
           })
       ),
+      clearPrefix: (prefix: string) =>
+        fs.readDirectory(directory).pipe(
+          Effect.flatMap((files) =>
+            Effect.forEach(
+              files.filter((file) => decodeFileKey(file)?.startsWith(prefix)),
+              (file) =>
+                Effect.catchTag(
+                  fs.remove(path.join(directory, file)),
+                  "PlatformError",
+                  (cause) => cause.reason._tag === "NotFound" ? Effect.void : Effect.fail(cause)
+                ),
+              { discard: true }
+            )
+          ),
+          Effect.mapError((cause) =>
+            new KeyValueStoreError({
+              method: "clearPrefix",
+              key: prefix,
+              message: `Unable to clear items with prefix ${prefix}`,
+              cause
+            })
+          )
+        ),
       size: Effect.matchEffect(
         fs.readDirectory(directory),
         {
@@ -474,9 +555,29 @@ export const layerFileSystem = (
               })
             )
         }
+      ),
+      keys: fs.readDirectory(directory).pipe(
+        Effect.flatMap((files) => Effect.try(() => files.map(decodeURIComponent))),
+        Effect.mapError((cause) =>
+          new KeyValueStoreError({
+            method: "keys",
+            message: `Unable to get keys`,
+            cause
+          })
+        )
       )
     })
   }))
+
+const decodeFileKey = (file: string): string | undefined => {
+  try {
+    return decodeURIComponent(file)
+  } catch {
+    return undefined
+  }
+}
+
+const escapeLike = (prefix: string): string => `${prefix.replace(/[!%_[\]]/g, "!$&")}%`
 
 /**
  * Options for configuring the SQL-backed `KeyValueStore` layer.
@@ -512,7 +613,8 @@ export const layerSql = (
   Layer.effect(KeyValueStore)(
     Effect.gen(function*() {
       const sql = (yield* SqlClient.SqlClient).withoutTransforms()
-      const table = sql(options.table ?? "effect_key_value_store")
+      const tableName = options.table ?? "effect_key_value_store"
+      const table = sql(tableName)
 
       yield* sql.onDialectOrElse({
         mysql: () =>
@@ -533,7 +635,7 @@ export const layerSql = (
         `,
         mssql: () =>
           sql`
-          IF NOT EXISTS (SELECT * FROM sysobjects WHERE name=${table} AND xtype='U')
+          IF NOT EXISTS (SELECT * FROM sysobjects WHERE name=${tableName} AND xtype='U')
           CREATE TABLE ${table} (
             id NVARCHAR(450) PRIMARY KEY,
             value VARBINARY(MAX) NOT NULL,
@@ -583,6 +685,23 @@ export const layerSql = (
           INSERT INTO ${table} (id, value, value_type) VALUES (${entry.id}, ${entry.value}, ${entry.value_type})
           ON CONFLICT(id) DO UPDATE SET value=excluded.value, value_type=excluded.value_type
         `.unprepared
+      })
+
+      // The first LIKE uses the primary key index. On mysql and mssql it follows
+      // the column collation, which is usually case / accent-insensitive, so a
+      // second binary LIKE keeps only exact prefix matches.
+      const deleteByPrefix = sql.onDialectOrElse({
+        // sqlite LIKE is case-insensitive, so compare the leading characters
+        orElse: () => (prefix: string) => sql`DELETE FROM ${table} WHERE substr(id, 1, length(${prefix})) = ${prefix}`,
+        pg: () => (prefix: string) => sql`DELETE FROM ${table} WHERE id LIKE ${escapeLike(prefix)} ESCAPE '!'`,
+        mysql: () => (prefix: string) => {
+          const pattern = escapeLike(prefix)
+          return sql`DELETE FROM ${table} WHERE id LIKE ${pattern} ESCAPE '!' AND CONVERT(id USING utf8mb4) COLLATE utf8mb4_bin LIKE ${pattern} ESCAPE '!'`
+        },
+        mssql: () => (prefix: string) => {
+          const pattern = escapeLike(prefix)
+          return sql`DELETE FROM ${table} WHERE id LIKE ${pattern} ESCAPE '!' AND id COLLATE Latin1_General_100_BIN2 LIKE ${pattern} ESCAPE '!'`
+        }
       })
 
       const encoder = new TextEncoder()
@@ -696,6 +815,18 @@ export const layerSql = (
           ),
           Effect.asVoid
         ),
+        clearPrefix: (prefix: string) =>
+          deleteByPrefix(prefix).pipe(
+            Effect.mapError((cause) =>
+              new KeyValueStoreError({
+                method: "clearPrefix",
+                key: prefix,
+                message: `Unable to clear items with prefix ${prefix}`,
+                cause
+              })
+            ),
+            Effect.asVoid
+          ),
         size: sql<{ count: number }>`SELECT COUNT(*) as count FROM ${table}`.pipe(
           Effect.mapError((cause) =>
             new KeyValueStoreError({
@@ -705,6 +836,16 @@ export const layerSql = (
             })
           ),
           Effect.map((rows) => rows.length === 0 ? 0 : Number(rows[0].count))
+        ),
+        keys: sql<{ id: string }>`SELECT id FROM ${table}`.pipe(
+          Effect.mapError((cause) =>
+            new KeyValueStoreError({
+              method: "keys",
+              message: `Unable to get keys`,
+              cause
+            })
+          ),
+          Effect.map((rows) => rows.map((row) => row.id))
         )
       })
     })
@@ -750,6 +891,11 @@ export interface SchemaStore<S extends Schema.Constraint> {
    * Returns the number of entries.
    */
   readonly size: Effect.Effect<number, KeyValueStoreError>
+
+  /**
+   * Returns a snapshot of the keys in the store. The order is unspecified.
+   */
+  readonly keys: Effect.Effect<ReadonlyArray<string>, KeyValueStoreError>
 
   /**
    * Updates the value of the specified key if it exists.
@@ -821,6 +967,7 @@ export const toSchemaStore = <S extends Schema.Constraint>(self: KeyValueStore, 
     remove: self.remove,
     clear: self.clear,
     size: self.size,
+    keys: self.keys,
     has: self.has,
     isEmpty: self.isEmpty
   }
@@ -891,12 +1038,48 @@ export const layerStorage = (
           })
       }),
 
+      clearPrefix: (prefix: string) =>
+        Effect.try({
+          try: () => {
+            const keys: Array<string> = []
+            for (let i = 0; i < storage.length; i++) {
+              const key = storage.key(i)
+              if (key !== null && key.startsWith(prefix)) keys.push(key)
+            }
+            for (const key of keys) storage.removeItem(key)
+          },
+          catch: (cause) =>
+            new KeyValueStoreError({
+              key: prefix,
+              method: "clearPrefix",
+              message: `Unable to clear items with prefix ${prefix}`,
+              cause
+            })
+        }),
+
       size: Effect.try({
         try: () => storage.length,
         catch: (cause) =>
           new KeyValueStoreError({
             method: "size",
             message: `Unable to get size`,
+            cause
+          })
+      }),
+
+      keys: Effect.try({
+        try: () => {
+          const keys: Array<string> = []
+          for (let i = 0; i < storage.length; i++) {
+            const key = storage.key(i)
+            if (key !== null) keys.push(key)
+          }
+          return keys
+        },
+        catch: (cause) =>
+          new KeyValueStoreError({
+            method: "keys",
+            message: `Unable to get keys`,
             cause
           })
       })

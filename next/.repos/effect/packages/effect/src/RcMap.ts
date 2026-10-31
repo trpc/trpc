@@ -4,10 +4,12 @@
  * An `RcMap` runs a lookup effect the first time a key is requested, shares the
  * in-progress or acquired resource with other callers for the same key, and
  * tracks each caller through its current `Scope`. When the last scope for a key
- * closes, the resource can be released, kept alive for an idle time, or removed
- * by capacity limits or explicit invalidation. It is meant for resource
- * lifecycles such as clients, sessions, and connections, not as a general
- * mutable cache.
+ * closes, the resource is released immediately or kept alive until its idle
+ * time-to-live expires. Entries can also be explicitly invalidated. Capacity
+ * limits do not evict entries: idle entries count toward capacity, and a new
+ * key fails with `ExceededCapacityError` when the map is full. It is meant for
+ * resource lifecycles such as clients, sessions, and connections, not as a
+ * general mutable cache.
  *
  * @stability stable
  * @since 3.5.0
@@ -204,7 +206,8 @@ const makeUnsafe = <K, A, E>(options: {
  *
  * Complex keys can extend `Equal` and `Hash` to allow lookups by value.
  *
- * - `capacity`: The maximum number of resources that can be held in the map.
+ * - `capacity`: The maximum number of entries, including idle entries. A new key
+ *   fails with `ExceededCapacityError` when full; existing entries are not evicted.
  * - `idleTimeToLive`: When the reference count reaches zero, the resource will be released after this duration.
  *
  * **Example** (Creating a reference-counted map)
@@ -285,7 +288,8 @@ export const make: {
             Effect.sync(() => {
               MutableHashMap.clear(map)
             })
-          )
+          ),
+          Effect.flatMap(Exit.asVoidAll)
         )
       }),
       self
@@ -475,6 +479,7 @@ const removeInterrupted = <K, A, E>(
   // Borrowers close the entry on release; an idle entry has none left.
   if (entry.refCount > 0) return
   closeEntry(entry).pipe(
+    Effect.ignoreCause({ log: "Unhandled", message: "Unhandled error in RcMap finalizer" }),
     Effect.runForkWith(context),
     Fiber.runIn(self.scope)
   )
@@ -516,7 +521,10 @@ const release = <K, A, E>(self: RcMap<K, A, E>, key: K, entry: State.Entry<A, E>
         const o = MutableHashMap.get(self.state.map, key)
         if (o._tag === "None" || o.value !== entry) return Effect.void
         MutableHashMap.remove(self.state.map, key)
-        return Scope.close(entry.scope, Exit.void)
+        return Effect.ignoreCause(Scope.close(entry.scope, Exit.void), {
+          log: "Unhandled",
+          message: "Unhandled error in RcMap finalizer"
+        })
       }
       return Effect.flatMap(restore(clock.sleep(Duration.millis(remaining))), () => loop(restore))
     }).pipe(

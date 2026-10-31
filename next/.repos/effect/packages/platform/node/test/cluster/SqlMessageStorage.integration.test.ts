@@ -19,8 +19,10 @@ import {
   Snowflake,
   SqlMessageStorage
 } from "effect/cluster"
-import { SqlClient } from "effect/sql"
+import { Reactivity } from "effect/reactivity"
+import { SqlClient, Statement } from "effect/sql"
 import { TestClock } from "effect/testing"
+import { MssqlContainer } from "../fixtures/mssql-utils.ts"
 import { MysqlContainer } from "../fixtures/mysql2-utils.ts"
 import { PgContainer } from "../fixtures/pg-utils.ts"
 import {
@@ -41,7 +43,7 @@ const TestEntityLayer = TestEntity.toLayer({
 
 const StorageLayer = SqlMessageStorage.layer.pipe(
   Layer.provideMerge(Snowflake.layerGenerator),
-  Layer.provide([ShardingConfig.layerDefaults, NodeCrypto.layer])
+  Layer.provide([ShardingConfig.layerDefaults, NodeCrypto.layerDigest])
 )
 
 const truncate = Effect.gen(function*() {
@@ -51,9 +53,61 @@ const truncate = Effect.gen(function*() {
 })
 
 describe("SqlMessageStorage", () => {
+  it.effect("preserves ids above 2^53 with a number-returning SQLite driver", () => {
+    let id = 9007199254740993n
+    return Effect.gen(function*() {
+      const storage = yield* MessageStorage.MessageStorage
+      const request = yield* makeRequest({
+        rpc: PrimaryKeyTest,
+        payload: PrimaryKeyTest.payloadSchema.make({ id: 123 })
+      })
+      const requestId = request.envelope.requestId
+      yield* storage.saveRequest(request)
+      const shards = [request.envelope.address.shardId]
+      const messages = yield* storage.unprocessedMessages(shards)
+      assert.strictEqual(messages.length, 1)
+      assert.strictEqual(messages[0].envelope.requestId, requestId)
+      assert.deepStrictEqual(yield* storage.unprocessedMessages(shards), [])
+
+      const reply = yield* makeReply(request)
+      yield* storage.saveReply(reply)
+      assert.deepStrictEqual(yield* storage.repliesFor([request]), [reply.reply])
+      yield* storage.resetShards(shards)
+      assert.deepStrictEqual(yield* storage.unprocessedMessages(shards), [])
+
+      const duplicate = yield* storage.saveRequest(
+        yield* makeRequest({ rpc: PrimaryKeyTest, payload: request.envelope.payload })
+      )
+      assert(duplicate._tag === "Duplicate")
+      assert.strictEqual(duplicate.originalId, requestId)
+      assert.deepStrictEqual(duplicate.lastReceivedReply, Option.some(reply.reply))
+      assert.deepStrictEqual(
+        yield* storage.requestIdForPrimaryKey({
+          address: request.envelope.address,
+          tag: request.envelope.tag,
+          id: "123"
+        }),
+        Option.some(requestId)
+      )
+    }).pipe(
+      Effect.provide(SqlMessageStorage.layer.pipe(
+        Layer.provide(NumberSqliteLayer),
+        Layer.provide([ShardingConfig.layerDefaults, NodeCrypto.layer])
+      )),
+      Effect.provideService(Snowflake.Generator, {
+        nextUnsafe: () => {
+          const next = Snowflake.Snowflake(id)
+          id += 2n
+          return next
+        },
+        setMachineId: () => Effect.void
+      })
+    )
+  })
   ;([
     ["pg", Layer.orDie(PgContainer.layerClient)],
     ["mysql", Layer.orDie(MysqlContainer.layerClient)],
+    ["mssql", Layer.orDie(MssqlContainer.layerClient)],
     ["sqlite", Layer.orDie(SqliteLayer)]
   ] as const).forEach(([label, layer]) => {
     // Tests truncate this backend's shared tables.
@@ -67,7 +121,7 @@ describe("SqlMessageStorage", () => {
             Effect.gen(function*() {
               yield* truncate
               const sql = yield* SqlClient.SqlClient
-              const storage = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layer))
+              const storage = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layerDigest))
               // Heap order is the reverse of the claim query's rowid order.
               yield* sql`
                 INSERT INTO cluster_messages
@@ -140,6 +194,22 @@ describe("SqlMessageStorage", () => {
               AND indexname = 'cluster_messages_rowid_idx'
             `
             expect(indexes).toHaveLength(1)
+          }))
+      }
+
+      if (label === "mssql") {
+        it.effect("rejects duplicate exit replies when another table has the same index name", () =>
+          Effect.gen(function*() {
+            const sql = yield* SqlClient.SqlClient
+            yield* sql`CREATE TABLE collision_other (id INT)`
+            yield* sql`CREATE INDEX collision_replies_one_exit ON collision_other (id)`
+            const storage = yield* SqlMessageStorage.makeEncoded({ prefix: "collision" }).pipe(
+              Effect.provide(NodeCrypto.layer)
+            )
+            const exit = { _tag: "WithExit", requestId: "1", exit: { _tag: "Success", value: null } } as const
+            yield* storage.saveReply({ ...exit, id: "1" })
+            const error = yield* Effect.flip(storage.saveReply({ ...exit, id: "2" }))
+            expect(error._tag).toEqual("PersistenceError")
           }))
       }
 
@@ -538,7 +608,7 @@ describe("SqlMessageStorage", () => {
           const storage = yield* MessageStorage.MessageStorage
           const request = yield* makeRequest()
           yield* storage.saveRequest(request)
-          const encoded = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layer))
+          const encoded = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layerDigest))
           const shardId = request.envelope.address.shardId.toString()
           const messages = yield* encoded.unprocessedMessages([shardId], Date.now(), { addresses: [] })
           expect(messages).toHaveLength(0)
@@ -554,7 +624,7 @@ describe("SqlMessageStorage", () => {
           const storage = yield* MessageStorage.MessageStorage
           const request = yield* makeRequest()
           yield* storage.saveRequest(request)
-          const encoded = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layer))
+          const encoded = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layerDigest))
           const shardId = request.envelope.address.shardId.toString()
           const claimed = yield* encoded.unprocessedMessages([shardId], Date.now())
           expect(claimed).toHaveLength(1)
@@ -649,7 +719,7 @@ describe("SqlMessageStorage", () => {
           const ack = yield* makeAckChunk(request, chunk)
           yield* storage.saveEnvelope(ack)
 
-          const encoded = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layer))
+          const encoded = yield* SqlMessageStorage.makeEncoded().pipe(Effect.provide(NodeCrypto.layerDigest))
           const acknowledgements = yield* encoded.unprocessedMessagesById([ack.envelope.id], 0)
           expect(acknowledgements).toHaveLength(1)
           assert(acknowledgements[0].envelope._tag === "AckChunk")
@@ -707,3 +777,28 @@ const SqliteLayer = Effect.gen(function*() {
     filename: dir + "/test.db"
   })
 }).pipe(Layer.unwrap, Layer.provide(NodeFileSystem.layer))
+
+const NumberSqliteLayer = Layer.effect(
+  SqlClient.SqlClient,
+  Effect.gen(function*() {
+    const sqlite = yield* SqliteClient.make({ filename: ":memory:" })
+    const connection = yield* sqlite.reserve
+    // Model drivers such as Durable Objects that return INTEGERs as numbers, even with SafeIntegers.
+    const roundRows = (rows: ReadonlyArray<Record<string, unknown>>) =>
+      rows.map((row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([key, value]) => [key, typeof value === "bigint" ? Number(value) : value])
+        )
+      )
+    return yield* SqlClient.make({
+      driver: "sqlite-number",
+      compiler: Statement.makeCompilerSqlite(),
+      spanAttributes: [],
+      acquirer: Effect.succeed({
+        ...connection,
+        execute: (...args) => connection.execute(...args).pipe(Effect.map(roundRows)),
+        executeUnprepared: (...args) => connection.executeUnprepared(...args).pipe(Effect.map(roundRows))
+      })
+    })
+  })
+).pipe(Layer.provide(Reactivity.layer))

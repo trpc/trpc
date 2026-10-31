@@ -77,11 +77,69 @@ const runElicitation = <S extends Schema.ConstraintEncoder<Record<string, unknow
   )
 
 export const suite = (
-  protocol: McpProtocol.ProtocolAdapter<McpProtocol.StatefulProtocolVersion>,
+  protocol: McpProtocol.ProtocolAdapter<McpProtocol.StatefulProtocolVersion, McpProtocol.StatefulRuntimeDescriptor>,
   layer: McpConformanceLayer
 ) =>
   it.layer(layer)(`Mcp Conformance (${protocol.protocolVersion})`, (it) => {
     describe("Elicitation", () => {
+      // https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/cancellation
+      it.effect("MUST cancel the pending HTTP elicitation when its tool call is cancelled", () =>
+        Effect.gen(function*() {
+          const toolkit = Toolkit.make(Tool.make("Approve", {
+            parameters: Tool.EmptyParams,
+            success: Schema.Struct({ approved: Schema.Boolean }),
+            dependencies: [McpSchema.McpServerClient]
+          }))
+          const registration = McpServer.toolkit(toolkit).pipe(Layer.provide(
+            toolkit.toLayer({
+              Approve: () =>
+                McpServer.elicit({
+                  message: "Approve this operation",
+                  schema: Schema.Struct({ approved: Schema.Boolean })
+                }).pipe(Effect.orDie)
+            })
+          ))
+          const harness = yield* makeHttpHarness(registration.pipe(Layer.provideMerge(
+            makeServerLayer({ name: "ElicitationCancellationConformance", protocols: [protocol] })
+          )))
+          const initialized = yield* harness.post({
+            jsonrpc: "2.0",
+            id: "initialize",
+            method: "initialize",
+            params: {
+              protocolVersion: protocol.protocolVersion,
+              capabilities: { elicitation: {} },
+              clientInfo: { name: "approval-client", version: "1.0.0" }
+            }
+          })
+          yield* readMcpHttpResponse(initialized)
+          const sessionId = initialized.headers.get("Mcp-Session-Id")
+          assert.isNotNull(sessionId)
+          const headers = { "Mcp-Session-Id": sessionId, "Mcp-Protocol-Version": protocol.protocolVersion }
+          yield* harness.post({ jsonrpc: "2.0", method: "notifications/initialized" }, headers)
+          const response = yield* harness.post({
+            jsonrpc: "2.0",
+            id: "approval-tool",
+            method: "tools/call",
+            params: { name: "Approve", arguments: {} }
+          }, headers)
+          const stream = makeMcpSseReader(response)
+          yield* Effect.addFinalizer(() => stream.cancel)
+          const reverse = yield* stream.take()
+          assert.strictEqual(reverse.method, "elicitation/create")
+          assert.isDefined(reverse.id)
+          const cancelled = yield* harness.post({
+            jsonrpc: "2.0",
+            method: "notifications/cancelled",
+            params: { requestId: "approval-tool" }
+          }, headers)
+          assert.strictEqual(cancelled.status, 202)
+          const remaining = yield* stream.drain().pipe(Effect.timeout("1 second"))
+          assert.deepStrictEqual(remaining.map((message) => message.method), ["notifications/cancelled"])
+          assert.propertyVal(remaining[0].params, "requestId", reverse.id)
+          assert.isFalse(remaining.some((message) => message.method?.startsWith("@effect/rpc/")))
+        }))
+
       for (const responseSession of ["missing", "unknown", "unrelated", "owner"] as const) {
         // https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#session-management
         // A reverse response must belong to the session that requested the input.

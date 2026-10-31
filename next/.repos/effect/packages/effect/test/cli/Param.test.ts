@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Config, ConfigProvider, Effect, FileSystem, Layer, Option, Path, Ref, Result, Stdio } from "effect"
-import { Argument, CliError, Command, Flag, Param, Primitive, Prompt } from "effect/cli"
+import { Argument, CliError, Command, Flag, Param, Primitive, Prompt, TerminalCapabilities } from "effect/cli"
 import * as Lexer from "effect/cli/internal/lexer"
 import * as Parser from "effect/cli/internal/parser"
 import { ChildProcessSpawner } from "effect/process"
@@ -12,6 +12,11 @@ const FileSystemLayer = FileSystem.layerNoop({})
 const PathLayer = Path.layer
 const TerminalLayer = MockTerminal.layer
 const StdioLayer = Stdio.layerTest({})
+const TerminalCapabilitiesLayer = Layer.succeed(TerminalCapabilities.TerminalCapabilities, {
+  canColor: false,
+  canAnimate: false,
+  canPrompt: true
+})
 const ChildProcessSpawnerLayer = Layer.succeed(
   ChildProcessSpawner.ChildProcessSpawner,
   ChildProcessSpawner.make(() => Effect.die("Not implemented"))
@@ -23,6 +28,7 @@ const TestLayer = Layer.mergeAll(
   PathLayer,
   TerminalLayer,
   StdioLayer,
+  TerminalCapabilitiesLayer,
   ChildProcessSpawnerLayer
 )
 
@@ -177,6 +183,18 @@ describe("Param", () => {
       const result = yield* argument.parse({ flags: {}, arguments: [] })
 
       assert.deepStrictEqual(result, [[], ["README.md"]])
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("rejects repeated occurrences of a single-valued flag", () =>
+    Effect.gen(function*() {
+      const flag = Flag.Int("window-minutes")
+
+      for (const values of [["2", "3"], ["2", "not-an-integer"]]) {
+        const error = yield* Effect.flip(flag.parse({ flags: { "window-minutes": values }, arguments: [] }))
+        assert.instanceOf(error, CliError.InvalidValue)
+        assert.strictEqual(error.option, "window-minutes")
+        assert.strictEqual(error.value, "2 occurrences")
+      }
     }).pipe(Effect.provide(TestLayer)))
 
   describe("withFallbackPrompt", () => {
@@ -414,6 +432,35 @@ describe("Param", () => {
 
         assert.instanceOf(error, CliError.MissingArgument)
       }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("returns the missing error without prompting when the terminal cannot prompt", () =>
+      Effect.gen(function*() {
+        const calls = yield* Ref.make(0)
+        const prompt = Effect.gen(function*() {
+          yield* Ref.update(calls, (n) => n + 1)
+          return Prompt.String({ message: "Value" })
+        })
+        const flag = Flag.String("name").pipe(Flag.withFallbackPrompt(prompt))
+        const argument = Argument.String("file").pipe(Argument.withFallbackPrompt(prompt))
+
+        // Ends terminal input so a prompt that runs anyway quits instead of waiting
+        yield* MockTerminal.inputKey("c", { ctrl: true })
+
+        const flagError = yield* Effect.flip(flag.parse({ flags: {}, arguments: [] }))
+        const argumentError = yield* Effect.flip(argument.parse({ flags: {}, arguments: [] }))
+
+        assert.instanceOf(flagError, CliError.MissingOption)
+        assert.instanceOf(argumentError, CliError.MissingArgument)
+        assert.strictEqual(yield* Ref.get(calls), 0)
+        assert.deepStrictEqual(yield* MockTerminal.displayLines, [])
+      }).pipe(
+        Effect.provideService(TerminalCapabilities.TerminalCapabilities, {
+          canColor: false,
+          canAnimate: false,
+          canPrompt: false
+        }),
+        Effect.provide(TestLayer)
+      ))
   })
 
   describe("withFallbackConfig", () => {

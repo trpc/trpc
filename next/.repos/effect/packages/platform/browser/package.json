@@ -1,7 +1,7 @@
 {
   "name": "@effect/platform-browser",
   "type": "module",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "license": "MIT",
   "description": "Platform specific implementations for the browser",
   "homepage": "https://effect.website",

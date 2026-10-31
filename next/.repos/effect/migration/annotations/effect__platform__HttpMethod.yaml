@@ -1,3 +1,6 @@
 "@effect/platform/HttpMethod#all":
   replacement: "HttpMethod.all"
   note: "Retained as the readonly set of all supported methods."
+"@effect/platform/HttpMethod#hasBody":
+  replacement: "HttpMethod.hasBody"
+  note: "Retained and now narrows an HttpMethod to HttpMethod.WithBody. An overload also accepts any string, such as a received request method, and returns a plain boolean."

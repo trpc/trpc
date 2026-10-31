@@ -83,6 +83,13 @@ describe("SchemaRepresentation.fromRepresentation", () => {
     assertRepresentationRoundtrip(Schema.String)
   })
 
+  it("revives a string with content without parsing its value", () => {
+    const schema = revive(Schema.fromJsonString(Schema.Boolean)) as Schema.Codec<unknown>
+
+    assert.strictEqual(Schema.decodeUnknownSync(schema)("not JSON"), "not JSON")
+    assert.isFalse(Schema.is(schema)(true))
+  })
+
   it("revives Number", () => {
     assertRepresentationRoundtrip(Schema.Number)
   })

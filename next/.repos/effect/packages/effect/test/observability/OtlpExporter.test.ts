@@ -1,7 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Clock, ConfigProvider, Deferred, type Duration, Effect, Exit, Fiber, Layer, Metric, Ref, Scope } from "effect"
 import { type Headers, HttpBody, HttpClient, type HttpClientError, HttpClientResponse } from "effect/http"
-import { OtlpExporter, OtlpLogger, OtlpMetrics, OtlpSerialization, OtlpTracer } from "effect/observability"
+import { Otlp, OtlpExporter, OtlpLogger, OtlpMetrics, OtlpSerialization, OtlpTracer } from "effect/observability"
 import { TestClock } from "effect/testing"
 import * as Version from "effect/Version"
 
@@ -332,6 +332,25 @@ describe("OtlpExporter", () => {
       assert.strictEqual(yield* Ref.get(attempts), 2)
     }))
 
+  it.effect("uses fallback retry-after delay when header is negative", () =>
+    Effect.gen(function*() {
+      const { attempts, httpClient } = yield* makeHttpClient("-5")
+      const exporter = yield* makeExporter(httpClient)
+
+      exporter.push({ value: 1 })
+      yield* yieldNowN(3)
+
+      assert.strictEqual(yield* Ref.get(attempts), 1)
+
+      yield* TestClock.adjust("4 seconds")
+      yield* yieldNowN(2)
+      assert.strictEqual(yield* Ref.get(attempts), 1)
+
+      yield* TestClock.adjust("1 second")
+      yield* yieldNowN(2)
+      assert.strictEqual(yield* Ref.get(attempts), 2)
+    }))
+
   it.effect("uses fallback retry-after delay when header is missing", () =>
     Effect.gen(function*() {
       const { attempts, httpClient } = yield* makeHttpClient(undefined)
@@ -531,6 +550,39 @@ describe("OtlpExporter", () => {
             ]
           )
         }).pipe(Effect.provide(signals))
+      }))
+
+    it.effect("Otlp.layerFromConfig flushes enabled signals when one is disabled", () =>
+      Effect.gen(function*() {
+        const { httpClient, urls } = yield* makeStatusHttpClient(200)
+        const otlp = Otlp.layerFromConfig({
+          resource: { serviceName: "test" },
+          loggerMergeWithExisting: false
+        }).pipe(
+          Layer.provide(OtlpSerialization.layerJson),
+          Layer.provide(Layer.succeed(HttpClient.HttpClient, httpClient)),
+          Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnv({
+            env: {
+              OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4318",
+              OTEL_LOGS_EXPORTER: "otlp",
+              OTEL_METRICS_EXPORTER: "otlp",
+              OTEL_TRACES_EXPORTER: "none",
+              OTEL_BLRP_SCHEDULE_DELAY: "3600000",
+              OTEL_METRIC_EXPORT_INTERVAL: "3600000"
+            }
+          })))
+        )
+
+        yield* Effect.gen(function*() {
+          yield* Effect.log("flush test")
+          yield* Metric.update(Metric.counter("otlp_flush_test"), 1)
+          yield* (yield* OtlpExporter.Flusher).flush
+
+          assert.deepStrictEqual(
+            [...yield* Ref.get(urls)].sort(),
+            ["http://localhost:4318/v1/logs", "http://localhost:4318/v1/metrics"]
+          )
+        }).pipe(Effect.provide(otlp))
       }))
 
     it.effect("is a no-op while the exporter is disabled", () =>

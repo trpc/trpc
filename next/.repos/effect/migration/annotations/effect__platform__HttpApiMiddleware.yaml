@@ -16,6 +16,9 @@
 "@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Only":
   replacement: "Extract<R, HttpApiMiddleware.AnyId>"
   note: "The helper was removed because middleware IDs are explicit; use Extract when the direct filter is still needed."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Without":
+  replacement: "Exclude<R, HttpApiMiddleware.AnyId>"
+  note: "The helper was removed because middleware IDs are explicit; use Exclude when the direct filter is still needed."
 "@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Provides":
   replacement: "effect/http-api/HttpApiMiddleware#Provides"
   note: "Same name and reads the expanded v4 middleware ID metadata."

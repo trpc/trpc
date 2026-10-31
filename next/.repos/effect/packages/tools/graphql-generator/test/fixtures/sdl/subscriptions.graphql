@@ -1,0 +1,147 @@
+"""
+Something with a stable ID.
+"""
+interface Node {
+  id: ID!
+}
+
+"""
+Something that happened in a room.
+"""
+interface Event implements Node {
+  id: ID!
+  """
+  When it happened, as an ISO-8601 string.
+  """
+  at: String!
+}
+
+"""
+An event a member caused.
+"""
+interface MemberEvent implements Event & Node {
+  id: ID!
+  at: String!
+  """
+  The member who caused it.
+  """
+  member: Member!
+}
+
+"""
+What a member may do in a room.
+"""
+enum Role {
+  OWNER
+  MEMBER
+  GUEST
+}
+
+"""
+Someone in a room.
+"""
+type Member implements Node {
+  id: ID!
+  name: String!
+  role: Role!
+}
+
+"""
+A room members talk in.
+"""
+type Room implements Node {
+  id: ID!
+  name: String!
+}
+
+"""
+A member posted a message.
+"""
+type MessagePosted implements MemberEvent & Event & Node {
+  id: ID!
+  at: String!
+  member: Member!
+  """
+  The message text.
+  """
+  body: String!
+}
+
+"""
+A member joined the room.
+"""
+type MemberJoined implements MemberEvent & Event & Node {
+  id: ID!
+  at: String!
+  member: Member!
+}
+
+"""
+The room was renamed.
+"""
+type RoomRenamed implements Event & Node {
+  id: ID!
+  at: String!
+  """
+  The room's new name.
+  """
+  name: String!
+}
+
+"""
+Exactly one way to pick a room.
+"""
+input RoomBy @oneOf {
+  id: ID
+  slug: String
+}
+
+"""
+An instant, as an ISO-8601 string.
+"""
+scalar DateTime
+
+"""
+Filters messages.
+"""
+input MessageFilter {
+  postedAfter: DateTime
+  member: MemberMatch
+  "Any of these filters."
+  or: [MessageFilter!]
+  "A type named like a TypeScript global, which generated code must not shadow."
+  shadow: ReadonlyArray
+}
+
+enum ReadonlyArray {
+  ANY
+}
+
+"""
+Exactly one way to match a member.
+"""
+input MemberMatch @oneOf {
+  id: ID
+  """
+  Members who posted a matching message.
+  """
+  posted: MessageFilter
+}
+
+type Query {
+  """
+  Looks up a room.
+  """
+  room(by: RoomBy!): Room
+  """
+  Messages that match a filter.
+  """
+  messages(filter: MessageFilter!): [MessagePosted!]!
+}
+
+type Subscription {
+  """
+  Every event in a room, as it happens.
+  """
+  events(room: RoomBy!): Event!
+}

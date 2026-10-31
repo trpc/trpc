@@ -18,7 +18,7 @@
   note: "Use the moved combinator; v4 validates bounds when constructing the parameter."
 "@effect/cli/Options#boolean":
   replacement: "Flag.Boolean + Flag.withDefault"
-  note: "Use Flag.Boolean(name).pipe(Flag.withDefault(false)) to preserve v3's omitted-flag default; bare Flag.Boolean is now required. --no-name is automatic and aliases are added with Flag.withAlias."
+  note: "Use Flag.Boolean(name).pipe(Flag.withDefault(false)) to preserve v3's omitted-flag default; bare Flag.Boolean is now required. --no-name is automatic; rename it with Flag.withNegation or remove it with Flag.withoutNegation. Aliases are added with Flag.withAlias."
 "@effect/cli/Options#choice":
   replacement: "Flag.Literals"
   note: "Use the moved constructor."
@@ -92,8 +92,8 @@
   replacement: "Flag.Flag"
   note: "Options was renamed to Flag in effect/cli."
 "@effect/cli/Options#Options.BooleanOptionsConfig":
-  replacement: "Flag.Boolean + Flag.withAlias + Flag.map"
-  note: "The config object was removed; aliases and value inversion are combinators, while custom negation names need application logic."
+  replacement: "Flag.Boolean + Flag.withAlias + Flag.withNegation + Flag.map"
+  note: "The config object was removed; aliases, the negation name, and value inversion are combinators. Flag.withNegation replaces --no-name with a single custom name and Flag.withoutNegation removes it; additional negation names need application logic."
 "@effect/cli/Options#Options.PathOptionsConfig":
   replacement: "{ readonly mustExist?: boolean }"
   note: "Path options are inline; true replaces exists=yes and omission replaces either. exists=no has no exact replacement."

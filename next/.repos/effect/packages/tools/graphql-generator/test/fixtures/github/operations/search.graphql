@@ -1,0 +1,46 @@
+# Fragment-heavy search with directives, a block string argument and an interface fragment.
+query SearchRepositories($query: String!, $withOwner: Boolean = false) {
+  search(
+    query: $query
+    type: REPOSITORY
+    first: 5
+  ) {
+    repositoryCount
+    nodes {
+      __typename
+      ... on Repository {
+        ...RepoSummary
+        owner @include(if: $withOwner) {
+          ...OwnerInfo
+        }
+      }
+    }
+  }
+  pinned: search(
+    query: """
+      is:public
+      stars:>1000
+    """
+    type: REPOSITORY
+    first: 1
+  ) @skip(if: $withOwner) {
+    repositoryCount
+  }
+}
+
+fragment RepoSummary on Repository {
+  id
+  nameWithOwner
+  description
+  stargazerCount
+}
+
+fragment OwnerInfo on RepositoryOwner {
+  login
+  ... on Organization {
+    name
+  }
+  ... on User {
+    bio
+  }
+}

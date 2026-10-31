@@ -1,4 +1,4 @@
-import { Context, Effect, Schema, SchemaGetter } from "effect"
+import { Context, Effect, type Result, Schema, SchemaGetter } from "effect"
 import { type AiError, Decision, DecisionModel } from "effect/ai"
 import { describe, expect, it } from "tstyche"
 
@@ -106,6 +106,85 @@ describe("Decision", () => {
     expect<Answers["urgent"]>().type.not.toHaveProperty("probabilities")
   })
 
+  it("locate answers carry a bounding box and optional confidence", () => {
+    const definition = Decision.make({
+      input: Schema.Struct({ photo: Decision.Image }),
+      decisions: { mug: Decision.locate({ image: "photo", instructions: "the coffee mug" }) }
+    })
+    const result = DecisionModel.decide(definition, {
+      input: { photo: { mediaType: "image/png", data: "iVBORw0KGgo=" } }
+    })
+
+    type Result = typeof result extends Effect.Effect<infer A, any, any> ? A : never
+
+    expect<Result["answers"]["mug"]>().type.toBe<{
+      readonly box: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number }
+      readonly confidence?: number | undefined
+    }>()
+  })
+
+  it("Image preserves its concrete schema type and requires no services", () => {
+    expect(Decision.Image.annotate({})).type.toBe<Decision.Image>()
+    expect<typeof Decision.Image.Type>().type.toBe<DecisionModel.Image>()
+    expect<typeof Decision.Image.Encoded>().type.toBe<Decision.ImageEncoded>()
+    expect<typeof Decision.Image.DecodingServices>().type.toBe<never>()
+    expect<typeof Decision.Image.EncodingServices>().type.toBe<never>()
+    expect(Decision.Image).type.toBeAssignableTo<Schema.Codec<DecisionModel.Image, Decision.ImageEncoded>>()
+  })
+
+  it("image paths follow nested, array, and tuple fields of the encoded input", () => {
+    class Listing extends Schema.Class<Listing>("Listing")({ cover: Decision.Image }) {}
+    const Input = Schema.Struct({
+      photo: Decision.Image,
+      frames: Schema.Array(Schema.Struct({ frame: Decision.Image })),
+      pair: Schema.Tuple([Decision.Image, Schema.String, Decision.Image]),
+      listing: Listing,
+      scan: Schema.Union([
+        Schema.Struct({ front: Decision.Image }),
+        Schema.Struct({ back: Decision.Image })
+      ]),
+      renamed: Schema.Struct({ photo: Decision.Image }).pipe(Schema.encodeKeys({ photo: "image_url" })),
+      deep: Schema.Struct({
+        a: Schema.Struct({ b: Schema.Struct({ c: Decision.Image, d: Schema.Struct({ e: Decision.Image }) }) })
+      }),
+      thumbnail: Schema.optional(Decision.Image),
+      "file.name": Decision.Image,
+      caption: Schema.String
+    })
+
+    expect<Decision.ImagePaths<typeof Input.Encoded>>().type.toBe<
+      | "photo"
+      | `frames[${number}].frame`
+      | "pair[0]"
+      | "pair[2]"
+      | "listing.cover"
+      | "scan.front"
+      | "scan.back"
+      | "renamed.image_url"
+      | "deep.a.b.c"
+    >()
+  })
+
+  it("make accepts locate decisions only for required image paths", () => {
+    const Input = Schema.Struct({
+      photo: Decision.Image,
+      frames: Schema.Array(Schema.Struct({ frame: Decision.Image })),
+      thumbnail: Schema.optional(Decision.Image),
+      caption: Schema.String
+    })
+
+    expect(Decision.make).type.toBeCallableWith({
+      input: Input,
+      decisions: { car: Decision.locate({ image: "frames[2].frame", instructions: "the car" }) }
+    })
+    for (const image of ["thumbnail", "caption", "frames.frame", "missing"] as const) {
+      expect(Decision.make).type.not.toBeCallableWith({
+        input: Input,
+        decisions: { car: Decision.locate({ image, instructions: "the car" }) }
+      })
+    }
+  })
+
   it("probability accepts omitted criteria and preserves answer inference", () => {
     const urgent = Decision.probability({ instructions: "Needs action now" })
     const definition = Decision.make({
@@ -138,11 +217,41 @@ describe("Decision", () => {
     })
   })
 
-  it("instructions must be a string", () => {
-    Decision.classify({
+  it("structured descriptions preserve classify and rate label inference", () => {
+    const department = Decision.classify({
+      instructions: { question: "Which team?" },
+      criteria: { billing: { handles: "payments" }, orders: ["delivery"], other: null }
+    })
+    const severity = Decision.rate({
+      instructions: ["How severe?"],
+      criteria: ["low", { label: "high", description: { impact: "outage" } }]
+    })
+    const definition = Decision.make({ input: Schema.String, decisions: { department, severity } })
+    const result = DecisionModel.decide(definition, { input: "Export fails" })
+    type Result = typeof result extends Effect.Effect<infer A, any, any> ? A : never
+
+    expect<Result["answers"]["department"]["label"]>().type.toBe<"billing" | "orders" | "other">()
+    expect<Result["answers"]["severity"]["label"]>().type.toBe<"low" | "high">()
+    expect(Decision.probability).type.toBeCallableWith({
+      instructions: { question: "Urgent?" },
+      criteria: { false: { action: "wait" }, true: ["act now"] }
+    })
+  })
+
+  it("structured levels require labels and non-null descriptions", () => {
+    Decision.rate({
+      instructions: "How severe?",
       // @ts-expect-error is not assignable to type
-      instructions: ["Which team"],
-      criteria: { billing: "payments" }
+      criteria: ["low", { description: { impact: "outage" } }]
+    })
+    Decision.rate({
+      instructions: "How severe?",
+      // @ts-expect-error is not assignable to type
+      criteria: ["low", { label: "high", description: null }]
+    })
+    Decision.probability({
+      // @ts-expect-error is not assignable to type
+      instructions: null
     })
   })
 
@@ -233,6 +342,41 @@ describe("DecisionModel", () => {
     expect<RedactedRequirements>().type.toBe<Redactor>()
   })
 
+  it("provider classify and rate answers may omit probabilities", () => {
+    expect<{ readonly _tag: "Classify"; readonly label: string }>()
+      .type.toBeAssignableTo<DecisionModel.ProviderClassifyAnswer>()
+    expect<{ readonly _tag: "Rate"; readonly rating: number }>()
+      .type.toBeAssignableTo<DecisionModel.ProviderRateAnswer>()
+  })
+
+  it("providers can report a refused decision", () => {
+    expect<{ readonly _tag: "Refusal" }>().type.toBeAssignableTo<DecisionModel.ProviderAnswer>()
+  })
+
+  it("decideSettled keys Result outcomes by the decisions map", () => {
+    const settled = DecisionModel.decideSettled(RedactedTriage, { input: { body: "call me" } })
+    const outcomes = DecisionModel.decideSettled(TicketTriage, {
+      input: { subject: "Card was charged twice", priority: 3 }
+    })
+
+    type Settled = typeof outcomes extends Effect.Effect<infer A, any, any> ? A : never
+
+    expect<Settled["outcomes"]>().type.toBe<{
+      readonly department: Result.Result<Answers["department"], Decision.Unanswered>
+      readonly frustration: Result.Result<Answers["frustration"], Decision.Unanswered>
+      readonly urgent: Result.Result<Answers["urgent"], Decision.Unanswered>
+    }>()
+    expect<Settled["usage"]>().type.toBe<DecisionModel.DecisionUsage>()
+    expect<Decision.Unanswered["reason"]>().type.toBe<"Missing" | "Refused" | "NoDistribution" | "Invalid">()
+    expect(settled).type.toBe<
+      Effect.Effect<
+        DecisionModel.DecideSettledResponse<typeof RedactedTriage.decisions>,
+        AiError.AiError,
+        DecisionModel.DecisionModel | Redactor
+      >
+    >()
+  })
+
   it("make takes a provider decide returning AiError", () => {
     const provider = (options: DecisionModel.ProviderOptions) => {
       expect(options.state).type.toBe<Schema.Json>()
@@ -244,5 +388,28 @@ describe("DecisionModel", () => {
     }
 
     expect(DecisionModel.make({ decide: provider })).type.toBe<Effect.Effect<DecisionModel.DecisionModel>>()
+  })
+
+  it("make passes locate decisions only to a decide created with supportsLocate: true", () => {
+    const response: DecisionModel.ProviderResponse = {
+      answers: {},
+      usage: { inputTokens: undefined, outputTokens: undefined }
+    }
+
+    DecisionModel.make({
+      decide: Effect.fnUntraced(function*({ decisions }) {
+        expect(decisions).type.toBe<
+          Record<string, Decision.Classify<string> | Decision.Rate<string> | Decision.Probability>
+        >()
+        return response
+      })
+    })
+    DecisionModel.make({
+      supportsLocate: true,
+      decide: Effect.fnUntraced(function*({ decisions }) {
+        expect(decisions).type.toBe<Record<string, Decision.Any>>()
+        return response
+      })
+    })
   })
 })

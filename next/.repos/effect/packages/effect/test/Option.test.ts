@@ -561,4 +561,42 @@ describe("Option", () => {
     assertNone(Option.none().pipe(Option.asVoid))
     assertSome(Option.some(1).pipe(Option.asVoid), undefined)
   })
+
+  it("fromUndefinedOr", () => {
+    assertNone(Option.fromUndefinedOr(undefined))
+    assertSome(Option.fromUndefinedOr(null), null)
+  })
+
+  it("fromNullOr", () => {
+    assertNone(Option.fromNullOr(null))
+    assertSome(Option.fromNullOr(undefined), undefined)
+  })
+
+  it("flatten", () => {
+    assertSome(Option.flatten(Option.some(Option.some(1))), 1)
+    assertNone(Option.flatten(Option.some(Option.none())))
+  })
+
+  it("zipLeft", () => {
+    assertSome(Option.zipLeft(Option.some(1), Option.some("a")), 1)
+    assertNone(Option.some(1).pipe(Option.zipLeft(Option.none())))
+  })
+
+  it("zipRight", () => {
+    assertSome(Option.zipRight(Option.some(1), Option.some("a")), "a")
+    assertNone(Option.none().pipe(Option.zipRight(Option.some("a"))))
+  })
+
+  it("composeK", () => {
+    const half = (n: number): Option.Option<number> => n % 2 === 0 ? Option.some(n / 2) : Option.none()
+    const quarter = Option.composeK(half, half)
+    assertSome(quarter(8), 2)
+    assertNone(quarter(6))
+    assertSome(pipe(half, Option.composeK(half))(8), 2)
+  })
+
+  it("toArray", () => {
+    deepStrictEqual(Option.toArray(Option.some(1)), [1])
+    deepStrictEqual(Option.toArray(Option.none()), [])
+  })
 })

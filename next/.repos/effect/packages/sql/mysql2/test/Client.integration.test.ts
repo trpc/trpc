@@ -30,6 +30,15 @@ describe("sql", () => {
       assert.deepStrictEqual(yield* sql`SELECT value FROM savepoint_release`, [{ value: 1 }])
     }).pipe(Effect.provide(MysqlContainer.layerClient)), { timeout: 60_000 })
 
+  it.effect("in helper with an empty list", () =>
+    Effect.gen(function*() {
+      const sql = yield* SqlClient.SqlClient
+      yield* sql`CREATE TABLE empty_in (id INTEGER)`
+      yield* sql`INSERT INTO empty_in VALUES (1)`
+      assert.deepStrictEqual(yield* sql`SELECT id FROM empty_in WHERE id IN ${sql.in([])}`, [])
+      assert.deepStrictEqual(yield* sql`SELECT id FROM empty_in WHERE id NOT IN ${sql.in([])}`, [{ id: 1 }])
+    }).pipe(Effect.provide(MysqlContainer.layerClient)), { timeout: 60_000 })
+
   it.effect("tranformers", () =>
     Effect.gen(function*() {
       const logs: Array<unknown> = []

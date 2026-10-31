@@ -494,6 +494,14 @@ describe("Cron", () => {
     deepStrictEqual(next(Cron.parseUnsafe("0 1 * * TUE", utc), wednesday), new Date("2025-10-28T01:00:00.000Z"))
   })
 
+  it("prev includes an occurrence earlier in the same second", () => {
+    const daily = Cron.parseUnsafe("0 0 * * *", "UTC")
+    deepStrictEqual(prev(daily, new Date("2024-01-01T00:00:00.001Z")), new Date("2024-01-01T00:00:00.000Z"))
+    deepStrictEqual(prev(daily, new Date("2024-01-01T00:00:00.000Z")), new Date("2023-12-31T00:00:00.000Z"))
+    const seconds = Cron.parseUnsafe("10,30 * * * * *", "UTC")
+    deepStrictEqual(prev(seconds, new Date("2024-01-01T00:00:30.999Z")), new Date("2024-01-01T00:00:30.000Z"))
+  })
+
   it("returns the latest second when rolling back a minute", () => {
     const utc = DateTime.zoneMakeNamedUnsafe("UTC")
     const expr = Cron.parseUnsafe("10,30 * * * * *", utc)
@@ -776,6 +784,106 @@ describe("Cron", () => {
       next(cron, new Date("2023-03-09T00:00:00+08:00")),
       new Date("2023-03-09T03:00:00+08:00")
     )
+  })
+
+  describe("onDstOverlap", () => {
+    // Europe/Berlin falls back on 2026-10-25: local 02:00-02:59 runs first at
+    // 00:00Z-00:59Z (+02:00) and again at 01:00Z-01:59Z (+01:00).
+    const every5 = "*/5 * * * *"
+    const daily = "0 30 2 * * *"
+
+    it("defaults to earlier", () => {
+      const fields = { minutes: [0], hours: [2], days: [], months: [], weekdays: [] }
+      strictEqual(Cron.parseUnsafe(every5, "Europe/Berlin").onDstOverlap, "earlier")
+      assertTrue(Cron.equals(Cron.make(fields), Cron.make({ ...fields, onDstOverlap: "earlier" })))
+      assertFalse(Cron.equals(Cron.make(fields), Cron.make({ ...fields, onDstOverlap: "both" })))
+    })
+
+    it("next", () => {
+      const cases: Array<[string, string, Cron.DstOverlapPolicy, string, string]> = [
+        [every5, "Europe/Berlin", "earlier", "2026-10-25T00:55:00Z", "2026-10-25T02:00:00Z"],
+        [every5, "Europe/Berlin", "later", "2026-10-25T00:55:00Z", "2026-10-25T01:00:00Z"],
+        [every5, "Europe/Berlin", "both", "2026-10-25T00:55:00Z", "2026-10-25T01:00:00Z"],
+        // inside the first occurrence
+        [every5, "Europe/Berlin", "earlier", "2026-10-25T00:07:00Z", "2026-10-25T00:10:00Z"],
+        [every5, "Europe/Berlin", "later", "2026-10-25T00:07:00Z", "2026-10-25T01:00:00Z"],
+        [every5, "Europe/Berlin", "both", "2026-10-25T00:07:00Z", "2026-10-25T00:10:00Z"],
+        // inside the second occurrence
+        [every5, "Europe/Berlin", "earlier", "2026-10-25T01:07:00Z", "2026-10-25T02:00:00Z"],
+        [every5, "Europe/Berlin", "later", "2026-10-25T01:07:00Z", "2026-10-25T01:10:00Z"],
+        [every5, "Europe/Berlin", "both", "2026-10-25T01:07:00Z", "2026-10-25T01:10:00Z"],
+        // daily schedule inside the fold
+        [daily, "Europe/Berlin", "earlier", "2026-10-24T23:00:00Z", "2026-10-25T00:30:00Z"],
+        [daily, "Europe/Berlin", "later", "2026-10-24T23:00:00Z", "2026-10-25T01:30:00Z"],
+        [daily, "Europe/Berlin", "both", "2026-10-25T00:30:00Z", "2026-10-25T01:30:00Z"],
+        [daily, "Europe/Berlin", "both", "2026-10-25T01:30:00Z", "2026-10-26T01:30:00Z"],
+        // three-hour fold: Casey repeats 00:00:00-02:59:59 when rolling back from +11:00 to +08:00
+        ["* * * * * *", "Antarctica/Casey", "both", "2023-03-09T00:00:00+08:00", "2023-03-09T00:00:01+08:00"],
+        // spring-forward gaps are unaffected
+        [daily, "Europe/Berlin", "earlier", "2026-03-28T23:00:00Z", "2026-03-29T01:30:00Z"],
+        [daily, "Europe/Berlin", "later", "2026-03-28T23:00:00Z", "2026-03-29T01:30:00Z"],
+        [daily, "Europe/Berlin", "both", "2026-03-28T23:00:00Z", "2026-03-29T01:30:00Z"],
+        // UTC has no repeated times
+        [every5, "UTC", "earlier", "2026-10-25T00:55:00Z", "2026-10-25T01:00:00Z"],
+        [every5, "UTC", "later", "2026-10-25T00:55:00Z", "2026-10-25T01:00:00Z"],
+        [every5, "UTC", "both", "2026-10-25T00:55:00Z", "2026-10-25T01:00:00Z"]
+      ]
+
+      for (const [expr, tz, onDstOverlap, from, expected] of cases) {
+        const cron = Cron.parseUnsafe(expr, tz, { onDstOverlap })
+        deepStrictEqual(next(cron, new Date(from)), new Date(expected), `${expr} ${tz} ${onDstOverlap} from ${from}`)
+      }
+
+      throws(() => next(Cron.parseUnsafe("0 0 30 2 *", "Europe/Berlin", { onDstOverlap: "both" })))
+    })
+
+    it("prev", () => {
+      const cases: Array<[Cron.DstOverlapPolicy, string, string]> = [
+        ["earlier", "2026-10-25T02:00:00Z", "2026-10-25T00:55:00Z"],
+        ["later", "2026-10-25T02:00:00Z", "2026-10-25T01:55:00Z"],
+        ["both", "2026-10-25T02:00:00Z", "2026-10-25T01:55:00Z"],
+        // inside the second occurrence
+        ["earlier", "2026-10-25T01:07:00Z", "2026-10-25T00:55:00Z"],
+        ["later", "2026-10-25T01:07:00Z", "2026-10-25T01:05:00Z"],
+        ["both", "2026-10-25T01:07:00Z", "2026-10-25T01:05:00Z"],
+        // start of the second occurrence
+        ["earlier", "2026-10-25T01:00:00Z", "2026-10-25T00:55:00Z"],
+        ["later", "2026-10-25T01:00:00Z", "2026-10-24T23:55:00Z"],
+        ["both", "2026-10-25T01:00:00Z", "2026-10-25T00:55:00Z"],
+        // inside the first occurrence
+        ["earlier", "2026-10-25T00:07:00Z", "2026-10-25T00:05:00Z"],
+        ["later", "2026-10-25T00:07:00Z", "2026-10-24T23:55:00Z"],
+        ["both", "2026-10-25T00:07:00Z", "2026-10-25T00:05:00Z"]
+      ]
+
+      for (const [onDstOverlap, from, expected] of cases) {
+        const cron = Cron.parseUnsafe(every5, "Europe/Berlin", { onDstOverlap })
+        deepStrictEqual(prev(cron, new Date(from)), new Date(expected), `${onDstOverlap} from ${from}`)
+      }
+    })
+
+    it("prev across a spring-forward gap", () => {
+      // Europe/Berlin skips local 02:00-02:59 on 2026-03-29; 02:30 resolves to 03:30 (01:30Z).
+      const cases: Array<[string, string, string]> = [
+        [daily, "2026-03-29T01:40:00Z", "2026-03-29T01:30:00Z"],
+        [daily, "2026-03-29T01:20:00Z", "2026-03-28T01:30:00Z"],
+        ["30 * * * *", "2026-03-29T01:20:00Z", "2026-03-29T00:30:00Z"]
+      ]
+
+      for (const onDstOverlap of ["earlier", "later", "both"] as const) {
+        for (const [expr, from, expected] of cases) {
+          const cron = Cron.parseUnsafe(expr, "Europe/Berlin", { onDstOverlap })
+          deepStrictEqual(prev(cron, new Date(from)), new Date(expected), `${expr} ${onDstOverlap} from ${from}`)
+        }
+      }
+    })
+
+    it("sequence with both visits every instant of the fold in order", () => {
+      const cron = Cron.parseUnsafe(every5, "Europe/Berlin", { onDstOverlap: "both" })
+      const sequence = Cron.sequence(cron, new Date("2026-10-25T00:55:00Z"))
+      const expected = Array.from({ length: 13 }, (_, i) => new Date(Date.UTC(2026, 9, 25, 1, i * 5)))
+      deepStrictEqual(Array.from({ length: 13 }, () => sequence.next().value), expected)
+    })
   })
 
   it("handles utc timezone", () => {

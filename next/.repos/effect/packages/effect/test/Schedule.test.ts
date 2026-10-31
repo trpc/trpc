@@ -1,5 +1,5 @@
 import { assert, describe, expect, it } from "@effect/vitest"
-import { Array, Deferred, Duration, Effect, Fiber, Pull, Random, Result, Schedule } from "effect"
+import { Array, Cron, Deferred, Duration, Effect, Fiber, Pull, Random, Result, Schedule } from "effect"
 import { constant, constUndefined } from "effect/Function"
 import { TestClock } from "effect/testing"
 
@@ -351,6 +351,53 @@ describe("Schedule", () => {
         ])
       }))
 
+    it.effect("honors onDstOverlap across a DST fold", () =>
+      Effect.gen(function*() {
+        // Europe/Berlin repeats local 02:00-02:59 at 01:00Z-01:59Z on 2026-10-25.
+        const recurrences = Effect.fnUntraced(
+          function*(schedule: Schedule.Schedule<Duration.Duration, unknown, Cron.CronParseError>, from: string) {
+            const now = new Date(from).getTime()
+            yield* TestClock.setTime(now)
+            const [, outputs] = yield* runDelays(schedule, Array.makeBy(4, constUndefined)).pipe(
+              Effect.map(Array.mapAccum(now, (next, delay) => {
+                const timestamp = next + Duration.toMillis(delay)
+                return [timestamp, new Date(timestamp).toISOString()]
+              }))
+            )
+            return outputs
+          }
+        )
+
+        expect(yield* recurrences(Schedule.cron("*/5 * * * *", "Europe/Berlin"), "2026-10-25T00:55:00Z")).toEqual([
+          "2026-10-25T02:00:00.000Z",
+          "2026-10-25T02:05:00.000Z",
+          "2026-10-25T02:10:00.000Z",
+          "2026-10-25T02:15:00.000Z"
+        ])
+        expect(
+          yield* recurrences(
+            Schedule.cron("*/5 * * * *", "Europe/Berlin", { onDstOverlap: "both" }),
+            "2026-10-25T00:55:00Z"
+          )
+        ).toEqual([
+          "2026-10-25T01:00:00.000Z",
+          "2026-10-25T01:05:00.000Z",
+          "2026-10-25T01:10:00.000Z",
+          "2026-10-25T01:15:00.000Z"
+        ])
+        expect(
+          yield* recurrences(
+            Schedule.cron(Cron.parseUnsafe("*/5 * * * *", "Europe/Berlin", { onDstOverlap: "both" })),
+            "2026-10-25T01:07:00Z"
+          )
+        ).toEqual([
+          "2026-10-25T01:10:00.000Z",
+          "2026-10-25T01:15:00.000Z",
+          "2026-10-25T01:20:00.000Z",
+          "2026-10-25T01:25:00.000Z"
+        ])
+      }))
+
     it.effect("does not fail when the test clock is adjusted to infinity", () =>
       Effect.gen(function*() {
         const latch = yield* Deferred.make<void>()
@@ -506,6 +553,16 @@ describe("Schedule", () => {
       }))
   })
 
+  describe("fibonacci", () => {
+    it.effect("repeats the initial delay", () =>
+      Effect.gen(function*() {
+        const schedule = Schedule.fibonacci("100 millis")
+        const inputs = Array.makeBy(5, constUndefined)
+        const output = yield* runDelays(schedule, inputs)
+        expect(output).toEqual([100, 100, 200, 300, 500].map(Duration.millis))
+      }))
+  })
+
   describe("fixed", () => {
     it.effect("constant delays", () =>
       Effect.gen(function*() {
@@ -614,23 +671,22 @@ const run = Effect.fnUntraced(function*<A, E, R>(effect: Effect.Effect<A, E, R>)
   return yield* Fiber.join(fiber)
 })
 
-const runDelays = <Output, Input, Error, Env>(
+const runDelays = Effect.fnUntraced(function*<Output, Input, Error, Env>(
   schedule: Schedule.Schedule<Output, Input, Error, Env>,
   input: Iterable<Input>
-) =>
-  Effect.gen(function*() {
-    const step = yield* Schedule.toStepWithMetadata(schedule)
-    const out: Array<Duration.Duration> = []
-    yield* Effect.gen(function*() {
-      for (const value of input) {
-        out.push((yield* step(value)).duration)
-      }
-    }).pipe(Pull.catchDone(() => {
-      out.push(Duration.zero)
-      return Effect.void
-    }))
-    return out
-  }).pipe(run)
+) {
+  const step = yield* Schedule.toStepWithMetadata(schedule)
+  const out: Array<Duration.Duration> = []
+  yield* Effect.gen(function*() {
+    for (const value of input) {
+      out.push((yield* step(value)).duration)
+    }
+  }).pipe(Pull.catchDone(() => {
+    out.push(Duration.zero)
+    return Effect.void
+  }))
+  return out
+}, (_) => run(_))
 
 const format = (timestamp: number | string | Date): string => {
   const date = new Date(timestamp)

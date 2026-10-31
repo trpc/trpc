@@ -93,7 +93,7 @@ export const make = (self: MessagePort | Window): WorkerRunner.WorkerRunnerPlatf
             closeLatch,
             new WorkerError({
               reason: new WorkerReceiveError({
-                message: "An messageerror event was emitted",
+                message: "A messageerror event was emitted",
                 cause: error.data
               })
             })
@@ -105,7 +105,7 @@ export const make = (self: MessagePort | Window): WorkerRunner.WorkerRunnerPlatf
             new WorkerError({
               reason: new WorkerReceiveError({
                 message: "An error event was emitted",
-                cause: error.data
+                cause: error.error
               })
             })
           )

@@ -69,6 +69,35 @@ describe("Channel.catchIf", () => {
     )
     expect(_c).type.toBe<Channel.Channel<number, never>>()
   })
+
+  it("supports unknown refinement input in data-first usage", () => {
+    const result = Channel.catchIf(
+      channel,
+      (e: unknown): e is ErrorA => e instanceof ErrorA,
+      () => Channel.succeed(1)
+    )
+    expect(result).type.toBe<Channel.Channel<number, ErrorB>>()
+  })
+
+  it("supports unknown refinement input in data-last usage", () => {
+    const result = pipe(
+      channel,
+      Channel.catchIf((e: unknown): e is ErrorA => e instanceof ErrorA, () => Channel.succeed(1))
+    )
+    expect(result).type.toBe<Channel.Channel<number, ErrorB>>()
+  })
+
+  it("does not widen to unknown with unrelated refinement in data-first usage", () => {
+    const result = Channel.catchIf(
+      channel,
+      (e: unknown): e is { _tag: "Whatever" } => (e as { _tag: string })._tag === "Whatever",
+      (e) => {
+        expect(e).type.toBe<ErrorA | ErrorB>()
+        return Channel.succeed("recovered" as const)
+      }
+    )
+    expect(result).type.toBe<Channel.Channel<number | "recovered", ErrorA | ErrorB>>()
+  })
 })
 
 describe("Channel.catchFilter", () => {

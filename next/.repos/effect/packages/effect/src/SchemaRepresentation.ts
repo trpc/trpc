@@ -288,13 +288,19 @@ export interface Unknown extends Keyword<"Unknown"> {}
 export interface Any extends Keyword<"Any"> {}
 
 /**
- * A string representation.
+ * A string representation, optionally describing its content through a media
+ * type and a schema for the value encoded in the string.
  *
  * @stability stable
  * @category models
  * @since 4.0.0
  */
-export interface String extends Keyword<"String"> {}
+export interface String extends Keyword<"String"> {
+  readonly content?: {
+    readonly mediaType: string
+    readonly schema?: Representation | undefined
+  } | undefined
+}
 
 /**
  * A number representation.
@@ -920,6 +926,25 @@ export const isULIDReviver: FilterReviver<null> = makeReviverFilter(
   "effect/schema/isULID",
   Schema.Null,
   ({ annotations }) => Schema.isULID(annotations)
+)
+
+/**
+ * Reviver for persisted `isAscii` checks.
+ *
+ * **When to use**
+ *
+ * Use when reconstructing documents that may contain checks created by {@link Schema.isAscii}.
+ *
+ * @see {@link Schema.isAscii} for creating the corresponding check
+ *
+ * @stability unstable
+ * @category validation
+ * @since 4.0.6
+ */
+export const isAsciiReviver: FilterReviver<null> = makeReviverFilter(
+  "effect/schema/isAscii",
+  Schema.Null,
+  ({ annotations }) => Schema.isAscii(annotations)
 )
 
 /**
@@ -1945,6 +1970,32 @@ export const BigDecimalReviver: DeclarationReviver<null> = makeFixedDeclarationR
 )
 
 /**
+ * Reviver for persisted {@link Schema.SemVer} declarations.
+ *
+ * @see {@link Schema.SemVer} for the corresponding schema
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.6
+ */
+export const SemVerReviver: DeclarationReviver<null> = makeFixedDeclarationReviver(
+  "effect/schema/SemVer",
+  Schema.SemVer
+)
+
+/**
+ * Reviver for persisted {@link Schema.SemVerRange} declarations.
+ *
+ * @see {@link Schema.SemVerRange} for the corresponding schema
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.6
+ */
+export const SemVerRangeReviver: DeclarationReviver<null> = makeFixedDeclarationReviver(
+  "effect/schema/SemVerRange",
+  Schema.SemVerRange
+)
+
+/**
  * Reviver for persisted `File` declarations.
  *
  * **When to use**
@@ -2362,32 +2413,13 @@ export const MutableJsonReviver: DeclarationReviver<null> = makeFixedDeclaration
   Schema.MutableJson
 )
 
-const jsonSchemaRevivers: ReadonlyArray<AnyReviver> = [
-  JsonReviver,
-  isPatternReviver,
-  isFiniteReviver,
-  isGreaterThanReviver,
-  isGreaterThanOrEqualToReviver,
-  isLessThanReviver,
-  isLessThanOrEqualToReviver,
-  isMultipleOfReviver,
-  isIntReviver,
-  isMinLengthReviver,
-  isMaxLengthReviver,
-  isMinCodePointsReviver,
-  isMaxCodePointsReviver,
-  isMinPropertiesReviver,
-  isMaxPropertiesReviver,
-  isPropertyNamesReviver,
-  isUniqueReviver
-]
-
 /**
  * Options for importing JSON Schema Draft 2020-12 documents.
  *
  * **When to use**
  *
- * Use when you need to configure pattern handling or transform each JSON Schema node before translation.
+ * Use when you need to configure pattern handling, preserve custom annotations, or transform each JSON Schema node
+ * before translation.
  *
  * **Details**
  *
@@ -2422,6 +2454,42 @@ export interface FromJsonSchemaOptions {
    * @default "error"
    */
   readonly patterns?: "error" | "ignore" | "apply" | undefined
+  /**
+   * Selects additional JSON Schema keys to preserve as Effect schema annotations.
+   *
+   * **Details**
+   *
+   * Standard annotations such as `title` and `description` are imported independently of this predicate.
+   * Other keys are ignored by default. Selected values must be JSON-compatible and are kept as opaque metadata.
+   * Selection runs after `onEnter`. JSON Schema structural and validation keywords, Effect's reserved annotation
+   * keys, and keys starting with `~` are excluded before calling the predicate. Exceptions from the predicate
+   * pass through unchanged.
+   *
+   * **Gotchas**
+   *
+   * Import normalizes the schema. Selected annotations stay on surviving values when checks simplify, and
+   * annotations from eliminated alternatives or unreachable children are discarded. When schemas merge,
+   * later annotations overwrite earlier values for the same key, following the importer's merge order.
+   * Retaining an annotation does not enforce its semantics or preserve the original JSON Schema structure.
+   *
+   * **Example** (Preserving custom metadata on import and export)
+   *
+   * ```ts import.meta.vitest
+   * import { JsonSchema, Schema, SchemaRepresentation } from "effect"
+   *
+   * const document = JsonSchema.fromSchemaDraft2020_12({
+   *   type: "string",
+   *   "x-sensitive": true
+   * })
+   * const options = { includeAnnotationKey: (key: string) => key.startsWith("x-") }
+   * const schema = SchemaRepresentation.fromJsonSchemaDocument(document, options)
+   *
+   * Schema.toJsonSchemaDocument(schema, options).schema // => { type: "string", "x-sensitive": true }
+   * ```
+   *
+   * @see Schema.ToJsonSchemaOptions
+   */
+  readonly includeAnnotationKey?: ((key: string) => boolean) | undefined
 }
 
 /**
@@ -2902,7 +2970,14 @@ const RepresentationUnion = Schema.Union([
   makeKeywordSchema("Never"),
   makeKeywordSchema("Unknown"),
   makeKeywordSchema("Any"),
-  makeKeywordSchema("String"),
+  Schema.Struct({
+    _tag: Schema.tag("String"),
+    ...KeywordFields,
+    content: Schema.optional(Schema.Struct({
+      mediaType: Schema.String,
+      schema: Schema.optional(RepresentationSchema)
+    }))
+  }),
   makeKeywordSchema("Number"),
   makeKeywordSchema("Boolean"),
   makeKeywordSchema("BigInt"),
@@ -3127,13 +3202,16 @@ export function fromRepresentations(
  * - Objects and arrays used as `const` values or `enum` members are rejected. Only strings, numbers, booleans, and null
  *   are supported.
  * - Intersections of overlapping unions are limited to disjoint root-type partitions and finite primitive `anyOf`
- *   literal sets. Other union intersections, including cases that would duplicate a nested choice, are rejected.
+ *   literal sets, which may also be duplicated across branches. Other union intersections, including cases that would
+ *   duplicate any other nested choice, are rejected.
  * - Unknown extension keywords are ignored and their semantics are not enforced.
- * - Only direct local references to top-level definitions in the form `#/$defs/<escaped-token>` are supported. Root
- *   references, external references, and pointers below a definition are rejected with the supported reference format.
- *   Missing definitions are reported by name. References reached inside nested schema
- *   resources introduced by `$id` are rejected instead of resolved against the top-level definitions.
- * - Built-in declarations and checks are reconstructed with importer-owned revivers.
+ * - Only local references to top-level definitions in the form `#/$defs/<escaped-token>` are supported, optionally
+ *   followed by a pointer below the definition. A pointer target becomes a definition keyed by its escaped tokens, such
+ *   as `Name/properties/field`, and is rejected if a top-level definition already uses that key. Root references and
+ *   external references are rejected with the supported reference format. Missing definitions are reported by name.
+ *   References reached inside nested schema resources introduced by `$id` are rejected instead of resolved against the
+ *   top-level definitions.
+ * - Imported constraints use built-in schemas and checks.
  * - Pattern constraints reached during translation cause an error by default. Use `patterns: "apply"` only for trusted
  *   documents, or `patterns: "ignore"` to skip them. Ignoring patterns can both admit invalid values and reject valid
  *   values when `oneOf` branches start overlapping.
@@ -3151,7 +3229,7 @@ export function fromJsonSchemaDocument(
   document: JsonSchema.Document<"draft-2020-12">,
   options?: FromJsonSchemaOptions
 ): Schema.Top {
-  return InternalFromJsonSchemaDocument.fromJsonSchemaDocument(document, options, jsonSchemaRevivers)
+  return InternalFromJsonSchemaDocument.fromJsonSchemaDocument(document, options)
 }
 
 /**
@@ -3174,11 +3252,14 @@ export function fromJsonSchemaDocument(
  * - Objects and arrays used as `const` values or `enum` members are rejected. Only strings, numbers, booleans, and null
  *   are supported.
  * - Intersections of overlapping unions are limited to disjoint root-type partitions and finite primitive `anyOf`
- *   literal sets. Other union intersections, including cases that would duplicate a nested choice, are rejected.
- * - Only direct local references to top-level definitions in the form `#/$defs/<escaped-token>` are supported. Root
- *   references, external references, and pointers below a definition are rejected with the supported reference format.
- *   Missing definitions are reported by name. References reached inside nested schema
- *   resources introduced by `$id` are rejected instead of resolved against the top-level definitions.
+ *   literal sets, which may also be duplicated across branches. Other union intersections, including cases that would
+ *   duplicate any other nested choice, are rejected.
+ * - Only local references to top-level definitions in the form `#/$defs/<escaped-token>` are supported, optionally
+ *   followed by a pointer below the definition. A pointer target becomes a definition keyed by its escaped tokens, such
+ *   as `Name/properties/field`, and is rejected if a top-level definition already uses that key. Root references and
+ *   external references are rejected with the supported reference format. Missing definitions are reported by name.
+ *   References reached inside nested schema resources introduced by `$id` are rejected instead of resolved against the
+ *   top-level definitions.
  * - Pattern constraints reached during translation cause an error by default. Use `patterns: "apply"` only for trusted
  *   documents, or `patterns: "ignore"` to skip them. Ignoring patterns can both admit invalid values and reject valid
  *   values when `oneOf` branches start overlapping.
@@ -3195,5 +3276,5 @@ export function fromJsonSchemaMultiDocument(
   document: JsonSchema.MultiDocument<"draft-2020-12">,
   options?: FromJsonSchemaOptions
 ): readonly [Schema.Top, ...Array<Schema.Top>] {
-  return InternalFromJsonSchemaDocument.fromJsonSchemaMultiDocument(document, options, jsonSchemaRevivers)
+  return InternalFromJsonSchemaDocument.fromJsonSchemaMultiDocument(document, options)
 }

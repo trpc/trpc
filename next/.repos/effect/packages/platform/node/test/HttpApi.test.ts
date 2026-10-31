@@ -1,13 +1,18 @@
 import { NodeHttpServer } from "@effect/platform-node"
+import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient"
 import { assert, describe, expect, it } from "@effect/vitest"
 import {
   Array,
   ByteSize,
   Cause,
+  Clock,
   Context,
   DateTime,
+  Deferred,
   Effect,
   Equal,
+  Exit,
+  Fiber,
   FileSystem,
   Layer,
   Option,
@@ -21,6 +26,7 @@ import {
 } from "effect"
 import {
   Cookies,
+  FetchHttpClient,
   HttpBody,
   HttpClient,
   HttpClientRequest,
@@ -44,6 +50,9 @@ import {
   HttpApiTest,
   OpenApi
 } from "effect/http-api"
+import type * as Socket from "effect/socket/Socket"
+import * as Http from "node:http"
+import type * as Net from "node:net"
 
 function* assertServerText(res: HttpClientResponse.HttpClientResponse, status: number, text: string) {
   assert.strictEqual(res.status, status)
@@ -68,6 +77,43 @@ function* assertClientError<A, E, R>(res: Effect.Effect<A, E, R>, error: E) {
 }
 
 describe("HttpApi", () => {
+  it.effect("undeclared multipart stream errors respond with 413", () => {
+    const Api = HttpApi.make("api").add(
+      HttpApiGroup.make("group").add(
+        HttpApiEndpoint.post("upload", "/upload", {
+          payload: Schema.Struct({
+            file: Multipart.SingleFileSchema
+          }).pipe(HttpApiSchema.asMultipartStream({ maxFileSize: 4 }))
+        })
+      )
+    )
+    const GroupLayer = HttpApiBuilder.group(
+      Api,
+      "group",
+      (handlers) =>
+        handlers.handle("upload", ({ payload }) =>
+          // Handler types only allow declared errors; preserve the undeclared runtime failure.
+          payload.pipe(
+            Stream.filter(Multipart.isFile),
+            Stream.runForEach((file) => Stream.runDrain(file.content))
+          ) as Effect.Effect<void>)
+    )
+    const ApiLayer = HttpRouter.serve(
+      HttpApiBuilder.layer(Api).pipe(Layer.provide(GroupLayer)),
+      { disableListenLog: true, disableLogger: true }
+    ).pipe(Layer.provideMerge(NodeHttpServer.layerTest))
+
+    return Effect.gen(function*() {
+      const data = new FormData()
+      data.append("file", new Blob(["hello"], { type: "text/plain" }), "hello.txt")
+      const response = yield* HttpClientRequest.post("/upload").pipe(
+        HttpClientRequest.bodyFormData(data),
+        HttpClient.execute
+      )
+      assert.strictEqual(response.status, 413)
+    }).pipe(Effect.provide(ApiLayer))
+  })
+
   it.effect("catch all path", () => {
     const Api = HttpApi.make("api")
       .add(
@@ -486,6 +532,54 @@ describe("HttpApi", () => {
       }).pipe(Effect.provide(ApiLayer))
     })
 
+    it.effect("basic security round trips non-ASCII credentials", () => {
+      class CurrentCredentials extends Context.Service<CurrentCredentials, string>()("CurrentCredentials") {}
+
+      class M extends HttpApiMiddleware.Service<M, {
+        provides: CurrentCredentials
+      }>()("Client/Security/Basic", {
+        security: {
+          basic: HttpApiSecurity.basic
+        }
+      }) {}
+
+      const Api = HttpApi.make("api").add(
+        HttpApiGroup.make("group")
+          .add(HttpApiEndpoint.get("a", "/a", {
+            success: Schema.String
+          }))
+          .middleware(M)
+      )
+      const GroupLayer = HttpApiBuilder.group(
+        Api,
+        "group",
+        (handlers) => handlers.handle("a", () => CurrentCredentials)
+      )
+      const MLayer = Layer.succeed(M)({
+        basic: (effect, { credential }) =>
+          Effect.provideService(
+            effect,
+            CurrentCredentials,
+            `${credential.username}:${Redacted.value(credential.password)}`
+          )
+      })
+
+      const ApiLayer = HttpRouter.serve(
+        HttpApiBuilder.layer(Api).pipe(Layer.provide(GroupLayer), Layer.provide(MLayer)),
+        { disableListenLog: true, disableLogger: true }
+      ).pipe(Layer.provideMerge(NodeHttpServer.layerTest))
+
+      return Effect.gen(function*() {
+        const MClient = HttpApiMiddleware.layerClient(
+          M,
+          ({ next, request }) => next(HttpClientRequest.basicAuth(request, "usér", "pässword€"))
+        )
+        const client = yield* HttpApiClient.make(Api).pipe(Effect.provide(MClient))
+
+        assert.strictEqual(yield* client.group.a(), "usér:pässword€")
+      }).pipe(Effect.provide(ApiLayer))
+    })
+
     it("security middleware cache does not reuse the first service impl", async () => {
       class CurrentMarker extends Context.Service<CurrentMarker, string>()("CurrentMarker") {}
 
@@ -814,6 +908,131 @@ describe("HttpApi", () => {
         yield* assertClientJson(client.group.a({ payload: new Uint8Array([1, 2, 3]) }), { 0: 1, 1: 2, 2: 3 })
       }).pipe(Effect.provide(ApiLayer))
     })
+
+    describe("streaming", () => {
+      const Item = Schema.Struct({ n: Schema.Number })
+      const Api = HttpApi.make("api").add(
+        HttpApiGroup.make("group").add(
+          HttpApiEndpoint.post("ndjson", "/ndjson", {
+            payload: HttpApiSchema.StreamNdjson({ schema: Item }),
+            success: Schema.Array(Item)
+          }),
+          HttpApiEndpoint.post("bytes", "/bytes", {
+            payload: HttpApiSchema.StreamUint8Array(),
+            success: Schema.Number
+          }),
+          HttpApiEndpoint.post("ignore", "/ignore", {
+            payload: HttpApiSchema.StreamUint8Array(),
+            success: Schema.String
+          }),
+          HttpApiEndpoint.post("flaky", "/flaky", {
+            payload: HttpApiSchema.StreamNdjson({ schema: Item }),
+            success: Schema.Array(Item),
+            error: HttpApiError.ServiceUnavailable
+          }),
+          HttpApiEndpoint.post("mixed", "/mixed", {
+            payload: [Schema.Array(Item), HttpApiSchema.StreamNdjson({ schema: Item })],
+            success: Schema.String
+          })
+        )
+      )
+      const GroupLayer = HttpApiBuilder.group(
+        Api,
+        "group",
+        Effect.fnUntraced(function*(handlers) {
+          const flakyCalls = yield* Ref.make(0)
+          return handlers
+            .handle("ndjson", ({ payload }) => Stream.runCollect(payload))
+            .handle("bytes", ({ payload }) => Stream.runFold(payload, () => 0, (total, chunk) => total + chunk.length))
+            .handle("ignore", () => Effect.succeed("ok"))
+            .handle("flaky", ({ payload }) =>
+              Effect.gen(function*() {
+                const items = yield* Stream.runCollect(payload)
+                if ((yield* Ref.getAndUpdate(flakyCalls, (n) => n + 1)) === 0) {
+                  return yield* new HttpApiError.ServiceUnavailable()
+                }
+                return items
+              }))
+            .handle("mixed", ({ payload }) =>
+              Stream.isStream(payload)
+                ? Effect.map(Stream.runCollect(payload), (items) => `stream:${items.length}`)
+                : Effect.succeed(`array:${payload.length}`))
+        })
+      )
+      ;[
+        { name: "node:http", layer: NodeHttpClient.layerNodeHttp },
+        { name: "undici", layer: NodeHttpClient.layerUndici },
+        { name: "fetch", layer: FetchHttpClient.layer }
+      ].forEach(({ layer, name }) => {
+        describe(name, () => {
+          const ApiLayer = HttpRouter.serve(
+            HttpApiBuilder.layer(Api).pipe(Layer.provide(GroupLayer)),
+            { disableListenLog: true, disableLogger: true }
+          ).pipe(
+            Layer.provideMerge(HttpServer.layerTestClient),
+            Layer.provide(layer),
+            Layer.provideMerge(NodeHttpServer.layer(Http.createServer, { port: 0 }))
+          )
+
+          it.effect("uploads a caller's stream", () =>
+            Effect.gen(function*() {
+              const client = yield* HttpApiClient.make(Api)
+              const items = yield* client.group.ndjson({ payload: Stream.make({ n: 1 }, { n: 2 }, { n: 3 }) })
+              assert.deepStrictEqual(items, [{ n: 1 }, { n: 2 }, { n: 3 }])
+              const total = yield* client.group.bytes({
+                payload: Stream.make(new Uint8Array(2), new Uint8Array(3))
+              })
+              assert.strictEqual(total, 5)
+            }).pipe(Effect.provide(ApiLayer)))
+
+          it.effect("fails with an HttpClientError when the source fails before the method returns", () =>
+            Effect.gen(function*() {
+              const client = yield* HttpApiClient.make(Api)
+              const error = yield* client.group.ndjson({
+                payload: Stream.make({ n: 1 }).pipe(Stream.concat(Stream.fail("SourceError" as const)))
+              }).pipe(Effect.flip)
+              assert.strictEqual(error._tag, "HttpClientError")
+            }).pipe(Effect.provide(ApiLayer)))
+
+          it.live("interrupts the upload once the response is decoded", () =>
+            Effect.gen(function*() {
+              const client = yield* HttpApiClient.make(Api)
+              const finalized = yield* Deferred.make<void>()
+              const result = yield* client.group.ignore({
+                payload: Stream.make(new Uint8Array(1)).pipe(
+                  Stream.concat(Stream.never),
+                  Stream.ensuring(Deferred.succeed(finalized, undefined))
+                )
+              })
+              assert.strictEqual(result, "ok")
+              yield* Deferred.await(finalized).pipe(Effect.timeout("1 second"))
+            }).pipe(Effect.provide(ApiLayer)))
+
+          it.effect("replays the stream on retry", () =>
+            Effect.gen(function*() {
+              const client = yield* HttpApiClient.make(Api, {
+                transformClient: (client) => HttpClient.retryTransient(client, { times: 1 })
+              })
+              let runs = 0
+              const items = yield* client.group.flaky({
+                payload: Stream.suspend(() => {
+                  runs++
+                  return Stream.make({ n: 1 }, { n: 2 })
+                })
+              })
+              assert.deepStrictEqual(items, [{ n: 1 }, { n: 2 }])
+              assert.strictEqual(runs, 2)
+            }).pipe(Effect.provide(ApiLayer)))
+
+          it.effect("sends the buffered or streaming member of a mixed payload", () =>
+            Effect.gen(function*() {
+              const client = yield* HttpApiClient.make(Api)
+              assert.strictEqual(yield* client.group.mixed({ payload: [{ n: 1 }, { n: 2 }] }), "array:2")
+              assert.strictEqual(yield* client.group.mixed({ payload: Stream.make({ n: 1 }, { n: 2 }) }), "stream:2")
+            }).pipe(Effect.provide(ApiLayer)))
+        })
+      })
+    })
   })
 
   describe("params option", () => {
@@ -930,6 +1149,162 @@ describe("HttpApi", () => {
       }).pipe(Effect.provide(ApiLayer))
     })
 
+    it.effect("upgrade", () => {
+      class NotFound extends Schema.Error<NotFound>("NotFound")({
+        _tag: Schema.tag("NotFound")
+      }, {
+        httpApiStatus: 404
+      }) {}
+      const Api = HttpApi.make("api")
+        .add(
+          HttpApiGroup.make("containers")
+            .add(
+              HttpApiEndpoint.post("attach", "/containers/:id/attach", {
+                params: { id: Schema.String },
+                success: HttpApiSchema.Upgrade({ protocol: "tcp" }),
+                error: NotFound
+              }),
+              HttpApiEndpoint.post("start", "/containers/:id/start", {
+                params: { id: Schema.String },
+                payload: Schema.Struct({ tty: Schema.Boolean, detach: Schema.Boolean }),
+                success: [
+                  HttpApiSchema.Upgrade({
+                    protocol: "tcp",
+                    headers: { "content-type": Schema.Literals(["application/raw", "application/multiplexed"]) }
+                  }),
+                  Schema.String
+                ],
+                error: NotFound
+              })
+            )
+        )
+      const GroupLayer = HttpApiBuilder.group(
+        Api,
+        "containers",
+        (handlers) =>
+          handlers
+            .handle("attach", ({ params, upgrade }) =>
+              Effect.gen(function*() {
+                // fails before the 101 is sent
+                if (params.id !== "abc") return yield* new NotFound()
+                const socket = yield* upgrade()
+                const reader = yield* socket.reader
+                const writer = yield* socket.writer
+                yield* writer.write(`${params.id}:${yield* readUntilClose(reader)}`)
+              }).pipe(Effect.catchTag("SocketError", Effect.die), Effect.scoped))
+            .handle("start", ({ params, payload, upgrade }) =>
+              Effect.gen(function*() {
+                if (params.id !== "abc") return yield* new NotFound()
+                // the server may decline the upgrade with an ordinary success
+                if (payload.detach) return `${params.id}:detached`
+                const socket = yield* upgrade({
+                  headers: { "content-type": payload.tty ? "application/raw" : "application/multiplexed" }
+                })
+                const reader = yield* socket.reader
+                const writer = yield* socket.writer
+                yield* writer.write(`${params.id}:${payload.tty}:${yield* readUntilClose(reader)}`)
+              }).pipe(Effect.catchTag("SocketError", Effect.die), Effect.scoped))
+      )
+      const ApiLayer = HttpRouter.serve(
+        HttpApiBuilder.layer(Api).pipe(Layer.provide(GroupLayer)),
+        { disableListenLog: true, disableLogger: true }
+      ).pipe(
+        Layer.provideMerge(HttpServer.layerTestClient),
+        Layer.provide(NodeHttpClient.layerNodeHttp),
+        Layer.provideMerge(NodeHttpServer.layer(Http.createServer, { port: 0 }))
+      )
+
+      return Effect.gen(function*() {
+        // server side
+        const refused = yield* HttpClient.post("/containers/abc/attach")
+        assert.strictEqual(refused.status, 426)
+        assert.strictEqual(refused.headers.upgrade, "tcp")
+
+        const missingConnection = yield* HttpClient.post("/containers/abc/attach", {
+          headers: { upgrade: "tcp" }
+        })
+        assert.strictEqual(missingConnection.status, 426)
+        assert.strictEqual(missingConnection.headers.upgrade, "tcp")
+
+        // the upgrade is checked before the payload is decoded
+        const invalidPayload = HttpBody.text("{", "application/json")
+        const refusedStart = yield* HttpClient.post("/containers/abc/start", { body: invalidPayload })
+        assert.strictEqual(refusedStart.status, 426)
+        const invalidStart = yield* HttpClient.post("/containers/abc/start", {
+          headers: { connection: "Upgrade", upgrade: "tcp" },
+          body: invalidPayload
+        })
+        assert.strictEqual(invalidStart.status, 400)
+        const detachedStart = yield* HttpClient.post("/containers/abc/start", {
+          headers: { connection: "Upgrade", upgrade: "tcp" },
+          body: HttpBody.text(JSON.stringify({ tty: false, detach: true }), "application/json")
+        })
+        assert.strictEqual(detachedStart.status, 200)
+        assert.strictEqual(yield* detachedStart.json, "abc:detached")
+
+        // client side
+        const client = yield* HttpApiClient.make(Api)
+        const attached = yield* client.containers.attach({ params: { id: "abc" } })
+        assert.isTrue(HttpApiClient.isUpgraded(attached))
+        const { headers, socket } = attached
+        assert.strictEqual(headers.upgrade, "tcp")
+        const reader = yield* socket.reader
+        yield* Effect.scoped(Effect.flatMap(socket.writer, (writer) => writer.write("ping")))
+        assert.strictEqual(yield* readUntilClose(reader), "abc:ping")
+
+        const error = yield* Effect.flip(client.containers.attach({ params: { id: "missing" } }))
+        assert.deepStrictEqual(error, new NotFound())
+
+        const started = yield* client.containers.start({ params: { id: "abc" }, payload: { tty: true, detach: false } })
+        if (!HttpApiClient.isUpgraded(started)) return assert.fail("expected an upgrade")
+        assert.deepStrictEqual(started.headers, { "content-type": "application/raw" })
+        const startReader = yield* started.socket.reader
+        yield* Effect.scoped(Effect.flatMap(started.socket.writer, (writer) => writer.write("ping")))
+        assert.strictEqual(yield* readUntilClose(startReader), "abc:true:ping")
+
+        const detached = yield* client.containers.start({
+          params: { id: "abc" },
+          payload: { tty: false, detach: true }
+        })
+        assert.strictEqual(detached, "abc:detached")
+
+        const startError = yield* Effect.flip(
+          client.containers.start({ params: { id: "missing" }, payload: { tty: false, detach: false } })
+        )
+        assert.deepStrictEqual(startError, new NotFound())
+      }).pipe(Effect.scoped, Effect.provide(ApiLayer))
+    })
+
+    it.live("closes an upgraded connection whose headers fail to decode", () =>
+      Effect.gen(function*() {
+        const { baseUrl, closed } = yield* makeUpgradeServer
+        const client = yield* HttpApiClient.make(UpgradeApi, { baseUrl })
+        const error = yield* Effect.flip(Effect.scoped(client.containers.start()))
+        assert.strictEqual(error._tag, "SchemaError")
+        yield* Deferred.await(closed).pipe(Effect.timeout("2 seconds"))
+      }).pipe(Effect.scoped, Effect.provide(NodeHttpClient.layerNodeHttp)))
+
+    it.live("closes an upgraded connection when interrupted as the upgrade is taken", () =>
+      Effect.gen(function*() {
+        const { baseUrl, closed } = yield* makeUpgradeServer
+        const client = yield* HttpApiClient.make(UpgradeApi, { baseUrl })
+        const response = yield* client.containers.start({ responseMode: "response-only" })
+        // interrupts the decoding fiber as soon as the upgrade succeeds
+        const interrupted: HttpClientResponse.HttpClientResponse = Object.create(response, {
+          upgrade: {
+            value: Effect.tap(response.upgrade, () =>
+              Effect.withFiber((fiber) => {
+                fiber.interruptUnsafe()
+                return Effect.void
+              }))
+          }
+        })
+        const decodeStart = HttpApiClient.decodeResponse(UpgradeApi, { group: "containers", endpoint: "start" })
+        const exit = yield* Fiber.await(yield* Effect.forkChild(decodeStart(interrupted)))
+        assert.isTrue(Exit.hasInterrupts(exit))
+        yield* Deferred.await(closed).pipe(Effect.timeout("2 seconds"))
+      }).pipe(Effect.scoped, Effect.provide(NodeHttpClient.layerNodeHttp)))
+
     it("no content via toWebHandler", async () => {
       const Api = HttpApi.make("api")
         .add(
@@ -991,6 +1366,53 @@ describe("HttpApi", () => {
           }).pipe(Effect.provide(ApiLayer))
         })
       })
+    })
+
+    describe("StreamNdjson", () => {
+      const Item = Schema.Struct({ text: Schema.String })
+      const Api = HttpApi.make("api").add(
+        HttpApiGroup.make("group").add(
+          HttpApiEndpoint.get("failing", "/failing", {
+            success: HttpApiSchema.StreamNdjson({ schema: Item })
+          })
+        )
+      )
+      const makeApiLayer = (firstItemReceived: Effect.Effect<void>) => {
+        const GroupLayer = HttpApiBuilder.group(
+          Api,
+          "group",
+          (handlers) =>
+            handlers.handle("failing", () =>
+              Effect.succeed(
+                Stream.make({ text: "a" }).pipe(
+                  Stream.concat(Stream.fromEffect(firstItemReceived.pipe(Effect.andThen(Effect.die("boom")))))
+                )
+              ))
+        )
+        return HttpRouter.serve(
+          HttpApiBuilder.layer(Api).pipe(Layer.provide(GroupLayer)),
+          { disableListenLog: true, disableLogger: true }
+        ).pipe(Layer.provideMerge(NodeHttpServer.layerTest))
+      }
+
+      it.effect("a server failure mid-stream reaches the client as a body read error, not a clean end", () =>
+        Effect.gen(function*() {
+          const firstItemReceived = yield* Deferred.make<void>()
+          yield* Effect.gen(function*() {
+            const client = yield* HttpApiClient.make(Api)
+            const stream = yield* client.group.failing()
+            const delivered: Array<typeof Item.Type> = []
+            const error = yield* stream.pipe(
+              Stream.runForEach((item) => {
+                delivered.push(item)
+                return Deferred.succeed(firstItemReceived, undefined)
+              }),
+              Effect.flip
+            )
+            assert.deepStrictEqual(delivered, [{ text: "a" }])
+            assert(error._tag === "HttpClientError" && error.reason._tag === "DecodeError")
+          }).pipe(Effect.provide(makeApiLayer(Deferred.await(firstItemReceived))))
+        }))
     })
   })
 
@@ -1273,8 +1695,14 @@ describe("HttpApi", () => {
     describe("security", () => {
       it.effect("security middleware sets current user", () =>
         Effect.gen(function*() {
-          const ref = yield* Ref.make(Cookies.empty.pipe(
-            Cookies.setUnsafe("token", "foo")
+          const server = yield* HttpServer.HttpServer
+          const url = new URL(HttpServer.formatAddress(server.address))
+          url.hostname = "127.0.0.1"
+          const ref = yield* Ref.make(Cookies.mergeIntoArray(
+            [],
+            url.origin,
+            Cookies.fromSetCookie("token=foo; Path=/"),
+            yield* Clock.currentTimeMillis
           ))
           const client = yield* HttpApiClient.makeWith(Api, {
             httpClient: HttpClient.withCookiesRef(yield* HttpClient.HttpClient, ref)
@@ -1488,6 +1916,60 @@ describe("HttpApi", () => {
         ])
       ))
   })
+})
+
+const UpgradeApi = HttpApi.make("api").add(
+  HttpApiGroup.make("containers").add(
+    HttpApiEndpoint.post("start", "/start", {
+      success: HttpApiSchema.Upgrade({
+        protocol: "tcp",
+        headers: { "content-type": Schema.Literal("application/raw") }
+      })
+    })
+  )
+)
+
+// Answers upgrade requests with a 101 whose Content-Type does not match
+// UpgradeApi, and completes `closed` once the client closes the connection.
+const makeUpgradeServer = Effect.gen(function*() {
+  const closed = yield* Deferred.make<void>()
+  const sockets = new Set<Net.Socket>()
+  const server = yield* Effect.acquireRelease(
+    Effect.callback<Http.Server>((resume) => {
+      const server = Http.createServer()
+      server.on("upgrade", (_request: Http.IncomingMessage, socket: Net.Socket) => {
+        sockets.add(socket)
+        const done = () => Deferred.doneUnsafe(closed, Effect.void)
+        socket.once("end", done)
+        socket.once("close", done)
+        socket.write(
+          "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: tcp\r\n" +
+            "Content-Type: text/plain\r\n\r\n"
+        )
+        // the server side must read for the client's close to arrive
+        socket.resume()
+      })
+      server.listen(0, "127.0.0.1", () => resume(Effect.succeed(server)))
+    }),
+    (server) =>
+      Effect.callback<void>((resume) => {
+        for (const socket of sockets) socket.destroy()
+        server.close(() => resume(Effect.void))
+      })
+  )
+  return { baseUrl: `http://127.0.0.1:${(server.address() as Net.AddressInfo).port}`, closed }
+})
+
+const readUntilClose = Effect.fnUntraced(function*(reader: Socket.Reader) {
+  const decoder = new TextDecoder()
+  let text = ""
+  while (true) {
+    const chunks = yield* reader.pull.pipe(
+      Effect.catchReason("SocketError", "SocketCloseError", () => Effect.succeed(undefined))
+    )
+    if (chunks === undefined) return text
+    for (const chunk of chunks) text += typeof chunk === "string" ? chunk : decoder.decode(chunk)
+  }
 })
 
 class UserError extends Schema.Error<UserError>("UserError")({

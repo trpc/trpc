@@ -5,8 +5,9 @@ effect/Cause#as:
   replacement: "Cause.map(self, () => error)"
   note: "Use Cause.map with a constant function; only Fail errors change and Die/Interrupt reasons remain."
 effect/Cause#Cause:
+  include: true
   replacement: "Cause.Cause"
-  note: "The name remains, but v4 Cause<E> is a wrapper with readonly reasons: ReadonlyArray<Cause.Reason<E>>, not the v3 Empty/Fail/Die/Interrupt/Sequential/Parallel tree."
+  note: "V4 Cause<E> wraps readonly reasons: ReadonlyArray<Cause.Reason<E>>, replacing the v3 cause tree. Finalizer and concurrent failure aggregation can convert typed errors to defects when a defect is present; Cause.combine itself does not perform this conversion."
 effect/Cause#Cause.Variance:
   replacement: "none"
   note: "The public variance helper was removed. Cause.Cause is directly branded by Cause.TypeId; application code should not reproduce the old variance member."

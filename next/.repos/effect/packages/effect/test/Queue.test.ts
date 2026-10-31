@@ -8,13 +8,12 @@ describe("Queue", () => {
     const withYield = <A, E>(effect: Effect.Effect<A, E>) =>
       Effect.provideService(effect, Scheduler.MaxOpsBeforeYield, 3)
 
-    const assertCompletes = (fiber: Fiber.Fiber<unknown, unknown>) =>
-      Effect.gen(function*() {
-        for (let i = 0; i < 200 && fiber.pollUnsafe() === undefined; i++) yield* Effect.yieldNow
-        const done = fiber.pollUnsafe() !== undefined
-        yield* Fiber.interrupt(fiber)
-        assert.isTrue(done, "lost wake-up")
-      })
+    const assertCompletes = Effect.fnUntraced(function*(fiber: Fiber.Fiber<unknown, unknown>) {
+      for (let i = 0; i < 200 && fiber.pollUnsafe() === undefined; i++) yield* Effect.yieldNow
+      const done = fiber.pollUnsafe() !== undefined
+      yield* Fiber.interrupt(fiber)
+      assert.isTrue(done, "lost wake-up")
+    })
 
     it.effect("offerAll does not park beside available capacity", () =>
       Effect.gen(function*() {
@@ -78,6 +77,15 @@ describe("Queue", () => {
 
       // Verify it's recognized as a dequeue
       assert.isTrue(Queue.isDequeue(dequeue))
+    }))
+
+  it.effect("offerAll does not retain the input array", () =>
+    Effect.gen(function*() {
+      const queue = yield* Queue.unbounded<number>()
+      const buffer = [1, 2, 3]
+      yield* Queue.offerAll(queue, buffer)
+      buffer[0] = 0
+      assert.deepStrictEqual(yield* Queue.takeAll(queue), [1, 2, 3])
     }))
 
   it.effect("bounded offerAll waits until capacity is released", () =>

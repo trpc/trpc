@@ -1,4 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
+import { Cause, Logger, References } from "effect"
 import * as Clock from "effect/Clock"
 import * as Deferred from "effect/Deferred"
 import * as Duration from "effect/Duration"
@@ -482,5 +483,35 @@ describe("RcRef", () => {
         assert.strictEqual(released, 1)
         assert.isTrue(Exit.hasInterrupts(yield* Fiber.await(getter)))
       }))
+  })
+
+  it.effect("reports idle expiry defects at UnhandledLogLevel", () => {
+    const logged: Array<Logger.Options<unknown>> = []
+    const logger = Logger.make((event) => {
+      logged.push(event)
+    })
+    return Effect.gen(function*() {
+      let released = 0
+      const ref = yield* RcRef.make({
+        acquire: Effect.acquireRelease(
+          Effect.succeed("a"),
+          () => Effect.sync(() => released++).pipe(Effect.andThen(Effect.die("release a")))
+        ),
+        idleTimeToLive: "1 second"
+      })
+      yield* Effect.scoped(RcRef.get(ref))
+      yield* TestClock.adjust("1 second")
+      assert.strictEqual(released, 1)
+      assert.deepStrictEqual(
+        logged.map((event) => ({
+          level: event.logLevel,
+          defects: event.cause.reasons.filter(Cause.isDieReason).map((reason) => reason.defect)
+        })),
+        [{ level: "Warn", defects: ["release a"] }]
+      )
+    }).pipe(
+      Effect.provide(Logger.layer([logger])),
+      Effect.provideService(References.UnhandledLogLevel, "Warn")
+    )
   })
 })

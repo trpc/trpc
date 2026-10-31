@@ -177,6 +177,12 @@ export type Replay = string
  * Each unconstrained string, collection, or object property observes the current size independently. Recursive
  * branches instead consume one shared recursion allowance. Explicit Schema bounds and required members still apply.
  *
+ * `concurrency` is a positive safe integer, defaulting to `1`. It bounds the number of pending generated cases,
+ * including evaluations that have completed ahead of an earlier case. Results are processed in generation order.
+ * For deterministic generators and independent, repeatable properties, changing concurrency preserves the result,
+ * including the selected failure, run and discard counts, shrinks, and replay token. Later cases may execute
+ * speculatively. Their fibers are interrupted and awaited before shrinking or returning. Shrinking stays sequential.
+ *
  * `maxShrinks` bounds the number of shrink candidates inspected after the initial failure. Candidates rejected by a
  * Schema check, `filter`, `filterMap`, or dependent generation consume the same budget even though the property is not
  * evaluated. Candidates that produce a different failure class also consume the budget. When the budget is exhausted,
@@ -186,7 +192,7 @@ export type Replay = string
  * **Gotchas**
  *
  * When `replay` is present, its recorded seed, attempt, size, and shrink path control the run. The `runs`, `size`,
- * `maxDiscards`, `maxShrinks`, and `seed` options are ignored.
+ * `maxDiscards`, `maxShrinks`, `seed`, and `concurrency` options are ignored. Replay stays sequential.
  *
  * @stability unstable
  * @category models
@@ -194,6 +200,7 @@ export type Replay = string
  */
 export interface CheckOptions {
   readonly runs?: number | undefined
+  readonly concurrency?: number | undefined
   readonly size?: number | undefined
   readonly maxDiscards?: number | undefined
   readonly maxShrinks?: number | undefined
@@ -662,7 +669,8 @@ export function sampleEffect<A>(
  *
  * A property must also produce the same outcome for the same input and initial environment. The runner may evaluate
  * it repeatedly and does not restore mutable services between evaluations. Stateful properties should acquire and
- * release an independent fixture inside each evaluation.
+ * release an independent fixture inside each evaluation. Concurrent evaluations inherit the provided services;
+ * the runner does not rebuild layers. Their outcomes must not depend on scheduling or shared mutable state.
  *
  * @stability unstable
  * @category running

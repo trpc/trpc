@@ -20,17 +20,24 @@ export class MssqlContainer extends Context.Service<MssqlContainer>()("test/Mssq
 }) {
   static readonly layer = Layer.effect(this)(this.make)
 
-  static layerClient = Layer.unwrap(
-    Effect.gen(function*() {
-      const container = yield* MssqlContainer
-      return MssqlClient.layer({
-        server: container.getHost(),
-        port: container.getPort(),
-        database: container.getDatabase(),
-        username: container.getUsername(),
-        password: Redacted.make(container.getPassword()),
-        trustServer: true
+  static layerClientWith = (options: { readonly maxConnections?: number }) =>
+    Layer.unwrap(
+      Effect.gen(function*() {
+        const container = yield* MssqlContainer
+        return MssqlClient.layer({
+          ...options,
+          server: container.getHost(),
+          port: container.getPort(),
+          database: container.getDatabase(),
+          username: container.getUsername(),
+          password: Redacted.make(container.getPassword()),
+          // Deno doesn't enforce the TLS fragment limits Tedious needs for large
+          // TDS writes, so only the Deno fixture runs unencrypted. Node keeps TLS.
+          encrypt: !("Deno" in globalThis),
+          trustServer: true
+        })
       })
-    })
-  ).pipe(Layer.provide(this.layer))
+    ).pipe(Layer.provideMerge(this.layer))
+
+  static layerClient = this.layerClientWith({})
 }

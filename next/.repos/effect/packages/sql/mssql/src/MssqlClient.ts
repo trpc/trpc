@@ -20,11 +20,12 @@ import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import { identity } from "effect/Function"
 import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
 import * as Pool from "effect/Pool"
 import * as Reactivity from "effect/reactivity/Reactivity"
 import * as Rec from "effect/Record"
 import * as Redacted from "effect/Redacted"
-import * as Scope from "effect/Scope"
+import type * as Scope from "effect/Scope"
 import * as Client from "effect/sql/SqlClient"
 import type { Connection } from "effect/sql/SqlConnection"
 import {
@@ -233,6 +234,12 @@ export interface MssqlClientConfig {
   readonly username?: string | undefined
   readonly password?: Redacted.Redacted | undefined
   readonly connectTimeout?: Duration.Input | undefined
+  /**
+   * How long Tedious waits for the server to acknowledge a cancelled request
+   * before it closes the connection. Defaults to 5 seconds. Interrupting a
+   * request waits for that acknowledgement, so a zero duration (which disables
+   * the timer) leaves interruption unbounded rather than making it faster.
+   */
   readonly cancelTimeout?: Duration.Input | undefined
   readonly connectionRetryInterval?: Duration.Input | undefined
   readonly multiSubnetFailover?: boolean | undefined
@@ -355,7 +362,8 @@ export const make = (
         Deferred.doneUnsafe(ended, Effect.void)
       }
       const removeListeners = () => {
-        conn.removeListener("error", onError)
+        // Tedious can emit a queued error after end, even once pool cleanup
+        // has closed the connection. Keep onError for the connection lifetime.
         conn.removeListener("end", onEnd)
       }
       const onEnd = () => {
@@ -388,12 +396,38 @@ export const make = (
         })
       })
 
+      // Tedious calls a request back once it is settled: completed, cancelled
+      // by the server, or failed when the connection ends or the cancellation
+      // times out. Interruption cancels the request and waits for that callback
+      // so the connection is not released while it is still SentClientRequest.
+      const request = <A>(
+        start: (resume: (effect: Effect.Effect<A, SqlError>) => void) => void
+      ) =>
+        Effect.callback<A, SqlError>((resume) => {
+          let settled = false
+          let onSettled: (() => void) | undefined
+          start((effect) => {
+            // A request that failed because the connection closed settles
+            // before tedious emits end. Record it now, before resuming can
+            // release the connection back to the pool.
+            if (conn.closed) Deferred.doneUnsafe(ended, Effect.void)
+            settled = true
+            resume(effect)
+            onSettled?.()
+          })
+          return Effect.callback<void>((done) => {
+            if (settled) return done(Effect.void)
+            onSettled = () => done(Effect.void)
+            conn.cancel()
+          })
+        })
+
       const run = (
         sql: string,
         values?: ReadonlyArray<any>,
         rowsAsArray = false
       ) =>
-        Effect.callback<any, SqlError>((resume) => {
+        request<any>((resume) => {
           const req = new Tedious.Request(sql, (cause, _rowCount, result) => {
             if (cause) {
               resume(
@@ -426,16 +460,14 @@ export const make = (
             }
           }
 
-          conn.cancel()
           conn.execSql(req)
-          return Effect.sync(() => conn.cancel())
         })
 
       const runProcedure = (
         procedure: Procedure.ProcedureWithValues<any, any, any>,
         transformRows: ((rows: ReadonlyArray<any>) => ReadonlyArray<any>) | undefined
       ) =>
-        Effect.callback<any, SqlError>((resume) => {
+        request<any>((resume) => {
           const result: Record<string, any> = {}
 
           const req = new Tedious.Request(
@@ -475,9 +507,7 @@ export const make = (
             Rec.assignProperty(result, name, value)
           })
 
-          conn.cancel()
           conn.callProcedure(req)
-          return Effect.sync(() => conn.cancel())
         })
 
       const connection = identity<MssqlConnection>({
@@ -606,15 +636,19 @@ export const make = (
     )
 
     const transactionService = TransactionConnection(clientIdCounter++)
+    // Inside `withTransaction`, statements and procedures use its connection.
+    const getConnection = Effect.flatMap(
+      Effect.serviceOption(transactionService),
+      Option.match({
+        onNone: () => acquireConnection,
+        onSome: ([conn]) => Effect.succeed(conn)
+      })
+    )
 
     const withTransaction = Client.makeWithTransaction({
       transactionService,
       spanAttributes,
-      acquireConnection: Effect.gen(function*() {
-        const scope = Scope.makeUnsafe()
-        const conn = yield* Scope.provide(acquireConnection, scope)
-        return [scope, conn] as const
-      }),
+      acquireConnection: (restore) => restore(acquireConnection),
       begin: (conn) => conn.begin,
       savepoint: (conn, id) => conn.savepoint(`effect_sql_${id}`),
       commit: (conn) => conn.commit,
@@ -624,6 +658,7 @@ export const make = (
 
     return identity<MssqlClient>(Object.assign(
       yield* Client.make({
+        driver: "mssql",
         acquirer: acquireConnection,
         compiler,
         transactionService: transactionService as any,
@@ -645,9 +680,9 @@ export const make = (
           A
         >(
           procedure: Procedure.ProcedureWithValues<I, O, A>
-        ) => Effect.scoped(Effect.flatMap(acquireConnection, (_) => _.call(procedure, transformRows))),
+        ) => Effect.scoped(Effect.flatMap(getConnection, (_) => _.call(procedure, transformRows))),
         withoutTransforms() {
-          const statement = Statement.make(acquireConnection, compiler.withoutTransform, spanAttributes, undefined)
+          const statement = Statement.make(getConnection, compiler.withoutTransform, spanAttributes, undefined)
           const client = Object.assign(
             statement,
             this,
@@ -659,7 +694,7 @@ export const make = (
                 A
               >(
                 procedure: Procedure.ProcedureWithValues<I, O, A>
-              ) => Effect.scoped(Effect.flatMap(acquireConnection, (_) => _.call(procedure, undefined)))
+              ) => Effect.scoped(Effect.flatMap(getConnection, (_) => _.call(procedure, undefined)))
             }
           )
           ;(client as any).safe = client

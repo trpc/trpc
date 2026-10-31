@@ -16,6 +16,7 @@ export const handleErrnoException = (module: SystemError["module"], method: stri
       break
 
     case "EACCES":
+    case "EPERM":
       reason = "PermissionDenied"
       break
 

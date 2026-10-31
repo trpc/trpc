@@ -52,6 +52,11 @@ export const make: (
       readonly attributes?: Record<string, unknown>
     } | undefined
     readonly headers?: Headers.Input | undefined
+    /**
+     * Request compression. Defaults to "none". Gzip uses
+     * HttpClientRequest's default minimum body size of 1KB.
+     */
+    readonly compression?: "gzip" | "none" | undefined
     readonly exportInterval?: Duration.Input | undefined
     readonly maxBatchSize?: number | undefined
     readonly shutdownTimeout?: Duration.Input | undefined
@@ -73,6 +78,7 @@ export const make: (
     label: "OtlpLogger",
     url: options.url,
     headers: options.headers,
+    compression: options.compression,
     maxBatchSize: options.maxBatchSize ?? 1000,
     exportInterval: options.exportInterval ?? Duration.seconds(1),
     body: (data) => [
@@ -118,6 +124,11 @@ export const layer = (options: {
     readonly attributes?: Record<string, unknown>
   } | undefined
   readonly headers?: Headers.Input | undefined
+  /**
+   * Request compression. Defaults to "none". Gzip uses
+   * HttpClientRequest's default minimum body size of 1KB.
+   */
+  readonly compression?: "gzip" | "none" | undefined
   readonly exportInterval?: Duration.Input | undefined
   readonly maxBatchSize?: number | undefined
   readonly shutdownTimeout?: Duration.Input | undefined
@@ -130,6 +141,13 @@ export const layer = (options: {
 
 /**
  * Creates an OTLP logs layer from OpenTelemetry configuration.
+ *
+ * **Details**
+ *
+ * Compression accepts "gzip" or "none".
+ * `OTEL_EXPORTER_OTLP_LOGS_COMPRESSION` takes precedence over
+ * `OTEL_EXPORTER_OTLP_COMPRESSION`, defaulting to "none". Gzip uses
+ * HttpClientRequest's default minimum body size of 1KB.
  *
  * @stability unstable
  * @category layers
@@ -156,7 +174,17 @@ export const layerFromConfig = (options?: {
       return Exporter.layerFlusher
     }
 
-    const { baseTimeout, logsTimeout, exportTimeout, scheduleDelay, maxBatchSize } = yield* Config.all({
+    const {
+      baseCompression,
+      compression,
+      baseTimeout,
+      logsTimeout,
+      exportTimeout,
+      scheduleDelay,
+      maxBatchSize
+    } = yield* Config.all({
+      baseCompression: Config.option(Config.Literals(["gzip", "none"], "OTEL_EXPORTER_OTLP_COMPRESSION")),
+      compression: Config.option(Config.Literals(["gzip", "none"], "OTEL_EXPORTER_OTLP_LOGS_COMPRESSION")),
       baseTimeout: Config.option(Config.Int("OTEL_EXPORTER_OTLP_TIMEOUT")),
       logsTimeout: Config.option(Config.Int("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT")),
       exportTimeout: Config.option(Config.Int("OTEL_BLRP_EXPORT_TIMEOUT")),
@@ -173,6 +201,7 @@ export const layerFromConfig = (options?: {
       url: endpoint.toString(),
       resource: options?.resource,
       headers: options?.headers ?? (yield* OtlpEnv.headers("LOGS")),
+      compression: Option.getOrElse(Option.firstSomeOf([compression, baseCompression]), () => "none" as const),
       exportInterval: Option.getOrUndefined(exportInterval),
       maxBatchSize: Option.getOrUndefined(maxBatchSize),
       shutdownTimeout: Option.getOrUndefined(shutdownTimeout),
@@ -232,7 +261,7 @@ const makeLogRecord = (options: Logger.Options<unknown>, opts: {
   }
 
   if (options.fiber.cache.span) {
-    logRecord.traceId = options.fiber.cache.span.traceId
+    logRecord.traceId = options.fiber.cache.span.traceId.padStart(32, "0")
     logRecord.spanId = options.fiber.cache.span.spanId
   }
 

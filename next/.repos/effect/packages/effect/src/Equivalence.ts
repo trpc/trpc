@@ -362,7 +362,8 @@ export const combine: {
  * comparison stops at the first equivalence that returns `false`. Empty
  * collections return an equivalence that always returns `true`. The result is
  * also an equivalence that satisfies reflexive, symmetric, and transitive
- * properties.
+ * properties. The collection is materialized when the equivalence is created,
+ * so it must be finite.
  *
  * **Example** (Combining multiple field equivalences)
  *
@@ -414,15 +415,17 @@ export const combine: {
  * @category combining
  * @since 2.0.0
  */
-export const combineAll = <A>(collection: Iterable<Equivalence<A>>): Equivalence<A> =>
-  make((x, y) => {
-    for (const equivalence of collection) {
+export const combineAll = <A>(collection: Iterable<Equivalence<A>>): Equivalence<A> => {
+  const equivalences = Array.from(collection)
+  return make((x, y) => {
+    for (const equivalence of equivalences) {
       if (!equivalence(x, y)) {
         return false
       }
     }
     return true
   })
+}
 
 /**
  * Transforms an equivalence relation by mapping the input values before comparison.

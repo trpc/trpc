@@ -70,13 +70,17 @@ This import enhances the standard `it` function from `vitest` with several power
 | -------------- | --------------------------------------------------------------------------------------------------- |
 | `it.effect`    | Runs a scoped test with test services such as `TestClock` and `TestConsole`.                        |
 | `it.live`      | Runs a scoped test with the live Effect environment.                                                |
-| `it.layer`     | Shares a `Layer` between multiple tests.                                                            |
+| `it.layer`     | Shares a `Layer` between multiple tests, or builds it for each test with `buildPerTest: true`.      |
 | `it.prop`      | Runs property tests using Effect `Schema` and `Arbitrary` values.                                   |
 | `it.flakyTest` | Retries an Effect that might occasionally fail until it succeeds or reaches the configured timeout. |
 
+Pass `{ buildPerTest: true }` to `it.layer` to build its layer once per test instead of once per block. Each test gets new services, released when it finishes, while services from an enclosing `layer` block stay shared. Blocks nested inside a per-test block are built per test as well.
+
 Property tests shrink callbacks that return `false`, throw, or complete with a non-interruption Effect failure. This
-includes failed assertions, typed failures, and defects. Effect interruption still interrupts the test. Returning
-normally with any value other than `false`, including `void`, passes for that generated input.
+includes failed assertions, typed failures, and defects. Effect interruption still interrupts the test.
+Synchronous `it.prop` callbacks must return a boolean or `void`: `true` and `undefined` pass, while `false`
+falsifies the property. Other return values, including Effects and Promises, are rejected. Use `it.effect.prop`
+for Effect callbacks; their successful results pass unless the value is `false`.
 
 The Vitest `timeout` interrupts the Effect fiber running property generation, evaluation, and shrinking. Effect
 finalizers run during the interruption, which is reported as a test timeout rather than a property falsification. As
@@ -94,7 +98,7 @@ import { it } from "@effect/vitest"
 it.effect("test name", () => EffectContainingAssertions, timeout: number | TestOptions = 5_000)
 ```
 
-`it.effect` automatically provides the Effect test services, including [`TestClock`](#using-the-testclock), and a fresh `Scope` for each test. The scope is closed when the test finishes.
+`it.effect` automatically provides the Effect test services, including [`TestClock`](#using-the-testclock) and `TestConsole`, and a fresh `Scope` for each test. The scope is closed when the test finishes. Logs are captured by `TestConsole`; use `it.live` for live console output, or see [Logging](#logging) to override the console explicitly.
 
 ### Testing Successful Operations
 
@@ -156,7 +160,7 @@ it.effect("test failure as Exit", () =>
 
 ### Using the TestClock
 
-When writing tests with `it.effect`, Effect test services are automatically provided. These include the [`TestClock`](https://effect.website/docs/guides/testing/testclock), which allows you to simulate the passage of time in your tests.
+When writing tests with `it.effect`, Effect test services are automatically provided. These include the [`TestClock`](https://effect.website/docs/testing/testclock/), which allows you to simulate the passage of time in your tests.
 
 **Note**: If you want to use the real-time clock (instead of the simulated one), you can switch to `it.live`.
 
@@ -274,26 +278,27 @@ it.effect.fails("dividing by zero special cases", ({ expect }) =>
 
 ### Logging
 
-By default, `it.effect` suppresses log output, which can be useful for keeping test results clean. However, if you want to enable logging during tests, you can use `it.live` or provide a custom logger to control the output.
+By default, `it.effect` captures log output in `TestConsole`; inspect it with `TestConsole.logLines`. A custom logger, including `Logger.consolePretty()`, still writes to that test console. To print to the live console, use `it.live` or explicitly provide `Console.Console` with `globalThis.console`.
 
 **Example** (Controlling Logging in Tests)
 
 ```ts
 import { it } from "@effect/vitest"
-import { Effect, Logger } from "effect"
+import { Console, Effect, Logger } from "effect"
 
-// This test won't display the log message, as logging is suppressed by default in `it.effect`
+// This test captures the log in TestConsole rather than displaying it
 it.effect("does not display a log", () =>
   Effect.gen(function*() {
-    yield* Effect.log("it.effect") // Log won't be shown
+    yield* Effect.log("it.effect") // Read it back with TestConsole.logLines
   }))
 
-// This test will display the log because a custom logger is provided
-it.effect("providing a logger displays a log", () =>
+// A pretty logger displays output when paired with the live console
+it.effect("providing the live console displays a log", () =>
   Effect.gen(function*() {
     yield* Effect.log("it.effect with custom logger") // Log will be displayed
   }).pipe(
-    Effect.provide(Logger.layer([Logger.consolePretty()])) // Providing a pretty logger for log output
+    Effect.provide(Logger.layer([Logger.consolePretty()])),
+    Effect.provideService(Console.Console, globalThis.console)
   ))
 
 // This test runs using `it.live`, which enables logging by default

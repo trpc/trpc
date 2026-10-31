@@ -11,6 +11,19 @@ const StreamError = Schema.Struct({ reason: Schema.String })
 const sse = () => HttpApiSchema.StreamSse({ events: Events, error: StreamError })
 
 describe("HttpApiEndpoint", () => {
+  it("omits undefined optional HTTP properties", () => {
+    const endpoint = HttpApiEndpoint.get("get", "/", {
+      query: {
+        search: Schema.optional(Schema.String),
+        absent: Schema.optional(Schema.Undefined)
+      }
+    })
+    const schema = endpoint.query as typeof endpoint["~Query"]
+
+    assert.deepStrictEqual(Schema.encodeSync(schema)({ search: undefined, absent: undefined }), {})
+    assert.deepStrictEqual(Schema.encodeSync(schema)({ search: "value" }), { search: "value" })
+  })
+
   it("stores the supplied identifier", () => {
     const endpoint = HttpApiEndpoint.get("getUser", "/users/:id")
 
@@ -56,6 +69,42 @@ describe("HttpApiEndpoint payload schemas", () => {
       () => HttpApiEndpoint.post("create", "/", { payload: [JsonPayload, TextPayload] }),
       /Multiple payload encodings/
     )
+  })
+})
+
+describe("HttpApiEndpoint streaming payload schemas", () => {
+  it("rejects two streaming payloads", () => {
+    assert.throws(
+      () =>
+        HttpApiEndpoint.post("upload", "/upload", {
+          payload: [
+            HttpApiSchema.StreamNdjson({ schema: Schema.Number }),
+            HttpApiSchema.StreamUint8Array()
+          ]
+        }),
+      /Multiple streaming payloads/
+    )
+  })
+
+  it("rejects buffered payloads and successes on any listed stream content type", () => {
+    const stream = HttpApiSchema.StreamNdjson({
+      schema: Schema.Number,
+      contentType: ["application/x-ndjson", "application/json"]
+    })
+
+    assert.throws(
+      () => HttpApiEndpoint.post("upload", "/upload", { payload: [stream, Schema.Struct({ ok: Schema.Boolean })] }),
+      /Cannot combine buffered and streaming payloads for content-type: application\/json/
+    )
+    assert.throws(
+      () => HttpApiEndpoint.get("export", "/export", { success: [stream, Schema.Struct({ ok: Schema.Boolean })] }),
+      /Cannot combine buffered and streaming success responses for status 200 and content-type: application\/json/
+    )
+  })
+
+  it("rejects streaming payloads on no-body methods", () => {
+    const payload: any = HttpApiSchema.StreamUint8Array()
+    assert.throws(() => HttpApiEndpoint.get("upload", "/upload", { payload }), /GET/)
   })
 })
 
@@ -478,5 +527,93 @@ describe("HttpApiEndpoint WithHeaders schemas", () => {
         { "retry-after": "30" }
       )
     }
+  })
+
+  describe("Upgrade", () => {
+    const upgrade = HttpApiSchema.Upgrade({ protocol: "tcp" })
+
+    it.each([
+      { name: "a no-content response", success: HttpApiSchema.Empty(200) },
+      { name: "a buffered response", success: Schema.String }
+    ])("accepts an upgrade with $name", ({ success }) => {
+      const endpoint = HttpApiEndpoint.post("start", "/start", { success: [upgrade, success] })
+
+      assert.deepStrictEqual(Array.from(endpoint.success).map(HttpApiSchema.isUpgrade), [true, false])
+    })
+
+    it.each([
+      {
+        name: "with another upgrade",
+        make: () =>
+          HttpApiEndpoint.post("attach", "/attach", {
+            success: [upgrade, HttpApiSchema.Upgrade({ protocol: "h2c" })]
+          }),
+        message: "Cannot declare more than one upgrade"
+      },
+      {
+        name: "with a streaming success",
+        make: () => HttpApiEndpoint.post("attach", "/attach", { success: [upgrade, sse()] }),
+        message: "Cannot combine an upgrade with a streaming success response"
+      },
+      {
+        name: "with another success at status 101",
+        make: () =>
+          HttpApiEndpoint.post("attach", "/attach", {
+            success: [upgrade, Schema.String.pipe(HttpApiSchema.status(101))]
+          }),
+        message: "Cannot combine an upgrade with another success response for status: 101"
+      },
+      {
+        name: "wrapped in WithHeaders",
+        make: () =>
+          HttpApiEndpoint.post("attach", "/attach", {
+            success: HttpApiSchema.WithHeaders(upgrade, { "x-id": Schema.String })
+          }),
+        message: "WithHeaders cannot wrap an upgrade"
+      },
+      {
+        name: "wrapped by encodeToWithHeaders",
+        make: () =>
+          upgrade.pipe(
+            HttpApiSchema.encodeToWithHeaders(
+              { body: upgrade, headers: { "x-id": Schema.String } },
+              { decode: ({ body }) => body, encode: (body) => ({ body, headers: { "x-id": "id" } }) }
+            )
+          ),
+        message: "encodeToWithHeaders cannot wrap an upgrade"
+      },
+      {
+        name: "on HEAD",
+        make: () => HttpApiEndpoint.head("attach", "/attach", { success: upgrade }),
+        message: "HEAD endpoints cannot declare an upgrade"
+      },
+      {
+        name: "with a byte stream payload",
+        make: () =>
+          HttpApiEndpoint.post("attach", "/attach", { payload: HttpApiSchema.StreamUint8Array(), success: upgrade }),
+        message: "Upgrade endpoints cannot declare a streaming payload"
+      },
+      {
+        name: "with a multipart stream payload",
+        make: () =>
+          HttpApiEndpoint.post("attach", "/attach", {
+            payload: Schema.Struct({ file: Schema.String }).pipe(HttpApiSchema.asMultipartStream()),
+            success: upgrade
+          }),
+        message: "Upgrade endpoints cannot declare a streaming payload"
+      },
+      {
+        name: "as an error",
+        make: () => HttpApiEndpoint.post("attach", "/attach", { error: upgrade as any }),
+        message: "Upgrade schemas are not supported in error responses"
+      },
+      {
+        name: "to WebSocket",
+        make: () => HttpApiSchema.Upgrade({ protocol: "WebSocket" }),
+        message: "Upgrade does not support WebSocket"
+      }
+    ])("rejects an upgrade $name", ({ make, message }) => {
+      assert.throws(make, message)
+    })
   })
 })

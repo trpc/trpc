@@ -15,10 +15,10 @@
   note: "The Web Storage layer remains in the moved module."
 "@effect/platform/KeyValueStore#make":
   replacement: "KeyValueStore.make"
-  note: "The constructor remains in the moved module with v4 MakeOptions."
+  note: "The constructor remains in the moved module with v4 MakeOptions. Custom stores must now also provide keys, an effect returning a snapshot of the stored keys; clearPrefix is derived from keys and remove when omitted."
 "@effect/platform/KeyValueStore#prefix":
   replacement: "KeyValueStore.prefix"
-  note: "The prefixed-store combinator remains in the moved module."
+  note: "The prefixed-store combinator remains in the moved module. Unlike v3, clear, size and isEmpty now apply only to keys under the prefix, and keys returns them with the prefix removed."
 "@effect/platform/KeyValueStore#SchemaStoreTypeId":
   replacement: "none"
   note: "The v4 SchemaStore has no public type-id alias; use the SchemaStore interface."

@@ -22,6 +22,7 @@ describe("TypeSafeDecisionModel", () => {
       expect(acceptsKnownModel).type.toBeCallableWith("jev-latest")
       expect(acceptsKnownModel).type.toBeCallableWith("jev-preview")
       expect(acceptsKnownModel).type.toBeCallableWith("jev-1.13.0")
+      expect(acceptsKnownModel).type.toBeCallableWith("jev-1.14.0")
       expect(acceptsKnownModel).type.not.toBeCallableWith("not-a-real-model")
       expect(TypeSafeDecisionModel.model).type.toBeCallableWith("not-a-real-model")
       expect(TypeSafeDecisionModel.layer).type.toBeCallableWith({ model: "not-a-real-model" })

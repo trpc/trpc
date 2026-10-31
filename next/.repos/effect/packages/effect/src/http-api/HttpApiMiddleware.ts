@@ -14,21 +14,25 @@
  */
 /** @effect-diagnostics floatingEffect:skip-file */
 /** @effect-diagnostics classSelfMismatch:off */
+import * as Cause from "../Cause.ts"
 import * as Context from "../Context.ts"
 import * as Effect from "../Effect.ts"
+import * as ErrorReporter from "../ErrorReporter.ts"
 import type * as HttpClientError from "../http/HttpClientError.ts"
 import type * as HttpClientRequest from "../http/HttpClientRequest.ts"
 import type * as HttpClientResponse from "../http/HttpClientResponse.ts"
 import type * as HttpRouter from "../http/HttpRouter.ts"
+import * as HttpServerRespondable from "../http/HttpServerRespondable.ts"
 import type { HttpServerResponse } from "../http/HttpServerResponse.ts"
 import { getStackTraceLimit, setStackTraceLimit } from "../internal/stackTraceLimit.ts"
 import * as Layer from "../Layer.ts"
 import { hasProperty } from "../Predicate.ts"
 import type * as Schema from "../Schema.ts"
+import * as SchemaIssue from "../SchemaIssue.ts"
 import { Scope } from "../Scope.ts"
 import type { unhandled } from "../Types.ts"
 import type * as HttpApiEndpoint from "./HttpApiEndpoint.ts"
-import { HttpApiSchemaError } from "./HttpApiError.ts"
+import { BadRequestProblem, HttpApiSchemaError, InternalServerErrorProblem } from "./HttpApiError.ts"
 import type * as HttpApiGroup from "./HttpApiGroup.ts"
 import type * as HttpApiSecurity from "./HttpApiSecurity.ts"
 
@@ -512,6 +516,96 @@ export const layerSchemaErrorTransform = <Id, E extends ErrorConstraint, Require
         > => HttpApiSchemaError.is(e) ? transform(e, options) : Effect.fail(e)
       )
   )
+
+/**
+ * Middleware that renders request decoding and response encoding failures as
+ * RFC 9457 problems.
+ *
+ * **Details**
+ *
+ * It declares `HttpApiError.BadRequestProblem` at 400 and
+ * `HttpApiError.InternalServerErrorProblem` at 500, so the OpenAPI document and
+ * generated clients of an API using it know both responses. Provide it with
+ * {@link layerProblemDetails}.
+ *
+ * **Example** (Opting in to problem details)
+ *
+ * ```ts
+ * import { Layer, Schema } from "effect"
+ * import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup, HttpApiMiddleware } from "effect/http-api"
+ *
+ * const Users = HttpApiGroup.make("users").add(
+ *   HttpApiEndpoint.get("list", "/users", { query: { page: Schema.Number } })
+ * )
+ * const Api = HttpApi.make("api").add(Users).middleware(HttpApiMiddleware.ProblemDetails)
+ *
+ * // A request whose query fails decoding now responds with 400 and
+ * // { "type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Request validation failed" }
+ * const ServerLive = HttpApiBuilder.layer(Api).pipe(
+ *   Layer.provide(HttpApiMiddleware.layerProblemDetails())
+ * )
+ * ```
+ *
+ * @stability unstable
+ * @category services
+ * @since 4.0.6
+ */
+export class ProblemDetails extends Service<ProblemDetails>()("effect/http-api/HttpApiMiddleware/ProblemDetails", {
+  error: [BadRequestProblem, InternalServerErrorProblem]
+}) {}
+
+const formatIssues = SchemaIssue.makeFormatterStandardSchemaV1()
+
+const toPathSegment = (segment: PropertyKey | { readonly key: PropertyKey }): string | number => {
+  const key = typeof segment === "object" ? segment.key : segment
+  return typeof key === "number" ? key : String(key)
+}
+
+const toProblemIssues = (error: HttpApiSchemaError) => {
+  const slot = error.kind.toLowerCase()
+  return formatIssues(error.cause.issue).issues.map((issue) => ({
+    path: [slot, ...(issue.path ?? []).map(toPathSegment)],
+    message: issue.message
+  }))
+}
+
+/**
+ * Provides the {@link ProblemDetails} middleware.
+ *
+ * **Details**
+ *
+ * A request decoding failure becomes a `400` problem with a generic `detail`
+ * and no information about the request or the schema. With
+ * `includeDetails: true` the problem also carries `errors`, one entry per
+ * issue with the path of the offending value prefixed by its request slot and
+ * the issue message. A response encoding failure is reported to the configured
+ * error reporters, as it is without the middleware, and becomes a `500`
+ * problem with no detail.
+ *
+ * @stability unstable
+ * @category layers
+ * @since 4.0.6
+ */
+export const layerProblemDetails = (options?: {
+  readonly includeDetails?: boolean | undefined
+}): Layer.Layer<ProblemDetails> => {
+  const includeDetails = options?.includeDetails === true
+  return layerSchemaErrorTransform(ProblemDetails, (error) => {
+    if (error.kind === "Body" || error.kind === "ResponseHeaders") {
+      return Effect.andThen(
+        ErrorReporter.report(Cause.fail(error)),
+        HttpServerRespondable.toResponse(new InternalServerErrorProblem())
+      )
+    }
+    return Effect.fail(
+      new BadRequestProblem(
+        includeDetails ? { ...requestValidationFailed, errors: toProblemIssues(error) } : requestValidationFailed
+      )
+    )
+  })
+}
+
+const requestValidationFailed = { detail: "Request validation failed" }
 
 /**
  * Provides a client-side middleware implementation for a middleware that is required by generated clients.

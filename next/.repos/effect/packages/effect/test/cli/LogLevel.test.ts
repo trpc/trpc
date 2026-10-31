@@ -190,10 +190,14 @@ describe("LogLevel", () => {
         runCommand(["--log-level", "invalid"]).pipe(Effect.provide(TestLayer))
       )
 
-      assert.strictEqual(result._tag, "InvalidValue")
-      if (result._tag === "InvalidValue") {
-        assert.strictEqual(result.option, "log-level")
-        assert.strictEqual(result.value, "invalid")
+      assert.strictEqual(result._tag, "ShowHelp")
+      if (result._tag === "ShowHelp") {
+        const [error] = result.errors
+        assert.strictEqual(error._tag, "InvalidValue")
+        if (error._tag === "InvalidValue") {
+          assert.strictEqual(error.option, "log-level")
+          assert.strictEqual(error.value, "invalid")
+        }
       }
 
       const logs = yield* MockLogger.logs

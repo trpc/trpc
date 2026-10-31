@@ -47,6 +47,17 @@ describe("IpInterface", () => {
     }
   })
 
+  it("checks address families in object inputs", () => {
+    expect(IpInterface.ipv4FromInput({ address: [10, 0, 0, 1], prefixLength: 8 })).type.toBe<
+      Result.Result<IpInterface.Ipv4Interface, NetAddress.NetAddressError>
+    >()
+    expect(IpInterface.ipv6FromInput({ address: [0, 0, 0, 0, 0, 0, 0, 1], prefixLength: 64 })).type.toBe<
+      Result.Result<IpInterface.Ipv6Interface, NetAddress.NetAddressError>
+    >()
+    expect(IpInterface.ipv4FromInput).type.not.toBeCallableWith({ address: [0, 0, 0, 0, 0, 0, 0, 0], prefixLength: 0 })
+    expect(IpInterface.ipv6FromInput).type.not.toBeCallableWith({ address: [10, 0, 0, 1], prefixLength: 8 })
+  })
+
   it("preserves exact Schema types", () => {
     expect<Schema.Schema.Type<typeof Schema.Ipv4InterfaceFromString>>().type.toBe<IpInterface.Ipv4Interface>()
     expect<Schema.Schema.Type<typeof Schema.Ipv6InterfaceFromString>>().type.toBe<IpInterface.Ipv6Interface>()

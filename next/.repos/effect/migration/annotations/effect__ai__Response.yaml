@@ -30,7 +30,7 @@
   note: "The lowercase convenience constructor was removed; construct the retained ReasoningStartPart through Response.makePart."
 "@effect/ai/Response#responseMetadataPart":
   replacement: "Response.makePart(\"response-metadata\", params)"
-  note: "The lowercase convenience constructor was removed. V4 id, modelId, and timestamp are optional raw values rather than Option values, and optional HTTP request details were added."
+  note: "The lowercase convenience constructor was removed. V4 id, modelId, and timestamp are optional raw values rather than Option values."
 "@effect/ai/Response#textDeltaPart":
   replacement: "Response.makePart(\"text-delta\", params)"
   note: "The lowercase convenience constructor was removed; construct the retained TextDeltaPart through Response.makePart."

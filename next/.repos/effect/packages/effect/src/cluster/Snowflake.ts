@@ -257,18 +257,14 @@ export const makeGenerator: Effect.Effect<Snowflake.Generator> = Effect.gen(func
         machineId = newMachineId
       }),
     nextUnsafe() {
-      let now = Math.floor(clock.currentTimeMillisUnsafe())
+      const now = Math.floor(clock.currentTimeMillisUnsafe())
 
-      // account for clock drift, only allow time to move forward
-      if (now < sequenceAt) {
-        now = sequenceAt
-      } else if (now > sequenceAt) {
+      if (now > sequenceAt) {
         // reset sequence if we're in a new millisecond
         sequence = 0
         sequenceAt = now
       } else if (sequence >= 4096) {
-        // if we've hit the max sequence for this millisecond, go to the next
-        // millisecond
+        // sequence exhausted and the clock hasn't advanced, so borrow the next millisecond
         sequenceAt++
         sequence = 0
       }

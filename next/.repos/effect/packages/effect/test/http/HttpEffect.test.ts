@@ -2,8 +2,7 @@ import { describe, it, test } from "@effect/vitest"
 import { deepStrictEqual, strictEqual } from "@effect/vitest/utils"
 import { Cause, Context, Effect, Exit, Option, References, Scope, Stream, Tracer } from "effect"
 import { identity } from "effect/Function"
-import { HttpEffect, HttpServerRequest, HttpServerResponse } from "effect/http"
-import { appendPreResponseHandlerUnsafe, requestPreResponseHandlers } from "effect/http/internal/preResponseHandler"
+import { HttpEffect, HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import * as Layer from "effect/Layer"
 
 const TestValue = Context.Reference<number>("test/TestValue", { defaultValue: () => 0 })
@@ -160,6 +159,75 @@ describe("HttpEffect", () => {
       strictEqual(response.headers.get("content-length"), "9007199254740993")
     })
 
+    test.each(["before the request", "while the handler starts"] as const)(
+      "an abort %s interrupts the handler as a client abort",
+      async (when) => {
+        const controller = new AbortController()
+        if (when === "before the request") controller.abort()
+        let interrupted = false
+        const handler = HttpEffect.toWebHandler(
+          Effect.sync(() => {
+            if (when === "while the handler starts") controller.abort()
+          }).pipe(
+            Effect.andThen(Effect.never),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => {
+                interrupted = true
+              })
+            ),
+            // Handlers are uninterruptible unless they opt in, as router routes do.
+            Effect.interruptible
+          )
+        )
+        const response = await handler(new Request("http://localhost:3000/", { signal: controller.signal }))
+        strictEqual(response.status, 499)
+        strictEqual(interrupted, true)
+      }
+    )
+
+    test.each(["after reading a chunk", "while the unread body is full"] as const)(
+      "an abort %s releases the request scope owned by a streamed body",
+      async (when) => {
+        const controller = new AbortController()
+        let finalized = false
+        let pulledSecond = false
+        const handler = HttpEffect.toWebHandler(Effect.gen(function*() {
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              finalized = true
+            })
+          )
+          return HttpServerResponse.stream(
+            Stream.make("first").pipe(
+              Stream.concat(Stream.fromEffect(Effect.sync(() => {
+                pulledSecond = true
+                return "second"
+              }))),
+              Stream.concat(Stream.never),
+              Stream.encodeText
+            )
+          )
+        }))
+        const waitFor = (predicate: () => boolean) =>
+          new Promise<void>((resolve) => {
+            const deadline = Date.now() + 1000
+            const poll = () => predicate() || Date.now() > deadline ? resolve() : setImmediate(poll)
+            poll()
+          })
+        const response = await handler(new Request("http://localhost:3000/", { signal: controller.signal }))
+        if (when === "after reading a chunk") {
+          await response.body!.getReader().read()
+        } else {
+          // The body has taken its second chunk and now waits for a read that never comes.
+          await waitFor(() => pulledSecond)
+        }
+
+        controller.abort()
+        await waitFor(() => finalized)
+        strictEqual(finalized, true)
+      }
+    )
+
     test("stream scope", async () => {
       let order = 0
       let streamFinalized = 0
@@ -252,17 +320,31 @@ describe("HttpEffect", () => {
       strictEqual(await response.text(), "420")
     })
 
-    test("pre-response handlers are keyed by request source", () => {
-      const request = HttpServerRequest.fromWeb(new Request("http://localhost:3000/"))
-      const modified = request.modify({ url: "/updated" })
-      const handler = (
-        _request: HttpServerRequest.HttpServerRequest,
-        response: HttpServerResponse.HttpServerResponse
-      ) => Effect.succeed(response)
+    test("runs pre-response handlers registered in a prefix-sliced route", async () => {
+      const { dispose, handler } = HttpRouter.toWebHandler(
+        HttpRouter.use((router) =>
+          router.prefixed("/api").add(
+            "GET",
+            "/hello",
+            Effect.gen(function*() {
+              const request = yield* HttpServerRequest.HttpServerRequest
+              yield* HttpEffect.appendPreResponseHandler((_request, response) =>
+                Effect.succeed(HttpServerResponse.setHeader(response, "x-pre-response", "applied"))
+              )
+              return HttpServerResponse.text(request.url)
+            })
+          )
+        ),
+        { disableLogger: true }
+      )
 
-      appendPreResponseHandlerUnsafe(request, handler)
-
-      strictEqual(requestPreResponseHandlers.get(modified.source), handler)
+      try {
+        const response = await handler(new Request("http://localhost/api/hello"))
+        strictEqual(await response.text(), "/hello")
+        strictEqual(response.headers.get("x-pre-response"), "applied")
+      } finally {
+        await dispose()
+      }
     })
   })
 

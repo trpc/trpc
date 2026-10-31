@@ -33,7 +33,7 @@ const makePort = () => {
     removed,
     port,
     emit(type: string, data: unknown) {
-      const event = { data } as MessageEvent
+      const event = type === "error" ? new ErrorEvent(type, { error: data }) : { data } as MessageEvent
       for (const listener of listeners.get(type) ?? []) {
         if (typeof listener === "function") {
           listener(event)
@@ -61,6 +61,20 @@ const makeSharedWorker = () => {
 }
 
 describe("BrowserWorkerRunner", () => {
+  it.effect("preserves the cause from an error event", () =>
+    Effect.gen(function*() {
+      const fake = makePort()
+      const cause = new Error("worker failed")
+      const runner = yield* BrowserWorkerRunner.make(fake.port).start()
+      const fiber = yield* Effect.forkChild(runner.run<void, never, never>(() => {}))
+      yield* Effect.yieldNow
+
+      fake.emit("error", cause)
+      const error = yield* Effect.flip(Fiber.join(fiber))
+
+      assert.strictEqual(error.reason.cause, cause)
+    }))
+
   it.effect("removes the registered messageerror listener", () =>
     Effect.gen(function*() {
       const fake = makePort()

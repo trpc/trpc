@@ -1,0 +1,13 @@
+diff --git a/dist/getPublishPlan.mjs b/dist/getPublishPlan.mjs
+index dc6ca95c3c26de55b3355d1f339b97ab79ba3d20..beb2ca3c261348b020d5f5f2c7ed7ffac13798f5 100644
+--- a/dist/getPublishPlan.mjs
++++ b/dist/getPublishPlan.mjs
+@@ -63,7 +63,7 @@ function createPromiseQueue(concurrency) {
+ const npmRequestQueue = createPromiseQueue(40);
+ const npmPublishQueue = createPromiseQueue(10);
+ function isAlreadyPublishedError(message) {
+-	return message.includes("cannot publish over the previously published");
++	return message.includes("cannot publish over the previously published") || message.toLowerCase().includes("cannot publish over previously staged version");
+ }
+ const isPublishSuccessful = (result) => result.result === "published";
+ const isPublishFailure = (result) => result.result.startsWith("failed");

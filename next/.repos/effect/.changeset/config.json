@@ -26,6 +26,7 @@
       "@effect/atom-vue",
       "@effect/docgen",
       "@effect/doctest",
+      "@effect/graphql-generator",
       "@effect/openapi-generator",
       "@effect/opentelemetry",
       "@effect/platform-browser",

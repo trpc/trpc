@@ -109,4 +109,40 @@ describe("BigInt", () => {
     assert.strictEqual(BigInt.sign(-5n), -1)
     assert.strictEqual(BigInt.sign(0n), 0)
   })
+
+  it("isBigInt refines bigints", () => {
+    assert.strictEqual(BigInt.isBigInt(1n), true)
+    assert.strictEqual(BigInt.isBigInt(1), false)
+  })
+
+  it("sum, subtract and multiply combine two bigints", () => {
+    assert.strictEqual(BigInt.sum(2n, 3n), 5n)
+    assert.strictEqual(BigInt.subtract(2n, 3n), -1n)
+    assert.strictEqual(BigInt.multiply(2n, 3n), 6n)
+  })
+
+  it("increment and decrement step by one", () => {
+    assert.strictEqual(BigInt.increment(2n), 3n)
+    assert.strictEqual(BigInt.decrement(2n), 1n)
+  })
+
+  it("abs returns the absolute value", () => {
+    assert.strictEqual(BigInt.abs(-5n), 5n)
+    assert.strictEqual(BigInt.abs(5n), 5n)
+  })
+
+  it("remainder keeps the sign of the dividend", () => {
+    assert.strictEqual(BigInt.remainder(-10n, 3n), -1n)
+  })
+
+  it("sumAll and multiplyAll fold an iterable", () => {
+    assert.strictEqual(BigInt.sumAll([2n, 3n, 4n]), 9n)
+    assert.strictEqual(BigInt.multiplyAll([2n, 3n, 4n]), 24n)
+    assert.strictEqual(BigInt.multiplyAll([]), 1n)
+  })
+
+  it("sqrtUnsafe returns integer square roots and throws for negatives", () => {
+    assert.strictEqual(BigInt.sqrtUnsafe(17n), 4n)
+    assert.throws(() => BigInt.sqrtUnsafe(-1n), RangeError)
+  })
 })

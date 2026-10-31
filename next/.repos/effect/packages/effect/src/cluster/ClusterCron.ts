@@ -7,9 +7,15 @@
  * for distributed maintenance work where the job should be owned by the cluster
  * rather than by every runner independently.
  *
+ * With `calculateNextRunFromPrevious`, every run is processed by a single
+ * entity per cron job, so runs never overlap and are caught up in order. The
+ * scheduled time of the current run is available through
+ * `CurrentScheduledTime`.
+ *
  * @stability unstable
  * @since 4.0.0
  */
+import * as Context from "../Context.ts"
 import * as Cron from "../Cron.ts"
 import * as DateTime from "../DateTime.ts"
 import * as Duration from "../Duration.ts"
@@ -28,6 +34,23 @@ import * as DeliverAt from "./DeliverAt.ts"
 import * as Entity from "./Entity.ts"
 import type { Sharding } from "./Sharding.ts"
 import * as Singleton from "./Singleton.ts"
+
+/**
+ * Service tag for the scheduled time of the cron run currently executing.
+ *
+ * **When to use**
+ *
+ * Use to read the time the current run was scheduled for, inside the
+ * `execute` effect of `make`.
+ *
+ * @stability unstable
+ * @category services
+ * @since 4.0.0
+ */
+export class CurrentScheduledTime extends Context.Service<
+  CurrentScheduledTime,
+  DateTime.Utc
+>()("effect/cluster/ClusterCron/CurrentScheduledTime") {}
 
 /**
  * Creates a layer that runs a cron job through the cluster sharding system.
@@ -60,6 +83,11 @@ export const make = <E, R>(options: {
    *
    * Defaults to `false`, meaning the next run will be calculated from the
    * current time.
+   *
+   * When enabled, all runs are processed one at a time by a single entity, so
+   * missed runs are caught up in order without overlapping. A run that fails
+   * is retried in place and blocks later runs until it succeeds or is older
+   * than `skipIfOlderThan`.
    */
   readonly calculateNextRunFromPrevious?: boolean | undefined
 
@@ -76,26 +104,42 @@ export const make = <E, R>(options: {
    * Defaults to "1 day".
    */
   readonly skipIfOlderThan?: Duration.Input | undefined
-}): Layer.Layer<never, never, Sharding | Exclude<R, Scope>> => {
+}): Layer.Layer<never, never, Sharding | Exclude<Exclude<R, CurrentScheduledTime>, Scope>> => {
+  const fromPrevious = options.calculateNextRunFromPrevious === true
+  const nextRun = (after: DateTime.Utc) => DateTime.fromDateUnsafe(Cron.next(options.cron, after))
+
   const CronEntity = Entity.make(`ClusterCron/${options.name}`, [
     Rpc.make("run", {
       payload: CronPayload
     })
       .annotate(Persisted, true)
-      .annotate(Uninterruptible, true)
+      .annotate(Uninterruptible, true),
+    Rpc.make("start").annotate(Persisted, true)
   ])
     .annotate(ClusterSchema.ShardGroup, () => options.shardGroup ?? "default")
     .annotate(ClusterSchema.ClientTracingEnabled, false)
 
+  // with `calculateNextRunFromPrevious`, every run shares the executor address
+  const send = (dateTime: DateTime.Utc) =>
+    Effect.flatMap(CronEntity.client, (makeClient) =>
+      fromPrevious
+        ? makeClient(executorId).run(new CronPayload({ dateTime, executor: true }), { discard: true })
+        : makeClient(DateTime.formatIso(dateTime)).run(new CronPayload({ dateTime }), { discard: true }))
+
+  const schedule = (dateTime: DateTime.Utc) => send(dateTime).pipe(withRetry("Failed to schedule next run, retrying"))
+
   const InitialRun = Singleton.make(
     `ClusterCron/${options.name}`,
-    Effect.gen(function*() {
-      const now = yield* DateTime.now
-      const next = DateTime.fromDateUnsafe(Cron.next(options.cron, now))
-      const entityId = options.calculateNextRunFromPrevious ? "initial" : DateTime.formatIso(next)
-      const client = (yield* CronEntity.client)(entityId)
-      yield* client.run({ dateTime: next }, { discard: true })
-    }),
+    fromPrevious
+      // the executor schedules the next run if its chain has been lost.
+      // `start` has no primary key, so each retry is a new message
+      ? Effect.flatMap(CronEntity.client, (makeClient) => makeClient(executorId).start()).pipe(
+        withRetry("Failed to start cron job, retrying")
+      )
+      : Effect.flatMap(
+        DateTime.now,
+        (now) => send(nextRun(now)).pipe(withRetry("Failed to schedule initial run, retrying"))
+      ),
     { shardGroup: options.shardGroup }
   )
 
@@ -104,61 +148,76 @@ export const make = <E, R>(options: {
     Option.getOrElse(() => Duration.days(1))
   )
 
-  const effect = Effect.fnUntraced(function*(dateTime: DateTime.Utc) {
+  const execute = Effect.fnUntraced(function*(dateTime: DateTime.Utc) {
     const now = yield* DateTime.now
     if (DateTime.isLessThan(dateTime, DateTime.subtractDuration(now, skipIfOlderThan))) {
       return
     }
-    return yield* options.execute
+    return yield* Effect.provideService(options.execute, CurrentScheduledTime, dateTime)
   }, Effect.orDie)
 
   const EntityLayer = CronEntity.toLayer(Effect.gen(function*() {
-    const makeClient = yield* CronEntity.client
+    const address = yield* Entity.CurrentAddress
+    // runs are processed one at a time, so a run processed before `start`
+    // means the chain is alive
+    let processedRun = false
     return {
-      run: (request) =>
-        Effect.onExitPrimitive(
-          effect(request.payload.dateTime),
-          Effect.fnUntraced(function*(exit) {
-            if (Exit.isFailure(exit)) {
-              yield* Effect.logWarning(exit.cause)
-            }
-            const now = yield* DateTime.now
-            const next = DateTime.fromDateUnsafe(Cron.next(
-              options.cron,
-              options.calculateNextRunFromPrevious ? request.payload.dateTime : now
-            ))
-            const client = makeClient(DateTime.formatIso(next))
-            return yield* client.run({ dateTime: next }, { discard: true }).pipe(
-              Effect.tapCause((cause) => Effect.logWarning("Failed to schedule next run, retrying", cause)),
-              Effect.sandbox,
-              Effect.retry(retryPolicy),
-              Effect.orDie
-            )
-          }),
+      run: (request) => {
+        const dateTime = request.payload.dateTime
+        if (fromPrevious && address.entityId !== executorId) {
+          // a run scheduled by an earlier release joins the executor's chain
+          return schedule(dateTime)
+        }
+        processedRun = true
+        return Effect.onExitPrimitive(
+          execute(dateTime),
+          (exit) =>
+            Effect.andThen(
+              Exit.isFailure(exit) ? Effect.logWarning(exit.cause) : Effect.void,
+              fromPrevious ? schedule(nextRun(dateTime)) : Effect.flatMap(DateTime.now, (now) => schedule(nextRun(now)))
+            ),
           true
         ).pipe(
           Effect.annotateLogs({
             module: "effect/cluster/ClusterCron",
             name: options.name,
-            dateTime: request.payload.dateTime
+            dateTime
           })
         )
+      },
+      start: () =>
+        processedRun
+          ? Effect.void
+          // deduplicated against the pending run if the chain is alive
+          : Effect.flatMap(DateTime.now, (now) => schedule(nextRun(now)))
     }
   }))
 
   return Layer.merge(InitialRun, EntityLayer)
 }
 
+const executorId = "executor"
+
 const retryPolicy = Schedule.min([
   Schedule.exponential(200, 1.5),
   Schedule.spaced("1 minute")
 ])
 
+const withRetry = (message: string) => <A, E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, never, R> =>
+  self.pipe(
+    Effect.tapCause((cause) => Effect.logWarning(message, cause)),
+    Effect.sandbox,
+    Effect.retry(retryPolicy),
+    Effect.orDie
+  )
+
 class CronPayload extends Schema.Class<CronPayload>("effect/cluster/ClusterCron/CronPayload")({
-  dateTime: Schema.DateTimeUtc
+  dateTime: Schema.DateTimeUtc,
+  // set for runs sent to the executor, which share one entity address
+  executor: Schema.optional(Schema.Boolean)
 }) {
   [PrimaryKey.symbol]() {
-    return ""
+    return this.executor ? DateTime.formatIso(this.dateTime) : ""
   }
   [DeliverAt.symbol]() {
     return this.dateTime

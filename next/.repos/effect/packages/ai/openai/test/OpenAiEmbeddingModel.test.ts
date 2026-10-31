@@ -113,6 +113,47 @@ describe("OpenAiEmbeddingModel", () => {
       assert.deepStrictEqual(requestBody.input, ["hello"])
     }))
 
+  it.effect("concurrent embed calls batch by their withConfigOverride", () =>
+    Effect.gen(function*() {
+      const requests: Array<ReadonlyArray<string>> = []
+      const clientLayer = OpenAiClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+        Layer.provide(Layer.succeed(
+          HttpClient.HttpClient,
+          makeHttpClient((request) =>
+            Effect.gen(function*() {
+              const body = yield* getRequestBody(request)
+              requests.push(body.input)
+              return jsonResponse(request, {
+                data: body.input.map((_: string, index: number) => ({
+                  index,
+                  embedding: Array.from({ length: body.dimensions }, () => 1),
+                  object: "embedding"
+                })),
+                model: body.model,
+                object: "list",
+                usage: { prompt_tokens: 1, total_tokens: 1 }
+              })
+            })
+          )
+        ))
+      )
+
+      const responses = yield* Effect.gen(function*() {
+        const model = yield* EmbeddingModel.EmbeddingModel
+        return yield* Effect.all([
+          model.embed("a").pipe(OpenAiEmbeddingModel.withConfigOverride({ dimensions: 2 })),
+          model.embed("b").pipe(OpenAiEmbeddingModel.withConfigOverride({ dimensions: 3 })),
+          model.embed("c").pipe(OpenAiEmbeddingModel.withConfigOverride({ dimensions: 2 }))
+        ], { concurrency: "unbounded" })
+      }).pipe(
+        Effect.provide(OpenAiEmbeddingModel.layer({ model: "text-embedding-3-small" })),
+        Effect.provide(clientLayer)
+      )
+
+      assert.deepStrictEqual(responses.map((response) => response.vector), [[1, 1], [1, 1, 1], [1, 1]])
+      assert.deepStrictEqual(requests, [["a", "c"], ["b"]])
+    }))
+
   it.effect("fails with InvalidOutputError when provider returns duplicate indices", () =>
     Effect.gen(function*() {
       const clientLayer = OpenAiClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
@@ -271,18 +312,18 @@ const jsonResponse = (
     })
   )
 
-const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
-  Effect.gen(function*() {
-    const body = request.body
-    if (body._tag === "Uint8Array") {
-      const text = new TextDecoder().decode(body.body)
-      return JSON.parse(text)
-    }
-    return yield* Effect.die(new Error("Expected Uint8Array body"))
-  })
+const getRequestBody = Effect.fnUntraced(function*(request: HttpClientRequest.HttpClientRequest) {
+  const body = request.body
+  if (body._tag === "Uint8Array") {
+    const text = new TextDecoder().decode(body.body)
+    return JSON.parse(text)
+  }
+  return yield* Effect.die(new Error("Expected Uint8Array body"))
+})
 
 const noopOpenAiClient: OpenAiClient.Service = {
   client: undefined as unknown as OpenAiClient.Service["client"],
+  createDecisions: () => Effect.die(new Error("noop")),
   createResponse: () => Effect.die(new Error("noop")),
   createResponseStream: () => Effect.die(new Error("noop")),
   createEmbedding: () => Effect.die(new Error("noop"))

@@ -3,6 +3,30 @@ import { Argument, Command, Flag, GlobalFlag } from "effect/cli"
 import { describe, expect, it } from "tstyche"
 
 describe("Command", () => {
+  describe("validate", () => {
+    it("receives the parsed input and preserves the command type", () => {
+      const command = Command.make("download", {
+        useApi: Flag.Boolean("use-api"),
+        useDocker: Flag.Boolean("use-docker")
+      }, () => Effect.void as Effect.Effect<void, "err">).pipe(
+        Command.validate((input) => {
+          expect(input).type.toBe<{ readonly useApi: boolean; readonly useDocker: boolean }>()
+          return Effect.void
+        })
+      )
+
+      expect(command).type.toBe<
+        Command.Command<
+          "download",
+          { readonly useApi: boolean; readonly useDocker: boolean },
+          {},
+          "err",
+          never
+        >
+      >()
+    })
+  })
+
   describe("withSubcommands", () => {
     it("unions errors and requirements across multiple subcommands", () => {
       class _ServiceA extends Context.Service<_ServiceA, string>()("ServiceA") {}

@@ -3,12 +3,13 @@ import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Stdio from "effect/Stdio"
 
-const streams = [Deno.stdin, Deno.stdout] as const
+const streams = [Deno.stdin, Deno.stdout, Deno.stderr] as const
 
-const setIsTerminal = (stdin: boolean, stdout: boolean) =>
+const setIsTerminal = (stdin: boolean, stdout: boolean, stderr: boolean) =>
   Effect.sync(() => {
     Object.defineProperty(streams[0], "isTerminal", { configurable: true, value: () => stdin })
     Object.defineProperty(streams[1], "isTerminal", { configurable: true, value: () => stdout })
+    Object.defineProperty(streams[2], "isTerminal", { configurable: true, value: () => stderr })
   })
 
 const withRestoredIsTerminal = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
@@ -34,16 +35,16 @@ describe("DenoStdio", () => {
       Effect.gen(function*() {
         const stdio = yield* Stdio.Stdio
 
-        yield* setIsTerminal(true, false)
+        yield* setIsTerminal(false, false, true)
         assert.deepStrictEqual(
-          yield* Effect.all([stdio.stdinIsTerminal, stdio.stdoutIsTerminal]),
-          [true, false]
+          yield* Effect.all([stdio.stdinIsTerminal, stdio.stdoutIsTerminal, stdio.stderrIsTerminal]),
+          [false, false, true]
         )
 
-        yield* setIsTerminal(false, true)
+        yield* setIsTerminal(true, true, false)
         assert.deepStrictEqual(
-          yield* Effect.all([stdio.stdinIsTerminal, stdio.stdoutIsTerminal]),
-          [false, true]
+          yield* Effect.all([stdio.stdinIsTerminal, stdio.stdoutIsTerminal, stdio.stderrIsTerminal]),
+          [true, true, false]
         )
       }).pipe(Effect.provide(DenoStdio.layer))
     ))

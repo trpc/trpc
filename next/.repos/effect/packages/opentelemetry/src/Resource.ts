@@ -14,12 +14,11 @@
 import type * as OtelApi from "@opentelemetry/api"
 import * as Resources from "@opentelemetry/resources"
 import * as OtelSemConv from "@opentelemetry/semantic-conventions"
-import * as Arr from "effect/Array"
 import * as Config from "effect/Config"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Rec from "effect/Record"
+import * as Schema from "effect/Schema"
 import * as Version from "effect/Version"
 
 /**
@@ -105,6 +104,16 @@ export const configToAttributes = (options: {
  * Creates a `Resource` layer from SDK defaults, then environment variables,
  * then additional attributes (later values take precedence).
  *
+ * **Details**
+ *
+ * `OTEL_RESOURCE_ATTRIBUTES` is read with `Config.Record`, so a structured
+ * config value is accepted as well as a `key=value` list. In the list, keys and
+ * values are trimmed, then percent-decoded once. Entries with an empty value
+ * are kept as `""`; entries without `=` or with an empty key are skipped. When
+ * a key is repeated as written, the last entry wins and the earlier ones are
+ * not decoded. If any remaining key or value is not valid percent-encoding,
+ * the whole variable is discarded and a warning is logged.
+ *
  * @stability unstable
  * @category layers
  * @since 4.0.0
@@ -118,26 +127,19 @@ export const layerFromEnv = (
     Resource,
     Effect.gen(function*() {
       const serviceName = yield* Config.option(Config.String("OTEL_SERVICE_NAME"))
-      const attributes = yield* Config.String("OTEL_RESOURCE_ATTRIBUTES").pipe(
-        Config.withDefault(""),
-        Config.map((s) => {
-          const attrs = s.split(",")
-          return Arr.reduce(attrs, {} as OtelApi.Attributes, (acc, attr) => {
-            const parts = attr.split("=")
-            if (parts.length !== 2) {
-              return acc
-            }
-            Rec.assignProperty(acc, parts[0].trim(), parts[1].trim())
-            return acc
-          })
-        })
+      const attributes = yield* Config.Record(
+        Schema.StringFromUriComponent,
+        Schema.StringFromUriComponent,
+        "OTEL_RESOURCE_ATTRIBUTES",
+        { trim: true, keepEmptyValues: true }
+      ).pipe(
+        Config.withDefault({}),
+        Effect.catch((error) => Effect.as(Effect.logWarning("Discarding OTEL_RESOURCE_ATTRIBUTES", error), {}))
       )
-      if (serviceName._tag === "Some") {
-        attributes[OtelSemConv.ATTR_SERVICE_NAME] = serviceName.value
-      }
       return Resources.resourceFromAttributes({
         ...sdkAttributes(),
         ...attributes,
+        ...(serviceName._tag === "Some" ? { [OtelSemConv.ATTR_SERVICE_NAME]: serviceName.value } : undefined),
         ...additionalAttributes
       })
     }).pipe(Effect.orDie)

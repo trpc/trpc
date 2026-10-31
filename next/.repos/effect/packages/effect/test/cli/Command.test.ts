@@ -1,6 +1,16 @@
 import { assert, describe, expect, it } from "@effect/vitest"
-import { Context, Effect, Fiber, FileSystem, Layer, Option, Path, Redacted, Runtime, Stdio } from "effect"
-import { Argument, CliConfig, CliError, CliOutput, Command, Flag, GlobalFlag } from "effect/cli"
+import { Context, Effect, Exit, Fiber, FileSystem, Layer, Option, Path, Redacted, Runtime, Schema, Stdio } from "effect"
+import {
+  Argument,
+  CliConfig,
+  CliError,
+  CliOutput,
+  Command,
+  Flag,
+  GlobalFlag,
+  Prompt,
+  TerminalCapabilities
+} from "effect/cli"
 import { toImpl } from "effect/cli/internal/command"
 import { ChildProcessSpawner } from "effect/process"
 import { TestConsole } from "effect/testing"
@@ -47,6 +57,21 @@ const TestLayerWithoutFormatter = Layer.mergeAll(
 )
 
 describe("Command", () => {
+  it.effect("omits styles from wizard headings and command blocks when colors are disabled", () =>
+    Effect.gen(function*() {
+      const command = Command.make("greet", { name: Flag.String("name") }, () => Effect.void)
+
+      const fiber = yield* Command.runWith(command, { version: "1.0.0" })(["--wizard"]).pipe(Effect.forkChild)
+      yield* MockTerminal.inputText("Alice")
+      yield* MockTerminal.inputKey("enter")
+      yield* MockTerminal.inputKey("enter")
+      yield* Fiber.join(fiber)
+
+      const logs = (yield* TestConsole.logLines).join("\n")
+      assert.include(logs, "$ greet --name Alice")
+      assert.notMatch(logs, new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`))
+    }).pipe(Effect.provide([TestLayer, Layer.succeed(Prompt.Theme, Prompt.makeTheme({ colors: false }))])))
+
   describe("annotations", () => {
     it.effect("should expose annotations in help docs", () =>
       Effect.gen(function*() {
@@ -350,9 +375,21 @@ describe("Command", () => {
         assert.isFalse(invoked)
         assert.isTrue(
           stderr.some((line) =>
-            String(line).includes("Missing value for flag --completions. Expected: bash | zsh | fish | sh")
+            String(line).includes(
+              "Missing value for flag --completions. Expected: bash | zsh | fish | powershell | sh | pwsh"
+            )
           )
         )
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("should print PowerShell completions for --completions pwsh", () =>
+      Effect.gen(function*() {
+        const command = Command.make("demo")
+
+        yield* Command.runWith(command, { version: "1.0.0" })(["--completions", "pwsh"])
+
+        const stdout = (yield* TestConsole.logLines).join("\n")
+        assert.include(stdout, "Register-ArgumentCompleter -Native -CommandName 'demo'")
       }).pipe(Effect.provide(TestLayer)))
 
     const missingValueCases: ReadonlyArray<{
@@ -405,6 +442,62 @@ describe("Command", () => {
           )
         )
       }).pipe(Effect.provide(TestLayer)))
+
+    describe("withOptionalValue", () => {
+      const watchFlag = Flag.Literals("watch", ["first-failure", "until-done"]).pipe(
+        Flag.withAlias("w"),
+        Flag.withOptionalValue("first-failure")
+      )
+
+      it.effect("uses the optional value for a bare flag without consuming the next token", () =>
+        Effect.gen(function*() {
+          const captured: Array<unknown> = []
+          const command = Command.make("app", {
+            watch: watchFlag,
+            files: Argument.String("file").pipe(Argument.variadic())
+          }, (config) => Effect.sync(() => captured.push(config)))
+          const run = Command.runWith(command, { version: "1.0.0" })
+
+          yield* run(["-w", "until-done"])
+          yield* run(["--watch=until-done"])
+
+          assert.deepStrictEqual(captured, [
+            { watch: "first-failure", files: ["until-done"] },
+            { watch: "until-done", files: [] }
+          ])
+        }).pipe(Effect.provide(TestLayer)))
+
+      it.effect("does not consume a boolean literal after a negated flag", () =>
+        Effect.gen(function*() {
+          const captured: Array<unknown> = []
+          const command = Command.make("app", {
+            watch: Flag.Boolean("watch").pipe(Flag.withOptionalValue("true")),
+            files: Argument.String("file").pipe(Argument.variadic())
+          }, (config) => Effect.sync(() => captured.push(config)))
+
+          yield* Command.runWith(command, { version: "1.0.0" })(["--no-watch", "false"])
+
+          assert.deepStrictEqual(captured, [{ watch: false, files: ["false"] }])
+        }).pipe(Effect.provide(TestLayer)))
+
+      it.effect("emits the wizard value inline", () =>
+        Effect.gen(function*() {
+          const captured: Array<ReadonlyArray<string>> = []
+          const target = Command.make("app", { watch: watchFlag })
+          const command = Command.make("launcher", {}, () =>
+            Effect.flatMap(Command.wizard(target), (args) =>
+              Effect.sync(() => {
+                captured.push(args)
+              })))
+
+          const fiber = yield* Command.runWith(command, { version: "1.0.0" })([]).pipe(Effect.forkChild)
+          yield* MockTerminal.inputKey("down")
+          yield* MockTerminal.inputKey("enter")
+          yield* Fiber.join(fiber)
+
+          assert.deepStrictEqual(captured, [["app", "--watch=until-done"]])
+        }).pipe(Effect.provide(TestLayer)))
+    })
 
     it.effect("should execute handler with parsed config", () =>
       Effect.gen(function*() {
@@ -831,6 +924,48 @@ describe("Command", () => {
         assert.isTrue(stderr.some((line) => String(line).includes("invalid-command")))
       }).pipe(Effect.provide(TestLayer)))
 
+    it.effect("should route built-in output through the configured presenter", () =>
+      Effect.gen(function*() {
+        const events: Array<string> = []
+        const PresenterLayer = CliOutput.layerPresenter({
+          present: (event) =>
+            Effect.sync(() => {
+              events.push(event._tag === "Help" ? `Help(${event.reason})` : event._tag)
+            })
+        })
+        const run = Command.runWith(Command.make("greet", { name: Flag.String("name") }), { version: "1.0.0" })
+        const runEmpty = Command.runWith(Command.make("empty"), { version: "1.0.0" })
+
+        yield* Effect.gen(function*() {
+          yield* run(["--help"])
+          yield* run(["--version"])
+          yield* Effect.flip(run([]))
+          yield* Effect.flip(runEmpty([]))
+        }).pipe(Effect.provide(PresenterLayer))
+
+        assert.deepStrictEqual(events, ["Help(Requested)", "Version", "InvalidInvocation", "Help(Implicit)"])
+        assert.deepStrictEqual(yield* TestConsole.logLines, [])
+        assert.deepStrictEqual(yield* TestConsole.errorLines, [])
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("should show help for invalid global flag values", () =>
+      Effect.gen(function*() {
+        const Region = GlobalFlag.Setting("region")({
+          flag: Flag.Literals("region", ["us", "eu"]).pipe(Flag.withDefault("us"))
+        })
+        const deploy = Command.make("deploy").pipe(Command.withGlobalFlags([Region]))
+        const runCommand = Command.runWith(Command.make("app").pipe(Command.withSubcommands([deploy])), {
+          version: "1.0.0"
+        })
+
+        for (const flag of ["completions", "log-level", "region"]) {
+          const error = yield* Effect.flip(runCommand(["deploy", `--${flag}`, "bad"]))
+          assert.instanceOf(error, CliError.ShowHelp)
+          assert.deepStrictEqual(error.commandPath, ["app", "deploy"])
+          assert.instanceOf(error.errors[0], CliError.InvalidValue)
+        }
+      }).pipe(Effect.provide(TestLayer)))
+
     it.effect("should propagate handler errors from run", () =>
       Effect.gen(function*() {
         const result = yield* Effect.flip(Cli.run(["test-failing", "--input", "test"]))
@@ -855,6 +990,32 @@ describe("Command", () => {
         assert.isEmpty(yield* TestConsole.logLines)
       }).pipe(Effect.provide(TestLayer)))
 
+    it.effect("should render tagged handler failures with a userMessage and rethrow the original error", () =>
+      Effect.gen(function*() {
+        class Occupied extends Schema.TaggedError<Occupied>()("Occupied", {
+          path: Schema.String
+        }) {
+          override get [CliError.userMessage]() {
+            return `${this.path} already exists. Re-run with --force to replace it.`
+          }
+        }
+
+        const failure = new Occupied({ path: "config.yaml" })
+        const command = Command.make("deploy", {}, () => failure)
+
+        const error = yield* Effect.flip(Command.runWith(command, { version: "1.0.0" })([]))
+
+        assert.strictEqual(error, failure)
+        assert.isFalse(Runtime.getErrorReported(error))
+        const stderr = yield* TestConsole.errorLines
+        assert.lengthOf(stderr, 1)
+        assert.strictEqual(
+          String(stderr[0]),
+          "\nERROR\n  config.yaml already exists. Re-run with --force to replace it."
+        )
+        assert.isEmpty(yield* TestConsole.logLines)
+      }).pipe(Effect.provide(TestLayer)))
+
     it.effect("should render UserError handler failures with the installed formatter", () =>
       Effect.gen(function*() {
         const formatter: CliOutput.Formatter = {
@@ -872,6 +1033,22 @@ describe("Command", () => {
 
         assert.deepStrictEqual(yield* TestConsole.errorLines, ["CUSTOM ERROR: Deployment failed"])
       }))
+
+    it.effect("should color built-in output from TerminalCapabilities", () =>
+      Effect.gen(function*() {
+        const capabilities = { canColor: true, canAnimate: false, canPrompt: false }
+        const run = Command.runWith(Command.make("tool"), { version: "1.2.3" })(["--version"])
+
+        yield* run.pipe(Effect.provideService(TerminalCapabilities.TerminalCapabilities, capabilities))
+        yield* run.pipe(
+          Effect.provideService(TerminalCapabilities.TerminalCapabilities, capabilities),
+          Effect.provideService(CliOutput.Formatter, CliOutput.defaultFormatter({ colors: false }))
+        )
+
+        const [colored, custom] = yield* TestConsole.logLines
+        assert.include(String(colored), "\x1b[1mtool")
+        assert.strictEqual(String(custom), "tool v1.2.3")
+      }).pipe(Effect.provide(TestLayerWithoutFormatter)))
 
     it.effect("should render UserError once when running wizard-generated arguments", () =>
       Effect.gen(function*() {
@@ -939,6 +1116,105 @@ describe("Command", () => {
         assert.isEmpty(error.errors)
         assert.include((yield* TestConsole.logLines).join("\n"), "USAGE")
         assert.isEmpty(yield* TestConsole.errorLines)
+      }).pipe(Effect.provide(TestLayer)))
+  })
+
+  describe("validate", () => {
+    it.effect("rejects the parsed input with help before the handler runs", () =>
+      Effect.gen(function*() {
+        const handled: Array<{ readonly useApi: boolean; readonly useDocker: boolean }> = []
+        const command = Command.make("download", {
+          useApi: Flag.Boolean("use-api").pipe(Flag.withDefault(false)),
+          useDocker: Flag.Boolean("use-docker").pipe(Flag.withDefault(false))
+        }, (input) =>
+          Effect.sync(() => {
+            handled.push(input)
+          })).pipe(
+            Command.validate((input) =>
+              input.useApi && input.useDocker
+                ? Effect.fail(
+                  new CliError.ValidationError({ message: "--use-api and --use-docker are mutually exclusive" })
+                )
+                : Effect.void
+            )
+          )
+        const run = Command.runWith(command, { version: "1.0.0" })
+
+        yield* run(["--use-api"])
+        const error = yield* Effect.flip(run(["--use-api", "--use-docker"]))
+
+        assert.deepStrictEqual(handled, [{ useApi: true, useDocker: false }])
+        assert.instanceOf(error, CliError.ShowHelp)
+        assert.lengthOf(error.errors, 1)
+        assert.instanceOf(error.errors[0], CliError.ValidationError)
+        assert.include(
+          (yield* TestConsole.errorLines).join("\n"),
+          "--use-api and --use-docker are mutually exclusive"
+        )
+        assert.include((yield* TestConsole.logLines).join("\n"), "USAGE")
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("keeps validators through withHandler and stops at the first failure", () =>
+      Effect.gen(function*() {
+        const calls: Array<string> = []
+        const command = Command.make("download", {
+          useDocker: Flag.Boolean("use-docker").pipe(Flag.withDefault(false))
+        }).pipe(
+          Command.validate(({ useDocker }) =>
+            Effect.suspend(() => {
+              calls.push("first")
+              return useDocker ? Effect.fail(new CliError.ValidationError({ message: "no docker" })) : Effect.void
+            })
+          ),
+          Command.validate(() =>
+            Effect.sync(() => {
+              calls.push("second")
+            })
+          ),
+          Command.withHandler(() =>
+            Effect.sync(() => {
+              calls.push("handler")
+            })
+          )
+        )
+        const run = Command.runWith(command, { version: "1.0.0" })
+
+        yield* run([])
+        const error = yield* Effect.flip(run(["--use-docker"]))
+
+        assert.deepStrictEqual(calls, ["first", "second", "handler", "first"])
+        assert.instanceOf(error, CliError.ShowHelp)
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("sees only the input that exists where it is applied in the pipeline", () =>
+      Effect.gen(function*() {
+        const seen: Array<[string, ReadonlyArray<string>]> = []
+        const record = (label: string) => <A extends object>(input: A) =>
+          Effect.sync(() => {
+            seen.push([label, Object.keys(input).sort()])
+          })
+        const child = Command.make("deploy", {}, () => Effect.void)
+        const root = Command.make("tool", {
+          dryRun: Flag.Boolean("dry-run").pipe(Flag.withDefault(false))
+        }, () => Effect.void).pipe(
+          Command.validate(record("before shared flags")),
+          Command.withSharedFlags({ useApi: Flag.Boolean("use-api").pipe(Flag.withDefault(false)) }),
+          Command.validate(record("before subcommands")),
+          Command.withSubcommands([child]),
+          Command.validate(record("after subcommands"))
+        )
+        const run = Command.runWith(root, { version: "1.0.0" })
+
+        yield* run(["--use-api"])
+        const leaf = seen.splice(0)
+        yield* run(["--use-api", "deploy"])
+
+        assert.deepStrictEqual(leaf, [
+          ["before shared flags", ["dryRun"]],
+          ["before subcommands", ["dryRun", "useApi"]],
+          ["after subcommands", ["dryRun", "useApi"]]
+        ])
+        assert.deepStrictEqual(seen, [["after subcommands", ["useApi"]]])
       }).pipe(Effect.provide(TestLayer)))
   })
 
@@ -1672,6 +1948,91 @@ describe("Command", () => {
         ])
       }).pipe(Effect.provide(TestLayer)))
 
+    it.effect("should not accept --no-<flag> for boolean flags without negation", () =>
+      Effect.gen(function*() {
+        const captured: Array<boolean> = []
+
+        const cmd = Command.make("tool", {
+          unsafe: Flag.Boolean("unsafe").pipe(
+            Flag.withDefault(false),
+            Flag.withoutNegation
+          )
+        }, (config) => Effect.sync(() => captured.push(config.unsafe)))
+
+        const runCmd = Command.runWith(cmd, { version: "1.0.0" })
+
+        yield* runCmd(["--unsafe"])
+        yield* runCmd(["--no-unsafe"]).pipe(Effect.catchTag("ShowHelp", () => Effect.void))
+
+        assert.deepStrictEqual(captured, [true])
+
+        const stderr = yield* TestConsole.errorLines
+        assert.isTrue(stderr.join("\n").includes("Unrecognized flag: --no-unsafe"))
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("should negate boolean flags through a custom negation name", () =>
+      Effect.gen(function*() {
+        const captured: Array<boolean> = []
+
+        const cmd = Command.make("tool", {
+          validate: Flag.Boolean("validate").pipe(
+            Flag.withDefault(true),
+            Flag.withNegation("skip-validate")
+          )
+        }, (config) => Effect.sync(() => captured.push(config.validate)))
+
+        const runCmd = Command.runWith(cmd, { version: "1.0.0" })
+
+        yield* runCmd([])
+        yield* runCmd(["--skip-validate"])
+        yield* runCmd(["--no-validate"]).pipe(Effect.catchTag("ShowHelp", () => Effect.void))
+
+        assert.deepStrictEqual(captured, [true, false])
+
+        const stderr = yield* TestConsole.errorLines
+        assert.isTrue(stderr.join("\n").includes("Unrecognized flag: --no-validate"))
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("should reject boolean flags that share a negation name", () =>
+      Effect.gen(function*() {
+        const run = (flags: Record<string, Flag.Flag<boolean>>) =>
+          Effect.exit(Effect.suspend(() => Command.runWith(Command.make("tool", flags), { version: "1.0.0" })([])))
+
+        const sharedCustom = yield* run({
+          validate: Flag.Boolean("validate").pipe(Flag.withNegation("skip")),
+          verify: Flag.Boolean("verify").pipe(Flag.withNegation("skip"))
+        })
+        const customMatchesDefault = yield* run({
+          bar: Flag.Boolean("bar"),
+          foo: Flag.Boolean("foo").pipe(Flag.withNegation("no-bar"))
+        })
+
+        assert.isTrue(Exit.hasDies(sharedCustom))
+        assert.isTrue(Exit.hasDies(customMatchesDefault))
+      }).pipe(Effect.provide(TestLayer)))
+
+    it.effect("should resolve a disabled negation name to a conflicting alias", () =>
+      Effect.gen(function*() {
+        const captured: Array<readonly [boolean, boolean]> = []
+
+        const cmd = Command.make("tool", {
+          prompt: Flag.Boolean("prompt").pipe(
+            Flag.withDefault(true),
+            Flag.withoutNegation
+          ),
+          force: Flag.Boolean("force").pipe(
+            Flag.withAlias("no-prompt"),
+            Flag.withDefault(false)
+          )
+        }, (config) => Effect.sync(() => captured.push([config.prompt, config.force] as const)))
+
+        const runCmd = Command.runWith(cmd, { version: "1.0.0" })
+
+        yield* runCmd(["--no-prompt"])
+
+        assert.deepStrictEqual(captured, [[true, true]])
+      }).pipe(Effect.provide(TestLayer)))
+
     it.effect("should prefer canonical negation over conflicting aliases", () =>
       Effect.gen(function*() {
         const captured: Array<readonly [boolean, boolean]> = []
@@ -1831,7 +2192,7 @@ describe("Command", () => {
 
         const runCmd = Command.runWith(cmd, { version: "1.0.0" })
 
-        yield* runCmd(["--verbose", "a.txt", "b.txt", "--verbose", "c.txt"])
+        yield* runCmd(["a.txt", "b.txt", "--verbose", "c.txt"])
 
         assert.deepStrictEqual(captured, [{ files: ["a.txt", "b.txt", "c.txt"], verbose: true }])
       }).pipe(Effect.provide(TestLayer)))
@@ -2302,6 +2663,27 @@ describe("Command", () => {
           { command: "myapp root", description: "Run root command" }
         ])
       }))
+
+    it.effect("should resolve examples from the command path", () =>
+      Effect.gen(function*() {
+        const deploy = Command.make("deploy").pipe(
+          Command.withExamples(({ commandPath }) => [
+            { command: `${commandPath.join(" ")} --yes`, description: "Take every default" }
+          ]),
+          Command.withSubcommands([Command.make("status")]),
+          Command.withSharedFlags({ verbose: Flag.Boolean("verbose") })
+        )
+        const tool = Command.make("tool").pipe(Command.withSubcommands([deploy]))
+
+        yield* Command.runWith(deploy, { version: "1.0.0" })(["--help"])
+        const standalone = (yield* TestConsole.logLines).join("\n").split("\n").map((line) => line.trim())
+        assert.include(standalone, "deploy --yes")
+        assert.notInclude(standalone, "tool deploy --yes")
+
+        yield* Command.runWith(tool, { version: "1.0.0" })(["deploy", "--help"])
+        const mounted = (yield* TestConsole.logLines).join("\n").split("\n").map((line) => line.trim())
+        assert.include(mounted, "tool deploy --yes")
+      }).pipe(Effect.provide(TestLayer)))
   })
 
   describe("help docs", () => {

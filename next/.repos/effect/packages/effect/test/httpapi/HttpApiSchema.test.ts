@@ -88,6 +88,23 @@ describe("HttpApiSchema", () => {
         { id: undefined, event: "user.created", data: { id: "123" } }
       )
     })
+
+    it("encodes data with its JSON codec", () => {
+      const Data = Schema.Struct({ at: Schema.Date, total: Schema.BigInt })
+      const stream = HttpApiSchema.StreamSse({ data: Data })
+      const encode = Schema.encodeUnknownSync(stream.events)
+      const decode = Schema.decodeUnknownSync(stream.events)
+      const data = "{\"at\":\"1970-01-01T00:00:00.000Z\",\"total\":\"1\"}"
+
+      assert.deepStrictEqual(
+        encode({ event: "tick", data: { at: new Date(0), total: 1n } }),
+        { event: "tick", data }
+      )
+      assert.deepStrictEqual(
+        decode({ event: "tick", data }),
+        { event: "tick", data: { at: new Date(0), total: 1n } }
+      )
+    })
   })
 
   describe("StreamUint8Array", () => {
@@ -112,6 +129,31 @@ describe("HttpApiSchema", () => {
       })
 
       assert.strictEqual(stream.contentType, "application/custom-binary")
+    })
+
+    it("stores a list of content types with the first as the default", () => {
+      const stream = HttpApiSchema.StreamUint8Array({
+        contentType: ["application/vnd.docker.raw-stream", "application/vnd.docker.multiplexed-stream"]
+      })
+
+      assert.strictEqual(stream.contentType, "application/vnd.docker.raw-stream")
+      assert.deepStrictEqual(stream.contentTypes, [
+        "application/vnd.docker.raw-stream",
+        "application/vnd.docker.multiplexed-stream"
+      ])
+      assert.deepStrictEqual(HttpApiSchema.StreamUint8Array().contentTypes, ["application/octet-stream"])
+    })
+
+    it("rejects empty and duplicate content type lists", () => {
+      assert.throws(() => HttpApiSchema.StreamUint8Array({ contentType: [] }), /content type/i)
+      assert.throws(
+        () =>
+          HttpApiSchema.StreamNdjson({
+            schema: Schema.Number,
+            contentType: ["application/json", "Application/JSON; charset=utf-8"]
+          }),
+        /content type/i
+      )
     })
   })
 
@@ -301,6 +343,45 @@ describe("HttpApiSchema", () => {
     it("accepts status literals", () => {
       assert.strictEqual(HttpApiSchema.getStatusSuccess(Schema.String.pipe(HttpApiSchema.status("Created")).ast), 201)
       assert.strictEqual(HttpApiSchema.getStatusError(Schema.String.pipe(HttpApiSchema.status("Conflict")).ast), 409)
+    })
+
+    it("uses the last of status and the httpApiStatus annotation", () => {
+      const created = Schema.String.pipe(HttpApiSchema.status(201))
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(created.annotate({ httpApiStatus: 202 }).ast), 202)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(created.annotate({ httpApiStatus: undefined }).ast), 200)
+      const annotated = Schema.String.annotate({ httpApiStatus: 404 }).check(Schema.isMinLength(1))
+      assert.strictEqual(HttpApiSchema.getStatusError(annotated.ast), 404)
+      assert.strictEqual(HttpApiSchema.getStatusError(annotated.pipe(HttpApiSchema.status(409)).ast), 409)
+    })
+
+    it("preserves the status when adding checks", () => {
+      const check = Schema.isMinLength(1)
+      const created = Schema.String.check(check).pipe(HttpApiSchema.status(201)).check(check)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(created.ast), 201)
+
+      const annotated = created.annotate({ httpApiStatus: 202 }).check(check)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(annotated.ast), 202)
+
+      const updated = annotated.pipe(HttpApiSchema.status(203)).check(check)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(updated.ast), 203)
+
+      const cleared = updated.annotate({ httpApiStatus: undefined }).check(check)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(cleared.ast), 200)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(cleared.pipe(HttpApiSchema.status(201)).ast), 201)
+    })
+
+    it("resolves status annotations inside check groups", () => {
+      const group = Schema.makeFilterGroup([
+        Schema.isMinLength(1, { httpApiStatus: 201 }),
+        Schema.makeFilterGroup([Schema.isMaxLength(100, { httpApiStatus: 202 })])
+      ])
+      const schema = Schema.String.check(group).check(Schema.isTrimmed())
+
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(schema.ast), 202)
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(schema.pipe(HttpApiSchema.status(203)).ast), 203)
+
+      const cleared = Schema.String.check(group.annotate({ httpApiStatus: undefined }))
+      assert.strictEqual(HttpApiSchema.getStatusSuccess(cleared.ast), 200)
     })
   })
 })

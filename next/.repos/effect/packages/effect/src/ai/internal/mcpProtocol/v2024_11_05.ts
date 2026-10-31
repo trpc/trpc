@@ -10,9 +10,10 @@ import * as McpCore from "../mcpCore.ts"
 import * as McpProtocol from "../mcpProtocol.ts"
 import * as McpRuntime from "../mcpRuntime.ts"
 import * as McpSchema from "../mcpSchema/v2024_11_05.ts"
+import * as McpSkills from "../mcpSkills.ts"
 
 // Pings can arrive before initialize and do not require a client session.
-const ClientRequestRpcs = McpSchema.ClientRequestRpcs.omit("ping").middleware(
+const ClientRequestRpcs = McpSchema.ClientRequestRpcs.omit("ping").merge(McpSkills.LegacyRpcs).middleware(
   PublicMcpSchema.McpServerClientMiddleware
 ).add(McpSchema.Ping)
 
@@ -124,6 +125,7 @@ export const protocol = McpProtocol.make({
   handlerRpcs: AdapterRpcs,
   makeHandlers: (core, lifecycle) =>
     AdapterRpcs.of({
+      ...McpSkills.legacyHandlers(core),
       initialize: (request, { client }) =>
         lifecycle.initialize(McpSchema.protocolVersion, profileFromInitialize(request), client.id).pipe(
           Effect.map((result) =>
@@ -154,12 +156,10 @@ export const protocol = McpProtocol.make({
       "notifications/roots/list_changed": (_, { client, headers }) =>
         lifecycle.clientNotification(McpCore.ClientNotification.RootsChanged(), client.id, headers),
       "resources/list": (_pageRequest) =>
-        PublicMcpSchema.McpServerClient.use((request) => core.resources.list(McpProtocol.profileFromClient(request)))
+        McpProtocol.listForClient(core.resources.list)
           .pipe(Effect.map((resources) => McpSchema.ListResourcesResult.make({ resources }))),
       "resources/templates/list": (_pageRequest) =>
-        PublicMcpSchema.McpServerClient.use((request) =>
-          core.resources.listTemplates(McpProtocol.profileFromClient(request))
-        ).pipe(
+        McpProtocol.listForClient(core.resources.listTemplates).pipe(
           Effect.map((resourceTemplates) => McpSchema.ListResourceTemplatesResult.make({ resourceTemplates }))
         ),
       "resources/read": Effect.fnUntraced(function*({ uri }) {
@@ -189,7 +189,7 @@ export const protocol = McpProtocol.make({
       "resources/unsubscribe": ({ uri }, { client, headers }) =>
         lifecycle.unsubscribe(uri, client.id, headers).pipe(Effect.as({})),
       "prompts/list": () =>
-        PublicMcpSchema.McpServerClient.use((request) => core.prompts.list(McpProtocol.profileFromClient(request)))
+        McpProtocol.listForClient(core.prompts.list)
           .pipe(
             Effect.map((prompts) =>
               McpSchema.ListPromptsResult.make({
@@ -249,15 +249,14 @@ export const protocol = McpProtocol.make({
         })
       }),
       "tools/list": Effect.fnUntraced(function*() {
-        const request = yield* PublicMcpSchema.McpServerClient
-        return yield* core.tools.list(McpProtocol.profileFromClient(request)).pipe(
+        return yield* McpProtocol.listForClient(core.tools.list).pipe(
           Effect.map((tools) =>
             McpSchema.ListToolsResult.make({
               tools: tools.map((tool) =>
                 McpSchema.Tool.make({
                   name: tool.name,
                   description: tool.description,
-                  inputSchema: tool.inputSchema
+                  inputSchema: McpProtocol.projectLegacyToolInputSchema(tool.inputSchema)
                 })
               )
             })

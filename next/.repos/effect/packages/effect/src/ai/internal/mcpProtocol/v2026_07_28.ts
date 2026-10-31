@@ -25,8 +25,9 @@ import * as PublicMcpSchema from "../../McpSchema.ts"
 import * as McpCore from "../mcpCore.ts"
 import * as McpProtocol from "../mcpProtocol.ts"
 import * as McpSchema from "../mcpSchema/v2026_07_28.ts"
+import * as McpSkills from "../mcpSkills.ts"
 
-const InputResponses = Schema.Record(Schema.String, Schema.JsonObject)
+const InputResponses = Schema.Record(Schema.String, Schema.Record(Schema.String, Schema.Unknown))
 const decodeRequestMetadata = Schema.decodeUnknownEffect(McpSchema.RequestMetaObject)
 const decodeCancellation = Schema.decodeUnknownEffect(McpSchema.CancelledNotification.payloadSchema)
 const isJson = Schema.is(Schema.Json)
@@ -92,8 +93,8 @@ export const profileFromRequestMetadata = Effect.fnUntraced(function*(metadata: 
 
 const resultMetadata = (
   value: ObjectWithUndefined,
-  serverInfo: Schema.JsonObject
-): Schema.JsonObject => {
+  serverInfo: Readonly<Record<string, unknown>>
+): Readonly<Record<string, unknown>> => {
   const metadata: unknown = value._meta
   return {
     ...(Predicate.isReadonlyObject(metadata) ? metadata : {}),
@@ -103,7 +104,7 @@ const resultMetadata = (
 
 const projectInputRequired = (
   outcome: McpCore.InputRequiredFields,
-  serverInfo: Schema.JsonObject
+  serverInfo: Readonly<Record<string, unknown>>
 ) =>
   omitUndefined({
     _meta: { "io.modelcontextprotocol/serverInfo": serverInfo },
@@ -138,8 +139,8 @@ export const projectCallToolOutcome = Effect.fnUntraced(function*(
 const requiredCapabilitiesForInputRequests = (
   inputRequests: McpCore.InputRequiredFields["inputRequests"],
   capabilities: McpCore.NegotiatedProtocolProfile["clientCapabilities"]
-): Record<string, Schema.JsonObject> => {
-  const required: Record<string, Types.Mutable<Schema.JsonObject>> = {}
+): Record<string, Readonly<Record<string, unknown>>> => {
+  const required: Record<string, Record<string, unknown>> = {}
   for (const request of Object.values(inputRequests ?? {})) {
     Match.value(request).pipe(
       Match.when({ method: "roots/list" }, () => {
@@ -202,9 +203,10 @@ const projectContent = Match.type<PublicMcpSchema.ContentBlock>().pipe(
   Match.exhaustive
 )
 
-const projectResource = (resource: PublicMcpSchema.Resource) => McpSchema.Resource.make(resource)
+const projectResource = (resource: PublicMcpSchema.Resource) =>
+  McpProtocol.transcode(PublicMcpSchema.Resource, McpSchema.Resource, resource)
 const projectResourceTemplate = (resourceTemplate: PublicMcpSchema.ResourceTemplate) =>
-  McpSchema.ResourceTemplate.make(resourceTemplate)
+  McpProtocol.transcode(PublicMcpSchema.ResourceTemplate, McpSchema.ResourceTemplate, resourceTemplate)
 
 const projectPrompt = (prompt: PublicMcpSchema.Prompt) =>
   McpProtocol.transcode(PublicMcpSchema.Prompt, McpSchema.Prompt, prompt)
@@ -231,6 +233,8 @@ const projectCompleteResult = Effect.fnUntraced(function*(
 type ProtocolError =
   | McpCore.ResourceNotFound
   | McpCore.PromptNotFound
+  | McpCore.SkillNotFound
+  | McpCore.DirectoryNotFound
   | McpCore.ToolError
   | McpCore.UnsupportedByProtocol
   | McpProtocol.ProtocolError
@@ -264,16 +268,14 @@ const projectError = (error: ProtocolError): McpSchema.McpError => {
   })
 }
 
-const failWithHttpStatus = Effect.fnUntraced(function*(status: number, error: McpProtocol.ProtocolError) {
-  const request = yield* Effect.serviceOption(HttpServerRequest.HttpServerRequest)
-  if (Option.isSome(request)) {
+const failWithHttpStatus = (status: number, error: McpProtocol.ProtocolError) =>
+  Effect.withFiber((fiber) => {
     appendPreResponseHandlerUnsafe(
-      request.value,
+      fiber.context,
       (_request, response) => Effect.succeed(HttpServerResponse.setStatus(response, status))
     )
-  }
-  return yield* error
-})
+    return Effect.fail(error)
+  })
 
 /**
  * @internal
@@ -299,7 +301,7 @@ const unsupported = (
 /**
  * @internal
  */
-export const handlerRpcs = McpSchema.ClientRequestRpcs.merge(McpSchema.ClientNotificationRpcs)
+export const handlerRpcs = McpSchema.ClientRequestRpcs.merge(McpSchema.ClientNotificationRpcs, McpSkills.StatelessRpcs)
 
 /**
  * @internal
@@ -322,16 +324,25 @@ export const makeHandlers = (
   ]))
   const decodeCompleteResult = Schema.decodeUnknownEffect(McpSchema.CompleteResult)
   const decodeListToolsResult = Schema.decodeUnknownEffect(McpSchema.ListToolsResult)
+  const decodeListSkillsResult = Schema.decodeUnknownEffect(McpSkills.ListSkillsResult)
+  const decodeGetSkillResult = Schema.decodeUnknownEffect(McpSkills.GetSkillResult)
+  const decodeReadResourceDirectoryResult = Schema.decodeUnknownEffect(McpSkills.ReadResourceDirectoryResult)
   const sendNotification = context.sendNotification
   const supportsSubscriptions = sendNotification !== undefined
   // Older adapters accept arbitrary JSON; this binding requires extension settings objects.
   const extensions = context.serverInfo.extensions === undefined ? undefined : Record.filter(
     context.serverInfo.extensions,
-    (value): value is Schema.JsonObject => Predicate.isReadonlyObject(value)
+    (value): value is Readonly<Record<string, unknown>> => Predicate.isReadonlyObject(value)
   )
+  // Project only the wire fields; structurally compatible hints can carry extra properties.
+  const cacheHint = (family: keyof McpProtocol.CacheHints) => {
+    const hint = context.serverInfo.cacheHints?.[family]
+    return hint === undefined ? privateStaleCache : { ttlMs: hint.ttlMs, cacheScope: hint.cacheScope }
+  }
   const getDiscovery = Effect.map(context.registrationPresence, (presence) => {
     const capabilities: Types.Mutable<typeof McpSchema.ServerCapabilities.Type> = { completions: {}, logging: {} }
-    if (extensions !== undefined) capabilities.extensions = extensions
+    const declared = McpSkills.declareExtension(extensions, presence.skills)
+    if (declared !== undefined) capabilities.extensions = declared
     if (presence.tools) capabilities.tools = { listChanged: supportsSubscriptions }
     if (presence.resources) {
       capabilities.resources = { listChanged: supportsSubscriptions, subscribe: supportsSubscriptions }
@@ -339,6 +350,10 @@ export const makeHandlers = (
     if (presence.prompts) capabilities.prompts = { listChanged: supportsSubscriptions }
     return { supportedVersions: context.supportedVersions, capabilities, serverInfo: context.serverInfo }
   })
+  const requireSkills = (method: string) =>
+    McpSkills.requireSkills(core, method).pipe(
+      Effect.catch((error) => failWithHttpStatus(404, error))
+    )
   const getInvocation = PublicMcpSchema.McpRequestContext.useSync(
     McpProtocol.invocationFromRequestContext
   )
@@ -386,6 +401,8 @@ export const makeHandlers = (
       }
       const presence = yield* context.registrationPresence
       const eventsScope = yield* Scope.fork(yield* Effect.scope)
+      // Ignore changes emitted before this subscription, even if delivery was deferred.
+      const listChangeRevision = context.getListChangeRevision?.() ?? 0
       const events = yield* Scope.provide(context.subscribeServerNotifications, eventsScope)
       const honored = {
         ...(presence.tools && request.notifications.toolsListChanged === true
@@ -410,6 +427,9 @@ export const makeHandlers = (
       yield* Effect.gen(function*() {
         while (true) {
           const event = yield* PubSub.take(events)
+          if (event.listChangeRevision !== undefined && event.listChangeRevision <= listChangeRevision) {
+            continue
+          }
           if (event.targetClientId !== undefined && event.targetClientId !== client.id) {
             continue
           }
@@ -480,7 +500,7 @@ export const makeHandlers = (
     ) {
       const discovery = yield* getDiscovery
       const result = yield* projectCompleteResult({
-        ...privateStaleCache,
+        ...cacheHint("discover"),
         supportedVersions: Array.from(discovery.supportedVersions),
         capabilities: discovery.capabilities,
         instructions: context.serverInfo.instructions
@@ -491,10 +511,10 @@ export const makeHandlers = (
       _request: typeof McpSchema.ListResources.payloadSchema.Type
     ) {
       const invocation = yield* getInvocation
-      const resources = yield* core.resources.list(invocation.protocol)
+      const resources = yield* core.resources.list(invocation)
       const result = yield* projectCompleteResult({
-        ...privateStaleCache,
-        resources: resources.map(projectResource)
+        ...cacheHint("resources"),
+        resources: yield* Effect.forEach(resources, projectResource)
       }, context.serverInfo)
       return yield* decodeListResourcesResult(result)
     }, Effect.mapError(projectError)),
@@ -502,10 +522,10 @@ export const makeHandlers = (
       _request: typeof McpSchema.ListResourceTemplates.payloadSchema.Type
     ) {
       const invocation = yield* getInvocation
-      const resourceTemplates = yield* core.resources.listTemplates(invocation.protocol)
+      const resourceTemplates = yield* core.resources.listTemplates(invocation)
       const result = yield* projectCompleteResult({
-        ...privateStaleCache,
-        resourceTemplates: resourceTemplates.map(projectResourceTemplate)
+        ...cacheHint("resourceTemplates"),
+        resourceTemplates: yield* Effect.forEach(resourceTemplates, projectResourceTemplate)
       }, context.serverInfo)
       return yield* decodeListResourceTemplatesResult(result)
     }, Effect.mapError(projectError)),
@@ -534,10 +554,10 @@ export const makeHandlers = (
         )
       }
       const invocation = yield* getInvocation
-      const prompts = yield* core.prompts.list(invocation.protocol)
+      const prompts = yield* core.prompts.list(invocation)
       const projectedPrompts = yield* Effect.forEach(prompts, projectPrompt)
       const result = yield* projectCompleteResult({
-        ...privateStaleCache,
+        ...cacheHint("prompts"),
         prompts: projectedPrompts
       }, context.serverInfo)
       return yield* decodeListPromptsResult(result)
@@ -590,17 +610,17 @@ export const makeHandlers = (
       _request: typeof McpSchema.ListTools.payloadSchema.Type
     ) {
       const invocation = yield* getInvocation
-      const tools = yield* core.tools.list(invocation.protocol)
+      const tools = yield* core.tools.list(invocation)
       const projectedTools = yield* Effect.forEach(tools, projectTool)
       const result = yield* projectCompleteResult({
-        ...privateStaleCache,
+        ...cacheHint("tools"),
         tools: projectedTools
       }, context.serverInfo)
       return yield* decodeListToolsResult(result)
     }, Effect.mapError(projectError)),
     "tools/call": Effect.fnUntraced(function*(request: typeof McpSchema.CallTool.payloadSchema.Type) {
       const invocation = yield* getInputInvocation(request)
-      const tool = (yield* core.tools.list(invocation.protocol)).find((tool) => tool.name === request.name)
+      const tool = core.tools.find(request.name, invocation.protocol)
       const httpRequest = yield* Effect.serviceOption(HttpServerRequest.HttpServerRequest)
 
       if (tool !== undefined && Option.isSome(httpRequest)) {
@@ -665,6 +685,28 @@ export const makeHandlers = (
         context.serverInfo
       )
     }, Effect.mapError(projectError)),
+    "skills/list": Effect.fnUntraced(function*(request: typeof McpSkills.ListSkills.payloadSchema.Type) {
+      yield* requireSkills("skills/list")
+      yield* McpSkills.rejectCursor(request.cursor)
+      const skills = yield* core.skills.list(yield* getInvocation)
+      const result = yield* projectCompleteResult({ ...cacheHint("skills"), skills }, context.serverInfo)
+      return yield* decodeListSkillsResult(result)
+    }, Effect.mapError(projectError)),
+    "skills/get": Effect.fnUntraced(function*(request: typeof McpSkills.GetSkill.payloadSchema.Type) {
+      yield* requireSkills("skills/get")
+      const skill = yield* core.skills.get(request.uri, yield* getInvocation)
+      const result = yield* projectCompleteResult({ ...cacheHint("skills"), skill }, context.serverInfo)
+      return yield* decodeGetSkillResult(result)
+    }, Effect.mapError(projectError)),
+    "resources/directory/read": Effect.fnUntraced(function*(
+      request: typeof McpSkills.ReadResourceDirectory.payloadSchema.Type
+    ) {
+      yield* requireSkills("resources/directory/read")
+      yield* McpSkills.rejectCursor(request.cursor)
+      const resources = yield* core.skills.readDirectory(request.uri, yield* getInvocation)
+      const result = yield* projectCompleteResult({ ...cacheHint("skills"), resources }, context.serverInfo)
+      return yield* decodeReadResourceDirectoryResult(result)
+    }, Effect.mapError(projectError)),
     "notifications/cancelled": Effect.fnUntraced(function*(
       _request: typeof McpSchema.CancelledNotification.payloadSchema.Type
     ) {
@@ -688,7 +730,7 @@ const runtime = {
 export const protocol = McpProtocol.make({
   protocolVersion: McpSchema.protocolVersion,
   runtime,
-  clientRpcs: McpSchema.ClientRpcs,
+  clientRpcs: McpSchema.ClientRpcs.merge(McpSkills.StatelessRpcs),
   clientNotificationRpcs: McpSchema.ClientNotificationRpcs,
   serverRequestRpcs: McpSchema.ServerRequestRpcs,
   serverNotificationRpcs: McpSchema.ServerNotificationRpcs,

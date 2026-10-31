@@ -1551,7 +1551,7 @@ export const isPastUnsafe: (self: DateTime) => boolean = Internal.isPastUnsafe
  *
  * **Details**
  *
- * This always returns the UTC representation, ignoring any time zone information.
+ * This preserves the original instant, regardless of any time zone information.
  *
  * **Example** (Converting DateTime values to UTC Dates)
  *
@@ -1576,7 +1576,9 @@ export const toDateUtc: (self: DateTime) => Date = Internal.toDateUtc
  *
  * **Details**
  *
- * For `DateTime.Zoned`, this adjusts for the time zone before converting.
+ * For `DateTime.Zoned`, this stores the zoned wall-clock time in the returned
+ * `Date`'s UTC fields, rather than preserving the original instant. Use
+ * `toDateUtc` to preserve the instant.
  * For `DateTime.Utc`, this is equivalent to `toDateUtc`.
  *
  * **Example** (Converting DateTime values to Dates)
@@ -1584,13 +1586,14 @@ export const toDateUtc: (self: DateTime) => Date = Internal.toDateUtc
  * ```ts import.meta.vitest
  * import { DateTime } from "effect"
  *
- * const utc = DateTime.makeUnsafe("2024-01-01T12:00:00Z")
- * const zoned = DateTime.makeZonedUnsafe("2024-01-01T12:00:00Z", {
+ * const utc = DateTime.makeUnsafe("2024-07-01T12:00:00Z")
+ * const zoned = DateTime.makeZonedUnsafe("2024-07-01T12:00:00Z", {
  *   timeZone: "Europe/London"
  * })
  *
- * DateTime.toDate(utc).toISOString() // => "2024-01-01T12:00:00.000Z"
- * DateTime.toDate(zoned).toISOString() // => "2024-01-01T12:00:00.000Z"
+ * DateTime.toDate(utc).toISOString() // => "2024-07-01T12:00:00.000Z"
+ * DateTime.toDate(zoned).toISOString() // => "2024-07-01T13:00:00.000Z"
+ * DateTime.toDateUtc(zoned).toISOString() // => "2024-07-01T12:00:00.000Z"
  * ```
  *
  * @stability stable

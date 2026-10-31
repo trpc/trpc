@@ -1,7 +1,8 @@
 import { PgliteClient } from "@effect/sql-pglite"
-import { assert, describe, layer } from "@effect/vitest"
+import { assert, describe, it, layer } from "@effect/vitest"
 import * as Pglite from "@electric-sql/pglite"
-import { Effect, Exit, Layer, Queue, Scope } from "effect"
+import { Effect, Exit, Layer, Queue, Scope, String } from "effect"
+import * as Reactivity from "effect/reactivity/Reactivity"
 import { SqlClient } from "effect/sql/SqlClient"
 
 const ClientLayer = PgliteClient.layer()
@@ -51,7 +52,7 @@ describe("PgliteClient", { concurrent: false }, () => {
         }`.compile()
         assert.strictEqual(
           query,
-          `UPDATE people SET name = data.name FROM (values ($1),($2)) AS data("name")`
+          `UPDATE people SET name = data.name FROM (values ($1),($2)) AS "data"("name")`
         )
         assert.deepStrictEqual(params, ["Tim", "John"])
       }))
@@ -62,6 +63,21 @@ describe("PgliteClient", { concurrent: false }, () => {
         const [query, params] = sql`SELECT * FROM ${sql("people")} WHERE id IN ${sql.in([1, 2, "x"])}`.compile()
         assert.strictEqual(query, `SELECT * FROM "people" WHERE id IN ($1,$2,$3)`)
         assert.deepStrictEqual(params, [1, 2, "x"])
+      }))
+
+    it.effect("in helper with an empty list", () =>
+      Effect.gen(function*() {
+        const sql = yield* PgliteClient.PgliteClient
+        yield* sql`INSERT INTO test (name) VALUES ('hello')`
+        assert.deepStrictEqual(yield* sql`SELECT name FROM test WHERE id IN ${sql.in([])}`, [])
+        assert.deepStrictEqual(yield* sql`SELECT name FROM test WHERE id NOT IN ${sql.in([])}`, [{ name: "hello" }])
+      }).pipe(Effect.provide(Migrations)))
+
+    it.effect("in helper is not rewritten inside a line comment", () =>
+      Effect.gen(function*() {
+        const sql = yield* PgliteClient.PgliteClient
+        const [query] = sql`SELECT 2 -- check in\n${sql.in([])} AS x`.compile()
+        assert.strictEqual(query, "SELECT 2 -- check in\n() AS x")
       }))
 
     it.effect("and helper", () =>
@@ -162,4 +178,11 @@ describe("PgliteClient", { concurrent: false }, () => {
         }))
     })
   })
+
+  it.effect("identifies the pglite driver on directly constructed clients", () =>
+    Effect.gen(function*() {
+      const sql = yield* PgliteClient.make({ transformResultNames: String.snakeToCamel })
+      assert.strictEqual(sql.driver, "pglite")
+      assert.strictEqual(sql.withoutTransforms().driver, "pglite")
+    }).pipe(Effect.scoped, Effect.provide(Reactivity.layer)), { timeout: 30_000 })
 })

@@ -84,7 +84,11 @@ indented: >-
       "multiple blank paragraph lines",
       "message: >-\n  first\n\n\n  second\n",
       "first\n\nsecond"
-    ]
+    ],
+    ["literal tab content", "message: |\n  all:\n  \tcc\n", "all:\n\tcc\n"],
+    ["folded tab-led content", "message: >\n  a\n  \tb\n  c\n", "a\n\tb\nc\n"],
+    ["whitespace-only content", "message: |\n  a\n    \n  b\n", "a\n  \nb\n"],
+    ["explicit-indicator leading whitespace", "message: |1\n   \n  x\n", "  \n x\n"]
   ])("preserves %s", (_, source, expected) => {
     assert.deepStrictEqual(Yaml.parse(source), { message: expected })
   })
@@ -127,6 +131,21 @@ indented: >-
     assert.deepStrictEqual(Yaml.parse("- |+\n  first\n\n- second\n"), ["first\n\n", "second"])
   })
 
+  it.each([
+    ["|", "    first\n    second\n", "first\nsecond\n"],
+    [">-", "\n    first\n    second\n\n", "\nfirst second"],
+    ["|2+", "    # text\n\n", "  # text\n\n"]
+  ])("ends %s scalars before less-indented comments", (indicator, content, expected) => {
+    assert.deepStrictEqual(Yaml.parse(`message: ${indicator}\n${content} # outside\nnext: 1\n`), {
+      message: expected,
+      next: 1
+    })
+  })
+
+  it("rejects less-indented block scalar content", () => {
+    assert.throws(() => Yaml.parse("message: |\n    first\n  second\nnext: 1\n"), SyntaxError)
+  })
+
   it("resolves aliases", () => {
     assert.deepStrictEqual(
       Yaml.parse(`
@@ -145,6 +164,24 @@ development:
 
   it("rejects invalid indentation", () => {
     assert.throws(() => Yaml.parse("root:\n   child: true\n  sibling: false\n"))
+  })
+
+  it("allows tabs on comment and blank lines outside scalars", () => {
+    assert.deepStrictEqual(Yaml.parse("a: 1\n\t# comment\n\t\nb: 2\n"), { a: 1, b: 2 })
+  })
+
+  it.each([
+    ["structural indentation", "root:\n\tchild: true\n"],
+    ["below block content indentation", "text: |\n  x\n\t\nnext: 1\n"],
+    ["plain continuation", "text: a\n\t\n  b\n"],
+    ["single-quoted continuation", "text: 'a\n\tb'\n"],
+    ["double-quoted continuation", "text: \"a\n\tb\"\n"]
+  ])("rejects tabs in %s", (_, source) => {
+    assert.throws(() => Yaml.parse(source), /Tabs cannot be used for YAML indentation/)
+  })
+
+  it("rejects leading empty lines more indented than the first block content line", () => {
+    assert.throws(() => Yaml.parse("text: |\n    \n  \tx\n"), SyntaxError)
   })
 
   // YAML 1.2.2 §8.2.1: a mapping value's block sequence may be indentless.
@@ -192,6 +229,36 @@ development:
       }
     ])("parses $name", ({ source, expected }) => {
       assert.deepStrictEqual(Yaml.parse(source), expected)
+    })
+  })
+
+  // YAML 1.2.2 §8.2.1: a sequence entry's mapping is indented to its first key.
+  // Expected values and rejection fixtures were checked with yaml 2.9.1 and js-yaml 4.3.2.
+  describe("sequence entry mappings indented past the dash", () => {
+    it.each([
+      {
+        name: "root sequence",
+        source: "-   name: a\n    age: 1\n",
+        expected: [{ name: "a", age: 1 }]
+      },
+      {
+        name: "indentless sequence",
+        source: "items:\n-   name: a\n    age: 1\n-   name: b\n    age: 2\n",
+        expected: { items: [{ name: "a", age: 1 }, { name: "b", age: 2 }] }
+      }
+    ])("parses $name", ({ source, expected }) => {
+      assert.deepStrictEqual(Yaml.parse(source), expected)
+    })
+
+    it.each([
+      ["two spaces", "-   name: a\n  age: 1\n"],
+      ["three spaces", "-   name: a\n   age: 1\n"]
+    ])("rejects a later key indented by %s", (_, source) => {
+      assert.throws(() => Yaml.parse(source), SyntaxError)
+    })
+
+    it("rejects a tab before the first key", () => {
+      assert.throws(() => Yaml.parse("- \tname: a\n   age: 1\n"), /Tabs cannot be used for YAML indentation/)
     })
   })
 
@@ -264,6 +331,36 @@ development:
 
     it("folds plain sequence items", () => {
       assert.deepStrictEqual(Yaml.parse("- Deploy\n  and verify.\n- Finish\n"), ["Deploy and verify.", "Finish"])
+    })
+  })
+
+  // YAML 1.2.2 §§7.4–7.5: flow collections may span lines indented past the parent node.
+  // Unlike the spec, the closing bracket may also sit at the parent's indentation.
+  describe("multiline flow collections", () => {
+    it.each(
+      [
+        [
+          "JSON-style mapping below its key",
+          "example:\n  {\n    \"active_anon\": 1572864,\n    \"active_file\": 5115904\n  }\n",
+          { example: { active_anon: 1572864, active_file: 5115904 } }
+        ],
+        ["closing bracket at the parent indentation", "a: [\n  1,\n  2\n]\n", { a: [1, 2] }],
+        ["nested collections", "a: {\n  b: [\n    1\n  ],\n  c: {d: 2}\n  }\n", { a: { b: [1], c: { d: 2 } } }],
+        ["sibling key after the collection", "a: [\n  1\n  ]\nb: 2\n", { a: [1], b: 2 }],
+        ["comment and blank lines", "a: [1, # one\n# between\n\n  2]\n", { a: [1, 2] }],
+        ["quoted hash after a comma on a continuation line", "a: [\n  1, \"a # b\"\n  ]\n", { a: [1, "a # b"] }],
+        ["multiline plain values", "a: [b\n  c, d\n\n  e]\n", { a: ["b c", "d\ne"] }]
+      ] as const
+    )("parses %s", (_, source, expected) => {
+      assert.deepStrictEqual(Yaml.parse(source), expected)
+    })
+
+    it.each([
+      ["continuation at the parent indentation", "a: {\nb: 1 }\n"],
+      ["unterminated collection before a sibling key", "a: [1,\n  2\nb: 3\n"],
+      ["content after the closing bracket", "a: [1,\n  2] extra\n"]
+    ])("rejects %s", (_, source) => {
+      assert.throws(() => Yaml.parse(source), SyntaxError)
     })
   })
 
@@ -379,6 +476,41 @@ development:
     })
   })
 
+  describe("merge keys", () => {
+    it("merges mappings with explicit keys and earlier sources taking precedence", () => {
+      const source = `base: &base {a: 1, b: 2}
+other: &other {b: 3, c: 4}
+block:
+  c: 5
+  <<: [*base, *other]
+flow: {<<: *other, c: 5}
+items:
+  - <<: *base
+    a: 5
+`
+      const result = Yaml.parse(source)
+      assert.deepStrictEqual(result, {
+        base: { a: 1, b: 2 },
+        other: { b: 3, c: 4 },
+        block: { a: 1, b: 2, c: 5 },
+        flow: { b: 3, c: 5 },
+        items: [{ a: 5, b: 2 }]
+      })
+      assert.deepStrictEqual(Object.keys((result as { readonly flow: object }).flow), ["b", "c"])
+    })
+
+    it("treats quoted merge keys as ordinary keys", () => {
+      assert.deepStrictEqual(Yaml.parse("\"<<\": 1\nflow: {'<<': 2}\n"), { "<<": 1, flow: { "<<": 2 } })
+    })
+
+    it.each(["<<: 1\n", "{<<: [{a: 1}, 2]}", "<<: {a: 1}\n<<: {b: 2}\n"])(
+      "rejects invalid merge usage in %j",
+      (source) => {
+        assert.throws(() => Yaml.parse(source), SyntaxError)
+      }
+    )
+  })
+
   describe("anchors and quoted comment boundaries", () => {
     it.each([
       ["plain", "description: &text Deploy\n  and verify.\nalias: *text\n", "Deploy and verify."],
@@ -401,6 +533,17 @@ development:
         Yaml.parse("metadata:\n  tools: &tools\n  - Read\n  - Bash\n  alias: *tools\n"),
         { metadata: { tools: ["Read", "Bash"], alias: ["Read", "Bash"] } }
       )
+    })
+
+    it("resolves anchors defined inside flow collections", () => {
+      assert.deepStrictEqual(
+        Yaml.parse("mapping: {a: &value 1, b: *value}\nsequence: [&item one, *item, &empty, *empty]\nalias: *value\n"),
+        { mapping: { a: 1, b: 1 }, sequence: ["one", "one", null, null], alias: 1 }
+      )
+    })
+
+    it.each(["{a: &}", "[&item[1]]", "[&first &second 1]"])("rejects invalid flow anchor %s", (source) => {
+      assert.throws(() => Yaml.parse(source), SyntaxError)
     })
 
     it("preserves hashes in JSON-style flow strings without colon spacing", () => {

@@ -22,12 +22,16 @@
 "effect/DateTime#DateTime.UnitSingular":
   replacement: "DateTime.DateTime.UnitSingular"
   note: "Use millisecond instead of milli; the other singular unit strings remain."
+"effect/DateTime#distance":
+  include: true
+  replacement: "Duration.toMillis(DateTime.distance(self, other))"
+  note: "V3 returns signed milliseconds; v4 returns a signed Duration (other minus self). Convert it with Duration.toMillis when a numeric millisecond result is required."
 "effect/DateTime#distanceDuration":
-  replacement: "Duration.millis(Math.abs(DateTime.distance(self, other)))"
-  note: "DateTime.distance returns signed milliseconds in v4; take the absolute value and construct a Duration to preserve v3 behavior."
+  replacement: "Duration.abs(DateTime.distance(self, other))"
+  note: "V4 DateTime.distance already returns a signed Duration. Use Duration.abs to preserve the non-negative distance returned by v3; Math.abs and Duration.millis expect numbers, not Durations."
 "effect/DateTime#distanceDurationEither":
   replacement: "DateTime.distance + Result"
-  note: "Compute the signed millisecond distance, wrap its absolute Duration as Result.succeed when positive and Result.fail when non-positive; v4 uses Result instead of Either."
+  note: "Let diff = DateTime.distance(self, other), a signed Duration. Use Duration.isPositive(diff) ? Result.succeed(Duration.abs(diff)) : Result.fail(Duration.abs(diff)) to preserve v3 behavior, including equal dates producing a failure with Duration.zero. V4 uses Result instead of Either."
 "effect/DateTime#greaterThan":
   replacement: "DateTime.isGreaterThan"
   note: "The comparison was renamed with the is prefix."

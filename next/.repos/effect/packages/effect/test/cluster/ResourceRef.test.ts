@@ -26,19 +26,18 @@ const makeAcquire = Effect.fnUntraced(function*(options?: {
   const releaseGates = new Map<number, Gate>()
   for (const acquisition of options?.gated ?? []) gates.set(acquisition, yield* makeGate())
   for (const acquisition of options?.gatedRelease ?? []) releaseGates.set(acquisition, yield* makeGate())
-  const acquire = (scope: Scope.Scope) =>
-    Effect.gen(function*() {
-      const acquisition = ++acquisitions
-      const releaseGate = releaseGates.get(acquisition)
-      yield* Scope.addFinalizer(
-        scope,
-        Effect.andThen(releaseGate ? pass(releaseGate) : Effect.void, Effect.sync(() => releases++))
-      )
-      const gate = gates.get(acquisition)
-      if (gate) yield* pass(gate)
-      completed++
-      return acquisition
-    })
+  const acquire = Effect.fnUntraced(function*(scope: Scope.Scope) {
+    const acquisition = ++acquisitions
+    const releaseGate = releaseGates.get(acquisition)
+    yield* Scope.addFinalizer(
+      scope,
+      Effect.andThen(releaseGate ? pass(releaseGate) : Effect.void, Effect.sync(() => releases++))
+    )
+    const gate = gates.get(acquisition)
+    if (gate) yield* pass(gate)
+    completed++
+    return acquisition
+  })
   return {
     acquire,
     gate: (acquisition: number) => gates.get(acquisition)!,
@@ -115,12 +114,11 @@ it.effect("interrupts prepare when its generation is replaced", () =>
       ref.rebuildUnsafe({
         from: 1,
         // Replaces the value being prepared, as a replayed request that defects does.
-        prepare: (value) =>
-          Effect.gen(function*() {
-            newer = ref.rebuildUnsafe({ from: value })
-            yield* Effect.yieldNow
-            finishedPreparing = true
-          })
+        prepare: Effect.fnUntraced(function*(value) {
+          newer = ref.rebuildUnsafe({ from: value })
+          yield* Effect.yieldNow
+          finishedPreparing = true
+        })
       })!
     )
     assert.isTrue(Exit.hasInterrupts(yield* Fiber.await(superseded)))

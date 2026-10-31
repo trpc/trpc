@@ -95,8 +95,8 @@
   replacement: "Layer.fromBuild with Effect.matchCauseEffect over Layer.buildWithMemoMap"
   note: "Fold the source acquisition cause, then build the selected failure or success layer."
 "effect/Layer#memoize":
-  replacement: "automatic shared memoization under Effect.provide"
-  note: "Reuse the same Layer value; use { local: true } or Layer.fresh to opt out, or MemoMap APIs for manual control."
+  replacement: "enclosing Effect.provide or explicit MemoMap APIs"
+  note: "A layer already built by an enclosing provide or runtime is reused; sibling provide calls build their own copies. Use { local: true } or Layer.fresh for fresh builds, or MemoMap APIs for manual sharing."
 "effect/Layer#MemoMap":
   replacement: "Layer.MemoMap"
   note: "The interface remains and now supports parent-child ambient maps."

@@ -126,9 +126,9 @@ export const defaultTeardown: Teardown = <E, A>(
  *
  * **Details**
  *
- * The runner executes Effect programs as main entry points. The provided
- * function receives a forked fiber and a teardown callback so it can install
- * platform-specific signal handling, fiber observers, and final exit behavior.
+ * The setup function runs before user code and receives the main fiber and a
+ * teardown callback to install platform-specific signal handlers, observers,
+ * and exit behavior.
  *
  * Most applications should use a platform-provided runner, such as
  * `NodeRuntime.runMain`, rather than constructing one directly.
@@ -208,23 +208,24 @@ export const makeRunMain = (
     readonly disableErrorReporting?: boolean | undefined
     readonly teardown?: Teardown | undefined
   }) => {
-    const fiber = options?.disableErrorReporting === true
-      ? Effect.runFork(effect)
-      : Effect.runFork(
-        Effect.tapCause(effect, (cause) => {
-          if (Cause.hasInterruptsOnly(cause)) return Effect.void
-          const isReported = getErrorReported(Cause.squash(cause))
-          return isReported ? Effect.logError(cause) : Effect.void
-        })
-      )
-    try {
-      const keepAlive = globalThis.setInterval(constVoid, 2_147_483_647)
-      fiber.addObserver(() => {
-        clearInterval(keepAlive)
+    const main = options?.disableErrorReporting === true
+      ? effect
+      : Effect.tapCause(effect, (cause) => {
+        if (Cause.hasInterruptsOnly(cause)) return Effect.void
+        const isReported = getErrorReported(Cause.squash(cause))
+        return isReported ? Effect.logError(cause) : Effect.void
       })
-    } catch {}
     const teardown = options?.teardown ?? defaultTeardown
-    return f({ fiber, teardown })
+    Effect.runFork(Effect.withFiber((fiber) => {
+      try {
+        const keepAlive = globalThis.setInterval(constVoid, 2_147_483_647)
+        fiber.addObserver(() => {
+          clearInterval(keepAlive)
+        })
+      } catch {}
+      f({ fiber, teardown })
+      return main
+    }))
   })
 
 declare global {

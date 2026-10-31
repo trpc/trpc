@@ -1288,6 +1288,33 @@ describe("Array", () => {
     )
   })
 
+  it("unionWith compares only self elements with that elements in argument order", () => {
+    const isEquivalent = (self: string, that: number) => self.trim() === that.toFixed()
+    deepStrictEqual(Arr.unionWith([" 2 ", " 1 "], [1, 3, 2, 4], isEquivalent), [" 2 ", " 1 ", 3, 4])
+  })
+
+  it("unionWith supports one-shot iterables", () => {
+    const isEquivalent = (self: string, that: number) => self.trim() === that.toFixed()
+    deepStrictEqual(
+      pipe([" 2 ", " 1 "][Symbol.iterator](), Arr.unionWith([1, 3, 2, 4][Symbol.iterator](), isEquivalent)),
+      [" 2 ", " 1 ", 3, 4]
+    )
+  })
+
+  it("unionWith does not call the equivalence when either input is empty", () => {
+    const isEquivalent = (_self: string, _that: number) => {
+      assert.fail("The equivalence must not be called for an empty input")
+    }
+    deepStrictEqual(Arr.unionWith([], [1, 2], isEquivalent), [1, 2])
+    deepStrictEqual(Arr.unionWith(["1", "2"], [], isEquivalent), ["1", "2"])
+    deepStrictEqual(Arr.unionWith([], [], isEquivalent), [])
+  })
+
+  it("unionWith treats holes in self as undefined", () => {
+    const self = globalThis.Array<undefined>(1)
+    deepStrictEqual(Arr.unionWith(self, [undefined], Equivalence.strictEqual<undefined>()), [undefined])
+  })
+
   it("intersectionWith", () => {
     const intersectionWith = Arr.intersectionWith(Equivalence.strictEqual<number>())
     deepStrictEqual(pipe([1, 2], intersectionWith([3, 4])), [])

@@ -14,11 +14,13 @@
   replacement: "Duration.DurationValue"
   note: "The tagged value remains and adds NegativeInfinity; its object fields are no longer readonly."
 "effect/Duration#formatIso":
-  replacement: "none"
-  note: "ISO 8601 duration formatting was removed from the v4 Duration module. The v4 source and migration guides expose no direct replacement; retain a local formatter when this wire format is required."
+  include: true
+  replacement: "Duration.formatIso"
+  note: "Available again from 4.1. The output is balanced into days, hours, minutes and seconds and never contains weeks, months or years; infinite durations return Option.none()."
 "effect/Duration#fromIso":
-  replacement: "none"
-  note: "ISO 8601 duration parsing was removed from the v4 Duration module. The v4 source and migration guides expose no direct replacement; use a dedicated ISO parser and pass the resulting parts to Duration.fromInput."
+  include: true
+  replacement: "Duration.fromIso"
+  note: "Available again from 4.1 for exact units only (weeks, days, hours, minutes and seconds). Years and months are rejected instead of approximated. Use Schema.DurationFromIsoString for a Schema codec."
 "effect/Duration#greaterThan":
   replacement: "Duration.isGreaterThan"
   note: "The comparison was renamed with the is prefix."
@@ -42,7 +44,7 @@
   note: "The unsafe prefix moved to the end of the division function name."
 "effect/Duration#unsafeFormatIso":
   replacement: "none"
-  note: "ISO 8601 duration formatting was removed from v4. The v4 Duration exports and migration guides contain no direct unsafe formatter; retain a local formatter if required."
+  note: "There is no throwing variant. Use Duration.formatIso and handle Option.none() for infinite durations."
 "effect/Duration#unsafeToNanos":
   replacement: "Duration.toNanosUnsafe"
   note: "The unsafe prefix moved to the end of the nanosecond conversion name."

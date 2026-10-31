@@ -149,6 +149,16 @@ export const decodeString = (str: string) => Result.map(decode(str), (_) => deco
 
 const encodeBytes = (bytes: Uint8Array): string => {
   const length = bytes.length
+  // Looked up on the prototype at call time, so own or subclass overrides are ignored.
+  const toBase64 = (Uint8Array.prototype as { readonly toBase64?: (this: Uint8Array) => string }).toBase64
+  // The size guard also keeps detached buffers (length 0) away from native `toBase64`, which throws on them.
+  if (length >= 32 && typeof toBase64 === "function") return toBase64.call(bytes)
+  // Below ~128 bytes, appending to a string beats filling a byte array and decoding it once.
+  return length < 128 ? encodeShort(bytes) : encodeLong(bytes)
+}
+
+const encodeShort = (bytes: Uint8Array): string => {
+  const length = bytes.length
   let result = ""
   let i: number
   for (i = 2; i < length; i += 3) {
@@ -171,10 +181,38 @@ const encodeBytes = (bytes: Uint8Array): string => {
   return result
 }
 
+const encodeLong = (bytes: Uint8Array): string => {
+  const length = bytes.length
+  const result = new Uint8Array(Math.ceil(length / 3) * 4)
+  let i: number
+  let j = 0
+  for (i = 2; i < length; i += 3, j += 4) {
+    result[j] = alphabetCodes[bytes[i - 2] >> 2]
+    result[j + 1] = alphabetCodes[((bytes[i - 2] & 0x03) << 4) | (bytes[i - 1] >> 4)]
+    result[j + 2] = alphabetCodes[((bytes[i - 1] & 0x0f) << 2) | (bytes[i] >> 6)]
+    result[j + 3] = alphabetCodes[bytes[i] & 0x3f]
+  }
+  if (i === length + 1) {
+    result[j] = alphabetCodes[bytes[i - 2] >> 2]
+    result[j + 1] = alphabetCodes[(bytes[i - 2] & 0x03) << 4]
+    result[j + 2] = paddingCode
+    result[j + 3] = paddingCode
+  }
+  if (i === length) {
+    result[j] = alphabetCodes[bytes[i - 2] >> 2]
+    result[j + 1] = alphabetCodes[((bytes[i - 2] & 0x03) << 4) | (bytes[i - 1] >> 4)]
+    result[j + 2] = alphabetCodes[(bytes[i - 1] & 0x0f) << 2]
+    result[j + 3] = paddingCode
+  }
+  return decoder.decode(result)
+}
+
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 const stripCrlf = (str: string) => str.replace(/[\n\r]/g, "")
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+const alphabetCodes = encoder.encode(alphabet)
+const paddingCode = "=".charCodeAt(0)
 const codes = new Uint8Array(123).fill(255)
 for (let i = 0; i < alphabet.length; i++) codes[alphabet.charCodeAt(i)] = i
 codes["=".charCodeAt(0)] = 0

@@ -7,7 +7,7 @@
 import * as Equal from "../Equal.ts"
 import { dual } from "../Function.ts"
 import * as Hash from "../Hash.ts"
-import { NodeInspectSymbol } from "../Inspectable.ts"
+import * as Inspectable from "../Inspectable.ts"
 import { hasProperty } from "../Predicate.ts"
 import * as Result from "../Result.ts"
 import * as IpInterface from "./IpInterface.ts"
@@ -25,13 +25,13 @@ const TypeId = "~effect/net/IpNetwork" as const
  * @category models
  * @since 4.0.0
  */
-export interface IpNetwork<out A extends NetAddress.IpAddress = NetAddress.IpAddress> extends Equal.Equal, Hash.Hash {
+export interface IpNetwork<out A extends NetAddress.IpAddress = NetAddress.IpAddress>
+  extends Equal.Equal, Hash.Hash, Inspectable.Inspectable
+{
   readonly _tag: "IpNetwork"
   readonly address: A
   readonly prefixLength: number
   readonly [TypeId]: typeof TypeId
-  toString(): string
-  toJSON(): string
 }
 
 /**
@@ -51,6 +51,45 @@ export type Ipv4Network = IpNetwork<NetAddress.Ipv4Address>
  * @since 4.0.0
  */
 export type Ipv6Network = IpNetwork<NetAddress.Ipv6Address>
+
+/**
+ * A network address and prefix length, generic over the accepted address
+ * input. The address must have no host bits set.
+ *
+ * @see {@link make} for the checked constructor
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export type IpNetworkParts<A extends NetAddress.IpAddressInput = NetAddress.IpAddressInput> =
+  IpInterface.IpInterfaceParts<A>
+
+/**
+ * An IP network prefix, or a CIDR string or parts to convert to one.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export type IpNetworkInput = IpNetwork | string | IpNetworkParts
+
+/**
+ * An IPv4 network prefix, or a CIDR string or parts to convert to one.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export type Ipv4NetworkInput = Ipv4Network | string | IpNetworkParts<NetAddress.Ipv4AddressInput>
+
+/**
+ * An IPv6 network prefix, or a CIDR string or parts to convert to one.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export type Ipv6NetworkInput = Ipv6Network | string | IpNetworkParts<NetAddress.Ipv6AddressInput>
 
 /**
  * Returns `true` when a value is an IPv4 network prefix.
@@ -80,6 +119,7 @@ export const isIpv6Network = (u: unknown): u is Ipv6Network => isIpNetwork(u) &&
 export const isIpNetwork = (u: unknown): u is IpNetwork => hasProperty(u, TypeId)
 
 const IpNetworkProto = {
+  ...Inspectable.BaseProto,
   _tag: "IpNetwork",
   [TypeId]: TypeId,
   [Equal.symbol](this: IpNetwork, that: Equal.Equal): boolean {
@@ -93,9 +133,6 @@ const IpNetworkProto = {
   },
   toJSON(this: IpNetwork): string {
     return this.toString()
-  },
-  [NodeInspectSymbol](this: IpNetwork): string {
-    return this.toJSON()
   }
 }
 
@@ -110,18 +147,14 @@ const fromInterfaceValue = <A extends NetAddress.IpAddress>(value: IpInterface.I
 const toBytes = (address: NetAddress.IpAddress): ReadonlyArray<number> =>
   NetAddress.isIpv4Address(address) ? NetAddress.ipv4ToOctets(address) : NetAddress.ipv6ToOctets(address)
 
-type IpAddressFamily<A extends NetAddress.IpAddress> = A extends NetAddress.Ipv4Address ? NetAddress.Ipv4Address
-  : A extends NetAddress.Ipv6Address ? NetAddress.Ipv6Address
-  : never
-
 const fromBytes = <A extends NetAddress.IpAddress>(
   address: A,
   bytes: ReadonlyArray<number>
-): IpAddressFamily<A> => {
+): NetAddress.Family<A> => {
   const array = new Uint8Array(bytes)
   return (NetAddress.isIpv4Address(address)
     ? NetAddress.ipv4FromBytesUnsafe(array)
-    : NetAddress.ipv6FromBytesUnsafe(array)) as IpAddressFamily<A>
+    : NetAddress.ipv6FromBytesUnsafe(array)) as NetAddress.Family<A>
 }
 
 const maskBytes = (bytes: ReadonlyArray<number>, prefixLength: number): Array<number> => {
@@ -177,7 +210,7 @@ export const make = <A extends NetAddress.IpAddress>(
 export const fromAddress = <A extends NetAddress.IpAddress>(
   address: A,
   prefixLength: number
-): Result.Result<IpNetwork<IpAddressFamily<A>>, NetAddress.NetAddressError> => {
+): Result.Result<IpNetwork<NetAddress.Family<A>>, NetAddress.NetAddressError> => {
   return Result.map(IpInterface.make(address, prefixLength), (value) => {
     const masked = fromBytes(address, maskBytes(toBytes(address), prefixLength))
     return fromInterfaceValue(IpInterface.makeUnsafe(masked, value.prefixLength))
@@ -194,7 +227,7 @@ export const fromAddress = <A extends NetAddress.IpAddress>(
  */
 export const fromInterface = <A extends NetAddress.IpAddress>(
   self: IpInterface.IpInterface<A>
-): IpNetwork<IpAddressFamily<A>> => fromAddressUnsafe(self.address, self.prefixLength)
+): IpNetwork<NetAddress.Family<A>> => fromAddressUnsafe(self.address, self.prefixLength)
 
 /**
  * Parses a strict IPv4 network prefix in CIDR notation.
@@ -238,6 +271,72 @@ export const fromString = (input: string): Result.Result<IpNetwork, NetAddress.N
   )
 }
 
+const fromParts = <I extends NetAddress.IpAddressInput, A extends NetAddress.IpAddress>(
+  input: IpNetworkParts<I>,
+  toAddress: (input: I) => Result.Result<A, NetAddress.NetAddressError>
+): Result.Result<IpNetwork<A>, NetAddress.NetAddressError> =>
+  hasProperty(input, "address") && hasProperty(input, "prefixLength")
+    ? Result.flatMap(toAddress(input.address), (address) => make(address, input.prefixLength))
+    : Result.fail(new NetAddress.NetAddressError({ input, message: "expected an address and prefix length" }))
+
+/**
+ * Converts an `Ipv4NetworkInput` to an IPv4 network prefix, parsing strings
+ * like `ipv4FromString`, converting parts like `make`, and returning network
+ * prefixes unchanged.
+ *
+ * @stability unstable
+ * @category constructors
+ * @since 4.0.0
+ */
+export const ipv4FromInput = (input: Ipv4NetworkInput): Result.Result<Ipv4Network, NetAddress.NetAddressError> => {
+  if (isIpv4Network(input)) return Result.succeed(input)
+  if (typeof input === "string") return ipv4FromString(input)
+  return fromParts(input, NetAddress.ipv4FromInput)
+}
+
+/**
+ * Converts an `Ipv6NetworkInput` to an IPv6 network prefix, parsing strings
+ * like `ipv6FromString`, converting parts like `make`, and returning network
+ * prefixes unchanged.
+ *
+ * @stability unstable
+ * @category constructors
+ * @since 4.0.0
+ */
+export const ipv6FromInput = (input: Ipv6NetworkInput): Result.Result<Ipv6Network, NetAddress.NetAddressError> => {
+  if (isIpv6Network(input)) return Result.succeed(input)
+  if (typeof input === "string") return ipv6FromString(input)
+  return fromParts(input, NetAddress.ipv6FromInput)
+}
+
+/**
+ * Converts an `IpNetworkInput` to a network prefix, parsing strings like
+ * `fromString`, converting parts like `make`, and returning network prefixes
+ * unchanged.
+ *
+ * **Gotchas**
+ *
+ * Like `make`, an address with host bits set is rejected rather than truncated.
+ *
+ * @stability unstable
+ * @category constructors
+ * @since 4.0.0
+ */
+export const fromInput = (input: IpNetworkInput): Result.Result<IpNetwork, NetAddress.NetAddressError> => {
+  if (isIpNetwork(input)) return Result.succeed(input)
+  if (typeof input === "string") return fromString(input)
+  return fromParts(input, NetAddress.ipFromInput)
+}
+
+/**
+ * Converts a trusted `IpNetworkInput` to a network prefix, throwing on failure.
+ *
+ * @stability unstable
+ * @category unsafe
+ * @since 4.0.0
+ */
+export const fromInputUnsafe = (input: IpNetworkInput): IpNetwork => Result.getOrThrow(fromInput(input))
+
 /**
  * Creates a trusted network prefix, throwing when its address or prefix is invalid.
  *
@@ -260,7 +359,7 @@ export const makeUnsafe = <A extends NetAddress.IpAddress>(address: A, prefixLen
 export const fromAddressUnsafe = <A extends NetAddress.IpAddress>(
   address: A,
   prefixLength: number
-): IpNetwork<IpAddressFamily<A>> => Result.getOrThrow(fromAddress(address, prefixLength))
+): IpNetwork<NetAddress.Family<A>> => Result.getOrThrow(fromAddress(address, prefixLength))
 
 /**
  * Parses a trusted network prefix in CIDR notation, throwing on failure.
@@ -298,7 +397,7 @@ export const firstAddress = <A extends NetAddress.IpAddress>(self: IpNetwork<A>)
  * @category getters
  * @since 4.0.0
  */
-export const lastAddress = <A extends NetAddress.IpAddress>(self: IpNetwork<A>): IpAddressFamily<A> => {
+export const lastAddress = <A extends NetAddress.IpAddress>(self: IpNetwork<A>): NetAddress.Family<A> => {
   const bytes = toBytes(self.address)
   const networkMask = maskBytes(bytes.map(() => 0xff), self.prefixLength)
   return fromBytes(self.address, bytes.map((byte, index) => byte | (networkMask[index] ^ 0xff)))

@@ -21,6 +21,7 @@ import * as HttpClientRequest from "effect/http/HttpClientRequest"
 import * as HttpClientResponse from "effect/http/HttpClientResponse"
 import * as Layer from "effect/Layer"
 import * as Redacted from "effect/Redacted"
+import * as Result from "effect/Result"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 import * as Errors from "./internal/errors.ts"
@@ -216,9 +217,9 @@ export const make = Effect.fnUntraced(
       const stream = response.stream.pipe(
         Stream.decodeText(),
         Stream.pipeThroughChannel(Sse.decode()),
-        Stream.flatMap((event) => {
+        Stream.filterMap((event) => {
           const data = decodeChatCompletionSseData(event.data)
-          return Stream.fromIterable(data !== undefined ? [data] : [])
+          return data !== undefined ? Result.succeed(data) : Result.failVoid
         }),
         Stream.takeUntil((event) => event === "[DONE]"),
         Stream.catchTags({
@@ -531,6 +532,7 @@ type FunctionCall = {
   readonly call_id: string
   readonly name: string
   readonly arguments: string
+  readonly extra_content?: JsonObject | undefined
   readonly status?: MessageStatus | undefined
 }
 
@@ -978,6 +980,7 @@ export type ChatCompletionRequestToolCall = {
     readonly name: string
     readonly arguments: string
   }
+  readonly extra_content?: JsonObject | undefined
 }
 /**
  * Message shapes accepted by the chat completions endpoint.
@@ -991,6 +994,15 @@ export type ChatCompletionRequestMessage =
     readonly role: "system" | "developer" | "user" | "assistant"
     readonly content: string | ReadonlyArray<ChatCompletionContentPart> | null
     readonly tool_calls?: ReadonlyArray<ChatCompletionRequestToolCall> | undefined
+    /**
+     * Assistant reasoning replayed for providers that read it from
+     * `reasoning_content`.
+     */
+    readonly reasoning_content?: string | undefined
+    /**
+     * Assistant reasoning replayed for providers that read it from `reasoning`.
+     */
+    readonly reasoning?: string | undefined
   }
   | {
     readonly role: "tool"
@@ -1135,6 +1147,7 @@ const ChatCompletionToolCall = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
   index: Schema.optionalKey(Schema.Int),
   type: Schema.optionalKey(Schema.String),
+  extra_content: Schema.optionalKey(Schema.NullOr(Schema.JsonObject)),
   function: Schema.optionalKey(ChatCompletionToolFunction)
 })
 
@@ -1143,6 +1156,7 @@ const ChatCompletionToolCallDelta = Schema.Struct({
   id: Schema.optionalKey(Schema.NullOr(Schema.String)),
   index: Schema.optionalKey(Schema.Int),
   type: Schema.optionalKey(Schema.String),
+  extra_content: Schema.optionalKey(Schema.NullOr(Schema.JsonObject)),
   function: Schema.optionalKey(ChatCompletionToolFunctionDelta)
 })
 

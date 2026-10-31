@@ -1336,6 +1336,27 @@ describe("JsonSchema", () => {
             type: ["string", "null"],
             allOf: [{}]
           }
+        },
+        {
+          name: "makes a single-member allOf nullable while preserving siblings and relocating refs",
+          input: {
+            nullable: true,
+            allOf: [{ $ref: "#/components/schemas/A" }],
+            description: "a",
+            enum: ["a"],
+            properties: { copy: { $ref: "#/allOf/0" } }
+          },
+          expected: {
+            anyOf: [{ $ref: "#/$defs/A" }, { type: "null" }],
+            description: "a",
+            enum: ["a"],
+            properties: { copy: { $ref: "#/anyOf/0" } }
+          }
+        },
+        {
+          name: "does not rewrite a nullable single-member allOf when anyOf is present",
+          input: { nullable: true, allOf: [{ type: "string" }], anyOf: [{ minLength: 1 }] },
+          expected: { allOf: [{ type: "string" }], anyOf: [{ minLength: 1 }] }
         }
       ])
     })
@@ -1652,12 +1673,13 @@ describe("JsonSchema", () => {
           properties: {
             mode: { const: "on" },
             value: { type: "number", exclusiveMinimum: 0 },
-            tuple: { type: "array", prefixItems: [{ type: "string" }], items: false }
+            tuple: { type: "array", prefixItems: [{ type: "string" }], items: false },
+            empty: { enum: [], $ref: "#/$defs/Anything" }
           },
           required: ["mode", "value", "tuple"],
           additionalProperties: false
         },
-        definitions: {}
+        definitions: { Anything: {} }
       })
       const schema = makeSchema(document)
       deepStrictEqual(ajvDraft07.validateSchema(schema), true)
@@ -1667,6 +1689,7 @@ describe("JsonSchema", () => {
       deepStrictEqual(validate({ mode: "off", value: 1, tuple: ["a"] }), false)
       deepStrictEqual(validate({ mode: "on", value: 0, tuple: ["a"] }), false)
       deepStrictEqual(validate({ mode: "on", value: 1, tuple: ["a", "b"] }), false)
+      deepStrictEqual(validate({ mode: "on", value: 1, tuple: ["a"], empty: null }), false)
     })
 
     it("rewrites $defs refs to Draft-07 definitions refs", () => {

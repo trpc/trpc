@@ -15,6 +15,7 @@ import { hasProperty } from "../Predicate.ts"
 import * as Schema from "../Schema.ts"
 import type * as HttpClientRequest from "./HttpClientRequest.ts"
 import type * as ClientResponse from "./HttpClientResponse.ts"
+import * as UrlParams from "./UrlParams.ts"
 
 const TypeId = "~effect/http/HttpClientError"
 
@@ -88,6 +89,18 @@ const formatReason = (tag: string) => tag.endsWith("Error") ? tag.slice(0, -5) :
 const formatMessage = (reason: string, description: string | undefined, info: string) =>
   description ? `${reason}: ${description} (${info})` : `${reason} error (${info})`
 
+const formatMethodAndUrl = (request: HttpClientRequest.HttpClientRequest) =>
+  `${request.method} ${UrlParams.redactUrl(request.url)}`
+
+// Serialized reasons carry the same request and response information as the
+// message, so headers, URL parameters and bodies stay out of logs. The full
+// objects remain available through the `request` and `response` properties.
+const reasonToJSON = (reason: HttpClientErrorReason, json: unknown) => ({
+  ...(json as object),
+  request: { _id: "HttpClientRequest", method: reason.request.method, url: UrlParams.redactUrl(reason.request.url) },
+  ...("response" in reason ? { response: { _id: "HttpClientResponse", status: reason.response.status } } : undefined)
+})
+
 /**
  * Error describing transport-level failures that occur while sending an HTTP request.
  *
@@ -107,7 +120,7 @@ export class TransportError extends Data.TaggedError("TransportError")<{
    * @since 4.0.0
    */
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   /**
@@ -118,6 +131,10 @@ export class TransportError extends Data.TaggedError("TransportError")<{
    */
   override get message() {
     return formatMessage(formatReason(this._tag), this.description, this.methodAndUrl)
+  }
+
+  override toJSON(): unknown {
+    return reasonToJSON(this, super.toJSON())
   }
 }
 
@@ -140,7 +157,7 @@ export class EncodeError extends Data.TaggedError("EncodeError")<{
    * @since 4.0.0
    */
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   /**
@@ -151,6 +168,10 @@ export class EncodeError extends Data.TaggedError("EncodeError")<{
    */
   override get message() {
     return formatMessage(formatReason(this._tag), this.description, this.methodAndUrl)
+  }
+
+  override toJSON(): unknown {
+    return reasonToJSON(this, super.toJSON())
   }
 }
 
@@ -173,7 +194,7 @@ export class InvalidUrlError extends Data.TaggedError("InvalidUrlError")<{
    * @since 4.0.0
    */
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   /**
@@ -184,6 +205,10 @@ export class InvalidUrlError extends Data.TaggedError("InvalidUrlError")<{
    */
   override get message() {
     return formatMessage(formatReason(this._tag), this.description, this.methodAndUrl)
+  }
+
+  override toJSON(): unknown {
+    return reasonToJSON(this, super.toJSON())
   }
 }
 
@@ -207,7 +232,7 @@ export class StatusCodeError extends Data.TaggedError("StatusCodeError")<{
    * @since 4.0.0
    */
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   /**
@@ -220,10 +245,15 @@ export class StatusCodeError extends Data.TaggedError("StatusCodeError")<{
     const info = `${this.response.status} ${this.methodAndUrl}`
     return formatMessage(formatReason(this._tag), this.description, info)
   }
+
+  override toJSON(): unknown {
+    return reasonToJSON(this, super.toJSON())
+  }
 }
 
 /**
- * Response error for failures while decoding an HTTP response body.
+ * Response error for failures while decoding an HTTP response, including a
+ * response with an undeclared status.
  *
  * @stability unstable
  * @category errors
@@ -242,7 +272,7 @@ export class DecodeError extends Data.TaggedError("DecodeError")<{
    * @since 4.0.0
    */
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   /**
@@ -254,6 +284,10 @@ export class DecodeError extends Data.TaggedError("DecodeError")<{
   override get message() {
     const info = `${this.response.status} ${this.methodAndUrl}`
     return formatMessage(formatReason(this._tag), this.description, info)
+  }
+
+  override toJSON(): unknown {
+    return reasonToJSON(this, super.toJSON())
   }
 }
 
@@ -277,7 +311,7 @@ export class EmptyBodyError extends Data.TaggedError("EmptyBodyError")<{
    * @since 4.0.0
    */
   get methodAndUrl() {
-    return `${this.request.method} ${this.request.url}`
+    return formatMethodAndUrl(this.request)
   }
 
   /**
@@ -289,6 +323,10 @@ export class EmptyBodyError extends Data.TaggedError("EmptyBodyError")<{
   override get message() {
     const info = `${this.response.status} ${this.methodAndUrl}`
     return formatMessage(formatReason(this._tag), this.description, info)
+  }
+
+  override toJSON(): unknown {
+    return reasonToJSON(this, super.toJSON())
   }
 }
 

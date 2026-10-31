@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Duration, Effect, Exit, Layer, Ref, Schema, Stream } from "effect"
+import { Duration, Effect, Exit, Layer, type Redacted, Ref, Schema, Stream } from "effect"
 import { Sse } from "effect/encoding"
 import { HttpClient, HttpClientResponse } from "effect/http"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/http-api"
@@ -33,6 +33,60 @@ const StreamApi = HttpApi.make("StreamApi").add(
 )
 
 describe("AtomHttpApi", () => {
+  it.effect.each([
+    { idA: "ApiA", groupA: "users", idB: "ApiB", groupB: "users" },
+    { idA: "Api:users", groupA: "users", idB: "Api", groupB: "users:users" }
+  ])("isolates mutations across services ($idA / $idB)", ({ idA, groupA, idB, groupB }) =>
+    Effect.gen(function*() {
+      const requests: Array<unknown> = []
+      const makeClient = (id: string, group: string, baseUrl: string) =>
+        AtomHttpApi.Service()(id, {
+          api: HttpApi.make(id).add(
+            HttpApiGroup.make(group).add(
+              HttpApiEndpoint.post("create", "/users", {
+                payload: Schema.Struct({ name: Schema.String }),
+                success: Schema.String
+              })
+            )
+          ),
+          baseUrl,
+          httpClient: Layer.succeed(
+            HttpClient.HttpClient,
+            HttpClient.make((request) =>
+              Effect.sync(() => {
+                assert(request.body._tag === "Uint8Array")
+                requests.push({
+                  url: request.url,
+                  payload: JSON.parse(new TextDecoder().decode(request.body.body))
+                })
+                return HttpClientResponse.fromWeb(request, Response.json(`${id} ok`))
+              })
+            )
+          )
+        })
+      const ApiA = makeClient(idA, groupA, "https://a.test")
+      const ApiB = makeClient(idB, groupB, "https://b.test")
+      const createA = ApiA.mutation(groupA, "create")
+      const createB = ApiB.mutation(groupB, "create")
+      const registry = AtomRegistry.make()
+      yield* Effect.addFinalizer(() => Effect.sync(() => registry.dispose()))
+      yield* AtomRegistry.mount(registry, createA)
+      yield* AtomRegistry.mount(registry, createB)
+
+      registry.set(createA, { payload: { name: "alice" } })
+      const resultA = yield* AtomRegistry.getResult(registry, createA, { suspendOnWaiting: true })
+      registry.set(createB, { payload: { name: "bob" } })
+      const resultB = yield* AtomRegistry.getResult(registry, createB, { suspendOnWaiting: true })
+
+      assert.deepStrictEqual({ results: [resultA, resultB], requests }, {
+        results: [`${idA} ok`, `${idB} ok`],
+        requests: [
+          { url: "https://a.test/users", payload: { name: "alice" } },
+          { url: "https://b.test/users", payload: { name: "bob" } }
+        ]
+      })
+    }))
+
   it.effect("query keeps SSE decode options in the cache key and forwards them", () =>
     Effect.gen(function*() {
       const Client = makeStreamingClient()
@@ -109,7 +163,7 @@ describe("AtomHttpApi", () => {
       const requestRef = yield* Ref.make<
         {
           readonly url: string
-          readonly urlParams: ReadonlyArray<readonly [string, string]>
+          readonly urlParams: ReadonlyArray<readonly [string, string | Redacted.Redacted]>
         } | undefined
       >(undefined)
 

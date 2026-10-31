@@ -140,6 +140,9 @@ export interface ChildProcessHandle {
    *
    * **Details**
    *
+   * Available for `"input"` and `"duplex"` file descriptors. The write side is
+   * ended when the sink completes.
+   *
    * If a file descriptor is accessed that was not configured, returns a drain
    * `Sink`.
    */
@@ -149,6 +152,8 @@ export interface ChildProcessHandle {
    * `ChildProcessOptions.additionalFds`.
    *
    * **Details**
+   *
+   * Available for `"output"` and `"duplex"` file descriptors.
    *
    * If a file descriptor is accessed that was not configured, returns an empty
    * `Stream`.
@@ -230,11 +235,13 @@ export const makeHandle = (params: Omit<ChildProcessHandle, typeof HandleTypeId>
  * @since 4.0.0
  */
 export const make = (spawn: ChildProcessSpawner["Service"]["spawn"]): ChildProcessSpawner["Service"] => {
+  // The helpers own the handle, so they drain any output they do not return
+  // to keep a full pipe from blocking the child.
   const streamString: ChildProcessSpawner["Service"]["streamLines"] = (command, options) =>
     spawn(command).pipe(
       Effect.map((handle) =>
         Stream.decodeText(
-          options?.includeStderr === true ? handle.all : handle.stdout
+          options?.includeStderr === true ? handle.all : Stream.drainFork(handle.stdout, handle.stderr)
         )
       ),
       Stream.unwrap
@@ -244,7 +251,14 @@ export const make = (spawn: ChildProcessSpawner["Service"]["spawn"]): ChildProce
 
   return ChildProcessSpawner.of({
     spawn,
-    exitCode: (command) => Effect.scoped(Effect.flatMap(spawn(command), (handle) => handle.exitCode)),
+    // Return once the process exits, even if descendants keep the pipes open.
+    exitCode: (command) =>
+      Effect.scoped(
+        Effect.flatMap(
+          spawn(command),
+          (handle) => Effect.raceFirst(handle.exitCode, Effect.andThen(Stream.runDrain(handle.all), Effect.never))
+        )
+      ),
     streamString,
     streamLines,
     lines: (command, options) => Stream.runCollect(streamLines(command, options)),
@@ -269,6 +283,12 @@ export class ChildProcessSpawner extends Context.Service<ChildProcessSpawner, {
 
   /**
    * Run a command and return its exit code.
+   *
+   * **Details**
+   *
+   * Piped `stdout` and `stderr` are read and discarded until the process
+   * exits. A read failure before then, such as from an output `Sink`, fails
+   * the effect.
    */
   exitCode(
     command: Command
@@ -277,6 +297,12 @@ export class ChildProcessSpawner extends Context.Service<ChildProcessSpawner, {
   /**
    * Stream the output of a command as strings. Optionally include stderr output
    * interleaved with stdout.
+   *
+   * **Details**
+   *
+   * Without `includeStderr`, piped `stderr` is read and discarded until
+   * `stdout` ends. A read failure before then, such as from an output `Sink`,
+   * fails the result.
    */
   streamString(command: Command, options?: {
     readonly includeStderr?: boolean | undefined
@@ -285,6 +311,12 @@ export class ChildProcessSpawner extends Context.Service<ChildProcessSpawner, {
   /**
    * Stream the output of a command as lines. Optionally include stderr output
    * interleaved with stdout.
+   *
+   * **Details**
+   *
+   * Without `includeStderr`, piped `stderr` is read and discarded until
+   * `stdout` ends. A read failure before then, such as from an output `Sink`,
+   * fails the result.
    */
   streamLines(command: Command, options?: {
     readonly includeStderr?: boolean | undefined
@@ -292,6 +324,12 @@ export class ChildProcessSpawner extends Context.Service<ChildProcessSpawner, {
 
   /**
    * Run a command and return the lines of its output as an array of strings.
+   *
+   * **Details**
+   *
+   * Without `includeStderr`, piped `stderr` is read and discarded until
+   * `stdout` ends. A read failure before then, such as from an output `Sink`,
+   * fails the result.
    */
   lines(command: Command, options?: {
     readonly includeStderr?: boolean | undefined
@@ -299,6 +337,12 @@ export class ChildProcessSpawner extends Context.Service<ChildProcessSpawner, {
 
   /**
    * Run a command and return its output as a string.
+   *
+   * **Details**
+   *
+   * Without `includeStderr`, piped `stderr` is read and discarded until
+   * `stdout` ends. A read failure before then, such as from an output `Sink`,
+   * fails the result.
    */
   string(command: Command, options?: {
     readonly includeStderr?: boolean | undefined

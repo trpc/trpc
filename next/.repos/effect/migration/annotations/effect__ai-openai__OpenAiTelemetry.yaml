@@ -13,3 +13,7 @@
 "@effect/ai-openai/OpenAiTelemetry#WellKnownResponseFormat":
   replacement: "Telemetry.WellKnownOutputType"
   note: "The response format is no longer a telemetry option. LanguageModel records gen_ai.output.type as text or json from the requested response format."
+"@effect/ai-openai/OpenAiTelemetry#OpenAiTelemetryAttributes":
+  include: true
+  replacement: "OpenAiTelemetry.OpenAiTelemetryAttributes"
+  note: "Use openai.request.* for request keys and openai.response.* for response keys instead of gen_ai.openai.*. The response-format attribute was removed; use gen_ai.output.type from LanguageModel instead."

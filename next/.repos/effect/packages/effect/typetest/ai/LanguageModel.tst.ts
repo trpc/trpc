@@ -98,6 +98,44 @@ describe("LanguageModel", () => {
       expect<ToolCallParams>().type.toBe<unknown>()
     })
 
+    it("returns undeclared tool names for a non-literal resolution flag when tool call validation is deferred", () => {
+      const toolkit = Toolkit.make(TransformTool)
+      const disableToolCallResolution = null as unknown as boolean
+      const program = LanguageModel.generateText({
+        prompt: "hello",
+        toolkit,
+        disableToolCallResolution,
+        toolCallValidation: "deferred"
+      })
+
+      type ProgramSuccess = typeof program extends Effect.Effect<infer A, any, any> ? A : never
+      type ToolCall = ProgramSuccess["toolCalls"][number]
+
+      expect<ToolCall["name"]>().type.toBe<string>()
+      expect<ToolCall["params"]>().type.toBe<unknown>()
+    })
+
+    it("returns tool calls without a toolkit for union options that may defer tool call validation", () => {
+      const options = null as unknown as
+        | {
+          readonly prompt: string
+          readonly disableToolCallResolution: true
+          readonly toolCallValidation: "strict"
+        }
+        | {
+          readonly prompt: string
+          readonly disableToolCallResolution: true
+          readonly toolCallValidation: "deferred"
+        }
+      const program = LanguageModel.generateText(options)
+
+      type ProgramSuccess = typeof program extends Effect.Effect<infer A, any, any> ? A : never
+      type ToolCall = ProgramSuccess["toolCalls"][number]
+
+      expect<ToolCall["name"]>().type.toBe<string>()
+      expect<ToolCall["params"]>().type.toBe<unknown>()
+    })
+
     it("returns an empty tool record when no toolkit is provided", () => {
       const program = LanguageModel.generateText({
         prompt: "hello"
@@ -273,6 +311,22 @@ describe("LanguageModel", () => {
       type ToolCallParams = Extract<StreamPart, { readonly type: "tool-call" }>["params"]
 
       expect<ToolCallParams>().type.toBe<string>()
+    })
+
+    it("returns undeclared tool names with opaque parameters when tool call validation is deferred", () => {
+      const toolkit = Toolkit.make(TransformTool)
+      const stream = LanguageModel.streamText({
+        prompt: "hello",
+        toolkit,
+        disableToolCallResolution: true,
+        toolCallValidation: "deferred"
+      })
+
+      type StreamPart = typeof stream extends Stream.Stream<infer A, any, any> ? A : never
+      type ToolCall = Extract<StreamPart, { readonly type: "tool-call" }>
+
+      expect<ToolCall["name"]>().type.toBe<string>()
+      expect<ToolCall["params"]>().type.toBe<unknown>()
     })
 
     it("returns an empty tool record when no toolkit is provided", () => {

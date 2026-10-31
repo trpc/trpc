@@ -23,6 +23,7 @@ import * as Predicate from "../Predicate.ts"
 import * as PrimaryKey from "../PrimaryKey.ts"
 import type * as Queue from "../Queue.ts"
 import * as Schema from "../Schema.ts"
+import * as SchemaAST from "../SchemaAST.ts"
 import type { Stream } from "../Stream.ts"
 import type * as Struct from "../Struct.ts"
 import type { NoInfer } from "../Types.ts"
@@ -362,7 +363,9 @@ export type SuccessExit<R> = Success<R> extends infer T ? T extends Stream<infer
  * @category utility types
  * @since 4.0.0
  */
-export type SuccessChunk<R> = Success<R> extends Stream<infer _A, infer _E, infer _Env> ? _A : never
+export type SuccessChunk<R> = R extends Any ?
+  SuccessSchema<R> extends RpcSchema.Stream<infer _A, infer _E> ? _A["Type"] : never
+  : never
 
 /**
  * Extracts the RPC error schema, including error schemas contributed by
@@ -1193,6 +1196,26 @@ export const exitSchema = <R extends Any>(
   exitSchemaCache.set(self, schema as any)
   return schema as any
 }
+
+/**
+ * Annotation that sets the schema parse options used by `RpcClient` and
+ * `RpcServer` when encoding and decoding an RPC's payload, success values,
+ * stream chunks, and exits.
+ *
+ * **Details**
+ *
+ * The default value is `SchemaAST.defaultParseOptions`. Set `concurrency` to
+ * parse product elements concurrently, which lets decoding transformations that
+ * call `Effect.request` share `RequestResolver` batches. Annotate a single RPC
+ * with `annotate`, or every RPC in a group with `RpcGroup.annotateRpcs`.
+ *
+ * @stability unstable
+ * @category annotations
+ * @since 4.0.0
+ */
+export const ParseOptions = Context.Reference<SchemaAST.ParseOptions>("effect/rpc/Rpc/ParseOptions", {
+  defaultValue: () => SchemaAST.defaultParseOptions
+})
 
 const WrapperTypeId = "~effect/rpc/Rpc/Wrapper"
 

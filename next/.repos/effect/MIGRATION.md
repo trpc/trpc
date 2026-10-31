@@ -71,9 +71,8 @@ Moving these modules does not stabilize their APIs.
 ### Performance and Bundle Size
 
 The fiber runtime has been rewritten for reduced memory overhead and faster
-execution. The core `effect` package supports aggressive tree-shaking — a
-minimal Effect program bundles to ~6.3 KB (minified + gzipped). With Schema,
-~15 KB.
+execution. The core `effect` package supports aggressive tree-shaking. A
+minimal Effect program bundles to 7.1 kB (minified + gzipped).
 
 ---
 

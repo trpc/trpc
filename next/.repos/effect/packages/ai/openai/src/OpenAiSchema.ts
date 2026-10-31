@@ -1,8 +1,8 @@
 /**
  * The `OpenAiSchema` module defines the request, response, streaming, and
  * embedding schemas used by the handwritten OpenAI client. These schemas are
- * the transport boundary for JSON sent to and decoded from the Responses and
- * embeddings endpoints.
+ * the transport boundary for JSON sent to and decoded from the Responses,
+ * embeddings, and decisions endpoints.
  *
  * @stability unstable
  * @since 4.0.0
@@ -93,7 +93,8 @@ const InputImageContent = Schema.Struct({
   type: Schema.Literal("input_image"),
   image_url: Schema.optionalKey(Schema.NullOr(Schema.String)),
   file_id: Schema.optionalKey(Schema.NullOr(Schema.String)),
-  detail: Schema.optionalKey(Schema.NullOr(ImageDetail))
+  detail: Schema.optionalKey(Schema.NullOr(ImageDetail)),
+  prompt_cache_breakpoint: Schema.optional(PromptCacheBreakpoint)
 })
 
 const InputFileContent = Schema.Struct({
@@ -101,7 +102,8 @@ const InputFileContent = Schema.Struct({
   file_id: Schema.optionalKey(Schema.NullOr(Schema.String)),
   filename: Schema.optionalKey(Schema.String),
   file_url: Schema.optionalKey(Schema.String),
-  file_data: Schema.optionalKey(Schema.String)
+  file_data: Schema.optionalKey(Schema.String),
+  prompt_cache_breakpoint: Schema.optional(PromptCacheBreakpoint)
 })
 
 /**
@@ -703,7 +705,8 @@ export type TextResponseFormatConfiguration = typeof TextResponseFormatConfigura
  * Validates the Responses API request payload, including input content, model
  * selection, instructions, reasoning options, text output format, tools,
  * `tool_choice`, streaming, storage, response continuation, sampling options,
- * prompt caching, and optional response fields requested through `include`.
+ * safety identifiers, prompt caching, and optional response fields requested
+ * through `include`.
  *
  * **Gotchas**
  *
@@ -723,7 +726,9 @@ export const CreateResponse = Schema.Struct({
   temperature: Schema.optional(Schema.Finite),
   top_p: Schema.optional(Schema.Finite),
   user: Schema.optional(Schema.String),
+  safety_identifier: Schema.optional(Schema.String),
   prompt_cache_key: Schema.optional(Schema.String),
+  prompt_cache_retention: Schema.optional(Schema.Literals(["in_memory", "24h"])),
   prompt_cache_options: Schema.optional(Schema.Struct({
     mode: Schema.optional(Schema.Literals(["implicit", "explicit"])),
     ttl: Schema.optional(Schema.Literal("30m")),
@@ -1442,3 +1447,193 @@ export const CreateEmbeddingResponse = Schema.Struct({
  * @since 4.0.0
  */
 export type CreateEmbeddingResponse = typeof CreateEmbeddingResponse.Type
+
+// =============================================================================
+// Decisions
+// =============================================================================
+
+/**
+ * Schema for a question sent to the OpenAI Decisions API.
+ *
+ * **Details**
+ *
+ * A `predicate` asks for the probability that a statement holds. A `choice`
+ * picks one of the supplied `choices`. A `score` rates against `levels`,
+ * ordered from lowest to highest. Each question needs a `name` that is unique
+ * within the request.
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.5
+ */
+export const DecisionQuestion = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("predicate"),
+    name: Schema.String,
+    instructions: Schema.String
+  }),
+  Schema.Struct({
+    type: Schema.Literal("choice"),
+    name: Schema.String,
+    instructions: Schema.String,
+    choices: Schema.Array(Schema.Struct({ value: Schema.String, description: Schema.String }))
+  }),
+  Schema.Struct({
+    type: Schema.Literal("score"),
+    name: Schema.String,
+    instructions: Schema.String,
+    levels: Schema.Array(Schema.Struct({ label: Schema.String, description: Schema.String }))
+  })
+])
+
+/**
+ * A question sent to the OpenAI Decisions API.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.5
+ */
+export type DecisionQuestion = typeof DecisionQuestion.Type
+
+/**
+ * Schema for a content part in a Decisions API input message.
+ *
+ * **Gotchas**
+ *
+ * `image_url` must be an inline base64 `data:` URL. OpenAI rejects hosted
+ * URLs and file ids.
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.5
+ */
+export const DecisionInputContent = Schema.Union([
+  Schema.Struct({ type: Schema.Literal("input_text"), text: Schema.String }),
+  Schema.Struct({ type: Schema.Literal("input_image"), image_url: Schema.String })
+])
+
+/**
+ * A content part in a Decisions API input message.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.5
+ */
+export type DecisionInputContent = typeof DecisionInputContent.Type
+
+/**
+ * Schema for the request payload sent to `POST /decisions`.
+ *
+ * **Details**
+ *
+ * `input` is either a string or a list of user messages made of text and image
+ * parts.
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.5
+ */
+export const CreateDecisionsRequest = Schema.Struct({
+  model: Schema.Union([Schema.Literal("gpt-6-luna"), Schema.StringForLiteralAutocomplete]),
+  input: Schema.Union([
+    Schema.String,
+    Schema.Array(Schema.Struct({ role: Schema.Literal("user"), content: Schema.Array(DecisionInputContent) }))
+  ]),
+  questions: Schema.Array(DecisionQuestion)
+})
+
+/**
+ * Request payload sent to `POST /decisions`.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.5
+ */
+export type CreateDecisionsRequest = typeof CreateDecisionsRequest.Type
+
+/**
+ * Schema for an answer returned by the OpenAI Decisions API.
+ *
+ * **Details**
+ *
+ * Each answer echoes the `name` of its question. Answers to `predicate`,
+ * `choice`, and `score` questions have the same `type` as the question. A
+ * `score` is a probability-weighted average of the 0-based level indices, so
+ * it can fall between levels.
+ *
+ * **Gotchas**
+ *
+ * OpenAI can refuse a single question. That answer has `type: "refusal"` and
+ * no result fields.
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.5
+ */
+export const DecisionAnswer = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("predicate"),
+    name: Schema.String,
+    probability: Schema.Number
+  }),
+  Schema.Struct({
+    type: Schema.Literal("choice"),
+    name: Schema.String,
+    choice: Schema.String,
+    probabilities: Schema.Array(Schema.Struct({ value: Schema.String, probability: Schema.Number })),
+    confidence: Schema.Number
+  }),
+  Schema.Struct({
+    type: Schema.Literal("score"),
+    name: Schema.String,
+    score: Schema.Number,
+    probabilities: Schema.Array(Schema.Struct({
+      value: Schema.Int,
+      label: Schema.String,
+      probability: Schema.Number
+    })),
+    confidence: Schema.Number
+  }),
+  Schema.Struct({
+    type: Schema.Literal("refusal"),
+    name: Schema.String
+  })
+])
+
+/**
+ * An answer returned by the OpenAI Decisions API.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.5
+ */
+export type DecisionAnswer = typeof DecisionAnswer.Type
+
+/**
+ * Schema for a successful response from `POST /decisions`.
+ *
+ * **Gotchas**
+ *
+ * OpenAI does not document usage for this endpoint, so `usage` and its token
+ * counts are optional.
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.5
+ */
+export const CreateDecisionsResponse = Schema.Struct({
+  answers: Schema.Array(DecisionAnswer),
+  usage: Schema.optionalKey(Schema.Struct({
+    input_tokens: Schema.optionalKey(Schema.Int),
+    output_tokens: Schema.optionalKey(Schema.Int)
+  }))
+})
+
+/**
+ * Successful response from `POST /decisions`.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.5
+ */
+export type CreateDecisionsResponse = typeof CreateDecisionsResponse.Type

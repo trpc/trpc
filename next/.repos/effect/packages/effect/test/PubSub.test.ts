@@ -12,6 +12,15 @@ describe("PubSub", () => {
       assert.isFalse(PubSub.isPubSub(null))
     }))
 
+  it.effect("takeBetween returns a large backlog", () =>
+    Effect.gen(function*() {
+      const values = Array.makeBy(200000, (i) => i)
+      const pubsub = yield* PubSub.unbounded<number>()
+      const subscription = yield* PubSub.subscribe(pubsub)
+      yield* PubSub.publishAll(pubsub, values)
+      assert.deepStrictEqual(yield* PubSub.takeBetween(subscription, 1, values.length), values)
+    }))
+
   for (const batch of [false, true]) {
     it.effect.each([1, 2, 3])(
       `sliding capacity %s delivers each retained message once per subscriber (batch: ${batch})`,
@@ -543,6 +552,18 @@ describe("PubSub", () => {
       assert.strictEqual(replayWindow.take(), replayed)
     })
 
+    it("does not retain values through a dropped replay node", () => {
+      const pubsub = PubSub.makeAtomicUnbounded<object>({ replay: 1 })
+      const first = {}
+      pubsub.publish(first)
+      const droppedNode = (pubsub as unknown as { readonly replayBuffer: { readonly head: object } }).replayBuffer.head
+      const second = {}
+      pubsub.publish(second)
+
+      assert.isFalse(retains(droppedNode, first))
+      assert.isFalse(retains(droppedNode, second))
+    })
+
     it("preserves replay order across multiple slides", () => {
       const pubsub = PubSub.makeAtomicBounded<number>({ capacity: 4, replay: 3 })
       pubsub.publishAll([1, 2, 3, 4, 5])
@@ -624,6 +645,18 @@ describe("PubSub", () => {
         assert.deepStrictEqual(yield* PubSub.takeUpTo(replay, 1.9), [1])
         assert.deepStrictEqual(yield* PubSub.takeUpTo(replay, Number.NaN), [])
         assert.deepStrictEqual(yield* PubSub.takeAll(replay), [2, 3])
+      }))
+
+    it.effect("takeUpTo keeps its limit when run again after taking replayed messages", () =>
+      Effect.gen(function*() {
+        const pubsub = yield* PubSub.unbounded<number>({ replay: 2 })
+        yield* PubSub.publishAll(pubsub, [1, 2])
+        const sub = yield* PubSub.subscribe(pubsub)
+        const takeThree = PubSub.takeUpTo(sub, 3)
+        yield* PubSub.publish(pubsub, 3)
+        assert.deepStrictEqual(yield* takeThree, [1, 2, 3])
+        yield* PubSub.publishAll(pubsub, [4, 5, 6])
+        assert.deepStrictEqual(yield* takeThree, [4, 5, 6])
       }))
 
     it.effect("dropping", () =>
@@ -710,19 +743,18 @@ describe("PubSub", () => {
   // A small op budget makes the fiber yield at each point between starting a
   // wait and suspending on it; interrupting it there must leave nothing behind.
   // (With a budget below 3 a fiber yields again before making progress.)
-  const interruptAtEveryYield = (
+  const interruptAtEveryYield = Effect.fnUntraced(function*(
     test: (
       budget: (effect: Effect.Effect<unknown>) => Effect.Effect<unknown>
     ) => Effect.Effect<boolean, never, Scope.Scope>
-  ) =>
-    Effect.gen(function*() {
-      const failed: Array<number> = []
-      for (let ops = 3; ops <= 64; ops++) {
-        const ok = yield* Effect.scoped(test(Effect.provideService(Scheduler.MaxOpsBeforeYield, ops)))
-        if (!ok) failed.push(ops)
-      }
-      assert.deepStrictEqual(failed, [])
-    })
+  ) {
+    const failed: Array<number> = []
+    for (let ops = 3; ops <= 64; ops++) {
+      const ok = yield* Effect.scoped(test(Effect.provideService(Scheduler.MaxOpsBeforeYield, ops)))
+      if (!ok) failed.push(ops)
+    }
+    assert.deepStrictEqual(failed, [])
+  })
 
   it.effect("an interrupted take never swallows the next message", () =>
     interruptAtEveryYield((budget) =>
@@ -906,6 +938,25 @@ describe("PubSub", () => {
         assert.isFalse(yield* Fiber.join(publisher))
         assert.strictEqual(yield* PubSub.take(fast), 0)
         assert.strictEqual(yield* PubSub.take(slow), 0)
+      }))
+
+    it.effect("delivers a backpressured publish to a waiting subscriber when the resumed publisher ends the PubSub", () =>
+      Effect.gen(function*() {
+        const pubsub = yield* PubSub.bounded<number>(1)
+        const fast = yield* PubSub.subscribe(pubsub)
+        const slow = yield* PubSub.subscribe(pubsub)
+        yield* PubSub.publish(pubsub, 1)
+        yield* Effect.forkChild(
+          PubSub.publish(pubsub, 2).pipe(Effect.andThen(PubSub.end(pubsub, 0))),
+          { startImmediately: true }
+        )
+        assert.strictEqual(yield* PubSub.take(fast), 1)
+        const waiting = yield* Effect.forkChild(PubSub.take(fast), { startImmediately: true })
+
+        assert.strictEqual(yield* PubSub.take(slow), 1)
+
+        assert.strictEqual(yield* Fiber.join(waiting), 2)
+        assert.strictEqual(yield* PubSub.take(fast), 0)
       }))
 
     it.effect("rejects a backpressured publish that yields before registering its surplus", () =>

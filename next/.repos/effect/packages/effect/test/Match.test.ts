@@ -57,6 +57,31 @@ describe("Match", () => {
     strictEqual(match(null), "miss")
   })
 
+  it("literalsExhaustive dispatches string and numeric literals to their handlers", () => {
+    const match = pipe(
+      Match.type<"draft" | 404>(),
+      Match.literalsExhaustive({
+        draft: (value) => `string:${value}`,
+        404: (value) => `number:${value}`
+      })
+    )
+
+    strictEqual(match("draft"), "string:draft")
+    strictEqual(match(404), "number:404")
+  })
+
+  it("literals only uses own handler keys and falls through otherwise", () => {
+    const match = pipe(
+      Match.type<"draft" | "review" | "toString" | null>(),
+      Match.literals({ draft: () => "draft", review: () => "review" }),
+      Match.orElse(() => "miss")
+    )
+
+    strictEqual(match("review"), "review")
+    strictEqual(match("toString"), "miss")
+    strictEqual(match(null), "miss")
+  })
+
   it("checks symbol-keyed object pattern properties", () => {
     const key = Symbol("key")
     const match = pipe(
@@ -68,5 +93,16 @@ describe("Match", () => {
     strictEqual(match({ [key]: "expected" }), "hit")
     strictEqual(match({ [key]: "other" }), "miss")
     strictEqual(match({} as any), "miss")
+  })
+
+  it("array patterns match prefixes and reject shorter arrays", () => {
+    const match = Match.type<ReadonlyArray<number>>().pipe(
+      Match.when([Match.any, Match.any], () => "hit"),
+      Match.orElse(() => "miss")
+    )
+
+    strictEqual(match([1]), "miss")
+    strictEqual(match([1, 2]), "hit")
+    strictEqual(match([1, 2, 3]), "hit")
   })
 })

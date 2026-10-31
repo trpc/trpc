@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=../../tools/ai-codegen/codegen.schema.json
-spec: https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml
+# To update, pin the latest openai/openai-openapi commit and regenerate from the repo root:
+#   nix develop -c node packages/tools/ai-codegen/src/bin.ts generate --provider openai
+spec: https://raw.githubusercontent.com/openai/openai-openapi/e95c0fe615f45a19e8878af923a729948445a6bd/openapi.yaml
 output: src/Generated.ts
 name: OpenAiClient
 header: |
@@ -8,20 +10,20 @@ header: |
    * @since 1.0.0
    */
 patches:
-  - '[{"op":"replace","path":"/openapi","value":"3.0.0"}]'
-  - '[{"op":"add","path":"/components/schemas/ModelResponseProperties/properties/user/nullable","value":true}]'
-  - '[{"op":"add","path":"/components/schemas/ModelResponseProperties/properties/safety_identifier/nullable","value":true}]'
-  - '[{"op":"add","path":"/components/schemas/ModelResponseProperties/properties/prompt_cache_key/nullable","value":true}]'
-  - '[{"op":"add","path":"/components/schemas/Response/allOf/2/properties/usage/nullable","value":true}]'
-  - '[{"op":"remove","path":"/components/schemas/ResponseFunctionCallArgumentsDoneEvent/required/2"}]'
-  - '[{"op":"add","path":"/components/schemas/ModelResponseProperties/properties/prompt_cache_retention/anyOf/0/enum/1","value":"in_memory"}]'
+  # Preserve the optional `name` field removed upstream.
+  - '[{"op":"add","path":"/components/schemas/ResponseFunctionCallArgumentsDoneEvent/properties/name","value":{"type":"string","description":"The name of the function that was called."}}]'
+  # Keep cache_write_tokens and access_programs optional for older and OpenAI-compatible servers.
+  - '[{"op":"replace","path":"/components/schemas/ResponseUsage/properties/input_tokens_details/required","value":["cached_tokens"]}]'
+  - '[{"op":"replace","path":"/components/schemas/Response/allOf/2/required","value":["id","object","created_at","error","incomplete_details","instructions","model","tools","output","parallel_tool_calls","metadata","tool_choice","temperature","top_p"]}]'
+  # Also accept the legacy `in-memory` spelling
   - '[{"op":"add","path":"/components/schemas/PromptCacheRetentionEnum/enum/1","value":"in-memory"}]'
   - '[{"op":"replace","path":"/components/schemas/OpenAIFile/properties/expires_at","value":{"anyOf":[{"type":"integer","format":"unixtime","description":"The Unix timestamp (in seconds) for when the file will expire."},{"type":"null"}]}}]'
-  - '[{"op":"add","path":"/components/schemas/OpenAIFile/properties/status_details/nullable","value":true}]'
+  - '[{"op":"replace","path":"/components/schemas/OpenAIFile/properties/status_details/type","value":["string","null"]}]'
   # Remove when the upstream schema includes named API sources: https://github.com/openai/openai-openapi/issues/573
   - '[{"op":"replace","path":"/components/schemas/WebSearchActionSearch/properties/sources/items","value":{"anyOf":[{"type":"object","title":"Web search source","description":"A source used in the search.\n","properties":{"type":{"type":"string","enum":["url"],"description":"The type of source. Always `url`.\n","x-stainless-const":true},"url":{"type":"string","format":"uri","description":"The URL of the source.\n"}},"required":["type","url"]},{"type":"object","title":"Web search API source","description":"An API source used in the search.\n","properties":{"type":{"type":"string","enum":["api"],"description":"The type of source. Always `api`.\n","x-stainless-const":true},"name":{"type":"string","description":"The name of the API source, such as `oai-weather`, `oai-sports`, or `oai-finance`.\n"}},"required":["type","name"]}]}}]'
-  # OpenAI may omit action (https://github.com/openai/openai-openapi/issues/572) or report incomplete.
-  - '[{"op":"replace","path":"/components/schemas/WebSearchToolCall/required","value":["id","type","status"]},{"op":"replace","path":"/components/schemas/WebSearchToolCall/properties/status","value":{"type":"string","enum":["in_progress","searching","completed","failed","incomplete"],"description":"The status of the web search tool call.\n"}}]'
+  # OpenAI may omit the find-in-page URL: https://github.com/openai/openai-openapi/issues/571
+  # Also tolerate omitted patterns without substituting a value.
+  - '[{"op":"replace","path":"/components/schemas/WebSearchActionFind/required","value":["type"]}]'
   # Add missing keepalive stream event support
   - '[{"op":"add","path":"/components/schemas/ResponseKeepAliveEvent","value":{"type":"object","title":"Keep alive","description":"A keepalive event emitted during long-running response streams.","properties":{"type":{"type":"string","enum":["keepalive"],"description":"The type of the keepalive event. Always `keepalive`.","default":"keepalive","x-stainless-const":true},"sequence_number":{"type":"integer","description":"The sequence number of this keepalive event."}},"required":["type","sequence_number"]}}]'
   - '[{"op":"add","path":"/components/schemas/ResponseStreamEvent/anyOf/-","value":{"$ref":"#/components/schemas/ResponseKeepAliveEvent"}}]'

@@ -10,10 +10,12 @@
  * @since 4.0.0
  */
 import type { NonEmptyReadonlyArray } from "../Array.ts"
+import * as ByteSize from "../ByteSize.ts"
 import type * as Cause from "../Cause.ts"
 import * as Context from "../Context.ts"
 import * as Effect from "../Effect.ts"
 import * as Base64 from "../encoding/Base64.ts"
+import * as Ndjson from "../encoding/Ndjson.ts"
 import * as Sse from "../encoding/Sse.ts"
 import * as Fiber from "../Fiber.ts"
 import type { FileSystem } from "../FileSystem.ts"
@@ -26,6 +28,7 @@ import type { HttpPlatform } from "../http/HttpPlatform.ts"
 import * as HttpRouter from "../http/HttpRouter.ts"
 import * as Request from "../http/HttpServerRequest.ts"
 import { HttpServerRequest } from "../http/HttpServerRequest.ts"
+import * as Respondable from "../http/HttpServerRespondable.ts"
 import * as Response from "../http/HttpServerResponse.ts"
 import type { HttpServerResponse } from "../http/HttpServerResponse.ts"
 import * as Multipart from "../http/Multipart.ts"
@@ -47,7 +50,7 @@ import type { NoInfer } from "../Types.ts"
 import * as UndefinedOr from "../UndefinedOr.ts"
 import * as HttpApi from "./HttpApi.ts"
 import * as HttpApiEndpoint from "./HttpApiEndpoint.ts"
-import { HttpApiSchemaError } from "./HttpApiError.ts"
+import { HttpApiPayloadTooLarge, HttpApiSchemaError } from "./HttpApiError.ts"
 import type * as HttpApiGroup from "./HttpApiGroup.ts"
 import * as HttpApiMiddleware from "./HttpApiMiddleware.ts"
 import * as HttpApiSchema from "./HttpApiSchema.ts"
@@ -87,19 +90,33 @@ export const layer = <Id extends string, Groups extends HttpApiGroup.Constraint>
       | Path
     >()
     const routes: Array<HttpRouter.Route<any, any>> = []
+    const routeOwners = new Map<string, string>()
     const availableGroups = Array.from(services.mapUnsafe.keys()).filter((key) =>
       key.startsWith("effect/http-api/HttpApiGroup/")
     )
     const groups = Object.values(api.groups) as ReadonlyArray<HttpApiGroup.Top>
     for (const group of groups) {
-      const groupRoutes = services.mapUnsafe.get(group.key)?.routes as Array<HttpRouter.Route<any, any>>
-      if (groupRoutes === undefined) {
+      const service = services.mapUnsafe.get(group.key) as GroupService | undefined
+      if (service === undefined) {
         const available = availableGroups.length === 0 ? "none" : availableGroups.join(", ")
         return yield* Effect.die(
           `HttpApiGroup "${group.identifier}" not found (key: "${group.key}"). Did you forget to provide HttpApiBuilder.group(api, "${group.identifier}", ...)? Available groups: ${available}`
         )
       }
-      routes.push(...groupRoutes)
+      for (const { endpoint } of service.handlers.values()) {
+        const owner = `${group.identifier}.${endpoint.identifier}`
+        const key = `${endpoint.method} ${HttpApiPath.toRouterPath(endpoint.path, endpoint.params)}`
+        const existing = routeOwners.get(key)
+        if (existing !== undefined) {
+          return yield* Effect.die(
+            new Error(
+              `HttpApiEndpoint "${owner}" (${endpoint.method} ${endpoint.path}) has the same method and path as "${existing}". Declare one endpoint whose query, headers, payload or success schemas cover each variant instead.`
+            )
+          )
+        }
+        routeOwners.set(key, owner)
+      }
+      routes.push(...service.routes)
     }
     yield* (router.addAll(routes) as Effect.Effect<void>)
     if (options?.openapiPath) {
@@ -156,12 +173,8 @@ export const group = <
     for (const item of handlers.handlers.values()) {
       routes.push(handlerToRoute(api, group as any, item, services))
     }
-    return Context.makeUnsafe(
-      new Map([[group.key, {
-        routes,
-        handlers: handlers.handlers
-      }]])
-    )
+    const service: GroupService = { routes, handlers: handlers.handlers }
+    return Context.makeUnsafe(new Map([[group.key, service]]))
   })) as any
 
 /**
@@ -240,6 +253,14 @@ export interface HandlerRuntime {
   readonly handler: HttpApiEndpoint.Handler<HttpApiEndpoint.Constraint, unknown, unknown>
   readonly isRaw: boolean
   readonly uninterruptible: boolean
+}
+
+/**
+ * @internal
+ */
+export interface GroupService {
+  readonly routes: Array<HttpRouter.Route<any, any>>
+  readonly handlers: Map<string, HandlerRuntime>
 }
 
 type HandleAllEntry<Endpoint extends HttpApiEndpoint.Constraint> =
@@ -739,6 +760,11 @@ type PayloadDecoder =
     readonly nullOnEmpty: boolean
     readonly decode: (input: unknown) => Effect.Effect<unknown, Schema.SchemaError, unknown>
   }
+  | {
+    readonly _tag: "Stream"
+    readonly maxBytes: number | undefined
+    readonly decode: (request: HttpServerRequest) => Stream.Stream<unknown, unknown, unknown>
+  }
 
 function buildPayloadDecoders(
   payloadMap: HttpApiEndpoint.PayloadMap,
@@ -746,6 +772,15 @@ function buildPayloadDecoders(
 ): Map<string, PayloadDecoder> {
   const result = new Map<string, PayloadDecoder>()
   payloadMap.forEach(({ encoding, schemas }, contentType) => {
+    if (encoding._tag === "Stream") {
+      const schema = schemas[0] as HttpApiSchema.StreamUint8Array | HttpApiSchema.StreamNdjson<Schema.Top>
+      result.set(contentType, {
+        _tag: "Stream",
+        maxBytes: schema.maxBytes === undefined ? undefined : ByteSize.toNumberUnsafe(schema.maxBytes),
+        decode: makePayloadStreamDecoder(schema, options)
+      })
+      return
+    }
     const schema = Schema.Union(schemas)
     const decode = Schema.decodeUnknownEffect(
       encoding._tag === "FormUrlEncoded" ? Schema.toCodecArrayFromSingle(schema) : schema,
@@ -776,6 +811,17 @@ function decodePayload(
   const existing = payloadBy.get(contentType)
   if (!existing) {
     return Response.text(`Unsupported content-type: ${contentType}`, { status: 415 })
+  }
+  if (existing._tag === "Stream") {
+    if (existing.maxBytes !== undefined && Number(httpRequest.headers["content-length"]) > existing.maxBytes) {
+      return payloadTooLargeResponse
+    }
+    // The stream can be pulled after the handler returns, inside a streaming
+    // response, so it carries the element schema's services with it.
+    return Effect.map(
+      Effect.context<unknown>(),
+      (context) => Stream.provideContext(existing.decode(httpRequest), context)
+    )
   }
   const { _tag, decode } = existing
   switch (_tag) {
@@ -824,6 +870,69 @@ function decodePayload(
   }
 }
 
+const payloadTooLargeResponse = Response.empty({ status: 413, headers: { connection: "close" } })
+
+// The handler pulls the body itself, so nothing is read ahead of it. Body read
+// failures stay defects, as they are for buffered payloads.
+function makePayloadStreamDecoder(
+  schema: HttpApiSchema.StreamUint8Array | HttpApiSchema.StreamNdjson<Schema.Top>,
+  options: SchemaAST.ParseOptions | undefined
+): (request: HttpServerRequest) => Stream.Stream<unknown, unknown, unknown> {
+  const maxBytes = schema.maxBytes
+  const readBody = (request: HttpServerRequest) => {
+    const body = Stream.orDie(request.stream)
+    return maxBytes === undefined ? body : limitBytes(body, maxBytes)
+  }
+  if (HttpApiSchema.isStreamUint8Array(schema)) {
+    return readBody
+  }
+  const decodeElement = Schema.decodeUnknownEffect(Schema.toCodecJson(schema.schema), options)
+  const maxElementBytes = schema.maxElementBytes
+  const elementTooLarge = new HttpApiPayloadTooLarge({ limit: "maxElementBytes", size: maxElementBytes })
+  const maxLineBytes = ByteSize.toNumberUnsafe(maxElementBytes)
+  return (request) =>
+    readBody(request).pipe(
+      Stream.pipeThroughChannel(Ndjson.decode({ ignoreEmptyLines: true, maxLineBytes })),
+      Stream.mapEffect((json) => decodeElement(json)),
+      Stream.mapError((error) => {
+        if (HttpApiPayloadTooLarge.is(error)) return error
+        if (!Ndjson.isNdjsonError(error)) return new HttpApiSchemaError({ kind: "Payload", cause: error })
+        if (error.reason === "LineTooLarge") return elementTooLarge
+        return new HttpApiSchemaError({ kind: "Payload", cause: ndjsonSchemaError(error) })
+      })
+    )
+}
+
+// `JSON.stringify` found no JSON representation for an encoded element
+const isNdjsonPackError = (error: unknown): error is Ndjson.NdjsonError =>
+  Ndjson.isNdjsonError(error) && error.kind === "Pack"
+
+const ndjsonSchemaError = (error: Ndjson.NdjsonError): Schema.SchemaError =>
+  new Schema.SchemaError(
+    new SchemaIssue.InvalidValue({
+      message: error.reason === "InvalidUtf8"
+        ? "Expected valid UTF-8"
+        : error.unterminated
+        ? "Expected a valid JSON line, got an unterminated final line"
+        : "Expected a valid JSON line"
+    })
+  )
+
+function limitBytes<E, R>(
+  self: Stream.Stream<Uint8Array, E, R>,
+  maxBytes: ByteSize.ByteSize
+): Stream.Stream<Uint8Array, E | HttpApiPayloadTooLarge, R> {
+  const limit = ByteSize.toNumberUnsafe(maxBytes)
+  const error = new HttpApiPayloadTooLarge({ limit: "maxBytes", size: maxBytes })
+  return Stream.suspend(() => {
+    let total = 0
+    return Stream.mapArrayEffect(self, (chunks) => {
+      for (const chunk of chunks) total += chunk.length
+      return total > limit ? Effect.fail(error) : Effect.succeed(chunks)
+    })
+  })
+}
+
 function handlerToHttpEffect(
   api: Pick<HttpApi.Top, "annotations">,
   group: HttpApiGroup.Top,
@@ -847,6 +956,13 @@ function handlerToHttpEffect(
   )
   const encodeStream = makeStreamEncoder(endpoint, options.success)
   const encodeWithHeaders = makeWithHeadersEncoder(endpoint, options.success, options.headers)
+  const upgrade = getUpgradeSuccessSchema(endpoint)
+  // The handler of a mixed endpoint may decline the upgrade and return one of the other successes.
+  const upgradeOnly = upgrade !== undefined && endpoint.success.size === 1
+  const encodeUpgradeHeaders = UndefinedOr.map(
+    upgrade?.headers,
+    (schema) => Schema.encodeUnknownEffect(schema, options.headers)
+  )
 
   const shouldParsePayload = endpoint.payload.size > 0 && !isRaw
   const payloadBy = shouldParsePayload ? buildPayloadDecoders(endpoint.payload, options.payload) : undefined
@@ -875,6 +991,24 @@ function handlerToHttpEffect(
       if (decodeQuery) {
         request.query = yield* HttpApiSchemaError.wrap("Query", decodeQuery(query))
       }
+      let upgraded = false
+      if (upgrade !== undefined) {
+        if (!isUpgradeRequest(httpRequest, upgrade.protocol)) {
+          return upgradeRequired(upgrade.protocol)
+        }
+        request.upgrade = (options?: { readonly headers?: unknown }) =>
+          Effect.suspend(() => {
+            upgraded = true
+            return Effect.orDie(
+              encodeUpgradeHeaders === undefined
+                ? httpRequest.upgrade
+                : Effect.flatMap(
+                  HttpApiSchemaError.wrap("ResponseHeaders", encodeUpgradeHeaders(options?.headers)),
+                  (headers) => httpRequest.upgradeWith({ headers: headers as Record<string, string> })
+                )
+            )
+          })
+      }
       if (payloadBy) {
         const result = decodePayload(payloadBy, httpRequest, query)
         if (Response.isHttpServerResponse(result)) {
@@ -887,6 +1021,13 @@ function handlerToHttpEffect(
       let response = yield* handler(request)
       if (Response.isHttpServerResponse(response)) {
         return response
+      }
+      if (upgradeOnly || upgraded) {
+        if (response !== undefined && !upgradeOnly) {
+          return yield* Effect.die(new Error("Cannot return a success value after calling upgrade()"))
+        }
+        // The server replaces this with the 101 once the connection is upgraded.
+        return Response.empty()
       }
       let responseHeaders: unknown | undefined
       if (encodeWithHeaders !== undefined && HttpApiSchema.isWithHeadersValue(response)) {
@@ -908,8 +1049,11 @@ function handlerToHttpEffect(
   ).pipe(
     Effect.withErrorReporting,
     Effect.catch((error) => {
-      if (HttpApiSchemaError.is(error)) return Effect.die(error)
-      return Effect.orDie(encodeError(error))
+      if (HttpApiSchemaError.is(error) || HttpApiPayloadTooLarge.is(error)) return Effect.die(error)
+      return Effect.catch(encodeError(error), (schemaError) =>
+        Respondable.isRespondable(error)
+          ? Respondable.toResponse(error)
+          : Effect.die(schemaError))
     }),
     Effect.provideContext(context)
   )
@@ -1071,25 +1215,7 @@ function makeStreamEncoder(
   const status = HttpApiSchema.getStatusSuccessSchema(successSchema.schema)
   const contentType = streamSchema.contentType
 
-  if (HttpApiSchema.isStreamUint8Array(streamSchema)) {
-    return (response, context) => {
-      if (!Stream.isStream(response)) {
-        return hasBuffered ? undefined : new Schema.SchemaError(
-          new SchemaIssue.InvalidValue({ message: "Expected a streaming response" })
-        )
-      }
-
-      return Effect.succeed(Response.stream(
-        Stream.provideContext(
-          response as Stream.Stream<Uint8Array, unknown, unknown>,
-          context as Context.Context<unknown>
-        ),
-        { status, contentType }
-      ))
-    }
-  }
-
-  const sseEncoder = makeSseEncoder(streamSchema, options)
+  const encodeBody = makeStreamBodyEncoder(streamSchema, options)
 
   return (response, context) => {
     if (!Stream.isStream(response)) {
@@ -1100,13 +1226,54 @@ function makeStreamEncoder(
 
     return Effect.succeed(Response.stream(
       Stream.provideContext(
-        encodeSseStream(response, sseEncoder),
+        encodeBody(response),
         context as Context.Context<unknown>
       ),
       { status, contentType }
     ))
   }
 }
+
+function makeStreamBodyEncoder(
+  streamSchema: HttpApiSchema.StreamSchema,
+  options: SchemaAST.ParseOptions | undefined
+): (stream: Stream.Stream<unknown, unknown, unknown>) => Stream.Stream<Uint8Array, unknown, unknown> {
+  if (HttpApiSchema.isStreamUint8Array(streamSchema)) {
+    return (stream) => stream as Stream.Stream<Uint8Array, unknown, unknown>
+  }
+  if (HttpApiSchema.isStreamNdjson(streamSchema)) {
+    const encodeElements = Schema.encodeUnknownEffect(
+      Schema.NonEmptyArray(Schema.toCodecJson(streamSchema.schema)),
+      options
+    )
+    // There is no error schema, so a bad element aborts the response
+    return (stream) =>
+      stream.pipe(
+        Stream.mapArrayEffect((elements) => Effect.orDie(encodeElements(elements))),
+        Stream.pipeThroughChannel(Ndjson.encode()),
+        Stream.catchIf(isNdjsonPackError, Stream.die)
+      )
+  }
+  const sseEncoder = makeSseEncoder(streamSchema, options)
+  return (stream) => encodeSseStream(stream, sseEncoder)
+}
+
+function getUpgradeSuccessSchema(endpoint: HttpApiEndpoint.Top): HttpApiSchema.Upgrade | undefined {
+  for (const schema of endpoint.success) {
+    if (HttpApiSchema.isUpgrade(schema)) return schema
+  }
+}
+
+// RFC 9110 §7.8: `Upgrade` only applies with an `upgrade` connection option.
+const isUpgradeRequest = (request: HttpServerRequest, protocol: string): boolean =>
+  request.headers.upgrade?.toLowerCase() === protocol.toLowerCase() &&
+  /(?:^|,)\s*upgrade\s*(?:,|$)/i.test(request.headers.connection ?? "")
+
+const upgradeRequired = (protocol: string) =>
+  Response.empty({
+    status: 426,
+    headers: { connection: "Upgrade", upgrade: protocol }
+  })
 
 function getStreamSuccessSchema(endpoint: HttpApiEndpoint.Top) {
   for (const schema of endpoint.success) {
@@ -1209,9 +1376,12 @@ function makeSuccessSchema(
   endpoint: HttpApiEndpoint.Top,
   headersOptions: SchemaAST.ParseOptions | undefined
 ): Schema.ConstraintEncoder<HttpServerResponse, unknown> {
-  const schemas = HttpApiEndpoint.getSuccessSchemas(endpoint).map((schema) =>
-    toResponseSuccessSchema(schema, headersOptions)
-  )
+  const schemas: Array<Schema.ConstraintEncoder<HttpServerResponse, unknown>> = []
+  for (const schema of HttpApiEndpoint.getSuccessSchemas(endpoint)) {
+    // The 101 is written by the transport, so the upgrade has no response encoder.
+    if (HttpApiSchema.isUpgrade(schema)) continue
+    schemas.push(toResponseSuccessSchema(schema, headersOptions))
+  }
   return schemas.length === 1 ? schemas[0] : Schema.Union(schemas)
 }
 

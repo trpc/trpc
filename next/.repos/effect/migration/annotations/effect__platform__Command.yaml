@@ -27,7 +27,7 @@
   note: "Output collection moved onto the ChildProcessSpawner service."
 "@effect/platform/Command#runInShell":
   replacement: "ChildProcess.CommandOptions[\"shell\"]"
-  note: "Set shell when calling ChildProcess.make; there is no post-construction shell combinator."
+  note: "Set shell when calling ChildProcess.make; there is no post-construction shell combinator. With shell set, the command string is the whole script: extra arguments fail with BadArgument and templates cannot interpolate ${} values, so build the script with CommandLine.join or CommandLine.quote."
 "@effect/platform/Command#start":
   replacement: "ChildProcessSpawner.ChildProcessSpawner.spawn"
   note: "Use the spawner service, or yield the Effectable ChildProcess.Command directly, to obtain a ChildProcessHandle."

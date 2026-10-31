@@ -5,7 +5,7 @@
  * `stdin` and `stdout` streams into {@link Terminal.Terminal}. The service can
  * display output, read a line, stream key input, and read terminal dimensions.
  * `make` manages readline and TTY raw mode in a scope, while `layer` provides
- * the default service that ends key input on Ctrl+C or Ctrl+D.
+ * the default service that ends key input on bare Esc, Ctrl+C, or Ctrl+D.
  *
  * @stability unstable
  * @since 4.0.0
@@ -24,8 +24,8 @@ import * as readline from "node:readline"
 
 /**
  * Creates a scoped process-backed `Terminal` using Node `readline`, enabling
- * TTY raw mode while in scope and using the supplied predicate to decide when
- * key input should end.
+ * TTY raw mode while key input is read. By default, Esc, Ctrl+C, and Ctrl+D
+ * end key input. Supply `shouldQuit` to override these quit keys.
  *
  * @stability unstable
  * @category constructors
@@ -65,10 +65,6 @@ export const make: (
           readline.emitKeypressEvents(stdin, rl)
           rl.on("line", onLine)
           rl.once("close", onClose)
-
-          if (stdin.isTTY) {
-            stdin.setRawMode(true)
-          }
           return { rl, onClose, onLine }
         }),
         ({ rl, onClose, onLine }) =>
@@ -76,9 +72,6 @@ export const make: (
             readlineActive = false
             rl.off("line", onLine)
             rl.off("close", onClose)
-            if (stdin.isTTY) {
-              stdin.setRawMode(false)
-            }
             rl.close()
             if (inputEnded) {
               Queue.endUnsafe(lines)
@@ -88,8 +81,31 @@ export const make: (
       idleTimeToLive: "10 millis"
     })
 
+    // Only key input needs raw mode; `readLine` never requests it.
+    const setRawMode = (enabled: boolean) =>
+      Effect.sync(() => {
+        if (stdin.isTTY) stdin.setRawMode(enabled)
+      })
+    const rawModeRef = yield* RcRef.make({
+      acquire: Effect.acquireRelease(setRawMode(true), () => setRawMode(false)),
+      idleTimeToLive: "10 millis"
+    })
+
     const columns = Effect.sync(() => stdout.columns ?? 0)
     const rows = Effect.sync(() => stdout.rows ?? 0)
+    const size = Effect.gen(function*() {
+      const queue = yield* Queue.sliding<Terminal.Size, Cause.Done>(1)
+      const onResize = () => Queue.offerUnsafe(queue, { columns: stdout.columns ?? 0, rows: stdout.rows ?? 0 })
+      yield* Effect.addFinalizer(() =>
+        Effect.sync(() => {
+          stdout.off("resize", onResize)
+          Queue.endUnsafe(queue)
+        })
+      )
+      stdout.on("resize", onResize)
+      onResize()
+      return queue
+    })
 
     const readInput = Effect.gen(function*() {
       const queue = yield* Queue.make<Terminal.UserInput, Cause.Done>()
@@ -124,6 +140,7 @@ export const make: (
         handleEnd()
       } else {
         yield* RcRef.get(rlRef)
+        yield* RcRef.get(rawModeRef)
         stdin.once("end", handleEnd)
       }
       return queue as Queue.Dequeue<Terminal.UserInput, Cause.Done>
@@ -159,6 +176,7 @@ export const make: (
     return Terminal.make({
       columns,
       rows,
+      size,
       readInput,
       readLine,
       display
@@ -168,7 +186,7 @@ export const make: (
 
 /**
  * Provides the default process-backed `Terminal` service, ending key input on
- * Ctrl+C or Ctrl+D.
+ * bare Esc, Ctrl+C, or Ctrl+D.
  *
  * @stability unstable
  * @category layers
@@ -177,5 +195,7 @@ export const make: (
 export const layer: Layer.Layer<Terminal.Terminal> = Layer.effect(Terminal.Terminal, make(defaultShouldQuit))
 
 function defaultShouldQuit(input: Terminal.UserInput) {
-  return input.key.ctrl && (input.key.name === "c" || input.key.name === "d")
+  const key = input.key
+  return key.name === "escape" ||
+    (key.ctrl && (key.name === "c" || key.name === "d"))
 }

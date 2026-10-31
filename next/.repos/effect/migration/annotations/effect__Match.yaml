@@ -10,6 +10,10 @@
 "effect/Match#Not":
   replacement: "Match.Not"
   note: "The case type is retained. Its evaluate method now receives any Match.fn selector arguments after the selected input; update custom case implementations that consume those arguments."
+"effect/Match#not":
+  include: true
+  replacement: "Match.not"
+  note: "Object patterns now reject top-level keys absent from every variant of the remaining input type. Correct stale property names or narrow the input before matching; function, refinement, and array patterns are not subject to this object-key check."
 "effect/Match#SafeRefinementId":
   replacement: "none"
   note: "The public safe-refinement brand was internalized. Use Predicate.Refinement, Predicate.Predicate, or a built-in Match refinement instead of constructing the brand."
@@ -21,7 +25,7 @@
   note: "The public type-level namespace is retained with no call-site migration."
 "effect/Match#Types.ExtractAndNarrow":
   replacement: "Match.Types.ExtractAndNarrow"
-  note: "The type-only matching helper is retained unchanged."
+  note: "Array prefix patterns now narrow the required positions and preserve the unmatched tail of arrays and variadic tuples. Update explicit handler or helper result types that assumed a prefix pattern described the entire array; runtime prefix matching is unchanged."
 "effect/Match#Types.MaybeReplace":
   replacement: "Match.Types.MaybeReplace"
   note: "The type-only matching helper is retained unchanged."
@@ -49,3 +53,15 @@
 "effect/Match#When":
   replacement: "Match.When"
   note: "The case type is retained. Its evaluate method now receives any Match.fn selector arguments after the selected input; update custom case implementations that consume those arguments."
+"effect/Match#when":
+  include: true
+  replacement: "Match.when"
+  note: "Object patterns now reject top-level keys absent from every variant of the remaining input type. Correct stale property names or narrow the input before matching. Array prefix patterns retain the unmatched tail in the handler type rather than treating the pattern as the entire array."
+"effect/Match#whenAnd":
+  include: true
+  replacement: "Match.whenAnd"
+  note: "Each object pattern now rejects top-level keys absent from every variant of the remaining input type, including patterns spread from an array. Correct stale property names or narrow the input before matching."
+"effect/Match#whenOr":
+  include: true
+  replacement: "Match.whenOr"
+  note: "Each object pattern now rejects top-level keys absent from every variant of the remaining input type, including patterns spread from an array. Correct stale property names or narrow the input before matching."

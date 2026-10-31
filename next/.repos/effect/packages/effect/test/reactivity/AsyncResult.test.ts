@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@effect/vitest"
-import { Cause } from "effect"
+import { Cause, Equal, Hash, Option } from "effect"
 import { AsyncResult } from "effect/reactivity"
 
 describe("AsyncResult", () => {
@@ -10,6 +10,53 @@ describe("AsyncResult", () => {
     expect(AsyncResult.waiting(result, { touch: false }).waiting).toBe(true)
     expect(AsyncResult.waiting()(result).waiting).toBe(true)
     expect(AsyncResult.waiting({ touch: false })(result).waiting).toBe(true)
+  })
+
+  it("is not equal to an unrelated Equal value with the same tag and hash", () => {
+    const result = AsyncResult.initial()
+    const lookalike = {
+      _tag: "Initial",
+      waiting: false,
+      [Equal.symbol]: () => false,
+      [Hash.symbol]: () => Hash.hash(result)
+    }
+
+    expect(Equal.equals(result, lookalike)).toBe(false)
+  })
+
+  describe("all", () => {
+    const cause = Cause.fail("offline")
+    const refetchFailed = AsyncResult.failure<number, string>(cause, {
+      previousSuccess: Option.some(AsyncResult.success(1)),
+      waiting: true
+    })
+
+    it("rebuilds a failed input's previous success in the combined record shape", () => {
+      const result = AsyncResult.all({
+        a: refetchFailed,
+        b: AsyncResult.success("x"),
+        c: 2,
+        d: AsyncResult.failure(Cause.fail("later"), { previousSuccess: Option.some(AsyncResult.success(3)) })
+      })
+
+      expect(AsyncResult.isFailure(result) && result.cause).toEqual(cause)
+      expect(result.waiting).toBe(true)
+      expect(AsyncResult.value(result)).toEqual(Option.some({ a: 1, b: "x", c: 2, d: 3 }))
+    })
+
+    it("rebuilds a failed input's previous success in the combined tuple shape", () => {
+      const result = AsyncResult.all([AsyncResult.success("x"), refetchFailed])
+
+      expect(AsyncResult.value(result)).toEqual(Option.some(["x", 1]))
+    })
+
+    it("drops the previous success when another input has no value", () => {
+      const result = AsyncResult.all({ a: refetchFailed, b: AsyncResult.initial() })
+
+      expect(AsyncResult.isFailure(result) && result.cause).toEqual(cause)
+      expect(result.waiting).toBe(true)
+      expect(AsyncResult.value(result)).toEqual(Option.none())
+    })
   })
 
   describe("builder", () => {

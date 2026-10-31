@@ -97,7 +97,7 @@ export const AutoIncrement = Schema.Int.check(
 export const make = (impl: Omit<IndexedDb, typeof TypeId>): IndexedDb => IndexedDb.of({ [TypeId]: TypeId, ...impl })
 
 /**
- * Layer that provides `IndexedDb` from `window.indexedDB` and `window.IDBKeyRange`, failing with a config error when they are unavailable.
+ * Layer that provides `IndexedDb` from `window.indexedDB` and `window.IDBKeyRange`, dying with a defect when they are unavailable.
  *
  * @stability unstable
  * @category layers

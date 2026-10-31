@@ -117,5 +117,25 @@ describe("Data", () => {
       expect(A).type.toBe<(<A>(args: { readonly a: A }) => { readonly _tag: "A"; readonly a: A })>()
       expect(B).type.toBe<(<B>(args: { readonly b?: B }) => { readonly _tag: "B"; readonly b?: B })>()
     })
+
+    it("should narrow and match a generic tagged enum", () => {
+      type TE<T> = Data.TaggedEnum<{
+        A: { a: T }
+        B: { b?: T }
+      }>
+
+      interface TEDefinition extends Data.TaggedEnum.WithGenerics<1> {
+        readonly taggedEnum: TE<this["A"]>
+      }
+
+      const { $is, $match, A } = Data.taggedEnum<TEDefinition>()
+      const u: unknown = null
+      if ($is("A")(u)) {
+        expect(u).type.toBe<{ readonly _tag: "A"; readonly a: unknown }>()
+      }
+      expect($match({ A: () => 1, B: () => "b" })(A({ a: 1 }))).type.toBe<number | string>()
+      expect($match(A({ a: 1 }), { A: ({ a }) => a, B: () => "b" })).type.toBe<number | string>()
+      expect($match).type.not.toBeCallableWith({ A: () => 1 })
+    })
   })
 })

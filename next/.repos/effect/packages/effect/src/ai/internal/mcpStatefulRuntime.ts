@@ -28,6 +28,7 @@ export interface Binding {
 
 interface Session extends Binding {
   readonly resourceSubscriptions: Set<string> | undefined
+  readonly listChangeRevision: number
   logLevel: SessionLogLevel
 }
 
@@ -37,6 +38,11 @@ interface Session extends Binding {
 export interface Registration extends Binding {
   readonly supportsResourceSubscriptions: boolean
   readonly logLevel: LogLevel.LogLevel
+  /**
+   * The server's list-change revision when the session initialized. Changes
+   * up to this revision are already reflected in what the client lists next.
+   */
+  readonly listChangeRevision: number
 }
 
 /**
@@ -67,7 +73,8 @@ export interface StatefulRuntime {
     clientId: number,
     headers: Headers.Headers,
     notification: McpCore.ServerNotification,
-    fallbackLogLevel: LogLevel.LogLevel
+    fallbackLogLevel: LogLevel.LogLevel,
+    listChangeRevision: number | undefined
   ) => boolean
   readonly effectLogLevel: (
     clientId: number,
@@ -84,6 +91,7 @@ const makeSession = (registration: Registration): Session => ({
   negotiatedProfile: registration.negotiatedProfile,
   protocol: registration.protocol,
   resourceSubscriptions: registration.supportsResourceSubscriptions ? new Set() : undefined,
+  listChangeRevision: registration.listChangeRevision,
   logLevel: { _tag: "Effect", level: registration.logLevel }
 })
 
@@ -157,8 +165,12 @@ export const make = (): StatefulRuntime => {
       return Effect.sync(() => subscriptions.delete(uri)).pipe(Effect.asVoid)
     },
     effectLogLevel,
-    canDeliver: (clientId, headers, notification, fallbackLogLevel) => {
+    canDeliver: (clientId, headers, notification, fallbackLogLevel, listChangeRevision) => {
       const session = resolveSession(clientId, headers)
+      if (listChangeRevision !== undefined) {
+        // A client without a session on this channel has not initialized.
+        return session !== undefined && listChangeRevision > session.listChangeRevision
+      }
       if (notification._tag === "LoggingMessage") {
         const minimum = session?.logLevel
         return minimum?._tag === "Mcp"

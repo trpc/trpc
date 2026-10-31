@@ -31,6 +31,12 @@ export * as OtlpMetrics from "./OtlpMetrics.ts"
 
 /**
  * @stability unstable
+ * @since 4.0.7
+ */
+export * as OtlpProxy from "./OtlpProxy.ts"
+
+/**
+ * @stability unstable
  * @since 4.0.0
  */
 export * as OtlpResource from "./OtlpResource.ts"

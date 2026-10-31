@@ -29,6 +29,10 @@ import * as TypeSafeSchema from "./TypeSafeSchema.ts"
  */
 export interface Service {
   readonly client: HttpClient.HttpClient
+  /**
+   * Sends `TypeSafe-Danger-Zone-Images: true` when the request has assets or a
+   * Box question.
+   */
   readonly systemOne: (
     request: typeof TypeSafeSchema.SystemOneRequest.Encoded
   ) => Effect.Effect<typeof TypeSafeSchema.SystemOneResponse.Type, AiError.AiError>
@@ -58,6 +62,12 @@ export interface Options {
 }
 
 const decodeSystemOne = HttpClientResponse.schemaBodyJson(TypeSafeSchema.SystemOneResponse)
+
+const imagesHeader = { "TypeSafe-Danger-Zone-Images": "true" }
+
+const usesImages = (request: typeof TypeSafeSchema.SystemOneRequest.Encoded): boolean =>
+  request.assets !== undefined || Object.values(request.questions).some((question) => question.type === "box")
+
 const decodeListModels = HttpClientResponse.schemaBodyJson(TypeSafeSchema.ListModelsResponse)
 
 /**
@@ -101,7 +111,10 @@ export const make = Effect.fnUntraced(
     return TypeSafeClient.of({
       client,
       systemOne: (payload) =>
-        HttpClientRequest.bodyJson(HttpClientRequest.post("/systemone"), payload).pipe(
+        HttpClientRequest.bodyJson(
+          HttpClientRequest.post("/systemone", usesImages(payload) ? { headers: imagesHeader } : undefined),
+          payload
+        ).pipe(
           Effect.mapError((error) =>
             AiError.make({
               module: "TypeSafeClient",

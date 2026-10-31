@@ -118,23 +118,22 @@ const SerializationEntityLayer = SerializationEntity.toLayer(
   Effect.succeed({ Ping: () => Effect.succeed("pong") })
 )
 
-const assertSerialization = (
+const assertSerialization = Effect.fnUntraced(function*(
   serverSerialization: Layer.Layer<RpcSerialization.RpcSerialization>,
   clientSerialization?: "binary" | "ndjson"
-) =>
-  Effect.gen(function*() {
-    const port = yield* startRunner(SerializationEntityLayer, serverSerialization)
+) {
+  const port = yield* startRunner(SerializationEntityLayer, serverSerialization)
 
-    const result = yield* Effect.gen(function*() {
-      const makeClient = yield* SerializationEntity.client
-      return yield* makeClient("serialization-entity").Ping()
-    }).pipe(
-      Effect.provide(makeConfiguredClientLayer(port, clientSerialization)),
-      Effect.scoped
-    )
+  const result = yield* Effect.gen(function*() {
+    const makeClient = yield* SerializationEntity.client
+    return yield* makeClient("serialization-entity").Ping()
+  }).pipe(
+    Effect.provide(makeConfiguredClientLayer(port, clientSerialization)),
+    Effect.scoped
+  )
 
-    assert.strictEqual(result, "pong")
-  }).pipe(Effect.provide(SharedStorage))
+  assert.strictEqual(result, "pong")
+}, Effect.provide(SharedStorage))
 
 // An entity whose reply cannot be serialized: the handler returns a
 // non-integer for a `Schema.Int` success schema, so `Reply.serialize` fails

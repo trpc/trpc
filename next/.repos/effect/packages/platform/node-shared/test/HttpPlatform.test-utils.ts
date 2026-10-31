@@ -14,7 +14,7 @@ export const fileSystemLayer = FileSystem.layerNoop({
       mtime: Option.none(),
       atime: Option.none(),
       birthtime: Option.none(),
-      dev: 0,
+      dev: 0n,
       mode: 0,
       ino: Option.none(),
       nlink: Option.none(),

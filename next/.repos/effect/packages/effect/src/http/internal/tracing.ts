@@ -1,5 +1,6 @@
 import type * as Tracer from "../../Tracer.ts"
 import * as Headers from "../Headers.ts"
+import * as UrlParams from "../UrlParams.ts"
 
 const defaultPorts: Record<string, number> = {
   "http:": 80,
@@ -9,16 +10,17 @@ const defaultPorts: Record<string, number> = {
 }
 
 /**
- * Records the `url.*` and `server.*` attributes for a request URL.
+ * Records `url.*` and `server.*` attributes with URL redaction.
  *
  * @internal
  */
 export const addUrlAttributes = (
   span: Tracer.Span,
-  url: URL
+  url: URL,
+  redactedNames: ReadonlyArray<string | RegExp>
 ): void => {
-  const query = url.search.slice(1)
-  span.attribute("url.full", url.toString())
+  const query = UrlParams.redactUrl(url.search, redactedNames).slice(1)
+  span.attribute("url.full", UrlParams.redactUrl(url.href, redactedNames))
   span.attribute("url.path", url.pathname)
   if (query !== "") {
     span.attribute("url.query", query)
@@ -32,6 +34,21 @@ export const addUrlAttributes = (
       span.attribute("server.port", port)
     }
   }
+}
+
+/**
+ * Adds the names of `Redacted` parameters to the redacted names.
+ *
+ * @internal
+ */
+export const redactedNames = (
+  urlParams: UrlParams.UrlParams,
+  redactedNames: ReadonlyArray<string | RegExp>
+): ReadonlyArray<string | RegExp> => {
+  const keys = urlParams.params.filter(([, value]) => typeof value !== "string").map(([key]) => key)
+  return keys.length === 0
+    ? redactedNames
+    : [...redactedNames, ...new URLSearchParams(keys.map((key) => [key, ""])).keys()]
 }
 
 /** @internal */

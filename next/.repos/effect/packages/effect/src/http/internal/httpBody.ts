@@ -11,9 +11,17 @@ export const updateHeaders = (headers: Headers.Headers, body: HttpBody.HttpBody)
   headers = body.contentType === undefined
     ? Headers.remove(headers, "content-type")
     : Headers.set(headers, "content-type", body.contentType)
-  return body.contentLength === undefined
+  return updateContentLength(headers, body)
+}
+
+/**
+ * @internal
+ */
+export const updateContentLength = (headers: Headers.Headers, body: HttpBody.HttpBody): Headers.Headers => {
+  const contentLength = body._tag === "Empty" || body._tag === "FormData" ? undefined : body.contentLength
+  return contentLength === undefined
     ? Headers.remove(headers, "content-length")
-    : Headers.set(headers, "content-length", body.contentLength.toString())
+    : Headers.set(headers, "content-length", contentLength.toString())
 }
 
 /**

@@ -16,7 +16,7 @@ import * as Duration from "../Duration.ts"
 import * as Effect from "../Effect.ts"
 import * as Exit from "../Exit.ts"
 import { identity } from "../Function.ts"
-import { sqlCleanupBatchSize } from "../internal/persistence.ts"
+import { escapeRedisGlob, sqlCleanupBatchSize, storeNamespace } from "../internal/persistence.ts"
 import * as Layer from "../Layer.ts"
 import * as PrimaryKey from "../PrimaryKey.ts"
 import * as Schedule from "../Schedule.ts"
@@ -301,6 +301,24 @@ export const layerBackingMemory: Layer.Layer<BackingPersistence> = Layer.sync(Ba
  * Each table is created if needed and stores JSON-encoded values with optional
  * expiration timestamps.
  *
+ * **Gotchas**
+ *
+ * Store ids are used directly in `effect_persistence_${storeId}` table names,
+ * without encoding or collision detection. Choose ids whose full table names
+ * are distinct under the database's identifier rules:
+ *
+ * - Do not use dots: they are interpreted as schema separators.
+ * - Do not rely on case alone to distinguish stores: SQLite treats ASCII-case
+ *   variants such as `Users` and `users` as the same table.
+ * - Stay within the database's identifier length limit, including the prefix.
+ *   PostgreSQL normally truncates identifiers to 63 bytes, leaving 44 bytes
+ *   for the store id. Ids sharing those first 44 bytes can alias the same table.
+ *
+ * Aliased stores share entries: writes can overwrite another store's values,
+ * and clearing one clears the other. For arbitrary store ids, prefer
+ * `layerBackingSql`, which stores ids as row values rather than table names.
+ *
+ * @see layerBackingSql
  * @stability unstable
  * @category layers
  * @since 4.0.0
@@ -359,7 +377,7 @@ export const layerBackingSqlMultiTable: Layer.Layer<
       )
 
       type UpsertFn = (
-        entries: Array<{ id: string; value: string; expires: number | null }>
+        entries: Arr.NonEmptyReadonlyArray<{ id: string; value: string; expires: number | null }>
       ) => Effect.Effect<unknown, SqlError>
 
       const upsert = sql.onDialectOrElse({
@@ -397,9 +415,11 @@ export const layerBackingSqlMultiTable: Layer.Layer<
 
       return identity<BackingPersistenceStore>({
         get: (key) =>
-          sql<
-            { value: string }
-          >`SELECT value FROM ${table} WHERE id = ${key} AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`
+          Effect.suspend(() =>
+            sql<
+              { value: string }
+            >`SELECT value FROM ${table} WHERE id = ${key} AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`
+          )
             .pipe(
               Effect.mapError((cause) =>
                 new PersistenceError({
@@ -424,9 +444,11 @@ export const layerBackingSqlMultiTable: Layer.Layer<
               })
             ),
         getMany: (keys) =>
-          sql<{ id: string; value: string }>`SELECT id, value FROM ${table} WHERE ${
-            sql.in("id", keys)
-          } AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`.unprepared.pipe(
+          Effect.suspend(() =>
+            sql<{ id: string; value: string }>`SELECT id, value FROM ${table} WHERE ${
+              sql.in("id", keys)
+            } AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`.unprepared
+          ).pipe(
             Effect.mapError((cause) =>
               new PersistenceError({
                 message: `Failed to getMany from backing store`,
@@ -470,7 +492,7 @@ export const layerBackingSqlMultiTable: Layer.Layer<
         setMany: (entries) =>
           Effect.suspend(() => {
             try {
-              const encoded = entries.map(([key, value, ttl]) => ({
+              const encoded = Arr.map(entries, ([key, value, ttl]) => ({
                 id: key,
                 value: JSON.stringify(value),
                 expires: unsafeTtlToExpires(clock, ttl)
@@ -585,35 +607,33 @@ export const layerBackingSql: Layer.Layer<
     pg: () =>
       sql`CREATE INDEX IF NOT EXISTS effect_persistence_expires_idx ON ${table} (expires) WHERE expires IS NOT NULL`
         .pipe(Effect.orDie, Effect.asVoid),
-    mysql: () =>
-      Effect.gen(function*() {
-        const indexExists = sql<{ readonly count: number }>`
+    mysql: Effect.fnUntraced(function*() {
+      const indexExists = sql<{ readonly count: number }>`
           SELECT COUNT(*) AS count FROM information_schema.statistics
           WHERE table_schema = DATABASE()
             AND table_name = 'effect_persistence'
             AND index_name = 'effect_persistence_expires_idx'
         `.pipe(
-          Effect.map((rows) => Number(rows[0].count) > 0)
-        )
+        Effect.map((rows) => Number(rows[0].count) > 0)
+      )
 
-        yield* sql`CREATE INDEX effect_persistence_expires_idx ON ${table} (expires)`.pipe(
-          Effect.catch((error) => Effect.flatMap(indexExists, (exists) => exists ? Effect.void : Effect.fail(error)))
-        )
-      }).pipe(Effect.orDie),
-    mssql: () =>
-      Effect.gen(function*() {
-        const indexExists = sql<{ readonly count: number }>`
+      yield* sql`CREATE INDEX effect_persistence_expires_idx ON ${table} (expires)`.pipe(
+        Effect.catch((error) => Effect.flatMap(indexExists, (exists) => exists ? Effect.void : Effect.fail(error)))
+      )
+    }, (_) => Effect.orDie(_)),
+    mssql: Effect.fnUntraced(function*() {
+      const indexExists = sql<{ readonly count: number }>`
           SELECT COUNT(*) AS count FROM sys.indexes
           WHERE name = N'effect_persistence_expires_idx'
             AND object_id = OBJECT_ID(N'effect_persistence')
         `.pipe(
-          Effect.map((rows) => Number(rows[0].count) > 0)
-        )
+        Effect.map((rows) => Number(rows[0].count) > 0)
+      )
 
-        yield* sql`CREATE INDEX effect_persistence_expires_idx ON ${table} (expires) WHERE expires IS NOT NULL`.pipe(
-          Effect.catch((error) => Effect.flatMap(indexExists, (exists) => exists ? Effect.void : Effect.fail(error)))
-        )
-      }).pipe(Effect.orDie),
+      yield* sql`CREATE INDEX effect_persistence_expires_idx ON ${table} (expires) WHERE expires IS NOT NULL`.pipe(
+        Effect.catch((error) => Effect.flatMap(indexExists, (exists) => exists ? Effect.void : Effect.fail(error)))
+      )
+    }, (_) => Effect.orDie(_)),
     // sqlite
     orElse: () =>
       sql`CREATE INDEX IF NOT EXISTS effect_persistence_expires_idx ON ${table} (expires) WHERE expires IS NOT NULL`
@@ -696,7 +716,7 @@ export const layerBackingSql: Layer.Layer<
   )
 
   type UpsertFn = (
-    entries: Array<{ store_id: string; id: string; value: string; expires: number | null }>
+    entries: Arr.NonEmptyReadonlyArray<{ store_id: string; id: string; value: string; expires: number | null }>
   ) => Effect.Effect<unknown, SqlError>
 
   const upsert = sql.onDialectOrElse({
@@ -738,9 +758,11 @@ export const layerBackingSql: Layer.Layer<
 
       return identity<BackingPersistenceStore>({
         get: (key) =>
-          sql<
-            { value: string }
-          >`SELECT value FROM ${table} WHERE store_id = ${storeId} AND id = ${key} AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`
+          Effect.suspend(() =>
+            sql<
+              { value: string }
+            >`SELECT value FROM ${table} WHERE store_id = ${storeId} AND id = ${key} AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`
+          )
             .pipe(
               Effect.mapError((cause) =>
                 new PersistenceError({
@@ -765,9 +787,11 @@ export const layerBackingSql: Layer.Layer<
               })
             ),
         getMany: (keys) =>
-          sql<{ id: string; value: string }>`SELECT id, value FROM ${table} WHERE store_id = ${storeId} AND ${
-            sql.in("id", keys)
-          } AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`.unprepared.pipe(
+          Effect.suspend(() =>
+            sql<{ id: string; value: string }>`SELECT id, value FROM ${table} WHERE store_id = ${storeId} AND ${
+              sql.in("id", keys)
+            } AND (expires IS NULL OR expires > ${clock.currentTimeMillisUnsafe()})`.unprepared
+          ).pipe(
             Effect.mapError((cause) =>
               new PersistenceError({
                 message: `Failed to getMany from backing store`,
@@ -817,7 +841,7 @@ export const layerBackingSql: Layer.Layer<
         setMany: (entries) =>
           Effect.suspend(() => {
             try {
-              const encoded = entries.map(([key, value, ttl]) => ({
+              const encoded = Arr.map(entries, ([key, value, ttl]) => ({
                 store_id: storeId,
                 id: key,
                 value: JSON.stringify(value),
@@ -870,8 +894,10 @@ export const layerBackingSql: Layer.Layer<
  *
  * **Details**
  *
- * Each store id is used as a key prefix, values are JSON-encoded, and finite
- * TTLs are stored with Redis expiration.
+ * Entries are stored under `<storeId>:<key>`, with `%` and `:` in the store id
+ * percent-encoded so store namespaces cannot overlap. Values are JSON-encoded,
+ * finite TTLs are stored with Redis expiration, and `clear` only removes keys
+ * in the store's namespace.
  *
  * @stability unstable
  * @category layers
@@ -886,9 +912,10 @@ export const layerBackingRedis: Layer.Layer<
   const setMany = redis.eval(setManyRedis)
 
   return BackingPersistence.of({
-    make: (prefix) =>
+    make: (storeId) =>
       Effect.sync(() => {
-        const prefixed = (key: string) => `${prefix}:${key}`
+        const namespace = storeNamespace(storeId)
+        const prefixed = (key: string) => `${namespace}${key}`
         const parse = (str: string | null) => {
           if (str === null) {
             return Effect.undefined
@@ -983,7 +1010,7 @@ export const layerBackingRedis: Layer.Layer<
               redis.send("DEL", prefixed(key)),
               ({ cause }) => new PersistenceError({ message: `Failed to remove key ${key} from Redis`, cause })
             ),
-          clear: redis.send<Array<string>>("KEYS", `${prefix}:*`).pipe(
+          clear: redis.send<Array<string>>("KEYS", `${escapeRedisGlob(namespace)}*`).pipe(
             Effect.flatMap((keys) => keys.length === 0 ? Effect.void : redis.send("DEL", ...keys)),
             Effect.mapError(({ cause }) =>
               new PersistenceError({
@@ -1038,8 +1065,12 @@ end
  *
  * **Details**
  *
- * Each store id becomes a key prefix, and values are stored as JSON with
- * optional expiration timestamps.
+ * Entries are stored under `<storeId>:<key>`, with `%` and `:` in the store id
+ * percent-encoded so store namespaces cannot overlap. Values are stored as JSON
+ * with optional expiration timestamps.
+ *
+ * `clear` uses `KeyValueStore.clearPrefix` to remove only the store's entries,
+ * so the backing store must support it.
  *
  * @stability unstable
  * @category layers
@@ -1055,7 +1086,7 @@ export const layerBackingKvs: Layer.Layer<
   return BackingPersistence.of({
     make: (storeId) =>
       Effect.sync(() => {
-        const store = KeyValueStore.prefix(backing, storeId)
+        const store = KeyValueStore.prefix(backing, storeNamespace(storeId))
         const get = (key: string) =>
           Effect.flatMap(
             Effect.mapError(
@@ -1172,6 +1203,16 @@ export const layerRedis: Layer.Layer<Persistence, never, Redis.Redis> = layer.pi
 /**
  * Provides `Persistence` backed by SQL with one table per store id.
  *
+ * **Gotchas**
+ *
+ * Store ids become `effect_persistence_${storeId}` table names and must obey
+ * the database's identifier rules. Avoid dots, case-only distinctions, and
+ * names exceeding the database's identifier length limit (including the
+ * prefix). Colliding names share data, including writes and clears.
+ * Prefer `layerSql` for arbitrary store ids.
+ *
+ * @see layerBackingSqlMultiTable for database-specific store-id restrictions
+ * @see layerSql
  * @stability unstable
  * @category layers
  * @since 4.0.0

@@ -314,3 +314,42 @@ describe("IpNetwork", () => {
     ))
   })
 })
+
+describe("fromInput", () => {
+  it("parses strings and returns values unchanged", () => {
+    const ipv4 = network("192.0.2.0/24") as IpNetwork.Ipv4Network
+    const ipv6 = network("2001:db8::/32") as IpNetwork.Ipv6Network
+
+    assertTrue(Equal.equals(success(IpNetwork.fromInput("192.0.2.0/24")), ipv4))
+    assertTrue(Equal.equals(success(IpNetwork.ipv4FromInput("192.0.2.0/24")), ipv4))
+    assertTrue(Equal.equals(success(IpNetwork.ipv6FromInput("2001:DB8::/32")), ipv6))
+
+    assert.strictEqual(success(IpNetwork.fromInput(ipv6)), ipv6)
+    assert.strictEqual(success(IpNetwork.ipv4FromInput(ipv4)), ipv4)
+    assert.strictEqual(success(IpNetwork.ipv6FromInput(ipv6)), ipv6)
+
+    failure(IpNetwork.fromInput("192.0.2.1/24"))
+    failure(IpNetwork.ipv4FromInput("2001:db8::/32"))
+    failure(IpNetwork.ipv6FromInput("192.0.2.0/24"))
+  })
+
+  it("converts an address and prefix length", () => {
+    const ipv4 = network("192.0.2.0/24")
+    const ipv6 = network("2001:db8::/32")
+
+    assertTrue(Equal.equals(success(IpNetwork.fromInput({ address: [192, 0, 2, 0], prefixLength: 24 })), ipv4))
+    assertTrue(Equal.equals(success(IpNetwork.ipv4FromInput({ address: "192.0.2.0", prefixLength: 24 })), ipv4))
+    assertTrue(Equal.equals(success(IpNetwork.ipv6FromInput({ address: "2001:db8::", prefixLength: 32 })), ipv6))
+
+    failure(IpNetwork.fromInput({ address: "192.0.2.1", prefixLength: 24 }))
+    failure(IpNetwork.ipv4FromInput({ address: "2001:db8::", prefixLength: 32 }))
+    failure(IpNetwork.ipv6FromInput({ address: "192.0.2.0", prefixLength: 24 }))
+  })
+
+  it("has an unsafe variant that throws on failure", () => {
+    const prefix = network("192.0.2.0/24")
+    assert.strictEqual(IpNetwork.fromInputUnsafe(prefix), prefix)
+    assertTrue(Equal.equals(IpNetwork.fromInputUnsafe("192.0.2.0/24"), prefix))
+    assert.throws(() => IpNetwork.fromInputUnsafe("192.0.2.1/24"))
+  })
+})

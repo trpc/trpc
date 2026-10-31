@@ -1,6 +1,6 @@
 {
   "name": "@effect/sql-pglite",
-  "version": "4.0.2",
+  "version": "4.1.1",
   "type": "module",
   "license": "MIT",
   "description": "A PGlite toolkit for Effect",
@@ -71,6 +71,6 @@
     "effect": "workspace:^"
   },
   "dependencies": {
-    "@electric-sql/pglite": "^0.5.8"
+    "@electric-sql/pglite": "^0.5.10"
   }
 }

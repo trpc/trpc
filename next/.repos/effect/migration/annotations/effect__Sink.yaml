@@ -171,16 +171,16 @@ effect/Sink#race:
   note: "Sink racing (race/raceBoth/raceWith) was removed from v4; broadcast the stream (Stream.broadcast) into two consumers and race the resulting run effects with Effect.race, or write a custom Channel."
 effect/Sink#raceBoth:
   replacement: "none"
-  note: "Removed with the race family; broadcast the stream and use Effect.raceBoth (or Effect.race) on the two Stream.run effects to learn which side won."
+  note: "Removed with the race family; broadcast the stream and tag each Stream.run effect's result before combining them with Effect.race to learn which side succeeded first."
 effect/Sink#raceWith:
   replacement: "none"
-  note: "Removed, along with the MergeDecision type it depended on; the closest is broadcasting the stream and combining the two run effects manually (Effect.raceWith on the run effects)."
+  note: "Removed, along with the MergeDecision type it depended on; broadcast the stream and combine the two run effects manually. Use Effect.race for the first success or Effect.raceFirst for the first completion; custom completion and interruption handling requires explicit fibers."
 effect/Sink#refineOrDie:
   replacement: "Sink.catch"
-  note: "Removed; rebuild with the typed-error handler: Sink.catch(self, (e) => Option.match(pf(e), { onSome: Effect.fail, onNone: () => Effect.die(e) })) — note Sink.catch replaces the result on recovery, so refined errors must be re-failed as shown."
+  note: "For recoverable typed errors, use Sink.catch(self, (e) => Option.match(pf(e), { onSome: Effect.fail, onNone: () => Effect.die(e) })). Causes containing defects skip pf and convert typed errors to defects; use Sink.catchCause for full-cause handling."
 effect/Sink#refineOrDieWith:
   replacement: "Sink.catch"
-  note: "Removed; same pattern as refineOrDie but die with the mapped defect: Sink.catch(self, (e) => Option.match(pf(e), { onSome: Effect.fail, onNone: () => Effect.die(f(e)) }))."
+  note: "Use the refineOrDie recipe with Effect.die(f(e)) for unrefined errors. Causes containing defects skip pf and f and convert typed errors to defects; use Sink.catchCause for full-cause handling."
 effect/Sink#splitWhere:
   replacement: "none"
   note: "Removed; it re-chunked input so the sink stopped before the first later element matching the predicate — closest v4 options are pre-splitting the stream (Stream.split / Stream.takeWhile) or a custom Sink.fromTransform that cuts pulled arrays at the predicate boundary and returns the rest as leftovers."
@@ -202,3 +202,12 @@ effect/Sink#zipRight:
 effect/Sink#zipWith:
   replacement: "Sink.flatMap"
   note: "Removed; use self.pipe(Sink.flatMap((a) => Sink.map(that, (a2) => f(a, a2)))) — sequential only, the { concurrent: true } option has no v4 equivalent."
+effect/Sink#mapError:
+  include: true
+  replacement: "Sink.mapError"
+  note: "Maps every typed error in the cause, preserving defects, interruptions and reason order. Unlike typed recovery, mapping does not convert errors to defects."
+
+effect/Sink#orElse:
+  include: true
+  replacement: "Sink.orElse"
+  note: "Causes containing defects skip the fallback and convert typed errors to defects; interruptions alongside typed errors do not block typed recovery."

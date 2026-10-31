@@ -17,7 +17,6 @@ import type * as Layer from "../Layer.ts"
 import type * as HttpApi from "./HttpApi.ts"
 import type * as HttpApiGroup from "./HttpApiGroup.ts"
 import * as Html from "./internal/html.ts"
-import * as internal from "./internal/httpApiScalar.ts"
 import * as OpenApi from "./OpenApi.ts"
 
 /**
@@ -60,6 +59,11 @@ export type ScalarConfig = {
   layout?: "modern" | "classic"
   /** URL to a request proxy for the API client */
   proxyUrl?: string
+  /** Authentication preferences for the API client */
+  authentication?: {
+    /** OpenAPI security scheme names to select by default */
+    preferredSecurityScheme?: string | Array<string | Array<string>> | null
+  }
   /** Browser JavaScript function expression used by Scalar for documents and test requests */
   customFetch?: string
   /** Whether to show the sidebar */
@@ -207,7 +211,8 @@ const makeHandler = <Id extends string, Groups extends HttpApiGroup.Constraint>(
  * **Details**
  *
  * The route serves the OpenAPI specification generated from the API at the
- * configured path, defaulting to `/docs`.
+ * configured path, defaulting to `/docs`. The bundled script is loaded when
+ * the layer is built, not when this module is imported.
  *
  * @stability unstable
  * @category layers
@@ -221,11 +226,12 @@ export const layer = <Id extends string, Groups extends HttpApiGroup.Constraint>
   } | undefined
 ): Layer.Layer<never, never, HttpRouter.HttpRouter> =>
   HttpRouter.use(Effect.fnUntraced(function*(router) {
+    const { javascript } = yield* Effect.promise(() => import("./internal/httpApiScalar.ts"))
     const handler = makeHandler({
       api,
       source: {
         _tag: "Inline",
-        source: internal.javascript
+        source: javascript
       },
       scalar: options?.scalar
     })

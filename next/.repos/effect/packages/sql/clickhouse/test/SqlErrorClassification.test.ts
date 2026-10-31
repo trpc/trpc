@@ -32,21 +32,21 @@ vi.mock("@clickhouse/client", () => ({
   })
 }))
 
-const connectFailureReasonTag = (code: number) =>
-  Effect.gen(function*() {
+const connectFailureReasonTag = Effect.fnUntraced(
+  function*(code: number) {
     state.connectCause = { code }
     state.queryCause = null
     state.resultJsonCause = null
     const { ClickhouseClient } = yield* Effect.promise(() => import("@effect/sql-clickhouse"))
     const error = yield* Effect.flip(ClickhouseClient.make({ url: "http://localhost:8123" }))
     return error.reason._tag
-  }).pipe(
-    Effect.scoped,
-    Effect.provide(Reactivity.layer)
-  )
+  },
+  (_) => Effect.scoped(_),
+  Effect.provide(Reactivity.layer)
+)
 
-const queryFailureReasonTag = (code: number) =>
-  Effect.gen(function*() {
+const queryFailureReasonTag = Effect.fnUntraced(
+  function*(code: number) {
     state.connectCause = null
     state.queryCause = { code }
     state.resultJsonCause = null
@@ -54,10 +54,10 @@ const queryFailureReasonTag = (code: number) =>
     const client = yield* ClickhouseClient.make({ url: "http://localhost:8123" })
     const error = yield* Effect.flip(client`SELECT 1`)
     return error.reason._tag
-  }).pipe(
-    Effect.scoped,
-    Effect.provide(Reactivity.layer)
-  )
+  },
+  (_) => Effect.scoped(_),
+  Effect.provide(Reactivity.layer)
+)
 
 describe("ClickhouseClient SqlError classification", { concurrent: false }, () => {
   it.effect("maps representative native codes to reasons", () =>

@@ -13,6 +13,28 @@ import * as Layer from "effect/Layer"
 import { OpenRouterClient } from "./OpenRouterClient.ts"
 import type * as OpenRouterSchema from "./OpenRouterSchema.ts"
 
+declare module "effect/ai/DecisionModel" {
+  /**
+   * OpenRouter metadata returned with a decision response.
+   *
+   * @stability unstable
+   * @category models
+   * @since 4.0.6
+   */
+  export interface DecideResponseMetadata {
+    readonly openrouter?: {
+      /**
+       * Credits charged for the request.
+       */
+      readonly cost?: number
+      /**
+       * Upstream provider that served the request.
+       */
+      readonly provider?: string
+    }
+  }
+}
+
 /**
  * Request options that override model defaults at call time.
  *
@@ -42,8 +64,11 @@ export const model = (
   Model.make("openrouter", model, layer({ model, config }))
 
 /**
- * Creates a decision service that requires full choice and score distributions.
- * Score indices map to criteria labels; cost, id, and provider metadata are omitted.
+ * Creates a decision service that validates full choice and score distributions.
+ * Missing distributions yield `"NoDistribution"` with `decideSettled` or
+ * `AiError.InvalidOutputError` with `decide`.
+ * Score indices map to criteria labels. Reported `cost` and the serving
+ * provider are returned under `metadata.openrouter`.
  * Probabilities arrive rounded to two decimals, so small sum drift is rescaled.
  *
  * @stability unstable
@@ -77,7 +102,11 @@ export const make = Effect.fnUntraced(function*(options: {
             questions[key] = { type: "choice", instructions: decision.instructions, criteria: decision.criteria }
             break
           case "Rate":
-            questions[key] = { type: "score", instructions: decision.instructions, criteria: decision.criteria }
+            questions[key] = {
+              type: "score",
+              instructions: decision.instructions,
+              criteria: decision.criteria.map((level) => level.description)
+            }
             break
           case "Probability":
             questions[key] = { type: "noul", instructions: decision.instructions, criteria: decision.criteria }
@@ -91,15 +120,6 @@ export const make = Effect.fnUntraced(function*(options: {
           answers[key] = { _tag: "Probability", probability: answer.noul }
           continue
         }
-        if (answer.probabilities === undefined) {
-          return yield* AiError.make({
-            module: "OpenRouterDecisionModel",
-            method: "decide",
-            reason: new AiError.InvalidOutputError({
-              description: `Provider returned no probabilities for decision "${key}"`
-            })
-          })
-        }
         if (answer.type === "choice") {
           answers[key] = {
             _tag: "Classify",
@@ -111,19 +131,32 @@ export const make = Effect.fnUntraced(function*(options: {
           const decision = decisions[key]
           const probabilities: Record<string, number> = Object.create(null)
           if (decision?._tag === "Rate") {
-            for (const [index, label] of decision.criteria.entries()) {
-              const probability = answer.probabilities[String(index)]
+            for (const [index, { label }] of decision.criteria.entries()) {
+              const probability = answer.probabilities?.[String(index)]
               if (probability !== undefined) {
                 probabilities[label] = probability
               }
             }
           }
-          answers[key] = { _tag: "Rate", rating: answer.score, probabilities, confidence: answer.confidence }
+          answers[key] = {
+            _tag: "Rate",
+            rating: answer.score,
+            probabilities: answer.probabilities === undefined ? undefined : probabilities,
+            confidence: answer.confidence
+          }
         }
       }
       return {
         answers,
-        usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens }
+        usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens },
+        id: response.id,
+        modelId: response.model,
+        metadata: {
+          openrouter: {
+            ...(response.usage.cost === undefined ? undefined : { cost: response.usage.cost }),
+            ...(response.provider === undefined ? undefined : { provider: response.provider })
+          }
+        }
       }
     })
   })

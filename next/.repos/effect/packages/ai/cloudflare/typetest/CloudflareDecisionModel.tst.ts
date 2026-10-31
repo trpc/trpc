@@ -18,3 +18,27 @@ describe("Cloudflare model identifiers", () => {
     expect(CloudflareDecisionModel.model).type.toBeCallableWith("clef-flash")
   })
 })
+
+describe("Cloudflare images", () => {
+  it("accepts data URLs and base64 images with any media type", () => {
+    expect(client.createDecisions).type.toBeCallableWith({
+      model,
+      state: "Checkout is down",
+      questions: {},
+      images: [
+        "data:image/png;base64,iVBORw==",
+        { content_type: "image/png", base64: "iVBORw==" },
+        { content_type: model, base64: "iVBORw==" }
+      ]
+    })
+  })
+
+  it("rejects images without base64 data", () => {
+    expect(client.createDecisions).type.not.toBeCallableWith({
+      model,
+      state: "Checkout is down",
+      questions: {},
+      images: [{ content_type: "image/png" }]
+    })
+  })
+})

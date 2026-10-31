@@ -56,8 +56,9 @@ export const layerWebSocket = (
  * **Gotchas**
  *
  * This layer only installs the client-side tracer; it does not start a devtools
- * server, so the configured WebSocket endpoint must already be reachable. It
- * relies on `globalThis.WebSocket` being available in the runtime.
+ * server. The client retries failed connections every second, so the configured
+ * endpoint can become reachable after startup. It relies on
+ * `globalThis.WebSocket` being available in the runtime.
  *
  * @see {@link layerWebSocket} for installing the devtools tracer with an explicit `WebSocketConstructor` requirement
  * @see {@link layerSocket} for installing the devtools tracer over an existing `Socket` transport

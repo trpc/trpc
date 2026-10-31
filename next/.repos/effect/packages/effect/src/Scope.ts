@@ -159,8 +159,13 @@ export declare namespace State {
     finalizers: Map<{}, (exit: Exit<any, any>) => Effect<void>> | undefined
   }
   /**
-   * Represents a closed scope state where finalizers have been executed
-   * and the scope is no longer accepting new resources.
+   * Represents a closed scope state where the scope is no longer accepting
+   * new resources.
+   *
+   * **Details**
+   *
+   * The scope enters this state when closing starts, so its finalizers may
+   * still be running.
    *
    * **Example** (Inspecting a closed scope state)
    *
@@ -480,6 +485,11 @@ export const forkUnsafe: (scope: Scope, finalizerStrategy?: "sequential" | "para
  * `Exit`.
  * By default, finalizers run uninterruptibly, so interrupting the closing fiber
  * waits for them to finish; a finalizer can explicitly restore interruptibility.
+ *
+ * **Gotchas**
+ *
+ * Closing a scope that is already closed returns immediately, even when the
+ * finalizers of an earlier close are still running.
  *
  * **Example** (Running scope finalizers)
  *

@@ -140,7 +140,7 @@ const makePredicate = (pattern: unknown): Predicate.Predicate<unknown> => {
     const len = predicates.length
 
     return (u: unknown) => {
-      if (!Array.isArray(u)) {
+      if (!Array.isArray(u) || u.length < len) {
         return false
       }
 
@@ -510,6 +510,23 @@ export const tags = discriminators("_tag")
 
 /** @internal */
 export const tagsExhaustive = discriminatorsExhaustive("_tag")
+
+/** @internal */
+export const literals = (fields: object) => {
+  const predicate = makeWhen(
+    (arg: any) =>
+      (typeof arg === "string" || typeof arg === "number") && Object.hasOwn(fields, arg) &&
+      (fields as any)[arg] !== undefined,
+    (data: any) => (fields as any)[data](data)
+  )
+  return (self: any): any => self.add(predicate)
+}
+
+/** @internal */
+export const literalsExhaustive = (fields: object) => {
+  const addCases = literals(fields)
+  return (matcher: any): any => exhaustive(addCases(matcher))
+}
 
 /** @internal */
 export const not = <

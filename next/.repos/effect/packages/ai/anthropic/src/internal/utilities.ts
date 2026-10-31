@@ -4,6 +4,7 @@ import * as Predicate from "effect/Predicate"
 const finishReasonMap: Record<string, Response.FinishReason> = {
   end_turn: "stop",
   max_tokens: "length",
+  model_context_window_exceeded: "length",
   pause_turn: "pause",
   refusal: "content-filter",
   stop_sequence: "stop",

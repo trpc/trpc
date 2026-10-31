@@ -1,4 +1,4 @@
-import { assertTrue, deepStrictEqual } from "@effect/vitest/utils"
+import { assertTrue, deepStrictEqual, strictEqual } from "@effect/vitest/utils"
 import { Schema } from "effect"
 import type { StandardJSONSchemaV1 } from "effect/StandardSchema"
 import { describe, it } from "vitest"
@@ -24,11 +24,13 @@ function standardConvertToJSONSchemaOutput(
 describe("toStandardJSONSchemaV1", () => {
   it("describes subclass fields when the parent already has a Standard JSON Schema adapter", () => {
     class Parent extends Schema.Class<Parent>("Parent")({ a: Schema.String }) {}
-    Schema.toStandardJSONSchemaV1(Parent)
-    class Child extends Parent.extend<Child>("Child")({ b: Schema.FiniteFromString }) {}
+    const parent = Schema.toStandardSchemaV1(Schema.toStandardJSONSchemaV1(Parent))
+    class Child extends parent.extend<Child>("Child")({ b: Schema.FiniteFromString }) {}
     const child = Schema.toStandardJSONSchemaV1(Child)
 
+    strictEqual("validate" in child["~standard"], false)
     deepStrictEqual(standardConvertToJSONSchemaInput(child), {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
       $ref: "#/$defs/Child",
       $defs: {
         Child: {
@@ -40,6 +42,7 @@ describe("toStandardJSONSchemaV1", () => {
       }
     })
     deepStrictEqual(standardConvertToJSONSchemaOutput(child), {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
       $ref: "#/$defs/Child",
       $defs: {
         Child: {
@@ -62,6 +65,7 @@ describe("toStandardJSONSchemaV1", () => {
     const schema = Schema.String
     const both = Schema.toStandardSchemaV1(Schema.toStandardJSONSchemaV1(schema))
     deepStrictEqual(standardConvertToJSONSchemaInput(both), {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "string"
     })
   })
@@ -71,6 +75,7 @@ describe("toStandardJSONSchemaV1", () => {
       const schema = Schema.Tuple([Schema.FiniteFromString])
       const standardJSONSchema = Schema.toStandardJSONSchemaV1(schema)
       deepStrictEqual(standardConvertToJSONSchemaInput(standardJSONSchema), {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "array",
         "prefixItems": [{ "type": "string" }],
         "minItems": 1,
@@ -82,6 +87,7 @@ describe("toStandardJSONSchemaV1", () => {
       const schema = Schema.Tuple([Schema.FiniteFromString])
       const standardJSONSchema = Schema.toStandardJSONSchemaV1(schema)
       deepStrictEqual(standardConvertToJSONSchemaOutput(standardJSONSchema), {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "array",
         "prefixItems": [{ "type": "number" }],
         "minItems": 1,
@@ -94,6 +100,7 @@ describe("toStandardJSONSchemaV1", () => {
       const schema = Schema.Tuple([S, S])
       const standardJSONSchema = Schema.toStandardJSONSchemaV1(schema)
       deepStrictEqual(standardConvertToJSONSchemaInput(standardJSONSchema), {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "array",
         "prefixItems": [
           { "$ref": "#/$defs/id" },
@@ -115,6 +122,7 @@ describe("toStandardJSONSchemaV1", () => {
       const schema = Schema.Tuple([Schema.FiniteFromString])
       const standardJSONSchema = Schema.toStandardJSONSchemaV1(schema)
       deepStrictEqual(standardConvertToJSONSchemaInput(standardJSONSchema, "draft-07"), {
+        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "array",
         "items": [{ "type": "string" }],
         "minItems": 1,
@@ -126,6 +134,7 @@ describe("toStandardJSONSchemaV1", () => {
       const schema = Schema.Tuple([Schema.FiniteFromString])
       const standardJSONSchema = Schema.toStandardJSONSchemaV1(schema)
       deepStrictEqual(standardConvertToJSONSchemaOutput(standardJSONSchema, "draft-07"), {
+        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "array",
         "items": [{ "type": "number" }],
         "minItems": 1,
@@ -138,6 +147,7 @@ describe("toStandardJSONSchemaV1", () => {
       const schema = Schema.Tuple([S, S])
       const standardJSONSchema = Schema.toStandardJSONSchemaV1(schema)
       deepStrictEqual(standardConvertToJSONSchemaInput(standardJSONSchema, "draft-07"), {
+        "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "array",
         "items": [
           { "$ref": "#/definitions/id" },

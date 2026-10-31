@@ -1,0 +1,6 @@
+query Messages($filter: MessageFilter!) {
+  messages(filter: $filter) {
+    id
+    body
+  }
+}

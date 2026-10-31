@@ -55,6 +55,11 @@ export const make: (
       readonly attributes?: Record<string, unknown>
     } | undefined
     readonly headers?: Headers.Input | undefined
+    /**
+     * Request compression. Defaults to "none". Gzip uses
+     * HttpClientRequest's default minimum body size of 1KB.
+     */
+    readonly compression?: "gzip" | "none" | undefined
     readonly exportInterval?: Duration.Input | undefined
     readonly maxBatchSize?: number | undefined
     readonly context?: (<X>(primitive: Tracer.EffectPrimitive<X>, span: Tracer.AnySpan) => X) | undefined
@@ -76,6 +81,7 @@ export const make: (
     label: "OtlpTracer",
     url: options.url,
     headers: options.headers,
+    compression: options.compression,
     exportInterval: options.exportInterval ?? Duration.seconds(5),
     maxBatchSize: options.maxBatchSize ?? 1000,
     body(spans) {
@@ -128,6 +134,11 @@ export const layer: (options: {
     readonly attributes?: Record<string, unknown>
   } | undefined
   readonly headers?: Headers.Input | undefined
+  /**
+   * Request compression. Defaults to "none". Gzip uses
+   * HttpClientRequest's default minimum body size of 1KB.
+   */
+  readonly compression?: "gzip" | "none" | undefined
   readonly exportInterval?: Duration.Input | undefined
   readonly maxBatchSize?: number | undefined
   readonly context?: (<X>(primitive: Tracer.EffectPrimitive<X>, span: Tracer.AnySpan) => X) | undefined
@@ -140,6 +151,13 @@ export const layer: (options: {
 
 /**
  * Creates an OTLP traces layer from OpenTelemetry configuration.
+ *
+ * **Details**
+ *
+ * Compression accepts "gzip" or "none".
+ * `OTEL_EXPORTER_OTLP_TRACES_COMPRESSION` takes precedence over
+ * `OTEL_EXPORTER_OTLP_COMPRESSION`, defaulting to "none". Gzip uses
+ * HttpClientRequest's default minimum body size of 1KB.
  *
  * @stability unstable
  * @category layers
@@ -165,7 +183,17 @@ export const layerFromConfig = (options?: {
       return Exporter.layerFlusher
     }
 
-    const { baseTimeout, tracesTimeout, exportTimeout, scheduleDelay, maxBatchSize } = yield* Config.all({
+    const {
+      baseCompression,
+      compression,
+      baseTimeout,
+      tracesTimeout,
+      exportTimeout,
+      scheduleDelay,
+      maxBatchSize
+    } = yield* Config.all({
+      baseCompression: Config.option(Config.Literals(["gzip", "none"], "OTEL_EXPORTER_OTLP_COMPRESSION")),
+      compression: Config.option(Config.Literals(["gzip", "none"], "OTEL_EXPORTER_OTLP_TRACES_COMPRESSION")),
       baseTimeout: Config.option(Config.Int("OTEL_EXPORTER_OTLP_TIMEOUT")),
       tracesTimeout: Config.option(Config.Int("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT")),
       exportTimeout: Config.option(Config.Int("OTEL_BSP_EXPORT_TIMEOUT")),
@@ -185,6 +213,7 @@ export const layerFromConfig = (options?: {
       url: endpoint.toString(),
       resource: options?.resource,
       headers: options?.headers ?? (yield* OtlpEnv.headers("TRACES")),
+      compression: Option.getOrElse(Option.firstSomeOf([compression, baseCompression]), () => "none" as const),
       exportInterval: Option.getOrUndefined(scheduleDelay),
       maxBatchSize: Option.getOrUndefined(maxBatchSize),
       context: options?.context,
@@ -252,6 +281,7 @@ class SpanImpl implements Tracer.Span {
   }
 
   end(endTime: bigint, exit: Exit.Exit<unknown, unknown>): void {
+    if (this.status._tag === "Ended") return
     this.status = {
       _tag: "Ended",
       startTime: this.status.startTime,
@@ -262,14 +292,17 @@ class SpanImpl implements Tracer.Span {
   }
 
   attribute(key: string, value: unknown): void {
+    if (this.status._tag === "Ended") return
     this.attributes.set(key, value)
   }
 
   event(name: string, startTime: bigint, attributes?: Record<string, unknown>): void {
+    if (this.status._tag === "Ended") return
     this.events.push([name, startTime, attributes])
   }
 
   addLinks(links: ReadonlyArray<Tracer.SpanLink>): void {
+    if (this.status._tag === "Ended") return
     // oxlint-disable-next-line no-restricted-syntax
     this.links.push(...links)
   }
@@ -342,7 +375,7 @@ const makeOtlpSpan = (self: SpanImpl): OtlpSpan => {
   for (let i = 0; i < self.links.length; i++) {
     const link = self.links[i]
     links.push({
-      traceId: link.span.traceId,
+      traceId: link.span.traceId.padStart(32, "0"),
       spanId: link.span.spanId,
       attributes: entriesToAttributes(Object.entries(link.attributes)),
       droppedAttributesCount: 0
@@ -350,7 +383,7 @@ const makeOtlpSpan = (self: SpanImpl): OtlpSpan => {
   }
 
   return {
-    traceId: self.traceId,
+    traceId: self.traceId.padStart(32, "0"),
     spanId: self.spanId,
     parentSpanId: Option.isSome(self.parent) ? self.parent.value.spanId : undefined,
     name: self.name,

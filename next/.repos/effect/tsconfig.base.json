@@ -33,14 +33,17 @@
     "jsx": "react-jsx",
     "plugins": [{
       "name": "@effect/language-service",
+      "effectFn": ["untraced"],
       "namespaceImportPackages": ["effect", "@effect/*"],
       "diagnosticSeverity": {
         "globalErrorInEffectFailure": "off", // TODO: Check if we should fix the warnings this reports
-        "unstableApiUsage": "off"
+        "unstableApiUsage": "off",
+        "experimentalApiUsage": "off",
+        "effectFnOpportunity": "error"
       },
       "includeSuggestionsInTsc": false,
       "ignoreEffectWarningsInTscExitCode": true,
-      "ignoreEffectErrorsInTscExitCode": true,
+      "ignoreEffectErrorsInTscExitCode": false,
       "overrides": [
         {
           "exclude": [

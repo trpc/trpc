@@ -12,7 +12,7 @@
  * @since 2.0.0
  */
 import type { Kind, TypeLambda } from "./HKT.ts"
-import { getStackTraceLimit } from "./internal/stackTraceLimit.ts"
+import { getStackTraceLimit, setStackTraceLimit } from "./internal/stackTraceLimit.ts"
 import type * as Types from "./Types.ts"
 
 /**
@@ -209,10 +209,13 @@ const pickInternalCall = (): <A>(body: () => A) => A => {
     }
   }
 
-  const isNotOptimizedAway = getStackTraceLimit() !== 0 &&
-    standard[InternalTypeId](() => new Error().stack)?.includes(InternalTypeId) === true
-
-  return isNotOptimizedAway ? standard[InternalTypeId] : forced[InternalTypeId]
+  const limit = getStackTraceLimit()
+  if (limit === 0) return forced[InternalTypeId]
+  // Only the callback and internal call frames are needed for detection.
+  setStackTraceLimit(2)
+  const error = standard[InternalTypeId](() => new Error())
+  setStackTraceLimit(limit)
+  return error.stack?.includes(InternalTypeId) === true ? standard[InternalTypeId] : forced[InternalTypeId]
 }
 
 /** @internal */

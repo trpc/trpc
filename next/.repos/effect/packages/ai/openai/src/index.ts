@@ -31,6 +31,12 @@ export * as OpenAiConfig from "./OpenAiConfig.ts"
 
 /**
  * @stability unstable
+ * @since 4.0.5
+ */
+export * as OpenAiDecisionModel from "./OpenAiDecisionModel.ts"
+
+/**
+ * @stability unstable
  * @since 4.0.0
  */
 export * as OpenAiEmbeddingModel from "./OpenAiEmbeddingModel.ts"

@@ -16,10 +16,14 @@
  * `all`, or `fdN`) to the destination `stdin` or `fdN`.
  *
  * Scoped release and `kill` wait for the signalled process group. Without
- * `forceKillAfter`, the wait is limited to one second and never escalates.
+ * `forceKillAfter`, cleanup waits for the leader to exit with no time limit,
+ * then gives remaining group members up to one second to exit, without
+ * escalating.
  * With it, cleanup may take the configured duration plus a final one-second
  * wait after `SIGKILL`. Zombie descendants can consume either full bound. On
- * Windows, `taskkill` terminates the tree and only the leader's exit is awaited.
+ * Windows, `taskkill` terminates the tree while the leader is running, and
+ * cleanup waits only for the leader's exit. Descendants that outlive the
+ * leader are left running.
  *
  * POSIX cleanup targets a numeric process-group ID. If the group disappears
  * and its ID is reused before cleanup, an unrelated group may be signalled.
@@ -35,7 +39,7 @@ import * as Exit from "effect/Exit"
 import * as FileSystem from "effect/FileSystem"
 import * as Layer from "effect/Layer"
 import * as Path from "effect/Path"
-import type * as PlatformError from "effect/PlatformError"
+import * as PlatformError from "effect/PlatformError"
 import * as Predicate from "effect/Predicate"
 import * as ChildProcess from "effect/process/ChildProcess"
 import type { ChildProcessHandle } from "effect/process/ChildProcessSpawner"
@@ -46,11 +50,13 @@ import {
   makeHandle,
   ProcessId
 } from "effect/process/ChildProcessSpawner"
+import * as CommandLine from "effect/process/CommandLine"
+import * as Redacted from "effect/Redacted"
 import type * as Scope from "effect/Scope"
 import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
 import * as NodeChildProcess from "node:child_process"
-import { PassThrough } from "node:stream"
+import { PassThrough, type Writable } from "node:stream"
 import { buildSpawnOptions } from "./internal/nodeChildProcessSpawner.ts"
 import { handleErrnoException } from "./internal/utils.ts"
 import * as NodeSink from "./NodeSink.ts"
@@ -67,11 +73,26 @@ const toPlatformError = (
   command: ChildProcess.Command
 ): PlatformError.PlatformError => {
   const { commands } = flattenCommand(command)
-  const commandStr = commands.reduce((acc, curr) => {
-    const cmd = `${curr.command} ${curr.args.join(" ")}`
-    return acc.length === 0 ? cmd : `${acc} | ${cmd}`
-  }, "")
+  const format = globalThis.process.platform === "win32" ? "windows" : "posix"
+  const commandStr = commands.map((cmd) => CommandLine.display([cmd.command, ...cmd.args], { format })).join(" | ")
   return handleErrnoException("ChildProcess", method)(error, [commandStr])
+}
+
+const unwrap = (value: string | Redacted.Redacted<string>): string =>
+  Redacted.isRedacted(value) ? Redacted.value(value) : value
+
+// Node's own NUL check throws an error that includes the value, so NUL is
+// rejected here to keep Redacted values out of errors.
+const findNulCharacter = (command: ChildProcess.StandardCommand): string | undefined => {
+  if (command.command.includes("\0")) return "The command contains a NUL character"
+  const index = command.args.findIndex((arg) => unwrap(arg).includes("\0"))
+  if (index !== -1) return `Argument ${index + 1} contains a NUL character`
+  for (const [name, value] of Object.entries(command.options.env ?? {})) {
+    if (value !== undefined && unwrap(value).includes("\0")) {
+      return `The environment variable ${name} contains a NUL character`
+    }
+  }
+  return undefined
 }
 
 type ExitCodeWithSignal = readonly [code: number | null, signal: NodeJS.Signals | null]
@@ -80,32 +101,69 @@ type ExitSignal = Deferred.Deferred<ExitCodeWithSignal>
 const processGroupGraceMillis = 1_000
 const processGroupPollIntervalMillis = 10
 
+// Buffered writes can fail after the sink has been interrupted and removed its
+// error listener. Keep a fallback until close, without replacing the sink
+// listener that propagates errors while it is active.
+const handleInputErrors = (writable: Writable): void => {
+  const onError = () => {}
+  writable.on("error", onError)
+  writable.once("close", () => writable.off("error", onError))
+}
+
+/** Node has recorded the leader's exit, after which its PID may be reused by an unrelated process. */
+const hasExited = (childProcess: NodeChildProcess.ChildProcess): boolean =>
+  childProcess.exitCode !== null || childProcess.signalCode !== null
+
+/**
+ * A non-detached leader shares its parent's process group, so once it has
+ * exited there is no group of its own left to signal or poll.
+ */
+const ownsProcessGroup = (
+  command: ChildProcess.StandardCommand,
+  childProcess: NodeChildProcess.ChildProcess
+): boolean => command.options.detached !== false || !hasExited(childProcess)
+
+/**
+ * The process group exists but has no member that can be signalled, such as
+ * on macOS when its remaining members are zombies.
+ */
+const isUnsignallableProcessGroup = (error: unknown): boolean =>
+  (error as NodeJS.ErrnoException | undefined)?.code === "EPERM"
+
 /** The leader has not exited, or a member of its process group still exists. */
-const isProcessAlive = (childProcess: NodeChildProcess.ChildProcess, exitSignal: ExitSignal): boolean => {
-  if (!Deferred.isDoneUnsafe(exitSignal)) {
+const isProcessAlive = (
+  command: ChildProcess.StandardCommand,
+  childProcess: NodeChildProcess.ChildProcess
+): boolean => {
+  if (!hasExited(childProcess)) {
     return true
   }
-  if (globalThis.process.platform === "win32") {
+  if (globalThis.process.platform === "win32" || !ownsProcessGroup(command, childProcess)) {
     return false
   }
   try {
     globalThis.process.kill(-childProcess.pid!, 0)
     return true
-  } catch {
-    return false
+  } catch (error) {
+    return isUnsignallableProcessGroup(error)
   }
 }
 
 const taskkill = (
   childProcess: NodeChildProcess.ChildProcess,
   onExit: (error: NodeChildProcess.ExecException | null) => void = () => {}
-) =>
+) => {
+  if (hasExited(childProcess)) {
+    onExit(null)
+    return
+  }
   NodeChildProcess.execFile(
     "taskkill",
     ["/pid", String(childProcess.pid!), "/T", "/F"],
     { windowsHide: true },
     onExit
   )
+}
 
 const make = Effect.gen(function*() {
   const fs = yield* FileSystem.FileSystem
@@ -121,9 +179,13 @@ const make = Effect.gen(function*() {
   )
 
   const resolveEnvironment = (options: ChildProcess.CommandOptions) => {
-    return options.extendEnv
-      ? { ...globalThis.process.env, ...options.env }
-      : options.env
+    if (options.env === undefined) return undefined
+    const env: Record<string, string | undefined> = options.extendEnv === true ? { ...globalThis.process.env } : {}
+    for (const [key, value] of Object.entries(options.env)) {
+      if (value === undefined) delete env[key]
+      else env[key] = unwrap(value)
+    }
+    return env
   }
 
   const inputToStdioOption = (input: ChildProcess.CommandInput | undefined): NodeChildProcess.IOType | undefined =>
@@ -221,10 +283,19 @@ const make = Effect.gen(function*() {
     return stdio as NodeChildProcess.StdioOptions
   }
 
+  // Runs a user-provided input stream into its sink, recording a failure of
+  // the source stream so that it can be surfaced by the process exit code
+  const runInputStream = (
+    stream: Stream.Stream<Uint8Array, PlatformError.PlatformError>,
+    sink: Sink.Sink<void, Uint8Array, never, PlatformError.PlatformError>,
+    inputFailure: Deferred.Deferred<never, PlatformError.PlatformError>
+  ) => Effect.forkScoped(Stream.run(Stream.tapError(stream, (error) => Deferred.fail(inputFailure, error)), sink))
+
   const setupAdditionalFds = Effect.fnUntraced(function*(
     command: ChildProcess.StandardCommand,
     childProcess: NodeChildProcess.ChildProcess,
-    additionalFds: ReadonlyArray<ResolvedAdditionalFd>
+    additionalFds: ReadonlyArray<ResolvedAdditionalFd>,
+    inputFailure: Deferred.Deferred<never, PlatformError.PlatformError>
   ) {
     if (additionalFds.length === 0) {
       return {
@@ -236,49 +307,81 @@ const make = Effect.gen(function*() {
     const inputSinks = new Map<number, Sink.Sink<void, Uint8Array, never, PlatformError.PlatformError>>()
     const outputStreams = new Map<number, Stream.Stream<Uint8Array, PlatformError.PlatformError>>()
 
+    const setupInput = (
+      fd: number,
+      nodeStream: NodeChildProcess.ChildProcess["stdio"][number],
+      stream: Stream.Stream<Uint8Array, PlatformError.PlatformError> | undefined
+    ) =>
+      Effect.suspend(() => {
+        let sink: Sink.Sink<void, Uint8Array, never, PlatformError.PlatformError> = Sink.drain
+        if (nodeStream && "write" in nodeStream) {
+          handleInputErrors(nodeStream)
+          sink = NodeSink.fromWritable({
+            evaluate: () => nodeStream,
+            onError: (error) => toPlatformError(`fromWritable(fd${fd})`, toError(error), command)
+          })
+        }
+
+        if (stream) {
+          return Effect.map(runInputStream(stream, sink, inputFailure), () => {
+            inputSinks.set(fd, sink)
+          })
+        }
+
+        inputSinks.set(fd, sink)
+        return Effect.void
+      })
+
+    const setupOutput = (
+      fd: number,
+      nodeStream: NodeChildProcess.ChildProcess["stdio"][number],
+      sink: Sink.Sink<Uint8Array, Uint8Array, never, PlatformError.PlatformError> | undefined
+    ) => {
+      let stream: Stream.Stream<Uint8Array, PlatformError.PlatformError> = Stream.empty
+      if (nodeStream && "read" in nodeStream) {
+        const passThrough = new PassThrough()
+        // Retain errors raised before anyone reads, e.g. a failed write on a
+        // duplex fd, so they neither go uncaught nor leave later readers hanging
+        let error: unknown = undefined
+        passThrough.on("error", (cause) => {
+          error ??= cause
+        })
+        nodeStream.on("error", (cause) => passThrough.destroy(cause))
+        nodeStream.pipe(passThrough)
+        const onError = (cause: unknown) => toPlatformError(`fromReadable(fd${fd})`, toError(cause), command)
+        stream = Stream.suspend(() =>
+          error === undefined
+            ? NodeStream.fromReadable({ evaluate: () => passThrough, onError })
+            : Stream.fail(onError(error))
+        )
+      }
+
+      if (sink) {
+        stream = Stream.transduce(stream, sink)
+      }
+
+      outputStreams.set(fd, stream)
+    }
+
     for (const { config, fd } of additionalFds) {
       const nodeStream = childProcess.stdio[fd]
 
       switch (config.type) {
         case "input": {
-          // Create a sink to write to for input file descriptors
-          let sink: Sink.Sink<void, Uint8Array, never, PlatformError.PlatformError> = Sink.drain
-          if (nodeStream && "write" in nodeStream) {
-            sink = NodeSink.fromWritable({
-              evaluate: () => nodeStream,
-              onError: (error) => toPlatformError(`fromWritable(fd${fd})`, toError(error), command)
-            })
-          }
-
-          // If user provided a stream, pipe it into the sink
-          if (config.stream) {
-            yield* Effect.forkScoped(Stream.run(config.stream, sink))
-          }
-
-          inputSinks.set(fd, sink)
-
+          yield* setupInput(fd, nodeStream, config.stream)
           break
         }
         case "output": {
-          // Create a stream to read from for output file descriptors
-          let stream: Stream.Stream<Uint8Array, PlatformError.PlatformError> = Stream.empty
-          if (nodeStream && "read" in nodeStream) {
-            const passThrough = new PassThrough()
-            nodeStream.on("error", (error) => passThrough.destroy(error))
-            nodeStream.pipe(passThrough)
-            stream = NodeStream.fromReadable({
-              evaluate: () => passThrough,
-              onError: (error) => toPlatformError(`fromReadable(fd${fd})`, toError(error), command)
-            })
+          setupOutput(fd, nodeStream, config.sink)
+          break
+        }
+        case "duplex": {
+          // Keep writing possible after the child closes its write side.
+          if (nodeStream && "allowHalfOpen" in nodeStream) {
+            nodeStream.allowHalfOpen = true
           }
-
-          // If user provided a sink, transduce the stream through it
-          if (config.sink) {
-            stream = Stream.transduce(stream, config.sink)
-          }
-
-          outputStreams.set(fd, stream)
-
+          setupOutput(fd, nodeStream, config.sink)
+          yield* setupInput(fd, nodeStream, config.stream)
           break
         }
       }
@@ -293,13 +396,15 @@ const make = Effect.gen(function*() {
   const setupChildStdin = (
     command: ChildProcess.StandardCommand,
     childProcess: NodeChildProcess.ChildProcess,
-    config: ChildProcess.StdinConfig
+    config: ChildProcess.StdinConfig,
+    inputFailure: Deferred.Deferred<never, PlatformError.PlatformError>
   ) =>
     Effect.suspend(() => {
       // If the child process has a standard input stream, connect it to the
       // sink that will attached to the process handle
       let sink: Sink.Sink<void, unknown, never, PlatformError.PlatformError> = Sink.drain
       if (Predicate.isNotNull(childProcess.stdin)) {
+        handleInputErrors(childProcess.stdin)
         sink = NodeSink.fromWritable({
           evaluate: () => childProcess.stdin!,
           onError: (error) => toPlatformError("fromWritable(stdin)", toError(error), command),
@@ -310,7 +415,7 @@ const make = Effect.gen(function*() {
 
       // If the user provided a `Stream`, run it into the stdin sink
       if (Stream.isStream(config.stream)) {
-        return Effect.as(Effect.forkScoped(Stream.run(config.stream, sink)), sink)
+        return Effect.as(runInputStream(config.stream, sink, inputFailure), sink)
       }
 
       return Effect.succeed(sink)
@@ -372,10 +477,16 @@ const make = Effect.gen(function*() {
       const deferred = Deferred.makeUnsafe<ExitCodeWithSignal>()
       const handle = NodeChildProcess.spawn(
         command.command,
-        command.args,
+        command.args.map(unwrap),
         spawnOptions
       )
       handle.on("error", (error) => {
+        // Node copies the arguments into `spawnargs`.
+        if (command.args.some(Redacted.isRedacted)) {
+          Object.assign(error, {
+            spawnargs: [command.command, ...command.args.map((arg) => Redacted.isRedacted(arg) ? "<redacted>" : arg)]
+          })
+        }
         resume(Effect.fail(toPlatformError("spawn", error, command)))
       })
       handle.on("exit", (...args) => {
@@ -445,8 +556,8 @@ const make = Effect.gen(function*() {
 
   /** Waits for the leader and its process group, bounded by native time. */
   const awaitProcessExit = (
+    command: ChildProcess.StandardCommand,
     childProcess: NodeChildProcess.ChildProcess,
-    exitSignal: ExitSignal,
     timeoutMillis: number
   ): Effect.Effect<void> =>
     Effect.callback<void>((resume) => {
@@ -458,14 +569,13 @@ const make = Effect.gen(function*() {
       }
       const poll = () => {
         clearTimeout(timer)
-        if (Date.now() >= deadline || !isProcessAlive(childProcess, exitSignal)) {
+        if (Date.now() >= deadline || !isProcessAlive(command, childProcess)) {
           stop()
           resume(Effect.void)
           return
         }
         timer = setTimeout(poll, processGroupPollIntervalMillis)
       }
-      // spawn's exit listener completes exitSignal before this listener runs
       childProcess.on("exit", poll)
       poll()
       return Effect.sync(stop)
@@ -478,17 +588,25 @@ const make = Effect.gen(function*() {
     options: ChildProcess.KillOptions | undefined
   ) {
     const signalGroup = (signal: NodeJS.Signals) =>
-      killProcessGroup(command, childProcess, signal).pipe(
-        Effect.catch(() => killProcess(command, childProcess, signal))
-      )
+      ownsProcessGroup(command, childProcess) ?
+        killProcessGroup(command, childProcess, signal).pipe(
+          Effect.catch((error) =>
+            // Only zombies remain in the exited leader's group, so nothing is left to signal.
+            hasExited(childProcess) && isUnsignallableProcessGroup(error.cause) ?
+              Effect.void :
+              killProcess(command, childProcess, signal)
+          )
+        ) :
+        killProcess(command, childProcess, signal)
     yield* signalGroup(options?.killSignal ?? "SIGTERM")
     if (Predicate.isUndefined(options?.forceKillAfter)) {
-      yield* awaitProcessExit(childProcess, exitSignal, processGroupGraceMillis)
+      yield* Deferred.await(exitSignal)
+      yield* awaitProcessExit(command, childProcess, processGroupGraceMillis)
     } else {
-      yield* awaitProcessExit(childProcess, exitSignal, Duration.toMillis(options.forceKillAfter))
-      if (isProcessAlive(childProcess, exitSignal)) {
+      yield* awaitProcessExit(command, childProcess, Duration.toMillis(options.forceKillAfter))
+      if (isProcessAlive(command, childProcess)) {
         yield* signalGroup("SIGKILL")
-        yield* awaitProcessExit(childProcess, exitSignal, processGroupGraceMillis)
+        yield* awaitProcessExit(command, childProcess, processGroupGraceMillis)
       }
     }
     yield* Deferred.await(exitSignal)
@@ -531,6 +649,21 @@ const make = Effect.gen(function*() {
   > = Effect.fnUntraced(function*(cmd) {
     switch (cmd._tag) {
       case "StandardCommand": {
+        if (cmd.options.shell !== undefined && cmd.options.shell !== false && cmd.args.length > 0) {
+          return yield* Effect.fail(PlatformError.badArgument({
+            module: "ChildProcess",
+            method: "spawn",
+            description: "The shell option cannot be combined with arguments; pass the whole script as the command"
+          }))
+        }
+        const nulCharacter = findNulCharacter(cmd)
+        if (nulCharacter !== undefined) {
+          return yield* Effect.fail(PlatformError.badArgument({
+            module: "ChildProcess",
+            method: "spawn",
+            description: nulCharacter
+          }))
+        }
         const stdinConfig = resolveStdinOption(cmd.options)
         const stdoutConfig = resolveOutputOption(cmd.options, "stdout")
         const stderrConfig = resolveOutputOption(cmd.options, "stderr")
@@ -562,11 +695,14 @@ const make = Effect.gen(function*() {
         )
 
         const pid = ProcessId(childProcess.pid!)
-        childProcess.on("exit", (code) => {
-          if (code !== 0 && Predicate.isNotNull(code)) {
-            killProcessGroupOnExit(childProcess, cmd.options.killSignal ?? "SIGTERM")
-          }
-        })
+        // A non-detached child leaves no process group of its own to clean up.
+        if (cmd.options.detached !== false) {
+          childProcess.on("exit", (code) => {
+            if (code !== 0 && Predicate.isNotNull(code)) {
+              killProcessGroupOnExit(childProcess, cmd.options.killSignal ?? "SIGTERM")
+            }
+          })
+        }
         const reref = Effect.sync(() => {
           if (!isReferenced) {
             childProcess.ref()
@@ -580,20 +716,35 @@ const make = Effect.gen(function*() {
           }
           return reref
         })
-        const stdin = yield* setupChildStdin(cmd, childProcess, stdinConfig)
+        const inputFailure = Deferred.makeUnsafe<never, PlatformError.PlatformError>()
+        const stdin = yield* setupChildStdin(cmd, childProcess, stdinConfig, inputFailure)
         const { all, stderr, stdout } = setupChildOutputStreams(cmd, childProcess, stdoutConfig, stderrConfig)
-        const { getInputFd, getOutputFd } = yield* setupAdditionalFds(cmd, childProcess, resolvedAdditionalFds)
+        const { getInputFd, getOutputFd } = yield* setupAdditionalFds(
+          cmd,
+          childProcess,
+          resolvedAdditionalFds,
+          inputFailure
+        )
         const isRunning = Effect.map(Deferred.isDone(exitSignal), (done) => !done)
-        const exitCode = Effect.flatMap(Deferred.await(exitSignal), ([code, signal]) => {
-          if (Predicate.isNotNull(code)) {
-            return Effect.succeed(ExitCode(code))
+        // A failed input stream truncates the input of the child process, so
+        // its failure takes precedence over the exit status and is surfaced
+        // without waiting for the child process to exit
+        const exitCode = Effect.flatMap(
+          Effect.raceFirst(Deferred.await(exitSignal), Deferred.await(inputFailure)),
+          ([code, signal]) => {
+            if (Deferred.isDoneUnsafe(inputFailure)) {
+              return Deferred.await(inputFailure)
+            }
+            if (Predicate.isNotNull(code)) {
+              return Effect.succeed(ExitCode(code))
+            }
+            // If code is `null`, then `signal` must be defined. See the NodeJS
+            // documentation for the `"exit"` event on a `child_process`.
+            // https://nodejs.org/api/child_process.html#child_process_event_exit
+            const error = new globalThis.Error(`Process interrupted due to receipt of signal: '${signal}'`)
+            return Effect.fail(toPlatformError("exitCode", error, cmd))
           }
-          // If code is `null`, then `signal` must be defined. See the NodeJS
-          // documentation for the `"exit"` event on a `child_process`.
-          // https://nodejs.org/api/child_process.html#child_process_event_exit
-          const error = new globalThis.Error(`Process interrupted due to receipt of signal: '${signal}'`)
-          return Effect.fail(toPlatformError("exitCode", error, cmd))
-        })
+        )
         const kill = (options?: ChildProcess.KillOptions | undefined) =>
           terminateProcessGroup(cmd, childProcess, exitSignal, options)
 
@@ -644,12 +795,16 @@ const make = Effect.gen(function*() {
             if (Predicate.isNotUndefined(fd)) {
               const fdName = ChildProcess.fdName(fd) as `fd${number}`
               const existingFds = command.options.additionalFds ?? {}
+              const existingFd = existingFds[fdName]
+              const fdConfig: ChildProcess.AdditionalFdConfig = existingFd?.type === "duplex"
+                ? { ...existingFd, stream: sourceStream }
+                : { type: "input", stream: sourceStream }
               handles.push(
                 yield* spawnCommand(ChildProcess.make(command.command, command.args, {
                   ...command.options,
                   additionalFds: {
                     ...existingFds,
-                    [fdName]: { type: "input" as const, stream: sourceStream }
+                    [fdName]: fdConfig
                   }
                 }))
               )

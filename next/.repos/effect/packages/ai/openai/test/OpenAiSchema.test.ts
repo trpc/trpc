@@ -55,6 +55,18 @@ describe("OpenAiSchema", () => {
     assert.strictEqual(decoded.reasoning?.effort, "max")
   })
 
+  it("accepts safety and prompt cache retention request options", () => {
+    const decoded = Schema.decodeUnknownSync(OpenAiSchema.CreateResponse)({
+      safety_identifier: "user-hash-123",
+      prompt_cache_retention: "24h"
+    })
+
+    assert.deepStrictEqual(decoded, {
+      safety_identifier: "user-hash-123",
+      prompt_cache_retention: "24h"
+    })
+  })
+
   it("decodes a representative response payload", () => {
     const decoded = Schema.decodeUnknownSync(OpenAiSchema.Response)({
       ...makeResponse(),
@@ -457,6 +469,7 @@ describe("OpenAiSchema", () => {
       OpenAiClient.OpenAiClient,
       OpenAiClient.OpenAiClient.of({
         client: undefined as any,
+        createDecisions: () => Effect.die("unexpected"),
         createResponse: () => Effect.die("unexpected"),
         createResponseStream: () =>
           Effect.succeed([

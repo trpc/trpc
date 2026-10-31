@@ -4,6 +4,21 @@ import { Effect, Fiber, Redacted } from "effect"
 import * as TestClock from "effect/testing/TestClock"
 
 describe("PgConnection config", () => {
+  it.effect("rejects sub-second keepalive before connecting", () =>
+    Effect.gen(function*() {
+      let connected = false
+      const error = yield* Effect.flip(PgConnection.make({
+        username: "test",
+        keepAlive: "999 millis",
+        stream: () => {
+          connected = true
+          throw new Error("unexpected connection")
+        }
+      }))
+      assert.isFalse(connected)
+      assert.strictEqual(error.reason._tag, "ConnectionError")
+    }))
+
   it.effect.each([
     { startupParameters: { REPLICATION: "database" } },
     { startupParameters: { client_encoding: "LATIN1" } },

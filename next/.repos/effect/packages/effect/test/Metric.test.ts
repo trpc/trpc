@@ -1,8 +1,9 @@
 import * as OtelMetrics from "@effect/opentelemetry/OtelMetrics"
 import * as Resource from "@effect/opentelemetry/Resource"
 import { assert, describe, it, vi } from "@effect/vitest"
-import { Duration, Fiber, Layer, Metric, Ref, String } from "effect"
+import { Context, Duration, Fiber, Layer, Metric, Ref, String } from "effect"
 import * as Effect from "effect/Effect"
+import { constVoid } from "effect/Function"
 import { HttpClient, type HttpClientError, HttpClientResponse } from "effect/http"
 import { OtlpExporter, OtlpMetrics, OtlpSerialization } from "effect/observability"
 import { TestClock } from "effect/testing"
@@ -185,6 +186,55 @@ describe("Metric", () => {
       assert.deepStrictEqual(Object.keys(snapshot[0].attributes ?? {}), ["route", "method"])
     }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())))
 
+  it.effect("remove deletes only the series for the current attributes", () =>
+    Effect.gen(function*() {
+      const counter = Metric.counter(nextId())
+      const tenantA = Effect.provideService(Metric.CurrentMetricAttributes, { tenant: "a" })
+
+      yield* Metric.update(counter, 1).pipe(tenantA)
+      yield* Metric.update(counter, 10)
+      yield* Metric.remove(counter).pipe(tenantA)
+      assert.deepStrictEqual(yield* series, [[null, 10]])
+
+      yield* Metric.update(counter, 100).pipe(tenantA)
+      assert.deepStrictEqual(yield* series, [[null, 10], [{ tenant: "a" }, 100]])
+    }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())))
+
+  it("registerUnsafe reads on snapshot and removes only its own registration", () => {
+    const context = Context.make(Metric.MetricRegistry, new Map())
+    const gauge = Metric.gauge(nextId(), { bigint: true })
+    const values = () => Metric.snapshotUnsafe(context).map((snapshot) => snapshot.state)
+    const callback = (get: () => Metric.GaugeState<bigint>) => ({ get, update: constVoid, modify: constVoid })
+    let size = BigInt(1)
+
+    const first = Metric.registerUnsafe(gauge, context, callback(() => ({ value: size })))
+    assert.deepStrictEqual(values(), [{ value: BigInt(1) }])
+    size = BigInt(2)
+    assert.deepStrictEqual(values(), [{ value: BigInt(2) }])
+
+    const second = Metric.registerUnsafe(gauge, context, callback(() => ({ value: BigInt(3) })))
+    first.remove()
+    assert.deepStrictEqual(values(), [{ value: BigInt(3) }])
+    second.remove()
+    assert.deepStrictEqual(values(), [])
+  })
+
+  it("registerUnsafe ignores update and modify through an input-changing transform", () => {
+    const context = Context.make(Metric.MetricRegistry, new Map())
+    const lengths = Metric.mapInput(Metric.gauge(nextId()), (input: string) => input.length)
+    const received: Array<unknown> = []
+    const record = (input: string) => {
+      received.push(input)
+    }
+
+    Metric.registerUnsafe(lengths, context, { get: () => ({ value: 1 }), update: record, modify: record })
+    lengths.updateUnsafe("hello", context)
+    lengths.modifyUnsafe("hi", context)
+
+    assert.deepStrictEqual(received, [])
+    assert.deepStrictEqual(lengths.valueUnsafe(context), { value: 1 })
+  })
+
   describe("withAttributes", () => {
     it.effect("follows the contextual attributes when they change between updates", () =>
       Effect.gen(function*() {
@@ -287,7 +337,7 @@ describe("Metric", () => {
         [[1, 0], [2, 0]],
         [[2, 0], [3, 0]]
       ])
-    }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())))
+    }).pipe(Effect.provideService(Metric.MetricRegistry, new Map())), { concurrent: false })
 
   it.effect("should be referentially transparent", () =>
     Effect.gen(function*() {

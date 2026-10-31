@@ -14,12 +14,13 @@ import * as Cause from "effect/Cause"
 import * as Channel from "effect/Channel"
 import * as Context from "effect/Context"
 import * as Deferred from "effect/Deferred"
-import * as Duration from "effect/Duration"
+import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Queue from "effect/Queue"
-import * as Redacted from "effect/Redacted"
+import type * as Redacted from "effect/Redacted"
 import * as EffectResult from "effect/Result"
+import * as Scheduler from "effect/Scheduler"
 import * as Scope from "effect/Scope"
 import * as Semaphore from "effect/Semaphore"
 import { AuthenticationError, ConnectionError, SqlError, type SqlErrorReason, UnknownError } from "effect/sql/SqlError"
@@ -30,6 +31,7 @@ import * as Net from "node:net"
 import type { Duplex } from "node:stream"
 import * as Tls from "node:tls"
 import type { ConnectionOptions } from "node:tls"
+import { resolveConfig, type ResolvedConfig } from "./internal/config.ts"
 import { type ConnectionInternals, internalsKey } from "./internal/connection.ts"
 import * as PasswordInternal from "./internal/password.ts"
 import { classifySqlState, validateChannelName } from "./internal/sqlError.ts"
@@ -72,7 +74,8 @@ export type TypeId = "~@effect/sql-pg/PgConnection"
  * unless explicitly disabled through `ssl` options.
  *
  * Prepared statements are enabled by default and limited by
- * `preparedStatementCacheSize`. Disable them for statement-mode poolers or
+ * `preparedStatementCacheSize`. Disable them for poolers that drop named
+ * statements, such as PgBouncer with `max_prepared_statements = 0`, or for
  * workloads that generate unique SQL. Streams always use unnamed statements.
  *
  * With `multiplex` enabled, unpinned queries from multiple fibers are
@@ -99,6 +102,19 @@ export interface Config {
    */
   readonly password?: Redacted.Redacted | Effect.Effect<Redacted.Redacted> | undefined
   readonly connectTimeout?: Duration.Input | undefined
+  /**
+   * Enables TCP keepalive on native TCP connections after this idle time.
+   *
+   * **Details**
+   *
+   * The duration is truncated to whole seconds (minimum 1 second). With Node's
+   * defaults, the connection errors after 10 unanswered probes sent 1 second
+   * apart. Disabled when omitted; Unix sockets and custom streams are unaffected.
+   *
+   * This is not a query timeout. Probes only run while no sent data is awaiting
+   * acknowledgement, so use `Effect.timeout` to bound a write to a dead peer.
+   */
+  readonly keepAlive?: Duration.Input | undefined
   /**
    * Overrides `startupParameters.application_name`, the URL's `application_name`,
    * and the default `"@effect/sql-pg"`, in that order.
@@ -202,6 +218,13 @@ export interface PgConnection {
    * Reserves the session for exclusive use until the scope closes. Pinning is
    * reentrant. Calls through the returned connection skip the
    * ownership queue, while calls through the original connection wait.
+   *
+   * **Details**
+   *
+   * After release, queries, streams and listeners through the returned
+   * connection fail, and its `interrupt` does nothing. Releasing a pin with
+   * an in-flight statement or an open listener closes the session and fails
+   * any listener queues, as does leaving a transaction the pin began aborted.
    */
   readonly pin: Effect.Effect<PgConnection, never, Scope.Scope>
   /**
@@ -243,7 +266,8 @@ export interface PgConnection {
   /**
    * Registers a channel listener and returns its notification queue after
    * PostgreSQL confirms `LISTEN`. The session stays pinned until the scope
-   * closes, when it runs `UNLISTEN` and shuts down the queue. PostgreSQL
+   * closes, when it runs `UNLISTEN` and shuts down the queue. A session that
+   * does not confirm `UNLISTEN` within 5 seconds is closed. PostgreSQL
    * registration errors fail the acquiring effect.
    * Connection failures after registration fail the queue with the original
    * `SqlError`. Intentional scope closure interrupts consumers.
@@ -342,6 +366,7 @@ const abortDrainGraceMillis = 10
 /** PostgreSQL `query_canceled` SQLSTATE. */
 const queryCanceledCode = "57014"
 const cancelRequestTimeoutMillis = 5000
+const unlistenTimeoutMillis = 5000
 /** How many statements a multiplexed session keeps on the wire at once. */
 const maxPipelineDepth = 128
 const streamPauseThreshold = 512
@@ -367,6 +392,8 @@ class PgConnectionImpl implements PgConnection {
   deadWith: SqlError | undefined
   closed = false
   cancelPending = false
+  /** Reported by the latest `ReadyForQuery`. */
+  transactionStatus: PgProtocol.TransactionStatus = "I"
   readonly channels = new Map<string, Set<Queue.Queue<Notification, SqlError>>>()
   readonly retireHooks = new Set<() => void>()
   /** Queued but not yet written; drained into `pipelineInFlight` on flush. */
@@ -376,7 +403,6 @@ class PgConnectionImpl implements PgConnection {
   pipelineHead = 0
   pipelineFlushScheduled = false
   readonly pipelineIdleWaiters = new Set<() => void>()
-  readonly pinnedView: PgConnection
   readonly [internalsKey]: ConnectionInternals
 
   constructor(config: Config, resolved: ResolvedConfig, session: Session, registry: PgTypes.Registry | undefined) {
@@ -388,13 +414,11 @@ class PgConnectionImpl implements PgConnection {
     this.bindEncoder = makeBindEncoder(registry)
     this.prepared = preparedCacheFor(config)
     this.multiplex = config.multiplex ?? false
-    // Before the pinned view, which copies it.
     this[internalsKey] = {
       base: this,
       deadError: () => this.deadWith,
       retireHooks: this.retireHooks
     }
-    this.pinnedView = new PinnedPgConnection(this)
     session.socket.on("data", this.onData)
     session.socket.on("error", this.onSocketError)
     session.socket.on("close", this.onSocketClose)
@@ -428,6 +452,7 @@ class PgConnectionImpl implements PgConnection {
         if (message.fields.code === queryCanceledCode) this.cancelPending = false
         break
       case "ReadyForQuery":
+        this.transactionStatus = message.status
         if (this.cancelPending) {
           this.cancelPending = false
           this.retire()
@@ -689,18 +714,6 @@ class PgConnectionImpl implements PgConnection {
     )
 
   /**
-   * One extended-query cycle for a caller that shares the session with others:
-   * the fibers inside a transaction, and a stream running beside them. The
-   * wire permit is what serializes them.
-   */
-  readonly cycle = (
-    sql: string,
-    params: ReadonlyArray<unknown>,
-    wantRows: boolean,
-    cache: PreparedCache | undefined
-  ): Effect.Effect<QueryOutput, SqlError> => this.wire.withPermit(this.cycleOwned(sql, params, wantRows, cache))
-
-  /**
    * Runs one cycle for a caller that owns the session. No wire permit is needed
    * because competing pinned work and streams must acquire `owner` first.
    */
@@ -742,30 +755,54 @@ class PgConnectionImpl implements PgConnection {
     return sendCancelRequest(this.resolved, this.session)
   })
 
-  readonly pin: Effect.Effect<PgConnection, never, Scope.Scope> = Effect.suspend(() => {
+  readonly pin: Effect.Effect<PinnedPgConnection, never, Scope.Scope> = Effect.suspend(() => {
     const reserve = this[internalsKey].reserve
     return reserve === undefined ? this.pinExclusive : Effect.andThen(reserve, this.pinExclusive)
   })
 
-  private readonly pinExclusive: Effect.Effect<PgConnection, never, Scope.Scope> = Effect.acquireRelease(
-    Effect.flatMap(this.owner.take(1), () =>
-      // Holding `owner` stops new submissions; a pipeline already on the wire
-      // still has to drain before this fiber owns the connection.
-      Effect.as(
-        Effect.tap(
-          Effect.onInterrupt(this.waitPipelineIdle, () => this.owner.release(1)),
-          () =>
-            Effect.sync(() => {
-              this.pinned = true
-            })
-        ),
-        this.pinnedView
-      )),
-    () =>
-      Effect.suspend(() => {
-        this.pinned = false
-        return this.owner.release(1)
-      })
+  // Only the waits are interruptible, so a caller can bound how long it waits
+  // for the connection without leaking the `owner` permit.
+  private readonly pinExclusive: Effect.Effect<PinnedPgConnection, never, Scope.Scope> = Effect.acquireRelease(
+    Effect.uninterruptibleMask((restore) =>
+      Effect.flatMap(restore(this.owner.take(1)), () =>
+        // Holding `owner` stops new submissions; a pipeline already on the wire
+        // still has to drain before this fiber owns the connection.
+        Effect.map(
+          Effect.onInterrupt(restore(this.waitPipelineIdle), () => this.owner.release(1)),
+          () => {
+            this.pinned = true
+            return new PinnedPgConnection(this)
+          }
+        ))
+    ),
+    (view) =>
+      Effect.flatMap(
+        Effect.suspend(() => {
+          view.released = true
+          this.pinned = false
+          // An `UNLISTEN` that took the wire before the release is bounded by its
+          // own timeout, so wait for it rather than treating it as leaked work.
+          return view.unlistening > 0 ? Effect.as(this.wire.take(1), true) : this.wire.takeIfAvailable(1)
+        }),
+        (idle) => {
+          // Retire rather than wait indefinitely for leaked work to finish.
+          if (!idle || view.listeners > 0) {
+            this.fatal(connectionQueryError(
+              new Error("Pinned connection released with work outstanding"),
+              "PgConnection: Pinned connection released with work outstanding"
+            ))
+          } else if (view.startedIdle && this.transactionStatus === "E") {
+            // A failed cleanup, such as a cancelled `ROLLBACK`, leaves every later
+            // statement failing. A transaction open before the pin is its caller's.
+            this.fatal(connectionQueryError(
+              new Error("Pinned connection released in an aborted transaction"),
+              "PgConnection: Pinned connection released in an aborted transaction"
+            ))
+          }
+          return idle ? Effect.andThen(this.wire.release(1), this.owner.release(1)) : this.owner.release(1)
+        }
+      ),
+    { interruptible: true }
   )
 
   private readonly run = (
@@ -812,15 +849,35 @@ class PinnedPgConnection implements PgConnection {
   readonly [TypeId]: TypeId = TypeId
   readonly base: PgConnectionImpl
   readonly [internalsKey]: ConnectionInternals
-  readonly pin: Effect.Effect<PgConnection, never, Scope.Scope>
-  readonly interrupt: Effect.Effect<void>
+  readonly pin: Effect.Effect<PinnedPgConnection, never, Scope.Scope>
+  released = false
+  listeners = 0
+  unlistening = 0
+  /** No transaction was open when the pin took the session. */
+  readonly startedIdle: boolean
 
   constructor(base: PgConnectionImpl) {
     this.base = base
     this[internalsKey] = base[internalsKey]
     this.pin = Effect.succeed(this)
-    this.interrupt = base.cancel
+    this.startedIdle = base.transactionStatus === "I"
   }
+
+  // Check the lease under the wire permit so queued work cannot run after release.
+  private cycle(
+    sql: string,
+    params: ReadonlyArray<unknown>,
+    wantRows: boolean,
+    prepare: boolean
+  ): Effect.Effect<QueryOutput, SqlError> {
+    return this.base.wire.withPermit(Effect.suspend(() =>
+      this.released
+        ? Effect.fail(pinReleasedError())
+        : this.base.cycleOwned(sql, params, wantRows, prepare ? this.base.prepared : undefined)
+    ))
+  }
+
+  readonly interrupt: Effect.Effect<void> = Effect.suspend(() => this.released ? Effect.void : this.base.cancel)
 
   get config(): Config {
     return this.base.config
@@ -831,14 +888,14 @@ class PinnedPgConnection implements PgConnection {
   }
 
   readonly query = (sql: string, params?: ReadonlyArray<unknown>, prepare = true): Effect.Effect<Result, SqlError> =>
-    Effect.map(this.base.cycle(sql, params ?? emptyParams, true, prepare ? this.base.prepared : undefined), takeResult)
+    Effect.map(this.cycle(sql, params ?? emptyParams, true, prepare), takeResult)
 
   readonly queryValues = (
     sql: string,
     params?: ReadonlyArray<unknown>,
     prepare = true
   ): Effect.Effect<ReadonlyArray<ReadonlyArray<unknown>>, SqlError> =>
-    Effect.map(this.base.cycle(sql, params ?? emptyParams, false, prepare ? this.base.prepared : undefined), takeValues)
+    Effect.map(this.cycle(sql, params ?? emptyParams, false, prepare), takeValues)
 
   readonly stream = (sql: string, params?: ReadonlyArray<unknown>): Stream.Stream<Row, SqlError> =>
     streamRows(this.base, this.pin, sql, params ?? emptyParams)
@@ -901,7 +958,8 @@ const inferScalar = (value: unknown): PgTypes.Parameter => {
 const inferParameter = (value: unknown, registry: PgTypes.Registry | undefined): PgTypes.Parameter => {
   if (!Array.isArray(value)) return inferScalar(value)
   if (value.length === 0) {
-    throw new PgTypes.CodecError({ message: "Cannot infer the type of an empty array; use PgTypes.array" })
+    // Let the backend infer the array type from the statement, as for scalar strings.
+    return inferredParameter(0, "{}")
   }
   let elementOid: number | undefined
   const values: Array<unknown> = new Array(value.length)
@@ -1261,6 +1319,9 @@ const retryStale = (
 const connectionQueryError = (cause: unknown, message: string): SqlError =>
   new SqlError({ reason: new ConnectionError({ cause, message, operation: "query" }) })
 
+const pinReleasedError = (): SqlError =>
+  connectionQueryError(new Error("Pinned connection was released"), "PgConnection: Pinned connection was released")
+
 const escapeIdentifier = (identifier: string): string => `"${identifier.replaceAll("\"", "\"\"")}"`
 
 type QueryPhase = "close" | "parse" | "bind" | "describe" | "rows" | "complete" | "error"
@@ -1372,7 +1433,7 @@ class QueryMachine implements Consumer {
     const prepared = this.plan.prepared
     if (prepared !== undefined) prepared.parsing = false
     if (this.aborted) this.drainDone?.()
-    else this.finish(Effect.fail(error))
+    else this.finish(Effect.fail(this.failure ?? error))
   }
 
   onMessage(message: PgProtocol.BackendMessage<unknown>): void {
@@ -1641,17 +1702,17 @@ const makeRowBuilder = (fields: ReadonlyArray<PgProtocol.FieldDescription>): Row
 
 const streamRows = (
   conn: PgConnectionImpl,
-  pin: Effect.Effect<PgConnection, never, Scope.Scope>,
+  pin: Effect.Effect<PinnedPgConnection, never, Scope.Scope>,
   sql: string,
   params: ReadonlyArray<unknown>
 ): Stream.Stream<Row, SqlError> =>
   Stream.fromChannel(Channel.fromTransform(Effect.fnUntraced(function*(_, scope) {
-    yield* Scope.provide(pin, scope)
+    const pinned = yield* Scope.provide(pin, scope)
     yield* Scope.provide(
       Effect.acquireRelease(conn.wire.take(1), () => conn.wire.release(1)),
       scope
     )
-    if (conn.deadWith !== undefined) return yield* conn.deadWith
+    if (pinned.released) return yield* pinReleasedError()
     // Streams stay on the unnamed path: a stream pays its setup once over the
     // whole result, so naming the statement buys little and would need the
     // stale-plan retry to unwind rows already delivered.
@@ -1814,7 +1875,8 @@ const streamRows = (
     yield* Scope.addFinalizer(
       scope,
       Effect.suspend(() => {
-        if (done) return Effect.void
+        // A dead session has nothing left to drain.
+        if (done || conn.deadWith !== undefined) return Effect.void
         aborted = true
         const drain = drainAborted(conn, "Stream cancellation timed out", (onDrained) => {
           drainDone = onDrained
@@ -1824,6 +1886,9 @@ const streamRows = (
       })
     )
 
+    // Checked as the consumer is registered: a session that dies any earlier
+    // has no consumer to tell through `onFatal`.
+    if (conn.deadWith !== undefined) return yield* conn.deadWith
     conn.consumer = { onMessage, onBatchEnd, onFatal }
     parser.readField = undefined
     // @effect-diagnostics-next-line tryCatchInEffectGen:off
@@ -1847,7 +1912,7 @@ const streamRows = (
 
 const listenChannel = (
   conn: PgConnectionImpl,
-  pin: Effect.Effect<PgConnection, never, Scope.Scope>,
+  pin: Effect.Effect<PinnedPgConnection, never, Scope.Scope>,
   channel: string
 ): Effect.Effect<Queue.Dequeue<Notification, SqlError>, SqlError, Scope.Scope> =>
   Effect.uninterruptibleMask((restore) =>
@@ -1859,6 +1924,7 @@ const listenChannel = (
       return yield* restore(Effect.gen(function*() {
         const pinned = yield* Scope.provide(pin, scope)
         if (conn.deadWith !== undefined) return yield* conn.deadWith
+        if (pinned.released) return yield* pinReleasedError()
         const queue = yield* Queue.unbounded<Notification, SqlError>()
         const identifier = escapeIdentifier(channel)
         let queues = conn.channels.get(channel)
@@ -1867,18 +1933,17 @@ const listenChannel = (
           conn.channels.set(channel, queues)
         }
         queues.add(queue)
+        pinned.listeners++
         yield* Scope.addFinalizer(
           scope,
           Effect.suspend(() => {
+            pinned.listeners--
             const current = conn.channels.get(channel)
             if (current === undefined) return Queue.shutdown(queue)
             current.delete(queue)
             if (current.size > 0) return Queue.shutdown(queue)
             conn.channels.delete(channel)
-            const unlisten = conn.deadWith === undefined
-              ? Effect.ignore(pinned.query(`UNLISTEN ${identifier}`))
-              : Effect.void
-            return Effect.andThen(unlisten, Queue.shutdown(queue))
+            return Effect.andThen(unlisten(conn, pinned, identifier), Queue.shutdown(queue))
           })
         )
         yield* pinned.query(`LISTEN ${identifier}`)
@@ -1888,6 +1953,43 @@ const listenChannel = (
       )
     })
   )
+
+/**
+ * Runs `UNLISTEN` and closes the session if PostgreSQL does not answer in time.
+ * The timer starts once the wire is free, so a long statement on the same
+ * pinned session does not count against it. Nothing is sent once the session
+ * is dead or its pin released, as the session may already have a new owner.
+ * A pin released while `UNLISTEN` holds the wire waits for it to finish, so
+ * the count moves together with the permit: the fiber cannot yield between
+ * taking the wire and counting, or between uncounting and returning it.
+ */
+const unlisten = (conn: PgConnectionImpl, pinned: PinnedPgConnection, identifier: string): Effect.Effect<void> =>
+  Effect.uninterruptible(Effect.flatMap(
+    withoutYield(Effect.flatMap(conn.wire.take(1), () =>
+      Effect.sync(() => {
+        pinned.unlistening++
+      }))),
+    () => {
+      if (conn.deadWith !== undefined || pinned.released) return releaseUnlisten(conn, pinned)
+      const timeout = setTimeout(
+        () => conn.fatal(connectionQueryError(new Error("UNLISTEN timed out"), "PgConnection: UNLISTEN timed out")),
+        unlistenTimeoutMillis
+      )
+      return Effect.ensuring(
+        Effect.ignore(conn.cycleOwned(`UNLISTEN ${identifier}`, emptyParams, true, conn.prepared)),
+        Effect.andThen(Effect.sync(() => clearTimeout(timeout)), releaseUnlisten(conn, pinned))
+      )
+    }
+  ))
+
+const releaseUnlisten = (conn: PgConnectionImpl, pinned: PinnedPgConnection): Effect.Effect<void> =>
+  withoutYield(Effect.suspend(() => {
+    pinned.unlistening--
+    return Effect.asVoid(conn.wire.release(1))
+  }))
+
+const withoutYield = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+  Effect.provideService(effect, Scheduler.PreventSchedulerYield, true)
 
 const sendCancelRequest = (config: ResolvedConfig, session: Session): Effect.Effect<void> =>
   Effect.callback<void>((resume) => {
@@ -2168,7 +2270,12 @@ const connect = (config: ResolvedConfig, resolvedPassword: string | undefined): 
         ? Net.connect({ path: config.path })
         // A statement is one write and then a wait for its answer, so Nagle has
         // nothing to coalesce and only holds the write back.
-        : Net.connect({ host: config.host, port: config.port, noDelay: true })
+        : Net.connect({
+          host: config.host,
+          port: config.port,
+          noDelay: true,
+          ...(config.keepAlive !== undefined && { keepAlive: true, keepAliveInitialDelay: config.keepAlive })
+        })
     } catch (cause) {
       resume(Effect.fail(
         new SqlError({
@@ -2193,215 +2300,6 @@ const connect = (config: ResolvedConfig, resolvedPassword: string | undefined): 
   })
 
 const ignoreError = (_: Error) => {}
-
-interface ResolvedConfig {
-  readonly host: string
-  readonly port: number
-  readonly path: string | undefined
-  readonly ssl: boolean | ConnectionOptions
-  readonly sslOptional: boolean
-  readonly username: string
-  readonly password: Redacted.Redacted | Effect.Effect<Redacted.Redacted> | undefined
-  readonly connectTimeout: Duration.Duration
-  readonly startupParameters: PgProtocol.StartupParameters
-  readonly stream: (() => Duplex) | undefined
-  readonly maxMessageSize: number | undefined
-}
-
-const configError = (message: string, cause?: unknown): SqlError =>
-  new SqlError({
-    reason: new ConnectionError({
-      cause: cause ?? new Error(message),
-      message: `PgConnection: ${message}`,
-      operation: "connect"
-    })
-  })
-
-const resolveConfig = (options: Config): Effect.Effect<ResolvedConfig, SqlError> =>
-  Effect.suspend(() => {
-    const parsed: EffectResult.Result<UrlConfig, SqlError> = options.url !== undefined
-      ? parseUrl(Redacted.value(options.url))
-      : EffectResult.succeed({})
-    if (EffectResult.isFailure(parsed)) return Effect.fail(parsed.failure)
-    const url = parsed.success
-    const host = options.host ?? url.host ?? "localhost"
-    const port = options.port ?? url.port ?? 5432
-    const username = options.username ?? url.username ?? process.env.USER ?? process.env.USERNAME
-    if (username === undefined) {
-      return Effect.fail(configError("No username configured"))
-    }
-    const named: Record<string, string> = Object.create(null)
-    for (const [name, value] of Object.entries(options.startupParameters ?? {})) {
-      const key = name.toLowerCase()
-      if (key === "user" || key === "database" || key === "replication" || key === "options") {
-        return Effect.fail(configError(`Reserved startup parameter: "${name}"`))
-      }
-      if (key === "client_encoding") {
-        const encoding = value.toUpperCase()
-        if (encoding !== "UTF8" && encoding !== "UTF-8") {
-          return Effect.fail(configError("Startup parameter client_encoding must be UTF8 or UTF-8"))
-        }
-        named[key] = "UTF8"
-      } else {
-        named[key] = value
-      }
-      if (name === "" || name.includes("\0") || value.includes("\0")) {
-        return Effect.fail(
-          configError("Startup parameter names must be nonempty and names/values must not contain NUL")
-        )
-      }
-    }
-    const startupParameters: PgProtocol.StartupParameters = {
-      ...named,
-      user: username,
-      database: options.database ?? url.database,
-      application_name: options.applicationName ?? named.application_name ?? url.applicationName ?? "@effect/sql-pg",
-      options: options.startupOptions ?? url.options
-    }
-    for (const [name, value] of Object.entries(startupParameters)) {
-      if (value?.includes("\0")) {
-        return Effect.fail(configError(`Startup parameter "${name}" must not contain NUL`))
-      }
-    }
-    return Effect.succeed<ResolvedConfig>({
-      host,
-      port,
-      path: options.path ?? (host.startsWith("/") ? `${host}/.s.PGSQL.${port}` : undefined),
-      ssl: options.ssl ?? (url.ssl === "prefer" ? true : url.ssl ?? false),
-      sslOptional: options.ssl === undefined && url.ssl === "prefer",
-      username,
-      password: options.password ?? (url.password !== undefined ? Redacted.make(url.password) : undefined),
-      connectTimeout: Duration.fromInputUnsafe(options.connectTimeout ?? url.connectTimeout ?? Duration.seconds(5)),
-      startupParameters,
-      stream: options.stream,
-      maxMessageSize: options.maxMessageSize
-    })
-  })
-
-interface UrlConfig {
-  host?: string | undefined
-  port?: number | undefined
-  database?: string | undefined
-  username?: string | undefined
-  password?: string | undefined
-  applicationName?: string | undefined
-  options?: string | undefined
-  connectTimeout?: Duration.Duration | undefined
-  ssl?: boolean | "prefer" | undefined
-}
-
-const decodeComponent = (value: string, what: string): EffectResult.Result<string, SqlError> => {
-  try {
-    return EffectResult.succeed(decodeURIComponent(value))
-  } catch {
-    return EffectResult.fail(configError(`Invalid percent-encoding in URL ${what}`))
-  }
-}
-
-const parsePort = (value: string, what: string): EffectResult.Result<number, SqlError> => {
-  const port = Number(value)
-  return !Number.isInteger(port) || port < 1 || port > 65535
-    ? EffectResult.fail(configError(`Invalid port in URL ${what}: "${value}"`))
-    : EffectResult.succeed(port)
-}
-
-const parseUrl = (raw: string): EffectResult.Result<UrlConfig, SqlError> => {
-  let url: URL
-  try {
-    url = new URL(raw)
-  } catch (cause) {
-    return EffectResult.fail(configError("Invalid connection URL", cause))
-  }
-  if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
-    return EffectResult.fail(configError(`Unsupported connection URL protocol: "${url.protocol}"`))
-  }
-
-  const config: UrlConfig = {}
-  if (url.hostname !== "") {
-    if (url.hostname.startsWith("[") && url.hostname.endsWith("]")) {
-      config.host = url.hostname.slice(1, -1)
-    } else {
-      const host = decodeComponent(url.hostname, "host")
-      if (EffectResult.isFailure(host)) return EffectResult.fail(host.failure)
-      config.host = host.success
-    }
-  }
-  if (url.port !== "") {
-    const port = parsePort(url.port, "authority")
-    if (EffectResult.isFailure(port)) return EffectResult.fail(port.failure)
-    config.port = port.success
-  }
-  if (url.username !== "") {
-    const username = decodeComponent(url.username, "username")
-    if (EffectResult.isFailure(username)) return EffectResult.fail(username.failure)
-    config.username = username.success
-  }
-  if (url.password !== "") {
-    const password = decodeComponent(url.password, "password")
-    if (EffectResult.isFailure(password)) return EffectResult.fail(password.failure)
-    config.password = password.success
-  }
-  const database = decodeComponent(url.pathname.replace(/^\//, ""), "database")
-  if (EffectResult.isFailure(database)) return EffectResult.fail(database.failure)
-  if (database.success !== "") config.database = database.success
-
-  for (const [key, value] of url.searchParams) {
-    switch (key) {
-      case "host":
-        config.host = value
-        break
-      case "port": {
-        const port = parsePort(value, "port parameter")
-        if (EffectResult.isFailure(port)) return EffectResult.fail(port.failure)
-        config.port = port.success
-        break
-      }
-      case "user":
-        config.username = value
-        break
-      case "password":
-        config.password = value
-        break
-      case "dbname":
-        config.database = value
-        break
-      case "application_name":
-        config.applicationName = value
-        break
-      case "options":
-        config.options = value
-        break
-      case "connect_timeout": {
-        const seconds = Number(value)
-        if (!Number.isInteger(seconds) || seconds < 0) {
-          return EffectResult.fail(configError(`Invalid connect_timeout in URL: "${value}"`))
-        }
-        config.connectTimeout = seconds === 0 ? Duration.infinity : Duration.seconds(seconds)
-        break
-      }
-      case "sslmode":
-        switch (value) {
-          case "disable":
-            config.ssl = false
-            break
-          case "require":
-          case "verify-ca":
-          case "verify-full":
-            config.ssl = true
-            break
-          case "prefer":
-          case "allow":
-            config.ssl = "prefer"
-            break
-          default:
-            return EffectResult.fail(configError(`Unrecognized sslmode in URL: "${value}"`))
-        }
-        break
-        // Unknown query parameters are ignored, matching libpq.
-    }
-  }
-  return EffectResult.succeed(config)
-}
 
 const classifyFields = (
   fields: PgProtocol.ErrorFields,

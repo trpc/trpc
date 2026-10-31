@@ -1,8 +1,35 @@
 import { afterEach, assert, describe, it } from "@effect/vitest"
-import { Arbitrary, Effect, Schema } from "effect"
+import { Arbitrary, Deferred, Effect, Schema } from "effect"
 
 describe("Arbitrary.configureGlobal", { concurrent: false }, () => {
   afterEach(() => Arbitrary.configureGlobal({}))
+
+  it.effect("uses the configured concurrency and lets explicit options override it", () =>
+    Effect.gen(function*() {
+      const ready = yield* Deferred.make<void>()
+      let active = 0
+      const configuration = { check: { runs: 3, concurrency: 3 } }
+      Arbitrary.configureGlobal(configuration)
+      configuration.check.concurrency = 1
+      const result = yield* Arbitrary.checkEffect(Arbitrary.Constant(0), () =>
+        Effect.gen(function*() {
+          if (++active === 3) yield* Deferred.succeed(ready, undefined)
+          yield* Deferred.await(ready)
+          return true
+        }))
+      assert.deepStrictEqual(result, { _tag: "Passed", runs: 3, discards: 0 })
+
+      let maximum = 0
+      active = 0
+      yield* Arbitrary.checkEffect(Arbitrary.Constant(0), () =>
+        Effect.gen(function*() {
+          maximum = Math.max(maximum, ++active)
+          yield* Effect.yieldNow
+          active--
+          return true
+        }), { concurrency: 1 })
+      assert.strictEqual(maximum, 1)
+    }))
 
   it.effect("uses global defaults and lets explicit options override individual fields", () =>
     Effect.gen(function*() {
@@ -97,7 +124,7 @@ describe("Arbitrary.configureGlobal", { concurrent: false }, () => {
       assert.deepStrictEqual(yield* Arbitrary.checkEffect(arbitrary, () => false), expected)
       assert.strictEqual(expected._tag, "Falsified")
       if (expected._tag === "Falsified") {
-        Arbitrary.configureGlobal({ check: { runs: -1, size: -1, maxDiscards: -1, maxShrinks: -1 } })
+        Arbitrary.configureGlobal({ check: { runs: -1, size: -1, maxDiscards: -1, maxShrinks: -1, concurrency: 0 } })
         const replayed = yield* Arbitrary.checkEffect(arbitrary, () => false, { replay: expected.replay })
         assert.deepStrictEqual(replayed, expected)
       }

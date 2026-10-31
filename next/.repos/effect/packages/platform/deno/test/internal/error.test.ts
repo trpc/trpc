@@ -13,6 +13,7 @@ describe("handleError", () => {
     [withCode(new Deno.errors.AlreadyExists(), "EEXIST"), "AlreadyExists"],
     [withCode(new Deno.errors.IsADirectory(), "EISDIR"), "BadResource"],
     [withCode(new Deno.errors.PermissionDenied(), "EACCES"), "PermissionDenied"],
+    [withCode(new Error("operation not permitted"), "EPERM"), "PermissionDenied"],
     [new Deno.errors.NotCapable(), "PermissionDenied"],
     [new Deno.errors.BadResource(), "BadResource"],
     [new Deno.errors.InvalidData(), "InvalidData"],

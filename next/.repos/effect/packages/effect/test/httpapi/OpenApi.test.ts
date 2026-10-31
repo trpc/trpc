@@ -28,6 +28,13 @@ class HeaderAuthUpper extends HttpApiMiddleware.Service<HeaderAuthUpper>()("Head
   }
 }) {}
 
+class BearerOrKeyAuth extends HttpApiMiddleware.Service<BearerOrKeyAuth>()("BearerOrKeyAuth", {
+  security: {
+    bearer: HttpApiSecurity.bearer,
+    apiKey: HttpApiSecurity.apiKey({ key: "x-alternative-key" })
+  }
+}) {}
+
 class QueryAuth extends HttpApiMiddleware.Service<QueryAuth>()("QueryAuth", {
   security: {
     auth: HttpApiSecurity.apiKey({ key: "api_key", in: "query" })
@@ -86,6 +93,22 @@ describe("OpenApi", () => {
     ])
   })
 
+  it("omits regex constraints from path templates", () => {
+    const Api = HttpApi.make("Api").add(
+      HttpApiGroup.make("users").add(
+        HttpApiEndpoint.get("get", "/users/:id(\\d+)", {
+          params: { id: Schema.NumberFromString }
+        }),
+        HttpApiEndpoint.get("preview", "/previews/:id(^(?:\\d)+)preview", {
+          params: { id: Schema.NumberFromString }
+        })
+      )
+    )
+    const spec = OpenApi.fromApi(Api)
+
+    assert.deepStrictEqual(Object.keys(spec.paths), ["/users/{id}", "/previews/{id}preview"])
+  })
+
   it("keeps action paths literal when no parameter schema is declared", () => {
     const Api = HttpApi.make("Api").add(
       HttpApiGroup.make("offers").add(HttpApiEndpoint.post("resolve", "/offers:resolve"))
@@ -141,7 +164,7 @@ describe("OpenApi", () => {
         name: "offset",
         in: "query",
         required: false,
-        schema: { anyOf: [{ type: "string" }, { type: "null" }] }
+        schema: { type: "string" }
       },
       {
         name: "search",
@@ -516,7 +539,7 @@ describe("OpenApi", () => {
         required: false
       },
       "x-offset": {
-        schema: { anyOf: [{ type: "string" }, { type: "null" }] },
+        schema: { type: "string" },
         required: false
       }
     })
@@ -584,12 +607,16 @@ describe("OpenApi", () => {
       spec.paths["/encoded"]?.get?.responses[404]?.headers?.["x-error-id"]?.schema,
       {
         type: "string",
-        pattern: "^[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$"
+        pattern: "^[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[Ee][+-]?\\d+)?$"
       }
     )
     assert.deepStrictEqual(
       spec.paths["/unencoded"]?.get?.responses[404]?.headers?.["x-error-id"]?.schema,
-      { type: "integer" }
+      {
+        type: "integer",
+        minimum: globalThis.Number.MIN_SAFE_INTEGER,
+        maximum: globalThis.Number.MAX_SAFE_INTEGER
+      }
     )
   })
 
@@ -611,7 +638,7 @@ describe("OpenApi", () => {
       "x-retry-after": {
         schema: {
           type: "string",
-          pattern: "^[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$"
+          pattern: "^[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[Ee][+-]?\\d+)?$"
         },
         required: true
       }
@@ -794,10 +821,99 @@ describe("OpenApi", () => {
       "x-stream-id": {
         schema: {
           type: "string",
-          pattern: "^[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$"
+          pattern: "^[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[Ee][+-]?\\d+)?$"
         },
         required: true
       }
+    })
+  })
+
+  it("emits streaming payloads and successes with x-effect-stream and no limits", () => {
+    const Item = Schema.Struct({ id: Schema.Finite })
+    const itemJsonSchema = {
+      type: "object",
+      properties: { id: { type: "number" } },
+      required: ["id"],
+      additionalProperties: false
+    }
+    const Api = HttpApi.make("Api").add(
+      HttpApiGroup.make("test").add(
+        HttpApiEndpoint.post("upload", "/upload", {
+          payload: HttpApiSchema.StreamUint8Array({ maxBytes: "1 MiB" })
+        }),
+        HttpApiEndpoint.post("ingest", "/ingest", {
+          payload: HttpApiSchema.StreamNdjson({ schema: Item, maxBytes: "10 MiB", maxElementBytes: "1 KiB" })
+        }),
+        HttpApiEndpoint.get("export", "/export", {
+          success: HttpApiSchema.StreamNdjson({ schema: Item })
+        })
+      )
+    )
+
+    const spec = OpenApi.fromApi(Api)
+
+    assert.deepStrictEqual(spec.paths["/upload"]?.post?.requestBody, {
+      content: {
+        "application/octet-stream": {
+          schema: { type: "string", format: "binary" },
+          "x-effect-stream": { encoding: "uint8array" }
+        }
+      },
+      required: true
+    })
+    assert.deepStrictEqual(spec.paths["/ingest"]?.post?.requestBody, {
+      content: {
+        "application/x-ndjson": {
+          schema: itemJsonSchema,
+          "x-effect-stream": { encoding: "ndjson" }
+        }
+      },
+      required: true
+    })
+    assert.deepStrictEqual(spec.paths["/export"]?.get?.responses[200]?.content, {
+      "application/x-ndjson": {
+        schema: itemJsonSchema,
+        "x-effect-stream": { encoding: "ndjson" }
+      }
+    })
+  })
+
+  it("emits each listed stream content type in declared order", () => {
+    const Api = HttpApi.make("Api").add(
+      HttpApiGroup.make("test").add(
+        HttpApiEndpoint.get("logs", "/logs", {
+          success: HttpApiSchema.StreamUint8Array({
+            contentType: ["application/vnd.docker.raw-stream", "application/vnd.docker.multiplexed-stream"]
+          })
+        }),
+        HttpApiEndpoint.post("ingest", "/ingest", {
+          payload: HttpApiSchema.StreamNdjson({
+            schema: Schema.Finite,
+            contentType: ["application/jsonl", "application/json"]
+          })
+        })
+      )
+    )
+
+    const spec = OpenApi.fromApi(Api)
+
+    const bytes = {
+      schema: { type: "string", format: "binary" },
+      "x-effect-stream": { encoding: "uint8array" }
+    } as const
+    const ndjson = { schema: { type: "number" }, "x-effect-stream": { encoding: "ndjson" } } as const
+    const logs = spec.paths["/logs"]?.get?.responses[200]?.content
+    assert.deepStrictEqual(logs, {
+      "application/vnd.docker.raw-stream": bytes,
+      "application/vnd.docker.multiplexed-stream": bytes
+    })
+    assert.deepStrictEqual(Object.keys(logs ?? {}), [
+      "application/vnd.docker.raw-stream",
+      "application/vnd.docker.multiplexed-stream"
+    ])
+    assert.deepStrictEqual(spec.paths["/ingest"]?.post?.requestBody, {
+      content: { "application/jsonl": ndjson, "application/json": ndjson },
+      required: true
     })
   })
 
@@ -855,6 +971,23 @@ describe("OpenApi", () => {
     assert.isDefined(second)
     assert.isFalse(Object.hasOwn(first, "operationId"))
     assert.isFalse(Object.hasOwn(second, "operationId"))
+  })
+
+  it("requires every stacked security middleware", () => {
+    const Api = HttpApi.make("Api").add(
+      HttpApiGroup.make("test").add(
+        HttpApiEndpoint.get("secured", "/secured").middleware(BearerOrKeyAuth).middleware(HeaderAuthA),
+        HttpApiEndpoint.get("public", "/public")
+      )
+    )
+
+    const spec = OpenApi.fromApi(Api)
+
+    assert.deepStrictEqual(spec.paths["/secured"]?.get?.security, [
+      { bearer: [], auth: [] },
+      { apiKey: [], auth: [] }
+    ])
+    assert.deepStrictEqual(spec.paths["/public"]?.get?.security, [])
   })
 
   it("rejects incompatible security schemes with the same name", () => {

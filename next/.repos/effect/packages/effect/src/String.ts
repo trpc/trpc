@@ -200,7 +200,7 @@ export const toUpperCase = <S extends string>(self: S): Uppercase<S> => self.toU
 export const toLowerCase = <T extends string>(self: T): Lowercase<T> => self.toLowerCase() as Lowercase<T>
 
 /**
- * Capitalizes the first character of a string.
+ * Capitalizes the first character (Unicode code point) of a string.
  *
  * **Example** (Capitalizing a string)
  *
@@ -209,6 +209,7 @@ export const toLowerCase = <T extends string>(self: T): Lowercase<T> => self.toL
  *
  * pipe("abc", String.capitalize) // => "Abc"
  * String.capitalize("hello") // => "Hello"
+ * String.capitalize("𐐨foo") // => "𐐀foo"
  * ```
  *
  * @stability stable
@@ -216,13 +217,12 @@ export const toLowerCase = <T extends string>(self: T): Lowercase<T> => self.toL
  * @since 2.0.0
  */
 export const capitalize = <T extends string>(self: T): Capitalize<T> => {
-  if (self.length === 0) return self as Capitalize<T>
-
-  return (toUpperCase(self[0]) + self.slice(1)) as Capitalize<T>
+  const [first = ""] = self
+  return (toUpperCase(first) + self.slice(first.length)) as Capitalize<T>
 }
 
 /**
- * Uncapitalizes the first character of a string.
+ * Uncapitalizes the first character (Unicode code point) of a string.
  *
  * **Example** (Uncapitalizing a string)
  *
@@ -231,6 +231,7 @@ export const capitalize = <T extends string>(self: T): Capitalize<T> => {
  *
  * pipe("ABC", String.uncapitalize) // => "aBC"
  * String.uncapitalize("Hello") // => "hello"
+ * String.uncapitalize("𐐀FOO") // => "𐐨FOO"
  * ```
  *
  * @stability stable
@@ -238,9 +239,8 @@ export const capitalize = <T extends string>(self: T): Capitalize<T> => {
  * @since 2.0.0
  */
 export const uncapitalize = <T extends string>(self: T): Uncapitalize<T> => {
-  if (self.length === 0) return self as Uncapitalize<T>
-
-  return (toLowerCase(self[0]) + self.slice(1)) as Uncapitalize<T>
+  const [first = ""] = self
+  return (toLowerCase(first) + self.slice(first.length)) as Uncapitalize<T>
 }
 
 /**
@@ -1079,6 +1079,12 @@ export const stripMargin = (self: string): string => stripMarginWith(self, "|")
 /**
  * Converts a snake_case string to camelCase.
  *
+ * **Details**
+ *
+ * Keeps the first character, then replaces each later underscore and the
+ * character after it with that character uppercased. A trailing underscore is
+ * dropped. Input made only of an even number of underscores returns `""`.
+ *
  * **Example** (Converting snake_case to camelCase)
  *
  * ```ts import.meta.vitest
@@ -1093,16 +1099,22 @@ export const stripMargin = (self: string): string => stripMarginWith(self, "|")
  * @since 2.0.0
  */
 export const snakeToCamel = (self: string): string => {
-  if (self.length === 0) return self
+  if (self.length === 0 || (self.length % 2 === 0 && self[0] === "_" && /^_+$/.test(self))) return ""
   let str = self[0]
   for (let i = 1; i < self.length; i++) {
-    str += self[i] === "_" ? self[++i].toUpperCase() : self[i]
+    str += self[i] === "_" ? self.charAt(++i).toUpperCase() : self[i]
   }
   return str
 }
 
 /**
  * Converts a snake_case string to PascalCase.
+ *
+ * **Details**
+ *
+ * Uppercases the first character, then replaces each later underscore and the
+ * character after it with that character uppercased. A trailing underscore is
+ * dropped. Input made only of an even number of underscores returns `""`.
  *
  * **Example** (Converting snake_case to PascalCase)
  *
@@ -1118,10 +1130,10 @@ export const snakeToCamel = (self: string): string => {
  * @since 2.0.0
  */
 export const snakeToPascal = (self: string): string => {
-  if (self.length === 0) return self
+  if (self.length === 0 || (self.length % 2 === 0 && self[0] === "_" && /^_+$/.test(self))) return ""
   let str = self[0].toUpperCase()
   for (let i = 1; i < self.length; i++) {
-    str += self[i] === "_" ? self[++i].toUpperCase() : self[i]
+    str += self[i] === "_" ? self.charAt(++i).toUpperCase() : self[i]
   }
   return str
 }
@@ -1334,6 +1346,7 @@ const normalizeCase = (
   while (result.charAt(end - 1) === "\0") {
     end--
   }
+  if (start >= end) return ""
 
   // Transform each token independently.
   return result.slice(start, end).split("\0").map(transform).join(delimiter)
@@ -1441,6 +1454,9 @@ export const constantCase: (self: string) => string = noCase({
  *
  * Unlike {@link constantCase}, digit-letter boundaries are not split. For
  * example, `"api-v2 xml"` becomes `"API_V2_XML"`.
+ *
+ * `configCase` is not idempotent: `"field2value"` becomes `"FIELD2VALUE"`, and
+ * applying it again gives `"FIELD2_VALUE"`.
  *
  * @see {@link constantCase} for standard uppercase underscore-separated output
  * @stability stable

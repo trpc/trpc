@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Effect, FileSystem, Layer, Path, PlatformError } from "effect"
 import * as Migrator from "effect/sql/Migrator"
+import * as MigratorFileSystem from "effect/sql/MigratorFileSystem"
 
 const migrationNames = (
   migrations: ReadonlyArray<Migrator.ResolvedMigration>
@@ -8,6 +9,19 @@ const migrationNames = (
 
 describe("Migrator", () => {
   describe("loaders", () => {
+    it.effect("fromRecord loads migrations without filesystem services", () =>
+      Effect.gen(function*() {
+        const migrations = yield* Migrator.fromRecord({
+          "0002_second": Effect.void,
+          "0001_first": Effect.void
+        })
+
+        assert.deepStrictEqual(migrationNames(migrations), [
+          [1, "first"],
+          [2, "second"]
+        ])
+      }))
+
     it.effect("fromGlob accepts js, ts, mjs, and mts files", () =>
       Effect.gen(function*() {
         const migrations = yield* Migrator.fromGlob({
@@ -45,7 +59,7 @@ describe("Migrator", () => {
 
     it.effect("fromFileSystem accepts js, ts, mjs, and mts files", () =>
       Effect.gen(function*() {
-        const migrations = yield* Migrator.fromFileSystem("/migrations").pipe(
+        const migrations = yield* MigratorFileSystem.fromFileSystem("/migrations").pipe(
           Effect.provide(FileSystem.layerNoop({
             readDirectory: () =>
               Effect.succeed([
@@ -82,7 +96,7 @@ describe("Migrator", () => {
           }
         })
 
-        const migrations = yield* Migrator.fromFileSystem("C:\\migrations").pipe(
+        const migrations = yield* MigratorFileSystem.fromFileSystem("C:\\migrations").pipe(
           Effect.provide(FileSystem.layerNoop({
             readDirectory: () => Effect.succeed(["0001_first.js"])
           })),
@@ -106,7 +120,7 @@ describe("Migrator", () => {
           toFileUrl: () => Effect.fail(new PlatformError.BadArgument({ module: "Path", method: "toFileUrl" }))
         })
 
-        const migrations = yield* Migrator.fromFileSystem("/migrations").pipe(
+        const migrations = yield* MigratorFileSystem.fromFileSystem("/migrations").pipe(
           Effect.provide(FileSystem.layerNoop({
             readDirectory: () => Effect.succeed(["0001_first.js"])
           })),

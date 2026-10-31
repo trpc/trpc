@@ -522,6 +522,15 @@ describe("JsonPatch", () => {
         )
       })
 
+      it("rejects invalid escape sequences", () => {
+        for (const path of ["/a~", "/a~2"]) {
+          expectMessage(
+            () => JsonPatch.apply([{ op: "add", path, value: 1 }], {}),
+            "Invalid JSON Pointer escape"
+          )
+        }
+      })
+
       it("rejects invalid array indices", () => {
         expectMessage(
           () => JsonPatch.apply([{ op: "add", path: "/abc", value: 1 }], []),

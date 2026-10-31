@@ -1,9 +1,20 @@
 "@effect/sql/SqlClient#make":
   replacement: "effect/sql/SqlClient#make"
-  note: "Moved; custom clients rename MakeOptions.reactiveMailbox to reactiveQueue and may supply transactionService."
+  note: "Moved; custom clients must supply MakeOptions.driver, rename reactiveMailbox to reactiveQueue, and may supply transactionService. Driver names conventionally omit the @effect/sql- prefix, for example pg or pglite."
 "@effect/sql/SqlClient#SafeIntegers":
   replacement: "effect/sql/SqlClient#SafeIntegers"
   note: "Moved and changed from a Reference subclass to a Context.Reference value; provide it as a service."
+"@effect/sql/SqlClient#SqlClient":
+  include: true
+  replacement: "effect/sql/SqlClient#SqlClient"
+  note: "Moved into core Effect. Custom service implementations must expose driver and afterCommit; SqlClient.make supplies both. driver identifies the driver independently of its SQL dialect. afterCommit registers effects to run after the outermost successful commit and connection release attempt, discarding rolled-back work. withTransaction now also defers contextual Reactivity.invalidate and mutation invalidations until that commit. Transactions bypassing makeWithTransaction, such as sqlite-do transactions, run callbacks and invalidations immediately."
+"@effect/sql/SqlClient#makeWithTransaction":
+  include: true
+  replacement: "effect/sql/SqlClient#makeWithTransaction"
+  note: "Rename transactionTag to transactionService. acquireConnection is now a function receiving restore and returning Effect<Connection, SqlError, Scope>, rather than an effect returning a scope/connection pair. Register releases in the provided scope and wrap interruptible connection waits with restore; the wrapper closes the scope on transaction completion or failed acquisition."
+"@effect/sql/SqlClient#SqlClient.MakeOptions":
+  replacement: "effect/sql/SqlClient#SqlClient.MakeOptions"
+  note: "Moved; driver is now required and conventionally names the driver package without @effect/sql-, for example pg or pglite. Rename reactiveMailbox to reactiveQueue; transactionService is optional."
 "@effect/sql/SqlClient#TransactionConnection":
   replacement: "effect/sql/SqlClient#TransactionConnection"
   note: "Now a factory keyed by client id, not a singleton tag. Prefer the client's transactionService; the payload type is TransactionConnection.Service."

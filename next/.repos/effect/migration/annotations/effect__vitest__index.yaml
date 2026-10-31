@@ -214,6 +214,12 @@
 "@effect/vitest/index#HookCleanupCallback":
   replacement: "none"
   note: "No named Vitest 5 export replaces this alias. Let the hook return type infer, or type the cleanup function locally."
+"@effect/vitest/index#beforeAll":
+  replacement: "@effect/vitest#beforeAll"
+  note: "Still accepts Vitest callbacks. A callback may also return an Effect, which runs with a Scope that closes after the suite's afterAll hooks; the Effect must not require other services."
+"@effect/vitest/index#beforeEach":
+  replacement: "@effect/vitest#beforeEach"
+  note: "Still accepts Vitest callbacks. A callback may also return an Effect, which runs with a Scope that closes when the test finishes; the Effect must not require other services."
 "@effect/vitest/index#HookListener":
   replacement: "none"
   note: "Infer the callback from the public hook function, or derive it with Parameters<typeof import(\"vitest\").beforeAll>[0] and the corresponding hook name."
@@ -269,8 +275,13 @@
   replacement: "vitest#Matchers"
   note: "Augment vitest.Matchers<R, T> for custom matchers. R is the matcher return type and T is the received value; @vitest/expect no longer shares Vitest's assertion state."
 "@effect/vitest/index#it":
+  include: true
   replacement: "@effect/vitest#it"
-  note: "Effect helpers retain their calling convention. Vitest 5 removes it.sequential; pass { concurrent: false } to the native test or as the Effect helper's third argument."
+  note: "Vitest 5 removes it.sequential; pass { concurrent: false } to the native test or as the Effect helper's third argument. Synchronous it.prop callbacks must return boolean or void: true and undefined pass, false falsifies, and other values (including Effects and Promises) throw TypeError. Use it.effect.prop for Effect callbacks."
+"@effect/vitest/index#prop":
+  include: true
+  replacement: "@effect/vitest#prop"
+  note: "Synchronous property callbacks must return boolean or void: true and undefined pass, false falsifies, and other values (including Effects and Promises) throw TypeError. Move Effect callbacks to it.effect.prop instead of returning an Effect from prop."
 "@effect/vitest/index#test":
   replacement: "vitest#test"
   note: "Vitest 5 removes test.sequential and sequential options. Pass { concurrent: false } to opt out of inherited concurrency."

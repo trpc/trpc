@@ -6,6 +6,8 @@
  */
 import * as Schema from "effect/Schema"
 
+const Entry = Schema.Union([Schema.String, Schema.JsonObject, Schema.Array(Schema.Json)])
+
 /**
  * A classification question.
  *
@@ -15,8 +17,8 @@ import * as Schema from "effect/Schema"
  */
 export const ChoiceQuestion = Schema.Struct({
   type: Schema.Literal("choice"),
-  instructions: Schema.String,
-  criteria: Schema.Record(Schema.String, Schema.String)
+  instructions: Entry,
+  criteria: Schema.Record(Schema.String, Schema.NullOr(Entry))
 })
 
 /**
@@ -28,8 +30,8 @@ export const ChoiceQuestion = Schema.Struct({
  */
 export const ScoreQuestion = Schema.Struct({
   type: Schema.Literal("score"),
-  instructions: Schema.String,
-  criteria: Schema.Array(Schema.String)
+  instructions: Entry,
+  criteria: Schema.Array(Schema.Json)
 })
 
 /**
@@ -41,12 +43,13 @@ export const ScoreQuestion = Schema.Struct({
  */
 export const NoulQuestion = Schema.Struct({
   type: Schema.Literal("noul"),
-  instructions: Schema.String,
-  criteria: Schema.optional(Schema.Struct({ false: Schema.String, true: Schema.String }))
+  instructions: Entry,
+  criteria: Schema.optional(Schema.Struct({ false: Schema.Json, true: Schema.Json }))
 })
 
 /**
- * A Clef classification, rating, or probability question.
+ * A Clef question with string, JSON object, or JSON array instructions.
+ * Choice descriptions also accept `null`; Score and Noul descriptions accept any JSON value.
  *
  * @stability unstable
  * @category schemas
@@ -55,7 +58,32 @@ export const NoulQuestion = Schema.Struct({
 export const Question = Schema.Union([ChoiceQuestion, ScoreQuestion, NoulQuestion])
 
 /**
- * A batch of questions about text or JSON state.
+ * An image as a `data:` URL or as base64 data with its media type. Clef
+ * rejects remote URLs.
+ *
+ * @stability unstable
+ * @category schemas
+ * @since 4.0.5
+ */
+export const Image = Schema.Union([
+  Schema.String,
+  Schema.Struct({
+    content_type: Schema.Union([
+      Schema.Literals(["image/png", "image/jpeg", "image/webp"]),
+      Schema.StringForLiteralAutocomplete
+    ]),
+    base64: Schema.String
+  })
+])
+
+/**
+ * A batch of questions about text or JSON state, with optional images shown
+ * to the model before the state.
+ *
+ * **Details**
+ *
+ * Clef accepts up to 4 images of at most 4 MiB and 16 megapixels each, 8 MiB
+ * of decoded images in total, and 13 MiB per request body.
  *
  * @stability unstable
  * @category schemas
@@ -64,7 +92,8 @@ export const Question = Schema.Union([ChoiceQuestion, ScoreQuestion, NoulQuestio
 export const DecisionsRequest = Schema.Struct({
   model: Schema.Union([Schema.Literals(["clef", "clef-flash"]), Schema.StringForLiteralAutocomplete]),
   state: Schema.Json,
-  questions: Schema.Record(Schema.String, Question)
+  questions: Schema.Record(Schema.String, Question),
+  images: Schema.optional(Schema.Array(Image))
 })
 
 /**
@@ -82,7 +111,7 @@ export const ChoiceAnswer = Schema.Struct({
 })
 
 /**
- * A zero-based rating and index-keyed distribution.
+ * A zero-based rating and index-keyed distribution. `legend` maps indices to descriptions.
  *
  * @stability unstable
  * @category schemas
@@ -93,7 +122,7 @@ export const ScoreAnswer = Schema.Struct({
   score: Schema.Number,
   probabilities: Schema.Record(Schema.String, Schema.Number),
   confidence: Schema.Number,
-  legend: Schema.Record(Schema.String, Schema.String)
+  legend: Schema.Record(Schema.String, Schema.Json)
 })
 
 /**

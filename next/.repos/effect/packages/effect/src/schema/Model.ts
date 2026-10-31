@@ -13,6 +13,7 @@
  * @since 4.0.0
  */
 import type { Brand } from "../Brand.ts"
+import * as SecureRandom from "../crypto/SecureRandom.ts"
 import * as DateTime from "../DateTime.ts"
 import * as Effect from "../Effect.ts"
 import * as Uuid from "../internal/uuid.ts"
@@ -808,7 +809,11 @@ export const Uint8Array: Schema.instanceOf<Uint8Array<ArrayBuffer>> = Schema.Uin
 export const UuidV4BytesWithGenerate = <B extends string>(
   schema: Schema.brand<Schema.instanceOf<Uint8Array<ArrayBuffer>>, B>
 ): Schema.withConstructorDefault<Schema.brand<Schema.instanceOf<Uint8Array<ArrayBuffer>>, B>> =>
-  schema.pipe(Schema.withConstructorDefault(Effect.sync(() => Uuid.v4Bytes())))
+  schema.pipe(
+    Schema.withConstructorDefault(
+      Effect.sync(() => Uuid.v4Bytes(SecureRandom.randomBytesUnsafe(16) as Uint8Array<ArrayBuffer>))
+    )
+  )
 
 /**
  * A field that represents a binary UUID v4 that is generated on inserts.
@@ -854,7 +859,7 @@ export interface UuidV4Insert<B extends string> extends
 export const UuidV4WithGenerate = <B extends string>(
   schema: Schema.brand<Schema.String, B>
 ): Schema.withConstructorDefault<Schema.brand<Schema.String, B>> =>
-  schema.pipe(Schema.withConstructorDefault(Effect.sync(Uuid.v4String)))
+  schema.pipe(Schema.withConstructorDefault(Effect.sync(() => Uuid.v4String(SecureRandom.randomBytesUnsafe(16)))))
 
 /**
  * A field that represents a string UUID v4 that is generated on inserts.
@@ -893,6 +898,20 @@ export interface UuidV7Insert<B extends string> extends
 /**
  * Adds a constructor default that generates a string UUID v7.
  *
+ * **Details**
+ *
+ * The UUID takes its timestamp from the `Clock`, and shares its ordering with
+ * `SecureRandom.uuidV7Unsafe` and every other `Model.UuidV7WithGenerate` in the
+ * JS realm, so below the maximum timestamp each UUID sorts after the previous
+ * one.
+ *
+ * **Gotchas**
+ *
+ * The shared ordering never moves the timestamp back, so a `Clock` behind the
+ * realm's latest timestamp, such as a `TestClock` after `Date.now()`-based
+ * UUIDs were generated, produces UUIDs with that latest timestamp rather than
+ * the `Clock` time.
+ *
  * @stability unstable
  * @category schemas
  * @since 4.0.0
@@ -902,7 +921,11 @@ export const UuidV7WithGenerate = <B extends string>(
 ): Schema.withConstructorDefault<Schema.brand<Schema.String, B>> =>
   schema.pipe(
     Schema.withConstructorDefault(
-      Effect.clockWith((clock) => Effect.succeed(Uuid.v7String(clock.currentTimeMillisUnsafe())))
+      Effect.clockWith((clock) =>
+        Effect.succeed(
+          Uuid.stringify(Uuid.v7Monotonic(clock.currentTimeMillisUnsafe(), SecureRandom.randomBytesUnsafe(16)))
+        )
+      )
     )
   )
 

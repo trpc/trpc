@@ -70,3 +70,12 @@ effect/Exit#zipRight:
 effect/Exit#zipWith:
   replacement: "Exit.match"
   note: "No direct v4 equivalent. Nested-match both Exits: preserve a lone failure cause, call options.onFailure and Exit.failCause only when both fail, and call Exit.succeed(options.onSuccess(a, b)) when both succeed."
+effect/Exit#mapError:
+  include: true
+  replacement: "Exit.mapError"
+  note: "Maps every typed error in the cause, preserving defects, interruptions and reason order. Unlike typed recovery, mapping does not convert errors to defects."
+
+effect/Exit#mapBoth:
+  include: true
+  replacement: "Exit.mapBoth"
+  note: "Maps every typed error in the cause, preserving defects, interruptions and reason order. Unlike typed recovery, mapping does not convert errors to defects."

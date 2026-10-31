@@ -14,12 +14,11 @@ import * as Libsql from "@libsql/client"
 import * as Config from "effect/Config"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Reactivity from "effect/reactivity/Reactivity"
 import * as Redacted from "effect/Redacted"
-import * as Scope from "effect/Scope"
+import type * as Scope from "effect/Scope"
 import * as Semaphore from "effect/Semaphore"
 import * as Client from "effect/sql/SqlClient"
 import type { Connection } from "effect/sql/SqlConnection"
@@ -318,15 +317,11 @@ export const make = (
     const withTransaction = Client.makeWithTransaction({
       transactionService: LibsqlTransaction,
       spanAttributes,
-      acquireConnection: Effect.uninterruptibleMask(Effect.fnUntraced(function*(restore) {
-        const scope = Scope.makeUnsafe()
+      acquireConnection: Effect.fnUntraced(function*(restore) {
         yield* restore(semaphore.take(1))
-        yield* Scope.addFinalizer(scope, semaphore.release(1))
-        const conn = yield* connection.beginTransaction.pipe(
-          Effect.tapCause((cause) => Scope.close(scope, Exit.failCause(cause)))
-        )
-        return [scope, conn] as const
-      })),
+        yield* Effect.addFinalizer(() => semaphore.release(1))
+        return yield* connection.beginTransaction
+      }),
       begin: () => Effect.void, // already begun in acquireConnection
       savepoint: (conn, id) => conn.executeRaw(`SAVEPOINT effect_sql_${id};`, []),
       releaseSavepoint: (conn, id) => conn.executeRaw(`RELEASE SAVEPOINT effect_sql_${id};`, []),
@@ -335,16 +330,23 @@ export const make = (
       rollbackSavepoint: (conn, id) => conn.executeRaw(`ROLLBACK TO SAVEPOINT effect_sql_${id};`, [])
     })
 
+    // Outside a transaction, hold the permit until the statement's scope
+    // closes, so no other fiber can begin a transaction while it runs.
+    const lease = Effect.as(
+      Effect.acquireRelease(semaphore.take(1), () => semaphore.release(1), { interruptible: true }),
+      connection as LibsqlConnection
+    )
     const acquirer = Effect.flatMap(
       Effect.serviceOption(LibsqlTransaction),
       Option.match({
-        onNone: () => semaphore.withPermits(1)(Effect.succeed(connection as LibsqlConnection)),
+        onNone: () => lease,
         onSome: ([conn]) => Effect.succeed(conn)
       })
     )
 
     return Object.assign(
       yield* Client.make({
+        driver: "libsql",
         acquirer,
         transactionService: LibsqlTransaction as any,
         compiler,

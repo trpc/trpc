@@ -79,6 +79,12 @@ export interface Stdio {
    * @since 4.0.0
    */
   readonly stdoutIsTerminal: Effect.Effect<boolean>
+  /**
+   * Whether standard error is attached to a terminal.
+   *
+   * @since 4.0.0
+   */
+  readonly stderrIsTerminal: Effect.Effect<boolean>
   stdout(options?: {
     readonly endOnDone?: boolean | undefined
   }): Sink.Sink<void, string | Uint8Array, never, PlatformError>
@@ -127,12 +133,13 @@ export const Stdio: Context.Service<Stdio, Stdio> = Context.Service<Stdio>(TypeI
  */
 export const make = (
   options:
-    & Omit<Stdio, TypeId | "stdinIsTerminal" | "stdoutIsTerminal">
-    & Partial<Pick<Stdio, "stdinIsTerminal" | "stdoutIsTerminal">>
+    & Omit<Stdio, TypeId | "stdinIsTerminal" | "stdoutIsTerminal" | "stderrIsTerminal">
+    & Partial<Pick<Stdio, "stdinIsTerminal" | "stdoutIsTerminal" | "stderrIsTerminal">>
 ): Stdio => ({
   [TypeId]: TypeId,
   stdinIsTerminal: Effect.succeed(false),
   stdoutIsTerminal: Effect.succeed(false),
+  stderrIsTerminal: Effect.succeed(false),
   ...options
 })
 

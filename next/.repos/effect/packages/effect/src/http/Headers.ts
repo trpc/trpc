@@ -6,10 +6,18 @@
  * reading and updating header values, and redacts configured sensitive headers
  * when values are inspected.
  *
+ * It also parses and formats the values of standard headers, such as HTTP
+ * dates and `Retry-After`, with the tolerance the RFCs allow and nothing more.
+ * The string codecs for those values live in `Schema`, for example
+ * `Schema.DateTimeUtcFromHttpDate` and `Schema.RetryAfterFromString`.
+ *
  * @stability unstable
  * @since 4.0.0
  */
 import * as Context from "../Context.ts"
+import * as Data from "../Data.ts"
+import * as DateTime from "../DateTime.ts"
+import * as Duration from "../Duration.ts"
 import * as Equal from "../Equal.ts"
 import * as Equ from "../Equivalence.ts"
 import { dual } from "../Function.ts"
@@ -20,6 +28,7 @@ import * as Predicate from "../Predicate.ts"
 import * as Record from "../Record.ts"
 import * as Redactable from "../Redactable.ts"
 import * as Redacted from "../Redacted.ts"
+import * as Result from "../Result.ts"
 import type { Mutable } from "../Types.ts"
 
 /**
@@ -406,10 +415,11 @@ export const isRedactedName = (
   name: string,
   patterns: ReadonlyArray<string | RegExp>
 ): boolean => {
+  const lowerName = name.toLowerCase()
   for (let i = 0; i < patterns.length; i++) {
     const pattern = patterns[i]
     if (typeof pattern === "string") {
-      if (pattern.toLowerCase() === name.toLowerCase()) {
+      if (pattern.toLowerCase() === lowerName) {
         return true
       }
     } else if (name.search(pattern) !== -1) {
@@ -424,9 +434,9 @@ export const isRedactedName = (
  *
  * **Details**
  *
- * Defaults include `authorization`, `cookie`, `set-cookie`, `x-api-key` and
- * `AWSAccessKeyId`, `Signature`, `sig` and `X-Goog-Signature`. Names match
- * case-insensitively, and providing a new list replaces the defaults.
+ * Defaults include `authorization`, `cookie`, `set-cookie` and `x-api-key`.
+ * A custom list replaces the defaults. Matching uses `isRedactedName`.
+ * Use `UrlParams.CurrentRedactedNames` for query parameters.
  *
  * @stability unstable
  * @category services
@@ -439,10 +449,334 @@ export const CurrentRedactedNames = Context.Reference<
     "authorization",
     "cookie",
     "set-cookie",
-    "x-api-key",
-    "AWSAccessKeyId",
-    "Signature",
-    "sig",
-    "X-Goog-Signature"
+    "x-api-key"
   ]
 })
+
+// -----------------------------------------------------------------------------
+// Header values
+// -----------------------------------------------------------------------------
+
+const HeaderParseErrorTypeId = "~effect/http/Headers/HeaderParseError"
+
+/**
+ * Error reason describing which header value failed to parse.
+ *
+ * **Details**
+ *
+ * `input` is the raw header value that was rejected.
+ *
+ * @stability unstable
+ * @category errors
+ * @since 4.0.0
+ */
+export class HeaderParseErrorReason extends Data.Error<{
+  readonly _tag: "InvalidHttpDate" | "InvalidRetryAfter"
+  readonly input: string
+}> {}
+
+/**
+ * Error returned when a header value does not match its grammar.
+ *
+ * **Details**
+ *
+ * Inspect `reason` to find the header that failed and the rejected input.
+ *
+ * @stability unstable
+ * @category errors
+ * @since 4.0.0
+ */
+export class HeaderParseError extends Data.TaggedError("HeaderParseError")<{
+  readonly reason: HeaderParseErrorReason
+}> {
+  /**
+   * Creates a header parse error from a reason tag and the rejected input.
+   *
+   * @stability unstable
+   * @since 4.0.0
+   */
+  static fromReason(reason: HeaderParseError["reason"]["_tag"], input: string): HeaderParseError {
+    return new HeaderParseError({ reason: new HeaderParseErrorReason({ _tag: reason, input }) })
+  }
+
+  /**
+   * Marks this value as a header parse error for runtime guards.
+   *
+   * @stability unstable
+   * @since 4.0.0
+   */
+  readonly [HeaderParseErrorTypeId] = HeaderParseErrorTypeId
+
+  /**
+   * Names the failed header and the rejected input.
+   *
+   * @stability unstable
+   * @since 4.0.0
+   */
+  override get message() {
+    return `${this.reason._tag}: ${JSON.stringify(this.reason.input)}`
+  }
+}
+
+/**
+ * Checks whether a value is a `HeaderParseError`.
+ *
+ * @stability unstable
+ * @category guards
+ * @since 4.0.0
+ */
+export const isHeaderParseError = (u: unknown): u is HeaderParseError =>
+  Predicate.hasProperty(u, HeaderParseErrorTypeId)
+
+// -----------------------------------------------------------------------------
+// HTTP dates (RFC 9110 §5.6.7)
+// -----------------------------------------------------------------------------
+
+const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+
+// RFC 9110 §5.6.7: IMF-fixdate, then the obsolete RFC 850 and asctime forms
+const httpDateFormats = [
+  // Sun, 06 Nov 1994 08:49:37 GMT
+  /^(?:mon|tue|wed|thu|fri|sat|sun), (?<day>\d{2}) (?<month>[a-z]{3}) (?<year>\d{4}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}) gmt$/i,
+  // Sunday, 06-Nov-94 08:49:37 GMT
+  /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday), (?<day>\d{2})-(?<month>[a-z]{3})-(?<year>\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}) gmt$/i,
+  // Sun Nov  6 08:49:37 1994
+  /^(?:mon|tue|wed|thu|fri|sat|sun) (?<month>[a-z]{3}) (?<day> \d|\d{2}) (?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2}) (?<year>\d{4})$/i
+]
+
+const httpDateToMillis = (input: string): number | undefined => {
+  for (const format of httpDateFormats) {
+    const groups = format.exec(input)?.groups
+    if (groups === undefined) continue
+    const month = monthNames.indexOf(groups.month.toLowerCase())
+    const hour = Number(groups.hour)
+    const minute = Number(groups.minute)
+    const second = Number(groups.second)
+    // the grammar allows 23:59:60 for a leap second
+    if (month === -1 || hour > 23 || minute > 59 || second > 60) {
+      return undefined
+    }
+    // two-digit years use a fixed pivot, see parseHttpDate
+    let year = Number(groups.year)
+    if (groups.year.length === 2) {
+      year += year < 70 ? 2000 : 1900
+    }
+    const day = Number(groups.day)
+    // setUTCFullYear keeps years below 100 as-is, unlike Date.UTC
+    const date = new Date(0)
+    date.setUTCFullYear(year, month, day)
+    // an impossible day such as 31 Feb rolls over into the next month
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) {
+      return undefined
+    }
+    // a leap second cannot be represented in epoch time and reads as the
+    // following second
+    return date.getTime() + ((hour * 60 + minute) * 60 + second) * 1000
+  }
+  return undefined
+}
+
+/**
+ * Parses an HTTP date header value into a UTC `DateTime`.
+ *
+ * **Details**
+ *
+ * Accepts the three formats of RFC 9110 §5.6.7: the preferred IMF-fixdate
+ * (`Sun, 06 Nov 1994 08:49:37 GMT`), the obsolete RFC 850 format
+ * (`Sunday, 06-Nov-94 08:49:37 GMT`) and the asctime format
+ * (`Sun Nov  6 08:49:37 1994`). All three are read as UTC regardless of the
+ * process time zone. Day and month names are case-insensitive, and the day
+ * name is not checked against the date. A leap second (`23:59:60`) is read
+ * as the following second, since epoch time cannot represent it.
+ *
+ * The two-digit year of the RFC 850 format is read with a fixed pivot:
+ * `70`-`99` as 1970-1999 and `00`-`69` as 2000-2069. This deviates from
+ * RFC 9110, which asks for the year to be chosen relative to the current
+ * time so that it is never more than 50 years in the future. The fixed pivot
+ * keeps parsing independent of the clock and matches most other HTTP
+ * implementations.
+ *
+ * @stability unstable
+ * @category header values
+ * @since 4.0.0
+ */
+export const parseHttpDate = (input: string): Result.Result<DateTime.Utc, HeaderParseError> => {
+  const millis = httpDateToMillis(input.trim())
+  return millis === undefined
+    ? Result.fail(HeaderParseError.fromReason("InvalidHttpDate", input))
+    : Result.succeed(DateTime.makeUnsafe(millis))
+}
+
+/**
+ * Formats a `DateTime` as an IMF-fixdate HTTP date, such as
+ * `Sun, 06 Nov 1994 08:49:37 GMT`.
+ *
+ * @stability unstable
+ * @category header values
+ * @since 4.0.0
+ */
+export const formatHttpDate = (self: DateTime.DateTime): string => DateTime.toDateUtc(self).toUTCString()
+
+// -----------------------------------------------------------------------------
+// Retry-After (RFC 9110 §10.2.3)
+// -----------------------------------------------------------------------------
+
+/**
+ * A `Retry-After` value given as a delay.
+ *
+ * **Details**
+ *
+ * The duration is always finite and non-negative. On the wire it is written
+ * as whole seconds, rounded up.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export interface RetryAfterDuration {
+  readonly _tag: "Duration"
+  readonly duration: Duration.Duration
+}
+
+/**
+ * A `Retry-After` value given as an HTTP date.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export interface RetryAfterDateTime {
+  readonly _tag: "DateTime"
+  readonly dateTime: DateTime.Utc
+}
+
+/**
+ * Represents a parsed `Retry-After` header value.
+ *
+ * **Details**
+ *
+ * The header carries either a delay in whole seconds or an absolute HTTP
+ * date. Use {@link retryAfterDelay} to turn either form into a `Duration`
+ * measured from a given instant.
+ *
+ * @stability unstable
+ * @category models
+ * @since 4.0.0
+ */
+export type RetryAfter = RetryAfterDuration | RetryAfterDateTime
+
+/**
+ * Creates a `Retry-After` value from a delay.
+ *
+ * **Details**
+ *
+ * Infinite durations, positive or negative, have no header form and throw.
+ * That check runs first; a finite negative duration then becomes zero.
+ * Fractional seconds are kept, and {@link formatRetryAfter} rounds them up so
+ * the header never asks for a shorter wait.
+ *
+ * A plain number is read as milliseconds, as everywhere in `Duration`: pass
+ * `"120 seconds"` or `Duration.seconds(120)` for a two-minute delay.
+ *
+ * @stability unstable
+ * @category constructors
+ * @since 4.0.0
+ */
+export const retryAfterDuration = (input: Duration.Input): RetryAfter => {
+  const duration = Duration.fromInputUnsafe(input)
+  if (!Duration.isFinite(duration)) {
+    throw new Error("Cannot create a Retry-After value from an infinite duration")
+  }
+  return { _tag: "Duration", duration: Duration.isNegative(duration) ? Duration.zero : duration }
+}
+
+/**
+ * Creates a `Retry-After` value from an HTTP date.
+ *
+ * @stability unstable
+ * @category constructors
+ * @since 4.0.0
+ */
+export const retryAfterDateTime = (dateTime: DateTime.Utc): RetryAfter => ({ _tag: "DateTime", dateTime })
+
+const wholeSeconds = /^\d+$/
+const nanosPerSecond = BigInt(1_000_000_000)
+
+/**
+ * Parses a `Retry-After` header value.
+ *
+ * **Details**
+ *
+ * Accepts whole non-negative seconds (`120`) of any size, read exactly, or an
+ * HTTP date in any of the formats {@link parseHttpDate} accepts. Fractional,
+ * negative, exponent and non-finite numbers are rejected, as are dates in
+ * other formats.
+ *
+ * @stability unstable
+ * @category header values
+ * @since 4.0.0
+ */
+export const parseRetryAfter = (input: string): Result.Result<RetryAfter, HeaderParseError> => {
+  const trimmed = input.trim()
+  if (wholeSeconds.test(trimmed)) {
+    const seconds = Number(trimmed)
+    // Keep the millisecond form while it is exact; beyond that, count nanos.
+    const duration = Number.isSafeInteger(seconds * 1000)
+      ? Duration.seconds(seconds)
+      : Duration.nanos(BigInt(trimmed) * nanosPerSecond)
+    return Result.succeed({ _tag: "Duration", duration })
+  }
+  const millis = httpDateToMillis(trimmed)
+  return millis === undefined
+    ? Result.fail(HeaderParseError.fromReason("InvalidRetryAfter", input))
+    : Result.succeed(retryAfterDateTime(DateTime.makeUnsafe(millis)))
+}
+
+/**
+ * Formats a `Retry-After` value as a header value: the delay as whole
+ * seconds, or the date as an IMF-fixdate.
+ *
+ * **Details**
+ *
+ * A delay with a fractional second is rounded up, since `Retry-After` is the
+ * least time to wait. Large delays are written as exact decimal digits.
+ *
+ * @stability unstable
+ * @category header values
+ * @since 4.0.0
+ */
+export const formatRetryAfter = (self: RetryAfter): string =>
+  self._tag === "Duration"
+    ? String((Duration.toNanosUnsafe(self.duration) + nanosPerSecond - BigInt(1)) / nanosPerSecond)
+    : formatHttpDate(self.dateTime)
+
+/**
+ * Computes how long to wait for a `Retry-After` value, measured from `now`
+ * in epoch milliseconds.
+ *
+ * **Details**
+ *
+ * A date that is already in the past yields a zero duration, never a
+ * negative one. Compute the delay when the retry is scheduled rather than
+ * when the header is parsed, so the wait reflects the time already spent.
+ *
+ * @stability unstable
+ * @category header values
+ * @since 4.0.0
+ */
+export const retryAfterDelay = (self: RetryAfter, now: number): Duration.Duration =>
+  self._tag === "Duration"
+    ? self.duration
+    : Duration.millis(Math.max(0, DateTime.toEpochMillis(self.dateTime) - now))
+
+/**
+ * Provides an `Equivalence` instance for `Retry-After` values.
+ *
+ * @stability unstable
+ * @category instances
+ * @since 4.0.0
+ */
+export const RetryAfterEquivalence: Equ.Equivalence<RetryAfter> = (self, that) =>
+  self._tag === "Duration"
+    ? that._tag === "Duration" && Duration.Equivalence(self.duration, that.duration)
+    : that._tag === "DateTime" && DateTime.Equivalence(self.dateTime, that.dateTime)

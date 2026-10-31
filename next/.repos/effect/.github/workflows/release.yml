@@ -41,10 +41,6 @@ jobs:
           # automatically to ensure workflows get triggered on the changesets
           # release branch.
           github-token: ${{ secrets.CHANGESET_GITHUB_TOKEN }}
-      - name: Deploy website
-        if: steps.changesets.outputs.published == 'true'
-        uses: ./.github/actions/deploy-website
-        with:
-          channel: v4
-          dispatch-token: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
-          revision: ${{ github.sha }}
+      # Packages are published under the `staging` dist-tag. The npm promote
+      # workflow moves `latest` once npm serves every package, then deploys the
+      # website.

@@ -136,7 +136,7 @@ export const auto = <A, E, R, Out, E2, R2>(
 ): Effect.Effect<Resource<A, E>, never, R | R2 | Scope.Scope> =>
   Effect.tap(
     manual(acquire),
-    (self) => Effect.forkScoped(Effect.repeat(refresh(self), policy))
+    (self) => Effect.forkScoped(Effect.schedule(Effect.ignoreCause(refresh(self)), policy))
   )
 
 /**

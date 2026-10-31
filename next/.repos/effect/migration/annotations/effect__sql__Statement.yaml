@@ -36,4 +36,8 @@
   note: "The helper was removed; locally provide undefined for the transformer reference."
 "@effect/sql/Statement#makeCompiler":
   replacement: "effect/sql/Statement#makeCompiler"
-  note: "Moved to core Effect; the constructor options are exposed as Statement.CompilerOptions and retain the dialect-specific callbacks."
+  note: "Moved to core Effect; the constructor options are exposed as Statement.CompilerOptions and retain the dialect-specific callbacks. onRecordUpdate now receives the updateValues alias already escaped with onIdentifier(alias, true); insert it as is."
+"@effect/sql/Statement#Constructor":
+  include: true
+  replacement: "effect/sql/Statement#Constructor"
+  note: "Moved to core Effect. sql.updateValues now escapes its alias as an identifier without applying name transforms; pass a bare alias such as \"data\" rather than pre-quoted SQL, and quote mixed-case PostgreSQL aliases where the query references them. sql.insert and sql.updateValues now require a non-empty array of rows; narrow array inputs with Array.isReadonlyArrayNonEmpty first."

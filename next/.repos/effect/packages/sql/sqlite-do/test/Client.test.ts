@@ -1,9 +1,11 @@
 import type { DurableObjectStorage, SqlStorage } from "@cloudflare/workers-types"
 import { SqliteClient, SqliteMigrator } from "@effect/sql-sqlite-do"
 import { assert, describe, it } from "@effect/vitest"
-import { Deferred, Effect, Exit, Fiber, Stream } from "effect"
+import { Deferred, Effect, Exit, Fiber, Schema, Stream } from "effect"
+import * as Arr from "effect/Array"
 import * as Reactivity from "effect/reactivity/Reactivity"
 import * as SqlClient from "effect/sql/SqlClient"
+import * as SqlResolver from "effect/sql/SqlResolver"
 
 class FakeCursor {
   readonly columnNames: ReadonlyArray<string>
@@ -183,17 +185,21 @@ const hasForbiddenTransactionSql = (db: FakeSqlStorage) =>
   db.statements.some((statement) => /^(BEGIN|COMMIT|ROLLBACK|SAVEPOINT)\b/i.test(normalizeSql(statement)))
 
 describe("Client", () => {
-  it.effect("classifies native errors without stable sqlite codes as UnknownError", () =>
+  it.effect("classifies native errors and releases the connection for the next statement", () =>
     Effect.gen(function*() {
       const failingDb = {
-        exec: () => {
-          throw new Error("boom")
+        exec: (statement: string) => {
+          if (statement === "SELECT broken") {
+            throw new Error("boom")
+          }
+          return new FakeCursor([{ value: 1 }])
         }
       } as unknown as SqlStorage
 
       const client = yield* makeClient({ db: failingDb })
-      const error = yield* Effect.flip(client`SELECT 1`)
+      const error = yield* Effect.flip(client`SELECT broken`)
       assert.strictEqual(error.reason._tag, "UnknownError")
+      assert.deepStrictEqual(yield* client`SELECT 1`, [{ value: 1 }])
     }))
 
   it.effect("classifies streaming native errors without stable sqlite codes as UnknownError", () =>
@@ -222,6 +228,35 @@ describe("Client", () => {
       const rows = yield* sql`SELECT * FROM test`
 
       assert.deepStrictEqual(rows, [{ id: 1, name: "hello" }])
+    }))
+
+  it.effect("statements wait for reservations and interrupted waiters do not leak the permit", () =>
+    Effect.gen(function*() {
+      const db = new FakeSqlStorage()
+      const sql = yield* makeClient({ db: db as unknown as SqlStorage })
+      const reserved = yield* Deferred.make<void>()
+      const release = yield* Deferred.make<void>()
+
+      yield* sql`CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)`
+      yield* sql`INSERT INTO test (name) VALUES (${"hello"})`
+      const reservation = yield* Effect.gen(function*() {
+        yield* sql.reserve
+        yield* Deferred.succeed(reserved, void 0)
+        yield* Deferred.await(release)
+      }).pipe(Effect.scoped, Effect.forkChild)
+      yield* Deferred.await(reserved)
+
+      const interrupted = yield* sql`SELECT * FROM test`.pipe(Effect.forkChild({ startImmediately: true }))
+      assert.isUndefined(interrupted.pollUnsafe())
+      yield* Fiber.interrupt(interrupted)
+      assert.isTrue(Exit.hasInterrupts(yield* Fiber.await(interrupted)))
+
+      const query = yield* sql`SELECT * FROM test`.pipe(Effect.forkChild({ startImmediately: true }))
+      assert.isUndefined(query.pollUnsafe())
+      yield* Deferred.succeed(release, void 0)
+      yield* Fiber.join(reservation)
+      assert.deepStrictEqual(yield* Fiber.join(query), [{ id: 1, name: "hello" }])
+      assert.deepStrictEqual(yield* sql`SELECT * FROM test`, [{ id: 1, name: "hello" }])
     }))
 
   it.effect("db-only transactions fail clearly without transaction SQL", () =>
@@ -470,6 +505,30 @@ describe("Client", () => {
       assert.strictEqual(storage.rollbackCalls, 1)
       assert.deepStrictEqual(storage.snapshots, [])
       assert.strictEqual(hasForbiddenTransactionSql(storage.sql), false)
+    }))
+
+  it.effect("SqlResolver keeps requests outside a storage-backed transaction out of its batch", () =>
+    Effect.gen(function*() {
+      const storage = new FakeDurableObjectStorage()
+      const sql = yield* makeClient({ storage: storage as unknown as DurableObjectStorage })
+      const batches: Array<Array<number>> = []
+      const insert = SqlResolver.request(SqlResolver.void({
+        Request: Schema.Number,
+        execute: (ids) => {
+          batches.push(ids)
+          return sql`INSERT INTO test ${sql.insert(Arr.map(ids, (id) => ({ id })))}`
+        }
+      }))
+
+      yield* sql`CREATE TABLE test (id INTEGER PRIMARY KEY)`
+      yield* Effect.all([
+        Effect.exit(sql.withTransaction(Effect.andThen(insert(1), Effect.fail("rollback")))),
+        insert(2)
+      ], { concurrency: "unbounded" })
+      const rows = yield* sql`SELECT * FROM test`
+
+      assert.deepStrictEqual(batches, [[2], [1]])
+      assert.deepStrictEqual(rows, [{ id: 2 }])
     }))
 
   it.effect("SqliteMigrator.run works with storage-backed transactions", () =>

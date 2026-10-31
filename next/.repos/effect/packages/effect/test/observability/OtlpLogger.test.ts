@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Cause, Clock, Effect, Layer } from "effect"
+import { Cause, Clock, Effect, Layer, Tracer } from "effect"
 import { HttpClient, HttpClientResponse } from "effect/http"
 import type { HttpClientError, HttpClientRequest } from "effect/http"
 import { OtlpExporter, OtlpLogger, OtlpSerialization } from "effect/observability"
@@ -109,6 +109,18 @@ describe("OtlpLogger", () => {
         name: "effect",
         version: Version.getCurrentVersion()
       })
+    }).pipe(Effect.provide(makeTestLayer(httpClient)))
+  })
+
+  it.effect("pads a 64-bit trace id to 32 hex characters", () => {
+    const { httpClient, requests } = capture()
+    return Effect.gen(function*() {
+      yield* Effect.log("test").pipe(
+        Effect.withParentSpan(Tracer.externalSpan({ traceId: "463ac35c9f6413ad", spanId: "0020000000000001" }))
+      )
+      yield* (yield* OtlpExporter.Flusher).flush
+
+      assert.strictEqual(logRecordOf(requests[0]).traceId, "0000000000000000463ac35c9f6413ad")
     }).pipe(Effect.provide(makeTestLayer(httpClient)))
   })
 })

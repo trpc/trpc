@@ -1,0 +1,22 @@
+{
+  "name": "@effect/eventlog-server",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://effect.website",
+  "type": "module",
+  "description": "Encrypted event log server backed by SQLite, published as a Docker image",
+  "scripts": {
+    "start": "node src/main.ts",
+    "bundle": "esbuild src/main.ts --bundle --platform=node --format=esm --target=node26 --outfile=build/main.js --external:bufferutil --external:utf-8-validate --banner:js=\"import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);\"",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@effect/platform-node": "workspace:^",
+    "@effect/sql-sqlite-node": "workspace:^",
+    "effect": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2"
+  }
+}

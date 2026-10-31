@@ -5,6 +5,9 @@
  * divide, round, and format decimal values such as money, quantities, and
  * measurements.
  *
+ * Parsed scales are limited to ±10,000, and operations that align scales throw
+ * a `RangeError` when the scales differ by more than 20,000.
+ *
  * @stability stable
  * @since 2.0.0
  */
@@ -21,6 +24,9 @@ import { type Pipeable, pipeArguments } from "./Pipeable.ts"
 import { hasProperty } from "./Predicate.ts"
 
 const DEFAULT_PRECISION = 100
+const MAX_SCALE = 10_000
+// Allows aligning values parsed at opposite bounds
+const MAX_SCALE_ALIGNMENT = 2 * MAX_SCALE
 const FINITE_INT_REGEXP = /^[+-]?\d+$/
 
 const TypeId = "~effect/BigDecimal"
@@ -211,13 +217,25 @@ export const normalize = (self: BigDecimal): BigDecimal => {
       self.normalized = zero
     } else {
       const digits = `${self.value}`
-      let end = digits.length
-      while (digits[end - 1] === "0") end--
-      self.normalized = makeNormalized(BigInt(digits.slice(0, end)), self.scale - (digits.length - end))
+      const zeros = trailingZeros(digits)
+      self.normalized = makeNormalized(BigInt(digits.slice(0, digits.length - zeros)), self.scale - zeros)
     }
   }
 
   return self.normalized
+}
+
+const trailingZeros = (digits: string): number => {
+  let end = digits.length
+  while (digits[end - 1] === "0") end--
+  return digits.length - end
+}
+
+const powerOfTen = (exponent: number): bigint => {
+  if (exponent > MAX_SCALE_ALIGNMENT) {
+    throw new RangeError(`Scale alignment must not exceed ${MAX_SCALE_ALIGNMENT} digits, got ${exponent}`)
+  }
+  return bigint10 ** BigInt(exponent)
 }
 
 /**
@@ -232,6 +250,10 @@ export const normalize = (self: BigDecimal): BigDecimal => {
  * Increasing the scale appends decimal zeros. Decreasing the scale discards
  * digits beyond the target scale by `bigint` division, which truncates toward
  * zero.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the scale changes by more than 20,000.
  *
  * **Example** (Scaling decimal precision)
  *
@@ -260,11 +282,11 @@ export const scale: {
   (self: BigDecimal, scale: number): BigDecimal
 } = dual(2, (self: BigDecimal, scale: number): BigDecimal => {
   if (scale > self.scale) {
-    return make(self.value * bigint10 ** BigInt(scale - self.scale), scale)
+    return make(self.value * powerOfTen(scale - self.scale), scale)
   }
 
   if (scale < self.scale) {
-    return make(self.value / bigint10 ** BigInt(self.scale - scale), scale)
+    return make(self.value / powerOfTen(self.scale - scale), scale)
   }
 
   return self
@@ -277,6 +299,10 @@ export const scale: {
  *
  * Use when you need a decimal addition function for piping or higher-order APIs
  * while preserving decimal precision.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the operands' scales differ by more than 20,000.
  *
  * **Example** (Adding decimals)
  *
@@ -325,6 +351,10 @@ export const sum: {
  *
  * Use when you need to aggregate decimal quantities with decimal precision
  * instead of converting through JavaScript numbers.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the operands' scales differ by more than 20,000.
  *
  * **Example** (Adding multiple decimals)
  *
@@ -429,6 +459,10 @@ export const multiplyAll = (collection: Iterable<BigDecimal>): BigDecimal => {
  * **When to use**
  *
  * Use to subtract one `BigDecimal` value from another.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the operands' scales differ by more than 20,000.
  *
  * **Example** (Subtracting decimals)
  *
@@ -1046,6 +1080,10 @@ export const negate = (n: BigDecimal): BigDecimal => make(-n.value, n.scale)
  *
  * If the divisor is `0`, the result will be `Option.none()`.
  *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the operands' scales differ by more than 20,000.
+ *
  * **Example** (Computing remainders safely)
  *
  * ```ts import.meta.vitest
@@ -1089,7 +1127,8 @@ export const remainder: {
  *
  * **Gotchas**
  *
- * Throws a `RangeError` if the divisor is `0`.
+ * Throws a `RangeError` if the divisor is `0` or the operands' scales differ by
+ * more than 20,000.
  *
  * **Example** (Computing remainders unsafely)
  *
@@ -1295,8 +1334,9 @@ export const fromNumber = (n: number): Option.Option<BigDecimal> => {
  * **Details**
  *
  * Returns `Option.some` for valid decimal or exponent notation and
- * `Option.none` when the string cannot be parsed or would produce an unsafe
- * scale. The empty string parses as zero.
+ * `Option.none` otherwise, including when the scale, before or after removing
+ * trailing zeros, is outside ±10,000 (for example, more than 10,000 fractional
+ * digits). The empty string parses as zero.
  *
  * **Example** (Parsing decimal strings safely)
  *
@@ -1340,6 +1380,9 @@ export const fromString = (s: string): Option.Option<BigDecimal> => {
   if (dot !== -1) {
     const lead = base.slice(0, dot)
     const trail = base.slice(dot + 1)
+    if (!/^\d*$/.test(trail)) {
+      return Option.none()
+    }
     digits = `${lead}${trail}`
     offset = trail.length
   } else {
@@ -1352,11 +1395,14 @@ export const fromString = (s: string): Option.Option<BigDecimal> => {
   }
 
   const scale = offset - exp
-  if (!Number.isSafeInteger(scale)) {
+  const value = BigInt(digits)
+  // Keeps `format` output parseable
+  const normalizedScale = value === bigint0 ? scale : scale - trailingZeros(digits)
+  if (scale > MAX_SCALE || normalizedScale < -MAX_SCALE) {
     return Option.none()
   }
 
-  return Option.some(make(BigInt(digits), scale))
+  return Option.some(make(value, scale))
 }
 
 /**
@@ -1369,8 +1415,9 @@ export const fromString = (s: string): Option.Option<BigDecimal> => {
  *
  * **Details**
  *
- * Accepts the same syntax as `fromString`. Use `fromString` when invalid input
- * should be represented as `Option.none` instead of throwing.
+ * Accepts the same syntax and scale limits as `fromString`. Use `fromString`
+ * when invalid input should be represented as `Option.none` instead of
+ * throwing.
  *
  * **Example** (Parsing decimal strings unsafely)
  *
@@ -1643,6 +1690,15 @@ export type RoundingMode =
  *
  * Use to round a decimal at a requested scale with an explicit rounding mode.
  *
+ * **Details**
+ *
+ * Values already at or below the target scale are returned unchanged.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the value's scale exceeds the target scale by more
+ * than 20,000.
+ *
  * **Example** (Rounding decimals)
  *
  * ```ts import.meta.vitest
@@ -1669,6 +1725,10 @@ export const round: {
 } = dual(isBigDecimalArgs, (self: BigDecimal, options?: { scale?: number; mode?: RoundingMode }): BigDecimal => {
   const mode = options?.mode ?? "half-from-zero"
   const scale = options?.scale ?? 0
+
+  if (self.scale <= scale) {
+    return self
+  }
 
   switch (mode) {
     case "ceil":
@@ -1722,6 +1782,11 @@ export const round: {
  * Use when you need to discard fractional digits beyond a scale rather than
  * round half up, half down, or toward an infinity.
  *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the value's scale exceeds the target scale by more
+ * than 20,000.
+ *
  * **Example** (Truncating decimals)
  *
  * ```ts import.meta.vitest
@@ -1748,7 +1813,7 @@ export const truncate: {
   }
 
   // BigInt division truncates towards zero
-  return make(self.value / (bigint10 ** BigInt(self.scale - scale)), scale)
+  return make(self.value / powerOfTen(self.scale - scale), scale)
 })
 
 /**
@@ -1763,6 +1828,11 @@ export const truncate: {
  * The default scale is `0`. Positive scales keep digits to the right of the
  * decimal point, and negative scales round positions to the left of the decimal
  * point.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the value's scale exceeds the target scale by more
+ * than 20,000.
  *
  * @see {@link floor} for rounding toward negative infinity
  * @see {@link truncate} for rounding toward zero
@@ -1809,7 +1879,7 @@ export const digitAt: {
     return bigint0
   }
 
-  const scaled = self.value / (bigint10 ** BigInt(self.scale - scale))
+  const scaled = self.value / powerOfTen(self.scale - scale)
   return scaled % bigint10
 })
 
@@ -1819,6 +1889,11 @@ export const digitAt: {
  * **When to use**
  *
  * Use to round a decimal toward negative infinity at a requested scale.
+ *
+ * **Gotchas**
+ *
+ * Throws a `RangeError` if the value's scale exceeds the target scale by more
+ * than 20,000.
  *
  * **Example** (Rounding decimals down)
  *

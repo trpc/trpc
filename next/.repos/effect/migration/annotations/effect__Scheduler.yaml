@@ -18,7 +18,7 @@ effect/Scheduler#makeMatrix:
   note: "Matrix routing was removed; implement routing in a custom Scheduler and SchedulerDispatcher if still required."
 effect/Scheduler#MixedScheduler:
   replacement: "Scheduler.MixedScheduler"
-  note: "The class remains with a redesigned constructor and makeDispatcher-based task API."
+  note: "The class remains with a redesigned constructor and makeDispatcher-based task API. On Cloudflare Workers, request-owned scheduler timers can leave shared fibers suspended; provide new Scheduler.MixedScheduler(\"sync\") to both layers and requests and build handlers at module scope (see HttpRouter.toWebHandler). Sync mode does not yield to the event loop and does not fix request-owned Effect.sleep timers or request-bound async contexts."
 effect/Scheduler#PriorityBuckets:
   replacement: "none"
   note: "Priority buckets are now an internal Scheduler implementation detail."

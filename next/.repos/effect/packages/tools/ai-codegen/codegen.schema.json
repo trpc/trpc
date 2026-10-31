@@ -7,30 +7,8 @@
   "required": ["spec", "output"],
   "properties": {
     "spec": {
-      "description": "OpenAPI specification source - URL, file path, or structured resolver config",
-      "oneOf": [
-        {
-          "type": "string",
-          "description": "URL or file path to the OpenAPI specification"
-        },
-        {
-          "type": "object",
-          "description": "Stainless stats resolver - fetches stats.yml and extracts openapi_spec_url",
-          "required": ["type", "statsUrl"],
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "stainless-stats",
-              "description": "Resolver type"
-            },
-            "statsUrl": {
-              "type": "string",
-              "format": "uri",
-              "description": "URL to Stainless .stats.yml file containing openapi_spec_url"
-            }
-          }
-        }
-      ]
+      "type": "string",
+      "description": "URL or file path to the OpenAPI specification (JSON or YAML, optionally gzipped with a .gz suffix)"
     },
     "output": {
       "type": "string",
@@ -55,6 +33,25 @@
       "items": {
         "type": "string"
       }
+    },
+    "includePaths": {
+      "type": "array",
+      "description": "Path prefixes to generate. Paths that match none of the prefixes are dropped after patches are applied. Defaults to every path.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "includeSchemas": {
+      "type": "array",
+      "description": "Component schemas to generate even when no operation references them, such as stream events or deprecated legacy contracts.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "collapseErrorResponses": {
+      "type": "boolean",
+      "description": "Replace each operation's explicit 4xx and 5xx responses with one 4XX response using the error envelope component they share. Generation fails when an operation's error responses do not reference exactly one component.",
+      "default": false
     },
     "replacements": {
       "type": "array",
@@ -84,7 +81,7 @@
     },
     "disableAdditionalProperties": {
       "type": "boolean",
-      "description": "When true, forces additionalProperties to false on all object schemas, preventing StructWithRest emission.",
+      "description": "When true, closes object schemas that declare properties and no additionalProperties of their own, preventing StructWithRest emission. Object compositions (allOf, and properties next to anyOf/oneOf) are merged before closing.",
       "default": false
     }
   },

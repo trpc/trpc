@@ -13,11 +13,13 @@
     "plugins": [
       {
         "name": "@effect/language-service",
+        "effectFn": ["untraced"],
         "namespaceImportPackages": [],
         "diagnosticSeverity": {
           "floatingEffect": "off",
           "preferSchemaOverJson": "off",
-          "unstableApiUsage": "off"
+          "unstableApiUsage": "off",
+          "effectFnOpportunity": "error"
         }
       }
     ]

@@ -7,6 +7,8 @@ import { flow, pipe } from "effect/Function"
 import { Persistable, Persistence } from "effect/persistence"
 import * as Request from "effect/Request"
 import * as Resolver from "effect/RequestResolver"
+import { TestClock } from "effect/testing"
+import { collectGarbage } from "./utils/gc.ts"
 
 class Counter extends Context.Service<Counter, { count: number }>()("Counter") {}
 class Requests extends Context.Service<Requests, { count: number }>()("Requests") {}
@@ -466,6 +468,58 @@ describe("Request", { concurrent: false }, () => {
       assert.strictEqual(calls, 1)
     }))
 
+  it.effect("withCache keeps the wrapped resolver's preCheck", () =>
+    Effect.gen(function*() {
+      let prechecked = "Alice"
+      const batched: Array<number> = []
+      const resolver = yield* Resolver.makeWith<GetNameById>({
+        batchKey: () => "batch",
+        delay: Effect.yieldNow,
+        collectWhile: () => true,
+        preCheck(entry) {
+          if (entry.request.id !== 1) return true
+          entry.completeUnsafe(Exit.succeed(prechecked))
+          return false
+        },
+        runAll: (entries) =>
+          Effect.sync(() => {
+            for (const entry of entries) {
+              batched.push(entry.request.id)
+              entry.completeUnsafe(Exit.succeed("Bob"))
+            }
+          })
+      }).pipe(Resolver.withCache({ capacity: 10 }))
+
+      assert.strictEqual(yield* Effect.request(new GetNameById({ id: 1 }), resolver), "Alice")
+      prechecked = "Carol"
+      assert.strictEqual(yield* Effect.request(new GetNameById({ id: 1 }), resolver), "Carol")
+      assert.strictEqual(yield* Effect.request(new GetNameById({ id: 2 }), resolver), "Bob")
+      assert.strictEqual(yield* Effect.request(new GetNameById({ id: 2 }), resolver), "Bob")
+      assert.deepStrictEqual(batched, [2])
+    }))
+
+  it.effect("withCache delegates pending and completed requests to the inner cache", () =>
+    Effect.gen(function*() {
+      const gate = yield* Deferred.make<void>()
+      let calls = 0
+      const inner = yield* Resolver.make<GetNameById>((entries) =>
+        Effect.sync(() => {
+          calls++
+          for (const entry of entries) entry.completeUnsafe(Exit.succeed("Alice"))
+        })
+      ).pipe(Resolver.setDelayEffect(Deferred.await(gate)), Resolver.withCache({ capacity: 10 }))
+      const outer = yield* Resolver.withCache(inner, { capacity: 10 })
+      const request = new GetNameById({ id: 1 })
+      const first = yield* Effect.request(request, inner).pipe(Effect.forkChild({ startImmediately: true }))
+      const second = yield* Effect.request(request, outer).pipe(Effect.forkChild({ startImmediately: true }))
+
+      yield* Deferred.succeed(gate, undefined)
+      assert.strictEqual(yield* Fiber.join(first), "Alice")
+      assert.strictEqual(yield* Fiber.join(second), "Alice")
+      assert.strictEqual(yield* Effect.request(request, outer), "Alice")
+      assert.strictEqual(calls, 1)
+    }))
+
   it.effect("withCache does not cache interrupted resolver results", () =>
     Effect.gen(function*() {
       let calls = 0
@@ -630,6 +684,45 @@ describe("Request", { concurrent: false }, () => {
       assert.strictEqual(calls, 1)
     }).pipe(Effect.provide(Persistence.layerMemory)))
 
+  for (const refresh of ["per-entry failure", "whole-batch failure", "no completions"] as const) {
+    it.effect(`persisted stale-while-revalidate persists only refresh results: ${refresh}`, () =>
+      Effect.gen(function*() {
+        class GetValue extends Persistable.Class()("StaleValue", {
+          primaryKey: () => "value",
+          success: Schema.String,
+          error: Persistence.PersistenceError
+        }) {}
+        const request = new GetValue()
+        const error = new Persistence.PersistenceError({ message: "backend failed" })
+        const options = { storeId: "stale-refresh", timeToLive: () => "1 second" as const }
+        const store = yield* (yield* Persistence.Persistence).make(options)
+        yield* store.set(request, Exit.succeed("Alice"))
+        const finished = yield* Deferred.make<void>()
+        const resolver = yield* Resolver.make<GetValue>((entries) => {
+          switch (refresh) {
+            case "whole-batch failure":
+              return Effect.fail(error)
+            case "per-entry failure":
+              return Effect.sync(() => {
+                for (const entry of entries) entry.completeUnsafe(Exit.fail(error))
+              })
+            case "no completions":
+              return Effect.void
+          }
+        }).pipe(Resolver.persisted({ ...options, staleWhileRevalidate: () => true }))
+        const persisted = resolver.pipe(
+          Resolver.around(() => Effect.void, () => Deferred.succeed(finished, undefined))
+        )
+
+        yield* TestClock.adjust("500 millis")
+        assert.strictEqual(yield* Effect.request(request, persisted), "Alice")
+        yield* Deferred.await(finished)
+        // Past the original expiry, but within the TTL of any refreshed result.
+        yield* TestClock.adjust("600 millis")
+        assert.deepStrictEqual(yield* store.get(request), refresh === "no completions" ? undefined : Exit.fail(error))
+      }).pipe(Effect.provide(Persistence.layerMemory)))
+  }
+
   it.effect("persisted propagates failures to unfinished requests", () =>
     Effect.gen(function*() {
       class GetValue extends Persistable.Class<{ payload: { id: number } }>()("GetValue", {
@@ -793,5 +886,42 @@ describe("Request", { concurrent: false }, () => {
 
       assert.strictEqual(delayServiceValue, "provided")
     })
+  )
+
+  it.effect("setDelay(0) registers the request before running the batch", () =>
+    Effect.gen(function*() {
+      const batches: Array<Array<number>> = []
+      const resolver = Resolver.makeGrouped<GetNameById, string>({
+        key: () => "all",
+        resolver: (entries) =>
+          Effect.sync(() => {
+            batches.push(entries.map(({ request }) => request.id))
+            for (const entry of entries) entry.completeUnsafe(Exit.succeed(String(entry.request.id)))
+          })
+      }).pipe(Resolver.setDelay(0), Resolver.batchN(2))
+
+      yield* Effect.promise(() => Promise.resolve())
+      assert.strictEqual(yield* Effect.request(new GetNameById({ id: 1 }), resolver), "1")
+      assert.deepStrictEqual(batches, [[1]])
+    }))
+
+  // Bun does not expose `gc` through V8 flags.
+  it.effect.skipIf(process.versions.bun !== undefined)(
+    "batches do not retain completed requests",
+    () =>
+      Effect.gen(function*() {
+        let reference!: WeakRef<GetNameById>
+        yield* Effect.request(
+          new GetNameById({ id: 0 }),
+          Resolver.make<GetNameById>((entries) =>
+            Effect.sync(() => {
+              reference = new WeakRef(entries[0].request)
+              entries[0].completeUnsafe(Exit.succeed(""))
+            })
+          )
+        )
+        yield* collectGarbage
+        assert.isUndefined(reference.deref())
+      })
   )
 })

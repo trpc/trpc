@@ -322,7 +322,7 @@ const extractResponseContent = (
 
   function add(schema: Schema.Top) {
     const body = HttpApiSchema.isWithHeaders(schema) ? schema.schema : schema
-    if (HttpApiSchema.isStreamSchema(body)) return
+    if (HttpApiSchema.isStreamSchema(body) || HttpApiSchema.isUpgrade(body)) return
     const status = getStatus(schema)
     const schemas = map.get(status)
     if (schemas === undefined) {
@@ -371,12 +371,9 @@ export class AdditionalSchemas extends Context.Service<
  *
  * Header codecs receive all HTTP headers, including undeclared transport
  * headers such as `content-type`, `content-length`, `host`, `user-agent` and
- * proxy headers. Without `HeadersParseOptions`, headers use `ParseOptions`:
- *
- * - `onExcessProperty: "error"` rejects real requests and `WithHeaders`
- *   responses with transport headers.
- * - `onExcessProperty: "preserve"` includes transport headers in the decoded
- *   value.
+ * proxy headers. Without `HeadersParseOptions`, headers use `ParseOptions`, so
+ * `onExcessProperty: "error"` rejects real requests and `WithHeaders` responses
+ * with transport headers.
  *
  * Set `HeadersParseOptions` to `{}` at the API level to use Schema defaults for
  * headers, even if an endpoint sets `ParseOptions`.

@@ -1,4 +1,4 @@
-import { afterAll, assert, describe, describeWrapped, expect, it, layer } from "@effect/vitest"
+import { afterAll, assert, beforeAll, beforeEach, describe, describeWrapped, expect, it, layer } from "@effect/vitest"
 import * as testAssert from "@effect/vitest/utils"
 import { Clock, Context, Duration, Effect, Fiber, Layer, Schema } from "effect"
 import * as Arbitrary from "effect/Arbitrary"
@@ -193,6 +193,42 @@ describe("layer", () => {
     })
   })
 
+  describe("release with retried or repeated tests", () => {
+    const resources: Array<{ open: boolean }> = []
+    afterAll(() => {
+      expect(resources.map((resource) => resource.open)).toEqual([false, false])
+    })
+
+    class Resource extends Context.Service<Resource, { readonly open: boolean }>()("Resource") {
+      static layer = Layer.effect(Resource)(
+        Effect.acquireRelease(
+          Effect.sync(() => {
+            const resource = { open: true }
+            resources.push(resource)
+            return resource
+          }),
+          (resource) => Effect.sync(() => resource.open = false)
+        )
+      )
+    }
+
+    const assertOpen = Effect.map(Resource, (resource) => expect(resource.open).toEqual(true))
+
+    it.layer(Resource.layer)((it) => {
+      it.effect("retried", ({ task }) =>
+        Effect.andThen(
+          assertOpen,
+          task.result?.retryCount === 0 ? Effect.die("first attempt fails") : Effect.void
+        ), { retry: 1 })
+      it.effect("after retried", () => assertOpen)
+    })
+
+    it.layer(Resource.layer)((it) => {
+      it.effect("repeated", () => assertOpen, { repeats: 1 })
+      it.effect("after repeated", () => assertOpen)
+    })
+  })
+
   describe("anonymous layer next to a Vitest fixture", () => {
     const withValue = it.extend("value", () => 1)
 
@@ -248,6 +284,83 @@ describeWrapped("describeWrapped", (it) => {
         assert.isTrue(task.suite?.tasks.includes(task))
         assert.strictEqual(yield* Foo, "foo")
       }))
+  })
+})
+
+describe("Effect hooks", () => {
+  let beforeAllRan = false
+  let beforeEachRan = false
+
+  beforeAll(() => Effect.sync(() => (beforeAllRan = true)))
+  beforeEach(() => Effect.sync(() => (beforeEachRan = true)))
+
+  it("runs Effects returned by beforeAll and beforeEach", () => {
+    assert.isTrue(beforeAllRan)
+    assert.isTrue(beforeEachRan)
+  })
+})
+
+describe("scoped Effect hooks", { concurrent: false }, () => {
+  const events: Array<string> = []
+  const resource = (name: string) =>
+    Effect.acquireRelease(
+      Effect.sync(() => events.push(`${name}:acquired`)),
+      () => Effect.sleep(10).pipe(Effect.andThen(Effect.sync(() => events.push(`${name}:released`))))
+    )
+
+  describe("suite", () => {
+    beforeAll(() => resource("all"))
+    beforeEach(() => resource("each"))
+
+    it("keeps hook resources alive during the test", () => {
+      assert.deepStrictEqual(events, ["all:acquired", "each:acquired"])
+    })
+
+    it("releases the beforeEach resource before the next test", () => {
+      assert.deepStrictEqual(events, ["all:acquired", "each:acquired", "each:released", "each:acquired"])
+    })
+  })
+
+  it("releases the beforeAll resource when the suite ends", () => {
+    assert.deepStrictEqual(events, [
+      "all:acquired",
+      "each:acquired",
+      "each:released",
+      "each:acquired",
+      "each:released",
+      "all:released"
+    ])
+  })
+
+  describe("failing hook", () => {
+    beforeEach(() => resource("failed").pipe(Effect.andThen(Effect.fail("boom"))))
+    it.fails("fails the test", () => {})
+  })
+
+  describe("hook returning a cleanup function", () => {
+    beforeEach(() => resource("cleanup").pipe(Effect.as(() => events.push("cleanup:ran"))))
+    it("runs the test", () => {})
+  })
+
+  describe("hook returning a throwing cleanup function", () => {
+    beforeEach(() =>
+      resource("throwing").pipe(Effect.as(() => {
+        throw new Error("cleanup failed")
+      }))
+    )
+    it.fails("reports the cleanup error", () => {})
+  })
+
+  it("closes the scope after a failure and after a returned cleanup function", () => {
+    assert.deepStrictEqual(events.slice(6), [
+      "failed:acquired",
+      "failed:released",
+      "cleanup:acquired",
+      "cleanup:ran",
+      "cleanup:released",
+      "throwing:acquired",
+      "throwing:released"
+    ])
   })
 })
 
@@ -350,6 +463,13 @@ it.effect.prop(
 )
 
 describe("property failures", () => {
+  it.prop(
+    "rejects Effect returns from synchronous properties",
+    [Schema.Int],
+    () => Effect.fail("must not silently pass") as unknown as void,
+    { fails: true }
+  )
+
   const Input = Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 1_000 }))
   const pureDefectValues: Array<number> = []
   const effectDefectValues: Array<number> = []

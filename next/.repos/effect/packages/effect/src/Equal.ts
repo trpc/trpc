@@ -12,7 +12,7 @@
  */
 import type { Equivalence } from "./Equivalence.ts"
 import * as Hash from "./Hash.ts"
-import { byReferenceInstances, getAllObjectKeys, viewBytes } from "./internal/equal.ts"
+import { bufferBytes, byReferenceInstances, getAllObjectKeys, isArrayBufferLike, viewBytes } from "./internal/equal.ts"
 import { hasProperty } from "./Predicate.ts"
 
 /**
@@ -257,6 +257,13 @@ function compareStructure(self: object, that: object): boolean {
       return false
     }
     return compareArrays(self, that)
+  } else if (isArrayBufferLike(self)) {
+    if (!isArrayBufferLike(that) || (self instanceof ArrayBuffer) !== (that instanceof ArrayBuffer)) {
+      return false
+    }
+    const selfBytes = bufferBytes(self)
+    const thatBytes = bufferBytes(that)
+    return selfBytes !== undefined && thatBytes !== undefined && compareTypedArrays(selfBytes, thatBytes)
   } else if (ArrayBuffer.isView(self)) {
     const selfIsDataView = self instanceof DataView
     if (
@@ -391,8 +398,8 @@ export function makeCompareSet<A>(equivalence: Equivalence<A>) {
  * **Details**
  *
  * - Pure function, no side effects.
- * - Returns `true` if and only if `u` has a property keyed by
- *   {@link symbol}.
+ * - Returns `true` if and only if `u` has a function keyed by {@link symbol}.
+ *   Data that merely carries the key, such as parsed JSON, is not `Equal`.
  * - Acts as a TypeScript type guard, narrowing the input to {@link Equal}.
  *
  * **Example** (Checking Equal values)
@@ -421,7 +428,7 @@ export function makeCompareSet<A>(equivalence: Equivalence<A>) {
  * @category guards
  * @since 2.0.0
  */
-export const isEqual = (u: unknown): u is Equal => hasProperty(u, symbol)
+export const isEqual = (u: unknown): u is Equal => hasProperty(u, symbol) && typeof u[symbol] === "function"
 
 /**
  * Wraps {@link equals} as an `Equivalence<A>`.

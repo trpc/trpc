@@ -78,7 +78,7 @@ export const UserRpcs = RpcGroup.make(
 
 export const AuthLayer = Layer.succeed(AuthMiddleware)(
   AuthMiddleware.of((effect, options) =>
-    Effect.provideService(
+    options.headers.unauthorized ? Effect.fail(new Unauthorized({})) : Effect.provideService(
       effect,
       CurrentUser,
       new User({ id: options.headers.userid ?? "1", name: options.headers.name ?? "Fallback name" })

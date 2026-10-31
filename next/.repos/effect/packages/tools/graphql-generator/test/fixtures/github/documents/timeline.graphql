@@ -1,0 +1,39 @@
+query IssueTimeline($id: ID!, $first: Int = 50) {
+  node(id: $id) {
+    ... on Issue {
+      number
+      timelineItems(first: $first, itemTypes: [ISSUE_COMMENT, LABELED_EVENT, CLOSED_EVENT]) {
+        nodes {
+          ... on IssueComment {
+            id
+            body
+            createdAt
+            author {
+              ...ActorFields
+            }
+          }
+          ... on LabeledEvent {
+            createdAt
+            label {
+              name
+              color
+            }
+          }
+          ... on ClosedEvent {
+            createdAt
+            closer {
+              ... on PullRequest {
+                number
+                title
+              }
+              ... on Commit {
+                oid
+                pushedDate
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

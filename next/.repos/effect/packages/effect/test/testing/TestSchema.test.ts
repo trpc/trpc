@@ -155,6 +155,12 @@ describe("TestSchema", () => {
     await asserts.verifyRoundTrip({ runs: 20, seed: "lossless" })
   })
 
+  it.effect("round trips accept equivalent struct objects regardless of prototype", () =>
+    new TestSchema.Asserts(Schema.Struct({ a: Schema.String })).verifyRoundTripEffect({ runs: 100, seed: 1 }))
+
+  it.effect("NumberFromString round trips accept equivalent signed zeros", () =>
+    new TestSchema.Asserts(Schema.NumberFromString).verifyRoundTripEffect({ runs: 100, seed: 1 }))
+
   it("verifyRoundTrip reports a shrunk input and replay", async () => {
     const schema = Schema.Number.pipe(
       Schema.decodeTo(

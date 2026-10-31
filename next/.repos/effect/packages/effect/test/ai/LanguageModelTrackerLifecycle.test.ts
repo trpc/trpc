@@ -16,8 +16,7 @@ const responseMetadataPart = (id: string): Response.ResponseMetadataPartEncoded 
   type: "response-metadata",
   id,
   modelId: undefined,
-  timestamp: undefined,
-  request: undefined
+  timestamp: undefined
 })
 
 const textMessage = (text: string) => Prompt.textPart({ text })

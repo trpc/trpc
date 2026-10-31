@@ -179,7 +179,7 @@ export const layer: Layer.Layer<
       name,
       packagePath,
       config,
-      specSource: SpecSourceUtils.fromConfig(config.spec, packagePath, pathService),
+      specSource: SpecSourceUtils.fromString(config.spec, packagePath, pathService),
       outputPath: pathService.join(packagePath, config.output)
     }
 

@@ -1,4 +1,5 @@
 // <reference types="@testing-library/jest-dom" />
+import { assert } from "@effect/vitest"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Cause, Context, Effect, Latch, Layer } from "effect"
 import * as AsyncResult from "effect/reactivity/AsyncResult"
@@ -127,6 +128,47 @@ describe("atom-react", { concurrent: false }, () => {
       render(<TestComponent />)
 
       expect(screen.getByTestId("value")).toHaveTextContent("20")
+    })
+
+    test("initializing an atom that sets another atom does not update other components during render", () => {
+      const count = Atom.make(0)
+      const resource = Atom.make((get) =>
+        Effect.sync(() => {
+          get.set(count, 1)
+          return "ready"
+        })
+      )
+      const errors = vi.spyOn(console, "error").mockImplementation(() => {})
+
+      function Observer() {
+        return <div data-testid="count">{useAtomValue(count)}</div>
+      }
+      function Initializer() {
+        const result = useAtomValue(resource)
+        return <div data-testid="resource">{AsyncResult.getOrElse(result, () => "")}</div>
+      }
+
+      try {
+        const { rerender } = render(
+          <RegistryContext.Provider value={registry}>
+            <Observer />
+          </RegistryContext.Provider>
+        )
+        assert.strictEqual(screen.getByTestId("count").textContent, "0")
+
+        rerender(
+          <RegistryContext.Provider value={registry}>
+            <Observer />
+            <Initializer />
+          </RegistryContext.Provider>
+        )
+
+        assert.strictEqual(screen.getByTestId("count").textContent, "1")
+        assert.strictEqual(screen.getByTestId("resource").textContent, "ready")
+        assert.deepStrictEqual(errors.mock.calls, [])
+      } finally {
+        errors.mockRestore()
+      }
     })
 
     test("suspense success", () => {
@@ -482,6 +524,9 @@ describe("atom-react", { concurrent: false }, () => {
       )
 
       expect(screen.getByTestId("value")).toHaveTextContent("Initial")
+      // Hydration starts a client effect while the server effect is still pending.
+      expect(start).toBe(2)
+      expect(stop).toBe(0)
 
       act(() => {
         Effect.runSync(latch.open)
@@ -495,8 +540,44 @@ describe("atom-react", { concurrent: false }, () => {
       }
 
       expect(screen.getByTestId("value")).toHaveTextContent("Success")
-      expect(start).toBe(1)
-      expect(stop).toBe(1)
+      expect(start).toBe(2)
+      expect(stop).toBe(2)
+    })
+
+    test("HydrationBoundary updates existing readers after commit", () => {
+      const count = Atom.make(0).pipe(
+        Atom.serializable({ key: "existing-count", schema: Schema.Number })
+      )
+      const server = AtomRegistry.make()
+      try {
+        server.set(count, 5)
+        const state = Hydration.dehydrate(server)
+
+        function Count({ id }: { id: string }) {
+          return <div data-testid={id}>{useAtomValue(count)}</div>
+        }
+
+        const { rerender } = render(
+          <RegistryContext.Provider value={registry}>
+            <Count id="header" />
+          </RegistryContext.Provider>
+        )
+        assert.strictEqual(screen.getByTestId("header").textContent, "0")
+
+        rerender(
+          <RegistryContext.Provider value={registry}>
+            <Count id="header" />
+            <HydrationBoundary state={state}>
+              <Count id="page" />
+            </HydrationBoundary>
+          </RegistryContext.Provider>
+        )
+
+        assert.strictEqual(screen.getByTestId("header").textContent, "5")
+        assert.strictEqual(screen.getByTestId("page").textContent, "5")
+      } finally {
+        server.dispose()
+      }
     })
 
     test("HydrationBoundary splits new vs existing atoms", () => {

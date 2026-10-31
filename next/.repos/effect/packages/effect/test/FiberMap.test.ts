@@ -18,6 +18,37 @@ const makeWorker = Effect.gen(function*() {
 })
 
 describe("FiberMap", () => {
+  it.effect("closing the scope waits for asynchronous cleanup of a replaced fiber", () =>
+    Effect.gen(function*() {
+      const events: Array<string> = []
+      const started = yield* Deferred.make<void>()
+      const release = yield* Deferred.make<void>()
+      const scope = yield* Scope.make()
+      yield* Scope.addFinalizer(scope, Effect.sync(() => events.push("resource released")))
+      const container = yield* FiberMap.make<string>().pipe(Scope.provide(scope))
+      const previous = yield* FiberMap.run(
+        container,
+        "key",
+        Deferred.succeed(started, undefined).pipe(
+          Effect.andThen(Effect.never),
+          Effect.onInterrupt(() =>
+            Deferred.await(release).pipe(
+              Effect.andThen(Effect.sync(() => events.push("worker cleanup done")))
+            )
+          )
+        )
+      )
+      yield* Deferred.await(started)
+      yield* FiberMap.run(container, "key", Effect.never)
+
+      const closing = yield* Effect.forkChild(Scope.close(scope, Exit.void), { startImmediately: true })
+      yield* Deferred.succeed(release, undefined)
+      yield* Fiber.join(closing)
+      yield* Fiber.await(previous)
+
+      assert.deepStrictEqual(events, ["worker cleanup done", "resource released"])
+    }))
+
   it.effect("run defers startup", () =>
     Effect.gen(function*() {
       const container = yield* FiberMap.make<string>()

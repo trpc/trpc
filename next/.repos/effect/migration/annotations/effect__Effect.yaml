@@ -51,11 +51,12 @@ effect/Effect#cacheRequestResult:
   replacement: "none"
   note: "Direct request-cache mutation was removed; configure request resolution through `RequestResolver`. No direct public replacement exists in v4; rewrite the call site around the stated v4 primitive."
 effect/Effect#catch:
+  include: true
   replacement: "Effect.catch"
-  note: "Still exported in v4; update call sites for the revised signature, options, and channel inference."
+  note: "Typed recovery skips causes containing defects and converts their typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery; use Effect.catchCause for full-cause handling."
 effect/Effect#catchAll:
   replacement: "Effect.catch"
-  note: "Use the shortened v4 error-handler name. Adapt arguments and imports to the v4 API."
+  note: "Rename to Effect.catch. Causes containing defects skip typed recovery and convert typed errors to defects; interruptions alongside typed errors do not block recovery. Use Effect.catchCause for full-cause handling."
 effect/Effect#catchAllCause:
   replacement: "Effect.catchCause"
   note: "Use the shortened v4 cause-handler name. Adapt arguments and imports to the v4 API."
@@ -64,7 +65,7 @@ effect/Effect#catchAllDefect:
   note: "Use the shortened v4 defect-handler name. Adapt arguments and imports to the v4 API."
 effect/Effect#catchSome:
   replacement: "Effect.catchFilter"
-  note: "Replace the Option-returning partial function with a `Filter` and handler. Adapt arguments and imports to the v4 API."
+  note: "Replace the Option-returning partial function with a Filter and handler. Causes containing defects skip typed recovery and convert typed errors to defects; interruptions alongside typed errors do not block recovery."
 effect/Effect#catchSomeCause:
   replacement: "Effect.catchCauseFilter"
   note: "Replace the Option-returning partial function with a cause `Filter` and handler. Adapt arguments and imports to the v4 API."
@@ -151,7 +152,7 @@ effect/Effect#EffectUnifyIgnore:
   note: "The internal unification-ignore helper is no longer public; rely on v4 Effect inference. No direct public replacement exists in v4; rewrite the call site around the stated v4 primitive."
 effect/Effect#either:
   replacement: "Effect.result"
-  note: "V4 represents typed success/failure as `Result` instead of `Either`. Adapt arguments and imports to the v4 API."
+  note: "V4 represents typed success/failure as `Result` instead of `Either`. Adapt arguments and imports to the v4 API. Causes containing defects are not captured as Result failures and propagate with typed errors converted to defects; interruptions alongside typed errors do not block typed recovery."
 effect/Effect#ensureErrorType:
   replacement: "Effect.satisfiesErrorType"
   note: "Use the renamed compile-time channel constraint. Adapt arguments and imports to the v4 API."
@@ -244,7 +245,7 @@ effect/Effect#if:
   note: "Select the branch lazily with a JavaScript conditional inside `Effect.suspend`. Adapt arguments and imports to the v4 API."
 effect/Effect#ignoreLogged:
   replacement: "Effect.ignore"
-  note: "Pass `{ log: true }` to the consolidated ignore combinator. Adapt arguments and imports to the v4 API."
+  note: "Use Effect.ignore(self, { log: true }). Causes containing defects are not ignored and propagate with typed errors converted to defects; interruptions alongside typed errors do not block typed recovery."
 effect/Effect#inheritFiberRefs:
   replacement: "none"
   note: "Bulk FiberRef inheritance was removed; propagate required context references explicitly. No direct public replacement exists in v4; rewrite the call site around the stated v4 primitive."
@@ -337,7 +338,7 @@ effect/Effect#orDieWith:
   note: "Map the typed error to the desired defect, then convert failures to defects. Adapt arguments and imports to the v4 API."
 effect/Effect#orElse:
   replacement: "Effect.catch"
-  note: "Ignore the caught error and evaluate the fallback Effect. Adapt arguments and imports to the v4 API."
+  note: "Use Effect.catch(self, () => that()). Causes containing defects skip the fallback and convert typed errors to defects; interruptions alongside typed errors do not block recovery."
 effect/Effect#orElseFail:
   replacement: "Effect.mapError"
   note: "Replace every typed error with the lazily produced failure value. Adapt arguments and imports to the v4 API."
@@ -662,8 +663,78 @@ effect/Effect#zipRight:
   replacement: "Effect.andThen"
   note: "Sequence the Effects and retain the second result. Adapt arguments and imports to the v4 API."
 "effect/Effect#repeatOrElse":
+  include: true
   replacement: "Effect.repeatOrElse"
-  note: "The fallback receives Option<Schedule.Metadata<B, A>> instead of Option<B>. Read metadata.output for the previous schedule output and metadata.attempt for the attempt count. The error also includes schedule failures."
+  note: "The fallback receives Option<Schedule.Metadata<B, A>> instead of Option<B>. Read metadata.output for the previous schedule output and metadata.attempt for the attempt count. The error also includes schedule failures. Causes containing defects from either the source or policy skip the fallback and convert typed errors to defects. Interruptions alongside typed errors do not block the fallback."
 "effect/Effect#tryPromise":
   replacement: "Effect.tryPromise"
   note: "Use the callback overload for Cause.UnknownError, or the object overload with try and catch to map failures to a custom error. The callback-only overload does not accept a custom error type parameter."
+effect/Effect#catchTag:
+  include: true
+  replacement: "Effect.catchTag"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#catchTags:
+  include: true
+  replacement: "Effect.catchTags"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#catchIf:
+  include: true
+  replacement: "Effect.catchIf"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#match:
+  include: true
+  replacement: "Effect.match"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#matchEffect:
+  include: true
+  replacement: "Effect.matchEffect"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#orElseSucceed:
+  include: true
+  replacement: "Effect.orElseSucceed"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#option:
+  include: true
+  replacement: "Effect.option"
+  note: "Causes containing defects skip typed recovery and convert typed errors to defects, preserving reason order and interruptions. An interruption alongside a typed error does not block recovery."
+
+effect/Effect#ignore:
+  include: true
+  replacement: "Effect.ignore"
+  note: "Ignores recoverable typed errors only. Causes containing defects propagate with typed errors converted to defects; interruptions alongside typed errors do not prevent ignoring them."
+
+effect/Effect#mapError:
+  include: true
+  replacement: "Effect.mapError"
+  note: "Maps every typed error in the cause, preserving defects, interruptions and reason order. Unlike typed recovery, mapping does not convert errors to defects."
+
+effect/Effect#mapBoth:
+  include: true
+  replacement: "Effect.mapBoth"
+  note: "Maps every typed error in the cause, preserving defects, interruptions and reason order. Unlike typed recovery, mapping does not convert errors to defects."
+
+effect/Effect#orDie:
+  include: true
+  replacement: "Effect.orDie"
+  note: "Converts typed errors to defects. If a defect is already present, every typed error is converted to a defect, preserving reason order and interruptions."
+
+effect/Effect#retry:
+  include: true
+  replacement: "Effect.retry"
+  note: "Retries typed source errors, including those alongside interruptions. A source cause containing a defect is not retried and propagates with typed errors converted to defects."
+
+effect/Effect#retryOrElse:
+  include: true
+  replacement: "Effect.retryOrElse"
+  note: "A source cause containing a defect skips retries and the fallback, converting typed errors to defects. Interruptions alongside typed errors do not block retries. Policy failures propagate unchanged."
+
+effect/Effect#repeat:
+  include: true
+  replacement: "Effect.repeat"
+  note: "If the source or policy fails with a cause containing defects, typed errors are converted to defects. An interruption alongside a typed error does not block the typed failure path."

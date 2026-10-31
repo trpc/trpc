@@ -13,6 +13,8 @@ import * as FileSystem from "effect/FileSystem"
 import { pipe } from "effect/Function"
 import * as Path from "effect/Path"
 import * as ChildProcess from "effect/process/ChildProcess"
+import * as CommandLine from "effect/process/CommandLine"
+import * as Result from "effect/Result"
 import * as Stream from "effect/Stream"
 import * as String from "effect/String"
 import * as Glob from "glob"
@@ -47,7 +49,12 @@ export const runCommand = Effect.fnUntraced(function*(
   args: ReadonlyArray<string>,
   shell: boolean
 ) {
-  const handle = yield* ChildProcess.make(executable, args, { shell })
+  // Windows runs `.cmd` shims only through a shell, which takes one script.
+  const handle = yield* (shell
+    ? ChildProcess.make(Result.getOrThrow(CommandLine.join([executable, ...args], { format: "windows" })), {
+      shell
+    })
+    : ChildProcess.make(executable, args))
   const [stdout, stderr, exitCode] = yield* Effect.all([
     Stream.mkString(Stream.decodeText(handle.stdout)),
     Stream.mkString(Stream.decodeText(handle.stderr)),
@@ -77,31 +84,30 @@ const readSourceFiles = Effect.gen(function*() {
 /**
  * Writes a file to the `config.outDir` directory, taking into account the configuration and existing files.
  */
-const writeFileToOutDir = (file: Domain.File) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    const fs = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
-    const process = yield* Domain.Process
-    const cwd = yield* process.cwd
-    const fileName = path.relative(path.join(cwd, config.outDir), file.path)
+const writeFileToOutDir = Effect.fnUntraced(function*(file: Domain.File) {
+  const config = yield* Configuration.Configuration
+  const fs = yield* FileSystem.FileSystem
+  const path = yield* Path.Path
+  const process = yield* Domain.Process
+  const cwd = yield* process.cwd
+  const fileName = path.relative(path.join(cwd, config.outDir), file.path)
 
-    const exists = yield* fs.exists(file.path)
-    if (exists) {
-      if (file.isOverwriteable) {
-        yield* Effect.logDebug(`Overwriting file ${chalk.black(fileName)}...`)
-        yield* fs.makeDirectory(path.dirname(file.path), { recursive: true })
-        yield* fs.writeFileString(file.path, file.content)
-      } else {
-        yield* Effect.logDebug(
-          `File ${chalk.black(fileName)} already exists, skipping creation.`
-        )
-      }
-    } else {
+  const exists = yield* fs.exists(file.path)
+  if (exists) {
+    if (file.isOverwriteable) {
+      yield* Effect.logDebug(`Overwriting file ${chalk.black(fileName)}...`)
       yield* fs.makeDirectory(path.dirname(file.path), { recursive: true })
       yield* fs.writeFileString(file.path, file.content)
+    } else {
+      yield* Effect.logDebug(
+        `File ${chalk.black(fileName)} already exists, skipping creation.`
+      )
     }
-  })
+  } else {
+    yield* fs.makeDirectory(path.dirname(file.path), { recursive: true })
+    yield* fs.writeFileString(file.path, file.content)
+  }
+})
 
 const writeFilesToOutDir = (
   files: ReadonlyArray<Domain.File>
@@ -120,29 +126,28 @@ const parseModules = (files: ReadonlyArray<Domain.File>) =>
 /**
  * Runs the example files for the given modules, type-checking them before execution.
  */
-const typeCheckAndRunExamples = (modules: ReadonlyArray<Domain.Module>) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    yield* cleanupExamples
-    const files = yield* getExampleFiles(modules)
-    const len = files.length
-    if (len > 0) {
-      yield* Effect.logInfo(`${len} example(s) found`)
-      yield* writeExamplesToOutDir(files)
-      yield* createExamplesTsConfigJson
-      yield* Effect.logInfo("Typechecking examples...")
-      yield* runTscOnExamples
-      if (config.runExamples) {
-        yield* Effect.logInfo("Running examples...")
-        yield* runTsxOnExamples
-      } else {
-        yield* Effect.logInfo(chalk.gray("Skipping running examples"))
-      }
+const typeCheckAndRunExamples = Effect.fnUntraced(function*(modules: ReadonlyArray<Domain.Module>) {
+  const config = yield* Configuration.Configuration
+  yield* cleanupExamples
+  const files = yield* getExampleFiles(modules)
+  const len = files.length
+  if (len > 0) {
+    yield* Effect.logInfo(`${len} example(s) found`)
+    yield* writeExamplesToOutDir(files)
+    yield* createExamplesTsConfigJson
+    yield* Effect.logInfo("Typechecking examples...")
+    yield* runTscOnExamples
+    if (config.runExamples) {
+      yield* Effect.logInfo("Running examples...")
+      yield* runTsxOnExamples
     } else {
-      yield* Effect.logInfo("No examples found.")
+      yield* Effect.logInfo(chalk.gray("Skipping running examples"))
     }
-    yield* cleanupExamples
-  })
+  } else {
+    yield* Effect.logInfo("No examples found.")
+  }
+  yield* cleanupExamples
+})
 
 /**
  * Joins an array of strings with a "-" after dropping all empty strings.
@@ -215,141 +220,140 @@ export const extractFencedCode = (content: string): [examples: Array<string>, wa
 /**
  * Generates example files for the given modules.
  */
-const getExampleFiles = (modules: ReadonlyArray<Domain.Module>) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    const path = yield* Path.Path
-    let warnings: Array<string> = []
-    // Flattened module paths can collide, so give every emitted example a unique prefix.
-    let fileIndex = 0
-    const files = Array.flatMap(modules, (module) => {
-      const prefix = module.path.join("-")
+const getExampleFiles = Effect.fnUntraced(function*(modules: ReadonlyArray<Domain.Module>) {
+  const config = yield* Configuration.Configuration
+  const path = yield* Path.Path
+  let warnings: Array<string> = []
+  // Flattened module paths can collide, so give every emitted example a unique prefix.
+  let fileIndex = 0
+  const files = Array.flatMap(modules, (module) => {
+    const prefix = module.path.join("-")
 
-      const getFiles =
-        (exampleId: string) =>
-        (namedDoc: { readonly name: string; readonly doc: Domain.Doc }): ReadonlyArray<Domain.File> => {
-          let descriptionExamples: Array<string> = []
-          if (namedDoc.doc.description !== undefined) {
-            const [es, ws] = extractFencedCode(namedDoc.doc.description)
-            warnings = warnings.concat(ws)
-            descriptionExamples = es
-          }
-          let exampleTagExamples: Array<string> = []
-          for (const example of namedDoc.doc.examples) {
-            const [es, ws] = extractFencedCode(example)
-            warnings = warnings.concat(ws)
-            exampleTagExamples = exampleTagExamples.concat(es)
-          }
-          const examples = descriptionExamples.concat(exampleTagExamples)
-          return Array.map(
-            examples,
-            (example, i) => {
-              return new Domain.File(
-                path.join(
-                  config.outDir,
-                  "examples",
-                  `${fileIndex++}-${prefix}-${exampleId}-${namedDoc.name}-${i}.ts`
-                ),
-                example,
-                true // make the file overwritable
-              )
-            }
-          )
+    const getFiles =
+      (exampleId: string) =>
+      (namedDoc: { readonly name: string; readonly doc: Domain.Doc }): ReadonlyArray<Domain.File> => {
+        let descriptionExamples: Array<string> = []
+        if (namedDoc.doc.description !== undefined) {
+          const [es, ws] = extractFencedCode(namedDoc.doc.description)
+          warnings = warnings.concat(ws)
+          descriptionExamples = es
         }
+        let exampleTagExamples: Array<string> = []
+        for (const example of namedDoc.doc.examples) {
+          const [es, ws] = extractFencedCode(example)
+          warnings = warnings.concat(ws)
+          exampleTagExamples = exampleTagExamples.concat(es)
+        }
+        const examples = descriptionExamples.concat(exampleTagExamples)
+        return Array.map(
+          examples,
+          (example, i) => {
+            return new Domain.File(
+              path.join(
+                config.outDir,
+                "examples",
+                `${fileIndex++}-${prefix}-${exampleId}-${namedDoc.name}-${i}.ts`
+              ),
+              example,
+              true // make the file overwritable
+            )
+          }
+        )
+      }
 
-      const allPrefixedNamespaces = Array.flatMap(module.namespaces, (namespace) =>
-        extractPrefixedNestedNamespaces(namespace, ""))
+    const allPrefixedNamespaces = Array.flatMap(
+      module.namespaces,
+      (namespace) => extractPrefixedNestedNamespaces(namespace, "")
+    )
 
-      const moduleExamples = getFiles("module")(module)
-      const classExamples = Array.flatMap(module.classes, (c) =>
-        Array.flatten([
-          getFiles("class")(c),
-          Array.flatMap(c.properties, getFiles(`${c.name}-property`)),
-          Array.flatMap(
-            c.methods,
-            getFiles(`${c.name}-method`)
-          ),
-          Array.flatMap(
-            c.staticMethods,
-            getFiles(`${c.name}-staticmethod`)
-          )
-        ]))
-      const allPrefixedInterfaces = [
-        ...module.interfaces.map((iface) =>
-          ["" as string, iface] as const
+    const moduleExamples = getFiles("module")(module)
+    const classExamples = Array.flatMap(module.classes, (c) =>
+      Array.flatten([
+        getFiles("class")(c),
+        Array.flatMap(c.properties, getFiles(`${c.name}-property`)),
+        Array.flatMap(
+          c.methods,
+          getFiles(`${c.name}-method`)
         ),
-        ...Array.flatMap(allPrefixedNamespaces, ([prefix, namespace]) =>
-          namespace.interfaces.map((iface) =>
-            [filterJoin([prefix, namespace.name]), iface] as const
-          ))
-      ]
-      const interfacesExamples = Array.flatMap(
-        allPrefixedInterfaces,
-        ([ns, doc]) => getFiles(filterJoin(["interface", ns]))(doc)
-      )
-      const allPrefixedTypeAliases = [
-        ...module.typeAliases.map((typeAlias) => ["" as string, typeAlias] as const),
-        ...Array.flatMap(allPrefixedNamespaces, ([prefix, namespace]) =>
-          namespace.typeAliases.map((typeAlias) =>
-            [filterJoin([prefix, namespace.name]), typeAlias] as const
-          ))
-      ]
-      const typeAliasesExamples = Array.flatMap(
-        allPrefixedTypeAliases,
-        ([ns, doc]) =>
-          getFiles(filterJoin(["typealias", ns]))(doc)
-      )
-      const constantsExamples = Array.flatMap(
-        module.constants,
-        getFiles("constant")
-      )
-      const functionsExamples = Array.flatMap(
-        module.functions,
-        getFiles("function")
-      )
-      const exportsExamples = Array.flatMap(
-        module.exports,
-        getFiles("export")
-      )
-      const namespacesExamples = Array.flatMap(
+        Array.flatMap(
+          c.staticMethods,
+          getFiles(`${c.name}-staticmethod`)
+        )
+      ]))
+    const allPrefixedInterfaces = [
+      ...module.interfaces.map((iface) => ["" as string, iface] as const),
+      ...Array.flatMap(
         allPrefixedNamespaces,
-        ([ns, doc]) => getFiles(filterJoin(["namespace", ns]))(doc)
+        ([prefix, namespace]) =>
+          namespace.interfaces.map((iface) => [filterJoin([prefix, namespace.name]), iface] as const)
       )
+    ]
+    const interfacesExamples = Array.flatMap(
+      allPrefixedInterfaces,
+      ([ns, doc]) => getFiles(filterJoin(["interface", ns]))(doc)
+    )
+    const allPrefixedTypeAliases = [
+      ...module.typeAliases.map((typeAlias) => ["" as string, typeAlias] as const),
+      ...Array.flatMap(
+        allPrefixedNamespaces,
+        ([prefix, namespace]) =>
+          namespace.typeAliases.map((typeAlias) => [filterJoin([prefix, namespace.name]), typeAlias] as const)
+      )
+    ]
+    const typeAliasesExamples = Array.flatMap(
+      allPrefixedTypeAliases,
+      ([ns, doc]) => getFiles(filterJoin(["typealias", ns]))(doc)
+    )
+    const constantsExamples = Array.flatMap(
+      module.constants,
+      getFiles("constant")
+    )
+    const functionsExamples = Array.flatMap(
+      module.functions,
+      getFiles("function")
+    )
+    const exportsExamples = Array.flatMap(
+      module.exports,
+      getFiles("export")
+    )
+    const namespacesExamples = Array.flatMap(
+      allPrefixedNamespaces,
+      ([ns, doc]) => getFiles(filterJoin(["namespace", ns]))(doc)
+    )
 
-      return Array.flatten([
-        moduleExamples,
-        classExamples,
-        interfacesExamples,
-        typeAliasesExamples,
-        constantsExamples,
-        functionsExamples,
-        namespacesExamples,
-        exportsExamples
-      ])
-    })
-
-    if (warnings.length > 0) {
-      yield* Effect.logWarning(warnings.join("\n"))
-    }
-
-    return files
+    return Array.flatten([
+      moduleExamples,
+      classExamples,
+      interfacesExamples,
+      typeAliasesExamples,
+      constantsExamples,
+      functionsExamples,
+      namespacesExamples,
+      exportsExamples
+    ])
   })
+
+  if (warnings.length > 0) {
+    yield* Effect.logWarning(warnings.join("\n"))
+  }
+
+  return files
+})
 
 /**
  * Generates an entry point file for the given examples.
  */
-const getExamplesEntryPoint = (examples: ReadonlyArray<Domain.File>) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    const path = yield* Path.Path
-    const content = examples.map((example) => `import './${path.basename(example.path, ".ts")}'`)
-      .join("\n")
-    return new Domain.File(
-      path.normalize(path.join(config.outDir, "examples", "index.ts")),
-      `${content}\n`,
-      true // make the file overwritable
-    )
-  })
+const getExamplesEntryPoint = Effect.fnUntraced(function*(examples: ReadonlyArray<Domain.File>) {
+  const config = yield* Configuration.Configuration
+  const path = yield* Path.Path
+  const content = examples.map((example) => `import './${path.basename(example.path, ".ts")}'`)
+    .join("\n")
+  return new Domain.File(
+    path.normalize(path.join(config.outDir, "examples", "index.ts")),
+    `${content}\n`,
+    true // make the file overwritable
+  )
+})
 
 /**
  * Removes the "examples" directory from the output directory specified in the configuration.
@@ -425,13 +429,12 @@ const runTsxOnExamples = Effect.gen(function*() {
   }
 })
 
-const writeExamplesToOutDir = (examples: ReadonlyArray<Domain.File>) =>
-  Effect.gen(function*() {
-    yield* Effect.logDebug("Writing examples...")
-    const entryPoint = yield* getExamplesEntryPoint(examples)
-    const files = [entryPoint, ...examples]
-    yield* writeFilesToOutDir(files)
-  })
+const writeExamplesToOutDir = Effect.fnUntraced(function*(examples: ReadonlyArray<Domain.File>) {
+  yield* Effect.logDebug("Writing examples...")
+  const entryPoint = yield* getExamplesEntryPoint(examples)
+  const files = [entryPoint, ...examples]
+  yield* writeFilesToOutDir(files)
+})
 
 const createExamplesTsConfigJson = Effect.gen(function*() {
   yield* Effect.logDebug("Writing examples tsconfig...")
@@ -448,14 +451,13 @@ const createExamplesTsConfigJson = Effect.gen(function*() {
   )
 })
 
-const getMarkdown = (modules: ReadonlyArray<Domain.Module>) =>
-  Effect.gen(function*() {
-    const homepage = yield* getMarkdownHomepage
-    const index = yield* getMarkdownIndex
-    const yml = yield* getMarkdownConfigYML
-    const moduleFiles = yield* getModuleMarkdownFiles(modules)
-    return [homepage, index, yml, ...moduleFiles]
-  })
+const getMarkdown = Effect.fnUntraced(function*(modules: ReadonlyArray<Domain.Module>) {
+  const homepage = yield* getMarkdownHomepage
+  const index = yield* getMarkdownIndex
+  const yml = yield* getMarkdownConfigYML
+  const moduleFiles = yield* getModuleMarkdownFiles(modules)
+  return [homepage, index, yml, ...moduleFiles]
+})
 
 const getMarkdownHomepage = Effect.gen(function*() {
   const config = yield* Configuration.Configuration
@@ -495,19 +497,18 @@ const getMarkdownIndex = Effect.gen(function*() {
   )
 })
 
-const resolveConfigYML = (content: string) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    return content
-      .replace(/^remote_theme:.*$/m, `remote_theme: ${config.theme}`)
-      .replace(
-        /^search_enabled:.*$/m,
-        `search_enabled: ${config.enableSearch}`
-      ).replace(
-        /^ {2}'\S* on GitHub':\n {4}- '.*'/m,
-        `  '${config.projectName} on GitHub':\n    - '${config.projectHomepage}'`
-      )
-  })
+const resolveConfigYML = Effect.fnUntraced(function*(content: string) {
+  const config = yield* Configuration.Configuration
+  return content
+    .replace(/^remote_theme:.*$/m, `remote_theme: ${config.theme}`)
+    .replace(
+      /^search_enabled:.*$/m,
+      `search_enabled: ${config.enableSearch}`
+    ).replace(
+      /^ {2}'\S* on GitHub':\n {4}- '.*'/m,
+      `  '${config.projectName} on GitHub':\n    - '${config.projectHomepage}'`
+    )
+})
 
 const getHomepageNavigationHeader = (config: Configuration.ConfigurationShape): string => {
   const isGitHub = config.projectHomepage.toLowerCase().includes("github")
@@ -545,17 +546,15 @@ const getMarkdownConfigYML = Effect.gen(function*() {
   }
 })
 
-const getModuleMarkdownOutputPath = (module: Domain.Module) => {
-  return Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    const path = yield* Path.Path
-    return path.normalize(path.join(
-      config.outDir,
-      "modules",
-      `${path.relative(config.srcDir, module.path.join(path.sep))}.md`
-    ))
-  })
-}
+const getModuleMarkdownOutputPath = Effect.fnUntraced(function*(module: Domain.Module) {
+  const config = yield* Configuration.Configuration
+  const path = yield* Path.Path
+  return path.normalize(path.join(
+    config.outDir,
+    "modules",
+    `${path.relative(config.srcDir, module.path.join(path.sep))}.md`
+  ))
+})
 
 /** @internal */
 export const getModuleMarkdownFiles = (modules: ReadonlyArray<Domain.Module>) =>
@@ -580,19 +579,18 @@ ${toc}
       return new Domain.File(outputPath, prettified, true)
     }))
 
-const writeMarkdown = (files: ReadonlyArray<Domain.File>) =>
-  Effect.gen(function*() {
-    const config = yield* Configuration.Configuration
-    const fileSystem = yield* FileSystem.FileSystem
-    const path = yield* Path.Path.pipe(Effect.provide(NodePath.layerPosix))
-    const pattern = path.normalize(path.join(config.outDir, "**/*.ts.md"))
-    yield* Effect.logDebug(`Deleting ${chalk.black(pattern)}...`)
-    const paths = yield* glob(pattern)
-    yield* Effect.forEach(paths, (path) => fileSystem.remove(path, { recursive: true }), {
-      concurrency: "unbounded"
-    })
-    return yield* writeFilesToOutDir(files)
+const writeMarkdown = Effect.fnUntraced(function*(files: ReadonlyArray<Domain.File>) {
+  const config = yield* Configuration.Configuration
+  const fileSystem = yield* FileSystem.FileSystem
+  const path = yield* Path.Path.pipe(Effect.provide(NodePath.layerPosix))
+  const pattern = path.normalize(path.join(config.outDir, "**/*.ts.md"))
+  yield* Effect.logDebug(`Deleting ${chalk.black(pattern)}...`)
+  const paths = yield* glob(pattern)
+  yield* Effect.forEach(paths, (path) => fileSystem.remove(path, { recursive: true }), {
+    concurrency: "unbounded"
   })
+  return yield* writeFilesToOutDir(files)
+})
 
 /** @internal */
 export const program = Effect.gen(function*() {

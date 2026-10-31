@@ -53,12 +53,10 @@ const makeSource = (source: string | ast.SourceFile) => {
   })
 }
 
-const print = (printables: ReadonlyArray<Printer.Printable>) => {
-  return Effect.gen(function*() {
-    const strings = yield* Effect.forEach(printables, (printable) => Printer.print(printable))
-    return strings.join("\n")
-  })
-}
+const print = Effect.fnUntraced(function*(printables: ReadonlyArray<Printer.Printable>) {
+  const strings = yield* Effect.forEach(printables, (printable) => Printer.print(printable))
+  return strings.join("\n")
+})
 
 const isModule = (printableOr: ReadonlyArray<Printer.Printable> | Domain.Module): printableOr is Domain.Module => {
   return !Array.isArray(printableOr)

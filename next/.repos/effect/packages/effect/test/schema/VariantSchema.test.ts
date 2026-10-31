@@ -94,6 +94,42 @@ describe("Model", () => {
     assert.isTrue(person instanceof Person)
   })
 
+  it("Class.extend preserves inherited members and variants", () => {
+    class Person extends Model.Class<Person>("Person")({
+      id: Model.GeneratedByDb(Schema.Number),
+      name: Schema.String
+    }) {
+      get upperName() {
+        return this.name.toUpperCase()
+      }
+    }
+    const base: Schema.Class<
+      Person,
+      Schema.Struct<{ readonly id: Schema.Number; readonly name: Schema.String }>,
+      {}
+    > = Person
+    assert.isTrue(Schema.isSchema(base))
+    Model.extract(Person, "json")
+    class PersonWithPosts extends Person.extend<PersonWithPosts>("PersonWithPosts")({
+      posts: Model.FieldOnly(["select", "json"])(Schema.Array(Schema.String))
+    }) {}
+
+    const person = Schema.decodeSync(PersonWithPosts)({ id: 1, name: "Alex", posts: ["Hello"] })
+
+    assert.isTrue(person instanceof PersonWithPosts)
+    assert.isTrue(person instanceof Person)
+    assert.strictEqual(person.upperName, "ALEX")
+    assert.deepStrictEqual(person.posts, ["Hello"])
+    assert.deepStrictEqual(Object.keys(PersonWithPosts.select.fields), ["id", "name", "posts"])
+    assert.deepStrictEqual(Object.keys(PersonWithPosts.insert.fields), ["name"])
+    assert.deepStrictEqual(Object.keys(Model.extract(PersonWithPosts, "json").fields), ["id", "name", "posts"])
+    assert.deepStrictEqual(Schema.decodeSync(PersonWithPosts.json)({ id: 1, name: "Alex", posts: [] }), {
+      id: 1,
+      name: "Alex",
+      posts: []
+    })
+  })
+
   it("FieldOption preserves omitted variants", () => {
     const field = Model.FieldOption(Model.Field({ select: Schema.String, json: undefined }))
     assert.strictEqual(field.schemas.json, undefined)
@@ -125,6 +161,17 @@ describe("Model", () => {
     assert.deepStrictEqual(encodeJson({ active: true }), { active: true })
     assert.deepStrictEqual(decodeJson({ active: false }), { active: false })
   })
+
+  it.effect("UuidV7Insert generates strictly increasing ids", () =>
+    Effect.gen(function*() {
+      const insert = Model.extract(
+        Model.Struct({ id: Model.UuidV7Insert(Schema.String.pipe(Schema.brand("Id"))) }),
+        "insert"
+      )
+      const ids: Array<string> = []
+      for (let i = 0; i < 2000; i++) ids.push((yield* insert.makeEffect({})).id)
+      assert.isTrue(ids.every((id, i) => i === 0 || ids[i - 1] < id))
+    }))
 
   it.effect("Overrideable defaults are constructor-only and accept explicit overrides", () =>
     Effect.gen(function*() {
