@@ -373,7 +373,7 @@ export const trpc = createTRPCOptionsProxy({
 You're all set! You can now prefetch queries in server components and consume them in client components.
 
 :::tip
-To avoid repeating the procedure and input in client components, start queries with `unstable_prefetch` or `unstable_ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
+To avoid repeating the procedure and input in client components, start queries on a handle proxy with `prefetch` or `ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
 :::
 
 #### Prefetching in a Server Component
