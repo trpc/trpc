@@ -195,13 +195,6 @@ interface Key {
   readonly options: QueryAtomOptions | undefined;
 }
 
-/** `Atom.serializable()`'s options with `skipInitialRun`, which effect 4.0.6 added. */
-interface SerializableOptions {
-  readonly key: string;
-  readonly schema: Schema.Codec<unknown, unknown>;
-  readonly skipInitialRun: boolean;
-}
-
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null) return false;
   const proto = Object.getPrototypeOf(value);
@@ -311,14 +304,12 @@ export function createAtomClient(opts: {
     // reads it through `get.once`, so a hydrated value on a wrapper would
     // still send the request.
     if (key.type === 'query') {
-      // From effect 4.0.6, a hydrated atom still runs on mount without
-      // `skipInitialRun`; earlier 4.x skip that run anyway.
-      const serializable: SerializableOptions = {
+      // Without `skipInitialRun`, a hydrated atom still runs on mount.
+      atom = Atom.serializable(atom, {
         key: `trpc:${atomKey.id}`,
         schema: resultSchema as Schema.Codec<unknown, unknown>,
         skipInitialRun: true,
-      };
-      atom = Atom.serializable(atom, serializable);
+      });
     }
     if (options?.reactivityKeys) {
       atom = runtime.factory.withReactivity(options.reactivityKeys)(atom);
