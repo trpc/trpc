@@ -189,7 +189,7 @@
     "zod": "4.6.5"
   },
   "peerDependencies": {
-    "effect": "^4.0.0",
+    "effect": "^4.1.0",
     "typescript": ">=5.7.2"
   },
   "peerDependenciesMeta": {

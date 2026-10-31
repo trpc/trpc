@@ -40,6 +40,6 @@
   },
   "peerDependencies": {
     "@tanstack/db": ">=0.15.0 <0.16.0",
-    "effect": "^4.0.0"
+    "effect": "^4.1.0"
   }
 }

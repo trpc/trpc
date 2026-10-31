@@ -47,7 +47,7 @@
   "peerDependencies": {
     "@tanstack/svelte-query": "^6.3.0",
     "@trpc12/trpc": "workspace:*",
-    "effect": "^4.0.0",
+    "effect": "^4.1.0",
     "svelte": "^5.25"
   }
 }

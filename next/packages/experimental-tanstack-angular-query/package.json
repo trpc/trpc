@@ -51,6 +51,6 @@
     "@angular/core": ">=19",
     "@tanstack/angular-query-experimental": "^5.104.0",
     "@trpc12/trpc": "workspace:*",
-    "effect": "^4.0.0"
+    "effect": "^4.1.0"
   }
 }

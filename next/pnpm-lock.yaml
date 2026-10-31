@@ -1627,11 +1627,11 @@ importers:
   packages/upgrade:
     dependencies:
       '@effect/platform-node':
-        specifier: ^4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: ^4.1.0
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       effect:
-        specifier: ^4.0.0
-        version: 4.0.2
+        specifier: ^4.1.0
+        version: 4.1.1
       magic-string:
         specifier: ^0.30.21
         version: 0.30.21
@@ -3600,13 +3600,6 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       effect: ^4.0.1
-      redis: '>=5.0.0 <7.0.0'
-
-  '@effect/platform-node@4.0.2':
-    resolution: {integrity: sha512-RWesXBQStnFHdD465gR5thFKgXO7FSyCKRZ56nWXB7PedNVzr8vV0nb/3MULLdri493sMz/b/pmGBTb6K8cBjQ==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      effect: ^4.0.2
       redis: '>=5.0.0 <7.0.0'
 
   '@effect/platform-node@4.1.1':
@@ -7713,9 +7706,6 @@ packages:
   effect@4.0.1:
     resolution: {integrity: sha512-b1VlQG9g8fwxE5QnIZuPoOP/0MsqHJSRKxUijjoM80E5q95FXrX5yWtY5XI8G+GJsBQAVSDbLS458z9a++uVvw==}
 
-  effect@4.0.2:
-    resolution: {integrity: sha512-YeYnLqSFrL4+tCOXRrfNP03w8FILoF/wDl+ukraJAGzXrjcS383W7LAAvGBbLatEyktmLxRq+9xJinx7QzXW5A==}
-
   effect@4.1.1:
     resolution: {integrity: sha512-XYu65BrcmNqu5i7PPvP4dqL+R5ma37zIsfuSPjcn78mog+6e5PkilNg7Xo+pBpjXJYlWEIpH4j91tMrfW05CMw==}
 
@@ -11367,15 +11357,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node-shared@4.0.2(effect@4.0.2)':
-    dependencies:
-      '@types/ws': 8.18.2
-      effect: 4.0.2
-      ws: 8.22.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
   '@effect/platform-node-shared@4.1.1(effect@4.1.1)':
     dependencies:
       '@types/ws': 8.18.2
@@ -11389,16 +11370,6 @@ snapshots:
     dependencies:
       '@effect/platform-node-shared': 4.0.2(effect@4.0.1)
       effect: 4.0.1
-      redis: 6.3.0(@opentelemetry/api@1.9.1)
-      undici: 8.11.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@effect/platform-node@4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))':
-    dependencies:
-      '@effect/platform-node-shared': 4.0.2(effect@4.0.2)
-      effect: 4.0.2
       redis: 6.3.0(@opentelemetry/api@1.9.1)
       undici: 8.11.2
     transitivePeerDependencies:
@@ -15005,8 +14976,6 @@ snapshots:
       fast-check: 3.23.2
 
   effect@4.0.1: {}
-
-  effect@4.0.2: {}
 
   effect@4.1.1: {}
 

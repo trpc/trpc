@@ -42,11 +42,11 @@
     "vite-plus": "1.1.0"
   },
   "peerDependencies": {
-    "@effect/platform-node": "^4.0.2",
+    "@effect/platform-node": "^4.1.0",
     "@nestjs/common": "^12.0.0",
     "@nestjs/core": "^12.0.0",
     "@trpc12/trpc": "workspace:*",
-    "effect": "^4.0.0",
+    "effect": "^4.1.0",
     "rxjs": "^7.8.0"
   }
 }

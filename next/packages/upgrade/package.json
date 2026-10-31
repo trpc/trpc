@@ -34,8 +34,8 @@
     "build": "node ../../tooling/pack/pack.ts src/bin.ts"
   },
   "dependencies": {
-    "@effect/platform-node": "^4.0.2",
-    "effect": "^4.0.0",
+    "@effect/platform-node": "^4.1.0",
+    "effect": "^4.1.0",
     "magic-string": "^0.30.21",
     "oxc-parser": "^0.154.0"
   },
