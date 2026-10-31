@@ -18,25 +18,46 @@ const attempt = <A>(method: string, run: () => Promise<A>, key?: string) =>
       }),
   });
 
+/** `makeStringOnly()`'s options with `keys` and `clearPrefix`, which effect 4.1 added. */
+type StoreOptions = KeyValueStore.MakeStringOptions & {
+  readonly keys: Effect.Effect<
+    ReadonlyArray<string>,
+    KeyValueStore.KeyValueStoreError
+  >;
+  readonly clearPrefix: (
+    prefix: string,
+  ) => Effect.Effect<void, KeyValueStore.KeyValueStoreError>;
+};
+
 /** A `KeyValueStore` on `storage`, every key under `prefix`. */
 export const durableObjectStore = (
   storage: DurableObjectStorage,
   prefix = 'kv:',
-): KeyValueStore.KeyValueStore =>
-  KeyValueStore.makeStringOnly({
+): KeyValueStore.KeyValueStore => {
+  const list = async (under = '') => [
+    ...(await storage.list({ prefix: prefix + under })).keys(),
+  ];
+  const deleteUnder = async (under = '') => {
+    const keys = await list(under);
+    for (let i = 0; i < keys.length; i += 128) {
+      await storage.delete(keys.slice(i, i + 128));
+    }
+  };
+  const options: StoreOptions = {
     get: (key) => attempt('get', () => storage.get<string>(prefix + key), key),
     set: (key, value) =>
       attempt('set', () => storage.put(prefix + key, value), key),
     remove: (key) =>
       attempt('remove', () => storage.delete(prefix + key).then(() => {}), key),
-    clear: attempt('clear', async () => {
-      const keys = [...(await storage.list({ prefix })).keys()];
-      for (let i = 0; i < keys.length; i += 128) {
-        await storage.delete(keys.slice(i, i + 128));
-      }
-    }),
-    size: attempt('size', async () => (await storage.list({ prefix })).size),
-  });
+    clear: attempt('clear', () => deleteUnder()),
+    clearPrefix: (under) => attempt('clearPrefix', () => deleteUnder(under)),
+    size: attempt('size', async () => (await list()).length),
+    keys: attempt('keys', async () =>
+      (await list()).map((key) => key.slice(prefix.length)),
+    ),
+  };
+  return KeyValueStore.makeStringOnly(options);
+};
 
 /** `BackingPersistence` for `experimental_durable()` on `storage`. */
 export const durableObjectPersistence = (
