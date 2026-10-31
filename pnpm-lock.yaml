@@ -177,11 +177,11 @@ catalogs:
       specifier: ^4.7.1
       version: 4.7.1
     '@lerna-lite/cli':
-      specifier: ^5.6.3
-      version: 5.6.3
+      specifier: ^5.6.4
+      version: 5.6.4
     '@lerna-lite/publish':
-      specifier: ^5.6.3
-      version: 5.6.3
+      specifier: ^5.6.4
+      version: 5.6.4
     '@types/node':
       specifier: ^24.13.4
       version: 24.13.4
@@ -192,8 +192,8 @@ catalogs:
       specifier: ^5.0.0
       version: 5.0.0
     devalue:
-      specifier: ^5.9.2
-      version: 5.9.2
+      specifier: ^6.0.0
+      version: 6.0.2
     eslint:
       specifier: ^10.10.0
       version: 10.10.0
@@ -256,9 +256,6 @@ catalogs:
       specifier: ^6.0.3
       version: 6.0.3
 
-patchedDependencies:
-  '@lerna-lite/core@5.6.3': 41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6
-
 importers:
 
   .:
@@ -277,10 +274,10 @@ importers:
         version: 4.7.1(@vue/compiler-sfc@3.5.16)(prettier@3.9.6)(supports-color@7.2.0)
       '@lerna-lite/cli':
         specifier: 'catalog:'
-        version: 5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
+        version: 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
       '@lerna-lite/publish':
         specifier: 'catalog:'
-        version: 5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0)
+        version: 5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0)
       '@manypkg/cli':
         specifier: ^0.22.0
         version: 0.22.0
@@ -1754,6 +1751,9 @@ importers:
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@vercel/functions':
+        specifier: ^3.10.5
+        version: 3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.21.3)
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -1763,6 +1763,9 @@ importers:
       next-auth:
         specifier: npm:next-auth@^4.24.15
         version: 4.24.15(next@15.5.25(@babel/core@7.26.9(supports-color@10.0.0))(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      postgres:
+        specifier: ^3.4.4
+        version: 3.4.4
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -2191,7 +2194,7 @@ importers:
         specifier: ^0.0.27
         version: 0.0.27
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -2236,13 +2239,13 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2258,7 +2261,7 @@ importers:
         version: 19.1.1(@types/react@19.1.0)
       devalue:
         specifier: 'catalog:'
-        version: 5.9.2
+        version: 6.0.2
       eslint:
         specifier: 'catalog:'
         version: 10.10.0(jiti@2.6.1)(supports-color@10.0.0)
@@ -2300,7 +2303,7 @@ importers:
         specifier: ^0.0.27
         version: 0.0.27
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -2357,10 +2360,10 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../client
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2439,7 +2442,7 @@ importers:
         version: 8.5.10
       devalue:
         specifier: 'catalog:'
-        version: 5.9.2
+        version: 6.0.2
       eslint:
         specifier: 'catalog:'
         version: 10.10.0(jiti@2.6.1)(supports-color@10.0.0)
@@ -2501,10 +2504,10 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../client
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -2555,10 +2558,10 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../client
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -2574,7 +2577,7 @@ importers:
         version: 2.2.2
       devalue:
         specifier: 'catalog:'
-        version: 5.9.2
+        version: 6.0.2
       effect:
         specifier: 3.22.2
         version: 3.22.2
@@ -2658,16 +2661,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../server
       '@trpc/tanstack-react-query':
-        specifier: 11.22.0
+        specifier: 11.22.1
         version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 17.3.0
@@ -2807,9 +2810,6 @@ importers:
       react-icons:
         specifier: ^5.4.0
         version: 5.4.0(react@19.1.0)
-      react-tweet:
-        specifier: ^3.2.1
-        version: 3.2.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       remark-shiki-twoslash:
         specifier: ^3.1.3
         version: 3.1.3(supports-color@10.0.0)(typescript@5.9.2)
@@ -4912,18 +4912,6 @@ packages:
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
-
-  '@conventional-changelog/git-client@3.1.2':
-    resolution: {integrity: sha512-jZqwnJwf7nboIlAcw/mkOjVa6DexCcUOgT2oOQgkoi3z9vR8tGFkcMy2BFcYwjhL9sYcDDXkRQDayiDieCoW7A==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      conventional-commits-filter: ^6.0.1
-      conventional-commits-parser: ^7.1.2
-    peerDependenciesMeta:
-      conventional-commits-filter:
-        optional: true
-      conventional-commits-parser:
-        optional: true
 
   '@conventional-changelog/git-client@3.2.0':
     resolution: {integrity: sha512-sD/E0vzpkoDz/dqM1Hhv0ihC4KBw6RXjefeO8SG1XrX+wGkMxe1pKeedkKDPCtr2JjuhbuS9aJNgOvnT8hbeBw==}
@@ -7232,8 +7220,8 @@ packages:
   '@leichtgewicht/ip-codec@2.0.4':
     resolution: {integrity: sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==}
 
-  '@lerna-lite/cli@5.6.3':
-    resolution: {integrity: sha512-DL79xF5lGeT/7JflVm9L9Gz3z5EJW1zsc/UbUi7dCXMNGKgeD0HSO976GVQi5hSNQDBwYEApWKtEdZOntdn9+A==}
+  '@lerna-lite/cli@5.6.4':
+    resolution: {integrity: sha512-Oyh/ReScWByM9KxcPHVkeatDeygGuCZtEZgf+o4gZo9KPvG0Xy3WxTlpyzYs4LG869orBi1Ru+G73oCq5+G8bQ==}
     engines: {node: ^22.17.0 || >=24.0.0}
     hasBin: true
     peerDependencies:
@@ -7257,24 +7245,24 @@ packages:
       '@lerna-lite/watch':
         optional: true
 
-  '@lerna-lite/core@5.6.3':
-    resolution: {integrity: sha512-33QjLOI+Nsgio2+BAhepCala8H0gaRiOoAEz2T/eGm+vUx2gxEaL/rXRBSCJSRE3LVGGYTat8NMyIQ5F3CxVVg==}
+  '@lerna-lite/core@5.6.4':
+    resolution: {integrity: sha512-QvCoTbJ67q0v0ZwL/C6yRDj38PeNBJGeIig8w8Y/9LVQ6ufuvwOj9Z+Ag10YE0UfVSrXLCMlgWlfrGs1J0zC6g==}
     engines: {node: ^22.17.0 || >=24.0.0}
 
-  '@lerna-lite/init@5.6.3':
-    resolution: {integrity: sha512-Ad1J0tdkF9oMiLXth7Y00QYW9ZSeRd0kAeLQNGVOJknpVEwPhaOG+T4R062FPpKOx58EIVJvvVOm8HNTlUqV5w==}
+  '@lerna-lite/init@5.6.4':
+    resolution: {integrity: sha512-B5I+2VOKjr7cmxt2DDDQoxnL+eergZQ82+8h61IJBb9yt5D60f8R8chkuARJcTTErwhco0RzRSZ/5N16yJeGMg==}
     engines: {node: ^22.17.0 || >=24.0.0}
 
   '@lerna-lite/npmlog@5.4.1':
     resolution: {integrity: sha512-APylzmp9eDWsM5ZLnTUwV6uwTshtWAbKIF4sA0/SgBsdbgfJUVoz5VTviBnyODCKRzpjcR1MAlRTcjUmKXSbKA==}
     engines: {node: ^22.17.0 || >=24.0.0}
 
-  '@lerna-lite/publish@5.6.3':
-    resolution: {integrity: sha512-sw45Ld5XKwlQ3R5k2I8GhOJ0bcy2RUvWTOcoz0JizEJxP0qO5uAwaEq1x1UnUmlSvH8DTYNVnf2sSQolLkrGFA==}
+  '@lerna-lite/publish@5.6.4':
+    resolution: {integrity: sha512-kpAWEdt2TBjF2tM7eOEKx/XyL0ukvzqY1QTyfYiiLl6al3K0j7lfQnG1XS8deOekFxgGj2xcUo94K+xwARtWHQ==}
     engines: {node: ^22.17.0 || >=24.0.0}
 
-  '@lerna-lite/version@5.6.3':
-    resolution: {integrity: sha512-aPzu2FOL5UW1GcfgXg92KVWDjgl6z4LLjzeDZ6kcYfftJAWsiGDNtZo8boRUq5QUJcU7eY3+leTPte8NfbOtPQ==}
+  '@lerna-lite/version@5.6.4':
+    resolution: {integrity: sha512-K02p93Q3M2Sjqd4PfLsf3aRGG+3W1P5heiQwX4AisE3ffsdbmWNm05O37NF9ifB+PGEfiR+9Ntzrfeu8vtluuA==}
     engines: {node: ^22.17.0 || >=24.0.0}
 
   '@lit-labs/ssr-dom-shim@1.3.0':
@@ -7482,10 +7470,6 @@ packages:
     resolution: {integrity: sha512-uuG5HZFXLfyFKqg8QypsmgLQW7smiRjVc45bqD/ofZZcR/uxEjgQU8qDPv0s9TEeMUiAAU/GC5bR6++UdTirIQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@npmcli/package-json@7.0.2':
-    resolution: {integrity: sha512-0ylN3U5htO1SJTmy2YI78PZZjLkKUGg7EKgukb2CRi0kzyoDr0cfjHAzi7kozVhj2V3SxN1oyKqZ2NSo40z00g==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
   '@npmcli/package-json@7.0.5':
     resolution: {integrity: sha512-iVuTlG3ORq2iaVa1IWUxAO/jIp77tUKBhoMjuzYW2kL4MLN1bi/ofqkZ7D7OOwh8coAx1/S2ge0rMdGv8sLSOQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -7498,16 +7482,8 @@ packages:
     resolution: {integrity: sha512-8TZWfTQOsODpLqo9SVhVjHovmKXNpevHU0gO9e+y4V4fRIOneiXy0u0sMP9LmS71XivrEWfZWg50ReH4WRT4aQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@npmcli/redact@3.2.2':
-    resolution: {integrity: sha512-7VmYAmk4csGv08QzrDKScdzn11jHPFGyqJW39FyPgPuAp3zIaUmuCo1yxw9aGs+NEJuTGQ9Gwqpt93vtJubucg==}
-    engines: {node: ^18.17.0 || >=20.5.0}
-
   '@npmcli/redact@4.0.0':
     resolution: {integrity: sha512-gOBg5YHMfZy+TfHArfVogwgfBeQnKbbGo3pSUyK/gSI0AVu+pEiDVcKlQb0D8Mg1LNRZILZ6XG8I5dJ4KuAd9Q==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
-  '@npmcli/run-script@10.0.3':
-    resolution: {integrity: sha512-ER2N6itRkzWbbtVmZ9WKaWxVlKlOeBFF1/7xx+KA5J1xKa4JjUwBdb6tDpk0v1qA+d+VDwHI9qmLcXSWcmi+Rw==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/run-script@10.0.4':
@@ -10237,6 +10213,25 @@ packages:
   '@unkey/ratelimit@2.0.0':
     resolution: {integrity: sha512-QwOBO7n7BngOZ8yknh4KyHVFweBYk9gVED33y7BpBZMLXnBeLnc2ttMXqTUH7b5rhyQkqnWrqHw4fbxLu8UnkQ==}
 
+  '@vercel/cli-config@0.3.5':
+    resolution: {integrity: sha512-O7y3EFzHENSLtE/3fjM3vIRqDpFFhZor2dMcZaND4G1d88gQk9u8yBcZhRR9CKnBowgzXdl0qcXkuINI05I72w==}
+
+  '@vercel/cli-exec@1.0.1':
+    resolution: {integrity: sha512-g9XerViJ/paZujufXYcu5XYI2vU2rtB4sgdpjUHde5RnOkdmpu0ngH46LCFGHoPXO/C+qDPSczIHIRN+8Q2YKQ==}
+    engines: {node: '>= 18'}
+
+  '@vercel/functions@3.10.5':
+    resolution: {integrity: sha512-IDqsDlIbVjWk5zoV63N41vKSShH3LgJ8Y5gAQc+dq7HEkHRrVh3naJ/klZxit4B8G+8WEK7ezb/tkOU2g3UViw==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-web-identity': '*'
+      ws: '>=8'
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-web-identity':
+        optional: true
+      ws:
+        optional: true
+
   '@vercel/nft@1.11.0':
     resolution: {integrity: sha512-m1QFg+U+3yPOnP1xSYJ73UIRxLOXdts1JOhiOiyPYqEsALgrXFFINvgUaD6R6iNvaBFAjHllBCbkfx4FuOdpaA==}
     engines: {node: '>=20'}
@@ -10245,6 +10240,10 @@ packages:
   '@vercel/og@1.0.0':
     resolution: {integrity: sha512-/uj/sVvxE4SFYUmc4VnMHGkVx/m+jkWzsqAawAghK8BFm5KXP8WAJ475osnO0xhqhptlZLWJDXcxGDht/sVm+g==}
     engines: {node: '>=16'}
+
+  '@vercel/oidc@4.0.5':
+    resolution: {integrity: sha512-E+duTxv0W8r3qNCGUYxTLt0V0BlLUlrEqxYOu2OoFubIbxwGjwm4wofache+YgU6Sr0MwoAA/vsSrrNrrWjimw==}
+    engines: {node: '>= 20'}
 
   '@visx/group@3.0.0':
     resolution: {integrity: sha512-SFjXhTMcsaVAb1/TVL1KM5vn8gQTIVgSx0ATdDl4BJSFp2ym1lO8LY4jpV4SFweaHnWxVwrrfGLTn5QsYnvmjQ==}
@@ -11702,11 +11701,6 @@ packages:
     resolution: {integrity: sha512-GZ8E3RQzXQb3JFy0pKl8oeSf7ENIhvAMvJr+PlWkavZOesLHHdhkfNJ4SvW35eo1Fu2+EyVxWQ1tVvtzAG2iWg==}
     engines: {node: '>=22'}
 
-  conventional-changelog-writer@9.2.1:
-    resolution: {integrity: sha512-StlYSmW3wLedRaqohJMpP3YuWiAqtgD0/cpsai9frdDkXv7rxj0hRbpJrubPYvJxJsjplONsOobEQnPuS9UgCg==}
-    engines: {node: '>=22'}
-    hasBin: true
-
   conventional-changelog-writer@9.3.0:
     resolution: {integrity: sha512-lxiECDlvy880e7JIYAtAhxg0wD/CGCVbZCdeua5aOlQVFTEd39zAeOzwK22i/FO4xnEOURK1gbUTETNEYW7zxQ==}
     engines: {node: '>=22'}
@@ -11720,11 +11714,6 @@ packages:
   conventional-commits-filter@6.0.1:
     resolution: {integrity: sha512-cs+LadpH7Kpw0M3k8wurk+sOVVDAENA0iK4OBOrkL94j5lEVYRJ4j3zd2bhY9qgzyrPqthdcYT3axzRN7AliMg==}
     engines: {node: '>=22'}
-
-  conventional-commits-parser@7.1.2:
-    resolution: {integrity: sha512-O+x4N2yH+ijvqWlIyTHsXTAP+algNWgGbjY2duCe8w2vUMvUB95cLRslCPfTMQyLAKlet3bhZTdu6ozn4M+QJQ==}
-    engines: {node: '>=22'}
-    hasBin: true
 
   conventional-commits-parser@7.1.3:
     resolution: {integrity: sha512-Q9oWm1o9uy/oEsZQIraoFMZ4RuPD+79KgwWj6mJVP356tazolCB0piRLZ5Kz9te9p027uSEcUW+Gu44Eh+X79g==}
@@ -12315,8 +12304,12 @@ packages:
     engines: {node: '>= 16.0.0'}
     hasBin: true
 
-  devalue@5.9.2:
-    resolution: {integrity: sha512-po4PAY5c53tw5XMocSnf8A/5OHhbbUftpr93aEN6BBoAdntUmK7vu7wOATqvt7cXO7m1Cl4gMVn6p7n6n4mj0w==}
+  devalue@5.9.4:
+    resolution: {integrity: sha512-sPAT4pztbu6586/hrhOnMKS17IJrvg12mXiSPSS3W5qDeN2RGgvZ0diZCm31dBbnevfVmujNO3IM2wrS4Y2Rhg==}
+
+  devalue@6.0.2:
+    resolution: {integrity: sha512-6V1HzU4to74skg//ScZR2mp9bdz+rESC9jQzVIIG/ha0HYgymHcXIQQCjH0+ivRaSuY82fa9fZ7Ro6QZT4s4uw==}
+    engines: {node: '>=22.17'}
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
@@ -14564,6 +14557,9 @@ packages:
   jose@4.15.9:
     resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
 
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
+
   jose@6.2.12:
     resolution: {integrity: sha512-9NiFmJEex0sy2Dk58j2UGBSHgUs2ypF9eZSu4L6vjOX3Dp96Sw1F3uL+H+D1sx02jZZdzUT0HgvCy59CuvXcWw==}
 
@@ -15896,16 +15892,8 @@ packages:
     resolution: {integrity: sha512-CJi3OS4JLsNMmr2u07OJlhcrPxCeOeP/4xq67aWNai6TNWWbTrlNDgl8NcFKVlcBKp18GPj+EzbNIgrBfZhsag==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  npm-package-arg@13.0.1:
-    resolution: {integrity: sha512-6zqls5xFvJbgFjB1B2U6yITtyGBjDBORB7suI4zA4T/sZ1OmkMFlaQSNB/4K0LtXNA1t4OprAFxPisadK5O2ag==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
   npm-package-arg@13.0.2:
     resolution: {integrity: sha512-IciCE3SY3uE84Ld8WZU23gAPPV9rIYod4F+rc+vJ7h7cwAJt9Vk6TVsK60ry7Uj3SRS3bqRRIGuTp9YVlk6WNA==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
-  npm-packlist@10.0.3:
-    resolution: {integrity: sha512-zPukTwJMOu5X5uvm0fztwS5Zxyvmk38H/LfidkOMt3gbZVCyro2cD/ETzwzVPcWZA3JOyPznfUN/nkyFiyUbxg==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   npm-packlist@10.0.4:
@@ -15914,10 +15902,6 @@ packages:
 
   npm-pick-manifest@11.0.3:
     resolution: {integrity: sha512-buzyCfeoGY/PxKqmBqn1IUJrZnUi1VVJTdSSRPGI60tJdUhUoSQFhs0zycJokDdOznQentgrpf8LayEHyyYlqQ==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
-  npm-registry-fetch@19.1.0:
-    resolution: {integrity: sha512-xyZLfs7TxPu/WKjHUs0jZOPinzBAI32kEUel6za0vH+JUTnFZ5zbHI1ZoGZRDm6oMjADtrli6FxtMlk/5ABPNw==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   npm-registry-fetch@19.1.1:
@@ -16132,6 +16116,10 @@ packages:
     resolution: {integrity: sha512-5b6Y85tPxZZ7QytO+BQzysW31HJku27cRIlkbAXaNx+BdcVi+LlRFmVXzeF6a7JCwJpyw5c4b+YSVImQIrBpuQ==}
     engines: {node: '>=10'}
 
+  os-paths@4.4.0:
+    resolution: {integrity: sha512-wrAwOeXp1RRMFfQY8Sy7VaGVmPocaLwSFOYCGKSyo8qmJ+/yaafCl5BCA1IQZWqFSRBrKDYFeR9d/VyQzfH/jg==}
+    engines: {node: '>= 6.0'}
+
   os-tmpdir@1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
@@ -16260,11 +16248,6 @@ packages:
   package-json@8.1.1:
     resolution: {integrity: sha512-cbH9IAIJHNj9uXi196JVsRlt7cHKak6u/e6AkL/bkRelZ7rlL3X1YKxsZwa36xipOEKAsdtmaG6aAJoM1fx2zA==}
     engines: {node: '>=14.16'}
-
-  pacote@21.0.4:
-    resolution: {integrity: sha512-RplP/pDW0NNNDh3pnaoIWYPvNenS7UqMbXyvMqJczosiFWTeGGwJC2NQBLqKf4rGLFfwCOnntw1aEp9Jiqm1MA==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-    hasBin: true
 
   pacote@21.5.1:
     resolution: {integrity: sha512-KvcJ9iy3crysCsgqc4+PknH/w6jkrp8JN36mpZBPwNaDRwTfMZD37YzRazNstiZUOhuF5pno9f78n9mEJBavwg==}
@@ -17543,12 +17526,6 @@ packages:
     peerDependencies:
       react: '>=15'
 
-  react-tweet@3.2.1:
-    resolution: {integrity: sha512-dktP3RMuwRB4pnSDocKpSsW5Hq1IXRW6fONkHhxT5EBIXsKZzdQuI70qtub1XN2dtZdkJWWxfBm/Q+kN+vRYFA==}
-    peerDependencies:
-      react: '>= 18.0.0'
-      react-dom: '>= 18.0.0'
-
   react@19.1.0:
     resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
     engines: {node: '>=0.10.0'}
@@ -18363,10 +18340,6 @@ packages:
     resolution: {integrity: sha512-S7iGNosepx9RadX82oimUkvr0Ct7IjJbEbs4mJcTxst8um95J3sDYU1RBEOvdu6oL1Wek2ODI5i4MAw+dZ6cAQ==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  ssri@13.0.0:
-    resolution: {integrity: sha512-yizwGBpbCn4YomB2lzhZqrHLJoqFGXihNbib3ozhqF/cIp5ue+xSmOQrjNasEE62hFxsCcg/V/z23t4n8jMEng==}
-    engines: {node: ^20.17.0 || >=22.9.0}
-
   ssri@13.0.1:
     resolution: {integrity: sha512-QUiRf1+u9wPTL/76GTYlKttDEBWV1ga9ZXW8BG6kfdeyyM8LGPix9gROyg9V2+P0xNyF3X2Go526xKFdMZrHSQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -18669,11 +18642,6 @@ packages:
     peerDependencies:
       '@swc/core': ^1.2.147
       webpack: '>=2'
-
-  swr@2.2.5:
-    resolution: {integrity: sha512-QtxqyclFeAsxEUeZIYmsaQ0UjimSq1RZ9Un7I68/0ClKK/U3LoyQunwkQfJZr2fc22DfIXLNDc2wFyTEikCUpg==}
-    peerDependencies:
-      react: ^16.11.0 || ^17.0.0 || ^18.0.0
 
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
@@ -19536,11 +19504,6 @@ packages:
   url@0.10.3:
     resolution: {integrity: sha512-hzSUW2q06EqL1gKM/a+obYHLIO6ct2hwPuviqTTOcfFVc61UbfJ2Q32+uGL/HCPxKqrdGB5QUwIe7UqlDgwsOQ==}
 
-  use-sync-external-store@1.2.0:
-    resolution: {integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
@@ -19599,10 +19562,6 @@ packages:
   validate-npm-package-name@5.0.1:
     resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
-
-  validate-npm-package-name@6.0.2:
-    resolution: {integrity: sha512-IUoow1YUtvoBBC06dXs8bR8B9vuA3aJfmQNKMoaPG/OFsPmoQvw8xh+6Ye25Gx9DQhoEom3Pcu9MKHerm/NpUQ==}
-    engines: {node: ^18.17.0 || >=20.5.0}
 
   validate-npm-package-name@7.0.2:
     resolution: {integrity: sha512-hVDIBwsRruT73PbK7uP5ebUt+ezEtCmzZz3F59BSr2F6OVFnJ/6h8liuvdLrQ88Xmnk6/+xGGuq+pG9WwTuy3A==}
@@ -20169,9 +20128,17 @@ packages:
     resolution: {integrity: sha512-g/eziiSUNBSsdDJtCLB8bdYEUMj4jR7AGeUo96p/3dTafgjHhpF4RiCFPiRILwjQoDXx5MqkBr4fwWtR3Ky4Wg==}
     engines: {node: '>=20'}
 
+  xdg-app-paths@5.5.1:
+    resolution: {integrity: sha512-hI3flOB4PLZIy5prbtTpirobtPE2ZtZ52szO+2mM9Efp6ErM398La+C1lIpNWDfNoQk+6Lsi6nMcCwVB7pxeMQ==}
+    engines: {node: '>= 6.0'}
+
   xdg-basedir@5.1.0:
     resolution: {integrity: sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==}
     engines: {node: '>=12'}
+
+  xdg-portable@7.3.0:
+    resolution: {integrity: sha512-sqMMuL1rc0FmMBOzCpd0yuy9trqF2yTTVe+E9ogwCSWQCdDEtQUwrZPT6AxqtsFGRNxycgncbP/xmOOSPw5ZUw==}
+    engines: {node: '>= 6.0'}
 
   xml-js@1.6.11:
     resolution: {integrity: sha512-7rVi2KMfwfWFl+GpPg6m80IVMWXLRjO+PxTq7V2CDhoGak0wzYzFgUY2m4XJ47OGdXd8eLE8EmwfAmdjw7lC1g==}
@@ -20342,6 +20309,9 @@ packages:
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+  zod@4.1.11:
+    resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
 
   zod@4.2.1:
     resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
@@ -23655,15 +23625,6 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@conventional-changelog/git-client@3.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)':
-    dependencies:
-      '@simple-libs/child-process-utils': 2.0.0
-      '@simple-libs/stream-utils': 2.0.0
-      semver: 7.8.5
-    optionalDependencies:
-      conventional-commits-filter: 6.0.1
-      conventional-commits-parser: 7.1.2
-
   '@conventional-changelog/git-client@3.2.0(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.3)':
     dependencies:
       '@simple-libs/child-process-utils': 2.0.0
@@ -26236,21 +26197,21 @@ snapshots:
 
   '@leichtgewicht/ip-codec@2.0.4': {}
 
-  '@lerna-lite/cli@5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)':
+  '@lerna-lite/cli@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)':
     dependencies:
-      '@lerna-lite/core': 5.6.3(patch_hash=41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6)(@types/node@24.13.4)
-      '@lerna-lite/init': 5.6.3(@types/node@24.13.4)
+      '@lerna-lite/core': 5.6.4(@types/node@24.13.4)
+      '@lerna-lite/init': 5.6.4(@types/node@24.13.4)
       '@lerna-lite/npmlog': 5.4.1
       dotenv: 18.0.8
       import-local: 3.2.0
       yargs: 18.2.0
     optionalDependencies:
-      '@lerna-lite/publish': 5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0)
-      '@lerna-lite/version': 5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1)
+      '@lerna-lite/publish': 5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0)
+      '@lerna-lite/version': 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1)
     transitivePeerDependencies:
       - '@types/node'
 
-  '@lerna-lite/core@5.6.3(patch_hash=41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6)(@types/node@24.13.4)':
+  '@lerna-lite/core@5.6.4(@types/node@24.13.4)':
     dependencies:
       '@inquirer/expand': 5.1.6(@types/node@24.13.4)
       '@inquirer/input': 5.1.7(@types/node@24.13.4)
@@ -26270,9 +26231,9 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@lerna-lite/init@5.6.3(@types/node@24.13.4)':
+  '@lerna-lite/init@5.6.4(@types/node@24.13.4)':
     dependencies:
-      '@lerna-lite/core': 5.6.3(patch_hash=41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6)(@types/node@24.13.4)
+      '@lerna-lite/core': 5.6.4(@types/node@24.13.4)
       write-json-file: 7.0.0
     transitivePeerDependencies:
       - '@types/node'
@@ -26282,12 +26243,12 @@ snapshots:
       fast-string-width: 3.0.2
       signal-exit: 4.1.0
 
-  '@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0)':
+  '@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0)':
     dependencies:
-      '@lerna-lite/cli': 5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
-      '@lerna-lite/core': 5.6.3(patch_hash=41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6)(@types/node@24.13.4)
+      '@lerna-lite/cli': 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
+      '@lerna-lite/core': 5.6.4(@types/node@24.13.4)
       '@lerna-lite/npmlog': 5.4.1
-      '@lerna-lite/version': 5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1)
+      '@lerna-lite/version': 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1)
       '@npmcli/arborist': 9.9.3(supports-color@7.2.0)
       '@npmcli/package-json': 7.0.5
       ci-info: 4.4.0
@@ -26309,12 +26270,12 @@ snapshots:
       - conventional-commits-filter
       - supports-color
 
-  '@lerna-lite/version@5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1)':
+  '@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1)':
     dependencies:
       '@conventional-changelog/git-client': 3.2.0(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.3)
       '@conventional-changelog/template': 1.4.0
-      '@lerna-lite/cli': 5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.3(@lerna-lite/publish@5.6.3(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
-      '@lerna-lite/core': 5.6.3(patch_hash=41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6)(@types/node@24.13.4)
+      '@lerna-lite/cli': 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
+      '@lerna-lite/core': 5.6.4(@types/node@24.13.4)
       '@lerna-lite/npmlog': 5.4.1
       '@octokit/plugin-enterprise-rest': 6.0.1
       '@octokit/rest': 22.0.1
@@ -26559,10 +26520,10 @@ snapshots:
       '@npmcli/metavuln-calculator': 9.0.3(supports-color@7.2.0)
       '@npmcli/name-from-folder': 4.0.0
       '@npmcli/node-gyp': 5.0.0
-      '@npmcli/package-json': 7.0.2
+      '@npmcli/package-json': 7.0.5
       '@npmcli/query': 5.0.0
       '@npmcli/redact': 4.0.0
-      '@npmcli/run-script': 10.0.3
+      '@npmcli/run-script': 10.0.4
       bin-links: 6.0.2
       cacache: 20.0.1
       common-ancestor-path: 2.0.0
@@ -26572,17 +26533,17 @@ snapshots:
       minimatch: 10.2.6
       nopt: 9.0.0
       npm-install-checks: 8.0.0
-      npm-package-arg: 13.0.1
+      npm-package-arg: 13.0.2
       npm-pick-manifest: 11.0.3
-      npm-registry-fetch: 19.1.0(supports-color@7.2.0)
-      pacote: 21.0.4(supports-color@7.2.0)
+      npm-registry-fetch: 19.1.1(supports-color@7.2.0)
+      pacote: 21.5.1(supports-color@7.2.0)
       parse-conflict-json: 5.0.1
       proc-log: 6.0.0
       proggy: 4.0.0
       promise-all-reject-late: 1.0.1
       promise-call-limit: 3.0.2
       semver: 7.8.5
-      ssri: 13.0.0
+      ssri: 13.0.1
       treeverse: 3.0.0
       walk-up-path: 4.0.0
     transitivePeerDependencies:
@@ -26615,7 +26576,7 @@ snapshots:
   '@npmcli/map-workspaces@5.0.1':
     dependencies:
       '@npmcli/name-from-folder': 4.0.0
-      '@npmcli/package-json': 7.0.2
+      '@npmcli/package-json': 7.0.5
       glob: 11.0.3
       minimatch: 10.2.6
 
@@ -26623,7 +26584,7 @@ snapshots:
     dependencies:
       cacache: 20.0.1
       json-parse-even-better-errors: 5.0.0
-      pacote: 21.0.4(supports-color@7.2.0)
+      pacote: 21.5.1(supports-color@7.2.0)
       proc-log: 6.0.0
       semver: 7.8.5
     transitivePeerDependencies:
@@ -26632,16 +26593,6 @@ snapshots:
   '@npmcli/name-from-folder@4.0.0': {}
 
   '@npmcli/node-gyp@5.0.0': {}
-
-  '@npmcli/package-json@7.0.2':
-    dependencies:
-      '@npmcli/git': 7.0.1
-      glob: 11.0.3
-      hosted-git-info: 9.0.2
-      json-parse-even-better-errors: 5.0.0
-      proc-log: 6.0.0
-      semver: 7.8.5
-      validate-npm-package-license: 3.0.4
 
   '@npmcli/package-json@7.0.5':
     dependencies:
@@ -26661,23 +26612,12 @@ snapshots:
     dependencies:
       postcss-selector-parser: 7.1.6
 
-  '@npmcli/redact@3.2.2': {}
-
   '@npmcli/redact@4.0.0': {}
-
-  '@npmcli/run-script@10.0.3':
-    dependencies:
-      '@npmcli/node-gyp': 5.0.0
-      '@npmcli/package-json': 7.0.2
-      '@npmcli/promise-spawn': 9.0.1
-      node-gyp: 12.4.0
-      proc-log: 6.0.0
-      which: 6.0.1
 
   '@npmcli/run-script@10.0.4':
     dependencies:
       '@npmcli/node-gyp': 5.0.0
-      '@npmcli/package-json': 7.0.2
+      '@npmcli/package-json': 7.0.5
       '@npmcli/promise-spawn': 9.0.1
       node-gyp: 12.4.0
       proc-log: 6.0.0
@@ -26906,7 +26846,7 @@ snapshots:
       consola: 3.4.2
       defu: 6.1.7
       destr: 2.0.5
-      devalue: 5.9.2
+      devalue: 5.9.4
       errx: 0.1.2
       escape-string-regexp: 5.0.0
       exsolve: 1.1.1
@@ -30051,6 +29991,22 @@ snapshots:
       - '@modelcontextprotocol/sdk'
       - zod
 
+  '@vercel/cli-config@0.3.5':
+    dependencies:
+      xdg-app-paths: 5.5.1
+      zod: 4.1.11
+
+  '@vercel/cli-exec@1.0.1':
+    dependencies:
+      execa: 5.1.1
+
+  '@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.21.3)':
+    dependencies:
+      '@vercel/oidc': 4.0.5
+    optionalDependencies:
+      '@aws-sdk/credential-provider-web-identity': 3.782.0
+      ws: 8.21.3
+
   '@vercel/nft@1.11.0(rollup@4.63.1)(supports-color@10.0.0)':
     dependencies:
       '@mapbox/node-pre-gyp': 2.0.0(supports-color@10.0.0)
@@ -30075,6 +30031,12 @@ snapshots:
       '@resvg/resvg-wasm': 2.0.0-alpha.4
       satori: 0.0.46
       yoga-wasm-web: 0.3.0
+
+  '@vercel/oidc@4.0.5':
+    dependencies:
+      '@vercel/cli-config': 0.3.5
+      '@vercel/cli-exec': 1.0.1
+      jose: 5.10.0
 
   '@visx/group@3.0.0(react@19.1.0)':
     dependencies:
@@ -31743,14 +31705,6 @@ snapshots:
 
   conventional-changelog-preset-loader@6.0.1: {}
 
-  conventional-changelog-writer@9.2.1:
-    dependencies:
-      '@conventional-changelog/template': 1.4.0
-      '@simple-libs/stream-utils': 2.0.0
-      argue-cli: 3.2.0
-      conventional-commits-filter: 6.0.1
-      semver: 7.8.5
-
   conventional-changelog-writer@9.3.0:
     dependencies:
       '@conventional-changelog/template': 1.4.0
@@ -31761,22 +31715,17 @@ snapshots:
 
   conventional-changelog@8.1.3:
     dependencies:
-      '@conventional-changelog/git-client': 3.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)
+      '@conventional-changelog/git-client': 3.2.0(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.3)
       '@simple-libs/hosted-git-info': 2.0.0
       '@simple-libs/normalize-package-data': 1.0.0
       argue-cli: 3.2.0
       conventional-changelog-preset-loader: 6.0.1
-      conventional-changelog-writer: 9.2.1
+      conventional-changelog-writer: 9.3.0
       conventional-commits-filter: 6.0.1
-      conventional-commits-parser: 7.1.2
+      conventional-commits-parser: 7.1.3
       fd-package-json: 2.0.0
 
   conventional-commits-filter@6.0.1: {}
-
-  conventional-commits-parser@7.1.2:
-    dependencies:
-      '@simple-libs/stream-utils': 2.0.0
-      argue-cli: 3.2.0
 
   conventional-commits-parser@7.1.3:
     dependencies:
@@ -31785,11 +31734,11 @@ snapshots:
 
   conventional-recommended-bump@12.1.0:
     dependencies:
-      '@conventional-changelog/git-client': 3.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)
+      '@conventional-changelog/git-client': 3.2.0(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.3)
       argue-cli: 3.2.0
       conventional-changelog-preset-loader: 6.0.1
       conventional-commits-filter: 6.0.1
-      conventional-commits-parser: 7.1.2
+      conventional-commits-parser: 7.1.3
 
   convert-hrtime@3.0.0: {}
 
@@ -32384,7 +32333,9 @@ snapshots:
     dependencies:
       address: 2.0.3
 
-  devalue@5.9.2: {}
+  devalue@5.9.4: {}
+
+  devalue@6.0.2: {}
 
   devlop@1.1.0:
     dependencies:
@@ -35381,6 +35332,8 @@ snapshots:
 
   jose@4.15.9: {}
 
+  jose@5.10.0: {}
+
   jose@6.2.12: {}
 
   js-string-escape@1.0.1: {}
@@ -35653,21 +35606,21 @@ snapshots:
 
   libnpmaccess@10.0.3(supports-color@7.2.0):
     dependencies:
-      npm-package-arg: 13.0.1
-      npm-registry-fetch: 19.1.0(supports-color@7.2.0)
+      npm-package-arg: 13.0.2
+      npm-registry-fetch: 19.1.1(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
   libnpmpublish@11.2.1(supports-color@7.2.0):
     dependencies:
-      '@npmcli/package-json': 7.0.2
+      '@npmcli/package-json': 7.0.5
       ci-info: 4.4.0
-      npm-package-arg: 13.0.1
-      npm-registry-fetch: 19.1.0(supports-color@7.2.0)
+      npm-package-arg: 13.0.2
+      npm-registry-fetch: 19.1.1(supports-color@7.2.0)
       proc-log: 6.0.0
       semver: 7.8.5
       sigstore: 4.0.0(supports-color@7.2.0)
-      ssri: 13.0.0
+      ssri: 13.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -37197,24 +37150,12 @@ snapshots:
 
   npm-normalize-package-bin@5.0.0: {}
 
-  npm-package-arg@13.0.1:
-    dependencies:
-      hosted-git-info: 9.0.2
-      proc-log: 5.0.0
-      semver: 7.8.5
-      validate-npm-package-name: 6.0.2
-
   npm-package-arg@13.0.2:
     dependencies:
       hosted-git-info: 9.0.2
       proc-log: 6.0.0
       semver: 7.8.5
       validate-npm-package-name: 7.0.2
-
-  npm-packlist@10.0.3:
-    dependencies:
-      ignore-walk: 8.0.0
-      proc-log: 6.0.0
 
   npm-packlist@10.0.4:
     dependencies:
@@ -37225,21 +37166,8 @@ snapshots:
     dependencies:
       npm-install-checks: 8.0.0
       npm-normalize-package-bin: 5.0.0
-      npm-package-arg: 13.0.1
+      npm-package-arg: 13.0.2
       semver: 7.8.5
-
-  npm-registry-fetch@19.1.0(supports-color@7.2.0):
-    dependencies:
-      '@npmcli/redact': 3.2.2
-      jsonparse: 1.3.1
-      make-fetch-happen: 15.0.2(supports-color@7.2.0)
-      minipass: 7.1.3
-      minipass-fetch: 4.0.1
-      minizlib: 3.1.0
-      npm-package-arg: 13.0.1
-      proc-log: 5.0.0
-    transitivePeerDependencies:
-      - supports-color
 
   npm-registry-fetch@19.1.1(supports-color@7.2.0):
     dependencies:
@@ -37249,7 +37177,7 @@ snapshots:
       minipass: 7.1.3
       minipass-fetch: 5.0.2
       minizlib: 3.1.0
-      npm-package-arg: 13.0.1
+      npm-package-arg: 13.0.2
       proc-log: 6.0.0
     transitivePeerDependencies:
       - supports-color
@@ -37333,7 +37261,7 @@ snapshots:
       cookie-es: 2.0.1
       defu: 6.1.7
       destr: 2.0.5
-      devalue: 5.9.2
+      devalue: 5.9.4
       errx: 0.1.2
       escape-string-regexp: 5.0.0
       exsolve: 1.1.1
@@ -37626,6 +37554,8 @@ snapshots:
       strip-ansi: 6.0.1
       wcwidth: 1.0.1
 
+  os-paths@4.4.0: {}
+
   os-tmpdir@1.0.2: {}
 
   own-keys@1.0.1:
@@ -37801,46 +37731,24 @@ snapshots:
       registry-url: 6.0.1
       semver: 7.8.5
 
-  pacote@21.0.4(supports-color@7.2.0):
-    dependencies:
-      '@npmcli/git': 7.0.1
-      '@npmcli/installed-package-contents': 4.0.0
-      '@npmcli/package-json': 7.0.2
-      '@npmcli/promise-spawn': 9.0.1
-      '@npmcli/run-script': 10.0.3
-      cacache: 20.0.1
-      fs-minipass: 3.0.2
-      minipass: 7.1.3
-      npm-package-arg: 13.0.1
-      npm-packlist: 10.0.3
-      npm-pick-manifest: 11.0.3
-      npm-registry-fetch: 19.1.0(supports-color@7.2.0)
-      proc-log: 6.0.0
-      promise-retry: 2.0.1
-      sigstore: 4.0.0(supports-color@7.2.0)
-      ssri: 13.0.0
-      tar: 7.5.22
-    transitivePeerDependencies:
-      - supports-color
-
   pacote@21.5.1(supports-color@7.2.0):
     dependencies:
       '@gar/promise-retry': 1.0.3
       '@npmcli/git': 7.0.1
       '@npmcli/installed-package-contents': 4.0.0
-      '@npmcli/package-json': 7.0.2
+      '@npmcli/package-json': 7.0.5
       '@npmcli/promise-spawn': 9.0.1
-      '@npmcli/run-script': 10.0.3
+      '@npmcli/run-script': 10.0.4
       cacache: 20.0.1
       fs-minipass: 3.0.2
       minipass: 7.1.3
-      npm-package-arg: 13.0.1
-      npm-packlist: 10.0.3
+      npm-package-arg: 13.0.2
+      npm-packlist: 10.0.4
       npm-pick-manifest: 11.0.3
-      npm-registry-fetch: 19.1.0(supports-color@7.2.0)
+      npm-registry-fetch: 19.1.1(supports-color@7.2.0)
       proc-log: 6.0.0
       sigstore: 4.0.0(supports-color@7.2.0)
-      ssri: 13.0.0
+      ssri: 13.0.1
       tar: 7.5.22
     transitivePeerDependencies:
       - supports-color
@@ -39052,14 +38960,6 @@ snapshots:
       react-is: 16.13.1
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
-
-  react-tweet@3.2.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
-    dependencies:
-      '@swc/helpers': 0.5.15
-      clsx: 2.1.1
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      swr: 2.2.5(react@19.1.0)
 
   react@19.1.0: {}
 
@@ -40404,10 +40304,6 @@ snapshots:
     dependencies:
       minipass: 7.1.3
 
-  ssri@13.0.0:
-    dependencies:
-      minipass: 7.1.3
-
   ssri@13.0.1:
     dependencies:
       minipass: 7.1.3
@@ -40798,12 +40694,6 @@ snapshots:
       '@swc/core': 1.16.2(@swc/helpers@0.5.20)
       '@swc/counter': 0.1.3
       webpack: 5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.27.7)(uglify-js@3.19.3)
-
-  swr@2.2.5(react@19.1.0):
-    dependencies:
-      client-only: 0.0.1
-      react: 19.1.0
-      use-sync-external-store: 1.2.0(react@19.1.0)
 
   symbol-tree@3.2.4: {}
 
@@ -41791,10 +41681,6 @@ snapshots:
       punycode: 1.3.2
       querystring: 0.2.0
 
-  use-sync-external-store@1.2.0(react@19.1.0):
-    dependencies:
-      react: 19.1.0
-
   util-deprecate@1.0.2: {}
 
   util@0.12.5:
@@ -41839,8 +41725,6 @@ snapshots:
       builtins: 1.0.3
 
   validate-npm-package-name@5.0.1: {}
-
-  validate-npm-package-name@6.0.2: {}
 
   validate-npm-package-name@7.0.2: {}
 
@@ -42492,7 +42376,16 @@ snapshots:
       is-wsl: 3.1.0
       powershell-utils: 0.1.0
 
+  xdg-app-paths@5.5.1:
+    dependencies:
+      os-paths: 4.4.0
+      xdg-portable: 7.3.0
+
   xdg-basedir@5.1.0: {}
+
+  xdg-portable@7.3.0:
+    dependencies:
+      os-paths: 4.4.0
 
   xml-js@1.6.11:
     dependencies:
@@ -42698,6 +42591,8 @@ snapshots:
       zod: 4.2.1
 
   zod@3.25.76: {}
+
+  zod@4.1.11: {}
 
   zod@4.2.1: {}
 

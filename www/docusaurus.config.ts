@@ -574,17 +574,7 @@ export default {
       } satisfies Preset.Options,
     ],
   ],
-  scripts: [
-    {
-      async: true,
-      src: 'https://platform.twitter.com/widgets.js',
-      charSet: 'utf-8',
-    },
-  ],
-  clientModules: [
-    require.resolve('./docusaurus.twitterReload.js'),
-    require.resolve('./docusaurus.preferredTheme.js'),
-  ],
+  clientModules: [require.resolve('./docusaurus.preferredTheme.js')],
 
   customFields: {
     env,
