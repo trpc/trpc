@@ -7,7 +7,7 @@
   "author": "KATT",
   "license": "MIT",
   "bin": {
-    "trpc-openapi": "./dist/cli.js",
+    "trpc-openapi": "./dist/cli.mjs",
     "intent": "./bin/intent.js"
   },
   "homepage": "https://trpc.io",
