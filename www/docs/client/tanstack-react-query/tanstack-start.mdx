@@ -122,54 +122,78 @@ Type the root route's context with `createRootRouteWithContext<{ queryClient: Qu
 
 ## 5. Start queries in loaders
 
-Start every query before you await any of them. `unstable_ensure` makes the navigation wait for the data; `unstable_prefetch` lets it stream in behind a `Suspense` boundary:
+A loader starts queries and returns their handles as loader data. For each query, choose whether the loader waits for it. [Starting a query](/docs/client/tanstack-react-query/handles#starting-a-query) compares the two.
 
-```tsx title='src/routes/posts.$id.tsx'
+- On the first visit, the loader runs on the server, and the data is sent with the page.
+- On later navigations, the loader runs in the browser against the tab's cache. Fresh data is reused; stale data renders at once and refetches.
+
+### Without waiting: `unstable_prefetch` {#loader-prefetch}
+
+The loader returns at once, and the route renders before the data arrives:
+
+```tsx title='src/routes/posts.$id.comments.tsx'
 import { createFileRoute } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
+
+export const Route = createFileRoute('/posts/$id/comments')({
+  loader: ({ context: { trpc }, params }) => ({
+    comments: trpc.post.comments.unstable_prefetchInfinite({
+      postId: params.id,
+      limit: 20,
+    }),
+  }),
+  component: CommentsPage,
+});
+
+function CommentsPage() {
+  const { comments } = Route.useLoaderData();
+  return (
+    <Suspense fallback={<p>Loading comments…</p>}>
+      <Comments comments={comments} />
+    </Suspense>
+  );
+}
+```
+
+- **Wrap the reader in `Suspense`.** `Comments` suspends until the data arrives. Without your own boundary, the suspension reaches the nearest boundary above it: the route's `pendingComponent`, or a parent route's. That can blank much more of the page than you want.
+- The loader never throws for these queries. If a request fails, `Comments` throws, and the route's `errorComponent` (or the router's default) shows the error.
+
+### Waiting: `unstable_ensure` {#loader-ensure}
+
+The loader waits, so the route renders with the data in place:
+
+```tsx title='src/routes/posts.$id.tsx'
+import { createFileRoute, notFound } from '@tanstack/react-router';
+import { isTRPCClientError } from '@trpc/client';
 import { Post } from '~/components/post';
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const comments = trpc.post.comments.unstable_prefetchInfinite({
-      postId: params.id,
-      limit: 20,
-    });
-    const post = await trpc.post.byId.unstable_ensure({ id: params.id });
-    return { post, comments };
+    const post = await trpc.post.byId
+      .unstable_ensure({ id: params.id })
+      .catch((cause) => {
+        if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
+          throw notFound();
+        }
+        throw cause;
+      });
+    return { post };
   },
   component: PostPage,
 });
 
 function PostPage() {
-  const data = Route.useLoaderData();
-  return (
-    <>
-      <Post post={data.post} />
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <Comments comments={data.comments} />
-      </Suspense>
-    </>
-  );
+  const { post } = Route.useLoaderData();
+  return <Post post={post} />;
 }
 ```
 
-On the first visit, the loader runs on the server and the data is sent with the page. On later navigations, the loader runs in the browser against the tab's cache: fresh data is reused, and stale data renders at once and refetches.
+- **No `Suspense` boundary is needed** for `Post`: the data is in the cache before the route renders.
+- The navigation waits for the loader. On a slow request, the router shows the route's `pendingComponent`, if it has one.
+- The loader can act on errors, as here with `notFound()`.
 
-To show a not-found page, catch the error from `unstable_ensure`:
-
-```tsx
-import { notFound } from '@tanstack/react-router';
-import { isTRPCClientError } from '@trpc/client';
-
-const post = await trpc.post.byId.unstable_ensure({ id }).catch((cause) => {
-  if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
-    throw notFound();
-  }
-  throw cause;
-});
-```
+To wait for some queries and stream others in the same loader, see [Combining both](/docs/client/tanstack-react-query/handles#combining-both): start every query first, then await.
 
 ## 6. Read handles in components
 

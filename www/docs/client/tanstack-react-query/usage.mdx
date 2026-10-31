@@ -262,6 +262,9 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
 
 On the server or in a route loader, `trpc.x.unstable_prefetch(input)` and `await trpc.x.unstable_ensure(input)` start a query and return a serializable handle. Components read it with `trpc.unstable_fromHandle(handle)`, which returns the same options as `trpc.x.queryOptions(input)`. Infinite queries have `unstable_prefetchInfinite` and `unstable_ensureInfinite`. Type props with `unstable_inferQueryHandle` and `unstable_inferInfiniteQueryHandle`.
 
+- `unstable_prefetch` doesn't wait. Read its handle inside a `Suspense` boundary; the data streams in.
+- `unstable_ensure` waits until the data is in the cache. Its reader needs no `Suspense` boundary.
+
 :::info
 We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
 :::

@@ -125,10 +125,9 @@ describe('types', () => {
     // @ts-expect-error not a handle
     trpc.unstable_fromHandle({ id: '1' });
     // nor is a query key
+    const queryKey = [['post', 'byId'], { input: { id: '1' } }];
     // @ts-expect-error not a handle
-    trpc.unstable_fromHandle({
-      queryKey: [['post', 'byId'], { input: { id: '1' } }],
-    });
+    trpc.unstable_fromHandle({ queryKey });
   });
 
   test('infinite handles need getNextPageParam and do not mix with query handles', () => {
