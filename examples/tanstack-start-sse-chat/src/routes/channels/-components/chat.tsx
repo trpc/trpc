@@ -75,13 +75,12 @@ function SubscriptionStatus(props: {
 
 export function Chat(
   props: Readonly<{
-    channelId: string;
     posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
   }>,
 ) {
-  const { channelId } = props;
+  const { channelId } = props.posts.input;
   const trpc = useTRPC();
-  const livePosts = useLivePosts(channelId, props.posts);
+  const livePosts = useLivePosts(props.posts);
   const currentlyTyping = useSubscription(
     trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
   );
