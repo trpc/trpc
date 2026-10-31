@@ -281,9 +281,6 @@ importers:
       '@manypkg/cli':
         specifier: ^0.22.0
         version: 0.22.0
-      '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -2208,9 +2205,6 @@ importers:
 
   packages/client:
     devDependencies:
-      '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
       '@trpc/server':
         specifier: 11.22.1
         version: link:../server
@@ -2250,9 +2244,6 @@ importers:
 
   packages/next:
     devDependencies:
-      '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -2317,9 +2308,6 @@ importers:
       '@swagger-api/apidom-ls':
         specifier: ^1.6.0
         version: 1.6.0(debug@4.4.3(supports-color@10.0.0))
-      '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
       '@trpc/server':
         specifier: 11.22.1
         version: link:../server
@@ -2431,9 +2419,6 @@ importers:
       '@oxc-project/runtime':
         specifier: 0.152.0
         version: 0.152.0
-      '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -2515,9 +2500,6 @@ importers:
 
   packages/tanstack-react-query:
     devDependencies:
-      '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -9696,10 +9678,6 @@ packages:
   '@tanstack/history@1.162.5':
     resolution: {integrity: sha512-w1+YvwmTkwt5n8yUqEH3IWZ9DsmorCZW/EQ3KYHnqEgIkOZpH54NvW6/Epq3Dzb8H0ifIeYX8PExvrNLIH5FIA==}
     engines: {node: '>=20.19'}
-
-  '@tanstack/intent@0.0.27':
-    resolution: {integrity: sha512-R8U4uadLrp9uosW5G1J5s4RQtT7F0S2oqIfWX6OD7uObuM6vJLO0jZzw+Et7H3PFMnue3snjdzJYX5BmNV1RXA==}
-    hasBin: true
 
   '@tanstack/match-sorter-utils@9.2.6':
     resolution: {integrity: sha512-DIpUSOhPfQ7u/qfUi/Wgm0wBO56MyBYXGvnlI0NcauDRPqdBUlAZZjW2Dxm92m+k1UWVhKw8YJ4f47+75Aujyw==}
@@ -29807,11 +29785,6 @@ snapshots:
 
   '@tanstack/history@1.162.5': {}
 
-  '@tanstack/intent@0.0.27':
-    dependencies:
-      cac: 6.7.14
-      yaml: 2.8.2
-
   '@tanstack/match-sorter-utils@9.2.6':
     dependencies:
       remove-accents: 0.5.0
@@ -43372,7 +43345,8 @@ snapshots:
 
   yaml@2.7.0: {}
 
-  yaml@2.8.2: {}
+  yaml@2.8.2:
+    optional: true
 
   yaml@2.9.0: {}
 

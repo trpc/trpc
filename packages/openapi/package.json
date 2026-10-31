@@ -7,8 +7,7 @@
   "author": "KATT",
   "license": "MIT",
   "bin": {
-    "trpc-openapi": "./dist/cli.mjs",
-    "intent": "./bin/intent.js"
+    "trpc-openapi": "./dist/cli.mjs"
   },
   "homepage": "https://trpc.io",
   "repository": {
@@ -65,10 +64,7 @@
     "!**/*.test.*",
     "!**/__tests__",
     "!test",
-    "heyapi",
-    "skills",
-    "bin",
-    "!skills/_artifacts"
+    "heyapi"
   ],
   "publishConfig": {
     "access": "public"
@@ -79,7 +75,6 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "catalog:",
     "@swagger-api/apidom-ls": "^1.6.0",
-    "@tanstack/intent": "^0.0.27",
     "@trpc/server": "11.22.1",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
@@ -108,8 +103,5 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ],
-  "keywords": [
-    "tanstack-intent"
   ]
 }
