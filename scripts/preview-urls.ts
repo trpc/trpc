@@ -1,10 +1,10 @@
 // Prints each Vercel project's preview URL for a branch, so PR links can be
 // written before the deploys finish. A project only has the URL once it builds.
-// Usage: node scripts/preview-urls.js [branch] [fork-owner]
+// Usage: pnpm preview-urls [branch] [fork-owner]
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
-const projects = {
+const projects: Record<string, string> = {
   www: 'www',
   'trpc-next-app-dir': 'examples/.experimental/next-app-dir',
   'next-prisma-starter': 'examples/next-prisma-starter',
