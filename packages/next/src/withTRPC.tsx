@@ -31,7 +31,7 @@ import type {
   AppPropsType,
   NextComponentType,
   NextPageContext,
-} from 'next/dist/shared/lib/utils';
+} from 'next/dist/shared/lib/utils.js';
 import type { NextRouter } from 'next/router';
 import React, { useState } from 'react';
 

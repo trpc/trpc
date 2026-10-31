@@ -44,3 +44,5 @@ export * from './unstable-core-do-not-import/utils';
 export * from './vendor/standard-schema-v1/error';
 export * from './vendor/standard-schema-v1/spec';
 export * from './vendor/unpromise';
+// `ws`-free home for the encoder type, so `@trpc/client` doesn't need `@types/ws`
+export type { Encoder } from './adapters/wsEncoder';

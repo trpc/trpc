@@ -1,8 +1,20 @@
-import type { Plugins } from '@hey-api/openapi-ts';
 import type {
   TRPCCombinedDataTransformer,
   TRPCDataTransformer,
 } from '@trpc/server';
+
+// `@hey-api/openapi-ts` is ESM-only. `resolution-mode` lets the CJS
+// declarations reference it on TypeScript 5.7. These are inline `import()`
+// types because the build drops `type` from import statements, and
+// `resolution-mode` is only allowed on type-only imports.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- see above
+type HeyApiFetchClient = import('@hey-api/openapi-ts', {
+  with: { 'resolution-mode': 'import' },
+}).Plugins.HeyApiClientFetch.Client;
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- see above
+type HeyApiTypeScriptResolvers = import('@hey-api/openapi-ts', {
+  with: { 'resolution-mode': 'import' },
+}).Plugins.HeyApiTypeScript.Resolvers;
 
 export type DataTransformerOptions =
   TRPCDataTransformer | TRPCCombinedDataTransformer;
@@ -10,11 +22,9 @@ export interface TRPCHeyApiClientOptions {
   transformer?: DataTransformerOptions;
 }
 
-export type HeyAPIResolvers = Plugins.HeyApiTypeScript.Resolvers;
+export type HeyAPIResolvers = HeyApiTypeScriptResolvers;
 
-export type HeyApiConfig = ReturnType<
-  Plugins.HeyApiClientFetch.Client['getConfig']
->;
+export type HeyApiConfig = ReturnType<HeyApiFetchClient['getConfig']>;
 
 export type TRPCHeyApiClientConfig = Required<
   Pick<HeyApiConfig, 'querySerializer'>
@@ -151,7 +161,7 @@ export function createTRPCErrorInterceptor(
  * ```
  */
 export function configureTRPCHeyApiClient(
-  client: Plugins.HeyApiClientFetch.Client,
+  client: HeyApiFetchClient,
   opts: TRPCHeyApiClientOptions &
     Omit<HeyApiConfig, keyof TRPCHeyApiClientConfig>,
 ) {
