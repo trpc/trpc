@@ -49,7 +49,6 @@ jobs:
 
   verify-packed:
     name: Verify packed packages as a consumer
-    # only run on PRs and in the merge queue
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 15
     env:

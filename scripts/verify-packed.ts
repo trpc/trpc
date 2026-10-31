@@ -1,18 +1,3 @@
-/**
- * Checks the packed packages the way a consumer sees them. Run after `pnpm build`.
- *
- * - Every `bin`, `exports`, `main`, `module` and `types` target is in the tarball,
- *   and every `bin` has a shebang.
- * - No `catalog:`/`workspace:` specifiers leak into published dependencies.
- * - The tarballs install together with npm, which enforces peer dependencies.
- * - Their declarations type-check with `skipLibCheck: false`, under `nodenext`
- *   (ESM and CJS) and `bundler` resolution, for each supported TypeScript major:
- *   - "core": only @trpc/server and @trpc/client, without any optional peers
- *   - "full": every package, with every optional peer installed
- *
- * The build doesn't fail when a declaration can't resolve a type, it emits `any`.
- * The assertions below catch that for types that have regressed this way before.
- */
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -52,7 +37,6 @@ function collectStrings(node: unknown): string[] {
   return [];
 }
 
-// Pack
 const tarballDir = path.join(tmp, 'tarballs');
 fs.mkdirSync(tarballDir);
 const packages = new Map<string, { pkg: PackageJson; tarball: string }>();
@@ -80,7 +64,6 @@ for (const dir of fs.readdirSync(path.join(root, 'packages'))) {
   ) as PackageJson;
   packages.set(pkg.name, { pkg, tarball: path.join(tarballDir, tarball) });
 
-  // Every target the manifest points at must be in the tarball
   const files = new Set(listFiles(pkgRoot));
   const bins =
     typeof pkg.bin === 'string' ? [pkg.bin] : Object.values(pkg.bin ?? {});
@@ -134,7 +117,6 @@ function getPacked(name: string) {
   return packed;
 }
 
-// Type-check as a consumer
 const OPTIONAL_PEERS = [
   '@hey-api/openapi-ts@^0.99.0',
   '@tanstack/react-query@^5.80.3',
@@ -149,7 +131,6 @@ const OPTIONAL_PEERS = [
   'react-dom@^19',
   'zod@^4',
 ];
-// Server entry points that need an optional peer; the "core" consumer doesn't install those
 const ADAPTERS_WITH_OPTIONAL_PEERS = [
   'aws-lambda',
   'express',
@@ -205,11 +186,9 @@ const scenarios = [
   },
   {
     name: 'full',
-    // @trpc/upgrade is a CLI and ships no declarations
     packages: [...packages.keys()].filter((name) => name !== '@trpc/upgrade'),
     extraDeps: OPTIONAL_PEERS,
-    // @trpc/openapi supports typescript <7
-    typescript: ['5.7.2', '6'],
+    typescript: ['5.8.2', '6'],
     skipEntry: () => false,
     assertions: ASSERTIONS + FULL_ASSERTIONS,
   },
@@ -332,7 +311,6 @@ for (const scenario of scenarios) {
       const errors = output
         .split('\n')
         .filter((line) => /error TS\d+/.test(line));
-      // Only our declarations and the consumer files are ours to fix
       const ours = errors.filter(
         (line) =>
           !line.startsWith('node_modules/') ||

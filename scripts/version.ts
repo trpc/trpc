@@ -31,8 +31,6 @@ const packages = fs
   }))
   .filter(({ packageJSON }) => fs.existsSync(packageJSON));
 
-// First pass: settle each package's own version, so the pins below see the
-// final version of every dependency regardless of iteration order
 const versions = new Map<string, string>();
 for (const { name, packageJSON } of packages) {
   let content = fs.readFileSync(packageJSON).toString();
@@ -59,13 +57,10 @@ for (const { name, packageJSON } of packages) {
   versions.set(parsed.name, version);
 }
 
-// Second pass: pin every @trpc/* dependency to that package's actual version.
-// This keeps alpha packages on the stable versions of their dependencies, and
-// keeps canary releases pointing at each other rather than the last stable
 for (const { name, packageJSON } of packages) {
   const content = fs.readFileSync(packageJSON).toString();
 
-  // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "<version of @trpc/*>""`
+  // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "${depVersion}""`
   const newContent = content.replace(
     /\"(@trpc\/(?:\w|-)+)\": "(?:[^"]|\\")*"/g,
     (match, depName: string) => {
