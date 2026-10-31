@@ -85,7 +85,7 @@ function ChannelPage() {
           </div>
         }
       >
-        <Chat key={channelId} channelId={channelId} posts={posts} />
+        <Chat key={channelId} posts={posts} />
       </Suspense>
     </div>
   );
