@@ -364,8 +364,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
-      signal?: AbortSignal;
-      clearMaxDurationTimer?: () => void;
+      /**
+       * Only set for subscriptions
+       */
+      abort?: ReturnType<typeof combinedAbortController>;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const bodyCancelled = new AbortController();
@@ -376,7 +378,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(callSignal);
-      let clearMaxDurationTimer: (() => void) | undefined;
       try {
         if (opts.error) {
           throw opts.error;
@@ -404,24 +405,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Cannot batch subscription calls`,
             });
           }
-
-          if (config.sse?.maxDurationMs) {
-            function cleanup() {
-              clearTimeout(timer);
-              combinedAbort.signal.removeEventListener('abort', cleanup);
-
-              combinedAbort.controller.abort();
-            }
-            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
-            combinedAbort.signal.addEventListener('abort', cleanup);
-
-            // the request signal may never abort (e.g. after a completed
-            // response), so the timer is also cleared when the stream ends
-            clearMaxDurationTimer = () => {
-              clearTimeout(timer);
-              combinedAbort.signal.removeEventListener('abort', cleanup);
-            };
-          }
         }
         const data: unknown = await proc({
           path: call.path,
@@ -435,15 +418,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           undefined,
           {
             data,
-            signal:
-              proc._def.type === 'subscription'
-                ? combinedAbort.signal
-                : undefined,
-            clearMaxDurationTimer,
+            abort:
+              proc._def.type === 'subscription' ? combinedAbort : undefined,
           },
         ];
       } catch (cause) {
-        clearMaxDurationTimer?.();
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
 
@@ -579,37 +558,40 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             headers.set(key, value);
           }
 
-          let headResponse: ReturnType<typeof initResponse>;
-          try {
-            headResponse = initResponse({
-              ctx: ctxManager.valueOrUndefined(),
-              info,
-              responseMeta: opts.responseMeta,
-              errors: [],
-              headers,
-              untransformedJSON: null,
-            });
-          } catch (cause) {
-            result?.clearMaxDurationTimer?.();
-            throw cause;
-          }
+          const headResponse = initResponse({
+            ctx: ctxManager.valueOrUndefined(),
+            info,
+            responseMeta: opts.responseMeta,
+            errors: [],
+            headers,
+            untransformedJSON: null,
+          });
 
-          const abortSignal = result?.signal;
+          const abort = result?.abort;
           let responseBody: ReadableStream<Uint8Array> = stream;
 
           // Fixes: https://github.com/trpc/trpc/issues/7094
-          if (abortSignal) {
+          if (abort) {
             const reader = stream.getReader();
-            const onAbort = () => void reader.cancel();
-            if (abortSignal.aborted) {
+            const maxDurationTimer = config.sse?.maxDurationMs
+              ? setTimeout(
+                  () => abort.controller.abort(),
+                  config.sse.maxDurationMs,
+                )
+              : undefined;
+            const onStreamEnd = () => {
+              clearTimeout(maxDurationTimer);
+              abort.signal.removeEventListener('abort', onAbort);
+            };
+            const onAbort = () => {
+              onStreamEnd();
+              void reader.cancel();
+            };
+            if (abort.signal.aborted) {
               onAbort();
             } else {
-              abortSignal.addEventListener('abort', onAbort, { once: true });
+              abort.signal.addEventListener('abort', onAbort, { once: true });
             }
-            const onStreamEnd = () => {
-              abortSignal.removeEventListener('abort', onAbort);
-              result?.clearMaxDurationTimer?.();
-            };
 
             responseBody = new ReadableStream({
               async pull(controller) {

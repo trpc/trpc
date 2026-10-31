@@ -78,31 +78,34 @@ type ConnectMiddleware<
   TResponse extends NodeHTTPResponse = NodeHTTPResponse,
 > = (req: TRequest, res: TResponse, next: (err?: any) => any) => void;
 
+// `NodeHTTPCreateContextOption` must stay the last member: spreading a generic
+// `opts` into an object literal merges the new properties into the trailing
+// non-generic member, which makes `{ ...opts, req, res, path }` unassignable
+// to `NodeHTTPRequestHandlerOptions` (https://github.com/trpc/trpc/issues/6057)
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = HTTPBaseHandlerOptions<TRouter, TRequest> &
-  NodeHTTPCreateContextOption<TRouter, TRequest, TResponse> & {
-    /**
-     * By default, http `OPTIONS` requests are not handled, and CORS headers are not returned.
-     *
-     * This can be used to handle them manually or via the `cors` npm package: https://www.npmjs.com/package/cors
-     *
-     * ```ts
-     * import cors from 'cors'
-     *
-     * nodeHTTPRequestHandler({
-     *   middleware: cors()
-     * })
-     * ```
-     *
-     * You can also use it for other needs which a connect/node.js compatible middleware can solve,
-     *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
-     */
-    middleware?: ConnectMiddleware<TRequest, TResponse>;
-    maxBodySize?: number;
-  };
+> = HTTPBaseHandlerOptions<TRouter, TRequest> & {
+  /**
+   * By default, http `OPTIONS` requests are not handled, and CORS headers are not returned.
+   *
+   * This can be used to handle them manually or via the `cors` npm package: https://www.npmjs.com/package/cors
+   *
+   * ```ts
+   * import cors from 'cors'
+   *
+   * nodeHTTPRequestHandler({
+   *   middleware: cors()
+   * })
+   * ```
+   *
+   * You can also use it for other needs which a connect/node.js compatible middleware can solve,
+   *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
+   */
+  middleware?: ConnectMiddleware<TRequest, TResponse>;
+  maxBodySize?: number;
+} & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
 export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
