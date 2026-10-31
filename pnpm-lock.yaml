@@ -1757,6 +1757,9 @@ importers:
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
+      cookie:
+        specifier: ^1.1.1
+        version: 1.1.1
       next:
         specifier: ^15.5.25
         version: 15.5.25(@babel/core@7.26.9(supports-color@10.0.0))(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
