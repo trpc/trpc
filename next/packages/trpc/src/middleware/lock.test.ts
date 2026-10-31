@@ -229,20 +229,19 @@ test('the handler must provide experimental_Locker', () => {
 /** Effect's `Redis`, where `SET` takes the lock from `freeAt` on; `tries` has each `SET`'s time. */
 const fakeRedis = (freeAt: number) => {
   const tries: number[] = [];
-  // effect 4.0.7 added `connect`.
-  const client: Parameters<typeof Redis.make>[0] & {
-    readonly connect: Effect.Effect<never>;
-  } = {
-    send: <A>(command: string) =>
-      Effect.map(Clock.currentTimeMillis, (now) => {
-        if (command !== 'SET') return null as A;
-        tries.push(now);
-        return (now >= freeAt ? 'OK' : null) as A;
-      }),
-    subscribe: () => Effect.die(new Error('unused')),
-    connect: Effect.die(new Error('unused')),
-  };
-  const layer = Layer.effect(Redis.Redis, Redis.make(client));
+  const layer = Layer.effect(
+    Redis.Redis,
+    Redis.make({
+      send: <A>(command: string) =>
+        Effect.map(Clock.currentTimeMillis, (now) => {
+          if (command !== 'SET') return null as A;
+          tries.push(now);
+          return (now >= freeAt ? 'OK' : null) as A;
+        }),
+      subscribe: () => Effect.die(new Error('unused')),
+      connect: Effect.die(new Error('unused')),
+    }),
+  );
   return { tries, layer };
 };
 

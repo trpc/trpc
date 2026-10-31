@@ -25,7 +25,7 @@ const noSubscribe = /* @__PURE__ */ new Redis.RedisError({
  * `fetch`, so it works where TCP doesn't (Workers, edge functions). Lua
  * scripts load once and run with `EVALSHA`, so anything built on `Redis`
  * works: `RateLimiter.layerStoreRedis()`, `experimental_redisLocker()`.
- * `reserve` (effect 4.0.7+) needs no connection of its own, since no command
+ * `reserve` needs no connection of its own, since no command
  * waits behind another. `subscribe` fails: Upstash's REST API has no pub/sub.
  *
  * @example
@@ -71,33 +71,23 @@ export function experimental_upstashRedis(
         },
         catch: (cause) => new Redis.RedisError({ cause }),
       });
-  // A REST command never blocks the ones behind it, so a reserved connection
-  // only has to fail its in-flight commands when it closes.
-  const connect = Effect.sync(() => {
-    const controller = new AbortController();
-    return {
-      send: makeSend(controller.signal),
-      close: Effect.sync(() => controller.abort()),
-    };
-  });
-  const client: RedisOptions = {
-    send: makeSend(),
-    subscribe: () => Effect.fail(noSubscribe),
-    connect,
-  };
-  return Layer.effect(Redis.Redis, Redis.make(client));
+  return Layer.effect(
+    Redis.Redis,
+    Redis.make({
+      send: makeSend(),
+      subscribe: () => Effect.fail(noSubscribe),
+      // A REST command never blocks the ones behind it, so a reserved
+      // connection only has to fail its in-flight commands when it closes.
+      connect: Effect.sync(() => {
+        const controller = new AbortController();
+        return {
+          send: makeSend(controller.signal),
+          close: Effect.sync(() => controller.abort()),
+        };
+      }),
+    }),
+  );
 }
-
-/** `Redis.make()`'s options with `connect`, which effect 4.0.7 added. */
-type RedisOptions = Parameters<typeof Redis.make>[0] & {
-  readonly connect: Effect.Effect<
-    {
-      readonly send: Redis.Redis['Service']['send'];
-      readonly close: Effect.Effect<void>;
-    },
-    Redis.RedisError
-  >;
-};
 
 /**
  * Options for {@link experimental_upstashRateLimiterStore}.

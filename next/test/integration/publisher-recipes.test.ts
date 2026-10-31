@@ -202,10 +202,7 @@ const fakeRedis = Layer.effect(Redis.Redis)(
     const streams = new Map<string, [string, [string, string]][]>();
     const listeners = new Map<string, Set<(m: Redis.RedisMessage) => void>>();
     let ms = 1;
-    // effect 4.0.7 added `connect`.
-    const client: Parameters<typeof Redis.make>[0] & {
-      readonly connect: Effect.Effect<never>;
-    } = {
+    return yield* Redis.make({
       send: <A>(command: string, ...args: ReadonlyArray<string>) =>
         Effect.suspend(() => {
           const [key = ''] = args;
@@ -241,8 +238,7 @@ const fakeRedis = Layer.effect(Redis.Redis)(
           return Effect.never;
         }),
       connect: Effect.die(new Error('fake redis: connect')),
-    };
-    return yield* Redis.make(client);
+    });
   }),
 );
 
