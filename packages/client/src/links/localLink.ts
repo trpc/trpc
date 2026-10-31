@@ -15,6 +15,7 @@ import {
   run,
   type AnyRouter,
   type ErrorHandlerOptions,
+  type FormattedErrorShapes,
   type inferClientTypes,
   type inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -70,8 +71,10 @@ export function unstable_localLink<TRouter extends AnyRouter>(
         });
 
         let input = op.input;
+        let errorShapes: FormattedErrorShapes | undefined = undefined;
         async function runProcedure(newInput: unknown): Promise<unknown> {
           input = newInput;
+          errorShapes = new WeakMap();
 
           ctx = await opts.createContext();
 
@@ -83,6 +86,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
             type: op.type,
             signal,
             batchIndex: 0,
+            errorShapes,
           });
         }
 
@@ -112,6 +116,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
             input,
             path: op.path,
             type: op.type,
+            errorShapes,
           });
           return TRPCClientError.from(
             { error: transformChunk(shape) },

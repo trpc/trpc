@@ -666,6 +666,254 @@ test('the handler sees the context added by earlier middlewares', async () => {
   expect(err.data).toMatchObject({ userId: 'user_1' });
 });
 
+test('a shared error instance is formatted again on every call', async () => {
+  const local = initTRPC.context<{ userId: string }>().create();
+
+  // errors are often defined once and reused
+  const notFound = new TRPCError({ code: 'NOT_FOUND' });
+
+  const router = local.router({
+    formatted: local.procedure
+      .errors((opts) => ({
+        ...opts.shape,
+        data: { ...opts.shape.data, userId: opts.ctx.userId },
+      }))
+      .query((): string => {
+        throw notFound;
+      }),
+    unformatted: local.procedure.query((): string => {
+      throw notFound;
+    }),
+  });
+
+  let userId = 'user_1';
+  await using ctx = testServerAndClientResource(router, {
+    server: { createContext: () => ({ userId }) },
+  });
+
+  const first = await waitError(ctx.client.formatted.query(), TRPCClientError);
+  expect(first.data).toMatchObject({ path: 'formatted', userId: 'user_1' });
+
+  userId = 'user_2';
+  const second = await waitError(ctx.client.formatted.query(), TRPCClientError);
+  expect(second.data).toMatchObject({ path: 'formatted', userId: 'user_2' });
+
+  const unformatted = await waitError(
+    ctx.client.unformatted.query(),
+    TRPCClientError,
+  );
+  expect(unformatted.data).toMatchObject({ path: 'unformatted' });
+  expect(unformatted.data).not.toHaveProperty('userId');
+});
+
+describe('an error instance shared between calls', () => {
+  class UserNotFoundError extends Error {}
+
+  function setup() {
+    const local = initTRPC.context<{ userId: string }>().create();
+
+    // e.g. DataLoader or `React.cache()` hand the same rejection to every caller
+    const original = new UserNotFoundError('User not found');
+    const shared = new TRPCError({ code: 'NOT_FOUND', cause: original });
+
+    const handledFor: string[] = [];
+    const formatted = local.procedure.input(z.string()).errors((opts) => {
+      handledFor.push(opts.ctx.userId);
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          userId: opts.ctx.userId,
+          input: opts.input,
+        },
+      };
+    });
+    const unformatted = local.procedure.input(z.string());
+
+    const router = local.router({
+      first: formatted.query((): string => {
+        throw shared;
+      }),
+      second: formatted.query((): string => {
+        throw shared;
+      }),
+      unformatted: unformatted.query((): string => {
+        throw shared;
+      }),
+      firstSub: formatted.subscription(async function* () {
+        throw shared;
+        yield 'never';
+      }),
+      unformattedSub: unformatted.subscription(async function* () {
+        throw shared;
+        yield 'never';
+      }),
+    });
+
+    return { local, router, original, shared, handledFor };
+  }
+
+  function expectOriginalError(
+    error: unknown,
+    { shared, original }: ReturnType<typeof setup>,
+  ) {
+    expect(error).toBe(shared);
+    assert(error instanceof TRPCError);
+    expect(error.cause).toBe(original);
+    expect(typeof error.stack).toBe('string');
+  }
+
+  test('server-side callers get the original error and each run the handler', async () => {
+    const setupResult = setup();
+    const { local, router, shared, handledFor } = setupResult;
+    const keysBefore = Reflect.ownKeys(shared);
+    const createCaller = local.createCallerFactory(router);
+
+    const errors = [
+      await waitError(createCaller({ userId: 'user_1' }).first('a')),
+      await waitError(createCaller({ userId: 'user_2' }).first('b')),
+      await waitError(createCaller({ userId: 'user_3' }).unformatted('c')),
+    ];
+
+    for (const error of errors) {
+      expectOriginalError(error, setupResult);
+    }
+    expect(handledFor).toEqual(['user_1', 'user_2']);
+    expect(Reflect.ownKeys(shared)).toEqual(keysBefore);
+  });
+
+  test('a server-side call does not leak its shape into later requests', async () => {
+    const { local, router } = setup();
+
+    await waitError(
+      local.createCallerFactory(router)({ userId: 'user_1' }).first('a'),
+    );
+
+    await using ctx = testServerAndClientResource(router, {
+      server: { createContext: () => ({ userId: 'user_2' }) },
+    });
+
+    const formattedErr = await waitError(
+      ctx.client.first.query('b'),
+      TRPCClientError,
+    );
+    expect(formattedErr.data).toMatchObject({
+      path: 'first',
+      userId: 'user_2',
+      input: 'b',
+    });
+
+    const unformattedErr = await waitError(
+      ctx.client.unformatted.query('c'),
+      TRPCClientError,
+    );
+    expect(unformattedErr.data).toMatchObject({ path: 'unformatted' });
+    expect(unformattedErr.data).not.toHaveProperty('userId');
+  });
+
+  test.each<'httpBatchLink' | 'httpBatchStreamLink' | 'httpLink' | 'wsLink'>([
+    'httpBatchLink',
+    'httpBatchStreamLink',
+    'httpLink',
+    'wsLink',
+  ])(
+    'concurrent calls over %s each get their own shape',
+    async (clientLink) => {
+      const setupResult = setup();
+      const { router, shared, handledFor } = setupResult;
+      const keysBefore = Reflect.ownKeys(shared);
+
+      const serverErrors: unknown[] = [];
+      await using ctx = testServerAndClientResource(router, {
+        clientLink,
+        server: {
+          createContext: () => ({ userId: 'user_1' }),
+          onError: (opts) => {
+            serverErrors.push(opts.error);
+          },
+        },
+        wssServer: {
+          createContext: () => ({ userId: 'user_1' }),
+          onError: (opts) => {
+            serverErrors.push(opts.error);
+          },
+        },
+      });
+
+      const [first, second, unformatted] = await Promise.all([
+        waitError(ctx.client.first.query('a'), TRPCClientError),
+        waitError(ctx.client.second.query('b'), TRPCClientError),
+        waitError(ctx.client.unformatted.query('c'), TRPCClientError),
+      ]);
+
+      expect(first.data).toMatchObject({
+        path: 'first',
+        userId: 'user_1',
+        input: 'a',
+      });
+      expect(second.data).toMatchObject({
+        path: 'second',
+        userId: 'user_1',
+        input: 'b',
+      });
+      expect(unformatted.data).toMatchObject({
+        code: 'NOT_FOUND',
+        path: 'unformatted',
+      });
+      expect(unformatted.data).not.toHaveProperty('userId');
+      expect(unformatted.data).not.toHaveProperty('input');
+
+      expect(handledFor).toHaveLength(2);
+      expect(serverErrors).toHaveLength(3);
+      for (const error of serverErrors) {
+        expectOriginalError(error, setupResult);
+      }
+      expect(Reflect.ownKeys(shared)).toEqual(keysBefore);
+    },
+  );
+
+  test.each<'httpSubscriptionLink' | 'wsLink'>([
+    'httpSubscriptionLink',
+    'wsLink',
+  ])(
+    'concurrent subscriptions over %s each get their own shape',
+    async (clientLink) => {
+      const { router } = setup();
+
+      await using ctx = testServerAndClientResource(router, {
+        clientLink,
+        server: { createContext: () => ({ userId: 'user_1' }) },
+        wssServer: { createContext: () => ({ userId: 'user_1' }) },
+      });
+
+      const received = new Map<string, unknown>();
+      const subs = [
+        ctx.client.firstSub.subscribe('a', {
+          onError: (err) => received.set('a', err.data),
+        }),
+        ctx.client.firstSub.subscribe('b', {
+          onError: (err) => received.set('b', err.data),
+        }),
+        ctx.client.unformattedSub.subscribe('c', {
+          onError: (err) => received.set('c', err.data),
+        }),
+      ];
+
+      await vi.waitFor(() => {
+        expect(received.size).toBe(3);
+      });
+      for (const sub of subs) {
+        sub.unsubscribe();
+      }
+
+      expect(received.get('a')).toMatchObject({ path: 'firstSub', input: 'a' });
+      expect(received.get('b')).toMatchObject({ path: 'firstSub', input: 'b' });
+      expect(received.get('c')).toMatchObject({ path: 'unformattedSub' });
+      expect(received.get('c')).not.toHaveProperty('input');
+    },
+  );
+});
+
 test('the handler receives the default shape, including the dev stack', async () => {
   const local = initTRPC.create({ isDev: true });
 
