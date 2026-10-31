@@ -199,7 +199,7 @@
     "@fastify/websocket": "catalog:",
     "@oxc-project/runtime": "0.152.0",
     "@tanstack/intent": "^0.0.27",
-    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query": "^5.105.0",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",
