@@ -164,3 +164,18 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 - #7175, #7176, #7429: Observables (`AsyncIterable` and Effect `Stream` instead). #7121 and #7494 are empty or unrelated.
 - #7609, #7610, #6703, #6984: v11 examples. #7162, #7320, #7321, #7399, #7418, #7565, #7589, #7605, #7613, #7615, #7619, #6827, #7672: v11 docs and the website. #7364, #7417, #7602: v11 skill reviews.
 - #7227, #7454, #7625, #7629, #7634, #7635, #7637, #7639, #7648, #7649, #7650, #7652, #7653, #7674, #7675: v11 repo chores and dependency bumps.
+
+## Fourth round (2026-10-31): `main`'s merged fixes, after the sync
+
+The 56 commits the 2026-10-31 sync brought from `main` (`d756e591a..9959a177b`) were checked against `next/`, skipping the ones the rounds above answered.
+
+- Fixed in vNext:
+  - #7707, an unexpected error made in another realm (`node:vm`, an iframe) fails `instanceof Error`, so `exposeUnexpectedErrors` showed "Internal server error" instead of its message (`isErrorLike`, `errors.test.ts`). Its `cause` already kept its own name and stack.
+  - #7691, in the v11 interop only: an untracked SSE event after a tracked one inherited its id in a v11 client. The interop writes v11's `restore-id` frames ([`v11-stream-cancel-and-interop-parity.md`](../decisions/v11-stream-cancel-and-interop-parity.md)). vNext's own links reset the id per event.
+  - #7748, bins pointing at files the build doesn't make: `tooling/pack/pack.test.ts` checks each `bin` is built, under `files`, with a shebang.
+- Already answered:
+  - #7729, #7731, `share()`'s fan-out and teardown: `dedupeLink` is `Stream.share` over an `RcMap`, and its tests cover a peer leaving, errors reaching every caller and a call after the end.
+  - #7706 is #5534, #7699 is #7666, #7709 is #6057 (v11 adapters), #7683 is in the interop already.
+- Not pursuing yet:
+  - The rest of #7748's `verify-packed` (installing the packed tarballs together and type-checking every entry point with `skipLibCheck: false` under `nodenext` and `bundler`): `tooling/portability` compiles against the sources, so nothing checks the published declarations. Worth porting before the first publish.
+  - #7675's publish gate: `next/` doesn't publish yet. #7726's Bun 1.4.4, #7694, #7695, #7658: CI and links `next/` doesn't share.
