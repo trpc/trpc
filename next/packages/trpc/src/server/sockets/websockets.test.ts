@@ -1,5 +1,5 @@
 import { request as httpRequest } from 'node:http';
-import { Duration, Stream } from 'effect';
+import { Duration, Function, Stream } from 'effect';
 import { cors } from '@trpc12/trpc/http';
 import {
   createTrpcClient,
@@ -725,19 +725,24 @@ test('a websocket.upgrade that throws answers 400', async () => {
   await handler.dispose();
 });
 
-/** A socket whose peer never answers the close handshake: only its session's end lets go of it. */
+/**
+ * A socket whose peer never answers the close handshake: only its session's
+ * end lets go of it. Counts the listeners that do something: since 4.0.6,
+ * Effect's `Socket` leaves a no-op `error` listener when it lets go, so a
+ * late error stays handled.
+ */
 class UnansweredSocket extends StandardSocket {
   listeners = 0;
   override addEventListener(
     ...args: Parameters<EventTarget['addEventListener']>
   ) {
-    this.listeners++;
+    if (args[1] !== Function.constVoid) this.listeners++;
     super.addEventListener(...args);
   }
   override removeEventListener(
     ...args: Parameters<EventTarget['removeEventListener']>
   ) {
-    this.listeners--;
+    if (args[1] !== Function.constVoid) this.listeners--;
     super.removeEventListener(...args);
   }
   override close(code?: number, reason?: string) {
