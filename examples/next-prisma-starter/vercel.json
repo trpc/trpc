@@ -1,4 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["lhr1"]
+  "framework": "nextjs",
+  "regions": ["lhr1"],
+  "fluid": true,
+  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "cd ../.. && pnpm turbo --filter=./examples/next-prisma-starter build",
+  "ignoreCommand": "pnpm dlx turbo-ignore",
+  "github": {
+    "silent": true
+  }
 }
