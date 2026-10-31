@@ -13,6 +13,12 @@ if (!DB_URL) {
  */
 export const DIRECT_DB_URL = process.env.DIRECT_URL ?? DB_URL;
 
-// Transaction poolers (e.g. Supabase, PgBouncer) don't support prepared statements
-const queryClient = postgres(DB_URL, { prepare: false });
+const queryClient = postgres(DB_URL, {
+  // Transaction poolers (e.g. Supabase, PgBouncer) support neither prepared
+  // statements nor pipelined queries. With pipelining off, `sql.begin()` can't
+  // be used, so don't add transactions without moving off the pooler.
+  prepare: false,
+  // @ts-expect-error -- supported at runtime but missing from the types
+  max_pipeline: 0,
+});
 export const db = drizzle(queryClient, { schema });
