@@ -6,11 +6,6 @@
     "version": {
       "exact": true,
       "syncWorkspaceLock": true
-    },
-    "publish": {
-      "stripPackageKeys": [
-        "devDependencies"
-      ]
     }
   },
   "$schema": "node_modules/@lerna-lite/cli/schemas/lerna-schema.json"
