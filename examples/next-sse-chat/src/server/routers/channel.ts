@@ -3,6 +3,8 @@ import type { TRPCRouterRecord } from '@trpc/server';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
+import type { PubSubEvent } from '~/server/pubsub';
+import { listen, publish } from '~/server/pubsub';
 import { authedProcedure, publicProcedure } from '~/server/trpc';
 import { z } from 'zod';
 
@@ -23,11 +25,54 @@ export interface MyEvents {
   isTypingUpdate: [channelId: string, who: WhoIsTyping];
 }
 
-// In a real app, you'd probably use Redis or something
+// Local to this server instance, fed by `onPubSubEvent()` below
 export const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing for each channel, key is `name`
 export const currentlyTyping: Record<string, WhoIsTyping> = Object.create(null);
+
+function setTyping(channelId: string, name: string, typing: boolean) {
+  currentlyTyping[channelId] ??= {};
+  if (typing) {
+    currentlyTyping[channelId][name] = { lastTyped: new Date() };
+  } else if (currentlyTyping[channelId][name]) {
+    delete currentlyTyping[channelId][name];
+  } else {
+    return;
+  }
+  ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId]);
+}
+
+async function onPubSubEvent(event: PubSubEvent) {
+  switch (event.type) {
+    case 'isTyping': {
+      setTyping(event.channelId, event.name, event.typing);
+      return;
+    }
+    case 'add': {
+      setTyping(event.channelId, event.name, false);
+      const post = await db.query.Post.findFirst({
+        where: (fields, ops) => ops.eq(fields.id, event.postId),
+      });
+      if (post) {
+        ee.emit('add', event.channelId, post);
+      }
+      return;
+    }
+  }
+}
+
+// Handle events one at a time so posts are emitted in the order they were published
+let pubSubQueue = Promise.resolve();
+export function ensureListening() {
+  return listen((event) => {
+    pubSubQueue = pubSubQueue
+      .then(() => onPubSubEvent(event))
+      .catch((cause) => {
+        console.error('Failed to handle pubsub event', event, cause);
+      });
+  });
+}
 
 // every 1s, clear old "isTyping"
 setInterval(() => {
@@ -68,19 +113,12 @@ export const channelRouter = {
   isTyping: authedProcedure
     .input(z.object({ channelId: z.string().uuid(), typing: z.boolean() }))
     .mutation(async (opts) => {
-      const { name } = opts.ctx.user;
-      const { channelId } = opts.input;
-
-      currentlyTyping[channelId] ??= {};
-
-      if (!opts.input.typing) {
-        delete currentlyTyping[channelId][name];
-      } else {
-        currentlyTyping[channelId][name] = {
-          lastTyped: new Date(),
-        };
-      }
-      ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId]);
+      await publish({
+        type: 'isTyping',
+        channelId: opts.input.channelId,
+        name: opts.ctx.user.name,
+        typing: opts.input.typing,
+      });
     }),
 
   whoIsTyping: publicProcedure
@@ -91,6 +129,8 @@ export const channelRouter = {
     )
     .subscription(async function* (opts) {
       const { channelId } = opts.input;
+
+      await ensureListening();
 
       let lastIsTyping = '';
 
