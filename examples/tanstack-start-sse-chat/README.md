@@ -28,7 +28,7 @@ Route loaders prefetch the queries a page needs ([`/src/queries.ts`](./src/queri
 ## Setup
 
 ```sh
-git clone git@github.com:trpc/examples-sse-chat.git
+git clone git@github.com:trpc/examples-tanstack-start-sse-chat.git
 pnpm i
 cp .env.example .env
 pnpm dev

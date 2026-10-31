@@ -1,5 +1,5 @@
 {
-  "name": "examples-sse-chat",
+  "name": "examples-tanstack-start-sse-chat",
   "type": "module",
   "private": true,
   "scripts": {

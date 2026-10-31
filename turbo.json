@@ -37,7 +37,7 @@
     "examples-minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },
-    "examples-sse-chat#build": {
+    "examples-tanstack-start-sse-chat#build": {
       "dependsOn": ["^build", "prebuild"],
       "outputs": [".output/**", ".vercel/output/**"]
     },

@@ -2026,7 +2026,53 @@ importers:
         specifier: ^1.0.1
         version: 1.0.4(supports-color@10.0.0)
 
-  examples/sse-chat:
+  examples/standalone-server:
+    dependencies:
+      '@trpc/client':
+        specifier: npm:@trpc/client
+        version: link:../../packages/client
+      '@trpc/react-query':
+        specifier: npm:@trpc/react-query
+        version: link:../../packages/react-query
+      '@trpc/server':
+        specifier: npm:@trpc/server
+        version: link:../../packages/server
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
+      zod:
+        specifier: ^4.2.1
+        version: 4.2.1
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.4
+        version: 24.13.4
+      '@types/ws':
+        specifier: ^8.2.0
+        version: 8.5.10
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+      eslint:
+        specifier: ^10.10.0
+        version: 10.10.0(jiti@2.6.1)(supports-color@10.0.0)
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0(supports-color@10.0.0)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      wait-port:
+        specifier: ^1.0.1
+        version: 1.0.4(supports-color@10.0.0)
+
+  examples/tanstack-start-sse-chat:
     dependencies:
       '@auth/core':
         specifier: ^0.41.3
@@ -2128,52 +2174,6 @@ importers:
       vite:
         specifier: ^8.3.0
         version: 8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
-
-  examples/standalone-server:
-    dependencies:
-      '@trpc/client':
-        specifier: npm:@trpc/client
-        version: link:../../packages/client
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
-      '@trpc/server':
-        specifier: npm:@trpc/server
-        version: link:../../packages/server
-      ws:
-        specifier: ^8.21.3
-        version: 8.21.3
-      zod:
-        specifier: ^4.2.1
-        version: 4.2.1
-    devDependencies:
-      '@types/node':
-        specifier: ^24.13.4
-        version: 24.13.4
-      '@types/ws':
-        specifier: ^8.2.0
-        version: 8.5.10
-      esbuild:
-        specifier: ^0.28.2
-        version: 0.28.2
-      eslint:
-        specifier: ^10.10.0
-        version: 10.10.0(jiti@2.6.1)(supports-color@10.0.0)
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
-      start-server-and-test:
-        specifier: ^1.12.0
-        version: 1.14.0(supports-color@10.0.0)
-      tsx:
-        specifier: ^4.19.3
-        version: 4.21.0
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-      wait-port:
-        specifier: ^1.0.1
-        version: 1.0.4(supports-color@10.0.0)
 
   examples/vercel-edge-runtime:
     dependencies:

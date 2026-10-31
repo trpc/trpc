@@ -156,7 +156,7 @@ jobs:
             next-prisma-starter,
             next-prisma-todomvc,
             next-prisma-websockets-starter,
-            # sse-chat,
+            # tanstack-start-sse-chat,
             openapi-codegen,
             soa,
             standalone-server,
