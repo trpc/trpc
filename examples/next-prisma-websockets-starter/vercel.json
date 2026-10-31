@@ -1,9 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "github": {
-    "silent": true
-  },
+  "framework": "nextjs",
   "regions": ["lhr1"],
+  "fluid": true,
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm turbo --filter=./examples/next-prisma-websockets-starter build"
 }

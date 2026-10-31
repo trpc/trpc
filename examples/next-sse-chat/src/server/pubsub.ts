@@ -12,7 +12,8 @@ export type PubSubEvent =
   | { type: 'add'; channelId: string; postId: string; name: string }
   | { type: 'isTyping'; channelId: string; name: string; typing: boolean };
 
-const PG_CHANNEL = 'sse_chat_events';
+// Channels are shared by the whole database, so scope them to the app's schema
+const PG_CHANNEL = `${new URL(DIRECT_DB_URL).searchParams.get('search_path') ?? 'public'}_events`;
 
 export async function publish(event: PubSubEvent) {
   await db.execute(

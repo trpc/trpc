@@ -1,4 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm --filter root --filter www --filter \"@trpc/*\" --filter \"!@trpc/tests\" install",
+  "buildCommand": "cd .. && pnpm turbo --filter www build",
   "redirects": [
     {
       "source": "/docs/server/output-validation",
