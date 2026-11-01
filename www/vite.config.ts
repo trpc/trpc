@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import { Effect, FileSystem } from 'effect';
 import { defineConfig } from 'vite';
 
+import { referenceSection } from './api-reference/convert.ts';
 import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
 import { blogFeeds } from './build/feeds.ts';
@@ -112,8 +113,9 @@ export default defineConfig({
       docsContent({
         agentFiles: {
           llmsTxt: llmsTxtPath(copy.version.id),
-          markdown: false,
+          markdown: copy.version.id === 'v11',
           name: `tRPC ${copy.version.id}`,
+          omitSections: [referenceSection],
           others: llmsOthers(copy.version.id),
         },
         basePath: copy.version.basePath,

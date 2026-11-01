@@ -53,14 +53,17 @@ describe('onDemandRoutes', () => {
   });
 
   it('sends nothing with ?flags= without experiments', () => {
-    expect(onDemandRoutes([]).some((route) => JSON.stringify(route.has ?? []).includes('"flags"'))).toBe(false);
+    expect(
+      onDemandRoutes([]).some((route) =>
+        JSON.stringify(route.has ?? []).includes('"flags"'),
+      ),
+    ).toBe(false);
   });
 
   it('sends a search to the function', () => {
     expect(search?.dest).toBe(`/${onDemandFunction}?${pathParam}=/search`);
     expect(search?.has).toEqual([{ key: 'q', type: 'query', value: '^.+$' }]);
   });
-
 });
 
 describe('writeOnDemandFunction', () => {

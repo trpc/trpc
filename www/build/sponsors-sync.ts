@@ -209,7 +209,7 @@ if (import.meta.main) {
   const here = (relative: string) =>
     fileURLToPath(new URL(relative, import.meta.url));
   const paths: SponsorsFiles = {
-    readme: here('../../../README.md'),
+    readme: here('../../README.md'),
     sponsorsFile: here('../sponsors.json'),
   };
   const tokenNeeded = "a token of KATT's with read:user and read:org";

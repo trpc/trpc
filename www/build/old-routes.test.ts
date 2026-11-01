@@ -311,9 +311,7 @@ describe('respond and land', () => {
     expect(
       routeProblems({
         redirects: result.redirects,
-        routes: routes([
-          ...redirectRoutes(result.redirects),
-              ]),
+        routes: routes([...redirectRoutes(result.redirects)]),
         served,
       }),
     ).toEqual([]);

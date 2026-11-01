@@ -1,14 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "NODE_OPTIONS=--max-old-space-size=4096 pnpm build",
+  "buildCommand": "cd .. && NODE_OPTIONS=--max-old-space-size=4096 pnpm turbo --filter www build",
   "framework": "tanstack-start",
-  "git": {
-    "deploymentEnabled": {
-      "**": false,
-      "v12": true,
-      "v12-*": true
-    }
-  },
-  "ignoreCommand": "sh ../tooling/vercel-ignore/ignore.sh",
-  "installCommand": "pnpm install --frozen-lockfile"
+  "installCommand": "pnpm --filter root --filter \"www...\" install --frozen-lockfile"
 }

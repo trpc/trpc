@@ -35,6 +35,20 @@
         "docs/typedoc/**"
       ]
     },
+    "www#build": {
+      "dependsOn": ["^build", "prebuild"],
+      "env": [
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "SENTRY_*",
+        "VERCEL",
+        "VERCEL_GIT_COMMIT_REF",
+        "VERCEL_GIT_COMMIT_SHA",
+        "VERCEL_URL",
+        "GITHUB_REF_NAME",
+        "GITHUB_SHA"
+      ],
+      "outputs": [".vercel/output/**", "dist/**"]
+    },
     "examples-minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },

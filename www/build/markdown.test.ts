@@ -346,7 +346,6 @@ describe('renderMarkdown', () => {
       expect(rendered.html).toMatch(/<div data-tab="Zod" data-active="">/);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
-
 });
 
 describe('resolveLink', () => {

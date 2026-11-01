@@ -32,5 +32,11 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src", "build", "not-found-check.ts", "vite.config.ts", "vitest.config.ts"]
+  "include": [
+    "src",
+    "build",
+    "not-found-check.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
 }

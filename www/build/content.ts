@@ -51,6 +51,11 @@ export interface AgentFiles {
   readonly markdown: boolean;
   /** Its heading: `tRPC v10`. `tRPC` if omitted. */
   readonly name?: string;
+  /**
+   * Sections `llms.txt` and its `-full` twin leave out, as trpc.io's left
+   * out the generated API reference. Their pages still get their markdown.
+   */
+  readonly omitSections?: ReadonlyArray<string>;
   /** The other versions' `llms.txt`, listed at the top: `v10` at `/llms-v10.txt`. */
   readonly others?: ReadonlyArray<{
     readonly name: string;
@@ -775,8 +780,18 @@ export function docsContent(options: ContentOptions): Plugin {
         })
         .map(async (source) => ({ page: await render(source), source })),
     );
+    const omitted = new Set(
+      sections
+        .filter((section) => files.omitSections?.includes(section.title))
+        .flatMap((section) => section.docs.map((doc) => doc.slug)),
+    );
     const written = new Map<string, string>();
-    const list = llmsTxt(files, sections);
+    const list = llmsTxt(
+      files,
+      sections.filter(
+        (section) => !files.omitSections?.includes(section.title),
+      ),
+    );
     written.set(files.llmsTxt, list);
     if (files.llmsTxt === '/llms.txt') {
       written.set('/index.md', list);
@@ -789,10 +804,12 @@ export function docsContent(options: ContentOptions): Plugin {
       llmsFullTxtPath(files.llmsTxt),
       [
         ...intro,
-        ...pages.map(
-          (entry) =>
-            `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
-        ),
+        ...pages
+          .filter((entry) => !omitted.has(entry.source.slug))
+          .map(
+            (entry) =>
+              `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
+          ),
       ].join('\n'),
     );
     if (files.markdown) {

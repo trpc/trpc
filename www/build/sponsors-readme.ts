@@ -95,13 +95,13 @@ export function withSponsorsBlock(readme: string, markdown: string) {
   }
   return [
     readme.slice(0, start + startMarker.length),
-    '<!-- prettier-ignore-start -->',
+    '<!-- oxfmt-ignore-start -->',
     '<!-- markdownlint-disable -->',
     '',
     markdown,
     '',
     '<!-- markdownlint-restore -->',
-    '<!-- prettier-ignore-end -->',
+    '<!-- oxfmt-ignore-end -->',
     '',
     readme.slice(end),
   ].join('\n');

@@ -336,5 +336,4 @@ describe('writeVercelOutput', () => {
         );
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
-
 });

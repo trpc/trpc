@@ -189,9 +189,7 @@ describe('hidden docs', () => {
 
 describe('hiddenRouteProblems', () => {
   it('passes the routes the site writes', () => {
-    expect(hiddenRouteProblems(routes(), hiddenPaths)).toEqual(
-      [],
-    );
+    expect(hiddenRouteProblems(routes(), hiddenPaths)).toEqual([]);
     expect(
       hiddenRouteProblems(
         routes(
