@@ -746,7 +746,7 @@ const billingQuery = useQuery(trpcBilling.list.queryOptions()); // billing servi
 }
 ```
 
-Enable the feature flag when creating your context:
+Pass a `keyPrefix` to each `TRPCProvider`. You create the contexts as usual:
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server.ts
@@ -764,7 +764,7 @@ import type { BillingRouter, AccountRouter } from '../server';
 // ---cut---
 // [...]
 
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext<BillingRouter>();
 export const BillingProvider = billing.TRPCProvider;
 export const useBilling = billing.useTRPC;
 export const createBillingClient = () =>
@@ -774,7 +774,7 @@ export const createBillingClient = () =>
     ],
   });
 
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext<AccountRouter>();
 export const AccountProvider = account.TRPCProvider;
 export const useAccount = account.useTRPC;
 export const createAccountClient = () =>
@@ -799,10 +799,10 @@ export type AccountRouter = typeof accountRouter;
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { createTRPCClient } from '@trpc/client';
 import type { BillingRouter, AccountRouter } from '../server';
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext<BillingRouter>();
 export const BillingProvider = billing.TRPCProvider;
 export const createBillingClient = () => createTRPCClient<BillingRouter>({ links: [] });
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext<AccountRouter>();
 export const AccountProvider = account.TRPCProvider;
 export const createAccountClient = () => createTRPCClient<AccountRouter>({ links: [] });
 
@@ -857,9 +857,9 @@ export type AccountRouter = typeof accountRouter;
 // @filename: utils/trpc.ts
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { BillingRouter, AccountRouter } from '../server';
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext<BillingRouter>();
 export const useBilling = billing.useTRPC;
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext<AccountRouter>();
 export const useAccount = account.useTRPC;
 
 // @filename: components/MyComponent.tsx
@@ -894,6 +894,38 @@ const queryKeys = [
   [['account'], ['list'], { type: 'query' }],
 ];
 ```
+
+Without React context, pass `keyPrefix` to `createTRPCOptionsProxy`. The key types then include the prefix:
+
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const billingRouter = t.router({ list: t.procedure.query(() => [{ id: '1' }]) });
+export type BillingRouter = typeof billingRouter;
+
+// @filename: utils/trpc.ts
+// ---cut---
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCClient } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { BillingRouter } from '../server';
+
+export const billing = createTRPCOptionsProxy<BillingRouter>({
+  client: createTRPCClient<BillingRouter>({ links: [] }),
+  queryClient: new QueryClient(),
+  keyPrefix: 'billing',
+});
+
+const listKey = billing.list.queryKey();
+//    ^?
+```
+
+With `createTRPCContext`, the prefix is only known when `TRPCProvider` renders, so the key types from `useTRPC()` keep the unprefixed shape. The keys themselves include the prefix.
+
+:::note
+Earlier versions required a feature flag: `createTRPCContext<AppRouter, { keyPrefix: true }>()`. You no longer need it, and it's deprecated. It still compiles and still types keys with the prefix.
+:::
 
 ### Inferring Input and Output types
 
