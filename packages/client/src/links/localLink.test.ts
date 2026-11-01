@@ -7,7 +7,11 @@ import { z } from 'zod';
 import { createTRPCClient } from '../createTRPCClient';
 import { isTRPCClientError } from '../TRPCClientError';
 import type { LocalLinkOptions } from './localLink';
-import { experimental_localLink as localLink } from './localLink';
+import {
+  experimental_localLink,
+  localLink,
+  unstable_localLink,
+} from './localLink';
 
 async function aggregateAsyncIterable<TYield, TReturn>(
   iterable: AsyncIterable<TYield, TReturn>,
@@ -551,4 +555,9 @@ test('with transformer', async () => {
   expect(result.foo).toBeInstanceOf(Promise);
 
   expect(await result.foo).toBe('bar');
+});
+
+test('deprecated aliases point to localLink', () => {
+  expect(unstable_localLink).toBe(localLink);
+  expect(experimental_localLink).toBe(localLink);
 });
