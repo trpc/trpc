@@ -1122,7 +1122,7 @@ function convertProse(lines: ReadonlyArray<string>, context: Converting) {
     keepingInlineCode(prose, (masked) => {
       const converted = masked
         .replaceAll(/<head>[\s\S]*?<\/head>\n?/g, '')
-        .replaceAll(/[ \t]*<script\b[\s\S]*?<\/script>/g, '')
+        .replaceAll(/[ \t]*<script\b[\s\S]*?<\/script[^>]*>/gi, '')
         .replaceAll(/\{\/\*[\s\S]*?\*\/\}\n?/g, '')
         .replaceAll(
           /<([A-Z][\w.]*)((?:\s+[\w-]+(?:=(?:"[^"]*"|'[^']*'|\{\{[^}]*\}\}|\{[^}]*\}))?)*)\s*\/>/g,
@@ -1515,6 +1515,7 @@ export function plainProse(markdown: string) {
     .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replaceAll(/<[^>]+>/g, '')
+    .replaceAll('<', '')
     .replaceAll(/(?<!\w)(\*\*|__|\*|_|`)(\S(?:[^\n]*?\S)?)\1(?!\w)/g, '$2')
     .replaceAll(/\s+/g, ' ')
     .trim();

@@ -14,6 +14,10 @@ import {
  * A samples dir whose `docs` and `v11` apps compile inline blocks, each with
  * its own `greeting`, removed when the test ends.
  */
+/** The HTML's text, without its tags. */
+const textOf = (html: string) =>
+  html.replaceAll(/<[^>]+>/g, '').replaceAll('<', '');
+
 const samples = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -254,9 +258,7 @@ describe('renderMarkdown', () => {
       ]) {
         const [manager = '', ...rest] = command.split(' ');
         expect(rendered.html).toContain(`data-tab-select="${manager}"`);
-        expect(rendered.html.replaceAll(/<[^>]+>/g, '')).toContain(
-          [manager, ...rest].join(' '),
-        );
+        expect(textOf(rendered.html)).toContain([manager, ...rest].join(' '));
       }
     }).pipe(Effect.provide(NodeServices.layer)),
   );
@@ -310,7 +312,7 @@ describe('renderMarkdown', () => {
       const rendered = yield* render(
         '> [!TIP] AI **agents**\n> Install the skills.\n\n> [!NOTE]\n> Plain.',
       );
-      const text = rendered.html.replaceAll(/<[^>]+>/g, '');
+      const text = textOf(rendered.html);
       expect(text).toContain('AI agents');
       expect(rendered.html).toContain('<strong>agents</strong>');
       expect(text).toContain('Install the skills.');
