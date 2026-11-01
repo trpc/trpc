@@ -22,16 +22,16 @@ export function behaviorSubject<TValue>(
 ): BehaviorSubject<TValue> {
   let value: TValue = initialValue;
 
-  const observerList: Observer<TValue, never>[] = [];
+  const observerList = new Set<Observer<TValue, never>>();
 
   const addObserver = (observer: Observer<TValue, never>) => {
     if (value !== undefined) {
       observer.next(value);
     }
-    observerList.push(observer);
+    observerList.add(observer);
   };
   const removeObserver = (observer: Observer<TValue, never>) => {
-    observerList.splice(observerList.indexOf(observer), 1);
+    observerList.delete(observer);
   };
 
   const obs = observable<TValue, never>((observer) => {
@@ -46,8 +46,12 @@ export function behaviorSubject<TValue>(
       return;
     }
     value = nextValue;
-    for (const observer of observerList) {
-      observer.next(nextValue);
+    // an observer can be removed while this loop is notifying it, and an
+    // observer removed by an earlier callback must not be notified
+    for (const observer of [...observerList]) {
+      if (observerList.has(observer)) {
+        observer.next(nextValue);
+      }
     }
   };
 
