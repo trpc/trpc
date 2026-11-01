@@ -40,6 +40,9 @@ jobs:
         with:
           # The branch's tip, not the triggering commit: a later push may be in.
           ref: ${{ github.ref }}
+          # The "main" rule set rejects pushes made with GITHUB_TOKEN; the
+          # commit-and-push step's fetch and push use this one.
+          token: ${{ secrets.ACCESS_TOKEN }}
       - if: steps.go.outputs.run == 'true'
         uses: pnpm/action-setup@v6
       - if: steps.go.outputs.run == 'true'

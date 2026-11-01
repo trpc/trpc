@@ -9,7 +9,7 @@
  *
  * `--only-when-sponsors-change` writes nothing while the same sponsors are
  * listed in the same tiers, so the daily CI run
- * (`.github/workflows/next-sponsors.yml`) commits only when one joined,
+ * (`.github/workflows/sponsors.yml`) commits only when one joined,
  * left or changed tier.
  *
  * `--readme-only` rewrites the README from `sponsors.json` without GitHub,
