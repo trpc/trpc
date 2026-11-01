@@ -5,7 +5,7 @@ import { v11Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import { site } from '~/site.ts';
 
-import { GitHubIcon } from './icons.tsx';
+import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
 import { Logo } from './logo.tsx';
 import { MobileNav } from './mobile-nav.tsx';
 import { SearchButton } from './search.tsx';
@@ -19,6 +19,27 @@ const links = [
   { label: 'Docs', slug: v11Docs.firstDoc },
   { label: 'Quickstart', slug: 'quickstart' },
   { label: 'Using Next.js', slug: 'client/nextjs' },
+] as const;
+
+const socialLinks = [
+  {
+    className: 'hidden sm:inline-flex',
+    href: site.github,
+    Icon: GitHubIcon,
+    label: 'tRPC on GitHub',
+  },
+  {
+    className: 'hidden md:inline-flex',
+    href: site.xUrl,
+    Icon: XIcon,
+    label: 'tRPC on X',
+  },
+  {
+    className: 'hidden md:inline-flex',
+    href: site.discord,
+    Icon: DiscordIcon,
+    label: 'tRPC on Discord',
+  },
 ] as const;
 
 function DocsLinks() {
@@ -58,7 +79,6 @@ export function SiteHeader() {
           <Logo />
           {site.name}
         </Link>
-        <VersionSwitcher />
         <nav
           aria-label="Main"
           className="ml-3 hidden items-center gap-1 text-sm md:flex"
@@ -73,20 +93,26 @@ export function SiteHeader() {
             Blog
           </Link>
         </nav>
+        {/* In trpc.io's order. */}
         <div className="ml-auto flex items-center gap-1">
-          <SearchButton />
-          <a
-            aria-label="tRPC on GitHub"
-            className={cn(
-              buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
-              'hidden sm:inline-flex',
-            )}
-            href={site.github}
-            title="tRPC on GitHub"
-          >
-            <GitHubIcon />
-          </a>
+          {socialLinks.map((link) => (
+            <a
+              aria-label={link.label}
+              className={cn(
+                buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
+                'text-muted-foreground hover:text-foreground',
+                link.className,
+              )}
+              href={link.href}
+              key={link.href}
+              title={link.label}
+            >
+              <link.Icon />
+            </a>
+          ))}
+          <VersionSwitcher />
           <ThemeToggle />
+          <SearchButton />
         </div>
       </div>
     </header>

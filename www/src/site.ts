@@ -16,8 +16,14 @@ export const site = {
    * (`atTrpcIo`).
    */
   url: 'https://trpc.io',
+  /**
+   * trpc.io's redirect to the Discord invite, as trpc.io's navbar linked it:
+   * absolute, so prerendering doesn't crawl it as a page.
+   */
+  discord: 'https://trpc.io/discord',
   /** The project's account on X, for `twitter:site`. */
   x: '@trpcio',
+  xUrl: 'https://x.com/trpcio',
 } as const;
 
 /** Where the docs and blog are served. */

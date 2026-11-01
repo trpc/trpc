@@ -14,7 +14,7 @@ import { cn } from '@shared/ui/lib/utils';
 import { site } from '~/site.ts';
 
 import { DocsNav } from './docs-nav.tsx';
-import { GitHubIcon } from './icons.tsx';
+import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -55,6 +55,22 @@ export function MobileNav() {
             href={site.github}
           >
             <GitHubIcon /> GitHub
+          </a>
+          <a
+            aria-label="tRPC on X"
+            className={buttonVariants({ size: 'icon-sm', variant: 'outline' })}
+            href={site.xUrl}
+            title="tRPC on X"
+          >
+            <XIcon />
+          </a>
+          <a
+            aria-label="tRPC on Discord"
+            className={buttonVariants({ size: 'icon-sm', variant: 'outline' })}
+            href={site.discord}
+            title="tRPC on Discord"
+          >
+            <DiscordIcon />
           </a>
         </nav>
         <p className="text-base leading-none font-medium">Documentation</p>

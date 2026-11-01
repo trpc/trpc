@@ -42,9 +42,6 @@ export function VersionSwitcher(props: {
         }
       >
         {current.id}
-        <span className="hidden font-sans text-[10px] sm:inline">
-          {current.status}
-        </span>
         <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-auto min-w-52">

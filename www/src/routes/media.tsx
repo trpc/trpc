@@ -79,13 +79,13 @@ function MediaPage() {
           <li className="grid content-start gap-3" key={asset.src}>
             <div
               className={cn(
-                'grid h-40 place-items-center rounded-xl border p-6',
+                'flex h-40 items-center justify-center rounded-xl border p-6',
                 asset.backdrop,
               )}
             >
               <img
                 alt={`tRPC ${asset.title.toLowerCase()}`}
-                className="max-h-full max-w-full"
+                className="max-h-full max-w-full object-contain"
                 src={asset.src}
               />
             </div>
