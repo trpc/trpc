@@ -39,7 +39,11 @@ const sentByClient = new WeakMap<QueryClient, SentEntries>();
 function sentEntries(queryClient: QueryClient) {
   let sent = sentByClient.get(queryClient);
   if (!sent) {
-    sent = { queries: new Map(), mutations: new WeakSet(), watchingPending: false };
+    sent = {
+      queries: new Map(),
+      mutations: new WeakSet(),
+      watchingPending: false,
+    };
     sentByClient.set(queryClient, sent);
   }
   return sent;
