@@ -2669,6 +2669,9 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
       tsdown:
         specifier: 'catalog:'
         version: 0.23.0(tsx@4.21.0)(typescript@7.0.2)

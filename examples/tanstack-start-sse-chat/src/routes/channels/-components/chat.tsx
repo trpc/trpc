@@ -1,6 +1,9 @@
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useMutation } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
+import {
+  useSubscription,
+  type unstable_inferInfiniteQueryHandle,
+} from '@trpc/tanstack-react-query';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import * as React from 'react';
@@ -8,7 +11,7 @@ import { useSession, useSignInHref } from '~/components/auth';
 import { Avatar } from '~/components/avatar';
 import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
-import { useTRPC } from '~/lib/trpc';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
@@ -70,10 +73,14 @@ function SubscriptionStatus(props: {
   );
 }
 
-export function Chat(props: Readonly<{ channelId: string }>) {
-  const { channelId } = props;
+export function Chat(
+  props: Readonly<{
+    posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+  }>,
+) {
+  const channelId = props.posts.input.channelId;
   const trpc = useTRPC();
-  const livePosts = useLivePosts(channelId);
+  const livePosts = useLivePosts(props.posts);
   const currentlyTyping = useSubscription(
     trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
   );
@@ -102,18 +109,25 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               <div>
                 <Button
                   disabled={
-                    !livePosts.query.hasNextPage ||
-                    livePosts.query.isFetchingNextPage
+                    livePosts.query.fetchStatus !== 'idle' ||
+                    !livePosts.query.hasNextPage
                   }
                   onClick={() => {
                     void livePosts.query.fetchNextPage();
                   }}
                 >
-                  {livePosts.query.isFetchingNextPage
-                    ? 'Loading...'
-                    : !livePosts.query.hasNextPage
-                      ? 'Fetched everything!'
-                      : 'Load more'}
+                  {run(() => {
+                    switch (livePosts.query.fetchStatus) {
+                      case 'fetching':
+                        return 'Loading...';
+                      case 'paused':
+                        return 'Waiting for network...';
+                      case 'idle':
+                        return livePosts.query.hasNextPage
+                          ? 'Load more'
+                          : 'Fetched everything!';
+                    }
+                  })}
                 </Button>
               </div>
 

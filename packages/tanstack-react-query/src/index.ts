@@ -24,3 +24,18 @@ export type {
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
 export type * from './internals/types';
+export type {
+  unstable_TRPCQueryHandle,
+  unstable_TRPCQueryHandleWithData,
+  unstable_TRPCInfiniteQueryHandle,
+  unstable_TRPCInfiniteQueryHandleWithData,
+  unstable_AnyTRPCHandle,
+  unstable_TRPCPrefetchOptions,
+  unstable_TRPCPrefetchInfiniteOptions,
+  unstable_inferQueryHandle,
+  unstable_inferQueryHandleWithData,
+  unstable_inferInfiniteQueryHandle,
+  unstable_inferInfiniteQueryHandleWithData,
+} from './internals/handles';
+export { unstable_createHydrateClient } from './internals/HydrateClient';
+export type { unstable_HydrateClientProps } from './internals/HydrateClient';

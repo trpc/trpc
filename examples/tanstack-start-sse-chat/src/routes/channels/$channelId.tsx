@@ -1,6 +1,7 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { Suspense } from 'react';
 import { z } from 'zod';
 import {
@@ -11,8 +12,7 @@ import {
 } from '~/components/auth';
 import { Button } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
-import { useTRPC } from '~/lib/trpc';
-import { channelListQuery, postListQuery } from '~/queries';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 import { Chat } from './-components/chat';
 
 export const Route = createFileRoute('/channels/$channelId')({
@@ -23,17 +23,20 @@ export const Route = createFileRoute('/channels/$channelId')({
     }
   },
   loader: (opts) => {
-    const { queryClient, trpc } = opts.context;
-    void queryClient.prefetchQuery(channelListQuery(trpc));
-    void queryClient.prefetchInfiniteQuery(
-      postListQuery(trpc, { channelId: opts.params.channelId }),
-    );
+    const { trpc } = opts.context;
+    return {
+      channels: trpc.channel.list.unstable_$prefetch(),
+      posts: trpc.post.infinite.unstable_$prefetchInfinite({
+        channelId: opts.params.channelId,
+      }),
+    };
   },
   component: ChannelPage,
 });
 
 function ChannelPage() {
   const { channelId } = Route.useParams();
+  const { channels, posts } = Route.useLoaderData();
   const signInHref = useSignInHref();
 
   return (
@@ -50,7 +53,7 @@ function ChannelPage() {
         </div>
         <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
           <Suspense>
-            <ChannelList />
+            <ChannelList channels={channels} />
           </Suspense>
         </div>
         <div className="mt-auto">
@@ -82,17 +85,23 @@ function ChannelPage() {
           </div>
         }
       >
-        <Chat key={channelId} channelId={channelId} />
+        <Chat key={channelId} posts={posts} />
       </Suspense>
     </div>
   );
 }
 
-function ChannelList() {
+function ChannelList(
+  props: Readonly<{
+    channels: unstable_inferQueryHandle<TRPC['channel']['list']>;
+  }>,
+) {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(channelListQuery(trpc)).data;
+  const channelsQuery = useSuspenseQuery(
+    trpc.unstable_$fromHandle(props.channels),
+  );
 
-  return channels.map((channel) => (
+  return channelsQuery.data.map((channel) => (
     <Link
       key={channel.id}
       className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50"

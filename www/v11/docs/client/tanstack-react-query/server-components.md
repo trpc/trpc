@@ -354,6 +354,10 @@ createTRPCOptionsProxy<AppRouter>({
 
 ## Using your API
 
+:::tip
+To avoid repeating the procedure and input in client components, start queries with `unstable_$prefetch` or `unstable_$ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+:::
+
 Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
 we can take advantage of the RSC capabilities by prefetching queries in a server component high up the tree. You may be familiar with this
 concept as "render as you fetch" commonly implemented as loaders. This means the request fires as soon as possible but without suspending until
@@ -571,6 +575,8 @@ function Home() {
   );
 }
 ```
+
+This `HydrateClient` sends every query in the cache each time it renders, so nested ones send the same queries again. `unstable_createHydrateClient(getQueryClient)` creates one that sends each query once per request. See [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client).
 
 :::
 

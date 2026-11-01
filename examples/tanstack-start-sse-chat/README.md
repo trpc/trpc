@@ -23,7 +23,7 @@ This project includes 2 examples of the subscription pattern:
 - The `EventEmitter` & `whoIsTyping` subscription route can be found in [`/src/server/routers/channel.ts`](./src/server/routers/channel.ts)
 - The more complex `post` subscription route can be found in [`/src/server/routers/post.ts`](./src/server/routers/post.ts)
 
-Route loaders prefetch the queries a page needs ([`/src/queries.ts`](./src/queries.ts)) and components read them with `useSuspenseQuery`. During SSR, procedures are called in-process with `localLink`; the browser talks to `/api/trpc` over HTTP.
+Route loaders start the queries a page needs with `unstable_$prefetch` and return the handles. Components read them with `useSuspenseQuery(trpc.unstable_$fromHandle(handle))`. During SSR, procedures are called in-process with `localLink`; the browser talks to `/api/trpc` over HTTP.
 
 ## Setup
 

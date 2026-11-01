@@ -1,24 +1,23 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { Suspense } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { SignedIn, SignedOut, useSignInHref } from '~/components/auth';
 import { buttonVariants } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
-import { useTRPC } from '~/lib/trpc';
-import { channelListQuery } from '~/queries';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 
 export const Route = createFileRoute('/')({
-  loader: (opts) => {
-    void opts.context.queryClient.prefetchQuery(
-      channelListQuery(opts.context.trpc),
-    );
-  },
+  loader: (opts) => ({
+    channels: opts.context.trpc.channel.list.unstable_$prefetch(),
+  }),
   component: Home,
 });
 
 function Home() {
+  const { channels } = Route.useLoaderData();
   const signInHref = useSignInHref();
 
   return (
@@ -69,7 +68,7 @@ function Home() {
             </SignedOut>
           </div>
           <Suspense fallback={<div className="text-sm italic">Loading...</div>}>
-            <ChannelList />
+            <ChannelList channels={channels} />
           </Suspense>
         </div>
       </div>
@@ -77,13 +76,19 @@ function Home() {
   );
 }
 
-function ChannelList() {
+function ChannelList(
+  props: Readonly<{
+    channels: unstable_inferQueryHandle<TRPC['channel']['list']>;
+  }>,
+) {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(channelListQuery(trpc)).data;
+  const channelsQuery = useSuspenseQuery(
+    trpc.unstable_$fromHandle(props.channels),
+  );
 
   return (
     <div className="flex w-full flex-col items-start">
-      {channels.map((channel) => (
+      {channelsQuery.data.map((channel) => (
         <Link
           key={channel.id}
           className={twMerge(
