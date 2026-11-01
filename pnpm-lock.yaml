@@ -362,7 +362,7 @@ importers:
         version: 6.9.1
       '@testing-library/react':
         specifier: ^16.1.0
-        version: 16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@testing-library/user-event':
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
@@ -408,6 +408,12 @@ importers:
       oxlint-tsgolint:
         specifier: 'catalog:'
         version: 7.0.2005
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
@@ -589,7 +595,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^15.5.25
-        version: 15.5.25(@babel/core@7.23.2(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 15.5.25(@babel/core@7.23.2(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
     devDependencies:
       '@tsconfig/esm':
         specifier: ^1.0.3
@@ -27503,16 +27509,6 @@ snapshots:
       '@types/react': 19.1.0
       '@types/react-dom': 19.1.1(@types/react@19.1.0)
 
-  '@testing-library/react@16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
-    dependencies:
-      '@babel/runtime': 7.24.7
-      '@testing-library/dom': 10.0.0
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
-    optionalDependencies:
-      '@types/react': 19.1.0
-      '@types/react-dom': 19.1.1(@types/react@19.1.0)
-
   '@testing-library/user-event@14.4.3(@testing-library/dom@10.0.0)':
     dependencies:
       '@testing-library/dom': 10.0.0
@@ -33383,31 +33379,6 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@15.5.25(@babel/core@7.23.2(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
-    dependencies:
-      '@next/env': 15.5.25
-      '@swc/helpers': 0.5.15
-      caniuse-lite: 1.0.30001810
-      postcss: 8.4.31
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
-      styled-jsx: 5.1.6(@babel/core@7.23.2(supports-color@10.0.0))(react@19.3.0)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 15.5.25
-      '@next/swc-darwin-x64': 15.5.25
-      '@next/swc-linux-arm64-gnu': 15.5.25
-      '@next/swc-linux-arm64-musl': 15.5.25
-      '@next/swc-linux-x64-gnu': 15.5.25
-      '@next/swc-linux-x64-musl': 15.5.25
-      '@next/swc-win32-arm64-msvc': 15.5.25
-      '@next/swc-win32-x64-msvc': 15.5.25
-      '@opentelemetry/api': 1.10.0
-      '@playwright/test': 1.51.1
-      sharp: 0.34.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
-
   next@15.5.25(@babel/core@7.26.9(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 15.5.25
@@ -36554,13 +36525,6 @@ snapshots:
     dependencies:
       client-only: 0.0.1
       react: 19.1.0
-    optionalDependencies:
-      '@babel/core': 7.23.2(supports-color@10.0.0)
-
-  styled-jsx@5.1.6(@babel/core@7.23.2(supports-color@10.0.0))(react@19.3.0):
-    dependencies:
-      client-only: 0.0.1
-      react: 19.3.0
     optionalDependencies:
       '@babel/core': 7.23.2(supports-color@10.0.0)
 

@@ -62,6 +62,8 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
     "tailwindcss": "catalog:www",
     "ts-prune": "^0.10.3",
