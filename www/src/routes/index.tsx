@@ -12,6 +12,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { DocBody } from '~/components/doc-body.tsx';
+import { GithubStarsButton } from '~/components/github-stars-button.tsx';
 import { PartnerCards } from '~/components/sponsors/partners.tsx';
 import { SponsorCloud } from '~/components/sponsors/sponsor-cloud.tsx';
 import {
@@ -227,19 +228,13 @@ function HeroText() {
         productivity for your full-stack application.
       </p>
       <div className="flex flex-wrap gap-3">
+        <GithubStarsButton className={secondary} />
         <Link
           className={primary}
           params={{ _splat: 'quickstart' }}
           to={v11Docs.route}
         >
           Quickstart <ArrowRight />
-        </Link>
-        <Link
-          className={secondary}
-          params={{ _splat: v11Docs.firstDoc }}
-          to={v11Docs.route}
-        >
-          Read the docs
         </Link>
       </div>
       <p className="font-mono text-sm text-muted-foreground">
