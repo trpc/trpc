@@ -280,6 +280,42 @@ export function readHandle(
 export type HandleVerb = 'prefetch' | 'ensure' | 'fetch';
 
 /**
+ * A query `unstable_prefetch` was called for inside `usePrefetchHandles()`,
+ * which decides whether to start it
+ * @internal
+ */
+export interface RenderPrefetch {
+  queryClient: QueryClient;
+  options: any;
+  kind: 'query' | 'infinite';
+}
+
+let renderPrefetches: RenderPrefetch[] | null = null;
+
+/**
+ * Run `fn` and collect the queries its `unstable_prefetch` calls name,
+ * instead of starting them
+ * @internal
+ */
+export function collectRenderPrefetches<T>(fn: () => T) {
+  const previous = renderPrefetches;
+  const prefetches: RenderPrefetch[] = [];
+  renderPrefetches = prefetches;
+  try {
+    return { result: fn(), prefetches };
+  } finally {
+    renderPrefetches = previous;
+  }
+}
+
+/**
+ * @internal
+ */
+export function isCollectingRenderPrefetches() {
+  return renderPrefetches !== null;
+}
+
+/**
  * @internal
  */
 export function startHandle(opts: {
@@ -294,6 +330,10 @@ export function startHandle(opts: {
   const handle: Record<string, unknown> = { queryKey: options.queryKey, input };
   if (kind === 'infinite' && options.initialPageParam != null) {
     handle['initialCursor'] = options.initialPageParam;
+  }
+  if (renderPrefetches) {
+    renderPrefetches.push({ queryClient, options, kind });
+    return handle;
   }
   const done = () => {
     if (selfHydrating) {
@@ -334,7 +374,10 @@ export function startHandle(opts: {
   }
 }
 
-function isServerEnvironment() {
+/**
+ * @internal
+ */
+export function isServerEnvironment() {
   return typeof window === 'undefined' || 'Deno' in globalThis;
 }
 

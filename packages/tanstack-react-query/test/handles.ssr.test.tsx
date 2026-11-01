@@ -18,7 +18,11 @@ import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCOptionsProxy, unstable_inferQueryHandle } from '../src';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src';
+import {
+  createTRPCContext,
+  createTRPCOptionsProxy,
+  usePrefetchHandles,
+} from '../src';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -147,6 +151,31 @@ describe('server rendering', () => {
     expect(html).toContain('Posts on 2026-01-01');
     expect(html).toContain('Posts on 2026-01-02');
     expect(html).toContain('fetchedAt:1970-01-01T00:00:00.000Z');
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    expect(trpcWarnings(warn)).toEqual([]);
+    warn.mockRestore();
+  });
+
+  test('usePrefetchHandles starts its queries in the server render', async () => {
+    await using resource = ctx();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    function Page() {
+      const trpc = trpcContext.useTRPC();
+      const handles = usePrefetchHandles(() => ({
+        a: trpc.post.byDay.unstable_prefetch({ day: new Date('2026-03-01') }),
+        b: trpc.post.byDay.unstable_prefetch({ day: new Date('2026-03-02') }),
+      }));
+      return (
+        <>
+          <Post post={handles.a} />
+          <Post post={handles.b} />
+        </>
+      );
+    }
+
+    const html = await renderClientTree(resource, undefined, <Page />);
+    expect(html).toContain('Posts on 2026-03-01');
+    expect(html).toContain('Posts on 2026-03-02');
     expect(resource.calls).toHaveBeenCalledTimes(2);
     expect(trpcWarnings(warn)).toEqual([]);
     warn.mockRestore();

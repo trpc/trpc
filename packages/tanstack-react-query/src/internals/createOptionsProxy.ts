@@ -24,7 +24,13 @@ import type {
   DecorateQueryHandleVerbs,
   HandleVerb,
 } from './handles';
-import { prepareHandleRead, readHandle, startHandle } from './handles';
+import {
+  isCollectingRenderPrefetches,
+  isServerEnvironment,
+  prepareHandleRead,
+  readHandle,
+  startHandle,
+} from './handles';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -312,9 +318,11 @@ export type TRPCOptionsProxyOptionsBase<
     mutations?: MutationOptionsOverride;
   };
   /**
-   * React Server Components only. Handles carry their query's data, or its
-   * pending request, and reading one with `unstable_fromHandle` writes it into
-   * the reading client's cache, so they need no `HydrateClient`.
+   * Server only. Handles carry their query's data, or its pending request, and
+   * reading one with `unstable_fromHandle` writes it into the reading client's
+   * cache, so they need no `HydrateClient` or `HydrationBoundary`. For handles
+   * that reach the browser through a serializer that streams promises: server
+   * components, and React Router's server loaders.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles
    */
   unstable_selfHydratingHandles?: boolean;
@@ -349,12 +357,6 @@ export type TRPCOptionsProxyOptions<
  */
 export const disableHandleVerbs = Symbol('disableHandleVerbs');
 
-/**
- * Set by the `react-server` build, the only one that allows `unstable_selfHydratingHandles`
- * @internal
- */
-export const reactServerProxy = Symbol('reactServerProxy');
-
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
   | keyof DecorateHandleReaders<any>
@@ -376,14 +378,11 @@ export function createTRPCOptionsProxy<
 ): TRPCOptionsProxy<TRouter, TFeatureFlags> {
   const prefix = opts.keyPrefix;
   const selfHydratingHandles = opts.unstable_selfHydratingHandles === true;
-  if (
-    selfHydratingHandles &&
-    !(opts as { [reactServerProxy]?: boolean })[reactServerProxy]
-  ) {
+  if (selfHydratingHandles && !isServerEnvironment()) {
     throw new Error(
-      '`unstable_selfHydratingHandles` works only in React Server Components: ' +
-        'handles from other environments would carry data that never reaches the browser this way. ' +
-        'Create this proxy in a server component module, which resolves `@trpc/tanstack-react-query` with the `react-server` export condition.',
+      '`unstable_selfHydratingHandles` works only on the server, in server components and server loaders: ' +
+        "a handle started in the browser already points at the browser's cache. " +
+        'See https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles',
     );
   }
 
@@ -418,10 +417,22 @@ export function createTRPCOptionsProxy<
     const [arg1, arg2] = args as any[];
 
     const startQueryHandle = (kind: 'query' | 'infinite', verb: HandleVerb) => {
-      if ((opts as { [disableHandleVerbs]?: boolean })[disableHandleVerbs]) {
+      const name = `\`${[...path, utilName].join('.')}()\``;
+      if (isCollectingRenderPrefetches()) {
+        if (verb !== 'prefetch') {
+          throw new Error(
+            `${name} waits for its query, which a render can't. ` +
+              `Inside \`usePrefetchHandles()\`, start queries with \`unstable_prefetch\` or \`unstable_prefetchInfinite\`, ` +
+              `and wait where you read the handle, with \`useSuspenseQuery\`.`,
+          );
+        }
+      } else if (
+        (opts as { [disableHandleVerbs]?: boolean })[disableHandleVerbs]
+      ) {
         throw new Error(
-          `\`${[...path, utilName].join('.')}()\` isn't available on \`useTRPC()\`. ` +
-            `Start handles on the server or in a route loader, or use \`queryClient.prefetchQuery(trpc.${path.join('.')}.queryOptions(input))\`.`,
+          `${name} on \`useTRPC()\` starts a query during render: call it inside \`usePrefetchHandles(() => ...)\`, ` +
+            `which starts it once per mount and input. ` +
+            `See https://trpc.io/docs/client/tanstack-react-query/handles#use-prefetch-handles`,
         );
       }
       const options =

@@ -319,18 +319,35 @@ describe('unstable_createHydrateClient outside server components', () => {
 });
 
 describe('self-hydrating handles', () => {
-  test('are available only in the react-server build', async () => {
+  test('work from server loaders, outside server components', async () => {
     await using resource = ctx();
-    expect(() =>
-      createClientOptionsProxy({
-        router: resource.appRouter,
-        ctx: {},
-        queryClient: makeServerQueryClient(),
-        unstable_selfHydratingHandles: true,
+    const queryClient = makeServerQueryClient();
+    // A React Router `loader`: the default build, on the server
+    const trpc = createClientOptionsProxy({
+      router: resource.appRouter,
+      ctx: {},
+      queryClient,
+      unstable_selfHydratingHandles: true,
+    });
+    const loaderData = {
+      post: await trpc.post.byDay.unstable_ensure({
+        day: new Date('2026-01-01'),
       }),
-    ).toThrow(
-      '`unstable_selfHydratingHandles` works only in React Server Components',
+      later: trpc.post.byDay.unstable_prefetch({
+        day: new Date('2026-01-02'),
+      }),
+    };
+
+    const html = await renderClientTree(
+      resource,
+      <>
+        <Post post={loaderData.post} />
+        <Post post={loaderData.later} />
+      </>,
     );
+    expect(html).toContain('Posts on 2026-01-01');
+    expect(html).toContain('Posts on 2026-01-02');
+    expect(resource.calls).toHaveBeenCalledTimes(2);
   });
 
   test('render pending and ensured handles without a boundary or a second fetch', async () => {

@@ -33,5 +33,6 @@ export type {
   unstable_inferQueryHandle,
   unstable_inferInfiniteQueryHandle,
 } from './internals/handles';
+export { usePrefetchHandles } from './internals/usePrefetchHandles';
 export { unstable_createHydrateClient } from './internals/HydrateClient';
 export type { unstable_HydrateClientProps } from './internals/HydrateClient';

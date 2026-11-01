@@ -654,7 +654,7 @@ describe('runtime', () => {
     ).toEqual([0, 1, 2, 3]);
   });
 
-  test('useTRPC() reads handles but does not start them', async () => {
+  test('useTRPC() starts handles only inside usePrefetchHandles()', async () => {
     await using resource = ctx();
     let error: unknown;
     function Component() {
@@ -669,8 +669,21 @@ describe('runtime', () => {
     }
     resource.renderApp(<Component />);
     expect(error).toMatchInlineSnapshot(
-      `[Error: \`post.byId.unstable_prefetch()\` isn't available on \`useTRPC()\`. Start handles on the server or in a route loader, or use \`queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))\`.]`,
+      `[Error: \`post.byId.unstable_prefetch()\` on \`useTRPC()\` starts a query during render: call it inside \`usePrefetchHandles(() => ...)\`, which starts it once per mount and input. See https://trpc.io/docs/client/tanstack-react-query/handles#use-prefetch-handles]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
+  });
+
+  test('self-hydrating handles are server only', async () => {
+    await using resource = ctx();
+    expect(() =>
+      createTRPCOptionsProxy({
+        client: resource.client,
+        queryClient: resource.queryClient,
+        unstable_selfHydratingHandles: true,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`unstable_selfHydratingHandles\` works only on the server, in server components and server loaders: a handle started in the browser already points at the browser's cache. See https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles]`,
+    );
   });
 });
