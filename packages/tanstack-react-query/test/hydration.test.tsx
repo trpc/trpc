@@ -155,9 +155,10 @@ function Post(props: {
   post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
 }) {
   const trpc = trpcContext.useTRPC();
-  const { data } = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
+  const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
+  const post = postQuery.data;
   return (
-    <p>{`${data.title} v${data.version} fetchedAt:${data.fetchedAt.toISOString()}`}</p>
+    <p>{`${post.title} v${post.version} fetchedAt:${post.fetchedAt.toISOString()}`}</p>
   );
 }
 
@@ -165,12 +166,14 @@ function List(props: {
   list: unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
 }) {
   const trpc = trpcContext.useTRPC();
-  const { data } = useSuspenseInfiniteQuery(
+  const listQuery = useSuspenseInfiniteQuery(
     trpc.unstable_fromHandle(props.list, {
       getNextPageParam: (page) => page.nextCursor,
     }),
   );
-  return <p>{`items:${data.pages.flatMap((page) => page.items).join(',')}`}</p>;
+  return (
+    <p>{`items:${listQuery.data.pages.flatMap((page) => page.items).join(',')}`}</p>
+  );
 }
 
 describe('unstable_createHydrateClient in server components', () => {

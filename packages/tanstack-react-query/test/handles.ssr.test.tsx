@@ -114,8 +114,10 @@ function Post(props: {
   post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
 }) {
   const trpc = trpcContext.useTRPC();
-  const { data } = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
-  return <p>{`${data.title} fetchedAt:${data.fetchedAt.toISOString()}`}</p>;
+  const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
+  return (
+    <p>{`${postQuery.data.title} fetchedAt:${postQuery.data.fetchedAt.toISOString()}`}</p>
+  );
 }
 
 describe('server rendering', () => {

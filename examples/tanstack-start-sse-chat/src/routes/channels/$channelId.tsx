@@ -97,11 +97,11 @@ function ChannelList(
   }>,
 ) {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(
+  const channelsQuery = useSuspenseQuery(
     trpc.unstable_fromHandle(props.channels),
-  ).data;
+  );
 
-  return channels.map((channel) => (
+  return channelsQuery.data.map((channel) => (
     <Link
       key={channel.id}
       className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50"

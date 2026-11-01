@@ -78,7 +78,7 @@ export function Chat(
     posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
   }>,
 ) {
-  const { channelId } = props.posts.input;
+  const channelId = props.posts.input.channelId;
   const trpc = useTRPC();
   const livePosts = useLivePosts(props.posts);
   const currentlyTyping = useSubscription(

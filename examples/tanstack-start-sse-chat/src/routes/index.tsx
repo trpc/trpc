@@ -82,13 +82,13 @@ function ChannelList(
   }>,
 ) {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(
+  const channelsQuery = useSuspenseQuery(
     trpc.unstable_fromHandle(props.channels),
-  ).data;
+  );
 
   return (
     <div className="flex w-full flex-col items-start">
-      {channels.map((channel) => (
+      {channelsQuery.data.map((channel) => (
         <Link
           key={channel.id}
           className={twMerge(

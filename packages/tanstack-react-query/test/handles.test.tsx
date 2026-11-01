@@ -231,19 +231,23 @@ describe('runtime', () => {
       handle: unstable_inferQueryHandle<TRPC['post']['byId']>;
     }) {
       const trpc = resource.useTRPC();
-      const { data } = useSuspenseQuery(trpc.unstable_fromHandle(p.handle));
-      return <p>title:{data.title}</p>;
+      const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(p.handle));
+      return <p>title:{postQuery.data.title}</p>;
     }
     function List(p: {
       handle: unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
     }) {
       const trpc = resource.useTRPC();
-      const { data } = useSuspenseInfiniteQuery(
+      const listQuery = useSuspenseInfiniteQuery(
         trpc.unstable_fromHandle(p.handle, {
           getNextPageParam: (last) => last.nextCursor,
         }),
       );
-      return <p>items:{data.pages.flatMap((page) => page.items).join(',')}</p>;
+      return (
+        <p>
+          items:{listQuery.data.pages.flatMap((page) => page.items).join(',')}
+        </p>
+      );
     }
 
     const utils = resource.renderApp(
@@ -435,8 +439,8 @@ describe('runtime', () => {
       }
       function renderRead(read: (trpc: TRPC) => any) {
         function Read() {
-          const { data } = useSuspenseQuery(read(useTRPC()));
-          return <p>data:{JSON.stringify(data)}</p>;
+          const readQuery = useSuspenseQuery(read(useTRPC()));
+          return <p>data:{JSON.stringify(readQuery.data)}</p>;
         }
         return render(
           <QueryClientProvider client={browser}>

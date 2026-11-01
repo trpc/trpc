@@ -45,19 +45,21 @@ function setup(resource: ReturnType<typeof ctx>) {
     post: unstable_inferQueryHandle<TRPC['post']['byId']>;
   }) {
     const trpc = resource.useTRPC();
-    const { data } = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
-    return <p>{`${data.title} v${data.version}`}</p>;
+    const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
+    return <p>{`${postQuery.data.title} v${postQuery.data.version}`}</p>;
   }
   function Comments(props: {
     comments: unstable_inferInfiniteQueryHandle<TRPC['post']['comments']>;
   }) {
     const trpc = resource.useTRPC();
-    const { data } = useSuspenseInfiniteQuery(
+    const commentsQuery = useSuspenseInfiniteQuery(
       trpc.unstable_fromHandle(props.comments, {
         getNextPageParam: (last) => last.nextCursor,
       }),
     );
-    return <p>{`comments:${data.pages.flatMap((p) => p.items).join(',')}`}</p>;
+    return (
+      <p>{`comments:${commentsQuery.data.pages.flatMap((p) => p.items).join(',')}`}</p>
+    );
   }
   function PostPage(props: { id: string }) {
     const trpc = resource.useTRPC();
@@ -159,8 +161,8 @@ describe('usePrefetchHandles', () => {
       const { post } = usePrefetchHandles(() => ({
         post: trpc.post.byId.unstable_prefetch({ id: '1' }),
       }));
-      const { data } = useSuspenseQuery(trpc.unstable_fromHandle(post));
-      return <p>{`${data.title} v${data.version}`}</p>;
+      const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(post));
+      return <p>{`${postQuery.data.title} v${postQuery.data.version}`}</p>;
     }
     const utils = resource.renderApp(
       <React.Suspense fallback={<p>loading</p>}>

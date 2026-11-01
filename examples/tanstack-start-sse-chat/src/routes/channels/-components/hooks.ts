@@ -44,7 +44,7 @@ export function useThrottledIsTypingMutation(channelId: string) {
 export function useLivePosts(
   posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>,
 ) {
-  const { channelId } = posts.input;
+  const channelId = posts.input.channelId;
   const trpc = useTRPC();
   const query = useSuspenseInfiniteQuery(
     trpc.unstable_fromHandle(posts, {
