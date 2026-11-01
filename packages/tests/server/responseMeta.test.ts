@@ -281,4 +281,29 @@ Object {
 `);
     }
   });
+
+  test('content-type array replaces the default', async () => {
+    const t = initTRPC.create();
+
+    const appRouter = t.router({
+      q: t.procedure.query(() => 'q'),
+    });
+
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: {
+        responseMeta() {
+          return {
+            headers: {
+              'content-type': ['application/json; charset=utf-8'],
+            },
+          };
+        },
+      },
+    });
+
+    const res = await fetch(`${ctx.httpUrl}/q`);
+    expect(res.headers.get('content-type')).toBe(
+      'application/json; charset=utf-8',
+    );
+  });
 });

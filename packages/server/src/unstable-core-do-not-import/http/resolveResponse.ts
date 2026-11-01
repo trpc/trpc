@@ -179,6 +179,9 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
        */
       for (const [key, value] of Object.entries(meta.headers)) {
         if (Array.isArray(value)) {
+          if (key.toLowerCase() === 'content-type' && value.length > 0) {
+            headers.delete(key);
+          }
           for (const v of value) {
             headers.append(key, v);
           }
