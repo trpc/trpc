@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Download } from 'lucide-react';
 
 import { cn } from '@shared/ui/lib/utils';
+import { mediaAssets } from '~/media-assets.ts';
 import { mediaPage } from '~/pages.ts';
 import { pageHead } from '~/seo.ts';
 
@@ -10,42 +11,17 @@ export const Route = createFileRoute('/media')({
   component: MediaPage,
 });
 
-interface Asset {
-  /** Behind the image, which shows what it's for. */
-  readonly backdrop: string;
-  readonly description: string;
-  /** Under `public/`, at trpc.io's URL. */
-  readonly src: string;
-  readonly title: string;
-}
-
-const assets: ReadonlyArray<Asset> = [
-  {
-    backdrop: 'bg-card',
-    description: 'Please use this in most circumstances.',
-    src: '/img/logo.svg',
-    title: 'Logo',
-  },
-  {
-    backdrop: 'bg-white',
-    description: 'Please use this on light backgrounds.',
-    src: '/img/logo-text-black.svg',
-    title: 'Wordmark, light',
-  },
-  {
-    backdrop: 'bg-black',
-    description: 'Please use this on dark backgrounds.',
-    src: '/img/logo-text-white.svg',
-    title: 'Wordmark, dark',
-  },
-];
-
 const facts: ReadonlyArray<{
   readonly label: string;
   readonly swatch: string;
   readonly value: string;
 }> = [
-  { label: 'Primary', swatch: 'bg-[#398ccb]', value: '#398ccb' },
+  {
+    label: 'Primary',
+    swatch: 'bg-linear-to-tr from-[#066dfc] to-[#22d4fc]',
+    value: '#066dfc → #22d4fc',
+  },
+  { label: 'Ink', swatch: 'bg-[#060a23]', value: '#060a23' },
   { label: 'Font', swatch: 'bg-black', value: 'Inter' },
 ];
 
@@ -60,7 +36,7 @@ function MediaPage() {
           {mediaPage.description}
         </p>
       </header>
-      <dl className="grid gap-4 sm:grid-cols-2">
+      <dl className="grid gap-4 sm:grid-cols-3">
         {facts.map((fact) => (
           <div
             className={cn(
@@ -74,8 +50,8 @@ function MediaPage() {
           </div>
         ))}
       </dl>
-      <ul className="grid gap-6 sm:grid-cols-3">
-        {assets.map((asset) => (
+      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {mediaAssets.map((asset) => (
           <li className="grid content-start gap-3" key={asset.src}>
             <div
               className={cn(
@@ -94,13 +70,22 @@ function MediaPage() {
               <p className="text-sm text-muted-foreground">
                 {asset.description}
               </p>
-              <a
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-link hover:underline"
-                download
-                href={asset.src}
-              >
-                <Download className="size-3.5" /> SVG
-              </a>
+              <p className="flex gap-4">
+                <a
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-link hover:underline"
+                  download
+                  href={asset.src}
+                >
+                  <Download className="size-3.5" /> SVG
+                </a>
+                <a
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-link hover:underline"
+                  download
+                  href={asset.png}
+                >
+                  <Download className="size-3.5" /> PNG
+                </a>
+              </p>
             </div>
           </li>
         ))}

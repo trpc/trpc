@@ -19,6 +19,7 @@ import {
 } from './build/sentry.ts';
 import { siteFiles } from './build/site-files.ts';
 import { samplesDir, twoslashCache } from './build/paths.ts';
+import { mediaAssets } from './src/media-assets.ts';
 import type { DocCard } from './src/og/card.ts';
 import { mediaPage, searchPage } from './src/pages.ts';
 import { absoluteUrl, copyPageUrl, deploymentOrigin } from './src/seo.ts';
@@ -45,7 +46,7 @@ const copies = copiedVersions.map((version) => ({
   version,
 }));
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
-const [copiedPages, posts, favicon] = await Effect.runPromise(
+const [copiedPages, posts, favicon, mediaPngs] = await Effect.runPromise(
   Effect.all([
     Effect.forEach(copies, (copy) =>
       Effect.map(
@@ -63,6 +64,18 @@ const [copiedPages, posts, favicon] = await Effect.runPromise(
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       return yield* fs.readFileString(faviconFile);
+    }),
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const entries = yield* Effect.forEach(mediaAssets, (asset) =>
+        Effect.map(
+          fs.readFileString(
+            new URL(`public${asset.src}`, import.meta.url).pathname,
+          ),
+          (svg) => [asset.png, { svg, width: asset.pngWidth }] as const,
+        ),
+      );
+      return Object.fromEntries(entries);
     }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
@@ -157,7 +170,7 @@ export default defineConfig({
       sourceUrl: `${site.github}/blob/main/www`,
     }),
     blogFeeds({ posts }),
-    siteIcons({ svg: favicon }),
+    siteIcons({ pngs: mediaPngs, svg: favicon }),
     ogCards([
       { kind: 'home', path: '/' },
       ...copiedPages.flatMap((copy) =>
