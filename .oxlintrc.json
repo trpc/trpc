@@ -278,12 +278,6 @@
         // Vite's `useEnvironment`, and routes' inline `component`s.
         "react-hooks/rules-of-hooks": "off"
       }
-    },
-    {
-      "files": ["www/og-image/utils/env.js"],
-      "rules": {
-        "sort-keys": "error"
-      }
     }
   ]
 }

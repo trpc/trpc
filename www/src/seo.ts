@@ -66,6 +66,18 @@ export function absoluteUrl(path: string) {
 }
 
 /**
+ * Where a build is served, from Vercel's environment at build time: a
+ * preview's branch URL (or its own, without a branch), so a preview's link
+ * shows the preview's social card, and `site.url` everywhere else.
+ */
+export function deploymentOrigin(
+  env: Readonly<Record<string, string | undefined>>,
+) {
+  const host = env['VERCEL_BRANCH_URL'] || env['VERCEL_URL'];
+  return env['VERCEL_ENV'] === 'preview' && host ? `https://${host}` : site.url;
+}
+
+/**
  * A copied page's canonical URL: trpc.io's, which is the page itself once
  * the site is trpc.io.
  */
@@ -86,7 +98,7 @@ export function postDate(date: string) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-/** Where the build writes a page's social card (`build/og-image.ts`). */
+/** Where a page's social card is served (`routes/og.$.ts`). */
 export function ogImagePath(path: string) {
   return `/og${path === '/' ? '/index' : path}.png`;
 }
@@ -94,9 +106,12 @@ export function ogImagePath(path: string) {
 /** Social cards' size, in pixels. */
 export const ogImageSize = { height: 630, width: 1200 } as const;
 
-/** A page's social card, as an absolute URL. */
+/** A page's social card, as an absolute URL on the deployment that serves it. */
 export function ogImageUrl(path: string) {
-  return absoluteUrl(ogImagePath(path));
+  return new URL(
+    ogImagePath(path),
+    import.meta.env.DEPLOYMENT_ORIGIN || site.url,
+  ).href;
 }
 
 function articleMeta(article: ArticleSeo | undefined) {

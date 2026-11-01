@@ -60,6 +60,19 @@ describe('onDemandRoutes', () => {
     ).toBe(false);
   });
 
+  it('sends the social cards to the function, with their path', () => {
+    const og = all.find((route) => route.src?.startsWith('^(/og/'));
+    const src = new RegExp(og?.src ?? '');
+    expect(src.exec('/og/docs/client/links.png')?.[1]).toBe(
+      '/og/docs/client/links.png',
+    );
+    expect(src.test('/og/index.png')).toBe(true);
+    expect(src.test('/og/')).toBe(false);
+    expect(src.test('/docs/og/a.png')).toBe(false);
+    expect(og?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
+    expect(og?.has).toBeUndefined();
+  });
+
   it('sends a search to the function', () => {
     expect(search?.dest).toBe(`/${onDemandFunction}?${pathParam}=/search`);
     expect(search?.has).toEqual([{ key: 'q', type: 'query', value: '^.+$' }]);
@@ -80,9 +93,11 @@ describe('writeOnDemandFunction', () => {
         [
           'export default {',
           '  fetch: (request) =>',
-          '    new Response(`${request.method} ${request.url} ${request.headers.get("accept")}`, {',
-          '      headers: [["content-type", "text/html"], ["set-cookie", "a=1"], ["set-cookie", "b=2"]],',
-          '    }),',
+          '    new URL(request.url).pathname === "/og/fresh.png"',
+          '      ? new Response("png", { headers: { "cache-control": "public, s-maxage=600" } })',
+          '      : new Response(`${request.method} ${request.url} ${request.headers.get("accept")}`, {',
+          '          headers: [["content-type", "text/html"], ["set-cookie", "a=1"], ["set-cookie", "b=2"]],',
+          '        }),',
           '};',
           '',
         ].join('\n'),
@@ -127,6 +142,14 @@ describe('writeOnDemandFunction', () => {
       const original = yield* fetchText('/v12/docs/b?flags=publisher');
       expect(original.body).toContain(
         `localhost:${port}/v12/docs/b?flags=publisher`,
+      );
+
+      // A response's own caching wins.
+      const fresh = yield* fetchText(
+        `/${onDemandFunction}?${pathParam}=/og/fresh.png`,
+      );
+      expect(fresh.response.headers.get('cache-control')).toBe(
+        'public, s-maxage=600',
       );
 
       const head = yield* fetchText('/', { method: 'HEAD' });

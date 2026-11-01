@@ -144,7 +144,7 @@ export const partners: ReadonlyArray<Partner> = sponsors
         (b.rank ?? Number.POSITIVE_INFINITY) || b.weight - a.weight,
   );
 
-/** Under the headline on `/sponsor`'s social card (`build/og-image.ts`). */
+/** Under the headline on `/sponsor`'s social card (`og/card.ts`). */
 export const sponsorCardLede = `MIT licensed, and kept going by ${sponsors.length} sponsors.`;
 
 /** `/sponsor`'s social card's alt text: what the card says. */
