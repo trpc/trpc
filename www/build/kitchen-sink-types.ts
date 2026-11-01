@@ -25,7 +25,7 @@ const storeFile = /\/node_modules\/\.pnpm\/([^/]+)\/node_modules\/(.+)$/;
 /**
  * Short paths for the browser, unique per file: `/lib/lib.dom.d.ts`,
  * `/node_modules/zod/v4/index.d.ts` (or under `.pnpm/<id>/` when two
- * versions of a package meet), `/packages/trpc/src/client/index.ts`.
+ * versions of a package meet), `/next/packages/trpc/src/client/index.ts`.
  */
 function virtualPaths(program: ts.Program) {
   const byReal = new Map<string, string>();

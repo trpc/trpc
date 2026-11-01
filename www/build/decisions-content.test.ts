@@ -99,7 +99,7 @@ describe('splitProsCons', () => {
 describe('samples/decisions/open', () => {
   it("has only the stubs of open questions, deleted with the question's file", () => {
     const questions = new Set(
-      readdirSync(new URL('../../.agent-docs/open', import.meta.url))
+      readdirSync(new URL('../../next/.agent-docs/open', import.meta.url))
         .filter((file) => file.endsWith('.md'))
         .map((file) => file.slice(0, -'.md'.length)),
     );

@@ -1,18 +1,22 @@
 /**
  * What's rendered on request instead of in the build: a URL whose query
- * turns on experiments (`?flags=`, `src/flags.ts`) or searches (`/search?q=`,
- * `src/pages.ts`), and the pages' social cards (`/og/*.png`,
- * `src/routes/og.$.ts`). The build prerenders each page once, without a
- * query; every combination of flags is a different page, so the host sends
- * those requests to a function running the site's server build, and its CDN
- * caches each URL's response until the next deploy. Everything else is the
- * prerendered file.
+ * turns on experiments (`?flags=`, `src/flags.ts`), shows v12 on the home
+ * page (`?version=v12`, `src/home-version.ts`, unless v12 is hidden),
+ * searches (`/search?q=`, `src/pages.ts`) or holds a choice made on a
+ * decisions page (`src/content/decision-search.ts`), and the pages' social
+ * cards (`/og/*.png`, `src/routes/og.$.ts`). The build prerenders each page
+ * once, without a query; every combination of flags is a different page, so
+ * the host sends those requests to a function running the site's server
+ * build, and its CDN caches each URL's response until the next deploy.
+ * Everything else is the prerendered file.
  */
 import { Effect, FileSystem, Path } from 'effect';
 import type { Plugin } from 'vite';
 
+import { decisionSearchKeys } from '../src/content/decision-search.ts';
 import { experimentIds } from '../src/experiments.ts';
 import { searchPage, searchParam } from '../src/pages.ts';
+import { decisions, v12 } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 
 /** The function's name, and the path routes rewrite to. */
@@ -61,11 +65,26 @@ export const onDemandRoutes = (
           src: pagePath,
         },
       ]),
+  ...(v12.hidden
+    ? []
+    : [
+        {
+          dest: `/${onDemandFunction}?${pathParam}=/`,
+          has: [{ key: 'version', type: 'query', value: '^v12$' }],
+          src: '^/$',
+        },
+      ]),
   {
     dest: `/${onDemandFunction}?${pathParam}=${searchPage.path}`,
     has: [{ key: searchParam, type: 'query', value: '^.+$' }],
     src: `^${escapeRegExp(searchPage.path)}$`,
   },
+  // Any value: the page drops one it doesn't know, as the browser does.
+  ...decisionSearchKeys.map((key) => ({
+    dest: `/${onDemandFunction}?${pathParam}=$1`,
+    has: [{ key, type: 'query' }],
+    src: `^(${escapeRegExp(decisions.basePath)}(?:/[^.]*)?)$`,
+  })),
   { dest: `/${onDemandFunction}?${pathParam}=$1`, src: ogImagePaths },
 ];
 

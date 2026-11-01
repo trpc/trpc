@@ -1,9 +1,11 @@
 import { Badge } from '@shared/ui/components/badge';
+import { cn } from '@shared/ui/lib/utils';
 import { Link, notFound, Outlet } from '@tanstack/react-router';
 import {
   ArrowLeft,
   ArrowRight,
   ChevronRight,
+  ExternalLink,
   FlaskConical,
   Pencil,
   Wrench,
@@ -29,19 +31,22 @@ import {
   findDoc,
   listedDocs,
   neighbours,
+  pagePath,
   useListedDocs,
 } from '~/content/docs.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
 import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
+import { CodemodPlaygroundSlot } from '~/codemod-playground/slot.tsx';
+import { PageDemo } from '~/kitchen-sink/embed.tsx';
 import { useEnableOnVisit } from '~/flags.ts';
-import { absoluteUrl, ogImageUrl, pageHead } from '~/seo.ts';
-import { docPath, site, v11 } from '~/site.ts';
+import { absoluteUrl, copyPageUrl, ogImageUrl, pageHead } from '~/seo.ts';
+import { atTrpcIo, site, v11, v12, v12Indexable } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
   return (
-    <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)] has-data-demo-page:max-w-[112rem]">
       <aside className="hidden md:block">
         <div className="sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto py-8 pr-2">
           <DocsNav />
@@ -99,23 +104,31 @@ function breadcrumbs(
 }
 
 /**
- * A page's `head()`. v11's pages have markdown for agents; the older
- * versions' titles name their version.
+ * A page's `head()`. v11's and v12's pages have markdown for agents. The
+ * older versions point search engines at trpc.io, where they're maintained,
+ * and their titles name their version, as v11's do while v12 isn't hidden.
+ * While v12 is hidden, its pages say `noindex, nofollow`.
  */
 export function docHead(version: DocsVersion, slug: string) {
   const meta = findDoc(version, slug);
   if (!meta) {
     return { meta: [{ title: `Not found | ${site.name}` }] };
   }
-  const path = docPath(version, meta.slug);
+  const path = pagePath(version, meta.slug);
   const title = stripInlineCode(meta.title);
   const description = stripInlineCode(meta.description) || site.description;
-  const isV11 = version.id === v11.id;
+  const copied = version.copied;
+  // A copy's page is trpc.io's, which is the page itself at trpc.io.
+  const urlOf = (page: string) =>
+    copied ? copyPageUrl(copied, page) : absoluteUrl(pagePath(version, page));
   return pageHead({
     article: { section: meta.section },
+    ...(copied ? { canonical: urlOf(meta.slug) } : { hidden: v12.hidden }),
     description,
-    ...(isV11 ? { markdownPath: `${version.basePath}/${meta.slug}.md` } : {}),
-    noindex: meta.experiment !== undefined,
+    ...(copied && copied.id !== v11.id
+      ? {}
+      : { markdownPath: `${version.basePath}/${meta.slug}.md` }),
+    noindex: meta.experiment !== undefined || (!copied && !v12Indexable),
     path,
     structuredData: [
       {
@@ -125,12 +138,15 @@ export function docHead(version: DocsVersion, slug: string) {
         image: ogImageUrl(path),
         inLanguage: 'en',
         isPartOf: { '@type': 'WebSite', name: site.name, url: site.url },
-        mainEntityOfPage: absoluteUrl(path),
+        mainEntityOfPage: urlOf(meta.slug),
         proficiencyLevel: 'Expert',
       },
-      breadcrumbs(version, meta, (page) => absoluteUrl(docPath(version, page))),
+      breadcrumbs(version, meta, urlOf),
     ],
-    title: isV11 ? title : `${title} (${version.id})`,
+    title:
+      (v12.hidden && copied?.id === v11.id) || !copied
+        ? title
+        : `${title} (${version.id})`,
     type: 'article',
   });
 }
@@ -149,10 +165,19 @@ export function DocPage(props: {
   const parents = ancestors(version, doc.slug);
   const children = childrenOf(listed, doc.slug);
   const showPartners = partners.length > 0;
+  const demo = doc.demo;
   useEnableOnVisit(doc.experiment, doc.slug);
 
   return (
-    <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
+    <div
+      className={cn(
+        'grid min-w-0 gap-10 py-8',
+        demo
+          ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]'
+          : 'xl:grid-cols-[minmax(0,1fr)_13rem]',
+      )}
+      data-demo-page={demo}
+    >
       <article className="min-w-0">
         <VersionBanner slug={doc.slug} version={version} />
         <header className="mb-8 grid gap-3 border-b pb-6">
@@ -199,8 +224,8 @@ export function DocPage(props: {
                 <FlaskConical className="text-brand" /> Experimental
               </Badge>
               <span>
-                {experiments[doc.experiment]?.label ?? doc.experiment} might
-                change or go away in any release.{' '}
+                {experiments[doc.experiment].label} might change or go away in
+                any release.{' '}
                 <Link
                   className="text-link hover:underline"
                   hash="experimental"
@@ -220,20 +245,22 @@ export function DocPage(props: {
               <TextWithCode text={doc.description} />
             </p>
           ) : null}
-          {version.id === v11.id ? (
+          {version.copied && version.id !== v11.id ? null : (
             <PageActions
               basePath={version.basePath}
               key={doc.slug}
               slug={doc.slug}
             />
-          ) : null}
+          )}
         </header>
         <CollapsedTableOfContents
-          className="mb-8 xl:hidden"
+          className={cn('mb-8', !demo && 'xl:hidden')}
           headings={doc.headings}
           key={doc.slug}
         />
         <DocBody html={doc.html} />
+        {demo ? <PageDemo demo={demo} html={doc.html} mode="inline" /> : null}
+        <CodemodPlaygroundSlot html={doc.html} />
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2
@@ -263,10 +290,20 @@ export function DocPage(props: {
           </section>
         ) : null}
         <footer className="mt-12 grid gap-6 border-t pt-6">
-          {showPartners ? <PartnersStrip className="xl:hidden" /> : null}
+          {showPartners ? (
+            <PartnersStrip className={cn(!demo && 'xl:hidden')} />
+          ) : null}
+          {version.copied && !atTrpcIo ? (
+            <a
+              className={footerLink}
+              href={copyPageUrl(version.copied, doc.slug)}
+            >
+              <ExternalLink className="size-3.5" /> Read this page on trpc.io
+            </a>
+          ) : null}
           <a
             className={footerLink}
-            href={`${site.github}/edit/main/www/${version.id}/docs/${doc.slug}.md`}
+            href={`${site.github}/edit/${version.copied ? 'main' : 'v12'}/www/${version.id}/docs/${doc.slug}.md`}
           >
             <Pencil className="size-3.5" /> Edit this page on GitHub
           </a>
@@ -311,10 +348,16 @@ export function DocPage(props: {
         </footer>
       </article>
       <aside className="hidden xl:block">
-        <div className="sticky top-22 grid gap-10">
-          <TableOfContents headings={doc.headings} key={doc.slug} />
-          {showPartners ? <PartnersRail /> : null}
-        </div>
+        {demo ? (
+          <div className="sticky top-22 h-[calc(100dvh-7rem)]">
+            <PageDemo demo={demo} html={doc.html} mode="aside" />
+          </div>
+        ) : (
+          <div className="sticky top-22 grid gap-10">
+            <TableOfContents headings={doc.headings} key={doc.slug} />
+            {showPartners ? <PartnersRail /> : null}
+          </div>
+        )}
       </aside>
     </div>
   );

@@ -84,7 +84,7 @@ function useBuild(demo: DemoDefinition, files: ReadonlyArray<DemoFile>) {
       current = false;
       clearTimeout(timer);
     };
-    // A build starts for new files only; `session` only picks the delay.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- A build starts for new files only; `session` only picks the delay.
   }, [demo, files]);
   return { building, error, session };
 }
@@ -132,7 +132,7 @@ function useTypeErrors(
       current = false;
       clearTimeout(timer);
     };
-    // A check starts for new files only; `checked` only picks the delay.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- A check starts for new files only; `checked` only picks the delay.
   }, [checker, files]);
   const errors = checked
     ? Object.values(checked.diagnostics).reduce(
@@ -192,7 +192,7 @@ function AppBrowser(props: {
         history: createMemoryHistory({ initialEntries: [path] }),
         user,
       }),
-    // `path` follows the app between restarts.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- `path` follows the app between restarts, and a reload makes a new router.
     [session, user, reloads],
   );
   useEffect(

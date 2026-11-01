@@ -78,6 +78,7 @@ function Frame(props: { readonly className: string; readonly demo: DemoId }) {
   const DemoFrame = frameOf(props.demo);
   return (
     <Suspense fallback={<Loading className={props.className} />}>
+      {/* oxlint-disable-next-line react/static-components -- `frameOf` makes one component per demo and keeps it. */}
       <DemoFrame className={props.className} />
     </Suspense>
   );

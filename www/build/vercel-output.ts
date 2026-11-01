@@ -15,9 +15,11 @@ import { indexable, indexedHost } from '../src/seo.ts';
 import {
   copiedVersions,
   hiddenPaths,
+  llmsTxtPath,
   site,
   unindexedPaths,
   v11,
+  v12,
 } from '../src/site.ts';
 import {
   hiddenPathProblems,
@@ -102,6 +104,13 @@ const v11Page = `^${escapeRegExp(v11.basePath)}/(?!(?:${olderVersions
   .join('|')})(?:/|$))([\\w/-]+)`;
 const v11FirstDoc = `${v11.basePath}/${v11.firstDoc}`;
 
+/** A v12 page, which has markdown too. Slugs nest: `/v12/docs/client/links`. */
+const v12Page = `^${escapeRegExp(v12.basePath)}/([\\w/-]+)`;
+
+/** The slug of the first page in sidebar order, which `llms.txt` lists in. */
+export const firstDoc = (llmsTxt: string): string | undefined =>
+  /\]\([^)\s]*\/docs\/([\w/-]+)\.md\)/.exec(llmsTxt)?.[1];
+
 /**
  * `X-Robots-Tag: noindex` on every response (pages, markdown, `llms.txt`,
  * images), unless the build is `indexable`; then on every host but trpc.io
@@ -147,13 +156,15 @@ export const noindexPageRoutes = (
  * `old`: `vercel.json`'s redirects, which keep trpc.io's URLs working (`old-routes.ts`).
  * `noindex`: the routes that say `X-Robots-Tag: noindex`. `hidden`: the
  * paths that say `noindex, nofollow` (`hiddenPaths`). `unindexed`: the
- * paths that say `noindex` on every host (`unindexedPaths`).
+ * paths that say `noindex` on every host (`unindexedPaths`). `v12First`:
+ * the slug `/v12/docs` redirects to, which prerendering can't write.
  */
 export const routes = (
   old: ReadonlyArray<VercelRoute> = [],
   noindex: ReadonlyArray<VercelRoute> = [noindexRoute(site.url, '')],
   hidden: ReadonlyArray<string> = hiddenPaths,
   unindexed: ReadonlyArray<string> = unindexedPaths,
+  v12First?: string,
 ): ReadonlyArray<VercelRoute> => [
   ...noindex,
   ...unindexed.map(unindexedRoute),
@@ -166,6 +177,17 @@ export const routes = (
     status: 308,
   },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
+  ...(v12First === undefined
+    ? []
+    : [
+        {
+          headers: { Location: `${v12.basePath}/${v12First}` },
+          src: `^${escapeRegExp(v12.basePath)}$`,
+          status: 307,
+        },
+      ]),
+  // The v11 docs were at `/v11/docs` before they took `/docs`.
+  { headers: { Location: '/docs$1' }, src: '^/v11/docs(/.*)?$', status: 308 },
   ...old,
   {
     continue: true,
@@ -219,6 +241,26 @@ export const routes = (
     headers: { Link: `<${site.url}${v11.basePath}>; rel="canonical"` },
     src: `^${escapeRegExp(v11FirstDoc)}\\.md$`,
   },
+  {
+    continue: true,
+    headers: {
+      Link: `<${v12.basePath}/$1.md>; rel="alternate"; type="text/markdown"`,
+      Vary: 'Accept',
+    },
+    src: `${v12Page}$`,
+  },
+  // Hidden pages have no canonical link (`v12.hidden`).
+  ...(v12.hidden
+    ? []
+    : [
+        {
+          continue: true,
+          headers: {
+            Link: `<${site.url}${v12.basePath}/$1>; rel="canonical"`,
+          },
+          src: `${v12Page}\\.md$`,
+        },
+      ]),
   { dest: '/index.md', has: acceptsMarkdown, src: '^/$' },
   {
     dest: `${v11FirstDoc}.md`,
@@ -229,6 +271,11 @@ export const routes = (
     dest: `${v11.basePath}/$1.md`,
     has: acceptsMarkdown,
     src: `${v11Page}$`,
+  },
+  {
+    dest: `${v12.basePath}/$1.md`,
+    has: acceptsMarkdown,
+    src: `${v12Page}$`,
   },
   ...onDemandRoutes(),
   { handle: 'filesystem' },
@@ -246,6 +293,16 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   const client = path.join(root, 'dist/client');
   const output = path.join(root, '.vercel/output');
   const staticDir = path.join(output, 'static');
+
+  const v12LlmsTxt = llmsTxtPath('v12');
+  const v12First = firstDoc(
+    yield* fs.readFileString(path.join(client, v12LlmsTxt)),
+  );
+  if (v12First === undefined) {
+    return yield* new VercelOutputError({
+      message: `${v12LlmsTxt} links to no docs page`,
+    });
+  }
 
   const { redirects } = yield* fs
     .readFileString(path.join(root, 'vercel.json'))
@@ -311,10 +368,16 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
       message: `sitemap.xml doesn't list every page; add them to \`pages\` in vite.config.ts:\n${unlisted.join('\n')}`,
     });
   }
-  const allRoutes = routes(redirects.map(redirectRoute), [
-    noindexRoute(site.url, vercelEnv),
-    ...noindexPageRoutes([...noindexPaths]),
-  ]);
+  const allRoutes = routes(
+    redirects.map(redirectRoute),
+    [
+      noindexRoute(site.url, vercelEnv),
+      ...noindexPageRoutes([...noindexPaths]),
+    ],
+    hiddenPaths,
+    unindexedPaths,
+    v12First,
+  );
   const landings = redirects
     .filter((redirect) => !redirect.source.includes(':'))
     .map((redirect) => ({
@@ -349,7 +412,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   const hidden = [
     ...hiddenPaths.flatMap((basePath) =>
       hiddenPathProblems(basePath, texts, {
-        agentFiles: false,
+        agentFiles: basePath === v12.basePath,
         others: hiddenPaths.filter((other) => other !== basePath),
       }),
     ),

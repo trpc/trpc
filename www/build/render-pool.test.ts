@@ -14,7 +14,7 @@ const dirs = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const root = yield* fs.makeTempDirectoryScoped({ prefix: 'render-pool-' });
-  const app = path.join(root, 'samples/docs');
+  const app = path.join(root, 'samples/v12');
   yield* fs.makeDirectory(path.join(app, 'src'), { recursive: true });
   yield* fs.writeFileString(
     path.join(app, 'src/server.ts'),

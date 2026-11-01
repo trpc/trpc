@@ -229,7 +229,7 @@ const cellsOf = (line: string) =>
     .map((cell) => cell.trim());
 
 /**
- * The feature tables of `.agent-docs/reference/orpc-parity.md`, by their
+ * The feature tables of `next/.agent-docs/reference/orpc-parity.md`, by their
  * `##` headings: the ones whose columns start Feature, oRPC, v11, v12. The
  * Where column is left out: it links the decisions, which the site doesn't.
  */
@@ -289,7 +289,7 @@ const parityFence = /^```parity\n(?:[ \t]*\n)*```$/gm;
 
 const snapshotUrl = new URL('../benchmarks.json', import.meta.url);
 const parityUrl = new URL(
-  '../../.agent-docs/reference/orpc-parity.md',
+  '../../next/.agent-docs/reference/orpc-parity.md',
   import.meta.url,
 );
 

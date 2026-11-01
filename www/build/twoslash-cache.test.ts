@@ -34,17 +34,17 @@ const setup = Effect.fn('setup')(function* () {
   const source = path.join(root, 'packages/react/src/index.ts');
   const samplesDir = path.join(root, 'samples');
   yield* fs.makeDirectory(path.dirname(source), { recursive: true });
-  yield* fs.makeDirectory(path.join(samplesDir, 'docs/src'), {
+  yield* fs.makeDirectory(path.join(samplesDir, 'v12/src'), {
     recursive: true,
   });
   yield* fs.writeFileString(
-    path.join(samplesDir, 'docs/src/app.ts'),
+    path.join(samplesDir, 'v12/src/app.ts'),
     'export {};',
   );
   yield* fs.writeFileString(lockfile, 'lockfileVersion: 9');
   yield* fs.writeFileString(source, 'export const a = 1;');
   yield* fs.writeFileString(
-    path.join(samplesDir, 'docs/tsconfig.json'),
+    path.join(samplesDir, 'v12/tsconfig.json'),
     JSON.stringify({
       compilerOptions: { lib: ['es5'], strict: true, types: [] },
       include: ['src'],
@@ -470,7 +470,7 @@ describe('makeTwoslashCache', () => {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
         const dirs = yield* setup();
-        const stub = path.join(dirs.samplesDir, 'docs/open/stub.ts');
+        const stub = path.join(dirs.samplesDir, 'v12/open/stub.ts');
         yield* fs.makeDirectory(path.dirname(stub));
         yield* fs.writeFileString(stub, 'export declare const a: number;');
         const markdown = [

@@ -87,7 +87,7 @@ function Pane(props: {
       created.destroy();
       view.current = null;
     };
-    // Made once per file: the effects below replace its text.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- Made once per file: the effects below replace its text.
   }, [props.filename]);
 
   useEffect(() => {

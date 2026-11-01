@@ -1,3 +1,5 @@
+import { decisions, site } from '../src/site.ts';
+import type { DecisionsOptions } from './decisions-content.ts';
 import type { TwoslashCacheOptions } from './twoslash-cache.ts';
 
 /** The sample apps the code blocks compile in. */
@@ -15,4 +17,16 @@ export const twoslashCache: TwoslashCacheOptions = {
     dir: new URL('..', import.meta.url).pathname,
     packages: ['@shikijs/twoslash', 'twoslash', 'typescript6'],
   },
+};
+
+/** The open questions and decisions in `.agent-docs`, for the site and `pnpm decisions:check`. */
+export const decisionsOptions: DecisionsOptions = {
+  basePath: decisions.basePath,
+  dir: new URL('../../next/.agent-docs', import.meta.url).pathname,
+  dirInRepo: 'next/.agent-docs',
+  inlineApp: 'decisions',
+  manifestId: 'virtual:decisions-manifest',
+  repoUrl: `${site.github}/blob/v12`,
+  samplesDir,
+  twoslashCache,
 };

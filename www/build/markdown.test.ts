@@ -23,7 +23,7 @@ const samples = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const root = yield* fs.makeTempDirectoryScoped({ prefix: 'markdown-' });
-  for (const name of ['docs', 'v11']) {
+  for (const name of ['v12', 'v11']) {
     const app = path.join(root, name);
     yield* fs.makeDirectory(path.join(app, 'src'), { recursive: true });
     yield* fs.writeFileString(
@@ -100,9 +100,7 @@ describe('renderMarkdown', () => {
           '```',
         ].join('\n'),
       );
-      expect(rendered.typeQueries).toEqual([
-        ['const shown: "hello from docs"'],
-      ]);
+      expect(rendered.typeQueries).toEqual([['const shown: "hello from v12"']]);
       expect(rendered.html).not.toContain('./server.ts');
     }).pipe(Effect.provide(NodeServices.layer)),
   );

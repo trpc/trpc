@@ -6,44 +6,44 @@
  * tRPC's own failures, and the client takes no registry.
  */
 import type { ReactNode } from 'react';
-import type { RegistryQueryUtils } from '../../../../spikes/error-registry/boundaries/boundaries.ts';
-import type { ErrorsOf } from '../../../../spikes/error-registry/shared/define.ts';
+import type { RegistryQueryUtils } from '../../../../next/spikes/error-registry/boundaries/boundaries.ts';
+import type { ErrorsOf } from '../../../../next/spikes/error-registry/shared/define.ts';
 import type {
   ClientErrorOf,
   TrpcFailure,
-} from '../../../../spikes/error-registry/shared/failures.ts';
+} from '../../../../next/spikes/error-registry/shared/failures.ts';
 
 export {
   createClient,
   createEffectClient,
   matchError,
   safe,
-} from '../../../../spikes/error-registry/shared/client.ts';
+} from '../../../../next/spikes/error-registry/shared/client.ts';
 export type {
   RegistryError,
   TrpcFailure,
-} from '../../../../spikes/error-registry/shared/failures.ts';
+} from '../../../../next/spikes/error-registry/shared/failures.ts';
 
 // B
-export { createErrors as createErrorsB } from '../../../../spikes/error-registry/create-errors/create-errors.ts';
+export { createErrors as createErrorsB } from '../../../../next/spikes/error-registry/create-errors/create-errors.ts';
 
 // C
-export { taggedErrors as taggedErrorsC } from '../../../../spikes/error-registry/tagged-classes/tagged-classes.ts';
+export { taggedErrors as taggedErrorsC } from '../../../../next/spikes/error-registry/tagged-classes/tagged-classes.ts';
 
 // D
 export {
   errors as errorsD,
   registryOf as registryOfD,
-} from '../../../../spikes/error-registry/builder/builder.ts';
+} from '../../../../next/spikes/error-registry/builder/builder.ts';
 
 // E
 export {
   createErrors as createErrorsE,
   mergeErrors as mergeErrorsE,
-} from '../../../../spikes/error-registry/merge-errors/merge-errors.ts';
+} from '../../../../next/spikes/error-registry/merge-errors/merge-errors.ts';
 
 // F: declared here, since a module augments the interface where it's declared.
-export { createErrors as createErrorsF } from '../../../../spikes/error-registry/register/register.ts';
+export { createErrors as createErrorsF } from '../../../../next/spikes/error-registry/register/register.ts';
 
 /** Every error of the program's backend, by tag; each module extends it. */
 export interface Errors {}
@@ -53,7 +53,7 @@ export type RegisteredError = ErrorOf<Errors>;
 type ErrorOf<TErrors> = ClientErrorOf<ErrorsOf<TErrors>> | TrpcFailure;
 
 // G
-export { defineError as defineErrorG } from '../../../../spikes/error-registry/inferred/inferred.ts';
+export { defineError as defineErrorG } from '../../../../next/spikes/error-registry/inferred/inferred.ts';
 
 // Error boundaries: every option's sources, by tag (B to G) or by code (A)
 export {
@@ -61,11 +61,11 @@ export {
   errorsOf,
   type ErrorsFrom,
   type TagOf,
-} from '../../../../spikes/error-registry/boundaries/boundaries.ts';
+} from '../../../../next/spikes/error-registry/boundaries/boundaries.ts';
 export {
   createCodeErrorBoundary as createCodeErrorBoundaryA,
   type CodeOf,
-} from '../../../../spikes/error-registry/boundaries/codes.ts';
+} from '../../../../next/spikes/error-registry/boundaries/codes.ts';
 
 /** `createTrpcContext()`'s shape over the client: each call's error is its own. */
 export declare function createTrpcContext<R>(): readonly [

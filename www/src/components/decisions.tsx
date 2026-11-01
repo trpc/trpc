@@ -346,7 +346,7 @@ export function DecisionsIndex() {
           recorded so far. Rendered from{' '}
           <a
             className="font-medium text-link hover:underline"
-            href={`${site.sourceUrl}/.agent-docs`}
+            href={`${site.sourceUrl}/next/.agent-docs`}
           >
             <code className="font-mono text-[0.875em]">.agent-docs/</code>
           </a>

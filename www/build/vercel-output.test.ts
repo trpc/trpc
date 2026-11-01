@@ -3,11 +3,12 @@ import { describe, expect, it } from '@effect/vitest';
 import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { hiddenPaths, site } from '../src/site.ts';
+import { hiddenPaths, llmsTxtPath, site, v12 } from '../src/site.ts';
 import { onDemandFunction } from './on-demand.ts';
 import { siteTextFiles } from './site-files.ts';
 import { land, type Redirect, servedPaths } from './old-routes.ts';
 import {
+  firstDoc,
   isNoindex,
   noindexPageRoutes,
   noindexRoute,
@@ -22,6 +23,17 @@ const llmsTxt = [
   '- [Introduction](https://trpc.io/docs/introduction.md): tRPC.',
   '- [Links](https://trpc.io/docs/client/links.md): Links.',
   '',
+].join('\n');
+
+const hiddenMeta = '<meta name="robots" content="noindex, nofollow">';
+/** The v12 docs pages: hidden at trpc.io (`v12.hidden`), and unindexed (`v12Indexable`). */
+const v12Page = v12.hidden
+  ? hiddenMeta
+  : '<meta name="robots" content="noindex">';
+const v12Llms = [
+  '# tRPC v12',
+  '',
+  '- [Getting started](https://v12.trpc.io/v12/docs/getting-started.md): A router.',
 ].join('\n');
 
 const sitemapPages = [
@@ -80,12 +92,16 @@ const setup = Effect.fn('setup')(function* (
     'docs/v9/index.html': '',
     'index.html': '',
     'index.md': '',
-    'llms.txt': llms,
+    [llmsTxtPath('v11').slice(1)]: llms,
+    [llmsTxtPath('v12').slice(1)]: v12Llms,
     'logo.svg': '',
     'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
     'sitemap.xml': sitemapOf(listed),
     'robots.txt': siteTextFiles().get('/robots.txt')?.source ?? '',
     'sponsor/index.html': '',
+    'v12/decisions/index.html': hiddenMeta,
+    'v12/docs/getting-started.md': '',
+    'v12/docs/getting-started/index.html': v12Page,
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -187,6 +203,13 @@ describe('opensearch.xml', () => {
   });
 });
 
+describe('firstDoc', () => {
+  it('reads the first page llms.txt links to', () => {
+    expect(firstDoc(v12Llms)).toBe('getting-started');
+    expect(firstDoc('# tRPC\n')).toBeUndefined();
+  });
+});
+
 describe('writeVercelOutput', () => {
   it.effect('copies the site and writes its routes', () =>
     Effect.gen(function* () {
@@ -224,7 +247,12 @@ describe('writeVercelOutput', () => {
           contentType: 'text/markdown; charset=utf-8',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
-        'llms.txt': { contentType: 'text/plain; charset=utf-8' },
+        [llmsTxtPath('v11').slice(1)]: {
+          contentType: 'text/plain; charset=utf-8',
+        },
+        [llmsTxtPath('v12').slice(1)]: {
+          contentType: 'text/plain; charset=utf-8',
+        },
         'robots.txt': { contentType: 'text/plain; charset=utf-8' },
         'sitemap.xml': { contentType: 'application/xml; charset=utf-8' },
         'sponsor/index.html': {
@@ -243,10 +271,21 @@ describe('writeVercelOutput', () => {
           contentType: 'text/html; charset=utf-8',
           path: 'docs/server/routers',
         },
+        'v12/decisions/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/decisions',
+        },
+        'v12/docs/getting-started.md': {
+          contentType: 'text/markdown; charset=utf-8',
+        },
+        'v12/docs/getting-started/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/docs/getting-started',
+        },
       });
       const moved = config.routes.find(
         (route: { src: string; status?: number }) =>
-          route.status === 308 && route.src.includes('v11'),
+          route.status === 308 && route.src.startsWith('^/docs/v11'),
       );
       expect(moved.headers.Location).toBe('/docs$1');
       expect(

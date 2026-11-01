@@ -8,8 +8,10 @@ import { defineConfig } from 'vite';
 import { referenceSection } from './api-reference/convert.ts';
 import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
+import { decisionsContent } from './build/decisions-content.ts';
 import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
+import { kitchenSinkTypes } from './build/kitchen-sink-types.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { ogCards } from './build/og-cards.ts';
 import {
@@ -18,7 +20,7 @@ import {
   sentryUploadPlugins,
 } from './build/sentry.ts';
 import { siteFiles } from './build/site-files.ts';
-import { samplesDir, twoslashCache } from './build/paths.ts';
+import { decisionsOptions, samplesDir, twoslashCache } from './build/paths.ts';
 import type { DocCard } from './src/og/card.ts';
 import { mediaPage, searchPage } from './src/pages.ts';
 import { absoluteUrl, copyPageUrl, deploymentOrigin } from './src/seo.ts';
@@ -27,14 +29,20 @@ import {
   blog,
   type CopiedVersion,
   copiedVersions,
+  decisions,
   llmsTxtPath,
   site,
+  v12,
+  v12Indexable,
 } from './src/site.ts';
 import { sponsorCardLede, sponsorPage } from './src/sponsors.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
 import v11Sections from './v11/sections.json' with { type: 'json' };
+import v12Sections from './v12/sections.json' with { type: 'json' };
 
+// The v12 docs, served at `/v12/docs`.
+const v12Dir = new URL('v12/docs', import.meta.url).pathname;
 const blogDir = new URL('blog', import.meta.url).pathname;
 // Each version's docs, served at `/docs` (v11, the stable release),
 // `/docs/v10` and `/docs/v9`.
@@ -44,9 +52,11 @@ const copies = copiedVersions.map((version) => ({
   sections: copiedSections[version.id],
   version,
 }));
+const v11Dir = new URL('v11/docs', import.meta.url).pathname;
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
-const [copiedPages, posts, favicon] = await Effect.runPromise(
+const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
+    docPages({ basePath: v12.basePath, contentDir: v12Dir, samplesDir }),
     Effect.forEach(copies, (copy) =>
       Effect.map(
         docPages({
@@ -66,12 +76,18 @@ const [copiedPages, posts, favicon] = await Effect.runPromise(
     }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
-/** Each version's `llms.txt` lists the others', as trpc.io's do. */
-const llmsVersions = copiedVersions.map((version) => ({
-  id: version.id,
-  name: version.status === 'stable' ? `${version.id} (stable)` : version.id,
-}));
-const llmsOthers = (id: CopiedVersion['id']) =>
+/**
+ * Each version's `llms.txt` lists the others', as trpc.io's do; none lists
+ * v12's while it's hidden.
+ */
+const llmsVersions = [
+  ...(v12.hidden ? [] : [{ id: 'v12' as const, name: 'v12 (preview)' }]),
+  ...copiedVersions.map((version) => ({
+    id: version.id,
+    name: version.status === 'stable' ? `${version.id} (stable)` : version.id,
+  })),
+];
+const llmsOthers = (id: 'v12' | CopiedVersion['id']) =>
   llmsVersions
     .filter((version) => version.id !== id)
     .map((version) => ({ name: version.name, path: llmsTxtPath(version.id) }));
@@ -119,6 +135,25 @@ export default defineConfig({
   preview: { host: '127.0.0.1' },
   plugins: [
     siteFiles(),
+    docsContent({
+      agentFiles: {
+        llmsTxt: llmsTxtPath('v12'),
+        markdown: true,
+        ...(v12.hidden ? { name: 'tRPC v12' } : {}),
+        others: llmsOthers('v12'),
+      },
+      basePath: v12.basePath,
+      contentDir: v12Dir,
+      contentPath: 'www/v12/docs',
+      manifestId: 'virtual:docs-manifest',
+      samplesDir,
+      sections: v12Sections,
+      siteUrl: site.url,
+      sourceUrl: site.sourceUrl,
+      summary: site.description,
+      twoslashCache,
+      v11Dir,
+    }),
     ...copies.map((copy) =>
       docsContent({
         agentFiles: {
@@ -157,9 +192,11 @@ export default defineConfig({
       sourceUrl: `${site.github}/blob/main/www`,
     }),
     blogFeeds({ posts }),
+    decisionsContent(decisionsOptions),
     siteIcons({ svg: favicon }),
     ogCards([
       { kind: 'home', path: '/' },
+      ...pages.map((page) => docCard(page, absoluteUrl(page.path))),
       ...copiedPages.flatMap((copy) =>
         copy.pages.map((page) =>
           docCard(page, copyPageUrl(copy.version, page.slug)),
@@ -199,6 +236,15 @@ export default defineConfig({
     tanstackStart({
       pages: [
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
+        ...pages.map((page) => ({
+          path: page.path,
+          // An experiment's page is `noindex`, and every page while v12 is
+          // hidden or unindexed.
+          sitemap:
+            page.experiment === undefined && !v12.hidden && v12Indexable
+              ? { changefreq: 'weekly' as const, priority: 0.8 }
+              : { exclude: true },
+        })),
         ...copiedPages.flatMap((copy) =>
           copy.pages.map((page) => ({
             path: page.path,
@@ -221,6 +267,9 @@ export default defineConfig({
           path: `/blog/${post.slug}`,
           sitemap: copySitemap,
         })),
+        // Hidden: nothing links here, so the crawl starts here, and finds
+        // each question and decision from it, out of the sitemap.
+        { path: decisions.basePath, sitemap: { exclude: true } },
         {
           path: '/404',
           prerender: { enabled: true, outputPath: '/404.html' },
@@ -233,10 +282,12 @@ export default defineConfig({
         failOnError: true,
         filter: (page) => {
           const prerendered =
+            // `/v12/docs` redirects to its first page (`build/vercel-output.ts`).
+            page.path !== v12.basePath &&
             // An index route (`/blog/`) is found with its slash, which the
             // host redirects away.
             (page.path === '/' || !page.path.endsWith('/')) &&
-            // A query (`?flags=`) is rendered on request
+            // A query (`?flags=`, `?version=v12`) is rendered on request
             // (`build/on-demand.ts`), not once per combination here.
             !/[?#]/.test(page.path);
           // Crawling (which checks that every link resolves) and route
@@ -258,5 +309,13 @@ export default defineConfig({
       new URL('dist', import.meta.url).pathname,
     ),
   ],
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    // `oxc-parser`'s browser entry, for the codemod playground, imports its
+    // WebAssembly binding, which pnpm installs only as `www`'s own dependency.
+    dedupe: ['@oxc-parser/binding-wasm32-wasip1'],
+    tsconfigPaths: true,
+  },
+  // The kitchen sink's type worker loads TypeScript and its declarations
+  // as chunks of their own, which only an ES module worker can split.
+  worker: { format: 'es', plugins: () => [kitchenSinkTypes()] },
 });

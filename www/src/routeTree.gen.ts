@@ -21,8 +21,14 @@ import { Route as DocsSplatRouteImport } from './routes/docs.$'
 import { Route as DocsV10RouteImport } from './routes/docs_.v10'
 import { Route as DocsV9RouteImport } from './routes/docs_.v9'
 import { Route as OgSplatRouteImport } from './routes/og.$'
+import { Route as V12DocsRouteImport } from './routes/v12.docs'
 import { Route as DocsV10SplatRouteImport } from './routes/docs_.v10.$'
 import { Route as DocsV9SplatRouteImport } from './routes/docs_.v9.$'
+import { Route as V12DecisionsIndexRouteImport } from './routes/v12.decisions.index'
+import { Route as V12DecisionsSlugRouteImport } from './routes/v12.decisions.$slug'
+import { Route as V12DocsIndexRouteImport } from './routes/v12.docs.index'
+import { Route as V12DocsSplatRouteImport } from './routes/v12.docs.$'
+import { Route as V12DecisionsOpenSlugRouteImport } from './routes/v12.decisions.open.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -84,6 +90,11 @@ const OgSplatRoute = OgSplatRouteImport.update({
   path: '/og/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V12DocsRoute = V12DocsRouteImport.update({
+  id: '/v12/docs',
+  path: '/v12/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsV10SplatRoute = DocsV10SplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -93,6 +104,31 @@ const DocsV9SplatRoute = DocsV9SplatRouteImport.update({
   id: '/$',
   path: '/$',
   getParentRoute: () => DocsV9Route,
+} as any)
+const V12DecisionsIndexRoute = V12DecisionsIndexRouteImport.update({
+  id: '/v12/decisions/',
+  path: '/v12/decisions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V12DecisionsSlugRoute = V12DecisionsSlugRouteImport.update({
+  id: '/v12/decisions/$slug',
+  path: '/v12/decisions/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V12DocsIndexRoute = V12DocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => V12DocsRoute,
+} as any)
+const V12DocsSplatRoute = V12DocsSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => V12DocsRoute,
+} as any)
+const V12DecisionsOpenSlugRoute = V12DecisionsOpenSlugRouteImport.update({
+  id: '/v12/decisions/open/$slug',
+  path: '/v12/decisions/open/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -107,9 +143,15 @@ export interface FileRoutesByFullPath {
   '/docs/v10': typeof DocsV10RouteWithChildren
   '/docs/v9': typeof DocsV9RouteWithChildren
   '/og/$': typeof OgSplatRoute
+  '/v12/docs': typeof V12DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
   '/docs/v10/$': typeof DocsV10SplatRoute
   '/docs/v9/$': typeof DocsV9SplatRoute
+  '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
+  '/v12/docs/$': typeof V12DocsSplatRoute
+  '/v12/decisions/': typeof V12DecisionsIndexRoute
+  '/v12/docs/': typeof V12DocsIndexRoute
+  '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +168,11 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/docs/v10/$': typeof DocsV10SplatRoute
   '/docs/v9/$': typeof DocsV9SplatRoute
+  '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
+  '/v12/docs/$': typeof V12DocsSplatRoute
+  '/v12/decisions': typeof V12DecisionsIndexRoute
+  '/v12/docs': typeof V12DocsIndexRoute
+  '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,9 +187,15 @@ export interface FileRoutesById {
   '/docs_/v10': typeof DocsV10RouteWithChildren
   '/docs_/v9': typeof DocsV9RouteWithChildren
   '/og/$': typeof OgSplatRoute
+  '/v12/docs': typeof V12DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
   '/docs_/v10/$': typeof DocsV10SplatRoute
   '/docs_/v9/$': typeof DocsV9SplatRoute
+  '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
+  '/v12/docs/$': typeof V12DocsSplatRoute
+  '/v12/decisions/': typeof V12DecisionsIndexRoute
+  '/v12/docs/': typeof V12DocsIndexRoute
+  '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,9 +211,15 @@ export interface FileRouteTypes {
     | '/docs/v10'
     | '/docs/v9'
     | '/og/$'
+    | '/v12/docs'
     | '/blog/'
     | '/docs/v10/$'
     | '/docs/v9/$'
+    | '/v12/decisions/$slug'
+    | '/v12/docs/$'
+    | '/v12/decisions/'
+    | '/v12/docs/'
+    | '/v12/decisions/open/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +236,11 @@ export interface FileRouteTypes {
     | '/blog'
     | '/docs/v10/$'
     | '/docs/v9/$'
+    | '/v12/decisions/$slug'
+    | '/v12/docs/$'
+    | '/v12/decisions'
+    | '/v12/docs'
+    | '/v12/decisions/open/$slug'
   id:
     | '__root__'
     | '/'
@@ -190,9 +254,15 @@ export interface FileRouteTypes {
     | '/docs_/v10'
     | '/docs_/v9'
     | '/og/$'
+    | '/v12/docs'
     | '/blog/'
     | '/docs_/v10/$'
     | '/docs_/v9/$'
+    | '/v12/decisions/$slug'
+    | '/v12/docs/$'
+    | '/v12/decisions/'
+    | '/v12/docs/'
+    | '/v12/decisions/open/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,7 +276,11 @@ export interface RootRouteChildren {
   DocsV10Route: typeof DocsV10RouteWithChildren
   DocsV9Route: typeof DocsV9RouteWithChildren
   OgSplatRoute: typeof OgSplatRoute
+  V12DocsRoute: typeof V12DocsRouteWithChildren
   BlogIndexRoute: typeof BlogIndexRoute
+  V12DecisionsSlugRoute: typeof V12DecisionsSlugRoute
+  V12DecisionsIndexRoute: typeof V12DecisionsIndexRoute
+  V12DecisionsOpenSlugRoute: typeof V12DecisionsOpenSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -295,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v12/docs': {
+      id: '/v12/docs'
+      path: '/v12/docs'
+      fullPath: '/v12/docs'
+      preLoaderRoute: typeof V12DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs_/v10/$': {
       id: '/docs_/v10/$'
       path: '/$'
@@ -308,6 +389,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/docs/v9/$'
       preLoaderRoute: typeof DocsV9SplatRouteImport
       parentRoute: typeof DocsV9Route
+    }
+    '/v12/decisions/': {
+      id: '/v12/decisions/'
+      path: '/v12/decisions'
+      fullPath: '/v12/decisions/'
+      preLoaderRoute: typeof V12DecisionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v12/decisions/$slug': {
+      id: '/v12/decisions/$slug'
+      path: '/v12/decisions/$slug'
+      fullPath: '/v12/decisions/$slug'
+      preLoaderRoute: typeof V12DecisionsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v12/docs/': {
+      id: '/v12/docs/'
+      path: '/'
+      fullPath: '/v12/docs/'
+      preLoaderRoute: typeof V12DocsIndexRouteImport
+      parentRoute: typeof V12DocsRoute
+    }
+    '/v12/docs/$': {
+      id: '/v12/docs/$'
+      path: '/$'
+      fullPath: '/v12/docs/$'
+      preLoaderRoute: typeof V12DocsSplatRouteImport
+      parentRoute: typeof V12DocsRoute
+    }
+    '/v12/decisions/open/$slug': {
+      id: '/v12/decisions/open/$slug'
+      path: '/v12/decisions/open/$slug'
+      fullPath: '/v12/decisions/open/$slug'
+      preLoaderRoute: typeof V12DecisionsOpenSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -344,6 +460,19 @@ const DocsV9RouteChildren: DocsV9RouteChildren = {
 const DocsV9RouteWithChildren =
   DocsV9Route._addFileChildren(DocsV9RouteChildren)
 
+interface V12DocsRouteChildren {
+  V12DocsSplatRoute: typeof V12DocsSplatRoute
+  V12DocsIndexRoute: typeof V12DocsIndexRoute
+}
+
+const V12DocsRouteChildren: V12DocsRouteChildren = {
+  V12DocsSplatRoute: V12DocsSplatRoute,
+  V12DocsIndexRoute: V12DocsIndexRoute,
+}
+
+const V12DocsRouteWithChildren =
+  V12DocsRoute._addFileChildren(V12DocsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
@@ -355,7 +484,11 @@ const rootRouteChildren: RootRouteChildren = {
   DocsV10Route: DocsV10RouteWithChildren,
   DocsV9Route: DocsV9RouteWithChildren,
   OgSplatRoute: OgSplatRoute,
+  V12DocsRoute: V12DocsRouteWithChildren,
   BlogIndexRoute: BlogIndexRoute,
+  V12DecisionsSlugRoute: V12DecisionsSlugRoute,
+  V12DecisionsIndexRoute: V12DecisionsIndexRoute,
+  V12DecisionsOpenSlugRoute: V12DecisionsOpenSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -3,7 +3,7 @@ import type { Packages } from './modules.ts';
 // The components a demo's UI is likely to need, not every one: some pull in
 // charts, carousels and date pickers.
 const components = import.meta.glob<object>(
-  '../../../shared/ui/src/components/{alert,badge,button,card,checkbox,field,input,label,native-select,separator,skeleton,spinner,switch,textarea}.tsx',
+  '../../../tooling/ui/src/components/{alert,badge,button,card,checkbox,field,input,label,native-select,separator,skeleton,spinner,switch,textarea}.tsx',
 );
 
 /**

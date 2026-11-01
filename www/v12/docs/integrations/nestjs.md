@@ -87,7 +87,7 @@ class AppModule {}
 
 Routes and errors follow the [OpenAPI handler](../openapi/routes.md).
 
-The [`examples/experimental/nest`](../../../examples/experimental/nest/README.md) app implements a contract in a controller, with a guard, an injected service and an Effect layer, and calls it with `experimental_openApiLink`.
+The [`examples/experimental/nest`](../../../../next/examples/experimental/nest/README.md) app implements a contract in a controller, with a guard, an injected service and an Effect layer, and calls it with `experimental_openApiLink`.
 
 ## Credits
 

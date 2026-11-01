@@ -22,7 +22,6 @@ export const menuParam = 'experiments';
 /** The menu with no experiment picked. */
 export const menuOpen = 'open';
 
-// oxlint-disable-next-line typescript/no-redundant-type-constituents -- `ExperimentId` is `string` while there are no experiments.
 export type MenuState = typeof menuOpen | ExperimentId;
 
 /**

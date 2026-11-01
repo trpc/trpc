@@ -1,6 +1,6 @@
 /**
  * The blog of `./server.ts` over REST, documented for clients generated from
- * OpenAPI. `pnpm --filter @samples/docs generate:api` writes its document to
+ * OpenAPI. `pnpm --filter @samples/v12 generate:api` writes its document to
  * `../openapi.json`, and Hey API writes `./api/` from that.
  */
 import {

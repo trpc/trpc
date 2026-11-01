@@ -63,7 +63,9 @@ describe('the declaration bundle', () => {
     const effect = paths.filter((path) =>
       path.startsWith('/node_modules/effect/'),
     );
-    const trpc = paths.filter((path) => path.startsWith('/packages/trpc/src/'));
+    const trpc = paths.filter((path) =>
+      path.startsWith('/next/packages/trpc/src/'),
+    );
     expect(effect.length).toBeGreaterThan(0);
     expect(trpc.length).toBeGreaterThan(0);
     expect(effect.some((path) => bundle.files[path]?.includes('/**'))).toBe(

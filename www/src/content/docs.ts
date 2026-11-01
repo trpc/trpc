@@ -1,11 +1,32 @@
-import { notFound, useLocation } from '@tanstack/react-router';
+import { notFound, useLocation, useSearch } from '@tanstack/react-router';
+import { useEffect } from 'react';
+import { sections as v12Sections } from 'virtual:docs-manifest';
 import { sections as v9Sections } from 'virtual:v9-docs-manifest';
 import { sections as v10Sections } from 'virtual:v10-docs-manifest';
 import { sections as v11Sections } from 'virtual:v11-docs-manifest';
 
 import type { ExperimentId } from '~/experiments.ts';
 import { useFlagsOn } from '~/flags.ts';
-import { type CopiedVersion, v9, v10, v11 } from '~/site.ts';
+import {
+  type HomeSearch,
+  type HomeVersion,
+  homeVersionAt,
+  homeVersionOf,
+  homeVersionSearch,
+  rememberHomeVersion,
+  revealV12,
+  shownHomeVersions,
+  useV12Shown,
+} from '~/home-version.ts';
+import {
+  type CopiedVersion,
+  docPath,
+  docsLinks,
+  v9,
+  v10,
+  v11,
+  v12,
+} from '~/site.ts';
 
 import { listedSections } from './listed.ts';
 import type { Doc, DocMeta, DocSection } from './types.ts';
@@ -13,15 +34,15 @@ import type { Doc, DocMeta, DocSection } from './types.ts';
 /** One version's pages, and where the site serves them. */
 export interface DocsVersion {
   readonly allDocs: ReadonlyArray<DocMeta>;
-  readonly basePath: CopiedVersion['basePath'];
-  /** The version of trpc.io's docs it is. */
-  readonly copied: CopiedVersion;
+  readonly basePath: typeof v12.basePath | CopiedVersion['basePath'];
+  /** The version of trpc.io's docs this copies, for the older versions. */
+  readonly copied: CopiedVersion | undefined;
   readonly firstDoc: string;
-  readonly id: CopiedVersion['id'];
+  readonly id: 'v12' | CopiedVersion['id'];
   /** The page route, for `<Link to>`. */
-  readonly route: '/docs/$' | '/docs/v10/$' | '/docs/v9/$';
+  readonly route: '/v12/docs/$' | '/docs/$' | '/docs/v10/$' | '/docs/v9/$';
   readonly sections: ReadonlyArray<DocSection>;
-  readonly status: CopiedVersion['status'];
+  readonly status: 'experimental' | CopiedVersion['status'];
   /** A page, compiled at build time. */
   readonly load: (slug: string) => Promise<Doc>;
 }
@@ -72,6 +93,23 @@ function copiedDocs(
 
 // Each page is its own content-hashed chunk: the browser downloads a page
 // once per deploy and the CDN can cache it forever.
+export const v12Docs = docsVersion(
+  {
+    basePath: v12.basePath,
+    copied: undefined,
+    id: 'v12',
+    route: '/v12/docs/$',
+    sections: v12Sections,
+    status: 'experimental',
+  },
+  import.meta.glob<{ default: Doc }>([
+    '../../v12/docs/**/*.md',
+    '!../../v12/docs/**/README.md',
+  ]),
+  (slug) => `../../v12/docs/${slug}.md`,
+  'getting-started',
+);
+
 export const v11Docs = copiedDocs(
   v11,
   '/docs/$',
@@ -103,7 +141,45 @@ export const v9Docs = copiedDocs(
 );
 
 /** Newest first, as the version switcher lists them. */
-export const versions = [v11Docs, v10Docs, v9Docs] as const;
+export const versions = [v12Docs, v11Docs, v10Docs, v9Docs] as const;
+
+/**
+ * The versions a reader of `current` is offered: v12 only on its own pages
+ * while it's hidden (`v12.hidden`), unless the session has been to v12
+ * (`shown`, `useV12Shown`).
+ */
+export function offeredVersions(
+  current: DocsVersion,
+  shown: boolean,
+): ReadonlyArray<DocsVersion> {
+  return versions.filter(
+    (version) => shown || version.id !== 'v12' || current.id === 'v12',
+  );
+}
+
+/** The docs of each version the home page shows. */
+export const homeDocs = {
+  v11: v11Docs,
+  v12: v12Docs,
+} as const satisfies Record<HomeVersion, DocsVersion>;
+
+/**
+ * The top bar's links to each version's pages, by slug; on phones they're in
+ * the menu. `wide`: only from `lg`, as from `md` the header has no room for
+ * it and the sidebar links it.
+ */
+export const linksOf = {
+  v11: docsLinks,
+  v12: [
+    { label: 'Docs', slug: v12Docs.firstDoc },
+    { label: 'Client', slug: 'client/overview' },
+    { label: 'Adapters', slug: 'adapters/overview' },
+    { label: 'Migrating from v11', slug: 'migrations/from-v11', wide: true },
+  ],
+} as const satisfies Record<
+  HomeVersion,
+  ReadonlyArray<{ label: string; slug: string; wide?: boolean }>
+>;
 
 /** The version whose pages `pathname` is among, and v11, the stable release, off the docs. */
 export function versionAt(pathname: string): DocsVersion {
@@ -123,9 +199,59 @@ export function useDocsVersion() {
   return versionAt(useLocation({ select: (location) => location.pathname }));
 }
 
-/** The version the search dialog looks in: the page's, and v11 off the docs. */
+/**
+ * The version the search dialog looks in: the page's, and on the home page
+ * the one it shows, so `/?version=v12` finds v12's pages, experiments'
+ * included.
+ */
 export function useSearchedDocs(): DocsVersion {
-  return useDocsVersion();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const version = useSearch({
+    select: (search) => search.version,
+    strict: false,
+  });
+  return pathname === '/'
+    ? homeDocs[homeVersionOf({ version })]
+    : versionAt(pathname);
+}
+
+/**
+ * The search for a link to the home page: `?version=v12` from v12's docs,
+ * so the home page shows the version the reader came from. On the home
+ * page, the version it shows; elsewhere, v11.
+ */
+export function useHomeSearch(): HomeSearch {
+  const onHome =
+    useLocation({ select: (location) => location.pathname }) === '/';
+  const shown = useSearch({
+    select: (search) => homeVersionOf({ version: search.version }),
+    strict: false,
+  });
+  const version = useDocsVersion();
+  const v12Shown = useV12Shown();
+  return homeVersionSearch(
+    onHome ? shown : version.id === 'v12' ? 'v12' : 'v11',
+    shownHomeVersions(v12Shown),
+  );
+}
+
+/** Remembers the version the reader browses, so `/` opens on it next time. */
+export function useRememberHomeVersion() {
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const shown = useSearch({
+    select: (search) => search.version,
+    strict: false,
+  });
+  useEffect(() => {
+    // A client navigation there shows v12's UI from then on, as landing there does.
+    if (pathname === '/v12' || pathname.startsWith('/v12/')) {
+      revealV12();
+    }
+    const version = homeVersionAt(pathname, { version: shown });
+    if (version !== undefined) {
+      rememberHomeVersion(version);
+    }
+  }, [pathname, shown]);
 }
 
 const listedVersions = new WeakMap<DocsVersion, Map<string, DocsVersion>>();
@@ -185,6 +311,16 @@ export function childrenOf(
   return version.allDocs.filter((doc) => doc.parent === slug);
 }
 
+/**
+ * A page's path: a copy's first page at the version's path, as trpc.io
+ * serves it (`docPath`); v12's at `/v12/docs/<slug>`, every one of them.
+ */
+export function pagePath(version: DocsVersion, slug: string) {
+  return version.copied
+    ? docPath(version.copied, slug)
+    : `${version.basePath}/${slug}`;
+}
+
 /** The pages before and after `slug` in sidebar order. */
 export function neighbours(version: DocsVersion, slug: string) {
   const index = version.allDocs.findIndex((doc) => doc.slug === slug);
@@ -194,13 +330,35 @@ export function neighbours(version: DocsVersion, slug: string) {
   };
 }
 
-/** The page on the same topic in the version `to`: the one at the same slug, as Docusaurus had it. */
+/**
+ * The page on the same topic in the version `to`. Between the copies, it's
+ * the page at the same slug, as Docusaurus had it. A v12 page names its v11
+ * page (`v11` frontmatter, or else the page at its slug), and a v11 page's
+ * v12 page is the one at its slug or else the first that names it, unless
+ * it's an experiment's; the older copies go by way of v11.
+ */
 export function counterpart(
-  _from: DocsVersion,
+  from: DocsVersion,
   slug: string,
   to: DocsVersion,
 ): DocMeta | undefined {
-  return findDoc(to, slug);
+  if (from.id === to.id || (from.copied && to.copied)) {
+    return findDoc(to, slug);
+  }
+  if (from.id === 'v12') {
+    const v11Slug = findDoc(v12Docs, slug)?.v11;
+    return v11Slug === undefined
+      ? undefined
+      : counterpart(v11Docs, v11Slug, to);
+  }
+  if (from.id !== 'v11') {
+    return findDoc(v11Docs, slug) ? counterpart(v11Docs, slug, to) : undefined;
+  }
+  const listed = listedDocs(v12Docs);
+  const same = findDoc(listed, slug);
+  return same?.v11 === slug
+    ? same
+    : listed.allDocs.find((doc) => doc.v11 === slug);
 }
 
 /** The slug of the page `pathname` shows in `version`, if it's a page. */

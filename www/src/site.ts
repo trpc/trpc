@@ -3,19 +3,20 @@ export const site = {
     'End-to-end typesafe APIs for TypeScript. Write procedures on the server, call them from the client with their types, and serve them on any runtime.',
   github: 'https://github.com/trpc/trpc',
   name: 'tRPC',
-  /** Where the files around the docs are browsable. */
-  sourceUrl: 'https://github.com/trpc/trpc/blob/main/www',
+  /** Where the repository's files are browsable, on the branch this site is built from. */
+  sourceUrl: 'https://github.com/trpc/trpc/blob/v12',
   /** trpc.io's tagline, in its words and casing. */
   tagline: [
     'Move Fast and Break Nothing.',
     'End-to-end typesafe APIs made easy.',
   ],
   /**
-   * Where the site is served. At `https://trpc.io`, search engines index it
-   * (`indexable` in `seo.ts`) and its docs and blog are the originals
-   * (`atTrpcIo`).
+   * Where the site is served: the switch to flip at the cutover. At
+   * `https://trpc.io`, search engines index it (`indexable` in `seo.ts`), its
+   * docs and blog are the originals (`atTrpcIo`), and v12 is hidden
+   * (`v12.hidden`). `main` builds trpc.io; `v12` builds v12.trpc.io.
    */
-  url: 'https://trpc.io',
+  url: 'https://v12.trpc.io',
   /**
    * trpc.io's redirect to the Discord invite, as trpc.io's navbar linked it:
    * absolute, so prerendering doesn't crawl it as a page.
@@ -35,11 +36,57 @@ const trpcIo = 'https://trpc.io';
  */
 export const atTrpcIo = new URL(site.url).origin === trpcIo;
 
-/** The paths no search engine may index, on any host. */
-export const unindexedPaths: ReadonlyArray<string> = [];
+/**
+ * The v12 docs, in `www/v12/docs`. v11 is the stable release, so it has
+ * `/docs` while v12 is experimental.
+ */
+export const v12 = {
+  basePath: '/v12/docs',
+  /** Where the header's GitHub links go while the reader browses v12. */
+  github: 'https://github.com/trpc/trpc/tree/v12',
+  /**
+   * Whether v12's docs are served only to whoever has a link: nothing
+   * outside them links there (the home page, the header, the version
+   * switcher and banner), they're `noindex, nofollow`, and out of
+   * `robots.txt`'s crawl, the sitemap, `llms.txt` and the feeds
+   * (`hiddenPaths`, checked by `build/hidden-paths.ts`). On trpc.io until
+   * v12 is released: make it `false` then. v12.trpc.io offers v12.
+   */
+  hidden: atTrpcIo,
+} as const;
+
+/**
+ * The design decisions in `next/.agent-docs/`, rendered for browsing: the
+ * open questions (`open/`) and the records (`decisions/`). Hidden: nothing on
+ * the site links here, and it's `noindex` and out of `robots.txt`'s crawl,
+ * the sitemap, `llms.txt` and search, whatever host serves it
+ * (`build/hidden-paths.ts` checks the build).
+ */
+export const decisions = { basePath: '/v12/decisions' } as const;
+
+/**
+ * Whether search engines may index anything under `/v12` (v12's docs and
+ * the decisions pages), on every host: trpc.io and v12.trpc.io alike.
+ * `false` until v12's first npm release; flip it then, with `v12.hidden`.
+ * Until then, every response under `/v12` says `X-Robots-Tag: noindex`,
+ * every page there has a `noindex` robots meta tag, and none is in the
+ * sitemap, whether v12 is hidden or not (`unindexedPathProblems` in
+ * `build/hidden-paths.ts` fails the build otherwise). `site.test.ts` fails
+ * if it flips while `@trpc12/trpc` is private, so not on npm.
+ */
+// oxlint-disable-next-line typescript/no-inferrable-types -- as `false`, TypeScript calls the code for `true` unreachable.
+export const v12Indexable: boolean = false;
+
+/** The paths no search engine may index, on any host (`v12Indexable`). */
+export const unindexedPaths: ReadonlyArray<string> = v12Indexable
+  ? []
+  : ['/v12'];
 
 /** The paths served only to whoever has a link (`build/hidden-paths.ts`). */
-export const hiddenPaths: ReadonlyArray<string> = [];
+export const hiddenPaths: ReadonlyArray<string> = [
+  decisions.basePath,
+  ...(v12.hidden ? [v12.basePath] : []),
+];
 
 /**
  * A version of the docs trpc.io serves: v11, the stable release, and the
@@ -123,11 +170,16 @@ export const versionsByPath = copiedVersions.toSorted(
 
 /**
  * Where `llms.txt` (https://llmstxt.org) lists a version's pages, with
- * `llms-full.txt` beside it (`-full` before `.txt`): v11's at `/llms.txt`,
- * the others at `/llms-<id>.txt`, as trpc.io had them.
+ * `llms-full.txt` beside it (`-full` before `.txt`). The site's own is
+ * v12's, or v11's while v12 is hidden, as on trpc.io; hidden, v12's is
+ * under its docs. The others are at `/llms-<id>.txt`, as trpc.io has v10's.
  */
-export function llmsTxtPath(id: CopiedVersion['id']): string {
-  return id === v11.id ? '/llms.txt' : `/llms-${id}.txt`;
+export function llmsTxtPath(id: 'v12' | CopiedVersion['id']): string {
+  const root: typeof id = v12.hidden ? v11.id : 'v12';
+  if (id === root) {
+    return '/llms.txt';
+  }
+  return id === 'v12' ? `${v12.basePath}/llms.txt` : `/llms-${id}.txt`;
 }
 
 /** `/llms.txt`'s `llms-full.txt`. */

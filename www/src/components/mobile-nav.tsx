@@ -11,14 +11,16 @@ import {
   DialogTrigger,
 } from '@shared/ui/components/dialog';
 import { cn } from '@shared/ui/lib/utils';
-import { v11Docs } from '~/content/docs.ts';
-import { docsLinks, site } from '~/site.ts';
+import { homeDocs, linksOf, useHomeSearch } from '~/content/docs.ts';
+import { homeVersionOf } from '~/home-version.ts';
+import { site, v12 } from '~/site.ts';
 
 import { DocsNav } from './docs-nav.tsx';
 import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const version = homeVersionOf(useHomeSearch());
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger
@@ -53,7 +55,7 @@ export function MobileNav() {
           </Link>
           <a
             className={buttonVariants({ size: 'sm', variant: 'outline' })}
-            href={site.github}
+            href={version === 'v12' ? v12.github : site.github}
           >
             <GitHubIcon /> GitHub
           </a>
@@ -75,7 +77,7 @@ export function MobileNav() {
           </a>
         </nav>
         <nav aria-label="Main" className="flex flex-col border-b pb-4">
-          {docsLinks.map((link) => (
+          {linksOf[version].map((link) => (
             <Link
               activeOptions={{ exact: true }}
               activeProps={{ 'aria-current': 'page' }}
@@ -83,7 +85,7 @@ export function MobileNav() {
               key={link.label}
               onClick={() => setOpen(false)}
               params={{ _splat: link.slug }}
-              to={v11Docs.route}
+              to={homeDocs[version].route}
             >
               {link.label}
             </Link>
