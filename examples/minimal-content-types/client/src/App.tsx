@@ -19,17 +19,22 @@ export function App() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            width: '10rem',
-          }}
-        >
-          <SendMultipartFormDataButton />
+        <div className="min-h-svh bg-muted/40">
+          <header className="border-b bg-background">
+            <div className="mx-auto max-w-4xl px-6 py-4">
+              <h1 className="text-lg font-bold tracking-tight">
+                <span className="text-brand">tRPC</span> Content Types
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                FormData and file uploads with @trpc/react-query
+              </p>
+            </div>
+          </header>
+          <main className="mx-auto grid max-w-4xl gap-6 p-6 md:grid-cols-2">
+            <SendMultipartFormDataButton />
 
-          <SendFileButton />
+            <SendFileButton />
+          </main>
         </div>
       </QueryClientProvider>
     </trpc.Provider>
