@@ -1,9 +1,9 @@
 import { loggerLink } from '@trpc/client';
 import { experimental_nextCacheLink } from '@trpc/next/app-dir/links/nextCache';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
+import { cookies } from 'next/headers';
 import { auth } from '~/auth';
 import { appRouter } from '~/server/routers/_app';
-import { cookies } from 'next/headers';
 import { transformer } from './shared';
 
 /**

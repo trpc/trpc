@@ -121,7 +121,8 @@ export type TRPCResponseMessage<
   TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = { id: JSONRPC2.RequestId } & (
-  TRPCErrorResponse<TError> | TRPCResultMessage<TData>
+  | TRPCErrorResponse<TError>
+  | TRPCResultMessage<TData>
 );
 
 /**

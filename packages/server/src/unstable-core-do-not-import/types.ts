@@ -35,7 +35,8 @@ export type FilterKeys<TObj extends object, TFilter> = {
  * @internal
  */
 export type Result<TType, TErr = unknown> =
-  { ok: true; value: TType } | { ok: false; error: TErr };
+  | { ok: true; value: TType }
+  | { ok: false; error: TErr };
 
 /**
  * @internal
@@ -94,7 +95,7 @@ export type Overwrite<TType, TWith> = TWith extends any
   ? TType extends object
     ? {
         [
-          K in  // Exclude index signature from keys
+          K in // Exclude index signature from keys
             | keyof WithoutIndexSignature<TType>
             | keyof WithoutIndexSignature<TWith>
         ]: K extends keyof TWith

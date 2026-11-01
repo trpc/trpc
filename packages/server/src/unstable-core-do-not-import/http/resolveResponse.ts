@@ -52,7 +52,13 @@ function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   });
 }
 type HTTPMethods =
-  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
+  | 'GET'
+  | 'POST'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();

@@ -72,7 +72,10 @@ export interface TRPCSubscriptionOptions<
   >;
 }
 export type TRPCSubscriptionStatus =
-  'idle' | 'connecting' | 'pending' | 'error';
+  | 'idle'
+  | 'connecting'
+  | 'pending'
+  | 'error';
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: TRPCSubscriptionStatus;
