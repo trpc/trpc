@@ -45,6 +45,7 @@ import type {
 import {
   createRouterClient,
   type AnyRouter,
+  type RootRouterCheck,
   type RouterClientOptions,
   type TransformerOption,
 } from '@trpc12/trpc/server';
@@ -66,7 +67,7 @@ const hasDigest = (error: unknown) =>
  * @stability stable
  */
 export type TrpcRscOptions<TRouter extends AnyRouter> = {
-  router: TRouter;
+  router: TRouter & RootRouterCheck<TRouter>;
   /** Makes each request's query client. @default a `QueryClient` with a 30 s `staleTime` */
   makeQueryClient?: () => QueryClient;
   /**
@@ -140,7 +141,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
         })),
   );
   const ctx = (opts as { ctx?: unknown }).ctx;
-  const caller = createRouterClient(opts.router, {
+  const caller = createRouterClient<TRouter>(opts.router, {
     ...opts,
     ctx: typeof ctx === 'function' ? cache(ctx as () => unknown) : ctx,
   } as never) as TrpcClient<TRouter, {}, ProgressiveJsonForm>;

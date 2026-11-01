@@ -102,14 +102,14 @@ test("HydrationBoundary keeps Next's digest errors, which Next needs to see, and
   });
   const t = initTrpc();
   const rsc = createTrpcRsc({
-    router: {
+    router: t.router({
       dynamic: t.procedure.query(async (): Promise<string> => {
         throw dynamic;
       }),
       broken: t.procedure.query(async (): Promise<string> => {
         throw new Error('db password is hunter2');
       }),
-    },
+    }),
     cache: requestCache(),
   });
   rsc.prefetch(rsc.trpc.dynamic.queryOptions({ retry: false }));

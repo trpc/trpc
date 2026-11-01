@@ -64,11 +64,11 @@ test("useMutation's mutate is the procedure's, and its state narrows on status",
 
 test("useMutation's error is the procedure's typed union; invalidates sees the input and data", () => {
   const t = initTrpc();
-  const local = {
+  const local = t.router({
     claim: t.procedure.mutation(() =>
       error({ code: 'CONFLICT', data: { reason: 'taken' } }),
     ),
-  };
+  });
   const claims = createReactClient({
     router: routerType<typeof local>(),
     links: [localLink({ router: local })],

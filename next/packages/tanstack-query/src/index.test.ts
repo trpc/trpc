@@ -208,7 +208,7 @@ test("queryFn forwards TanStack's signal: a query nothing observes aborts its ca
   const t = initTrpc();
   let started = 0;
   let aborts = 0;
-  const router = {
+  const router = t.router({
     slow: t.procedure.query(
       (opts) =>
         new Promise<string>((resolve) => {
@@ -219,7 +219,7 @@ test("queryFn forwards TanStack's signal: a query nothing observes aborts its ca
           });
         }),
     ),
-  };
+  });
   const trpc = createTrpcQueryUtils({
     client: createTrpcClient({
       router: routerType<typeof router>(),

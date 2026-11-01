@@ -37,6 +37,8 @@ import {
   type Post,
 } from '../../trpc/src/fixtures/posts.ts';
 
+const t = initTrpc();
+
 const transformer = experimental_createProgressiveJson();
 
 const make = <const L extends ReadonlyArray<AnyLink>>(
@@ -456,13 +458,13 @@ function renderHook<T>(hook: () => T) {
   return Object.assign(box, { unmount: view.unmount });
 }
 
-const local = {
+const local = t.router({
   item: {
-    claim: initTrpc().procedure.mutation(() =>
+    claim: t.procedure.mutation(() =>
       error({ code: 'CONFLICT', data: { reason: 'taken' } }),
     ),
   },
-};
+});
 
 test('useMutation tracks the latest call: pending, then data or the typed error', async () => {
   using _dom = domCleanup();

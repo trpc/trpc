@@ -76,7 +76,7 @@ function createDb() {
 }
 
 function createRouter(db: ReturnType<typeof createDb>) {
-  return {
+  return t.router({
     post: {
       live: t.procedure.subscription(async function* (opts) {
         db.stats.feeds++;
@@ -111,7 +111,7 @@ function createRouter(db: ReturnType<typeof createDb>) {
         .input(z.object({ id: z.string() }))
         .mutation((opts) => ({ eventId: db.remove(opts.input.id) })),
     },
-  };
+  });
 }
 
 type AppRouter = ReturnType<typeof createRouter>;

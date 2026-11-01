@@ -60,7 +60,7 @@ function addPost(title: string): Post {
 
 const t = initTrpc<{ ctx: { locale: string | null } }>();
 
-export const appRouter = {
+export const appRouter = t.router({
   greeting: t.procedure.query((opts) => {
     db.locales.push(opts.ctx.locale);
     return 'hello' as const;
@@ -168,7 +168,7 @@ export const appRouter = {
         if (opts.input.from === 0) throw error({ code: 'CONFLICT' });
       }),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 
 /**

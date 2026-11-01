@@ -23,7 +23,7 @@ interface Doc {
 
 const docs = new Map<string, Doc>();
 
-export const router = {
+export const router = t.router({
   doc: {
     byId: requireViewer
       .input(Schema.Struct({ id: Schema.String }))
@@ -52,7 +52,7 @@ export const router = {
         return doc;
       }),
   },
-};
+});
 
 /** The server, a client over HTTP, and switches for the session and the network. */
 export function createApp() {

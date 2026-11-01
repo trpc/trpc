@@ -19,9 +19,9 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { container, text, waitFor } from '../../trpc/src/fixtures/dom.ts';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   missing: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
-};
+});
 
 const inProcess = () =>
   createTrpcClient({
