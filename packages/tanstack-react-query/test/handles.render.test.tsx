@@ -147,8 +147,16 @@ describe('unstable_prefetch on useTRPC() during render', () => {
     );
     expect(resource.calls).toHaveBeenCalledTimes(4);
 
-    // Back to a stale input: the reader shows the cached post and refetches it
-    ageCachedData();
+    // Back to a stale input: the reader shows the cached post and refetches it.
+    // Only post 1 is aged: post 2's readers may still be subscribing, and
+    // would refetch stale data.
+    for (const query of resource.queryClient.getQueryCache().getAll()) {
+      const input = (query.queryKey[1] as { input?: Record<string, unknown> })
+        ?.input;
+      if (input?.['id'] === '1' || input?.['postId'] === '1') {
+        query.setState({ dataUpdatedAt: query.state.dataUpdatedAt - 2_000 });
+      }
+    }
     resource.rerenderApp(utils, <PostPage id="1" />);
     expect(utils.container).toHaveTextContent('Post 1 v1');
     await vi.waitFor(() =>
