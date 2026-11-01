@@ -9,19 +9,23 @@
     "start": "vite preview"
   },
   "dependencies": {
+    "@shared/ui": "workspace:*",
     "@tanstack/react-query": "^5.105.0",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "lucide-react": "1.55.0",
+    "react": "catalog:www",
+    "react-dom": "catalog:www"
   },
   "devDependencies": {
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.1",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "catalog:www",
+    "@types/react-dom": "catalog:www",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.90.0",
     "oxlint-tsgolint": "^7.0.2005",
+    "tailwindcss": "catalog:www",
     "typescript": "^5.9.2",
     "vite": "^8.3.0"
   }
