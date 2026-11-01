@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://trpc.io/"><img src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg" alt="tRPC" height="75"/></a>
+  <a href="https://trpc.io/"><img src="https://trpc.io/img/logo.svg" alt="tRPC" height="75"/></a>
 </p>
 
 <h3 align="center">tRPC</h3>
