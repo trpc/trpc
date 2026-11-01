@@ -244,6 +244,36 @@
       }
     },
     {
+      // The site, as the v12 branch writes it: kebab-case files, Effect's
+      // `A`/`E` type parameters, `||` for empty-string fallbacks.
+      "files": [
+        "www/api-reference/**",
+        "www/build/**",
+        "www/samples/**",
+        "www/shared/**",
+        "www/src/**",
+        "www/*.ts"
+      ],
+      "rules": {
+        "unicorn/filename-case": "off",
+        "max-params": "off",
+        "no-empty-function": "off",
+        "trpc/type-parameter-naming": "off",
+        "typescript/prefer-nullish-coalescing": "off",
+        "typescript/prefer-string-starts-ends-with": "off",
+        "typescript/dot-notation": "off",
+        // TanStack Router's `throw redirect()` and `throw notFound()`.
+        "typescript/only-throw-error": "off"
+      }
+    },
+    {
+      "files": ["www/build/markdown.ts", "www/src/routes/**"],
+      "rules": {
+        // Vite's `useEnvironment`, and routes' inline `component`s.
+        "react-hooks/rules-of-hooks": "off"
+      }
+    },
+    {
       "files": ["www/og-image/utils/env.js"],
       "rules": {
         "sort-keys": "error"

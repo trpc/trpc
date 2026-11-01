@@ -248,7 +248,7 @@ const commitDates = Effect.fn('commitDates')(
           }
         }
       }
-      return dates as ReadonlyMap<string, string>;
+      return dates;
     }
     const [root, files, log] = yield* Effect.all(
       [
@@ -292,7 +292,7 @@ const commitDates = Effect.fn('commitDates')(
         pending.set(from, [...(pending.get(from) ?? []), ...targets]);
       }
     }
-    return dates as ReadonlyMap<string, string>;
+    return dates;
   },
   Effect.orElseSucceed((): ReadonlyMap<string, string> => new Map()),
 );
@@ -636,6 +636,7 @@ export function docsContent(options: ContentOptions): Plugin {
         .filter((entry) => entry.section === title)
         .map((entry): DocMeta => {
           // SAFETY: `readingOrder` only returns the slugs it was given.
+          // oxlint-disable-next-line typescript/no-non-null-assertion
           const doc = bySlug.get(entry.slug)!.page.doc;
           return {
             description: doc.description,
