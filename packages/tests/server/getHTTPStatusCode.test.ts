@@ -1,6 +1,6 @@
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { getHTTPStatusCode } from '@trpc/server/unstable-core-do-not-import';
-import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 
 test('uses the error code when the formatted error has no `data` object', () => {
   expect(
