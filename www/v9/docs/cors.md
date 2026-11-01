@@ -1,7 +1,8 @@
 ---
-title: "Send cookies cross-origin"
-label: "CORS & Cookies"
-description: ""
+id: cors
+title: Send cookies cross-origin
+sidebar_label: CORS & Cookies
+slug: /cors
 section: "@trpc/client"
 order: 27
 ---
@@ -10,7 +11,7 @@ If your API reside on a different origin than your front-end and wish to send co
 
 The arguments provided to the fetch function used by tRPC can be modified as follow.
 
-```ts title="app.ts"
+```ts title='app.ts'
 import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient<AppRouter>({

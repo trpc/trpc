@@ -1,23 +1,18 @@
 ---
-title: "Inferring Types"
-description: ""
+id: infer-types
+title: Inferring Types
+sidebar_label: Inferring Types
+slug: /client/vanilla/infer-types
 section: "Client Usage"
 parent: "client/vanilla"
 order: 48
 ---
 
-It is often useful to access the types of your API within your clients. For this purpose, you are able to infer the types contained in your `AppRouter`.
+<!-- Reusable snippet -->
 
-`@trpc/server` exports the following helper types to assist with inferring these types from the `AppRouter` exported by your `@trpc/server` router:
-
-- `inferRouterInputs<TRouter>`
-- `inferRouterOutputs<TRouter>`
-
-## Inferring Input & Output Types
-
-Let's assume we have this example router:
-
-```ts title="server.ts"
+```twoslash include server
+// @module: esnext
+// @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 
@@ -48,9 +43,28 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+It is often useful to access the types of your API within your clients. For this purpose, you are able to infer the types contained in your `AppRouter`.
+
+`@trpc/server` exports the following helper types to assist with inferring these types from the `AppRouter` exported by your `@trpc/server` router:
+
+- `inferRouterInputs<TRouter>`
+- `inferRouterOutputs<TRouter>`
+
+## Inferring Input & Output Types
+
+Let's assume we have this example router:
+
+```ts twoslash title='server.ts'
+// @include: server
+```
+
 Using the helpers, we can infer the types of our router. The following example shows how to infer the types of the `post.create` procedure:
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @module: esnext
+// @include: server
+// ---cut---
+// @filename: client.ts
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
@@ -58,14 +72,33 @@ type RouterInput = inferRouterInputs<AppRouter>;
 type RouterOutput = inferRouterOutputs<AppRouter>;
 
 type PostCreateInput = RouterInput['post']['create'];
+//   ^?
 type PostCreateOutput = RouterOutput['post']['create'];
+//   ^?
 ```
 
 ## Infer `TRPCClientError` types
 
 It's also useful to infer the error type for your `AppRouter`
 
-```ts title="client.ts"
+```ts twoslash title='client.ts'
+// @module: esnext
+// @include: server
+
+// @filename: trpc.ts
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "./server";
+
+export const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+    }),
+  ],
+});
+
+// ---cut---
+// @filename: client.ts
 import { TRPCClientError } from '@trpc/client';
 import type { AppRouter } from './server';
 import { trpc } from './trpc';
@@ -83,6 +116,7 @@ async function main() {
     if (isTRPCClientError(cause)) {
       // `cause` is now typed as your router's `TRPCClientError`
       console.log('data', cause.data);
+      //                        ^?
     } else {
       // [...]
     }

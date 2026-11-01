@@ -1,7 +1,8 @@
 ---
-title: "AWS Lambda + API Gateway Adapter"
-label: "AWS Lambda + API Gateway"
-description: ""
+id: aws-lambda
+title: AWS Lambda + API Gateway Adapter
+sidebar_label: AWS Lambda + API Gateway
+slug: /server/adapters/aws-lambda
 section: "Backend Usage"
 parent: "server/adapters"
 order: 17
@@ -55,7 +56,7 @@ yarn add @trpc/server
 
 Implement your tRPC router. A sample router is given below:
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -76,7 +77,7 @@ export type AppRouter = typeof appRouter;
 
 tRPC includes an adapter for API Gateway out of the box. This adapter lets you run your routes through the API Gateway handler.
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -147,7 +148,7 @@ The signature of a streaming handler is different from the default handler. The 
 
 > Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 /// <reference types="aws-lambda" />
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';

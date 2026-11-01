@@ -1,6 +1,8 @@
 ---
-title: "Inferring Types"
-description: ""
+id: infer-types
+title: Inferring Types
+sidebar_label: Inferring Types
+slug: /infer-types
 section: "@trpc/server"
 order: 16
 ---
@@ -17,7 +19,7 @@ It is often useful to wrap functionality of your `@trpc/client` or `@trpc/react`
 
 ## Example Code
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 // trpc-helper.ts
 // Import AppRouter from your main server router
 import type {

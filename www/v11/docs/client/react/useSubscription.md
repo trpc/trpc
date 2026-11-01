@@ -1,6 +1,8 @@
 ---
-title: "useSubscription()"
-description: ""
+id: useSubscription
+title: useSubscription()
+sidebar_label: useSubscription()
+slug: /client/react/useSubscription
 section: "Client Usage"
 parent: "client/react"
 order: 59
@@ -12,11 +14,13 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 
 ### Options
 
-> [!TIP]
->
-> - If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
-> - If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
-> - Have a look at our [SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) for a complete example of how to use subscriptions
+:::tip
+
+- If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+- If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
+- Have a look at our [SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) for a complete example of how to use subscriptions
+
+:::
 
 ```tsx twoslash
 interface UseTRPCSubscriptionOptions<TOutput, TError> {
@@ -91,7 +95,7 @@ interface TRPCSubscriptionErrorResult<TOutput, TError> {
 
 ## Example Procedure
 
-```tsx twoslash title="server/routers/_app.ts"
+```tsx twoslash title='server/routers/_app.ts'
 // @target: esnext
 // @types: node
 import EventEmitter, { on } from 'events';
@@ -118,7 +122,7 @@ export type AppRouter = typeof appRouter;
 
 ## Example React Component
 
-```tsx twoslash title="components/PostFeed.tsx"
+```tsx twoslash title='components/PostFeed.tsx'
 // @target: esnext
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';

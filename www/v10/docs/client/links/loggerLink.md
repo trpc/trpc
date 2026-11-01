@@ -1,6 +1,8 @@
 ---
-title: "Logger Link"
-description: ""
+id: loggerLink
+title: Logger Link
+sidebar_label: Logger Link
+slug: /client/links/loggerLink
 section: "Client Usage"
 parent: "client/links"
 order: 56

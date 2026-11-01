@@ -1,6 +1,8 @@
 ---
-title: "useQuery()"
-description: ""
+id: queries
+title: useQuery()
+sidebar_label: useQuery()
+slug: /react-queries
 section: "@trpc/react"
 order: 28
 ---
@@ -23,7 +25,7 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 <details>
 <summary>Backend code</summary>
 
-```tsx title="server/routers/_app.ts"
+```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
@@ -47,7 +49,7 @@ export const appRouter = trpc
 
 </details>
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

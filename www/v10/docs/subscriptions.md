@@ -1,20 +1,24 @@
 ---
-title: "Subscriptions / WebSockets"
-description: ""
+id: subscriptions
+title: Subscriptions / WebSockets
+sidebar_label: Subscriptions / WebSockets
+slug: /subscriptions
 section: "Extra information"
 order: 62
 ---
 
 ## Using Subscriptions
 
-> [!TIP]
->
-> - For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
-> - For a bare-minimum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/v10.45.4/examples/standalone-server).
+:::tip
+
+- For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
+- For a bare-minimum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/v10.45.4/examples/standalone-server).
+
+:::
 
 ### Adding a subscription procedure
 
-```tsx title="server/router.ts"
+```tsx title='server/router.ts'
 import { EventEmitter } from 'events';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -65,7 +69,7 @@ export const appRouter = t.router({
 yarn add ws
 ```
 
-```ts title="server/wsServer.ts"
+```ts title='server/wsServer.ts'
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import ws from 'ws';
 import { appRouter } from './routers/app';
@@ -93,10 +97,11 @@ process.on('SIGTERM', () => {
 
 ### Setting `TRPCClient` to use WebSockets
 
-> [!TIP]
-> You can use [Links](./client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+:::tip
+You can use [Links](./client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+:::
 
-```tsx title="client.ts"
+```tsx title='client.ts'
 import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
 

@@ -1,13 +1,16 @@
 ---
-title: "useQuery()"
-description: ""
+id: useQuery
+title: useQuery()
+sidebar_label: useQuery()
+slug: /client/react/useQuery
 section: "Client Usage"
 parent: "client/react"
 order: 31
 ---
 
-> [!NOTE]
-> The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://tanstack.com/query/v4/docs/react/guides/queries).
+:::note
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://tanstack.com/query/v4/docs/react/guides/queries).
+:::
 
 ```tsx
 function useQuery(
@@ -31,8 +34,9 @@ Since `UseTRPCQueryOptions` extends @tanstack/react-query's `UseQueryOptions`, y
 - **`trpc.abortOnUnmount`:** Override the [global config](../nextjs/setup.md#config-callback) and opt in or out of aborting queries on unmount.
 - **`trpc.context`:** Add extra meta data that could be used in [Links](../links.md).
 
-> [!TIP]
-> If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+:::tip
+If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+:::
 
 You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
 
@@ -41,7 +45,7 @@ You'll notice that you get autocompletion on the `input` based on what you have 
 <details>
 <summary>Backend code</summary>
 
-```tsx title="server/routers/_app.ts"
+```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -68,7 +72,7 @@ export const appRouter = t.router({
 
 </details>
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

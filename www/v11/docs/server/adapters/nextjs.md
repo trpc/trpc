@@ -1,14 +1,16 @@
 ---
-title: "Next.js Adapter"
-label: "Next.js"
-description: ""
+id: nextjs
+title: Next.js Adapter
+sidebar_label: Next.js
+slug: /server/adapters/nextjs
 section: "Backend Usage"
 parent: "server/adapters"
 order: 16
 ---
 
-> [!TIP]
-> tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter. For complete documentation, see the [Next.js Integration guide](../../client/nextjs.md).
+:::tip
+tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter. For complete documentation, see the [Next.js Integration guide](../../client/nextjs.md).
+:::
 
 ## Example app
 
@@ -36,7 +38,7 @@ order: 16
 
 Serving your tRPC router in a Next.js project is straight-forward. Just create an API handler in `pages/api/trpc/[trpc].ts` as shown below:
 
-```ts twoslash title="pages/api/trpc/[trpc].ts"
+```ts twoslash title='pages/api/trpc/[trpc].ts'
 // @filename: server/trpc/context.ts
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 export async function createContext(opts: CreateNextContextOptions) {
@@ -64,9 +66,9 @@ export default createNextApiHandler({
 
 While you can usually just "set and forget" the API Handler as shown above, sometimes you might want to modify it further.
 
-The API handler created by `createNextApiHandler` and equivalents in other frameworks is just a function that takes `req` and `res` objects. This means you can also modify those objects before passing them to the handler, for example to [enable CORS](../../client/cors.md).
+The API handler created by `createNextApiHandler` and equivalents in other frameworks is just a function that takes `req` and `res` objects. This means you can also modify those objects before passing them to the handler, for example to [enable CORS](/docs/client/cors).
 
-```ts twoslash title="pages/api/trpc/[trpc].ts"
+```ts twoslash title='pages/api/trpc/[trpc].ts'
 // @filename: server/trpc/context.ts
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 export async function createContext(opts: CreateNextContextOptions) {
@@ -125,9 +127,9 @@ export default async function handler(
 
 ## App Router (Route Handlers)
 
-If you're using the Next.js **App Router**, use the [fetch adapter](./fetch.md) instead, as App Router route handlers are based on the Web standard `Request` and `Response` objects. See the [App Router setup guide](../../client/nextjs/app-router-setup.md) for a complete walkthrough.
+If you're using the Next.js **App Router**, use the [fetch adapter](./fetch.md) instead, as App Router route handlers are based on the Web standard `Request` and `Response` objects. See the [App Router setup guide](/docs/client/nextjs/app-router-setup) for a complete walkthrough.
 
-```ts twoslash title="app/api/trpc/[trpc]/route.ts"
+```ts twoslash title='app/api/trpc/[trpc]/route.ts'
 // @filename: app/api/trpc/init.ts
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 export function createTRPCContext(opts: FetchCreateContextFnOptions) {

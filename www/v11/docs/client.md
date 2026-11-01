@@ -1,7 +1,8 @@
 ---
-title: "Client Overview"
-label: "Overview"
-description: ""
+id: overview
+title: Client Overview
+sidebar_label: Overview
+slug: /client
 section: "Client Usage"
 order: 29
 ---
@@ -14,4 +15,4 @@ If you are using React, the recommended way to call a tRPC API is by using our [
 
 If you want to call a tRPC API from another server or from a frontend framework for which we don't have an integration, you can use the [Vanilla Client](./client/vanilla.md).
 
-In addition to the React and Next.js integrations and the Vanilla Client, there are a variety of [community-built integrations for other frameworks](./community/awesome-trpc.md#frontend-frameworks). Please note that these are not maintained by the tRPC team.
+In addition to the React and Next.js integrations and the Vanilla Client, there are a variety of [community-built integrations for other frameworks](/docs/community/awesome-trpc#frontend-frameworks). Please note that these are not maintained by the tRPC team.

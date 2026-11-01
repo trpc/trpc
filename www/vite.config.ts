@@ -9,7 +9,6 @@ import { referenceSection } from './api-reference/convert.ts';
 import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
 import { blogFeeds } from './build/feeds.ts';
-import { lastChanges } from './build/last-change.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
@@ -37,7 +36,7 @@ import v11Sections from './v11/sections.json' with { type: 'json' };
 
 const blogDir = new URL('blog', import.meta.url).pathname;
 // Each version's docs, served at `/docs` (v11, the stable release),
-// `/v10/docs` and `/v9/docs`.
+// `/docs/v10` and `/docs/v9`.
 const copiedSections = { v9: v9Sections, v10: v10Sections, v11: v11Sections };
 const copies = copiedVersions.map((version) => ({
   dir: new URL(`${version.id}/docs`, import.meta.url).pathname,
@@ -52,7 +51,9 @@ const [copiedPages, posts, favicon] = await Effect.runPromise(
         docPages({
           basePath: copy.version.basePath,
           contentDir: copy.dir,
+          firstDoc: copy.version.firstDoc,
           samplesDir,
+          twoslash: copy.version.id === 'v11',
         }),
         (found) => ({ pages: found, version: copy.version }),
       ),
@@ -64,28 +65,6 @@ const [copiedPages, posts, favicon] = await Effect.runPromise(
     }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
-/** Each post's last content change, by slug. */
-const postChanges = await Effect.runPromise(
-  lastChanges(
-    new URL('.', import.meta.url).pathname,
-    posts.map((post) => `${blogDir}/${post.slug}.md`),
-  ).pipe(
-    Effect.map(
-      (dates) =>
-        new Map(
-          posts.map((post) => [
-            post.slug,
-            dates.get(`${blogDir}/${post.slug}.md`),
-          ]),
-        ),
-    ),
-    Effect.provide(NodeServices.layer),
-  ),
-);
-const newestPostChange = [...postChanges.values()]
-  .filter((date) => date !== undefined)
-  .toSorted()
-  .at(-1);
 /** Each version's `llms.txt` lists the others', as trpc.io's do. */
 const llmsVersions = copiedVersions.map((version) => ({
   id: version.id,
@@ -143,7 +122,9 @@ export default defineConfig({
         },
         basePath: copy.version.basePath,
         contentDir: copy.dir,
-        // trpc.io compiled v11's blocks with Twoslash, and so does the site.
+        firstDoc: copy.version.firstDoc,
+        // trpc.io compiled v11's blocks with Twoslash, and so does the site;
+        // the older versions' show as the plain code trpc.io showed.
         inlineApp: copy.version.id === 'v11' ? 'v11' : undefined,
         manifestId: `virtual:${copy.version.id}-docs-manifest`,
         samplesDir,
@@ -156,6 +137,7 @@ export default defineConfig({
             : undefined,
         sourceUrl: `${site.github}/blob/main/www`,
         summary: site.description,
+        twoslash: copy.version.id === 'v11',
         twoslashCache: copy.version.id === 'v11' ? twoslashCache : undefined,
       }),
     ),
@@ -177,10 +159,7 @@ export default defineConfig({
             docCard(
               page,
               copy.version.id,
-              copyPageUrl(
-                copy.version,
-                page.path.slice(`${copy.version.basePath}/`.length),
-              ),
+              copyPageUrl(copy.version, page.slug),
             ),
           ),
         ),
@@ -225,16 +204,12 @@ export default defineConfig({
         ...copiedPages.flatMap((copy) =>
           copy.pages.map((page) => ({
             path: page.path,
-            sitemap: { ...copySitemap, lastmod: page.lastModified },
+            sitemap: copySitemap,
           })),
         ),
         {
           path: '/blog',
-          sitemap: {
-            changefreq: 'monthly',
-            lastmod: newestPostChange,
-            priority: 0.5,
-          },
+          sitemap: { changefreq: 'monthly', priority: 0.5 },
         },
         {
           path: sponsorPage.path,
@@ -246,7 +221,7 @@ export default defineConfig({
         })),
         ...posts.map((post) => ({
           path: `/blog/${post.slug}`,
-          sitemap: { ...copySitemap, lastmod: postChanges.get(post.slug) },
+          sitemap: copySitemap,
         })),
         {
           path: '/404',
@@ -260,7 +235,6 @@ export default defineConfig({
         failOnError: true,
         filter: (page) => {
           const prerendered =
-            copiedVersions.every((version) => page.path !== version.basePath) &&
             // An index route (`/blog/`) is found with its slash, which the
             // host redirects away.
             (page.path === '/' || !page.path.endsWith('/')) &&

@@ -1,6 +1,8 @@
 ---
-title: "Input & Output Validators"
-description: ""
+id: validators
+title: Input & Output Validators
+sidebar_label: Input & Output Validators
+slug: /server/validators
 section: "Backend Usage"
 order: 9
 ---
@@ -89,8 +91,9 @@ Validating outputs is not always as important as defining inputs, since tRPC giv
 - Checking that data returned from untrusted sources is correct
 - Ensure that you are not returning more data to the client than necessary
 
-> [!NOTE] Info
-> If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
+:::info
+If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
+:::
 
 ```ts twoslash
 // @target: esnext
@@ -122,16 +125,17 @@ export const appRouter = t.router({
 
 Since subscriptions are async iterators, you can use the same validation techniques as above.
 
-Have a look at the [subscriptions guide](./subscriptions.md#output-validation) for more information.
+Have a look at the [subscriptions guide](subscriptions.md#output-validation) for more information.
 
 ## The most basic validator: a function
 
 You can define a validator without any 3rd party dependencies, with a function.
 
-> [!NOTE] Info
-> We don't recommend making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
->
-> In most cases we recommend you use a [validation library](#library-integrations)
+:::info
+We don't recommend making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
+
+In most cases we recommend you use a [validation library](#library-integrations)
+:::
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -361,6 +365,32 @@ export const appRouter = t.router({
 
 export type AppRouter = typeof appRouter;
 ```
+
+<!-- runtypes example is broken -->
+<!--
+### With [runtypes](https://github.com/pelotom/runtypes)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import * as T from 'runtypes';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(T.Record({ name: T.String }))
+    .output(T.Record({ greeting: T.String }))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+``` -->
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 

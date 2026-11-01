@@ -1,6 +1,8 @@
 ---
-title: "Output Validation"
-description: ""
+id: output-validation
+title: Output Validation
+sidebar_label: Output Validation
+slug: /output-validation
 section: "@trpc/server"
 order: 15
 ---
@@ -11,10 +13,12 @@ Similar to `input:`, an `output:` validation to the `query()` and `mutation()` r
 
 When an `output` validator is defined, its inferred type is expected as the return type of the `resolve()` function.
 
-> [!NOTE] Info
->
-> - This is entirely optional and only if you want to ensure you don't accidentally leak anything e
-> - If output validation fails, the server will respond with a `INTERNAL_SERVER_ERROR`.
+:::info
+
+- This is entirely optional and only if you want to ensure you don't accidentally leak anything e
+- If output validation fails, the server will respond with a `INTERNAL_SERVER_ERROR`.
+
+:::
 
 ## Examples
 

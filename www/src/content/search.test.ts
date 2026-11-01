@@ -7,7 +7,6 @@ const docs: ReadonlyArray<DocMeta> = [
   {
     description: 'Calls go through a chain of links.',
     headings: [{ depth: 2, id: 'batching', text: 'Batching requests' }],
-    lastModified: undefined,
     section: 'Client',
     slug: 'client/links',
     title: 'Links',
@@ -15,7 +14,6 @@ const docs: ReadonlyArray<DocMeta> = [
   {
     description: 'Query and mutation options for TanStack Query.',
     headings: [{ depth: 2, id: 'query-options', text: '`queryOptions()`' }],
-    lastModified: undefined,
     section: 'Integrations',
     slug: 'integrations/tanstack-query/react',
     title: 'TanStack React Query',
@@ -24,7 +22,6 @@ const docs: ReadonlyArray<DocMeta> = [
     description: "A TanStack DB collection over a procedure's queryOptions().",
     experiment: 'tanstack-db',
     headings: [],
-    lastModified: undefined,
     section: 'Integrations',
     slug: 'integrations/tanstack-query/tanstack-db',
     title: 'TanStack DB',

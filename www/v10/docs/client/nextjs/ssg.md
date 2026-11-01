@@ -1,14 +1,16 @@
 ---
-title: "Static Site Generation"
-label: "Static Site Generation (SSG)"
-description: ""
+id: ssg
+title: Static Site Generation
+sidebar_label: Static Site Generation (SSG)
+slug: /client/nextjs/ssg
 section: "Client Usage"
 parent: "client/nextjs"
 order: 42
 ---
 
-> [!TIP]
-> Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+:::tip
+Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+:::
 
 Static site generation requires executing tRPC queries inside `getStaticProps` on each page.
 
@@ -16,7 +18,7 @@ This can be done using [server-side helpers](./server-side-helpers.md) to prefet
 
 ## Fetch data in `getStaticProps`
 
-```tsx title="pages/posts/[id].tsx"
+```tsx title='pages/posts/[id].tsx'
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import {
   GetStaticPaths,
@@ -110,7 +112,7 @@ const data = trpc.example.useQuery(
 
 Or globally, if every query across your app should behave the same way:
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';

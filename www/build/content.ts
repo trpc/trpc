@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url';
 import { NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Path, Schema } from 'effect';
 import { removeTwoslashNotations } from 'twoslash/fallback';
@@ -12,9 +11,14 @@ import { llmsFullTxtPath } from '../src/site.ts';
 import { chartMarkdown, decodeChart } from './charts.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
-import { type DocLink, releaseTwoslashers, resolveLink } from './markdown.ts';
+import { fromDocusaurus } from './docusaurus-syntax.ts';
+import {
+  type DocLink,
+  pagePath,
+  releaseTwoslashers,
+  resolveLink,
+} from './markdown.ts';
 import { closeRenderPool, makePageRenderer } from './page-renderer.ts';
-import { lastChanges } from './last-change.ts';
 import { expandSnippets } from './snippets.ts';
 import type { TwoslashCacheOptions } from './twoslash-cache.ts';
 
@@ -23,11 +27,19 @@ export interface ContentDirs {
   readonly contentDir: string;
   /** Directory of the sample apps the pages' code blocks compile in. */
   readonly samplesDir: string;
+  /**
+   * Whether the pages' Twoslash blocks compile, or show as plain code, as
+   * the older versions' do (`docusaurus-syntax.ts`): they compile unless
+   * `false`.
+   */
+  readonly twoslash?: boolean | undefined;
 }
 
 export interface PageDirs extends ContentDirs {
   /** Where the pages are served: `/docs` serves `client/links` at `/docs/client/links`. */
   readonly basePath: string;
+  /** The page served at `basePath` itself, if any: trpc.io's `/docs` is `introduction`. */
+  readonly firstDoc?: string | undefined;
 }
 
 /** The files `docsContent` writes for agents. */
@@ -95,8 +107,8 @@ export interface ContentOptions extends PageDirs {
 /** The `Accept` header agents send to get markdown instead of HTML. */
 const acceptsMarkdown = /\btext\/markdown\b/;
 
-const Frontmatter = Schema.Struct({
-  description: Schema.String,
+const FrontmatterFields = Schema.Struct({
+  description: Schema.optional(Schema.String),
   /**
    * The experiment the page belongs to (`src/experiments.ts`). Built and
    * served at its URL, in the sitemap and `llms.txt`, but out of the
@@ -116,11 +128,35 @@ const Frontmatter = Schema.Struct({
   stability: Schema.optional(Schema.Literal('unstable')),
   title: Schema.String,
   v11: Schema.optional(Schema.String),
+  /*
+   * A page copied from trpc.io keeps its Docusaurus frontmatter: `id` and
+   * `slug` name it as its path does, and `sidebar_label` is its `label`.
+   */
+  id: Schema.optional(Schema.String),
+  sidebar_label: Schema.optional(Schema.String),
+  slug: Schema.optional(Schema.String),
 });
 
-type Frontmatter = typeof Frontmatter.Type;
+type Frontmatter = Omit<
+  typeof FrontmatterFields.Type,
+  'description' | 'id' | 'sidebar_label' | 'slug'
+> & { readonly description: string };
 
-const decodeFrontmatter = Schema.decodeUnknownEffect(Frontmatter);
+const decodeFrontmatter = (yaml: unknown) =>
+  Effect.map(
+    Schema.decodeUnknownEffect(FrontmatterFields)(yaml),
+    (fields): Frontmatter => ({
+      description: fields.description ?? '',
+      experiment: fields.experiment,
+      label: fields.label ?? fields.sidebar_label,
+      order: fields.order,
+      parent: fields.parent,
+      section: fields.section,
+      stability: fields.stability,
+      title: fields.title,
+      v11: fields.v11,
+    }),
+  );
 
 interface Source {
   readonly file: string;
@@ -191,7 +227,16 @@ const parseSource = Effect.fn('parseSource')(function* (
         }),
     ),
   );
-  const expanded = yield* expandSnippets(raw.slice(match[0].length), {
+  const read = fromDocusaurus(
+    raw.slice(match[0].length),
+    dirs.twoslash ?? true,
+  );
+  if (read.problems.length > 0) {
+    return yield* new ContentError({
+      message: `${file}: ${read.problems.join('; ')}`,
+    });
+  }
+  const expanded = yield* expandSnippets(read.markdown, {
     file,
     samplesDir: dirs.samplesDir,
   });
@@ -203,20 +248,6 @@ const parseSource = Effect.fn('parseSource')(function* (
     snippets: expanded.files,
   };
   return source;
-});
-
-/** The site's dir, where `old-docs.json` says what each copied page was copied from. */
-const wwwDir = fileURLToPath(new URL('..', import.meta.url));
-
-/** When each page under `dir` last changed, by absolute path (`last-change.ts`). */
-const commitDates = Effect.fn('commitDates')(function* (dir: string) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const names = yield* fs.glob('**/*.md', { root: dir });
-  return yield* lastChanges(
-    wwwDir,
-    names.map((name) => path.join(dir, name)),
-  );
 });
 
 /** Every page: `**\/*.md` under the content dir, except `README.md` files, which index the folder on GitHub. */
@@ -238,16 +269,13 @@ const readSources = Effect.fn('readSources')(function* (dirs: ContentDirs) {
 
 /** Pages for prerendering, the sitemap and their social cards. */
 export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
-  const [sources, dates] = yield* Effect.all(
-    [readSources(dirs), commitDates(dirs.contentDir)],
-    { concurrency: 'unbounded' },
-  );
+  const sources = yield* readSources(dirs);
   return sources.map((source) => ({
     description: source.frontmatter.description,
     experiment: source.frontmatter.experiment,
-    lastModified: dates.get(source.file),
-    path: `${dirs.basePath}/${source.slug}`,
+    path: pagePath(dirs, source.slug),
     section: source.frontmatter.section,
+    slug: source.slug,
     title: source.frontmatter.title,
   }));
 });
@@ -390,12 +418,6 @@ export function docsContent(options: ContentOptions): Plugin {
   const resolvedManifestId = `\0${manifestId}`;
   const renderer = makePageRenderer(options.twoslashCache);
   const rendered = new Map<string, Promise<Rendered>>();
-  /** The pages' commit dates, read again after an edit, as the pages are. */
-  let commits: Promise<ReadonlyMap<string, string>> | undefined;
-  const lastModifiedDates = () => {
-    commits ??= run(commitDates(options.contentDir));
-    return commits;
-  };
   const renderOn = renderer.render;
 
   /** The v11 page on the same topic as `source`. */
@@ -422,6 +444,7 @@ export function docsContent(options: ContentOptions): Plugin {
   const renderDoc = Effect.fn('renderDoc')(function* (source: Source) {
     const result = yield* renderOn(source.markdown, {
       basePath,
+      firstDoc: options.firstDoc,
       inlineApp: options.inlineApp,
       samplesDir,
       slug: source.slug,
@@ -444,9 +467,6 @@ export function docsContent(options: ContentOptions): Plugin {
         headings: result.headings,
         html: result.html,
         label: source.frontmatter.label,
-        lastModified: (yield* Effect.promise(lastModifiedDates)).get(
-          source.file,
-        ),
         parent: source.frontmatter.parent,
         section: source.frontmatter.section,
         slug: source.slug,
@@ -468,6 +488,7 @@ export function docsContent(options: ContentOptions): Plugin {
     });
     const result = yield* renderOn(expanded.markdown, {
       basePath,
+      firstDoc: options.firstDoc,
       samplesDir,
       slug: 'index',
       contentPath: options.contentPath,
@@ -491,6 +512,7 @@ export function docsContent(options: ContentOptions): Plugin {
   ) {
     const result = yield* renderOn(markdown, {
       basePath,
+      firstDoc: options.firstDoc,
       inlineApp: options.inlineApp,
       samplesDir,
       slug: 'index',
@@ -565,7 +587,6 @@ export function docsContent(options: ContentOptions): Plugin {
             experiment: doc.experiment,
             headings: doc.headings,
             label: doc.label,
-            lastModified: doc.lastModified,
             parent: doc.parent,
             section: doc.section,
             slug: doc.slug,
@@ -588,7 +609,7 @@ export function docsContent(options: ContentOptions): Plugin {
   const agent = options.agentFiles;
   /** A page's URL for agents: its markdown, if it has one. */
   const pageUrl = (slug: string, hash = '') =>
-    `${options.siteUrl}${basePath}/${slug}${agent?.markdown === true ? '.md' : ''}${hash ? `#${hash}` : ''}`;
+    `${options.siteUrl}${agent?.markdown === true ? `${basePath}/${slug}.md` : pagePath(options, slug)}${hash ? `#${hash}` : ''}`;
 
   /**
    * A page as agents read it: links point at the other pages' markdown,
@@ -611,7 +632,12 @@ export function docsContent(options: ContentOptions): Plugin {
         chartMarkdown(decodeChart(json)),
       )
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
-        const resolved = resolveLink(source.slug, url, options.contentPath);
+        const resolved = resolveLink(
+          source.slug,
+          url,
+          options.contentPath,
+          options,
+        );
         if (resolved.kind === 'doc') {
           return `](${pageUrl(resolved.link.slug, resolved.link.hash)})`;
         }
@@ -731,7 +757,7 @@ export function docsContent(options: ContentOptions): Plugin {
           .filter((entry) => !omitted.has(entry.source.slug))
           .map(
             (entry) =>
-              `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
+              `---\n\nSource: ${options.siteUrl}${pagePath(options, entry.source.slug)}\n\n${pageMarkdown(entry.source, entry.page)}`,
           ),
       ].join('\n'),
     );
@@ -822,7 +848,6 @@ export function docsContent(options: ContentOptions): Plugin {
         rendered.clear();
       } else {
         rendered.delete(context.file);
-        commits = undefined;
       }
       const graph = this.environment.moduleGraph;
       const stale = [...graph.idToModuleMap].flatMap(([id, module]) =>

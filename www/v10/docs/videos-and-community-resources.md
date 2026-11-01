@@ -1,7 +1,8 @@
 ---
-title: "Videos and Community Resources"
-label: "Videos & Community Resources"
-description: ""
+id: videos-and-community-resources
+title: Videos and Community Resources
+sidebar_label: Videos & Community Resources
+slug: /videos-and-community-resources
 section: "tRPC"
 order: 4
 ---

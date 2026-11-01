@@ -1,6 +1,8 @@
 ---
-title: "Example Apps"
-description: ""
+id: example-apps
+title: Example Apps
+sidebar_label: Example Apps
+slug: /example-apps
 section: "tRPC"
 order: 2
 ---

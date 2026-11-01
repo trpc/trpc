@@ -14,8 +14,8 @@ const pngSize = (png: Uint8Array) => {
 describe('ogImagePath', () => {
   it('mirrors the page path under /og', () => {
     expect(ogImagePath('/')).toBe('/og/index.png');
-    expect(ogImagePath('/v10/docs/client/links')).toBe(
-      '/og/v10/docs/client/links.png',
+    expect(ogImagePath('/docs/v10/client/links')).toBe(
+      '/og/docs/v10/client/links.png',
     );
     expect(ogImagePath('/docs/quickstart')).toBe('/og/docs/quickstart.png');
   });
@@ -57,7 +57,7 @@ describe('makeOgRenderer', () => {
         OgCard.Home({ path: '/' }),
         OgCard.Doc({
           description: 'Queries, mutations and subscriptions.',
-          path: '/v10/docs/server/procedures',
+          path: '/docs/v10/server/procedures',
           section: 'Server',
           title: 'Procedures',
           url: 'https://trpc.io/docs/v10/server/procedures',

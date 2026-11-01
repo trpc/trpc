@@ -1,7 +1,8 @@
 ---
-title: "Links Overview"
-label: "Links"
-description: ""
+id: overview
+title: Links Overview
+sidebar_label: "Links"
+slug: /client/links
 section: "Client Usage"
 order: 50
 ---
@@ -15,10 +16,11 @@ You can compose links together into an array that you can provide to the tRPC cl
   <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>
 </div>
 
-> [!NOTE]
-> The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
+:::note
+The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
+:::
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 
@@ -48,7 +50,7 @@ A link is a function that follows the `TRPCLink` type. Each link is composed of 
 
 ### Example
 
-```tsx title="utils/customLink.ts"
+```tsx title='utils/customLink.ts'
 import { TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import type { AppRouter } from 'server/routers/_app';

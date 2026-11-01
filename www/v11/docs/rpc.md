@@ -1,6 +1,8 @@
 ---
-title: "HTTP RPC Specification"
-description: ""
+id: rpc
+title: HTTP RPC Specification
+sidebar_label: HTTP RPC Specification
+slug: /rpc
 section: "Extra information"
 order: 82
 ---
@@ -11,7 +13,7 @@ order: 82
 | ----------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}`                                                                           |
 | `POST`      | `.mutation()`     | Input as POST body.                                                                                                                                                                      |
-| `GET`       | `.subscription()` | Subscriptions are supported via [Server-sent Events](./client/links/httpSubscriptionLink.md) using `httpSubscriptionLink`, or via [WebSockets](./server/websockets.md) using `wsLink`. |
+| `GET`       | `.subscription()` | Subscriptions are supported via [Server-sent Events](/docs/client/links/httpSubscriptionLink) using `httpSubscriptionLink`, or via [WebSockets](/docs/server/websockets) using `wsLink`. |
 
 ## Accessing nested procedures
 
@@ -45,7 +47,7 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 
 #### Given a router like this exposed at `/api/trpc`:
 
-```tsx twoslash title="server/router.ts"
+```tsx twoslash title='server/router.ts'
 import { initTRPC } from '@trpc/server';
 
 type Post = { id: string; title: string; body: string };
@@ -72,7 +74,8 @@ export const appRouter = t.router({
 
 #### ... And two queries defined like this in a React component:
 
-```tsx twoslash title="MyComponent.tsx"
+```tsx twoslash title='MyComponent.tsx'
+
 // @jsx: react-jsx
 import React from 'react';
 
@@ -294,7 +297,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 
 To override the HTTP method used for queries/mutations, you can use the `methodOverride` option:
 
-```tsx twoslash title="server/httpHandler.ts"
+```tsx twoslash title = 'server/httpHandler.ts'
 import { initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 const t = initTRPC.create();
@@ -307,7 +310,7 @@ const handler = createHTTPHandler({
 });
 ```
 
-```tsx twoslash title="client/trpc.ts"
+```tsx twoslash title = 'client/trpc.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();

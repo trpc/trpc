@@ -1,19 +1,16 @@
 ---
-title: "Inferring Types"
-description: ""
+id: infer-types
+title: Inferring Types
+sidebar_label: Inferring Types
+slug: /client/react/infer-types
 section: "Client Usage"
 parent: "client/react"
 order: 55
 ---
 
-In addition to the type inference made available by `@trpc/server` ([see here](../vanilla/infer-types.md)) this integration also provides some inference helpers for usage purely in React.
+<!-- Reusable snippet -->
 
-## Infer React Query options based on your router
-
-When creating custom hooks around tRPC procedures, it's sometimes necessary to have the types of the options inferred from the router. You can do so via the `inferReactQueryProcedureOptions` helper exported from `@trpc/react-query`.
-
-```ts twoslash title="trpc.ts"
-// @module: esnext
+```twoslash include server
 // @module: esnext
 // @filename: server.ts
 // ---cut---
@@ -45,6 +42,17 @@ const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
+```
+
+In addition to the type inference made available by `@trpc/server` ([see here](/docs/client/vanilla/infer-types)) this integration also provides some inference helpers for usage purely in React.
+
+## Infer React Query options based on your router
+
+When creating custom hooks around tRPC procedures, it's sometimes necessary to have the types of the options inferred from the router. You can do so via the `inferReactQueryProcedureOptions` helper exported from `@trpc/react-query`.
+
+```ts twoslash title='trpc.ts'
+// @module: esnext
+// @include: server
 // @filename: trpc.ts
 // ---cut---
 import {
@@ -62,39 +70,9 @@ export type RouterOutputs = inferRouterOutputs<AppRouter>;
 export const trpc = createTRPCReact<AppRouter>();
 ```
 
-```ts twoslash title="usePostCreate.ts"
+```ts twoslash title='usePostCreate.ts'
 // @module: esnext
-// @module: esnext
-// @filename: server.ts
-// ---cut---
-import { initTRPC } from '@trpc/server';
-import { z } from "zod";
-
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  post: t.router({
-    list: t.procedure
-      .query(() => {
-        // imaginary db call
-        return [{ id: 1, title: 'tRPC is the best!' }];
-    }),
-    byId: t.procedure
-      .input(z.string())
-      .query(({ input }) => {
-        // imaginary db call
-        return { id: 1, title: 'tRPC is the best!' };
-    }),
-    create: t.procedure
-      .input(z.object({ title: z.string(), text: z.string(), }))
-      .mutation(({ input }) => {
-        // imaginary db call
-        return { id: 1, ...input };
-    }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: server
 // @filename: trpc.ts
 import {
   createTRPCReact,
@@ -133,39 +111,9 @@ function usePostCreate(options?: PostCreateOptions) {
 }
 ```
 
-```ts twoslash title="usePostById.ts"
+```ts twoslash title='usePostById.ts'
 // @module: esnext
-// @module: esnext
-// @filename: server.ts
-// ---cut---
-import { initTRPC } from '@trpc/server';
-import { z } from "zod";
-
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  post: t.router({
-    list: t.procedure
-      .query(() => {
-        // imaginary db call
-        return [{ id: 1, title: 'tRPC is the best!' }];
-    }),
-    byId: t.procedure
-      .input(z.string())
-      .query(({ input }) => {
-        // imaginary db call
-        return { id: 1, title: 'tRPC is the best!' };
-    }),
-    create: t.procedure
-      .input(z.object({ title: z.string(), text: z.string(), }))
-      .mutation(({ input }) => {
-        // imaginary db call
-        return { id: 1, ...input };
-    }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: server
 // @filename: trpc.ts
 import {
   createTRPCReact,
@@ -194,7 +142,7 @@ function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
 
 If you write a factory which creates a similar router interface several times in your application, you may wish to share client code between usages of the factory. `@trpc/react-query/shared` exports several types which can be used to generate abstract types for a router factory, and build common React components which are passed the router as a prop.
 
-```tsx twoslash title="api/factory.ts"
+```tsx twoslash title='api/factory.ts'
 // @module: esnext
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
@@ -237,7 +185,7 @@ export type MyRouterLike = RouterLike<MyRouterType>
 export type MyRouterUtilsLike = UtilsLike<MyRouterType>
 ```
 
-```tsx twoslash title="api/server.ts"
+```tsx twoslash title='api/server.ts'
 // @module: esnext
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
@@ -276,7 +224,7 @@ export type AppRouter = typeof appRouter;
 export type { MyRouterLike, MyRouterUtilsLike } from './factory';
 ```
 
-```tsx twoslash title="frontend/usePostCreate.ts"
+```tsx twoslash title='frontend/usePostCreate.ts'
 // @module: esnext
 // @jsx: react-jsx
 // @filename: trpc.ts

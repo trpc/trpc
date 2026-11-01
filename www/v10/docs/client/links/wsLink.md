@@ -1,6 +1,8 @@
 ---
-title: "WebSocket Link"
-description: ""
+id: wsLink
+title: WebSocket Link
+sidebar_label: WebSocket Link
+slug: /client/links/wsLink
 section: "Client Usage"
 parent: "client/links"
 order: 54

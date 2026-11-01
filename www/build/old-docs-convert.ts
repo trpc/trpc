@@ -16,9 +16,22 @@
  * Whatever the copy can't convert is a problem, so a new construct in the
  * docs fails the copy instead of rendering as raw MDX.
  */
-import { removeTwoslashNotations } from 'twoslash/fallback';
+import { parse as parseYaml } from 'yaml';
 
-import { type CopiedVersion, copiedVersions, v11 } from '../src/site.ts';
+import {
+  commentsOf,
+  fromDocusaurus,
+  inFences,
+  withOwnIncludes,
+} from './docusaurus-syntax.ts';
+
+import {
+  type CopiedVersion,
+  copiedVersions,
+  docPath,
+  v11,
+  versionsByPath,
+} from '../src/site.ts';
 
 /** A page of a version's sidebar. */
 export interface CopiedPage {
@@ -32,7 +45,7 @@ export interface CopiedPage {
   /** The slug of the page it nests under in the sidebar. */
   readonly parent: string | undefined;
   readonly section: string;
-  /** Path under the version's `trpcPath` on trpc.io, and its `basePath` here. */
+  /** Path under the version's `basePath`, on trpc.io and here. */
   readonly slug: string;
   readonly title: string;
   readonly version: CopiedVersion['id'];
@@ -106,11 +119,6 @@ export function versionOf(id: CopiedVersion['id']): CopiedVersion {
   return copiedVersions.find((version) => version.id === id) ?? v11;
 }
 
-/** The copied versions, the longest `trpcPath` first, so `/docs/v10` isn't read as v11's `v10` page. */
-const byTrpcPath = copiedVersions.toSorted(
-  (a, b) => b.trpcPath.length - a.trpcPath.length,
-);
-
 /** A `vercel.json` path pattern as a regex: `:path` is a segment, `:path*` any rest. */
 export const redirectPattern = (source: string) =>
   new RegExp(
@@ -164,77 +172,6 @@ export interface ConvertedPage {
 }
 
 const packageManagers = new Set(['bun', 'deno', 'npm', 'pnpm', 'yarn']);
-
-/** Docusaurus admonitions, as GitHub alerts and the title Docusaurus shows. */
-const admonitions: Readonly<
-  Record<string, { readonly kind: string; readonly title?: string }>
-> = {
-  caution: { kind: 'WARNING', title: 'Caution' },
-  danger: { kind: 'CAUTION', title: 'Danger' },
-  info: { kind: 'NOTE', title: 'Info' },
-  note: { kind: 'NOTE' },
-  tip: { kind: 'TIP' },
-  warning: { kind: 'WARNING' },
-};
-
-interface Fence {
-  /** Index of the opening line. */
-  readonly start: number;
-  /** Index of the closing line, or the last line if it's never closed. */
-  readonly end: number;
-  readonly indent: string;
-  readonly info: string;
-  readonly marker: string;
-}
-
-const fenceOpen = /^([ \t]*)(`{3,}|~{3,})(.*)$/;
-
-/** The fenced code blocks among `lines`. */
-export function fencesOf(lines: ReadonlyArray<string>): ReadonlyArray<Fence> {
-  const fences: Array<Fence> = [];
-  let index = 0;
-  while (index < lines.length) {
-    const open = fenceOpen.exec(lines[index] ?? '');
-    const marker = open?.[2];
-    if (!open || marker === undefined) {
-      index++;
-      continue;
-    }
-    const start = index;
-    index++;
-    while (index < lines.length) {
-      const close = /^[ \t]*(`{3,}|~{3,})[ \t]*$/.exec(lines[index] ?? '');
-      if (
-        close?.[1] &&
-        close[1][0] === marker[0] &&
-        close[1].length >= marker.length
-      ) {
-        break;
-      }
-      index++;
-    }
-    fences.push({
-      end: Math.min(index, lines.length - 1),
-      indent: open[1] ?? '',
-      info: (open[3] ?? '').trim(),
-      marker,
-      start,
-    });
-    index++;
-  }
-  return fences;
-}
-
-/** For each line, whether it belongs to a fenced code block. */
-function inFences(lines: ReadonlyArray<string>) {
-  const mask = lines.map(() => false);
-  for (const fence of fencesOf(lines)) {
-    for (let index = fence.start; index <= fence.end; index++) {
-      mask[index] = true;
-    }
-  }
-  return mask;
-}
 
 /** Applies `edit` to each run of lines outside code blocks, as one string. */
 function editProse(
@@ -381,7 +318,7 @@ export function resolveLink(
     local,
     context.page.blog
       ? `${v11.url}/blog/${context.page.slug}`
-      : `${v11.url}${from.trpcPath}/${context.page.slug}`,
+      : `${v11.url}${docPath(from, context.page.slug)}`,
   );
   const decoded = decodeURIComponent(target.pathname);
   const pageOf = (version: CopiedVersion['id'], slug: string) =>
@@ -422,15 +359,15 @@ export function resolveLink(
   if (post) {
     return { hash: hashOf(target), kind: 'post', slug: post.slug };
   }
-  for (const version of byTrpcPath) {
+  for (const version of versionsByPath) {
     if (
-      pathname !== version.trpcPath &&
-      !pathname.startsWith(`${version.trpcPath}/`)
+      pathname !== version.basePath &&
+      !pathname.startsWith(`${version.basePath}/`)
     ) {
       continue;
     }
     const slug =
-      pathname.slice(version.trpcPath.length + 1) || version.firstDoc;
+      pathname.slice(version.basePath.length + 1) || version.firstDoc;
     const page =
       (unversioned && version.id === v11.id
         ? pageOf(context.page.version, slug)
@@ -606,74 +543,6 @@ function inlineComponent(source: string) {
   return /=\{|\{[^}]*\}/.test(html) ? undefined : html;
 }
 
-/** A Twoslash block with its `// @include:` lines replaced by the `twoslash include` blocks they name. */
-export function expandIncludes(
-  code: string,
-  includes: ReadonlyMap<string, string>,
-  problems: Array<string>,
-) {
-  let expanded = code;
-  for (let depth = 0; depth < 5; depth++) {
-    expanded = expanded.replaceAll(
-      /^[ \t]*\/\/ @include: (\S+)[ \t]*$/gm,
-      (line, name: string) => {
-        const included = includes.get(name);
-        if (included === undefined) {
-          problems.push(`\`${line.trim()}\`: no \`twoslash include ${name}\``);
-          return '';
-        }
-        return included.replace(/\n$/, '');
-      },
-    );
-  }
-  return trimBlankLines(expanded.split('\n')).join('\n');
-}
-
-function trimBlankLines(lines: Array<string>) {
-  while (lines[0]?.trim() === '') {
-    lines.shift();
-  }
-  while (lines.at(-1)?.trim() === '') {
-    lines.pop();
-  }
-  return lines;
-}
-
-/**
- * A `// ^?` above the last `// ---cut---` queries code that isn't shown,
- * which trpc.io's Twoslash ignored and this site's rejects; it goes.
- */
-function withoutHiddenQueries(code: string) {
-  const lines = code.split('\n');
-  const cut = lines.findLastIndex((line) =>
-    /^[ \t]*\/\/ ---cut(?:-before)?---[ \t]*$/.test(line),
-  );
-  return lines
-    .filter((line, index) => index > cut || !/^[ \t]*\/\/\s*\^[?|]/.test(line))
-    .join('\n');
-}
-
-/** Plain code for a Twoslash block: what trpc.io shows of it. */
-export function plainCode(
-  code: string,
-  includes: ReadonlyMap<string, string>,
-  problems: Array<string>,
-) {
-  const lines = removeTwoslashNotations(
-    expandIncludes(code, includes, problems),
-  )
-    .split('\n')
-    .filter((line) => !/^[ \t]*\/\/ @(?:filename|include): /.test(line));
-  return trimBlankLines(lines).join('\n');
-}
-
-/** A fence's info, without `twoslash`, its language in lowercase and its title in double quotes. */
-function plainInfo(info: string) {
-  const lang = (/^[\w-]*/.exec(info)?.[0] ?? '').toLowerCase();
-  const title = /\btitle\s*=\s*(["'])(.*?)\1/.exec(info)?.[2];
-  return `${lang}${title === undefined ? '' : ` title="${title}"`}`;
-}
-
 interface PageContext {
   readonly docs: CopiedDocs;
   /** The file being converted: the page, or a partial it includes. */
@@ -683,8 +552,6 @@ interface PageContext {
   /** The page the result renders on, which its links are relative to. */
   readonly page: LinkingPage;
   readonly problems: Array<string>;
-  /** Whether Twoslash blocks stay Twoslash blocks (v11's), or become plain code. */
-  readonly twoslash: boolean;
 }
 
 /**
@@ -713,10 +580,17 @@ function rewriteUrl(url: string, context: PageContext, html: boolean) {
     return target.url;
   }
   const hash = target.hash ? `#${target.hash}` : '';
-  if (html || context.page.blog || target.version !== context.page.version) {
-    return `${versionOf(target.version).basePath}/${target.slug}${hash}`;
+  const path = `${docPath(versionOf(target.version), target.slug)}${hash}`;
+  if (
+    url === path ||
+    html ||
+    context.page.blog ||
+    target.version !== context.page.version
+  ) {
+    return path;
   }
-  return `${relativeLink(context.page.slug, target.slug)}${hash}`;
+  const relative = `${relativeLink(context.page.slug, target.slug)}${hash}`;
+  return relative === `./${url}` ? url : relative;
 }
 
 /** Resolves an import's specifier to a path under `www/`, or a `@theme/` or package name. */
@@ -747,7 +621,6 @@ function keepingInlineCode(prose: string, edit: (masked: string) => string) {
 
 interface Converting extends PageContext {
   readonly imports: Map<string, string>;
-  readonly includes: Map<string, string>;
   /** Partials to splice in at the end, by their marker's number. */
   readonly partials: Array<string>;
 }
@@ -777,65 +650,6 @@ function takeImports(lines: ReadonlyArray<string>, context: Converting) {
     context.imports.set(name, resolveImport(match[3], context.file));
     return false;
   });
-}
-
-function takeIncludes(lines: ReadonlyArray<string>, context: Converting) {
-  const drop = new Set<number>();
-  for (const fence of fencesOf(lines)) {
-    const name = /^twoslash include (\S+)/.exec(fence.info)?.[1];
-    if (!name) {
-      continue;
-    }
-    context.includes.set(
-      name,
-      lines.slice(fence.start + 1, fence.end).join('\n'),
-    );
-    for (let index = fence.start; index <= fence.end; index++) {
-      drop.add(index);
-    }
-    if (lines[fence.end + 1]?.trim() === '') {
-      drop.add(fence.end + 1);
-    }
-  }
-  return lines.filter((_line, index) => !drop.has(index));
-}
-
-function convertFences(lines: ReadonlyArray<string>, context: Converting) {
-  const output = [...lines];
-  for (const fence of fencesOf(lines).toReversed()) {
-    const twoslash = /\btwoslash\b/.test(fence.info);
-    const info = plainInfo(fence.info);
-    const opening = `${fence.indent}${fence.marker}${info}`;
-    if (!twoslash) {
-      output[fence.start] = opening;
-      continue;
-    }
-    const body = lines
-      .slice(fence.start + 1, fence.end)
-      .map((line) =>
-        line.startsWith(fence.indent) ? line.slice(fence.indent.length) : line,
-      )
-      .join('\n');
-    const problems: Array<string> = [];
-    const code = context.twoslash
-      ? withoutHiddenQueries(expandIncludes(body, context.includes, problems))
-      : plainCode(body, context.includes, problems);
-    context.problems.push(
-      ...problems.map((problem) => `${context.file}: ${problem}`),
-    );
-    output.splice(
-      fence.start,
-      fence.end - fence.start + 1,
-      context.twoslash
-        ? `${fence.indent}${fence.marker}${info.replace(/^[\w-]*/, (lang) => `${lang} twoslash`)}`
-        : opening,
-      ...code
-        .split('\n')
-        .map((line) => (line === '' ? '' : `${fence.indent}${line}`)),
-      `${fence.indent}${fence.marker}`,
-    );
-  }
-  return output;
 }
 
 function youTubeEmbed(attributes: ReadonlyMap<string, string | true>) {
@@ -1278,64 +1092,6 @@ function convertTabs(lines: ReadonlyArray<string>, context: Converting) {
   return output;
 }
 
-/** `:::tip Title` … `:::` becomes `> [!TIP] Title` and the lines quoted. */
-function convertAdmonitions(lines: ReadonlyArray<string>, context: Converting) {
-  const output: Array<string> = [];
-  const mask = inFences(lines);
-  let open: { readonly indent: string; readonly name: string } | undefined;
-  for (const [index, line] of lines.entries()) {
-    const fenced = mask[index];
-    const start = fenced
-      ? null
-      : /^([ \t]*):::(\w+)(?:[ \t]+(.*))?$/.exec(line);
-    // `:::tip` in an open tip is a typo for `:::`: Docusaurus nests the rest
-    // of the page in it.
-    const reopened =
-      open !== undefined && start?.[2] === open.name && !start[3]?.trim();
-    if (start && !reopened) {
-      const admonition = admonitions[start[2] ?? ''];
-      if (open || !admonition) {
-        context.problems.push(`${context.file}: \`${line.trim()}\``);
-        output.push(line);
-        continue;
-      }
-      const title = start[3]?.trim() || admonition.title;
-      open = { indent: start[1] ?? '', name: start[2] ?? '' };
-      // An alert is a block of its own, as an admonition is in MDX: a line
-      // of HTML right above it would otherwise swallow it.
-      if ((output.at(-1) ?? '').trim() !== '') {
-        output.push('');
-      }
-      output.push(
-        `${open.indent}> [!${admonition.kind}]${title ? ` ${title}` : ''}`,
-      );
-      continue;
-    }
-    if (!open) {
-      output.push(line);
-      continue;
-    }
-    if (reopened || (!fenced && /^[ \t]*:::[ \t]*$/.test(line))) {
-      while (output.at(-1) === `${open.indent}>`) {
-        output.pop();
-      }
-      output.push('');
-      open = undefined;
-      continue;
-    }
-    const inner = line.startsWith(open.indent)
-      ? line.slice(open.indent.length)
-      : line.trimStart();
-    output.push(
-      inner.trim() === '' ? `${open.indent}>` : `${open.indent}> ${inner}`,
-    );
-  }
-  if (open) {
-    context.problems.push(`${context.file}: an admonition isn't closed`);
-  }
-  return output;
-}
-
 /** Squeezes runs of blank lines outside code blocks into one. */
 function squeezeBlankLines(lines: ReadonlyArray<string>) {
   const mask = inFences(lines);
@@ -1347,84 +1103,59 @@ function squeezeBlankLines(lines: ReadonlyArray<string>) {
   );
 }
 
-/**
- * Drops HTML comments, which show nothing. A comment is a block of its own
- * up to the line that closes it, so a fence it comments out is no fence.
- */
-function dropComments(lines: ReadonlyArray<string>) {
-  const output: Array<string> = [];
-  let fence: string | undefined;
-  let comment = false;
-  for (const line of lines) {
-    if (comment) {
-      const end = line.indexOf('-->');
-      if (end !== -1) {
-        comment = false;
-        const rest = line.slice(end + '-->'.length);
-        if (rest.trim() !== '') {
-          output.push(rest);
-        }
-      }
-      continue;
-    }
-    if (fence !== undefined) {
-      output.push(line);
-      const close = /^[ \t]*(`{3,}|~{3,})[ \t]*$/.exec(line)?.[1];
-      if (
-        close !== undefined &&
-        close[0] === fence[0] &&
-        close.length >= fence.length
-      ) {
-        fence = undefined;
-      }
-      continue;
-    }
-    const start = /^ {0,3}<!--/.exec(line);
-    if (start) {
-      const end = line.indexOf('-->', start[0].length);
-      if (end === -1) {
-        comment = true;
-      } else if (line.slice(end + '-->'.length).trim() !== '') {
-        output.push(line.slice(end + '-->'.length));
-      }
-      continue;
-    }
-    fence = fenceOpen.exec(line)?.[2];
-    output.push(line);
-  }
-  return output;
-}
-
 function stripFrontmatter(raw: string) {
   return raw.replace(/^---\n[\s\S]*?\n---\n/, '');
+}
+
+/**
+ * The page's HTML comments, set aside behind a marker line each, so the
+ * conversion leaves what they comment out as it is.
+ */
+function asideComments(lines: ReadonlyArray<string>) {
+  const output = [...lines];
+  const comments: Array<string> = [];
+  for (const comment of commentsOf(lines).toReversed()) {
+    comments.unshift(lines.slice(comment.start, comment.end + 1).join('\n'));
+    output.splice(comment.start, comment.end - comment.start + 1, '\uE002');
+  }
+  let index = 0;
+  return {
+    lines: output,
+    restore: (markdown: string) =>
+      markdown.replaceAll(/^\uE002$/gm, () => comments[index++] ?? ''),
+  };
 }
 
 function convertBody(source: string, context: PageContext): string {
   const converting: Converting = {
     ...context,
     imports: new Map(),
-    includes: new Map(),
     partials: [],
   };
-  let lines = dropComments(
+  const aside = asideComments(
     stripFrontmatter(source).replaceAll('\r\n', '\n').split('\n'),
   );
-  lines = takeImports(lines, converting);
-  lines = takeIncludes(lines, converting);
-  lines = convertFences(lines, converting);
+  let lines = takeImports(aside.lines, converting);
   lines = convertEmbeds(lines, converting);
   lines = convertProse(lines, converting);
   lines = convertTabs(lines, converting);
-  lines = convertAdmonitions(lines, converting);
-  const body = lines
-    .join('\n')
-    .replaceAll(/\uE001(\d+)\uE001/g, (_marker, index: string) => {
-      const file = converting.partials[Number(index)] ?? '';
-      return convertBody(context.docs.files.get(file) ?? '', {
-        ...context,
-        file,
-      }).trim();
-    });
+  const body = aside.restore(
+    lines
+      .join('\n')
+      .replaceAll(/\uE001(\d+)\uE001/g, (_marker, index: string) => {
+        const file = converting.partials[Number(index)] ?? '';
+        const partial = withOwnIncludes(
+          convertBody(context.docs.files.get(file) ?? '', {
+            ...context,
+            file,
+          }),
+        );
+        context.problems.push(
+          ...partial.problems.map((problem) => `${file}: ${problem}`),
+        );
+        return partial.markdown.trim();
+      }),
+  );
   return body;
 }
 
@@ -1432,21 +1163,32 @@ function yamlString(value: string) {
   return JSON.stringify(value);
 }
 
-/**
- * Converts the file the page or post at `page` renders, and lays out the
- * result under the frontmatter `frontmatterOf` writes from its lines.
- */
-function convertFile(
-  file: string,
-  page: LinkingPage,
-  twoslash: boolean,
-  docs: CopiedDocs,
-  frontmatterOf:
+interface FileConversion {
+  /**
+   * Whether the result keeps the Docusaurus syntax the renderer reads
+   * (`docusaurus-syntax.ts`), as a page does, or is this site's Markdown.
+   */
+  readonly docusaurus: boolean;
+  /** Whether its Twoslash blocks compile here (v11's), or show as plain code. */
+  readonly twoslash: boolean;
+  /** Its frontmatter's lines, from the Markdown the renderer reads. */
+  readonly frontmatterOf?:
     | ((
         lines: ReadonlyArray<string>,
         problems: Array<string>,
       ) => ReadonlyArray<string>)
-    | undefined,
+    | undefined;
+}
+
+/**
+ * Converts the file the page or post at `page` renders, and lays out the
+ * result under its frontmatter.
+ */
+function convertFile(
+  file: string,
+  page: LinkingPage,
+  docs: CopiedDocs,
+  conversion: FileConversion,
 ): ConvertedPage {
   const images = new Set<string>();
   const inlined = new Set<string>();
@@ -1467,21 +1209,22 @@ function convertFile(
     inlined,
     page,
     problems,
-    twoslash,
   });
-  const lines = squeezeBlankLines(body.split('\n'));
-  while (lines[0]?.trim() === '') {
-    lines.shift();
-  }
-  for (const line of twoslash ? [] : lines) {
-    if (/^[ \t>]*(?:`{3,}|~{3,})[^\n]*\btwoslash\b/.test(line)) {
-      problems.push(`${file}: a Twoslash block is left in \`${line}\``);
+  const read = fromDocusaurus(body, conversion.twoslash);
+  problems.push(...read.problems.map((problem) => `${file}: ${problem}`));
+  const trimmed = (markdown: string) => {
+    const lines = squeezeBlankLines(markdown.split('\n'));
+    while (lines[0]?.trim() === '') {
+      lines.shift();
     }
-  }
+    return lines;
+  };
+  const rendered = trimmed(read.markdown);
+  const lines = conversion.docusaurus ? trimmed(body) : rendered;
   const frontmatter =
-    frontmatterOf === undefined
+    conversion.frontmatterOf === undefined
       ? []
-      : ['---', ...frontmatterOf(lines, problems), '---', ''];
+      : ['---', ...conversion.frontmatterOf(rendered, problems), '---', ''];
   return {
     images: [...images].toSorted(),
     inlined: [...inlined].toSorted(),
@@ -1499,26 +1242,94 @@ export function convertSnippet(file: string, docs: CopiedDocs): ConvertedPage {
   return convertFile(
     file,
     { blog: true, slug: 'index', version: v11.id },
-    true,
     docs,
-    undefined,
+    { docusaurus: false, twoslash: true },
   );
 }
 
-/** A copied page as a page of this site: its frontmatter and Markdown. */
-export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
-  return convertFile(page.file, page, page.version === v11.id, docs, () => [
-    `title: ${yamlString(page.title)}`,
-    ...(page.label === undefined || page.label === page.title
-      ? []
-      : [`label: ${yamlString(page.label)}`]),
-    `description: ${yamlString(page.description)}`,
+/** The frontmatter keys of trpc.io's pages a copy keeps, as this site reads them. */
+const keptKeys = [
+  'description',
+  'id',
+  'sidebar_label',
+  'slug',
+  'title',
+] as const;
+
+/**
+ * A copied page's frontmatter: its file's lines on trpc.io that this site
+ * reads (`id` and `slug` name the page as its path does), with what the
+ * sidebar says of it after them.
+ */
+function pageFrontmatter(
+  page: CopiedPage,
+  source: string,
+  problems: Array<string>,
+) {
+  const values: Readonly<
+    Record<(typeof keptKeys)[number], string | undefined>
+  > = {
+    description: page.description === '' ? undefined : page.description,
+    id: undefined,
+    sidebar_label: page.label,
+    slug: undefined,
+    title: page.title,
+  };
+  const written = new Set<string>();
+  const lines = (
+    /^---\n([\s\S]*?)\n---\n/.exec(source)?.[1]?.split('\n') ?? []
+  ).flatMap((line) => {
+    const key = keptKeys.find((candidate) => line.startsWith(`${candidate}:`));
+    if (key === undefined) {
+      // `hide_title` and the author of trpc.io's introductions, which
+      // this site lays out as any other page.
+      if (!/^(?:hide_title|author\w*):/.test(line)) {
+        problems.push(`${page.file}: frontmatter \`${line}\``);
+      }
+      return [];
+    }
+    written.add(key);
+    if (key === 'id' || key === 'slug') {
+      return [line];
+    }
+    const value = values[key];
+    if (value === undefined) {
+      return [];
+    }
+    const yaml: unknown = parseYaml(line);
+    const current =
+      typeof yaml === 'object' && yaml !== null && key in yaml
+        ? (yaml as Record<string, unknown>)[key]
+        : undefined;
+    return [current === value ? line : `${key}: ${yamlString(value)}`];
+  });
+  for (const key of ['title', 'sidebar_label', 'description'] as const) {
+    const value = values[key];
+    if (!written.has(key) && value !== undefined) {
+      lines.push(`${key}: ${yamlString(value)}`);
+    }
+  }
+  return [
+    ...lines,
     `section: ${yamlString(page.section)}`,
     ...(page.parent === undefined
       ? []
       : [`parent: ${yamlString(page.parent)}`]),
     `order: ${page.order}`,
-  ]);
+  ];
+}
+
+/**
+ * A copied page as a page of this site: trpc.io's file, with this site's
+ * frontmatter and links, and the Docusaurus syntax the renderer reads.
+ */
+export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
+  return convertFile(page.file, page, docs, {
+    docusaurus: true,
+    frontmatterOf: (_lines, problems) =>
+      pageFrontmatter(page, docs.files.get(page.file) ?? '', problems),
+    twoslash: page.version === v11.id,
+  });
 }
 
 /** Markdown as the text it reads as: without links' targets, emphasis or HTML. */
@@ -1543,30 +1354,35 @@ export function convertPost(post: CopiedPost, docs: CopiedDocs): ConvertedPage {
   return convertFile(
     post.file,
     { blog: true, slug: post.slug, version: v11.id },
-    true,
     docs,
-    (lines, problems) => {
-      const end = lines.findIndex((line) => line.trim() === '');
-      const paragraph = lines.slice(0, end === -1 ? undefined : end);
-      if (/^\s*(?:[#>|<]|`{3}|~{3}|[-*+] |\d+\. )/.test(paragraph[0] ?? '#')) {
-        problems.push(`${post.file}: doesn't open with a paragraph`);
-      }
-      return [
-        `title: ${yamlString(post.title)}`,
-        `description: ${yamlString(plainProse(paragraph.join('\n')))}`,
-        `date: ${yamlString(post.date)}`,
-        `authors: ${JSON.stringify(
-          post.authors.map((author) => ({
-            image: author.image,
-            name: author.name,
-            title: author.title,
-            url: author.url,
-          })),
-        )}`,
-        ...(post.discussion === undefined
-          ? []
-          : [`discussion: ${post.discussion}`]),
-      ];
+    {
+      docusaurus: false,
+      frontmatterOf: (lines, problems) => {
+        const end = lines.findIndex((line) => line.trim() === '');
+        const paragraph = lines.slice(0, end === -1 ? undefined : end);
+        if (
+          /^\s*(?:[#>|<]|`{3}|~{3}|[-*+] |\d+\. )/.test(paragraph[0] ?? '#')
+        ) {
+          problems.push(`${post.file}: doesn't open with a paragraph`);
+        }
+        return [
+          `title: ${yamlString(post.title)}`,
+          `description: ${yamlString(plainProse(paragraph.join('\n')))}`,
+          `date: ${yamlString(post.date)}`,
+          `authors: ${JSON.stringify(
+            post.authors.map((author) => ({
+              image: author.image,
+              name: author.name,
+              title: author.title,
+              url: author.url,
+            })),
+          )}`,
+          ...(post.discussion === undefined
+            ? []
+            : [`discussion: ${post.discussion}`]),
+        ];
+      },
+      twoslash: true,
     },
   );
 }
@@ -1593,12 +1409,20 @@ export function dropMissingAnchors(
     return !ids || ids.has(decodeURIComponent(hash));
   };
   const onSite = (path: string) => {
-    const version = copiedVersions.find((candidate) =>
-      path.startsWith(`${candidate.basePath}/`),
+    const version = versionsByPath.find(
+      (candidate) =>
+        path === candidate.basePath ||
+        path.startsWith(`${candidate.basePath}/`),
     );
     return version === undefined
       ? undefined
-      : { slug: path.slice(version.basePath.length + 1), version: version.id };
+      : {
+          slug:
+            path === version.basePath
+              ? version.firstDoc
+              : path.slice(version.basePath.length + 1),
+          version: version.id,
+        };
   };
   const lines = editProse(markdown.split('\n'), (prose) =>
     keepingInlineCode(prose, (masked) =>

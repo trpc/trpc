@@ -1,7 +1,8 @@
 ---
-title: "Set up a tRPC Client"
-label: "Setup"
-description: ""
+id: setup
+title: Set up a tRPC Client
+sidebar_label: Setup
+slug: /client/vanilla/setup
 section: "Client Usage"
 parent: "client/vanilla"
 order: 43
@@ -41,14 +42,15 @@ export type AppRouter = typeof appRouter;
 import type { AppRouter } from '../server/router';
 ```
 
-> [!TIP]
-> By using `import type` you ensure that the reference will be stripped at compile-time, meaning you don't inadvertently import server-side code into your client. For more information, [see the Typescript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export).
+:::tip
+By using `import type` you ensure that the reference will be stripped at compile-time, meaning you don't inadvertently import server-side code into your client. For more information, [see the Typescript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export).
+:::
 
 ### 3. Initialize the tRPC client
 
 Create a tRPC client with the `createTRPCClient` method, and add a `links` array with a [terminating link](../links.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../links.md).
 
-```ts twoslash title="client.ts"
+```ts twoslash title='client.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -81,7 +83,7 @@ const client = createTRPCClient<AppRouter>({
 
 Under the hood this creates a typed [JavaScript Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) which allows you to interact with your tRPC API in a fully type-safe way:
 
-```ts twoslash title="client.ts"
+```ts twoslash title='client.ts'
 // @target: esnext
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';

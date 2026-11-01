@@ -1,7 +1,8 @@
 ---
-title: "Fetch / Edge Runtimes Adapter"
-label: "Fetch / Edge Runtimes"
-description: ""
+id: fetch
+title: Fetch / Edge Runtimes Adapter
+sidebar_label: Fetch / Edge Runtimes
+slug: /server/adapters/fetch
 section: "Backend Usage"
 parent: "server/adapters"
 order: 19
@@ -83,15 +84,17 @@ tRPC server uses the following Fetch APIs:
 
 If your runtime supports these APIs, you can [use tRPC server](#how-to-use-trpc-server-with-an-edge-runtime).
 
-> [!TIP]
-> Fun fact: that also means you can use a tRPC server in your browser!
+:::tip
+Fun fact: that also means you can use a tRPC server in your browser!
+:::
 
 ## Common setup
 
 ### Install dependencies
 
-> [!TIP]
-> You can skip this step if you use Deno Deploy.
+:::tip
+You can skip this step if you use Deno Deploy.
+:::
 
 <div class="code-tabs" data-tabs="package-manager">
 <div data-tab="npm" data-active>
@@ -135,7 +138,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title="router.ts"
+```ts title='router.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { Context } from './context';
@@ -187,7 +190,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title="context.ts"
+```ts title='context.ts'
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 
 export function createContext({
@@ -207,7 +210,7 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 ### Astro
 
-```ts title="src/pages/trpc/[trpc].ts"
+```ts title='src/pages/trpc/[trpc].ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIRoute } from 'astro';
 import { createContext } from '../../server/context';
@@ -225,12 +228,13 @@ export const all: APIRoute = (opts) => {
 
 ### Cloudflare Worker
 
-> [!NOTE]
-> You need the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) to run Cloudflare Workers.
+:::note
+You need the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) to run Cloudflare Workers.
+:::
 
 #### Create Cloudflare Worker
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from './context';
 import { appRouter } from './router';
@@ -256,12 +260,13 @@ Run `wrangler dev server.ts` and your endpoints will be available via HTTP!
 
 ### Deno Oak
 
-> [!NOTE]
-> This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::note
+This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::
 
 #### Update the imports in `router.ts`
 
-```ts title="router.ts"
+```ts title='router.ts'
 import { initTRPC } from 'npm:@trpc/server';
 import { z } from 'npm:zod';
 import { Context } from './context.ts';
@@ -269,13 +274,13 @@ import { Context } from './context.ts';
 
 #### Update the imports in `context.ts`
 
-```ts title="context.ts"
+```ts title='context.ts'
 import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 ```
 
 #### Use `fetchRequestHandler` with Oak in `app.ts`
 
-```ts title="app.ts"
+```ts title='app.ts'
 import { Application, Router } from 'https://deno.land/x/oak/mod.ts';
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
@@ -312,15 +317,17 @@ await app.listen({ port: 3000 });
 
 ### Deno Deploy
 
-> [!NOTE]
-> This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::note
+This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::
 
-> [!TIP]
-> See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/v10.45.4/examples/deno-deploy) for a working example.
+:::tip
+See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/v10.45.4/examples/deno-deploy) for a working example.
+:::
 
 #### Update the imports in `router.ts`
 
-```ts title="router.ts"
+```ts title='router.ts'
 import { initTRPC } from 'npm:@trpc/server';
 import { z } from 'npm:zod';
 import { Context } from './context.ts';
@@ -328,13 +335,13 @@ import { Context } from './context.ts';
 
 #### Update the imports in `context.ts`
 
-```ts title="context.ts"
+```ts title='context.ts'
 import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 ```
 
 #### Create Deno Deploy Function
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
 import { appRouter } from './router.ts';
@@ -364,7 +371,7 @@ See a full example [here](https://github.com/trpc/trpc/tree/v10.45.4/examples/ne
 
 ### Remix
 
-```ts title="app/routes/trpc/$trpc.ts"
+```ts title='app/routes/trpc/$trpc.ts'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from '~/server/context';
@@ -388,7 +395,7 @@ function handleRequest(args: LoaderArgs | ActionArgs) {
 
 ### SolidStart
 
-```ts title="src/routes/api/trpc/[trpc].ts"
+```ts title='src/routes/api/trpc/[trpc].ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIEvent } from 'solid-start';
 import { createContext } from '../../server/context';
@@ -406,11 +413,13 @@ export { handler as GET, handler as POST };
 
 ### Vercel Edge Runtime
 
-> [!NOTE]
-> See the official [Vercel Edge Runtime documentation](https://edge-runtime.vercel.app/getting-started) for more information.
+:::note
+See the official [Vercel Edge Runtime documentation](https://edge-runtime.vercel.app/getting-started) for more information.
+:::
 
-> [!TIP]
-> See our example [Vercel Edge Runtime app](https://github.com/trpc/trpc/tree/v10.45.4/examples/vercel-edge-runtime) for a working example.
+:::tip
+See our example [Vercel Edge Runtime app](https://github.com/trpc/trpc/tree/v10.45.4/examples/vercel-edge-runtime) for a working example.
+:::
 
 #### Install dependencies
 
@@ -447,7 +456,7 @@ bun add -g edge-runtime
 
 #### Create Edge Runtime Function
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from './context';
 import { appRouter } from './router';

@@ -1,6 +1,8 @@
 ---
-title: "Define Routers"
-description: ""
+id: routers
+title: Define Routers
+sidebar_label: Define Routers
+slug: /server/routers
 section: "Backend Usage"
 order: 7
 ---
@@ -11,7 +13,9 @@ To begin building your tRPC-based API, you'll first need to define your router. 
 
 You should initialize tRPC **exactly once** per application. Multiple instances of tRPC will cause issues.
 
-```ts title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
+// @filename: trpc.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 
 // You can use any variable name you like.
@@ -30,7 +34,19 @@ Next, let's define a router with a procedure to use in our application. We have 
 
 In order for these endpoints to be exposed to the frontend, your [Adapter](./adapters.md) should be configured with your `appRouter` instance.
 
-```ts title="server/_app.ts"
+```ts twoslash title="server/_app.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: _app.ts
+import * as trpc from '@trpc/server';
+// ---cut---
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({

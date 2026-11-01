@@ -1,20 +1,24 @@
 ---
-title: "React Query Integration"
-description: "React Query Integration"
+id: introduction
+title: React Query Integration
+sidebar_label: "React Query Integration"
+description: React Query Integration
+slug: /client/react
 section: "Client Usage"
 order: 28
 ---
 
 tRPC offers a first class integration with React. Under the hood this is simply a wrapper around the very popular [@tanstack/react-query](https://tanstack.com/query/latest), so we recommend that you familiarise yourself with React Query, as their docs go in to much greater depth on its usage.
 
-> [!TIP]
-> If you are using Next.js we recommend using [our integration with that](./nextjs.md) instead
+:::tip
+If you are using Next.js we recommend using [our integration with that](./nextjs.md) instead
+:::
 
 ### The tRPC React Query Integration
 
 This library enables usage directly within React components
 
-```tsx title="pages/IndexPage.tsx"
+```tsx title='pages/IndexPage.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {

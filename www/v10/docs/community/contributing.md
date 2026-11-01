@@ -1,6 +1,8 @@
 ---
-title: "Contributing"
-description: ""
+id: contributing
+title: Contributing
+sidebar_label: Contributing
+slug: /community/contributing
 section: "Community"
 order: 66
 ---

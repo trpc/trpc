@@ -1,7 +1,8 @@
 ---
-title: "Standalone Adapter"
-label: "Standalone"
-description: ""
+id: standalone
+title: Standalone Adapter
+sidebar_label: Standalone
+slug: /server/adapters/standalone
 section: "Backend Usage"
 parent: "server/adapters"
 order: 14
@@ -50,7 +51,7 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
 
 Implement your tRPC router. For example:
 
-```ts title="appRouter.ts"
+```ts title='appRouter.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -80,7 +81,7 @@ For more information you can look at the [quickstart guide](../../quickstart.md)
 
 The Standalone adapter runs a simple Node.js HTTP server.
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './appRouter.ts';
@@ -115,7 +116,7 @@ For full information on how to configure this package, [check the docs](https://
 
 This example just throws open CORS to any request, which is useful for development, but you can and should configure it more strictly in a production environment.
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
@@ -140,7 +141,7 @@ The `middleware` option will accept any function which resembles a connect/node.
 
 If `createHTTPServer` isn't enough you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP Server. For instance:
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { createServer } from 'http';
 import { initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';

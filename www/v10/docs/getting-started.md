@@ -1,6 +1,8 @@
 ---
-title: "Getting Started"
-description: ""
+id: getting-started
+title: Getting Started
+sidebar_label: Getting Started
+slug: /getting-started
 section: "tRPC"
 order: 1
 ---

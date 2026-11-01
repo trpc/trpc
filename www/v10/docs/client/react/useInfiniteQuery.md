@@ -1,21 +1,24 @@
 ---
-title: "useInfiniteQuery"
-label: "useInfiniteQuery()"
-description: ""
+id: useInfiniteQuery
+title: useInfiniteQuery
+sidebar_label: useInfiniteQuery()
+slug: /client/react/useInfiniteQuery
 section: "Client Usage"
 parent: "client/react"
 order: 33
 ---
 
-> [!NOTE] Info
->
-> - Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
-> - For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v4/docs/react/reference/useInfiniteQuery)
-> - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+:::info
+
+- Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
+- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v4/docs/react/reference/useInfiniteQuery)
+- In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+
+:::
 
 ## Example Procedure
 
-```tsx title="server/routers/_app.ts"
+```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { Context } from './[trpc]';
@@ -62,7 +65,7 @@ export const appRouter = t.router({
 
 ## Example React Component
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -85,7 +88,7 @@ export function MyComponent() {
 
 This helper gets the currently cached data from an existing infinite query
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -105,7 +108,7 @@ export function MyComponent() {
 
 This helper allows you to update a query's cached data
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

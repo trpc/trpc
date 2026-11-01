@@ -1,7 +1,8 @@
 ---
-title: "tRPC"
-label: "Introduction"
-description: ""
+id: introduction
+title: tRPC
+sidebar_label: Introduction
+slug: /
 section: "tRPC"
 order: 0
 ---
@@ -61,6 +62,16 @@ As TypeScript and static typing increasingly becomes a best practice in web deve
 Currently, GraphQL is the dominant way to implement typesafe APIs in TypeScript ([and it's amazing!](./further-reading.md#relationship-to-graphql)). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript.
 
 If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on code generation.
+
+<!--
+### tRPC explained from a REST API background
+
+tRPC can co-exist with a REST API, as it uses a single endpoint. On this specific endpoint tRPC will itself function as a router, meaning tRPC will redirect internally to the right handler on every incoming request.
+
+Like an Express router, tRPC also supports middleware and registering handlers. Unlike Express, tRPC embraces TypeScript to its fullest, providing built-in input and output validation.
+
+On the frontend, `@trpc/client` provides developers typesafety and autocompletion for the available endpoints. It shows what input is required and infers the output type of the endpoint. This ensures that in the case you make breaking changes to an endpoint on the server, TypeScript will warn you in the frontend.
+-->
 
 ### Who is tRPC for?
 

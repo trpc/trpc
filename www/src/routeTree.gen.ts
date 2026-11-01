@@ -17,14 +17,11 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as SponsorRouteImport } from './routes/sponsor'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
-import { Route as V10DocsRouteImport } from './routes/v10.docs'
-import { Route as V9DocsRouteImport } from './routes/v9.docs'
-import { Route as V10DocsIndexRouteImport } from './routes/v10.docs.index'
-import { Route as V10DocsSplatRouteImport } from './routes/v10.docs.$'
-import { Route as V9DocsIndexRouteImport } from './routes/v9.docs.index'
-import { Route as V9DocsSplatRouteImport } from './routes/v9.docs.$'
+import { Route as DocsV10RouteImport } from './routes/docs_.v10'
+import { Route as DocsV9RouteImport } from './routes/docs_.v9'
+import { Route as DocsV10SplatRouteImport } from './routes/docs_.v10.$'
+import { Route as DocsV9SplatRouteImport } from './routes/docs_.v9.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -66,45 +63,30 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DocsIndexRoute = DocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DocsRoute,
-} as any)
 const DocsSplatRoute = DocsSplatRouteImport.update({
   id: '/$',
   path: '/$',
   getParentRoute: () => DocsRoute,
 } as any)
-const V10DocsRoute = V10DocsRouteImport.update({
-  id: '/v10/docs',
-  path: '/v10/docs',
+const DocsV10Route = DocsV10RouteImport.update({
+  id: '/docs_/v10',
+  path: '/docs/v10',
   getParentRoute: () => rootRouteImport,
 } as any)
-const V9DocsRoute = V9DocsRouteImport.update({
-  id: '/v9/docs',
-  path: '/v9/docs',
+const DocsV9Route = DocsV9RouteImport.update({
+  id: '/docs_/v9',
+  path: '/docs/v9',
   getParentRoute: () => rootRouteImport,
 } as any)
-const V10DocsIndexRoute = V10DocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => V10DocsRoute,
-} as any)
-const V10DocsSplatRoute = V10DocsSplatRouteImport.update({
+const DocsV10SplatRoute = DocsV10SplatRouteImport.update({
   id: '/$',
   path: '/$',
-  getParentRoute: () => V10DocsRoute,
+  getParentRoute: () => DocsV10Route,
 } as any)
-const V9DocsIndexRoute = V9DocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => V9DocsRoute,
-} as any)
-const V9DocsSplatRoute = V9DocsSplatRouteImport.update({
+const DocsV9SplatRoute = DocsV9SplatRouteImport.update({
   id: '/$',
   path: '/$',
-  getParentRoute: () => V9DocsRoute,
+  getParentRoute: () => DocsV9Route,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -116,29 +98,26 @@ export interface FileRoutesByFullPath {
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
-  '/v10/docs': typeof V10DocsRouteWithChildren
-  '/v9/docs': typeof V9DocsRouteWithChildren
+  '/docs/v10': typeof DocsV10RouteWithChildren
+  '/docs/v9': typeof DocsV9RouteWithChildren
   '/blog/': typeof BlogIndexRoute
-  '/docs/': typeof DocsIndexRoute
-  '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v9/docs/$': typeof V9DocsSplatRoute
-  '/v10/docs/': typeof V10DocsIndexRoute
-  '/v9/docs/': typeof V9DocsIndexRoute
+  '/docs/v10/$': typeof DocsV10SplatRoute
+  '/docs/v9/$': typeof DocsV9SplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/docs': typeof DocsRouteWithChildren
   '/media': typeof MediaRoute
   '/search': typeof SearchRoute
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
+  '/docs/v10': typeof DocsV10RouteWithChildren
+  '/docs/v9': typeof DocsV9RouteWithChildren
   '/blog': typeof BlogIndexRoute
-  '/docs': typeof DocsIndexRoute
-  '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v9/docs/$': typeof V9DocsSplatRoute
-  '/v10/docs': typeof V10DocsIndexRoute
-  '/v9/docs': typeof V9DocsIndexRoute
+  '/docs/v10/$': typeof DocsV10SplatRoute
+  '/docs/v9/$': typeof DocsV9SplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,14 +129,11 @@ export interface FileRoutesById {
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
-  '/v10/docs': typeof V10DocsRouteWithChildren
-  '/v9/docs': typeof V9DocsRouteWithChildren
+  '/docs_/v10': typeof DocsV10RouteWithChildren
+  '/docs_/v9': typeof DocsV9RouteWithChildren
   '/blog/': typeof BlogIndexRoute
-  '/docs/': typeof DocsIndexRoute
-  '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v9/docs/$': typeof V9DocsSplatRoute
-  '/v10/docs/': typeof V10DocsIndexRoute
-  '/v9/docs/': typeof V9DocsIndexRoute
+  '/docs_/v10/$': typeof DocsV10SplatRoute
+  '/docs_/v9/$': typeof DocsV9SplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,29 +146,26 @@ export interface FileRouteTypes {
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
-    | '/v10/docs'
-    | '/v9/docs'
+    | '/docs/v10'
+    | '/docs/v9'
     | '/blog/'
-    | '/docs/'
-    | '/v10/docs/$'
-    | '/v9/docs/$'
-    | '/v10/docs/'
-    | '/v9/docs/'
+    | '/docs/v10/$'
+    | '/docs/v9/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/404'
+    | '/docs'
     | '/media'
     | '/search'
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
+    | '/docs/v10'
+    | '/docs/v9'
     | '/blog'
-    | '/docs'
-    | '/v10/docs/$'
-    | '/v9/docs/$'
-    | '/v10/docs'
-    | '/v9/docs'
+    | '/docs/v10/$'
+    | '/docs/v9/$'
   id:
     | '__root__'
     | '/'
@@ -203,14 +176,11 @@ export interface FileRouteTypes {
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
-    | '/v10/docs'
-    | '/v9/docs'
+    | '/docs_/v10'
+    | '/docs_/v9'
     | '/blog/'
-    | '/docs/'
-    | '/v10/docs/$'
-    | '/v9/docs/$'
-    | '/v10/docs/'
-    | '/v9/docs/'
+    | '/docs_/v10/$'
+    | '/docs_/v9/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,8 +191,8 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SponsorRoute: typeof SponsorRoute
   BlogSlugRoute: typeof BlogSlugRoute
-  V10DocsRoute: typeof V10DocsRouteWithChildren
-  V9DocsRoute: typeof V9DocsRouteWithChildren
+  DocsV10Route: typeof DocsV10RouteWithChildren
+  DocsV9Route: typeof DocsV9RouteWithChildren
   BlogIndexRoute: typeof BlogIndexRoute
 }
 
@@ -284,13 +254,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/docs/': {
-      id: '/docs/'
-      path: '/'
-      fullPath: '/docs/'
-      preLoaderRoute: typeof DocsIndexRouteImport
-      parentRoute: typeof DocsRoute
-    }
     '/docs/$': {
       id: '/docs/$'
       path: '/$'
@@ -298,88 +261,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsSplatRouteImport
       parentRoute: typeof DocsRoute
     }
-    '/v10/docs': {
-      id: '/v10/docs'
-      path: '/v10/docs'
-      fullPath: '/v10/docs'
-      preLoaderRoute: typeof V10DocsRouteImport
+    '/docs_/v10': {
+      id: '/docs_/v10'
+      path: '/docs/v10'
+      fullPath: '/docs/v10'
+      preLoaderRoute: typeof DocsV10RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/v9/docs': {
-      id: '/v9/docs'
-      path: '/v9/docs'
-      fullPath: '/v9/docs'
-      preLoaderRoute: typeof V9DocsRouteImport
+    '/docs_/v9': {
+      id: '/docs_/v9'
+      path: '/docs/v9'
+      fullPath: '/docs/v9'
+      preLoaderRoute: typeof DocsV9RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/v10/docs/': {
-      id: '/v10/docs/'
-      path: '/'
-      fullPath: '/v10/docs/'
-      preLoaderRoute: typeof V10DocsIndexRouteImport
-      parentRoute: typeof V10DocsRoute
-    }
-    '/v10/docs/$': {
-      id: '/v10/docs/$'
+    '/docs_/v10/$': {
+      id: '/docs_/v10/$'
       path: '/$'
-      fullPath: '/v10/docs/$'
-      preLoaderRoute: typeof V10DocsSplatRouteImport
-      parentRoute: typeof V10DocsRoute
+      fullPath: '/docs/v10/$'
+      preLoaderRoute: typeof DocsV10SplatRouteImport
+      parentRoute: typeof DocsV10Route
     }
-    '/v9/docs/': {
-      id: '/v9/docs/'
-      path: '/'
-      fullPath: '/v9/docs/'
-      preLoaderRoute: typeof V9DocsIndexRouteImport
-      parentRoute: typeof V9DocsRoute
-    }
-    '/v9/docs/$': {
-      id: '/v9/docs/$'
+    '/docs_/v9/$': {
+      id: '/docs_/v9/$'
       path: '/$'
-      fullPath: '/v9/docs/$'
-      preLoaderRoute: typeof V9DocsSplatRouteImport
-      parentRoute: typeof V9DocsRoute
+      fullPath: '/docs/v9/$'
+      preLoaderRoute: typeof DocsV9SplatRouteImport
+      parentRoute: typeof DocsV9Route
     }
   }
 }
 
 interface DocsRouteChildren {
   DocsSplatRoute: typeof DocsSplatRoute
-  DocsIndexRoute: typeof DocsIndexRoute
 }
 
 const DocsRouteChildren: DocsRouteChildren = {
   DocsSplatRoute: DocsSplatRoute,
-  DocsIndexRoute: DocsIndexRoute,
 }
 
 const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 
-interface V10DocsRouteChildren {
-  V10DocsSplatRoute: typeof V10DocsSplatRoute
-  V10DocsIndexRoute: typeof V10DocsIndexRoute
+interface DocsV10RouteChildren {
+  DocsV10SplatRoute: typeof DocsV10SplatRoute
 }
 
-const V10DocsRouteChildren: V10DocsRouteChildren = {
-  V10DocsSplatRoute: V10DocsSplatRoute,
-  V10DocsIndexRoute: V10DocsIndexRoute,
+const DocsV10RouteChildren: DocsV10RouteChildren = {
+  DocsV10SplatRoute: DocsV10SplatRoute,
 }
 
-const V10DocsRouteWithChildren =
-  V10DocsRoute._addFileChildren(V10DocsRouteChildren)
+const DocsV10RouteWithChildren =
+  DocsV10Route._addFileChildren(DocsV10RouteChildren)
 
-interface V9DocsRouteChildren {
-  V9DocsSplatRoute: typeof V9DocsSplatRoute
-  V9DocsIndexRoute: typeof V9DocsIndexRoute
+interface DocsV9RouteChildren {
+  DocsV9SplatRoute: typeof DocsV9SplatRoute
 }
 
-const V9DocsRouteChildren: V9DocsRouteChildren = {
-  V9DocsSplatRoute: V9DocsSplatRoute,
-  V9DocsIndexRoute: V9DocsIndexRoute,
+const DocsV9RouteChildren: DocsV9RouteChildren = {
+  DocsV9SplatRoute: DocsV9SplatRoute,
 }
 
-const V9DocsRouteWithChildren =
-  V9DocsRoute._addFileChildren(V9DocsRouteChildren)
+const DocsV9RouteWithChildren =
+  DocsV9Route._addFileChildren(DocsV9RouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -389,8 +332,8 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SponsorRoute: SponsorRoute,
   BlogSlugRoute: BlogSlugRoute,
-  V10DocsRoute: V10DocsRouteWithChildren,
-  V9DocsRoute: V9DocsRouteWithChildren,
+  DocsV10Route: DocsV10RouteWithChildren,
+  DocsV9Route: DocsV9RouteWithChildren,
   BlogIndexRoute: BlogIndexRoute,
 }
 export const routeTree = rootRouteImport

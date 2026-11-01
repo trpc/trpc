@@ -1,6 +1,8 @@
 ---
-title: "Response Caching"
-description: ""
+id: caching
+title: Response Caching
+sidebar_label: Response Caching
+slug: /caching
 section: "@trpc/server"
 order: 20
 ---
@@ -21,7 +23,7 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 
 ### Example code
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 export default withTRPC({
   config(config) {
     if (typeof window !== 'undefined') {
@@ -66,7 +68,7 @@ Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache
 
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
-```tsx title="server.ts"
+```tsx title='server.ts'
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';

@@ -1,6 +1,8 @@
 ---
-title: "Define Procedures"
-description: ""
+id: procedures
+title: Define Procedures
+sidebar_label: Define Procedures
+slug: /server/procedures
 section: "Backend Usage"
 order: 8
 ---
@@ -17,7 +19,7 @@ Procedures in tRPC are very flexible primitives to create backend functions. The
 
 The `t` object you create during tRPC setup returns an initial `t.procedure` which all other procedures are built on:
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -51,7 +53,17 @@ As a general pattern we recommend you rename and export `t.procedure` as `public
 
 The below example takes a user input and [authorizes](https://en.wikipedia.org/wiki/Authorization) them like protective towns-people. This is obviously a contrived example for simplicity, and not an appropriate way to securely authorize an application user, so in practice you may want to use some combination of [Headers](../client/headers.md), [Context](./context.md), [Middleware](./middlewares.md), and [Metadata](./metadata.md), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and authorize your users.
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.context<{ signGuestBook: () => Promise<void> }>().create();
+
+export const publicProcedure = t.procedure;
+
+// ---cut---
+
 export const authorizedProcedure = publicProcedure
   .input(z.object({ townName: z.string() }))
   .use((opts) => {

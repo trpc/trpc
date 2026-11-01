@@ -1,6 +1,8 @@
 ---
-title: "Sponsors"
-description: ""
+id: sponsors
+title: Sponsors
+sidebar_label: Sponsors
+slug: /community/sponsors
 section: "Community"
 order: 68
 ---
@@ -26,6 +28,10 @@ Also, if your company is using tRPC and want to support long-term maintenance of
         Become a Sponsor!
       </span>
     </a>
+
+<!-- SPONSORS:LIST:START -->
+<!-- oxfmt-ignore-start -->
+<!-- markdownlint-disable -->
 
 ### 🥈 Silver Sponsors
 
@@ -65,3 +71,8 @@ Also, if your company is using tRPC and want to support long-term maintenance of
    <td align="center"><a href="https://usevault.app/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/203708130?v=4&s=100" width="100" alt="Vault"/><br />Vault</a></td>
   </tr>
 </table>
+
+<!-- markdownlint-restore -->
+<!-- oxfmt-ignore-end -->
+
+<!-- SPONSORS:LIST:END -->

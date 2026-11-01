@@ -1,15 +1,19 @@
 ---
-title: "Example Apps"
-description: "Example apps built with tRPC"
+id: example-apps
+title: Example Apps
+sidebar_label: Example Apps
+slug: /example-apps
+description: Example apps built with tRPC
 section: "tRPC"
 order: 5
 ---
 
-> [!NOTE]
-> Although it is possible to install the examples using any of listed package managers, the examples are all configured
-> to use [pnpm](https://pnpm.io) as the script runner, so make sure to [install](https://pnpm.io/installation) it first.
->
-> If you wish to use `npm` or `yarn`, make sure to update the relevant `package.json` `scripts` entries in generated example.
+:::note
+Although it is possible to install the examples using any of listed package managers, the examples are all configured
+to use [pnpm](https://pnpm.io) as the script runner, so make sure to [install](https://pnpm.io/installation) it first.
+
+If you wish to use `npm` or `yarn`, make sure to update the relevant `package.json` `scripts` entries in generated example.
+:::
 
 ---
 

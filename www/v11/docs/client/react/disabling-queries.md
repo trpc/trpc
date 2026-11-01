@@ -1,6 +1,8 @@
 ---
-title: "Disabling Queries"
-description: ""
+id: disabling-queries
+title: Disabling Queries
+sidebar_label: Disabling Queries
+slug: /client/react/disabling-queries
 section: "Client Usage"
 parent: "client/react"
 order: 66

@@ -1,6 +1,8 @@
 ---
-title: "Context"
-description: ""
+id: context
+title: Context
+sidebar_label: Context
+slug: /server/context
 section: "Backend Usage"
 order: 11
 ---
@@ -15,7 +17,9 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 
 This will make sure your context is properly typed in your procedures and middlewares.
 
-```ts
+```ts twoslash
+import * as trpc from '@trpc/server';
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
@@ -29,11 +33,15 @@ export const createContext = async (opts: CreateNextContextOptions) => {
 };
 
 const t1 = initTRPC.context<typeof createContext>().create();
+// @noErrors
 t1.procedure.use(({ ctx }) => { ... });
+//                  ^?
 
 type Context = Awaited<ReturnType<typeof createContext>>;
 const t2 = initTRPC.context<Context>().create();
+// @noErrors
 t2.procedure.use(({ ctx }) => { ... });
+//                  ^?
 ```
 
 ## Creating the context
@@ -76,8 +84,11 @@ const helpers = createServerSideHelpers({
 
 ## Example code
 
-```tsx
+<!-- oxfmt-ignore-start -->
+
+```tsx twoslash
 // -------------------------------------------------
+// @filename: context.ts
 // -------------------------------------------------
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
@@ -97,6 +108,7 @@ export async function createContext(opts: CreateNextContextOptions) {
 export type Context = Awaited<ReturnType<typeof createContext>>;
 
 // -------------------------------------------------
+// @filename: trpc.ts
 // -------------------------------------------------
 import { initTRPC, TRPCError } from '@trpc/server';
 import { Context } from './context';
@@ -128,6 +140,8 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
   });
 });
 ```
+
+<!-- oxfmt-ignore-end -->
 
 ## Inner and outer context
 

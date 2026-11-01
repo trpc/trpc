@@ -1,9 +1,76 @@
 ---
-title: "Quickstart"
-description: "Learn how to quickly get started and setup tRPC"
+id: quickstart
+title: Quickstart
+sidebar_label: Quickstart
+slug: /quickstart
+description: Learn how to quickly get started and setup tRPC
 section: "tRPC"
 order: 3
 ---
+
+```twoslash include db
+type User = { id: string; name: string };
+
+// Imaginary database
+const users: User[] = [];
+export const db = {
+  user: {
+    findMany: async () => users,
+    findById: async (id: string) => users.find((user) => user.id === id),
+    create: async (data: { name: string }) => {
+      const user = { id: String(users.length + 1), ...data };
+      users.push(user);
+      return user;
+    },
+  },
+};
+```
+
+```twoslash include trpc
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+```twoslash include server
+import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import { z } from "zod";
+import { db } from "./db";
+import { publicProcedure, router } from "./trpc";
+
+const appRouter = router({
+  userList: publicProcedure
+    .query(async () => {
+      const users = await db.user.findMany();
+      return users;
+    }),
+  userById: publicProcedure
+    .input(z.string())
+    .query(async (opts) => {
+      const { input } = opts;
+      const user = await db.user.findById(input);
+      return user;
+    }),
+  userCreate: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(async (opts) => {
+      const { input } = opts;
+      const user = await db.user.create(input);
+      return user;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+
+const server = createHTTPServer({
+  router: appRouter,
+});
+
+server.listen(3000);
+```
 
 tRPC combines concepts from [REST](https://www.sitepoint.com/rest-api/) and [GraphQL](https://graphql.org/). If you are unfamiliar with either, take a look at the key [Concepts](./concepts.md).
 
@@ -11,10 +78,12 @@ tRPC combines concepts from [REST](https://www.sitepoint.com/rest-api/) and [Gra
 
 tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](./client/react/setup.md) and [usage with Next.js](./client/nextjs/setup.md).
 
-> [!NOTE] Requirements
->
-> - tRPC requires TypeScript >= 4.7.0
-> - We strongly recommend you using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
+:::info Requirements
+
+- tRPC requires TypeScript >= 4.7.0
+- We strongly recommend you using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
+
+:::
 
 Start off by installing the `@trpc/server` and `@trpc/client` packages:
 
@@ -65,7 +134,7 @@ userCreate: (data: { name: string }) => User;
 
 First, let's initialize the tRPC backend. It's good convention to do this in a separate file and export reusable helper functions instead of the entire tRPC object.
 
-```ts title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
 /**
@@ -84,7 +153,11 @@ export const publicProcedure = t.procedure;
 
 Next, we'll initialize our main router instance, commonly referred to as `appRouter`, in which we'll later add procedures to. Lastly, we need to export the type of the router which we'll later use on the client side.
 
-```ts title="server/index.ts"
+```ts twoslash title='server/index.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: server.ts
+// ---cut---
 import { router } from './trpc';
 
 const appRouter = router({
@@ -102,7 +175,13 @@ Use `publicProcedure.query()` to add a query procedure to the router.
 
 The following creates a query procedure called `userList` that returns a list of users from our database:
 
-```ts title="server/index.ts"
+```ts twoslash title='server/index.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+// ---cut---
 import { db } from './db';
 import { publicProcedure, router } from './trpc';
 
@@ -110,6 +189,7 @@ const appRouter = router({
   userList: publicProcedure.query(async () => {
     // Retrieve users from a datasource, this is an imaginary database
     const users = await db.user.findMany();
+    //    ^?
     return users;
   }),
 });
@@ -129,7 +209,16 @@ The input parser should be a function that validates and casts the input of this
 <br />
 <br />
 
-```ts title="server/index.ts"
+```ts twoslash title='server/index.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
+
+// ---cut---
 const appRouter = router({
   // ...
   userById: publicProcedure
@@ -146,8 +235,10 @@ const appRouter = router({
     })
     .query(async (opts) => {
       const { input } = opts;
+      //      ^?
       // Retrieve the user with the given ID
       const user = await db.user.findById(input);
+      //    ^?
       return user;
     }),
 });
@@ -161,7 +252,14 @@ The input parser can be any <code>ZodType</code>, e.g. <code>z.string()</code> o
 <br />
 <br />
 
-```ts title="server.ts"
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+
+// ---cut---
 import { z } from 'zod';
 import { db } from './db';
 import { publicProcedure, router } from './trpc';
@@ -170,8 +268,10 @@ const appRouter = router({
   // ...
   userById: publicProcedure.input(z.string()).query(async (opts) => {
     const { input } = opts;
+    //      ^?
     // Retrieve the user with the given ID
     const user = await db.user.findById(input);
+    //    ^?
     return user;
   }),
 });
@@ -185,7 +285,14 @@ The input parser can be any <code>YupSchema</code>, e.g. <code>yup.string()</cod
 <br />
 <br />
 
-```ts title="server.ts"
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+
+// ---cut---
 import * as yup from 'yup';
 import { db } from './db';
 import { publicProcedure, router } from './trpc';
@@ -196,8 +303,10 @@ const appRouter = router({
     .input(yup.string().required())
     .query(async (opts) => {
       const { input } = opts;
+      //      ^?
       // Retrieve the user with the given ID
       const user = await db.user.findById(input);
+      //    ^?
       return user;
     }),
 });
@@ -211,7 +320,7 @@ With Valibot, you simply need to <code>wrap</code> your schema with [TypeSchema]
 <br />
 <br />
 
-```ts title="server.ts"
+```ts title='server.ts'
 // @filename: trpc.ts
 // @include: trpc
 // @filename: db.ts
@@ -240,8 +349,9 @@ const appRouter = router({
 </div>
 </div>
 
-> [!NOTE] Info
-> Throughout the remaining of this documentation, we will use `zod` as our validation library.
+:::info
+Throughout the remaining of this documentation, we will use `zod` as our validation library.
+:::
 
 ### 4. Adding a mutation procedure
 
@@ -251,15 +361,28 @@ The way a procedure works on the server doesn't change much between a query and 
 
 Let's add a `userCreate` mutation by adding it as a new property on our router object:
 
-```ts title="server.ts"
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+import { z } from 'zod';
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
+
+// ---cut---
+
 const appRouter = router({
   // ...
   userCreate: publicProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async (opts) => {
       const { input } = opts;
+      //      ^?
       // Create a new user in the database
       const user = await db.user.create(input);
+      //    ^?
       return user;
     }),
 });
@@ -269,7 +392,12 @@ const appRouter = router({
 
 Now that we have defined our router, we can serve it. tRPC has many [adapters](./server/adapters.md) so you can use any backend framework of your choice. To keep it simple, we'll use the [`standalone`](./server/adapters/standalone.md) adapter.
 
-```ts title="server/index.ts"
+```ts twoslash title='server/index.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: server.ts
+
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { router } from './trpc';
 
@@ -287,72 +415,26 @@ server.listen(3000);
 <details>
 <summary>See the full backend code</summary>
 
-```ts title="server/db.ts"
-type User = { id: string; name: string };
-
-// Imaginary database
-const users: User[] = [];
-export const db = {
-  user: {
-    findMany: async () => users,
-    findById: async (id: string) => users.find((user) => user.id === id),
-    create: async (data: { name: string }) => {
-      const user = { id: String(users.length + 1), ...data };
-      users.push(user);
-      return user;
-    },
-  },
-};
+```ts twoslash title="server/db.ts"
+// @include: db
 ```
 
 <br />
 
-```ts title="server/trpc.ts"
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+```ts twoslash title="server/trpc.ts"
+// @include: trpc
 ```
 
 <br />
 
-```ts title="server/index.ts"
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
-import { z } from "zod";
-import { db } from "./db";
-import { publicProcedure, router } from "./trpc";
-
-const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users = await db.user.findMany();
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user = await db.user.findById(input);
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user = await db.user.create(input);
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-
-const server = createHTTPServer({
-  router: appRouter,
-});
-
-server.listen(3000);
+```ts twoslash title='server/index.ts'
+// @filename: db.ts
+// @include: db
+// @filename: trpc.ts
+// @include: trpc
+// @filename: server.ts
+// ---cut---
+// @include: server
 ```
 
 </details>
@@ -363,7 +445,16 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 
 ### 1. Setup the tRPC Client
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @target: esnext
+// @filename: db.ts
+// @include: db
+// @filename: trpc.ts
+// @include: trpc
+// @filename: server.ts
+// @include: server
+// @filename: client.ts
+// ---cut---
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -386,20 +477,64 @@ Links in tRPC are similar to links in GraphQL, they let us control the data flow
 
 You now have access to your API procedures on the `trpc` object. Try it out!
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @target: esnext
+// @filename: db.ts
+// @include: db
+// @filename: trpc.ts
+// @include: trpc
+// @filename: server.ts
+// @include: server
+// @filename: client.ts
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+
+// ---cut---
 // Inferred types
 const user = await trpc.userById.query('1');
+//    ^?
 
 const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
+//    ^?
 ```
 
 ### Full autocompletion
 
 You can open up your Intellisense to explore your API on your frontend. You'll find all of your procedure routes waiting for you along with the methods for calling them.
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @target: esnext
+// @filename: db.ts
+// @include: db
+// @filename: trpc.ts
+// @include: trpc
+// @filename: server.ts
+// @include: server
+// @filename: client.ts
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+
+// ---cut---
+// @errors: 2339
 // Full autocompletion on your routes
 trpc.u;
+//    ^|
 ```
 
 ## Try it out for yourself!
@@ -408,13 +543,17 @@ trpc.u;
 
 ## Next steps
 
-> [!TIP]
->
-> We highly encourage you to check out [the example apps](./example-apps.md) to learn about how tRPC is installed in your favorite framework.
+:::tip
 
-> [!TIP]
->
-> By default, tRPC will map complex types like `Date` to their JSON-equivalent _(`string` in the case of `Date`)_. If you want to add to retain the integrity of those types, the easiest way to add support for these is to [use superjson](./server/data-transformers.md#using-superjson) as a Data Transformer.
+We highly encourage you to check out [the example apps](./example-apps.md) to learn about how tRPC is installed in your favorite framework.
+
+:::
+
+:::tip
+
+By default, tRPC will map complex types like `Date` to their JSON-equivalent _(`string` in the case of `Date`)_. If you want to add to retain the integrity of those types, the easiest way to add support for these is to [use superjson](./server/data-transformers.md#using-superjson) as a Data Transformer.
+
+:::
 
 tRPC includes more sophisticated client-side tooling designed for React projects and Next.js.
 

@@ -32,6 +32,7 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
 import type { DocHeading } from '../src/content/types.ts';
+import { versionsByPath } from '../src/site.ts';
 import { collapseRegions } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
@@ -159,16 +160,21 @@ export type ResolvedLink =
 /**
  * Links are written as relative paths between the `.md` files
  * (`../client/links.md#batching`), so they work on GitHub too. A link to a
- * page points at `<basePath>/<slug>`, and a link out of the docs folder (an
+ * page points at its `pagePath`, and a link out of the docs folder (an
  * example, a design note) points at the file on GitHub, by its path from
  * where `contentPath` (the folder's path there) puts the folder. A path from
- * `/` is a page of the site, as written.
+ * `/` is a page of the site, as written: one of these pages if it's under
+ * the `basePath` of `served` (where they're served) and no other version's.
  */
 export function resolveLink(
   fromSlug: string,
   url: string,
   contentPath = 'docs',
+  served?: Pick<RenderOptions, 'basePath' | 'firstDoc'>,
 ): ResolvedLink {
+  if (url.startsWith('/') && served) {
+    return servedLink(url, served);
+  }
   if (
     /^[a-z][a-z\d+.-]*:/i.test(url) ||
     url.startsWith('#') ||
@@ -192,8 +198,47 @@ export function resolveLink(
   return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
 }
 
+function servedLink(
+  url: string,
+  served: Pick<RenderOptions, 'basePath' | 'firstDoc'>,
+): ResolvedLink {
+  const target = new URL(url, 'https://site.invalid');
+  const pathname = decodeURIComponent(target.pathname);
+  const version = versionsByPath.find(
+    (candidate) =>
+      pathname === candidate.basePath ||
+      pathname.startsWith(`${candidate.basePath}/`),
+  );
+  const slug =
+    pathname === served.basePath
+      ? served.firstDoc
+      : pathname.slice(served.basePath.length + 1);
+  if (version?.basePath !== served.basePath || !slug) {
+    return { kind: 'other' };
+  }
+  const hash = target.hash
+    ? decodeURIComponent(target.hash.slice(1))
+    : undefined;
+  return { kind: 'doc', link: { hash, slug } };
+}
+
+/** A page's path: `<basePath>/<slug>`, and `basePath` itself for `firstDoc`. */
+export const pagePath = (
+  options: {
+    readonly basePath: string;
+    readonly firstDoc?: string | undefined;
+  },
+  slug: string,
+) =>
+  slug === options.firstDoc ? options.basePath : `${options.basePath}/${slug}`;
+
 /** The options a page's links resolve with. */
-type LinkOptions = 'basePath' | 'contentPath' | 'slug' | 'sourceUrl';
+type LinkOptions =
+  | 'basePath'
+  | 'contentPath'
+  | 'firstDoc'
+  | 'slug'
+  | 'sourceUrl';
 
 function remarkLinks(
   options: Pick<RenderOptions, LinkOptions>,
@@ -201,10 +246,15 @@ function remarkLinks(
 ) {
   return () => (tree: MdastRoot) => {
     visit(tree, 'link', (node: Link) => {
-      const resolved = resolveLink(options.slug, node.url, options.contentPath);
+      const resolved = resolveLink(
+        options.slug,
+        node.url,
+        options.contentPath,
+        options,
+      );
       if (resolved.kind === 'doc') {
         links.push(resolved.link);
-        node.url = `${options.basePath}/${resolved.link.slug}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
+        node.url = `${pagePath(options, resolved.link.slug)}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
       } else if (resolved.kind === 'source') {
         node.url = `${options.sourceUrl}/${resolved.path}`;
       }
@@ -859,6 +909,8 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
 export interface RenderOptions {
   /** Where the pages are served: `/docs`. Links between them point under it. */
   readonly basePath: string;
+  /** The page served at `basePath` itself, if any. */
+  readonly firstDoc?: string | undefined;
   /** The dir of the sample apps the code blocks compile in. */
   readonly samplesDir: string;
   /** The sample app inline blocks compile in: `docs`, or `v11` for the v11 docs. */

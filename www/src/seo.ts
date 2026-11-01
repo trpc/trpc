@@ -1,4 +1,4 @@
-import { atTrpcIo, blog, type CopiedVersion, site } from './site.ts';
+import { blog, type CopiedVersion, docPath, site } from './site.ts';
 
 type JsonValue =
   | boolean
@@ -17,8 +17,6 @@ interface JsonObject {
 export interface ArticleSeo {
   /** The authors' profile URLs. */
   readonly authors?: ReadonlyArray<string>;
-  /** ISO date. */
-  readonly modified?: string | undefined;
   /** ISO date. */
   readonly published?: string;
   readonly section?: string;
@@ -67,19 +65,12 @@ export function absoluteUrl(path: string) {
   return new URL(path, site.url).href;
 }
 
-/** A copied page on trpc.io, which serves each version's first page at its `trpcPath`. */
-export function trpcPageUrl(version: CopiedVersion, slug: string) {
-  return `${version.url}${version.trpcPath}${slug === version.firstDoc ? '' : `/${slug}`}`;
-}
-
 /**
  * A copied page's canonical URL: trpc.io's, which is the page itself once
- * the site is trpc.io (where the first page has its own path).
+ * the site is trpc.io.
  */
 export function copyPageUrl(version: CopiedVersion, slug: string) {
-  return atTrpcIo
-    ? absoluteUrl(`${version.basePath}/${slug}`)
-    : trpcPageUrl(version, slug);
+  return `${version.url}${docPath(version, slug)}`;
 }
 
 /** A copied post on trpc.io's blog. */
@@ -116,9 +107,6 @@ function articleMeta(article: ArticleSeo | undefined) {
     ...(article.published === undefined
       ? []
       : [{ content: article.published, property: 'article:published_time' }]),
-    ...(article.modified === undefined
-      ? []
-      : [{ content: article.modified, property: 'article:modified_time' }]),
     ...(article.authors ?? []).map((author) => ({
       content: author,
       property: 'article:author',

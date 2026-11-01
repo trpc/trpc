@@ -1,6 +1,8 @@
 ---
-title: "Contributing"
-description: ""
+id: contributing
+title: Contributing
+sidebar_label: Contributing
+slug: /contributing
 section: "tRPC"
 order: 5
 ---

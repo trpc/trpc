@@ -11,7 +11,8 @@ import {
   DialogTrigger,
 } from '@shared/ui/components/dialog';
 import { cn } from '@shared/ui/lib/utils';
-import { site } from '~/site.ts';
+import { v11Docs } from '~/content/docs.ts';
+import { docsLinks, site } from '~/site.ts';
 
 import { DocsNav } from './docs-nav.tsx';
 import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
@@ -72,6 +73,21 @@ export function MobileNav() {
           >
             <DiscordIcon />
           </a>
+        </nav>
+        <nav aria-label="Main" className="flex flex-col border-b pb-4">
+          {docsLinks.map((link) => (
+            <Link
+              activeOptions={{ exact: true }}
+              activeProps={{ 'aria-current': 'page' }}
+              className="rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+              key={link.label}
+              onClick={() => setOpen(false)}
+              params={{ _splat: link.slug }}
+              to={v11Docs.route}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
         <p className="text-base leading-none font-medium">Documentation</p>
         <DocsNav

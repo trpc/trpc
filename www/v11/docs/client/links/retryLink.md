@@ -1,6 +1,8 @@
 ---
-title: "Retry Link"
-description: ""
+id: retryLink
+title: Retry Link
+sidebar_label: Retry Link
+slug: /client/links/retryLink
 section: "Client Usage"
 parent: "client/links"
 order: 39
@@ -8,8 +10,9 @@ order: 39
 
 `retryLink` is a link that allows you to retry failed operations in your tRPC client. It provides a customizable way to handle transient errors, such as network failures or server errors, by automatically retrying the failed requests based on specified conditions.
 
-> [!TIP]
-> If you use `@trpc/react-query` you will generally **not** need this link as it's built into the `useQuery()` and the `useMutation()` hooks from `@tanstack/react-query`.
+:::tip
+If you use `@trpc/react-query` you will generally **not** need this link as it's built into the `useQuery()` and the `useMutation()` hooks from `@tanstack/react-query`.
+:::
 
 ## Usage
 

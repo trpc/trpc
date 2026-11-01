@@ -1,7 +1,8 @@
 ---
-title: "tRPC Client"
-label: "Vanilla Client"
-description: ""
+id: introduction
+title: tRPC Client
+sidebar_label: "Vanilla Client"
+slug: /client/vanilla
 section: "Client Usage"
 order: 46
 ---

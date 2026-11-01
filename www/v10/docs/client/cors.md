@@ -1,7 +1,8 @@
 ---
-title: "Send cookies cross-origin"
-label: "CORS & Cookies"
-description: ""
+id: cors
+title: Send cookies cross-origin
+sidebar_label: CORS & Cookies
+slug: /client/cors
 section: "Client Usage"
 order: 58
 ---
@@ -10,7 +11,7 @@ If your API resides on a different origin than your front-end and you wish to se
 
 The arguments provided to the fetch function used by tRPC can be modified as follow.
 
-```ts title="app.ts"
+```ts title='app.ts'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
 const client = createTRPCProxyClient<AppRouter>({
@@ -28,5 +29,6 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-> [!NOTE] Info
-> You also need to enable CORS on your server by modifying your [adapter](../server/adapters.md), or the HTTP server which fronts your API. The best way to do this varies adapter-by-adapter and based on your hosting infrastructure, and individual adapters generally document this process where applicable.
+:::info
+You also need to enable CORS on your server by modifying your [adapter](../server/adapters.md), or the HTTP server which fronts your API. The best way to do this varies adapter-by-adapter and based on your hosting infrastructure, and individual adapters generally document this process where applicable.
+:::

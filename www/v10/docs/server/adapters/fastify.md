@@ -1,7 +1,8 @@
 ---
-title: "Fastify Adapter"
-label: "Fastify"
-description: ""
+id: fastify
+title: Fastify Adapter
+sidebar_label: Fastify
+slug: /server/adapters/fastify
 section: "Backend Usage"
 parent: "server/adapters"
 order: 16
@@ -55,7 +56,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title="router.ts"
+```ts title='router.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -105,7 +106,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title="context.ts"
+```ts title='context.ts'
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -123,10 +124,11 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into a [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
-> [!TIP]
-> Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
+:::tip
+Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
+:::
 
-```ts title="server.ts"
+```ts title='server.ts'
 import {
   fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
@@ -190,7 +192,7 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```ts title="router.ts"
+```ts title='router.ts'
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 
@@ -212,7 +214,7 @@ export const appRouter = t.router({
 
 ### Activate the `useWSS` option
 
-```ts title="server.ts"
+```ts title='server.ts'
 server.register(fastifyTRPCPlugin, {
   useWSS: true,
   // ...

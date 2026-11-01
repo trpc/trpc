@@ -120,7 +120,7 @@ function convert(body: string, files: Record<string, string> = {}, index = 1) {
 }
 
 describe('convertPage', () => {
-  it('writes the frontmatter, with the label only where it differs', () => {
+  it("keeps trpc.io's frontmatter, with what the sidebar says after it", () => {
     expect(
       convertPage(
         page('a', 'docs/a.md', {
@@ -129,13 +129,27 @@ describe('convertPage', () => {
           section: 'tRPC',
           title: 'A "quoted" title',
         }),
-        docsOf({ 'docs/a.md': '---\nid: a\n---\n\nHello.\n' }),
+        docsOf({
+          'docs/a.md': [
+            '---',
+            'id: a',
+            'title: \'A "quoted" title\'',
+            'sidebar_label: Long',
+            'slug: /a',
+            'hide_title: true',
+            '---',
+            '',
+            'Hello.',
+          ].join('\n'),
+        }),
       ).markdown,
     ).toBe(
       [
         '---',
-        'title: "A \\"quoted\\" title"',
-        'label: "Short"',
+        'id: a',
+        'title: \'A "quoted" title\'',
+        'sidebar_label: "Short"',
+        'slug: /a',
         'description: "About a"',
         'section: "tRPC"',
         'order: 3',
@@ -147,207 +161,26 @@ describe('convertPage', () => {
     );
   });
 
-  it('turns admonitions into alerts, apart from the HTML around them', () => {
-    const converted = convert(
-      [
-        '<br />',
-        ':::info',
-        'We use `zod`.',
-        '',
-        '```ts',
-        'z.string();',
-        '```',
-        ':::',
-        '',
-        ':::tip AI Agents',
-        'Install the skills.',
-        ':::',
-      ].join('\n'),
-    );
+  it("keeps trpc.io's Docusaurus syntax, which the renderer reads", () => {
+    const body = [
+      ':::tip AI Agents',
+      'Install the [skills](/docs/server/routers).',
+      ':::',
+      '',
+      '<!-- [old](./gone.md) -->',
+      '',
+      '```twoslash include trpc',
+      'export const t = initTRPC.create();',
+      '```',
+      '',
+      "```TS twoslash title='server.ts'",
+      '// @include: trpc',
+      '```',
+      '',
+    ].join('\n');
+    const converted = convert(body);
     expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe(
-      [
-        '<br />',
-        '',
-        '> [!NOTE] Info',
-        '> We use `zod`.',
-        '>',
-        '> ```ts',
-        '> z.string();',
-        '> ```',
-        '',
-        '> [!TIP] AI Agents',
-        '> Install the skills.',
-        '',
-      ].join('\n'),
-    );
-  });
-
-  it('closes an admonition reopened by mistake, which Docusaurus nests the page in', () => {
-    const converted = convert(
-      [
-        ':::tip',
-        'Careful!',
-        ':::tip',
-        '',
-        '## Next',
-        '',
-        ':::note',
-        'Ok.',
-        ':::',
-      ].join('\n'),
-    );
-    expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe(
-      [
-        '> [!TIP]',
-        '> Careful!',
-        '',
-        '## Next',
-        '',
-        '> [!NOTE]',
-        '> Ok.',
-        '',
-      ].join('\n'),
-    );
-  });
-
-  it('turns tabs into a tab group, with its default tab', () => {
-    const converted = convert(
-      [
-        "import Tabs from '@theme/Tabs';",
-        "import TabItem from '@theme/TabItem';",
-        '',
-        '<Tabs>',
-        '  <TabItem value="vanilla" label="Vanilla">',
-        '    A **function**.',
-        '  </TabItem>',
-        '  <TabItem value="zod" label="Zod" default>',
-        '',
-        '```ts',
-        '  z.string();',
-        '```',
-        '',
-        '  </TabItem>',
-        '</Tabs>',
-      ].join('\n'),
-    );
-    expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe(
-      [
-        '<div class="code-tabs" data-tabs="tabs-vanilla-zod">',
-        '<div data-tab="Vanilla">',
-        '',
-        'A **function**.',
-        '',
-        '</div>',
-        '<div data-tab="Zod" data-active>',
-        '',
-        '```ts',
-        '  z.string();',
-        '```',
-        '',
-        '</div>',
-        '</div>',
-        '',
-      ].join('\n'),
-    );
-  });
-
-  it('groups tabs of package managers with the install commands', () => {
-    const converted = convert(
-      [
-        "import Tabs from '@theme/Tabs';",
-        "import TabItem from '@theme/TabItem';",
-        '',
-        '<Tabs>',
-        '<TabItem value="npm">',
-        '',
-        'npm',
-        '',
-        '</TabItem>',
-        '<TabItem value="pnpm">',
-        '',
-        'pnpm',
-        '',
-        '</TabItem>',
-        '</Tabs>',
-      ].join('\n'),
-    );
-    expect(converted.body).toContain('data-tabs="package-manager"');
-    expect(converted.body).toContain('<div data-tab="pnpm">');
-  });
-
-  const twoslashPage = [
-    '```twoslash include trpc',
-    "import { initTRPC } from '@trpc/server';",
-    'export const t = initTRPC.create();',
-    '```',
-    '',
-    "```TS twoslash title='server.ts'",
-    '// @filename: trpc.ts',
-    '// @include: trpc',
-    '//    ^?',
-    '// @filename: server.ts',
-    '// ---cut---',
-    "import { t } from './trpc';",
-    'const router = t.router({});',
-    '//    ^?',
-    '// @errors: 2322',
-    '```',
-  ].join('\n');
-
-  it("keeps v11's Twoslash blocks, with their includes, for the site to compile", () => {
-    const converted = convert(twoslashPage);
-    expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe(
-      [
-        '```ts twoslash title="server.ts"',
-        '// @filename: trpc.ts',
-        "import { initTRPC } from '@trpc/server';",
-        'export const t = initTRPC.create();',
-        '// @filename: server.ts',
-        '// ---cut---',
-        "import { t } from './trpc';",
-        'const router = t.router({});',
-        '//    ^?',
-        '// @errors: 2322',
-        '```',
-        '',
-      ].join('\n'),
-    );
-  });
-
-  it("shows an older version's Twoslash block as trpc.io does, as plain code", () => {
-    const converted = convert(twoslashPage, {}, 6);
-    expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe(
-      [
-        '```ts title="server.ts"',
-        "import { t } from './trpc';",
-        'const router = t.router({});',
-        '```',
-        '',
-      ].join('\n'),
-    );
-  });
-
-  it('drops HTML comments, with the fences they comment out', () => {
-    const converted = convert(
-      [
-        '<!-- runtypes example is broken -->',
-        '<!--',
-        '```ts twoslash',
-        'broken();',
-        '``` -->',
-        '',
-        '```ts twoslash',
-        'works();',
-        '```',
-      ].join('\n'),
-    );
-    expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe('```ts twoslash\nworks();\n```\n');
+    expect(converted.body).toBe(body);
   });
 
   it('reports an include that no block defines', () => {
@@ -373,9 +206,9 @@ describe('convertPage', () => {
     expect(converted.problems).toEqual([]);
     expect(converted.body).toBe(
       [
-        '[Routers](./routers.md#merging), [links](../client/links.md),',
-        '[intro](../introduction.md), [v9](/v9/docs/nextjs#hooks),',
-        '[v10](/v10/docs/server/routers), [awesome](../community/awesome-trpc.md#list),',
+        '[Routers](./routers.md#merging), [links](/docs/client/links),',
+        '[intro](/docs), [v9](/docs/v9/nextjs#hooks),',
+        '[v10](/docs/v10/server/routers), [awesome](../community/awesome-trpc.md#list),',
         '[old](https://trpc.io/docs/further/old), [chat](https://trpc.io/discord),',
         '[blog](/blog/announcing-trpc-v11) and [npm](https://npmjs.com).',
         '<a href="/docs/client/links">Links</a>',
@@ -576,7 +409,7 @@ describe('convertPost', () => {
         'discussion: 6622',
         '---',
         '',
-        'Today, we are _finally_ shipping [v11](/docs/introduction)',
+        'Today, we are _finally_ shipping [v11](/docs)',
         'with `@trpc/server`!',
         '',
         '## Upgrading',
@@ -597,7 +430,7 @@ describe('convertPost', () => {
     expect(converted.problems).toEqual([]);
     expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
       [
-        'See [routers](/docs/server/routers), [v10](/v10/docs/server/routers),',
+        'See [routers](/docs/server/routers), [v10](/docs/v10/server/routers),',
         '[the post](/blog/announcing-trpc-v11#upgrading),',
         'and [the old one](/blog/announcing-trpc-v11).',
         '',
@@ -969,7 +802,7 @@ describe('dropMissingAnchors', () => {
         '[d](../client/links.md#gone)',
         '```',
         '[e](../client/links.md#gone)',
-        '[f](/v9/docs/nextjs#hooks) [g](/v9/docs/nextjs#gone)',
+        '[f](/docs/v9/nextjs#hooks) [g](/docs/v9/nextjs#gone)',
         '<a href="/docs/client/links#gone">h</a>',
       ].join('\n'),
       { slug: 'server/procedures', version: 'v11' },
@@ -983,14 +816,14 @@ describe('dropMissingAnchors', () => {
         '[d](../client/links.md#gone)',
         '```',
         '[e](../client/links.md)',
-        '[f](/v9/docs/nextjs#hooks) [g](/v9/docs/nextjs)',
+        '[f](/docs/v9/nextjs#hooks) [g](/docs/v9/nextjs)',
         '<a href="/docs/client/links">h</a>',
       ].join('\n'),
     );
     expect(result.dropped).toEqual([
       'v11 server/procedures: ./routers.md#gone',
       'v11 server/procedures: ../client/links.md#gone',
-      'v11 server/procedures: /v9/docs/nextjs#gone',
+      'v11 server/procedures: /docs/v9/nextjs#gone',
       'v11 server/procedures: /docs/client/links#gone',
     ]);
   });

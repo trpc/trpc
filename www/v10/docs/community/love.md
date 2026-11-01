@@ -1,7 +1,8 @@
 ---
-title: "Testimonials / Love"
-label: "Testimonials"
-description: ""
+id: love
+title: Testimonials / Love
+sidebar_label: Testimonials
+slug: /community/love
 section: "Community"
 order: 67
 ---

@@ -1,7 +1,8 @@
 ---
-title: "Usage with Fastify"
-label: "Adapter: Fastify"
-description: ""
+id: fastify
+title: Usage with Fastify
+sidebar_label: 'Adapter: Fastify'
+slug: /fastify
 section: "@trpc/server"
 order: 22
 ---
@@ -54,7 +55,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title="router.ts"
+```ts title='router.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
@@ -105,7 +106,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title="context.ts"
+```ts title='context.ts'
 import { inferAsyncReturnType } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
@@ -124,7 +125,7 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
 import { createContext } from './context';
@@ -178,7 +179,7 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```ts title="router.ts"
+```ts title='router.ts'
 export const appRouter = trpc
   .router()
   // .query(...)
@@ -199,7 +200,7 @@ export const appRouter = trpc
 
 ### Activate the `useWSS` option
 
-```ts title="server.ts"
+```ts title='server.ts'
 server.register(fastifyTRPCPlugin, {
   useWSS: true,
   // ...

@@ -1,7 +1,8 @@
 ---
-title: "tRPC"
-label: "Introduction"
-description: ""
+id: introduction
+title: tRPC
+sidebar_label: Introduction
+slug: /
 section: "tRPC"
 order: 0
 ---

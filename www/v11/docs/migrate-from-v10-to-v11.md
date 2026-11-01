@@ -1,16 +1,19 @@
 ---
-title: "Migrate from v10 to v11"
-description: ""
+id: migrate-from-v10-to-v11
+title: Migrate from v10 to v11
+sidebar_label: Migrate from v10 to v11
+slug: /migrate-from-v10-to-v11
 section: "Extra information"
 order: 84
 ---
 
 ## Migrating from v10 to v11
 
-> [!TIP]
-> For most users, the migration should be quick & straight-forward.
->
-> If the below three steps aren't enough, look through the below document for _"rarely breaking"_.
+:::tip
+For most users, the migration should be quick & straight-forward.
+
+If the below three steps aren't enough, look through the below document for _"rarely breaking"_.
+:::
 
 ### 1. Install new versions
 

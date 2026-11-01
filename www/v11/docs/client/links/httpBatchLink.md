@@ -1,6 +1,8 @@
 ---
-title: "HTTP Batch Link"
-description: ""
+id: httpBatchLink
+title: HTTP Batch Link
+sidebar_label: HTTP Batch Link
+slug: /client/links/httpBatchLink
 section: "Client Usage"
 parent: "client/links"
 order: 32
@@ -149,7 +151,7 @@ createHTTPServer({
 
 or for example if using Next.js:
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   maxBatchSize: 10,
 });
@@ -198,7 +200,7 @@ createHTTPServer({
 
 or, if you're using Next.js:
 
-```ts twoslash title="pages/api/trpc/[trpc].ts"
+```ts twoslash title='pages/api/trpc/[trpc].ts'
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -241,7 +243,7 @@ const client = createTRPCClient<AppRouter>({
 
 or, if you're using Next.js:
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();

@@ -1,12 +1,15 @@
 ---
-title: "Usage with Next.js"
-description: ""
+id: introduction
+title: Usage with Next.js
+sidebar_label: Usage with Next.js
+slug: /nextjs
 section: "tRPC"
 order: 3
 ---
 
-> [!TIP]
-> If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](./example-apps.md)
+:::tip
+If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](./example-apps.md)
+:::
 
 tRPC and Next.js are a match made in heaven! Next.js makes it easy for you to build your client and server together in one codebase. This makes it easy to share types between them.
 
@@ -85,7 +88,7 @@ Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split
 <details>
 <summary>View sample router</summary>
 
-```ts title="./pages/api/trpc/[trpc].ts"
+```ts title='./pages/api/trpc/[trpc].ts'
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
@@ -119,7 +122,7 @@ export default trpcNext.createNextApiHandler({
 
 Create a set of strongly-typed hooks using your API's type signature.
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 import { createReactQueryHooks } from '@trpc/react';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
@@ -131,7 +134,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 The `createReactQueryHooks` function expects certain parameters to be passed via the Context API. To set these parameters, create a custom `_app.tsx` using the `withTRPC` higher-order component:
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 import type { AppRouter } from './api/trpc/[trpc]';
@@ -167,7 +170,7 @@ export default withTRPC<AppRouter>({
 
 ### 6. Make API requests
 
-```tsx title="pages/index.tsx"
+```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
@@ -211,7 +214,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 export default withTRPC<AppRouter>({
   config(config) {
     /* [...] */

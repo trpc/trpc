@@ -1,14 +1,18 @@
 ---
-title: "Usage with React"
-description: ""
+id: introduction
+title: Usage with React
+sidebar_label: Usage with React
+slug: /react
 section: "tRPC"
 order: 4
 ---
 
-> [!NOTE] Info
->
-> - If you're using Next.js, read the [Usage with Next.js](./nextjs.md) guide instead.
-> - In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
+:::info
+
+- If you're using Next.js, read the [Usage with Next.js](./nextjs.md) guide instead.
+- In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
+
+:::
 
 ## Add tRPC to existing React project
 
@@ -71,7 +75,7 @@ yarn add @trpc/client @trpc/server @trpc/react react-query@3
 
 Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 // utils/trpc.ts
 import { createReactQueryHooks } from '@trpc/react';
 import type { AppRouter } from '../path/to/router.ts';
@@ -84,7 +88,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 
 In your `App.tsx`
 
-```tsx title="App.tsx"
+```tsx title='App.tsx'
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { trpc } from './utils/trpc';
@@ -115,7 +119,7 @@ export function App() {
 
 #### 4. Fetch data
 
-```tsx title="pages/IndexPage.tsx"
+```tsx title='pages/IndexPage.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {

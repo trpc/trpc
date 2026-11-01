@@ -1,12 +1,16 @@
 ---
-title: "React Query Integration (Classic)"
-description: "React Query Integration"
+id: overview
+title: React Query Integration (Classic)
+sidebar_label: "React Query Integration (Classic)"
+description: React Query Integration
+slug: /client/react
 section: "Client Usage"
 order: 52
 ---
 
-> [!TIP]
-> These are the docs for our 'Classic' React Query integration, which (while still supported) is not the recommended way to start new tRPC projects with TanStack React Query. We recommend using the new [TanStack React Query Integration](./tanstack-react-query/setup.md) instead.
+:::tip
+These are the docs for our 'Classic' React Query integration, which (while still supported) is not the recommended way to start new tRPC projects with TanStack React Query. We recommend using the new [TanStack React Query Integration](/docs/client/tanstack-react-query/setup) instead.
+:::
 
 tRPC offers a first class integration with React. Under the hood this is simply a wrapper around the very popular [@tanstack/react-query](https://tanstack.com/query/latest), so we recommend that you familiarize yourself with React Query, as their docs go into much greater depth on its usage.
 
@@ -15,9 +19,9 @@ If you are using Next.js we recommend using [our integration with that](./nextjs
 <details>
 <summary>❓ Do I have to use an integration?</summary>
 
-No! The integration is fully optional. You can use `@tanstack/react-query` using just a [vanilla tRPC client](./vanilla.md), although then you'll have to manually manage query keys and do not get the same level of DX as when using the integration package.
+No! The integration is fully optional. You can use `@tanstack/react-query` using just a [vanilla tRPC client](/docs/client/vanilla), although then you'll have to manually manage query keys and do not get the same level of DX as when using the integration package.
 
-```ts twoslash title="utils/trpc.ts"
+```ts twoslash title='utils/trpc.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -41,7 +45,7 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-```tsx twoslash title="components/PostList.tsx"
+```tsx twoslash title='components/PostList.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -84,7 +88,7 @@ function PostList() {
 
 This library enables usage directly within React components.
 
-```tsx twoslash title="pages/IndexPage.tsx"
+```tsx twoslash title='pages/IndexPage.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -126,5 +130,5 @@ export default function IndexPage() {
 The wrapper abstracts some aspects of React Query for you:
 
 - Query Keys - these are generated and managed by tRPC on your behalf, based on the procedure inputs you provide
-  - If you need the query key which tRPC calculates, you can use [getQueryKey](./react/getQueryKey.md)
+  - If you need the query key which tRPC calculates, you can use [getQueryKey](/docs/client/react/getQueryKey)
 - Type safe by default - the types you provide in your tRPC Backend also drive the types of your React Query client, providing safety throughout your React app

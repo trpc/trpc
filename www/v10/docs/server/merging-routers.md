@@ -1,6 +1,8 @@
 ---
-title: "Merging Routers"
-description: ""
+id: merging-routers
+title: Merging Routers
+sidebar_label: Merging Routers
+slug: /server/merging-routers
 section: "Backend Usage"
 order: 10
 ---
@@ -9,7 +11,8 @@ Writing all API-code in your code in the same file is not a great idea. It's eas
 
 ## Merging with child routers
 
-```ts title="server.ts"
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
@@ -18,6 +21,7 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
+// @filename: routers/_app.ts
 import { router } from '../trpc';
 import { z } from 'zod';
 
@@ -35,6 +39,7 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 
+// @filename: routers/post.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const postRouter = router({
@@ -46,6 +51,7 @@ export const postRouter = router({
     )
     .mutation((opts) => {
       const { input } = opts;
+      //        ^?
       // [...]
     }),
   list: publicProcedure.query(() => {
@@ -54,6 +60,7 @@ export const postRouter = router({
   }),
 });
 
+// @filename: routers/user.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const userRouter = router({
@@ -62,13 +69,15 @@ export const userRouter = router({
     return [];
   }),
 });
+
 ```
 
 ## Merging with `t.mergeRouters`
 
 If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
 
-```ts title="server.ts"
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
@@ -77,6 +86,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;
 
+// @filename: routers/_app.ts
 import { router, publicProcedure, mergeRouters } from '../trpc';
 import { z } from 'zod';
 
@@ -87,6 +97,7 @@ const appRouter = mergeRouters(userRouter, postRouter)
 
 export type AppRouter = typeof appRouter;
 
+// @filename: routers/post.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const postRouter = router({
@@ -98,6 +109,7 @@ export const postRouter = router({
     )
     .mutation((opts) => {
       const { input } = opts;
+      //        ^?
       // [...]
     }),
   postList: publicProcedure.query(() => {
@@ -107,6 +119,7 @@ export const postRouter = router({
 });
 
 
+// @filename: routers/user.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 export const userRouter = router({
@@ -115,4 +128,5 @@ export const userRouter = router({
     return [];
   }),
 });
+
 ```

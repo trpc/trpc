@@ -1,20 +1,24 @@
 ---
-title: "Server Side Calls"
-description: ""
+id: server-side-calls
+title: Server Side Calls
+sidebar_label: Server Side Calls
+slug: /server/server-side-calls
 section: "Backend Usage"
 order: 19
 ---
 
 You may need to call your procedure(s) directly from the same server they're hosted in, `createCallerFactory()` can be used to achieve this. This is useful for server-side calls and for integration testing of your tRPC procedures.
 
-> [!NOTE] Info
->
-> `createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
->
-> <div class="flex gap-2 w-full justify-between pt-2">
->   <img src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png" class="w-[49.5%]" />
->   <img src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png" class="w-[49.5%]" />
-> </div>
+:::info
+
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
+
+<div class="flex gap-2 w-full justify-between pt-2">
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png" class="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png" class="w-[49.5%]" />
+</div>
+
+:::
 
 ## Create caller
 
@@ -204,9 +208,11 @@ We create a middleware to check the context before executing the `secret` proced
 
 <br />
 
-> [!NOTE] Info
->
-> Middlewares are performed before any procedure(s) are called.
+:::info
+
+Middlewares are performed before any procedure(s) are called.
+
+:::
 
 <br />
 
@@ -263,10 +269,12 @@ const router = t.router({
 
 ### Example for a Next.js API endpoint
 
-> [!TIP]
->
-> This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
-> how to call a procedure from another, custom endpoint.
+:::tip
+
+This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
+how to call a procedure from another, custom endpoint.
+
+:::
 
 ```ts twoslash
 // @target: esnext

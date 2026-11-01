@@ -1,6 +1,8 @@
 ---
-title: "HTTP RPC Specification"
-description: ""
+id: rpc
+title: HTTP RPC Specification
+sidebar_label: HTTP RPC Specification
+slug: /rpc
 section: "Extra information"
 order: 36
 ---
@@ -26,7 +28,7 @@ When batching, we combine all parallel procedure calls of the same type in one r
 
 #### Given a router like this exposed at `/api/trpc`:
 
-```tsx title="server/router.ts"
+```tsx title='server/router.ts'
 export const appRouter = trpc
   .router<Context>()
   .query('postById', {
@@ -49,7 +51,7 @@ export const appRouter = trpc
 
 #### .. And two queries defined like this in a React component:
 
-```tsx title="MyComponent.tsx"
+```tsx title='MyComponent.tsx'
 export function MyComponent() {
   const post1 = trpc.useQuery(['postById', '1']);
   const relatedPosts = trpc.useQuery(['relatedPosts', '1']);

@@ -1,6 +1,8 @@
 ---
-title: "Next.js Integration"
-description: ""
+id: introduction
+title: Next.js Integration
+sidebar_label: "Next.js Integration"
+slug: /client/nextjs
 section: "Client Usage"
 order: 39
 ---
@@ -17,5 +19,6 @@ When using the Next.js integration, you'll get the following features:
 - **Static site generation** - Prefetch queries on the server and generate static HTML files that are ready to be served. Read more about [Static site generation](./nextjs/ssg.md).
 - **Automatic Provider Wrapping** - `@trpc/next` provides a higher-order component (HOC) that wraps your app with the necessary providers so you don't have to do it yourself.
 
-> [!TIP]
-> If you're using tRPC in a new project, consider using one of the example projects for reference: [tRPC Example Projects](../example-apps.md)
+:::tip
+If you're using tRPC in a new project, consider using one of the example projects for reference: [tRPC Example Projects](../example-apps.md)
+:::

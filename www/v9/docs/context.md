@@ -1,6 +1,8 @@
 ---
-title: "Request Context"
-description: ""
+id: context
+title: Request Context
+sidebar_label: Request Context
+slug: /context
 section: "@trpc/server"
 order: 11
 ---
@@ -9,7 +11,7 @@ The `createContext()` function is called for each request and the result is prop
 
 ## Example code
 
-```ts title="server/context.ts"
+```ts title='server/context.ts'
 import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 

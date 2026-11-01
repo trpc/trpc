@@ -1,23 +1,9 @@
 /**
- * The sitemap TanStack Start writes, checked and corrected: it gives a page
- * without a `lastmod` of its own the build's date, which says every page
- * changed on every deploy, and lists only the pages `vite.config.ts` names,
- * so a new route could be left out.
+ * The sitemap TanStack Start writes, checked and corrected: it dates every
+ * page with the build, which says every page changed on every deploy, so
+ * the dates go; and it lists only the pages `vite.config.ts` names, so a
+ * new route could be left out.
  */
-import { Schema } from 'effect';
-
-/** `pages.json`, which TanStack Start writes next to the sitemap: the pages it lists, as `vite.config.ts` gave them. */
-export const SitemapPages = Schema.Struct({
-  pages: Schema.Array(
-    Schema.Struct({
-      path: Schema.String,
-      sitemap: Schema.optional(
-        Schema.Struct({ lastmod: Schema.optional(Schema.String) }),
-      ),
-    }),
-  ),
-});
-
 const locOf = (url: string) => /<loc>([^<]*)<\/loc>/.exec(url)?.[1];
 
 /** The paths `sitemap` lists, on `host`. */
@@ -28,24 +14,9 @@ export function sitemapPaths(sitemap: string, host: string) {
   });
 }
 
-/** `sitemap` without the `<lastmod>` of the pages `pages` gave none. */
-export function withRealLastmods(
-  sitemap: string,
-  pages: typeof SitemapPages.Type,
-  host: string,
-) {
-  const dated = new Set(
-    pages.pages
-      .filter((page) => page.sitemap?.lastmod !== undefined)
-      .map((page) => `${host}${page.path}`),
-  );
-  return sitemap.replaceAll(/<url>[\s\S]*?<\/url>/g, (url) => {
-    const loc = locOf(url);
-    return loc !== undefined && dated.has(loc)
-      ? url
-      : url.replace(/\s*<lastmod>[^<]*<\/lastmod>/, '');
-  });
-}
+/** `sitemap` without its `<lastmod>`s. */
+export const withoutLastmods = (sitemap: string) =>
+  sitemap.replaceAll(/\s*<lastmod>[^<]*<\/lastmod>/g, '');
 
 /** The page each prerendered file is: `docs/a/index.html` is `/docs/a`. */
 export function pagePaths(files: ReadonlyArray<string>) {

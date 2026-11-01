@@ -1,6 +1,8 @@
 ---
-title: "useQueries()"
-description: ""
+id: useQueries
+title: useQueries()
+sidebar_label: useQueries()
+slug: /client/react/useQueries
 section: "Client Usage"
 parent: "client/react"
 order: 35
@@ -10,15 +12,17 @@ The `useQueries` hook can be used to fetch a variable number of queries at the s
 
 The main use case for such a hook is to be able to fetch a number of queries, usually of the same type. For example if you fetch a list of todo ids, you can then map over them in a useQueries hook calling a byId endpoint that would fetch the details of each todo.
 
-> [!NOTE]
-> While fetching multiple types in a `useQueries` hook is possible, there is not much of an advantage compared to using multiple `useQuery` calls unless you use the `suspense` option as that `useQueries` can trigger suspense in parallel while multiple `useQuery` calls would waterfall.
+:::note
+While fetching multiple types in a `useQueries` hook is possible, there is not much of an advantage compared to using multiple `useQuery` calls unless you use the `suspense` option as that `useQueries` can trigger suspense in parallel while multiple `useQuery` calls would waterfall.
+:::
 
 ## Usage
 
 The useQueries hook is the same as that of [@tanstack/query useQueries](https://tanstack.com/query/v4/docs/react/reference/useQueries). The only difference is that you pass in a function that returns an array of queries instead of an array of queries inside an object parameter.
 
-> [!TIP]
-> When you're using the [`httpBatchLink`](../links/httpBatchLink.md) or [`wsLink`](../links/wsLink.md), the below will end up being only 1 HTTP call to your server. Additionally, if the underlying procedure is using something like Prisma's `findUnique()` it will [automatically batch](https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) & do exactly 1 database query as a well.
+:::tip
+When you're using the [`httpBatchLink`](../links/httpBatchLink.md) or [`wsLink`](../links/wsLink.md), the below will end up being only 1 HTTP call to your server. Additionally, if the underlying procedure is using something like Prisma's `findUnique()` it will [automatically batch](https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) & do exactly 1 database query as a well.
+:::
 
 ```tsx
 const Component = (props: { postIds: string[] }) => {

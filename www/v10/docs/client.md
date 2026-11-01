@@ -1,7 +1,8 @@
 ---
-title: "Client Overview"
-label: "Overview"
-description: ""
+id: overview
+title: Client Overview
+sidebar_label: Overview
+slug: /client
 section: "Client Usage"
 order: 27
 ---

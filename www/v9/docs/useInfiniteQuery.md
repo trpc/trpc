@@ -1,20 +1,23 @@
 ---
-title: "useInfiniteQuery"
-label: "useInfiniteQuery()"
-description: ""
+id: useInfiniteQuery
+title: useInfiniteQuery
+sidebar_label: useInfiniteQuery()
+slug: /useInfiniteQuery
 section: "@trpc/react"
 order: 30
 ---
 
-> [!NOTE] Info
->
-> - Your procedure needs to accept a `cursor` input of `any` type
-> - For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v3/docs/react/reference/useInfiniteQuery)
-> - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+:::info
+
+- Your procedure needs to accept a `cursor` input of `any` type
+- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v3/docs/react/reference/useInfiniteQuery)
+- In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+
+:::
 
 ## Example Procedure
 
-```tsx title="server/routers/_app.ts"
+```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { Context } from './[trpc]';
 import { z } from 'zod';
@@ -55,7 +58,7 @@ export const appRouter = trpc.router<Context>()
 
 ## Example React Component
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -80,7 +83,7 @@ export function MyComponent() {
 
 This helper gets the currently cached data from an existing infinite query
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -100,7 +103,7 @@ export function MyComponent() {
 
 This helper allows you to update a queries cached data
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

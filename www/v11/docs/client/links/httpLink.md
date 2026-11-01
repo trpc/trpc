@@ -1,6 +1,8 @@
 ---
-title: "HTTP Link"
-description: ""
+id: httpLink
+title: HTTP Link
+sidebar_label: HTTP Link
+slug: /client/links/httpLink
 section: "Client Usage"
 parent: "client/links"
 order: 31

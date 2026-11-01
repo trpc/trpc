@@ -1,6 +1,8 @@
 ---
-title: "Aborting Procedure Calls"
-description: ""
+id: aborting-procedure-calls
+title: Aborting Procedure Calls
+sidebar_label: Aborting Procedure Calls
+slug: /client/vanilla/aborting-procedure-calls
 section: "Client Usage"
 parent: "client/vanilla"
 order: 46

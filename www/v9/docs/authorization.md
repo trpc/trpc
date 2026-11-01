@@ -1,6 +1,8 @@
 ---
-title: "Authorization"
-description: ""
+id: authorization
+title: Authorization
+sidebar_label: Authorization
+slug: /authorization
 section: "@trpc/server"
 order: 14
 ---
@@ -9,7 +11,7 @@ The `createContext`-function is called for each incoming request so here you can
 
 ## Create context from request headers
 
-```ts title="server/context.ts"
+```ts title='server/context.ts'
 import * as trpc from '@trpc/server';
 import { inferAsyncReturnType } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
@@ -45,7 +47,7 @@ type Context = inferAsyncReturnType<typeof createContext>;
 
 ## Option 1: Authorize using resolver
 
-```ts title="server/routers/_app.ts"
+```ts title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { TRPCError } from '@trpc/server';
 import { createRouter } from '../createRouter';
@@ -73,7 +75,7 @@ export const appRouter = createRouter()
 
 ## Option 2: Authorize using middleware
 
-```ts title="server/routers/_app.ts"
+```ts title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { TRPCError } from '@trpc/server';
 import { createRouter } from '../createRouter';

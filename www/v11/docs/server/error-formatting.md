@@ -1,6 +1,8 @@
 ---
-title: "Error Formatting"
-description: ""
+id: error-formatting
+title: Error Formatting
+sidebar_label: Error Formatting
+slug: /server/error-formatting
 section: "Backend Usage"
 order: 22
 ---
@@ -11,7 +13,7 @@ The error formatting in your router will be inferred all the way to your client.
 
 ### Adding custom formatting
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { ZodError } from 'zod';
 
@@ -34,7 +36,7 @@ export const t = initTRPC.create({
 
 ### Usage in React
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @jsx: react-jsx
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -94,7 +96,7 @@ Errors can be formatted on a per-procedure basis using the `.errors()` method, w
 
 When a middleware or procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
 class RateLimitError extends Error {}

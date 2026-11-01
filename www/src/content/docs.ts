@@ -19,7 +19,7 @@ export interface DocsVersion {
   readonly firstDoc: string;
   readonly id: CopiedVersion['id'];
   /** The page route, for `<Link to>`. */
-  readonly route: '/docs/$' | '/v10/docs/$' | '/v9/docs/$';
+  readonly route: '/docs/$' | '/docs/v10/$' | '/docs/v9/$';
   readonly sections: ReadonlyArray<DocSection>;
   readonly status: CopiedVersion['status'];
   /** A page, compiled at build time. */
@@ -84,7 +84,7 @@ export const v11Docs = copiedDocs(
 
 export const v10Docs = copiedDocs(
   v10,
-  '/v10/docs/$',
+  '/docs/v10/$',
   v10Sections,
   import.meta.glob<{ default: Doc }>([
     '../../v10/docs/**/*.md',
@@ -94,7 +94,7 @@ export const v10Docs = copiedDocs(
 
 export const v9Docs = copiedDocs(
   v9,
-  '/v9/docs/$',
+  '/docs/v9/$',
   v9Sections,
   import.meta.glob<{ default: Doc }>([
     '../../v9/docs/**/*.md',
@@ -108,11 +108,13 @@ export const versions = [v11Docs, v10Docs, v9Docs] as const;
 /** The version whose pages `pathname` is among, and v11, the stable release, off the docs. */
 export function versionAt(pathname: string): DocsVersion {
   return (
-    versions.find(
-      (version) =>
-        pathname === version.basePath ||
-        pathname.startsWith(`${version.basePath}/`),
-    ) ?? v11Docs
+    versions
+      .toSorted((a, b) => b.basePath.length - a.basePath.length)
+      .find(
+        (version) =>
+          pathname === version.basePath ||
+          pathname.startsWith(`${version.basePath}/`),
+      ) ?? v11Docs
   );
 }
 

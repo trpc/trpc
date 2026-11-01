@@ -166,7 +166,7 @@ const appRouter = router({
 
 ### Goodbye v9 `.interop()`-mode
 
-In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration path for tRPC v9 users. With tRPC v11, we've removed the `.interop()`-mode. If you're still using the `.interop()`-mode, you can use the [v10 migration guide](/v10/docs/migrate-from-v9-to-v10) to complete your transition to the APIs used by tRPC today.
+In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration path for tRPC v9 users. With tRPC v11, we've removed the `.interop()`-mode. If you're still using the `.interop()`-mode, you can use the [v10 migration guide](/docs/v10/migrate-from-v9-to-v10) to complete your transition to the APIs used by tRPC today.
 
 ## Migrating to v11
 

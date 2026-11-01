@@ -1,11 +1,10 @@
 ---
 title: "Extra Information"
-description: ""
 section: "Extra information"
 order: 59
 ---
 
-- [FAQ / Troubleshooting](./faq.md)
-- [HTTP RPC Specification](./rpc.md)
-- [Subscriptions / WebSockets](./subscriptions.md)
-- [Further Reading](./further-reading.md)
+- [FAQ / Troubleshooting](/docs/v10/faq)
+- [HTTP RPC Specification](/docs/v10/rpc)
+- [Subscriptions / WebSockets](/docs/v10/subscriptions)
+- [Further Reading](/docs/v10/further-reading)

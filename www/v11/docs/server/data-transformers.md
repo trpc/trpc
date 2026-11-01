@@ -1,14 +1,17 @@
 ---
-title: "Data Transformers"
-description: ""
+id: data-transformers
+title: Data Transformers
+sidebar_label: Data Transformers
+slug: /server/data-transformers
 section: "Backend Usage"
 order: 23
 ---
 
 You are able to serialize the response data & input args. The transformers need to be added both to the server and the client.
 
-> [!NOTE] Info
-> A transformer is optional. Without one, tRPC serializes data with `JSON.stringify`, so values that JSON can't represent don't round-trip: a `Date` arrives on the client as a string, and a `Map` or `Set` are always converted to an empty object (`{}`). Add a transformer like superjson (below) if you need those types preserved on the client.
+:::info
+A transformer is optional. Without one, tRPC serializes data with `JSON.stringify`, so values that JSON can't represent don't round-trip: a `Date` arrives on the client as a string, and a `Map` or `Set` are always converted to an empty object (`{}`). Add a transformer like superjson (below) if you need those types preserved on the client.
+:::
 
 ## Using [superjson](https://github.com/blitz-js/superjson)
 
@@ -24,7 +27,7 @@ yarn add superjson
 
 #### 2. Add to your `initTRPC`
 
-```ts twoslash title="server/routers/_app.ts"
+```ts twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
@@ -39,7 +42,7 @@ export const t = initTRPC.create({
 
 `createTRPCClient()`:
 
-```ts twoslash title="src/app/_trpc/client.ts"
+```ts twoslash title='src/app/_trpc/client.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
@@ -79,7 +82,7 @@ yarn add devalue
 
 Here we use `parse` and `stringify` as they [mitigate XSS](https://github.com/Rich-Harris/devalue?tab=readme-ov-file#xss-mitigation).
 
-```ts twoslash title="utils/trpc.ts"
+```ts twoslash title='utils/trpc.ts'
 // @filename: devalue.d.ts
 declare module 'devalue' {
   export function parse(str: string): any;
@@ -100,7 +103,7 @@ export const transformer = {
 
 #### 3. Add to your `initTRPC`
 
-```ts twoslash title="server/routers/_app.ts"
+```ts twoslash title='server/routers/_app.ts'
 // @filename: utils/trpc.ts
 export const transformer = {
   deserialize: (object: any) => object,
@@ -123,7 +126,7 @@ export const t = initTRPC.create({
 
 `createTRPCClient()`:
 
-```ts twoslash title="src/app/_trpc/client.ts"
+```ts twoslash title='src/app/_trpc/client.ts'
 // @filename: utils/trpc.ts
 export const transformer = {
   deserialize: (object: any) => object,

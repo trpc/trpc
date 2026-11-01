@@ -1,28 +1,25 @@
 import { describe, expect, it } from '@effect/vitest';
 
 import {
-  follow,
   land,
-  oldRedirects,
-  redirectRoutes,
+  landingProblem,
+  type Redirect,
+  redirectRoute,
   respond,
   routeProblems,
   servedPaths,
-  siteLocation,
-  type TrpcRedirect,
-  trpcPages,
   type VercelRoute,
 } from './old-routes.ts';
 import { routes } from './vercel-output.ts';
 
-const redirects: ReadonlyArray<TrpcRedirect> = [
+const redirects: ReadonlyArray<Redirect> = [
   {
     destination: '/docs/server/routers',
     permanent: true,
     source: '/docs/router',
   },
   {
-    destination: '/docs/reactjs/useUtils#invalidation',
+    destination: '/docs/client/react/useUtils#invalidation',
     permanent: true,
     source: '/docs/invalidateQueries',
   },
@@ -32,19 +29,18 @@ const redirects: ReadonlyArray<TrpcRedirect> = [
     source: '/docs/reactjs/:path',
   },
   { destination: '/docs/:path*', permanent: true, source: '/docs/v11/:path*' },
-  { destination: '/docs/', permanent: true, source: '/docs/v11' },
+  {
+    destination: '/docs/v10/:path*',
+    permanent: true,
+    source: '/v10/docs/:path*',
+  },
+  { destination: '/docs', permanent: true, source: '/docs/introduction' },
   {
     destination: 'https://discord.gg/abc',
     permanent: false,
     source: '/discord',
   },
   { destination: '/docs/faq', permanent: false, source: '/faq' },
-  {
-    destination: '/server/adapters',
-    permanent: true,
-    source: '/docs/server/api-handler',
-  },
-  { destination: '/docs/gone', permanent: true, source: '/docs/old' },
 ];
 
 const served = servedPaths([
@@ -52,244 +48,75 @@ const served = servedPaths([
   'blog/announcing-trpc-v11/index.html',
   'blog/index.html',
   'blog/rss.xml',
+  'docs/index.html',
   'docs/client/react/useQuery/index.html',
   'docs/client/react/useUtils/index.html',
   'docs/faq/index.html',
-  'docs/introduction/index.html',
-  'docs/server/adapters/index.html',
   'docs/server/routers/index.html',
+  'docs/v10/index.html',
+  'docs/v10/server/routers/index.html',
   'favicon.ico',
   'index.html',
   'logo.svg',
-  'sponsor/index.html',
-  'v10/docs/introduction/index.html',
-  'v10/docs/server/routers/index.html',
-  'v11/img/links-diagram.svg',
-  'v12/docs/getting-started.md',
-  'v12/docs/getting-started/index.html',
-  'v12/docs/server/transformers.md',
-  'v12/docs/server/transformers/index.html',
-  'v12/decisions/progressive-json/index.html',
-  'v12/decisions/replaceable-transformers/index.html',
 ]);
+
+const all = routes(redirects.map(redirectRoute));
 
 describe('servedPaths', () => {
   it('serves a prerendered page at its directory, and other files as they are', () => {
     expect([...served]).toEqual(
-      expect.arrayContaining([
-        '/',
-        '/blog',
-        '/blog/rss.xml',
-        '/v12/docs/getting-started',
-      ]),
+      expect.arrayContaining(['/', '/blog', '/blog/rss.xml', '/docs/v10']),
     );
     expect(served.has('/404.html')).toBe(false);
     expect(served.has('/404')).toBe(false);
   });
 });
 
-describe('follow', () => {
-  it("follows trpc.io's redirects in order, with their params, to a page or off the site", () => {
-    expect(follow('/docs/router', redirects)).toEqual({
-      hash: '',
-      permanent: true,
-      target: '/docs/server/routers',
+describe('redirectRoute', () => {
+  it('matches the path, with `:path` a segment, and is a 308 when permanent', () => {
+    expect(redirectRoute(redirects[2] ?? ({} as never))).toEqual({
+      headers: { Location: '/docs/client/react/$1' },
+      src: '^/docs/reactjs/([^/]+)$',
+      status: 308,
     });
-    expect(follow('/docs/v11/reactjs/useQuery/', redirects)).toEqual({
-      hash: '',
-      permanent: true,
-      target: '/docs/client/react/useQuery',
-    });
-    expect(follow('/discord', redirects)).toEqual({
-      hash: '',
-      permanent: false,
-      target: 'https://discord.gg/abc',
-    });
-    expect(follow('/docs/v11', redirects).target).toBe('/docs');
-  });
-
-  it('keeps the #hash a hop adds through the hops after it', () => {
-    expect(follow('/docs/invalidateQueries', redirects)).toEqual({
-      hash: '#invalidation',
-      permanent: true,
-      target: '/docs/client/react/useUtils',
+    expect(redirectRoute(redirects[6] ?? ({} as never))).toEqual({
+      headers: { Location: 'https://discord.gg/abc' },
+      src: '^/discord$',
+      status: 307,
     });
   });
 
-  it('is temporary when any hop is', () => {
-    expect(follow('/faq', redirects).permanent).toBe(false);
-  });
-});
-
-describe('siteLocation', () => {
-  it("is v11's page at trpc.io's path, and its first page for `/docs`", () => {
-    expect(siteLocation('/docs/server/routers', served)).toBe(
-      '/docs/server/routers',
-    );
-    expect(siteLocation('/docs', served)).toBe('/docs/introduction');
-  });
-
-  it('is the copy of an older version', () => {
-    expect(siteLocation('/docs/v10/server/routers', served)).toBe(
-      '/v10/docs/server/routers',
-    );
-    expect(siteLocation('/docs/v10', served)).toBe('/v10/docs/introduction');
-  });
-
-  it('is a post, an image or a URL off the site as they are', () => {
-    expect(siteLocation('/blog/announcing-trpc-v11', served)).toBe(
-      '/blog/announcing-trpc-v11',
-    );
-    expect(siteLocation('/img/links-diagram.svg', served)).toBe(
-      '/v11/img/links-diagram.svg',
-    );
-    expect(siteLocation('https://discord.gg/abc', served)).toBe(
-      'https://discord.gg/abc',
-    );
-  });
-
-  it("is nothing for what the site doesn't serve", () => {
-    expect(siteLocation('/docs/gone', served)).toBeUndefined();
-    expect(siteLocation('/docs/v10/gone', served)).toBeUndefined();
-    expect(siteLocation('/img/gone.svg', served)).toBeUndefined();
-  });
-});
-
-describe('trpcPages', () => {
-  it("lists trpc.io's URL for each copied page, post and image", () => {
-    expect(trpcPages(served)).toEqual(
-      expect.arrayContaining([
-        '/blog',
-        '/blog/announcing-trpc-v11',
-        '/docs/client/react/useQuery',
-        '/docs/v10/server/routers',
-        '/docs/v10',
-        '/img/links-diagram.svg',
-      ]),
-    );
-    // `/docs` is v11's, served at trpc.io's path; v9 has no pages here.
-    expect(trpcPages(served)).not.toContain('/docs');
-    expect(trpcPages(served)).not.toContain('/docs/v9');
-  });
-});
-
-describe('oldRedirects', () => {
-  const result = oldRedirects({ redirects, served });
-  const bySource = new Map(
-    result.redirects.map((redirect) => [redirect.source, redirect]),
-  );
-
-  it('redirects each old URL once, to where trpc.io sends it', () => {
-    expect(bySource.get('/docs/router')).toEqual({
+  it('matches the rest of the path, if any, with `/:path*`', () => {
+    const route = redirectRoute(redirects[3] ?? ({} as never));
+    expect(route).toEqual({
+      headers: { Location: '/docs$1' },
+      src: '^/docs/v11(/.*)?$',
+      status: 308,
+    });
+    expect(respond([route], served, '/docs/v11')).toEqual({
+      kind: 'redirect',
+      location: '/docs',
+      status: 308,
+    });
+    expect(respond([route], served, '/docs/v11/server/routers')).toEqual({
+      kind: 'redirect',
       location: '/docs/server/routers',
-      source: '/docs/router',
       status: 308,
     });
-    expect(bySource.get('/docs/invalidateQueries')).toEqual({
-      location: '/docs/client/react/useUtils#invalidation',
-      source: '/docs/invalidateQueries',
-      status: 308,
-    });
-    expect(bySource.get('/docs/v10/server/routers')?.location).toBe(
-      '/v10/docs/server/routers',
-    );
-    expect(bySource.get('/discord')).toEqual({
-      location: 'https://discord.gg/abc',
-      source: '/discord',
-      status: 307,
-    });
-    expect(bySource.get('/faq')).toEqual({
-      location: '/docs/faq',
-      source: '/faq',
-      status: 307,
-    });
-  });
-
-  it("answers a redirect's params for every page they reach", () => {
-    expect(bySource.get('/docs/reactjs/useQuery')?.location).toBe(
-      '/docs/client/react/useQuery',
-    );
-    expect(bySource.get('/docs/v11/faq')?.location).toBe('/docs/faq');
-    expect(bySource.get('/docs/v11/server/routers')?.location).toBe(
-      '/docs/server/routers',
-    );
-    expect(bySource.get('/docs/v11')?.location).toBe('/docs/introduction');
-    expect(
-      [...bySource.keys()].filter((source) =>
-        source.startsWith('/docs/v11/v10'),
-      ),
-    ).toEqual([]);
-  });
-
-  it("leaves the site's own pages alone, v11's among them", () => {
-    expect(bySource.has('/docs/server/routers')).toBe(false);
-    expect(bySource.has('/docs/faq')).toBe(false);
-    expect(bySource.has('/blog')).toBe(false);
-  });
-
-  it("fixes trpc.io's redirects to nowhere, and sends retired pages elsewhere", () => {
-    expect(bySource.get('/docs/server/api-handler')?.location).toBe(
-      '/docs/server/adapters',
-    );
-    expect(bySource.get('/blog/archive')?.location).toBe('/blog');
-    expect(bySource.get('/pricing')).toEqual({
-      location: '/sponsor',
-      source: '/pricing',
-      status: 308,
-    });
-    expect(bySource.get('/sponsors')?.location).toBe('/sponsor');
-  });
-
-  it('names each URL that lands nowhere', () => {
-    expect(result.problems).toEqual([
-      "/docs/old: trpc.io sends it to /docs/gone, which this site doesn't serve",
-    ]);
-  });
-});
-
-describe('redirectRoutes', () => {
-  it('shares a route between redirects that keep the end of the path', () => {
-    expect(
-      redirectRoutes([
-        { location: '/v10/docs/a', source: '/docs/v10/a', status: 308 },
-        { location: '/v10/docs/b/c', source: '/docs/v10/b/c', status: 308 },
-        { location: '/v11/docs/x.y', source: '/docs/x.y', status: 307 },
-        { location: '/blog', source: '/blog/archive', status: 308 },
-      ]),
-    ).toEqual([
-      {
-        headers: { Location: '/v10/docs$1' },
-        src: '^/docs/v10(/a|/b/c)$',
-        status: 308,
-      },
-      {
-        headers: { Location: '/v11$1' },
-        src: '^(/docs/x\\.y)$',
-        status: 307,
-      },
-      {
-        headers: { Location: '/blog' },
-        src: '^/blog/archive$',
-        status: 308,
-      },
-    ]);
+    expect(respond([route], served, '/docs/v110')).toEqual({ kind: 'missing' });
   });
 });
 
 describe('respond and land', () => {
-  const all = routes([
-    ...redirectRoutes(oldRedirects({ redirects, served }).redirects),
-  ]);
-
   it("answers as Vercel's routes do", () => {
-    expect(respond(all, served, '/v12/docs/getting-started')).toEqual({
+    expect(respond(all, served, '/docs/v10')).toEqual({
       kind: 'file',
-      path: '/v12/docs/getting-started',
+      path: '/docs/v10',
     });
     expect(respond(all, served, '/nope')).toEqual({ kind: 'missing' });
-    expect(respond(all, served, '/docs')).toEqual({
+    expect(respond(all, served, '/docs/introduction')).toEqual({
       kind: 'redirect',
-      location: '/docs/introduction',
+      location: '/docs',
       status: 308,
     });
   });
@@ -305,36 +132,49 @@ describe('respond and land', () => {
       hops: ['/docs/client/react/useUtils#invalidation'],
       landed: { kind: 'file', path: '/docs/client/react/useUtils' },
     });
+    expect(land(all, served, '/v10/docs/server/routers').landed).toEqual({
+      kind: 'file',
+      path: '/docs/v10/server/routers',
+    });
+    expect(land(all, served, '/docs/v11/reactjs/useQuery').hops).toEqual([
+      '/docs/reactjs/useQuery',
+      '/docs/client/react/useQuery',
+    ]);
   });
 
+  it('names a URL that lands on a 404, or redirects in a loop', () => {
+    expect(landingProblem(all, served, '/docs/v11/gone')).toBe(
+      '/docs/v11/gone: redirects to /docs/gone, a 404',
+    );
+    const loop = routes([
+      redirectRoute({ destination: '/b', permanent: true, source: '/a' }),
+      redirectRoute({ destination: '/a', permanent: true, source: '/b' }),
+    ]);
+    expect(landingProblem(loop, served, '/a')).toMatch(
+      /^\/a: redirects more than 10 times/,
+    );
+  });
+});
+
+describe('routeProblems', () => {
   it('finds no problems with the routes the site writes', () => {
-    const result = oldRedirects({ redirects: redirects.slice(0, -1), served });
-    expect(
-      routeProblems({
-        redirects: result.redirects,
-        routes: routes([...redirectRoutes(result.redirects)]),
-        served,
-      }),
-    ).toEqual([]);
+    expect(routeProblems({ redirects, routes: all, served })).toEqual([]);
   });
 
-  it('finds a redirect that goes elsewhere and a hidden file', () => {
+  it('finds a redirect that lands nowhere, and a hidden file', () => {
     const hiding: ReadonlyArray<VercelRoute> = [
       { headers: { Location: '/' }, src: '^/logo\\.svg$', status: 308 },
     ];
+    const gone = { destination: '/docs/gone', permanent: true, source: '/old' };
     expect(
       routeProblems({
-        redirects: [
-          { location: '/blog', source: '/blog/archive', status: 308 },
-        ],
-        routes: routes(hiding),
+        redirects: [gone],
+        routes: routes([...hiding, redirectRoute(gone)]),
         served,
       }),
-    ).toEqual(
-      expect.arrayContaining([
-        '/blog/archive: redirects to nowhere, a 404, not once to /blog',
-        '/logo.svg: a route hides the file',
-      ]),
-    );
+    ).toEqual([
+      '/old: redirects to /docs/gone, a 404',
+      '/logo.svg: a route hides the file',
+    ]);
   });
 });

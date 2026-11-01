@@ -1,6 +1,8 @@
 ---
-title: "Server-Side Helpers"
-description: ""
+id: server-side-helpers
+title: Server-Side Helpers
+sidebar_label: Server-Side Helpers
+slug: /client/nextjs/server-side-helpers
 section: "Client Usage"
 parent: "client/nextjs"
 order: 43
@@ -73,12 +75,13 @@ The rule of thumb is `prefetch` for queries that you know you'll need on the cli
 
 The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v4/docs/react/overview) to learn more about them in detail.
 
-> [!NOTE] Info
-> For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/v10.45.4/examples/.test/ssg)
+:::info
+For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/v10.45.4/examples/.test/ssg)
+:::
 
 ## Next.js Example
 
-```tsx title="pages/posts/[id].tsx"
+```tsx title='pages/posts/[id].tsx'
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { appRouter } from 'server/routers/_app';

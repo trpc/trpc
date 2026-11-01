@@ -1,6 +1,8 @@
 ---
-title: "Further Reading"
-description: ""
+id: further-reading
+title: Further Reading
+sidebar_label: Further Reading
+slug: /further-reading
 section: "Extra information"
 order: 83
 ---

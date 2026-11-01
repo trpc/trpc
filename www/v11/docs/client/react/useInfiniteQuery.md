@@ -1,20 +1,24 @@
 ---
-title: "useInfiniteQuery()"
-description: ""
+id: useInfiniteQuery
+title: useInfiniteQuery()
+sidebar_label: useInfiniteQuery()
+slug: /client/react/useInfiniteQuery
 section: "Client Usage"
 parent: "client/react"
 order: 58
 ---
 
-> [!NOTE] Info
->
-> - Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
-> - For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v5/docs/framework/react/reference/useInfiniteQuery)
-> - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+:::info
+
+- Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
+- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v5/docs/framework/react/reference/useInfiniteQuery)
+- In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
+
+:::
 
 ## Example Procedure
 
-```tsx twoslash title="server/routers/_app.ts"
+```tsx twoslash title='server/routers/_app.ts'
 // @filename: server/routers/_app.ts
 declare const prisma: {
   post: {
@@ -68,7 +72,7 @@ export const appRouter = t.router({
 
 ## Example React Component
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -119,7 +123,7 @@ export function MyComponent() {
 
 This helper gets the currently cached data from an existing infinite query
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -174,7 +178,7 @@ export function MyComponent() {
 
 This helper allows you to update a query's cached data
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';

@@ -1,7 +1,8 @@
 ---
-title: "Fastify Adapter"
-label: "Fastify"
-description: ""
+id: fastify
+title: Fastify Adapter
+sidebar_label: Fastify
+slug: /server/adapters/fastify
 section: "Backend Usage"
 parent: "server/adapters"
 order: 15
@@ -53,14 +54,14 @@ yarn add @trpc/server fastify zod
 
 ### Create the router
 
-First of all you need a [router](../routers.md) to handle your queries, mutations and subscriptions.
+First of all you need a [router](/docs/server/routers) to handle your queries, mutations and subscriptions.
 
 A sample router is given below, save it in a file named `router.ts`.
 
 <details>
   <summary>router.ts</summary>
 
-```ts twoslash title="router.ts"
+```ts twoslash title='router.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -99,18 +100,18 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](../merging-routers.md) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/server/merging-routers) into a single root `appRouter`.
 
 ### Create the context
 
-Then you need a [context](../context.md) that will be created for each request.
+Then you need a [context](/docs/server/context) that will be created for each request.
 
 A sample context is given below, save it in a file named `context.ts`:
 
 <details>
   <summary>context.ts</summary>
 
-```ts twoslash title="context.ts"
+```ts twoslash title='context.ts'
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -128,10 +129,11 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into a [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
-> [!TIP]
-> Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
+:::tip
+Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
+:::
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 // @types: node
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
@@ -221,7 +223,7 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```ts twoslash title="router.ts"
+```ts twoslash title='router.ts'
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -238,7 +240,7 @@ export const appRouter = t.router({
 
 ### Activate the `useWSS` option
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();

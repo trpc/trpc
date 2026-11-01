@@ -387,9 +387,30 @@ describe('resolveLink', () => {
     expect(resolveLink('a', 'https://example.com')).toEqual({ kind: 'other' });
     expect(resolveLink('a', 'mailto:a@b.c')).toEqual({ kind: 'other' });
     expect(resolveLink('a', '#heading')).toEqual({ kind: 'other' });
-    expect(resolveLink('a', '/v9/docs/nextjs#hooks')).toEqual({
+    expect(resolveLink('a', '/docs/v9/nextjs#hooks')).toEqual({
       kind: 'other',
     });
+  });
+
+  it("resolves a path from `/` under the version's own path as its page", () => {
+    const v11 = { basePath: '/docs', firstDoc: 'introduction' };
+    const v10 = { basePath: '/docs/v10', firstDoc: 'introduction' };
+    expect(resolveLink('a', '/docs/server/routers#lazy', 'docs', v11)).toEqual({
+      kind: 'doc',
+      link: { hash: 'lazy', slug: 'server/routers' },
+    });
+    expect(resolveLink('a', '/docs', 'docs', v11)).toEqual({
+      kind: 'doc',
+      link: { hash: undefined, slug: 'introduction' },
+    });
+    expect(resolveLink('a', '/docs/v10/server/routers', 'docs', v11)).toEqual({
+      kind: 'other',
+    });
+    expect(resolveLink('a', '/docs/v10/server/routers', 'docs', v10)).toEqual({
+      kind: 'doc',
+      link: { hash: undefined, slug: 'server/routers' },
+    });
+    expect(resolveLink('a', '/blog/a', 'docs', v11)).toEqual({ kind: 'other' });
   });
 });
 

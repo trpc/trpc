@@ -1,6 +1,8 @@
 ---
-title: "SSG Helpers"
-description: ""
+id: ssg-helpers
+title: SSG Helpers
+sidebar_label: SSG Helpers
+slug: /ssg-helpers
 section: "@trpc/next"
 order: 34
 ---
@@ -28,7 +30,7 @@ The returned functions are all wrappers around react-query functions. Please che
 
 ## Next.js Example
 
-```ts title="pages/posts/[id].tsx"
+```ts title='pages/posts/[id].tsx'
 import { createSSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { createContext, prisma } from 'server/context';

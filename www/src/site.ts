@@ -46,56 +46,80 @@ export const hiddenPaths: ReadonlyArray<string> = [];
  * unmaintained v10 and v9, each in `www/<id>/docs`.
  */
 export interface CopiedVersion {
-  /** Where the copy serves it: v11, the stable release, at `/docs`, as trpc.io does. */
-  readonly basePath: '/docs' | `/${string}/docs`;
-  /** The page trpc.io serves at `trpcPath` itself, the first in its sidebar. */
+  /** Where trpc.io serves it, and so does the site: `/docs`, `/docs/v10`. */
+  readonly basePath: '/docs' | `/docs/${string}`;
+  /** The page trpc.io serves at `basePath` itself, the first in its sidebar. */
   readonly firstDoc: string;
   readonly id: 'v9' | 'v10' | 'v11';
   /** Where the copy serves the images it shows. */
   readonly imagePath: string;
   /** As trpc.io's version banner has it. */
   readonly status: 'stable' | 'unmaintained';
-  /** Where trpc.io serves it: `/docs/v10`. */
-  readonly trpcPath: string;
   /** Where it's maintained. */
   readonly url: string;
 }
 
-/** The v11 docs, which trpc.io serves at `/docs`, and so does the copy. */
+/** The v11 docs, which trpc.io serves at `/docs`. */
 export const v11 = {
   basePath: '/docs',
   firstDoc: 'introduction',
   id: 'v11',
   imagePath: '/v11/img',
   status: 'stable',
-  trpcPath: '/docs',
   url: trpcIo,
 } as const satisfies CopiedVersion;
 
 /** The v10 docs, which trpc.io serves at `/docs/v10`. */
 export const v10 = {
-  basePath: '/v10/docs',
+  basePath: '/docs/v10',
   firstDoc: 'introduction',
   id: 'v10',
   imagePath: '/v10/img',
   status: 'unmaintained',
-  trpcPath: '/docs/v10',
   url: trpcIo,
 } as const satisfies CopiedVersion;
 
 /** The v9 docs, which trpc.io serves at `/docs/v9`. */
 export const v9 = {
-  basePath: '/v9/docs',
+  basePath: '/docs/v9',
   firstDoc: 'introduction',
   id: 'v9',
   imagePath: '/v9/img',
   status: 'unmaintained',
-  trpcPath: '/docs/v9',
   url: trpcIo,
 } as const satisfies CopiedVersion;
 
+/**
+ * A page's path: `/docs/v10/server/routers`, and a version's first page at
+ * the version's own path (`/docs/v10`), as trpc.io serves it.
+ */
+export const docPath = (
+  version: Pick<CopiedVersion, 'basePath' | 'firstDoc'>,
+  slug: string,
+) =>
+  slug === version.firstDoc ? version.basePath : `${version.basePath}/${slug}`;
+
+/**
+ * The top bar's links to v11 pages, by slug: trpc.io's navbar's, in its
+ * order. On phones they're in the menu.
+ */
+export const docsLinks = [
+  { label: 'Docs', slug: v11.firstDoc },
+  { label: 'Quickstart', slug: 'quickstart' },
+  { label: 'Awesome tRPC Collection', slug: 'community/awesome-trpc' },
+  { label: 'Using Next.js', slug: 'client/nextjs' },
+] as const;
+
 /** Newest first, as the version switcher lists them. */
 export const copiedVersions = [v11, v10, v9] as const;
+
+/**
+ * The versions, the longest `basePath` first: the one a path is under is
+ * the first it starts with, so `/docs/v10/x` isn't read as v11's `v10/x`.
+ */
+export const versionsByPath = copiedVersions.toSorted(
+  (a, b) => b.basePath.length - a.basePath.length,
+);
 
 /**
  * Where `llms.txt` (https://llmstxt.org) lists a version's pages, with

@@ -1,7 +1,9 @@
 ---
-title: "TanStack React Query"
-label: "Usage"
-description: "TanStack React Query usage"
+id: usage
+title: TanStack React Query
+sidebar_label: Usage
+description: TanStack React Query usage
+slug: /client/tanstack-react-query/usage
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 49
@@ -637,9 +639,9 @@ const mutationKey = trpc.path.to.mutation.mutationKey();
 
 ### `subscriptionOptions` - creating subscription options {#subscriptionOptions}
 
-TanStack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](../../server/subscriptions.md).
+TanStack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions).
 Available for all subscription procedures. Provides a type-safe identity function for constructing options that can be passed to `useSubscription`.
-Note that you need to have either the [`httpSubscriptionLink`](../links/httpSubscriptionLink.md) or [`wsLink`](../links/wsLink.md) configured in your tRPC client to use subscriptions.
+Note that you need to have either the [`httpSubscriptionLink`](/docs/client/links/httpSubscriptionLink) or [`wsLink`](/docs/client/links/wsLink) configured in your tRPC client to use subscriptions.
 
 ```tsx twoslash
 // @jsx: react-jsx
@@ -749,7 +751,7 @@ const billingQuery = useQuery(trpcBilling.list.queryOptions()); // billing servi
 
 Enable the feature flag when creating your context:
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -786,7 +788,7 @@ export const createAccountClient = () =>
   });
 ```
 
-```tsx twoslash title="App.tsx"
+```tsx twoslash title='App.tsx'
 // @jsx: react-jsx
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -845,7 +847,7 @@ export function App() {
 }
 ```
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @jsx: react-jsx
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -955,7 +957,7 @@ function Component() {
 
 ### Accessing the tRPC client {#useTRPCClient}
 
-If you used the [setup with React Context](./setup.md#3a-set-up-the-trpc-context-provider), you can access the tRPC client using the `useTRPCClient` hook.
+If you used the [setup with React Context](/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider), you can access the tRPC client using the `useTRPCClient` hook.
 
 ```tsx twoslash
 // @filename: server/router.ts
@@ -985,7 +987,7 @@ async function Component() {
 }
 ```
 
-If you [setup without React Context](./setup.md#3c-set-up-without-react-context),
+If you [setup without React Context](/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context),
 you can import the global client instance directly instead.
 
 ```ts twoslash

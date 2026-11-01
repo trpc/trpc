@@ -1,15 +1,19 @@
 ---
-title: "Define Router"
-description: ""
+id: router
+title: Define Router
+sidebar_label: Define Router
+slug: /router
 section: "@trpc/server"
 order: 9
 ---
 
-> [!NOTE] Info
->
-> - A procedure can be viewed as the equivalent of a REST-endpoint.
-> - There's no internal difference between queries and mutations apart from semantics.
-> - Defining router is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
+:::info
+
+- A procedure can be viewed as the equivalent of a REST-endpoint.
+- There's no internal difference between queries and mutations apart from semantics.
+- Defining router is the same for queries, mutations, and subscription with the exception that subscriptions need to return a `Subscription`-instance.
+
+:::
 
 ## Input validation
 

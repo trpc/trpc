@@ -1,26 +1,29 @@
 ---
-title: "Suspense"
-description: ""
+id: suspense
+title: Suspense
+sidebar_label: Suspense
+slug: /client/react/suspense
 section: "Client Usage"
 parent: "client/react"
 order: 63
 ---
 
-> [!NOTE] Info
->
-> - Ensure you're on the latest version of React
-> - If you use suspense with [tRPC's _automatic_ SSR in Next.js](../nextjs/pages-router/ssr.md), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
+:::info
+
+- Ensure you're on the latest version of React
+- If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/pages-router/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
+
+:::
 
 ## Usage
 
-> [!TIP]
->
-> `useSuspenseQuery` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
+:::tip
 
-### `useSuspenseQuery()`
+`useSuspenseQuery` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
 
-```tsx twoslash
-// @target: esnext
+:::
+
+```twoslash include server
 // @target: esnext
 
 // @filename: server.ts
@@ -79,6 +82,14 @@ import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server';
 
 export const trpc = createTRPCReact<AppRouter>();
+
+```
+
+### `useSuspenseQuery()`
+
+```tsx twoslash
+// @target: esnext
+// @include: server
 // @filename: pages/index.tsx
 import React from 'react';
 // ---cut---
@@ -96,64 +107,7 @@ function PostView() {
 
 ```tsx twoslash
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const posts = [
-  { id: '1', title: 'everlong' },
-  { id: '2', title: 'After Dark' },
-];
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure
-      .input(
-        z.object({
-          cursor: z.string().optional(),
-        })
-      )
-      .query(({ input }) => {
-        return {
-          posts,
-          nextCursor: '123' as string | undefined,
-        };
-      }),
-    byId: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        })
-      )
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-          })
-        }
-        return post;
-     }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
-
-export interface PostPage {
-  posts: { id: string; title: string }[];
-  nextCursor?: string | undefined;
-}
-
-// @filename: utils/trpc.tsx
-// ---cut---
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter>();
+// @include: server
 // @filename: pages/index.tsx
 import React from 'react';
 // ---cut---
@@ -184,64 +138,7 @@ Suspense equivalent of [`useQueries()`](./useQueries.md).
 
 ```tsx twoslash
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const posts = [
-  { id: '1', title: 'everlong' },
-  { id: '2', title: 'After Dark' },
-];
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure
-      .input(
-        z.object({
-          cursor: z.string().optional(),
-        })
-      )
-      .query(({ input }) => {
-        return {
-          posts,
-          nextCursor: '123' as string | undefined,
-        };
-      }),
-    byId: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        })
-      )
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-          })
-        }
-        return post;
-     }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
-
-export interface PostPage {
-  posts: { id: string; title: string }[];
-  nextCursor?: string | undefined;
-}
-
-// @filename: utils/trpc.tsx
-// ---cut---
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter>();
+// @include: server
 // @filename: pages/index.tsx
 import React from 'react';
 // ---cut---
@@ -260,73 +157,18 @@ const Component = (props: { postIds: string[] }) => {
 
 The performance of suspense queries can be improved by prefetching the query data before the Suspense component is rendered (this is sometimes called ["render-as-you-fetch"](https://tanstack.com/query/v5/docs/framework/react/guides/suspense#fetch-on-render-vs-render-as-you-fetch)).
 
-> [!NOTE]
->
-> - Prefetching and the render-as-you-fetch model are very dependent on the framework and router you are using. We recommend reading your frameworks router docs along with the [@tanstack/react-query docs](https://tanstack.com/query/v5/docs/react/guides/prefetching) to understand how to implement these patterns.
-> - If you are using Next.js please look at the docs on [Server-Side Helpers](../nextjs/pages-router/server-side-helpers.md) to implement server-side prefetching.
+:::note
+
+- Prefetching and the render-as-you-fetch model are very dependent on the framework and router you are using. We recommend reading your frameworks router docs along with the [@tanstack/react-query docs](https://tanstack.com/query/v5/docs/react/guides/prefetching) to understand how to implement these patterns.
+- If you are using Next.js please look at the docs on [Server-Side Helpers](/docs/client/nextjs/pages-router/server-side-helpers) to implement server-side prefetching.
+
+:::
 
 ### Route-level prefetching
 
 ```tsx twoslash
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const posts = [
-  { id: '1', title: 'everlong' },
-  { id: '2', title: 'After Dark' },
-];
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure
-      .input(
-        z.object({
-          cursor: z.string().optional(),
-        })
-      )
-      .query(({ input }) => {
-        return {
-          posts,
-          nextCursor: '123' as string | undefined,
-        };
-      }),
-    byId: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        })
-      )
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-          })
-        }
-        return post;
-     }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
-
-export interface PostPage {
-  posts: { id: string; title: string }[];
-  nextCursor?: string | undefined;
-}
-
-// @filename: utils/trpc.tsx
-// ---cut---
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter>();
+// @include: server
 // @filename: loader.ts
 // ---cut---
 import { createTRPCQueryUtils } from '@trpc/react-query';
@@ -347,64 +189,7 @@ const loader = async (params: { id: string }) =>
 
 ```tsx twoslash
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const posts = [
-  { id: '1', title: 'everlong' },
-  { id: '2', title: 'After Dark' },
-];
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure
-      .input(
-        z.object({
-          cursor: z.string().optional(),
-        })
-      )
-      .query(({ input }) => {
-        return {
-          posts,
-          nextCursor: '123' as string | undefined,
-        };
-      }),
-    byId: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        })
-      )
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-          })
-        }
-        return post;
-     }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
-
-export interface PostPage {
-  posts: { id: string; title: string }[];
-  nextCursor?: string | undefined;
-}
-
-// @filename: utils/trpc.tsx
-// ---cut---
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter>();
+// @include: server
 // @filename: pages/index.tsx
 // ---cut---
 import React, { Suspense } from 'react';
@@ -429,64 +214,7 @@ function PostViewPage(props: { postId: string }) {
 
 ```tsx twoslash
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const posts = [
-  { id: '1', title: 'everlong' },
-  { id: '2', title: 'After Dark' },
-];
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure
-      .input(
-        z.object({
-          cursor: z.string().optional(),
-        })
-      )
-      .query(({ input }) => {
-        return {
-          posts,
-          nextCursor: '123' as string | undefined,
-        };
-      }),
-    byId: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        })
-      )
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-          })
-        }
-        return post;
-     }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
-
-export interface PostPage {
-  posts: { id: string; title: string }[];
-  nextCursor?: string | undefined;
-}
-
-// @filename: utils/trpc.tsx
-// ---cut---
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter>();
+// @include: server
 // @filename: pages/index.tsx
 // ---cut---
 import React, { Suspense } from 'react';

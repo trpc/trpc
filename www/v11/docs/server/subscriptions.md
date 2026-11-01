@@ -1,6 +1,8 @@
 ---
-title: "Subscriptions"
-description: ""
+id: subscriptions
+title: Subscriptions
+sidebar_label: Subscriptions
+slug: /server/subscriptions
 section: "Backend Usage"
 order: 27
 ---
@@ -30,8 +32,9 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 
 ## Basic example
 
-> [!TIP]
-> For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat).
+:::tip
+For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat).
+:::
 
 ```ts twoslash title="server.ts"
 // @target: esnext
@@ -67,8 +70,9 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 - For SSE, this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 - For WebSockets, our `wsLink` will automatically send the last known ID and update it as the browser receives data.
 
-> [!TIP]
-> If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you set up the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::tip
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you set up the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::
 
 ```ts twoslash
 // @types: node

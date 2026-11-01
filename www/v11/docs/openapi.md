@@ -1,12 +1,15 @@
 ---
-title: "OpenAPI (alpha)"
-description: ""
+id: openapi
+title: OpenAPI (alpha)
+sidebar_label: OpenAPI (alpha)
+slug: /openapi
 section: "Client Usage"
 order: 76
 ---
 
-> [!WARNING] Caution
-> This package is in alpha. APIs may change without notice.
+:::caution
+This package is in alpha. APIs may change without notice.
+:::
 
 The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router. Use the spec to:
 
@@ -20,15 +23,16 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 pnpm add @trpc/openapi
 ```
 
-> [!NOTE]
-> `@trpc/openapi` is currently versioned like 11.x.x-alpha, and should work with any recent tRPC v11 version, but as always we recommend aligning the version numbers
+:::note
+`@trpc/openapi` is currently versioned like 11.x.x-alpha, and should work with any recent tRPC v11 version, but as always we recommend aligning the version numbers
+:::
 
 ## Adapting your tRPC setup
 
 The generator works with your existing router — no annotations or decorators required. A few things to be aware of:
 
 - **No output types needed** — unlike other OpenAPI tools, `.output()` schemas are optional. The generator infers return types from your implementation automatically.
-- **Transformers** — if your server uses a [data transformer](./server/data-transformers.md), your OpenAPI clients must use the same one. See [Transformers](#transformers) for setup and cross-language options.
+- **Transformers** — if your server uses a [data transformer](/docs/server/data-transformers), your OpenAPI clients must use the same one. See [Transformers](#transformers) for setup and cross-language options.
 - **Subscriptions** — currently excluded from the generated spec. SSE support is planned.
 - **Descriptions** — Zod `.describe()` calls and JSDoc comments on types, routers, and procedures, all become `description` fields in the spec.
 
@@ -54,7 +58,7 @@ pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --ver
 
 ### Programmatic
 
-```ts title="scripts/generate-openapi.ts"
+```ts title='scripts/generate-openapi.ts'
 import { generateOpenAPIDocument } from '@trpc/openapi';
 
 const doc = await generateOpenAPIDocument('./src/server/router.ts', {
@@ -97,7 +101,7 @@ pnpm exec openapi-ts -i openapi.json -o ./generated
 
 Next a little configuration is required at runtime:
 
-```ts title="src/usage.ts"
+```ts title='src/usage.ts'
 import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import { client } from './generated/client.gen';
 import { Sdk } from './generated/sdk.gen';
@@ -113,12 +117,13 @@ const user = await sdk.user.create({ body: { name: 'Bob', age: 30 } });
 
 #### With a transformer (superjson, devalue, etc.)
 
-> [!WARNING]
-> If your backend uses a [data transformer](./server/data-transformers.md) like `superjson`, you **must** pass it to the client config. Without this, Dates, Maps, Sets, and other non-JSON types may be silently wrong.
+:::warning
+If your backend uses a [data transformer](/docs/server/data-transformers) like `superjson`, you **must** pass it to the client config. Without this, Dates, Maps, Sets, and other non-JSON types may be silently wrong.
+:::
 
 First generate your client code using Hey API's programmatic API, this way you can use `createTRPCHeyApiTypeResolvers` to ensure your emitted types are correct:
 
-```ts title="src/client.ts"
+```ts title='src/client.ts'
 import { createClient } from '@hey-api/openapi-ts';
 import { createTRPCHeyApiTypeResolvers } from '@trpc/openapi/heyapi';
 
@@ -144,7 +149,7 @@ await createClient({
 
 At runtime configure the generated client with your transformer, you can then pass native types directly and get them back deserialised:
 
-```ts title="src/usage.ts"
+```ts title='src/usage.ts'
 import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import superjson from 'superjson';
 import { client } from './generated/client.gen';
@@ -182,7 +187,7 @@ See the [Hey API config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c
 
 ### Transformers
 
-tRPC [data transformers](./server/data-transformers.md) let you send rich types like `Date`, `Map`, `Set`, and `BigInt` over the wire. When using the OpenAPI client, the same transformer must be configured on both the server and client so that inputs are serialised and outputs are deserialised correctly.
+tRPC [data transformers](/docs/server/data-transformers) let you send rich types like `Date`, `Map`, `Set`, and `BigInt` over the wire. When using the OpenAPI client, the same transformer must be configured on both the server and client so that inputs are serialised and outputs are deserialised correctly.
 
 Any transformer that implements the tRPC `DataTransformer` interface (`serialize` / `deserialize`) works with `configureTRPCHeyApiClient`. Below are some tested options.
 
@@ -194,14 +199,14 @@ The most popular transformer for TypeScript-to-TypeScript setups. Handles `Date`
 pnpm add superjson
 ```
 
-```ts title="src/server.ts"
+```ts title='src/server.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
 const t = initTRPC.create({ transformer: superjson });
 ```
 
-```ts title="src/client.ts"
+```ts title='src/client.ts'
 import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import superjson from 'superjson';
 import { client } from './generated/client.gen';
@@ -224,7 +229,7 @@ Available in: C, C#, C++, Go, Java, Node.js, Perl, PHP, Python, Ruby, Scala
 pnpm add bson
 ```
 
-```ts title="src/transformer.ts"
+```ts title='src/transformer.ts'
 import { EJSON } from 'bson';
 import type { TRPCDataTransformer } from '@trpc/server';
 
@@ -234,7 +239,7 @@ export const ejsonTransformer: TRPCDataTransformer = {
 };
 ```
 
-```ts title="src/client.ts"
+```ts title='src/client.ts'
 import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import { client } from './generated/client.gen';
 import { ejsonTransformer } from './transformer';
@@ -276,7 +281,7 @@ const myTransformer: TRPCDataTransformer = {
 };
 ```
 
-Pass it to both `initTRPC.create({ transformer })` on the server and `configureTRPCHeyApiClient(client, { transformer })` on the client. See the [data transformers docs](./server/data-transformers.md) for more details.
+Pass it to both `initTRPC.create({ transformer })` on the server and `configureTRPCHeyApiClient(client, { transformer })` on the client. See the [data transformers docs](/docs/server/data-transformers) for more details.
 
 ### Full example
 

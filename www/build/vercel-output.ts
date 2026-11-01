@@ -3,8 +3,9 @@
  * in `.vercel/output`, which Vercel deploys as is. `vercel.json` can't do
  * content negotiation: its rewrites run only when no file matches the URL,
  * and every page is a file. Routes here run before the files, so a page's URL
- * answers `Accept: text/markdown` with the page's markdown, and trpc.io's old
- * URLs redirect to where this site serves them (`old-routes.ts`).
+ * answers `Accept: text/markdown` with the page's markdown. The Build Output
+ * API doesn't read `vercel.json`'s `redirects` either, so they're routes here
+ * too (`old-routes.ts`).
  */
 import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
@@ -32,26 +33,23 @@ import {
   writeOnDemandFunction,
 } from './on-demand.ts';
 import {
-  oldRedirects,
-  redirectRoutes,
-  redirectsFile,
+  land,
+  redirectRoute,
   routeProblems,
   servedPaths,
   type VercelRoute,
 } from './old-routes.ts';
-import {
-  missingFromSitemap,
-  SitemapPages,
-  withRealLastmods,
-} from './sitemap.ts';
+import { missingFromSitemap, withoutLastmods } from './sitemap.ts';
 
-const TrpcRedirects = Schema.Array(
-  Schema.Struct({
-    destination: Schema.String,
-    permanent: Schema.Boolean,
-    source: Schema.String,
-  }),
-);
+const VercelJson = Schema.Struct({
+  redirects: Schema.Array(
+    Schema.Struct({
+      destination: Schema.String,
+      permanent: Schema.Boolean,
+      source: Schema.String,
+    }),
+  ),
+});
 
 const contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -84,12 +82,25 @@ export const overrides = (files: ReadonlyArray<string>) =>
     }),
   );
 
+const escapeRegExp = (text: string) =>
+  text.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const olderVersions = copiedVersions.filter((version) => version.id !== v11.id);
+
 const acceptsMarkdown = [
   { key: 'accept', type: 'header', value: '(.*)text/markdown(.*)' },
 ];
 
-/** A v11 page, the only docs with markdown. Slugs nest: `/docs/client/links`. */
-const docPath = `^${v11.basePath}/([\\w/-]+)`;
+/**
+ * A v11 page, the only docs with markdown, but its first, at `/docs` itself.
+ * Slugs nest: `/docs/client/links`. The older versions are under `/docs` too.
+ */
+const v11Page = `^${escapeRegExp(v11.basePath)}/(?!(?:${olderVersions
+  .map((version) =>
+    escapeRegExp(version.basePath.slice(v11.basePath.length + 1)),
+  )
+  .join('|')})(?:/|$))([\\w/-]+)`;
+const v11FirstDoc = `${v11.basePath}/${v11.firstDoc}`;
 
 /**
  * `X-Robots-Tag: noindex` on every response (pages, markdown, `llms.txt`,
@@ -114,9 +125,6 @@ export const noindexRoute = (
 
 export { isNoindex };
 
-const escapeRegExp = (text: string) =>
-  text.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 /**
  * `X-Robots-Tag: noindex` for the pages `paths` and their markdown, which
  * has no `<meta>` of its own: the experiments' pages, once the site is
@@ -136,7 +144,7 @@ export const noindexPageRoutes = (
       ];
 
 /**
- * `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`).
+ * `old`: `vercel.json`'s redirects, which keep trpc.io's URLs working (`old-routes.ts`).
  * `noindex`: the routes that say `X-Robots-Tag: noindex`. `hidden`: the
  * paths that say `noindex, nofollow` (`hiddenPaths`). `unindexed`: the
  * paths that say `noindex` on every host (`unindexedPaths`).
@@ -158,14 +166,6 @@ export const routes = (
     status: 308,
   },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
-  // The v11 docs were at `/v11/docs` before they took `/docs`.
-  { headers: { Location: '/docs$1' }, src: '^/v11/docs(/.*)?$', status: 308 },
-  // A copy's first page is trpc.io's, which never moves.
-  ...copiedVersions.map((version) => ({
-    headers: { Location: `${version.basePath}/${version.firstDoc}` },
-    src: `^${version.basePath}$`,
-    status: 308,
-  })),
   ...old,
   {
     continue: true,
@@ -199,18 +199,36 @@ export const routes = (
       Link: `<${v11.basePath}/$1.md>; rel="alternate"; type="text/markdown"`,
       Vary: 'Accept',
     },
-    src: `${docPath}$`,
+    src: `${v11Page}$`,
+  },
+  {
+    continue: true,
+    headers: {
+      Link: `<${v11FirstDoc}.md>; rel="alternate"; type="text/markdown"`,
+      Vary: 'Accept',
+    },
+    src: `^${escapeRegExp(v11.basePath)}$`,
   },
   {
     continue: true,
     headers: { Link: `<${site.url}${v11.basePath}/$1>; rel="canonical"` },
-    src: `${docPath}\\.md$`,
+    src: `${v11Page}\\.md$`,
+  },
+  {
+    continue: true,
+    headers: { Link: `<${site.url}${v11.basePath}>; rel="canonical"` },
+    src: `^${escapeRegExp(v11FirstDoc)}\\.md$`,
   },
   { dest: '/index.md', has: acceptsMarkdown, src: '^/$' },
   {
+    dest: `${v11FirstDoc}.md`,
+    has: acceptsMarkdown,
+    src: `^${escapeRegExp(v11.basePath)}$`,
+  },
+  {
     dest: `${v11.basePath}/$1.md`,
     has: acceptsMarkdown,
-    src: `${docPath}$`,
+    src: `${v11Page}$`,
   },
   ...onDemandRoutes(),
   { handle: 'filesystem' },
@@ -229,16 +247,16 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   const output = path.join(root, '.vercel/output');
   const staticDir = path.join(output, 'static');
 
-  const trpcRedirects = yield* fs
-    .readFileString(path.join(root, redirectsFile))
+  const { redirects } = yield* fs
+    .readFileString(path.join(root, 'vercel.json'))
     .pipe(
       Effect.flatMap((json) =>
-        Schema.decodeUnknownEffect(Schema.fromJsonString(TrpcRedirects))(json),
+        Schema.decodeUnknownEffect(Schema.fromJsonString(VercelJson))(json),
       ),
       Effect.mapError(
         (cause) =>
           new VercelOutputError({
-            message: `${redirectsFile}: ${cause.message}`,
+            message: `vercel.json: ${cause.message}`,
           }),
       ),
     );
@@ -254,7 +272,6 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     ),
   )).map((file) => file.split(path.sep).join('/'));
   const served = servedPaths(files);
-  const old = oldRedirects({ redirects: trpcRedirects, served });
   const vercelEnv = process.env['VERCEL_ENV'] ?? '';
   // Until the site is indexed, every page says `noindex`; under the hidden
   // paths, every response does.
@@ -273,22 +290,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
       )
     : [];
   const sitemapFile = path.join(staticDir, 'sitemap.xml');
-  const sitemapPages = yield* fs
-    .readFileString(path.join(staticDir, 'pages.json'))
-    .pipe(
-      Effect.flatMap((json) =>
-        Schema.decodeUnknownEffect(Schema.fromJsonString(SitemapPages))(json),
-      ),
-      Effect.mapError(
-        (cause) =>
-          new VercelOutputError({ message: `pages.json: ${cause.message}` }),
-      ),
-    );
-  const sitemap = withRealLastmods(
-    yield* fs.readFileString(sitemapFile),
-    sitemapPages,
-    site.url,
-  );
+  const sitemap = withoutLastmods(yield* fs.readFileString(sitemapFile));
   yield* fs.writeFileString(sitemapFile, sitemap);
   const noindexPaths = new Set(
     noindexPages.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
@@ -309,22 +311,30 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
       message: `sitemap.xml doesn't list every page; add them to \`pages\` in vite.config.ts:\n${unlisted.join('\n')}`,
     });
   }
-  const allRoutes = routes(redirectRoutes(old.redirects), [
+  const allRoutes = routes(redirects.map(redirectRoute), [
     noindexRoute(site.url, vercelEnv),
     ...noindexPageRoutes([...noindexPaths]),
   ]);
-  const missingAnchors = yield* Effect.filter(old.redirects, (redirect) => {
-    const url = new URL(redirect.location, site.url);
-    if (url.origin !== new URL(site.url).origin || url.hash === '') {
-      return Effect.succeed(false);
-    }
-    return fs
-      .readFileString(path.join(staticDir, url.pathname, 'index.html'))
-      .pipe(
-        Effect.map((html) => !html.includes(` id="${url.hash.slice(1)}"`)),
-        Effect.orElseSucceed(() => true),
-      );
-  });
+  const landings = redirects
+    .filter((redirect) => !redirect.source.includes(':'))
+    .map((redirect) => ({
+      landed: land(allRoutes, served, redirect.source),
+      source: redirect.source,
+    }));
+  const missingAnchors = yield* Effect.filter(landings, ({ landed }) =>
+    landed.landed.kind !== 'file' || landed.hash === ''
+      ? Effect.succeed(false)
+      : fs
+          .readFileString(
+            path.join(staticDir, landed.landed.path, 'index.html'),
+          )
+          .pipe(
+            Effect.map(
+              (html) => !html.includes(` id="${landed.hash.slice(1)}"`),
+            ),
+            Effect.orElseSucceed(() => true),
+          ),
+  );
   const texts = new Map(
     yield* Effect.forEach(
       files.filter((file) => /\.(?:html|md|txt|xml)$/.test(file)),
@@ -354,20 +364,15 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     });
   }
   const problems = [
-    ...old.problems,
     ...missingAnchors.map(
-      (redirect) =>
-        `${redirect.source}: redirects to ${redirect.location}, a heading the page doesn't have`,
+      ({ landed, source }) =>
+        `${source}: redirects to ${landed.hops.at(-1)}, a heading the page doesn't have`,
     ),
-    ...routeProblems({
-      redirects: old.redirects,
-      routes: allRoutes,
-      served,
-    }),
+    ...routeProblems({ redirects, routes: allRoutes, served }),
   ];
   if (problems.length > 0) {
     return yield* new VercelOutputError({
-      message: `trpc.io's old URLs don't all land on a page:\n${problems.join('\n')}`,
+      message: `vercel.json's redirects don't all land on a page:\n${problems.join('\n')}`,
     });
   }
   const config = {

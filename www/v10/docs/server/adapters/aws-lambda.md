@@ -1,7 +1,8 @@
 ---
-title: "AWS Lambda + API Gateway Adapter"
-label: "AWS Lambda + API Gateway"
-description: ""
+id: aws-lambda
+title: AWS Lambda + API Gateway Adapter
+sidebar_label: AWS Lambda + API Gateway
+slug: /server/adapters/aws-lambda
 section: "Backend Usage"
 parent: "server/adapters"
 order: 18
@@ -44,7 +45,7 @@ yarn add @trpc/server
 
 Implement your tRPC router. A sample router is given below:
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -65,7 +66,7 @@ export type AppRouter = typeof appRouter;
 
 tRPC includes an adapter for API Gateway out of the box. This adapter lets you run your routes through the API Gateway handler.
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { CreateAWSLambdaContextOptions, awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
 
 const appRouter = /* ... */;

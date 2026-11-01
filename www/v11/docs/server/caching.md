@@ -1,20 +1,23 @@
 ---
-title: "Response Caching"
-description: ""
+id: caching
+title: Response Caching
+sidebar_label: Response Caching
+slug: /server/caching
 section: "Backend Usage"
 order: 26
 ---
 
 Since all tRPC queries are normal HTTP `GET` requests, you can use standard HTTP cache headers to cache responses. This can make responses snappy, give your database a rest, and help scale your API.
 
-> [!NOTE] Info
-> Always be careful with caching - especially if you handle personal information.
->
-> &nbsp;
-> Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth header or cookie.
->
-> &nbsp;
-> You can also use a [`splitLink`](../client/links/splitLink.md) to split your public requests and those that should be private and uncached.
+:::info
+Always be careful with caching - especially if you handle personal information.
+
+&nbsp;
+Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth header or cookie.
+
+&nbsp;
+You can also use a [`splitLink`](../client/links/splitLink.md) to split your public requests and those that should be private and uncached.
+:::
 
 ## Using `responseMeta` to cache responses
 
@@ -22,7 +25,7 @@ Most tRPC adapters support a `responseMeta` callback that lets you set HTTP head
 
 > This works with any hosting provider that supports standard HTTP cache headers (e.g. Vercel, Cloudflare, AWS CloudFront).
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -89,5 +92,6 @@ const server = createHTTPServer({
 server.listen(3000);
 ```
 
-> [!TIP]
-> If you are using Next.js, see the [Next.js SSR caching guide](../client/nextjs/pages-router/ssr.md#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
+:::tip
+If you are using Next.js, see the [Next.js SSR caching guide](/docs/client/nextjs/pages-router/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
+:::

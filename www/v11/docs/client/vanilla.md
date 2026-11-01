@@ -1,7 +1,8 @@
 ---
-title: "tRPC Client"
-label: "Vanilla Client"
-description: ""
+id: overview
+title: tRPC Client
+sidebar_label: "Vanilla Client"
+slug: /client/vanilla
 section: "Client Usage"
 order: 42
 ---
@@ -44,4 +45,4 @@ You are likely to use this client in two scenarios:
 ### When **NOT** to use the Vanilla Client?
 
 - While you _can_ use the client to call procedures from a React component, you should usually use our [TanStack React Query Integration](./tanstack-react-query/setup.md). It offers many additional features such as the ability to manage loading and error state, caching, and invalidation.
-- We recommend you do not use this client when calling procedures of the same API instance, this is because the invocation has to pass through the network layer. For complete recommendations on invoking a procedure in the current API, you can [read more here](../server/server-side-calls.md).
+- We recommend you do not use this client when calling procedures of the same API instance, this is because the invocation has to pass through the network layer. For complete recommendations on invoking a procedure in the current API, you can [read more here](/docs/server/server-side-calls).

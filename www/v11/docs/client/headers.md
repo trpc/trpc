@@ -1,6 +1,8 @@
 ---
-title: "Headers"
-description: ""
+id: headers
+title: Headers
+sidebar_label: Headers
+slug: /client/headers
 section: "Client Usage"
 parent: "client/links"
 order: 40
@@ -10,7 +12,7 @@ The headers option may be used with any of our HTTP links: [`httpBatchLink`](./l
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 
-```ts twoslash title="utils/trpc.ts"
+```ts twoslash title='utils/trpc.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -51,7 +53,7 @@ export const trpc = createTRPCClient<AppRouter>({
 
 ### Example with auth login
 
-```ts twoslash title="auth.ts"
+```ts twoslash title='auth.ts'
 // @target: esnext
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';

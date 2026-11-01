@@ -1,6 +1,8 @@
 ---
-title: "Middlewares"
-description: ""
+id: middlewares
+title: Middlewares
+sidebar_label: Middlewares
+slug: /server/middlewares
 section: "Backend Usage"
 order: 10
 ---
@@ -11,7 +13,7 @@ You can add middleware(s) to a procedure with the `t.procedure.use()` method. Th
 
 In the example below, any call to a `adminProcedure` will ensure that the user is an "admin" before executing.
 
-```ts twoslash
+```twoslash include admin
 import { TRPCError, initTRPC } from '@trpc/server';
 
 interface Context {
@@ -40,32 +42,12 @@ export const adminProcedure = publicProcedure.use(async (opts) => {
 ```
 
 ```ts twoslash
+// @include: admin
+```
+
+```ts twoslash
 // @filename: trpc.ts
-import { TRPCError, initTRPC } from '@trpc/server';
-
-interface Context {
-  user?: {
-    id: string;
-    isAdmin: boolean;
-    // [..]
-  };
-}
-
-const t = initTRPC.context<Context>().create();
-export const publicProcedure = t.procedure;
-export const router = t.router;
-
-export const adminProcedure = publicProcedure.use(async (opts) => {
-  const { ctx } = opts;
-  if (!ctx.user?.isAdmin) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
-  }
-  return opts.next({
-    ctx: {
-      user: ctx.user,
-    },
-  });
-});
+// @include: admin
 // @filename: _app.ts
 // ---cut---
 import { adminProcedure, publicProcedure, router } from './trpc';
@@ -80,14 +62,15 @@ export const appRouter = router({
 });
 ```
 
-> [!TIP]
-> See [Error Handling](./error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+:::tip
+See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+:::
 
 ## Logging
 
 In the example below timings for queries are logged automatically.
 
-```ts twoslash
+```twoslash include trpclogger
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
@@ -115,31 +98,12 @@ export const loggedProcedure = publicProcedure.use(async (opts) => {
 ```
 
 ```ts twoslash
+// @include: trpclogger
+```
+
+```ts twoslash
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-
-export const publicProcedure = t.procedure;
-export const router = t.router;
-
-declare function logMock(...args: any[]): void;
-// ---cut---
-
-export const loggedProcedure = publicProcedure.use(async (opts) => {
-  const start = Date.now();
-
-  const result = await opts.next();
-
-  const durationMs = Date.now() - start;
-  const meta = { path: opts.path, type: opts.type, durationMs };
-
-  result.ok
-    ? console.log('OK request timing:', meta)
-    : console.error('Non-OK request timing', meta);
-
-  return result;
-});
+// @include: trpclogger
 // @filename: _app.ts
 // ---cut---
 import { loggedProcedure, router } from './trpc';
@@ -199,14 +163,18 @@ protectedProcedure.query((opts) => {
 
 ## Using `.concat()` to create reusable middlewares and plugins {#concat}
 
-> [!TIP]
->
-> - Creating middlewares using `t.middleware` has the limitation that the `Context` type is tied to the `Context` type of the tRPC instance.
-> - Creating middlewares with `experimental_standaloneMiddleware()` has the limitation that you cannot define input parsers and similar tied to your module.
+:::tip
+
+- Creating middlewares using `t.middleware` has the limitation that the `Context` type is tied to the `Context` type of the tRPC instance.
+- Creating middlewares with `experimental_standaloneMiddleware()` has the limitation that you cannot define input parsers and similar tied to your module.
+
+:::
 
 tRPC has an API called `.concat()` which allows you to independently define a partial procedure that can be used with any tRPC instance that matches the context and metadata of the plugin.
 
 This helper primarily targets creating plugins and libraries with tRPC.
+
+<!-- TODO: add docs with a real-world example of a plugin or something -->
 
 ```ts twoslash
 // @target: esnext
@@ -281,8 +249,9 @@ export const appRouter = router({
 
 ## Extending middlewares
 
-> [!NOTE] Info
-> We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](../faq.md#unstable).
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
 
 We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.
 
@@ -371,8 +340,9 @@ barMiddleware.unstable_pipe(fooMiddleware);
 
 ## Experimental: standalone middlewares
 
-> [!WARNING] Deprecated
-> This has been deprecated in favor of [`.concat()`](#concat). Use `.concat()` for new code.
+:::warning Deprecated
+This has been deprecated in favor of [`.concat()`](#concat). Use `.concat()` for new code.
+:::
 
 tRPC has an experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that
 the `Context` type is tied to the `Context` type of the tRPC instance. This means that you cannot use the same middleware with multiple tRPC instances that have different `Context` types.

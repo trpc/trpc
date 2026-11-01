@@ -1,7 +1,8 @@
-import { createRouter } from '@tanstack/react-router';
+import { composeRewrites, createRouter } from '@tanstack/react-router';
 
 import { startAnalytics } from './analytics.ts';
 import { NotFound } from './components/not-found.tsx';
+import { firstDocRewrite } from './first-doc.ts';
 import {
   dehydrateRenderedPath,
   hydrateRenderedPath,
@@ -32,7 +33,7 @@ export function getRouter() {
       hydrateRelease(dehydrated);
       hydrateRenderedPath(dehydrated);
     },
-    rewrite: renderedPathRewrite,
+    rewrite: composeRewrites([renderedPathRewrite, firstDocRewrite]),
     routeTree,
     scrollRestoration: true,
     // `styles.css` makes scrolling smooth for in-page links; a page change or

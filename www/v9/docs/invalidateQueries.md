@@ -1,7 +1,8 @@
 ---
-title: "invalidateQueries"
-label: "invalidateQueries()"
-description: ""
+id: query-invalidation
+title: invalidateQueries
+sidebar_label: invalidateQueries()
+slug: /invalidateQueries
 section: "@trpc/react"
 order: 31
 ---

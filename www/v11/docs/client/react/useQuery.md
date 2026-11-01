@@ -1,6 +1,8 @@
 ---
-title: "useQuery()"
-description: ""
+id: useQuery
+title: useQuery()
+sidebar_label: useQuery()
+slug: /client/react/useQuery
 section: "Client Usage"
 parent: "client/react"
 order: 56
@@ -8,8 +10,9 @@ order: 56
 
 `useQuery` is the primary hook for data fetching, it works similarly to `@tanstack/react-query`'s `useQuery`, but with some `trpc` specific options and additional features like streaming.
 
-> [!NOTE]
-> For in-depth information about options and usage patterns, refer to the TanStack Query docs on [queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries).
+:::note
+For in-depth information about options and usage patterns, refer to the TanStack Query docs on [queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries).
+:::
 
 ## Signature
 
@@ -35,12 +38,13 @@ interface UseTRPCQueryOptions
 
 Since `UseTRPCQueryOptions` extends `@tanstack/react-query`'s `UseQueryOptions`, you can use any of their options here such as `enabled`, `refetchOnWindowFocus`, etc. We also have some `trpc` specific options that let you opt in or out of certain behaviors on a per-procedure level:
 
-- **`trpc.ssr`:** If you have `ssr: true` in your [global config](../nextjs/pages-router/setup.md#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
-- **`trpc.abortOnUnmount`:** Override the [global config](../nextjs/pages-router/setup.md#config-callback) and opt in or out of aborting queries on unmount.
-- **`trpc.context`:** Add extra meta data that could be used in [Links](../links.md).
+- **`trpc.ssr`:** If you have `ssr: true` in your [global config](/docs/client/nextjs/pages-router/setup#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
+- **`trpc.abortOnUnmount`:** Override the [global config](/docs/client/nextjs/pages-router/setup#config-callback) and opt in or out of aborting queries on unmount.
+- **`trpc.context`:** Add extra meta data that could be used in [Links](/docs/client/links).
 
-> [!TIP]
-> If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+:::tip
+If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+:::
 
 You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
 
@@ -49,7 +53,7 @@ You'll notice that you get autocompletion on the `input` based on what you have 
 <details>
 <summary>Backend code</summary>
 
-```tsx twoslash title="server/routers/_app.ts"
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -78,7 +82,7 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -127,8 +131,9 @@ export function MyComponent() {
 
 ## Streaming responses using async generators {#streaming}
 
-> [!NOTE] Info
-> Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
+:::info
+Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
+:::
 
 When returning an async generator in a query, you will:
 
@@ -138,7 +143,7 @@ When returning an async generator in a query, you will:
 
 ### Example
 
-```tsx twoslash title="server/routers/_app.ts"
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -155,7 +160,7 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-```tsx twoslash title="components/MyComponent.tsx"
+```tsx twoslash title='components/MyComponent.tsx'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();

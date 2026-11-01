@@ -1,6 +1,8 @@
 ---
-title: "HTTP Batch Link"
-description: ""
+id: httpBatchLink
+title: HTTP Batch Link
+sidebar_label: HTTP Batch Link
+slug: /client/links/httpBatchLink
 section: "Client Usage"
 parent: "client/links"
 order: 52
@@ -100,7 +102,7 @@ createHTTPServer({
 
 or, if you're using Next.js:
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // [...]
   // 👇 disable batching
@@ -127,7 +129,7 @@ const client = createTRPCProxyClient<AppRouter>({
 
 or, if you're using Next.js:
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 import type { AppRouter } from '@/server/routers/app';
 import { httpLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';

@@ -1,6 +1,8 @@
 ---
-title: "HTTP Batch Stream Link"
-description: ""
+id: httpBatchStreamLink
+title: HTTP Batch Stream Link
+sidebar_label: HTTP Batch Stream Link
+slug: /client/links/httpBatchStreamLink
 section: "Client Usage"
 parent: "client/links"
 order: 53
@@ -8,15 +10,17 @@ order: 53
 
 `unstable_httpBatchStreamLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
 
-> [!NOTE] Info
-> We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](../../faq.md#unstable).
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](../../faq.md#unstable).
+:::
 
 ## Usage
 
 > All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
 
-> [!NOTE]
-> If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `unstable_httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](./httpBatchLink.md).
+:::note
+If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `unstable_httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](./httpBatchLink.md).
+:::
 
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 

@@ -1,6 +1,8 @@
 ---
-title: "Awesome tRPC Collection"
-description: ""
+id: awesome-trpc
+title: Awesome tRPC Collection
+sidebar_label: Awesome tRPC Collection
+slug: /awesome-trpc
 section: "tRPC"
 order: 8
 ---

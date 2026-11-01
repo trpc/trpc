@@ -1,19 +1,21 @@
 ---
-title: "Static Site Generation"
-label: "Static Site Generation (SSG)"
-description: ""
+id: ssg
+title: Static Site Generation
+sidebar_label: Static Site Generation (SSG)
+slug: /ssg
 section: "@trpc/next"
 order: 33
 ---
 
-> [!TIP]
-> Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+:::tip
+Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+:::
 
 Static site generation requires executing tRPC queries inside `getStaticProps` on each page.
 
 ## Fetch data in `getStaticProps`
 
-```tsx title="pages/posts/[id].tsx"
+```tsx title='pages/posts/[id].tsx'
 import { createSSGHelpers } from '@trpc/react/ssg';
 import {
   GetStaticPaths,

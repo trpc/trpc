@@ -1,6 +1,8 @@
 ---
-title: "Split Link"
-description: ""
+id: splitLink
+title: Split Link
+sidebar_label: Split Link
+slug: /client/links/splitLink
 section: "Client Usage"
 parent: "client/links"
 order: 55
@@ -55,7 +57,7 @@ const client = createTRPCProxyClient<AppRouter>({
 
 #### 2. Perform request without batching
 
-```ts title="client.ts"
+```ts title='client.ts'
 const postResult = proxy.posts.query(null, {
   context: {
     skipBatch: true,
@@ -65,7 +67,7 @@ const postResult = proxy.posts.query(null, {
 
 or:
 
-```tsx title="MyComponent.tsx"
+```tsx title='MyComponent.tsx'
 export function MyComponent() {
   const postsQuery = proxy.posts.useQuery(undefined, {
     trpc: {

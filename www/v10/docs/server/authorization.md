@@ -1,6 +1,8 @@
 ---
-title: "Authorization"
-description: ""
+id: authorization
+title: Authorization
+sidebar_label: Authorization
+slug: /server/authorization
 section: "Backend Usage"
 order: 21
 ---
@@ -9,7 +11,7 @@ The `createContext` function is called for each incoming request, so here you ca
 
 ## Create context from request headers
 
-```ts title="server/context.ts"
+```ts title='server/context.ts'
 import * as trpcNext from '@trpc/server/adapters/next';
 import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
 
@@ -41,7 +43,7 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 ## Option 1: Authorize using resolver
 
-```ts title="server/routers/_app.ts"
+```ts title='server/routers/_app.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Context } from '../context';
 
@@ -66,7 +68,7 @@ const appRouter = t.router({
 
 ## Option 2: Authorize using middleware
 
-```ts title="server/routers/_app.ts"
+```ts title='server/routers/_app.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();

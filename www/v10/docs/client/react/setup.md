@@ -1,7 +1,9 @@
 ---
-title: "Set up the React Query Integration"
-label: "Setup"
-description: "How to use and setup tRPC in React"
+id: setup
+title: Set up the React Query Integration
+sidebar_label: Setup
+description: How to use and setup tRPC in React
+slug: /client/react/setup
 section: "Client Usage"
 parent: "client/react"
 order: 29
@@ -44,20 +46,54 @@ bun add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query@4
 
 ### 2. Import your `AppRouter`
 
+```twoslash include router
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  getUser: t.procedure.input(z.object({ id: z.string() })).query(() => ({ name: 'foo' })),
+  createUser: t.procedure.input(z.object({ name: z.string() })).mutation(() => 'bar'),
+});
+export type AppRouter = typeof appRouter;
+```
+
 Import your `AppRouter` type into the client application. This type holds the shape of your entire API.
 
-```ts
+```ts twoslash
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({input}) => {
+        return { id: input.id, title: 'Hello' };
+      }),
+  })
+});
+export type AppRouter = typeof appRouter;
+// @filename: utils/trpc.ts
+// ---cut---
 import type { AppRouter } from '../server/router';
 ```
 
-> [!TIP]
-> By using `import type` you ensure that the reference will be stripped at compile-time, meaning you don't inadvertently import server-side code into your client. For more information, [see the Typescript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export).
+:::tip
+By using `import type` you ensure that the reference will be stripped at compile-time, meaning you don't inadvertently import server-side code into your client. For more information, [see the Typescript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export).
+:::
 
 ### 3. Create tRPC hooks
 
 Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createTRPCReact`.
 
-```ts title="utils/trpc.ts"
+```ts twoslash title='utils/trpc.ts'
+// @include: router
+// @filename: utils/trpc.ts
+// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server/router';
 
@@ -68,10 +104,11 @@ export const trpc = createTRPCReact<AppRouter>();
 
 Create a tRPC client, and wrap your application in the tRPC Provider, as below. You will also need to set up and connect React Query, which [they document in more depth](https://tanstack.com/query/latest/docs/react/quick-start).
 
-> [!TIP]
-> If you already use React Query in your application, you **should** re-use the `QueryClient` and `QueryClientProvider` you already have.
+:::tip
+If you already use React Query in your application, you **should** re-use the `QueryClient` and `QueryClientProvider` you already have.
+:::
 
-```tsx title="App.tsx"
+```tsx title='App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
 import React, { useState } from 'react';
@@ -106,14 +143,25 @@ export function App() {
 }
 ```
 
-> [!NOTE]
-> The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can move them if you wish.
+:::note
+The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can move them if you wish.
+:::
 
 #### 5. Fetch data
 
 You can now use the tRPC React Query integration to call queries and mutations on your API.
 
-```tsx title="pages/IndexPage.tsx"
+```tsx twoslash title='pages/IndexPage.tsx'
+// @include: router
+// @filename: utils/trpc.ts
+// ---cut---
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+
+export const trpc = createTRPCReact<AppRouter>();
+// @filename: pages/IndexPage.tsx
+import React from "react";
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {

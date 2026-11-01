@@ -1,6 +1,9 @@
 ---
-title: "Example Apps"
-description: "Example apps built with tRPC"
+id: example-apps
+title: Example Apps
+sidebar_label: Example Apps
+slug: /example-apps
+description: Example apps built with tRPC
 section: "tRPC"
 order: 4
 ---
@@ -62,8 +65,9 @@ order: 4
 
 ## Community
 
-> [!NOTE]
-> Community examples are maintained by their respective authors and may not be updated for the latest tRPC version. Check each project's README for version compatibility.
+:::note
+Community examples are maintained by their respective authors and may not be updated for the latest tRPC version. Check each project's README for version compatibility.
+:::
 
 ### Frameworks
 

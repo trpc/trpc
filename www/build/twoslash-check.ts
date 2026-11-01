@@ -8,6 +8,7 @@ import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Effect, FileSystem, Path } from 'effect';
 
 import { messageOf } from './content-error.ts';
+import { commentsOf, fromDocusaurus } from './docusaurus-syntax.ts';
 import { releaseTwoslashers, renderMarkdown } from './markdown.ts';
 import { samplesDir } from './paths.ts';
 
@@ -18,15 +19,20 @@ const roots = [here('../v11/docs'), here('../v11/home'), here('../blog')];
 interface Block {
   readonly code: string;
   readonly file: string;
+  /** Whether it's a `twoslash include` block, which the others' `// @include:` expand. */
+  readonly include: boolean;
   readonly line: number;
 }
 
 /**
- * The ` ```ts twoslash ` fences in `markdown`, each as markdown of its own,
- * those in a blockquote (an alert's) too.
+ * The ` ```ts twoslash ` fences in `markdown` outside its HTML comments,
+ * each as markdown of its own, those in a blockquote (an alert's) too.
  */
 function blocksOf(file: string, markdown: string): ReadonlyArray<Block> {
   const lines = markdown.split('\n');
+  for (const comment of commentsOf(lines)) {
+    lines.fill('', comment.start, comment.end + 1);
+  }
   const blocks: Array<Block> = [];
   for (let start = 0; start < lines.length; start++) {
     const open = /^((?:[ \t]*>)*[ \t]*)(`{3,}|~{3,})\w*[^\n]*\btwoslash\b/.exec(
@@ -54,6 +60,9 @@ function blocksOf(file: string, markdown: string): ReadonlyArray<Block> {
         .map(quote === '' ? (line) => line : unquoted)
         .join('\n'),
       file,
+      include: /^(?:`{3,}|~{3,})twoslash include\b/.test(
+        unquoted(lines[start] ?? '').trimStart(),
+      ),
       line: start + 1,
     });
     start = end;
@@ -82,18 +91,30 @@ const check = Effect.fn('check')(function* (only: ReadonlyArray<string>) {
   let count = 0;
   for (const file of files) {
     const markdown = yield* fs.readFileString(file);
-    for (const block of blocksOf(file, markdown)) {
+    const blocks = blocksOf(file, markdown);
+    const includes = blocks
+      .filter((block) => block.include)
+      .map((block) => block.code)
+      .join('\n\n');
+    for (const block of blocks.filter((candidate) => !candidate.include)) {
       count++;
-      const result = yield* renderMarkdown(block.code, {
+      const read = fromDocusaurus(`${includes}\n\n${block.code}`, true);
+      const result = yield* renderMarkdown(read.markdown, {
         basePath: '/docs',
         inlineApp: 'v11',
         samplesDir,
         slug: 'twoslash-check',
         sourceUrl: '',
       }).pipe(Effect.result);
-      if (result._tag === 'Failure') {
+      const problems = [
+        ...read.problems,
+        ...(result._tag === 'Failure'
+          ? [messageOf(result.failure).trim()]
+          : []),
+      ];
+      if (problems.length > 0) {
         const where = `${path.relative(process.cwd(), block.file)}:${block.line}`;
-        failures.push(`${where}\n${messageOf(result.failure).trim()}`);
+        failures.push(`${where}\n${problems.join('\n')}`);
         yield* Console.error(`✗ ${where}`);
       }
     }

@@ -1,6 +1,8 @@
 ---
-title: "FAQ / Troubleshooting"
-description: ""
+id: faq
+title: FAQ / Troubleshooting
+sidebar_label: FAQ / Troubleshooting
+slug: /faq
 section: "Extra information"
 order: 81
 ---
@@ -32,7 +34,7 @@ We highly recommend committing this file to your repo so your colleagues also ge
 
 ## How do I make a middleware change the type of my `Context`?
 
-See [Context Extension](./server/middlewares.md#context-extension).
+See [Context Extension](/docs/server/middlewares#context-extension).
 
 ## Is tRPC production ready?
 
@@ -49,7 +51,7 @@ Here are some things to check:
 - Make sure you have no type errors in your app
 - In the case that you have a dedicated server and client `tsconfig.json` files without a bundled server monorepo package, make sure you have `"paths": [...]` in your client `tsconfig.json` like your server `tsconfig.json`, so that the client can find the same file.
 
-You can also have a look at our [Awesome tRPC](./community/awesome-trpc.md)-collection to find several open-source projects that are using tRPC in a monorepo.
+You can also have a look at our [Awesome tRPC](/docs/community/awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
 
 ## Is a monorepo mandatory?
 
@@ -67,11 +69,11 @@ No, not currently, in order for tRPC to do that automatically, we need something
 
 ## Can I apply a middleware to a full router?
 
-No, but you can use [base procedures](./server/procedures.md#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
+No, but you can use [base procedures](/docs/server/procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
 
 ## Does tRPC work with Next.js App Router & RSC?
 
-Yes, tRPC works with Next.js App Router & React Server Components. See the [Next.js App Router setup guide](./client/nextjs/app-router-setup.md) for the recommended approach.
+Yes, tRPC works with Next.js App Router & React Server Components. See the [Next.js App Router setup guide](/docs/client/nextjs/app-router-setup) for the recommended approach.
 
 ## Am I safe with using features marked as `unstable_`? {#unstable}
 

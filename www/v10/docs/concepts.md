@@ -1,6 +1,8 @@
 ---
-title: "Concepts"
-description: ""
+id: concepts
+title: Concepts
+sidebar_label: Concepts
+slug: /concepts
 section: "tRPC"
 order: 2
 ---
@@ -40,7 +42,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
       <tbody>
         <tr>
           <td>
-            <a href="/v10/docs/server/procedures">
+            <a href="/docs/v10/server/procedures">
               <strong class="text-green-600 dark:text-green-400">
                 Procedure&nbsp;↗
               </strong>
@@ -87,7 +89,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v10/docs/subscriptions">
+            <a href="/docs/v10/subscriptions">
               <strong class="text-teal-700 dark:text-teal-400">
                 Subscription&nbsp;↗
               </strong>
@@ -103,7 +105,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v10/docs/server/routers">
+            <a href="/docs/v10/server/routers">
               <strong class="text-blue-700 dark:text-blue-400">
                 Router&nbsp;↗
               </strong>
@@ -119,7 +121,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v10/docs/server/context">
+            <a href="/docs/v10/server/context">
               <strong class="text-violet-700 dark:text-violet-400">
                 Context&nbsp;↗
               </strong>
@@ -136,7 +138,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v10/docs/server/middlewares">
+            <a href="/docs/v10/server/middlewares">
               <strong class="text-blue-600 dark:text-blue-400">
                 Middleware&nbsp;↗
               </strong>
@@ -156,7 +158,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v10/docs/server/validators">
+            <a href="/docs/v10/server/validators">
               <strong class="text-blue-600 dark:text-blue-400">
                 Validation&nbsp;↗
               </strong>

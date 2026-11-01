@@ -1,6 +1,8 @@
 ---
-title: "Links & Request Batching"
-description: ""
+id: links
+title: Links & Request Batching
+sidebar_label: Links & Request Batching
+slug: /links
 section: "@trpc/client"
 order: 25
 ---
@@ -28,7 +30,7 @@ const somePosts = await Promise.all([
 
 This limits the number of requests that can be sent together in batch ( useful to prevent the url from getting too large and run into [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413) ).
 
-```ts title="server.ts"
+```ts title='server.ts'
 // 👇 import the httpBatchLink
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { withTRPC } from '@trpc/next';
@@ -59,7 +61,7 @@ export default withTRPC<AppRouter>({
 
 In your `[trpc].ts`:
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // [...]
   // 👇 disable batching
@@ -71,7 +73,7 @@ export default trpcNext.createNextApiHandler({
 
 #### 2. Use batch-free link in your tRPC Client
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 // 👇 import the httpLink
 import { httpLink } from '@trpc/client/links/httpLink';
 import { withTRPC } from '@trpc/next';
@@ -102,7 +104,7 @@ export default withTRPC<AppRouter>({
 
 ##### 1. Configure client / `_app.tsx`
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { httpLink } from '@trpc/client/links/httpLink';
 import { splitLink } from '@trpc/client/links/splitLink';
@@ -137,7 +139,7 @@ export default withTRPC<AppRouter>({
 
 ##### 2. Perform request without batching
 
-```tsx title="MyComponent.tsx"
+```tsx title='MyComponent.tsx'
 export function MyComponent() {
   const postsQuery = trpc.useQuery(['posts'], {
     context: {
@@ -152,7 +154,7 @@ export function MyComponent() {
 
 or:
 
-```ts title="client.ts"
+```ts title='client.ts'
 const postResult = client.query('posts', null, {
   context: {
     skipBatch: true,
@@ -162,7 +164,7 @@ const postResult = client.query('posts', null, {
 
 ### Creating a custom link
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 import { TRPCLink } from '@trpc/client';
 import type { AppRouter } from 'pages/api/trpc/[trpc]';
 

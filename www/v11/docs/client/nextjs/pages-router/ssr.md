@@ -1,7 +1,8 @@
 ---
-title: "Server-Side Rendering"
-label: "Server-Side Rendering (SSR)"
-description: ""
+id: ssr
+title: Server-Side Rendering
+sidebar_label: Server-Side Rendering (SSR)
+slug: /client/nextjs/pages-router/ssr
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
 order: 71
@@ -9,15 +10,16 @@ order: 71
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
 
-> [!NOTE] Info
-> When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps`, and solving it is out of our hands.
->
-> &nbsp;  
-> Alternatively, you can leave SSR disabled (the default) and use [Server-Side Helpers](./server-side-helpers.md) to prefetch queries in `getStaticProps` or `getServerSideProps`.
+:::info
+When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps`, and solving it is out of our hands.
+
+&nbsp;  
+Alternatively, you can leave SSR disabled (the default) and use [Server-Side Helpers](./server-side-helpers.md) to prefetch queries in `getStaticProps` or `getServerSideProps`.
+:::
 
 In order to execute queries properly during the server-side render step, we need to add extra logic inside our `config`. Additionally, consider [`Response Caching`](../../../server/caching.md).
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -76,7 +78,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 or, if you want to SSR conditional on a given request, you can pass a callback to `ssr`. This callback can return a boolean, or a Promise resolving to a boolean:
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -136,7 +138,7 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-```tsx twoslash title="pages/_app.tsx"
+```tsx twoslash title='pages/_app.tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -174,7 +176,7 @@ If you turn on SSR in your app, you might discover that your app loads slowly on
 
 You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
 
-```tsx twoslash title="utils/trpc.tsx"
+```tsx twoslash title='utils/trpc.tsx'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -242,7 +244,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 You can also use `responseMeta` on the Next.js API handler to cache API responses directly:
 
-```tsx twoslash title="pages/api/trpc/[trpc].ts"
+```tsx twoslash title='pages/api/trpc/[trpc].ts'
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 

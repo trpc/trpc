@@ -1,6 +1,8 @@
 ---
-title: "HTTP RPC Specification"
-description: ""
+id: rpc
+title: HTTP RPC Specification
+sidebar_label: HTTP RPC Specification
+slug: /rpc
 section: "Extra information"
 order: 61
 ---
@@ -40,7 +42,7 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 
 #### Given a router like this exposed at `/api/trpc`:
 
-```tsx title="server/router.ts"
+```tsx title='server/router.ts'
 export const appRouter = t.router({
   postById: t.procedure.input(String).query(async (opts) => {
     const post = await opts.ctx.post.findUnique({
@@ -57,7 +59,7 @@ export const appRouter = t.router({
 
 #### ... And two queries defined like this in a React component:
 
-```tsx title="MyComponent.tsx"
+```tsx title='MyComponent.tsx'
 export function MyComponent() {
   const post1 = trpc.postById.useQuery('1');
   const relatedPosts = trpc.relatedPosts.useQuery('1');

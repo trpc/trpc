@@ -1,6 +1,8 @@
 ---
-title: "Split Link"
-description: ""
+id: splitLink
+title: Split Link
+sidebar_label: Split Link
+slug: /client/links/splitLink
 section: "Client Usage"
 parent: "client/links"
 order: 37
@@ -63,7 +65,7 @@ const client = createTRPCClient<AppRouter>({
 
 #### 2. Perform request without batching
 
-```ts twoslash title="client.ts"
+```ts twoslash title='client.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -94,7 +96,7 @@ const postResult = proxy.posts.query(undefined, {
 
 or:
 
-```tsx twoslash title="MyComponent.tsx"
+```tsx twoslash title='MyComponent.tsx'
 // @jsx: react-jsx
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';

@@ -1,14 +1,17 @@
 ---
-title: "WebSockets"
-description: ""
+id: websockets
+title: WebSockets
+sidebar_label: WebSockets
+slug: /server/websockets
 section: "Backend Usage"
 order: 28
 ---
 
 You can use WebSockets for all or some of the communication with your server, see [wsLink](../client/links/wsLink.md) for how to set it up on the client.
 
-> [!TIP]
-> The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](./subscriptions.md).
+:::tip
+The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](./subscriptions.md).
+:::
 
 ### Creating a WebSocket-server
 
@@ -16,7 +19,7 @@ You can use WebSockets for all or some of the communication with your server, se
 yarn add ws
 ```
 
-```ts twoslash title="server/wsServer.ts"
+```ts twoslash title='server/wsServer.ts'
 // @filename: trpc.ts
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 export const createContext = (opts: CreateWSSContextFnOptions) => ({});
@@ -68,10 +71,11 @@ process.on('SIGTERM', () => {
 
 ### Setting `TRPCClient` to use WebSockets
 
-> [!TIP]
-> You can use [Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+:::tip
+You can use [Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+:::
 
-```tsx twoslash title="client.ts"
+```tsx twoslash title='client.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -100,8 +104,9 @@ const client = createTRPCClient<AppRouter>({
 
 ## Authentication / connection params {#connectionParams}
 
-> [!TIP]
-> If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
+:::tip
+If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
+:::
 
 In order to authenticate with WebSockets, you can define `connectionParams` to `createWSClient`. This will be sent as the first message when the client establishes a WebSocket connection.
 
@@ -154,8 +159,9 @@ If you `yield` an event using our `tracked()`-helper and include an `id`, the cl
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
-> [!NOTE] Info
-> If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::info
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::
 
 ```ts twoslash
 // @types: node

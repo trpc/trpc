@@ -1,20 +1,23 @@
 ---
-title: "Response Caching"
-description: ""
+id: caching
+title: Response Caching
+sidebar_label: Response Caching
+slug: /server/caching
 section: "Backend Usage"
 order: 26
 ---
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/edge-network/caching) to serve data to your users as fast as possible.
 
-> [!NOTE] Info
-> Always be careful with caching - especially if you handle personal information.
->
-> &nbsp;  
-> Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth header or cookie.
->
-> &nbsp;  
-> You can also use a [`splitLink`](../client/links/splitLink.md) to split your public requests and those that should be private and uncached.
+:::info
+Always be careful with caching - especially if you handle personal information.
+
+&nbsp;  
+Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth header or cookie.
+
+&nbsp;  
+You can also use a [`splitLink`](../client/links/splitLink.md) to split your public requests and those that should be private and uncached.
+:::
 
 ## App Caching
 
@@ -22,7 +25,7 @@ If you turn on SSR in your app, you might discover that your app loads slowly on
 
 ### Example code
 
-```tsx title="utils/trpc.tsx"
+```tsx title='utils/trpc.tsx'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../server/routers/_app';
@@ -81,7 +84,7 @@ Since all queries are normal HTTP `GET`s, we can use normal HTTP headers to cach
 
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
-```tsx title="server.ts"
+```tsx title='server.ts'
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 

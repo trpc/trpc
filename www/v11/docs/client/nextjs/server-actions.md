@@ -1,6 +1,8 @@
 ---
-title: "Server Actions"
-description: ""
+id: server-actions
+title: Server Actions
+sidebar_label: Server Actions
+slug: /client/nextjs/server-actions
 section: "Client Usage"
 parent: "client/nextjs/app-router-setup"
 order: 69
@@ -10,8 +12,9 @@ Server Actions allow you to define functions on the server and call them directl
 
 By defining your server actions using tRPC procedures, you get all of tRPC's built-in features: input validation, authentication and authorization through middlewares, output validation, data transformers, and more.
 
-> [!NOTE] Info
-> The Server Actions integration uses the `experimental_` prefix and is still under active development. The API may change in future releases.
+:::info
+The Server Actions integration uses the `experimental_` prefix and is still under active development. The API may change in future releases.
+:::
 
 ## Setting up Server Action procedures
 
@@ -19,7 +22,7 @@ By defining your server actions using tRPC procedures, you get all of tRPC's bui
 
 Use `experimental_caller` on a procedure builder together with `experimental_nextAppDirCaller` to create procedures that can be invoked as plain functions (server actions). The `pathExtractor` option lets you identify procedures by metadata, which is useful for logging and observability since server actions don't have a router path like `user.byId`.
 
-```ts twoslash title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
 
@@ -40,7 +43,7 @@ export const serverActionProcedure = t.procedure.experimental_caller(
 
 Since server actions don't go through an HTTP adapter, there's no `createContext` to inject context. Instead, use a middleware to provide context such as session data:
 
-```ts twoslash title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 // @filename: auth.ts
 export declare function currentUser(): Promise<{ id: string; name: string } | null>;
 
@@ -72,7 +75,7 @@ export const serverActionProcedure = t.procedure
 
 Add an authorization middleware to create a reusable base for actions that require authentication:
 
-```ts twoslash title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 // @filename: auth.ts
 export declare function currentUser(): Promise<{ id: string; name: string } | null>;
 
@@ -112,7 +115,7 @@ export const protectedAction = serverActionProcedure.use((opts) => {
 
 Create a file with the `"use server"` directive and define your action using the procedure builder:
 
-```ts twoslash title="app/_actions.ts"
+```ts twoslash title='app/_actions.ts'
 // @filename: server/trpc.ts
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
@@ -149,7 +152,7 @@ Because of `experimental_caller`, the procedure is now a plain async function th
 
 Import the server action and use it in a client component. Server actions work with both the `action` attribute for progressive enhancement and programmatic calls via `onSubmit`:
 
-```tsx twoslash title="app/post-form.tsx"
+```tsx twoslash title='app/post-form.tsx'
 // @jsx: react-jsx
 // @filename: _actions.ts
 export declare function createPost(input: { title: string }): Promise<void>;
@@ -180,7 +183,7 @@ export function PostForm() {
 
 Use the `.meta()` method to tag actions for logging or tracing. The `span` property from the metadata is passed to `pathExtractor`, so it can be used by observability tools:
 
-```ts twoslash title="app/_actions.ts"
+```ts twoslash title='app/_actions.ts'
 // @filename: server/trpc.ts
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';

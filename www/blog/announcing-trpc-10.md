@@ -17,7 +17,7 @@ Since our last major version release in August 2021, the tRPC community has seen
 
 **Today, we're launching tRPC v10**. We're excited to share that v10 is already being used in production by many large TypeScript projects. This official release announces general availability to the wider community.
 
-For new projects, you can get up and running with an [example application](/docs/community/awesome-trpc#-starting-points-example-projects-etc) to learn about tRPC v10. For projects that were already enjoying tRPC v9, [visit the v10 migration guide](/v10/docs/migrate-from-v9-to-v10).
+For new projects, you can get up and running with an [example application](/docs/community/awesome-trpc#-starting-points-example-projects-etc) to learn about tRPC v10. For projects that were already enjoying tRPC v9, [visit the v10 migration guide](/docs/v10/migrate-from-v9-to-v10).
 
 ## Overview of changes
 
@@ -50,7 +50,7 @@ Our goal is to enhance the developer experience for applications of all sizes. I
 
 ## Incremental migration
 
-We've also put in a lot of work to make the migration experience as straightforward as possible, including an `interop()` method that allows (almost) full backward compatibility with v9 routers. [Visit the migration guide](/v10/docs/migrate-from-v9-to-v10) for more information.
+We've also put in a lot of work to make the migration experience as straightforward as possible, including an `interop()` method that allows (almost) full backward compatibility with v9 routers. [Visit the migration guide](/docs/v10/migrate-from-v9-to-v10) for more information.
 
 [Sachin](https://twitter.com/s4chinraja) from the core team has also made [a codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) that can do much of the heavy lifting of the migration for you.
 

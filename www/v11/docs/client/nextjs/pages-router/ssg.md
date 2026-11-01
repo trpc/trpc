@@ -1,22 +1,24 @@
 ---
-title: "Static Site Generation"
-label: "Static Site Generation (SSG)"
-description: ""
+id: ssg
+title: Static Site Generation
+sidebar_label: Static Site Generation (SSG)
+slug: /client/nextjs/pages-router/ssg
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
 order: 72
 ---
 
-> [!TIP]
-> Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+:::tip
+Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+:::
 
 Static site generation requires executing tRPC queries inside `getStaticProps` on each page.
 
-This can be done using [server-side helpers](./server-side-helpers.md) to prefetch the queries, dehydrate them, and pass it to the page. The queries will then automatically pick up the `trpcState` and use it as an initial value.
+This can be done using [server-side helpers](/docs/client/nextjs/pages-router/server-side-helpers) to prefetch the queries, dehydrate them, and pass it to the page. The queries will then automatically pick up the `trpcState` and use it as an initial value.
 
 ## Fetch data in `getStaticProps`
 
-```tsx twoslash title="pages/posts/[id].tsx"
+```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
 // @filename: server/context.ts
 export declare const prisma: {
@@ -161,7 +163,7 @@ const data = trpc.example.useQuery(
 
 Or globally, if every query across your app should behave the same way:
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();

@@ -1,6 +1,8 @@
 ---
-title: "HTTP Batch Stream Link"
-description: ""
+id: httpBatchStreamLink
+title: HTTP Batch Stream Link
+sidebar_label: HTTP Batch Stream Link
+slug: /client/links/httpBatchStreamLink
 section: "Client Usage"
 parent: "client/links"
 order: 33
@@ -20,8 +22,9 @@ Options are identical to [`httpBatchLink options`](./httpBatchLink.md#options), 
 
 > All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
 
-> [!NOTE]
-> If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](./httpBatchLink.md).
+:::note
+If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](./httpBatchLink.md).
+:::
 
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
@@ -193,11 +196,13 @@ httpBatchStreamLink({
 
 ## Compatibility (server-side)
 
-> [!WARNING] AWS Lambda
-> `httpBatchStreamLink` only supported on AWS Lambda when your [infrastructure is set up](../../server/adapters/aws-lambda.md#aws-lambda-response-streaming-adapter) for streaming responses. If not this Link will simply behave like a regular `httpBatchLink`.
+:::caution AWS Lambda
+`httpBatchStreamLink` only supported on AWS Lambda when your [infrastructure is set up](/docs/server/adapters/aws-lambda#aws-lambda-response-streaming-adapter) for streaming responses. If not this Link will simply behave like a regular `httpBatchLink`.
+:::
 
-> [!WARNING] Cloudflare Workers
-> You need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors).
+:::caution Cloudflare Workers
+You need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors).
+:::
 
 ## Reference
 

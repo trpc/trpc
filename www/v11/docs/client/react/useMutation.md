@@ -1,20 +1,23 @@
 ---
-title: "useMutation()"
-description: ""
+id: useMutation
+title: useMutation()
+sidebar_label: useMutation()
+slug: /client/react/useMutation
 section: "Client Usage"
 parent: "client/react"
 order: 57
 ---
 
-> [!NOTE]
-> The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://tanstack.com/query/v5/docs/framework/react/guides/mutations).
+:::note
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://tanstack.com/query/v5/docs/framework/react/guides/mutations).
+:::
 
 ### Example
 
 <details>
 <summary>Backend code</summary>
 
-```tsx twoslash title="server/routers/_app.ts"
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 

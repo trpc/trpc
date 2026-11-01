@@ -1,6 +1,8 @@
 ---
-title: "HTTP Subscription Link"
-description: ""
+id: httpSubscriptionLink
+title: HTTP Subscription Link
+sidebar_label: HTTP Subscription Link
+slug: /client/links/httpSubscriptionLink
 section: "Client Usage"
 parent: "client/links"
 order: 34
@@ -12,8 +14,9 @@ SSE is a good option for real-time as it's a bit easier than setting up a WebSoc
 
 ## Setup {#setup}
 
-> [!NOTE] Info
-> If your client's environment doesn't support EventSource, you need an [EventSource polyfill](https://www.npmjs.com/package/event-source-polyfill). For React Native specific instructions please defer to the [compatibility section](#compatibility-react-native).
+:::info
+If your client's environment doesn't support EventSource, you need an [EventSource polyfill](https://www.npmjs.com/package/event-source-polyfill). For React Native specific instructions please defer to the [compatibility section](#compatibility-react-native).
+:::
 
 To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.md) to make it explicit that we want to use SSE for subscriptions.
 
@@ -56,8 +59,9 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 ```
 
-> [!TIP]
-> The document here outlines the specific details of using `httpSubscriptionLink`. For general usage of subscriptions, see [our subscriptions guide](../../server/subscriptions.md).
+:::tip
+The document here outlines the specific details of using `httpSubscriptionLink`. For general usage of subscriptions, see [our subscriptions guide](../../server/subscriptions.md).
+:::
 
 ## Headers and authorization / authentication
 
@@ -156,8 +160,9 @@ const trpc = createTRPCClient<AppRouter>({
 
 To address this limitation, you can use a [`retryLink`](./retryLink.md) in conjunction with `httpSubscriptionLink`. This approach ensures that the connection is re-established with the latest configuration, including any updated authentication details.
 
-> [!WARNING] Caution
-> Please note that restarting the connection will result in the `EventSource` being recreated from scratch, which means any previously tracked events will be lost.
+:::caution
+Please note that restarting the connection will result in the `EventSource` being recreated from scratch, which means any previously tracked events will be lost.
+:::
 
 ```tsx twoslash
 // @filename: server.ts
@@ -417,6 +422,7 @@ type HTTPSubscriptionLinkOptions<
 ## SSE Options on the server
 
 ```ts twoslash
+
 export interface SSEStreamProducerOptions<TValue = unknown> {
   ping?: {
     /**

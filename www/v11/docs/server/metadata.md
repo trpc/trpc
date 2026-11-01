@@ -1,14 +1,17 @@
 ---
-title: "Metadata"
-description: ""
+id: metadata
+title: Metadata
+sidebar_label: Metadata
+slug: /server/metadata
 section: "Backend Usage"
 order: 25
 ---
 
 Procedure metadata allows you to add an optional procedure specific `meta` property which will be available in all [middleware](./middlewares.md) function parameters.
 
-> [!TIP]
-> Use metadata together with [`trpc-openapi`](https://github.com/jlalmes/trpc-openapi) if you want to expose REST-compatible endpoints for your application.
+:::tip
+Use metadata together with [`trpc-openapi`](https://github.com/jlalmes/trpc-openapi) if you want to expose REST-compatible endpoints for your application.
+:::
 
 ## Create router with typed metadata
 
@@ -30,7 +33,7 @@ export const appRouter = t.router({
 
 ## Example with per route authentication settings
 
-```tsx twoslash title="server.ts"
+```tsx twoslash title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 
 type Context = { user: { name: string } | null };

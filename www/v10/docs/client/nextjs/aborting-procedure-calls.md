@@ -1,6 +1,8 @@
 ---
-title: "Aborting Procedure Calls"
-description: ""
+id: aborting-procedure-calls
+title: Aborting Procedure Calls
+sidebar_label: Aborting Procedure Calls
+slug: /client/nextjs/aborting-procedure-calls
 section: "Client Usage"
 parent: "client/nextjs"
 order: 44
@@ -10,7 +12,11 @@ By default, tRPC does not cancel requests on unmount. If you want to opt into th
 
 ### Globally
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @target: esnext
+// ---cut---
+// @filename: utils.ts
+// @noErrors
 import { createTRPCNext } from '@trpc/next';
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -27,7 +33,12 @@ export const trpc = createTRPCNext<AppRouter>({
 
 You may also override this behavior at the request level.
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @target: esnext
+
+// ---cut---
+// @filename: pages/posts/[id].tsx
+// @noErrors
 import { trpc } from '~/utils/trpc';
 
 const PostViewPage: NextPageWithLayout = () => {

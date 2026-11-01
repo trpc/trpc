@@ -1,7 +1,8 @@
 ---
-title: "Content Types"
-label: "Content Types (JSON, FormData, File, Blob)"
-description: ""
+id: non-json-content-types
+title: Content Types
+sidebar_label: Content Types (JSON, FormData, File, Blob)
+slug: /server/non-json-content-types
 section: "Backend Usage"
 order: 24
 ---
@@ -35,8 +36,9 @@ In addition to JSON, tRPC can use FormData, File, and other binary types as proc
 
 ### Client Setup
 
-> [!NOTE] Info
-> While tRPC natively supports several non-JSON serializable types, your client may need a little link configuration to support them depending on your setup.
+:::info
+While tRPC natively supports several non-JSON serializable types, your client may need a little link configuration to support them depending on your setup.
+:::
 
 `httpLink` supports non-JSON content types out of the box — if you're only using this link, your existing setup should work immediately.
 
@@ -147,35 +149,37 @@ createTRPCClient<AppRouter>({
 
 ### Server Setup
 
-> [!NOTE] Info
-> When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
-> If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it.
->
-> ```ts twoslash
-> // @filename: router.ts
-> import { initTRPC } from '@trpc/server';
-> const t = initTRPC.create();
-> export const appRouter = t.router({});
->
-> // @filename: app.ts
-> // ---cut---
-> // Example in express
-> import express from 'express';
-> import * as trpcExpress from '@trpc/server/adapters/express';
-> import { appRouter } from './router';
->
-> // incorrect
-> const app1 = express();
-> app1.use(express.json()); // this tries to parse body before tRPC.
-> app1.post('/express/hello', (req, res) => { res.end(); }); // normal express route handler
-> app1.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC fails to parse body
->
-> // correct
-> const app2 = express();
-> app2.use('/express', express.json()); // do it only in "/express/*" path
-> app2.post('/express/hello', (req, res) => { res.end(); });
-> app2.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC can parse body
-> ```
+:::info
+When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
+If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it.
+
+```ts twoslash
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: app.ts
+// ---cut---
+// Example in express
+import express from 'express';
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { appRouter } from './router';
+
+// incorrect
+const app1 = express();
+app1.use(express.json()); // this tries to parse body before tRPC.
+app1.post('/express/hello', (req, res) => { res.end(); }); // normal express route handler
+app1.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC fails to parse body
+
+// correct
+const app2 = express();
+app2.use('/express', express.json()); // do it only in "/express/*" path
+app2.post('/express/hello', (req, res) => { res.end(); });
+app2.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC can parse body
+```
+
+:::
 
 #### `FormData` Input
 

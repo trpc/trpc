@@ -1,7 +1,8 @@
 ---
-title: "Express Adapter"
-label: "Express"
-description: ""
+id: express
+title: Express Adapter
+sidebar_label: Express
+slug: /server/adapters/express
 section: "Backend Usage"
 parent: "server/adapters"
 order: 14
@@ -43,7 +44,7 @@ yarn add @trpc/server zod
 
 Implement your tRPC router. A sample router is given below:
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -66,13 +67,13 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](../merging-routers.md) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/server/merging-routers) into a single root `appRouter`.
 
 ### 3. Use the Express adapter
 
 tRPC includes an adapter for Express out of the box. This adapter lets you convert your tRPC router into an Express middleware.
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';

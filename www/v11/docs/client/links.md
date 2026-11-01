@@ -1,7 +1,8 @@
 ---
-title: "Links Overview"
-label: "Links"
-description: ""
+id: overview
+title: Links Overview
+sidebar_label: "Links"
+slug: /client/links
 section: "Client Usage"
 order: 30
 ---
@@ -15,7 +16,7 @@ You can compose links together into an array that you can provide to the tRPC cl
   <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>
 </div>
 
-```ts twoslash title="utils/trpc.ts"
+```ts twoslash title='utils/trpc.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -47,7 +48,7 @@ A link is a function that follows the `TRPCLink` type. Each link is composed of 
 
 ### Example
 
-```tsx twoslash title="utils/customLink.ts"
+```tsx twoslash title='utils/customLink.ts'
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -111,4 +112,4 @@ Obtain the current context object and modify it by accessing `op.context`.
 
 You can set the context object's initial value for a particular operation by providing the context parameter to the `query` or `useQuery` hook (or `mutation`, `subscription`, etc.).
 
-For an example use case, see [Disable batching for certain requests](./links/splitLink.md#disable-batching-for-certain-requests).
+For an example use case, see [Disable batching for certain requests](/docs/client/links/splitLink#disable-batching-for-certain-requests).

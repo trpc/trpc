@@ -1,7 +1,8 @@
 ---
-title: "createTRPCQueryUtils"
-label: "createTRPCQueryUtils()"
-description: ""
+id: createTRPCQueryUtils
+title: createTRPCQueryUtils
+sidebar_label: createTRPCQueryUtils()
+slug: /client/react/createTRPCQueryUtils
 section: "Client Usage"
 parent: "client/react"
 order: 61
@@ -15,17 +16,17 @@ The difference between `useUtils` and `createTRPCQueryUtils` is that `useUtils` 
 
 If you need access to the client directly, you can use the `client` object that you passed to `createTRPCQueryUtils` during creation.
 
-> [!WARNING] Caution
->
-> You should avoid using `createTRPCQueryUtils` in React Components. Instead, use `useUtils` which is a React hook that implements `useCallback` and `useQueryClient` under the hood.
+:::caution
+
+You should avoid using `createTRPCQueryUtils` in React Components. Instead, use `useUtils` which is a React hook that implements `useCallback` and `useQueryClient` under the hood.
+
+:::
 
 ## Usage
 
 `createTRPCQueryUtils` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
 
-Now in our route loader, when we navigate the object `createTRPCQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
-
-```tsx twoslash title="MyPage.tsx"
+```twoslash include server
 // @target: esnext
 // @filename: server.ts
 // ---cut---
@@ -48,6 +49,12 @@ const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
+```
+
+Now in our route loader, when we navigate the object `createTRPCQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
+
+```tsx twoslash title="MyPage.tsx"
+// @include: server
 // @filename: MyPage.tsx
 declare function useLoaderData(): unknown;
 import React from 'react';
@@ -90,9 +97,11 @@ export function Component() {
 }
 ```
 
-> [!NOTE]
->
-> If you were using Remix Run or SSR you wouldn't re-use the same `queryClient` for every request. Instead, you would create a new `queryClient` for every request so that there's no cross-request data leakage.
+:::note
+
+If you were using Remix Run or SSR you wouldn't re-use the same `queryClient` for every request. Instead, you would create a new `queryClient` for every request so that there's no cross-request data leakage.
+
+:::
 
 ## Helpers
 

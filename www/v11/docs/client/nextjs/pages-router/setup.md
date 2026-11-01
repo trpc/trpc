@@ -1,18 +1,20 @@
 ---
-title: "Set up with Next.js Pages Router"
-label: "Pages Router"
-description: ""
+id: setup
+title: Set up with Next.js Pages Router
+sidebar_label: "Pages Router"
+slug: /client/nextjs/pages-router/setup
 section: "Client Usage"
 parent: "client/nextjs"
 order: 70
 ---
 
-> [!WARNING] Caution
-> This guide is for the **Next.js Pages Router**. If you are using the **Next.js App Router**, see the [App Router setup guide](../app-router-setup.md) instead.
+:::caution
+This guide is for the **Next.js Pages Router**. If you are using the **Next.js App Router**, see the [App Router setup guide](/docs/client/nextjs/app-router-setup) instead.
+:::
 
 ## Recommended file structure
 
-We recommend a file structure like this one, although it is not enforced by tRPC. This is what you'll see in [our examples](../../../example-apps.md). The rest of this page will take you through the process of adding tRPC in to this structure.
+We recommend a file structure like this one, although it is not enforced by tRPC. This is what you'll see in [our examples](/docs/example-apps). The rest of this page will take you through the process of adding tRPC in to this structure.
 
 ```graphql
 .
@@ -69,13 +71,13 @@ If strict mode is too harsh, you'll at least want to enable `strictNullChecks`:
 
 Initialize your tRPC backend in `src/server/trpc.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to:
 
-- the [Quickstart guide](../../../quickstart.md) and [Backend usage docs](../../../server/overview.md) for tRPC information
-- the [Next.js Adapter docs](../../../server/adapters/nextjs.md) for mounting tRPC within your Next.js server.
+- the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/overview) for tRPC information
+- the [Next.js Adapter docs](/docs/server/adapters/nextjs) for mounting tRPC within your Next.js server.
 
 <details>
 <summary>View sample backend</summary>
 
-```ts twoslash title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
 // Avoid exporting the entire t-object
@@ -91,7 +93,7 @@ export const procedure = t.procedure;
 
 <br />
 
-```ts twoslash title="server/routers/_app.ts"
+```ts twoslash title='server/routers/_app.ts'
 // @filename: server/trpc.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -123,7 +125,7 @@ export type AppRouter = typeof appRouter;
 
 <br />
 
-```ts twoslash title="pages/api/trpc/[trpc].ts"
+```ts twoslash title='pages/api/trpc/[trpc].ts'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -145,14 +147,15 @@ export default trpcNext.createNextApiHandler({
 
 </details>
 
-> [!NOTE]
-> The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/main/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
+:::note
+The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/main/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
+:::
 
 ### 4. Create tRPC hooks
 
 Use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -210,14 +213,15 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-> [!NOTE]
-> `createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](/v9/docs/nextjs#4-create-trpc-hooks).
+:::note
+`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](/docs/v9/nextjs#4-create-trpc-hooks).
+:::
 
 ### 5. Configure `_app.tsx`
 
 Wrap your root app page in the `trpc.withTRPC` HOC, similar to this:
 
-```tsx twoslash title="pages/_app.tsx"
+```tsx twoslash title='pages/_app.tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -252,7 +256,7 @@ You're all set!
 
 You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../../react/setup.md)
 
-```tsx twoslash title="pages/index.tsx"
+```tsx twoslash title='pages/index.tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -296,17 +300,17 @@ export default function IndexPage() {
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function receives an object with an optional `ctx` property (of type `NextPageContext`) that gives you access to the Next.js `req` object during server-side rendering. The returned value can contain the following properties:
 
 - **Required**:
-- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](../../links.md).
+- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/client/links).
 - Optional:
 - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v5/docs/reference/QueryClient)
 - `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v5/docs/reference/QueryClient)
   - **Note:** You can only provide either a `queryClient` or a `queryClientConfig`.
-- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](../../../server/data-transformers.md)
+- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
 ### `overrides`: (default: `undefined`) {#overrides}
 
-Configure [overrides for React Query's hooks](../../react/useUtils.md#invalidate-full-cache-on-every-mutation).
+Configure [overrides for React Query's hooks](/docs/client/react/useUtils#invalidate-full-cache-on-every-mutation).
 
 ### `ssr`-boolean (default: `false`)
 
@@ -318,7 +322,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx twoslash title="utils/trpc.ts"
+```tsx twoslash title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -343,6 +347,6 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## Next steps
 
-Browse the rest of the docs to learn more about things like [authorization](../../../server/authorization.md), [middlewares](../../../server/middlewares.md), and [error handling](../../../server/error-handling.md).
+Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find information about [queries](../../react/useQuery.md) and [mutations](../../react/useMutation.md) now that you're using `@trpc/react-query`.
+You can also find information about [queries](/docs/client/react/useQuery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query`.

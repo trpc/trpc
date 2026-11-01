@@ -1,6 +1,8 @@
 ---
-title: "Migrate from v9 to v10"
-description: ""
+id: migrate-from-v9-to-v10
+title: Migrate from v9 to v10
+sidebar_label: Migrate from v9 to v10
+slug: /migrate-from-v9-to-v10
 section: "Migrate from v9 to v10"
 order: 64
 ---
@@ -16,7 +18,7 @@ tRPC v10 features a compatibility layer for users coming from v9. `.interop()` a
 <details>
   <summary>Initializing your server</summary>
 
-```ts title="/src/server/trpc.ts"
+```ts title='/src/server/trpc.ts'
 /**
  * This is your entry point to setup the root configuration for tRPC on the server.
  * - `initTRPC` should only be used once per app.
@@ -194,7 +196,7 @@ const appRouter = t.router({
 <details>
   <summary>Full example with data transformer, OpenAPI metadata, and error formatter</summary>
 
-```ts title="/src/server/trpc.ts"
+```ts title='/src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
@@ -245,10 +247,12 @@ We recommend two strategies to start **(and finish!)** upgrading your codebase t
 
 [@sachinraja](https://twitter.com/s4chinraja) has created [an excellent codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) for this major upgrade. Run the script to have 95% of the work done for you in a matter of moments.
 
-> [!NOTE] Info
->
-> - If you use the codemod, you should still do steps 1-3 below to make sure that works for you before doing the full migration.
-> - Please note that this codemod isn't perfect but will do a lot of the heavy lifting for you.
+:::info
+
+- If you use the codemod, you should still do steps 1-3 below to make sure that works for you before doing the full migration.
+- Please note that this codemod isn't perfect but will do a lot of the heavy lifting for you.
+
+:::
 
 ### Using `.interop()`
 
@@ -258,7 +262,7 @@ Rewriting all of your existing v9 routes today may be too heavy of a lift for yo
 
 Turning your v9 router into a v10 router only takes 10 characters. Add `.interop()` to the end of your v9 router... and you're done with your server code!
 
-```diff title="src/server/routers/_app.ts"
+```diff title='src/server/routers/_app.ts'
   const appRouter = trpc
     .router<Context>()
     /* ... */
@@ -266,14 +270,15 @@ Turning your v9 router into a v10 router only takes 10 characters. Add `.interop
   export type AppRouter = typeof appRouter;
 ```
 
-> [!NOTE] Info
-> There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
+:::info
+There are [a few features that are not supported by `.interop()`](#limitations-of-interop). We expect nearly all of our users to be able to use `.interop()` to migrate their server side code in only a few minutes. If you are discovering that `.interop()` is not working correctly for you, be sure to [check here](#limitations-of-interop).
+:::
 
 ### 2. Create the `t`-object
 
 Now, let's initialize a v10 router so we can start using v10 for any new routes we will write.
 
-```ts title="src/server/trpc.ts"
+```ts title='src/server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { Context } from './context';
@@ -326,8 +331,9 @@ export const appRouter = mergeRouters(legacyRouter, mainRouter);
 export type AppRouter = typeof appRouter;
 ```
 
-> [!TIP]
-> Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
+:::tip
+Be careful of using procedures that will end up having the same caller name! You will run into issues if a path in your legacy router matches a path in your new router.
+:::tip
 
 ### 4. Use it in your client
 
@@ -409,12 +415,13 @@ trpc.post.byId.useQuery('1', {
 
 #### Query key changes
 
-> [!NOTE]
-> If you only use the tRPC provided APIs in your app you will have no problems in
-> migrating 👍 However if you have been using the tanstack query client directly
-> to do things like update query data for multiple tRPC generated queries using
-> [`queryClient.setQueriesData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
-> you may need to take note!
+:::note
+If you only use the tRPC provided APIs in your app you will have no problems in
+migrating 👍 However if you have been using the tanstack query client directly
+to do things like update query data for multiple tRPC generated queries using
+[`queryClient.setQueriesData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
+you may need to take note!
+:::
 
 To allow us to make room for some more advanced features like [invalidation across
 whole routers](./client/react/useUtils.md#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the

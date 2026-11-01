@@ -1,7 +1,8 @@
 ---
-title: "Custom header"
-label: "Create Custom Header"
-description: ""
+id: headers
+title: Custom header
+sidebar_label: Create Custom Header
+slug: /client/headers
 section: "Client Usage"
 order: 57
 ---
@@ -10,7 +11,7 @@ The headers option can be customized in the config when using the [`httpBatchLin
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 
-```ts title="utils/trpc.ts"
+```ts title='utils/trpc.ts'
 // Import the router type from your server file
 import type { AppRouter } from '@/server/routers/app';
 import { httpBatchLink } from '@trpc/client';
@@ -49,7 +50,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ### Example with auth login
 
-```ts title="pages/auth.tsx"
+```ts title='pages/auth.tsx'
 const loginMut = trpc.auth.login.useMutation({
   onSuccess(opts) {
     token = opts.accessToken;

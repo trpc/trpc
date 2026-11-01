@@ -36,7 +36,7 @@ import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
 import { useEnableOnVisit } from '~/flags.ts';
 import { absoluteUrl, ogImageUrl, pageHead } from '~/seo.ts';
-import { site, v11 } from '~/site.ts';
+import { docPath, site, v11 } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
@@ -107,20 +107,19 @@ export function docHead(version: DocsVersion, slug: string) {
   if (!meta) {
     return { meta: [{ title: `Not found | ${site.name}` }] };
   }
-  const path = `${version.basePath}/${meta.slug}`;
+  const path = docPath(version, meta.slug);
   const title = stripInlineCode(meta.title);
   const description = stripInlineCode(meta.description) || site.description;
   const isV11 = version.id === v11.id;
   return pageHead({
-    article: { modified: meta.lastModified, section: meta.section },
+    article: { section: meta.section },
     description,
-    ...(isV11 ? { markdownPath: `${path}.md` } : {}),
+    ...(isV11 ? { markdownPath: `${version.basePath}/${meta.slug}.md` } : {}),
     noindex: meta.experiment !== undefined,
     path,
     structuredData: [
       {
         '@type': 'TechArticle',
-        dateModified: meta.lastModified,
         description,
         headline: title,
         image: ogImageUrl(path),
@@ -129,9 +128,7 @@ export function docHead(version: DocsVersion, slug: string) {
         mainEntityOfPage: absoluteUrl(path),
         proficiencyLevel: 'Expert',
       },
-      breadcrumbs(version, meta, (page) =>
-        absoluteUrl(`${version.basePath}/${page}`),
-      ),
+      breadcrumbs(version, meta, (page) => absoluteUrl(docPath(version, page))),
     ],
     title: isV11 ? title : `${title} (${version.id})`,
     type: 'article',

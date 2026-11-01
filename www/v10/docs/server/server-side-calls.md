@@ -1,20 +1,24 @@
 ---
-title: "Server Side Calls"
-description: ""
+id: server-side-calls
+title: Server Side Calls
+sidebar_label: Server Side Calls
+slug: /server/server-side-calls
 section: "Backend Usage"
 order: 20
 ---
 
 You may need to call your procedure(s) directly from the same server they're hosted in, `createCallerFactory()` can be used to achieve this. This is useful for server-side calls and for integration testing of your tRPC procedures.
 
-> [!NOTE] Info
->
-> `createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
->
-> <div class="flex gap-2 w-full justify-between pt-2">
->   <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" class="w-[49.5%]" />
->   <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" class="w-[49.5%]" />
-> </div>
+:::info
+
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
+
+<div class="flex gap-2 w-full justify-between pt-2">
+  <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" class="w-[49.5%]" />
+  <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" class="w-[49.5%]" />
+</div>
+
+:::
 
 ## Create caller
 
@@ -24,7 +28,8 @@ With the `t.createCallerFactory`-function you can create a server-side caller of
 
 We create the router with a query to list posts and a mutation to add posts, and then we a call each method.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -81,6 +86,7 @@ const addedPost = await caller.post.add({
 });
 
 const postList = await caller.post.list();
+//     ^?
 ```
 
 ### Example usage in an integration test
@@ -110,8 +116,9 @@ test('add and get post', async () => {
 
 ## `router.createCaller()`
 
-> [!WARNING] Caution
-> `router.createCaller()` has been deprecated and will be removed in v11 or v12 of tRPC.
+:::caution
+`router.createCaller()` has been deprecated and will be removed in v11 or v12 of tRPC.
+:::
 
 With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
 
@@ -119,7 +126,8 @@ With the `router.createCaller({})` function (first argument is `Context`) we ret
 
 We create the router with an input query, and then we call the asynchronous `greeting` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -134,13 +142,15 @@ const router = t.router({
 
 const caller = router.createCaller({});
 const result = await caller.greeting({ name: 'tRPC' });
+//     ^?
 ```
 
 ### Mutation example
 
 We create the router with a mutation, and then we call the asynchronous `post` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -158,6 +168,7 @@ const router = t.router({
 
 const caller = router.createCaller({});
 const result = await caller.post.add('Four');
+//     ^?
 ```
 
 ### Context with middleware example
@@ -166,13 +177,16 @@ We create a middleware to check the context before executing the `secret` proced
 
 <br />
 
-> [!NOTE] Info
->
-> Middlewares are performed before any procedure(s) are called.
+:::info
+
+Middlewares are performed before any procedure(s) are called.
+
+:::
 
 <br />
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC, TRPCError } from '@trpc/server';
 
 type Context = {
@@ -218,17 +232,22 @@ const router = t.router({
     },
   });
   const result = await authorizedCaller.secret();
+  //     ^?
 }
 ```
 
 ### Example for a Next.js API endpoint
 
-> [!TIP]
->
-> This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
-> how to call a procedure from another, custom endpoint.
+:::tip
 
-```ts
+This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
+how to call a procedure from another, custom endpoint.
+
+:::
+
+```ts twoslash
+// @noErrors
+// ---cut---
 import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 import { appRouter } from '~/server/routers/_app';

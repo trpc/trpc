@@ -1,6 +1,8 @@
 ---
-title: "Error Formatting"
-description: ""
+id: error-formatting
+title: Error Formatting
+sidebar_label: Error Formatting
+slug: /error-formatting
 section: "@trpc/server"
 order: 18
 ---
@@ -11,7 +13,7 @@ The error formatting in your router will be inferred all the way to your client 
 
 ### Adding custom formatting
 
-```ts title="server.ts"
+```ts title='server.ts'
 const router = trpc.router<Context>().formatError(({ shape, error }) => {
   return {
     ...shape,
@@ -28,7 +30,7 @@ const router = trpc.router<Context>().formatError(({ shape, error }) => {
 
 ### Usage in React
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 export function MyComponent() {
   const mutation = trpc.useMutation('addPost');
 

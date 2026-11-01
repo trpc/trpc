@@ -3,7 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { buttonVariants } from '@shared/ui/components/button';
 import { v11Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
-import { site } from '~/site.ts';
+import { docsLinks, site } from '~/site.ts';
 
 import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
 import { Logo } from './logo.tsx';
@@ -13,13 +13,6 @@ import { ThemeToggle } from './theme-toggle.tsx';
 import { VersionSwitcher } from './version-switcher.tsx';
 
 const navLink = buttonVariants({ size: 'sm', variant: 'ghost' });
-
-/** trpc.io's navbar links; the older versions' pages get them too. */
-const links = [
-  { label: 'Docs', slug: v11Docs.firstDoc },
-  { label: 'Quickstart', slug: 'quickstart' },
-  { label: 'Using Next.js', slug: 'client/nextjs' },
-] as const;
 
 const socialLinks = [
   {
@@ -43,7 +36,7 @@ const socialLinks = [
 ] as const;
 
 function DocsLinks() {
-  return links.map((link) => (
+  return docsLinks.map((link) => (
     <Link
       activeOptions={{ exact: true }}
       activeProps={{ className: 'text-foreground' }}

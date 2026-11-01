@@ -1,6 +1,8 @@
 ---
-title: "useMutation()"
-description: ""
+id: mutations
+title: useMutation()
+sidebar_label: useMutation()
+slug: /react-mutations
 section: "@trpc/react"
 order: 29
 ---
@@ -14,7 +16,7 @@ Works like react-query's mutations - [see their docs](https://tanstack.com/query
 <details>
 <summary>Backend code</summary>
 
-```tsx title="server/routers/_app.ts"
+```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 

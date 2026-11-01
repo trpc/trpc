@@ -1,7 +1,9 @@
 ---
-title: "Migrating from the classic React Client"
-label: "Migrating"
-description: "Migrating from the classic React Client"
+id: migrating
+title: Migrating from the classic React Client
+sidebar_label: Migrating
+description: Migrating from the classic React Client
+slug: /client/tanstack-react-query/migrating
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 50
@@ -11,8 +13,9 @@ There are a few approaches to migrate over, and this library is a significant de
 
 ## Codemod migration
 
-> [!NOTE] Info
-> The codemod is a work in progress and we're looking for help to make it better. If you're interested in contributing to the codemod, please see [Julius' comment here](https://github.com/trpc/trpc/pull/6262#issuecomment-2651959435).
+:::info
+The codemod is a work in progress and we're looking for help to make it better. If you're interested in contributing to the codemod, please see [Julius' comment here](https://github.com/trpc/trpc/pull/6262#issuecomment-2651959435).
+:::
 
 We're working on a codemod to help you migrate your existing codebase over to the new client. This is already available to try but we need your feedback and contributions to improve it. Codemods are very tricky to get right so we're looking for your help to make it as effective as possible.
 
@@ -261,5 +264,6 @@ function Users() {
 }
 ```
 
-> [!NOTE]
-> @tanstack/react-query only supports aborting queries, so this applies to `queryOptions` and `infiniteQueryOptions`.
+:::note
+@tanstack/react-query only supports aborting queries, so this applies to `queryOptions` and `infiniteQueryOptions`.
+:::

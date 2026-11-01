@@ -1,6 +1,8 @@
 ---
-title: "Input & Output Validators"
-description: ""
+id: validators
+title: Input & Output Validators
+sidebar_label: Input & Output Validators
+slug: /server/validators
 section: "Backend Usage"
 order: 9
 ---
@@ -89,8 +91,9 @@ Validating outputs is not always as important as defining inputs, since tRPC giv
 - Checking that data returned from untrusted sources is correct
 - Ensure that you are not returning more data to the client than necessary
 
-> [!NOTE] Info
-> If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
+:::info
+If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
+:::
 
 ```ts
 // @target: esnext
@@ -123,10 +126,11 @@ export const appRouter = t.router({
 
 You can define a validator without any 3rd party dependencies, with a function.
 
-> [!NOTE] Info
-> We don't recommend making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
->
-> In most cases we recommend you use a [validation library](#library-integrations)
+:::info
+We don't recommend making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
+
+In most cases we recommend you use a [validation library](#library-integrations)
+:::
 
 ```ts
 import { initTRPC } from '@trpc/server';

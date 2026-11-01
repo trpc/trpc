@@ -1,14 +1,16 @@
 ---
-title: "Next.js Adapter"
-label: "Next.js"
-description: ""
+id: nextjs
+title: Next.js Adapter
+sidebar_label: Next.js
+slug: /server/adapters/nextjs
 section: "Backend Usage"
 parent: "server/adapters"
 order: 17
 ---
 
-> [!TIP]
-> tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter, but complete documentation is [available here](../../client/nextjs.md)
+:::tip
+tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter, but complete documentation is [available here](../../client/nextjs.md)
+:::
 
 ## Example app
 
@@ -36,7 +38,7 @@ order: 17
 
 Serving your tRPC router in a Next.js project is straight-forward. Just create an API handler in `pages/api/trpc/[trpc].ts` as shown below:
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 import { createNextApiHandler } from '@trpc/server/adapters/next';
 import { createContext } from '../../../server/trpc/context';
 import { appRouter } from '../../../server/trpc/router/_app';
@@ -54,7 +56,7 @@ While you can usually just "set and forget" the API Handler as shown above, some
 
 The API handler created by `createNextApiHandler` and equivalents in other frameworks is just a function that takes `req` and `res` objects. This means you can also modify those objects before passing them to the handler, for example to [enable CORS](../../client/cors.md).
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 import { createNextApiHandler } from '@trpc/server/adapters/next';
 import { createContext } from '../../../server/trpc/context';
 import { appRouter } from '../../../server/trpc/router/_app';
@@ -101,7 +103,7 @@ export default async function handler(
 
 If you're trying out the Next.js App Router and want to use [route handlers](https://beta.nextjs.org/docs/routing/route-handlers), you can do so by using the [fetch](./fetch.md) adapter, as they build on web standard Request and Response objects:
 
-```ts title="app/api/trpc/[trpc]/route.ts"
+```ts title='app/api/trpc/[trpc]/route.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from '~/server/api/router';
 

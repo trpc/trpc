@@ -1,7 +1,8 @@
 ---
-title: "tRPC"
-label: "Introduction"
-description: ""
+id: introduction
+title: tRPC
+sidebar_label: Introduction
+slug: /
 section: "tRPC"
 order: 0
 ---
@@ -50,4 +51,4 @@ If your project is built with full-stack TypeScript, you can share types **direc
 - 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React and there are many [community adapters](./awesome-trpc.md#-extensions--community-add-ons) for other libraries)_
 - 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one.
-- 👀&nbsp; Quite a few [examples](./example-apps.md) that you can use for reference or as a starting point.
+- 👀&nbsp; Quite a few [examples](example-apps.md) that you can use for reference or as a starting point.

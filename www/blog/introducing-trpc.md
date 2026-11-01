@@ -123,14 +123,14 @@ return (
 
 Anyway, as I said, I just wanted to get the ball rolling. There's a lot more things:
 
-- Creating context for incoming requests for user-specific data that are dependency injected into the resolvers - [link](/v9/docs/context)
-- Middleware support for routers - [link](/v9/docs/middlewares)
-- Merging routers (you probably don't want all your backend data in one file) - [link](/v9/docs/merging-routers)
-- Simplest server-side rendering you've ever seen in React-land using our `@trpc/next` adapter - [link](/v9/docs/introduction)
-- Type-safe error formatting - [link](/v9/docs/error-formatting)
-- Data transformers (use Date/Map/Set objects across the wire) - [link](/v9/docs/data-transformers)
+- Creating context for incoming requests for user-specific data that are dependency injected into the resolvers - [link](/docs/v9/context)
+- Middleware support for routers - [link](/docs/v9/middlewares)
+- Merging routers (you probably don't want all your backend data in one file) - [link](/docs/v9/merging-routers)
+- Simplest server-side rendering you've ever seen in React-land using our `@trpc/next` adapter - [link](/docs/v9)
+- Type-safe error formatting - [link](/docs/v9/error-formatting)
+- Data transformers (use Date/Map/Set objects across the wire) - [link](/docs/v9/data-transformers)
 - Helpers for React Query
 
-If you want to get started there's a few examples in the [Getting Started for Next.js](/v9/docs/nextjs).
+If you want to get started there's a few examples in the [Getting Started for Next.js](/docs/v9/nextjs).
 
 [Follow me on Twitter for updates!](https://twitter.com/alexdotjs)

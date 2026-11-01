@@ -1,6 +1,8 @@
 ---
-title: "Define Procedures"
-description: ""
+id: procedures
+title: Define Procedures
+sidebar_label: Define Procedures
+slug: /server/procedures
 section: "Backend Usage"
 order: 7
 ---
@@ -51,7 +53,7 @@ As a general pattern we recommend you rename and export `t.procedure` as `public
 
 In the below code, we're using reusable base procedures to build common use-cases for our app - we're making a reusable base procedures for logged in users (`authedProcedure`) & another base procedure that takes an `organizationId` and validates that a user is part of that organization.
 
-> This is a simplified example; in practice you may want to use some combination of [Headers](../client/headers.md), [Context](./context.md), [Middleware](./middlewares.md), and [Metadata](./metadata.md), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and [authorize](./authorization.md) your users.
+> This is a simplified example; in practice you may want to use some combination of [Headers](/docs/client/headers), [Context](./context.md), [Middleware](./middlewares.md), and [Metadata](./metadata.md), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and [authorize](./authorization.md) your users.
 
 ```ts twoslash
 // @target: esnext
@@ -146,7 +148,7 @@ export const appRouter = t.router({
 
 ## Inferring the options type of a "Base Procedure" {#inferProcedureBuilderResolverOptions}
 
-In addition to being able to [infer the input and output types](../client/vanilla/infer-types.md#inferring-input--output-types) of a procedure, you can also infer the options type of a specific procedure builder (or base procedure) using `inferProcedureBuilderResolverOptions`.
+In addition to being able to [infer the input and output types](/docs/client/vanilla/infer-types#inferring-input--output-types) of a procedure, you can also infer the options type of a specific procedure builder (or base procedure) using `inferProcedureBuilderResolverOptions`.
 
 This type helper is useful for declaring a type to a function's parameters. Like for example, separating the procedure's handler (main execution code) from its definition at the router, or for creating a helper function that works with multiple procedures.
 
@@ -188,6 +190,7 @@ export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
   const { ctx } = opts;
   // `ctx.user` is nullable
   if (!ctx.user) {
+    //     ^?
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 

@@ -27,7 +27,8 @@ import { Command, Flag } from 'effect/cli';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { parse as parseYaml } from 'yaml';
 
-import { type CopiedVersion, copiedVersions } from '../src/site.ts';
+import { type CopiedVersion, copiedVersions, docPath } from '../src/site.ts';
+import { fromDocusaurus } from './docusaurus-syntax.ts';
 import { anchorsOf } from './markdown.ts';
 import {
   type CopiedPage,
@@ -40,7 +41,6 @@ import {
   type SidebarItem,
   sidebarSections,
 } from './old-docs-convert.ts';
-import { redirectsFile } from './old-routes.ts';
 
 class OldDocsCopyError extends Data.TaggedError('OldDocsCopyError')<{
   readonly message: string;
@@ -502,7 +502,7 @@ const readVersion = Effect.fn('readVersion')(function* (
         const item = byId.get(id);
         return item === undefined
           ? undefined
-          : `- [${item.label ?? item.title}](${version.trpcPath}/${item.slug})${item.description ? `: ${item.description}` : ''}`;
+          : `- [${item.label ?? item.title}](${docPath(version, item.slug)})${item.description ? `: ${item.description}` : ''}`;
       });
       if (list.includes(undefined)) {
         return yield* new OldDocsCopyError({
@@ -551,10 +551,7 @@ const readVersion = Effect.fn('readVersion')(function* (
   const unlisted = new Map(
     [...byFile]
       .filter(([file]) => !pages.some((page) => page.file === file))
-      .map(([file, doc]) => [
-        file,
-        `${version.trpcPath}${doc.slug === version.firstDoc ? '' : `/${doc.slug}`}`,
-      ]),
+      .map(([file, doc]) => [file, docPath(version, doc.slug)]),
   );
   return { indexes, pages, sections, unlisted };
 });
@@ -697,7 +694,12 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
   const anchors = new Map(
     yield* Effect.forEach(converted, (entry) =>
       Effect.map(
-        anchorsOf(entry.markdown.replace(/^---\n[\s\S]*?\n---\n/, '')),
+        anchorsOf(
+          fromDocusaurus(
+            entry.markdown.replace(/^---\n[\s\S]*?\n---\n/, ''),
+            true,
+          ).markdown,
+        ),
         (ids) =>
           [`${entry.page.version}:${entry.page.slug}`, new Set(ids)] as const,
       ),
@@ -871,23 +873,11 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     path.join(dirs.to, manifestFile),
     `${JSON.stringify(accounted.manifest, null, 2)}\n`,
   );
-  // trpc.io's redirects, which `vercel-output.ts` keeps working here.
-  // Vercel's `permanent` defaults to `true`.
-  const redirects = docs.redirects.map((redirect) => ({
-    destination: redirect.destination,
-    permanent: redirect.permanent ?? true,
-    source: redirect.source,
-  }));
-  yield* fs.writeFileString(
-    path.join(dirs.to, redirectsFile),
-    `${JSON.stringify(redirects, null, 2)}\n`,
-  );
   report.push(
     `Copied ${posts.length} blog posts.`,
     `Copied the ${steps.length} steps of the home page's intro.`,
     `Copied ${staticFiles.reduce((sum, count) => sum + count, 0)} of its static files, from ${staticDirs.map((dir) => `static/${dir}`).join(' and ')}.`,
     `Accounted for ${Object.keys(accounted.manifest).length} files in ${manifestFile}.`,
-    `Copied ${redirects.length} of trpc.io's redirects to ${redirectsFile}.`,
   );
   const dropped = [...pages, ...posts].flatMap((entry) => entry.dropped);
   return [
@@ -913,7 +903,6 @@ function outputsOf(dirs: CopyDirs, path: Path.Path) {
     path.join(dirs.to, 'v11', 'home'),
     ...staticDirs.map((dir) => path.join(dirs.images, dir)),
     path.join(dirs.to, manifestFile),
-    path.join(dirs.to, redirectsFile),
   ];
 }
 

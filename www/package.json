@@ -8,13 +8,14 @@
     "./site": "./src/site.ts"
   },
   "scripts": {
-    "build": "pnpm typedoc && vite build && node build/vercel-output.ts",
+    "build": "pnpm typedoc && vite build && node build/vercel-output.ts && node build/legacy-urls-check.ts",
     "dev": "pnpm typedoc && vite dev --port 3000",
     "start": "vite preview --port 3000",
     "lint": "oxlint src build",
     "test": "vitest run",
     "typecheck": "tsc && pnpm --filter @samples/v11 --filter @shared/ui typecheck",
     "typedoc": "pnpm --filter @www/api-reference generate",
+    "check-legacy-urls": "node build/legacy-urls-check.ts",
     "check-twoslash": "node build/twoslash-check.ts",
     "not-found:check": "node not-found-check.ts",
     "sponsors:sync": "node build/sponsors-sync.ts",

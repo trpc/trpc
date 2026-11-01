@@ -1,6 +1,8 @@
 ---
-title: "Aborting Procedure Calls"
-description: ""
+id: aborting-procedure-calls
+title: Aborting Procedure Calls
+sidebar_label: Aborting Procedure Calls
+slug: /client/vanilla/aborting-procedure-calls
 section: "Client Usage"
 parent: "client/vanilla"
 order: 49
@@ -8,8 +10,12 @@ order: 49
 
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query or mutation options, and call the `AbortController` instance's `abort` method if you need to cancel the request.
 
-```ts title="utils.ts"
+```ts twoslash title="utils.ts"
+// @target: esnext
+// ---cut---
+// @filename: server.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+// @noErrors
 import type { AppRouter } from 'server.ts';
 
 const proxy = createTRPCProxyClient<AppRouter>({

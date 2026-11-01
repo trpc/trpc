@@ -1,7 +1,8 @@
 ---
-title: "Custom header"
-label: "Create Custom Header"
-description: ""
+id: header
+title: Custom header
+sidebar_label: Create Custom Header
+slug: /header
 section: "@trpc/client"
 order: 26
 ---
@@ -10,7 +11,7 @@ The headers option can be customized in config when using `withTRPC` in nextjs o
 
 `headers` can be both an object or a function. If it's a function it will gets called dynamically every http request.
 
-```ts title="_app.tsx"
+```ts title='_app.tsx'
 import type { AppRouter } from '@/server/routers/app';
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -41,7 +42,7 @@ export default withTRPC<AppRouter>({
 
 ### Example with auth login
 
-```ts title="pages/auth.tsx"
+```ts title='pages/auth.tsx'
 const loginMut = trpc.useMutation(['auth.login'], {
   onSuccess({ accessToken }) {
     token = accessToken;

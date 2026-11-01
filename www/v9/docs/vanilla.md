@@ -1,7 +1,8 @@
 ---
-title: "Vanilla client"
-label: "Create Vanilla Client"
-description: ""
+id: vanilla
+title: Vanilla client
+sidebar_label: Create Vanilla Client
+slug: /vanilla
 section: "@trpc/client"
 order: 24
 ---
@@ -10,7 +11,7 @@ The magic of tRPC is making _strongly typed_ API calls without relying on code g
 
 Import the `AppRouter` type into your client from the file your root tRPC router is defined. This single type represents the type signature of your entire API.
 
-```ts title="client.ts"
+```ts title='client.ts'
 import type { AppRouter } from '../path/to/server/trpc';
 ```
 
@@ -20,7 +21,7 @@ The `import type` keywords let you import from _any TypeScript file_ on your fil
 
 Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 
-```ts title="client.ts"
+```ts title='client.ts'
 // pages/index.tsx
 import { createTRPCClient } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
@@ -32,7 +33,7 @@ const client = createTRPCClient<AppRouter>({
 
 As you can see, we passed `AppRouter` as a **type argument** of `createTRPCClient`. This returns a strongly typed `client` instance:
 
-```ts title="client.ts"
+```ts title='client.ts'
 const bilbo = await client.query('getUser', 'id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 

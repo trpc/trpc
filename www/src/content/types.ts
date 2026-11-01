@@ -18,8 +18,6 @@ export interface DocMeta {
   readonly headings: ReadonlyArray<DocHeading>;
   /** The page's name in the sidebar, where it's shorter than its title. */
   readonly label?: string | undefined;
-  /** ISO date of the source file's last commit, when git knows it. */
-  readonly lastModified: string | undefined;
   /** The slug of the page it nests under in the sidebar. */
   readonly parent?: string | undefined;
   readonly section: string;

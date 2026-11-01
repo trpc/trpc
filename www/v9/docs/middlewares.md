@@ -1,6 +1,8 @@
 ---
-title: "Middlewares"
-description: ""
+id: middlewares
+title: Middlewares
+sidebar_label: Middlewares
+slug: /middlewares
 section: "@trpc/server"
 order: 12
 ---
@@ -37,8 +39,9 @@ trpc
   );
 ```
 
-> [!TIP]
-> See [Error Handling](./error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+:::tip
+See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+:::
 
 ## Logging
 
@@ -106,7 +109,7 @@ trpc
 
 This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
 
-```tsx title="server/createRouter.ts"
+```tsx title='server/createRouter.ts'
 import * as trpc from '@trpc/server';
 import { Context } from './context';
 
@@ -130,8 +133,9 @@ export function createProtectedRouter() {
 
 A middleware can access the raw input that will be passed to a procedure. This can be used for authentication / other preprocessing in the middleware that requires access to the procedure input, and can be especially useful when used in conjunction with Context Swapping.
 
-> [!WARNING] Caution
-> The `rawInput` passed to a middleware has not yet been validated by a procedure's `input` schema / validator, so be careful when using it! Because of this, `rawInput` has type `unknown`. For more info see [#1059](https://github.com/trpc/trpc/pull/1059#issuecomment-932985023).
+:::caution
+The `rawInput` passed to a middleware has not yet been validated by a procedure's `input` schema / validator, so be careful when using it! Because of this, `rawInput` has type `unknown`. For more info see [#1059](https://github.com/trpc/trpc/pull/1059#issuecomment-932985023).
+:::
 
 ```ts
 const inputSchema = z.object({ userId: z.string() });

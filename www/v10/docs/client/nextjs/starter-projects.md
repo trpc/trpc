@@ -1,6 +1,8 @@
 ---
-title: "Starter Projects"
-description: ""
+id: starter-projects
+title: Starter Projects
+sidebar_label: Starter Projects
+slug: /client/nextjs/starter-projects
 section: "Client Usage"
 parent: "client/nextjs"
 order: 45

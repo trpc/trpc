@@ -1,7 +1,8 @@
 ---
-title: "Usage with Express.js"
-label: "Adapter: Express.js"
-description: ""
+id: express
+title: Usage with Express.js
+sidebar_label: 'Adapter: Express.js'
+slug: /express
 section: "@trpc/server"
 order: 21
 ---
@@ -44,7 +45,7 @@ yarn add @trpc/server zod
 
 Implement your tRPC router. A sample router is given below:
 
-```ts title="server.ts"
+```ts title='server.ts'
 import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
@@ -78,7 +79,7 @@ If your router file starts getting too big, split your router into several subro
 
 tRPC includes an adapter for Express.js out of the box. This adapter lets you convert your tRPC router into an Express.js middleware.
 
-```ts title="server.ts"
+```ts title='server.ts'
 import * as trpcExpress from '@trpc/server/adapters/express';
 
 const appRouter = /* ... */;

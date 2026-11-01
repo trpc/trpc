@@ -1,6 +1,8 @@
 ---
-title: "Next.js Integration"
-description: ""
+id: overview
+title: Next.js Integration
+sidebar_label: "Next.js Integration"
+slug: /client/nextjs
 section: "Client Usage"
 order: 67
 ---
@@ -13,7 +15,7 @@ tRPC provides first-class support for both the **App Router** and the **Pages Ro
 
 ## App Router
 
-The recommended approach for new Next.js projects. Uses React Server Components, the [fetch adapter](../server/adapters/fetch.md), and [`@trpc/tanstack-react-query`](./tanstack-react-query.md).
+The recommended approach for new Next.js projects. Uses React Server Components, the [fetch adapter](/docs/server/adapters/fetch), and [`@trpc/tanstack-react-query`](/docs/client/tanstack-react-query).
 
 Key features:
 
@@ -21,7 +23,7 @@ Key features:
 - **Streaming** - Leverage Next.js streaming for optimal loading performance
 - **Suspense** - Use `useSuspenseQuery` with Suspense boundaries for loading states
 
-**[Get started with App Router &rarr;](./nextjs/app-router-setup.md)**
+**[Get started with App Router &rarr;](/docs/client/nextjs/app-router-setup)**
 
 ## Pages Router
 
@@ -29,11 +31,11 @@ Uses `@trpc/next` which provides a higher-order component (HOC) and integrated h
 
 Key features:
 
-- **Server-side rendering** - Render pages on the server and hydrate them on the client. Read more about [SSR](./nextjs/pages-router/ssr.md).
-- **Static site generation** - Prefetch queries on the server and generate static HTML files. Read more about [SSG](./nextjs/pages-router/ssg.md).
+- **Server-side rendering** - Render pages on the server and hydrate them on the client. Read more about [SSR](/docs/client/nextjs/pages-router/ssr).
+- **Static site generation** - Prefetch queries on the server and generate static HTML files. Read more about [SSG](/docs/client/nextjs/pages-router/ssg).
 - **Automatic Provider Wrapping** - `@trpc/next` provides a HOC that wraps your app with the necessary providers automatically.
 
-**[Get started with Pages Router &rarr;](./nextjs/pages-router/setup.md)**
+**[Get started with Pages Router &rarr;](/docs/client/nextjs/pages-router/setup)**
 
 ## Choosing between App Router and Pages Router
 
@@ -41,9 +43,10 @@ Key features:
 | ------------------- | --------------------------------------------- | --------------------------------------------------- |
 | **Recommended for** | New projects                                  | Existing Pages Router projects                      |
 | **Data fetching**   | Server Components, `prefetchQuery`            | `getServerSideProps`, `getStaticProps`, SSR via HOC |
-| **Server adapter**  | [Fetch adapter](../server/adapters/fetch.md)  | [Next.js adapter](../server/adapters/nextjs.md)     |
+| **Server adapter**  | [Fetch adapter](/docs/server/adapters/fetch)  | [Next.js adapter](/docs/server/adapters/nextjs)     |
 | **Client package**  | `@trpc/tanstack-react-query`                  | `@trpc/next` + `@trpc/react-query`                  |
 | **Provider setup**  | Manual `QueryClientProvider` + `TRPCProvider` | Automatic via `withTRPC()` HOC                      |
 
-> [!TIP]
-> If you're starting a new project, we recommend the App Router. If you have an existing Pages Router project, the Pages Router integration works well and is fully supported.
+:::tip
+If you're starting a new project, we recommend the App Router. If you have an existing Pages Router project, the Pages Router integration works well and is fully supported.
+:::

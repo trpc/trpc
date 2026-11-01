@@ -6,12 +6,7 @@ import { Effect, FileSystem, Path } from 'effect';
 import { hiddenPaths, site } from '../src/site.ts';
 import { onDemandFunction } from './on-demand.ts';
 import { siteTextFiles } from './site-files.ts';
-import {
-  land,
-  redirectsFile,
-  servedPaths,
-  type TrpcRedirect,
-} from './old-routes.ts';
+import { land, type Redirect, servedPaths } from './old-routes.ts';
 import {
   isNoindex,
   noindexPageRoutes,
@@ -32,38 +27,40 @@ const llmsTxt = [
 const sitemapPages = [
   '/',
   '/blog',
+  '/docs',
   '/docs/client/links',
-  '/docs/introduction',
   '/docs/server/routers',
+  '/docs/v10',
+  '/docs/v9',
   '/sponsor',
-  '/v10/docs/introduction',
-  '/v9/docs/introduction',
 ];
 
-const introductionChange = '2026-10-19T12:00:00+02:00';
-
-/** The sitemap TanStack Start writes, which dates the pages without a `lastmod` with the build. */
+/** The sitemap TanStack Start writes, which dates every page with the build. */
 const sitemapOf = (pages: ReadonlyArray<string>) =>
   [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ...pages.map(
       (page) =>
-        `<url><loc>${site.url}${page}</loc><lastmod>${page === '/docs/introduction' ? introductionChange : '2026-11-01'}</lastmod></url>`,
+        `<url><loc>${site.url}${page}</loc><lastmod>2026-11-01</lastmod></url>`,
     ),
     '</urlset>',
   ].join('\n');
 
+const defaultRedirects: ReadonlyArray<Redirect> = [
+  {
+    destination: '/docs/server/routers#nesting',
+    permanent: true,
+    source: '/docs/router',
+  },
+  { destination: '/docs/:path*', permanent: true, source: '/docs/v11/:path*' },
+  { destination: '/docs', permanent: true, source: '/docs/introduction' },
+];
+
 /** A prerendered site in a temp dir, removed when the test ends. */
 const setup = Effect.fn('setup')(function* (
   llms: string,
-  redirects: ReadonlyArray<TrpcRedirect> = [
-    {
-      destination: '/docs/server/routers#nesting',
-      permanent: true,
-      source: '/docs/router',
-    },
-  ],
+  redirects: ReadonlyArray<Redirect> = defaultRedirects,
   listed: ReadonlyArray<string> = sitemapPages,
 ) {
   const fs = yield* FileSystem.FileSystem;
@@ -77,25 +74,18 @@ const setup = Effect.fn('setup')(function* (
     'favicon.ico': '',
     'docs/client/links.md': '',
     'docs/client/links/index.html': '',
+    'docs/index.html': '',
     'docs/introduction.md': '',
-    'docs/introduction/index.html': '',
+    'docs/v10/index.html': '',
+    'docs/v9/index.html': '',
     'index.html': '',
     'index.md': '',
     'llms.txt': llms,
     'logo.svg': '',
     'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
-    'pages.json': JSON.stringify({
-      pages: listed.map((page) =>
-        page === '/docs/introduction'
-          ? { path: page, sitemap: { lastmod: introductionChange } }
-          : { path: page },
-      ),
-    }),
     'sitemap.xml': sitemapOf(listed),
     'robots.txt': siteTextFiles().get('/robots.txt')?.source ?? '',
     'sponsor/index.html': '',
-    'v10/docs/introduction/index.html': '',
-    'v9/docs/introduction/index.html': '',
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -108,8 +98,8 @@ const setup = Effect.fn('setup')(function* (
     'export default { fetch: () => new Response("") };\n',
   );
   yield* fs.writeFileString(
-    path.join(root, redirectsFile),
-    JSON.stringify(redirects),
+    path.join(root, 'vercel.json'),
+    JSON.stringify({ framework: 'tanstack-start', redirects }),
   );
   return root;
 });
@@ -226,12 +216,12 @@ describe('writeVercelOutput', () => {
           contentType: 'text/html; charset=utf-8',
           path: 'docs/client/links',
         },
+        'docs/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'docs',
+        },
         'docs/introduction.md': {
           contentType: 'text/markdown; charset=utf-8',
-        },
-        'docs/introduction/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'docs/introduction',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
         'llms.txt': { contentType: 'text/plain; charset=utf-8' },
@@ -241,40 +231,28 @@ describe('writeVercelOutput', () => {
           contentType: 'text/html; charset=utf-8',
           path: 'sponsor',
         },
-        'v10/docs/introduction/index.html': {
+        'docs/v10/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v10/docs/introduction',
+          path: 'docs/v10',
         },
-        'v9/docs/introduction/index.html': {
+        'docs/v9/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v9/docs/introduction',
+          path: 'docs/v9',
         },
         'docs/server/routers/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'docs/server/routers',
         },
       });
-      // v11, the stable release, has `/docs`.
-      for (const [basePath, src] of [
-        ['/docs', '^/docs$'],
-        ['/v10/docs', '^/v10/docs$'],
-        ['/v9/docs', '^/v9/docs$'],
-      ]) {
-        expect(config.routes).toContainEqual({
-          headers: { Location: `${basePath}/introduction` },
-          src,
-          status: 308,
-        });
-      }
       const moved = config.routes.find(
         (route: { src: string; status?: number }) =>
           route.status === 308 && route.src.includes('v11'),
       );
       expect(moved.headers.Location).toBe('/docs$1');
       expect(
-        '/v11/docs/client/links'.replace(new RegExp(moved.src), '/docs$1'),
+        '/docs/v11/client/links'.replace(new RegExp(moved.src), '/docs$1'),
       ).toBe('/docs/client/links');
-      expect('/v11/docs'.replace(new RegExp(moved.src), '/docs$1')).toBe(
+      expect('/docs/v11'.replace(new RegExp(moved.src), '/docs$1')).toBe(
         '/docs',
       );
 
@@ -285,7 +263,21 @@ describe('writeVercelOutput', () => {
       expect(match?.[1]).toBe('client/links');
       expect(new RegExp(markdownRewrite.src).test('/docs/a.md')).toBe(false);
       // The older versions have no markdown.
-      expect(new RegExp(markdownRewrite.src).test('/v9/docs/a')).toBe(false);
+      expect(new RegExp(markdownRewrite.src).test('/docs/v9/a')).toBe(false);
+      expect(new RegExp(markdownRewrite.src).test('/docs/v10')).toBe(false);
+      // v11's first page is at `/docs`, and so is its markdown's canonical URL.
+      expect(config.routes).toContainEqual({
+        dest: '/docs/introduction.md',
+        has: [
+          { key: 'accept', type: 'header', value: '(.*)text/markdown(.*)' },
+        ],
+        src: '^/docs$',
+      });
+      expect(config.routes).toContainEqual({
+        continue: true,
+        headers: { Link: `<${site.url}/docs>; rel="canonical"` },
+        src: '^/docs/introduction\\.md$',
+      });
 
       // Until the site is trpc.io, every response, before any redirect.
       expect(config.routes[0]).toEqual({
@@ -337,6 +329,13 @@ describe('writeVercelOutput', () => {
         expect(land(config.routes, served, '/docs/router').hops).toEqual([
           '/docs/server/routers#nesting',
         ]);
+        expect(land(config.routes, served, '/docs/introduction').hops).toEqual([
+          '/docs',
+        ]);
+        expect(land(config.routes, served, '/docs/v11').landed).toEqual({
+          kind: 'file',
+          path: '/docs',
+        });
         expect(land(config.routes, served, '/docs/server/routers')).toEqual({
           hash: '',
           hops: [],
@@ -355,7 +354,7 @@ describe('writeVercelOutput', () => {
         ]);
         const error = yield* Effect.flip(writeVercelOutput(broken));
         expect(error.message).toContain(
-          "/docs/old: trpc.io sends it to /docs/gone, which this site doesn't serve",
+          "vercel.json's redirects don't all land on a page:\n/docs/old: redirects to /docs/gone, a 404",
         );
 
         const noHeading = yield* setup(llmsTxt, [
@@ -373,7 +372,7 @@ describe('writeVercelOutput', () => {
   );
 
   it.effect(
-    'keeps only the real lastmods, and fails on a page the sitemap leaves out',
+    'drops the lastmods, and fails on a page the sitemap leaves out',
     () =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
@@ -383,11 +382,8 @@ describe('writeVercelOutput', () => {
         const sitemap = yield* fs.readFileString(
           path.join(root, '.vercel/output/static/sitemap.xml'),
         );
-        expect(sitemap).toContain(
-          `<loc>${site.url}/docs/introduction</loc><lastmod>${introductionChange}</lastmod>`,
-        );
-        expect(sitemap).toContain(`<loc>${site.url}/sponsor</loc></url>`);
-        expect(sitemap).not.toContain('2026-11-01');
+        expect(sitemap).toContain(`<url><loc>${site.url}/sponsor</loc></url>`);
+        expect(sitemap).not.toContain('lastmod');
 
         const unlisted = yield* setup(
           llmsTxt,

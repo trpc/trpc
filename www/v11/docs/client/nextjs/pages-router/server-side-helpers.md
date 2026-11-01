@@ -1,6 +1,8 @@
 ---
-title: "Server-Side Helpers"
-description: ""
+id: server-side-helpers
+title: Server-Side Helpers
+sidebar_label: Server-Side Helpers
+slug: /client/nextjs/pages-router/server-side-helpers
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
 order: 73
@@ -16,8 +18,8 @@ Prefetching via the server-side helpers allows populating the query cache on the
 
 This method is used when you have direct access to your tRPC router, e.g., when developing a monolithic Next.js application.
 
-Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](../../../server/server-side-calls.md).
-That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the server-side helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](../../../server/context.md) in that scenario.
+Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](/docs/server/server-side-calls).
+That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the server-side helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
 ```ts twoslash
 // @module: esnext
@@ -104,12 +106,13 @@ The rule of thumb is `prefetch` for queries that you know you'll need on the cli
 
 The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v5/docs/framework/react/overview) to learn more about them in detail.
 
-> [!NOTE] Info
-> For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
+:::info
+For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
+:::
 
 ## Next.js Example
 
-```tsx twoslash title="pages/posts/[id].tsx"
+```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';

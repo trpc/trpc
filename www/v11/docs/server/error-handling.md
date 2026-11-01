@@ -1,6 +1,8 @@
 ---
-title: "Error Handling"
-description: ""
+id: error-handling
+title: Error Handling
+sidebar_label: Error Handling
+slug: /server/error-handling
 section: "Backend Usage"
 order: 21
 ---
@@ -31,7 +33,7 @@ By default, tRPC includes `error.data.stack` only when [`isDev`](./routers.md#in
 `initTRPC.create()` sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
 If you need deterministic behavior across runtimes, override `isDev` manually.
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create({ isDev: false });
@@ -87,9 +89,11 @@ if (error instanceof TRPCError) {
 }
 ```
 
-> [!TIP]
->
-> There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](./server-side-calls.md).
+:::tip
+
+There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](./server-side-calls.md).
+
+:::
 
 ## Throwing errors
 
@@ -97,7 +101,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -140,7 +144,7 @@ Results in the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](./error-formatting.md)).
 
-```ts twoslash title="server.ts"
+```ts twoslash title='server.ts'
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();

@@ -1,6 +1,8 @@
 ---
-title: "Concepts"
-description: ""
+id: concepts
+title: Concepts
+sidebar_label: Concepts
+slug: /concepts
 section: "tRPC"
 order: 2
 ---

@@ -1,6 +1,8 @@
 ---
-title: "Define Routers"
-description: ""
+id: routers
+title: Define Routers
+sidebar_label: Define Routers
+slug: /server/routers
 section: "Backend Usage"
 order: 6
 ---
@@ -11,7 +13,7 @@ To begin building your tRPC-based API, you'll first need to define your router. 
 
 You should initialize tRPC **exactly once** per application. Multiple instances of tRPC will cause issues.
 
-```ts twoslash title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 // @filename: trpc.ts
 // ---cut---
 import { initTRPC } from '@trpc/server';
@@ -30,7 +32,7 @@ You'll notice we are exporting certain methods of the `t` variable here rather t
 
 Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
 
-In order for these endpoints to be exposed to the frontend, your [Adapter](./adapters.md) should be configured with your `appRouter` instance.
+In order for these endpoints to be exposed to the frontend, your [Adapter](/docs/server/adapters) should be configured with your `appRouter` instance.
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
@@ -91,10 +93,10 @@ const appRouter = router({
 
 When initializing your router, tRPC allows you to:
 
-- Setup [request contexts](./context.md)
-- Assign [metadata](./metadata.md) to procedures
-- [Format](./error-formatting.md) and [handle](./error-handling.md) errors
-- [Transform data](./data-transformers.md) as needed
+- Setup [request contexts](/docs/server/context)
+- Assign [metadata](/docs/server/metadata) to procedures
+- [Format](/docs/server/error-formatting) and [handle](/docs/server/error-handling) errors
+- [Transform data](/docs/server/data-transformers) as needed
 - Customize the [runtime configuration](#runtime-configuration)
 
 You can use method chaining to customize your `t`-object on initialization. For example:

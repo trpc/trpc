@@ -1,6 +1,8 @@
 ---
-title: "Error Formatting"
-description: ""
+id: error-formatting
+title: Error Formatting
+sidebar_label: Error Formatting
+slug: /server/error-formatting
 section: "Backend Usage"
 order: 23
 ---
@@ -11,7 +13,7 @@ The error formatting in your router will be inferred all the way to your client 
 
 ### Adding custom formatting
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create({
@@ -33,7 +35,7 @@ export const t = initTRPC.context<Context>().create({
 
 ### Usage in React
 
-```tsx title="components/MyComponent.tsx"
+```tsx title='components/MyComponent.tsx'
 export function MyComponent() {
   const mutation = trpc.addPost.useMutation();
 

@@ -1,14 +1,16 @@
 ---
-title: "Set up with React Server Components"
-label: "Server Components"
-description: ""
+id: server-components
+title: Set up with React Server Components
+sidebar_label: Server Components
+slug: /client/tanstack-react-query/server-components
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 51
 ---
 
-> [!TIP]
-> **Using Next.js?** See the dedicated [Next.js App Router setup guide](../nextjs/app-router-setup.md) for a streamlined walkthrough tailored to Next.js.
+:::tip
+**Using Next.js?** See the dedicated [Next.js App Router setup guide](/docs/client/nextjs/app-router-setup) for a streamlined walkthrough tailored to Next.js.
+:::
 
 This guide is an overview of how one may use tRPC with a React Server Components (RSC) framework such as Next.js App Router.
 Be aware that RSC on its own solves a lot of the same problems tRPC was designed to solve, so you may not need tRPC at all.
@@ -16,12 +18,14 @@ Be aware that RSC on its own solves a lot of the same problems tRPC was designed
 There is also not a one-size-fits-all way to integrate tRPC with RSCs, so see this guide as a starting point and adjust it
 to your needs and preferences.
 
-> [!NOTE] Info
-> If you're looking for how to use tRPC with Server Actions, see the [Server Actions guide](../nextjs/server-actions.md).
+:::info
+If you're looking for how to use tRPC with Server Actions, see the [Server Actions guide](/docs/client/nextjs/server-actions).
+:::
 
-> [!WARNING] Caution
-> Please read React Query's [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr) docs before proceeding to understand the different types of server rendering
-> and what footguns to avoid.
+:::caution
+Please read React Query's [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr) docs before proceeding to understand the different types of server rendering
+and what footguns to avoid.
+:::
 
 ## Add tRPC to existing projects
 
@@ -33,15 +37,16 @@ to your needs and preferences.
 
 ### 2. Create a tRPC router
 
-Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to the [Quickstart guide](../../quickstart.md) and [Backend usage docs](../../server/overview.md) for tRPC information.
+Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/overview) for tRPC information.
 
-> [!NOTE] Info
-> The file names used here are not enforced by tRPC. You may use any file structure you wish.
+:::info
+The file names used here are not enforced by tRPC. You may use any file structure you wish.
+:::
 
 <details>
 <summary>View sample backend</summary>
 
-```ts twoslash title="trpc/init.ts"
+```ts twoslash title='trpc/init.ts'
 import { initTRPC } from '@trpc/server';
 import { cache } from 'react';
 
@@ -71,7 +76,7 @@ export const baseProcedure = t.procedure;
 
 <br />
 
-```ts twoslash title="trpc/routers/_app.ts"
+```ts twoslash title='trpc/routers/_app.ts'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -103,10 +108,11 @@ export type AppRouter = typeof appRouter;
 
 <br />
 
-> [!NOTE]
-> The backend adapter depends on your framework and how it sets up API routes. The following example sets up GET and POST routes at `/api/trpc/*` using the [fetch adapter](../../server/adapters/fetch.md) in Next.js.
+:::note
+The backend adapter depends on your framework and how it sets up API routes. The following example sets up GET and POST routes at `/api/trpc/*` using the [fetch adapter](../../server/adapters/fetch.md) in Next.js.
+:::
 
-```ts twoslash title="app/api/trpc/[trpc]/route.ts"
+```ts twoslash title='app/api/trpc/[trpc]/route.ts'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -148,7 +154,7 @@ export { handler as GET, handler as POST };
 
 Create a shared file `trpc/query-client.ts` that exports a function that creates a `QueryClient` instance.
 
-```ts twoslash title="trpc/query-client.ts"
+```ts twoslash title='trpc/query-client.ts'
 import {
   defaultShouldDehydrateQuery,
   QueryClient,
@@ -189,7 +195,7 @@ We're setting a few default options here:
 The `trpc/client.tsx` is the entrypoint when consuming your tRPC API from client components. In here, import the **type definition** of
 your tRPC router and create typesafe hooks using `createTRPCContext`. We'll also export our context provider from this file.
 
-```tsx twoslash title="trpc/client.tsx"
+```tsx twoslash title='trpc/client.tsx'
 // @target: esnext
 // @jsx: react-jsx
 // @filename: trpc/init.ts
@@ -290,7 +296,7 @@ Mount the provider in the root of your application (e.g. `app/layout.tsx` when u
 
 To prefetch queries from server components, we create a proxy from our router. You can also pass in a client if your router is on a separate server.
 
-```tsx twoslash title="trpc/server.tsx"
+```tsx twoslash title='trpc/server.tsx'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -361,7 +367,7 @@ If you prefer to avoid this initial undefined state, you can `await` the `prefet
 This ensures the query on the client always has data on first render, but it comes with a tradeoff -
 the page will load more slowly since the server must complete the query before sending HTML to the client.
 
-```tsx twoslash title="app/page.tsx"
+```tsx twoslash title='app/page.tsx'
 // @jsx: react-jsx
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
@@ -425,7 +431,7 @@ export default async function Home() {
 }
 ```
 
-```tsx twoslash title="app/client-greeting.tsx"
+```tsx twoslash title='app/client-greeting.tsx'
 // @jsx: react-jsx
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
@@ -459,118 +465,120 @@ export function ClientGreeting() {
 }
 ```
 
-> [!TIP]
-> You can also create `prefetch` and `HydrateClient` helper functions to make it a bit more concise and reusable:
->
-> ```tsx twoslash title="trpc/server.tsx"
-> // @jsx: react-jsx
-> // @filename: trpc/query-client.ts
-> import { QueryClient } from '@tanstack/react-query';
-> export function makeQueryClient() { return new QueryClient(); }
->
-> // @filename: trpc/server.tsx
-> import { cache } from 'react';
-> import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-> import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-> import { makeQueryClient } from './query-client';
-> const getQueryClient = cache(makeQueryClient);
-> // ---cut---
-> export function HydrateClient(props: { children: React.ReactNode }) {
->   const queryClient = getQueryClient();
->   return (
->     <HydrationBoundary state={dehydrate(queryClient)}>
->       {props.children}
->     </HydrationBoundary>
->   );
-> }
->
-> export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
->   queryOptions: T,
-> ) {
->   const queryClient = getQueryClient();
->   if (queryOptions.queryKey[1]?.type === 'infinite') {
->     void queryClient.prefetchInfiniteQuery(queryOptions as any);
->   } else {
->     void queryClient.prefetchQuery(queryOptions);
->   }
-> }
-> ```
->
-> Then you can use it like this:
->
-> ```tsx twoslash
-> // @jsx: react-jsx
-> // @filename: trpc/init.ts
-> import { initTRPC } from '@trpc/server';
-> const t = initTRPC.create();
-> export const createTRPCContext = async () => ({ userId: 'user_123' });
-> export const createTRPCRouter = t.router;
-> export const baseProcedure = t.procedure;
->
-> // @filename: trpc/query-client.ts
-> import { QueryClient } from '@tanstack/react-query';
-> export function makeQueryClient() { return new QueryClient(); }
->
-> // @filename: trpc/routers/_app.ts
-> import { initTRPC } from '@trpc/server';
-> import { z } from 'zod';
-> const t = initTRPC.create();
-> export const appRouter = t.router({
->   hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
->     greeting: `hello ${opts.input?.text ?? 'world'}`,
->   })),
-> });
-> export type AppRouter = typeof appRouter;
->
-> // @filename: trpc/server.tsx
-> import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-> import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-> import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-> import { cache } from 'react';
-> import { createTRPCContext } from './init';
-> import { makeQueryClient } from './query-client';
-> import { appRouter } from './routers/_app';
-> export const getQueryClient = cache(makeQueryClient);
-> export const trpc = createTRPCOptionsProxy({ ctx: createTRPCContext, router: appRouter, queryClient: getQueryClient });
-> export function HydrateClient(props: { children: React.ReactNode }) {
->   const queryClient = getQueryClient();
->   return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>;
-> }
-> export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
->   const queryClient = getQueryClient();
->   void queryClient.prefetchQuery(queryOptions);
-> }
->
-> // @filename: app/client-greeting.tsx
-> export function ClientGreeting() { return null; }
->
-> // @filename: app/page.tsx
-> // ---cut---
-> import { HydrateClient, prefetch, trpc } from '../trpc/server';
-> import { ClientGreeting } from './client-greeting';
->
-> function Home() {
->   prefetch(
->     trpc.hello.queryOptions({
->       /** input */
->     }),
->   );
->
->   return (
->     <HydrateClient>
->       <div>...</div>
->       {/** ... */}
->       <ClientGreeting />
->     </HydrateClient>
->   );
-> }
-> ```
+:::tip
+You can also create `prefetch` and `HydrateClient` helper functions to make it a bit more concise and reusable:
+
+```tsx twoslash title='trpc/server.tsx'
+// @jsx: react-jsx
+// @filename: trpc/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
+// @filename: trpc/server.tsx
+import { cache } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
+import { makeQueryClient } from './query-client';
+const getQueryClient = cache(makeQueryClient);
+// ---cut---
+export function HydrateClient(props: { children: React.ReactNode }) {
+  const queryClient = getQueryClient();
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      {props.children}
+    </HydrationBoundary>
+  );
+}
+
+export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
+  queryOptions: T,
+) {
+  const queryClient = getQueryClient();
+  if (queryOptions.queryKey[1]?.type === 'infinite') {
+    void queryClient.prefetchInfiniteQuery(queryOptions as any);
+  } else {
+    void queryClient.prefetchQuery(queryOptions);
+  }
+}
+```
+
+Then you can use it like this:
+
+```tsx twoslash
+// @jsx: react-jsx
+// @filename: trpc/init.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const createTRPCContext = async () => ({ userId: 'user_123' });
+export const createTRPCRouter = t.router;
+export const baseProcedure = t.procedure;
+
+// @filename: trpc/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
+// @filename: trpc/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
+    greeting: `hello ${opts.input?.text ?? 'world'}`,
+  })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc/server.tsx
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+import { cache } from 'react';
+import { createTRPCContext } from './init';
+import { makeQueryClient } from './query-client';
+import { appRouter } from './routers/_app';
+export const getQueryClient = cache(makeQueryClient);
+export const trpc = createTRPCOptionsProxy({ ctx: createTRPCContext, router: appRouter, queryClient: getQueryClient });
+export function HydrateClient(props: { children: React.ReactNode }) {
+  const queryClient = getQueryClient();
+  return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>;
+}
+export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
+  const queryClient = getQueryClient();
+  void queryClient.prefetchQuery(queryOptions);
+}
+
+// @filename: app/client-greeting.tsx
+export function ClientGreeting() { return null; }
+
+// @filename: app/page.tsx
+// ---cut---
+import { HydrateClient, prefetch, trpc } from '../trpc/server';
+import { ClientGreeting } from './client-greeting';
+
+function Home() {
+  prefetch(
+    trpc.hello.queryOptions({
+      /** input */
+    }),
+  );
+
+  return (
+    <HydrateClient>
+      <div>...</div>
+      {/** ... */}
+      <ClientGreeting />
+    </HydrateClient>
+  );
+}
+```
+
+:::
 
 ### Leveraging Suspense
 
 You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
 
-```tsx twoslash title="app/page.tsx"
+```tsx twoslash title='app/page.tsx'
 // @jsx: react-jsx
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
@@ -638,7 +646,7 @@ export default async function Home() {
 }
 ```
 
-```tsx twoslash title="app/client-greeting.tsx"
+```tsx twoslash title='app/client-greeting.tsx'
 // @jsx: react-jsx
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
@@ -677,7 +685,7 @@ store the data in the cache. This means that you cannot use the data in a server
 intentional and explained in more detail in the [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
 guide.
 
-```tsx twoslash title="trpc/server.tsx"
+```tsx twoslash title='trpc/server.tsx'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -702,7 +710,7 @@ import { appRouter } from './routers/_app';
 export const caller = appRouter.createCaller(createTRPCContext);
 ```
 
-```tsx twoslash title="app/page.tsx"
+```tsx twoslash title='app/page.tsx'
 // @jsx: react-jsx
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
@@ -741,7 +749,7 @@ If you **really** need to use the data both on the server as well as inside clie
 [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
 guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
 
-```tsx twoslash title="app/page.tsx"
+```tsx twoslash title='app/page.tsx'
 // @jsx: react-jsx
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';

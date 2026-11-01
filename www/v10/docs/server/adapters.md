@@ -1,7 +1,8 @@
 ---
-title: "Adapters"
-label: "Hosting tRPC with Adapters"
-description: ""
+id: adapters-intro
+title: Adapters
+sidebar_label: "Hosting tRPC with Adapters"
+slug: /server/adapters
 section: "Backend Usage"
 order: 13
 ---
@@ -16,5 +17,6 @@ We support many modes of hosting an API, which you will find documented here.
 - You might want a serverless solution and choose [AWS Lambda](./adapters/aws-lambda.md), or [Fetch](./adapters/fetch.md) for edge runtimes
 - You might have a full-stack framework and want a full integration like [Next.js](./adapters/nextjs.md), or you could use the [Fetch](./adapters/fetch.md) adapter with Next.js, Astro, Remix, or SolidStart
 
-> [!TIP]
-> For local development or serverful infrastructure, the simplest Adapter to use is the [Standalone Adapter](./adapters/standalone.md), which can be used to run a standard Node.js HTTP Server. We recommend this when you need to get started quickly and have no existing HTTP Server to integrate with. Swapping out later is trivial if your needs change.
+:::tip
+For local development or serverful infrastructure, the simplest Adapter to use is the [Standalone Adapter](./adapters/standalone.md), which can be used to run a standard Node.js HTTP Server. We recommend this when you need to get started quickly and have no existing HTTP Server to integrate with. Swapping out later is trivial if your needs change.
+:::

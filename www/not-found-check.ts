@@ -19,7 +19,7 @@ const paths = [
   '/no/such/page',
   '/no-such-file.txt',
   '/docs/no-such-page',
-  '/v10/docs/no-such-page',
+  '/docs/v10/no-such-page',
   '/v12/no-such-page',
   '/v12/docs/no-such-page',
   '/v12/docs/client/no-such-page',

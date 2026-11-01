@@ -1,7 +1,8 @@
 ---
-title: "Set up with Next.js"
-label: "Setup"
-description: ""
+id: setup
+title: Set up with Next.js
+sidebar_label: Setup
+slug: /client/nextjs/setup
 section: "Client Usage"
 parent: "client/nextjs"
 order: 40
@@ -99,7 +100,7 @@ Initialize your tRPC backend in `src/server/trpc.ts` using the `initTRPC` functi
 <details>
 <summary>View sample backend</summary>
 
-```ts title="server/trpc.ts"
+```ts title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
 // Avoid exporting the entire t-object
@@ -115,7 +116,7 @@ export const procedure = t.procedure;
 
 <br />
 
-```ts title="server/routers/_app.ts"
+```ts title='server/routers/_app.ts'
 import { z } from 'zod';
 import { procedure, router } from '../trpc';
 
@@ -139,7 +140,7 @@ export type AppRouter = typeof appRouter;
 
 <br />
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 import * as trpcNext from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/routers/_app';
 
@@ -153,14 +154,15 @@ export default trpcNext.createNextApiHandler({
 
 </details>
 
-> [!NOTE]
-> The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/v10.45.4/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
+:::note
+The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/v10.45.4/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
+:::
 
 ### 4. Create tRPC hooks
 
 use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../server/routers/_app';
@@ -210,14 +212,15 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-> [!NOTE]
-> `createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](/v9/docs/nextjs#4-create-trpc-hooks).
+:::note
+`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](/docs/v9/nextjs#4-create-trpc-hooks).
+:::
 
 ### 5. Configure `_app.tsx`
 
 Wrap your root app page in the `trpc.withTRPC` HOC, similar to this:
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 import type { AppType } from 'next/app';
 import { trpc } from '../utils/trpc';
 
@@ -234,7 +237,7 @@ You're all set!
 
 You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../react.md)
 
-```tsx title="pages/index.tsx"
+```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
@@ -279,7 +282,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx title="utils/trpc.ts"
+```tsx title='utils/trpc.ts'
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 

@@ -12,7 +12,6 @@ const doc = (
   description: '',
   experiment,
   headings: [],
-  lastModified: undefined,
   section,
   slug,
   title: slug,

@@ -1,6 +1,8 @@
 ---
-title: "FAQ / Troubleshooting"
-description: ""
+id: faq
+title: FAQ / Troubleshooting
+sidebar_label: FAQ / Troubleshooting
+slug: /faq
 section: "Extra information"
 order: 60
 ---

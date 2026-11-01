@@ -1,6 +1,8 @@
 ---
-title: "Error Handling"
-description: ""
+id: error-handling
+title: Error Handling
+sidebar_label: Error Handling
+slug: /server/error-handling
 section: "Backend Usage"
 order: 22
 ---
@@ -49,7 +51,9 @@ tRPC defines a list of error codes that each represent a different type of error
 
 tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
 
-```ts
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
 // Example error you might get if your input validation fails
@@ -65,9 +69,11 @@ if (error instanceof TRPCError) {
 }
 ```
 
-> [!TIP]
->
-> There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](./server-side-calls.md).
+:::tip
+
+There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](./server-side-calls.md).
+
+:::
 
 ## Throwing errors
 
@@ -75,7 +81,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts title="server.ts"
+```ts title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -116,7 +122,7 @@ Results to the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle or change errors.
 
-```ts title="pages/api/trpc/[trpc].ts"
+```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // ...
   onError(opts) {

@@ -1,7 +1,8 @@
 ---
-title: "getQueryKey"
-label: "getQueryKey()"
-description: ""
+id: getQueryKey
+title: getQueryKey
+sidebar_label: getQueryKey()
+slug: /client/react/getQueryKey
 section: "Client Usage"
 parent: "client/react"
 order: 64
@@ -34,9 +35,11 @@ type QueryType = "query" | "infinite" | "any";
 // will match all ───────────────────────┘
 ```
 
-> [!NOTE]
->
-> The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching. See [TanStack/query#5111 (comment)](https://github.com/TanStack/query/issues/5111#issuecomment-1464864361) for more context.
+:::note
+
+The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching. See [TanStack/query#5111 (comment)](https://github.com/TanStack/query/issues/5111#issuecomment-1464864361) for more context.
+
+:::
 
 ```tsx twoslash
 // @filename: server.ts

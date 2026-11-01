@@ -1,6 +1,8 @@
 ---
-title: "Starter Projects"
-description: ""
+id: starter-projects
+title: Starter Projects
+sidebar_label: Starter Projects
+slug: /starter-projects
 section: "@trpc/next"
 order: 35
 ---

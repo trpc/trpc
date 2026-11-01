@@ -1,7 +1,8 @@
 ---
-title: "Server-Side Rendering"
-label: "Server-Side Rendering (SSR)"
-description: ""
+id: ssr
+title: Server-Side Rendering
+sidebar_label: Server-Side Rendering (SSR)
+slug: /ssr
 section: "@trpc/next"
 order: 32
 ---
@@ -10,7 +11,7 @@ The only thing you need to do to get SSR on your application is to set `ssr: tru
 
 In order to execute queries properly during the server-side render step and customize caching behavior, we might want to add some extra logic inside our `_app.tsx`:
 
-```tsx title="pages/_app.tsx"
+```tsx title='pages/_app.tsx'
 import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';

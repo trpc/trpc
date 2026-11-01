@@ -1,17 +1,72 @@
 ---
-title: "Quickstart"
-description: "Learn how to quickly get started and setup tRPC"
+id: quickstart
+title: Quickstart
+sidebar_label: Quickstart
+slug: /quickstart
+description: Learn how to quickly get started and setup tRPC
 section: "tRPC"
 order: 1
 ---
+
+```twoslash include trpc
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+```twoslash include appRouter
+import { z } from "zod";
+import { publicProcedure, router } from "./trpc";
+
+type User = { id: string; name: string };
+
+export const appRouter = router({
+  userList: publicProcedure
+    .query(async () => {
+      const users: User[] = [{ id: '1', name: 'Katt' }];
+      return users;
+    }),
+  userById: publicProcedure
+    .input(z.string())
+    .query(async (opts) => {
+      const { input } = opts;
+      const user: User = { id: input, name: 'Katt' };
+      return user;
+    }),
+  userCreate: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(async (opts) => {
+      const { input } = opts;
+      const user: User = { id: '1', ...input };
+      return user;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+```twoslash include server
+import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import { appRouter } from "./appRouter";
+
+const server = createHTTPServer({
+  router: appRouter,
+});
+
+server.listen(3000);
+```
 
 ## Installation
 
 tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, check out [usage with React](./client/tanstack-react-query/setup.md) and [usage with Next.js](./client/nextjs.md).
 
-> [!NOTE] Requirements
-> - tRPC requires TypeScript >=5.7.2
-> - We strongly recommend using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
+:::info Requirements
+- tRPC requires TypeScript >=5.7.2
+- We strongly recommend using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
+:::
 
 Start off by installing the `@trpc/server` and `@trpc/client` packages:
 
@@ -47,7 +102,7 @@ Here's the file structure we'll be building. We recommend separating tRPC initia
 
 First, let's initialize the tRPC backend. It's good convention to do this in a separate file and export reusable helper functions instead of the entire tRPC object. 
 
-```ts twoslash title="server/trpc.ts"
+```ts twoslash title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
 /**
@@ -66,14 +121,9 @@ export const publicProcedure = t.procedure;
 
 Next, we'll initialize our main router instance, commonly referred to as `appRouter`, to which we'll later add procedures. Lastly, we need to export the type of the router which we'll later use on the client side.
 
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 // ---cut---
 import { router } from './trpc';
@@ -91,14 +141,9 @@ Use `publicProcedure.query()` to add a query procedure to the router.
 
 The following creates a query procedure called `userList` that returns a list of users:
 
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 
 type User = { id: string; name: string };
@@ -130,18 +175,13 @@ You define your input parser on `publicProcedure.input()`, which can then be acc
 The input parser should be a function that validates and casts the input of this procedure. It should return a strongly typed value when the input is valid or throw an error if the input is invalid.
 
 <br />
+:::info
+Throughout the remainder of this documentation, we will use `zod` as our validation library.
+:::
 
-> [!NOTE] Info
-> Throughout the remainder of this documentation, we will use `zod` as our validation library.
-
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 
 type User = { id: string; name: string };
@@ -182,14 +222,9 @@ The input parser can be any <code>ZodType</code>, e.g. <code>z.string()</code> o
 
 <br />
 
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 
 type User = { id: string; name: string };
@@ -219,18 +254,13 @@ export type AppRouter = typeof appRouter;
 The input parser can be any <code>YupSchema</code>, e.g. <code>yup.string()</code> or <code>yup.object({})</code>.
 
 <br />
+:::info
+Throughout the remainder of this documentation, we will use `zod` as our validation library.
+:::
 
-> [!NOTE] Info
-> Throughout the remainder of this documentation, we will use `zod` as our validation library.
-
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 
 type User = { id: string; name: string };
@@ -261,17 +291,13 @@ The input parser can be any Valibot schema, e.g. <code>v.string()</code> or <cod
 
 <br />
 
-> [!NOTE] Info
-> Throughout the remainder of this documentation, we will use `zod` as our validation library.
+:::info
+Throughout the remainder of this documentation, we will use `zod` as our validation library.
+:::
 
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 
 type User = { id: string; name: string };
@@ -306,14 +332,9 @@ The distinction between a Query and a Mutation is primarily semantic. Queries us
 
 Let's add a `userCreate` mutation by adding it as a new property on our router object:
 
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 import { z } from 'zod';
 
@@ -342,43 +363,11 @@ export type AppRouter = typeof appRouter;
 
 Now that we have defined our router, we can serve it. tRPC has first-class [adapters](./server/adapters.md) for many popular web servers. To keep it simple, we'll use the [`standalone`](./server/adapters/standalone.md) Node.js adapter here.
 
-```ts twoslash title="server/index.ts"
+```ts twoslash title='server/index.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
-import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
-
-type User = { id: string; name: string };
-
-export const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users: User[] = [{ id: '1', name: 'Katt' }];
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: input, name: 'Katt' };
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: '1', ...input };
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: appRouter
 // @filename: server.ts
 // ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
@@ -395,105 +384,29 @@ server.listen(3000);
 <summary>See the full backend code</summary>
 
 ```ts twoslash title="server/trpc.ts"
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 ```
 
 <br/>
 
-```ts twoslash title="server/appRouter.ts"
+```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
 // ---cut---
-import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
-
-type User = { id: string; name: string };
-
-export const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users: User[] = [{ id: '1', name: 'Katt' }];
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: input, name: 'Katt' };
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: '1', ...input };
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: appRouter
 ```
 
 <br/>
 
-```ts twoslash title="server/index.ts"
+```ts twoslash title='server/index.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
-import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
-
-type User = { id: string; name: string };
-
-export const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users: User[] = [{ id: '1', name: 'Katt' }];
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: input, name: 'Katt' };
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: '1', ...input };
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: appRouter
 // @filename: server.ts
 // ---cut---
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
-import { appRouter } from "./appRouter";
-
-const server = createHTTPServer({
-  router: appRouter,
-});
-
-server.listen(3000);
+// @include: server
 ```
 
 </details>
@@ -507,41 +420,9 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 ```ts twoslash title="client/index.ts"
 // @target: esnext
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
-import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
-
-type User = { id: string; name: string };
-
-export const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users: User[] = [{ id: '1', name: 'Katt' }];
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: input, name: 'Katt' };
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: '1', ...input };
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: appRouter
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
@@ -568,41 +449,9 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 ```ts twoslash title="client/index.ts"
 // @target: esnext
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
-import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
-
-type User = { id: string; name: string };
-
-export const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users: User[] = [{ id: '1', name: 'Katt' }];
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: input, name: 'Katt' };
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: '1', ...input };
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: appRouter
 // @filename: client.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './appRouter';
@@ -629,41 +478,9 @@ You can also use your autocomplete to explore the API on your client
 ```ts twoslash title="client/index.ts"
 // @target: esnext
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: trpc
 // @filename: appRouter.ts
-import { z } from "zod";
-import { publicProcedure, router } from "./trpc";
-
-type User = { id: string; name: string };
-
-export const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      const users: User[] = [{ id: '1', name: 'Katt' }];
-      return users;
-    }),
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: input, name: 'Katt' };
-      return user;
-    }),
-  userCreate: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async (opts) => {
-      const { input } = opts;
-      const user: User = { id: '1', ...input };
-      return user;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: appRouter
 // @filename: client.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './appRouter';
@@ -680,6 +497,8 @@ const trpc = createTRPCClient<AppRouter>({
 // @errors: 2339
 trpc.u;
 //    ^|
+
+
 ```
 
 ## Next steps

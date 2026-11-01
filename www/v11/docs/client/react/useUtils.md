@@ -1,7 +1,8 @@
 ---
-title: "useUtils"
-label: "useUtils()"
-description: ""
+id: useUtils
+title: useUtils
+sidebar_label: useUtils()
+slug: /client/react/useUtils
 section: "Client Usage"
 parent: "client/react"
 order: 60
@@ -9,15 +10,42 @@ order: 60
 
 `useUtils` is a hook that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`queryClient`](https://tanstack.com/query/v5/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useUtils` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
 
-> [!NOTE]
->
-> This hook was called `useContext()` until `10.41.0` (and is still aliased for the foreseeable future)
+:::note
+
+This hook was called `useContext()` until `10.41.0` (and is still aliased for the foreseeable future)
+
+:::
 
 ## Usage
 
 `useUtils` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
 
-```ts twoslash title="server.ts"
+```twoslash include server
+// @target: esnext
+
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    all: t.procedure.query(() => {
+      return {
+        posts: [
+          { id: 1, title: 'everlong' },
+          { id: 2, title: 'After Dark' },
+        ],
+      };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+```ts twoslash title='server.ts'
 // @target: esnext
 // @filename: server.ts
 // ---cut---
@@ -46,28 +74,7 @@ Now in our component, when we navigate the object `useUtils` gives us and reach 
 
 ```tsx twoslash title="MyComponent.tsx"
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure.query(() => {
-      return {
-        posts: [
-          { id: 1, title: 'everlong' },
-          { id: 2, title: 'After Dark' },
-        ],
-      };
-    }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: server
 // @filename: MyComponent.tsx
 // ---cut---
 // @errors: 2339
@@ -111,7 +118,7 @@ These are the helpers you'll get access to via `useUtils`. The table below will 
 
 `@tanstack/react-query` has a lot of functions that we haven't put in the tRPC context yet. If you need a function that isn't here, feel free to [open a feature request](https://github.com/trpc/trpc/issues/new/choose) requesting it.
 
-In the meantime, you can import and use the function directly from `@tanstack/react-query`. We also provide a [getQueryKey](./getQueryKey.md) which you can use to get the correct queryKey on the filters when using these functions.
+In the meantime, you can import and use the function directly from `@tanstack/react-query`. We also provide a [getQueryKey](/docs/client/react/getQueryKey) which you can use to get the correct queryKey on the filters when using these functions.
 
 ## Proxy client
 
@@ -221,7 +228,7 @@ just one query.
 <details>
   <summary>Backend code</summary>
 
-```tsx twoslash title="server/routers/_app.ts"
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -340,28 +347,7 @@ We have added a feature to help with this:
 
 ```ts twoslash
 // @target: esnext
-// @target: esnext
-
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  post: t.router({
-    all: t.procedure.query(() => {
-      return {
-        posts: [
-          { id: 1, title: 'everlong' },
-          { id: 2, title: 'After Dark' },
-        ],
-      };
-    }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
+// @include: server
 // @filename: utils/trpc.ts
 // ---cut---
 import { createTRPCReact } from '@trpc/react-query';

@@ -1,6 +1,8 @@
 ---
-title: "Route Metadata"
-description: ""
+id: metadata
+title: Route Metadata
+sidebar_label: Route Metadata
+slug: /metadata
 section: "@trpc/server"
 order: 13
 ---
@@ -23,7 +25,7 @@ export const appRouter = trpc.router<Context, Meta>();
 
 ## Example with per route authentication settings
 
-```tsx title="server.ts"
+```tsx title='server.ts'
 import * as trpc from '@trpc/server';
 
 // [...]

@@ -1,6 +1,7 @@
 ---
-title: "Local Link"
-description: "A link for direct procedure calls without HTTP overhead"
+id: localLink
+title: Local Link
+description: A link for direct procedure calls without HTTP overhead
 section: "Client Usage"
 parent: "client/links"
 order: 35
@@ -8,8 +9,9 @@ order: 35
 
 `localLink` is a [**terminating link**](../links.md#the-terminating-link) that allows you to make tRPC procedure calls directly in your application without going through HTTP.
 
-> [!NOTE] Info
-> We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](../../faq.md#unstable).
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
 
 ## Usage
 

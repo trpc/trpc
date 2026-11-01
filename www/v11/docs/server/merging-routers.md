@@ -1,6 +1,8 @@
 ---
-title: "Merging Routers"
-description: ""
+id: merging-routers
+title: Merging Routers
+sidebar_label: Merging Routers
+slug: /server/merging-routers
 section: "Backend Usage"
 order: 11
 ---
@@ -9,14 +11,18 @@ Writing all API-code in the same file can become unwieldy. It's easy to merge ro
 
 ## Merging with child routers
 
-```ts twoslash title="routers/user.ts"
-// @filename: trpc.ts
+```twoslash include trpcbase
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;
+```
+
+```ts twoslash title='routers/user.ts'
+// @filename: trpc.ts
+// @include: trpcbase
 // @filename: routers/user.ts
 // ---cut---
 import { router, publicProcedure } from '../trpc';
@@ -30,14 +36,9 @@ export const userRouter = router({
 });
 ```
 
-```ts twoslash title="routers/post.ts"
+```ts twoslash title='routers/post.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
-export const mergeRouters = t.mergeRouters;
+// @include: trpcbase
 // @filename: routers/post.ts
 // ---cut---
 import { router, publicProcedure } from '../trpc';
@@ -61,14 +62,9 @@ export const postRouter = router({
 });
 ```
 
-```ts twoslash title="routers/_app.ts"
+```ts twoslash title='routers/_app.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
-export const mergeRouters = t.mergeRouters;
+// @include: trpcbase
 // @filename: routers/user.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
@@ -102,14 +98,9 @@ export type AppRouter = typeof appRouter;
 
 If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
 
-```ts twoslash title="routers/user.ts"
+```ts twoslash title='routers/user.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
-export const mergeRouters = t.mergeRouters;
+// @include: trpcbase
 // @filename: routers/user.ts
 // ---cut---
 import { router, publicProcedure } from '../trpc';
@@ -123,14 +114,9 @@ export const userRouter = router({
 });
 ```
 
-```ts twoslash title="routers/post.ts"
+```ts twoslash title='routers/post.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
-export const mergeRouters = t.mergeRouters;
+// @include: trpcbase
 // @filename: routers/post.ts
 // ---cut---
 import { router, publicProcedure } from '../trpc';
@@ -154,14 +140,9 @@ export const postRouter = router({
 });
 ```
 
-```ts twoslash title="routers/_app.ts"
+```ts twoslash title='routers/_app.ts'
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
-export const mergeRouters = t.mergeRouters;
+// @include: trpcbase
 // @filename: routers/user.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
@@ -187,14 +168,18 @@ export type AppRouter = typeof appRouter;
 
 You can use the `lazy` function to dynamically load your routers. This can be useful to reduce cold starts of your application. There's no difference in how you use the router after it's been lazy loaded vs. how you use a normal router.
 
-```ts twoslash title="routers/greeting.ts"
-// @target: esnext
-// @filename: trpc.ts
+```twoslash include lazytrpc
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
+```
+
+```ts twoslash title='routers/greeting.ts'
+// @target: esnext
+// @filename: trpc.ts
+// @include: lazytrpc
 // @filename: routers/greeting.ts
 // ---cut---
 import { router, publicProcedure } from '../trpc';
@@ -204,14 +189,10 @@ export const greetingRouter = router({
 });
 ```
 
-```ts twoslash title="routers/user.ts"
+```ts twoslash title='routers/user.ts'
 // @target: esnext
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: lazytrpc
 // @filename: routers/user.ts
 // ---cut---
 import { router, publicProcedure } from '../trpc';
@@ -221,14 +202,10 @@ export const userRouter = router({
 });
 ```
 
-```ts twoslash title="routers/_app.ts"
+```ts twoslash title='routers/_app.ts'
 // @target: esnext
 // @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
+// @include: lazytrpc
 // @filename: routers/greeting.ts
 import { router, publicProcedure } from '../trpc';
 export const greetingRouter = router({ hello: publicProcedure.query(() => 'world') });
