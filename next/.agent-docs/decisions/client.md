@@ -11,7 +11,7 @@
 - (agent) The opt-in is `experimental_validationLink({ contract })` ([`client-validation-link.md`](./client-validation-link.md)).
 - Lost: v11's `context: Record<string, unknown>`; a single composed `link` (oRPC); callback-first subscriptions.
 - (agent, CS-A) `query(input, opts)`, `mutate(…)`, and `subscribe(input, { signal, lastEventId })` returning an `AsyncIterable`.
-- (agent, D-C) `createTrpcClient({ router: routerType<AppRouter>(), links })`. `router:` takes a contract or an `experimental_toContract()` value too; the explicit generic `createTrpcClient<AppRouter>({ links })` still works. The carrier is `routerType<T>()`, not proposal 17's `type<T>()`, which [`validation.md`](./validation.md) bans.
+- (agent, D-C) `createTrpcClient({ router: routerType<AppRouter>(), links })`. `router:` takes a contract or an `experimental_toContract()` value too. It's the only form: the explicit generic `createTrpcClient<AppRouter>({ links })` went with its overloads ([`links.md`](./links.md), Q17.3; [`router-type-from-values.md`](./router-type-from-values.md)). The carrier is `routerType<T>()`, not proposal 17's `type<T>()`, which [`validation.md`](./validation.md) bans.
 - (agent) Outputs are typed as `Deserialized<Output>`: generators become `AsyncIterable`s and thenables `Promise`s at any depth; built-ins (`Date`, `Map`, `URL`, …) are left alone. Custom serializer types are mapped structurally, so methods stay but private fields are lost.
 - First-release review, question 7: "`links: []` type-checks and fails at runtime: require a non-empty tuple. `routerType<any>()`, which a broken `AppRouter` import produces, gives an unusable client type: map it to the untyped client's type."
 - Human, 2026-10-19 (first-release review, question 7): "sgtm".
