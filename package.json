@@ -63,7 +63,7 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "superjson": "^1.12.4",
-    "tailwindcss": "4.3.3",
+    "tailwindcss": "^3.4.6",
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.3",
     "turbo": "catalog:",
