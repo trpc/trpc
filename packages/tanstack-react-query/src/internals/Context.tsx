@@ -14,11 +14,7 @@ type TRPCProviderType<TRouter extends AnyTRPCRouter> = React.FC<
   } & KeyPrefixOptions
 >;
 
-export interface CreateTRPCContextResult<
-  TRouter extends AnyTRPCRouter,
-  /** @deprecated `keyPrefix` no longer needs a feature flag */
-  _TFeatureFlags extends FeatureFlags = FeatureFlags,
-> {
+export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
   TRPCProvider: TRPCProviderType<TRouter>;
   useTRPC: () => TRPCOptionsProxy<TRouter>;
   useTRPCClient: () => TRPCClient<TRouter>;

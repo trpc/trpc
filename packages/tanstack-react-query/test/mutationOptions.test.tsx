@@ -229,7 +229,7 @@ describe.each(['userid-123', undefined])(
         ? ([[keyPrefix], ['post', 'create']] as const)
         : ([['post', 'create']] as const);
 
-      queryClient.setMutationDefaults(expectedKey as any, {
+      queryClient.setMutationDefaults(expectedKey, {
         onSuccess() {
           calls.push('defaultOnSuccess');
         },

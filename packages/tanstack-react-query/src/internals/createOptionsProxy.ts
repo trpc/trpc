@@ -276,15 +276,12 @@ export type DecoratedRouterRecord<
     : never;
 };
 
-export type TRPCOptionsProxy<
-  TRouter extends AnyTRPCRouter,
-  /** @deprecated `keyPrefix` no longer needs a feature flag */
-  _TFeatureFlags extends FeatureFlags = FeatureFlags,
-> = DecoratedRouterRecord<
-  TRouter['_def']['_config']['$types'],
-  TRouter['_def']['record']
-> &
-  DecorateRouterKeyable;
+export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> =
+  DecoratedRouterRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  > &
+    DecorateRouterKeyable;
 
 export type TRPCOptionsProxyOptionsBase = {
   queryClient: QueryClient | (() => QueryClient);

@@ -101,7 +101,7 @@ export function trpcMutationOptions(args: {
   const mutationKey = getMutationKeyInternal({
     path,
     prefix: (opts as { keyPrefix?: string } | undefined)?.keyPrefix ?? prefix,
-  }) as TRPCMutationKey;
+  });
 
   const defaultOpts = queryClient.defaultMutationOptions(
     queryClient.getMutationDefaults(mutationKey),

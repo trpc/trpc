@@ -746,7 +746,7 @@ const billingQuery = useQuery(trpcBilling.list.queryOptions()); // billing servi
 }
 ```
 
-Enable the feature flag when creating your context:
+Create the contexts as usual, and pass a `keyPrefix` to each provider. `createTRPCOptionsProxy` takes the same `keyPrefix` option.
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server.ts
@@ -764,7 +764,7 @@ import type { BillingRouter, AccountRouter } from '../server';
 // ---cut---
 // [...]
 
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext<BillingRouter>();
 export const BillingProvider = billing.TRPCProvider;
 export const useBilling = billing.useTRPC;
 export const createBillingClient = () =>
@@ -774,7 +774,7 @@ export const createBillingClient = () =>
     ],
   });
 
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext<AccountRouter>();
 export const AccountProvider = account.TRPCProvider;
 export const useAccount = account.useTRPC;
 export const createAccountClient = () =>
@@ -799,10 +799,10 @@ export type AccountRouter = typeof accountRouter;
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { createTRPCClient } from '@trpc/client';
 import type { BillingRouter, AccountRouter } from '../server';
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext<BillingRouter>();
 export const BillingProvider = billing.TRPCProvider;
 export const createBillingClient = () => createTRPCClient<BillingRouter>({ links: [] });
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext<AccountRouter>();
 export const AccountProvider = account.TRPCProvider;
 export const createAccountClient = () => createTRPCClient<AccountRouter>({ links: [] });
 
@@ -857,9 +857,9 @@ export type AccountRouter = typeof accountRouter;
 // @filename: utils/trpc.ts
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { BillingRouter, AccountRouter } from '../server';
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext<BillingRouter>();
 export const useBilling = billing.useTRPC;
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext<AccountRouter>();
 export const useAccount = account.useTRPC;
 
 // @filename: components/MyComponent.tsx
