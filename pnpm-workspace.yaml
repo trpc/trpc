@@ -75,3 +75,35 @@ catalog:
 catalogs:
   ts-api:
     typescript: ^6.0.3
+  www:
+    '@fastify/websocket': 11.3.0
+    '@tanstack/react-router': 1.170.42
+    '@tanstack/react-start': 1.168.61
+    '@types/aws-lambda': 8.10.149
+    '@types/cors': 2.8.19
+    '@types/event-source-polyfill': 1.0.5
+    '@types/express': 5.0.0
+    '@types/react': 19.1.0
+    '@types/react-dom': 19.1.1
+    '@types/ws': 8.5.10
+    '@vitejs/plugin-react': 6.1.2
+    arktype: 2.2.8
+    class-variance-authority: 0.7.1
+    cors: 2.8.6
+    date-fns: 4.4.0
+    effect: 4.1.1
+    event-source-polyfill: 1.0.31
+    express: 5.2.1
+    fastify: 5.12.4
+    react-dom: 19.3.0
+    react: 19.3.0
+    runtypes: 7.0.5
+    scale-codec: 0.13.0
+    server-only: 0.0.1
+    superjson: 2.2.6
+    superstruct: 2.0.2
+    tailwindcss: 4.3.3
+    typescript: 5.9.2
+    ws: 8.21.3
+    yup: 1.7.1
+    zod: 4.6.5

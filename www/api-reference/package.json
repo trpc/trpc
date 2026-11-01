@@ -11,6 +11,6 @@
     "typedoc": "0.27.9",
     "typedoc-docusaurus-theme": "1.4.3",
     "typedoc-plugin-markdown": "4.4.2",
-    "typescript": "^5.9.2"
+    "typescript": "catalog:www"
   }
 }
