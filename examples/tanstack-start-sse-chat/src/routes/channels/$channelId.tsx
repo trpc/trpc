@@ -2,6 +2,8 @@ import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { Suspense } from 'react';
+import { z } from 'zod';
 import {
   SignedIn,
   SignedOut,
@@ -11,8 +13,6 @@ import {
 import { Button } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC, type TRPC } from '~/lib/trpc';
-import { Suspense } from 'react';
-import { z } from 'zod';
 import { Chat } from './-components/chat';
 
 export const Route = createFileRoute('/channels/$channelId')({

@@ -4,14 +4,14 @@ import {
   useSubscription,
   type unstable_inferInfiniteQueryHandle,
 } from '@trpc/tanstack-react-query';
+import { cx } from 'class-variance-authority';
+import { format, formatDistanceToNow, isToday } from 'date-fns';
+import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
 import { Avatar } from '~/components/avatar';
 import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
 import { useTRPC, type TRPC } from '~/lib/trpc';
-import { cx } from 'class-variance-authority';
-import { format, formatDistanceToNow, isToday } from 'date-fns';
-import * as React from 'react';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 

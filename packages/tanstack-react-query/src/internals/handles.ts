@@ -116,7 +116,8 @@ export interface unstable_TRPCInfiniteQueryHandleWithData<
 }
 
 export type unstable_AnyTRPCHandle =
-  unstable_TRPCQueryHandle<any> | unstable_TRPCInfiniteQueryHandle<any>;
+  | unstable_TRPCQueryHandle<any>
+  | unstable_TRPCInfiniteQueryHandle<any>;
 
 /** Options for starting a query that returns a handle */
 export interface unstable_TRPCPrefetchOptions
@@ -447,7 +448,7 @@ function warnIfNotHydrated(
       const queryHash = hashKey(context.queryKey);
       if (!warnedNotHydrated.has(queryHash)) {
         warnedNotHydrated.add(queryHash);
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.warn(
           `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering: ` +
             `the query it refers to isn't in this QueryClient. ` +

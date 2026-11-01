@@ -7,8 +7,8 @@ import {
   useSubscription,
   type unstable_inferInfiniteQueryHandle,
 } from '@trpc/tanstack-react-query';
-import { useTRPC, type TRPC } from '~/lib/trpc';
 import * as React from 'react';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 
 /**
  * Set isTyping with a throttle of 1s

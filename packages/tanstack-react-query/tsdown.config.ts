@@ -21,7 +21,7 @@ export default defineConfig({
     const { generateEntrypoints } =
       await import('../../scripts/entrypoints.js');
     await generateEntrypoints(input, { reactServer: reactServerInput });
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log(`Generated entrypoints in ${Date.now() - start}ms`);
   },
 });
