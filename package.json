@@ -1,9 +1,18 @@
 {
   "name": "trpc-repo",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": "^26.0.0",
+    "pnpm": "^12.0.0"
+  },
   "scripts": {
     "next": "pnpm -C next",
-    "v11": "pnpm -C v11"
+    "v11": "pnpm -C v11",
+    "www": "pnpm -C www"
+  },
+  "devDependencies": {
+    "turbo": "catalog:"
   }
 }

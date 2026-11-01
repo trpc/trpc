@@ -35,7 +35,13 @@
   "include": [
     "src",
     "build",
+    "codemod-playground-check.ts",
+    "decisions-layout.ts",
     "not-found-check.ts",
+    "search-check.ts",
+    "sentry-smoke.ts",
+    "smoke.ts",
+    "v12-reveal-check.ts",
     "vite.config.ts",
     "vitest.config.ts"
   ]

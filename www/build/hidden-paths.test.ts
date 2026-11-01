@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import { hiddenPaths, unindexedPaths } from '../src/site.ts';
+import { decisions, hiddenPaths, unindexedPaths } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 import {
   hiddenPathProblems,
@@ -241,9 +241,9 @@ describe('hiddenRouteProblems', () => {
 
 describe('hiddenRoute', () => {
   it('says noindex, nofollow under the path, on every host, after the site-wide noindex', () => {
-    const all = routes(undefined, undefined, ['/v12/decisions']);
+    const all = routes();
     const index = all.findIndex(
-      (route) => route.src === hiddenRoute('/v12/decisions').src,
+      (route) => route.src === hiddenRoute(decisions.basePath).src,
     );
     expect(all[index]).toEqual({
       continue: true,
@@ -297,8 +297,8 @@ describe('unindexedPathProblems', () => {
     }
   });
 
-  it('is none on main, which has no v12', () => {
-    expect(unindexedPaths).toEqual([]);
+  it('is every path under /v12 until v12Indexable flips', () => {
+    expect(unindexedPaths).toEqual(['/v12']);
   });
 
   it('fails on trpc.io, unhidden, without the route', () => {
@@ -344,6 +344,6 @@ describe('robotsTxt', () => {
     ).toBe(
       'User-agent: *\nAllow: /\nDisallow: /v12/decisions\nDisallow: /v12/docs\n\nSitemap: https://trpc.io/sitemap.xml\n',
     );
-    expect(hiddenPaths).toEqual([]);
+    expect(hiddenPaths).toContain(decisions.basePath);
   });
 });

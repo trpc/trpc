@@ -1,5 +1,5 @@
 {
-  "name": "@samples/docs",
+  "name": "@samples/v12",
   "private": true,
   "description": "The app the docs' code blocks compile in: their imports resolve here, and `sample` fences show regions of its files",
   "type": "module",

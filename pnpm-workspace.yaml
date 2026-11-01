@@ -1,15 +1,30 @@
 packages:
-  - 'packages/*'
-  - 'examples/*'
-  - 'examples/.*/*'
-  - 'examples/minimal/*'
-  - 'examples/minimal-react/*'
-  - 'examples/minimal-per-procedure-errors/*'
-  - 'examples/minimal-content-types/*'
+  # tRPC v11 (`@trpc/*`): kept, tested and published until 12.0.0.
+  - 'v11'
+  - 'v11/packages/*'
+  - 'v11/examples/*'
+  - 'v11/examples/.*/*'
+  - 'v11/examples/minimal/*'
+  - 'v11/examples/minimal-react/*'
+  - 'v11/examples/minimal-per-procedure-errors/*'
+  - 'v11/examples/minimal-content-types/*'
+  - 'v11/tooling/*'
+  # tRPC v12 (`@trpc12/*`).
+  - 'next'
+  - 'next/packages/*'
+  - 'next/examples/*'
+  - 'next/examples/experimental/*'
+  - 'next/examples/monorepo/packages/*'
+  - 'next/examples/monorepo/apps/*'
+  - 'next/test/*'
+  - 'next/spikes'
+  - 'next/tooling/*'
+  # trpc.io, with every version's docs, and what it shares with the examples.
   - 'www'
   - 'www/api-reference'
   - 'www/samples/*'
   - 'tooling/*'
+
 publicHoistPattern:
   - '@types/*'
   - '!@types/parse-path'
@@ -19,12 +34,30 @@ publicHoistPattern:
   - '!prisma'
 sideEffectsCache: false
 strictPeerDependencies: false
+# v11's examples depend on `npm:@trpc/*` and get the workspace's packages.
+# v12's exact `@trpc/*` pins (11.19.0) don't match them, so stay on npm.
 preferWorkspacePackages: true
 linkWorkspacePackages: true
 nodeOptions: --no-warnings
 
 minimumReleaseAgeExclude:
   - sury@11.0.0
+  - vendor-src@0.16.0
+  - '@orpc/client@2.0.0-beta.44'
+  - '@orpc/contract@2.0.0-beta.44'
+  - '@orpc/server@2.0.0-beta.44'
+  - '@orpc/shared@2.0.0-beta.44'
+  - typescript@7.1.0-beta
+  - '@typescript/typescript-*'
+
+# Vite+ runs every Vite and Vitest in the workspace on its own core.
+overrides:
+  vite@*: npm:@voidzero-dev/vite-plus-core@1.1.0
+  vitest@*: 5.0.3
+
+peerDependencyRules:
+  allowedVersions:
+    vite: '1.1.0'
 
 allowBuilds:
   '@prisma/client': true
@@ -43,6 +76,7 @@ allowBuilds:
   sharp: true
   tree-sitter: true
   tree-sitter-json: true
+  vue-demi: true
   workerd: true
 
 catalog:
@@ -83,8 +117,8 @@ catalogs:
     '@types/cors': 2.8.19
     '@types/event-source-polyfill': 1.0.5
     '@types/express': 5.0.0
-    '@types/react': 19.1.0
-    '@types/react-dom': 19.1.1
+    '@types/react': 19.3.0
+    '@types/react-dom': 19.3.0
     '@types/ws': 8.5.10
     '@vitejs/plugin-react': 6.1.2
     arktype: 2.2.8
