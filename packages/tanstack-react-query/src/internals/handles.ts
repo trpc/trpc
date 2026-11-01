@@ -7,7 +7,6 @@ import type {
 import { hashKey, isCancelledError } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { isTRPCClientError } from '@trpc/client';
-import { dehydrateHandleQuery, hydrateHandleQuery } from './hydration';
 import type {
   UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
   UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
@@ -270,7 +269,6 @@ export function readHandle(
     path: data.path,
     input: data.args?.input,
     queryKey,
-    dehydratedQuery: (handle as { dehydratedQuery?: unknown }).dehydratedQuery,
   };
 }
 
@@ -303,10 +301,9 @@ export function startHandle(opts: {
   options: any;
   kind: 'query' | 'infinite';
   verb: HandleVerb;
-  selfHydrating: boolean;
   inRender: boolean;
 }) {
-  const { queryClient, options, kind, verb, selfHydrating, inRender } = opts;
+  const { queryClient, options, kind, verb, inRender } = opts;
   const input = readQueryKey(options.queryKey).args?.input;
   const handle: Record<string, unknown> = { queryKey: options.queryKey, input };
   if (kind === 'infinite' && options.initialPageParam != null) {
@@ -320,18 +317,7 @@ export function startHandle(opts: {
     }
     return handle;
   }
-  const done = () => {
-    if (selfHydrating) {
-      const dehydratedQuery = dehydrateHandleQuery(
-        queryClient,
-        options.queryKey,
-      );
-      if (dehydratedQuery) {
-        handle['dehydratedQuery'] = dehydratedQuery;
-      }
-    }
-    return handle;
-  };
+  const done = () => handle;
 
   if (kind === 'infinite') {
     switch (verb) {
@@ -381,7 +367,7 @@ function warnIfNotHydrated(
         console.warn(
           `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering: ` +
             `the query it refers to isn't in this QueryClient. ` +
-            `Render the reading component inside <HydrateClient> (or use self-hydrating handles), and don't return handles from server functions or server actions. ` +
+            `Render the reading component inside <HydrateClient> or <HydrationBoundary>, and don't return handles from server functions or server actions. ` +
             `See https://trpc.io/docs/client/tanstack-react-query/handles#where-handles-dont-work`,
         );
       }
@@ -446,7 +432,6 @@ export function prepareHandleRead<TOptions extends { queryFn?: unknown }>(
       options.queryFn as QueryFunction<any, any, any>,
     );
   }
-  hydrateHandleQuery(queryClient, handle.dehydratedQuery);
   refetchRejectedHydration(queryClient, options);
   return options;
 }

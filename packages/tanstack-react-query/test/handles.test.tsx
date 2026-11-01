@@ -677,17 +677,4 @@ describe('runtime', () => {
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
-
-  test('self-hydrating handles are server only', async () => {
-    await using resource = ctx();
-    expect(() =>
-      createTRPCOptionsProxy({
-        client: resource.client,
-        queryClient: resource.queryClient,
-        unstable_selfHydratingHandles: true,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`unstable_selfHydratingHandles\` works only on the server, in server components and server loaders: a handle started in the browser already points at the browser's cache. See https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles]`,
-    );
-  });
 });

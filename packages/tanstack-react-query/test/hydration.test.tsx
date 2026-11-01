@@ -5,10 +5,10 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import type { DehydratedState } from '@tanstack/react-query';
 import {
   defaultShouldDehydrateQuery,
+  dehydrate,
   HydrationBoundary,
   QueryClient,
   QueryClientProvider,
-  QueryObserver,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
@@ -88,16 +88,12 @@ function makeBrowserQueryClient() {
 }
 
 /** The request-scoped server side, with the `react-server` build */
-function makeServer(
-  resource: ReturnType<typeof ctx>,
-  opts: { selfHydratingHandles?: boolean } = {},
-) {
+function makeServer(resource: ReturnType<typeof ctx>) {
   const queryClient = makeServerQueryClient();
   const trpc = rsc.createTRPCOptionsProxy({
     router: resource.appRouter,
     ctx: {},
     queryClient,
-    unstable_selfHydratingHandles: opts.selfHydratingHandles,
   });
   return { queryClient, trpc };
 }
@@ -321,60 +317,42 @@ describe('unstable_createHydrateClient outside server components', () => {
   });
 });
 
-describe('self-hydrating handles', () => {
-  test('work from server loaders, outside server components', async () => {
+describe('dehydrate and HydrationBoundary from a server loader', () => {
+  test('carries transformed data and pending queries with no second fetch', async () => {
     await using resource = ctx();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const queryClient = makeServerQueryClient();
     // A React Router `loader`: the default build, on the server
     const trpc = createClientOptionsProxy({
       router: resource.appRouter,
       ctx: {},
       queryClient,
-      unstable_selfHydratingHandles: true,
     });
-    const loaderData = {
-      post: await trpc.post.byDay.unstable_ensure({
-        day: new Date('2026-01-01'),
-      }),
-      later: trpc.post.byDay.unstable_prefetch({
-        day: new Date('2026-01-02'),
-      }),
-    };
-
-    const html = await renderClientTree(
-      resource,
-      <>
-        <Post post={loaderData.post} />
-        <Post post={loaderData.later} />
-      </>,
-    );
-    expect(html).toContain('Posts on 2026-01-01');
-    expect(html).toContain('Posts on 2026-01-02');
-    expect(resource.calls).toHaveBeenCalledTimes(2);
-  });
-
-  test('render pending and ensured handles without a boundary or a second fetch', async () => {
-    await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const server = makeServer(resource, { selfHydratingHandles: true });
-
-    const pending = server.trpc.post.byDay.unstable_prefetch({
+    const post = await trpc.post.byDay.unstable_ensure({
       day: new Date('2026-01-01'),
     });
-    const ensured = await server.trpc.post.byDay.unstable_ensure({
+    const later = trpc.post.byDay.unstable_prefetch({
       day: new Date('2026-01-02'),
     });
-    const list = server.trpc.post.list.unstable_prefetchInfinite({});
+    const list = trpc.post.list.unstable_prefetchInfinite({});
+    const loaderData = {
+      dehydratedState: dehydrate(queryClient),
+      post,
+      later,
+      list,
+    };
+    expect(
+      loaderData.dehydratedState.queries.map((query) => query.state.status),
+    ).toEqual(['success', 'pending', 'pending']);
 
     const html = await renderClientTree(
       resource,
-      <>
-        <Post post={pending} />
-        <Post post={ensured} />
-        <List list={list} />
-      </>,
+      <HydrationBoundary state={loaderData.dehydratedState}>
+        <Post post={loaderData.post} />
+        <Post post={loaderData.later} />
+        <List list={loaderData.list} />
+      </HydrationBoundary>,
     );
-
     expect(html).toContain('Posts on 2026-01-01');
     expect(html).toContain('Posts on 2026-01-02');
     expect(html).toContain('fetchedAt:1970-01-01T00:00:00.000Z');
@@ -382,80 +360,5 @@ describe('self-hydrating handles', () => {
     expect(resource.calls).toHaveBeenCalledTimes(3);
     expect(trpcWarnings(warn)).toEqual([]);
     warn.mockRestore();
-  });
-
-  test('handles of the same query state share one dehydrated copy', async () => {
-    await using resource = ctx();
-    const server = makeServer(resource, { selfHydratingHandles: true });
-    const first = await server.trpc.post.byDay.unstable_ensure({
-      day: new Date('2026-01-01'),
-    });
-    const second = await server.trpc.post.byDay.unstable_ensure({
-      day: new Date('2026-01-01'),
-    });
-    const dehydrated = (handle: object) =>
-      (handle as { dehydratedQuery?: unknown }).dehydratedQuery;
-
-    expect(dehydrated(first)).toBeDefined();
-    expect(dehydrated(second)).toBe(dehydrated(first));
-  });
-
-  test("don't carry failed queries", async () => {
-    await using resource = ctx();
-    const server = makeServer(resource, { selfHydratingHandles: true });
-    server.trpc.post.missing.unstable_prefetch();
-    await vi.waitFor(() =>
-      expect(
-        server.queryClient.getQueryState(server.trpc.post.missing.queryKey())
-          ?.status,
-      ).toBe('error'),
-    );
-
-    const handle = server.trpc.post.missing.unstable_prefetch();
-    // prefetch starts a new request for the failed query, so the handle carries that one
-    expect(
-      (handle as { dehydratedQuery?: { state: { status: string } } })
-        .dehydratedQuery?.state.status,
-    ).toBe('pending');
-
-    await server.queryClient
-      .fetchQuery(server.trpc.post.missing.queryOptions())
-      .catch(() => null);
-    const ensured = await server.trpc.post.byDay.unstable_ensure({
-      day: new Date('2026-01-01'),
-    });
-    expect(ensured).toHaveProperty('dehydratedQuery');
-  });
-
-  test('newer data reaches an observed query after the read', async () => {
-    await using resource = ctx();
-    const server = makeServer(resource, { selfHydratingHandles: true });
-    const browser = makeBrowserQueryClient();
-    const browserTrpc = createClientOptionsProxy({
-      client: resource.client,
-      queryClient: browser,
-    });
-
-    const first = await server.trpc.post.byDay.unstable_ensure({
-      day: new Date('2026-01-01'),
-    });
-    const firstOptions = browserTrpc.unstable_fromHandle(first);
-    const observer = new QueryObserver(browser, firstOptions);
-    const unsubscribe = observer.subscribe(() => {});
-    expect(observer.getCurrentResult().data?.version).toBe(1);
-
-    // `router.refresh()`: the server renders again with newer data
-    await new Promise((resolve) => setTimeout(resolve, 2));
-    const refreshed = await server.trpc.post.byDay.unstable_fetch(
-      { day: new Date('2026-01-01') },
-      { staleTime: 0 },
-    );
-    browserTrpc.unstable_fromHandle(refreshed);
-    expect(browser.getQueryData(firstOptions.queryKey)?.version).toBe(1);
-
-    await Promise.resolve();
-    expect(browser.getQueryData(firstOptions.queryKey)?.version).toBe(2);
-    expect(resource.calls).toHaveBeenCalledTimes(2);
-    unsubscribe();
   });
 });

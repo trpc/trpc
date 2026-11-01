@@ -24,12 +24,7 @@ import type {
   DecorateQueryHandleVerbs,
   HandleVerb,
 } from './handles';
-import {
-  isServerEnvironment,
-  prepareHandleRead,
-  readHandle,
-  startHandle,
-} from './handles';
+import { prepareHandleRead, readHandle, startHandle } from './handles';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -316,15 +311,6 @@ export type TRPCOptionsProxyOptionsBase<
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
-  /**
-   * Server only. Handles carry their query's data, or its pending request, and
-   * reading one with `unstable_fromHandle` writes it into the reading client's
-   * cache, so they need no `HydrateClient` or `HydrationBoundary`. For handles
-   * that reach the browser through a serializer that streams promises: server
-   * components, and React Router's server loaders.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles
-   */
-  unstable_selfHydratingHandles?: boolean;
 } & KeyPrefixOptions<TFeatureFlags>;
 
 export interface TRPCOptionsProxyOptionsInternal<
@@ -377,14 +363,6 @@ export function createTRPCOptionsProxy<
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
 ): TRPCOptionsProxy<TRouter, TFeatureFlags> {
   const prefix = opts.keyPrefix;
-  const selfHydratingHandles = opts.unstable_selfHydratingHandles === true;
-  if (selfHydratingHandles && !isServerEnvironment()) {
-    throw new Error(
-      '`unstable_selfHydratingHandles` works only on the server, in server components and server loaders: ' +
-        "a handle started in the browser already points at the browser's cache. " +
-        'See https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles',
-    );
-  }
 
   const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
@@ -460,7 +438,6 @@ export function createTRPCOptionsProxy<
         options,
         kind,
         verb,
-        selfHydrating: selfHydratingHandles,
         inRender,
       });
     };
