@@ -18,7 +18,11 @@ type TRPCProviderType<
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
-  } & KeyPrefixOptions<TFeatureFlags>
+  } & KeyPrefixOptions<
+    TFeatureFlags['keyPrefix'] extends true
+      ? TFeatureFlags
+      : { keyPrefix: boolean }
+  >
 >;
 
 export interface CreateTRPCContextResult<
@@ -33,8 +37,23 @@ export interface CreateTRPCContextResult<
 /**
  * Create a set of type-safe provider-consumers
  *
+ * Pass `keyPrefix` to `<TRPCProvider>` to prefix query and mutation keys.
+ * Key types keep the unprefixed shape, since the prefix is only known at render.
+ *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
  */
+export function createTRPCContext<
+  TRouter extends AnyTRPCRouter,
+>(): CreateTRPCContextResult<TRouter>;
+/**
+ * @deprecated `keyPrefix` no longer needs a feature flag. Drop the second
+ * type argument and pass `keyPrefix` to `<TRPCProvider>`. The flag only types
+ * query and mutation keys with the prefix.
+ */
+export function createTRPCContext<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends FeatureFlags,
+>(): CreateTRPCContextResult<TRouter, TFeatureFlags>;
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,

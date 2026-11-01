@@ -17,8 +17,20 @@ export type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
-  featureFlags: FeatureFlags;
+  /**
+   * Only set when query keys are typed with a prefix
+   */
+  featureFlags?: FeatureFlags;
 };
+
+/**
+ * @internal
+ */
+export type inferFeatureFlags<TDef extends ResolverDef> = TDef extends {
+  featureFlags: infer $FeatureFlags extends FeatureFlags;
+}
+  ? $FeatureFlags
+  : DefaultFeatureFlags;
 
 /**
  * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
@@ -130,7 +142,10 @@ export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
     : TRPCMutationKeyWithoutPrefix;
 
 /**
- * Feature flags for configuring tRPC behavior
+ * Type-level options for query and mutation keys.
+ *
+ * `keyPrefix: true` types keys with a prefix, `false` without one, and
+ * `boolean` as either.
  * @public
  */
 export type FeatureFlags = { keyPrefix: boolean };
@@ -148,12 +163,16 @@ export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
     ? {
         keyPrefix: string;
       }
-    : {
-        /**
-         * In order to use a query key prefix, you have to initialize the context with the `keyPrefix`
-         */
-        keyPrefix?: never;
-      };
+    : TFeatureFlags['keyPrefix'] extends false
+      ? {
+          /**
+           * In order to use a query key prefix, you have to initialize the context with the `keyPrefix`
+           */
+          keyPrefix?: never;
+        }
+      : {
+          keyPrefix?: string | undefined;
+        };
 /**
  * Default feature flags with query key prefix disabled
  * @public

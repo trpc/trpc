@@ -35,6 +35,7 @@ import {
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
+  inferFeatureFlags,
   KeyPrefixOptions,
   OptionalCursorInput,
   ResolverDef,
@@ -115,7 +116,7 @@ export interface DecorateInfiniteQueryProcedure<
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   infiniteQueryKey: (input?: Partial<TDef['input']>) => DataTag<
-    TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
+    TRPCQueryKey<inferFeatureFlags<TDef>['keyPrefix']>,
     TRPCInfiniteData<TDef['input'], TDef['output']>,
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
@@ -133,7 +134,7 @@ export interface DecorateInfiniteQueryProcedure<
     input?: Partial<TDef['input']>,
     filters?: QueryFilters<
       DataTag<
-        TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
+        TRPCQueryKey<inferFeatureFlags<TDef>['keyPrefix']>,
         TRPCInfiniteData<TDef['input'], TDef['output']>,
         TRPCClientErrorLike<{
           transformer: TDef['transformer'];
@@ -144,7 +145,7 @@ export interface DecorateInfiniteQueryProcedure<
   ) => WithRequired<
     QueryFilters<
       DataTag<
-        TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
+        TRPCQueryKey<inferFeatureFlags<TDef>['keyPrefix']>,
         TRPCInfiniteData<TDef['input'], TDef['output']>,
         TRPCClientErrorLike<{
           transformer: TDef['transformer'];
@@ -156,7 +157,7 @@ export interface DecorateInfiniteQueryProcedure<
   >;
 }
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef>, DecorateRouterKeyable<TDef['featureFlags']> {
+  extends TypeHelper<TDef>, DecorateRouterKeyable<inferFeatureFlags<TDef>> {
   /**
    * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
    *
@@ -172,7 +173,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   queryKey: (input?: Partial<TDef['input']>) => DataTag<
-    TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
+    TRPCQueryKey<inferFeatureFlags<TDef>['keyPrefix']>,
     TDef['output'],
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
@@ -190,7 +191,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
     input?: Partial<TDef['input']>,
     filters?: QueryFilters<
       DataTag<
-        TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
+        TRPCQueryKey<inferFeatureFlags<TDef>['keyPrefix']>,
         TDef['output'],
         TRPCClientErrorLike<{
           transformer: TDef['transformer'];
@@ -201,7 +202,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
   ) => WithRequired<
     QueryFilters<
       DataTag<
-        TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
+        TRPCQueryKey<inferFeatureFlags<TDef>['keyPrefix']>,
         TDef['output'],
         TRPCClientErrorLike<{
           transformer: TDef['transformer'];
@@ -228,7 +229,7 @@ export interface DecorateMutationProcedure<
    *
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
    */
-  mutationKey: () => TRPCMutationKey<TDef['featureFlags']['keyPrefix']>;
+  mutationKey: () => TRPCMutationKey<inferFeatureFlags<TDef>['keyPrefix']>;
 }
 
 export interface DecorateSubscriptionProcedure<
@@ -256,6 +257,25 @@ export type DecorateProcedure<
       ? DecorateSubscriptionProcedure<TDef>
       : never;
 
+type DecoratedProcedureDef<
+  TRoot extends AnyTRPCRootTypes,
+  TProcedure extends AnyTRPCProcedure,
+  TFeatureFlags extends FeatureFlags,
+> = TFeatureFlags extends DefaultFeatureFlags
+  ? {
+      input: inferProcedureInput<TProcedure>;
+      output: inferTransformedProcedureOutput<TRoot, TProcedure>;
+      transformer: TRoot['transformer'];
+      errorShape: inferProcedureErrorShape<TRoot, TProcedure>;
+    }
+  : {
+      input: inferProcedureInput<TProcedure>;
+      output: inferTransformedProcedureOutput<TRoot, TProcedure>;
+      transformer: TRoot['transformer'];
+      errorShape: inferProcedureErrorShape<TRoot, TProcedure>;
+      featureFlags: TFeatureFlags;
+    };
+
 /**
  * @internal
  */
@@ -271,13 +291,7 @@ export type DecoratedRouterRecord<
       : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
             $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<TRoot, $Value>;
-              transformer: TRoot['transformer'];
-              errorShape: inferProcedureErrorShape<TRoot, $Value>;
-              featureFlags: TFeatureFlags;
-            }
+            DecoratedProcedureDef<TRoot, $Value, TFeatureFlags>
           >
         : never
     : never;
@@ -335,15 +349,49 @@ type UtilsMethods =
 /**
  * Create a typed proxy from your router types. Can also be used on the server.
  *
+ * Query and mutation keys are typed with a prefix when you pass a `keyPrefix`.
+ *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
  * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
+ */
+export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
+  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: true }>,
+): TRPCOptionsProxy<TRouter, { keyPrefix: true }>;
+/**
+ * Create a typed proxy from your router types. Can also be used on the server.
+ *
+ * Query and mutation keys are typed with a prefix when you pass a `keyPrefix`.
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
+ * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
+ */
+export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
+  opts: TRPCOptionsProxyOptions<TRouter>,
+): TRPCOptionsProxy<TRouter>;
+/**
+ * Create a typed proxy from your router types. Can also be used on the server.
+ *
+ * Query and mutation keys are typed as either shape when `keyPrefix` may be `undefined`.
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
+ * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
+ */
+export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
+  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: boolean }>,
+): TRPCOptionsProxy<TRouter, { keyPrefix: boolean }>;
+/**
+ * @deprecated `keyPrefix` no longer needs a feature flag. Drop the second
+ * type argument: key types follow the `keyPrefix` you pass.
  */
 export function createTRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
-): TRPCOptionsProxy<TRouter, TFeatureFlags> {
+): TRPCOptionsProxy<TRouter, TFeatureFlags>;
+export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
+  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: boolean }>,
+): any {
   const prefix = opts.keyPrefix;
 
   const callIt = (type: TRPCProcedureType): any => {
