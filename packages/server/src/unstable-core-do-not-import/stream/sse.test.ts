@@ -393,6 +393,38 @@ describe('untracked events after a tracked event', () => {
   });
 });
 
+describe('tracked ids', () => {
+  test.each(['1\n2', '1\r2', '1\r\n2', '1\0x'])(
+    'tracked() rejects %j',
+    (id) => {
+      expect(() => tracked(id, 'a')).toThrow(
+        new Error(
+          '`id` must not contain line breaks or null characters as they are not allowed in a Server-Sent Events id',
+        ),
+      );
+    },
+  );
+
+  test.each(['1', 'a b', '2026-10-25T10:00:00.000Z'])(
+    'tracked() accepts %j',
+    (id) => {
+      expect(isTrackedEnvelope(tracked(id, 'a'))).toBe(true);
+    },
+  );
+
+  test('an id with a line break ends the stream with an error instead of adding fields', async () => {
+    async function* data() {
+      yield tracked('1\ndata: "injected"', 'a');
+    }
+    const text = await new Response(sseStreamProducer({ data: data() })).text();
+    expect(text.split('\n\n\n')).toEqual([
+      'event: connected\ndata: {}',
+      'event: serialized-error\ndata: null',
+      '',
+    ]);
+  });
+});
+
 test('sse()', () => {
   const event = sse({
     id: String(1),

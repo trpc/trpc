@@ -42,6 +42,11 @@ export function tracked<TData>(
       '`id` must not be an empty string as empty string is the same as not setting the id at all',
     );
   }
+  if (/[\0\n\r]/.test(id)) {
+    throw new Error(
+      '`id` must not contain line breaks or null characters as they are not allowed in a Server-Sent Events id',
+    );
+  }
   return [id as TrackedId, data, trackedSymbol];
 }
 
