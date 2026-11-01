@@ -11,16 +11,17 @@ import { docPages, docsContent } from './build/content.ts';
 import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
-import { OgCard, ogImages } from './build/og-image.ts';
+import { ogCards } from './build/og-cards.ts';
 import {
   sentryDefines,
   sentrySettings,
   sentryUploadPlugins,
 } from './build/sentry.ts';
 import { siteFiles } from './build/site-files.ts';
-import { cacheDir, samplesDir, twoslashCache } from './build/paths.ts';
+import { samplesDir, twoslashCache } from './build/paths.ts';
+import type { DocCard } from './src/og/card.ts';
 import { mediaPage, searchPage } from './src/pages.ts';
-import { absoluteUrl, copyPageUrl, postDate, trpcPostUrl } from './src/seo.ts';
+import { absoluteUrl, copyPageUrl, deploymentOrigin } from './src/seo.ts';
 import {
   atTrpcIo,
   blog,
@@ -29,7 +30,7 @@ import {
   llmsTxtPath,
   site,
 } from './src/site.ts';
-import { partners, sponsorCardLede, sponsorPage } from './src/sponsors.ts';
+import { sponsorCardLede, sponsorPage } from './src/sponsors.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
 import v11Sections from './v11/sections.json' with { type: 'json' };
@@ -81,26 +82,33 @@ const copySitemap = atTrpcIo
   : { exclude: true };
 
 const docCard = (
-  page: (typeof copiedPages)[number]['pages'][number],
-  version: CopiedVersion['id'],
+  page: {
+    readonly description: string;
+    readonly path: string;
+    readonly title: string;
+  },
   url: string,
-) =>
-  OgCard.Doc({
-    description: page.description,
-    path: page.path,
-    section: page.section,
-    title: page.title,
-    url,
-    version,
-  });
+): DocCard => ({
+  description: page.description,
+  kind: 'doc',
+  path: page.path,
+  title: page.title,
+  url,
+});
 
 const sentry = sentrySettings(process.env);
 
 export default defineConfig({
+  // `src/og/render.ts` inlines resvg's wasm.
+  assetsInclude: ['**/*.wasm'],
   define: {
     // The environment the Experiments menu names (`src/flags.ts`).
     'import.meta.env.VERCEL_ENV': JSON.stringify(
       process.env['VERCEL_ENV'] ?? '',
+    ),
+    // Pages are prerendered, so their social cards' host is the build's.
+    'import.meta.env.DEPLOYMENT_ORIGIN': JSON.stringify(
+      deploymentOrigin(process.env),
     ),
     ...sentryDefines(sentry),
   },
@@ -150,52 +158,42 @@ export default defineConfig({
     }),
     blogFeeds({ posts }),
     siteIcons({ svg: favicon }),
-    ogImages({
-      cacheDir: `${cacheDir}/og`,
-      cards: [
-        OgCard.Home({ path: '/' }),
-        ...copiedPages.flatMap((copy) =>
-          copy.pages.map((page) =>
-            docCard(
-              page,
-              copy.version.id,
-              copyPageUrl(copy.version, page.slug),
-            ),
-          ),
+    ogCards([
+      { kind: 'home', path: '/' },
+      ...copiedPages.flatMap((copy) =>
+        copy.pages.map((page) =>
+          docCard(page, copyPageUrl(copy.version, page.slug)),
         ),
-        OgCard.Post({
+      ),
+      docCard(
+        {
           description: blog.description,
-          eyebrow: '',
           path: '/blog',
           title: `The ${site.name} blog`,
-          url: absoluteUrl('/blog'),
-        }),
-        OgCard.Sponsor({
-          headline: sponsorPage.headline,
-          lede: sponsorCardLede,
-          partners,
+        },
+        absoluteUrl('/blog'),
+      ),
+      docCard(
+        {
+          description: sponsorCardLede,
           path: sponsorPage.path,
-          url: absoluteUrl(sponsorPage.path),
-        }),
-        ...[mediaPage, searchPage].map((page) =>
-          OgCard.Page({
-            ...page,
-            eyebrow: '',
-            pill: 'MIT licensed',
-            url: absoluteUrl(page.path),
-          }),
-        ),
-        ...posts.map((post) =>
-          OgCard.Post({
-            description: post.description,
-            eyebrow: `${postDate(post.date)} · ${post.authors.map((author) => author.name).join(', ')}`,
-            path: `/blog/${post.slug}`,
-            title: post.title,
-            url: trpcPostUrl(post.slug),
-          }),
-        ),
-      ],
-    }),
+          title: sponsorPage.headline,
+        },
+        absoluteUrl(sponsorPage.path),
+      ),
+      ...[mediaPage, searchPage].map((page) =>
+        docCard(page, absoluteUrl(page.path)),
+      ),
+      ...posts.map((post) => ({
+        authors: post.authors,
+        date: post.date,
+        description: post.description,
+        kind: 'post' as const,
+        path: `/blog/${post.slug}`,
+        readingMinutes: post.readingMinutes,
+        title: post.title,
+      })),
+    ]),
     tailwindcss(),
     bundledServer(),
     tanstackStart({

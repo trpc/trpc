@@ -1,9 +1,10 @@
 /**
- * The pages rendered on request instead of in the build: a URL whose query
+ * What's rendered on request instead of in the build: a URL whose query
  * turns on experiments (`?flags=`, `src/flags.ts`) or searches (`/search?q=`,
- * `src/pages.ts`). The build prerenders each page once, without a query;
- * every combination of flags is a different page, so the host sends those
- * requests to a function running the site's server build, and its CDN
+ * `src/pages.ts`), and the pages' social cards (`/og/*.png`,
+ * `src/routes/og.$.ts`). The build prerenders each page once, without a
+ * query; every combination of flags is a different page, so the host sends
+ * those requests to a function running the site's server build, and its CDN
  * caches each URL's response until the next deploy. Everything else is the
  * prerendered file.
  */
@@ -43,6 +44,9 @@ export const flagsValue = (ids: ReadonlyArray<string> = experimentIds) => {
 /** A page's path: not an asset, nor a file with an extension. */
 const pagePath = '^(/(?!assets/)[^.]*)$';
 
+/** The social cards' paths (`ogImagePath`). */
+const ogImagePaths = '^(/og/.+\\.png)$';
+
 /** Routes sending the flagged requests to the function, before the files. */
 export const onDemandRoutes = (
   ids: ReadonlyArray<string> = experimentIds,
@@ -62,12 +66,14 @@ export const onDemandRoutes = (
     has: [{ key: searchParam, type: 'query', value: '^.+$' }],
     src: `^${escapeRegExp(searchPage.path)}$`,
   },
+  { dest: `/${onDemandFunction}?${pathParam}=$1`, src: ogImagePaths },
 ];
 
 /**
  * The function's entry: a Node.js handler that renders the requested path
  * with the server build's `fetch`, and lets the CDN cache it like a
- * prerendered page.
+ * prerendered page, or as long as the response says (the home page's social
+ * card, with live numbers).
  */
 export const handlerSource = `import { Readable } from 'node:stream';
 import server from './server/server.js';
@@ -95,7 +101,7 @@ export default async function handler(req, res) {
   }
   const cookies = response.headers.getSetCookie();
   if (cookies.length > 0) res.setHeader('set-cookie', cookies);
-  res.setHeader('cache-control', ${JSON.stringify(pageCacheControl)});
+  res.setHeader('cache-control', response.headers.get('cache-control') ?? ${JSON.stringify(pageCacheControl)});
   if (response.body === null || req.method === 'HEAD') {
     res.end();
     return;

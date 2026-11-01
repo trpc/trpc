@@ -11,7 +11,6 @@ const projects: Record<string, string> = {
   'next-prisma-websockets-starter': 'examples/next-prisma-websockets-starter',
   'examples-todomvc': 'examples/next-prisma-todomvc',
   'tanstack-start-sse-chat': 'examples/tanstack-start-sse-chat',
-  'og-image': 'www/og-image',
 };
 
 const branch =
