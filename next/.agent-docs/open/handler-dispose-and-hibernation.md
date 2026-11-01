@@ -40,13 +40,14 @@ import { Context, Effect, type Layer } from 'effect';
 interface Env {}
 class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
 declare const AppLive: Layer.Layer<Db>;
-const router = {
-  health: initTrpc().procedure.query(() =>
+const t = initTrpc();
+const router = t.router({
+  health: t.procedure.query(() =>
     Effect.gen(function* () {
       return yield* (yield* Db).ping;
     }),
   ),
-};
+});
 type AppRouter = typeof router;
 // ---cut-end---
 const handler = createFetchHandler<AppRouter, { env: Env }>({
@@ -86,13 +87,14 @@ import { Context, Effect, type Layer } from 'effect';
 interface Env {}
 class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
 declare const AppLive: Layer.Layer<Db>;
-const router = {
-  health: initTrpc().procedure.query(() =>
+const t = initTrpc();
+const router = t.router({
+  health: t.procedure.query(() =>
     Effect.gen(function* () {
       return yield* (yield* Db).ping;
     }),
   ),
-};
+});
 type AppRouter = typeof router;
 // ---cut-end---
 const handler = createFetchHandler<AppRouter, { env: Env }>({

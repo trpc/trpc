@@ -42,7 +42,8 @@ import { serve } from '@trpc12/trpc/http';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { Effect, Layer, type ManagedRuntime } from 'effect';
-const appRouter = { health: initTrpc().procedure.query(() => 'ok') };
+const t = initTrpc();
+const appRouter = t.router({ health: t.procedure.query(() => 'ok') });
 declare const runtime: ManagedRuntime.ManagedRuntime<never, never>;
 // ---cut-end---
 const openapi = Effect.acquireRelease(
@@ -78,13 +79,14 @@ import {
   makeV11HandlerB as makeV11Handler,
 } from '../open/scoped-openapi-and-v11-handlers.ts';
 class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
-const appRouter = {
-  health: initTrpc().procedure.query(() =>
+const t = initTrpc();
+const appRouter = t.router({
+  health: t.procedure.query(() =>
     Effect.gen(function* () {
       return yield* (yield* Db).ping;
     }),
   ),
-};
+});
 declare const AppLive: Layer.Layer<Db>;
 declare const superjson: V11Transformer;
 // ---cut-end---

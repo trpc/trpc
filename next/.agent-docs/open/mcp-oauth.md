@@ -49,7 +49,9 @@ interface Ctx {
   user: User | null;
 }
 const t = initTrpc<{ ctx: Ctx }>();
-const appRouter = { post: { delete: t.procedure.mutation(() => {}) } };
+const appRouter = t.router({
+  post: { delete: t.procedure.mutation(() => {}) },
+});
 declare function verify(token: string): User;
 // ---cut-end---
 experimental_createMcpHandler({
@@ -88,7 +90,9 @@ interface Ctx {
   user: { name: string; admin: boolean } | null;
 }
 const t = initTrpc<{ ctx: Ctx }>();
-const appRouter = { post: { delete: t.procedure.mutation(() => {}) } };
+const appRouter = t.router({
+  post: { delete: t.procedure.mutation(() => {}) },
+});
 declare function createContext(opts: { request: Request }): Ctx;
 // ---cut-end---
 experimental_createMcpHandler({
@@ -118,7 +122,9 @@ interface Ctx {
   user: { name: string; admin: boolean } | null;
 }
 const t = initTrpc<{ ctx: Ctx }>();
-const appRouter = { post: { delete: t.procedure.mutation(() => {}) } };
+const appRouter = t.router({
+  post: { delete: t.procedure.mutation(() => {}) },
+});
 declare function createContext(opts: { request: Request }): Ctx;
 // ---cut-end---
 experimental_createMcpHandler({ router: appRouter, createContext });

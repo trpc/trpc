@@ -90,7 +90,7 @@ class PostRepo extends Context.Service<
 >()('PostRepo') {
   declare static readonly layer: Layer.Layer<PostRepo>;
 }
-const router = {
+const router = t.router({
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
       Effect.gen(function* () {
@@ -98,7 +98,7 @@ const router = {
       }),
     ),
   },
-};
+});
 // ---cut-end---
 const handler = createFetchHandler({
   router,

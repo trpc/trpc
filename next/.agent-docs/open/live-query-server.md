@@ -69,7 +69,7 @@ declare const log: {
 };
 declare function publish(change: PostChange): string;
 // ---cut-end---
-const router = {
+const router = t.router({
   post: {
     live: t.procedure.subscription(async function* (opts) {
       const changes = listen(opts.signal); // yours: node:events `on()`, or a DB change feed
@@ -83,7 +83,7 @@ const router = {
       return { eventId: publish({ type: 'upsert', row: opts.input }) };
     }),
   },
-};
+});
 ```
 
 - ✅ Built, documented and tested; nothing new in `@trpc12/trpc`
@@ -121,7 +121,7 @@ class PostEvents extends experimental_Publisher.Service<
   { changes: PostChange }
 >()('PostEvents') {}
 
-const router = {
+const router = t.router({
   post: {
     live: t.procedure.subscription((opts) =>
       PostEvents.subscribe('changes', {
@@ -142,7 +142,7 @@ const router = {
       }),
     ),
   },
-};
+});
 
 createFetchHandler({ router, layer: PostEvents.memory({ buffer: 100 }) });
 ```
@@ -178,12 +178,13 @@ const t = {
   procedure: initTrpc().procedure.use((opts) =>
     opts.next({ ctx: { user: currentUser() } }),
   ),
+  router: initTrpc().router,
 };
 // ---cut-end---
 // Live from '@trpc12/trpc/live'
 class Posts extends Live.Source<Posts, Post>()('Posts') {}
 
-const router = {
+const router = t.router({
   post: {
     live: t.procedure.input(PostFilter).subscription((opts) =>
       Live.feed(Posts, {
@@ -198,7 +199,7 @@ const router = {
       }),
     ),
   },
-};
+});
 
 createFetchHandler({
   router,

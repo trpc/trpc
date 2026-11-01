@@ -63,7 +63,7 @@ export const cached = initTrpc().procedure.provide(CacheKey, () =>
   Effect.map(Cache, (cache) => cache.scoped('posts')),
 ); // requires Cache
 // ---cut-start---
-const router = { posts: cached.query(() => 'posts') };
+const router = initTrpc().router({ posts: cached.query(() => 'posts') });
 // ---cut-end---
 
 // the app has to know and provide the plugin's layer
@@ -118,7 +118,7 @@ class PostRepo extends Context.Service<
 
 const withRepo = t.procedure.provide(PostRepo.layer); // Layer<PostRepo, never, Db>
 
-export const router = {
+export const router = t.router({
   post: {
     byId: withRepo
       .input(ById)
@@ -126,7 +126,7 @@ export const router = {
         Effect.flatMap(PostRepo, (repo) => repo.find(opts.input.id)),
       ),
   },
-};
+});
 
 type Services = inferRouterServices<typeof router>;
 //   ^?

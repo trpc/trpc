@@ -38,7 +38,7 @@ Effect users report from an Effect middleware with `Effect.tapError`, or from th
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { Effect } from 'effect';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 declare const Sentry: {
   captureException: (error: unknown, hint: { extra: object }) => void;
 };
@@ -84,13 +84,14 @@ class Telemetry extends Context.Service<
 >()('Telemetry') {
   declare static readonly layer: Layer.Layer<Telemetry>;
 }
-const router = {
-  health: initTrpc().procedure.query(() =>
+const t = initTrpc();
+const router = t.router({
+  health: t.procedure.query(() =>
     Effect.gen(function* () {
       return yield* (yield* Db).ping;
     }),
   ),
-};
+});
 // ---cut-end---
 const handler = createFetchHandler({
   router,
@@ -117,13 +118,14 @@ import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { Context, Effect, Layer, Logger } from 'effect';
 class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
 declare const AppLive: Layer.Layer<Db>;
-const router = {
-  health: initTrpc().procedure.query(() =>
+const t = initTrpc();
+const router = t.router({
+  health: t.procedure.query(() =>
     Effect.gen(function* () {
       return yield* (yield* Db).ping;
     }),
   ),
-};
+});
 // ---cut-end---
 const handler = createFetchHandler({
   router,

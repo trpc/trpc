@@ -18,7 +18,7 @@
     { created: Post }
   >()('Posts') {}
 
-  const router = {
+  const router = t.router({
     create: t.procedure
       .input(z.object({ title: z.string() }))
       .mutation((opts) =>
@@ -31,7 +31,7 @@
     onPost: t.procedure.subscription(({ lastEventId }) =>
       Posts.subscribe('created', { lastEventId }),
     ),
-  };
+  });
   createFetchHandler({
     router,
     createContext: () => ({ user: null }),

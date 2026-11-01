@@ -34,7 +34,7 @@ import { initTrpc } from '@trpc12/trpc/server';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 const handler = createFetchHandler({
   router,
@@ -60,7 +60,7 @@ A top-level `drainTimeout` covers the HTTP requests, 5 seconds by default; `webs
 import { initTrpc } from '@trpc12/trpc/server';
 import { createFetchHandlerB as createFetchHandler } from '../open/http-drain-timeout.ts';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 const handler = createFetchHandler({
   router,
@@ -84,7 +84,7 @@ const handler = createFetchHandler({
 import { initTrpc } from '@trpc12/trpc/server';
 import { createFetchHandlerC as createFetchHandler } from '../open/http-drain-timeout.ts';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 // before: doesn't compile any more, the option moved up
 createFetchHandler({ router, websocket: { drainTimeout: '20 seconds' } });

@@ -57,14 +57,14 @@ import {
 
 const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 // ---cut-start---
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
       .query(getPost),
   },
-};
+});
 // ---cut-end---
 
 export const api = experimental_createOpenApiHandler({

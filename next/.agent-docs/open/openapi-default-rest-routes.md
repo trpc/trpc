@@ -51,7 +51,7 @@ declare function createContext(): Context;
 // ---cut-end---
 const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query(getPost),
     // served at GET /api/post/byId?id=1
@@ -61,7 +61,7 @@ const appRouter = {
       .query(getPost),
     // served at GET /api/posts/1
   },
-};
+});
 
 export const api = experimental_createOpenApiHandler({
   router: appRouter,
@@ -86,7 +86,7 @@ const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 const ById = z.object({ id: z.string() });
 declare function getPost(opts: { input: { id: string } }): Post | undefined;
 // ---cut-end---
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure.input(ById).query(getPost), // 404 over REST, not in the document
     get: t.procedure
@@ -94,7 +94,7 @@ const appRouter = {
       .input(ById)
       .query(getPost), // GET /api/posts/1
   },
-};
+});
 ```
 
 - ✅ An explicit public REST surface: nothing appears by accident. MCP's proposed opt-in works the same way.
@@ -114,10 +114,10 @@ import { initTrpc } from '@trpc12/trpc/server';
 import { experimental_createOpenApiHandlerC as experimental_createOpenApiHandler } from '../open/openapi-default-rest-routes.ts';
 import type { Context } from './server.ts';
 const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
-const appRouter = {
+const appRouter = t.router({
   post: { byId: t.procedure.query(() => null) },
   internal: { reindex: t.procedure.mutation(() => 'ok') },
-};
+});
 const info = { title: 'Blog', version: '1.0.0' };
 declare function createContext(): Context;
 // ---cut-end---

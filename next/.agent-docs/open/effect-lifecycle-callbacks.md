@@ -97,7 +97,10 @@ const ping = t.procedure
   .query(() => 'pong');
 
 // Doesn't compile: the procedure now requires Metrics from the handler's layer
-createFetchHandler({ router: { ping }, createContext: () => ({ user: null }) });
+createFetchHandler({
+  router: t.router({ ping }),
+  createContext: () => ({ user: null }),
+});
 ```
 
 - ✅ One helper whichever kind of code observes the call

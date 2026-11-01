@@ -63,13 +63,13 @@ const authed = t.procedure.use(
 );
 // ---cut-start---
 declare const AuthLive: Layer.Layer<Auth>;
-const router = {
+const router = t.router({
   me: authed.query(() =>
     Effect.gen(function* () {
       return yield* CurrentUser;
     }),
   ),
-};
+});
 // ---cut-end---
 
 createFetchHandler({ router, layer: Layer.mergeAll(AuthLive, Db.layer) });
@@ -128,13 +128,13 @@ const AuthLive = Layer.effect(
 
 const authed = t.procedure.use(Auth); // provides CurrentUser, requires Auth, adds UNAUTHORIZED
 // ---cut-start---
-const router = {
+const router = t.router({
   me: authed.query(() =>
     Effect.gen(function* () {
       return yield* CurrentUser;
     }),
   ),
-};
+});
 // ---cut-end---
 createFetchHandler({
   router,
