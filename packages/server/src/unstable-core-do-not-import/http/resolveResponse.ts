@@ -820,6 +820,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type: info?.type ?? 'unknown',
     });
 
+    headers.set('content-type', 'application/json');
     const headResponse = initResponse({
       ctx,
       info,
