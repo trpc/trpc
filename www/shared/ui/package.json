@@ -1,0 +1,49 @@
+{
+  "name": "@shared/ui",
+  "private": true,
+  "description": "Vanilla shadcn/ui components on Base UI, in tRPC's branding",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    "./globals.css": "./src/styles/globals.css",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./lib/*": "./src/lib/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@shadcn/react": "0.3.1",
+    "class-variance-authority": "0.7.1",
+    "cmdk": "1.1.1",
+    "cn": "0.4.0",
+    "date-fns": "4.4.0",
+    "embla-carousel-react": "8.6.0",
+    "input-otp": "1.5.0",
+    "lucide-react": "1.55.0",
+    "next-themes": "0.4.6",
+    "react-day-picker": "10.0.2",
+    "react-resizable-panels": "4.14.5",
+    "recharts": "3.8.0",
+    "shadcn": "4.21.4",
+    "shiki": "4.5.0",
+    "sonner": "2.0.8",
+    "tw-animate-css": "1.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

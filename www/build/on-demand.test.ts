@@ -1,0 +1,163 @@
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { pathToFileURL } from 'node:url';
+import { NodeServices } from '@effect/platform-node';
+import { describe, expect, it } from '@effect/vitest';
+import { Effect, FileSystem, Path } from 'effect';
+
+import { decisionSearchKeys } from '../src/content/decision-search.ts';
+import {
+  flagsValue,
+  onDemandFunction,
+  onDemandRoutes,
+  pageCacheControl,
+  pathParam,
+  writeOnDemandFunction,
+} from './on-demand.ts';
+import { v12 } from '../src/site.ts';
+
+describe('flagsValue', () => {
+  const value = new RegExp(
+    flagsValue(['publisher', 'contracts', 'tanstack-db']),
+  );
+
+  it('matches a list of experiments, in any order', () => {
+    expect(value.test('publisher')).toBe(true);
+    expect(value.test('contracts,publisher')).toBe(true);
+    expect(value.test('publisher%2Ccontracts')).toBe(true);
+    expect(value.test('tanstack-db%2ctanstack-db')).toBe(true);
+  });
+
+  it("doesn't match a name that isn't an experiment", () => {
+    expect(value.test('')).toBe(false);
+    expect(value.test('nope')).toBe(false);
+    expect(value.test('publisher,nope')).toBe(false);
+    expect(value.test('publisherx')).toBe(false);
+    expect(value.test('tanstack')).toBe(false);
+  });
+});
+
+describe('onDemandRoutes', () => {
+  const all = onDemandRoutes(['publisher']);
+  const [flagged] = all;
+  const home = all.find((route) => route.src === '^/$');
+  const search = all.find((route) => route.src === '^/search$');
+
+  it('sends pages with ?flags= to the function, with their path', () => {
+    const src = new RegExp(flagged?.src ?? '');
+    expect(src.exec('/v12/docs/server/overview')?.[1]).toBe(
+      '/v12/docs/server/overview',
+    );
+    expect(src.test('/')).toBe(true);
+    expect(src.test('/assets/app.js')).toBe(false);
+    expect(src.test('/llms.txt')).toBe(false);
+    expect(flagged?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
+    expect(flagged?.has).toEqual([
+      { key: 'flags', type: 'query', value: flagsValue(['publisher']) },
+    ]);
+  });
+
+  it.skipIf(v12.hidden)(
+    'sends the home page with ?version=v12 to the function',
+    () => {
+      expect(home?.dest).toBe(`/${onDemandFunction}?${pathParam}=/`);
+      expect(home?.has).toEqual([
+        { key: 'version', type: 'query', value: '^v12$' },
+      ]);
+    },
+  );
+
+  it.runIf(v12.hidden)("doesn't while v12 is hidden", () => {
+    expect(home).toBeUndefined();
+  });
+
+  it('sends a search to the function', () => {
+    expect(search?.dest).toBe(`/${onDemandFunction}?${pathParam}=/search`);
+    expect(search?.has).toEqual([{ key: 'q', type: 'query', value: '^.+$' }]);
+  });
+
+  it('sends a decisions page with a choice in its query to the function', () => {
+    const decided = all.filter((route) => route.src?.includes('/decisions'));
+    expect(decided.map((route) => route.has)).toEqual(
+      decisionSearchKeys.map((key) => [{ key, type: 'query' }]),
+    );
+    const src = new RegExp(decided[0]?.src ?? '');
+    expect(src.exec('/v12/decisions')?.[1]).toBe('/v12/decisions');
+    expect(src.exec('/v12/decisions/open/mcp-oauth')?.[1]).toBe(
+      '/v12/decisions/open/mcp-oauth',
+    );
+    expect(src.test('/v12/decisions/open/mcp-oauth.md')).toBe(false);
+    expect(src.test('/v12/docs/server/overview')).toBe(false);
+    expect(decided[0]?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
+  });
+});
+
+describe('writeOnDemandFunction', () => {
+  it.effect('renders the requested path with the server build', () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const root = yield* fs.makeTempDirectoryScoped({ prefix: 'on-demand-' });
+      yield* fs.makeDirectory(path.join(root, 'dist/server'), {
+        recursive: true,
+      });
+      yield* fs.writeFileString(
+        path.join(root, 'dist/server/server.js'),
+        [
+          'export default {',
+          '  fetch: (request) =>',
+          '    new Response(`${request.method} ${request.url} ${request.headers.get("accept")}`, {',
+          '      headers: [["content-type", "text/html"], ["set-cookie", "a=1"], ["set-cookie", "b=2"]],',
+          '    }),',
+          '};',
+          '',
+        ].join('\n'),
+      );
+      const output = path.join(root, '.vercel/output');
+      yield* writeOnDemandFunction(root, output);
+      const dir = path.join(output, `functions/${onDemandFunction}.func`);
+      expect(
+        JSON.parse(yield* fs.readFileString(path.join(dir, '.vc-config.json'))),
+      ).toMatchObject({ handler: 'index.mjs', launcherType: 'Nodejs' });
+
+      const entry = yield* Effect.promise(
+        () => import(pathToFileURL(path.join(dir, 'index.mjs')).href),
+      );
+      const server = createServer(entry.default);
+      yield* Effect.acquireRelease(
+        Effect.promise(
+          () => new Promise<void>((resolve) => server.listen(0, resolve)),
+        ),
+        () => Effect.sync(() => server.close()),
+      );
+      const { port } = server.address() as AddressInfo;
+      const fetchText = (url: string, init?: RequestInit) =>
+        Effect.promise(async () => {
+          const response = await fetch(`http://localhost:${port}${url}`, init);
+          return { body: await response.text(), response };
+        });
+
+      const rewritten = yield* fetchText(
+        `/${onDemandFunction}?${pathParam}=/v12/docs/a&flags=publisher`,
+        { headers: { accept: 'text/html' } },
+      );
+      expect(rewritten.body).toBe(
+        `GET https://localhost:${port}/v12/docs/a?flags=publisher text/html`,
+      );
+      expect(rewritten.response.headers.get('cache-control')).toBe(
+        pageCacheControl,
+      );
+      expect(rewritten.response.headers.getSetCookie()).toEqual(['a=1', 'b=2']);
+
+      // Should the host pass the original URL instead, it's rendered as is.
+      const original = yield* fetchText('/v12/docs/b?flags=publisher');
+      expect(original.body).toContain(
+        `localhost:${port}/v12/docs/b?flags=publisher`,
+      );
+
+      const head = yield* fetchText('/', { method: 'HEAD' });
+      expect(head.response.status).toBe(200);
+      expect(head.body).toBe('');
+    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+  );
+});

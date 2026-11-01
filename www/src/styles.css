@@ -1,0 +1,800 @@
+@import '@shared/ui/globals.css';
+@import '@shikijs/twoslash/style-rich.css';
+@plugin '@tailwindcss/typography';
+
+html {
+  scroll-padding-top: 4.5rem;
+}
+
+/* The home page: the site header (3.5rem) and the version pill under it. */
+html:has(#hero-code) {
+  scroll-padding-top: 7rem;
+}
+
+/*
+ * The home page's versions: every version ships in the static HTML; a
+ * blocking script sets data-home-version from ?version= before paint so v12
+ * never flashes the prerendered v11 panels.
+ */
+[data-home-panel] {
+  display: none;
+}
+
+:root:not([data-home-version]) [data-home-panel='v11'],
+[data-home-version='v11'] [data-home-panel='v11'],
+[data-home-version='v12'] [data-home-panel='v12'] {
+  display: contents;
+}
+
+:root:not([data-home-version]) [data-home-version-link='v11'].home-version-link,
+[data-home-version='v11'] [data-home-version-link='v11'].home-version-link,
+[data-home-version='v12'] [data-home-version-link='v12'].home-version-link {
+  background-color: var(--foreground);
+  color: var(--background);
+  font-weight: 500;
+}
+
+/*
+ * v12's UI while v12 is hidden (`v12.hidden`): in the HTML, with its links
+ * disabled, for a session that has been to v12, which homeVersionScript
+ * marks with data-v12 on <html> before paint (`v12Attribute`).
+ */
+:root:not([data-v12]) [data-v12-ui] {
+  display: none !important;
+}
+
+:root:not([data-v12]) [data-v12-room] {
+  padding-top: 0;
+}
+
+/* The home page's "As used by" marquee (`UsedBy`). */
+@theme {
+  --animate-used-by: used-by 60s linear infinite;
+
+  @keyframes used-by {
+    to {
+      translate: -50% 0;
+    }
+  }
+}
+
+/* In-page links glide to their heading. The router scrolls `instant`ly
+   (`scrollRestorationBehavior`), so a new page starts at the top. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--link);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-quotes: var(--muted-foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-hr: var(--border);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-invert-body: var(--foreground);
+  --tw-prose-invert-headings: var(--foreground);
+  --tw-prose-invert-links: var(--link);
+  --tw-prose-invert-bold: var(--foreground);
+  --tw-prose-invert-code: var(--foreground);
+  --tw-prose-invert-quotes: var(--muted-foreground);
+  --tw-prose-invert-quote-borders: var(--border);
+  --tw-prose-invert-hr: var(--border);
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
+  --tw-prose-invert-bullets: var(--muted-foreground);
+  --tw-prose-invert-counters: var(--muted-foreground);
+  line-height: 1.7;
+}
+
+.prose a {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+  overflow-wrap: break-word;
+}
+
+.prose a:hover {
+  text-decoration-color: currentColor;
+}
+
+.prose :where(h2, h3) {
+  letter-spacing: -0.01em;
+}
+/* Prose links are lighter than headings; a heading's own link isn't. */
+.prose .heading-anchor {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.heading-anchor::after {
+  content: '#';
+  margin-left: 0.4em;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+:where(h2, h3):hover .heading-anchor::after,
+.heading-anchor:focus-visible::after {
+  opacity: 1;
+}
+
+/* Inline code */
+.prose :where(:not(pre) > code) {
+  border-radius: 0.375rem;
+  background: var(--muted);
+  padding: 0.125em 0.3em;
+  font-size: 0.875em;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+}
+
+.prose a :where(code) {
+  color: inherit;
+}
+
+.prose :where(:not(pre) > code)::before,
+.prose :where(:not(pre) > code)::after {
+  content: none;
+}
+
+/* Code blocks, highlighted at build time in both themes */
+.code-block {
+  position: relative;
+  margin-block: 1.5em;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--shiki-light-bg, var(--card));
+}
+
+.dark .code-block {
+  background: var(--shiki-dark-bg, var(--card));
+}
+
+.code-block pre {
+  margin: 0;
+  overflow-x: auto;
+  border-radius: 0;
+  background: transparent !important;
+  padding: 1rem 1.125rem;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+.code-block pre:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.code-block .shiki,
+.code-block .shiki span {
+  color: var(--shiki-light);
+}
+
+.dark .code-block .shiki,
+.dark .code-block .shiki span {
+  color: var(--shiki-dark);
+}
+
+.code-title {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.125rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--background);
+  padding: 0.125rem 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+/* Folded lines: “N collapsed lines”, opened from `DocBody`. A tab in the
+   indent is two columns, the same as `tab-size` on `pre` above. */
+.code-collapse {
+  display: block;
+}
+
+.code-collapse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0.25rem;
+  background: color-mix(in oklch, var(--foreground) 7%, transparent);
+  padding: 0 0.45em;
+  padding-inline-start: calc(var(--collapse-indent, 0) * 1ch + 0.45em);
+  color: var(--muted-foreground);
+  font: inherit;
+  line-height: inherit;
+  text-align: start;
+  cursor: pointer;
+  user-select: none;
+}
+
+.code-collapse-toggle:hover {
+  background: color-mix(in oklch, var(--foreground) 12%, transparent);
+  color: var(--foreground);
+}
+
+.code-collapse-toggle:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.code-collapse-chevron {
+  flex: none;
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.05em) rotate(-45deg);
+}
+
+.code-collapse-toggle[aria-expanded='true'] .code-collapse-chevron {
+  transform: translateY(0.05em) rotate(45deg);
+}
+
+.code-collapse-body {
+  display: block;
+}
+
+/* Without hover, Copy always shows. A block with a title bar has it there;
+   one without makes room for it above its first line, except one-line
+   commands under tabs, which are short enough to sit beside it. */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+
+  :not(.code-tabs) > .code-block:not(:has(> .code-title)) > pre {
+    padding-top: 2.25rem;
+  }
+}
+
+/* Twoslash: types on hover, and `^?` types pinned under their line */
+:root {
+  --twoslash-popup-bg: var(--popover);
+  --twoslash-popup-color: var(--popover-foreground);
+  --twoslash-border-color: var(--border);
+  --twoslash-docs-color: var(--muted-foreground);
+  --twoslash-docs-font: var(--font-sans);
+  --twoslash-code-font: var(--font-mono);
+  --twoslash-popup-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+}
+
+.twoslash .twoslash-popup-container {
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}
+
+/* `DocBody` places hover popups on screen, so the code block's scrolling
+   doesn't clip them, and caps their height to the room it puts them in. A
+   long type scrolls inside its popup. */
+.twoslash
+  .twoslash-hover:not(.twoslash-query-persisted)
+  .twoslash-popup-container {
+  position: fixed;
+  max-width: min(40rem, calc(100vw - 1rem));
+  overflow: auto;
+  overscroll-behavior: contain;
+  transform: none;
+}
+
+.twoslash .twoslash-hover:not(.twoslash-query-persisted) .twoslash-popup-arrow {
+  display: none;
+}
+
+/* A `^?` type ties the hover popup's z-index and comes later in the page, so
+   it would cover the type of a name hovered above it. */
+.twoslash .twoslash-query-line .twoslash-popup-container {
+  z-index: 9;
+}
+
+.twoslash .twoslash-popup-docs {
+  max-width: 36rem;
+  white-space: normal;
+}
+
+.twoslash .twoslash-error-line {
+  white-space: pre-wrap;
+}
+
+/* Tables scroll instead of overflowing the page */
+.prose table:not(:where(.not-prose *)) {
+  display: block;
+  overflow-x: auto;
+  font-size: 0.875em;
+}
+
+.prose :where(thead th):not(:where(.not-prose *)) {
+  white-space: nowrap;
+}
+
+/* GitHub-style alerts: > [!NOTE] */
+.callout {
+  --callout: var(--muted-foreground);
+  margin-block: 1.5em;
+  border: 1px solid color-mix(in oklch, var(--callout) 30%, var(--border));
+  border-left: 3px solid var(--callout);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--callout) 6%, transparent);
+  padding: 0.75rem 1rem;
+}
+
+.callout > :first-child {
+  margin-top: 0;
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+.callout .callout-title {
+  margin-bottom: 0.25rem;
+  color: var(--callout);
+  font-size: 0.875em;
+  font-weight: 600;
+}
+
+.callout-note {
+  --callout: oklch(0.6 0.15 250);
+}
+
+.callout-tip {
+  --callout: oklch(0.6 0.15 155);
+}
+
+.callout-important {
+  --callout: oklch(0.6 0.18 300);
+}
+
+.callout-warning {
+  --callout: oklch(0.7 0.15 75);
+}
+
+.callout-caution {
+  --callout: oklch(0.6 0.2 25);
+}
+
+/* trpc.io's `StaticTweet`s (`build/old-docs-convert.ts`), styled like Twitter's embedded tweets, as on trpc.io */
+figure.tweet {
+  --tweet-background: #ffffff;
+  --tweet-border: #cfd9de;
+  --tweet-color: #0f1419;
+  --tweet-secondary: #536471;
+  --tweet-link: #1d9bf0;
+  box-sizing: border-box;
+  margin-block: 1.5em;
+  border: 1px solid var(--tweet-border);
+  border-radius: 12px;
+  background: var(--tweet-background);
+  padding: 12px 16px 16px;
+  width: 100%;
+  max-width: 550px;
+  color: var(--tweet-color);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.3333;
+  text-align: left;
+}
+
+.dark figure.tweet {
+  --tweet-background: #15202b;
+  --tweet-border: #38444d;
+  --tweet-color: #f7f9f9;
+  --tweet-secondary: #8b98a5;
+}
+
+figure.tweet a,
+figure.tweet a:hover {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+figure.tweet .tweet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+figure.tweet .tweet-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+figure.tweet .tweet-avatar {
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 9999px;
+  width: 48px;
+  height: 48px;
+}
+
+figure.tweet .tweet-author-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+figure.tweet .tweet-name,
+figure.tweet .tweet-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+figure.tweet .tweet-name {
+  font-weight: 700;
+}
+
+figure.tweet .tweet-username,
+figure.tweet .tweet-meta {
+  color: var(--tweet-secondary);
+}
+
+figure.tweet .tweet-bird {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  fill: #1da1f2;
+}
+
+figure.tweet .tweet-text {
+  margin: 12px 0;
+  box-shadow: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-style: normal;
+  font-weight: inherit;
+  font-size: 17px;
+  line-height: 1.375;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  quotes: none;
+}
+
+figure.tweet .tweet-text a,
+figure.tweet .tweet-footer a {
+  color: var(--tweet-link);
+}
+
+figure.tweet .tweet-archive {
+  font-size: 13px;
+}
+
+figure.tweet a.tweet-author:hover .tweet-name,
+figure.tweet .tweet-text a:hover,
+figure.tweet .tweet-meta a:hover {
+  text-decoration: underline;
+}
+
+figure.tweet .tweet-footer {
+  margin-top: 12px;
+  border-top: 1px solid var(--tweet-border);
+  padding-top: 12px;
+}
+
+figure.tweet .tweet-footer a {
+  display: block;
+  border: 1px solid var(--tweet-border);
+  border-radius: 9999px;
+  padding: 6px 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+figure.tweet .tweet-footer a:hover {
+  background: color-mix(in srgb, var(--tweet-link) 10%, transparent);
+}
+
+.prose details {
+  margin-block: 1.5em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+}
+
+/* Linked images are badges, in a row (the v11 introduction's). */
+.prose a > img {
+  display: inline-block;
+  margin-block: 0;
+}
+
+.prose summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Install commands and other tabbed blocks: one block shows at a time, the
+   reader's choice (`DocBody`) or else the first. */
+.code-tabs {
+  margin-block: 1.5em;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.code-tabs > .code-block,
+.code-tabs > [data-tab] > .code-block:only-child {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* A tab of prose and blocks, from the v11 docs' `<Tabs>`. */
+.code-tabs > div[data-tab]:not(.code-block) {
+  padding-inline: 1rem;
+}
+
+.code-tabs > div[data-tab]:not(.code-block):has(> .code-block:only-child) {
+  padding-inline: 0;
+}
+
+.code-tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.375rem 0.5rem;
+}
+
+.code-tab {
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.code-tab:hover {
+  color: var(--foreground);
+}
+
+.code-tab[aria-selected='true'] {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.code-tabs > [data-tab]:not([data-active]) {
+  display: none;
+}
+
+/* An install of `@trpc12/` packages, which aren't on npm yet. */
+.code-tabs[data-unpublished] {
+  position: relative;
+}
+
+.code-tabs[data-unpublished] > .code-tabs-list {
+  padding-right: 8.5rem;
+}
+
+.code-unpublished {
+  --unpublished: oklch(0.7 0.15 75);
+  position: absolute;
+  top: 0.375rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid color-mix(in oklch, var(--unpublished) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--unpublished) 12%, transparent);
+  padding: 0.0625rem 0.5rem;
+  color: color-mix(in oklch, var(--unpublished) 70%, var(--foreground));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+
+.code-unpublished::before {
+  content: '';
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--unpublished);
+}
+
+/* `DocBody` sets it when the block's command is copied. */
+.code-unpublished[data-flash] {
+  animation: unpublished-shake 0.5s ease-in-out;
+}
+
+@keyframes unpublished-shake {
+  20%,
+  60% {
+    transform: translateX(-3px);
+  }
+  40%,
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-unpublished[data-flash] {
+    animation: none;
+  }
+}
+
+/* A `chart` fence's bars (`build/charts.ts`) */
+.bench-chart {
+  margin-block: 1.5em;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.bench-chart-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.bench-chart-title {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.bench-chart-better,
+.bench-chart-note {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}
+
+.bench-chart-row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bench-chart-label {
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.bench-chart-track {
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.bench-chart-bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+}
+
+.bench-chart-value {
+  min-width: 4.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bench-chart-row[data-highlight] .bench-chart-label,
+.bench-chart-row[data-highlight] .bench-chart-value {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.bench-chart-row[data-highlight] .bench-chart-bar {
+  background: var(--brand);
+}
+
+@media (max-width: 40rem) {
+  .bench-chart-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 0.75rem;
+  }
+
+  .bench-chart-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* A kitchen-sink demo's place in its page (`remarkDemos`), until `PageDemo` runs it */
+.demo-slot {
+  margin-block: 1.5em;
+}
+
+.demo-slot > p {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.125rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.demo-slot[data-demo-running] > p {
+  display: none;
+}
+
+/* From `xl` up, the page runs its demo beside the text instead. */
+@media (min-width: 80rem) {
+  .demo-slot {
+    display: none;
+  }
+}
+
+/* The codemod playground's place in its page (`remarkCodemodPlayground`), until it runs */
+.codemod-playground-slot {
+  margin-block: 1.5em;
+}
+
+.codemod-playground-slot > p {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.125rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.codemod-playground-slot[data-codemod-playground-running] > p {
+  display: none;
+}
+
+/* The demo editor's colors: Shiki's GitHub themes, as the code blocks */
+[data-demo-frame],
+[data-codemod-playground-frame] {
+  --ks-keyword: #d73a49;
+  --ks-string: #032f62;
+  --ks-constant: #005cc5;
+  --ks-comment: #6a737d;
+  --ks-function: #6f42c1;
+  --ks-tag: #22863a;
+}
+
+.dark [data-demo-frame],
+.dark [data-codemod-playground-frame] {
+  --ks-keyword: #f97583;
+  --ks-string: #9ecbff;
+  --ks-constant: #79b8ff;
+  --ks-comment: #6a737d;
+  --ks-function: #b392f0;
+  --ks-tag: #85e89d;
+}

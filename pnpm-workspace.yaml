@@ -7,7 +7,10 @@ packages:
   - 'examples/minimal-per-procedure-errors/*'
   - 'examples/minimal-content-types/*'
   - 'www'
+  - 'www/api-reference'
   - 'www/og-image'
+  - 'www/samples/*'
+  - 'www/shared/*'
   - 'tooling/*'
 publicHoistPattern:
   - '@types/*'
