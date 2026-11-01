@@ -111,7 +111,8 @@ type CursorInput = {
 
 type ReservedInfiniteQueryKeys = 'cursor' | 'direction';
 type InfiniteInput<TInput> =
-  Omit<TInput, ReservedInfiniteQueryKeys> | SkipToken;
+  | Omit<TInput, ReservedInfiniteQueryKeys>
+  | SkipToken;
 
 type inferCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']

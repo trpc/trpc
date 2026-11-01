@@ -2,6 +2,7 @@ import * as Headless from '@headlessui/react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import * as React from 'react';
 import { Button } from '~/components/button';
 import {
   Dialog,
@@ -11,7 +12,6 @@ import {
 } from '~/components/dialog';
 import { Input, Label } from '~/components/input';
 import { useTRPC } from '~/lib/trpc';
-import * as React from 'react';
 
 export function CreateChannelDialog() {
   const [open, setOpen] = React.useState(false);

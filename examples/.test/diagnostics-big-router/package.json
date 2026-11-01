@@ -21,7 +21,8 @@
     "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "eslint": "^10.10.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "tsx": "^4.19.3",
     "typescript": "^5.9.2"
   }

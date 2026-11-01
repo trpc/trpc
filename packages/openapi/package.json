@@ -15,18 +15,10 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/openapi"
   },
-  "eslintConfig": {
-    "rules": {
-      "no-restricted-imports": [
-        "error",
-        "@trpc/openapi"
-      ]
-    }
-  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "codegen": "tsx test/scripts/codegen.run.ts",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
@@ -78,8 +70,9 @@
     "@trpc/server": "11.22.1",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
-    "eslint": "catalog:",
     "ion-js": "^5.2.1",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "superjson": "^1.12.4",
     "tsdown": "catalog:",
     "typescript": "catalog:ts-api",

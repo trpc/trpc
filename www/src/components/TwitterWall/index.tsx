@@ -11,7 +11,7 @@ const latestTweets = tweets.data
   // Attach user to each tweet & replace profile image with github profile image
   .map((tweet) => {
     const user = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       ...tweets.includes.users.find((user) => user.id === tweet.author_id)!,
     };
     const githubProfile = knownGithubProfiles[user.username];

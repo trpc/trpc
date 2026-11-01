@@ -1,6 +1,7 @@
 {
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
+    "baseUrl": null,
     "strict": true,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
@@ -11,5 +12,5 @@
       "@docusaurus/theme-classic"
     ]
   },
-  "include": ["src", "*.ts", "*.js", ".eslintrc.js", "global.d.ts"]
+  "include": ["src", "*.ts", "*.js", "global.d.ts"]
 }

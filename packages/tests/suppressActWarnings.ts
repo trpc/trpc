@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 
 // Suppress React act() warnings
 const originalError = console.error;

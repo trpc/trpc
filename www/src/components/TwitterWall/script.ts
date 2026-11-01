@@ -78,7 +78,7 @@ function req(pathname: string): Promise<any> {
           return;
         }
         try {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+          // oxlint-disable-next-line typescript/no-non-null-assertion, typescript/no-non-null-asserted-optional-chain
           resolve(JSON.parse(data?.toString()!));
         } catch (err) {
           reject(err);
@@ -123,9 +123,8 @@ async function main() {
   const tweets = await getTweets(collection);
 
   const text = [
-    `// prettier-ignore`,
-    `// eslint-disable`,
-    `export const tweets = ${JSON.stringify(tweets, null, 4)}`,
+    `// oxfmt-ignore`,
+    `export const tweets = ${JSON.stringify(tweets, null, 4)};`,
     ``,
   ].join('\n');
 

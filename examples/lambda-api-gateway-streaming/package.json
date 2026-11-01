@@ -5,7 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc",
     "start": "tsx watch src/client.ts",
     "deploy": "pnpx serverless@4.28.0 deploy"
@@ -19,7 +19,8 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",
     "@types/node": "^24.13.4",
-    "eslint": "^10.10.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "typescript": "^5.9.2"
   }
 }

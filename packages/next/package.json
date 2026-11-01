@@ -14,19 +14,10 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/next"
   },
-  "eslintConfig": {
-    "rules": {
-      "react-hooks/exhaustive-deps": "error",
-      "no-restricted-imports": [
-        "error",
-        "@trpc/next"
-      ]
-    }
-  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
@@ -130,9 +121,10 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "devalue": "catalog:",
-    "eslint": "catalog:",
     "express": "^5.0.0",
     "next": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "catalog:",

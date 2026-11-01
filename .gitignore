@@ -6,7 +6,6 @@ dist/
 .vercel/
 .vinxi/
 .output/
-.eslintcache
 *.tsbuildinfo
 app.config.timestamp_*
 

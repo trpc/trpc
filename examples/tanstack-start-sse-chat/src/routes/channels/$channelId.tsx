@@ -1,6 +1,8 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import { Suspense } from 'react';
+import { z } from 'zod';
 import {
   SignedIn,
   SignedOut,
@@ -11,14 +13,12 @@ import { Button } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC } from '~/lib/trpc';
 import { channelListQuery, postListQuery } from '~/queries';
-import { Suspense } from 'react';
-import { z } from 'zod';
 import { Chat } from './-components/chat';
 
 export const Route = createFileRoute('/channels/$channelId')({
   beforeLoad: (opts) => {
     if (!z.string().uuid().safeParse(opts.params.channelId).success) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's not-found signal
+      // oxlint-disable-next-line typescript/only-throw-error -- the router's not-found signal
       throw notFound();
     }
   },

@@ -1,7 +1,8 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "globalDependencies": [
-    ".eslintrc.config.js",
+    ".oxlintrc.json",
+    "tooling/oxlint-plugin/**",
     "tsconfig.json",
     "tsconfig.build.json",
     "scripts/**"

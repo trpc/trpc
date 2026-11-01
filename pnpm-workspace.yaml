@@ -8,6 +8,7 @@ packages:
   - 'examples/minimal-content-types/*'
   - 'www'
   - 'www/og-image'
+  - 'tooling/*'
 publicHoistPattern:
   - '@types/*'
   - '!@types/parse-path'
@@ -47,15 +48,10 @@ catalog:
   '@types/node': ^24.13.4
   tsdown: 0.23.0
   typescript: ^7.0.2
-  eslint: ^10.10.0
-  typescript-eslint: ^8.70.0
-  eslint-plugin-react: ^7.37.5
-  eslint-plugin-react-hooks: ^7.1.1
-  eslint-plugin-unicorn: ^74.0.0
-  '@eslint/compat': ^2.1.1
-  prettier: ^3.9.6
-  prettier-plugin-tailwindcss: ^0.8.1
-  '@ianvs/prettier-plugin-sort-imports': ^4.7.1
+  oxlint: ^1.90.0
+  oxlint-tsgolint: ^7.0.2005
+  '@oxlint/plugins': ^1.90.0
+  oxfmt: ^0.75.0
   vitest: ^5.0.0
   '@vitest/coverage-istanbul': ^5.0.0
   '@vitest/ui': ^5.0.0

@@ -3,8 +3,8 @@
  * @see https://github.com/standard-schema/standard-schema/blob/main/packages/spec/src/index.ts
  */
 
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable @typescript-eslint/naming-convention */
+/* oxlint-disable typescript/no-namespace */
+/* oxlint-disable trpc/type-parameter-naming */
 
 /** The Standard Schema interface. */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {

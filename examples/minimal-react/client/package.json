@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "start": "vite preview"
   },
   "dependencies": {
@@ -20,7 +20,8 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^6.1.1",
-    "eslint": "^10.10.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "typescript": "^5.9.2",
     "vite": "^8.3.0"
   }

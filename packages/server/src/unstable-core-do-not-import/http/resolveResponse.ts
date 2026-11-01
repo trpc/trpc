@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 import {
   isObservable,
   observableToAsyncIterable,
@@ -52,7 +52,13 @@ function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   });
 }
 type HTTPMethods =
-  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
+  | 'GET'
+  | 'POST'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();

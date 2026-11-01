@@ -1,13 +1,13 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { Suspense } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { SignedIn, SignedOut, useSignInHref } from '~/components/auth';
 import { buttonVariants } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC } from '~/lib/trpc';
 import { channelListQuery } from '~/queries';
-import { Suspense } from 'react';
-import { twMerge } from 'tailwind-merge';
 
 export const Route = createFileRoute('/')({
   loader: (opts) => {

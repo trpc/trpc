@@ -4,9 +4,9 @@ import {
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
+import * as React from 'react';
 import { useTRPC } from '~/lib/trpc';
 import { postListQuery } from '~/queries';
-import * as React from 'react';
 
 /**
  * Set isTyping with a throttle of 1s

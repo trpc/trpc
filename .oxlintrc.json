@@ -1,0 +1,253 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "unicorn"],
+  "jsPlugins": ["./tooling/oxlint-plugin/index.ts"],
+  // Only the rules below run, as they did with ESLint (no `eslint:recommended`).
+  "categories": {
+    "correctness": "off"
+  },
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "warn"
+  },
+  "ignorePatterns": ["**/vendor/**", "**/generated/**", "**/routeTree.gen.ts"],
+  "rules": {
+    // eslint-plugin-react-hooks `recommended`, minus the opt-outs below.
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/error-boundaries": "error",
+    "react/globals": "error",
+    "react/incompatible-library": "warn",
+    "react/purity": "error",
+    "react/set-state-in-render": "error",
+    "react/static-components": "error",
+    "react/unsupported-syntax": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+      "rules": {
+        // typescript-eslint `recommended`
+        "no-array-constructor": "error",
+        "no-unused-expressions": "error",
+        "no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_",
+            "caughtErrorsIgnorePattern": "^_"
+          }
+        ],
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "typescript/ban-ts-comment": "error",
+        "typescript/no-duplicate-enum-values": "error",
+        "typescript/no-extra-non-null-assertion": "error",
+        "typescript/no-misused-new": "error",
+        "typescript/no-namespace": "error",
+        "typescript/no-non-null-asserted-optional-chain": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/no-this-alias": "error",
+        "typescript/no-unnecessary-type-constraint": "error",
+        "typescript/no-unsafe-declaration-merging": "error",
+        "typescript/no-unsafe-function-type": "error",
+        "typescript/no-wrapper-object-types": "error",
+        "typescript/prefer-as-const": "error",
+        "typescript/prefer-namespace-keyword": "error",
+        "typescript/triple-slash-reference": "error",
+
+        // typescript-eslint `recommendedTypeChecked`
+        "typescript/await-thenable": "error",
+        "typescript/no-array-delete": "error",
+        "typescript/no-base-to-string": "error",
+        "typescript/no-duplicate-type-constituents": "error",
+        "typescript/no-floating-promises": "error",
+        "typescript/no-for-in-array": "error",
+        "typescript/no-implied-eval": "error",
+        "typescript/no-misused-promises": "error",
+        "typescript/no-redundant-type-constituents": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-enum-comparison": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/no-unsafe-unary-minus": "error",
+        "typescript/only-throw-error": "error",
+        "typescript/require-await": "error",
+        "typescript/restrict-plus-operands": "error",
+        "typescript/restrict-template-expressions": "error",
+        "typescript/unbound-method": "error",
+
+        // typescript-eslint `stylisticTypeChecked`
+        "no-empty-function": "error",
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/ban-tslint-comment": "error",
+        "typescript/class-literal-property-style": "error",
+        "typescript/consistent-generic-constructors": "error",
+        "typescript/consistent-type-assertions": "error",
+        "typescript/dot-notation": "error",
+        "typescript/no-confusing-non-null-assertion": "error",
+        "typescript/no-inferrable-types": "error",
+        "typescript/non-nullable-type-assertion-style": "error",
+        "typescript/prefer-find": "error",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-includes": "error",
+        "typescript/prefer-nullish-coalescing": "error",
+        "typescript/prefer-optional-chain": "error",
+        "typescript/prefer-regexp-exec": "error",
+        "typescript/prefer-string-starts-ends-with": "error",
+
+        // Not in typescript-eslint's presets, but we like them
+        "typescript/no-non-null-assertion": "error",
+        "typescript/consistent-type-imports": "error",
+        "typescript/switch-exhaustiveness-check": "error",
+        "max-params": ["error", 3],
+        "unicorn/filename-case": [
+          "error",
+          {
+            "case": "camelCase",
+            "ignore": [
+              "TRPC",
+              "RPC",
+              "HTTP",
+              "JSON",
+              "\\.config\\.js",
+              "\\.d\\.ts$",
+              "issue-\\d+-.*\\.test\\.tsx?$",
+              "\\.(t|j)sx$",
+              "@trpc/*",
+              "unstable-*",
+              "script",
+              "URL",
+              "next-app-dir"
+            ]
+          }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@testing-library/dom",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              },
+              {
+                "name": "@testing-library/react",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@trpc/*/src", "@trpc/*/src/**"],
+                "message": "Remove the \"`/src`\" part of this import",
+                "allowTypeImports": false
+              }
+            ]
+          }
+        ],
+        "trpc/no-symbol-dispose": "error",
+        "trpc/type-parameter-naming": "error"
+      }
+    },
+    {
+      "files": ["examples/**", "packages/**", "scripts/**", "www/**"],
+      "rules": {
+        // Todo: enable these for even stronger linting! 💪
+        "typescript/no-misused-promises": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-declaration-merging": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/require-await": "off",
+        "typescript/restrict-plus-operands": "off",
+        "typescript/restrict-template-expressions": "off"
+      }
+    },
+    {
+      "files": ["examples/**"],
+      "rules": {
+        "typescript/no-floating-promises": "error",
+        "no-unused-vars": "off",
+        "unicorn/filename-case": "off",
+        "no-unused-expressions": "off"
+      }
+    },
+    {
+      "files": [
+        "**/test/**",
+        "packages/tests/**",
+        "**/*.test.tsx",
+        "**/*.test.ts"
+      ],
+      "rules": {
+        "typescript/no-floating-promises": "off",
+        "typescript/no-non-null-assertion": "off",
+        "no-unused-vars": "off",
+        "trpc/type-parameter-naming": "off",
+        "no-unused-expressions": "off",
+        "typescript/only-throw-error": "off",
+        "typescript/switch-exhaustiveness-check": "off"
+      }
+    },
+    {
+      "files": ["packages/**"],
+      "rules": {
+        "no-console": "error"
+      }
+    },
+    {
+      "files": ["packages/server/src/adapters/**"],
+      "rules": {
+        // Repeats the options above: an override replaces a rule's options.
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@testing-library/dom",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              },
+              {
+                "name": "@testing-library/react",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@trpc/*/src", "@trpc/*/src/**"],
+                "message": "Remove the \"`/src`\" part of this import",
+                "allowTypeImports": false
+              },
+              {
+                "group": ["@trpc/server", "@trpc/server/**"]
+              },
+              {
+                "group": [
+                  "unstable-core-do-not-import",
+                  "**/unstable-core-do-not-import/**"
+                ],
+                "message": "Use e.g. `../@trpc/server/http` instead - avoiding importing core helps us ensure third party adapters can be made"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["www/og-image/utils/env.js"],
+      "rules": {
+        "sort-keys": "error"
+      }
+    }
+  ]
+}

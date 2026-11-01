@@ -1,14 +1,14 @@
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useMutation } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
+import { cx } from 'class-variance-authority';
+import { format, formatDistanceToNow, isToday } from 'date-fns';
+import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
 import { Avatar } from '~/components/avatar';
 import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
 import { useTRPC } from '~/lib/trpc';
-import { cx } from 'class-variance-authority';
-import { format, formatDistanceToNow, isToday } from 'date-fns';
-import * as React from 'react';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 

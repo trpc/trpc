@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* oxlint-disable typescript/ban-ts-comment */
+
 import { createAppRouter } from './__testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import { render } from '@testing-library/react';

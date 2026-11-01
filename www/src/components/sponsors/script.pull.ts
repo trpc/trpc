@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 // This is an awful script, don't judge
 import fs from 'fs';
 import type { Node, SponsorEsque } from './script.types';
@@ -281,16 +281,14 @@ async function main() {
   const topSponsors = withWeights.slice(0, 5);
 
   const text = [
-    '// eslint-disable',
-    '',
-    '// prettier-ignore',
+    '// oxfmt-ignore',
     `export const topSponsors = ${JSON.stringify(
       topSponsors,
       null,
       2,
     )} as const;`,
     '',
-    '// prettier-ignore',
+    '// oxfmt-ignore',
     `export const allSponsors = ${JSON.stringify(
       withWeights.sort((a, b) => a.createdAt - b.createdAt),
       null,

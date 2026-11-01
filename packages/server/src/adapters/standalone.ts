@@ -13,7 +13,7 @@ import http from 'http';
 import type * as http2 from 'http2';
 // @trpc/server
 import { type AnyRouter } from '../@trpc/server';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
