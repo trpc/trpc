@@ -13,7 +13,7 @@
     "prebuild": "run-s generate migrate",
     "build": "next build",
     "start": "next start",
-    "lint": "oxlint src",
+    "lint": "oxlint --type-aware --report-unused-disable-directives-severity=warn src",
     "lint-fix": "pnpm lint --fix",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
