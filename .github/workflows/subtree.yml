@@ -17,10 +17,6 @@ concurrency:
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
-    # The canary @trpc/server's next-app-dir adapter imports `next/navigation`
-    # without `.js`, which Node can't resolve, so this example's standalone
-    # build fails until that's fixed.
-    continue-on-error: ${{ github.event_name == 'pull_request' && matrix.path == '.experimental/next-app-dir' }}
     # The Prisma examples migrate the database they build against.
     services:
       postgres:
@@ -87,19 +83,28 @@ jobs:
           pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
       # Installs and builds the copy outside the monorepo, the way its README
-      # says: npm for the npm workspaces (minimal-react), pnpm otherwise.
+      # says: npm for the npm workspaces (minimal-react), pnpm otherwise. The
+      # copy doesn't list which dependencies may run build scripts (Prisma,
+      # esbuild), which CI's pnpm otherwise refuses.
       - name: Build the standalone example
         if: github.event_name == 'pull_request'
         run: |
           cp -r "examples/${{ matrix.path }}" "$RUNNER_TEMP/example"
           cd "$RUNNER_TEMP/example"
           rm -rf node_modules
-          if node -e "process.exit(require('./package.json').workspaces ? 0 : 1)"; then
-            npm install --no-audit --no-fund
-            npm run build
+          build() {
+            if node -e "process.exit(require('./package.json').workspaces ? 0 : 1)"; then
+              npm install --no-audit --no-fund && npm run build
+            else
+              pnpm install --ignore-workspace --config.dangerously-allow-all-builds=true && pnpm build
+            fi
+          }
+          # The canary @trpc/server's next-app-dir adapter imports
+          # `next/navigation` without `.js`, which Node can't resolve.
+          if [ "${{ matrix.path }}" = ".experimental/next-app-dir" ]; then
+            build || echo "::warning::The standalone next-app-dir build fails until @trpc/server imports next/navigation.js"
           else
-            pnpm install --ignore-workspace
-            pnpm build
+            build
           fi
 
       - name: Commit changes
