@@ -121,9 +121,13 @@ export type unstable_TRPCInfiniteQueryHandleWithData<
   readonly data: TRPCInfiniteData<TDef['input'], TDef['output']>;
 };
 
-type HandleVerbArgs<TDef extends ResolverDef> = undefined extends TDef['input']
-  ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-  : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions];
+/**
+ * @internal
+ */
+export type HandleVerbArgs<TDef extends ResolverDef> =
+  undefined extends TDef['input']
+    ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
+    : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions];
 
 /** Verbs on query procedures of the handle proxy */
 export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {

@@ -2,6 +2,7 @@ export {
   unstable_createTRPCHandleProxy,
   type unstable_TRPCHandleProxy,
 } from '../internals/createHandleProxy';
+export { useWaterfall as unstable_useWaterfall } from '../internals/useWaterfall';
 export type {
   unstable_TRPCQueryHandle,
   unstable_TRPCInfiniteQueryHandle,

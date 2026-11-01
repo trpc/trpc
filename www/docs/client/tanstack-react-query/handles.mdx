@@ -8,7 +8,7 @@ slug: /client/tanstack-react-query/handles
 A **handle** is a small, serializable reference to a query you started on the server or in a route loader. You pass it to a component, and the component reads it with full input and output types, without naming the procedure or repeating its input.
 
 :::info
-We have prefixed `unstable_createTRPCHandleProxy`, `unstable_fromHandle` and the handle types with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
+We have prefixed `unstable_createTRPCHandleProxy`, `unstable_fromHandle`, `unstable_useWaterfall` and the handle types with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
 :::
 
 ```tsx
@@ -139,7 +139,7 @@ Here the post is ready when the page renders, and the related posts stream in be
 
 - Start queries on a [handle proxy](#handle-proxy): one per request in server components, or one in your router context for loaders.
 - In server components, the request's `QueryClient` starts empty, so `ensure` always waits for the request.
-- `useTRPC()` can read handles but can't start them. In a component, use `queryClient.prefetchQuery(trpc.x.queryOptions(input))` instead.
+- `useTRPC()` can read handles but can't start them. For an input that's only known at render time, see [`unstable_useWaterfall`](#use-waterfall).
 
 ## Reading a handle {#reading-a-handle}
 
@@ -209,6 +209,77 @@ const query = useSuspenseInfiniteQuery(
 ```
 
 Type the prop with `unstable_inferInfiniteQueryHandle<TRPCHandles['post']['comments']>`.
+
+## Request waterfalls {#waterfalls}
+
+A request waterfall is a request that can't start until another one has finished. Each level costs a full round trip, and on a slow connection a round trip can take hundreds of milliseconds. Removing waterfalls is usually the most effective thing you can do for a page's loading time.
+
+Handles are built around this. Queries start in loaders and server components, where everything a page needs is known up front, so they start together:
+
+```
+1. |-> post.byId
+1. |-> post.comments
+1. |-> user.byId
+```
+
+instead of one after the other, as each component renders and finds out what it needs:
+
+```
+1. |-> post.byId
+2.   |-> post.comments
+3.     |-> user.byId
+```
+
+To keep it that way:
+
+- Start queries in loaders and server components, not in render.
+- Start every query before awaiting any. See [Combining both](#combining-both).
+- Make the URL the input. Anything that changes what a query fetches, such as filters, sort or page, belongs in path or search params, so the loader starts the right query on every navigation. Don't derive query input from component state.
+
+### Dependent queries {#dependent-queries}
+
+A query whose input comes from another query's result is a waterfall by construction. Most pages don't need one. Fix it where the data is shaped, so every query a page needs can start from what the URL already holds:
+
+- **Put the input in the route.** If the page is about an organization, its id belongs in the path (`/orgs/$orgId`), not in a lookup on the current user.
+- **Have a procedure resolve it.** The server already knows the session and the relations. A procedure can return the child with its parent, or take what the client already has: `trpc.viewer.org` instead of `trpc.viewer` and then `trpc.org.byId`.
+
+When the data really can't be reshaped, for example a third-party API you don't control, there are two explicit ways. Both pay the extra round trip.
+
+### In a loader or server component {#waterfall-in-a-loader}
+
+Wait for the first query, then start the second from its `data`:
+
+```tsx
+const viewer = await trpc.viewer.ensure();
+const org = trpc.org.byId.prefetch({ orgId: viewer.data.orgId });
+```
+
+The page waits for the first request, and the second starts only after it.
+
+### In a component: `unstable_useWaterfall` {#use-waterfall}
+
+When an input is only known at render time, such as an id from a parent query's result, no loader can start the query. `unstable_useWaterfall` starts it during render and returns a handle, so the reader looks the same as one fed by a loader:
+
+```tsx
+import { unstable_useWaterfall as useWaterfall } from '@trpc/tanstack-react-query/handles';
+
+function PostAuthor(props: { post: Post }) {
+  const trpc = useTRPC();
+  const author = useWaterfall(trpc.user.byId, { id: props.post.authorId });
+  return (
+    <Suspense fallback={<AuthorSkeleton />}>
+      <AuthorCard author={author} />
+    </Suspense>
+  );
+}
+```
+
+- It takes a query procedure from `useTRPC()`, and the same input and options as `prefetch`.
+- Like `prefetch`, it refetches stale cached data in the background, once each time the component mounts or its input changes. Re-renders don't refetch.
+- Call it above the `Suspense` boundary that reads the handle. A component that suspends before it mounts starts the query again when it retries.
+- Import it as `useWaterfall`, as above, so the rules-of-hooks lint rule checks it.
+- The name is the warning: each one is an extra round trip after render. Search a codebase for `useWaterfall` and you have a list of every waterfall in it.
+- In the Next.js App Router, start the dependent query in the server component instead, as in the [loader example](#waterfall-in-a-loader).
 
 ## Next.js App Router {#nextjs-app-router}
 

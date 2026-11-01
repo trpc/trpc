@@ -9,7 +9,7 @@ import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { TRPC_ERROR_CODE_KEY } from '@trpc/server';
@@ -27,7 +27,10 @@ import type {
   unstable_inferQueryHandle,
   unstable_TRPCHandleProxy,
 } from '../src/handles';
-import { unstable_createTRPCHandleProxy } from '../src/handles';
+import {
+  unstable_createTRPCHandleProxy,
+  unstable_useWaterfall,
+} from '../src/handles';
 import type { TRPCOptionsProxyOptions } from '../src/internals/createOptionsProxy';
 import type { FeatureFlags } from '../src/internals/types';
 
@@ -711,6 +714,54 @@ describe('runtime', () => {
     const props = overTheWire({ post, list });
     expect(props.post.input).toEqual({ id: '1' });
     expect(props.list.input).toEqual({ limit: 2 });
+  });
+
+  test('unstable_useWaterfall starts a query in render and returns a handle', async () => {
+    await using resource = ctx();
+    let setId!: (id: string) => void;
+    let rerender!: () => void;
+
+    function Post(p: {
+      handle: unstable_inferQueryHandle<Start['post']['byId']>;
+    }) {
+      const trpc = resource.useTRPC();
+      const { data } = useSuspenseQuery(trpc.unstable_fromHandle(p.handle));
+      return <p>title:{data.title}</p>;
+    }
+    function Parent() {
+      const [id, _setId] = React.useState('1');
+      const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
+      setId = _setId;
+      rerender = forceRender;
+      const trpc = resource.useTRPC();
+      const handle = unstable_useWaterfall(trpc.post.byId, { id });
+      expectTypeOf(handle).toEqualTypeOf<
+        unstable_inferQueryHandle<Start['post']['byId']>
+      >();
+      expect(handle.input).toEqual({ id });
+      return (
+        <React.Suspense fallback="loading">
+          <Post handle={handle} />
+        </React.Suspense>
+      );
+    }
+
+    const utils = resource.renderApp(<Parent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('title:Post 1');
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    act(() => rerender());
+    expect(utils.container).toHaveTextContent('title:Post 1');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    act(() => setId('2'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('title:Post 2');
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    expect(resource.calls).toHaveBeenLastCalledWith('post.byId', { id: '2' });
   });
 
   test('the handle proxy only has query procedures and handle verbs', () => {
