@@ -36,7 +36,7 @@ import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
 import { useEnableOnVisit } from '~/flags.ts';
 import { absoluteUrl, ogImageUrl, pageHead } from '~/seo.ts';
-import { docPath, site, v11 } from '~/site.ts';
+import { docPath, docsearchVersions, site, v11 } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
@@ -111,7 +111,7 @@ export function docHead(version: DocsVersion, slug: string) {
   const title = stripInlineCode(meta.title);
   const description = stripInlineCode(meta.description) || site.description;
   const isV11 = version.id === v11.id;
-  return pageHead({
+  const head = pageHead({
     article: { section: meta.section },
     description,
     ...(isV11 ? { markdownPath: `${version.basePath}/${meta.slug}.md` } : {}),
@@ -133,6 +133,15 @@ export function docHead(version: DocsVersion, slug: string) {
     title: isV11 ? title : `${title} (${version.id})`,
     type: 'article',
   });
+  return {
+    ...head,
+    meta: [
+      ...head.meta,
+      // Algolia's crawler copies these onto the page's records.
+      { content: docsearchVersions[version.id], name: 'docsearch:version' },
+      { content: 'en', name: 'docsearch:language' },
+    ],
+  };
 }
 
 const footerLink =

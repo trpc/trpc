@@ -695,3 +695,49 @@ figure.tweet .tweet-footer a:hover {
     grid-row: 2;
   }
 }
+
+/*
+ * Algolia's DocSearch modal (`algolia-search.tsx`), in the site's colors.
+ * On the container, not `:root`: DocSearch's lazily loaded `_variables.css`
+ * sets them on `:root` after this, and its dark ones need
+ * `html[data-theme=dark]`, which the site doesn't set.
+ */
+.DocSearch-Container {
+  --docsearch-primary-color: var(--brand);
+  --docsearch-background-color: var(--muted);
+  --docsearch-subtle-color: var(--border);
+  --docsearch-soft-primary-color: color-mix(
+    in oklch,
+    var(--brand) 15%,
+    transparent
+  );
+  --docsearch-highlight-color: var(--link);
+  --docsearch-focus-color: var(--ring);
+  --docsearch-text-color: var(--foreground);
+  --docsearch-secondary-text-color: var(--muted-foreground);
+  --docsearch-muted-color: var(--muted-foreground);
+  --docsearch-icon-color: var(--muted-foreground);
+  --docsearch-logo-color: var(--foreground);
+  --docsearch-container-background: color-mix(
+    in oklch,
+    var(--background) 60%,
+    transparent
+  );
+  --docsearch-modal-background: var(--popover);
+  --docsearch-modal-shadow: 0 16px 48px rgb(0 0 0 / 0.25);
+  --docsearch-searchbox-background: var(--background);
+  --docsearch-searchbox-focus-background: var(--background);
+  --docsearch-hit-color: var(--foreground);
+  --docsearch-hit-background: var(--background);
+  --docsearch-hit-highlight-color: color-mix(
+    in oklch,
+    var(--brand) 15%,
+    transparent
+  );
+  --docsearch-hit-shadow: 0 0 0 1px var(--border);
+  --docsearch-key-background: var(--muted);
+  --docsearch-key-color: var(--muted-foreground);
+  --docsearch-footer-background: var(--popover);
+  --docsearch-footer-shadow: 0 -1px 0 0 var(--border);
+  --docsearch-border-radius: var(--radius);
+}
