@@ -27,6 +27,14 @@ import {
   nodeHTTPRequestHandler,
 } from './node-http';
 
+// same as in the fetch adapter
+const trimSlashes = (path: string): string => {
+  path = path.startsWith('/') ? path.slice(1) : path;
+  path = path.endsWith('/') ? path.slice(0, -1) : path;
+
+  return path;
+};
+
 type StandaloneHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -35,7 +43,6 @@ type StandaloneHandlerOptions<
   /**
    * The base path to handle requests for.
    * This will be sliced from the beginning of the request path
-   * (Do not miss including the trailing slash)
    * @default '/'
    * @example '/trpc/'
    * @example '/trpc/api/'
@@ -59,8 +66,7 @@ function createHandler<
 >(
   opts: StandaloneHandlerOptions<TRouter, TRequest, TResponse>,
 ): (req: TRequest, res: TResponse) => void {
-  const basePath = opts.basePath ?? '/';
-  const sliceLength = basePath.length;
+  const basePath = trimSlashes(opts.basePath ?? '/');
 
   return (req, res) => {
     let path = '';
@@ -68,8 +74,8 @@ function createHandler<
     run(async () => {
       const url = createURL(req);
 
-      // get procedure(s) path and remove the leading slash
-      path = url.pathname.slice(sliceLength);
+      // get procedure(s) path and remove the slashes around it
+      path = trimSlashes(trimSlashes(url.pathname).slice(basePath.length));
 
       await nodeHTTPRequestHandler({
         ...opts,

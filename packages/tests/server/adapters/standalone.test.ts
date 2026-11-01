@@ -233,6 +233,22 @@ test('force content-type on mutations', async () => {
   }
 });
 
+test('basePath without a trailing slash', async () => {
+  const { port, address } = await startServer({
+    router,
+    basePath: '/trpc',
+  });
+  const input = encodeURIComponent(JSON.stringify({ who: 'test' }));
+
+  for (const path of ['/trpc/hello', '/trpc/hello/']) {
+    const res = await fetch(`http://${address}:${port}${path}?input=${input}`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      result: { data: { text: 'hello test' } },
+    });
+  }
+});
+
 test('bad url does not crash server', async () => {
   const { port, address } = await startServer({
     router,
