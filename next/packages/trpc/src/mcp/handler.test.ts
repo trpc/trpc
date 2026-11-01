@@ -5,12 +5,7 @@ import {
   experimental_mcp,
   type McpHandler,
 } from '@trpc12/trpc/mcp';
-import {
-  initTrpc,
-  TrpcError,
-  type AnyRouter,
-  type OnErrorOpts,
-} from '@trpc12/trpc/server';
+import { initTrpc, TrpcError, type OnErrorOpts } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { blogRouter, type Ctx } from './fixtures/blog.ts';
@@ -150,7 +145,7 @@ test('the transport: stateless JSON over POST', async () => {
 
 test('allowedOrigins and maxBodySize', async () => {
   await using handler = experimental_createMcpHandler({
-    router: {},
+    router: t.router({}),
     allowedOrigins: ['https://app.example'],
     maxBodySize: 64,
   });
@@ -261,7 +256,7 @@ test('tools run with the layer, and text content is a string output as it is', a
   class Greeter extends Context.Service<Greeter, { readonly hi: string }>()(
     'Greeter',
   ) {}
-  const router = {
+  const router = t.router({
     greet: t.procedure
       .meta({ mcp: true })
       .input(z.object({ name: z.string() }))
@@ -270,7 +265,7 @@ test('tools run with the layer, and text content is a string output as it is', a
           return `${(yield* Greeter).hi}, ${opts.input.name}`;
         }),
       ),
-  } satisfies AnyRouter;
+  });
   await using handler = experimental_createMcpHandler({
     router,
     layer: Layer.succeed(Greeter, { hi: 'Hello' }),
@@ -281,7 +276,7 @@ test('tools run with the layer, and text content is a string output as it is', a
 });
 
 test('arguments are ignored without an input, and a non-object input is unwrapped', async () => {
-  const router = {
+  const router = t.router({
     none: t.procedure.meta({ mcp: true }).query(() => ({ ok: true })),
     tagged: t.procedure
       .meta({ mcp: true })
@@ -292,7 +287,7 @@ test('arguments are ignored without an input, and a non-object input is unwrappe
       .meta({ mcp: true })
       .output(z.undefined())
       .mutation(() => undefined),
-  } satisfies AnyRouter;
+  });
   await using handler = experimental_createMcpHandler({ router });
   expect(await toolCall(handler, 'none', { stray: 1 })).toEqual({
     content: [{ type: 'text', text: '{"ok":true}' }],
@@ -317,12 +312,12 @@ test('arguments are ignored without an input, and a non-object input is unwrappe
 
 test("a streamed output or a Response isn't a tool result", async () => {
   const onError = vi.fn<(opts: OnErrorOpts) => void>();
-  const router = {
+  const router = t.router({
     feed: t.procedure.query(async function* () {
       yield 1;
     }),
     raw: t.procedure.query(() => HttpServerResponse.text('hi')),
-  } satisfies AnyRouter;
+  });
   await using handler = experimental_createMcpHandler({
     router,
     include: 'all',
@@ -344,7 +339,7 @@ test("a streamed output or a Response isn't a tool result", async () => {
 
 test('lazy subtrees load on the first request', async () => {
   let loads = 0;
-  const router = {
+  const router = t.router({
     posts: t.lazy(async () => {
       loads += 1;
       return {
@@ -354,7 +349,7 @@ test('lazy subtrees load on the first request', async () => {
         })),
       };
     }),
-  } satisfies AnyRouter;
+  });
   await using handler = experimental_createMcpHandler({ router });
   expect(loads).toBe(0);
   const listed = await rpc(handler, 'tools/list');
@@ -368,12 +363,12 @@ test('lazy subtrees load on the first request', async () => {
 });
 
 test('a name clash in a lazy subtree fails the first request', async () => {
-  const router = {
+  const router = t.router({
     a_b: t.procedure.meta({ mcp: true }).query(() => 1),
     a: t.lazy(async () => ({
       b: t.procedure.meta({ mcp: true }).query(() => 2),
     })),
-  } satisfies AnyRouter;
+  });
   await using handler = experimental_createMcpHandler({
     router,
     exposeUnexpectedErrors: true,
@@ -393,21 +388,21 @@ test('a name clash in a lazy subtree fails the first request', async () => {
 });
 
 test('a name clash throws at creation', () => {
-  const router = {
+  const router = t.router({
     a_b: t.procedure.meta({ mcp: true }).query(() => 1),
     a: { b: t.procedure.meta({ mcp: true }).query(() => 2) },
-  } satisfies AnyRouter;
+  });
   expect(() => experimental_createMcpHandler({ router })).toThrow(
     'both tool "a_b"',
   );
 });
 
 test('middleware wraps the handler, and platform reaches createContext', async () => {
-  const router = {
+  const router = t.router({
     env: t.procedure
       .meta({ mcp: true })
       .query((opts) => (opts.ctx as { env: string }).env),
-  } satisfies AnyRouter;
+  });
   const handler = experimental_createMcpHandler<typeof router, { env: string }>(
     {
       router,
@@ -442,7 +437,7 @@ test('middleware wraps the handler, and platform reaches createContext', async (
 
 test('an aborted request interrupts the tool call', async () => {
   let interrupted = false;
-  const router = {
+  const router = t.router({
     stuck: t.procedure.meta({ mcp: true }).query(() =>
       Effect.never.pipe(
         Effect.onInterrupt(() =>
@@ -452,7 +447,7 @@ test('an aborted request interrupts the tool call', async () => {
         ),
       ),
     ),
-  } satisfies AnyRouter;
+  });
   await using handler = experimental_createMcpHandler({ router });
   const controller = new AbortController();
   const pending = handler.fetch(

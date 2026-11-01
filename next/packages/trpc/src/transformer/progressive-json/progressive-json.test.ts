@@ -64,7 +64,7 @@ const progressiveJson = experimental_createProgressiveJson({
 let stopped = 0;
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
   find: t.procedure.input(z.unknown()).query((opts) => opts.input ?? 'none'),
   graph: t.procedure.query(() => {
@@ -136,7 +136,7 @@ const router = {
     }),
     opaque: Promise.resolve(new Opaque()),
   })),
-};
+});
 
 function setup() {
   const handler = createFetchHandler({ router, transformer: progressiveJson });

@@ -21,21 +21,20 @@ import {
   createFetchHandler,
   initTrpc,
   makeFetchHandler,
-  type AnyRouter,
   type WebSocketLike,
 } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   hello: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name}`),
   save: t.procedure
     .input(z.object({ n: z.number() }))
     .mutation((opts) => opts.input.n * 2),
-};
+});
 const handler = createFetchHandler({ router });
 
 /** A fetch handler that isn't `createFetchHandler()`'s, as another library's would be. */
@@ -258,13 +257,13 @@ test('serve() serves a makeFetchHandler(), whose services come from the layers u
     'Greeting',
   ) {}
   const events: string[] = [];
-  const greeter = {
+  const greeter = t.router({
     greet: t.procedure.query(() =>
       Effect.gen(function* () {
         return (yield* Greeting).text;
       }),
     ),
-  } satisfies AnyRouter;
+  });
   const live = Layer.unwrap(
     Effect.map(makeFetchHandler({ router: greeter }), serve),
   ).pipe(

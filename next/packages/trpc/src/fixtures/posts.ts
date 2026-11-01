@@ -28,7 +28,7 @@ export const freshDb = (): Disposable => {
   return { [Symbol.dispose]: () => db.reset() };
 };
 
-export const router = {
+export const router = t.router({
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
       db.calls.push(`byId:${input.id}`);
@@ -84,7 +84,7 @@ export const router = {
       yield 'latest';
     }),
   },
-};
+});
 
 export type AppRouter = typeof router;
 

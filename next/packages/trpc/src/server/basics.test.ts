@@ -39,7 +39,7 @@ interface Post {
 }
 const posts = new Map<string, Post>();
 
-const router = {
+const router = t.router({
   health: t.procedure.query(() => 'ok' as const),
   greet: t.procedure
     .input(z.object({ name: z.string() }))
@@ -64,7 +64,7 @@ const router = {
       .input(z.object({ id: z.string() }))
       .query((opts) => posts.get(opts.input.id) ?? null),
   },
-};
+});
 type AppRouter = typeof router;
 
 async function setup(user: User | null = { id: 'u1', name: 'Ada' }) {
@@ -144,7 +144,7 @@ test('input issue paths are typed from each schema, and match what the schema re
       return z.array(Category);
     },
   });
-  const issues = {
+  const issues = t.router({
     nested: t.procedure
       .input(
         z.object({
@@ -167,7 +167,7 @@ test('input issue paths are typed from each schema, and match what the schema re
       .query(() => 'ok'),
     tree: t.procedure.input(Category).query(() => 'ok'),
     whole: t.procedure.input(z.string()).query(() => 'ok'),
-  };
+  });
   await using server = await createTestServer({
     router: issues,
     createContext: () => ({ user: null }),
@@ -291,7 +291,7 @@ test('a Standard Schema types input from ~standard.types, or from validate witho
       validate: (value: unknown) => ({ value: String(value) }),
     },
   } as const;
-  const schemas = {
+  const schemas = t.router({
     typed: t.procedure.input(toNumber).query((opts) => {
       expectTypeOf(opts.input).toEqualTypeOf<number>();
       return opts.input + 1;
@@ -300,7 +300,7 @@ test('a Standard Schema types input from ~standard.types, or from validate witho
       expectTypeOf(opts.input).toEqualTypeOf<string>();
       return opts.input.length;
     }),
-  };
+  });
   await using server = await createTestServer({
     router: schemas,
     createContext: () => ({ user: null }),
@@ -324,7 +324,7 @@ test('Standard Schema issues keep their paths, async validators are awaited, and
     ({
       '~standard': { version: 1, vendor: 'test', validate },
     }) as unknown as z.ZodString;
-  const schemas = {
+  const schemas = t.router({
     paths: t.procedure
       .input(
         standard(() => ({
@@ -352,7 +352,7 @@ test('Standard Schema issues keep their paths, async validators are awaited, and
         }),
       )
       .query(() => 'never'),
-  };
+  });
   await using server = await createTestServer({
     router: schemas,
     createContext: () => ({ user: null }),
@@ -397,10 +397,10 @@ type JsonValue =
 type Pair = [string, number] & { readonly __brand: 'pair' };
 
 test('recursive and branded outputs keep their types', async () => {
-  const typed = {
+  const typed = t.router({
     json: t.procedure.query((): JsonValue => ({ a: [1, { b: null }] })),
     pair: t.procedure.query(() => ['a', 1] as unknown as Pair),
-  };
+  });
   await using server = await createTestServer({
     router: typed,
     createContext: () => ({ user: null }),

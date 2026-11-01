@@ -20,14 +20,14 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   hello: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name}`),
   save: t.procedure
     .input(z.object({ n: z.number() }))
     .mutation((opts) => opts.input.n * 2),
-};
+});
 const handler = createFetchHandler({ router });
 
 /** What `express.json()` does: read the stream, set `req.body`. */
@@ -115,12 +115,12 @@ test('platform values reach createContext, typed by the handler (www/docs/adapte
     ctx: { waitUntil(promise: Promise<unknown>): void };
   }
   const wt = initTrpc<{ ctx: { greeting: string; defer: Platform['ctx'] } }>();
-  const workerRouter = {
+  const workerRouter = wt.router({
     greet: wt.procedure.query((opts) => {
       opts.ctx.defer.waitUntil(Promise.resolve());
       return opts.ctx.greeting;
     }),
-  };
+  });
   const worker = createFetchHandler<typeof workerRouter, Platform>({
     router: workerRouter,
     createContext: ({ platform }) => {

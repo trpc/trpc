@@ -47,7 +47,7 @@ const unpaid = t.procedure.use(
   ),
 );
 
-const router = {
+const router = t.router({
   gated: signedOut.query(() => 'secret'),
   paid: unpaid.query(() => 'pro'),
   post: {
@@ -136,7 +136,7 @@ const router = {
     yield 1;
     yield 2;
   }),
-};
+});
 type AppRouter = typeof router;
 
 async function setup(opts: { expose?: boolean } = {}) {
@@ -311,11 +311,11 @@ test("a failure only the server tells apart reaches clients as its code's class"
 
 test("localLink folds a server-only tag to its code's class too, keeping it as the cause", async () => {
   const tagged = new TrpcError.BadRequest({ tag: 'InvalidBatch' });
-  const local = {
+  const local = t.router({
     thrownTagged: t.procedure.query((): string => {
       throw tagged;
     }),
-  };
+  });
   const client = createTrpcClient({
     router: routerType<typeof local & { gone: typeof local.thrownTagged }>(),
     links: [localLink({ router: local })],
@@ -656,7 +656,7 @@ test('every built-in code has a class', () => {
 });
 
 test('a returned built-in class is a defined error, and catchTag narrows it', async () => {
-  const router = {
+  const router = t.router({
     me: t.procedure.query((opts) =>
       opts.signal.aborted ? 'ada' : new TrpcError.Unauthorized(),
     ),
@@ -667,7 +667,7 @@ test('a returned built-in class is a defined error, and catchTag narrows it', as
         Effect.catchTag('Conflict', (e) => Effect.succeed(`kept ${e.message}`)),
       ),
     ),
-  };
+  });
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<typeof router>(),

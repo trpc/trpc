@@ -40,7 +40,7 @@ const progressiveJson = experimental_createProgressiveJson();
 
 const t = initTrpc();
 
-const router = {
+const router = t.router({
   echo: t.procedure
     .input(
       z.object({
@@ -80,7 +80,7 @@ const router = {
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name}`),
   write: t.procedure.mutation(() => 'written'),
-};
+});
 type AppRouter = typeof router;
 
 test('with progressive JSON, built-in types round-trip through inputs and outputs', async () => {
@@ -198,9 +198,9 @@ test("a link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCO
 test("a socket link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCOL, and the server runs nothing", async () => {
   const t = initTrpc();
   let runs = 0;
-  const counter = {
+  const counter = t.router({
     bump: t.procedure.mutation(() => ++runs),
-  };
+  });
   await using server = await createTestServer({ router: counter });
   await using ws = wsLink({ url: server.wsUrl, transformer: progressiveJson });
   const client = createTrpcClient({

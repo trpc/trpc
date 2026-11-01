@@ -5,7 +5,9 @@ import type { ClientMessage, ServerMessage } from '../../internal/protocol.ts';
 
 const t = initTrpc();
 const makeHandler = () =>
-  createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') } });
+  createFetchHandler({
+    router: t.router({ hello: t.procedure.query(() => 'hi') }),
+  });
 
 const request: ClientMessage = {
   id: 1,

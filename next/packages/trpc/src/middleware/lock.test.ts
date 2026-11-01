@@ -66,7 +66,7 @@ function makeRouter(opts: {
   });
   return {
     log,
-    router: {
+    router: t.router({
       pay: t.procedure
         .input(z.object({ invoice: z.string(), by: z.string() }))
         .use(byInvoice)
@@ -85,7 +85,7 @@ function makeRouter(opts: {
         .use(byInvoice)
         .use(byInvoice)
         .mutation((args) => args.ctx.lock.waited),
-    },
+    }),
     started,
   };
 }

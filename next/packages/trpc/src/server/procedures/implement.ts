@@ -42,6 +42,7 @@ import {
 } from './procedure.ts';
 import type { EventOutput, ResultOf } from '../validation/index.ts';
 import type { TrackedEnvelope } from '../subscriptions/index.ts';
+import type { Branded } from './router.ts';
 
 /** A contract procedure's def, read by index (see `ProcedureDefOf`). */
 type ContractDefOf<T extends AnyProcedure> = NonNullable<T['~trpc']['~types']>;
@@ -116,7 +117,7 @@ interface ImplementedFields<
   input: ContractDefOf<TContract>['input'];
   output: ContractDefOf<TContract>['output'];
   errors: ContractDefOf<TContract>['errors'];
-  ctx: TDef['ctx'];
+  ctx: TDef['needs'];
   services: TDef['requires'] | Exclude<TServices, TDef['provided']>;
   outputValidated: ContractDefOf<TContract>['outputValidated'];
   declared: ContractDefOf<TContract>['declared'];
@@ -344,7 +345,9 @@ export type ExactRouter<TRouter, TContract> = TContract extends AnyProcedure
   : {
       [K in keyof TRouter]: K extends keyof TContract
         ? ExactRouter<TRouter[K], TContract[K]>
-        : TypeError<'impl.router: this key is not in the contract', K>;
+        : K extends string
+          ? TypeError<'impl.router: this key is not in the contract', K>
+          : unknown;
     };
 
 /**
@@ -353,10 +356,11 @@ export type ExactRouter<TRouter, TContract> = TContract extends AnyProcedure
  * @since 0.1.0
  * @stability stable
  */
-export interface ImplementRouter<TContract> {
+export interface ImplementRouter<TContract, TCtx = {}> {
   /**
    * Checks completeness at the type level (missing and extra keys, wrong
-   * types) and at runtime, and returns the router unchanged.
+   * types) and at runtime, and returns the router unchanged, its type
+   * carrying the root's ctx as `t.router()`'s does.
    *
    * @example
    * ```ts
@@ -367,7 +371,7 @@ export interface ImplementRouter<TContract> {
    */
   router<TRouter extends ImplementedRouter<TContract>>(
     routes: TRouter & ExactRouter<TRouter, TContract>,
-  ): TRouter;
+  ): Branded<TRouter, TCtx>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -620,5 +624,5 @@ export type ImplementResult<
   TRoot extends BuilderDef,
   TContract extends AnyContractRouter,
 > = Implementer<TRoot, TContract> &
-  ImplementRouter<TContract> &
+  ImplementRouter<TContract, TRoot['ctx']> &
   ImplementerRoot<TRoot, TContract>;

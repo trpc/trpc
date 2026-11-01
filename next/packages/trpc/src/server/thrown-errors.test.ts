@@ -26,7 +26,7 @@ const throwsNotFound = (): string => {
   throw new TrpcError.NotFound({ message: 'No post' });
 };
 
-const router = {
+const router = t.router({
   notFound: t.procedure.query(throwsNotFound),
   notFoundAgain: t.procedure.query(throwsNotFound),
   inProduction: t.procedure.query(throwsNotFound),
@@ -81,7 +81,7 @@ const router = {
   streamedFailure: t.procedure.query(() =>
     Stream.concat(Stream.make(1), Stream.fail(new TrpcError.Conflict())),
   ),
-};
+});
 
 /** A server whose Effect warnings land in `warnings`, with `NODE_ENV` set to `env`. */
 const failure = async (stream: AsyncIterable<number>) => {
@@ -230,7 +230,7 @@ test("middleware sees a thrown error as clients will, by the procedure's declara
   });
   let made: TrpcError | undefined;
   const caller = createRouterClient(
-    {
+    t.router({
       declared: watched.errors(OutOfStock).query((opts): string => {
         made = opts.errors.OUT_OF_STOCK({ data: { sku: 'a1' } });
         throw made;
@@ -241,7 +241,7 @@ test("middleware sees a thrown error as clients will, by the procedure's declara
       otherConstructor: watched.query((): string => {
         throw made;
       }),
-    },
+    }),
     { ctx: {} },
   );
   const [, declared] = await safe(caller.declared.query());

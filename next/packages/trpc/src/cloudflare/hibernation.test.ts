@@ -32,7 +32,7 @@ const t = initTrpc<{
 }>();
 
 let ticksStopped = 0;
-const router = {
+const router = t.router({
   whoami: t.procedure.query((opts) => opts.ctx),
   double: t.procedure
     .input(z.object({ n: z.number() }))
@@ -47,7 +47,7 @@ const router = {
       ticksStopped++;
     }
   }),
-};
+});
 
 const handler = createFetchHandler<typeof router, { env: Env }>({
   router,
@@ -380,7 +380,7 @@ const pt = initTrpc();
 /** A Durable Object instance: what its constructor builds. */
 const room = (state: ReturnType<typeof fakeState>) => {
   const h = createFetchHandler({
-    router: {
+    router: pt.router({
       create: pt.procedure
         .input(z.object({ title: z.string() }))
         .mutation((opts) =>
@@ -391,7 +391,7 @@ const room = (state: ReturnType<typeof fakeState>) => {
         .subscription((opts) =>
           Posts.subscribe('created', { lastEventId: opts.lastEventId }),
         ),
-    },
+    }),
     layer: experimental_hibernatingPublisher(Posts, { state, buffer: 10 }),
   });
   return experimental_createHibernatingWebSockets(h, { state });
@@ -558,14 +558,14 @@ test('a lazy subtree that fails to load after a wake ends its hibernated subscri
   ) =>
     experimental_createHibernatingWebSockets(
       createFetchHandler({
-        router: {
+        router: pt.router({
           create: pt.procedure
             .input(z.object({ title: z.string() }))
             .mutation((opts) =>
               Effect.as(Posts.publish('created', opts.input), opts.input),
             ),
           live: lazy(load),
-        },
+        }),
         layer: experimental_hibernatingPublisher(Posts, { state, buffer: 10 }),
       }),
       { state },
@@ -619,7 +619,7 @@ const nt = initTrpc<{ ctx: { user: string } }>();
 const notesRoom = (state: ReturnType<typeof fakeState>) =>
   experimental_createHibernatingWebSockets(
     createFetchHandler({
-      router: {
+      router: nt.router({
         send: nt.procedure
           .input(z.object({ to: z.string(), text: z.string() }))
           .mutation((opts) =>
@@ -635,7 +635,7 @@ const notesRoom = (state: ReturnType<typeof fakeState>) =>
             lastEventId: opts.lastEventId,
           }),
         ),
-      },
+      }),
       createContext: (opts) =>
         Effect.runPromise(
           RoomToken.verify(opts.info.connectionParams?.['token']),

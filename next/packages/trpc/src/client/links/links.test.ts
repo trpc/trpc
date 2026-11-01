@@ -15,7 +15,6 @@ import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import {
-  call,
   createFetchHandler,
   createRouterClient,
   error,
@@ -34,7 +33,7 @@ const t = initTrpc<{ ctx: Context }>();
 
 const signals = { aborted: 0 };
 
-const router = {
+const router = t.router({
   whoami: t.procedure.query((opts) => opts.ctx.token ?? 'anonymous'),
   today: t.procedure.query(() => new Date('2026-10-10T00:00:00.000Z')),
   add: t.procedure
@@ -61,7 +60,7 @@ const router = {
         });
       }),
   ),
-};
+});
 type AppRouter = typeof router;
 
 const serve = () =>
@@ -282,13 +281,17 @@ test('localLink runs the router in-process, through the transformer', async () =
   expect(err).toMatchObject({ code: 'NOT_FOUND', defined: true });
   // @ts-expect-error -- the router's procedures read `ctx.token`
   localLink({ router });
-  localLink({ router: { ping: initTrpc().procedure.query(() => 'pong') } });
+  const bare = initTrpc();
+  localLink({
+    router: bare.router({ ping: bare.procedure.query(() => 'pong') }),
+  });
 });
 
 test("interrupting a localLink call aborts the procedure's signal", async () => {
   const seen = { aborted: 0 };
-  const local = {
-    wait: initTrpc().procedure.query(
+  const bare = initTrpc();
+  const local = bare.router({
+    wait: bare.procedure.query(
       (opts) =>
         new Promise<string>((resolve) =>
           opts.signal.addEventListener('abort', () => {
@@ -297,7 +300,7 @@ test("interrupting a localLink call aborts the procedure's signal", async () => 
           }),
         ),
     ),
-  };
+  });
   const client = createEffectClient({
     router: routerType<typeof local>(),
     links: [localLink({ router: local })],
@@ -322,7 +325,7 @@ test('localLink fails unknown paths and wrong methods; deferred failures arrive 
   );
   expect(wrong).toMatchObject({ code: 'METHOD_NOT_SUPPORTED' });
 
-  const deferred = {
+  const deferred = t.router({
     later: t.procedure.query(() => ({
       ok: Promise.resolve('fine'),
       bad: Promise.reject(new Error('went wrong')),
@@ -330,7 +333,7 @@ test('localLink fails unknown paths and wrong methods; deferred failures arrive 
         new TrpcError({ code: 'FORBIDDEN', message: 'not yours' }),
       ),
     })),
-  };
+  });
   const client = createTrpcClient({
     router: routerType<typeof deferred>(),
     links: [
@@ -352,7 +355,7 @@ test('localLink fails unknown paths and wrong methods; deferred failures arrive 
   });
 });
 
-test('createRouterClient and call() skip the network and the transformer', async () => {
+test('createRouterClient and t.call() skip the network and the transformer', async () => {
   const caller = createRouterClient(router, { ctx: { token: 'server' } });
   expect(await caller.whoami.query()).toBe('server');
   expect(await caller.add.mutate({ a: 2, b: 3 })).toBe(5);
@@ -365,11 +368,15 @@ test('createRouterClient and call() skip the network and the transformer', async
   // @ts-expect-error -- the router needs a ctx
   createRouterClient(router);
 
-  const sum = await call(router.add, { a: 4, b: 5 }, { ctx: { token: null } });
+  const sum = await t.call(
+    router.add,
+    { a: 4, b: 5 },
+    { ctx: { token: null } },
+  );
   expect(sum).toBe(9);
   expectTypeOf(sum).toEqualTypeOf<number>();
   await expect(
-    call(router.find, { id: 'x' }, { ctx: { token: null } }),
+    t.call(router.find, { id: 'x' }, { ctx: { token: null } }),
   ).rejects.toMatchObject({ code: 'NOT_FOUND' });
 });
 
@@ -389,12 +396,12 @@ test('the untyped client takes paths as strings', async () => {
 test('one client for routers on two servers with different contexts (www/docs/client/links.md)', async () => {
   const blogT = initTrpc<{ ctx: { locale: string } }>();
   const shopT = initTrpc<{ ctx: { cart: string[] } }>();
-  const blogRouter = {
+  const blogRouter = blogT.router({
     hello: blogT.procedure.query((opts) => `hej (${opts.ctx.locale})`),
-  };
-  const shopRouter = {
+  });
+  const shopRouter = shopT.router({
     cart: shopT.procedure.query((opts) => opts.ctx.cart),
-  };
+  });
   await using blog = await createTestServer({
     router: blogRouter,
     createContext: () => ({ locale: 'sv' }),

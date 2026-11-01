@@ -38,7 +38,7 @@ const ban = t.procedure
 const makeRouter = () => {
   const loads = { admin: 0, reports: 0, billing: 0 };
   return {
-    router: {
+    router: t.router({
       health: t.procedure.query(() => 'ok'),
       admin: t.router(
         { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
@@ -66,7 +66,7 @@ const makeRouter = () => {
             .query((opts) => opts.input.n * 2),
         };
       }),
-    },
+    }),
     loads,
   };
 };
@@ -201,7 +201,7 @@ test("mergeRouters keeps a router's meta for everything merged with it", async (
     route: { prefix: '/admin', tags: ['admin'] },
   });
 
-  const router = { api: merged, root: users };
+  const router = t.router({ api: merged, root: users });
   expect(openApiPaths(router)).toEqual([
     '/api/admin/users',
     '/api/admin/health',
@@ -356,9 +356,9 @@ test('a router key no client can call is an error when it is served', async () =
   const withKey = (key: string, node: AnyRouter[string]): AnyRouter =>
     Object.fromEntries([[key, node]]);
   expect(() =>
-    createFetchHandler({ router: { post: withKey('then', q) } }),
+    createFetchHandler({ router: t.router({ post: withKey('then', q) }) }),
   ).toThrow('Router key "post.then": "then" is reserved');
-  expect(() => createRouterClient({ 'post.byId': q })).toThrow(
+  expect(() => createRouterClient(t.router({ 'post.byId': q }))).toThrow(
     'Router key "post.byId": "." separates path segments',
   );
   const router: AnyRouter = { admin: lazy(async () => withKey('then', q)) };
@@ -367,7 +367,7 @@ test('a router key no client can call is an error when it is served', async () =
   ).rejects.toThrow('Router key "then"');
   expect(() =>
     createFetchHandler({
-      router: { call: q, apply: q, nested: { thenable: q } },
+      router: t.router({ call: q, apply: q, nested: { thenable: q } }),
     }),
   ).not.toThrow();
 });

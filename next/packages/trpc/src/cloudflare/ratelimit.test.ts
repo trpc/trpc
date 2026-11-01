@@ -72,7 +72,7 @@ function namespace() {
 const t = initTrpc<{ ctx: { ip: string } }>();
 const serve = (ns: DurableRateLimitNamespace) => {
   const handler = createFetchHandler({
-    router: {
+    router: t.router({
       ping: t.procedure
         .use(
           experimental_rateLimit<{ ctx: { ip: string } }>({
@@ -82,7 +82,7 @@ const serve = (ns: DurableRateLimitNamespace) => {
           }),
         )
         .query(() => 'pong' as const),
-    },
+    }),
     layer: RateLimiter.layer.pipe(
       Layer.provide(
         experimental_durableRateLimiterStore(ns, { prefix: 'rl:' }),

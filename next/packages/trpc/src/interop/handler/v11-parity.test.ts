@@ -137,7 +137,7 @@ const v11Router = (config: V11Config) => {
 };
 
 const t = initTrpc<{ ctx: Ctx }>();
-const v12Router = {
+const v12Router = t.router({
   greet: t.procedure
     .input(z.object({ name: z.string() }))
     .query((o) => `hello ${o.input.name}`),
@@ -220,7 +220,7 @@ const v12Router = {
       o.ctx.finished.push('idle');
     }
   }),
-} satisfies AnyRouter;
+}) satisfies AnyRouter;
 
 const custom = <S extends { data: object }>({ shape }: { shape: S }) => ({
   ...shape,

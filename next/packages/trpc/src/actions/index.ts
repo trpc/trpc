@@ -1,14 +1,15 @@
 /**
  * Procedures as plain async functions (15 Q15.2, Q15.3), for React Server
  * Actions in Next, TanStack Start or any React Server Components setup. A
- * factory sets the ctx, services and result mode once.
+ * factory sets the ctx, services and result mode once, typed by the `t` the
+ * procedures are built with.
  *
  * @example
  * ```ts
  * 'use server';
  * import { experimental_createAction } from '@trpc12/trpc/actions';
  *
- * const action = experimental_createAction({ ctx: createContext });
+ * const action = experimental_createAction(t, { ctx: createContext });
  * export const createPost = action(appRouter.post.create);
  *
  * // <form action={createPost}>, or createPost({ title })
@@ -49,6 +50,7 @@ import type {
   DefServices,
   Procedure,
   ProcedureDef,
+  TrpcRoot,
 } from '../server/procedures/index.ts';
 
 /**
@@ -214,10 +216,11 @@ export type Callable<
 type Fits<
   TDef extends ProcedureDef,
   TType extends ProcedureType,
+  TRootCtx,
   TCtx,
   TServices,
 > = TType extends 'query' | 'mutation'
-  ? TCtx extends DefCtx<TDef>
+  ? TCtx extends TRootCtx & DefCtx<TDef>
     ? [DefServices<TDef>] extends [never]
       ? []
       : [DefServices<TDef>] extends [TServices]
@@ -225,7 +228,9 @@ type Fits<
         : [
             error: 'The factory runtime does not provide the services this procedure needs',
           ]
-    : [error: "The factory ctx does not satisfy this procedure's ctx"]
+    : [
+        error: "The factory ctx does not satisfy the root's ctx and this procedure's",
+      ]
   : [error: 'Subscriptions cannot be actions'];
 
 const isDev = () => {
@@ -327,30 +332,34 @@ function makeFactory<TMode extends ActionResultMode>(
 /**
  * Creates `action(procedure)`, which turns a query or mutation into an
  * async function for a React Server Action: it takes the input or a form's
- * `FormData`. The ctx, runtime and result mode are set once here. With
+ * `FormData`. The ctx, runtime and result mode are set once here, and `t`
+ * (the procedures' root) types the ctx: a procedure's type leaves its
+ * root ctx out. With
  * `result: 'safe'` it resolves to `{ data }` or `{ error }`
  * ({@link ActionSafeResult}), plain objects React can send to the browser.
  *
  * @example
  * ```ts
- * const action = experimental_createAction({ ctx: async () => ({ user: await auth() }) });
+ * const action = experimental_createAction(t, { ctx: async () => ({ user: await auth() }) });
  * export const createPost = action(appRouter.post.create);
  * const { data, error } = await createPost(formData);
  *
- * const strict = experimental_createAction({ ctx: createContext, result: 'throw' });
+ * const strict = experimental_createAction(t, { ctx: createContext, result: 'throw' });
  * ```
  * @since 0.1.0
  * @stability experimental
  */
 export function experimental_createAction<
+  TRootCtx extends object,
   TCtx extends object = {},
   TServices = never,
   TMode extends ActionResultMode = 'safe',
 >(
+  _root: TrpcRoot<TRootCtx, any, any>,
   opts?: CreateActionOptions<TCtx, TServices, TMode>,
 ): <TDef extends ProcedureDef, TType extends ProcedureType>(
   procedure: Procedure<TDef, TType>,
-  ...fits: Fits<TDef, TType, TCtx, TServices>
+  ...fits: Fits<TDef, TType, TRootCtx, TCtx, TServices>
 ) => Action<TDef, TMode> {
   return makeFactory(opts as never, plainResult) as never;
 }
@@ -363,7 +372,7 @@ export function experimental_createAction<
  *
  * @example
  * ```ts
- * const callable = experimental_createCallable({ ctx: createContext, result: 'throw' });
+ * const callable = experimental_createCallable(t, { ctx: createContext, result: 'throw' });
  * const byId = callable(appRouter.post.byId);
  * const post = await byId({ id: '1' });
  * ```
@@ -371,14 +380,16 @@ export function experimental_createAction<
  * @stability experimental
  */
 export function experimental_createCallable<
+  TRootCtx extends object,
   TCtx extends object = {},
   TServices = never,
   TMode extends ActionResultMode = 'safe',
 >(
+  _root: TrpcRoot<TRootCtx, any, any>,
   opts?: CreateActionOptions<TCtx, TServices, TMode>,
 ): <TDef extends ProcedureDef, TType extends ProcedureType>(
   procedure: Procedure<TDef, TType>,
-  ...fits: Fits<TDef, TType, TCtx, TServices>
+  ...fits: Fits<TDef, TType, TRootCtx, TCtx, TServices>
 ) => Callable<TDef, TMode> {
   return makeFactory(opts as never, dualResult) as never;
 }

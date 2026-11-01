@@ -11,7 +11,6 @@ import {
   experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
 import {
-  type AnyRouter,
   experimental_byteStream,
   initTrpc,
   type experimental_ByteStream,
@@ -33,7 +32,7 @@ const text = (bytes: experimental_ByteStream) =>
     ),
   );
 
-const router = {
+const router = t.router({
   upload: t.procedure
     .meta({ route: { method: 'POST', path: '/uploads' } })
     .input(experimental_byteStream())
@@ -70,7 +69,7 @@ const router = {
     .meta({ route: { method: 'POST', path: '/json' } })
     .input(z.object({ n: z.number() }))
     .mutation((opts) => opts.input),
-} satisfies AnyRouter;
+});
 
 const octet: Record<string, string> = {
   'content-type': 'application/octet-stream',

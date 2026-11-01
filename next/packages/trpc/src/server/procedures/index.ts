@@ -128,8 +128,12 @@ export {
 export type {
   AnyLazyRouter,
   AnyRouter,
+  Branded,
   LazyDef,
   LazyRouter,
+  MergedRouter,
+  RootRouterCheck,
+  RouterCtx,
   RouterMeta,
   RouterOptions,
   Unlazy,

@@ -28,6 +28,7 @@ import {
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
+  type RootRouterCheck,
   type inferRouterServices,
 } from '../../server/procedures/index.ts';
 import { link, withTransformer, type TrpcLink } from '../link.ts';
@@ -39,7 +40,7 @@ import { isByteStreamInput } from './events.ts';
  * @stability stable
  */
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
-  router: TRouter;
+  router: TRouter & RootRouterCheck<TRouter>;
   /**
    * Round-trip inputs and outputs through a transformer, as over the wire.
    * `false` passes values by reference, with native types.

@@ -31,7 +31,7 @@ const boom = t.procedure.mutation((): string => {
   throw new Error('db password is hunter2');
 });
 
-const action = experimental_createAction({
+const action = experimental_createAction(t, {
   ctx: { user: 'ada' },
   exposeUnexpectedErrors: false,
 });

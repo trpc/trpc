@@ -8,7 +8,7 @@
  *
  * const t = initTrpc<{ ctx: { user: User | null } }>();
  *
- * export const appRouter = {
+ * export const appRouter = t.router({
  *   post: {
  *     byId: t.procedure
  *       .input(z.object({ id: z.string() }))
@@ -16,7 +16,7 @@
  *         (await db.post.find(input.id)) ?? error({ code: 'NOT_FOUND' }),
  *       ),
  *   },
- * };
+ * });
  * export type AppRouter = typeof appRouter;
  *
  * export default createFetchHandler({
@@ -90,7 +90,11 @@ export {
   router,
   type AnyLazyRouter,
   type AnyRouter,
+  type Branded,
   type LazyRouter,
+  type MergedRouter,
+  type RootRouterCheck,
+  type RouterCtx,
   type RouterMeta,
   type RouterOptions,
   type Unlazy,
@@ -157,12 +161,8 @@ export type {
   Transport,
   WebSocketLike,
 } from './sockets/index.ts';
-export {
-  call,
-  createRouterClient,
-  type CallOptions,
-  type RouterClientOptions,
-} from './caller.ts';
+export { createRouterClient, type RouterClientOptions } from './caller.ts';
+export type { Call, CallOptions, CallOutput } from './call.ts';
 export {
   ERROR_STATUS,
   error,

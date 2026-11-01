@@ -14,7 +14,7 @@ import { z } from 'zod';
 const t = initTrpc<{ ctx: { token: string | undefined; transport: string } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export const workerRouter = {
+export const workerRouter = t.router({
   thread: t.procedure.query((opts) => ({
     threadId,
     token: opts.ctx.token,
@@ -39,7 +39,7 @@ export const workerRouter = {
       yield tracked(String(i), { percent: i * 33 });
     }
   }),
-};
+});
 export type WorkerRouter = typeof workerRouter;
 
 if (parentPort) {

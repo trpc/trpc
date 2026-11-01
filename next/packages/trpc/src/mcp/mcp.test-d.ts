@@ -4,7 +4,7 @@ import {
   type McpTool,
 } from '@trpc12/trpc/mcp';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
-import { initTrpc, type AnyRouter } from '@trpc12/trpc/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import { Context, Effect, Layer } from 'effect';
 import { expectTypeOf, test } from 'vite-plus/test';
 
@@ -29,9 +29,9 @@ test('createContext and filter are typed by the router', () => {
     user: { admin: boolean } | null;
   }
   const t = initTrpc<{ ctx: Ctx }>().concat(experimental_mcp());
-  const router = {
+  const router = t.router({
     a: t.procedure.meta({ mcp: true }).query(() => 1),
-  } satisfies AnyRouter;
+  });
 
   experimental_createMcpHandler({
     router,
@@ -54,13 +54,13 @@ test('createContext and filter are typed by the router', () => {
 test('a router that needs services needs a layer, and a platform reaches fetch', () => {
   class Db extends Context.Service<Db, { readonly count: number }>()('Db') {}
   const t = initTrpc();
-  const router = {
+  const router = t.router({
     count: t.procedure.query(() =>
       Effect.gen(function* () {
         return (yield* Db).count;
       }),
     ),
-  } satisfies AnyRouter;
+  });
   // @ts-expect-error `layer` provides Db
   experimental_createMcpHandler({ router });
   const mcp = experimental_createMcpHandler<typeof router, { env: string }>({

@@ -94,7 +94,7 @@ test('invalid inputs fail on the client with the server error shape, before any 
 
 test('results that drift from the contract fail with BAD_RESPONSE', async () => {
   await using http = await createTestServer({
-    router: {
+    router: t.router({
       post: {
         byId: t.procedure
           .input(z.object({ id: z.string() }))
@@ -103,7 +103,7 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
           yield tracked('1', { id: '1', title: 2, at });
         }),
       },
-    },
+    }),
   });
   const client = createTrpcClient({
     router: appContract,
@@ -269,7 +269,7 @@ test("output: 'json' decodes declared errors' data with their schemas, and types
 
 test("output: 'json' types the data of errors it has no schema for in its JSON form, as it arrives", async () => {
   const p = initTrpc();
-  const appRouter = {
+  const appRouter = p.router({
     returned: p.procedure
       .output(Post)
       .query(() => error({ code: 'EXPIRED', data: { at } })),
@@ -277,7 +277,7 @@ test("output: 'json' types the data of errors it has no schema for in its JSON f
       .output(Post)
       .errors({ POST_GONE: PostGone })
       .query(() => new PostGone({ id: '1', deletedAt: at })),
-  } satisfies AnyRouter;
+  });
   await using http = await createTestServer({ router: appRouter });
   const links = [
     experimental_validationLink({ contract: appRouter, output: 'json' }),
@@ -309,7 +309,7 @@ test("output: 'json' types the data of errors it has no schema for in its JSON f
 test("a declared error whose data fails its schema arrives undeclared, as oRPC's response validation does, not as BAD_RESPONSE", async () => {
   const p = initTrpc();
   await using http = await createTestServer({
-    router: {
+    router: p.router({
       post: {
         byId: p.procedure.input(z.object({ id: z.string() })).query((opts) =>
           opts.input.id === 'gone'
@@ -322,7 +322,7 @@ test("a declared error whose data fails its schema arrives undeclared, as oRPC's
             : error({ code: 'NOT_FOUND', data: { id: 404 } }),
         ),
       },
-    },
+    }),
   });
   const client = createTrpcClient({
     router: gone,
@@ -366,13 +366,13 @@ test('undeclared errors pass through untouched', async () => {
     data: { at: 'not a date' },
   });
   await using http = await createTestServer({
-    router: {
+    router: p.router({
       post: {
         byId: p.procedure.input(z.object({ id: z.string() })).query(() => {
           throw thrown;
         }),
       },
-    },
+    }),
   });
   const clientOf = (validate: boolean) =>
     createTrpcClient({
@@ -453,7 +453,7 @@ test("output: 'json' types a streamed output's items in their JSON form, as they
 test("output: 'json' types as the schemas' types only the results it decodes", async () => {
   const p = initTrpc();
   const post = () => ({ id: '1', title: 'One', at });
-  const appRouter = {
+  const appRouter = p.router({
     decoded: p.procedure.output(Post).query(post),
     coerced: p.procedure
       .output(z.object({ at: z.coerce.date() }))
@@ -467,7 +467,7 @@ test("output: 'json' types as the schemas' types only the results it decodes", a
       yield post();
     }),
     outside: { decoded: p.procedure.output(Post).query(post) },
-  } satisfies AnyRouter;
+  });
   const { outside: _, ...linkContract } = appRouter;
   await using http = await createTestServer({ router: appRouter });
   const links = [
@@ -543,7 +543,7 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
     nested: { leaf: p.procedure.output(z.number()).query(() => 1) },
   } satisfies AnyRouter;
   await using http = await createTestServer({
-    router: {
+    router: p.router({
       perCall: p.procedure
         .input(z.unknown())
         .query(() => 'checked by the server'),
@@ -562,7 +562,7 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
       trusted: p.procedure.query(() => ({ n: 'not a number' })),
       strict: p.procedure.input(z.unknown()).query(() => 'unchecked'),
       extra: p.procedure.query(() => 'not in the contract'),
-    },
+    }),
   });
   const client = (opts: Parameters<typeof experimental_validationLink>[0]) =>
     createUntypedClient({

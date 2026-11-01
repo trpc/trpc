@@ -7,7 +7,6 @@ import {
   type OpenApiOperation,
 } from '@trpc12/trpc/openapi';
 import {
-  type AnyRouter,
   createFetchHandler,
   experimental_byteStream,
   initTrpc,
@@ -54,7 +53,7 @@ const Deep = z.object({
   parent: z.object({ child: z.object({ name: z.string().nullable() }) }),
 });
 
-const router = {
+const router = t.router({
   query: {
     none: t.procedure.output(z.literal('ok')).query(() => 'ok' as const),
     flat: echo(Flat).query((opts) => opts.input),
@@ -107,7 +106,7 @@ const router = {
         })),
       ),
   },
-} satisfies AnyRouter;
+});
 
 type Schema = Record<string, unknown>;
 

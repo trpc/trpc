@@ -24,11 +24,13 @@ import {
 } from './implement.ts';
 import { mergeMeta, type MetaMerge } from './procedure.ts';
 import type { Response } from '../execution/index.ts';
+import { call, type Call } from '../call.ts';
 import {
   lazyWith,
   router,
   type AnyRouter,
   type LazyRouter,
+  type Branded,
   type RouterMeta,
   type RouterOptions,
 } from './router.ts';
@@ -88,6 +90,7 @@ export interface RootOptions<TMeta> {
  */
 export interface RootDef<TCtx extends object, TMeta extends object> {
   ctx: TCtx;
+  needs: {};
   ctxAdded: {};
   meta: TMeta;
   inputIn: Unset;
@@ -158,6 +161,19 @@ export interface TrpcRoot<
    */
   middleware: RootMiddleware<CurrentCtx<TDef>, TDef['meta']>;
   /**
+   * Calls one procedure directly, with this root's ctx: a procedure's type
+   * leaves the root ctx out. Throws the procedure's `TrpcError`s. A `layer`
+   * is built for the call and released once it returns, before a streamed
+   * output is read; pass a caller-owned `runtime` for those. A returned
+   * response arrives as the web `Response` HTTP would send.
+   *
+   * @example
+   * ```ts
+   * const post = await t.call(byId, { id: '1' }, { ctx: { user }, layer: PostRepo.Live });
+   * ```
+   */
+  call: Call<TCtx>;
+  /**
    * Implements a contract: a mirror of the contract whose leaves are
    * builders pre-loaded with the contract's input, output, errors and route.
    * Leaves only offer `.use()`, `.provide()` and the contract's terminal, and
@@ -181,22 +197,38 @@ export interface TrpcRoot<
     contract: TContract & ImplementMetaCheck<TDef['meta'], TContract>,
   ): ImplementResult<TDef, TContract>;
   /**
-   * A router with router-level meta, for the meta keys that have
-   * a router-level form ({@link RouterMeta}). Types and RPC paths don't
-   * change, and it takes no middleware.
+   * A router whose type carries this root's ctx (`RouterCtx`), which
+   * its procedures' types leave out. Handlers type `createContext` from it,
+   * so the root router passed to one is made with it, and so is a router
+   * in a module of its own: its declarations then name the ctx once.
+   * Inline nesting stays plain objects. The router itself is `routes`.
+   *
+   * @example
+   * ```ts
+   * // post.ts
+   * export const postRouter = t.router({ byId, create });
+   * // app.ts
+   * export const appRouter = t.router({ post: postRouter, health: { ping } });
+   * ```
+   */
+  router<TRoutes extends AnyRouter>(routes: TRoutes): Branded<TRoutes, TCtx>;
+  /**
+   * With router-level meta, for the meta keys that have a router-level form
+   * ({@link RouterMeta}). Types and RPC paths don't change, and it takes no
+   * middleware.
    *
    * @example
    * ```ts
    * const t = initTrpc().concat(experimental_openapi());
-   * const appRouter = {
+   * const appRouter = t.router({
    *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
-   * };
+   * });
    * ```
    */
-  router<const TRoutes extends AnyRouter>(
+  router<TRoutes extends AnyRouter>(
     opts: RouterOptions<RouterMeta<TDef['meta']>>,
     routes: TRoutes,
-  ): TRoutes;
+  ): Branded<TRoutes, TCtx>;
   /**
    * {@link lazy}, with router-level meta as `t.router()` takes. Under
    * `experimental_openapi()`, a `route.prefix` lets the OpenAPI handler load the subtree
@@ -204,9 +236,9 @@ export interface TrpcRoot<
    *
    * @example
    * ```ts
-   * const appRouter = {
+   * const appRouter = t.router({
    *   admin: t.lazy(() => import('./admin.ts'), { meta: { route: { prefix: '/admin' } } }),
-   * };
+   * });
    * ```
    */
   lazy<TRouter extends AnyRouter>(
@@ -369,9 +401,13 @@ function makeRoot(procedure: AnyProcedureBuilder): TrpcRoot<any, any, any> {
     middleware: Object.assign((fn: unknown) => fn, {
       effect: () => makeEffectMiddleware,
     }) as never,
+    call: call as never,
     implement: (contract: AnyContractRouter) =>
       implement(procedure['~trpc'], contract) as never,
-    router,
+    router: ((opts: RouterOptions | AnyRouter, routes?: AnyRouter) =>
+      routes === undefined
+        ? opts
+        : router(opts as RouterOptions, routes)) as never,
     lazy: (load: () => Promise<never>, opts: RouterOptions = {}) =>
       lazyWith(load, opts),
   };

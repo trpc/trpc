@@ -9,14 +9,14 @@
  * import { experimental_createMcpHandler, experimental_mcp } from '@trpc12/trpc/mcp';
  *
  * const t = initTrpc().concat(experimental_mcp());
- * const appRouter = {
+ * const appRouter = t.router({
  *   post: {
  *     byId: t.procedure
  *       .meta({ mcp: { description: 'Read one blog post by its id.' } })
  *       .input(z.object({ id: z.string() }))
  *       .query(…),
  *   },
- * };
+ * });
  * export const mcp = experimental_createMcpHandler({ router: appRouter });
  * // POST /mcp tools/call { name: 'post_byId', arguments: { id: '1' } }
  * ```

@@ -71,7 +71,7 @@ const vendor = (
   },
 });
 
-const router = {
+const router = t.router({
   zod: t.procedure.input(Signup).mutation(() => 'ok'),
   effect: t.procedure.input(Effectful).mutation(() => 'ok'),
   leaves: t.procedure.input(Leaves).mutation(() => 'ok'),
@@ -101,7 +101,7 @@ const router = {
   other: t.procedure
     .input(vendor('valibot', [{ message: 'no', path: [], kind: 'schema' }]))
     .query(() => 'ok'),
-};
+});
 
 async function setup() {
   const server = await createTestServer({

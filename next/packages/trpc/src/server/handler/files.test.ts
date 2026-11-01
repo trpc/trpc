@@ -25,7 +25,7 @@ const progressiveJson = experimental_createProgressiveJson();
 
 const t = initTrpc();
 
-const router = {
+const router = t.router({
   setCover: t.procedure
     .input(
       z.object({
@@ -86,7 +86,7 @@ const router = {
       ),
     };
   }),
-};
+});
 type AppRouter = typeof router;
 
 const cover = new File(['<png>'], 'a.png', { type: 'image/png' });
@@ -264,14 +264,14 @@ test('parts that are missing or not referenced correctly are a PARSE_ERROR', asy
 test('a multipart mutation needs the trpc-version header, which a cross-site form cannot send', async () => {
   let ran = 0;
   await using server = await createTestServer({
-    router: {
+    router: t.router({
       post: t.procedure
         .input(z.object({ title: z.string() }))
         .mutation((opts) => {
           ran++;
           return opts.input.title;
         }),
-    },
+    }),
   });
   const form = () => {
     const f = new FormData();
@@ -361,13 +361,13 @@ test('a file that changes on disk while it downloads fails the response body', a
   const path = join(await mkdtemp(join(tmpdir(), 'trpc-')), 'report.csv');
   await writeFile(path, 'first version');
   const handler = createFetchHandler({
-    router: {
+    router: t.router({
       report: t.procedure.query(async () => {
         const blob = await openAsBlob(path);
         await writeFile(path, 'a longer second version');
         return blob;
       }),
-    },
+    }),
   });
   const res = await handler.fetch(new Request('http://localhost/trpc/report'));
   expect(res.status).toBe(200);

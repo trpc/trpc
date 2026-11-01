@@ -348,7 +348,9 @@ test('t.implement() checks the contract meta against the root meta', () => {
 });
 
 test('a contract procedure without an implementation answers NOT_IMPLEMENTED', async () => {
-  await using server = await createTestServer({ router: appContract });
+  await using server = await createTestServer({
+    router: initTrpc().router(appContract),
+  });
   const client = createTrpcClient({
     router: appContract,
     links: [httpLink({ url: server.url })],

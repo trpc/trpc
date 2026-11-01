@@ -17,7 +17,7 @@ const raw = (body: BodyInit | null, init?: ResponseInit) =>
   HttpServerResponse.fromWeb(new Response(body, init));
 
 let slowAborts = 0;
-const router = {
+const router = t.router({
   echo: t.procedure
     .meta({ route: { method: 'POST', path: '/echo' } })
     .input(z.unknown())
@@ -125,7 +125,7 @@ const router = {
   who: t.procedure
     .meta({ route: { method: 'GET', path: '/who' } })
     .query((opts) => opts.ctx.user),
-};
+});
 
 const make = (
   opts: Partial<
@@ -357,9 +357,9 @@ test('createContext and lazy routers that throw are masked 500s', async () => {
   await throwing.dispose();
 
   const broken = experimental_createOpenApiHandler({
-    router: {
+    router: t.router({
       later: lazy(() => Promise.reject(new Error('cannot load'))),
-    },
+    }),
     createContext: () => ({ user: 'ada' }),
   });
   const lazyRes = await api(broken, '/later/x');

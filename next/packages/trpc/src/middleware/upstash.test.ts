@@ -39,7 +39,7 @@ function upstash(send: (command: string[]) => Promise<unknown>) {
 const t = initTrpc<{ ctx: { ip: string } }>();
 const serve = (store: Layer.Layer<RateLimiter.RateLimiterStore>) => {
   const handler = createFetchHandler({
-    router: {
+    router: t.router({
       ping: t.procedure
         .use(
           experimental_rateLimit<{ ctx: { ip: string } }>({
@@ -59,7 +59,7 @@ const serve = (store: Layer.Layer<RateLimiter.RateLimiterStore>) => {
           }),
         )
         .query(() => 'ok' as const),
-    },
+    }),
     layer: RateLimiter.layer.pipe(Layer.provide(store)),
     createContext: (opts) => ({ ip: opts.request.headers['x-ip'] ?? '?' }),
   });

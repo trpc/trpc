@@ -44,7 +44,7 @@ let attempts = 0;
 /** Told how the next `watched` call's read ended. */
 const watchers: Array<(outcome: string) => void> = [];
 
-const router = {
+const router = t.router({
   echo: t.procedure.input(experimental_byteStream()).mutation((opts) => {
     expectTypeOf(opts.input).toEqualTypeOf<experimental_ByteStream>();
     return text(opts.input);
@@ -101,7 +101,7 @@ const router = {
   hello: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name}`),
-};
+});
 type AppRouter = typeof router;
 
 const encoder = new TextEncoder();

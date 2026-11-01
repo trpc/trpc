@@ -61,9 +61,10 @@ export function mergeMeta(
 /**
  * What a built procedure's type carries: what clients read (`input`,
  * `output`, `errors`) and what the handler that serves it must provide
- * (`ctx`, `services`). A field that would say nothing is left out, so
- * hovers and declarations show only what the procedure needs. The
- * procedure's type (`'query'`, …) is {@link Procedure}'s.
+ * beyond its router's root ctx (`ctx`, `services`). A field that would say
+ * nothing is left out, so hovers and declarations show only what the
+ * procedure needs. The procedure's type (`'query'`, …) is
+ * {@link Procedure}'s; the root ctx is its router's (`t.router()`).
  * @since 0.1.0
  * @stability stable
  */
@@ -74,7 +75,10 @@ export interface ProcedureDef {
   output: unknown;
   /** The typed error union. */
   errors: AnyTrpcError;
-  /** The root ctx the handler must provide; left out when that's `{}`. */
+  /**
+   * Root ctx keys standalone middleware need that the procedure's `t` does
+   * not declare; left out when none.
+   */
   ctx?: object;
   /** Effect services the handler's `layer` must provide; left out when none. */
   services?: unknown;
@@ -328,7 +332,8 @@ export type ProcedureTypeOf<P> = P extends AnyProcedure
   : never;
 
 /**
- * The root ctx a procedure's handler must provide (`{}` when none).
+ * The root ctx keys a procedure's standalone middleware need beyond its
+ * `t`'s (`{}` when none).
  * @internal
  */
 export type DefCtx<D> = D extends { readonly ctx: infer C } ? C : {};

@@ -494,7 +494,7 @@ type ClientRouter<
   TForm extends OutputForm | undefined,
   TLinks extends ChainTypes,
 > = {
-  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+  [K in keyof TRouter & string]: TRouter[K] extends AnyProcedure
     ? DecorateProcedure<TRouter[K], TContext, TForm, TLinks>
     : ClientRouter<Unlazy<TRouter[K]>, TContext, TForm, TLinks>;
 };
@@ -612,7 +612,7 @@ type DecodingRouter<
   F extends OutputForm,
   TDecoded extends OutputForm,
 > = {
-  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+  [K in keyof TRouter & string]: TRouter[K] extends AnyProcedure
     ? DecorateDef<
         DecodedDef<TRouter[K], ContractAt<C, K>, F>,
         ProcedureTypeOf<TRouter[K]>,

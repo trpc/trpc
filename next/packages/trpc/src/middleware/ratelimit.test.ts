@@ -25,10 +25,10 @@ const limited = experimental_rateLimit<{ ctx: { ip: string } }>({
   limit: 2,
   window: '1 minute',
 });
-const router = {
+const router = t.router({
   ping: t.procedure.use(limited).query(() => 'pong' as const),
   free: t.procedure.query(() => 'free' as const),
-};
+});
 const memory = () =>
   RateLimiter.layer.pipe(Layer.provide(RateLimiter.layerStoreMemory));
 

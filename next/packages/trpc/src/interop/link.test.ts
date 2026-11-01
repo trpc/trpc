@@ -20,7 +20,7 @@ const t = initTrpc<{ ctx: { user: string | null } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let stopped = 0;
 
-const router = {
+const router = t.router({
   whoami: t.procedure.query((opts) => opts.ctx.user),
   byId: t.procedure
     .input(z.object({ id: z.string() }))
@@ -40,7 +40,7 @@ const router = {
       stopped++;
     }
   }),
-};
+});
 type AppRouter = typeof router;
 
 const serve = () =>

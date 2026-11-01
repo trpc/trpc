@@ -5,7 +5,7 @@ import {
   experimental_openapi,
   experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
-import { type AnyRouter, initTrpc } from '@trpc12/trpc/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -41,7 +41,7 @@ const Input = z.object({
 });
 
 const handler = experimental_createOpenApiHandler({
-  router: {
+  router: t.router({
     echo: t.procedure
       .meta({ route: { method: 'GET', path: '/echo' } })
       .input(Input)
@@ -52,7 +52,7 @@ const handler = experimental_createOpenApiHandler({
         z.object({ count: z.number(), done: z.boolean(), notes: z.string() }),
       )
       .mutation((opts) => opts.input),
-  },
+  }),
 });
 const api = (path: string, init?: RequestInit) =>
   handler.fetch(new Request(`http://localhost/api${path}`, init));
@@ -129,7 +129,7 @@ test('form fields are coerced one key at a time (18 (b))', async () => {
 });
 
 test('experimental_openApiLink sends nulls, dates and lists of objects in bracket notation', async () => {
-  const r = {
+  const r = t.router({
     find: t.procedure
       .meta({ route: { method: 'GET', path: '/find' } })
       .input(
@@ -140,7 +140,7 @@ test('experimental_openApiLink sends nulls, dates and lists of objects in bracke
         }),
       )
       .query((opts) => opts.input),
-  } satisfies AnyRouter;
+  });
   const h = experimental_createOpenApiHandler({ router: r });
   const urls: string[] = [];
   const client = createTrpcClient({

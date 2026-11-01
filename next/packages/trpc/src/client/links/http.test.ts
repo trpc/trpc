@@ -21,7 +21,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let finished = 0;
 
-const router = {
+const router = t.router({
   double: t.procedure
     .input(z.object({ n: z.number() }))
     .query((opts) => opts.input.n * 2),
@@ -59,7 +59,7 @@ const router = {
       ticksStopped++;
     }
   }),
-};
+});
 let ticksStopped = 0;
 type AppRouter = typeof router;
 
@@ -243,7 +243,7 @@ test("a custom fetch is any function with fetch's call shape", async () => {
 
 // --- responses -----------------------------------------------------------------
 
-const versioned = {
+const versioned = t.router({
   version: t.procedure.query((opts) => {
     opts.response.headers.set('x-version', '7');
     return 'v7';
@@ -252,7 +252,7 @@ const versioned = {
   ticks: t.procedure.subscription(async function* () {
     yield 1;
   }),
-};
+});
 
 /**
  * Needs `'response'`: records each call's response before its value, then

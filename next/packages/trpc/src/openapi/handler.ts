@@ -66,6 +66,7 @@ import {
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
+  type RootRouterCheck,
   type inferRouterServices,
 } from '../server/procedures/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
@@ -92,7 +93,7 @@ import {
  * @stability experimental
  */
 export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
-  router: TRouter;
+  router: TRouter & RootRouterCheck<TRouter>;
   /**
    * Prepended to every route's path.
    * @default '/api'
@@ -142,7 +143,7 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
    * time. Lazy subtrees then load on their first request, whatever their
    * `route.prefix` (08 Q8.4).
    */
-  contract?: ContractJson<TRouter>;
+  contract?: ContractJson<NoInfer<TRouter>>;
   /**
    * How long `dispose()` waits for the requests in flight before it
    * interrupts them.

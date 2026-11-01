@@ -22,7 +22,6 @@ import {
 import type { ProgressiveJsonForm } from '@trpc12/trpc/transformer';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
-  type AnyRouter,
   createFetchHandler,
   createRouterClient,
   error,
@@ -87,7 +86,7 @@ const withUser = t.procedure.provide(CurrentUser, (opts) =>
 
 const aborted = { count: 0 };
 
-const router = {
+const router = t.router({
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
       Effect.gen(function* () {
@@ -123,7 +122,7 @@ const router = {
     ),
   ),
   crash: t.procedure.query(() => Effect.die(new Error('db exploded'))),
-};
+});
 type AppRouter = typeof router;
 
 async function setup(user: string | null = 'ada') {
@@ -390,7 +389,7 @@ test('Effect code in a query or mutation gets a Scope that closes with it', asyn
       () => Effect.sync(() => log.push(`close ${name}`)),
     );
   class Tx extends Context.Service<Tx, string>()('Tx') {}
-  const router = {
+  const router = t.router({
     read: t.procedure.query(() =>
       Effect.gen(function* () {
         const name = yield* resource('file');
@@ -406,7 +405,7 @@ test('Effect code in a query or mutation gets a Scope that closes with it', asyn
           return 'ok';
         }),
       ),
-  };
+  });
   expectTypeOf<inferRouterServices<typeof router>>().toBeNever();
   const handler = createFetchHandler({ router });
   const res = await handler.fetch(new Request('http://localhost/trpc/read'));
@@ -421,7 +420,7 @@ test('Effect code in a query or mutation gets a Scope that closes with it', asyn
 
 test('a layer that provides no services, like a tracer, is accepted', async () => {
   const t = initTrpc();
-  const router = { ping: t.procedure.query(() => 'pong') } satisfies AnyRouter;
+  const router = t.router({ ping: t.procedure.query(() => 'pong') });
   const tracing = Layer.succeed(
     Tracer.Tracer,
     Tracer.make({ span: (o) => new Tracer.NativeSpan(o) }),
@@ -447,7 +446,7 @@ test('every call runs in a span named after its path', async () => {
   );
   const t = initTrpc();
   const client = createRouterClient(
-    {
+    t.router({
       post: {
         byId: t.procedure
           .input(z.object({ id: z.string() }))
@@ -458,7 +457,7 @@ test('every call runs in a span named after its path', async () => {
               : opts.errors.NOT_FOUND(),
           ),
       },
-    },
+    }),
     { ctx: {}, runtime },
   );
   expect(await client.post.byId.query({ id: '1' })).toBe('Hello');
@@ -483,7 +482,7 @@ test('work forked with Effect.forkDetach outlives the response (www/docs/server/
   const t0 = initTrpc();
   let sent = false;
   const handler = createFetchHandler({
-    router: {
+    router: t0.router({
       signup: t0.procedure.mutation(() =>
         Effect.gen(function* () {
           yield* Effect.forkDetach(
@@ -498,7 +497,7 @@ test('work forked with Effect.forkDetach outlives the response (www/docs/server/
           return 'ok';
         }),
       ),
-    },
+    }),
   });
   const res = await handler.fetch(
     new Request('http://localhost/trpc/signup', {

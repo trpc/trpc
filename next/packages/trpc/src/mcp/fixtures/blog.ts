@@ -28,7 +28,7 @@ export const freshPosts = (): Disposable => {
   return { [Symbol.dispose]: () => posts.clear() };
 };
 
-export const blogRouter = {
+export const blogRouter = t.router({
   post: {
     byId: t.procedure
       .meta({
@@ -94,4 +94,4 @@ export const blogRouter = {
     reindex: t.procedure.mutation(() => 'ok'),
     hidden: t.procedure.meta({ mcp: false }).query(() => 'secret'),
   },
-};
+});

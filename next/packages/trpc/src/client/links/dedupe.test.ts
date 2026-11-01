@@ -34,7 +34,7 @@ const transformer = experimental_createProgressiveJson({
   },
 });
 
-const router = {
+const router = t.router({
   echo: t.procedure
     .input(z.object({ a: z.number(), b: z.number() }))
     .query(async (opts) => {
@@ -94,7 +94,7 @@ const router = {
     yield* [];
     throw error({ code: 'CONFLICT', message: 'refused' });
   }),
-};
+});
 type AppRouter = typeof router;
 
 async function setup(opts?: Parameters<typeof dedupeLink>[0]) {

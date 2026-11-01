@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
 
-const router = {
+const router = t.router({
   whoami: t.procedure.query((opts) => opts.ctx.user),
   echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
   feed: t.procedure.subscription(async function* (opts) {
@@ -20,7 +20,7 @@ const router = {
     throw error({ code: 'CONFLICT', message: 'Feed ended badly' });
   }),
   forever: t.procedure.subscription(() => Stream.never),
-};
+});
 
 async function start(extra: Partial<V11HandlerOptions<typeof router>> = {}) {
   const handler = createV11Handler({
@@ -363,7 +363,7 @@ class StandardSocket extends EventTarget {
 test('dispose() closes the sockets handed to websocket() and ends their subscriptions, without a stopped result', async () => {
   let ended = 0;
   const handler = createV11Handler({
-    router: {
+    router: t.router({
       ...router,
       forever: t.procedure.subscription(async function* (opts) {
         try {
@@ -375,7 +375,7 @@ test('dispose() closes the sockets handed to websocket() and ends their subscrip
           ended++;
         }
       }),
-    },
+    }),
     createContext: () => ({ user: null }),
   });
   const socket = new StandardSocket();

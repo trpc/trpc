@@ -4,7 +4,6 @@ import {
   experimental_createCallable,
 } from '@trpc12/trpc/actions';
 import {
-  call,
   createRouterClient,
   error,
   initTrpc,
@@ -49,7 +48,7 @@ const tick = t.procedure.subscription(async function* () {
 });
 
 test('experimental_createAction: FormData in, a safe result out (15 Q15.3)', async () => {
-  const action = experimental_createAction({
+  const action = experimental_createAction(t, {
     ctx: async () => ({ user: 'ada' }),
   });
   const run = action(createPost);
@@ -92,7 +91,7 @@ test('experimental_createAction: FormData in, a safe result out (15 Q15.3)', asy
 });
 
 test('an action returns plain objects, which React can send to the browser', async () => {
-  const run = experimental_createAction({ ctx: { user: null } })(createPost);
+  const run = experimental_createAction(t, { ctx: { user: null } })(createPost);
   const res = await run({
     title: 'x',
     draft: false,
@@ -121,7 +120,9 @@ test('an action returns plain objects, which React can send to the browser', asy
 });
 
 test("an action takes useActionState's (previous state, input) call", async () => {
-  const run = experimental_createAction({ ctx: { user: 'ada' } })(createPost);
+  const run = experimental_createAction(t, { ctx: { user: 'ada' } })(
+    createPost,
+  );
   const form = new FormData();
   form.set('title', 'Hi');
   form.set('draft', 'false');
@@ -145,7 +146,7 @@ test("an action takes useActionState's (previous state, input) call", async () =
 
 test('defined errors are typed; unexpected ones are masked unless exposed', async () => {
   const seen: string[] = [];
-  const anonymous = experimental_createAction({
+  const anonymous = experimental_createAction(t, {
     ctx: { user: null },
     exposeUnexpectedErrors: false,
     onError: (opts) => seen.push(opts.error.message),
@@ -181,7 +182,7 @@ test('a runtime whose layer fails to build is an unexpected error, masked and se
       }),
     ),
   );
-  const action = experimental_createAction({
+  const action = experimental_createAction(t, {
     ctx: { user: 'ada' },
     exposeUnexpectedErrors: false,
     runtime,
@@ -215,8 +216,11 @@ test("factories share the caller's runtime, and disposing it releases its servic
       ),
     ),
   );
-  const action = experimental_createAction({ ctx: { user: 'ada' }, runtime });
-  const callable = experimental_createCallable({
+  const action = experimental_createAction(t, {
+    ctx: { user: 'ada' },
+    runtime,
+  });
+  const callable = experimental_createCallable(t, {
     ctx: { user: 'ada' },
     runtime,
     result: 'throw',
@@ -231,7 +235,7 @@ test("factories share the caller's runtime, and disposing it releases its servic
   });
 
   void (() =>
-    experimental_createAction({
+    experimental_createAction(t, {
       // @ts-expect-error -- the factory takes a caller-owned runtime, not a layer
       layer: Layer.succeed(Clock, { now: () => 1 }),
     }));
@@ -246,17 +250,17 @@ test('in-process calls without a signal get one that aborts when the call is int
     })
     .query(() => Effect.interrupt);
   const ctx: Ctx = { user: 'ada' };
-  await expect(call(interrupted, undefined, { ctx })).rejects.toMatchObject({
+  await expect(t.call(interrupted, undefined, { ctx })).rejects.toMatchObject({
     code: 'CLIENT_CLOSED_REQUEST',
   });
   await expect(
-    createRouterClient({ interrupted }, { ctx }).interrupted.query(),
+    createRouterClient(t.router({ interrupted }), { ctx }).interrupted.query(),
   ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   expect(
-    (await experimental_createAction({ ctx })(interrupted)()).error,
+    (await experimental_createAction(t, { ctx })(interrupted)()).error,
   ).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   await expect(
-    experimental_createCallable({ ctx, result: 'throw' })(interrupted)(),
+    experimental_createCallable(t, { ctx, result: 'throw' })(interrupted)(),
   ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   expect(signals.map((signal) => signal.aborted)).toEqual([
     true,
@@ -270,7 +274,7 @@ test("result: 'throw' returns the data and throws TrpcError", async () => {
   await using runtime = ManagedRuntime.make(
     Layer.succeed(Clock, { now: () => 42 }),
   );
-  const callable = experimental_createCallable({
+  const callable = experimental_createCallable(t, {
     ctx: { user: 'ada' },
     result: 'throw',
     runtime,
@@ -285,7 +289,7 @@ test("result: 'throw' returns the data and throws TrpcError", async () => {
 });
 
 test("a callable's safe result is safe()'s, with the TrpcError itself", async () => {
-  const res = await experimental_createCallable({ ctx: { user: null } })(
+  const res = await experimental_createCallable(t, { ctx: { user: null } })(
     conflict,
   )();
   const [value, err] = res;
@@ -296,8 +300,8 @@ test("a callable's safe result is safe()'s, with the TrpcError itself", async ()
 });
 
 test('the factory must satisfy what a procedure needs', () => {
-  const noCtx = experimental_createCallable();
-  const withCtx = experimental_createCallable({ ctx: { user: 'ada' } });
+  const noCtx = experimental_createCallable(t);
+  const withCtx = experimental_createCallable(t, { ctx: { user: 'ada' } });
   void (() => {
     // @ts-expect-error -- createPost needs { user }
     noCtx(createPost);
@@ -308,7 +312,7 @@ test('the factory must satisfy what a procedure needs', () => {
     // @ts-expect-error -- callables don't take FormData
     void withCtx(createPost)(new FormData());
   });
-  void experimental_createAction({ ctx: { user: 'ada' } })(createPost)(
+  void experimental_createAction(t, { ctx: { user: 'ada' } })(createPost)(
     new FormData(),
   );
 });
@@ -321,21 +325,23 @@ test("Next's redirect() and notFound() pass through in-process calls unchanged",
     throw redirect;
   });
   const onError: unknown[] = [];
-  const safeAction = experimental_createAction({
+  const safeAction = experimental_createAction(t, {
     ctx: { user: null },
     onError: (opts) => onError.push(opts.error),
   });
   await expect(safeAction(guarded)()).rejects.toBe(redirect);
   await expect(
-    experimental_createAction({ ctx: { user: null }, result: 'throw' })(
+    experimental_createAction(t, { ctx: { user: null }, result: 'throw' })(
       guarded,
     )(),
   ).rejects.toBe(redirect);
   expect(onError).toEqual([]);
 
-  const caller = createRouterClient({ guarded }, { ctx: { user: null } });
+  const caller = createRouterClient(t.router({ guarded }), {
+    ctx: { user: null },
+  });
   await expect(caller.guarded.mutate()).rejects.toBe(redirect);
-  await expect(call(guarded, undefined, { ctx: { user: null } })).rejects.toBe(
-    redirect,
-  );
+  await expect(
+    t.call(guarded, undefined, { ctx: { user: null } }),
+  ).rejects.toBe(redirect);
 });

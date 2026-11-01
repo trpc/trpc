@@ -417,8 +417,8 @@ export function experimental_isContractProcedure(
 }
 
 /**
- * A router (or contract) reduced to what clients see (01, 09): no ctx,
- * middleware or services. Clients typed from `inferContract<typeof
+ * A router (or contract) reduced to what clients see (01, 09): no ctx
+ * (nor the root ctx `t.router()` records), middleware or services. Clients typed from `inferContract<typeof
  * appRouter>` and from `typeof appRouter` are the same.
  *
  * @example
@@ -438,7 +438,11 @@ export type inferContract<TRouter> = TRouter extends AnyProcedure
         errors: ProcedureDefOf<TRouter>['errors'];
       }
     >
-  : { [K in keyof TRouter]: inferContract<Unlazy<TRouter[K]>> };
+  : {
+      [K in keyof TRouter as K extends string ? K : never]: inferContract<
+        Unlazy<TRouter[K]>
+      >;
+    };
 
 /**
  * One procedure of a {@link ContractJson}.

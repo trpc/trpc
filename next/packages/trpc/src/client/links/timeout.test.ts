@@ -11,7 +11,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
-import { call, initTrpc } from '@trpc12/trpc/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import {
   createTestServer,
   type NodeTestServer,
@@ -26,7 +26,7 @@ const slow = t.procedure.query(
       opts.signal.addEventListener('abort', () => clearTimeout(timer));
     }),
 );
-const router = { slow };
+const router = t.router({ slow });
 type AppRouter = typeof router;
 
 const serve = () => createTestServer({ router, batch: true });
@@ -176,8 +176,8 @@ test('the safe client and matchError() get TIMEOUT as an unexpected error', asyn
   expect(shown).toBe('That took too long');
 });
 
-test('call() fails with TIMEOUT when its signal times out', async () => {
+test('t.call() fails with TIMEOUT when its signal times out', async () => {
   await expect(
-    call(slow, undefined, { signal: AbortSignal.timeout(20) }),
+    t.call(slow, undefined, { signal: AbortSignal.timeout(20) }),
   ).rejects.toMatchObject({ code: 'TIMEOUT' });
 });

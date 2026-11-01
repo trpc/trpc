@@ -77,7 +77,7 @@ test('errors, deferred values and subscriptions cross the port', async () => {
 
 test('a MessageChannel connects a client and a handler in one thread', async () => {
   const t = initTrpc();
-  const router = { ping: t.procedure.query(() => 'pong' as const) };
+  const router = t.router({ ping: t.procedure.query(() => 'pong' as const) });
   const channel = new MessageChannel();
   createFetchHandler({ router }).messagePort(channel.port1);
   const link = experimental_messagePortLink({ port: channel.port2 });
@@ -96,11 +96,11 @@ test('a MessageChannel connects a client and a handler in one thread', async () 
 
 test('file bytes cross a port as bytes, not base64', async () => {
   const t = initTrpc();
-  const router = {
+  const router = t.router({
     report: t.procedure.query(() => ({
       file: new File([new Uint8Array([0, 255, 1])], 'r.bin'),
     })),
-  };
+  });
   const channel = new MessageChannel();
   const { port2 } = channel;
   const transformer = experimental_createProgressiveJson();
@@ -132,9 +132,9 @@ test('a port peer that posts values JSON cannot hold is refused', async () => {
   const channel = new MessageChannel();
   const { port2 } = channel;
   createFetchHandler({
-    router: {
+    router: t.router({
       echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
-    },
+    }),
     transformer: experimental_createProgressiveJson(),
   }).messagePort(channel.port1);
   const replies: unknown[] = [];

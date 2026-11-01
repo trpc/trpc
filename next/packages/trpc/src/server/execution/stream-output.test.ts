@@ -10,7 +10,7 @@ import {
   type AnyContractRouter,
   experimental_contract,
 } from '@trpc12/trpc/contract';
-import { call, initTrpc, stream, tracked } from '@trpc12/trpc/server';
+import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -22,7 +22,7 @@ const Post = z.object({ id: z.string(), title: z.string().trim() });
 const Token = z.object({ text: z.string() });
 const Summary = z.object({ tokens: z.number().int() });
 
-const router = {
+const router = t.router({
   feed: t.procedure.output(stream(Post)).query(async function* () {
     yield { id: '1', title: ' Hello ' };
     yield { id: '2', title: 'World' };
@@ -61,7 +61,7 @@ const router = {
     .subscription(async function* () {
       yield { id: '1', title: ' b ' };
     }),
-};
+});
 type AppRouter = typeof router;
 
 async function setup() {
@@ -155,18 +155,18 @@ test('subscriptions validate each event with .output(Event) or .output(stream(Ev
 });
 
 test('in-process, a streamed output ends with its validated return value', async () => {
-  expect(await drain(await call(router.chat, undefined))).toEqual({
+  expect(await drain(await t.call(router.chat, undefined))).toEqual({
     items: [{ text: 'He' }, { text: 'llo' }],
     returned: { tokens: 2 },
   });
   const fromStream = t.procedure
     .output(stream(Schema.Struct({ n: Schema.Number })))
     .query(() => Stream.make({ n: 1 }));
-  expect(await drain(await call(fromStream, undefined))).toEqual({
+  expect(await drain(await t.call(fromStream, undefined))).toEqual({
     items: [{ n: 1 }],
     returned: undefined,
   });
-  const bad = await drain(await call(router.badSummary, undefined)).then(
+  const bad = await drain(await t.call(router.badSummary, undefined)).then(
     () => undefined,
     (e: unknown) => e,
   );
@@ -193,7 +193,9 @@ test('a streamed output reads its source one item per next(), and leaving closes
   for (const procedure of [validated, unvalidated]) {
     pulled.length = 0;
     closed = false;
-    const iterator = (await call(procedure, undefined))[Symbol.asyncIterator]();
+    const iterator = (await t.call(procedure, undefined))[
+      Symbol.asyncIterator
+    ]();
     expect(await iterator.next()).toEqual({
       done: false,
       value: { text: '0' },
@@ -226,7 +228,9 @@ test('throw() on a streamed output closes its source and rejects with the error'
   const unvalidated = t.procedure.query(tokens);
   for (const procedure of [validated, unvalidated]) {
     closed = false;
-    const iterator = (await call(procedure, undefined))[Symbol.asyncIterator]();
+    const iterator = (await t.call(procedure, undefined))[
+      Symbol.asyncIterator
+    ]();
     await iterator.next();
     const thrown = new Error('stop');
     await expect(iterator.throw?.(thrown)).rejects.toBe(thrown);
@@ -248,7 +252,7 @@ test('an invalid item closes the source before the stream fails', async () => {
   });
   const items: unknown[] = [];
   const err = await (async () => {
-    for await (const item of await call(broken, undefined)) items.push(item);
+    for await (const item of await t.call(broken, undefined)) items.push(item);
   })().then(
     () => undefined,
     (e: unknown) => e,
@@ -269,7 +273,7 @@ test('stream() validates the items of a ReadableStream', async () => {
       }),
   );
   const items: unknown[] = [];
-  for await (const item of await call(fromWeb, undefined)) items.push(item);
+  for await (const item of await t.call(fromWeb, undefined)) items.push(item);
   expect(items).toEqual([{ id: '1', title: 'Web' }]);
 });
 
@@ -280,12 +284,12 @@ test('contracts take stream() outputs', async () => {
   } satisfies AnyContractRouter;
   const impl = t.implement(appContract);
   await using server = await createTestServer({
-    router: {
+    router: impl.router({
       chat: impl.chat.mutation(async function* () {
         yield { text: 'a' };
         return { tokens: 1 };
       }),
-    },
+    }),
   });
   const client = createTrpcClient({
     router: appContract,

@@ -21,7 +21,7 @@ const t = initTrpc<{
   ctx: { requestId: string | undefined; cookie: string };
 }>();
 
-const router = {
+const router = t.router({
   hello: t.procedure
     .input(Schema.Struct({ name: Schema.String }))
     .query((opts) => ({ hi: opts.input.name, requestId: opts.ctx.requestId })),
@@ -47,7 +47,7 @@ const router = {
     yield 1;
     yield 2;
   }),
-};
+});
 
 const handler = createFetchHandler<typeof router, LambdaPlatform>({
   router,
@@ -251,8 +251,9 @@ test.each([
 );
 
 test('a handler without a platform type is accepted', () => {
+  const t = initTrpc();
   const plain = createFetchHandler({
-    router: { ok: initTrpc().procedure.query(() => 'ok') },
+    router: t.router({ ok: t.procedure.query(() => 'ok') }),
   });
   expectTypeOf(toLambdaHandler(plain)).toBeFunction();
 });
@@ -396,14 +397,15 @@ test('the streaming handler sends cookies in the prelude, and HEAD responses wit
 test('the streaming handler ends the stream when the body fails mid-way', async () => {
   const path = join(await mkdtemp(join(tmpdir(), 'trpc-')), 'report.csv');
   await writeFile(path, 'first version');
+  const t = initTrpc();
   const changing = createFetchHandler({
-    router: {
-      report: initTrpc().procedure.query(async () => {
+    router: t.router({
+      report: t.procedure.query(async () => {
         const blob = await openAsBlob(path);
         await writeFile(path, 'a longer second version');
         return blob;
       }),
-    },
+    }),
   });
   const result = await streamed(
     {

@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string } }>();
 
-const router = {
+const router = t.router({
   greet: t.procedure
     .input(z.object({ name: z.string() }).optional())
     .query((opts) => `hello ${opts.input?.name ?? opts.ctx.user}`),
@@ -56,7 +56,7 @@ const router = {
   slow: t.procedure.subscription(() =>
     Stream.fromEffect(Effect.as(Effect.sleep('60 millis'), 'late')),
   ),
-};
+});
 
 type Options = Partial<V11HandlerOptions<typeof router>>;
 
@@ -419,7 +419,7 @@ test('a streamed batch nobody reads waits instead of buffering its rows', async 
   let yielded = 0;
   let closed = false;
   const handler = createV11Handler({
-    router: {
+    router: t.router({
       firehose: t.procedure.query(async function* () {
         try {
           while (yielded < 10_000) yield ++yielded;
@@ -427,7 +427,7 @@ test('a streamed batch nobody reads waits instead of buffering its rows', async 
           closed = true;
         }
       }),
-    },
+    }),
     createContext: () => ({ user: 'ada' }),
   });
   const res = await call(handler, '/trpc/firehose?batch=1&input={}', {
@@ -444,7 +444,7 @@ test('a streamed batch nobody reads waits instead of buffering its rows', async 
 test('cancelling a JSON Lines body without aborting the request ends a query waiting on its signal', async () => {
   const state = { waiting: false, closed: false };
   const handler = createV11Handler({
-    router: {
+    router: t.router({
       waiting: t.procedure.query(async function* (opts) {
         try {
           yield 'first';
@@ -456,7 +456,7 @@ test('cancelling a JSON Lines body without aborting the request ends a query wai
           state.closed = true;
         }
       }),
-    },
+    }),
     createContext: () => ({ user: 'ada' }),
   });
   const res = await call(handler, '/trpc/waiting?batch=1&input={}', {
@@ -475,8 +475,9 @@ test('cancelling a JSON Lines body without aborting the request ends a query wai
 
 test('dispose() answers an HTTP call still running after drainTimeout with a 503, and leaves a runtime you pass running', async () => {
   await using runtime = ManagedRuntime.make(Layer.empty);
+  const bare = initTrpc();
   await using handler = createV11Handler({
-    router: { stuck: initTrpc().procedure.query(() => Effect.never) },
+    router: bare.router({ stuck: bare.procedure.query(() => Effect.never) }),
     runtime,
     drainTimeout: 0,
   });

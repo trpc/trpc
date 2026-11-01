@@ -16,7 +16,7 @@ import { createTestServer } from '../../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { user: string } }>();
 
-const router = {
+const router = t.router({
   greet: t.procedure
     .input(z.object({ name: z.string() }).optional())
     .query((opts) => `hello ${opts.input?.name ?? opts.ctx.user}`),
@@ -42,7 +42,7 @@ const router = {
   later: lazy(async () => ({
     default: { inner: t.procedure.query(() => 'loaded') },
   })),
-};
+});
 
 const createContext = () => ({ user: 'ada' });
 
@@ -348,7 +348,7 @@ test.each([
       }
     }
     await using server = await createTestServer({
-      router: { big: procedure(big) },
+      router: t.router({ big: procedure(big) }),
       createContext,
     });
     const url = new URL(`${server.url}/big`);
@@ -380,13 +380,13 @@ test.each(['rows', 'report'])(
       }
     }
     const handler = createFetchHandler({
-      router: {
+      router: t.router({
         rows: t.procedure.query((opts) => waiting(opts.signal)),
         report: t.procedure.query((opts) => ({
           title: 'Report',
           rows: waiting(opts.signal),
         })),
-      },
+      }),
       createContext,
     });
     const request = HttpServerRequest.fromWeb(

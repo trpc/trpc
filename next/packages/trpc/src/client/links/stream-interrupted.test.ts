@@ -17,7 +17,7 @@ import { ScriptedWebSocket } from '../../fixtures/scripted-websocket.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   plain: t.procedure.query(() => ({ n: 1 })),
   failing: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
   deferred: t.procedure.query(() => ({ n: 1, later: Promise.resolve(2) })),
@@ -31,7 +31,7 @@ const router = {
   ticks: t.procedure.subscription(async function* () {
     yield 1;
   }),
-};
+});
 type AppRouter = typeof router;
 
 type ErrorOf<P> = P extends (...args: any[]) => { '~error'?: infer E }

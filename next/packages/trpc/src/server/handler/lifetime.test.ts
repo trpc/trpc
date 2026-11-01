@@ -13,7 +13,7 @@ class Pool extends Context.Service<Pool, { readonly id: number }>()('Pool') {}
 const t = initTrpc();
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const router = {
+const router = t.router({
   pool: t.procedure.query(() =>
     Effect.gen(function* () {
       return (yield* Pool).id;
@@ -35,7 +35,7 @@ const router = {
     yield 1;
     await new Promise(() => {});
   }),
-} satisfies AnyRouter;
+}) satisfies AnyRouter;
 
 const get = (
   handler: { fetch: (r: Request) => Promise<Response> },

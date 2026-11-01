@@ -151,7 +151,7 @@ function app(layer: Layer.Layer<experimental_Locker>, log: string[]) {
     key: (opts) => opts.input.key,
     timeout: '1 second',
   });
-  const router = {
+  const router = t.router({
     hold: t.procedure
       .input(z.object({ key: z.string(), by: z.string() }))
       .use(byKey)
@@ -161,7 +161,7 @@ function app(layer: Layer.Layer<experimental_Locker>, log: string[]) {
         log.push(`end ${opts.input.by}`);
         return opts.ctx.lock.waited;
       }),
-  };
+  });
   const handler = createFetchHandler({ router, layer });
   const client = createTrpcClient({
     router: routerType<typeof router>(),

@@ -25,14 +25,16 @@ import {
 
 /**
  * A router is a plain object of procedures and nested routers. Keys
- * are path segments: `{ post: { byId } }` serves `post.byId`.
+ * are path segments: `{ post: { byId } }` serves `post.byId`. A root, or a
+ * router a module exports, is made with `t.router()`, which records `t`'s
+ * root ctx on its type; nesting inline stays a plain object.
  *
  * @example
  * ```ts
- * export const appRouter = {
+ * export const appRouter = t.router({
  *   health: t.procedure.query(() => 'ok'),
  *   post: { byId, create },
- * };
+ * });
  * export type AppRouter = typeof appRouter;
  * ```
  * @since 0.1.0
@@ -41,6 +43,61 @@ import {
 export interface AnyRouter {
   readonly [key: string]: AnyProcedure | AnyRouter | AnyLazyRouter;
 }
+
+declare const routerCtx: unique symbol;
+
+/**
+ * The root ctx of the `t` a router was made with (`t.router(routes)`), on
+ * its type only. A built procedure's type leaves the root ctx out, so a
+ * module's declarations carry it once, here; handlers type `createContext`
+ * from it.
+ * @since 0.1.0
+ * @stability stable
+ */
+// Under a symbol key, which client and inference walks leave out (they map
+// string keys, so declarations never have to name the symbol). A function
+// type: a walk over every key sees a node with no keys. Required, though no
+// router has it at runtime: such a walk indexes a router by all its keys, and
+// an optional key would add `undefined`. An alias, not an interface: an
+// object literal type fits `AnyRouter`'s index signature, an interface
+// doesn't.
+export type RouterCtx<TCtx> = {
+  readonly [routerCtx]: (ctx: TCtx) => void;
+};
+
+/** The root ctx a router's {@link RouterCtx} brand names; `never` without one. */
+type BrandCtx<R> = R extends unknown
+  ? typeof routerCtx extends keyof R
+    ? R[typeof routerCtx & keyof R] extends (ctx: infer C) => void
+      ? C
+      : never
+    : never
+  : never;
+
+/**
+ * `routes` branded with the root ctx `TCtx`. A router branded already (a
+ * `mergeRouters()` result) gets one brand naming both: of two, reads see
+ * only one.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type Branded<TRoutes, TCtx> = typeof routerCtx extends keyof TRoutes
+  ? {
+      [K in keyof TRoutes as K extends string ? K : never]: TRoutes[K];
+    } & RouterCtx<TCtx & BrandCtx<TRoutes>>
+  : TRoutes & RouterCtx<TCtx>;
+
+/**
+ * `unknown` for a router made with `t.router()` (or `impl.router()`): a
+ * handler types `createContext` from its brand, which a plain object lacks.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type RootRouterCheck<R> = string extends keyof R
+  ? unknown
+  : typeof routerCtx extends keyof R
+    ? unknown
+    : TypeError<'Make the root router with t.router({ … }): its type carries the ctx createContext must return'>;
 
 type RouterForm<T> = '~router' extends keyof NonNullable<T>
   ? NonNullable<NonNullable<T>['~router' & keyof NonNullable<T>]>
@@ -80,9 +137,9 @@ const META = '~meta';
  * @example
  * ```ts
  * const t = initTrpc().concat(experimental_openapi());
- * const appRouter = {
+ * const appRouter = t.router({
  *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
- * };
+ * });
  * // RPC: admin.users; OpenAPI: GET /api/admin/users, tagged admin
  * ```
  * @since 0.1.0
@@ -153,10 +210,10 @@ export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
  *
  * @example
  * ```ts
- * export const appRouter = {
+ * export const appRouter = t.router({
  *   post: postRouter,
  *   admin: lazy(() => import('./admin.ts')),
- * };
+ * });
  * ```
  * @since 0.1.0
  * @stability stable
@@ -207,11 +264,26 @@ const isLazyModule = (mod: object): mod is { default: AnyRouter } =>
 export const isLazy = (node: unknown): node is AnyLazyRouter =>
   typeof node === 'object' && node !== null && Object.hasOwn(node, '~lazy');
 
+/**
+ * Routers merged: their keys, and a {@link RouterCtx} with every root ctx
+ * their brands name, kept apart so declarations print the brand by name.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type MergedRouter<TRouters> = Simplify<{
+  [
+    K in keyof UnionToIntersection<TRouters> as K extends string ? K : never
+  ]: UnionToIntersection<TRouters>[K];
+}> &
+  ([BrandCtx<TRouters>] extends [never]
+    ? unknown
+    : RouterCtx<UnionToIntersection<BrandCtx<TRouters>>>);
+
 type DuplicateKeys<T extends readonly unknown[], Seen = never> = T extends [
   infer H,
   ...infer Rest,
 ]
-  ? (keyof H & Seen) | DuplicateKeys<Rest, Seen | keyof H>
+  ? (keyof H & string & Seen) | DuplicateKeys<Rest, Seen | keyof H>
   : never;
 
 /**
@@ -236,7 +308,7 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
     ([DuplicateKeys<[...T]>] extends [never]
       ? unknown
       : TypeError<'mergeRouters: duplicate keys', DuplicateKeys<[...T]>>)
-): Simplify<UnionToIntersection<T[number]>> {
+): MergedRouter<T[number]> {
   const merged: Record<string, AnyRouter[string]> = {};
   const meta: Record<string, unknown> = {};
   const metaFrom: Record<string, number> = {};
@@ -409,13 +481,13 @@ const loadAll = (router: AnyRouter): Effect.Effect<void> =>
   );
 
 type InputMap<R> = {
-  [K in keyof R]: R[K] extends AnyProcedure
+  [K in keyof R & string]: R[K] extends AnyProcedure
     ? ProcedureDefOf<R[K]>['input']
     : InputMap<Unlazy<R[K]>>;
 };
 
 type OutputMap<R, F extends OutputForm> = {
-  [K in keyof R]: R[K] extends AnyProcedure
+  [K in keyof R & string]: R[K] extends AnyProcedure
     ? ClientValue<ProcedureDefOf<R[K]>['output'], F>
     : OutputMap<Unlazy<R[K]>, F>;
 };
@@ -430,7 +502,7 @@ type DecodedOutputMap<
   F extends OutputForm,
   TDecoded extends OutputForm,
 > = {
-  [K in keyof R]: R[K] extends AnyProcedure
+  [K in keyof R & string]: R[K] extends AnyProcedure
     ? ClientValue<
         ProcedureDefOf<R[K]>['output'],
         DecodedForm<R[K], ContractAt<C, K>, F, TDecoded>
@@ -489,12 +561,20 @@ export type inferRouterOutputs<T> = [SourceClient<T>] extends [never]
  * What every procedure's def gives `F` (`never` from a def without it, as
  * `ctx` and `services` may be); an untyped (`any`) subtree adds none.
  */
-type DefField<R, F extends 'errors' | 'ctx' | 'services'> =
+type DefField<R, F extends 'errors' | 'services'> =
   IsAny<R> extends true
     ? never
     : R extends AnyProcedure
       ? ProcedureDefOf<R>[F & keyof ProcedureDefOf<R>]
       : { [K in keyof R]: DefField<Unlazy<R[K]>, F> }[keyof R];
+
+/** Every router's {@link RouterCtx} and every procedure's middleware needs. */
+type CtxField<R> =
+  IsAny<R> extends true
+    ? never
+    : R extends AnyProcedure
+      ? ProcedureDefOf<R>['ctx' & keyof ProcedureDefOf<R>]
+      : BrandCtx<R> | { [K in keyof R]: CtxField<Unlazy<R[K]>> }[keyof R];
 
 /**
  * The union of every procedure's typed errors.
@@ -509,10 +589,9 @@ export type inferRouterErrors<R> = DefField<R, 'errors'>;
  */
 export type inferRouterServices<R> = DefField<R, 'services'>;
 /**
- * The ctx `createContext` must return: every procedure's root ctx.
+ * The ctx `createContext` must return: the root ctx of every `t.router()`
+ * in it, and the keys standalone middleware needs on its procedures.
  * @since 0.1.0
  * @stability stable
  */
-export type inferRouterContext<R> = Simplify<
-  UnionToIntersection<DefField<R, 'ctx'>>
->;
+export type inferRouterContext<R> = Simplify<UnionToIntersection<CtxField<R>>>;

@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   post: t.procedure
     .input(z.object({ id: z.string() }))
     .query((opts) =>
@@ -27,7 +27,7 @@ const router = {
         ? error({ code: 'NOT_FOUND' })
         : { id: opts.input.id },
     ),
-};
+});
 
 function recorder() {
   const spans: Tracer.Span[] = [];
@@ -155,7 +155,7 @@ test('the server span is the current span, the stack frame and the parent of spa
   const server = recorder();
   const seen: { span?: string; frame?: string | undefined } = {};
   const handler = createFetchHandler({
-    router: {
+    router: t.router({
       inner: t.procedure.query(() =>
         Effect.gen(function* () {
           seen.span = (yield* Effect.orDie(Effect.currentSpan)).name;
@@ -164,7 +164,7 @@ test('the server span is the current span, the stack frame and the parent of spa
         }),
       ),
       fails: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
-    },
+    }),
     layer: Layer.succeed(Tracer.Tracer, server.tracer),
   });
   await handler.fetch(new Request('http://localhost/trpc/inner'));
@@ -192,14 +192,14 @@ test('without a tracer, calls open no spans: tracing is opt-in', async () => {
     Effect.option(Effect.currentSpan),
     (span) => Option.getOrUndefined(span)?.name ?? 'none',
   );
-  const traced = {
+  const traced = t.router({
     inner: t.procedure.query(() =>
       Effect.map(spanName, (name) => {
         seen.push(`resolver: ${name}`);
         return 'ok';
       }),
     ),
-  } satisfies AnyRouter;
+  }) satisfies AnyRouter;
   const handler = createFetchHandler({ router: traced });
   await handler.fetch(new Request('http://localhost/trpc/inner'));
   await handler.dispose();

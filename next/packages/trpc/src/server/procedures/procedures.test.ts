@@ -9,7 +9,6 @@ import {
 } from '@trpc12/trpc/client';
 import type { ProgressiveJsonForm } from '@trpc12/trpc/transformer';
 import {
-  call,
   error,
   initTrpc,
   middleware,
@@ -97,7 +96,7 @@ const timed = middleware.effect<{ ctx: { user: string | null } }>()((opts) =>
   }),
 );
 
-const router = {
+const router = t.router({
   post: {
     byId: notFound.input(z.object({ id: z.string() })).query((opts) => {
       const { input } = opts;
@@ -159,7 +158,7 @@ const router = {
       yield tracked('1', { n: 1 });
       yield tracked('2', { n: 2 });
     }),
-};
+});
 type AppRouter = typeof router;
 
 const ClockLive = Layer.succeed(Clock, { now: () => 1234 });
@@ -446,16 +445,21 @@ test('lifecycle helpers type meta and input from the procedure, and ctx from a t
     )
     .use(onStart<Ctx>((opts) => void seen.push(opts.ctx.user)))
     .query((opts) => opts.input.id);
-  expect(await call(byId, { id: '1' }, { ctx: { user: 'ada' } })).toBe('1');
+  expect(await typed.call(byId, { id: '1' }, { ctx: { user: 'ada' } })).toBe(
+    '1',
+  );
   expect(seen).toEqual(['ada', true, '1']);
 
-  const needsUser = initTrpc()
-    .procedure.use(onStart<{ user: string }>((opts) => void opts.ctx.user))
+  const bare = initTrpc();
+  const needsUser = bare.procedure
+    .use(onStart<{ user: string }>((opts) => void opts.ctx.user))
     .query(() => 1);
   // @ts-expect-error -- the hook's ctx is now a requirement of the procedure
-  const missing = () => call(needsUser, undefined);
+  const missing = () => bare.call(needsUser, undefined);
   expectTypeOf(missing).toBeFunction();
-  expect(await call(needsUser, undefined, { ctx: { user: 'bo' } })).toBe(1);
+  expect(await bare.call(needsUser, undefined, { ctx: { user: 'bo' } })).toBe(
+    1,
+  );
 });
 
 test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a throwing callback fails the call', async () => {
@@ -471,7 +475,7 @@ test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a thro
       ),
     );
   await expect(
-    call(aborted, undefined, {
+    t.call(aborted, undefined, {
       ctx: { user: null },
       signal: controller.signal,
     }),
@@ -489,7 +493,7 @@ test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a thro
   ]) {
     const throwing = t.procedure.use(helper).query(() => 1);
     await expect(
-      call(throwing, undefined, { ctx: { user: null } }),
+      t.call(throwing, undefined, { ctx: { user: null } }),
     ).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'boom',
@@ -503,7 +507,7 @@ test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a thro
     )
     .query(() => error({ code: 'CONFLICT' }));
   await expect(
-    call(replaced, undefined, { ctx: { user: null } }),
+    t.call(replaced, undefined, { ctx: { user: null } }),
   ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR', message: 'boom' });
 });
 
@@ -556,7 +560,7 @@ test("lifecycle helpers are Promise middleware when called, and their callbacks'
       }),
     )
     .query(() => 2);
-  expect(await call(peeking, undefined, { ctx: { user: null } })).toBe(2);
+  expect(await t.call(peeking, undefined, { ctx: { user: null } })).toBe(2);
   expect(outcomes).toEqual([true]);
 });
 
@@ -577,7 +581,7 @@ test('Effect middleware provides services and its failures are typed', async () 
   >();
 
   // Only the Clock layer is passed: the middleware provides CurrentUser.
-  const provided = { me: router.me };
+  const provided = t.router({ me: router.me });
   await using server = await createTestServer({
     router: provided,
     createContext: () => ({ user: 'kim' }),
@@ -601,7 +605,7 @@ test('a standalone Effect middleware adds ctx and requires its services', async 
   const create = () =>
     // @ts-expect-error -- the timed middleware needs Clock from the layer
     createTestServer({
-      router: { timed: router.timed },
+      router: t.router({ timed: router.timed }),
       createContext: () => ({ user: null }),
     });
   expectTypeOf(create).toBeFunction();
@@ -653,32 +657,32 @@ test('route meta from experimental_openapi() merges by key, and spec functions c
   initTrpc().procedure.meta({ route: { path: '/x' } });
 });
 
-test('call() runs one procedure, with a layer for its services', async () => {
+test('t.call() runs one procedure, with a layer for its services', async () => {
   expect(
-    await call(router.timed, undefined, {
+    await t.call(router.timed, undefined, {
       ctx: { user: null },
       layer: ClockLive,
     }),
   ).toBe(1234);
   await expect(
-    call(router.post.byId, { id: 'missing-2' }, { ctx: { user: null } }),
+    t.call(router.post.byId, { id: 'missing-2' }, { ctx: { user: null } }),
   ).rejects.toMatchObject({ code: 'NOT_FOUND', defined: true });
 
-  // @ts-expect-error -- `timed` needs Clock, so `layer` or `runtime` is required
-  const missing = () => call(router.timed, undefined, { ctx: { user: null } });
+  const missing = () =>
+    // @ts-expect-error -- `timed` needs Clock, so `layer` or `runtime` is required
+    t.call(router.timed, undefined, { ctx: { user: null } });
   expectTypeOf(missing).toBeFunction();
-  // @ts-expect-error -- `byId` needs a `Ctx`, so the options are required
-  const noCtx = () => call(router.post.byId, { id: '1' });
+  // @ts-expect-error -- `t`'s ctx is a `Ctx`, so the options are required
+  const noCtx = () => t.call(router.post.byId, { id: '1' });
   expectTypeOf(noCtx).toBeFunction();
 
-  const echo = initTrpc()
-    .procedure.input(z.string())
-    .query((opts) => opts.input);
-  expect(await call(echo, 'hi')).toBe('hi');
-  expect(await call(echo, 'hi', { path: 'echo' })).toBe('hi');
+  const bare = initTrpc();
+  const echo = bare.procedure.input(z.string()).query((opts) => opts.input);
+  expect(await bare.call(echo, 'hi')).toBe('hi');
+  expect(await bare.call(echo, 'hi', { path: 'echo' })).toBe('hi');
 });
 
-test('call() releases its layer once it returns; a runtime outlives a streamed output', async () => {
+test('t.call() releases its layer once it returns; a runtime outlives a streamed output', async () => {
   let builds = 0;
   let open = false;
   const ClockScoped = Layer.effect(
@@ -695,7 +699,8 @@ test('call() releases its layer once it returns; a runtime outlives a streamed o
         }),
     ),
   );
-  const ticks = initTrpc().procedure.query(() =>
+  const bare = initTrpc();
+  const ticks = bare.procedure.query(() =>
     Effect.gen(function* () {
       const clock = yield* Clock;
       return (async function* () {
@@ -710,16 +715,20 @@ test('call() releases its layer once it returns; a runtime outlives a streamed o
   };
 
   expect(
-    await read(await call(ticks, undefined, { layer: ClockScoped })),
+    await read(await bare.call(ticks, undefined, { layer: ClockScoped })),
   ).toEqual([0]);
 
   await using runtime = ManagedRuntime.make(ClockScoped);
-  expect(await read(await call(ticks, undefined, { runtime }))).toEqual([1]);
-  expect(await read(await call(ticks, undefined, { runtime }))).toEqual([1]);
+  expect(await read(await bare.call(ticks, undefined, { runtime }))).toEqual([
+    1,
+  ]);
+  expect(await read(await bare.call(ticks, undefined, { runtime }))).toEqual([
+    1,
+  ]);
   expect(builds).toBe(2);
 
   // @ts-expect-error -- `ticks` needs Clock, so `layer` or `runtime` is required
-  const missing = () => call(ticks, undefined, {});
+  const missing = () => bare.call(ticks, undefined, {});
   expectTypeOf(missing).toBeFunction();
 });
 
@@ -731,7 +740,7 @@ test('.output(schema, { validate: false }) types the result without running the 
   const typed = t.procedure
     .output(Post, { validate: false })
     .query(() => ({ id: '1', at: '2026-10-15', extra: true }) as never);
-  const result = await call(typed, undefined, { ctx: { user: null } });
+  const result = await t.call(typed, undefined, { ctx: { user: null } });
   expect(result).toEqual({ id: '1', at: '2026-10-15', extra: true });
   expectTypeOf(result).toEqualTypeOf<{ id: string; at: string }>();
 
@@ -741,7 +750,7 @@ test('.output(schema, { validate: false }) types the result without running the 
   const validated = t.procedure
     .output(Post)
     .query(() => ({ id: '1', at: '2026-10-15' }));
-  const out = await call(validated, undefined, { ctx: { user: null } });
+  const out = await t.call(validated, undefined, { ctx: { user: null } });
   expect(out.at).toBeInstanceOf(Date);
 });
 
@@ -796,11 +805,11 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
       return `${opts.input.post.title} for ${opts.ctx.viewer}`;
     });
   expect(
-    await call(bySlug, { slug: 'hello-world' }, { ctx: { user: 'ada' } }),
+    await t.call(bySlug, { slug: 'hello-world' }, { ctx: { user: 'ada' } }),
   ).toBe('Hello for ada');
   void (() =>
     // @ts-expect-error -- the client still sends the schema's input
-    call(bySlug, { post: { id: '1', title: 'x' } }, { ctx: { user: null } }));
+    t.call(bySlug, { post: { id: '1', title: 'x' } }, { ctx: { user: null } }));
 
   const trimmed = t.procedure
     .input(z.string())
@@ -809,7 +818,7 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
       expectTypeOf(opts.input).toEqualTypeOf<number>();
       return opts.input;
     });
-  expect(await call(trimmed, '  hi  ', { ctx: { user: null } })).toBe(2);
+  expect(await t.call(trimmed, '  hi  ', { ctx: { user: null } })).toBe(2);
 
   const doubled = t.procedure
     .input(z.number())
@@ -822,7 +831,7 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
       expectTypeOf(opts.input).toEqualTypeOf<string>();
       return opts.input;
     });
-  expect(await call(doubled, 4, { ctx: { user: null } })).toBe('8');
+  expect(await t.call(doubled, 4, { ctx: { user: null } })).toBe('8');
 });
 
 test('calls that go wrong in unusual ways fail with one clear error', async () => {
@@ -871,7 +880,7 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
   };
   const failure = async (procedure: keyof typeof procedures) => {
     const [, err] = await safe<unknown, TrpcError>(
-      call(procedures[procedure] as AnyProcedure, undefined, {
+      u.call(procedures[procedure] as AnyProcedure, undefined, {
         ctx: {},
       } as never),
     );
@@ -893,7 +902,7 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
     message: 'as a value',
   });
   const [, conflict] = await safe(
-    call(procedures.stringData, undefined, { ctx: {} }),
+    u.call(procedures.stringData, undefined, { ctx: {} }),
   );
   expect(conflict).toMatchObject({ code: 'CONFLICT', data: 'same string' });
   expect(await failure('badMiddleware')).toEqual({
@@ -917,13 +926,13 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
     message: 'no user',
   });
   const [stream] = await safe(
-    call(procedures.notAStream, undefined, { ctx: {} }) as Promise<unknown>,
+    u.call(procedures.notAStream, undefined, { ctx: {} }) as Promise<unknown>,
   );
   expect(stream).toBeDefined();
 
   // A layer that can't be built fails the call as unexpected.
   const [, down] = await safe(
-    call(router.timed, undefined, {
+    t.call(router.timed, undefined, {
       ctx: { user: null },
       layer: Layer.effect(Clock, Effect.fail('clock down')),
     }),
@@ -937,12 +946,12 @@ test('chained inputs merge only plain objects; a subscription takes a stream() o
     .input(z.date())
     .input(z.date())
     .query((opts) => opts.input.getTime());
-  expect(await call(dates, new Date(5), { ctx: {} })).toBe(5);
+  expect(await u.call(dates, new Date(5), { ctx: {} })).toBe(5);
   const nulls = u.procedure
     .input(z.null())
     .input(z.null())
     .query((opts) => opts.input);
-  expect(await call(nulls, null, { ctx: {} })).toBe(null);
+  expect(await u.call(nulls, null, { ctx: {} })).toBe(null);
 
   const ticks = u.procedure
     .output(stream(z.number().transform((n) => n * 10)))
@@ -950,7 +959,7 @@ test('chained inputs merge only plain objects; a subscription takes a stream() o
       yield 1;
       yield 2;
     });
-  const tickRouter = { ticks };
+  const tickRouter = u.router({ ticks });
   await using server = await createTestServer({
     router: tickRouter,
     createContext: () => ({}),
@@ -978,7 +987,9 @@ test('.provide() takes a promise; ok() deep in the chain reaches the middleware 
         return (yield* CurrentUser).name;
       }),
     );
-  expect(await call(named, undefined, { ctx: { short: false } })).toBe('ada');
-  expect(await call(named, undefined, { ctx: { short: true } })).toBe('short');
+  expect(await u.call(named, undefined, { ctx: { short: false } })).toBe('ada');
+  expect(await u.call(named, undefined, { ctx: { short: true } })).toBe(
+    'short',
+  );
   expect(seen).toEqual(['ada', 'short']);
 });

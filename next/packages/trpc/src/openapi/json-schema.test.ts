@@ -6,7 +6,6 @@ import {
 import {
   ERROR_STATUS,
   initTrpc,
-  type AnyRouter,
   type StandardSchemaV1,
 } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
@@ -32,7 +31,7 @@ const opaque: StandardSchemaV1 = {
   },
 };
 
-const router = {
+const router = t.router({
   coerce: t.procedure
     .meta({ route: { method: 'GET', path: '/coerce' } })
     .input(
@@ -141,7 +140,7 @@ const router = {
   hidden: t.procedure
     .meta({ route: { method: 'GET', path: '/hidden' } })
     .query(() => 'shh'),
-} satisfies AnyRouter;
+});
 
 const handler = experimental_createOpenApiHandler({ router });
 const api = (path: string, init?: RequestInit) =>

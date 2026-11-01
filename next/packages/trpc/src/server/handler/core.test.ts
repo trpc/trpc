@@ -12,13 +12,13 @@ const t = initTrpc();
 test("the handler's layer is built once, by the first calls, and shared by every call after", async () => {
   let built = 0;
   const handler = createFetchHandler({
-    router: {
+    router: t.router({
       build: t.procedure.query(() =>
         Effect.gen(function* () {
           return (yield* Builds).id;
         }),
       ),
-    },
+    }),
     layer: Layer.effect(
       Builds,
       Effect.map(Effect.sleep(5), () => ({ id: ++built })),

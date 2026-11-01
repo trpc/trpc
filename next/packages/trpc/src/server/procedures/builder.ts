@@ -70,6 +70,12 @@ import type { TrackedEnvelope } from '../subscriptions/index.ts';
 export interface BuilderDef {
   /** The root ctx. For a plugin, what it requires. */
   ctx: object;
+  /**
+   * The keys standalone middleware needs that the root ctx lacked (in
+   * `ctx` too): a built procedure's `ctx`, since its router carries the
+   * rest.
+   */
+  needs: object;
   /** What middleware has added so far. */
   ctxAdded: object;
   meta: object;
@@ -325,7 +331,7 @@ interface ReturnShapes<TDef extends BuilderDef, $Ret> {
       ? SplitReturn<$Ret>['output']
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
-    ctx: TDef['ctx'];
+    ctx: TDef['needs'];
   };
   '101': {
     input: Value<TDef['inputIn']>;
@@ -333,7 +339,7 @@ interface ReturnShapes<TDef extends BuilderDef, $Ret> {
       ? SplitReturn<$Ret>['output']
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
-    ctx: TDef['ctx'];
+    ctx: TDef['needs'];
     outputValidated: TDef['outputValidated'];
     declared: keyof TDef['declared'] & string;
   };
@@ -343,7 +349,7 @@ interface ReturnShapes<TDef extends BuilderDef, $Ret> {
       ? SplitReturn<$Ret>['output']
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
-    ctx: TDef['ctx'];
+    ctx: TDef['needs'];
     services:
       | Exclude<TDef['requires'], Scope.Scope>
       | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
@@ -354,7 +360,7 @@ interface ReturnShapes<TDef extends BuilderDef, $Ret> {
       ? SplitReturn<$Ret>['output']
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
-    ctx: TDef['ctx'];
+    ctx: TDef['needs'];
     services:
       | Exclude<TDef['requires'], Scope.Scope>
       | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
@@ -367,7 +373,7 @@ type ReturnDef<TDef extends BuilderDef, $Ret> = ReturnShapes<
   TDef,
   $Ret
 >[ShapeKey<
-  keyof TDef['ctx'],
+  keyof TDef['needs'],
   TDef['requires'] | ServicesKey<$Ret>,
   TDef['outputValidated']
 >];
@@ -395,7 +401,7 @@ interface StreamFields<TDef extends BuilderDef, $Ret> extends DefFields {
       ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
       : EventOutput<TDef['outputOut']>;
   errors: TDef['errors'] | SplitStream<$Ret>['errors'];
-  ctx: TDef['ctx'];
+  ctx: TDef['needs'];
   services:
     | TDef['requires']
     | Exclude<SplitStream<$Ret>['services'], TDef['provided']>;
@@ -652,6 +658,21 @@ export type WithNeeds<TDef extends BuilderDef, TNeeds> = [
       TDef['ctx'] & Pick<TNeeds, Exclude<keyof TNeeds, keyof CurrentCtx<TDef>>>
     >;
 
+/**
+ * {@link WithNeeds}' new keys alone, on top of earlier middleware's: what a
+ * built procedure's `ctx` says.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type NeedsAdded<TDef extends BuilderDef, TNeeds> = [
+  Exclude<keyof TNeeds, keyof CurrentCtx<TDef>>,
+] extends [never]
+  ? TDef['needs']
+  : Simplify<
+      TDef['needs'] &
+        Pick<TNeeds, Exclude<keyof TNeeds, keyof CurrentCtx<TDef>>>
+    >;
+
 // --- concat ----------------------------------------------------------------------
 
 /**
@@ -800,9 +821,9 @@ export interface BuilderInternals {
  *   ctx.user ? next({ ctx: { user: ctx.user } }) : error({ code: 'UNAUTHORIZED' }),
  * );
  *
- * export const router = {
+ * export const router = t.router({
  *   me: authed.query(({ ctx }) => ctx.user),
- * };
+ * });
  * ```
  * @since 0.1.0
  * @stability stable
@@ -949,6 +970,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       TDef,
       {
         ctx: WithNeeds<TDef, $Needs>;
+        needs: NeedsAdded<TDef, $Needs>;
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
         inputOut: NextInput<TDef['inputOut'], $Input>;
         errors: TDef['errors'] | Extract<$Err, AnyTrpcError>;
@@ -987,6 +1009,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       TDef,
       {
         ctx: WithNeeds<TDef, $Needs>;
+        needs: NeedsAdded<TDef, $Needs>;
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
         inputOut: NextInput<TDef['inputOut'], $Input>;
         errors: TDef['errors'] | $Err;
@@ -1147,6 +1170,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
 // and a mapped type costs a conditional per key.
 export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
   ctx: TDef['ctx'];
+  needs: TDef['needs'];
   ctxAdded: TDef['ctxAdded'];
   meta: TDef['meta'];
   inputIn: Merge<TDef['inputIn'], InOf<$S>>;

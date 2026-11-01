@@ -37,7 +37,7 @@ const state = {
 };
 let current: TestServer | undefined;
 
-const router = {
+const router = t.router({
   hello: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name} over ${opts.ctx.transport}`),
@@ -121,7 +121,7 @@ const router = {
     throw error({ code: 'CONFLICT', message: 'Gone' });
   }),
   stream: t.procedure.subscription(() => Stream.make('x', 'y')),
-};
+});
 type AppRouter = typeof router;
 
 async function setup(
@@ -481,9 +481,9 @@ test('a call keeps the connectionParams it arrived under, despite a later init',
 });
 
 test('the Node upgrade handles large messages and enforces maxPayload', async () => {
-  const echoRouter = {
+  const echoRouter = t.router({
     length: t.procedure.input(z.string()).query((opts) => opts.input.length),
-  };
+  });
   await using server = await createTestServer({
     router: echoRouter,
     createContext: () => ({ user: null, transport: 'x' }),

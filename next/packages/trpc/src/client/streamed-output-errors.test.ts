@@ -30,7 +30,7 @@ const SoldOut = {
   SOLD_OUT: { data: z.object({ sku: z.string() }) },
 } satisfies ErrorMapInput;
 
-const router = {
+const router = t.router({
   feed: t.procedure.query(() =>
     Stream.fromIterable([1, 2]).pipe(
       Stream.concat(Stream.fail(error({ code: 'GONE', data: { at: 2 } }))),
@@ -64,7 +64,7 @@ const router = {
       Stream.concat(Stream.fail(error({ code: 'GONE' }))),
     ),
   ),
-};
+});
 type AppRouter = typeof router;
 
 type ErrorOf<T> = T extends { readonly '~error'?: infer E } ? E : never;
@@ -260,7 +260,7 @@ test("wsLink: a streamed output's typed failures arrive typed, through safe()", 
 test('safe() iterates without throwing, and closes the source when the loop is left', async () => {
   let closed = false;
   const caller = createRouterClient(
-    {
+    t.router({
       ...router,
       endless: t.procedure.query(async function* () {
         try {
@@ -269,7 +269,7 @@ test('safe() iterates without throwing, and closes the source when the loop is l
           closed = true;
         }
       }),
-    },
+    }),
     { ctx: {} },
   );
   const fed = await steps(safe(await caller.feed.query()));
@@ -304,7 +304,7 @@ test("createSafeClient iterates a streamed output without throwing, closes it wh
   let closed = false;
   const safeClient = createSafeClient(
     createRouterClient(
-      {
+      t.router({
         ...router,
         endless: t.procedure.query(async function* () {
           try {
@@ -316,7 +316,7 @@ test("createSafeClient iterates a streamed output without throwing, closes it wh
         bytes: t.procedure.query(
           () => new ReadableStream<Uint8Array>({ start: (c) => c.close() }),
         ),
-      },
+      }),
       { ctx: {} },
     ),
   );

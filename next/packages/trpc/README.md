@@ -15,11 +15,11 @@ import { z } from 'zod';
 
 const t = initTrpc();
 
-export const appRouter = {
+export const appRouter = t.router({
   greet: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `Hello, ${opts.input.name}`),
-};
+});
 export type AppRouter = typeof appRouter;
 
 export const handler = createFetchHandler({ router: appRouter });

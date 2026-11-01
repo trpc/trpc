@@ -1,6 +1,5 @@
 import { Context, Effect, Exit } from 'effect';
 import {
-  call,
   error,
   initTrpc,
   ok,
@@ -28,7 +27,7 @@ test('next() fails with the downstream error, so catchTag can map it', async () 
       ),
     )
     .query(() => error({ code: 'NOT_FOUND' }));
-  await expect(call(mapped, undefined, { ctx })).rejects.toMatchObject({
+  await expect(t.call(mapped, undefined, { ctx })).rejects.toMatchObject({
     code: 'GONE',
     defined: true,
   });
@@ -47,7 +46,7 @@ test('next() fails with the downstream error, so catchTag can map it', async () 
     .query((opts) =>
       opts.ctx.user === 'nobody' ? null : error({ code: 'NOT_FOUND' }),
     );
-  expect(await call(recovered, undefined, { ctx })).toBeNull();
+  expect(await t.call(recovered, undefined, { ctx })).toBeNull();
 });
 
 test('Effect.retry on next() runs the rest of the chain again', async () => {
@@ -66,7 +65,7 @@ test('Effect.retry on next() runs the rest of the chain again', async () => {
     .query(() =>
       ++attempts < 3 ? error({ code: 'SERVICE_UNAVAILABLE' }) : attempts,
     );
-  expect(await call(flaky, undefined, { ctx })).toBe(3);
+  expect(await t.call(flaky, undefined, { ctx })).toBe(3);
 });
 
 test('Effect.timeout on next() interrupts the rest of the chain', async () => {
@@ -91,7 +90,7 @@ test('Effect.timeout on next() interrupts the rest of the chain', async () => {
         ),
       ),
     );
-  await expect(call(slow, undefined, { ctx })).rejects.toMatchObject({
+  await expect(t.call(slow, undefined, { ctx })).rejects.toMatchObject({
     code: 'TIMEOUT',
   });
   expect(interrupted).toBe(true);
@@ -133,11 +132,11 @@ test('a transaction around next() rolls back when the rest of the chain fails', 
     throw new Error('disk full');
   });
 
-  expect(await call(create, undefined, { ctx })).toBe(1);
-  await expect(call(conflict, undefined, { ctx })).rejects.toMatchObject({
+  expect(await t.call(create, undefined, { ctx })).toBe(1);
+  await expect(t.call(conflict, undefined, { ctx })).rejects.toMatchObject({
     code: 'CONFLICT',
   });
-  await expect(call(crash, undefined, { ctx })).rejects.toMatchObject({
+  await expect(t.call(crash, undefined, { ctx })).rejects.toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
   });
   expect(log).toEqual(['commit 1', 'rollback 2', 'rollback 3']);
@@ -167,18 +166,18 @@ test('tapError and onExit see every failure; failing with it again keeps its cau
     throw new TrpcError.NotFound();
   });
 
-  expect(await call(fine, undefined, { ctx, path: 'fine' })).toBe('fine');
+  expect(await t.call(fine, undefined, { ctx, path: 'fine' })).toBe('fine');
   // A thrown value is INTERNAL_SERVER_ERROR to the middleware, and still
   // an unexpected one to the client.
   await expect(
-    call(thrown, undefined, { ctx, path: 'thrown' }),
+    t.call(thrown, undefined, { ctx, path: 'thrown' }),
   ).rejects.toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
     defined: false,
     message: 'db down',
   });
   await expect(
-    call(undeclared, undefined, { ctx, path: 'undeclared' }),
+    t.call(undeclared, undefined, { ctx, path: 'undeclared' }),
   ).rejects.toMatchObject({ code: 'NOT_FOUND', defined: false });
   expect(seen).toEqual([
     'fine ok',
@@ -209,7 +208,7 @@ test('a client abort interrupts next(); it is not a failure', async () => {
       ),
     );
   await expect(
-    call(watched, undefined, { ctx, signal: controller.signal }),
+    t.call(watched, undefined, { ctx, signal: controller.signal }),
   ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   expect(outcomes).toEqual(['interrupted']);
 });
@@ -244,7 +243,7 @@ test('interrupting next() reaches the steps after a Promise middleware', async (
         ),
       ),
     );
-  await expect(call(timed, undefined, { ctx })).rejects.toMatchObject({
+  await expect(t.call(timed, undefined, { ctx })).rejects.toMatchObject({
     code: 'GONE',
   });
   await settled;
@@ -267,9 +266,9 @@ test('auth before next() and ctx for next() keep both branches typed', async () 
     inferProcedureErrors<typeof me>['code']
   >().toEqualTypeOf<'UNAUTHORIZED'>();
   expectTypeOf<inferProcedureOutput<typeof me>>().toEqualTypeOf<string>();
-  expect(await call(me, undefined, { ctx })).toBe('ada');
+  expect(await t.call(me, undefined, { ctx })).toBe('ada');
   await expect(
-    call(me, undefined, { ctx: { user: null } }),
+    t.call(me, undefined, { ctx: { user: null } }),
   ).rejects.toMatchObject({ code: 'UNAUTHORIZED', defined: true });
 });
 
@@ -284,7 +283,7 @@ test('next() succeeds with the output, for middleware that reads it', async () =
       ),
     )
     .query(() => ({ id: '1' }));
-  expect(await call(recorded, undefined, { ctx })).toEqual({ id: '1' });
+  expect(await t.call(recorded, undefined, { ctx })).toEqual({ id: '1' });
   expect(outputs).toEqual([{ id: '1' }]);
 });
 

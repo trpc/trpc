@@ -63,7 +63,7 @@ const authed = t.middleware((opts) => {
     : error({ code: 'UNAUTHORIZED' });
 });
 
-const appRouter = {
+const appRouter = t.router({
   hello: t.procedure.query((opts) => {
     expectTypeOf(opts.meta).toEqualTypeOf<{
       rateLimit?: { max: number };
@@ -84,7 +84,7 @@ const appRouter = {
         return log.entries.length;
       }),
     ),
-};
+});
 
 test('an extension adds ctx, meta, errors and middleware to every procedure (03 Q3.6)', async () => {
   await using server = await createTestServer({
@@ -141,7 +141,9 @@ test("an extension's output is every procedure's, which can't take another (v11 
     root.concat(shaped),
   ).toThrow('concat: this procedure and the plugin both have an output');
   const ping = root.procedure.query(() => ({ ok: true, extra: 1 }));
-  expect(await createRouterClient({ ping }).ping.query()).toEqual({ ok: true });
+  expect(await createRouterClient(root.router({ ping })).ping.query()).toEqual({
+    ok: true,
+  });
 });
 
 test('implement() on an extended root runs the extension', async () => {

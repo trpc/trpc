@@ -21,11 +21,13 @@ test('a body that fails mid-read fails the stream with BAD_REQUEST', async () =>
       Stream.fail(new Error('connection reset')),
     ),
   } as unknown as HttpServerRequest.HttpServerRequest;
-  const caller = createRouterClient({
-    drain: t.procedure
-      .input(experimental_byteStream())
-      .mutation((opts) => Stream.runDrain(opts.input)),
-  });
+  const caller = createRouterClient(
+    t.router({
+      drain: t.procedure
+        .input(experimental_byteStream())
+        .mutation((opts) => Stream.runDrain(opts.input)),
+    }),
+  );
   const body = await Effect.runPromise(bodyStream(request));
   const [, err] = await safe(caller.drain.mutate(body));
   expect(err).toMatchObject({

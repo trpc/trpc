@@ -44,7 +44,7 @@ const posts = new Map([
   ['2', { id: '2', title: 'World' }],
 ]);
 
-const router = {
+const router = t.router({
   health: t.procedure.query(() => 'ok' as const),
   post: {
     byId: t.procedure
@@ -152,7 +152,7 @@ const router = {
   boom: t.procedure.query(() => {
     throw new Error('secret detail');
   }),
-};
+});
 
 const layer = Layer.succeed(Clock, { now: () => 42 });
 
@@ -643,10 +643,10 @@ test('experimental_openApiReference middleware serves Scalar or Swagger UI and t
 test('two procedures on the same route are rejected', () => {
   expect(() =>
     experimental_createOpenApiHandler({
-      router: {
+      router: t.router({
         a: t.procedure.meta({ route: { path: '/x/{id}' } }).query(() => 1),
         b: t.procedure.meta({ route: { path: '/x/{slug}' } }).query(() => 2),
-      },
+      }),
       createContext: () => ({ user: null }),
     }),
   ).toThrow(/"b" and "a" both map to GET \/api\/x\/\{\}/);
@@ -709,13 +709,13 @@ test('an unvalidated output is documented by its schema input side', () => {
 
 test('quiet subscriptions send keep-alive comments', async () => {
   const handler = experimental_createOpenApiHandler({
-    router: {
+    router: t.router({
       slow: t.procedure.subscription(async function* () {
         yield 'a';
         await new Promise((resolve) => setTimeout(resolve, 60));
         yield 'b';
       }),
-    },
+    }),
     createContext: () => ({ user: null }),
     sse: { pingInterval: 10 },
   });
@@ -729,7 +729,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
 test('a cancelled subscription sends no keep-alives while it winds down', async () => {
   let closed = false;
   const handler = experimental_createOpenApiHandler({
-    router: {
+    router: t.router({
       slow: t.procedure.subscription(async function* () {
         try {
           yield 'a';
@@ -739,7 +739,7 @@ test('a cancelled subscription sends no keep-alives while it winds down', async 
           closed = true;
         }
       }),
-    },
+    }),
     createContext: () => ({ user: null }),
     sse: { pingInterval: 5 },
   });
@@ -759,7 +759,7 @@ test('a subscription nobody reads waits instead of buffering its events', async 
   let yielded = 0;
   let closed = false;
   const handler = experimental_createOpenApiHandler({
-    router: {
+    router: t.router({
       firehose: t.procedure.subscription(async function* () {
         try {
           while (yielded < 10_000) yield ++yielded;
@@ -767,7 +767,7 @@ test('a subscription nobody reads waits instead of buffering its events', async 
           closed = true;
         }
       }),
-    },
+    }),
     createContext: () => ({ user: null }),
   });
   const res = await handler.fetch(new Request('http://localhost/api/firehose'));
@@ -781,7 +781,7 @@ test('a subscription nobody reads waits instead of buffering its events', async 
 
 test('serve() runs one procedure with params the caller matched', async () => {
   const handler = experimental_createOpenApiHandler({
-    router: {},
+    router: t.router({}),
     createContext: () => ({ user: 'ada' }),
   });
   const byId = t.procedure
@@ -886,7 +886,7 @@ test('security schemes, document-level security and tags', () => {
 });
 
 test('a body with a file is documented as multipart/form-data, and served', async () => {
-  const router = {
+  const router = t.router({
     upload: t.procedure
       .meta({ route: { method: 'POST', path: '/files' } })
       .input(z.object({ name: z.string(), file: z.file() }))
@@ -917,7 +917,7 @@ test('a body with a file is documented as multipart/form-data, and served', asyn
       .meta({ route: { method: 'POST', path: '/posts' } })
       .input(z.object({ title: z.string() }))
       .mutation(() => 'ok'),
-  } satisfies AnyRouter;
+  });
   const doc = experimental_generateOpenApi(router, {
     info: { title: 'x', version: '1' },
   });

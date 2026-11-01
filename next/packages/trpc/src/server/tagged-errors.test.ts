@@ -38,7 +38,7 @@ const find = (id: string) =>
     return post;
   });
 
-const router = {
+const router = t.router({
   byId: t.procedure
     .input(z.object({ id: z.string() }))
     .query((opts) => find(opts.input.id)),
@@ -72,7 +72,7 @@ const router = {
     .errors({ POST_NOT_FOUND: PostNotFound })
     .input(z.object({ id: z.string() }))
     .query((opts) => find(opts.input.id)),
-};
+});
 type AppRouter = typeof router;
 
 async function setup() {

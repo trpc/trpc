@@ -34,7 +34,7 @@ const progressiveJson = experimental_createProgressiveJson();
 const t = initTrpc();
 
 /** The router doesn't name a transformer: the handler and the links do. */
-const router = {
+const router = t.router({
   rich: t.procedure.input(z.object({ q: z.string() })).query((opts) => ({
     q: opts.input.q,
     at,
@@ -58,7 +58,7 @@ const router = {
     yield { at };
     yield { at };
   }),
-};
+});
 
 const collect = async <T>(iterable: AsyncIterable<T>) => {
   const out: T[] = [];
@@ -155,7 +155,7 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
     return out;
   };
 
-  const itemsRouter = { items: t.procedure.query(items) };
+  const itemsRouter = t.router({ items: t.procedure.query(items) });
   await using richServer = await createTestServer({
     router: itemsRouter,
     transformer: progressiveJson,
@@ -277,11 +277,11 @@ test('no transformer: plain JSON, JSON-form client types, ?input= GET params', a
 });
 
 test('error data follows the transformer like outputs', async () => {
-  const expiring = {
+  const expiring = t.router({
     expired: t.procedure.query(
       () => new TrpcError({ code: 'EXPIRED', data: { at } }),
     ),
-  };
+  });
   await using server = await createTestServer({ router: expiring });
   const client = createTrpcClient({
     router: routerType<typeof expiring>(),
@@ -369,7 +369,7 @@ test('a sync transformer (superjson): its types survive, the transport frames ro
 });
 
 test('inferRouterOutputs is what a client receives: plain JSON for a router type, its links for a client', async () => {
-  const shapes = {
+  const shapes = t.router({
     post: {
       byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => ({
         id: opts.input.id,
@@ -378,7 +378,7 @@ test('inferRouterOutputs is what a client receives: plain JSON for a router type
         note: undefined as string | undefined,
       })),
     },
-  };
+  });
   type ServerPost = inferProcedureOutput<typeof shapes.post.byId>;
   expectTypeOf<ServerPost['at']>().toEqualTypeOf<Date>();
 
@@ -477,7 +477,7 @@ test('devalue as a sync transformer', async () => {
 });
 
 test('nested deferred values stream with every transformer; files in inputs need progressive JSON', async () => {
-  const deferred = {
+  const deferred = t.router({
     nested: t.procedure.query(() => ({
       later: Promise.resolve({ at }),
       list: [1, Promise.resolve(2)] as const,
@@ -486,7 +486,7 @@ test('nested deferred values stream with every transformer; files in inputs need
       })(),
     })),
     file: t.procedure.input(z.instanceof(Blob).optional()).mutation(() => 'ok'),
-  };
+  });
   for (const transformer of [undefined, superjsonTransformer]) {
     await using server = await createTestServer({
       router: deferred,
@@ -552,10 +552,10 @@ test("returning a deferred AsyncIterable ends a read that's still waiting for it
 
 test('a File nested in an input or output fails with the other transformers, before it is sent', async () => {
   const file = new File(['x'], 'a.txt');
-  const files = {
+  const files = t.router({
     upload: t.procedure.input(z.unknown()).mutation(() => 'ok'),
     report: t.procedure.query(() => ({ name: 'a.txt', file })),
-  };
+  });
   for (const transformer of [undefined, superjsonTransformer]) {
     await using server = await createTestServer({ router: files, transformer });
     let requests = 0;

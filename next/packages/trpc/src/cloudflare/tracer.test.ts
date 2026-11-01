@@ -69,7 +69,7 @@ const t = initTrpc();
 
 function setup(snapshot: boolean) {
   const fake = fakeTracing();
-  const router = {
+  const router = t.router({
     post: t.procedure.query(() =>
       Effect.gen(function* () {
         const body = yield* Effect.promise(fake.subrequest).pipe(
@@ -79,7 +79,7 @@ function setup(snapshot: boolean) {
       }),
     ),
     missing: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
-  };
+  });
   const handler = createFetchHandler({
     router,
     layer: experimental_workersTracer({
@@ -136,7 +136,7 @@ test('attributes of any type are recorded; non-Error failures and untraced spans
   const fake = fakeTracing(false);
   const circular: Record<string, unknown> = {};
   circular['self'] = circular;
-  const router = {
+  const router = t.router({
     odd: t.procedure.query(() =>
       Effect.fail('plain').pipe(
         Effect.withSpan('odd', {
@@ -151,7 +151,7 @@ test('attributes of any type are recorded; non-Error failures and untraced spans
         Effect.orElseSucceed(() => 'recovered'),
       ),
     ),
-  };
+  });
   const handler = createFetchHandler({
     router,
     layer: experimental_workersTracer({ tracing: fake.tracing }),

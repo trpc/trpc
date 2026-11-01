@@ -26,7 +26,7 @@ function counter(limit = 100_000) {
   const state = { yielded: 0, returned: false };
   return {
     state,
-    router: {
+    router: t.router({
       big: t.procedure.subscription(async function* () {
         try {
           while (state.yielded < limit) {
@@ -37,7 +37,7 @@ function counter(limit = 100_000) {
           state.returned = true;
         }
       }),
-    },
+    }),
   };
 }
 

@@ -55,7 +55,7 @@ const reset = () => {
   log.length = 0;
 };
 
-const router = {
+const router = t.router({
   whoami: t.procedure.query((opts) => opts.ctx.server),
   held: t.procedure.query(async (opts) => {
     state.running++;
@@ -89,7 +89,7 @@ const router = {
     yield `${opts.ctx.server}:1`;
     await aborted(opts.signal);
   }),
-};
+});
 
 const start = (server: string, drainTimeout: Duration.Input = '10 seconds') =>
   createTestServer({

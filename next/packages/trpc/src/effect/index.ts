@@ -193,7 +193,7 @@ type EffectRouter<
   TContext extends object,
   TLinks extends ChainTypes,
 > = {
-  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+  [K in keyof TRouter & string]: TRouter[K] extends AnyProcedure
     ? DecorateEffectProcedure<TRouter[K], TContext, TLinks>
     : EffectRouter<Unlazy<TRouter[K]>, TContext, TLinks>;
 };
@@ -207,7 +207,7 @@ type DecodingEffectRouter<
   F extends OutputForm,
   TDecoded extends OutputForm,
 > = {
-  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+  [K in keyof TRouter & string]: TRouter[K] extends AnyProcedure
     ? DecorateEffectDef<
         DecodedDef<TRouter[K], ContractAt<C, K>, F>,
         ProcedureTypeOf<TRouter[K]>,

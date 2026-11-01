@@ -84,7 +84,7 @@ test('a channel per audience: template keys type every room, replays included', 
 });
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   create: t.procedure
     .input(z.object({ title: z.string() }))
     .mutation(({ input }) =>
@@ -97,7 +97,7 @@ const router = {
   onCreated: t.procedure.subscription((opts) =>
     Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
-};
+});
 
 test('a subscription resumes from the buffer after lastEventId', async () => {
   expectTypeOf<inferRouterServices<typeof router>>().toEqualTypeOf<Posts>();

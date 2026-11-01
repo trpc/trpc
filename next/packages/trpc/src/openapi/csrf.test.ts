@@ -10,7 +10,7 @@ const t = initTrpc<{ ctx: { ran: (input: unknown) => void } }>().concat(
   experimental_openapi(),
 );
 
-const router = {
+const router = t.router({
   save: t.procedure
     .meta({ route: { method: 'POST', path: '/notes' } })
     .input(z.object({ text: z.string() }).optional())
@@ -29,7 +29,7 @@ const router = {
   list: t.procedure
     .meta({ route: { method: 'GET', path: '/notes' } })
     .query(() => 'listed'),
-};
+});
 
 const make = (
   opts: Partial<

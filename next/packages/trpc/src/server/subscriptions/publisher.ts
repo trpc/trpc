@@ -187,7 +187,7 @@ export const memoryPublisher = (
  * ```ts
  * class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()('Posts') {}
  *
- * const router = {
+ * const router = t.router({
  *   create: t.procedure.input(PostInput).mutation(({ input }) =>
  *     Effect.gen(function* () {
  *       const post = yield* savePost(input);
@@ -198,7 +198,7 @@ export const memoryPublisher = (
  *   onCreated: t.procedure.subscription(({ lastEventId }) =>
  *     Posts.subscribe('created', { lastEventId }),
  *   ),
- * };
+ * });
  * createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
  * ```
  * @since 0.1.0

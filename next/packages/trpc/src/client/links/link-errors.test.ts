@@ -29,7 +29,7 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   echo: t.procedure.input(z.string()).query((opts) => opts.input),
   ping: t.procedure.query(() => 'pong'),
   ticks: t.procedure.subscription(async function* () {
@@ -39,7 +39,7 @@ const router = {
     yield 1;
   }),
   digest: t.procedure.query(() => ({ later: Promise.resolve(1) })),
-};
+});
 type AppRouter = typeof router;
 
 type ErrorOf<P> = P extends (...args: any[]) => { '~error'?: infer E }

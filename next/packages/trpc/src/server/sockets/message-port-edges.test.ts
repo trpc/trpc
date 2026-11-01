@@ -15,7 +15,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Settles the `hang` call's steps; each test that uses it sets these. */
 const hanging = { started: () => {}, aborted: () => {} };
 
-const router = {
+const router = t.router({
   hello: t.procedure.query((opts) => `hello ${opts.ctx.user}`),
   slow: t.procedure.query(async () => {
     await sleep(50);
@@ -42,7 +42,7 @@ const router = {
         });
       }),
   ),
-};
+});
 
 const handler = createFetchHandler({
   router,

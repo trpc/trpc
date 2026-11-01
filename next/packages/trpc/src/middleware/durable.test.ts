@@ -10,8 +10,6 @@ import { experimental_durable } from '@trpc12/trpc/middleware';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
-  type AnyRouter,
-  call,
   createFetchHandler,
   initTrpc,
   TrpcError,
@@ -30,7 +28,7 @@ class OutOfStock extends TrpcError.Tagged('OUT_OF_STOCK', {
 const makeRouter = () => {
   const runs = { order: 0, fail: 0, slow: 0 };
   return {
-    router: {
+    router: t.router({
       order: t.procedure
         .input(Schema.Struct({ sku: Schema.String }))
         .use(experimental_durable())
@@ -47,7 +45,7 @@ const makeRouter = () => {
         await new Promise((r) => setTimeout(r, 50));
         return ++runs.slow;
       }),
-    },
+    }),
     runs,
   };
 };
@@ -292,7 +290,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const makeFeed = () => {
   const runs = { feed: 0 };
   return {
-    router: {
+    router: t.router({
       feed: t.procedure.use(experimental_durable()).mutation(() => {
         runs.feed++;
         return {
@@ -309,7 +307,7 @@ const makeFeed = () => {
           total: sleep(60).then(() => 4),
         };
       }),
-    },
+    }),
     runs,
   };
 };
@@ -539,20 +537,20 @@ test('a streamed call joined without a frame log is a BAD_REQUEST, while it runs
         yield 2;
       })();
     });
-  const handler = createFetchHandler({ router: { ticks }, layer });
+  const handler = createFetchHandler({ router: t.router({ ticks }), layer });
 
   // Without HTTP there's no frame log, so the stream isn't kept.
-  expect(await collect(await call(ticks, 'k1', { ctx: {}, layer }))).toEqual([
+  expect(await collect(await t.call(ticks, 'k1', { ctx: {}, layer }))).toEqual([
     1, 2,
   ]);
 
   const first = post(handler, 'ticks', 'k2');
   await sleep(10);
-  const [, joined] = await safe(call(ticks, 'k2', { ctx: {}, layer }));
+  const [, joined] = await safe(t.call(ticks, 'k2', { ctx: {}, layer }));
   expect(joined).toMatchObject({ code: 'BAD_REQUEST' });
   const frames = await lines(await first);
   expect(frames.length).toBeGreaterThan(1);
-  const [, kept] = await safe(call(ticks, 'k2', { ctx: {}, layer }));
+  const [, kept] = await safe(t.call(ticks, 'k2', { ctx: {}, layer }));
   expect(kept).toMatchObject({ code: 'BAD_REQUEST' });
 
   // A second unbatched request joins it and reads the frames from the log.
@@ -572,7 +570,7 @@ test('a call that fails while another waits on it gives the waiter the typed err
       return new OutOfStock({ sku: 'x' });
     });
   const handler = createFetchHandler({
-    router: { slowGone },
+    router: t.router({ slowGone }),
     layer: Persistence.layerBackingMemory,
   });
   const first = post(handler, 'slowGone', undefined, 'g1');
@@ -619,7 +617,7 @@ test('frames that expired from the store end the replay where they stop', async 
 
 test('inputs with files are kept without a fingerprint; an error that cannot be sent ends the kept stream', async () => {
   let runs = 0;
-  const router = {
+  const router = t.router({
     upload: t.procedure
       .input(Schema.Struct({ file: Schema.instanceOf(File) }))
       .use(experimental_durable())
@@ -631,7 +629,7 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
       yield 1;
       throw new TrpcError({ code: 'ODD', data: { fn: () => 1 } });
     }),
-  } satisfies AnyRouter;
+  });
   const progressiveJson = experimental_createProgressiveJson();
   await using server = await createTestServer({
     router,
@@ -666,13 +664,13 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
 test('experimental_durableLink waits before retrying by default; queries and subscriptions pass through', async () => {
   const app = makeRouter();
   const { router: base } = app;
-  const router = {
+  const router = t.router({
     ...base,
     count: t.procedure.query(() => app.runs.order),
     ticks: t.procedure.subscription(async function* () {
       yield 1;
     }),
-  } satisfies AnyRouter;
+  });
   await using http = await createTestServer({
     router,
     layer: Persistence.layerBackingMemory,

@@ -59,7 +59,7 @@ let waiting = 0;
 // Bigger than the socket's buffers, so the server is left waiting to write it.
 const big = 'x'.repeat(16 * 1024 * 1024);
 
-const router = {
+const router = t.router({
   greet: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name}`),
@@ -170,7 +170,7 @@ const router = {
     yield tracked(String(id), id);
     await untilAborted(opts.signal);
   }),
-};
+});
 
 interface Running {
   readonly url: string;

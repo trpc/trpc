@@ -67,6 +67,7 @@ import {
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
+  type RootRouterCheck,
   type inferRouterServices,
 } from '../../server/procedures/index.ts';
 import {
@@ -113,7 +114,7 @@ export type V11TransformerOption =
  * @stability stable
  */
 export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
-  router: TRouter;
+  router: TRouter & RootRouterCheck<TRouter>;
   /**
    * The path prefix the old clients call, their links' `url` path.
    * @default '/trpc'

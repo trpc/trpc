@@ -1,5 +1,6 @@
 import { API, TypeFormatFlags } from 'typescript/sync';
 import type {
+  inferRouterContext,
   MutationProcedure,
   QueryProcedure,
   SubscriptionProcedure,
@@ -11,7 +12,7 @@ import type { appRouter, Db, Post } from './fixtures/hover-router.ts';
 
 const file = new URL('./fixtures/hover-router.ts', import.meta.url).pathname;
 
-/** Each procedure's type as an editor's hover prints it. */
+/** The router's type and each procedure's, as an editor's hover prints them. */
 const hovers = (): Record<string, string> => {
   const api = new API({ cwd: new URL('../../..', import.meta.url).pathname });
   try {
@@ -23,36 +24,39 @@ const hovers = (): Record<string, string> => {
     const router = checker
       .getExportsOfModule(checker.getSymbolAtLocation(source)!)
       .find((symbol) => symbol.name === 'appRouter')!;
-    return Object.fromEntries(
-      checker
-        .getPropertiesOfType(checker.getTypeOfSymbol(router)!)
-        .map((prop) => [
-          prop.name,
-          checker.typeToString(
-            checker.getTypeOfSymbol(prop)!,
-            undefined,
-            TypeFormatFlags.NoTruncation,
-          ),
-        ]),
-    );
+    const print = (type: Parameters<typeof checker.typeToString>[0]) =>
+      checker.typeToString(type, undefined, TypeFormatFlags.NoTruncation);
+    const type = checker.getTypeOfSymbol(router)!;
+    return {
+      router: print(type).replace(/^\{.*\} & /, '{ … } & '),
+      ...Object.fromEntries(
+        checker
+          .getPropertiesOfType(type)
+          .filter((prop) => !prop.name.startsWith('__@'))
+          .map((prop) => [prop.name, print(checker.getTypeOfSymbol(prop)!)]),
+      ),
+    };
   } finally {
     api.close();
   }
 };
 
-test('a built procedure carries only what clients and its handler read', () => {
+test('a built procedure carries only what clients and its handler read; its router, the root ctx', () => {
   expect(hovers()).toEqual({
-    byId: 'QueryProcedure<{ input: { id: string; }; output: Post; errors: SchemaValidationError<ZodObject<{ id: ZodString; }, $strip>> | TrpcError<"NOT_FOUND", { id: string; }, "NotFound">; ctx: { userId: string | null; }; }>',
+    router: '{ … } & RouterCtx<{ userId: string | null; }>',
+    byId: 'QueryProcedure<{ input: { id: string; }; output: Post; errors: SchemaValidationError<ZodObject<{ id: ZodString; }, $strip>> | TrpcError<"NOT_FOUND", { id: string; }, "NotFound">; }>',
     health:
       'QueryProcedure<{ input: undefined; output: "ok"; errors: never; }>',
     fromDb:
-      'QueryProcedure<{ input: undefined; output: Post | null; errors: never; ctx: { userId: string | null; }; services: Db; }>',
+      'QueryProcedure<{ input: undefined; output: Post | null; errors: never; services: Db; }>',
     validated:
-      'QueryProcedure<{ input: undefined; output: { id: string; title: string; }; errors: TrpcError<"GONE", undefined, "GONE">; ctx: { userId: string | null; }; outputValidated: true; declared: "GONE"; }>',
+      'QueryProcedure<{ input: undefined; output: { id: string; title: string; }; errors: TrpcError<"GONE", undefined, "GONE">; outputValidated: true; declared: "GONE"; }>',
     onPost:
       'SubscriptionProcedure<{ input: undefined; output: TrackedEnvelope<{ id: string; title: string; }>; errors: never; }>',
     publish:
-      'MutationProcedure<{ input: { id: string; }; output: { id: string; title: string; }; errors: SchemaValidationError<ZodObject<{ id: ZodString; }, $strip>> | TrpcError<"NOT_FOUND", undefined, "NotFound">; ctx: { userId: string | null; }; outputValidated: true; declared: "NOT_FOUND"; }>',
+      'MutationProcedure<{ input: { id: string; }; output: { id: string; title: string; }; errors: SchemaValidationError<ZodObject<{ id: ZodString; }, $strip>> | TrpcError<"NOT_FOUND", undefined, "NotFound">; outputValidated: true; declared: "NOT_FOUND"; }>',
+    tenant:
+      'QueryProcedure<{ input: undefined; output: string; errors: never; ctx: { tenant: string; }; }>',
   });
 });
 
@@ -66,7 +70,6 @@ test('the procedure types have exactly those fields', () => {
       input: undefined;
       output: Post | null;
       errors: never;
-      ctx: { userId: string | null };
       services: Db;
     }>
   >();
@@ -75,7 +78,6 @@ test('the procedure types have exactly those fields', () => {
       input: undefined;
       output: { id: string; title: string };
       errors: TrpcError<'GONE', undefined, 'GONE'>;
-      ctx: { userId: string | null };
       outputValidated: true;
       declared: 'GONE';
     }>
@@ -87,12 +89,23 @@ test('the procedure types have exactly those fields', () => {
       errors: never;
     }>
   >();
+  expectTypeOf<Router['tenant']>().toEqualTypeOf<
+    QueryProcedure<{
+      input: undefined;
+      output: string;
+      errors: never;
+      ctx: { tenant: string };
+    }>
+  >();
+  expectTypeOf<inferRouterContext<Router>>().toEqualTypeOf<{
+    userId: string | null;
+    tenant: string;
+  }>();
   expectTypeOf<Router['publish']>().toExtend<
     MutationProcedure<{
       input: { id: string };
       output: { id: string; title: string };
       errors: any;
-      ctx: { userId: string | null };
       outputValidated: true;
       declared: 'NOT_FOUND';
     }>

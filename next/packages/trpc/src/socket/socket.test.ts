@@ -29,7 +29,7 @@ const state = {
   returned: false,
 };
 
-const router = {
+const router = t.router({
   hello: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => `hello ${opts.input.name} over ${opts.ctx.transport}`),
@@ -76,7 +76,7 @@ const router = {
       state.returned = true;
     }
   }),
-};
+});
 
 async function serve(
   opts: { idleTimeout?: number | false; maxPayload?: number } = {},

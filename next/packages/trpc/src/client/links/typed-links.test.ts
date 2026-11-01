@@ -30,7 +30,7 @@ const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const state = { calls: 0, aborted: 0 };
 
-const router = {
+const router = t.router({
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
@@ -56,7 +56,7 @@ const router = {
         });
       }),
   },
-};
+});
 type AppRouter = typeof router;
 const otherRouter = { other: t.procedure.query(() => 1) };
 
@@ -494,13 +494,13 @@ test('links takes at least one link, since the last one sends the request', () =
 });
 
 test('an any router, like an AppRouter import that broke, gives the untyped client', async () => {
-  const live = {
+  const live = t.router({
     ...router,
     ticks: t.procedure.subscription(async function* () {
       yield 1;
       yield 2;
     }),
-  } as const;
+  });
   const client = createTrpcClient({
     router: routerType<any>(),
     links: [localLink({ router: live })],

@@ -9,7 +9,6 @@ import {
 } from '@trpc12/trpc/client';
 import { cors } from '@trpc12/trpc/http';
 import {
-  call,
   createFetchHandler,
   createRouterClient,
   initTrpc,
@@ -20,7 +19,7 @@ import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { cookie: string | null; web: boolean } }>();
-const router = {
+const router = t.router({
   whoami: t.procedure.query((opts) => opts.ctx),
   cached: t.procedure.query(() =>
     Effect.gen(function* () {
@@ -60,7 +59,7 @@ const router = {
         headers: { 'content-type': 'text/csv' },
       }),
   ),
-};
+});
 type Router = typeof router;
 
 const createContext = (opts: {
@@ -278,7 +277,7 @@ test("in-process calls get a procedure's own response as a web Response, its err
       status: 307,
     }),
   );
-  const files = { download, moved };
+  const files = s.router({ download, moved });
   const decoder = new TextDecoder();
   const check = async (res: Response) => {
     expect(res.status).toBe(201);
@@ -314,10 +313,10 @@ test("in-process calls get a procedure's own response as a web Response, its err
   expectTypeOf(fromLink).toEqualTypeOf<Response>();
   await check(fromLink);
 
-  const fromCall = await call(download, { name: 'report' });
+  const fromCall = await s.call(download, { name: 'report' });
   expectTypeOf(fromCall).toEqualTypeOf<Response>();
   await check(fromCall);
-  const movedByCall = await call(moved, undefined);
+  const movedByCall = await s.call(moved, undefined);
   expectTypeOf(movedByCall).toEqualTypeOf<Response>();
   expect(movedByCall.status).toBe(307);
 
@@ -332,7 +331,7 @@ test("in-process calls get a procedure's own response as a web Response, its err
   });
   const [, goneByLink] = await safe(client.download.query({ name: 'gone' }));
   expect(goneByLink).toMatchObject({ code: 'GONE', defined: true });
-  await expect(call(download, { name: 'gone' })).rejects.toMatchObject({
+  await expect(s.call(download, { name: 'gone' })).rejects.toMatchObject({
     code: 'GONE',
     defined: true,
   });

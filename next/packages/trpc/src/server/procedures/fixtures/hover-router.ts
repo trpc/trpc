@@ -1,6 +1,6 @@
 import { Context, Effect } from 'effect';
 import { experimental_contract } from '@trpc12/trpc/contract';
-import { error, initTrpc, tracked } from '@trpc12/trpc/server';
+import { error, initTrpc, middleware, tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 export interface Post {
@@ -29,7 +29,11 @@ export const postContract = {
 
 const impl = t.implement(postContract);
 
-export const appRouter = {
+const withTenant = middleware<{ ctx: { tenant: string } }>()((opts) =>
+  opts.next(),
+);
+
+export const appRouter = t.router({
   byId: t.procedure
     .input(z.object({ id: z.string() }))
     .query(
@@ -51,7 +55,8 @@ export const appRouter = {
     yield tracked('1', { id: '1', title: 'a' } satisfies Post);
   }),
   publish: impl.publish.mutation((opts) => ({ id: opts.input.id, title: 'a' })),
-};
+  tenant: t.procedure.use(withTenant).query((opts) => opts.ctx.tenant),
+});
 
 function notFound(id: string) {
   return error({ code: 'NOT_FOUND', data: { id } });

@@ -24,7 +24,7 @@ const transformer = experimental_createProgressiveJson();
 const t = initTrpc();
 const aborted: string[] = [];
 
-const router = {
+const router = t.router({
   post: t.procedure.input(z.object({ id: z.string() })).query((opts) => ({
     id: opts.input.id,
     createdAt: new Date(Date.UTC(2026, 0, 1)),
@@ -57,7 +57,7 @@ const router = {
       await Bun.sleep(5);
     }
   }),
-};
+});
 
 const scope = Scope.makeUnsafe();
 let server: TestServerShape;

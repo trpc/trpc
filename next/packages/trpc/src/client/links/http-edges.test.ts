@@ -13,7 +13,7 @@ const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 let aborted = 0;
-const router = {
+const router = t.router({
   echo: t.procedure.input(z.unknown()).query((opts) => opts.input ?? 'none'),
   slow: t.procedure.query(async (opts) => {
     await new Promise<void>((resolve) => {
@@ -28,7 +28,7 @@ const router = {
     yield 1;
     yield 2;
   }),
-};
+});
 
 const handler = createFetchHandler({ router, batch: true });
 const real: typeof fetch = (input, init) =>

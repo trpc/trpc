@@ -36,7 +36,7 @@ let current: TestServer | undefined;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const router = {
+const router = t.router({
   countdown: t.procedure
     .input(z.object({ from: z.number() }))
     .subscription(async function* (opts) {
@@ -128,7 +128,7 @@ const router = {
     );
     yield 'late';
   }),
-};
+});
 type AppRouter = typeof router;
 
 async function setup(user: string | null = 'ada') {
@@ -426,13 +426,13 @@ test.each([
 ] as const)(
   'quiet subscriptions send keep-alive comments, every pingInterval in %s',
   async (_, pingInterval) => {
-    const pinged = {
+    const pinged = t.router({
       slow: t.procedure.subscription(async function* () {
         yield 'a';
         await sleep(60);
         yield 'b';
       }),
-    };
+    });
     await using server = await createTestServer({
       router: pinged,
       createContext: () => ({ user: null }),
@@ -450,7 +450,7 @@ test.each([
 
 test('without keep-alives a subscription sends only its events; one that interrupts itself just ends', async () => {
   await using server = await createTestServer({
-    router: {
+    router: t.router({
       slow: t.procedure.subscription(async function* () {
         yield 'a';
         await sleep(30);
@@ -459,7 +459,7 @@ test('without keep-alives a subscription sends only its events; one that interru
       stops: t.procedure.subscription(() =>
         Stream.concat(Stream.make('a'), Stream.fromEffect(Effect.interrupt)),
       ),
-    },
+    }),
     createContext: () => ({ user: null }),
     sse: { pingInterval: false },
   });

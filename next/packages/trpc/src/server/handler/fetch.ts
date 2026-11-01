@@ -22,6 +22,7 @@ import {
   checkRouterKeys,
   type AnyRouter,
   type inferRouterContext,
+  type RootRouterCheck,
   type inferRouterServices,
 } from '../procedures/index.ts';
 import {
@@ -176,7 +177,7 @@ export interface TransformerOption {
  * @stability stable
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter> {
-  router: TRouter;
+  router: TRouter & RootRouterCheck<TRouter>;
   /**
    * The path prefix procedures are served under.
    * @default '/trpc'

@@ -8,12 +8,12 @@ import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 const t = initTrpc();
-const router = {
+const router = t.router({
   health: t.procedure.query(() => 'ok'),
   double: t.procedure
     .input(z.object({ n: z.number() }))
     .mutation((opts) => opts.input.n * 2),
-};
+});
 
 const server = TestServer.layer({ router }).pipe(
   Layer.provide(

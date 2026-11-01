@@ -41,6 +41,7 @@ import {
 import type {
   AnyRouter,
   inferRouterContext,
+  RootRouterCheck,
   inferRouterServices,
 } from '../server/procedures/index.ts';
 import {
@@ -65,7 +66,7 @@ const PROTOCOL_VERSIONS: ReadonlyArray<string> = [
 export interface BaseMcpHandlerOptions<
   TRouter extends AnyRouter,
 > extends DescribeToolsOptions {
-  router: TRouter;
+  router: TRouter & RootRouterCheck<TRouter>;
   /** Sent in `initialize`. @default { name: 'trpc', version: '0.0.0' } */
   serverInfo?: {
     readonly name: string;
@@ -237,14 +238,14 @@ const decoder = /* @__PURE__ */ new TextDecoder();
  * @example
  * ```ts
  * const t = initTrpc<{ ctx: Context }>().concat(experimental_mcp());
- * const appRouter = {
+ * const appRouter = t.router({
  *   post: {
  *     byId: t.procedure
  *       .meta({ mcp: { description: 'Read one blog post by its id.' } })
  *       .input(z.object({ id: z.string() }))
  *       .query(({ input }) => db.post.find(input.id)),
  *   },
- * };
+ * });
  * export const mcp = experimental_createMcpHandler({
  *   router: appRouter,
  *   serverInfo: { name: 'blog', version: '1.0.0' },

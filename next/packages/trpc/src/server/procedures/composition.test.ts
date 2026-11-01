@@ -61,7 +61,7 @@ interface Context {
 }
 const t = initTrpc<{ ctx: Context; meta: { audit?: string } }>();
 
-const projectRouter = {
+const projectRouter = t.router({
   rename: t.procedure
     .use(requireUser)
     .concat(audited)
@@ -72,9 +72,9 @@ const projectRouter = {
       opts.ctx.audit(input.name);
       return { orgId: input.orgId, name: input.name, by: opts.ctx.user };
     }),
-} satisfies AnyRouter;
+}) satisfies AnyRouter;
 
-const searchRouter = {
+const searchRouter = t.router({
   search: t.procedure
     .input((opts) =>
       z.object({
@@ -86,7 +86,7 @@ const searchRouter = {
       }),
     )
     .query((opts) => ({ q: opts.input.q, limit: opts.input.limit })),
-} satisfies AnyRouter;
+}) satisfies AnyRouter;
 
 const router = mergeRouters(projectRouter, searchRouter, {
   nested: { deep: { ping: t.procedure.query(() => 'pong' as const) } },
@@ -196,10 +196,9 @@ test("concat takes a plugin's output; another .output() is a type error and thro
     id: string;
     checked: true;
   }>();
-  const caller = createRouterClient(
-    { byId },
-    { ctx: { db: { log: [] }, user: null, plan: 'free' } },
-  );
+  const caller = createRouterClient(t.router({ byId }), {
+    ctx: { db: { log: [] }, user: null, plan: 'free' },
+  });
   expect(await caller.byId.query()).toEqual({ id: '1', checked: true });
 });
 
@@ -215,7 +214,7 @@ test('concat runs the leading middleware an app and a plugin share once', async 
     return opts.next({ ctx: { tag: opts.ctx.session } });
   });
   const caller = createRouterClient(
-    {
+    t.router({
       shared: t.procedure
         .use(session)
         .concat(tagged)
@@ -228,7 +227,7 @@ test('concat runs the leading middleware an app and a plugin share once', async 
         .use(session)
         .concat(tagged)
         .query((opts) => opts.ctx.tag),
-    },
+    }),
     {
       ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
     },
@@ -277,7 +276,7 @@ test('concat shares leading inputs and provides only when they are the same', as
       .concat(pluginT.procedure.use((opts) => opts.next()))
       .query(tenantName),
   };
-  const caller = createRouterClient(r, {
+  const caller = createRouterClient(t.router(r), {
     ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
   });
   const run = async (name: keyof typeof r) => {
@@ -355,12 +354,12 @@ const effectTenant = middleware.effect<{ ctx: { tenant: string } }>()((opts) =>
 
 test('ctx a standalone middleware needs and the procedure lacks becomes a root ctx requirement', async () => {
   const bare = initTrpc();
-  const tenantRouter = {
+  const tenantRouter = bare.router({
     whoami: bare.procedure
       .use(withTenant)
       .use(effectTenant)
       .query((opts) => `${opts.ctx.scope}/${opts.ctx.region}`),
-  };
+  });
   expectTypeOf<inferRouterContext<typeof tenantRouter>>().toEqualTypeOf<{
     tenant: string;
   }>();
