@@ -166,7 +166,12 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   if (meta.headers) {
     if (meta.headers instanceof Headers) {
       for (const [key, value] of meta.headers.entries()) {
-        headers.append(key, value);
+        if (key === 'content-type') {
+          // a response has one content type, so replace the default
+          headers.set(key, value);
+        } else {
+          headers.append(key, value);
+        }
       }
     } else {
       /**
@@ -174,6 +179,9 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
        */
       for (const [key, value] of Object.entries(meta.headers)) {
         if (Array.isArray(value)) {
+          if (key.toLowerCase() === 'content-type' && value.length > 0) {
+            headers.delete(key);
+          }
           for (const v of value) {
             headers.append(key, v);
           }
@@ -825,6 +833,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type: info?.type ?? 'unknown',
     });
 
+    headers.set('content-type', 'application/json');
     const headResponse = initResponse({
       ctx,
       info,
