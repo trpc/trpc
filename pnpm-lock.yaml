@@ -1411,9 +1411,12 @@ importers:
 
   examples/minimal-react/client:
     dependencies:
+      '@shared/ui':
+        specifier: workspace:*
+        version: link:../../../tooling/ui
       '@tanstack/react-query':
         specifier: ^5.105.0
-        version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
+        version: 5.105.0(@types/react@19.1.0)(react@19.3.0)
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../../packages/client
@@ -1423,18 +1426,24 @@ importers:
       '@trpc/tanstack-react-query':
         specifier: npm:@trpc/tanstack-react-query
         version: link:../../../packages/tanstack-react-query
+      lucide-react:
+        specifier: 1.55.0
+        version: 1.55.0(@types/react@19.1.0)(react@19.3.0)
       react:
-        specifier: ^19.1.0
-        version: 19.1.0
+        specifier: catalog:www
+        version: 19.3.0
       react-dom:
-        specifier: ^19.1.0
-        version: 19.1.0(react@19.1.0)
+        specifier: catalog:www
+        version: 19.3.0(react@19.3.0)
     devDependencies:
+      '@tailwindcss/vite':
+        specifier: 4.3.3
+        version: 4.3.3(vite@8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
       '@types/react':
-        specifier: ^19.1.0
+        specifier: catalog:www
         version: 19.1.0
       '@types/react-dom':
-        specifier: ^19.1.1
+        specifier: catalog:www
         version: 19.1.1(@types/react@19.1.0)
       '@vitejs/plugin-react':
         specifier: ^6.1.1
@@ -1445,6 +1454,9 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2005
         version: 7.0.2005
+      tailwindcss:
+        specifier: catalog:www
+        version: 4.3.3
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
@@ -26882,7 +26894,7 @@ snapshots:
       jiti: 2.7.0
       lightningcss: 1.32.0
       magic-string: 0.30.21
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
       tailwindcss: 4.3.3
 
   '@tailwindcss/oxide-android-arm64@4.3.3':
@@ -26940,6 +26952,13 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.0.10
       tailwindcss: 4.3.3
+
+  '@tailwindcss/vite@4.3.3(vite@8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@tailwindcss/node': 4.3.3
+      '@tailwindcss/oxide': 4.3.3
+      tailwindcss: 4.3.3
+      vite: 8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
 
   '@tailwindcss/vite@4.3.3(vite@8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
