@@ -40,7 +40,7 @@ function DocsLinks() {
     <Link
       activeOptions={{ exact: true }}
       activeProps={{ className: 'text-foreground' }}
-      className={navLink}
+      className={cn(navLink, 'wideOnly' in link && 'hidden xl:inline-flex')}
       inactiveProps={{ className: 'text-muted-foreground' }}
       key={link.label}
       params={{ _splat: link.slug }}

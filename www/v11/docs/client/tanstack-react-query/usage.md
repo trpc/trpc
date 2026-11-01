@@ -261,6 +261,21 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
 }
 ```
 
+### `unstable_$prefetch`, `unstable_$ensure` and `unstable_$fromHandle` - passing queries as handles {#handles}
+
+On the server or in a route loader, `trpc.x.unstable_$prefetch(input)`, `await trpc.x.unstable_$ensure(input)` and `await trpc.x.unstable_$fetch(input)` start a query and return a serializable handle. Components read it with `trpc.unstable_$fromHandle(handle)`, which returns the same options as `trpc.x.queryOptions(input)`. Infinite queries have `unstable_$prefetchInfinite`, `unstable_$ensureInfinite` and `unstable_$fetchInfinite`. Type props with `unstable_inferQueryHandle` and `unstable_inferInfiniteQueryHandle`.
+
+- `unstable_$prefetch` doesn't wait. Read its handle inside a `Suspense` boundary; the data streams in.
+- `unstable_$ensure` waits until the data is in the cache. Its handle carries the data as `handle.data`, and its reader needs no `Suspense` boundary.
+- `unstable_$fetch` also waits, and refetches stale data before it resolves.
+- Methods with a `$` are tRPC helpers built on TanStack Query. Each one maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
+
+:::info
+We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
+:::
+
+See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+
 ### `queryKey` - getting the query key and performing operations on the query client {#queryKey}
 
 Available for all query procedures. Allows you to access the query key in a type-safe manner.
