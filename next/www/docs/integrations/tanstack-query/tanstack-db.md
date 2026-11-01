@@ -20,7 +20,7 @@ import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
-const router = {
+const router = t.router({
   post: {
     ...appRouter.post,
     list: t.procedure
@@ -30,7 +30,7 @@ const router = {
         return { items, nextCursor: items.at(-1)?.id };
       }),
   },
-};
+});
 const client = createTrpcClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: '/trpc' })],
@@ -91,7 +91,7 @@ class PostEvents extends experimental_Publisher.Service<
   { changes: PostChange }
 >()('PostEvents') {}
 
-export const router = {
+export const router = t.router({
   post: {
     list: t.procedure.query(() => db.post.list()),
     changes: t.procedure.subscription((opts) =>
@@ -107,7 +107,7 @@ export const router = {
         }),
       ),
   },
-};
+});
 
 createFetchHandler({ router, layer: PostEvents.memory({ buffer: 100 }) });
 // ---cut-start---
@@ -175,7 +175,7 @@ declare function listen(
 /** Sends a change to every `listen()`, and returns its event id. */
 declare function publish(change: PostChange): string;
 // ---cut-end---
-export const router = {
+export const router = t.router({
   post: {
     live: t.procedure.subscription(async function* (opts) {
       const changes = listen(opts.signal);
@@ -190,7 +190,7 @@ export const router = {
         return { eventId: publish({ type: 'upsert', row: post }) };
       }),
   },
-};
+});
 // ---cut-start---
 // @filename: app.ts
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';

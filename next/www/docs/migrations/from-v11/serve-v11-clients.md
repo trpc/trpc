@@ -60,7 +60,9 @@ import { createV11Handler } from '@trpc12/trpc/interop';
 import { initTrpc } from '@trpc12/trpc/server';
 import { db } from './server.ts';
 const t = initTrpc();
-const appRouter = { post: { list: t.procedure.query(() => db.post.list()) } };
+const appRouter = t.router({
+  post: { list: t.procedure.query(() => db.post.list()) },
+});
 // ---cut-end---
 createV11Handler({
   router: appRouter,

@@ -21,7 +21,7 @@ import { httpLink, routerType } from '@trpc12/trpc/client';
 import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
-const router = {
+const router = t.router({
   ...appRouter,
   post: {
     ...appRouter.post,
@@ -29,7 +29,7 @@ const router = {
       .input(z.object({ id: z.string(), title: z.string() }))
       .mutation((opts) => db.post.find(opts.input.id)),
   },
-};
+});
 type AppRouter = typeof router;
 // ---cut-end---
 import { useAtomSuspense, useAtomSet } from '@effect/atom-react';

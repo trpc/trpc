@@ -35,7 +35,7 @@ import {
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
-const router = {
+const router = t.router({
   post: {
     ...appRouter.post,
     list: t.procedure
@@ -45,7 +45,7 @@ const router = {
         return { items, nextCursor: items.at(-1)?.id };
       }),
   },
-};
+});
 const client = createTrpcClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: '/trpc' })],

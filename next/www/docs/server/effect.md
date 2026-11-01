@@ -29,7 +29,7 @@ const byId = t.procedure.input(z.object({ id: z.string() })).query((opts) =>
 );
 
 createFetchHandler({
-  router: { byId },
+  router: t.router({ byId }),
   createContext: () => ({ user: null }),
   layer: PostRepoLive,
 });
@@ -234,9 +234,9 @@ const create = inTx.mutation(() =>
 | `makeFetchHandler({ router })`                 | the Effect's context; the end of its `Scope` disposes the handler              |
 | `createRouterClient(router, { ctx, runtime })` | your `ManagedRuntime`, built on its first use; `runtime.dispose()` releases it |
 | `localLink({ router, runtime })`               | the same                                                                       |
-| `call(procedure, input, { ctx, layer })`       | the `layer`, built for the call and released when it returns; or a `runtime`   |
+| `t.call(procedure, input, { ctx, layer })`     | the `layer`, built for the call and released when it returns; or a `runtime`   |
 
-In-process clients have no lifetime of their own, so they take a runtime you own and dispose: `const runtime = ManagedRuntime.make(AppLive)`, or `await using runtime = …` in a test. Several clients can share one. Passing them a `layer` is a type error that says so. Handlers (`createFetchHandler`, the OpenAPI and v11 handlers) take either a `layer` they own or a `runtime` you own, not both: pass the runtime your SSR `createRouterClient` uses and the two share one connection pool. Build long-lived resources (connection pools) into the handler's `layer` or a shared runtime, not per `call()`.
+In-process clients have no lifetime of their own, so they take a runtime you own and dispose: `const runtime = ManagedRuntime.make(AppLive)`, or `await using runtime = …` in a test. Several clients can share one. Passing them a `layer` is a type error that says so. Handlers (`createFetchHandler`, the OpenAPI and v11 handlers) take either a `layer` they own or a `runtime` you own, not both: pass the runtime your SSR `createRouterClient` uses and the two share one connection pool. Build long-lived resources (connection pools) into the handler's `layer` or a shared runtime, not per `t.call()`.
 
 An Effect program makes the handler with `makeFetchHandler` instead: it reads the services from the Effect's context and lives as long as its `Scope`, so with `serve()` the server, the handler and the services are one layer ([Node](../adapters/node.md#the-effect-way)).
 

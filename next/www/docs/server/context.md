@@ -19,7 +19,7 @@ const t = initTrpc<{ ctx: { user: User | null } }>();
 
 ## From the request
 
-The handler's `createContext` makes it from the request (and, on runtimes like Workers, the platform argument). It runs once per HTTP request, so the calls in a batch share one `ctx`, and once per call over a WebSocket or `MessagePort`; `opts.info.calls` lists the paths it serves:
+The handler's `createContext` makes it from the request (and, on runtimes like Workers, the platform argument). It runs once per HTTP request, so the calls in a batch share one `ctx`, and once per call over a WebSocket or `MessagePort`; `opts.info.calls` lists the paths it serves. Its type comes from the root router, made with `t.router()`, which records `t`'s root `ctx` ([Routers](./routers.md)):
 
 ```ts twoslash
 // ---cut-start---

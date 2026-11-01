@@ -6,7 +6,7 @@ order: 1
 v11: quickstart
 ---
 
-A router is a plain object of procedures. A handler serves it; a client calls it with the router's type.
+A router is a plain object of procedures, made with `t.router()`. A handler serves it; a client calls it with the router's type.
 
 ```package-install
 @trpc12/trpc effect
@@ -33,7 +33,7 @@ import { db } from './db.ts';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
@@ -46,7 +46,7 @@ export const appRouter = {
         db.post.create({ ...opts.input, author: opts.ctx.user }),
       ),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 
 export const handler = createFetchHandler({
@@ -92,7 +92,7 @@ import { db } from './db.ts';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
@@ -105,7 +105,7 @@ export const appRouter = {
         db.post.create({ ...opts.input, author: opts.ctx.user }),
       ),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 // @filename: client.ts
 // ---cut-end---

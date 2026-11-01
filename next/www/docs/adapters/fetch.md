@@ -35,7 +35,7 @@ interface Env {
 const t = initTrpc<{
   ctx: { db: D1Database; waitUntil: (p: Promise<unknown>) => void };
 }>();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 type AppRouter = typeof router;
 // ---cut-end---
 const handler = createFetchHandler<

@@ -95,7 +95,7 @@ import { error } from '@trpc12/trpc/server';
 import { Stream } from 'effect';
 import { t } from './server.ts';
 declare function render(seat: string): void;
-const router = {
+const router = t.router({
   seats: t.procedure.query(() =>
     Stream.fromIterable(['A1', 'A2']).pipe(
       Stream.concat(
@@ -103,7 +103,7 @@ const router = {
       ),
     ),
   ),
-};
+});
 const client = createTrpcClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: 'http://localhost:3000/trpc' })],

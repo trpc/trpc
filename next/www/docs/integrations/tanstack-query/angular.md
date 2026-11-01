@@ -103,7 +103,7 @@ import {
 } from '@trpc12/experimental-tanstack-angular-query';
 import { z } from 'zod';
 import { t } from './server.ts';
-const router = {
+const router = t.router({
   clock: {
     ticks: t.procedure
       .input(z.object({ from: z.number() }))
@@ -111,7 +111,7 @@ const router = {
         for (let n = opts.input.from; ; n++) yield n;
       }),
   },
-};
+});
 const injectTrpc = createTrpcContext<typeof router>().injectTrpc;
 // ---cut-end---
 @Component({ selector: 'app-ticker', template: `<p>{{ ticks.data() }}</p>` })

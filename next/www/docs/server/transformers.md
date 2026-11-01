@@ -27,7 +27,7 @@ The transformer lives on the handler and the links, not on `initTrpc`:
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 type AppRouter = typeof router;
 declare const url: string;
 // ---cut-end---
@@ -68,13 +68,13 @@ import { t } from './server.ts';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 
-const router = {
+const router = t.router({
   getPost: t.procedure.query(() => ({
     at: new Date(),
     tags: new Set(['a']),
     draft: undefined,
   })),
-};
+});
 
 const json = createTrpcClient({
   router: routerType<typeof router>(),

@@ -70,13 +70,13 @@ import {
 } from '@trpc12/experimental-tanstack-preact-query';
 import { t, type Post } from './server.ts';
 declare function onPost(): AsyncIterable<Post>;
-const router = {
+const router = t.router({
   post: {
     onAdd: t.procedure.subscription(async function* () {
       yield* onPost();
     }),
   },
-};
+});
 const [, useTrpc] = createTrpcContext<typeof router>();
 // ---cut-end---
 function NewPosts() {

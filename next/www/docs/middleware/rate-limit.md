@@ -51,7 +51,7 @@ The store is Effect's `RateLimiterStore`, under `RateLimiter.layer`. A store tha
 // ---cut-start---
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 declare const env: {
   UPSTASH_REDIS_REST_URL: string;
   UPSTASH_REDIS_REST_TOKEN: string;

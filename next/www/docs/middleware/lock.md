@@ -15,7 +15,6 @@ import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 const t = initTrpc();
 declare function charge(invoice: string, opts: { retried: boolean }): void;
-declare const router: { pay: typeof pay };
 // ---cut-end---
 import { NodeRedis } from '@effect/platform-node';
 import {
@@ -34,6 +33,9 @@ const pay = t.procedure
     charge(opts.input.invoice, { retried: opts.ctx.lock.waited }),
   );
 
+// ---cut-start---
+const router = t.router({ pay });
+// ---cut-end---
 createFetchHandler({
   router,
   layer: experimental_redisLocker().pipe(

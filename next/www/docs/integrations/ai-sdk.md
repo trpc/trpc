@@ -26,7 +26,7 @@ import {
   type UIMessage,
 } from 'ai';
 
-const router = {
+const router = t.router({
   chat: t.procedure
     .input(
       z.object({
@@ -42,7 +42,7 @@ const router = {
       });
       return toUIMessageStream({ stream: result.stream });
     }),
-};
+});
 ```
 
 ```tsx
@@ -66,7 +66,7 @@ const chat = useChat({
 
 ## Procedures as tools
 
-AI SDK takes Standard Schema as a tool's `inputSchema`, so a tool reuses the procedure's input schema and runs the procedure with [`call()`](../server/server-side-calls.md), middleware and validation included:
+AI SDK takes Standard Schema as a tool's `inputSchema`, so a tool reuses the procedure's input schema and runs the procedure with [`t.call()`](../server/server-side-calls.md), middleware and validation included:
 
 ```ts twoslash
 // ---cut-start---
@@ -79,7 +79,6 @@ declare const prompt: string;
 declare function forecast(city: string): Promise<string>;
 // ---cut-end---
 import { generateText, tool } from 'ai';
-import { call } from '@trpc12/trpc/server';
 
 const WeatherInput = z.object({ city: z.string() });
 const weatherProcedure = t.procedure
@@ -89,7 +88,7 @@ const weatherProcedure = t.procedure
 const weather = tool({
   description: 'The weather in a city',
   inputSchema: WeatherInput,
-  execute: (input) => call(weatherProcedure, input, { ctx }),
+  execute: (input) => t.call(weatherProcedure, input, { ctx }),
 });
 
 await generateText({ model, tools: { weather }, prompt });

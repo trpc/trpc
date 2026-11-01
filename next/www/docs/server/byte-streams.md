@@ -31,11 +31,11 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { experimental_byteStream } from '@trpc12/trpc/server';
 import { Stream } from 'effect';
 import { t } from './server.ts';
-const router = {
+const router = t.router({
   upload: t.procedure
     .input(experimental_byteStream())
     .mutation((opts) => Stream.runDrain(opts.input)),
-};
+});
 const client = createTrpcClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: 'http://localhost:3000/trpc' })],

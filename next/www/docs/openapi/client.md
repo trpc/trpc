@@ -16,14 +16,14 @@ import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { db, type Context } from './server.ts';
 const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
       .query((opts) => db.post.find(opts.input.id)),
   },
-};
+});
 // ---cut-end---
 import { experimental_toContract } from '@trpc12/trpc/contract';
 import { experimental_openApiLink } from '@trpc12/trpc/openapi';

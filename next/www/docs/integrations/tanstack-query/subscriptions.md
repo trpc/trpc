@@ -26,7 +26,7 @@ import { z } from 'zod';
 import { t, type Post } from './server.ts';
 declare function onPost(channel: string, after?: string): AsyncIterable<Post>;
 declare function toast(message: string): void;
-const router = {
+const router = t.router({
   post: {
     onAdd: t.procedure
       .input(z.object({ channel: z.string() }))
@@ -36,7 +36,7 @@ const router = {
         }
       }),
   },
-};
+});
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),
@@ -76,7 +76,7 @@ import { z } from 'zod';
 import { t } from './server.ts';
 declare function ticks(symbol: string): AsyncIterable<number>;
 declare function messages(room: string): AsyncIterable<{ text: string }>;
-const router = {
+const router = t.router({
   price: {
     onTick: t.procedure
       .input(z.object({ symbol: z.string() }))
@@ -91,7 +91,7 @@ const router = {
         yield* messages(opts.input.room);
       }),
   },
-};
+});
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),

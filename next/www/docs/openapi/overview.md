@@ -24,14 +24,14 @@ import { z } from 'zod';
 
 const t = initTrpc().concat(experimental_openapi());
 
-const router = {
+const router = t.router({
   post: {
     byId: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
       .query((opts) => db.post.find(opts.input.id) ?? null),
   },
-};
+});
 
 const rest = experimental_createOpenApiHandler({ router });
 const doc = experimental_generateOpenApi(router, {

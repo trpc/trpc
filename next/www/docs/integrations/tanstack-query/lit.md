@@ -98,7 +98,7 @@ import {
 } from '@trpc12/experimental-tanstack-lit-query';
 import { z } from 'zod';
 import { t } from './server.ts';
-const router = {
+const router = t.router({
   clock: {
     ticks: t.procedure
       .input(z.object({ from: z.number() }))
@@ -106,7 +106,7 @@ const router = {
         for (let n = opts.input.from; ; n++) yield n;
       }),
   },
-};
+});
 const useTrpc = createTrpcContext<typeof router>().useTrpc;
 // ---cut-end---
 class Ticker extends LitElement {

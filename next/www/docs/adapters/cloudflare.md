@@ -26,11 +26,11 @@ class Posts extends experimental_Publisher.Service<
   { created: Post; deleted: { id: string } }
 >()('Posts') {}
 const t = initTrpc();
-const router = {
+const router = t.router({
   onCreated: t.procedure.subscription((opts) =>
     Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
-};
+});
 interface Env {
   POSTS_ROOM: DurableObjectNamespace<PostsRoom>;
 }
@@ -135,7 +135,7 @@ class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()(
   'Posts',
 ) {}
 
-const router = {
+const router = t.router({
   create: t.procedure
     .input(PostInput)
     .mutation((opts) =>
@@ -144,7 +144,7 @@ const router = {
   onCreated: t.procedure.subscription((opts) =>
     Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
-};
+});
 
 export class Room extends DurableObject<Env> {
   handler = createFetchHandler({
@@ -195,11 +195,11 @@ declare function durableObjectPersistence(
   storage: DurableObjectStorage,
 ): Layer.Layer<Persistence.BackingPersistence>;
 const t = initTrpc();
-const router = {
+const router = t.router({
   onMessage: t.procedure.subscription((opts) =>
     Messages.subscribe('message', { lastEventId: opts.lastEventId }),
   ),
-};
+});
 interface Env {}
 class Room extends DurableObject<Env> {
   // ---cut-end---
@@ -227,7 +227,7 @@ class Room extends DurableObject<Env> {
 import { DurableObject } from 'cloudflare:workers';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 interface Env {
   LOCKS: DurableObjectNamespace<Locks>;
 }
@@ -267,7 +267,7 @@ Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). 
 import { DurableObject } from 'cloudflare:workers';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 interface Env {
   RATE_LIMITS: DurableObjectNamespace<RateLimits>;
 }
@@ -310,7 +310,7 @@ Bind `RATE_LIMITS` to `RateLimits` in `wrangler.jsonc` (a `new_sqlite_classes` m
 /// <reference types="@cloudflare/workers-types" />
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 import { tracing } from 'cloudflare:workers';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -358,13 +358,13 @@ import { RoomToken } from './token.ts';
 const t = initTrpc<{ ctx: { user: User } }>();
 // ---cut-end---
 // the Worker's router
-const workerRouter = {
+const workerRouter = t.router({
   roomToken: t.procedure
     .input(Schema.Struct({ room: Schema.String }))
     .query((opts) =>
       RoomToken.sign({ room: opts.input.room, user: opts.ctx.user.id }),
     ),
-};
+});
 
 // ---cut-start---
 export type WorkerRouter = typeof workerRouter;
@@ -386,13 +386,13 @@ class Notes extends experimental_Publisher.Service<
 >()('Notes') {}
 // ---cut-end---
 // the Durable Object's router and handler
-const roomRouter = {
+const roomRouter = t.router({
   inbox: t.procedure.subscription((opts) =>
     Notes.subscribe(`inbox:${opts.ctx.user}`, {
       lastEventId: opts.lastEventId,
     }),
   ),
-};
+});
 
 export class Room extends DurableObject<Env> {
   handler = createFetchHandler({

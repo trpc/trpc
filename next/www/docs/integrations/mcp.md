@@ -32,7 +32,7 @@ const authed = t.procedure.use((opts) =>
     : error({ code: 'UNAUTHORIZED', message: 'Sign in first' }),
 );
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .meta({ mcp: { description: 'Read one blog post by its id.' } })
@@ -52,7 +52,7 @@ export const appRouter = {
     // Not a tool: no `mcp` meta.
     list: t.procedure.query(() => db.post.list()),
   },
-};
+});
 ```
 
 A model picks a tool by its description and fills in the arguments from the input's JSON Schema, so describe the procedure and its fields (`.describe()` in Zod).
@@ -71,9 +71,9 @@ import { Layer } from 'effect';
 const t = initTrpc<{ ctx: { token: string | undefined } }>().concat(
   experimental_mcp(),
 );
-const appRouter = {
+const appRouter = t.router({
   health: t.procedure.meta({ mcp: true }).query(() => 'ok'),
-};
+});
 const handler = createFetchHandler({
   router: appRouter,
   createContext: () => ({ token: undefined }),
@@ -174,9 +174,9 @@ interface User {
 }
 declare function verifyToken(header: string | undefined): Promise<User | null>;
 const t = initTrpc<{ ctx: { user: User } }>().concat(experimental_mcp());
-const appRouter = {
+const appRouter = t.router({
   health: t.procedure.meta({ mcp: true }).query(() => 'ok'),
-};
+});
 // ---cut-end---
 import { TrpcError } from '@trpc12/trpc/server';
 

@@ -12,7 +12,7 @@ v11: server/adapters/aws-lambda
 // ---cut-start---
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc<{ ctx: { requestId: string | undefined } }>();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 type AppRouter = typeof router;
 // ---cut-end---
 import { toLambdaHandler, type LambdaPlatform } from '@trpc12/trpc/aws-lambda';

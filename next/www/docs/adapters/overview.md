@@ -44,7 +44,7 @@ Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware`
 // ---cut-start---
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 import { HttpMiddleware } from 'effect/http';
 import { cors } from '@trpc12/trpc/http';

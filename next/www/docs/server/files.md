@@ -26,11 +26,11 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
 declare const storage: { put(id: string, file: File): Promise<void> };
-const router = {
+const router = t.router({
   setCover: t.procedure
     .input(z.object({ postId: z.string(), cover: z.instanceof(File) }))
     .mutation((opts) => storage.put(opts.input.postId, opts.input.cover)),
-};
+});
 const client = createTrpcClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: 'http://localhost:3000/trpc' })],
@@ -69,14 +69,14 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
 declare function csv(id: string): string;
-const router = {
+const router = t.router({
   report: t.procedure
     .input(z.object({ id: z.string() }))
     .query(
       (opts) =>
         new File([csv(opts.input.id)], 'report.csv', { type: 'text/csv' }),
     ),
-};
+});
 const client = createTrpcClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: 'http://localhost:3000/trpc' })],

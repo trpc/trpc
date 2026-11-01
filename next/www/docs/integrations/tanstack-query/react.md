@@ -131,13 +131,13 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { t, type Post } from './server.ts';
 declare function onPost(): AsyncIterable<Post>;
 declare function toast(message: string): void;
-const router = {
+const router = t.router({
   post: {
     onAdd: t.procedure.subscription(async function* () {
       yield* onPost();
     }),
   },
-};
+});
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),

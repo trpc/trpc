@@ -18,9 +18,9 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import { t } from './server.ts';
-const appRouter = {
+const appRouter = t.router({
   report: t.procedure.query(() => ({ views: 0 })),
-};
+});
 type AppRouter = typeof appRouter;
 declare const url: string;
 declare const wsUrl: string;

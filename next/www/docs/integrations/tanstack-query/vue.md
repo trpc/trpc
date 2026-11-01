@@ -90,7 +90,7 @@ import { tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { db, t, type Post } from './server.ts';
 declare function onPost(channel: string): AsyncIterable<Post>;
-const router = {
+const router = t.router({
   post: {
     onAdd: t.procedure
       .input(z.object({ channel: z.string() }))
@@ -99,7 +99,7 @@ const router = {
           yield tracked(post.id, post);
       }),
   },
-};
+});
 const useTrpc = createTrpcContext<typeof router>().useTrpc;
 const trpc = useTrpc();
 void db;

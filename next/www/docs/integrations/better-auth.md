@@ -29,9 +29,9 @@ const authed = t.procedure.use(async (opts) => {
     : error({ code: 'UNAUTHORIZED' });
 });
 
-const router = {
+const router = t.router({
   me: authed.query((opts) => opts.ctx.user.name), // ctx.user is Better Auth's user type
-};
+});
 
 createFetchHandler({
   router,

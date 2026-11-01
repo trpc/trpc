@@ -15,7 +15,7 @@ import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
-const router = {
+const router = t.router({
   chat: {
     send: t.procedure
       .input(z.object({ text: z.string() }))
@@ -24,7 +24,7 @@ const router = {
         yield 'hi';
       }),
   },
-};
+});
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),
@@ -53,7 +53,7 @@ import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
-const router = {
+const router = t.router({
   chat: {
     send: t.procedure
       .input(z.object({ text: z.string() }))
@@ -61,7 +61,7 @@ const router = {
         yield 'ok';
       }),
   },
-};
+});
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),

@@ -38,7 +38,7 @@ An app's `tsconfig.json` lists the api package in `references`, and imports its 
 
 In the example, every package extends [`tsconfig.base.json`](../../../examples/monorepo/tsconfig.base.json) and lists what it imports, as [`packages/posts`](../../../examples/monorepo/packages/posts/tsconfig.json) and [`apps/web`](../../../examples/monorepo/apps/web/tsconfig.json) do. The root [`tsconfig.json`](../../../examples/monorepo/tsconfig.json) references them all, so one `tsc -b` builds and checks the repo.
 
-Split the server by domain (a package per area, each exporting its router and its type, like [`packages/posts`](../../../examples/monorepo/packages/posts/src/index.ts)) so `tsc -b` rebuilds only the packages a change reaches. Keep `t` and base procedures such as `authed` in a package of their own that every domain depends on ([`packages/trpc`](../../../examples/monorepo/packages/trpc/src/index.ts)).
+Split the server by domain (a package per area, each exporting its router, made with `t.router()`, and its type, like [`packages/posts`](../../../examples/monorepo/packages/posts/src/index.ts)) so `tsc -b` rebuilds only the packages a change reaches. Keep `t` and base procedures such as `authed` in a package of their own that every domain depends on ([`packages/trpc`](../../../examples/monorepo/packages/trpc/src/index.ts)).
 
 ## Name the root router's type
 
@@ -46,24 +46,26 @@ Mount the domains in a router whose type you write from theirs:
 
 ```ts twoslash
 // ---cut-start---
-import { t } from './server.ts';
-const postsRouter = { byId: t.procedure.query(() => 'post') };
-const usersRouter = { me: t.procedure.query(() => 'me') };
+import { t, type Context } from './server.ts';
+const postsRouter = t.router({ byId: t.procedure.query(() => 'post') });
+const usersRouter = t.router({ me: t.procedure.query(() => 'me') });
 type PostsRouter = typeof postsRouter;
 type UsersRouter = typeof usersRouter;
 // ---cut-end---
+import type { RouterCtx } from '@trpc12/trpc/server';
+
 export type AppRouter = {
   posts: PostsRouter;
   users: UsersRouter;
-};
+} & RouterCtx<Context>;
 
-export const appRouter: AppRouter = {
+export const appRouter: AppRouter = t.router({
   posts: postsRouter,
   users: usersRouter,
-};
+});
 ```
 
-The declarations then refer to each domain's type. Inferred from the object instead, they copy every domain's procedures into the api package's `.d.ts`, and past a few thousand procedures TypeScript stops with TS7056 ("the inferred type of this node exceeds the maximum length the compiler will serialize"). Write it as a `type`: an `interface` isn't accepted as a router. The example's [`packages/api`](../../../examples/monorepo/packages/api/src/index.ts) mounts its three domains this way.
+The declarations then refer to each domain's type. `RouterCtx<Context>` is what `t.router()` adds to a router's type: the root `ctx` the handler's `createContext` must return ([Routers](./routers.md)). Inferred from the object instead, they copy every domain's procedures into the api package's `.d.ts`, and past a few thousand procedures TypeScript stops with TS7056 ("the inferred type of this node exceeds the maximum length the compiler will serialize"). Write it as a `type`: an `interface` isn't accepted as a router. The example's [`packages/api`](../../../examples/monorepo/packages/api/src/index.ts) mounts its three domains this way.
 
 ## One client or several
 

@@ -49,9 +49,9 @@ import {
   splitLink,
 } from '@trpc12/trpc/client';
 import { t, type AppRouter } from './server.ts';
-const shopRouter = {
+const shopRouter = t.router({
   cart: t.procedure.query(() => [] as string[]),
-};
+});
 type BlogRouter = AppRouter;
 type ShopRouter = typeof shopRouter;
 declare const blogUrl: string;

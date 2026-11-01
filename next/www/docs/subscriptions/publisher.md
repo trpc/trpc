@@ -25,7 +25,7 @@ class Posts extends experimental_Publisher.Service<
   { created: Post; deleted: { id: string } }
 >()('Posts') {}
 
-const router = {
+const router = t.router({
   create: t.procedure.input(PostInput).mutation((opts) =>
     Effect.gen(function* () {
       const post = yield* savePost(opts.input);
@@ -36,7 +36,7 @@ const router = {
   onCreated: t.procedure.subscription((opts) =>
     Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
-};
+});
 
 createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
 ```
@@ -59,7 +59,7 @@ class Notes extends experimental_Publisher.Service<
   { [inbox: `inbox:${string}`]: { text: string } }
 >()('Notes') {}
 
-const router = {
+const router = t.router({
   notify: t.procedure
     .input(Schema.Struct({ to: Schema.String, text: Schema.String }))
     .mutation((opts) =>
@@ -70,7 +70,7 @@ const router = {
       lastEventId: opts.lastEventId,
     }),
   ),
-};
+});
 ```
 
 The backend filters by channel, so a process only receives its subscribers' channels (Redis subscribes per channel). To reach several audiences, publish to each channel.

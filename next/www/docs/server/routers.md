@@ -1,11 +1,11 @@
 ---
 title: Routers
-description: Plain objects of procedures, merged with `mergeRouters` and split with `lazy()`.
+description: Plain objects of procedures, made with `t.router()`, merged with `mergeRouters` and split with `lazy()`.
 section: Server
 order: 2
 ---
 
-A router is a plain object. Keys are path segments: `{ post: { byId } }` serves `post.byId`, at `/trpc/post.byId` over HTTP.
+A router is a plain object. Keys are path segments: `{ post: { byId } }` serves `post.byId`, at `/trpc/post.byId` over HTTP. Make the root with `t.router(routes)`:
 
 ```ts twoslash
 // ---cut-start---
@@ -13,10 +13,39 @@ import { appRouter as blog, t } from './server.ts';
 const byId = blog.post.byId;
 const create = blog.post.create;
 // ---cut-end---
-export const appRouter = {
+export const appRouter = t.router({
   health: t.procedure.query(() => 'ok'),
   post: { byId, create },
-};
+});
+```
+
+`t.router()` returns `routes` as they are. Its type also records `t`'s root `ctx`, which a built procedure's type leaves out, and the handlers, `createRouterClient` and `localLink` type `createContext` (or `ctx`) from it. A root that's a plain object is a type error at the handler. Nesting inline (`post: { byId, create }`) stays a plain object.
+
+A router a module exports is made with `t.router()` too, so its declarations carry the root `ctx` once, at the router, rather than on every procedure. A root made from routers of different `t`s needs every one of their `ctx`s:
+
+```ts twoslash
+// ---cut-start---
+// @filename: base.ts
+import { initTrpc } from '@trpc12/trpc/server';
+export const t = initTrpc<{ ctx: { user: string | null } }>();
+// @filename: post.ts
+import { t } from './base.ts';
+// ---cut-end---
+export const postRouter = t.router({
+  list: t.procedure.query(() => ['hello']),
+});
+// ---cut-start---
+// @filename: index.ts
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { t } from './base.ts';
+import { postRouter } from './post.ts';
+// ---cut-end---
+
+export const appRouter = t.router({ post: postRouter });
+createFetchHandler({
+  router: appRouter,
+  createContext: () => ({ user: null }),
+});
 ```
 
 Two kinds of key can't be called from a client, so `createFetchHandler` and `createRouterClient` throw on them (and a lazy subtree throws when it loads): `then`, because clients and their nested routers can be awaited, and a key with a `.`, which separates path segments (nest it instead: `{ post: { byId } }`).
@@ -44,7 +73,7 @@ const billing = t.router(
 export const adminApi = mergeRouters(admin, { health });
 
 // mergeRouters(admin, billing) throws: they set `route` to different values.
-export const appRouter = { admin, billing, health };
+export const appRouter = t.router({ admin, billing, health });
 ```
 
 The type check doesn't see router-level `meta`, so a conflict is a runtime error only.
@@ -59,17 +88,17 @@ With thousands of procedures, split the router into packages and type apps from 
 // ---cut-start---
 // @filename: admin.ts
 import { t } from './server.ts';
-export default { stats: t.procedure.query(() => 0) };
+export default t.router({ stats: t.procedure.query(() => 0) });
 // @filename: index.ts
-import { appRouter as blog } from './server.ts';
+import { appRouter as blog, t } from './server.ts';
 const postRouter = blog.post;
 // ---cut-end---
 import { lazy } from '@trpc12/trpc/server';
 
-export const appRouter = {
+export const appRouter = t.router({
   post: postRouter,
   admin: lazy(() => import('./admin.ts')),
-};
+});
 ```
 
 `t.lazy(load, { meta })` also takes router-level `meta`, as `t.router()` does.

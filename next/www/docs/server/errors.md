@@ -142,7 +142,7 @@ import { z } from 'zod';
 import { db, t } from './server.ts';
 declare const url: string;
 // ---cut-end---
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
       const post = db.post.find(opts.input.id);
@@ -155,7 +155,7 @@ const appRouter = {
       return post;
     }),
   },
-};
+});
 
 // ---cut-start---
 const client = createTrpcClient({

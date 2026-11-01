@@ -87,11 +87,11 @@ import {
 } from '@trpc12/trpc/client';
 import { t } from './server.ts';
 declare const url: string;
-const appRouter = {
+const appRouter = t.router({
   onPost: t.procedure.subscription(async function* () {
     yield 'created';
   }),
-};
+});
 type AppRouter = typeof appRouter;
 // ---cut-end---
 const restOnly = link<{ unsupported: 'subscription' }>((opts) =>

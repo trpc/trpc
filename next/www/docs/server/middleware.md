@@ -65,9 +65,9 @@ declare function tenantOf(request: HttpServerRequest.HttpServerRequest): string;
 const withTenant = middleware<{ ctx: { tenant: string } }>()((opts) =>
   opts.next({ ctx: { db: dbFor(opts.ctx.tenant) } }),
 );
-const router = {
+const router = t.router({
   posts: t.procedure.use(withTenant).query((opts) => opts.ctx.db.posts()),
-};
+});
 createFetchHandler({
   router,
   createContext: (opts) => ({ tenant: tenantOf(opts.request) }),
@@ -78,7 +78,7 @@ createFetchHandler({
 
 ## Running once
 
-When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once, on a builder or on `t`. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what `ctx` already has, so nested `call(other, input, { ctx })`s skip it:
+When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once, on a builder or on `t`. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what `ctx` already has, so nested `t.call(other, input, { ctx })`s skip it:
 
 ```ts twoslash
 // ---cut-start---

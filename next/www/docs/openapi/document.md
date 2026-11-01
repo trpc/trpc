@@ -38,14 +38,14 @@ const t = initTrpc().concat(experimental_openapi());
 // ---cut-end---
 import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
 
-const router = {
+const router = t.router({
   me: t.procedure
     .meta({ route: { tags: ['users'] } })
     .query(() => ({ name: 'Ada' })),
   health: t.procedure
     .meta({ route: { spec: (op) => ({ ...op, security: [] }) } })
     .query(() => 'ok'),
-};
+});
 
 const doc = experimental_generateOpenApi(router, {
   info: { title: 'API', version: '1.0.0' },

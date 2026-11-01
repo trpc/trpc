@@ -194,7 +194,7 @@ import { createReactClient } from '@trpc12/experimental-react';
 import { httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
-const router = {
+const router = t.router({
   ...appRouter,
   post: {
     ...appRouter.post,
@@ -202,7 +202,7 @@ const router = {
       .input(z.object({ id: z.string(), title: z.string() }))
       .mutation((opts) => db.post.find(opts.input.id)),
   },
-};
+});
 const trpc = createReactClient({
   router: routerType<typeof router>(),
   links: [httpLink({ url: '/trpc' })],

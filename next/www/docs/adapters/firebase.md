@@ -6,7 +6,7 @@ order: 9
 experiment: adapters
 ---
 
-A callable function gets JSON `data` and Firebase's `auth`, and reports errors as `HttpsError`. Call the procedure with `call()` and map the error code:
+A callable function gets JSON `data` and Firebase's `auth`, and reports errors as `HttpsError`. Call the procedure with `t.call()` and map the error code:
 
 ```ts
 import {
@@ -14,7 +14,7 @@ import {
   onCall,
   type FunctionsErrorCode,
 } from 'firebase-functions/v2/https';
-import { call, isTrpcError } from '@trpc12/trpc/server';
+import { isTrpcError } from '@trpc12/trpc/server';
 
 const firebaseCode: Record<string, FunctionsErrorCode> = {
   BAD_REQUEST: 'invalid-argument',
@@ -33,7 +33,7 @@ const firebaseCode: Record<string, FunctionsErrorCode> = {
 
 export const createPost = onCall(async (request) => {
   try {
-    return await call(appRouter.post.create, request.data, {
+    return await t.call(appRouter.post.create, request.data, {
       ctx: { uid: request.auth?.uid ?? null },
     });
   } catch (error) {

@@ -26,7 +26,7 @@ const onPost = t.procedure.subscription(async function* (opts) {
   }
 });
 // ---cut-start---
-export const router = { onPost };
+export const router = t.router({ onPost });
 // @filename: client.ts
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { router } from './server.ts';
@@ -64,7 +64,7 @@ const onPost = t.procedure.subscription(async function* (opts) {
     yield tracked(post.id, post);
 });
 // ---cut-start---
-export const router = { onPost };
+export const router = t.router({ onPost });
 // @filename: client.ts
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { router } from './server.ts';

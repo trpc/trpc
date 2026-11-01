@@ -88,11 +88,11 @@ A subscription is a `Stream` of what the server emits. Ending the stream early, 
 // ---cut-start---
 import { httpLink, routerType } from '@trpc12/trpc/client';
 import { t } from './server.ts';
-const router = {
+const router = t.router({
   ticks: t.procedure.subscription(async function* () {
     for (let i = 0; ; i++) yield i;
   }),
-};
+});
 // ---cut-end---
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { Effect, Stream } from 'effect';

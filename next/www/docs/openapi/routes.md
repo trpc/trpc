@@ -169,12 +169,12 @@ const users = t.procedure.query(() => [{ id: '1', name: 'Ada' }]);
 const ban = t.procedure.mutation(() => {});
 // ---cut-end---
 
-const appRouter = {
+const appRouter = t.router({
   admin: t.router(
     { meta: { route: { prefix: '/staff', tags: ['admin'] } } },
     { users, ban },
   ),
-};
+});
 // RPC: admin.users. OpenAPI: GET /api/staff/users, tagged admin.
 ```
 
@@ -194,7 +194,7 @@ import { experimental_toContract } from '@trpc12/trpc/contract';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { initTrpc, loadRouter } from '@trpc12/trpc/server';
 const t = initTrpc();
-const appRouter = { health: t.procedure.query(() => 'ok') };
+const appRouter = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 // build step
 const contract = experimental_toContract(await loadRouter(appRouter));

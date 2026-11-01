@@ -12,7 +12,7 @@ experiment: adapters
 // ---cut-start---
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const router = { health: t.procedure.query(() => 'ok') };
+const router = t.router({ health: t.procedure.query(() => 'ok') });
 // ---cut-end---
 // worker.ts
 import { parentPort } from 'node:worker_threads';
