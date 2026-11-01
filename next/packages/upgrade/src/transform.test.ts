@@ -35,14 +35,14 @@ const caller = appRouter.createCaller({ user: null });
 `);
     expect(result.changed).toBe(true);
     expect(result.code).toMatchInlineSnapshot(`
-      "import { initTrpc, TrpcError, createRouterClient } from '@trpc12/trpc/server';
+      "import { initTrpc, TrpcError, mergeRouters, createRouterClient } from '@trpc12/trpc/server';
       import type { Context } from './context';
 
       const t = initTrpc<{ ctx: Context; meta: { auth: boolean } }>();
 
       export const router = t.router;
       export const publicProcedure = t.procedure;
-      export const merged = { ...userRouter, ...postRouter };
+      export const merged = mergeRouters(userRouter, postRouter);
 
       export const authed = t.procedure.use(({ ctx, next }) => {
         if (!ctx.user) throw new TrpcError({ code: 'UNAUTHORIZED' });
@@ -87,7 +87,7 @@ const t = initTRPC.create({
     `);
   });
 
-  test('t.router(routes) is the routes object; other t.router uses are notes', () => {
+  test('t.router stays: in v12 it brands a router with the root ctx handlers read', () => {
     const source = `import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 export const router = t.router;
@@ -101,18 +101,14 @@ other.router({ post });
       "import { initTrpc } from '@trpc12/trpc/server';
       const t = initTrpc();
       export const router = t.router;
-      const post = { list: t.procedure.query(() => []) };
-      export const appRouter = { post, user: userRoutes };
-      export const make = () => ({ post });
+      const post = t.router({ list: t.procedure.query(() => []) });
+      export const appRouter = t.router({ post, user: t.router(userRoutes) });
+      export const make = () => t.router({ post });
       const other = { router: (routes: object) => routes };
       other.router({ post });
       "
     `);
-    expect(messages(source)).toMatchInlineSnapshot(`
-      [
-        "3:23 t.router: a router is a plain object in v12; router(routes) is routes, and t.router({ meta }, routes) takes router meta first",
-      ]
-    `);
+    expect(messages(source)).toEqual([]);
   });
 
   test('input.lastEventId is a note: v12 passes it to the resolver', () => {
@@ -608,20 +604,24 @@ export const { useTRPCClient: useClient } = createTRPCContext<AppRouter>();
     `);
   });
 
-  test('mergeRouters as an arrow body, createCallerFactory, req last in fetchRequestHandler', () => {
+  test('mergeRouters as an arrow body or with spread or no routers, createCallerFactory, req last in fetchRequestHandler', () => {
     const source = `import { initTRPC } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 const t = initTRPC.create();
 const merged = () => t.mergeRouters(a, b);
+const spread = t.mergeRouters(...routers);
+const none = t.mergeRouters();
 const factory = t.createCallerFactory(appRouter);
 export const handle = (request: Request) =>
   fetchRequestHandler({ endpoint: '/trpc', router: appRouter, req: request });
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
-      "import { initTrpc } from '@trpc12/trpc/server';
+      "import { initTrpc, mergeRouters } from '@trpc12/trpc/server';
       import { createFetchHandler } from '@trpc12/trpc/server';
       const t = initTrpc();
-      const merged = () => ({ ...a, ...b });
+      const merged = () => mergeRouters(a, b);
+      const spread = mergeRouters(...routers);
+      const none = mergeRouters();
       const factory = t.createCallerFactory(appRouter);
       export const handle = (request: Request) =>
         createFetchHandler({ endpoint: '/trpc', router: appRouter }).fetch(request);
@@ -629,8 +629,8 @@ export const handle = (request: Request) =>
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "5:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
-        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
+        "7:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
+        "9:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
       ]
     `);
   });
@@ -709,8 +709,6 @@ const bare = Object.create(null);
 const holes = [, t];
 const batch = httpBatchLink();
 const client = createTRPCClient<AppRouter>({ links });
-const spread = t.mergeRouters(...routers);
-const none = t.mergeRouters();
 const fromOptions = fetchRequestHandler(options);
 const noReq = fetchRequestHandler({ endpoint: '/trpc' });
 export const { TRPCProvider, 1: one, ...rest } = createTRPCContext<AppRouter>();
@@ -725,8 +723,6 @@ export const { TRPCProvider, 1: one, ...rest } = createTRPCContext<AppRouter>();
       const holes = [, t];
       const batch = httpLink();
       const client = createTrpcClient({ router: routerType<AppRouter>(), links });
-      const spread = t.mergeRouters(...routers);
-      const none = t.mergeRouters();
       const fromOptions = createFetchHandler(options);
       const noReq = createFetchHandler({ endpoint: '/trpc' });
       export const { TrpcProvider, 1: one, ...rest } = createTrpcContext<AppRouter>();
@@ -734,7 +730,7 @@ export const { TRPCProvider, 1: one, ...rest } = createTRPCContext<AppRouter>();
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "14:30 createTrpcContext returns [TrpcProvider, useTrpc, useTrpcClient, context]: destructure it as a tuple",
+        "12:30 createTrpcContext returns [TrpcProvider, useTrpc, useTrpcClient, context]: destructure it as a tuple",
       ]
     `);
   });

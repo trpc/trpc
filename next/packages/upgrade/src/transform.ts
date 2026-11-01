@@ -443,11 +443,6 @@ export function upgradeSource(
   const isImportedAs = (node: Node, v11Name: string) =>
     node.type === 'Identifier' && imported.get(node.name) === v11Name;
 
-  /** Locals bound to `initTRPC…create()`: v11's `t`. */
-  const roots = new Set<string>();
-  const isRoot = (node: Node) =>
-    node.type === 'Identifier' && roots.has(node.name);
-
   const objectArg = (call: Node): Node | undefined => {
     const arg = call['arguments'][0];
     return arg?.type === 'ObjectExpression' ? arg : undefined;
@@ -626,39 +621,13 @@ export function upgradeSource(
             const message = name && own(ROOT_OPTION_NOTES, name);
             if (message) note(prop.start, message);
           }
-          if (
-            parent?.type === 'VariableDeclarator' &&
-            parent['id'].type === 'Identifier'
-          ) {
-            roots.add(parent['id'].name);
-          }
           return;
         }
-      }
-      if (method === 'router' && isRoot(callee['object'])) {
-        const args = node['arguments'] as Node[];
-        const routes = args[0];
-        if (routes && args.length === 1 && routes.type !== 'SpreadElement') {
-          const wrap =
-            routes.type === 'ObjectExpression' &&
-            parent?.type === 'ArrowFunctionExpression' &&
-            key === 'body';
-          take(node.start, routes.start, wrap ? '(' : '');
-          take(routes.end, node.end, wrap ? ')' : '');
-        }
-        return;
       }
       if (method === 'mergeRouters' && imported.size > 0) {
-        const args = node['arguments'] as Node[];
-        if (args.length > 0 && args.every((a) => a.type !== 'SpreadElement')) {
-          const wrap =
-            parent?.type === 'ArrowFunctionExpression' && key === 'body';
-          take(node.start, args[0]!.start, `${wrap ? '(' : ''}{ ...`);
-          for (let i = 1; i < args.length; i++)
-            take(args[i - 1]!.end, args[i]!.start, ', ...');
-          take(args.at(-1)!.end, node.end, ` }${wrap ? ')' : ''}`);
-          return;
-        }
+        ensure('@trpc12/trpc/server', 'mergeRouters');
+        take(callee.start, callee.end, 'mergeRouters');
+        return;
       }
       if (
         method === 'createCaller' &&
@@ -730,12 +699,6 @@ export function upgradeSource(
     }
     if (node.type === 'MemberExpression' && !node['computed']) {
       const property = node['property'].name as string;
-      if (property === 'router' && isRoot(node['object'])) {
-        note(
-          node.start,
-          `${text(node)}: a router is a plain object in v12; router(routes) is routes, and t.router({ meta }, routes) takes router meta first`,
-        );
-      }
       const object = node['object'] as Node;
       if (
         property === 'lastEventId' &&
