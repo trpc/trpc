@@ -98,7 +98,7 @@ const PooledInput = z.object({
   ),
 });
 
-const router = {
+const router = t.router({
   todo: {
     live: t.procedure
       .input(TodoFilter)
@@ -132,7 +132,7 @@ const router = {
   stats: t.procedure.query(() =>
     Effect.map(Todos, (todos) => ({ ...todos.stats })),
   ),
-};
+});
 type AppRouter = typeof router;
 
 /** The router over in-memory fetch, recording request paths. */

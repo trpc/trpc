@@ -11,7 +11,7 @@ const titles = new Map([
   ['1', 'Hello'],
   ['2', 'World'],
 ]);
-const router = {
+const router = t.router({
   post: {
     list: t.procedure.query(() => [...titles.values()]),
     byId: t.procedure
@@ -35,7 +35,7 @@ const router = {
       throw new Error('nope');
     }),
   },
-};
+});
 
 function setup() {
   const handler = createFetchHandler({ router, batch: true });

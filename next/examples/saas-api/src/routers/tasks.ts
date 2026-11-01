@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
 import { z } from 'zod';
 import { Store } from '../store.ts';
-import { tenantProcedure } from '../trpc.ts';
+import { t, tenantProcedure } from '../trpc.ts';
 import { projectProcedure } from './projects.ts';
 
 const TaskOutput = z.object({
@@ -11,7 +11,7 @@ const TaskOutput = z.object({
   createdAt: z.date().transform((d) => d.toISOString()),
 });
 
-export const tasksRouter = {
+export const tasksRouter = t.router({
   task: {
     list: projectProcedure.output(z.array(TaskOutput)).query((opts) =>
       Effect.gen(function* () {
@@ -46,4 +46,4 @@ export const tasksRouter = {
         }),
       ),
   },
-};
+});

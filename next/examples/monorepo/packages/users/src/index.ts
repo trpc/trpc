@@ -11,7 +11,7 @@ const users = new Map<string, User>([
   ['ada', { id: 'ada', name: 'Ada Lovelace' }],
 ]);
 
-export const usersRouter = {
+export const usersRouter = t.router({
   byId: t.procedure
     .input(z.object({ id: z.string() }))
     .query(
@@ -24,6 +24,6 @@ export const usersRouter = {
       users.get(opts.ctx.user) ??
       error({ code: 'NOT_FOUND', data: { id: opts.ctx.user } }),
   ),
-};
+});
 
 export type UsersRouter = typeof usersRouter;

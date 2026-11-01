@@ -29,7 +29,7 @@ const authed = t.procedure.use((opts) =>
     : error({ code: 'UNAUTHORIZED', message: 'Send an authorization header' }),
 );
 
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
@@ -52,7 +52,7 @@ const appRouter = {
       for (const post of posts.values()) yield tracked(post.id, post);
     }),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 
 export async function listen(port = 0) {

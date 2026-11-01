@@ -12,7 +12,7 @@ const posts = new Map<string, Post>([
   ['1', { id: '1', title: 'Hello v12', authorId: 'ada' }],
 ]);
 
-export const postsRouter = {
+export const postsRouter = t.router({
   byId: t.procedure
     .input(z.object({ id: z.string() }))
     .query(
@@ -40,6 +40,6 @@ export const postsRouter = {
       posts.set(post.id, post);
       return post;
     }),
-};
+});
 
 export type PostsRouter = typeof postsRouter;

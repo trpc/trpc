@@ -104,7 +104,7 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
   }),
 );
 
-export const appRouter = {
+export const appRouter = t.router({
   user: {
     signup: t.procedure
       .input(Schema.Struct({ email: Schema.String }))
@@ -121,7 +121,7 @@ export const appRouter = {
       ),
     me: t.procedure.use(withUser).query(() => Effect.service(CurrentUser)),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 
 /**

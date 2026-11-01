@@ -197,11 +197,11 @@ const fixture = (fw: Framework, routers: number): Array<[string, string]> => {
   for (const id of ids) {
     const body = byFramework(fw, {
       trpc12: () =>
-        nest(
+        `t.router(${nest(
           `procedure${P1('query')}`,
           `procedure${P2('mutation')}`,
           (b) => `{${b}}`,
-        ),
+        )})`,
       trpc11: () =>
         nest(
           `procedure${P1('query')}`,
@@ -212,7 +212,7 @@ const fixture = (fw: Framework, routers: number): Array<[string, string]> => {
         nest(`base${P1('handler')}`, `base${P2('handler')}`, (b) => `{${b}}`),
     });
     const imports = byFramework(fw, {
-      trpc12: () => `import { procedure, type Schema } from '../base';`,
+      trpc12: () => `import { procedure, t, type Schema } from '../base';`,
       trpc11: () => `import { procedure, router, type Schema } from '../base';`,
       orpc: () => `import { base, type Schema } from '../base';`,
     });
@@ -242,16 +242,20 @@ const fixture = (fw: Framework, routers: number): Array<[string, string]> => {
   const entries = ids.join(',\n  ');
   files.push([
     'router/index.ts',
-    fw === 'trpc11'
-      ? `import { router as make } from '../base';\n${index}export const router = make({\n  ${entries},\n});\n`
-      : `${index}export const router = {\n  ${entries},\n};\n`,
+    byFramework(fw, {
+      trpc12: () =>
+        `import { t } from '../base';\n${index}export const router = t.router({\n  ${entries},\n});\n`,
+      trpc11: () =>
+        `import { router as make } from '../base';\n${index}export const router = make({\n  ${entries},\n});\n`,
+      orpc: () => `${index}export const router = {\n  ${entries},\n};\n`,
+    }),
   ]);
   const schema = `export type { StandardSchemaV1 as Schema } from '@standard-schema/spec';\n`;
   files.push([
     'base.ts',
     byFramework(fw, {
       trpc12: () =>
-        `import { initTrpc } from '@trpc12/trpc/server';\n\nexport const procedure = initTrpc().procedure;\n${schema}`,
+        `import { initTrpc } from '@trpc12/trpc/server';\n\nexport const t = initTrpc();\nexport const procedure = t.procedure;\n${schema}`,
       trpc11: () =>
         `import { initTRPC } from '@trpc/server';\n\nconst t = initTRPC.create();\nexport const router = t.router;\nexport const procedure = t.procedure;\n${schema}`,
       orpc: () => `export { os as base, type Schema } from '@orpc/server';\n`,
@@ -375,12 +379,12 @@ import { serve } from '@trpc12/trpc/http';
 import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, transformer: experimental_createProgressiveJson() });
+const handler = createFetchHandler({ router: t.router({ hello: t.procedure.query(() => 'hi') }), transformer: experimental_createProgressiveJson() });
 export const app = serve(handler).pipe(Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })));`,
     fetch: `import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-export const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, transformer: experimental_createProgressiveJson() });`,
+export const handler = createFetchHandler({ router: t.router({ hello: t.procedure.query(() => 'hi') }), transformer: experimental_createProgressiveJson() });`,
   },
   trpc11: {
     client: `import { createTRPCClient, httpLink, httpSubscriptionLink, splitLink } from '@trpc/client';

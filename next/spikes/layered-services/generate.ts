@@ -187,11 +187,11 @@ const { t, auth } = b;
 ${variant === 'provide-layer' ? 'const { base } = b;\n' : ''}${
         variant === 'middleware-service' ? 'const { authed } = b;\n' : ''
       }${variant === 'contract' ? 'const { impl } = b;\n' : ''}void [Effect, Schema, strict, t, auth, CurrentUser, ${names.join(', ')}];
-export const router${f} = {
+export const router${f} = t.router({
 ${indices(f)
   .map((i) => `  p${i % PER_FILE}: ${procedure(variant, i)},`)
   .join('\n')}
-};
+});
 `,
     );
   }
@@ -211,11 +211,11 @@ ${indices(f)
     `import { Layer } from 'effect';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { AuthLive, layer } from './services.ts';
-${variant === 'contract' ? "import { impl } from './base.ts';\n" : ''}${Array.from({ length: files }, (_, f) => `import { router${f} } from './router${f}.ts';`).join('\n')}
+${variant === 'contract' ? "import { impl } from './base.ts';\n" : "import { t } from './base.ts';\n"}${Array.from({ length: files }, (_, f) => `import { router${f} } from './router${f}.ts';`).join('\n')}
 void [Layer, AuthLive, layer];
-export const appRouter = ${variant === 'contract' ? 'impl.router(' : ''}{
+export const appRouter = ${variant === 'contract' ? 'impl' : 't'}.router({
 ${routes.join('\n')}
-}${variant === 'contract' ? ')' : ''};
+});
 export const handler = createFetchHandler({
   router: appRouter,
   createContext: () => ({})${layerOption},

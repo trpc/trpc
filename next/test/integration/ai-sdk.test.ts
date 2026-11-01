@@ -12,7 +12,7 @@ import {
 } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { call, initTrpc } from '@trpc12/trpc/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../packages/trpc/src/fixtures/server.ts';
@@ -46,7 +46,7 @@ const model = new MockLanguageModelV4({
 const t = initTrpc<{ ctx: { user: string } }>();
 
 const WeatherInput = z.object({ city: z.string() });
-const router = {
+const router = t.router({
   chat: t.procedure
     .input(
       z.object({
@@ -67,7 +67,7 @@ const router = {
     celsius: 21,
     for: opts.ctx.user,
   })),
-};
+});
 
 test('a procedure streams an AI SDK UI message stream that useChat can read', async () => {
   await using server = await createTestServer({
@@ -107,11 +107,11 @@ test('a procedure streams an AI SDK UI message stream that useChat can read', as
   );
 });
 
-test('a procedure is an AI SDK tool through its input schema and call()', async () => {
+test('a procedure is an AI SDK tool through its input schema and t.call()', async () => {
   const weather = tool({
     description: 'The weather in a city',
     inputSchema: WeatherInput,
-    execute: (input) => call(router.weather, input, { ctx: { user: 'ada' } }),
+    execute: (input) => t.call(router.weather, input, { ctx: { user: 'ada' } }),
   });
   const agent = new MockLanguageModelV4({
     doGenerate: [

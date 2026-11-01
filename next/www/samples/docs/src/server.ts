@@ -28,7 +28,7 @@ export const PostSchema = z.object({
   createdAt: z.date(),
 });
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
@@ -44,7 +44,7 @@ export const appRouter = {
         db.post.create({ ...opts.input, author: opts.ctx.user.name }),
       ),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 

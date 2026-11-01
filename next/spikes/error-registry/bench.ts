@@ -299,7 +299,7 @@ const fixture = (name: Name, g: Gen, dir: string): Files => {
       .join('\n')}\n}`;
     files.push([
       `router/f${f}.ts`,
-      `import { t, type S } from '../base';\n${o.routerImports(f)}\n\nexport const f${f} = ${routes};\n`,
+      `import { t, type S } from '../base';\n${o.routerImports(f)}\n\nexport const f${f} = t.router(${routes});\n`,
     ]);
     const call = (i: number) =>
       `c.client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' })`;
@@ -332,7 +332,7 @@ const fixture = (name: Name, g: Gen, dir: string): Files => {
   }
   files.push([
     'router/index.ts',
-    `${ids.map((f) => `import { f${f} } from './f${f}';`).join('\n')}\n\nexport const router = {\n${ids.map((f) => `  f${f},`).join('\n')}\n};\n`,
+    `import { t } from '../base';\n${ids.map((f) => `import { f${f} } from './f${f}';`).join('\n')}\n\nexport const router = t.router({\n${ids.map((f) => `  f${f},`).join('\n')}\n});\n`,
   ]);
   files.push([
     'server.ts',

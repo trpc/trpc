@@ -39,7 +39,7 @@ const isTaken = (username: string) =>
 const t = initTrpc();
 
 // #region router
-export const appRouter = {
+export const appRouter = t.router({
   profile: {
     get: t.procedure.query(() => db.profile),
     changes: t.procedure.query(() => db.changes.slice(0, 5)),
@@ -66,7 +66,7 @@ export const appRouter = {
         return db.profile;
       }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 // #endregion router

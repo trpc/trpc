@@ -13,7 +13,7 @@ const posts: Post[] = [
   { id: '1', title: 'Read with Effect atoms', createdAt: new Date(0) },
 ];
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     list: t.procedure.query(async () => {
       await sleep(50);
@@ -37,5 +37,5 @@ export const appRouter = {
       await sleep(250);
     }
   }),
-};
+});
 export type AppRouter = typeof appRouter;

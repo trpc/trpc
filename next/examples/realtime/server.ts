@@ -57,7 +57,7 @@ const authed = t.procedure.use((opts) =>
 
 const Text = z.string().min(1);
 
-const appRouter = {
+const appRouter = t.router({
   send: authed
     .input(z.object({ room: z.string(), text: Text }))
     .mutation((opts) =>
@@ -86,7 +86,7 @@ const appRouter = {
       lastEventId: opts.lastEventId,
     }),
   ),
-};
+});
 export type AppRouter = typeof appRouter;
 
 const redisUrl = process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379';

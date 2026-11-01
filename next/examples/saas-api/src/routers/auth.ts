@@ -3,9 +3,9 @@ import { error } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { Principal } from '../tenancy.ts';
 import { Store } from '../store.ts';
-import { publicProcedure, tenantProcedure } from '../trpc.ts';
+import { publicProcedure, t, tenantProcedure } from '../trpc.ts';
 
-export const authRouter = {
+export const authRouter = t.router({
   health: publicProcedure.query(() => 'ok' as const),
   auth: {
     /** Sets a session cookie; the token also works as a bearer token. */
@@ -30,4 +30,4 @@ export const authRouter = {
       }),
     ),
   },
-};
+});

@@ -20,7 +20,7 @@ const authed = t.procedure.use((opts) =>
     : error({ code: 'UNAUTHORIZED', message: 'Sign in first' }),
 );
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .meta({ mcp: { description: 'Read one blog post by its id.' } })
@@ -48,6 +48,6 @@ export const appRouter = {
     // Over RPC only: no `mcp` meta.
     list: t.procedure.query(() => [...posts.values()]),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;

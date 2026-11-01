@@ -244,7 +244,7 @@ const fakeRedis = Layer.effect(Redis.Redis)(
 
 test('the Redis publisher recipe delivers live events and resumes from lastEventId', async () => {
   const t = initTrpc();
-  const router = {
+  const router = t.router({
     create: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) =>
@@ -253,7 +253,7 @@ test('the Redis publisher recipe delivers live events and resumes from lastEvent
     onCreated: t.procedure.subscription((opts) =>
       Posts.subscribe('created', { lastEventId: opts.lastEventId }),
     ),
-  };
+  });
   const layer = Layer.effect(Posts)(
     redisPublisher<{ created: Post }>({ prefix: 'posts' }),
   ).pipe(Layer.provide(fakeRedis));

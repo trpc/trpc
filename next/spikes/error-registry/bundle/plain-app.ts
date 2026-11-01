@@ -22,7 +22,7 @@ const authed = t.procedure.use((opts) =>
     : new Unauthorized(),
 );
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .errors({ PostNotFound, TitleTaken })
@@ -35,6 +35,6 @@ export const appRouter = {
       .input(z.object({ title: z.string() }))
       .mutation((opts) => ({ id: '2', title: opts.input.title })),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;

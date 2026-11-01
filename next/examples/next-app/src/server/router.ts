@@ -42,9 +42,9 @@ function seed() {
 }
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const t = initTrpc();
+export const t = initTrpc();
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     list: t.procedure.query(() => [...posts.values()]),
     create: t.procedure
@@ -117,5 +117,5 @@ export const appRouter = {
         ),
     ),
   },
-};
+});
 export type AppRouter = typeof appRouter;

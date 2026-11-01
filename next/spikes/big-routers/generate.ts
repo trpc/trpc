@@ -242,21 +242,22 @@ export interface Row {
 }
 const items = table<Row>('d${d}');
 
-export const f${f} = {
+export const f${f} = t.router({
 ${procsIn(f)
   .map((j) => `  p${j}: ${procedure(d, j).impl},`)
   .join('\n')}
-};
+});
 `,
       );
     }
     write(
       `packages/d${d}/src/index.ts`,
-      `${Array.from({ length: files }, (_, f) => `import { f${f} } from './f${f}';`).join('\n')}
+      `import { t } from '@big/base';
+${Array.from({ length: files }, (_, f) => `import { f${f} } from './f${f}';`).join('\n')}
 
-export const d${d}Router = {
+export const d${d}Router = t.router({
 ${Array.from({ length: files }, (_, f) => `  f${f},`).join('\n')}
-};
+});
 export type D${d}Router = typeof d${d}Router;
 `,
     );
@@ -301,17 +302,20 @@ ${procsIn(f)
 
   write(
     'packages/api/src/index.ts',
-    `${domains.map((d) => `import { d${d}Router, type D${d}Router } from '@big/d${d}';`).join('\n')}
+    `import type { RouterCtx } from '@trpc12/trpc/server';
+import { t, type Context } from '@big/base';
+${domains.map((d) => `import { d${d}Router, type D${d}Router } from '@big/d${d}';`).join('\n')}
 
 // Named, so declarations refer to each domain's types instead of copying
-// them (TS7056 past a few thousand procedures).
+// them (TS7056 past a few thousand procedures). \`RouterCtx\` is the ctx
+// \`t.router()\` adds.
 export type AppRouter = {
 ${domains.map((d) => `  d${d}: D${d}Router;`).join('\n')}
-};
+} & RouterCtx<Context>;
 
-export const appRouter: AppRouter = {
+export const appRouter: AppRouter = t.router({
 ${domains.map((d) => `  d${d}: d${d}Router,`).join('\n')}
-};
+});
 `,
   );
   write(

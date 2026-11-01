@@ -56,7 +56,7 @@ const t = initTrpc<{ ctx: { user: string } }>();
 const Room = z.object({ room: z.enum(rooms) });
 
 // #region router
-export const appRouter = {
+export const appRouter = t.router({
   room: {
     send: t.procedure
       .input(Room.extend({ text: z.string().trim().min(1).max(280) }))
@@ -100,7 +100,7 @@ export const appRouter = {
       );
     }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 // #endregion router

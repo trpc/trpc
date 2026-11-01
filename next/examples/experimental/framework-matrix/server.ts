@@ -18,7 +18,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const votes: Record<Framework, number> = { vue: 0, solid: 0, svelte: 0 };
 
 // One poll, read and voted on by every page.
-export const appRouter = {
+export const appRouter = t.router({
   votes: {
     list: t.procedure.query(() => ({ ...votes, at: new Date() })),
     cast: t.procedure
@@ -31,7 +31,7 @@ export const appRouter = {
       await sleep(250);
     }
   }),
-};
+});
 export type AppRouter = typeof appRouter;
 
 const handler = createFetchHandler({

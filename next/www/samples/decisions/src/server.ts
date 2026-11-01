@@ -42,7 +42,7 @@ export const authed = t.procedure.use((opts) =>
     : error({ code: 'UNAUTHORIZED' }),
 );
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
@@ -67,7 +67,7 @@ export const appRouter = {
       yield* db.post.list();
     }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 

@@ -715,9 +715,15 @@ importers:
       '@acme/posts':
         specifier: workspace:*
         version: link:../posts
+      '@acme/trpc':
+        specifier: workspace:*
+        version: link:../trpc
       '@acme/users':
         specifier: workspace:*
         version: link:../users
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
     devDependencies:
       '@types/node':
         specifier: ^26.0.0

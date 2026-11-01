@@ -2,10 +2,10 @@
 import { revalidationTag } from '@trpc12/tanstack-react-query/rsc';
 import { experimental_createAction } from '@trpc12/trpc/actions';
 import { updateTag } from 'next/cache';
-import { appRouter } from '../../server/router.ts';
+import { appRouter, t } from '../../server/router.ts';
 import { trpc } from '../../trpc/server.ts';
 
-const action = experimental_createAction();
+const action = experimental_createAction(t);
 const signEntry = action(appRouter.guestbook.sign);
 
 /**

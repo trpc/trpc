@@ -1,5 +1,5 @@
 /**
- * In-process tests: `createRouterClient` and `call()` skip HTTP and the
+ * In-process tests: `createRouterClient` and `t.call()` skip HTTP and the
  * transformer, `localLink` keeps the transformer and the client's links. Each
  * test owns its runtime, so `await using` releases its services.
  */
@@ -11,13 +11,13 @@ import {
   safe,
   type LoggerEvent,
 } from '@trpc12/trpc/client';
-import { call, createRouterClient } from '@trpc12/trpc/server';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { ManagedRuntime } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import { appRouter } from './router.ts';
 import { projectsRouter } from './routers/projects.ts';
 import { appLayer, SaasDb } from './store.ts';
-import type { RequestContext } from './trpc.ts';
+import { t, type RequestContext } from './trpc.ts';
 
 function signedIn(email: string, tenant = 'acme') {
   const db = SaasDb.seeded();
@@ -100,11 +100,11 @@ test('roles, memberships and plan limits are typed errors', async () => {
   expect(unauthorized?.code).toBe('UNAUTHORIZED');
 });
 
-test('call(): one procedure, its errors thrown, its layer built per call', async () => {
+test('t.call(): one procedure, its errors thrown, its layer built per call', async () => {
   await using app = signedIn('bob@acme.test');
   const byId = projectsRouter.project.byId;
   const byIdCall = (projectId: string) =>
-    call(byId, { projectId }, { ctx: app.ctx, layer: appLayer(app.db) });
+    t.call(byId, { projectId }, { ctx: app.ctx, layer: appLayer(app.db) });
 
   const project = [...app.db.projects.values()][0]!;
   expect((await byIdCall(project.id)).name).toBe('Website');

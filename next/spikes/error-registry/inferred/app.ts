@@ -30,7 +30,7 @@ const authed = t.procedure.use((opts) =>
   opts.ctx.user ? opts.next({ ctx: { user: opts.ctx.user } }) : Unauthorized(),
 );
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(byId)
@@ -65,6 +65,6 @@ export const appRouter = {
           posts.get(opts.input.id) ?? PostNotFound({ id: opts.input.id }),
       ),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;

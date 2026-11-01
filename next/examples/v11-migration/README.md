@@ -29,7 +29,6 @@ The React components (`v11/client/app.tsx`, `client/app.tsx`) are type-checked, 
 The rewritten copy doesn't type-check until you work through its steps. The steps that take the most work:
 
 - `queryOptions(input)`, `queryKey(input)` and the other TanStack helpers take `{ input }` in v12. Each call is a step.
-- `export const router = t.router` keeps compiling, but v12's `t.router` takes router meta first. Call sites need plain objects.
 - `createContext` reads `opts.request.headers['authorization']` instead of `opts.req.headers.get(...)`.
 - A `TRPCLink<AppRouter>` typed by the v11 router stops fitting once `AppRouter` is v12. Here the link keeps its v11 router type, since `v11/` is untouched.
 - v12's `httpLink` `headers` must return `HeadersInit`. v11's `() => (token ? { authorization: token } : {})` is a union that doesn't fit, so `client/client.ts` annotates the return as `HeadersInit`.

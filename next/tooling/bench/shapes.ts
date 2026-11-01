@@ -319,7 +319,7 @@ const fixture = (
   const compose = shape?.compose;
   // A composed file keeps its procedures under `f<n>`, so client paths match.
   const composeFile = (f: number, routes: string) =>
-    compose ? compose.file(`{ f${f}: ${routes} }`) : routes;
+    compose ? compose.file(`{ f${f}: ${routes} }`) : `t.router(${routes})`;
 
   for (const f of ids) {
     if (contract) {
@@ -335,9 +335,11 @@ const fixture = (
     files.push([
       `router/f${f}.ts`,
       contract
-        ? `import { impl } from './impl';\n\nexport const f${f} = {\n${inFile(f)
+        ? `import { t } from '../base';\nimport { impl } from './impl';\n\nexport const f${f} = t.router({\n${inFile(
+            f,
+          )
             .map((i) => `  p${i}: impl.f${f}.p${i}${shape!.impl(i, kind(i))},`)
-            .join('\n')}\n};\n`
+            .join('\n')}\n});\n`
         : `import { Effect } from 'effect';\nimport { authed, error, t, type S } from '../base';\n${own?.imports ?? ''}\n\nexport const f${f} = ${composeFile(
             f,
             `{\n${inFile(f)
@@ -382,7 +384,7 @@ const fixture = (
       'router/index.ts',
       compose
         ? `${compose.rootImports}${imports}\n\nexport const router = ${compose.root(ids.map((f) => `f${f}`))};\n`
-        : `${imports}\n\nexport const router = {\n${entries}\n};\n`,
+        : `import { t } from '../base';\n${imports}\n\nexport const router = t.router({\n${entries}\n});\n`,
     ]);
   }
   files.push([

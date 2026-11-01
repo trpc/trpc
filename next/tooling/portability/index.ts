@@ -98,7 +98,7 @@ export const orgPlugin = pluginT.procedure
   .input(z.object({ orgId: z.string() }))
   .use((opts) => opts.next({ ctx: { orgId: opts.input.orgId } }));
 
-export const postRouter = {
+export const postRouter = t.router({
   byId: t.procedure.input(Schema.Struct({ id: Schema.String })).query((opts) =>
     Effect.gen(function* () {
       const post = yield* (yield* PostRepo).find(opts.input.id);
@@ -141,7 +141,7 @@ export const postRouter = {
       opts.response.status = 201;
       return 'miss';
     }),
-};
+});
 
 export const appRouter = mergeRouters(postRouter, {
   health: publicProcedure.query(() => 'ok' as const),

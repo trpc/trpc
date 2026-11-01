@@ -65,7 +65,7 @@ async function* exportAlbum(photos: ReadonlyArray<Photo>) {
   return { count: photos.length, bytes };
 }
 
-export const appRouter = {
+export const appRouter = t.router({
   photos: {
     /** Multipart in, progress out: one item per stored photo. */
     upload: t.procedure
@@ -252,5 +252,5 @@ export const appRouter = {
         };
       }),
   },
-};
+});
 export type AppRouter = typeof appRouter;

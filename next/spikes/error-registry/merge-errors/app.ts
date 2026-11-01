@@ -69,6 +69,6 @@ const billingRouter = {
     ),
 };
 
-export const appRouter = { post: postRouter, billing: billingRouter };
+export const appRouter = t.router({ post: postRouter, billing: billingRouter });
 
 export type AppRouter = typeof appRouter;

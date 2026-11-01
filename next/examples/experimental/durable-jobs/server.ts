@@ -25,7 +25,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const db = { charges: new Map<string, number>(), reportRuns: 0 };
 
 const t = initTrpc();
-const appRouter = {
+const appRouter = t.router({
   invoice: {
     pay: t.procedure
       .input(z.object({ invoice: z.string() }))
@@ -69,7 +69,7 @@ const appRouter = {
       }),
     runs: t.procedure.query(() => db.reportRuns),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 
 const RedisLive = NodeRedis.layer({

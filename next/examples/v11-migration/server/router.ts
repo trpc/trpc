@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '../db.ts';
 import { authed, t } from './trpc.ts';
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     list: t.procedure.query(() => db.list()),
     byId: t.procedure
@@ -30,6 +30,6 @@ export const appRouter = {
       }
     }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;

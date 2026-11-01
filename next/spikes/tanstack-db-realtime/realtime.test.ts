@@ -73,7 +73,7 @@ function createApp() {
   const snapshot = () =>
     ({ type: 'snapshot', rows: [...posts.values()] }) as const;
 
-  const router = {
+  const router = t.router({
     post: {
       list: t.procedure.query(() => {
         stats.lists++;
@@ -110,7 +110,7 @@ function createApp() {
           }),
         ),
     },
-  };
+  });
   return { router, posts, stats };
 }
 

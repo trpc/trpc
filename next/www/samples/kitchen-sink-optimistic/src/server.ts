@@ -19,7 +19,7 @@ const db = {
 const t = initTrpc();
 
 // #region router
-export const appRouter = {
+export const appRouter = t.router({
   todo: {
     list: t.procedure.query(() => db.todos),
     add: t.procedure
@@ -50,7 +50,7 @@ export const appRouter = {
         );
       }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 // #endregion router

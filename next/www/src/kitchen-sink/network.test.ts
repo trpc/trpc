@@ -19,7 +19,7 @@ function feedApp() {
   vi.stubGlobal('location', { origin: 'https://trpc.io', pathname: '/' });
   const server = { watching: 0 };
   const t = initTrpc();
-  const router = {
+  const router = t.router({
     post: t.procedure.mutation(() => Feed.publish('posts', 'hello')),
     feed: t.procedure.subscription((opts) =>
       Stream.unwrap(
@@ -29,7 +29,7 @@ function feedApp() {
         }),
       ).pipe(Stream.ensuring(Effect.sync(() => server.watching--))),
     ),
-  };
+  });
   const network = createNetwork(
     createFetchHandler({ router, layer: Feed.memory({ buffer: 10 }) }),
   );

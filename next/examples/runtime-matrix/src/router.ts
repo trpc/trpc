@@ -54,7 +54,7 @@ const gate = (id: string, ms: number) =>
 
 const t = initTrpc<{ ctx: { runtime: Runtime } }>();
 
-export const appRouter = {
+export const appRouter = t.router({
   runtime: t.procedure.query((opts) => opts.ctx.runtime),
   greet: t.procedure
     .input(z.object({ name: z.string() }))
@@ -106,7 +106,7 @@ export const appRouter = {
       return yield* visits.hit(opts.input.page);
     }),
   ),
-};
+});
 export type AppRouter = typeof appRouter;
 
 export const transformer = experimental_createProgressiveJson();

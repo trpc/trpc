@@ -97,7 +97,7 @@ const notFound = (id: string) => error({ code: 'NOT_FOUND', data: { id } });
 
 const t = initTrpc();
 
-export const trackerRouter = {
+export const trackerRouter = t.router({
   issue: {
     /** Newest first, `limit` at a time; `cursor` is the last number seen. */
     list: t.procedure
@@ -216,5 +216,5 @@ export const trackerRouter = {
     yield stats();
     for await (const _change of live) yield stats();
   }),
-};
+});
 export type TrackerRouter = typeof trackerRouter;

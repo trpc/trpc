@@ -3,7 +3,7 @@ import { HttpServerResponse } from 'effect/http';
 import { error, middleware, Response, TrpcError } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { projectLimits, Store, type Plan } from '../store.ts';
-import { cachedQuery, memberProcedure, tenantProcedure } from '../trpc.ts';
+import { cachedQuery, memberProcedure, t, tenantProcedure } from '../trpc.ts';
 
 export class QuotaExceeded extends TrpcError.Tagged('QUOTA_EXCEEDED', {
   status: 402,
@@ -43,7 +43,7 @@ const ProjectStats = z.object({
   done: z.number(),
 });
 
-export const projectsRouter = {
+export const projectsRouter = t.router({
   project: {
     list: tenantProcedure.output(z.array(ProjectOutput)).query((opts) =>
       Effect.gen(function* () {
@@ -100,4 +100,4 @@ export const projectsRouter = {
       }),
     ),
   },
-};
+});

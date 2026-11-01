@@ -47,7 +47,7 @@ const authed = t.procedure.use((opts) => {
   return opts.next({ ctx: { user: opts.ctx.user } });
 });
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(byId)
@@ -75,6 +75,6 @@ export const appRouter = {
       return post;
     }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;

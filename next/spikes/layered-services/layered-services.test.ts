@@ -92,7 +92,7 @@ const withRepo = provideLayer(t.procedure, PostRepoLive);
 const withTx = provideLayer(t.procedure, TxLive, { lifetime: 'call' });
 const authed = useService(t.procedure, Auth);
 
-const router = {
+const router = t.router({
   post: {
     byId: withRepo.query(() =>
       Effect.flatMap(PostRepo, (repo) => repo.find('1')),
@@ -103,7 +103,7 @@ const router = {
   },
   write: withTx.mutation(() => Effect.map(Tx, (tx) => tx.id)),
   me: authed.query(() => Effect.map(CurrentUser, (u) => u.id)),
-};
+});
 
 test('provided services drop out of the router type; what their layers need joins it', () => {
   expectTypeOf<inferRouterServices<typeof router>>().toEqualTypeOf<Db | Auth>();
@@ -221,10 +221,10 @@ test('a strict procedure is checked against its declared output and errors', asy
   strict(declared).query(() => Effect.succeed({ id: 1 }));
 
   await using runtime = ManagedRuntime.make(AuthLive);
-  const client = createRouterClient(
-    { byId },
-    { ctx: { token: 'nobody' }, runtime },
-  );
+  const client = createRouterClient(t.router({ byId }), {
+    ctx: { token: 'nobody' },
+    runtime,
+  });
   await expect(client.byId.query()).rejects.toMatchObject({
     code: 'NOT_FOUND',
     data: { id: '1' },

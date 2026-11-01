@@ -1,8 +1,8 @@
 /**
  * The APIs `.agent-docs/open/call-subscription-output.md` proposes, as
  * types: A types `call()` on a subscription as the `Stream` it resolves to,
- * B resolves it to an `AsyncIterable` of events. Today `call()` types it as
- * one event.
+ * B resolves it to an `AsyncIterable` of events. Today `t.call()` types it
+ * as one event.
  */
 import type { Stream } from 'effect';
 import type {
@@ -17,7 +17,7 @@ import type {
 export declare function callA<P extends AnyProcedure>(
   procedure: P,
   input: inferProcedureInput<P>,
-  opts?: CallOptions<NonNullable<P['~trpc']['~types']>>,
+  opts?: CallOptions<{}, NonNullable<P['~trpc']['~types']>>,
 ): Promise<
   P['~trpc']['type'] extends 'subscription'
     ? Stream.Stream<inferProcedureOutput<P>, AnyTrpcError>
@@ -28,7 +28,7 @@ export declare function callA<P extends AnyProcedure>(
 export declare function callB<P extends AnyProcedure>(
   procedure: P,
   input: inferProcedureInput<P>,
-  opts?: CallOptions<NonNullable<P['~trpc']['~types']>>,
+  opts?: CallOptions<{}, NonNullable<P['~trpc']['~types']>>,
 ): Promise<
   P['~trpc']['type'] extends 'subscription'
     ? AsyncIterable<inferProcedureOutput<P>>

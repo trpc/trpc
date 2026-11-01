@@ -20,7 +20,7 @@ export class Messages extends experimental_Publisher.Service<
 
 const t = initTrpc<{ ctx: { room: string; greeting: string } }>();
 
-export const appRouter = {
+export const appRouter = t.router({
   room: t.procedure.query(
     (opts) => `${opts.ctx.greeting} from ${opts.ctx.room}`,
   ),
@@ -73,7 +73,7 @@ export const appRouter = {
         }
       })(),
     })),
-};
+});
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export type AppRouter = typeof appRouter;

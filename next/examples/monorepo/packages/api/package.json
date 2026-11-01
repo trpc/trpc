@@ -8,7 +8,9 @@
   "dependencies": {
     "@acme/billing": "workspace:*",
     "@acme/posts": "workspace:*",
-    "@acme/users": "workspace:*"
+    "@acme/trpc": "workspace:*",
+    "@acme/users": "workspace:*",
+    "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.0.0"

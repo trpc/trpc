@@ -3,9 +3,9 @@ import { Effect } from 'effect';
 import { z } from 'zod';
 import { Store } from '../store.ts';
 import { roles } from '../tenancy.ts';
-import { adminProcedure, metrics } from '../trpc.ts';
+import { adminProcedure, metrics, t } from '../trpc.ts';
 
-export default {
+export default t.router({
   members: adminProcedure.query((opts) =>
     Effect.gen(function* () {
       return (yield* Store).membersOf(opts.ctx.tenantId);
@@ -31,4 +31,4 @@ export default {
     }),
   ),
   metrics: adminProcedure.query(() => Object.fromEntries(metrics)),
-};
+});

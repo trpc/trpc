@@ -67,7 +67,7 @@ const authed = t.procedure.provide(CurrentUser, (opts) =>
     : Effect.fail(new TrpcError({ code: 'UNAUTHORIZED' })),
 );
 
-const appRouter = {
+const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(Schema.Struct({ id: Schema.String }))
@@ -94,7 +94,7 @@ const appRouter = {
       ),
     ),
   },
-};
+});
 export type AppRouter = typeof appRouter;
 
 export async function listen(port = 0) {

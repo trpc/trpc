@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "references": [
+    { "path": "../trpc" },
     { "path": "../posts" },
     { "path": "../users" },
     { "path": "../billing" }

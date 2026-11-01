@@ -45,7 +45,6 @@ const steps = [
   'app/server/router.ts:28:37 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
   'app/server/trpc.ts:7:3 transformer: drop it here; pass the same createSyncTransformer(transformer) to the handler and every link',
   'app/server/trpc.ts:8:3 errorFormatter: declare errors with .errors() or TrpcError.Tagged; createV11Handler({ errorFormatter }) keeps old clients working',
-  'app/server/trpc.ts:22:23 t.router: a router is a plain object in v12; router(routes) is routes, and t.router({ meta }, routes) takes router meta first',
 ];
 
 export function run() {
@@ -76,12 +75,12 @@ export function run() {
       dry.filter((line) => /^app\/\S+:\d+:\d+ /.test(line)),
       steps,
     );
-    strictEqual(dry.at(-1), '7 file(s) to upgrade, 18 step(s) by hand');
+    strictEqual(dry.at(-1), '7 file(s) to upgrade, 17 step(s) by hand');
     for (const file of files) strictEqual(read(file), before.get(file));
 
     strictEqual(
       upgrade('--write').at(-1),
-      '7 file(s) upgraded, 18 step(s) by hand',
+      '7 file(s) upgraded, 17 step(s) by hand',
     );
 
     const server = read('server/trpc.ts');

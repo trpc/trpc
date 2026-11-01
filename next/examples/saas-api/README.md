@@ -16,7 +16,7 @@ src/
   handler.ts         createFetchHandler with cors(), createContext and the layer
   servers.ts         Effect's server (handler.routes + /health), Express and Fastify
   api-client.ts      the client's links
-  api.test.ts        in-process tests: createRouterClient, call() and localLink
+  api.test.ts        in-process tests: createRouterClient, t.call() and localLink
 ```
 
 ## What it shows

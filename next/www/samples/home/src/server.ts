@@ -11,7 +11,7 @@ const posts = new Map<string, Post>();
 // #region procedure
 const t = initTrpc<{ ctx: { userId: string | null } }>();
 
-export const appRouter = {
+export const appRouter = t.router({
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
@@ -28,7 +28,7 @@ export const appRouter = {
         return post;
       }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 // #endregion procedure

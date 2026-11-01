@@ -46,7 +46,7 @@ export const authed = t.procedure.use((opts) => {
 export const postProcedure = authed.errors(postErrors);
 const billingProcedure = authed.errors(billingErrors);
 
-export const appRouter = {
+export const appRouter = t.router({
   posts: {
     byId: postProcedure.input(z.object({ id: z.string() })).query((opts) => {
       if (opts.input.id === 'crash') throw new Error('db is down');
@@ -73,7 +73,7 @@ export const appRouter = {
   billing: {
     charge: billingProcedure.mutation(() => billingErrors.CardDeclined()),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 

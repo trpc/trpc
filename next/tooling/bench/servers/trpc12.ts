@@ -8,7 +8,7 @@ import { port, schema } from './schema.ts';
 
 const t = initTrpc();
 const handler = createFetchHandler({
-  router: {
+  router: t.router({
     procedure_1: t.procedure.input(schema).query((opts) => ({
       name: 'procedure_1',
       date: new Date(),
@@ -43,7 +43,7 @@ const handler = createFetchHandler({
         })),
       },
     },
-  },
+  }),
   transformer: experimental_createProgressiveJson(),
 });
 

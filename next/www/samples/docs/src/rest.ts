@@ -22,7 +22,7 @@ const authed = t.procedure
   )
   .meta({ route: { spec: (op) => ({ ...op, security: [{ bearer: [] }] }) } });
 
-export const restRouter = {
+export const restRouter = t.router({
   post: {
     byId: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/{id}' } })
@@ -48,7 +48,7 @@ export const restRouter = {
         for (const post of db.post.list()) yield tracked(post.id, post);
       }),
   },
-};
+});
 
 export const document = experimental_generateOpenApi(restRouter, {
   info: { title: 'Blog', version: '1.0.0' },

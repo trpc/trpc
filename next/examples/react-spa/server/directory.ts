@@ -17,9 +17,9 @@ const t = initTrpc();
  * A second API, as if run by another team: the browser caches it in the same
  * `QueryClient` under the `directory` key prefix.
  */
-export const directoryRouter = {
+export const directoryRouter = t.router({
   user: {
     list: t.procedure.query(() => users),
   },
-};
+});
 export type DirectoryRouter = typeof directoryRouter;

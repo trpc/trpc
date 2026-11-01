@@ -19,7 +19,7 @@ start.ts             runs client.ts against server.ts
 ```
 
 - Every package is a TypeScript project (`composite`, `emitDeclarationOnly`) that references the packages it imports. `tsc -b` builds them in order, and a package that imports another reads that package's `dist/*.d.ts`, not its source. So `apps/web` loads five `.d.ts` files and never infers a procedure.
-- `packages/api` names `AppRouter` as `{ posts: PostsRouter; … }`. Inferred from the object instead, its declarations would copy every domain's procedures.
+- `packages/api` names `AppRouter` as `{ posts: PostsRouter; … } & RouterCtx<Context>`, the type `t.router()` gives the root. Inferred from the object instead, its declarations would copy every domain's procedures.
 - `apps/billing-widget` depends on `billing-contract` only. It can't import server code by accident, and it validates calls against the contract's schemas with `experimental_validationLink`.
 - Packages export their `src/*.ts` (Node runs TypeScript directly), so nothing needs bundling to run. Editors follow project references to source; set `disableSourceOfProjectReferenceRedirect` in an app's `tsconfig.json` to have the editor read declarations too, with `tsc -b --watch` running.
 

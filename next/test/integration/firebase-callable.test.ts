@@ -1,5 +1,5 @@
 import { Schema } from 'effect';
-import { call, error, initTrpc, isTrpcError } from '@trpc12/trpc/server';
+import { error, initTrpc, isTrpcError } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 
 // Stand-ins with the shapes of `firebase-functions/v2/https`, so the recipe in www/docs/adapters/firebase.md runs as written.
@@ -23,7 +23,7 @@ const onCall =
     run(request);
 
 const t = initTrpc<{ ctx: { uid: string | null } }>();
-const appRouter = {
+const appRouter = t.router({
   post: {
     create: t.procedure
       .input(Schema.Struct({ title: Schema.String }))
@@ -37,7 +37,7 @@ const appRouter = {
             : { title: opts.input.title, by: opts.ctx.uid },
       ),
   },
-};
+});
 
 const firebaseCode: Record<string, FunctionsErrorCode> = {
   BAD_REQUEST: 'invalid-argument',
@@ -47,7 +47,7 @@ const firebaseCode: Record<string, FunctionsErrorCode> = {
 
 const createPost = onCall(async (request) => {
   try {
-    return await call(appRouter.post.create, request.data as never, {
+    return await t.call(appRouter.post.create, request.data as never, {
       ctx: { uid: request.auth?.uid ?? null },
     });
   } catch (error) {

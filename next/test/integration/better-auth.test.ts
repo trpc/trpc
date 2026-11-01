@@ -32,12 +32,12 @@ const authed = t.procedure.use(async (opts) => {
     : error({ code: 'UNAUTHORIZED' });
 });
 
-const router = {
+const router = t.router({
   me: authed.query((opts) => ({
     name: opts.ctx.user.name,
     email: opts.ctx.user.email,
   })),
-};
+});
 
 test('a Better Auth session becomes the ctx user through a middleware', async () => {
   await using server = await createTestServer({

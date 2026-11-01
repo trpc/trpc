@@ -28,7 +28,7 @@ const avatar = z
   )
   .refine((file) => file.size <= 200 * 1024, 'At most 200 kB');
 
-export const appRouter = {
+export const appRouter = t.router({
   profile: {
     get: t.procedure.query(() => ({
       name: db.name,
@@ -51,7 +51,7 @@ export const appRouter = {
         return { name: db.name };
       }),
   },
-};
+});
 
 export type AppRouter = typeof appRouter;
 // #endregion router
