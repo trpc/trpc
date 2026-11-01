@@ -9,6 +9,7 @@ import {
   renderMarkdown,
   resolveLink,
 } from './markdown.ts';
+import { removeAll } from './old-docs-convert.ts';
 
 /**
  * A samples dir whose `docs` and `v11` apps compile inline blocks, each with
@@ -16,7 +17,7 @@ import {
  */
 /** The HTML's text, without its tags. */
 const textOf = (html: string) =>
-  html.replaceAll(/<[^>]+>/g, '').replaceAll('<', '');
+  removeAll(html, /<[^>]*>/g).replaceAll('<', '');
 
 const samples = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;

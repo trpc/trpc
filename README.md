@@ -189,6 +189,6 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 
 <a href="https://vercel.com/?utm_source=trpc&utm_campaign=oss">
   <p align="center">
-    <img src="./www/static/img/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
+    <img src="./www/public/img/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
   </p>
 </a>

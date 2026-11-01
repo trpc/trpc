@@ -1117,12 +1117,24 @@ function expandComponent(
   return problem(`no conversion for ${source}`);
 }
 
+/** `text` without `pattern`'s matches, removed again until none are left. */
+export function removeAll(text: string, pattern: RegExp) {
+  let previous: string;
+  let current = text;
+  do {
+    previous = current;
+    current = current.replace(pattern, '');
+  } while (current !== previous);
+  return current;
+}
+
 function convertProse(lines: ReadonlyArray<string>, context: Converting) {
   return editProse(lines, (prose) =>
     keepingInlineCode(prose, (masked) => {
-      const converted = masked
-        .replaceAll(/<head>[\s\S]*?<\/head>\n?/g, '')
-        .replaceAll(/[ \t]*<script\b[\s\S]*?<\/script[^>]*>/gi, '')
+      const converted = removeAll(
+        removeAll(masked, /<head>[\s\S]*?<\/head>\n?/g),
+        /[ \t]*<script\b[\s\S]*?<\/script[^>]*>/gi,
+      )
         .replaceAll(/\{\/\*[\s\S]*?\*\/\}\n?/g, '')
         .replaceAll(
           /<([A-Z][\w.]*)((?:\s+[\w-]+(?:=(?:"[^"]*"|'[^']*'|\{\{[^}]*\}\}|\{[^}]*\}))?)*)\s*\/>/g,
@@ -1511,10 +1523,12 @@ export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
 
 /** Markdown as the text it reads as: without links' targets, emphasis or HTML. */
 export function plainProse(markdown: string) {
-  return markdown
-    .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replaceAll(/<[^>]+>/g, '')
+  return removeAll(
+    markdown
+      .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, '')
+      .replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1'),
+    /<[^>]*>/g,
+  )
     .replaceAll('<', '')
     .replaceAll(/(?<!\w)(\*\*|__|\*|_|`)(\S(?:[^\n]*?\S)?)\1(?!\w)/g, '$2')
     .replaceAll(/\s+/g, ' ')
