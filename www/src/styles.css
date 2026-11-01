@@ -696,9 +696,21 @@ figure.tweet .tweet-footer a:hover {
   }
 }
 
-/* Algolia's DocSearch modal (`algolia-search.tsx`), in the site's colors. */
-:root {
+/*
+ * Algolia's DocSearch modal (`algolia-search.tsx`), in the site's colors.
+ * On the container, not `:root`: DocSearch's lazily loaded `_variables.css`
+ * sets them on `:root` after this, and its dark ones need
+ * `html[data-theme=dark]`, which the site doesn't set.
+ */
+.DocSearch-Container {
   --docsearch-primary-color: var(--brand);
+  --docsearch-background-color: var(--muted);
+  --docsearch-subtle-color: var(--border);
+  --docsearch-soft-primary-color: color-mix(
+    in oklch,
+    var(--brand) 15%,
+    transparent
+  );
   --docsearch-highlight-color: var(--link);
   --docsearch-focus-color: var(--ring);
   --docsearch-text-color: var(--foreground);

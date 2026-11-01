@@ -36,6 +36,16 @@ export const algolia = {
   indexName: 'trpc',
 } as const;
 
+/**
+ * Each docs version's `docsearch:version`, as Docusaurus named them: the
+ * index's `version` facet, which search filters on.
+ */
+export const docsearchVersions = {
+  v9: '9.x',
+  v10: '10.x',
+  v11: 'current',
+} as const satisfies Record<CopiedVersion['id'], string>;
+
 /** Where the docs and blog are served. */
 const trpcIo = 'https://trpc.io';
 
