@@ -17,7 +17,7 @@ concurrency:
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
-    # The Prisma examples migrate the database they build against.
+    # The Prisma and Drizzle examples migrate a database when they install or build.
     services:
       postgres:
         image: postgres
@@ -88,6 +88,9 @@ jobs:
       # esbuild), which CI's pnpm otherwise refuses.
       - name: Build the standalone example
         if: github.event_name == 'pull_request'
+        env:
+          # For the examples without a committed `.env` (tanstack-start-sse-chat)
+          DATABASE_URL: postgresql://postgres@localhost:5432/postgres
         run: |
           cp -r "examples/${{ matrix.path }}" "$RUNNER_TEMP/example"
           cd "$RUNNER_TEMP/example"
