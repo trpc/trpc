@@ -27,6 +27,7 @@ interface SentQuery {
 interface SentEntries {
   queries: Map<string, SentQuery>;
   mutations: WeakSet<Mutation>;
+  watchingPending: boolean;
 }
 
 /**
@@ -38,21 +39,40 @@ const sentByClient = new WeakMap<QueryClient, SentEntries>();
 function sentEntries(queryClient: QueryClient) {
   let sent = sentByClient.get(queryClient);
   if (!sent) {
-    sent = { queries: new Map(), mutations: new WeakSet() };
+    sent = { queries: new Map(), mutations: new WeakSet(), watchingPending: false };
     sentByClient.set(queryClient, sent);
   }
   return sent;
 }
 
+/**
+ * A query sent pending carries its request's promise, so the data that
+ * request writes is already on its way. Record it once it lands: the query
+ * drops its promise after settling, so it can't be compared later.
+ */
+function watchPendingSends(queryClient: QueryClient, sent: SentEntries) {
+  if (sent.watchingPending) {
+    return;
+  }
+  sent.watchingPending = true;
+  queryClient.getQueryCache().subscribe((event) => {
+    if (
+      event.type !== 'updated' ||
+      event.action.type !== 'success' ||
+      event.action.manual
+    ) {
+      return;
+    }
+    const entry = sent.queries.get(event.query.queryHash);
+    if (entry?.promise && entry.promise === event.query.promise) {
+      entry.dataUpdatedAt = event.query.state.dataUpdatedAt;
+      entry.promise = undefined;
+    }
+  });
+}
+
 function isAlreadySent(query: Query, sent: SentQuery | undefined) {
-  if (!sent) {
-    return false;
-  }
-  if (query.state.dataUpdatedAt <= sent.dataUpdatedAt) {
-    return true;
-  }
-  // Newer data is already on its way only if the sent promise resolves with it
-  return sent.promise !== undefined && query.promise === sent.promise;
+  return sent !== undefined && query.state.dataUpdatedAt <= sent.dataUpdatedAt;
 }
 
 /**
@@ -76,9 +96,14 @@ export function dehydrateUnsent(queryClient: QueryClient): DehydratedState {
       ) {
         return false;
       }
+      const promise =
+        query.state.status === 'pending' ? query.promise : undefined;
+      if (promise) {
+        watchPendingSends(queryClient, sent);
+      }
       sent.queries.set(query.queryHash, {
         dataUpdatedAt: query.state.dataUpdatedAt,
-        promise: query.state.status === 'pending' ? query.promise : undefined,
+        promise,
       });
       return true;
     },

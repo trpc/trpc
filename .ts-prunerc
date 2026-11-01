@@ -1,4 +1,4 @@
 {
   "error": true,
-  "ignore": ".d.ts|config\\.[cm]?ts|examples|index.ts|packages/server/src/adapters/*"
+  "ignore": ".d.ts|config\\.[cm]?ts|examples|index.ts|index\\.react-server\\.ts|packages/server/src/adapters/*"
 }
