@@ -1,6 +1,4 @@
-// eslint-disable
-
-// prettier-ignore
+// oxfmt-ignore
 export const topSponsors = [
   {
     "name": "Greptile",
@@ -44,7 +42,7 @@ export const topSponsors = [
   }
 ] as const;
 
-// prettier-ignore
+// oxfmt-ignore
 export const allSponsors = [
   {
     "name": "Max Greenwald",

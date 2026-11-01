@@ -50,7 +50,8 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   : TValue;
 
 type FoldErrorShape<TErrorShape, $Shape> =
-  Extract<$Shape, TRPCErrorShape> | TErrorShape;
+  | Extract<$Shape, TRPCErrorShape>
+  | TErrorShape;
 
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
@@ -703,7 +704,7 @@ async function callRecursive(
   opts: ProcedureCallOptions<any>,
 ): Promise<MiddlewareResult<any>> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const middleware = _def.middlewares[index]!;
     const result = await middleware({
       ...opts,

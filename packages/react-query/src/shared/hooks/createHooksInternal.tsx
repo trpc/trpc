@@ -154,7 +154,7 @@ export function createRootHooks<
    * @see https://github.com/trpc/trpc/pull/1645
    */
   function useSSRQueryOptionsIfNeeded<
-    TOptions extends { retryOnMount?: boolean } | undefined,
+    TOptions extends { retryOnMount?: unknown } | undefined,
   >(queryKey: TRPCQueryKey, opts: TOptions): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
@@ -258,8 +258,9 @@ export function createRootHooks<
     _usePrefetchQuery({
       ...opts,
       queryKey: queryKey as any,
+      // usePrefetchQuery's types exclude skipToken, but query-core handles it at runtime
       queryFn: isInputSkipToken
-        ? input
+        ? (input as never)
         : (queryFunctionContext) => {
             const actualOpts = {
               trpc: {
@@ -498,7 +499,7 @@ export function createRootHooks<
 
       currentSubscriptionRef.current = subscription;
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, [client, queryKey, enabled, updateState]);
     React.useEffect(() => {
       reset();
@@ -621,7 +622,7 @@ export function createRootHooks<
       initialPageParam: opts.initialCursor ?? null,
       queryKey,
       queryFn: isInputSkipToken
-        ? input
+        ? (input as never)
         : (queryFunctionContext) => {
             const actualOpts = {
               ...ssrOpts,
@@ -693,7 +694,7 @@ export function createRootHooks<
       path,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     return [hook.data!, hook as any];
   }
 

@@ -16,15 +16,15 @@ export default function BlogPostPageMetadata(): React.JSX.Element {
     title: metadata.title,
     description: metadata.description,
     authors: authors.map((author) => ({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       name: author.name!,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       title: author.title!,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       img: author.imageURL!,
     })),
     date,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     readingTimeInMinutes: metadata.readingTime!,
   })}`;
 

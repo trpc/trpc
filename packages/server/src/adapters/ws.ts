@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type ws from 'ws';
+import type { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -25,7 +25,7 @@ import type {
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,
   isObject,
@@ -33,9 +33,9 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import type { Result } from '../unstable-core-do-not-import';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
@@ -53,7 +53,7 @@ const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
  */
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
-  ws.WebSocket
+  WsWebSocket
 >;
 
 /**
@@ -75,7 +75,7 @@ export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
-    wss: ws.WebSocketServer;
+    wss: WebSocketServer;
     prefix?: string;
     keepAlive?: {
       /**
@@ -114,7 +114,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: ws.WebSocket, req: IncomingMessage) => {
+  return (client: WsWebSocket, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
@@ -257,7 +257,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
       run(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         const res = await ctxPromise!; // asserts context has been set
         if (!res.ok) {
           throw res.error;
@@ -453,7 +453,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
       if (!isBinary) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // oxlint-disable-next-line typescript/no-base-to-string
         const msgStr = rawData.toString();
         if (msgStr === 'PONG') {
           return;
@@ -575,7 +575,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
  * Handle WebSocket keep-alive messages
  */
 export function handleKeepAlive(
-  client: ws.WebSocket,
+  client: WsWebSocket,
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {

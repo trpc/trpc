@@ -42,7 +42,7 @@ export interface JSONLConfig extends Pick<JSONLProducerOptions, 'pingMs'> {
 export const isServerDefault: boolean =
   typeof window === 'undefined' ||
   'Deno' in window ||
-  // eslint-disable-next-line @typescript-eslint/dot-notation
+  // oxlint-disable-next-line typescript/dot-notation
   globalThis.process?.env?.['NODE_ENV'] === 'test' ||
   !!globalThis.process?.env?.['JEST_WORKER_ID'] ||
   !!globalThis.process?.env?.['VITEST_WORKER_ID'];
@@ -51,7 +51,7 @@ export const isServerDefault: boolean =
  * The default check to see if we're in development
  */
 export function isDevDefault(): boolean {
-  // eslint-disable-next-line @typescript-eslint/dot-notation
+  // oxlint-disable-next-line typescript/dot-notation
   return globalThis.process?.env['NODE_ENV'] !== 'production';
 }
 

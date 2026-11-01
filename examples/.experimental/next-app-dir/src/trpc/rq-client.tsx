@@ -9,8 +9,8 @@ import {
   loggerLink,
 } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '~/server/routers/_app';
 import { useState } from 'react';
+import type { AppRouter } from '~/server/routers/_app';
 import { createQueryClient, getUrl, transformer } from './shared';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();

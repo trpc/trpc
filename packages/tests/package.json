@@ -3,7 +3,7 @@
   "version": "11.22.1",
   "private": true,
   "scripts": {
-    "lint": "eslint --cache .",
+    "lint": "oxlint .",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
@@ -18,12 +18,13 @@
     "dataloader": "^2.2.2",
     "devalue": "catalog:",
     "effect": "3.22.2",
-    "eslint": "catalog:",
     "fastify": "catalog:",
     "fastify-plugin": "catalog:",
     "jsdom": "catalog:",
     "myzod": "^1.3.1",
     "node-fetch": "^3.3.0",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "runtypes": "^7.0.0",
     "scale-codec": "^0.13.0",
     "srvx": "0.12.8",

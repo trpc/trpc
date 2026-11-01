@@ -19,8 +19,7 @@ const companies = files.map((src) => {
 fs.writeFileSync(
   __dirname + '/CompaniesUsing.script.output.ts',
   `
-// prettier-ignore
-// eslint-disable
+// oxfmt-ignore
 
 export const companies = ${JSON.stringify(companies, null, 2)} as const;
 `.trimStart(),

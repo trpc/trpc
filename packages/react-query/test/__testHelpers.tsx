@@ -322,8 +322,9 @@ export function createAppRouter() {
   // trpcClientOptions.queryClientConfig = createQueryClientConfig(
   //   trpcClientOptions.queryClientConfig,
   // );
-  const queryClient =
-    createQueryClient(/** trpcClientOptions.queryClientConfig */);
+  const queryClient = createQueryClient(
+    /** trpcClientOptions.queryClientConfig */
+  );
   const trpc = createTRPCReact<typeof appRouter>();
 
   function App(props: { children: ReactNode }) {

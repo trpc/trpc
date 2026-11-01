@@ -33,11 +33,3 @@ pnpm add @trpc/tanstack-react-query @tanstack/react-query
 # Bun
 bun add @trpc/tanstack-react-query @tanstack/react-query
 ```
-
-## AI Agents
-
-If you use an AI coding agent, install tRPC skills for better code generation:
-
-```bash
-npx @tanstack/intent@latest install
-```

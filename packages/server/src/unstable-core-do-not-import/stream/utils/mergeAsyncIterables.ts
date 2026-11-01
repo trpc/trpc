@@ -169,7 +169,7 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
       });
 
       while (iterables.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         initIterable(iterables.shift()!);
       }
 
@@ -177,7 +177,7 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
         await flushSignal.promise;
 
         while (buffer.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          // oxlint-disable-next-line typescript/no-non-null-assertion
           const [iterator, result] = buffer.shift()!;
 
           switch (result.status) {

@@ -82,7 +82,7 @@ const helpers = createServerSideHelpers({
 
 ## Example code
 
-<!-- prettier-ignore-start -->
+<!-- oxfmt-ignore-start -->
 
 ```tsx twoslash
 // -------------------------------------------------
@@ -139,7 +139,7 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
 });
 ```
 
-<!-- prettier-ignore-end -->
+<!-- oxfmt-ignore-end -->
 
 ## Inner and outer context
 

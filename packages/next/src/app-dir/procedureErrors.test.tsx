@@ -130,7 +130,7 @@ describe('runtime', () => {
 
       React.useEffect(() => {
         mutation.mutate();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // oxlint-disable-next-line react/exhaustive-deps
       }, []);
 
       if (mutation.status !== 'error') {

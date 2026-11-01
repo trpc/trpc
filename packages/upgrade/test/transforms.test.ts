@@ -2,18 +2,26 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { cleanup } from '@testing-library/react';
 import { applyTransform } from 'jscodeshift/src/testUtils';
-import { format, resolveConfig } from 'prettier';
+import { format } from 'oxfmt';
 import { describe, expect, it } from 'vitest';
 import * as hooksTransform from '../src/transforms/hooksToOptions';
 import * as providerTransform from '../src/transforms/provider';
 import type { ComponentFile, SpecDefFile } from './specDef';
 
 const formatFile = async (path: string, source: string) => {
-  const prettierConfig = await resolveConfig(path);
-  return format(source, {
-    ...prettierConfig,
-    parser: 'typescript',
-  });
+  const {
+    $schema: _schema,
+    ignorePatterns: _ignorePatterns,
+    overrides: _overrides,
+    ...config
+  } = JSON.parse(
+    readFileSync(join(import.meta.dirname, '../../../.oxfmtrc.json'), 'utf-8'),
+  );
+  const result = await format(path, source, config);
+  if (result.errors.length > 0) {
+    throw new Error(`Failed to format ${path}`, { cause: result.errors });
+  }
+  return result.code;
 };
 
 type Transformer = Parameters<typeof applyTransform>[0];
@@ -78,7 +86,7 @@ async function executeTests(
       .filter((key) => key.startsWith('Component'))
       .map((key) => [key, fixture[key]!] as const);
     for (const [name, Component] of fixtureComponents) {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(`Running spec on input for ${name}`);
       try {
         await spec.run(Component);
@@ -110,7 +118,7 @@ async function executeTests(
         );
       }
 
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(`Running spec on output for ${name}`);
       try {
         await spec.run(Component);

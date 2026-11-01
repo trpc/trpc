@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* oxlint-disable typescript/no-unused-vars */
+/* oxlint-disable typescript/no-require-imports */
 const { PHASE_PRODUCTION_BUILD } = require('next/constants');
 
 module.exports = (phase, { defaultConfig }) => {

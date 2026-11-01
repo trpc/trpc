@@ -3,10 +3,9 @@
  * This file is included in `/next.config.js` which ensures the app isn't built with invalid env vars.
  * It has to be a `.js`-file to be imported there.
  */
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* oxlint-disable typescript/no-require-imports */
 const { z } = require('zod');
 
-/*eslint sort-keys: "error"*/
 const envSchema = z.object({
   GITHUB_TOKEN: z.string().min(1),
   // TWITTER_BEARER_TOKEN: z.string().min(1),

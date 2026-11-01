@@ -43,15 +43,6 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 <InstallSnippet pkgs="@trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query@latest zod client-only server-only" />
 
-:::tip AI Agents
-If you use an AI coding agent, install tRPC skills for better code generation:
-
-```bash
-npx @tanstack/intent@latest install
-```
-
-:::
-
 ### 2. Create a tRPC router
 
 Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here — for deeper information on creating your tRPC API, refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/overview).
@@ -713,4 +704,3 @@ export default async function Home() {
 - Learn about [Server Actions](/docs/client/nextjs/server-actions) for defining tRPC-powered server actions
 - Learn about [queries](/docs/client/react/useQuery) and [mutations](/docs/client/react/useMutation) in client components
 - Explore [server-side calls](/docs/server/server-side-calls) for more advanced server-side patterns
-- Check out the [SSE Chat example](https://github.com/trpc/trpc/tree/main/examples/next-sse-chat) for a full App Router example with subscriptions

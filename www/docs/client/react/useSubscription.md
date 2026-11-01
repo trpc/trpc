@@ -15,7 +15,7 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 
 - If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
 - If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
-- Have a look at our [SSE example](https://github.com/trpc/examples-next-sse-chat) for a complete example of how to use subscriptions
+- Have a look at our [SSE example](https://github.com/trpc/examples-tanstack-start-sse-chat) for a complete example of how to use subscriptions
 
 :::
 

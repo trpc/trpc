@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { isAbortError } from '../../unstable-core-do-not-import';
 import type { NodeHTTPResponse } from './types';
 

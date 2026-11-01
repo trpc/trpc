@@ -6,9 +6,9 @@ import { unified } from 'unified';
 
 // Match the import pattern used in docusaurus.config.ts
 const remarkShikiTwoslash =
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // oxlint-disable-next-line typescript/no-require-imports
   require('remark-shiki-twoslash').default;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 const shikiConfig = require('../shikiTwoslash.config');
 
 interface TwoslashBlock {

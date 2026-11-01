@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 // Don't judge me on this code
 import fs from 'fs';
 import { allSponsors } from './script.output';
@@ -161,13 +161,13 @@ for (const file of files) {
     str.substring(str.indexOf(start) + start.length, str.lastIndexOf(end)),
     [
       '',
-      '<!-- prettier-ignore-start -->',
+      '<!-- oxfmt-ignore-start -->',
       '<!-- markdownlint-disable -->',
       '',
       markdownStr,
       '',
       '<!-- markdownlint-restore -->',
-      '<!-- prettier-ignore-end -->',
+      '<!-- oxfmt-ignore-end -->',
       '\n',
     ].join('\n'),
   );

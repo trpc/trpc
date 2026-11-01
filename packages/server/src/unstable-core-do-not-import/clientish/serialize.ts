@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+/* oxlint-disable trpc/type-parameter-naming */
 import type { Simplify, WithoutIndexSignature } from '../types';
 
 /**
@@ -14,7 +14,7 @@ type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
 type IsJson<T> = T extends JsonValue ? true : false;
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+// oxlint-disable-next-line typescript/no-unsafe-function-type
 type NonJsonPrimitive = Function | symbol | undefined;
 /*
  * `any` is the only type that can let you equate `0` with `1`
@@ -31,7 +31,7 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
   ? true
   : false;
 
-/* prettier-ignore */
+/* oxfmt-ignore */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
@@ -66,7 +66,7 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
 };
 
-// prettier-ignore
+// oxfmt-ignore
 type SerializeObjectKey<T extends Record<any, any>, K> = 
   // never include entries where the key is a symbol
   K extends symbol ? never : 
