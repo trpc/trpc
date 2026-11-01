@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "start": "next start",
     "test:e2e": "playwright test",
     "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test:e2e",
@@ -27,7 +27,8 @@
     "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "eslint": "^10.10.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "start-server-and-test": "^1.12.0",
     "typescript": "^5.9.2"
   }

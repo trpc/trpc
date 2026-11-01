@@ -63,7 +63,7 @@ test('useMutation', async () => {
       mutation.mutate({
         text: 'hello',
       });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, []);
     if (!mutation.data) {
       return <>...</>;

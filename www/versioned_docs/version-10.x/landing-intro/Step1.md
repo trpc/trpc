@@ -1,4 +1,4 @@
-<!-- prettier-ignore -->
+<!-- oxfmt-ignore -->
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
 import z from 'zod';

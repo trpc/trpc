@@ -93,7 +93,7 @@ async function startServer(
     res.status(404).send({ error: 'Not found' });
   });
   // error middleware
-  // eslint-disable-next-line max-params
+  // oxlint-disable-next-line max-params
   const errHandler: express.ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(500).send({ error: err.message });
   };

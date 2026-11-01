@@ -131,7 +131,7 @@ deno init --npm next-app --example https://github.com/trpc/trpc --example-path e
 If you enjoy working with tRPC and want to support us, consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
 
 <!-- SPONSORS:LIST:START -->
-<!-- prettier-ignore-start -->
+<!-- oxfmt-ignore-start -->
 <!-- markdownlint-disable -->
 
 ### 🥈 Silver Sponsors
@@ -174,7 +174,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 </table>
 
 <!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
+<!-- oxfmt-ignore-end -->
 
 <!-- SPONSORS:LIST:END -->
 

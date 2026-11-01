@@ -55,7 +55,7 @@ function useTypedVersion() {
       .filter((it) => it.path !== '/docs')
       .find((it) => location.pathname.startsWith(it.path)) ??
     versions.find((it) => it.isLast) ??
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     versions[0]!;
 
   return {

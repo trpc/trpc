@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 /**
  * trpc-openapi – CLI that generates an OpenAPI 3.1 document from a tRPC
  * AppRouter type.

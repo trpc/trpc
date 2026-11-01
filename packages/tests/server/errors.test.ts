@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* oxlint-disable typescript/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';

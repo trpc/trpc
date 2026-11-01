@@ -35,7 +35,7 @@ export const Button = ({
 
   if ('external' in props) {
     const {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // oxlint-disable-next-line typescript/no-unused-vars
       external,
       ...rest
     } = props;

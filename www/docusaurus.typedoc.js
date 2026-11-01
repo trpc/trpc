@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* oxlint-disable typescript/no-require-imports */
 // @ts-check
 
 const fs = require('fs');

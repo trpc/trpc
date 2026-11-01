@@ -1,0 +1,65 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "sortPackageJson": false,
+  "sortImports": {
+    "newlinesBetween": false,
+    "customGroups": [
+      {
+        "groupName": "test-helpers-first",
+        "elementNamePattern": ["**/___*", "**/___*/**"]
+      },
+      {
+        "groupName": "test-helpers",
+        "elementNamePattern": ["**/__*", "**/__*/**"]
+      }
+    ],
+    "groups": [
+      "builtin",
+      "test-helpers-first",
+      "test-helpers",
+      ["external", "internal", "subpath", "unknown"],
+      ["parent", "sibling", "index"]
+    ]
+  },
+  "sortTailwindcss": {
+    "config": "./www/tailwind.config.ts"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.md", "**/*.mdx"],
+      "options": {
+        "embeddedLanguageFormatting": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "__generated__/",
+    ".docusaurus/",
+    "**/.next/",
+    "**/.nuxt",
+    "**/www/build/",
+    "**/www/typedoc/",
+    "dist/",
+    "examples/next-big-router/src/server/routers/*.ts",
+    "examples/.test/diagnostics-big-router/**/*",
+    "packages/tests/vendor/",
+    "packages/server/src/vendor/",
+    "packages/coverage/",
+    "pnpm-lock.yaml",
+    "www/docs/main/quickstart.mdx",
+    ".turbo",
+    ".vinxi",
+    ".output",
+    "www/docs/typedoc",
+    "packages/server/src/openapi/__testRouter.ts.json",
+    "examples/openapi-codegen/src/client/generated",
+    "examples/openapi-codegen/openapi.json",
+    "packages/openapi/test/routers/*/",
+    "packages/openapi/test/routers/*.json",
+    "**/routeTree.gen.ts",
+    "**/prisma/migrations/migration_lock.toml"
+  ]
+}

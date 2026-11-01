@@ -7,7 +7,7 @@
     "build": "vite build",
     "predev": "run-s generate migrate",
     "dev": "vite dev --port 3000",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
     "migrate": "drizzle-kit migrate",

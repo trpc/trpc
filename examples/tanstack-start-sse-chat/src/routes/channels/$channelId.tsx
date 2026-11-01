@@ -18,7 +18,7 @@ import { Chat } from './-components/chat';
 export const Route = createFileRoute('/channels/$channelId')({
   beforeLoad: (opts) => {
     if (!z.string().uuid().safeParse(opts.params.channelId).success) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- the router's not-found signal
+      // oxlint-disable-next-line typescript/only-throw-error -- the router's not-found signal
       throw notFound();
     }
   },

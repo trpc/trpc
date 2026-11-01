@@ -1,5 +1,5 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
-import type { AppProviders } from 'next-auth/providers';
+import type { AppProviders } from 'next-auth/providers/index';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
 

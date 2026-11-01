@@ -6,7 +6,7 @@
 - ⚡ Full-stack React with Next.js
 - ⚡ Database with Prisma
 - ⚙️ VSCode extensions
-- 🎨 ESLint + Prettier
+- 🎨 Oxlint + Oxfmt
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting

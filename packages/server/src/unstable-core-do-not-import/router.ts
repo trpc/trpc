@@ -393,7 +393,7 @@ export async function getProcedureAtPath(
       return null;
     }
     // console.log('loading', key, '.......');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const lazyRouter = _def.lazy[key]!;
     await lazyRouter.load();
 

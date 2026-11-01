@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-console */
+/* oxlint-disable typescript/no-non-null-assertion */
+/* oxlint-disable no-console */
 import type {
   API,
   ArrowFunctionExpression,

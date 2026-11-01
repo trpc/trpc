@@ -703,7 +703,7 @@ async function callRecursive(
   opts: ProcedureCallOptions<any>,
 ): Promise<MiddlewareResult<any>> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const middleware = _def.middlewares[index]!;
     const result = await middleware({
       ...opts,

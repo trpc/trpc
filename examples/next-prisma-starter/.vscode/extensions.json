@@ -1,7 +1,7 @@
 {
-  "recommendations": [
-    "esbenp.prettier-vscode",
+  "recommendations": ["oxc.oxc-vscode", "prisma.prisma"],
+  "unwantedRecommendations": [
     "dbaeumer.vscode-eslint",
-    "prisma.prisma"
+    "esbenp.prettier-vscode"
   ]
 }

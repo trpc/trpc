@@ -1,5 +1,5 @@
 /// <reference types="@docusaurus/module-type-aliases" />
-/* eslint-disable @typescript-eslint/no-require-imports */
+/* oxlint-disable typescript/no-require-imports */
 import fs from 'fs';
 import path from 'path';
 import type * as Preset from '@docusaurus/preset-classic';

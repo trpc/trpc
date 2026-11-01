@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react/exhaustive-deps */
 import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* oxlint-disable typescript/ban-ts-comment */
 import { createAppRouter } from '../__testHelpers';
 import { withTRPC } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';

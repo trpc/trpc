@@ -250,7 +250,7 @@ export function useSubscription<TOutput, TError>(
     currentSubscriptionRef.current = () => {
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [hashKey(opts.queryKey), opts.enabled]);
 
   const getInitialState = React.useCallback((): $Result => {

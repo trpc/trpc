@@ -147,7 +147,7 @@ test('share', () => {
     const error = vi.fn();
     const complete = vi.fn();
 
-    // eslint-disable-next-line no-var
+    // oxlint-disable-next-line no-var
     var subscription1 = obs.subscribe({
       next,
       error,
@@ -164,7 +164,7 @@ test('share', () => {
     const next = vi.fn();
     const error = vi.fn();
     const complete = vi.fn();
-    // eslint-disable-next-line no-var
+    // oxlint-disable-next-line no-var
     var subscription2 = obs.subscribe({
       next,
       error,

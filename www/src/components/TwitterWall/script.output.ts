@@ -1,5 +1,4 @@
-// prettier-ignore
-// eslint-disable
+// oxfmt-ignore
 export const tweets = {
     "data": [
         {
