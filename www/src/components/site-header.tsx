@@ -6,7 +6,7 @@ import { cn } from '@shared/ui/lib/utils';
 import { docsLinks, site } from '~/site.ts';
 
 import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
-import { Logo } from './logo.tsx';
+import { Wordmark } from './logo.tsx';
 import { MobileNav } from './mobile-nav.tsx';
 import { SearchButton } from './search.tsx';
 import { ThemeToggle } from './theme-toggle.tsx';
@@ -62,15 +62,14 @@ export function SiteHeader() {
         <MobileNav />
         <Link
           aria-label={`${site.name} home`}
-          className="mr-1.5 flex items-center gap-2 font-bold tracking-tight"
+          className="mr-1.5 flex items-center"
           onContextMenu={(event) => {
             event.preventDefault();
             void navigate({ to: '/media' });
           }}
           to="/"
         >
-          <Logo />
-          {site.name}
+          <Wordmark />
         </Link>
         <nav
           aria-label="Main"
