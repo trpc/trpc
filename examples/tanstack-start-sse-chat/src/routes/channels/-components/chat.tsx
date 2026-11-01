@@ -109,18 +109,25 @@ export function Chat(
               <div>
                 <Button
                   disabled={
-                    !livePosts.query.hasNextPage ||
-                    livePosts.query.isFetchingNextPage
+                    livePosts.query.fetchStatus !== 'idle' ||
+                    !livePosts.query.hasNextPage
                   }
                   onClick={() => {
                     void livePosts.query.fetchNextPage();
                   }}
                 >
-                  {livePosts.query.isFetchingNextPage
-                    ? 'Loading...'
-                    : !livePosts.query.hasNextPage
-                      ? 'Fetched everything!'
-                      : 'Load more'}
+                  {run(() => {
+                    switch (livePosts.query.fetchStatus) {
+                      case 'fetching':
+                        return 'Loading...';
+                      case 'paused':
+                        return 'Waiting for network...';
+                      case 'idle':
+                        return livePosts.query.hasNextPage
+                          ? 'Load more'
+                          : 'Fetched everything!';
+                    }
+                  })}
                 </Button>
               </div>
 
