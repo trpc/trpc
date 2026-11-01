@@ -280,39 +280,19 @@ export function readHandle(
 export type HandleVerb = 'prefetch' | 'ensure' | 'fetch';
 
 /**
- * A query `unstable_prefetch` was called for inside `usePrefetchHandles()`,
- * which decides whether to start it
- * @internal
+ * A prefetch during render runs on every render, so it only starts a query
+ * the cache has never fetched, keyed by the query hash. Stale data is
+ * refetched by the reader's observer, and an error stays until the reader's
+ * error boundary resets it: restarting it here would suspend the reader again.
  */
-export interface RenderPrefetch {
-  queryClient: QueryClient;
-  options: any;
-  kind: 'query' | 'infinite';
-}
-
-let renderPrefetches: RenderPrefetch[] | null = null;
-
-/**
- * Run `fn` and collect the queries its `unstable_prefetch` calls name,
- * instead of starting them
- * @internal
- */
-export function collectRenderPrefetches<T>(fn: () => T) {
-  const previous = renderPrefetches;
-  const prefetches: RenderPrefetch[] = [];
-  renderPrefetches = prefetches;
-  try {
-    return { result: fn(), prefetches };
-  } finally {
-    renderPrefetches = previous;
-  }
-}
-
-/**
- * @internal
- */
-export function isCollectingRenderPrefetches() {
-  return renderPrefetches !== null;
+function needsRenderPrefetch(queryClient: QueryClient, options: any) {
+  const query = queryClient
+    .getQueryCache()
+    .get(queryClient.defaultQueryOptions(options).queryHash);
+  return (
+    !query ||
+    (query.state.status === 'pending' && query.state.fetchStatus === 'idle')
+  );
 }
 
 /**
@@ -324,15 +304,20 @@ export function startHandle(opts: {
   kind: 'query' | 'infinite';
   verb: HandleVerb;
   selfHydrating: boolean;
+  inRender: boolean;
 }) {
-  const { queryClient, options, kind, verb, selfHydrating } = opts;
+  const { queryClient, options, kind, verb, selfHydrating, inRender } = opts;
   const input = readQueryKey(options.queryKey).args?.input;
   const handle: Record<string, unknown> = { queryKey: options.queryKey, input };
   if (kind === 'infinite' && options.initialPageParam != null) {
     handle['initialCursor'] = options.initialPageParam;
   }
-  if (renderPrefetches) {
-    renderPrefetches.push({ queryClient, options, kind });
+  if (inRender) {
+    if (needsRenderPrefetch(queryClient, options)) {
+      void (kind === 'infinite'
+        ? queryClient.prefetchInfiniteQuery(options)
+        : queryClient.prefetchQuery(options));
+    }
     return handle;
   }
   const done = () => {

@@ -18,11 +18,7 @@ import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCOptionsProxy, unstable_inferQueryHandle } from '../src';
-import {
-  createTRPCContext,
-  createTRPCOptionsProxy,
-  usePrefetchHandles,
-} from '../src';
+import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -158,19 +154,21 @@ describe('server rendering', () => {
     warn.mockRestore();
   });
 
-  test('usePrefetchHandles starts its queries in the server render', async () => {
+  test('useTRPC() starts its prefetches in the server render', async () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     function Page() {
       const trpc = trpcContext.useTRPC();
-      const handles = usePrefetchHandles(() => ({
-        a: trpc.post.byDay.unstable_prefetch({ day: new Date('2026-03-01') }),
-        b: trpc.post.byDay.unstable_prefetch({ day: new Date('2026-03-02') }),
-      }));
+      const a = trpc.post.byDay.unstable_prefetch({
+        day: new Date('2026-03-01'),
+      });
+      const b = trpc.post.byDay.unstable_prefetch({
+        day: new Date('2026-03-02'),
+      });
       return (
         <>
-          <Post post={handles.a} />
-          <Post post={handles.b} />
+          <Post post={a} />
+          <Post post={b} />
         </>
       );
     }

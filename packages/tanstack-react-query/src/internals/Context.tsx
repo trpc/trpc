@@ -5,7 +5,7 @@ import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import {
   createTRPCOptionsProxy,
-  disableHandleVerbs,
+  renderHandleVerbs,
 } from './createOptionsProxy';
 import type {
   DefaultFeatureFlags,
@@ -57,7 +57,7 @@ export function createTRPCContext<
           client: props.trpcClient,
           queryClient: props.queryClient,
           keyPrefix: props.keyPrefix as any,
-          [disableHandleVerbs]: true,
+          [renderHandleVerbs]: true,
         }),
       [props.trpcClient, props.queryClient, props.keyPrefix],
     );

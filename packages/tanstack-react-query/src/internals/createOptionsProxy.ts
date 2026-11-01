@@ -25,7 +25,6 @@ import type {
   HandleVerb,
 } from './handles';
 import {
-  isCollectingRenderPrefetches,
   isServerEnvironment,
   prepareHandleRead,
   readHandle,
@@ -353,9 +352,10 @@ export type TRPCOptionsProxyOptions<
   );
 
 /**
+ * Marks the `useTRPC()` proxy, whose handle verbs run during render
  * @internal
  */
-export const disableHandleVerbs = Symbol('disableHandleVerbs');
+export const renderHandleVerbs = Symbol('renderHandleVerbs');
 
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
@@ -417,22 +417,14 @@ export function createTRPCOptionsProxy<
     const [arg1, arg2] = args as any[];
 
     const startQueryHandle = (kind: 'query' | 'infinite', verb: HandleVerb) => {
-      const name = `\`${[...path, utilName].join('.')}()\``;
-      if (isCollectingRenderPrefetches()) {
-        if (verb !== 'prefetch') {
-          throw new Error(
-            `${name} waits for its query, which a render can't. ` +
-              `Inside \`usePrefetchHandles()\`, start queries with \`unstable_prefetch\` or \`unstable_prefetchInfinite\`, ` +
-              `and wait where you read the handle, with \`useSuspenseQuery\`.`,
-          );
-        }
-      } else if (
-        (opts as { [disableHandleVerbs]?: boolean })[disableHandleVerbs]
-      ) {
+      const inRender =
+        (opts as { [renderHandleVerbs]?: boolean })[renderHandleVerbs] === true;
+      if (inRender && verb !== 'prefetch') {
         throw new Error(
-          `${name} on \`useTRPC()\` starts a query during render: call it inside \`usePrefetchHandles(() => ...)\`, ` +
-            `which starts it once per mount and input. ` +
-            `See https://trpc.io/docs/client/tanstack-react-query/handles#use-prefetch-handles`,
+          `\`${[...path, utilName].join('.')}()\` on \`useTRPC()\` waits for its query, which a render can't. ` +
+            `Start queries in components with \`unstable_prefetch\` or \`unstable_prefetchInfinite\`, ` +
+            `and wait where you read the handle, with \`useSuspenseQuery\`. ` +
+            `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
         );
       }
       const options =
@@ -469,6 +461,7 @@ export function createTRPCOptionsProxy<
         kind,
         verb,
         selfHydrating: selfHydratingHandles,
+        inRender,
       });
     };
 

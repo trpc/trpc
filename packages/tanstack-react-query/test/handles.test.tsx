@@ -658,13 +658,13 @@ describe('runtime', () => {
     ).toEqual([0, 1, 2, 3]);
   });
 
-  test('useTRPC() starts handles only inside usePrefetchHandles()', async () => {
+  test("useTRPC() doesn't take the verbs that wait", async () => {
     await using resource = ctx();
     let error: unknown;
     function Component() {
       const trpc = resource.useTRPC();
       try {
-        trpc.post.byId.unstable_prefetch({ id: '1' });
+        void trpc.post.byId.unstable_ensure({ id: '1' });
       } catch (cause) {
         error = cause;
       }
@@ -673,7 +673,7 @@ describe('runtime', () => {
     }
     resource.renderApp(<Component />);
     expect(error).toMatchInlineSnapshot(
-      `[Error: \`post.byId.unstable_prefetch()\` on \`useTRPC()\` starts a query during render: call it inside \`usePrefetchHandles(() => ...)\`, which starts it once per mount and input. See https://trpc.io/docs/client/tanstack-react-query/handles#use-prefetch-handles]`,
+      `[Error: \`post.byId.unstable_ensure()\` on \`useTRPC()\` waits for its query, which a render can't. Start queries in components with \`unstable_prefetch\` or \`unstable_prefetchInfinite\`, and wait where you read the handle, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
