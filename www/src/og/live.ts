@@ -66,7 +66,10 @@ export async function fetchStats(
 /** `https://github.com/KATT.png` at 128 pixels, the size the card needs. */
 export const avatarUrl = (image: string) => {
   const url = new URL(image);
-  if (url.host === 'github.com' || url.host.endsWith('githubusercontent.com')) {
+  if (
+    url.hostname === 'github.com' ||
+    url.hostname.endsWith('.githubusercontent.com')
+  ) {
     url.searchParams.set('size', '128');
   }
   return url.href;

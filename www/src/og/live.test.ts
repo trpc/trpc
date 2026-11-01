@@ -73,6 +73,12 @@ describe('fetchAvatar', () => {
     expect(avatarUrl('https://github.com/KATT.png')).toBe(
       'https://github.com/KATT.png?size=128',
     );
+    expect(
+      avatarUrl('https://avatars.githubusercontent.com/u/459267?v=4'),
+    ).toBe('https://avatars.githubusercontent.com/u/459267?v=4&size=128');
+    expect(avatarUrl('https://evilgithubusercontent.com/a.png')).toBe(
+      'https://evilgithubusercontent.com/a.png',
+    );
     respond({
       'https://github.com/KATT.png?size=128': () =>
         new Response(new Uint8Array([1, 2, 3]), {
