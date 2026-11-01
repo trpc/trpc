@@ -573,7 +573,8 @@ export function createTRPCOptionsProxy<
       unstable_$prefetch: () => startQueryHandle('query', 'prefetch'),
       unstable_$ensure: () => startQueryHandle('query', 'ensure'),
       unstable_$fetch: () => startQueryHandle('query', 'fetch'),
-      unstable_$prefetchInfinite: () => startQueryHandle('infinite', 'prefetch'),
+      unstable_$prefetchInfinite: () =>
+        startQueryHandle('infinite', 'prefetch'),
       unstable_$ensureInfinite: () => startQueryHandle('infinite', 'ensure'),
       unstable_$fetchInfinite: () => startQueryHandle('infinite', 'fetch'),
 
