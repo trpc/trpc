@@ -4,12 +4,28 @@ on:
   push:
     branches:
       - 'main'
+  pull_request:
+    paths:
+      - '.github/workflows/subtree.yml'
+      - 'examples/**'
+      - 'pnpm-workspace.yaml'
+      - 'tooling/subtree/**'
+      - 'tooling/ui/**'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false # true causes the workflow to cancel and look failed on `main` (which is done after a release)
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
+    # The Prisma and Drizzle examples migrate a database when they install or build.
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
 
     strategy:
       fail-fast: false
@@ -28,7 +44,7 @@ jobs:
             tanstack-start-sse-chat,
           ]
 
-    name: Update downstream ${{ matrix.path }} package
+    name: ${{ github.event_name == 'pull_request' && 'Check standalone' || 'Update downstream' }} ${{ matrix.path }} package
 
     steps:
       - uses: actions/checkout@v7
@@ -51,14 +67,51 @@ jobs:
           node-version: 24.x
           cache: 'pnpm'
 
+      # Copies the `@shared/ui` files the example uses into it, and replaces
+      # `catalog:` versions and `@trpc/*` (with `canary`), which only resolve
+      # in the monorepo. See tooling/subtree.
+      - name: Make the example standalone
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts --filter @tooling/subtree
+          pnpm --filter @tooling/subtree standalone "examples/${{ matrix.path }}" "$RUNNER_TEMP/standalone"
+          rm -rf "examples/${{ matrix.path }}"
+          mv "$RUNNER_TEMP/standalone" "examples/${{ matrix.path }}"
+
       - name: Install dependencies and create separate lockfile
         run: |
           cd ./examples/${{ matrix.path }}
-          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g'
           pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
+      # Installs and builds the copy outside the monorepo, the way its README
+      # says: npm for the npm workspaces (minimal-react), pnpm otherwise. The
+      # copy doesn't list which dependencies may run build scripts (Prisma,
+      # esbuild), which CI's pnpm otherwise refuses.
+      - name: Build the standalone example
+        if: github.event_name == 'pull_request'
+        env:
+          # For the examples without a committed `.env` (tanstack-start-sse-chat)
+          DATABASE_URL: postgresql://postgres@localhost:5432/postgres
+        run: |
+          cp -r "examples/${{ matrix.path }}" "$RUNNER_TEMP/example"
+          cd "$RUNNER_TEMP/example"
+          rm -rf node_modules
+          build() {
+            if node -e "process.exit(require('./package.json').workspaces ? 0 : 1)"; then
+              npm install --no-audit --no-fund && npm run build
+            else
+              pnpm install --ignore-workspace --config.dangerously-allow-all-builds=true && pnpm build
+            fi
+          }
+          # The canary @trpc/server's next-app-dir adapter imports
+          # `next/navigation` without `.js`, which Node can't resolve.
+          if [ "${{ matrix.path }}" = ".experimental/next-app-dir" ]; then
+            build || echo "::warning::The standalone next-app-dir build fails until @trpc/server imports next/navigation.js"
+          else
+            build
+          fi
+
       - name: Commit changes
+        if: github.event_name != 'pull_request'
         run: |
           git config --global user.email "<>"
           git config --global user.name "trpc-bot"
@@ -66,6 +119,7 @@ jobs:
           git commit -m "chore: sync lockfile"
 
       - name: Sync downstream
+        if: github.event_name != 'pull_request'
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
           repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'
