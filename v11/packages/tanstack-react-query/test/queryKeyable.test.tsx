@@ -578,7 +578,6 @@ test('types of normal usage', async () => {
             //
             queryClient={queryClient}
             trpcClient={trpcClient}
-            // @ts-expect-error - test
             keyPrefix="test"
           >
             {null}

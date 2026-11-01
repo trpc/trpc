@@ -13,6 +13,7 @@ import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import'
 import type {
   ExtractCursorType,
   FeatureFlags,
+  inferFeatureFlags,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
@@ -182,7 +183,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TDef['featureFlags']
+      inferFeatureFlags<TDef>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -192,7 +193,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TDef['featureFlags']
+    inferFeatureFlags<TDef>
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
@@ -204,7 +205,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TDef['featureFlags']
+      inferFeatureFlags<TDef>
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -214,7 +215,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TDef['featureFlags']
+    inferFeatureFlags<TDef>
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -226,7 +227,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TDef['featureFlags']
+      inferFeatureFlags<TDef>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -236,7 +237,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TDef['featureFlags']
+    inferFeatureFlags<TDef>
   >;
 }
 
