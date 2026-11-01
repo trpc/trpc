@@ -206,8 +206,13 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     }
     return heads;
   })();
+  // Header names are case-insensitive, so a `Content-Type` set by the caller
+  // replaces ours instead of being sent alongside it
+  const hasContentType = Object.keys(resolvedHeaders).some(
+    (key) => key.toLowerCase() === 'content-type',
+  );
   const headers = {
-    ...(opts.contentTypeHeader && method !== 'GET'
+    ...(opts.contentTypeHeader && method !== 'GET' && !hasContentType
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
