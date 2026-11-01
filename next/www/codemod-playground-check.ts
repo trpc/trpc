@@ -132,7 +132,7 @@ try {
     `the server sample's v12 pane doesn't show initTrpc: ${await paneText(page, 'v12')}`,
   );
   check(
-    (await summary(page)) === 'Rewritten, 2 steps by hand',
+    (await summary(page)) === 'Rewritten, 1 step by hand',
     `the server sample's summary is "${await summary(page)}"`,
   );
 
