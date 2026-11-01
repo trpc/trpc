@@ -63,8 +63,15 @@ export function experimental_createTRPCNextAppDirServer<
     const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === 'revalidate') {
-      revalidateTag(cacheTag);
-      return;
+      try {
+        revalidateTag(cacheTag);
+        return Promise.resolve({ revalidated: true });
+      } catch (cause) {
+        return Promise.resolve({
+          revalidated: false,
+          error: cause instanceof Error ? cause.message : 'Unknown error',
+        });
+      }
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
