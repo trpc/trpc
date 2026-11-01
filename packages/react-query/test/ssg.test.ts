@@ -22,6 +22,16 @@ const appRouter = t.router({
         }),
       )
       .query(() => '__infResult' as const),
+    paginated: t.procedure
+      .input(
+        z.object({
+          cursor: z.number().nullish(),
+        }),
+      )
+      .query(({ input }) => {
+        const cursor = input.cursor ?? 0;
+        return { cursor, nextCursor: cursor + 1 };
+      }),
   }),
 });
 
@@ -51,6 +61,27 @@ test('fetchInfinite', async () => {
   expect(post.pages).toStrictEqual(['__infResult']);
 });
 
+test('fetchInfinite with initialCursor and pages', async () => {
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+
+  const data = await ssg.post.paginated.fetchInfinite(
+    {},
+    {
+      initialCursor: 5,
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  expect(data).toStrictEqual({
+    pages: [
+      { cursor: 5, nextCursor: 6 },
+      { cursor: 6, nextCursor: 7 },
+    ],
+    pageParams: [5, 6],
+  });
+});
+
 test('prefetch and dehydrate', async () => {
   const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
   await ssg.post.byId.prefetch({ id: '1' });
@@ -67,6 +98,27 @@ test('prefetchInfinite and dehydrate', async () => {
   expect(data).toContain('__infResult');
 });
 
+test('prefetchInfinite with initialCursor and pages', async () => {
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+  await ssg.post.paginated.prefetchInfinite(
+    {},
+    {
+      initialCursor: 5,
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  const [query] = ssg.dehydrate().queries;
+  expect(query?.state.data).toStrictEqual({
+    pages: [
+      { cursor: 5, nextCursor: 6 },
+      { cursor: 6, nextCursor: 7 },
+    ],
+    pageParams: [5, 6],
+  });
+});
+
 test('using queryOptions', async () => {
   const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
@@ -77,4 +129,22 @@ test('using queryOptions', async () => {
   );
   expectTypeOf<'__result'>(post);
   expect(post).toStrictEqual('__result');
+});
+
+test('using infiniteQueryOptions with initialCursor', async () => {
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+
+  const data = await ssg.queryClient.fetchInfiniteQuery(
+    ssg.post.paginated.infiniteQueryOptions(
+      {},
+      {
+        initialCursor: 5,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
+    ),
+  );
+  expect(data).toStrictEqual({
+    pages: [{ cursor: 5, nextCursor: 6 }],
+    pageParams: [5],
+  });
 });
