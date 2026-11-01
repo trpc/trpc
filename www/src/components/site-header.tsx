@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 import { buttonVariants } from '@shared/ui/components/button';
 import { v11Docs } from '~/content/docs.ts';
@@ -38,6 +38,7 @@ function DocsLinks() {
 }
 
 export function SiteHeader() {
+  const navigate = useNavigate();
   return (
     <header
       className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
@@ -48,6 +49,10 @@ export function SiteHeader() {
         <Link
           aria-label={`${site.name} home`}
           className="mr-1.5 flex items-center gap-2 font-bold tracking-tight"
+          onContextMenu={(event) => {
+            event.preventDefault();
+            void navigate({ to: '/media' });
+          }}
           to="/"
         >
           <Logo />

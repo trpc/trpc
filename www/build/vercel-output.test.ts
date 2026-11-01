@@ -3,7 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { hiddenPaths, llmsTxtPath, site, v12 } from '../src/site.ts';
+import { hiddenPaths, site } from '../src/site.ts';
 import { onDemandFunction } from './on-demand.ts';
 import { siteTextFiles } from './site-files.ts';
 import {
@@ -13,7 +13,6 @@ import {
   type TrpcRedirect,
 } from './old-routes.ts';
 import {
-  firstDoc,
   isNoindex,
   noindexPageRoutes,
   noindexRoute,
@@ -25,18 +24,10 @@ const llmsTxt = [
   '',
   '## Getting started',
   '',
-  '- [Getting started](https://v12.trpc.io/v12/docs/getting-started.md): A router.',
-  '- [Links](https://v12.trpc.io/v12/docs/client/links.md): Links.',
+  '- [Introduction](https://trpc.io/docs/introduction.md): tRPC.',
+  '- [Links](https://trpc.io/docs/client/links.md): Links.',
   '',
 ].join('\n');
-
-const hiddenMeta = '<meta name="robots" content="noindex, nofollow">';
-/** The v12 docs pages: hidden at trpc.io (`v12.hidden`), and unindexed (`v12Indexable`). */
-const v12Page = v12.hidden
-  ? hiddenMeta
-  : '<meta name="robots" content="noindex">';
-/** Where the build writes v12's llms.txt, which moves when it's hidden. */
-const v12LlmsFile = llmsTxtPath('v12').slice(1);
 
 /** A prerendered site in a temp dir, removed when the test ends. */
 const setup = Effect.fn('setup')(function* (
@@ -58,22 +49,19 @@ const setup = Effect.fn('setup')(function* (
     'assets/app.js': '',
     'blog/index.html': '',
     'favicon.ico': '',
-    'v12/docs/client/links.md': '',
-    'v12/docs/client/links/index.html': v12Page,
-    'v12/docs/openapi/routes.md': '',
-    'v12/docs/openapi/routes/index.html': v12Page,
-    'v12/docs/server/transformers.md': '',
-    'v12/docs/server/transformers/index.html': v12Page,
+    'docs/client/links.md': '',
+    'docs/client/links/index.html': '',
+    'docs/introduction.md': '',
+    'docs/introduction/index.html': '',
     'index.html': '',
     'index.md': '',
-    [v12LlmsFile]: llms,
+    'llms.txt': llms,
     'logo.svg': '',
     'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
     'robots.txt': siteTextFiles().get('/robots.txt')?.source ?? '',
     'sponsor/index.html': '',
-    'v12/decisions/index.html': hiddenMeta,
-    'v12/decisions/progressive-json/index.html': hiddenMeta,
-    'v12/decisions/replaceable-transformers/index.html': hiddenMeta,
+    'v10/docs/introduction/index.html': '',
+    'v9/docs/introduction/index.html': '',
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -100,7 +88,9 @@ describe('noindexRoute', () => {
   };
 
   it('says noindex everywhere until the site is trpc.io', () => {
-    expect(noindexRoute('https://v12.trpc.io', 'production')).toEqual(noindex);
+    expect(noindexRoute('https://www-trpc.vercel.app', 'production')).toEqual(
+      noindex,
+    );
   });
 
   it("says noindex on trpc.io's previews", () => {
@@ -134,13 +124,13 @@ describe('isNoindex', () => {
 describe('noindexPageRoutes', () => {
   it('says noindex on the pages and their markdown, and nowhere else', () => {
     expect(noindexPageRoutes([])).toEqual([]);
-    const [route] = noindexPageRoutes(['/v12/docs/openapi/routes']);
+    const [route] = noindexPageRoutes(['/docs/openapi']);
     expect(route?.headers).toEqual({ 'X-Robots-Tag': 'noindex' });
     const pages = new RegExp(route?.src ?? '');
-    expect(pages.test('/v12/docs/openapi/routes')).toBe(true);
-    expect(pages.test('/v12/docs/openapi/routes.md')).toBe(true);
-    expect(pages.test('/v12/docs/client/links')).toBe(false);
-    expect(pages.test('/v12/docs/openapi/routes/more')).toBe(false);
+    expect(pages.test('/docs/openapi')).toBe(true);
+    expect(pages.test('/docs/openapi.md')).toBe(true);
+    expect(pages.test('/docs/client/links')).toBe(false);
+    expect(pages.test('/docs/openapi/more')).toBe(false);
   });
 });
 
@@ -173,13 +163,6 @@ describe('opensearch.xml', () => {
   });
 });
 
-describe('firstDoc', () => {
-  it('reads the first page llms.txt links to', () => {
-    expect(firstDoc(llmsTxt)).toBe('getting-started');
-    expect(firstDoc('# tRPC\n')).toBeUndefined();
-  });
-});
-
 describe('writeVercelOutput', () => {
   it.effect('copies the site and writes its routes', () =>
     Effect.gen(function* () {
@@ -191,7 +174,7 @@ describe('writeVercelOutput', () => {
 
       const output = path.join(root, '.vercel/output');
       expect(
-        yield* fs.exists(path.join(output, 'static/v12/docs/client/links.md')),
+        yield* fs.exists(path.join(output, 'static/docs/client/links.md')),
       ).toBe(true);
       const config = JSON.parse(
         yield* fs.readFileString(path.join(output, 'config.json')),
@@ -202,55 +185,39 @@ describe('writeVercelOutput', () => {
           contentType: 'text/html; charset=utf-8',
           path: 'blog',
         },
-        'v12/docs/client/links.md': {
+        'docs/client/links.md': {
           contentType: 'text/markdown; charset=utf-8',
         },
-        'v12/docs/client/links/index.html': {
+        'docs/client/links/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v12/docs/client/links',
+          path: 'docs/client/links',
         },
-        'v12/docs/openapi/routes.md': {
+        'docs/introduction.md': {
           contentType: 'text/markdown; charset=utf-8',
         },
-        'v12/docs/openapi/routes/index.html': {
+        'docs/introduction/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v12/docs/openapi/routes',
-        },
-        'v12/docs/server/transformers.md': {
-          contentType: 'text/markdown; charset=utf-8',
-        },
-        'v12/docs/server/transformers/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'v12/docs/server/transformers',
+          path: 'docs/introduction',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
-        [v12LlmsFile]: { contentType: 'text/plain; charset=utf-8' },
+        'llms.txt': { contentType: 'text/plain; charset=utf-8' },
         'robots.txt': { contentType: 'text/plain; charset=utf-8' },
         'sponsor/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'sponsor',
         },
-        'v12/decisions/index.html': {
+        'v10/docs/introduction/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v12/decisions',
+          path: 'v10/docs/introduction',
         },
-        'v12/decisions/progressive-json/index.html': {
+        'v9/docs/introduction/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v12/decisions/progressive-json',
-        },
-        'v12/decisions/replaceable-transformers/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'v12/decisions/replaceable-transformers',
+          path: 'v9/docs/introduction',
         },
         'docs/server/routers/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'docs/server/routers',
         },
-      });
-      expect(config.routes).toContainEqual({
-        headers: { Location: '/v12/docs/getting-started' },
-        src: '^/v12/docs$',
-        status: 307,
       });
       // v11, the stable release, has `/docs`.
       for (const [basePath, src] of [
@@ -277,17 +244,12 @@ describe('writeVercelOutput', () => {
       );
 
       const markdownRewrite = config.routes.find(
-        (route: { dest?: string }) => route.dest === '/v12/docs/$1.md',
+        (route: { dest?: string }) => route.dest === '/docs/$1.md',
       );
-      const match = new RegExp(markdownRewrite.src).exec(
-        '/v12/docs/client/links',
-      );
+      const match = new RegExp(markdownRewrite.src).exec('/docs/client/links');
       expect(match?.[1]).toBe('client/links');
-      expect(new RegExp(markdownRewrite.src).test('/v12/docs/a.md')).toBe(
-        false,
-      );
-      // The copies have no markdown.
-      expect(new RegExp(markdownRewrite.src).test('/docs/a')).toBe(false);
+      expect(new RegExp(markdownRewrite.src).test('/docs/a.md')).toBe(false);
+      // The older versions have no markdown.
       expect(new RegExp(markdownRewrite.src).test('/v9/docs/a')).toBe(false);
 
       // Until the site is trpc.io, every response, before any redirect.
@@ -297,8 +259,8 @@ describe('writeVercelOutput', () => {
         src: '^/.*$',
       });
 
-      // Flagged pages go to the function, after the markdown and before
-      // the files.
+      // Searches go to the function, after the markdown and before the
+      // files.
       const onDemand = config.routes.findIndex(
         (route: { dest?: string }) =>
           route.dest?.startsWith(`/${onDemandFunction}?`) === true,
@@ -375,11 +337,4 @@ describe('writeVercelOutput', () => {
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 
-  it.effect('fails when llms.txt links to no page', () =>
-    Effect.gen(function* () {
-      const root = yield* setup('# tRPC\n');
-      const error = yield* Effect.flip(writeVercelOutput(root));
-      expect(error._tag).toBe('VercelOutputError');
-    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-  );
 });

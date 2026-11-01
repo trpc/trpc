@@ -6,47 +6,6 @@ html {
   scroll-padding-top: 4.5rem;
 }
 
-/* The home page: the site header (3.5rem) and the version pill under it. */
-html:has(#hero-code) {
-  scroll-padding-top: 7rem;
-}
-
-/*
- * The home page's versions: every version ships in the static HTML; a
- * blocking script sets data-home-version from ?version= before paint so v12
- * never flashes the prerendered v11 panels.
- */
-[data-home-panel] {
-  display: none;
-}
-
-:root:not([data-home-version]) [data-home-panel='v11'],
-[data-home-version='v11'] [data-home-panel='v11'],
-[data-home-version='v12'] [data-home-panel='v12'] {
-  display: contents;
-}
-
-:root:not([data-home-version]) [data-home-version-link='v11'].home-version-link,
-[data-home-version='v11'] [data-home-version-link='v11'].home-version-link,
-[data-home-version='v12'] [data-home-version-link='v12'].home-version-link {
-  background-color: var(--foreground);
-  color: var(--background);
-  font-weight: 500;
-}
-
-/*
- * v12's UI while v12 is hidden (`v12.hidden`): in the HTML, with its links
- * disabled, for a session that has been to v12, which homeVersionScript
- * marks with data-v12 on <html> before paint (`v12Attribute`).
- */
-:root:not([data-v12]) [data-v12-ui] {
-  display: none !important;
-}
-
-:root:not([data-v12]) [data-v12-room] {
-  padding-top: 0;
-}
-
 /* The home page's "As used by" marquee (`UsedBy`). */
 @theme {
   --animate-used-by: used-by 60s linear infinite;
@@ -737,64 +696,36 @@ figure.tweet .tweet-footer a:hover {
   }
 }
 
-/* A kitchen-sink demo's place in its page (`remarkDemos`), until `PageDemo` runs it */
-.demo-slot {
-  margin-block: 1.5em;
-}
-
-.demo-slot > p {
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  padding: 1rem 1.125rem;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.demo-slot[data-demo-running] > p {
-  display: none;
-}
-
-/* From `xl` up, the page runs its demo beside the text instead. */
-@media (min-width: 80rem) {
-  .demo-slot {
-    display: none;
-  }
-}
-
-/* The codemod playground's place in its page (`remarkCodemodPlayground`), until it runs */
-.codemod-playground-slot {
-  margin-block: 1.5em;
-}
-
-.codemod-playground-slot > p {
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  padding: 1rem 1.125rem;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-}
-
-.codemod-playground-slot[data-codemod-playground-running] > p {
-  display: none;
-}
-
-/* The demo editor's colors: Shiki's GitHub themes, as the code blocks */
-[data-demo-frame],
-[data-codemod-playground-frame] {
-  --ks-keyword: #d73a49;
-  --ks-string: #032f62;
-  --ks-constant: #005cc5;
-  --ks-comment: #6a737d;
-  --ks-function: #6f42c1;
-  --ks-tag: #22863a;
-}
-
-.dark [data-demo-frame],
-.dark [data-codemod-playground-frame] {
-  --ks-keyword: #f97583;
-  --ks-string: #9ecbff;
-  --ks-constant: #79b8ff;
-  --ks-comment: #6a737d;
-  --ks-function: #b392f0;
-  --ks-tag: #85e89d;
+/* Algolia's DocSearch modal (`algolia-search.tsx`), in the site's colors. */
+:root {
+  --docsearch-primary-color: var(--brand);
+  --docsearch-highlight-color: var(--link);
+  --docsearch-focus-color: var(--ring);
+  --docsearch-text-color: var(--foreground);
+  --docsearch-secondary-text-color: var(--muted-foreground);
+  --docsearch-muted-color: var(--muted-foreground);
+  --docsearch-icon-color: var(--muted-foreground);
+  --docsearch-logo-color: var(--foreground);
+  --docsearch-container-background: color-mix(
+    in oklch,
+    var(--background) 60%,
+    transparent
+  );
+  --docsearch-modal-background: var(--popover);
+  --docsearch-modal-shadow: 0 16px 48px rgb(0 0 0 / 0.25);
+  --docsearch-searchbox-background: var(--background);
+  --docsearch-searchbox-focus-background: var(--background);
+  --docsearch-hit-color: var(--foreground);
+  --docsearch-hit-background: var(--background);
+  --docsearch-hit-highlight-color: color-mix(
+    in oklch,
+    var(--brand) 15%,
+    transparent
+  );
+  --docsearch-hit-shadow: 0 0 0 1px var(--border);
+  --docsearch-key-background: var(--muted);
+  --docsearch-key-color: var(--muted-foreground);
+  --docsearch-footer-background: var(--popover);
+  --docsearch-footer-shadow: 0 -1px 0 0 var(--border);
+  --docsearch-border-radius: var(--radius);
 }

@@ -378,7 +378,7 @@ export const createTinyRPCClient = <TRouter extends AnyTRPCRouter>(
     // No error - all good. Return the data.
     return json.result.data;
   }, []) as DecorateRouterRecord<TRouter['_def']['record']>;
-//   ^? provide empty array as path to begin with
+//   ^ provide empty array as path to begin with
 ```
 
 Most notably here is that our path is `.`-separated instead of `/`. This allows us to have a single API handler on the server which will process all requests, and not one for each procedure. If you're using a framework with filebased routing such as Next.js, you might recognize the catchall `/api/trpc/[trpc].ts` file which will match all procedure paths.

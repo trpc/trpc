@@ -10,71 +10,49 @@ import {
 } from './flags.ts';
 
 describe('flagsIn', () => {
-  it('reads comma-separated experiments, ignoring unknown ones and spaces', () => {
-    expect(flagsIn('publisher')).toEqual(['publisher']);
-    expect(flagsIn('nope, publisher ,also-nope')).toEqual(['publisher']);
-    expect(flagsIn('publisher,publisher')).toEqual(['publisher']);
+  it('ignores names that are not experiments', () => {
+    expect(flagsIn('nope, also-nope')).toEqual([]);
+    expect(flagsIn('partners,hidden-docs')).toEqual([]);
   });
 
-  it('lists several in the order experiments declares them', () => {
-    expect(flagsIn('publisher,contracts')).toEqual(['contracts', 'publisher']);
-    expect(flagParamFor(['publisher', 'contracts'])).toBe(
-      'contracts,publisher',
-    );
-    expect(withFlag(['publisher'], 'contracts', true)).toEqual([
-      'contracts',
-      'publisher',
-    ]);
-  });
-
-  it('has none without a string, and the old flags are gone', () => {
+  it('has none without a string', () => {
     expect(flagsIn(undefined)).toEqual([]);
     expect(flagsIn('')).toEqual([]);
     expect(flagsIn(1)).toEqual([]);
-    expect(flagsIn('partners,hidden-docs')).toEqual([]);
   });
 });
 
 describe('flagParamFor', () => {
-  it('lists the experiments, and is undefined for none', () => {
-    expect(flagParamFor(['publisher'])).toBe('publisher');
+  it('is undefined for none', () => {
     expect(flagParamFor([])).toBeUndefined();
+    expect(flagParamFor(['nope'])).toBeUndefined();
   });
 });
 
 describe('withFlag', () => {
-  it('turns an experiment on or off', () => {
-    expect(withFlag([], 'publisher', true)).toEqual(['publisher']);
-    expect(withFlag(['publisher'], 'publisher', false)).toEqual([]);
-    expect(withFlag(['publisher'], 'publisher', true)).toEqual(['publisher']);
+  it('only turns on experiments', () => {
+    expect(withFlag([], 'nope', true)).toEqual([]);
   });
 });
 
 describe('validateFlagSearch', () => {
-  it('keeps the known experiments, and drops the param when it names none', () => {
-    expect(validateFlagSearch({ flags: 'publisher,nope' })).toEqual({
-      flags: 'publisher',
-    });
+  it('drops the param when it names no experiment', () => {
     expect(validateFlagSearch({ flags: 'nope' })).toEqual({});
     expect(validateFlagSearch({ other: 'x' })).toEqual({});
   });
 
-  it('keeps the open menu, on no experiment or on one', () => {
+  it('keeps the open menu, and drops unknown experiments', () => {
     expect(validateFlagSearch({ experiments: 'open' })).toEqual({
       experiments: 'open',
     });
-    expect(
-      validateFlagSearch({ experiments: 'publisher', flags: 'contracts' }),
-    ).toEqual({ experiments: 'publisher', flags: 'contracts' });
     expect(validateFlagSearch({ experiments: 'nope' })).toEqual({});
     expect(validateFlagSearch({ experiments: true })).toEqual({});
   });
 });
 
 describe('menuStateOf', () => {
-  it('is open, an experiment, or closed', () => {
+  it('is open or closed', () => {
     expect(menuStateOf('open')).toBe('open');
-    expect(menuStateOf('tanstack-db')).toBe('tanstack-db');
     expect(menuStateOf('nope')).toBeUndefined();
     expect(menuStateOf(undefined)).toBeUndefined();
   });

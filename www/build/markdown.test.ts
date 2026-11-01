@@ -347,41 +347,6 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
-  it.effect('turns a `demo` fence into the place the page runs it', () =>
-    Effect.gen(function* () {
-      const rendered = yield* render(
-        'Before.\n\n```demo\nforms\n```\n\nAfter.',
-      );
-      expect(rendered.demos).toEqual(['forms']);
-      expect(rendered.html).toMatch(
-        /<div class="demo-slot not-prose" data-demo="forms"><p>[^<]+<\/p><\/div>/,
-      );
-      expect(rendered.html).not.toContain('<pre');
-    }).pipe(Effect.provide(NodeServices.layer)),
-  );
-
-  it.effect(
-    'turns a `codemod-playground` fence into the place the page runs it',
-    () =>
-      Effect.gen(function* () {
-        const rendered = yield* render(
-          'Before.\n\n```codemod-playground\n```\n\nAfter.',
-        );
-        expect(rendered.html).toMatch(
-          /<div class="codemod-playground-slot not-prose" data-codemod-playground=""><p>[^<]+<\/p><\/div>/,
-        );
-        expect(rendered.html).not.toContain('<pre');
-      }).pipe(Effect.provide(NodeServices.layer)),
-  );
-
-  it.effect("fails on a `demo` fence that doesn't hold an id", () =>
-    Effect.gen(function* () {
-      const error = yield* Effect.flip(render('```demo\n<forms>\n```'));
-      expect(error.message).toContain(
-        `A demo fence holds a demo's id, not "<forms>"`,
-      );
-    }).pipe(Effect.provide(NodeServices.layer)),
-  );
 });
 
 describe('resolveLink', () => {

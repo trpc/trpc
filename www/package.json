@@ -12,6 +12,7 @@
     "dev": "pnpm typedoc && vite dev --port 3000",
     "start": "vite preview --port 3000",
     "lint": "oxlint src build",
+    "test": "vitest run",
     "typecheck": "tsc && pnpm --filter @samples/v11 --filter @shared/ui typecheck",
     "typedoc": "pnpm --filter @www/api-reference generate",
     "check-twoslash": "node build/twoslash-check.ts",
@@ -20,6 +21,8 @@
     "sponsors:readme": "node build/sponsors-sync.ts --readme-only"
   },
   "dependencies": {
+    "@docsearch/css": "4.7.0",
+    "@docsearch/react": "4.7.0",
     "@sentry/tanstackstart-react": "11.8.0",
     "@shared/ui": "workspace:*",
     "@tanstack/react-router": "1.170.42",
@@ -76,6 +79,7 @@
     "unified": "11.0.5",
     "unist-util-visit": "5.1.0",
     "vite": "catalog:",
+    "vitest": "catalog:",
     "yaml": "2.9.1"
   },
   "engines": {

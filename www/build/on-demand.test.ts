@@ -5,7 +5,6 @@ import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { decisionSearchKeys } from '../src/content/decision-search.ts';
 import {
   flagsValue,
   onDemandFunction,
@@ -14,7 +13,6 @@ import {
   pathParam,
   writeOnDemandFunction,
 } from './on-demand.ts';
-import { v12 } from '../src/site.ts';
 
 describe('flagsValue', () => {
   const value = new RegExp(
@@ -40,14 +38,11 @@ describe('flagsValue', () => {
 describe('onDemandRoutes', () => {
   const all = onDemandRoutes(['publisher']);
   const [flagged] = all;
-  const home = all.find((route) => route.src === '^/$');
   const search = all.find((route) => route.src === '^/search$');
 
   it('sends pages with ?flags= to the function, with their path', () => {
     const src = new RegExp(flagged?.src ?? '');
-    expect(src.exec('/v12/docs/server/overview')?.[1]).toBe(
-      '/v12/docs/server/overview',
-    );
+    expect(src.exec('/docs/server/routers')?.[1]).toBe('/docs/server/routers');
     expect(src.test('/')).toBe(true);
     expect(src.test('/assets/app.js')).toBe(false);
     expect(src.test('/llms.txt')).toBe(false);
@@ -57,18 +52,8 @@ describe('onDemandRoutes', () => {
     ]);
   });
 
-  it.skipIf(v12.hidden)(
-    'sends the home page with ?version=v12 to the function',
-    () => {
-      expect(home?.dest).toBe(`/${onDemandFunction}?${pathParam}=/`);
-      expect(home?.has).toEqual([
-        { key: 'version', type: 'query', value: '^v12$' },
-      ]);
-    },
-  );
-
-  it.runIf(v12.hidden)("doesn't while v12 is hidden", () => {
-    expect(home).toBeUndefined();
+  it('sends nothing with ?flags= without experiments', () => {
+    expect(onDemandRoutes([]).some((route) => JSON.stringify(route.has ?? []).includes('"flags"'))).toBe(false);
   });
 
   it('sends a search to the function', () => {
@@ -76,20 +61,6 @@ describe('onDemandRoutes', () => {
     expect(search?.has).toEqual([{ key: 'q', type: 'query', value: '^.+$' }]);
   });
 
-  it('sends a decisions page with a choice in its query to the function', () => {
-    const decided = all.filter((route) => route.src?.includes('/decisions'));
-    expect(decided.map((route) => route.has)).toEqual(
-      decisionSearchKeys.map((key) => [{ key, type: 'query' }]),
-    );
-    const src = new RegExp(decided[0]?.src ?? '');
-    expect(src.exec('/v12/decisions')?.[1]).toBe('/v12/decisions');
-    expect(src.exec('/v12/decisions/open/mcp-oauth')?.[1]).toBe(
-      '/v12/decisions/open/mcp-oauth',
-    );
-    expect(src.test('/v12/decisions/open/mcp-oauth.md')).toBe(false);
-    expect(src.test('/v12/docs/server/overview')).toBe(false);
-    expect(decided[0]?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
-  });
 });
 
 describe('writeOnDemandFunction', () => {

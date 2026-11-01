@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import { decisions, hiddenPaths, unindexedPaths } from '../src/site.ts';
+import { hiddenPaths, unindexedPaths } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 import {
   hiddenPathProblems,
@@ -189,13 +189,12 @@ describe('hidden docs', () => {
 
 describe('hiddenRouteProblems', () => {
   it('passes the routes the site writes', () => {
-    expect(hiddenRouteProblems(routes('getting-started'), hiddenPaths)).toEqual(
+    expect(hiddenRouteProblems(routes(), hiddenPaths)).toEqual(
       [],
     );
     expect(
       hiddenRouteProblems(
         routes(
-          'getting-started',
           [],
           [noindexRoute('https://trpc.io', 'production')],
           ['/v12/decisions', '/v12/docs'],
@@ -244,9 +243,9 @@ describe('hiddenRouteProblems', () => {
 
 describe('hiddenRoute', () => {
   it('says noindex, nofollow under the path, on every host, after the site-wide noindex', () => {
-    const all = routes('getting-started');
+    const all = routes(undefined, undefined, ['/v12/decisions']);
     const index = all.findIndex(
-      (route) => route.src === hiddenRoute(decisions.basePath).src,
+      (route) => route.src === hiddenRoute('/v12/decisions').src,
     );
     expect(all[index]).toEqual({
       continue: true,
@@ -293,15 +292,15 @@ describe('unindexedPathProblems', () => {
           unindexedPathProblems(
             '/v12',
             pages,
-            routes('getting-started', [], noindex, hidden, ['/v12']),
+            routes([], noindex, hidden, ['/v12']),
           ),
         ).toEqual([]);
       }
     }
   });
 
-  it('is every path under /v12 until v12Indexable flips', () => {
-    expect(unindexedPaths).toEqual(['/v12']);
+  it('is none on main, which has no v12', () => {
+    expect(unindexedPaths).toEqual([]);
   });
 
   it('fails on trpc.io, unhidden, without the route', () => {
@@ -309,7 +308,7 @@ describe('unindexedPathProblems', () => {
       unindexedPathProblems(
         '/v12',
         pages,
-        routes('getting-started', [], trpcIoProduction, [], []),
+        routes([], trpcIoProduction, [], []),
       ),
     ).toEqual([
       "/v12: isn't answered with X-Robots-Tag: noindex",
@@ -347,6 +346,6 @@ describe('robotsTxt', () => {
     ).toBe(
       'User-agent: *\nAllow: /\nDisallow: /v12/decisions\nDisallow: /v12/docs\n\nSitemap: https://trpc.io/sitemap.xml\n',
     );
-    expect(hiddenPaths).toContain(decisions.basePath);
+    expect(hiddenPaths).toEqual([]);
   });
 });

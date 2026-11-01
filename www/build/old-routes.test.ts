@@ -4,7 +4,6 @@ import {
   follow,
   land,
   oldRedirects,
-  onTrpcIoRoutes,
   redirectRoutes,
   respond,
   routeProblems,
@@ -240,29 +239,6 @@ describe('oldRedirects', () => {
     });
   });
 
-  it("sends a moved v12 page's URL and its markdown's to where it is now", () => {
-    expect(bySource.get('/v12/docs/server/serializers')).toEqual({
-      location: '/v12/docs/server/transformers',
-      source: '/v12/docs/server/serializers',
-      status: 308,
-    });
-    expect(bySource.get('/v12/docs/server/serializers.md')?.location).toBe(
-      '/v12/docs/server/transformers.md',
-    );
-  });
-
-  it("sends a moved decision's URL where it is now, and not its markdown's, which no decision has", () => {
-    expect(bySource.get('/v12/decisions/serializer')).toEqual({
-      location: '/v12/decisions/progressive-json',
-      source: '/v12/decisions/serializer',
-      status: 308,
-    });
-    expect(
-      bySource.get('/v12/decisions/replaceable-serializers')?.location,
-    ).toBe('/v12/decisions/replaceable-transformers');
-    expect(bySource.has('/v12/decisions/serializer.md')).toBe(false);
-  });
-
   it('names each URL that lands nowhere', () => {
     expect(result.problems).toEqual([
       "/docs/old: trpc.io sends it to /docs/gone, which this site doesn't serve",
@@ -299,33 +275,9 @@ describe('redirectRoutes', () => {
   });
 });
 
-describe('onTrpcIoRoutes', () => {
-  it("sends what only trpc.io's own site has there, wherever it is", () => {
-    const toTrpcIo = onTrpcIoRoutes('https://trpc.io');
-    expect(land(toTrpcIo, served, '/docs/typedoc/server').hops).toEqual([
-      'https://trpc.io/docs/typedoc/server',
-    ]);
-    expect(land(toTrpcIo, served, '/docs/typedoc').hops).toEqual([
-      'https://trpc.io/docs/typedoc',
-    ]);
-    expect(land(toTrpcIo, served, '/media').hops).toEqual([]);
-    expect(land(toTrpcIo, served, '/pricing').hops).toEqual([]);
-    expect(land(toTrpcIo, served, '/docs/typedocs').hops).toEqual([]);
-    expect(
-      land(
-        onTrpcIoRoutes('https://www-trpc.vercel.app/'),
-        served,
-        '/docs/typedoc/server',
-      ).hops,
-    ).toEqual(['https://www-trpc.vercel.app/docs/typedoc/server']);
-    expect(onTrpcIoRoutes(undefined)).toEqual([]);
-  });
-});
-
 describe('respond and land', () => {
-  const all = routes('getting-started', [
+  const all = routes([
     ...redirectRoutes(oldRedirects({ redirects, served }).redirects),
-    ...onTrpcIoRoutes('https://trpc.io'),
   ]);
 
   it("answers as Vercel's routes do", () => {
@@ -334,11 +286,6 @@ describe('respond and land', () => {
       path: '/v12/docs/getting-started',
     });
     expect(respond(all, served, '/nope')).toEqual({ kind: 'missing' });
-    expect(respond(all, served, '/v12/docs')).toEqual({
-      kind: 'redirect',
-      location: '/v12/docs/getting-started',
-      status: 307,
-    });
     expect(respond(all, served, '/docs')).toEqual({
       kind: 'redirect',
       location: '/docs/introduction',
@@ -363,58 +310,31 @@ describe('respond and land', () => {
     const result = oldRedirects({ redirects: redirects.slice(0, -1), served });
     expect(
       routeProblems({
-        oldSiteUrl: 'https://trpc.io',
         redirects: result.redirects,
-        routes: routes('getting-started', [
+        routes: routes([
           ...redirectRoutes(result.redirects),
-          ...onTrpcIoRoutes('https://trpc.io'),
-        ]),
+              ]),
         served,
-        siteUrl: 'https://v12.trpc.io',
       }),
     ).toEqual([]);
   });
 
-  it("needs trpc.io's own site somewhere else once the site is trpc.io", () => {
-    const result = oldRedirects({ redirects: redirects.slice(0, -1), served });
-    const at = (oldSiteUrl: string | undefined) =>
-      routeProblems({
-        oldSiteUrl,
-        redirects: result.redirects,
-        routes: routes('getting-started', [
-          ...redirectRoutes(result.redirects),
-          ...onTrpcIoRoutes(oldSiteUrl),
-        ]),
-        served,
-        siteUrl: 'https://trpc.io',
-      });
-    expect(at('https://www-trpc.vercel.app')).toEqual([]);
-    for (const oldSiteUrl of [undefined, 'https://trpc.io']) {
-      expect(at(oldSiteUrl)).toEqual([
-        "/docs/typedoc: trpc.io's own site has to be somewhere else than https://trpc.io, to send them there: set `oldSite.url` in www/src/site.ts",
-      ]);
-    }
-  });
-
-  it('finds a redirect that goes elsewhere, a hidden file and a missing trip to trpc.io', () => {
+  it('finds a redirect that goes elsewhere and a hidden file', () => {
     const hiding: ReadonlyArray<VercelRoute> = [
       { headers: { Location: '/' }, src: '^/logo\\.svg$', status: 308 },
     ];
     expect(
       routeProblems({
-        oldSiteUrl: 'https://trpc.io',
         redirects: [
           { location: '/blog', source: '/blog/archive', status: 308 },
         ],
-        routes: routes('getting-started', hiding),
+        routes: routes(hiding),
         served,
-        siteUrl: 'https://v12.trpc.io',
       }),
     ).toEqual(
       expect.arrayContaining([
         '/blog/archive: redirects to nowhere, a 404, not once to /blog',
         '/logo.svg: a route hides the file',
-        "/docs/typedoc/x: doesn't redirect to https://trpc.io",
       ]),
     );
   });
