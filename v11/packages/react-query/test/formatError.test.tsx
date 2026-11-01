@@ -18,7 +18,7 @@ test('react types test', async () => {
 
     useEffect(() => {
       mutation.mutate({ title: 123 as any });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, []);
 
     if (mutation.error?.shape) {

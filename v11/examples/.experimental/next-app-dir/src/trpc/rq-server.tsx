@@ -2,11 +2,11 @@ import 'server-only';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { headers } from 'next/headers';
+import { cache } from 'react';
 import { auth } from '~/auth';
 import type { Context } from '~/server/context';
 import { appRouter } from '~/server/routers/_app';
-import { headers } from 'next/headers';
-import { cache } from 'react';
 import { createQueryClient } from './shared';
 
 const createContext = cache(async (): Promise<Context> => {

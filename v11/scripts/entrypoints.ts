@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import prettier from 'prettier';
+import { format } from 'oxfmt';
 
 // minimal version of PackageJson type necessary
 export type PackageJson = {
@@ -22,7 +22,6 @@ export type PackageJson = {
     overrides: Record<string, string>;
   };
   funding: string[];
-  keywords?: string[];
   peerDependencies: Record<string, string>;
 };
 
@@ -126,11 +125,6 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.files.push('!**/*.test.*');
   pkgJson.files.push('!**/__tests__');
 
-  // Include TanStack Intent skills and bin directories when the package opts in
-  if (pkgJson.keywords?.includes('tanstack-intent')) {
-    pkgJson.files.push('skills', '!skills/_artifacts', 'bin');
-  }
-
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];
 
@@ -139,19 +133,34 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.peerDependencies['typescript'] = '>=5.7.2';
 
   // write package.json
-  const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {
-    parser: 'json-stringify',
-    ...(await prettier.resolveConfig(pkgJsonPath)),
-  });
+  const formattedPkgJson = await formatWithRepoConfig(
+    pkgJsonPath,
+    JSON.stringify(pkgJson),
+  );
   fs.writeFileSync(pkgJsonPath, formattedPkgJson, 'utf8');
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
   turboJson.tasks.build ??= {};
   turboJson.tasks.build.outputs = [...scriptOutputs];
-  const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
-    parser: 'json',
-    ...(await prettier.resolveConfig(turboPath)),
-  });
+  const formattedTurboJson = await formatWithRepoConfig(
+    turboPath,
+    JSON.stringify(turboJson),
+  );
   fs.writeFileSync(turboPath, formattedTurboJson, 'utf8');
+}
+
+async function formatWithRepoConfig(fileName: string, source: string) {
+  const configPath = path.resolve(import.meta.dirname, '../.oxfmtrc.json');
+  const {
+    $schema: _schema,
+    ignorePatterns: _ignorePatterns,
+    overrides: _overrides,
+    ...config
+  } = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const result = await format(fileName, source, config);
+  if (result.errors.length > 0) {
+    throw new Error(`Failed to format ${fileName}`, { cause: result.errors });
+  }
+  return result.code;
 }

@@ -1,0 +1,16 @@
+{
+  "name": "@www/api-reference",
+  "private": true,
+  "description": "Generates the v11 API reference trpc.io serves under /docs/typedoc, with TypeDoc, into www/v11/docs/typedoc",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typedoc": "0.27.9",
+    "typedoc-docusaurus-theme": "1.4.3",
+    "typedoc-plugin-markdown": "4.4.2",
+    "typescript": "catalog:www"
+  }
+}

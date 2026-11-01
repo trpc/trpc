@@ -56,7 +56,7 @@ export function experimental_createTRPCNextAppDirServer<
     const client = getClient();
 
     const pathCopy = [...callOpts.path];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const action = pathCopy.pop()!;
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);

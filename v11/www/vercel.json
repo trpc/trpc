@@ -5,8 +5,9 @@
       "v12": false
     }
   },
-  "installCommand": "pnpm --filter root --filter www --filter \"@trpc/*\" --filter \"!@trpc/tests\" install",
-  "buildCommand": "cd .. && pnpm turbo --filter www build",
+  "installCommand": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 pnpm --filter root --filter \"www...\" install --frozen-lockfile",
+  "buildCommand": "cd .. && NODE_OPTIONS=--max-old-space-size=4096 pnpm turbo --filter www build",
+  "framework": "tanstack-start",
   "redirects": [
     {
       "source": "/docs/server/output-validation",
@@ -20,12 +21,12 @@
     },
     {
       "source": "/docs/aborting-procedures",
-      "destination": "/docs/client/aborting-procedure-calls",
+      "destination": "/docs/client/vanilla/aborting-procedure-calls",
       "permanent": true
     },
     {
       "source": "/docs/server/api-handler",
-      "destination": "/server/adapters",
+      "destination": "/docs/server/adapters",
       "permanent": true
     },
     {
@@ -36,11 +37,6 @@
     {
       "source": "/docs/header",
       "destination": "/docs/client/headers",
-      "permanent": true
-    },
-    {
-      "source": "/docs/client",
-      "destination": "/docs/client/introduction",
       "permanent": true
     },
     {
@@ -324,11 +320,6 @@
       "permanent": false
     },
     {
-      "source": "/sponsor",
-      "destination": "https://github.com/sponsors/trpc",
-      "permanent": false
-    },
-    {
       "source": "/buy/tier-pro",
       "destination": "https://github.com/sponsors/trpc/sponsorships?tier_id=73667",
       "permanent": false
@@ -345,7 +336,7 @@
     },
     {
       "source": "/docs/extra",
-      "destination": "/docs/further",
+      "destination": "/docs/further-reading",
       "permanent": true
     },
     {
@@ -586,6 +577,71 @@
     {
       "source": "/docs/getting-started",
       "destination": "/docs",
+      "permanent": true
+    },
+    {
+      "source": "/docs/skills",
+      "destination": "/docs/quickstart",
+      "permanent": true
+    },
+    {
+      "source": "/docs/introduction",
+      "destination": "/docs",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/introduction",
+      "destination": "/docs/v10",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v9/introduction",
+      "destination": "/docs/v9",
+      "permanent": true
+    },
+    {
+      "source": "/v10/docs/:path*",
+      "destination": "/docs/v10/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/v9/docs/:path*",
+      "destination": "/docs/v9/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/docs/landing-intro/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/landing-intro/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/docs/test",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/blog/archive",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/blog/authors",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/pricing",
+      "destination": "/sponsor",
+      "permanent": true
+    },
+    {
+      "source": "/sponsors",
+      "destination": "/sponsor",
       "permanent": true
     }
   ]

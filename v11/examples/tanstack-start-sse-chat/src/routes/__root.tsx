@@ -1,0 +1,81 @@
+/// <reference types="vite/client" />
+import type { QueryClient } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Link,
+  Outlet,
+  Scripts,
+} from '@tanstack/react-router';
+import type { TRPC } from '~/lib/trpc';
+import { sessionQuery } from '~/queries';
+import appCss from '~/styles.css?url';
+
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  trpc: TRPC;
+}>()({
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'tRPC SSE Chat' },
+    ],
+    links: [
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossOrigin: 'anonymous',
+      },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap',
+      },
+    ],
+  }),
+  // Pages can't lay out without knowing who is signed in
+  loader: async (opts) => {
+    await opts.context.queryClient.ensureQueryData(sessionQuery());
+  },
+  component: Outlet,
+  notFoundComponent: () => (
+    <div className="flex flex-1 items-center justify-center italic">
+      Nothing here.
+    </div>
+  ),
+  shellComponent: RootDocument,
+});
+
+function RootDocument(props: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body className="font-sans">
+        <div className="flex h-screen flex-col bg-gray-100 dark:bg-gray-950">
+          <header className="flex h-14 items-center justify-between border-b bg-white px-4 sm:px-6 lg:px-8 dark:border-gray-800 dark:bg-gray-900">
+            <Link className="flex items-center gap-2" to="/">
+              <svg viewBox="0 0 512 512" fill="none" className="size-6">
+                <rect width="512" height="512" rx="150" fill="#398CCB" />
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M255.446 75L326.523 116.008V138.556L412.554 188.238V273.224L435.631 286.546V368.608L364.6 409.615L333.065 391.378L256.392 435.646L180.178 391.634L149.085 409.615L78.0538 368.538V286.546L100.231 273.743V188.238L184.415 139.638L184.462 139.636V116.008L255.446 75ZM326.523 159.879V198.023L255.492 239.031L184.462 198.023V160.936L184.415 160.938L118.692 198.9V263.084L149.085 245.538L220.115 286.546V368.538L198.626 380.965L256.392 414.323L314.618 380.712L293.569 368.538V286.546L364.6 245.538L394.092 262.565V198.9L326.523 159.879ZM312.031 357.969V307.915L355.369 332.931V382.985L312.031 357.969ZM417.169 307.846L373.831 332.862V382.985L417.169 357.9V307.846ZM96.5154 357.9V307.846L139.854 332.862V382.915L96.5154 357.9ZM201.654 307.846L158.315 332.862V382.915L201.654 357.9V307.846ZM321.262 291.923L364.6 266.908L407.938 291.923L364.6 316.962L321.262 291.923ZM149.085 266.838L105.746 291.923L149.085 316.892L192.423 291.923L149.085 266.838ZM202.923 187.362V137.308L246.215 162.346V212.377L202.923 187.362ZM308.015 137.308L264.723 162.346V212.354L308.015 187.362V137.308ZM212.154 121.338L255.446 96.3231L298.785 121.338L255.446 146.354L212.154 121.338Z"
+                  fill="white"
+                />
+              </svg>
+              <span className="font-semibold">tRPC SSE Chat</span>
+            </Link>
+          </header>
+          {props.children}
+        </div>
+        <ReactQueryDevtools initialIsOpen={false} />
+        <Scripts />
+      </body>
+    </html>
+  );
+}

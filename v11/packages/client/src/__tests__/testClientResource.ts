@@ -44,7 +44,8 @@ export interface TestServerAndClientResourceOpts<
    */
   wsClient?: Partial<WebSocketClientOptions>;
   client?:
-    Partial<CreateTRPCClientOptions<TRouter>> | CreateClientCallback<TRouter>;
+    | Partial<CreateTRPCClientOptions<TRouter>>
+    | CreateClientCallback<TRouter>;
   /**
    * Use a specific link for the client
    */

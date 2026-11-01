@@ -58,7 +58,8 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
      * @see https://trpc.io/docs/client/nextjs/ssr
      */
     ssr:
-      true | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
+      | true
+      | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
     responseMeta?: (opts: {
       ctx: NextPageContext;
       clientErrors: TRPCClientError<TRouter>[];
@@ -167,7 +168,7 @@ export function withTRPC<
 
         // Run the wrapped component's getInitialProps function.
         let pageProps: Dict<unknown> = {};
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         const originalProps = await AppOrPage.getInitialProps!(
           appOrPageCtx as any,
         );

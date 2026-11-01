@@ -7,8 +7,7 @@
   "author": "KATT",
   "license": "MIT",
   "bin": {
-    "trpc-openapi": "./dist/cli.mjs",
-    "intent": "./bin/intent.js"
+    "trpc-openapi": "./dist/cli.mjs"
   },
   "homepage": "https://trpc.io",
   "repository": {
@@ -16,18 +15,10 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/openapi"
   },
-  "eslintConfig": {
-    "rules": {
-      "no-restricted-imports": [
-        "error",
-        "@trpc/openapi"
-      ]
-    }
-  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "codegen": "tsx test/scripts/codegen.run.ts",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
@@ -65,10 +56,7 @@
     "!**/*.test.*",
     "!**/__tests__",
     "!test",
-    "heyapi",
-    "skills",
-    "bin",
-    "!skills/_artifacts"
+    "heyapi"
   ],
   "publishConfig": {
     "access": "public"
@@ -79,12 +67,12 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "catalog:",
     "@swagger-api/apidom-ls": "^1.6.0",
-    "@tanstack/intent": "^0.0.27",
     "@trpc/server": "11.22.1",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
-    "eslint": "catalog:",
     "ion-js": "^5.2.1",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "superjson": "^1.12.4",
     "tsdown": "catalog:",
     "typescript": "catalog:ts-api",
@@ -108,8 +96,5 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ],
-  "keywords": [
-    "tanstack-intent"
   ]
 }

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 export function createDeferred<TValue = void>() {
   let resolve: (value: TValue) => void;
   let reject: (error: unknown) => void;

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 import {
   isObservable,
   observableToAsyncIterable,
@@ -52,7 +52,13 @@ function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   });
 }
 type HTTPMethods =
-  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
+  | 'GET'
+  | 'POST'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();
@@ -391,6 +397,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }
 
         if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
+          const accepted = opts.allowMethodOverride
+            ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
+            : TYPE_ACCEPTED_METHOD_MAP;
+          // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
+          headers.set('allow', accepted[proc._def.type].join(', '));
           throw new TRPCError({
             code: 'METHOD_NOT_SUPPORTED',
             message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,

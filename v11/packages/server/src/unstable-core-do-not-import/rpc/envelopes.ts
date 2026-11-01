@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-namespace */
+/* oxlint-disable typescript/no-namespace */
 import type { TRPCRequestInfo } from '../http/types';
 import type { ProcedureType } from '../procedure';
 import type { TRPC_ERROR_CODE_NUMBER } from './codes';
@@ -121,7 +121,8 @@ export type TRPCResponseMessage<
   TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = { id: JSONRPC2.RequestId } & (
-  TRPCErrorResponse<TError> | TRPCResultMessage<TData>
+  | TRPCErrorResponse<TError>
+  | TRPCResultMessage<TData>
 );
 
 /**

@@ -1,5 +1,5 @@
-import { publicProcedure, router } from '~/server/trpc';
 import { z } from 'zod';
+import { publicProcedure, router } from '~/server/trpc';
 
 export const __ROUTER__NAME__ = router({
   greeting: publicProcedure

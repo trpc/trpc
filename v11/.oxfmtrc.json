@@ -1,0 +1,75 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "sortPackageJson": false,
+  "sortImports": {
+    "newlinesBetween": false,
+    "customGroups": [
+      {
+        "groupName": "test-helpers-first",
+        "elementNamePattern": ["**/___*", "**/___*/**"]
+      },
+      {
+        "groupName": "test-helpers",
+        "elementNamePattern": ["**/__*", "**/__*/**"]
+      }
+    ],
+    "groups": [
+      "builtin",
+      "test-helpers-first",
+      "test-helpers",
+      ["external", "internal", "subpath", "unknown"],
+      ["parent", "sibling", "index"]
+    ]
+  },
+  "sortTailwindcss": {
+    "stylesheet": "./tooling/ui/src/styles/globals.css"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.md", "**/*.mdx"],
+      "options": {
+        "embeddedLanguageFormatting": "off"
+      }
+    },
+    {
+      "files": ["www/**", "tooling/ui/**"],
+      "options": {
+        "sortImports": false,
+        "sortTailwindcss": false
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "__generated__/",
+    "**/.next/",
+    "**/.nuxt",
+    "dist/",
+    "examples/next-big-router/src/server/routers/*.ts",
+    "examples/.test/diagnostics-big-router/**/*",
+    "packages/tests/vendor/",
+    "packages/server/src/vendor/",
+    "packages/coverage/",
+    "pnpm-lock.yaml",
+    ".turbo",
+    ".vinxi",
+    ".output",
+    "packages/server/src/openapi/__testRouter.ts.json",
+    "examples/openapi-codegen/src/client/generated",
+    "examples/openapi-codegen/openapi.json",
+    "packages/openapi/test/routers/*/",
+    "packages/openapi/test/routers/*.json",
+    "**/routeTree.gen.ts",
+    "**/prisma/migrations/migration_lock.toml",
+    "www/v11/**",
+    "www/v10/**",
+    "www/v9/**",
+    "www/blog/**",
+    "www/old-docs.json",
+    "www/sponsors.json",
+    "www/api-reference/out/",
+    "www/.vercel/"
+  ]
+}

@@ -23,7 +23,11 @@ import type {
 import { createTRPCOptionsResult, getClientArgs } from './utils';
 
 type ReservedOptions =
-  'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash' | 'initialPageParam';
+  | 'queryKey'
+  | 'queryFn'
+  | 'queryHashFn'
+  | 'queryHash'
+  | 'initialPageParam';
 
 interface UndefinedTRPCInfiniteQueryOptionsIn<
   TInput,

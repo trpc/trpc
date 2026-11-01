@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* oxlint-disable typescript/ban-ts-comment */
 
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { DehydratedState } from '@tanstack/react-query';

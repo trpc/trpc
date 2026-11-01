@@ -12,7 +12,7 @@ import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
 import { useSubscription } from '../src';
 
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 export const suppressLogs = () => {
   const log = console.log;
   const error = console.error;

@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
@@ -74,15 +74,6 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "eslintConfig": {
-    "rules": {
-      "react-hooks/exhaustive-deps": "error",
-      "no-restricted-imports": [
-        "error",
-        "@trpc/react-query"
-      ]
-    }
-  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.22.1",
@@ -91,9 +82,9 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/query-sync-storage-persister": "^5.80.2",
-    "@tanstack/react-query": "^5.80.3",
-    "@tanstack/react-query-persist-client": "^5.80.3",
+    "@tanstack/query-sync-storage-persister": "^5.105.0",
+    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-query-persist-client": "^5.105.0",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.1.0",
@@ -103,9 +94,10 @@
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
     "@types/react": "^19.1.0",
-    "eslint": "catalog:",
     "express": "^5.0.0",
     "next": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "catalog:",

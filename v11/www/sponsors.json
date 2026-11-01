@@ -1,0 +1,168 @@
+[
+  {
+    "createdAt": 1632143542000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4",
+    "link": "https://maxgreenwald.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "mgreenw",
+    "name": "Max Greenwald",
+    "weight": 6
+  },
+  {
+    "createdAt": 1633034677000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
+    "link": "https://github.com/hidrb",
+    "login": "hidrb",
+    "name": "Dr. B",
+    "weight": 28
+  },
+  {
+    "createdAt": 1644656389000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?u=59a369dc23fca0ed9943e5f020ff27ca968704d9&v=4",
+    "link": "https://iamkhan.io/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "debuglebowski",
+    "name": "Kalle",
+    "weight": 3
+  },
+  {
+    "createdAt": 1656515723000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4",
+    "link": "https://github.com/dmaykov",
+    "login": "dmaykov",
+    "name": "Dmitry Maykov",
+    "weight": 5
+  },
+  {
+    "createdAt": 1657316052000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
+    "link": "https://chrisbradley.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "chrisbradleydev",
+    "name": "Chris Bradley",
+    "weight": 5
+  },
+  {
+    "createdAt": 1661242015000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
+    "link": "https://www.fanvue.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "fanvue",
+    "name": "fanvue",
+    "weight": 5
+  },
+  {
+    "createdAt": 1694781987000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/108468352?v=4",
+    "link": "https://drizzle.team/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "drizzle-team",
+    "name": "Drizzle Team",
+    "weight": 3
+  },
+  {
+    "createdAt": 1706115991000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/15722950?u=e9b60ab93918fb2352b6357571cd67b9004d91e6&v=4",
+    "link": "https://www.spencermckenney.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "spencemc",
+    "name": "Spencer McKenney",
+    "weight": 3
+  },
+  {
+    "createdAt": 1707060132000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
+    "link": "https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "proxidize",
+    "name": "Proxidize",
+    "weight": 15
+  },
+  {
+    "createdAt": 1708012798000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "unkeyed",
+    "name": "Unkey",
+    "weight": 38
+  },
+  {
+    "createdAt": 1717016104000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&v=4",
+    "link": "https://github.com/infodusha",
+    "login": "infodusha",
+    "name": "Andrei Karushev",
+    "weight": 3
+  },
+  {
+    "createdAt": 1724917223000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/179804668?v=4",
+    "link": "https://liminity.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "liminityab",
+    "name": "Liminity AB",
+    "weight": 12
+  },
+  {
+    "createdAt": 1729879193000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/5327290?v=4",
+    "link": "https://github.com/ryanmagoon",
+    "login": "ryanmagoon",
+    "name": "Ryan Magoon",
+    "weight": 26
+  },
+  {
+    "createdAt": 1737645299000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
+    "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
+    "login": "coderabbitai",
+    "name": "CodeRabbit",
+    "rank": 1,
+    "tier": "silver",
+    "weight": 100
+  },
+  {
+    "createdAt": 1743099912000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
+    "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "greptileai",
+    "name": "Greptile",
+    "rank": 2,
+    "tier": "silver",
+    "weight": 86
+  },
+  {
+    "createdAt": 1745489411000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/159320286?v=4",
+    "link": "https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "BestKru",
+    "name": "BestKru",
+    "weight": 8
+  },
+  {
+    "createdAt": 1770553222000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/107723282?u=2639caa14ce293a0b6202c5766a40bb99ac9697e&v=4",
+    "link": "https://aerius.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "aeriusventilation",
+    "name": "Aerius Ventilation AB",
+    "weight": 4
+  },
+  {
+    "createdAt": 1770768000000,
+    "imgSrc": "https://github.com/serpapi.png",
+    "link": "https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "SerpApi",
+    "name": "SerpApi",
+    "rank": 3,
+    "tier": "silver",
+    "weight": 55
+  },
+  {
+    "createdAt": 1773658081000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/1984909?u=b7bf5bc40ed49df3c22f69d2da7b8d78709c49ed&v=4",
+    "link": "https://automatio.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "shtefcs",
+    "name": "Stefan Smiljkovic",
+    "weight": 4
+  },
+  {
+    "createdAt": 1786777883000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/203708130?v=4",
+    "link": "https://usevault.app/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "vault-technology-corporation",
+    "name": "Vault",
+    "weight": 1
+  }
+]

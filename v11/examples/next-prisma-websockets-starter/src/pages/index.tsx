@@ -157,7 +157,7 @@ export default function IndexPage() {
   }, [scrollTargetRef]);
   useEffect(() => {
     scrollToBottomOfList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, []);
   // subscribe to new posts and add
   trpc.post.onAdd.useSubscription(undefined, {

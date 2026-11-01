@@ -34,7 +34,7 @@ export async function waitError<TError extends Error = Error>(
     return cause as TError;
   }
 
-  // eslint-disable-next-line no-console
+  // oxlint-disable-next-line no-console
   console.warn('Expected function to throw, but it did not. Result:', res);
   throw new Error('Function did not throw');
 }

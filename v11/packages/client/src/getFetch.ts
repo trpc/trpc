@@ -11,7 +11,6 @@ export function getFetch(
     return customFetchImpl as FetchEsque;
   }
 
-  // eslint-disable-next-line @typescript-eslint/unbound-method
   if (typeof window !== 'undefined' && isFunction(window.fetch)) {
     return window.fetch.bind(window);
   }

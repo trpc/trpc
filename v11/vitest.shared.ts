@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* oxlint-disable typescript/no-unsafe-argument */
+/* oxlint-disable typescript/no-unsafe-member-access */
+/* oxlint-disable typescript/no-unsafe-assignment */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,6 +51,7 @@ export default defineConfig({
       exclude: [
         '**/coverage/**',
         '**/www/**',
+        '**/tooling/ui/**',
         '**/examples/**',
         // skip codecov for experimental features
         // FIXME: delete me once they're stable

@@ -12,7 +12,7 @@ import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import type { AnyRouter } from '../@trpc/server';
 // @trpc/server
 import { TRPCError } from '../@trpc/server';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,

@@ -82,7 +82,7 @@ jobs:
   typecheck-www:
     # only run on PRs, in the merge queue and on v12, which has no PRs
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -95,6 +95,8 @@ jobs:
       - uses: ./.github/actions/v11-setup
 
       - run: pnpm typecheck-www
+      - run: pnpm --filter www test
+      - run: pnpm --filter www check-twoslash
 
   test:
     name: unit and integration tests
@@ -172,7 +174,7 @@ jobs:
             next-prisma-starter,
             next-prisma-todomvc,
             next-prisma-websockets-starter,
-            # next-sse-chat,
+            # tanstack-start-sse-chat,
             openapi-codegen,
             soa,
             standalone-server,
