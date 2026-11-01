@@ -33,4 +33,3 @@ export type {
   unstable_inferQueryHandle,
   unstable_inferInfiniteQueryHandle,
 } from './internals/handles';
-export { useWaterfall as unstable_useWaterfall } from './internals/useWaterfall';
