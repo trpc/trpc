@@ -93,6 +93,30 @@ describe('standalonePackageJson', () => {
     expect(pkg.devDependencies).toEqual({ tailwindcss: '^4.0.0' });
   });
 
+  it("drops @shared/ui's dependenciesMeta", () => {
+    expect(
+      standalonePackageJson(
+        {
+          dependencies: { '@shared/ui': 'workspace:*' },
+          dependenciesMeta: { '@shared/ui': { injected: true } },
+        },
+        catalogs,
+      ),
+    ).toEqual({ dependencies: {} });
+    expect(
+      standalonePackageJson(
+        {
+          dependencies: { '@shared/ui': 'workspace:*', esbuild: '^0.27.0' },
+          dependenciesMeta: {
+            '@shared/ui': { injected: true },
+            esbuild: { built: true },
+          },
+        },
+        catalogs,
+      ).dependenciesMeta,
+    ).toEqual({ esbuild: { built: true } });
+  });
+
   it("fails on what doesn't resolve outside the monorepo", () => {
     expect(() =>
       standalonePackageJson(

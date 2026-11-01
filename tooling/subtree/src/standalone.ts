@@ -59,6 +59,7 @@ const dependencyFields = [
 
 export interface PackageJson {
   dependencies?: Record<string, string>;
+  dependenciesMeta?: Record<string, unknown>;
   devDependencies?: Record<string, string>;
   exports?: Record<string, string>;
   name?: string;
@@ -123,8 +124,8 @@ export function standaloneVersion(
 }
 
 /**
- * The package's `package.json` outside the monorepo: without `@shared/ui`,
- * with the dependencies of its files in `added` (unless it has them), and
+ * The package's `package.json` outside the monorepo: without `@shared/ui`
+ * (or its `dependenciesMeta`), with the dependencies of its files in `added` (unless it has them), and
  * with standalone versions.
  */
 export function standalonePackageJson(
@@ -146,6 +147,14 @@ export function standalonePackageJson(
           standaloneVersion(name, version, catalogs),
         ]),
     );
+  }
+  if (pkg.dependenciesMeta?.[sharedUi] !== undefined) {
+    const { [sharedUi]: _, ...rest } = pkg.dependenciesMeta;
+    if (Object.keys(rest).length > 0) {
+      result.dependenciesMeta = rest;
+    } else {
+      delete result.dependenciesMeta;
+    }
   }
   const missing = [...added].filter(
     ([name]) => !dependencyFields.some((field) => result[field]?.[name]),
