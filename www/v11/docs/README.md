@@ -1,5 +1,5 @@
 # The v11 docs
 
-A copy of the [v11 docs](../../../../v11/www/docs), which [trpc.io](https://trpc.io/docs) renders. The site serves it at `/docs`, for v11 users while v12 is experimental.
+The v11 docs, which the site serves at `/docs`. Edit them here.
 
-Don't edit these files: `www/build/old-docs-copy.ts` writes them. Change the docs in `v11/www/docs`, then run `pnpm --filter @trpc12/www old-docs:copy`.
+`www/build/old-docs-copy.ts` converted them from trpc.io's Docusaurus docs (`www/docs` before the move); `www/old-docs.json` says which file each page came from.

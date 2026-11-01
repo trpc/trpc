@@ -1,13 +1,11 @@
 /**
- * Copies the docs trpc.io serves (`v11/www` in the repo: v11 in `docs/`,
- * v10 and v9 in `versioned_docs/`) into `<version>/docs` as pages of this
- * site, in each version's sidebar sections and order, and its blog's posts
- * into `blog/`. The copies are committed and nobody edits them: after the
- * docs or the blog change (a merge of `main`), run
- * `pnpm --filter @trpc12/www old-docs:copy` again, as
- * `.agents/skills/sync-old-docs/SKILL.md` says; nothing reruns it.
- * `old-docs:check` fails when the committed copies aren't what the copy
- * writes.
+ * Copies the Docusaurus docs trpc.io served before this site (`www/` at a
+ * commit before the move, checked out at `OLD_WWW`: v11 in `docs/`, v10 and
+ * v9 in `versioned_docs/`) into `<version>/docs` as pages of this site, in
+ * each version's sidebar sections and order, and its blog's posts into
+ * `blog/`. The copies are the docs now, edited where they are; nothing
+ * reruns the copy. `--check` fails when the committed copies aren't what the
+ * copy writes from `OLD_WWW`, which shows what changed since.
  *
  * The pages are converted by `old-docs-convert.ts`. The copy fails on
  * anything it can't convert, and drops the `#hash` of links to headings
@@ -642,23 +640,23 @@ const readme = (
   from: string,
 ) => `# The ${version.id} docs
 
-A copy of the [${version.id} docs](../../../../v11/www/${from}), which [trpc.io](${version.url}${version.trpcPath}) renders. The site serves it at \`${version.basePath}\`, for ${version.id} users while v12 is experimental.
+The ${version.id} docs, which the site serves at \`${version.basePath}\`. Edit them here.
 
-Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the docs in \`v11/www/${from}\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+\`www/build/old-docs-copy.ts\` converted them from trpc.io's Docusaurus docs (\`www/${from}\` before the move); \`www/old-docs.json\` says which file each page came from.
 `;
 
 const blogReadme = `# The blog
 
-A copy of [trpc.io's blog](../../../v11/www/blog), which [trpc.io](https://trpc.io/blog) renders. The site serves it at \`/blog\`.
+trpc.io's blog, which the site serves at \`/blog\`. Edit the posts here.
 
-Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the posts in \`v11/www/blog\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+\`www/build/old-docs-copy.ts\` converted them from the Docusaurus blog (\`www/blog\` before the move); \`www/old-docs.json\` says which file each post came from.
 `;
 
 const homeReadme = `# The home page's v11 intro
 
-A copy of the code of [trpc.io's home page's intro](../../../../v11/www/docs/landing-intro), which the home page shows for v11 (\`src/routes/index.tsx\`).
+The code of the home page's intro, which the home page shows for v11 (\`src/routes/index.tsx\`). Edit the steps here.
 
-Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the steps in \`v11/www/docs/landing-intro\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+\`www/build/old-docs-copy.ts\` converted them from the Docusaurus home page's (\`www/docs/landing-intro\` before the move).
 `;
 
 /** Where each file under `contentDirs` went, under `CopyDirs.to`. */
@@ -672,7 +670,7 @@ const manifestFile = 'old-docs.json';
 export const staticDirs = ['img', 'logos'] as const;
 
 export interface CopyDirs {
-  /** trpc.io's site: `v11/www` in the repo. */
+  /** The Docusaurus site: `www/` at a commit before the move. */
   readonly from: string;
   /** Where the copies go: `<version>/` holds `docs/` and `sections.json`, and `blog/` the posts. */
   readonly to: string;
@@ -1000,7 +998,7 @@ export const checkOldDocs = Effect.fn('checkOldDocs')(function* (
       message: [
         `The copies in ${dirs.to} aren't what the copy writes from ${dirs.from}:`,
         ...differences.map((difference) => `  ${difference}`),
-        'Run `pnpm --filter @trpc12/www old-docs:copy` and commit what it writes.',
+        'Copying again (without `--check`) writes what the copy writes.',
       ].join('\n'),
     });
   }
@@ -1011,7 +1009,7 @@ if (import.meta.main) {
   const here = (relative: string) =>
     fileURLToPath(new URL(relative, import.meta.url));
   const dirs: CopyDirs = {
-    from: process.env['OLD_WWW'] ?? here('../../../v11/www'),
+    from: process.env['OLD_WWW'] ?? here('../../old-www'),
     images: here('../public'),
     to: here('..'),
   };

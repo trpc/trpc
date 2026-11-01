@@ -1,5 +1,5 @@
 # The blog
 
-A copy of [trpc.io's blog](../../../v11/www/blog), which [trpc.io](https://trpc.io/blog) renders. The site serves it at `/blog`.
+trpc.io's blog, which the site serves at `/blog`. Edit the posts here.
 
-Don't edit these files: `www/build/old-docs-copy.ts` writes them. Change the posts in `v11/www/blog`, then run `pnpm --filter @trpc12/www old-docs:copy`.
+`www/build/old-docs-copy.ts` converted them from the Docusaurus blog (`www/blog` before the move); `www/old-docs.json` says which file each post came from.

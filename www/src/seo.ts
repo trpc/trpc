@@ -36,7 +36,7 @@ export interface PageSeo {
   readonly description: string;
   /** What the page's social card shows, when it's more than its title. */
   readonly imageAlt?: string;
-  /** The page as markdown, for agents: `/v12/docs/<slug>.md`. */
+  /** The page as markdown, for agents: `/docs/<slug>.md`. */
   readonly markdownPath?: string;
   /** Keeps search engines from indexing the page, even once the site is. */
   readonly noindex?: boolean;

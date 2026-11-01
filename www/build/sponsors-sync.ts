@@ -1,5 +1,5 @@
 /**
- * Syncs the sponsors from GitHub: `pnpm --filter @trpc12/www sponsors:sync`
+ * Syncs the sponsors from GitHub: `pnpm --filter www sponsors:sync`
  * reads who sponsors KATT and the trpc organization, and what each has paid,
  * then writes `sponsors.json` (which the site shows) and the sponsors
  * section of the repo's `README.md`. It needs a token of KATT's (an admin

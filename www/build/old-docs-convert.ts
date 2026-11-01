@@ -1,5 +1,5 @@
 /**
- * Turns the docs trpc.io serves (Docusaurus MDX in `v11/www`:
+ * Turns the docs trpc.io served (Docusaurus MDX in `www/` before the move:
  * v11 in `docs/`, v10 and v9 in `versioned_docs/`) and its blog (`blog/`)
  * into pages and posts of this site: Markdown with this site's frontmatter,
  * which `build/content.ts` and `build/blog-content.ts` render.

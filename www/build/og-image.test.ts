@@ -14,8 +14,8 @@ const pngSize = (png: Uint8Array) => {
 describe('ogImagePath', () => {
   it('mirrors the page path under /og', () => {
     expect(ogImagePath('/')).toBe('/og/index.png');
-    expect(ogImagePath('/v12/docs/client/links')).toBe(
-      '/og/v12/docs/client/links.png',
+    expect(ogImagePath('/v10/docs/client/links')).toBe(
+      '/og/v10/docs/client/links.png',
     );
     expect(ogImagePath('/docs/quickstart')).toBe('/og/docs/quickstart.png');
   });
@@ -38,14 +38,12 @@ describe('plainText', () => {
 
 describe('displayUrl', () => {
   it('splits the host from the path', () => {
-    expect(
-      displayUrl('https://v12.trpc.io/v12/docs/server/procedures'),
-    ).toEqual({
-      host: 'v12.trpc.io',
-      path: '/v12/docs/server/procedures',
+    expect(displayUrl('https://trpc.io/docs/server/procedures')).toEqual({
+      host: 'trpc.io',
+      path: '/docs/server/procedures',
     });
-    expect(displayUrl('https://v12.trpc.io')).toEqual({
-      host: 'v12.trpc.io',
+    expect(displayUrl('https://trpc.io')).toEqual({
+      host: 'trpc.io',
       path: '',
     });
   });
@@ -59,11 +57,11 @@ describe('makeOgRenderer', () => {
         OgCard.Home({ path: '/' }),
         OgCard.Doc({
           description: 'Queries, mutations and subscriptions.',
-          path: '/v12/docs/server/procedures',
+          path: '/v10/docs/server/procedures',
           section: 'Server',
           title: 'Procedures',
-          url: 'https://v12.trpc.io/v12/docs/server/procedures',
-          version: 'v12',
+          url: 'https://trpc.io/docs/v10/server/procedures',
+          version: 'v10',
         }),
         OgCard.Doc({
           description: '',
@@ -89,7 +87,7 @@ describe('makeOgRenderer', () => {
             { login: 'someone', name: 'Someone' },
           ],
           path: '/sponsor',
-          url: 'https://v12.trpc.io/sponsor',
+          url: 'https://trpc.io/sponsor',
         }),
       ];
       for (const card of cards) {

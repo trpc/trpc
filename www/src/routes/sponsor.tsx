@@ -121,7 +121,6 @@ function SponsorPage() {
   return (
     <main>
       <Hero />
-      <Tokens />
       <Tiers />
       <Placements />
       <Cloud />
@@ -184,70 +183,6 @@ function Stat(props: { readonly label: string; readonly value: string }) {
       <dt className="order-2 text-sm text-muted-foreground">{props.label}</dt>
       <dd className="text-3xl font-bold tracking-tight">{props.value}</dd>
     </div>
-  );
-}
-
-const tokenLog: ReadonlyArray<readonly [string, string]> = [
-  ['Reading 40,000 lines of v11…', '182k'],
-  ['Debating the router API with itself…', '1.4M'],
-  ['Rewriting the router (again)…', '3.1M'],
-  ['Explaining Effect to the other agent…', '6.8M'],
-];
-
-function Tokens() {
-  return (
-    <section
-      aria-labelledby="tokens"
-      className="mx-auto grid max-w-7xl items-center gap-12 border-b px-4 py-16 sm:px-6 lg:grid-cols-2"
-    >
-      <div className="grid gap-4">
-        <h2 className={sectionTitle} id="tokens">
-          We need the money for tokens
-        </h2>
-        <p className="text-muted-foreground">
-          Honestly. tRPC v12 is a rewrite from scratch, and most of the typing
-          is done by a fleet of AI agents while the humans argue about API
-          design. Agents run on tokens. Tokens run on money. Every type you
-          hover in these docs cost a few thousand of them.
-        </p>
-        <p className="text-muted-foreground">
-          What the agents don&apos;t eat pays the humans: reviewing pull
-          requests, triaging issues, cutting releases and writing the docs
-          you&apos;re reading.
-        </p>
-      </div>
-      <figure
-        aria-label="An agent rewriting tRPC, out of tokens"
-        className="overflow-hidden rounded-xl border bg-card font-mono text-sm shadow-[0_-24px_300px_0_rgb(236_72_153/0.12)]"
-      >
-        <div className="flex items-center gap-1.5 border-b px-4 py-3">
-          <span className="size-3 rounded-full bg-red-500/70" />
-          <span className="size-3 rounded-full bg-yellow-500/70" />
-          <span className="size-3 rounded-full bg-green-500/70" />
-        </div>
-        <div className="grid gap-2 p-5">
-          <p>
-            <span className="text-muted-foreground select-none">$ </span>
-            agent &quot;rewrite tRPC from scratch&quot;
-          </p>
-          {tokenLog.map((line) => (
-            <p className="flex justify-between gap-4" key={line[0]}>
-              <span className="text-muted-foreground">
-                <Sparkles className="mr-2 inline size-3.5 text-brand" />
-                {line[0]}
-              </span>
-              <span className="shrink-0 tabular-nums">{line[1]} tokens</span>
-            </p>
-          ))}
-          <p className="text-red-500">✗ Out of credits.</p>
-          <p>
-            <a className="text-pink-500 hover:underline" href="#tiers">
-              → Sponsor to continue_
-            </a>
-          </p>
-        </div>
-      </figure>
-    </section>
   );
 }
 

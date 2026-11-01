@@ -35,7 +35,7 @@ export type OgCard = Data.TaggedEnum<{
     readonly title: string;
     /** The page's canonical URL, which the card shows. */
     readonly url: string;
-    readonly version: 'v12' | CopiedVersion['id'];
+    readonly version: CopiedVersion['id'];
   };
   Home: { readonly path: string };
   /** A page of its own, like `/media`. */
@@ -99,8 +99,7 @@ const versionLabels = {
   v9: 'v9 · unmaintained',
   v10: 'v10 · unmaintained',
   v11: 'v11 · stable',
-  v12: 'v12 · experimental',
-} as const satisfies Record<'v12' | CopiedVersion['id'], string>;
+} as const satisfies Record<CopiedVersion['id'], string>;
 
 interface Picture {
   /** Width over height. */
@@ -127,7 +126,7 @@ export const plainText = (text: string) =>
     .replaceAll(/\s+/g, ' ')
     .trim();
 
-/** `https://v12.trpc.io/v12/docs/a` as `v12.trpc.io` and `/v12/docs/a`. */
+/** `https://trpc.io/docs/v10/a` as `trpc.io` and `/docs/v10/a`. */
 export const displayUrl = (url: string) => {
   const parsed = new URL(url);
   return {
@@ -325,7 +324,7 @@ const homeCard = (assets: Assets) =>
     box(
       { alignItems: 'center', justifyContent: 'space-between' },
       wordmark(assets, 88),
-      pill(versionLabels.v12),
+      pill(versionLabels.v11),
     ),
     box(
       { flexDirection: 'column', flexGrow: 1, justifyContent: 'center' },
@@ -356,7 +355,11 @@ const homeCard = (assets: Assets) =>
           padding: '16px 24px',
         },
         h('span', { style: { color: colors.subtle, marginRight: 16 } }, '$'),
-        h('span', { style: { color: colors.text } }, 'pnpm add @trpc12/trpc'),
+        h(
+          'span',
+          { style: { color: colors.text } },
+          'pnpm add @trpc/server @trpc/client',
+        ),
       ),
       url(site.url, 26),
     ),
