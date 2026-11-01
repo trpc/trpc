@@ -895,7 +895,7 @@ const queryKeys = [
 ];
 ```
 
-Without React context, pass `keyPrefix` to `createTRPCOptionsProxy`. The key types then include the prefix:
+Without React context, pass `keyPrefix` to `createTRPCOptionsProxy` and leave out the router type argument: the router type comes from `client`, and the key types include the prefix:
 
 ```ts twoslash
 // @filename: server.ts
@@ -911,7 +911,7 @@ import { createTRPCClient } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { BillingRouter } from '../server';
 
-export const billing = createTRPCOptionsProxy<BillingRouter>({
+export const billing = createTRPCOptionsProxy({
   client: createTRPCClient<BillingRouter>({ links: [] }),
   queryClient: new QueryClient(),
   keyPrefix: 'billing',

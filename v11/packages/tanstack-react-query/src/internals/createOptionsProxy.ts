@@ -347,51 +347,57 @@ type UtilsMethods =
   | keyof DecorateSubscriptionProcedure<any>;
 
 /**
- * Create a typed proxy from your router types. Can also be used on the server.
- *
- * Query and mutation keys are typed with a prefix when you pass a `keyPrefix`.
- *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
- * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
+ * The feature flags for a `keyPrefix` of type `TKeyPrefix`: prefixed keys
+ * for a string, unprefixed ones without a prefix, and either shape for
+ * `string | undefined`. Feature flags are kept as they are.
+ * @internal
  */
-export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
-  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: true }>,
-): TRPCOptionsProxy<TRouter, { keyPrefix: true }>;
+export type inferKeyPrefixFlags<TKeyPrefix> = [TKeyPrefix] extends [
+  FeatureFlags,
+]
+  ? TKeyPrefix
+  : [TKeyPrefix] extends [undefined]
+    ? DefaultFeatureFlags
+    : undefined extends TKeyPrefix
+      ? { keyPrefix: boolean }
+      : { keyPrefix: true };
+
+/**
+ * `keyPrefix`, typed so that `createTRPCOptionsProxy()` infers it.
+ * @internal
+ */
+export type KeyPrefixInput<TKeyPrefix> = [TKeyPrefix] extends [FeatureFlags]
+  ? KeyPrefixOptions<TKeyPrefix>
+  : [TKeyPrefix] extends [undefined]
+    ? {
+        /**
+         * To prefix keys, leave out the router type argument: the router type
+         * comes from `client` (or `router`), and the key types from `keyPrefix`.
+         */
+        keyPrefix?: undefined;
+      }
+    : // Required, so that inferring from `string | undefined` keeps `undefined`
+      { keyPrefix: TKeyPrefix };
+
 /**
  * Create a typed proxy from your router types. Can also be used on the server.
  *
- * Query and mutation keys are typed with a prefix when you pass a `keyPrefix`.
+ * The router type comes from `client` (or `router`), and query and mutation
+ * keys are typed with a prefix when you pass a `keyPrefix`, so no type
+ * arguments are needed. `createTRPCOptionsProxy<AppRouter>()` still works
+ * without a `keyPrefix`; passing feature flags as the second type argument
+ * (`{ keyPrefix: true }`) is deprecated.
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
  * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
- */
-export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
-  opts: TRPCOptionsProxyOptions<TRouter>,
-): TRPCOptionsProxy<TRouter>;
-/**
- * Create a typed proxy from your router types. Can also be used on the server.
- *
- * Query and mutation keys are typed as either shape when `keyPrefix` may be `undefined`.
- *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
- * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
- */
-export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
-  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: boolean }>,
-): TRPCOptionsProxy<TRouter, { keyPrefix: boolean }>;
-/**
- * @deprecated `keyPrefix` no longer needs a feature flag. Drop the second
- * type argument: key types follow the `keyPrefix` you pass.
  */
 export function createTRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  TKeyPrefix extends string | undefined | FeatureFlags = undefined,
 >(
-  opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
-): TRPCOptionsProxy<TRouter, TFeatureFlags>;
-export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
-  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: boolean }>,
-): any {
+  opts: TRPCOptionsProxyOptions<TRouter, { keyPrefix: boolean }> &
+    KeyPrefixInput<TKeyPrefix>,
+): TRPCOptionsProxy<TRouter, inferKeyPrefixFlags<TKeyPrefix>> {
   const prefix = opts.keyPrefix;
 
   const callIt = (type: TRPCProcedureType): any => {

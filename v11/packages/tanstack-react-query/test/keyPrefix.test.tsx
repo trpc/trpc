@@ -33,8 +33,8 @@ const createClient = () =>
     links: [httpBatchLink({ url: 'http://localhost:3000' })],
   });
 
-test('createTRPCOptionsProxy: keyPrefix types keys with the prefix, no flag needed', () => {
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+test('createTRPCOptionsProxy: the router type comes from the client and key types from keyPrefix', () => {
+  const trpc = createTRPCOptionsProxy({
     client: createClient(),
     queryClient: new QueryClient(),
     keyPrefix: 'billing',
@@ -85,7 +85,7 @@ test('createTRPCOptionsProxy: without keyPrefix, keys and key types are unchange
 
 test('createTRPCOptionsProxy: a keyPrefix that may be undefined types keys as either shape', () => {
   const keyPrefix = 'billing' as string | undefined;
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCOptionsProxy({
     client: createClient(),
     queryClient: new QueryClient(),
     keyPrefix,
@@ -93,6 +93,21 @@ test('createTRPCOptionsProxy: a keyPrefix that may be undefined types keys as ei
 
   expectTypeOf(trpc.q.pathKey()).toEqualTypeOf<AnyTRPCQueryKey>();
   expect(trpc.q.pathKey()).toEqual([['billing'], ['q']]);
+});
+
+test('createTRPCOptionsProxy: an explicit router type argument keeps unprefixed keys', () => {
+  const trpc = createTRPCOptionsProxy<AppRouter>({
+    client: createClient(),
+    queryClient: new QueryClient(),
+  });
+  expectTypeOf(trpc.q.pathKey()).toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+
+  createTRPCOptionsProxy<AppRouter>({
+    client: createClient(),
+    queryClient: new QueryClient(),
+    // @ts-expect-error - with an explicit router type argument the prefix can't be inferred; leave it out
+    keyPrefix: 'billing',
+  });
 });
 
 test('createTRPCOptionsProxy: the deprecated feature flag still compiles', () => {
@@ -203,7 +218,7 @@ test('procedure types only mention feature flags when keys are prefixed', () => 
     'input' | 'output' | 'transformer' | 'errorShape'
   >();
 
-  const prefixed = createTRPCOptionsProxy<AppRouter>({
+  const prefixed = createTRPCOptionsProxy({
     client: createClient(),
     queryClient: new QueryClient(),
     keyPrefix: 'billing',
