@@ -95,7 +95,7 @@ export function postDate(date: string) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-/** Where the build writes a page's social card (`build/og-image.ts`). */
+/** Where a page's social card is served (`routes/og.$.ts`). */
 export function ogImagePath(path: string) {
   return `/og${path === '/' ? '/index' : path}.png`;
 }

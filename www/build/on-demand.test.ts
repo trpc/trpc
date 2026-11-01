@@ -60,6 +60,19 @@ describe('onDemandRoutes', () => {
     ).toBe(false);
   });
 
+  it('sends the social cards to the function, with their path', () => {
+    const og = all.find((route) => route.src?.startsWith('^(/og/'));
+    const src = new RegExp(og?.src ?? '');
+    expect(src.exec('/og/docs/client/links.png')?.[1]).toBe(
+      '/og/docs/client/links.png',
+    );
+    expect(src.test('/og/index.png')).toBe(true);
+    expect(src.test('/og/')).toBe(false);
+    expect(src.test('/docs/og/a.png')).toBe(false);
+    expect(og?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
+    expect(og?.has).toBeUndefined();
+  });
+
   it('sends a search to the function', () => {
     expect(search?.dest).toBe(`/${onDemandFunction}?${pathParam}=/search`);
     expect(search?.has).toEqual([{ key: 'q', type: 'query', value: '^.+$' }]);

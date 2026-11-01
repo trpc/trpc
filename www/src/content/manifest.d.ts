@@ -59,3 +59,10 @@ declare module '*.md' {
   const snippet: Sample;
   export default snippet;
 }
+
+declare module 'virtual:og-cards' {
+  import type { OgCard } from '~/og/card.ts';
+
+  /** Each page's social card, by its path (`ogImagePath`), from `build/og-cards.ts`. */
+  export const cards: ReadonlyMap<string, OgCard>;
+}

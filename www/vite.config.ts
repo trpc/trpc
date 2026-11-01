@@ -12,14 +12,15 @@ import { blogFeeds } from './build/feeds.ts';
 import { lastChanges } from './build/last-change.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
-import { OgCard, ogImages } from './build/og-image.ts';
+import { ogCards } from './build/og-cards.ts';
 import {
   sentryDefines,
   sentrySettings,
   sentryUploadPlugins,
 } from './build/sentry.ts';
 import { siteFiles } from './build/site-files.ts';
-import { cacheDir, samplesDir, twoslashCache } from './build/paths.ts';
+import { samplesDir, twoslashCache } from './build/paths.ts';
+import type { DocCard } from './src/og/card.ts';
 import { mediaPage, searchPage } from './src/pages.ts';
 import { absoluteUrl, copyPageUrl, postDate, trpcPostUrl } from './src/seo.ts';
 import {
@@ -105,19 +106,21 @@ const docCard = (
   page: (typeof copiedPages)[number]['pages'][number],
   version: CopiedVersion['id'],
   url: string,
-) =>
-  OgCard.Doc({
-    description: page.description,
-    path: page.path,
-    section: page.section,
-    title: page.title,
-    url,
-    version,
-  });
+): DocCard => ({
+  description: page.description,
+  kind: 'doc',
+  path: page.path,
+  section: page.section,
+  title: page.title,
+  url,
+  version,
+});
 
 const sentry = sentrySettings(process.env);
 
 export default defineConfig({
+  // `src/og/render.ts` inlines resvg's wasm.
+  assetsInclude: ['**/*.wasm'],
   define: {
     // The environment the Experiments menu names (`src/flags.ts`).
     'import.meta.env.VERCEL_ENV': JSON.stringify(
@@ -168,55 +171,52 @@ export default defineConfig({
     }),
     blogFeeds({ posts }),
     siteIcons({ svg: favicon }),
-    ogImages({
-      cacheDir: `${cacheDir}/og`,
-      cards: [
-        OgCard.Home({ path: '/' }),
-        ...copiedPages.flatMap((copy) =>
-          copy.pages.map((page) =>
-            docCard(
-              page,
-              copy.version.id,
-              copyPageUrl(
-                copy.version,
-                page.path.slice(`${copy.version.basePath}/`.length),
-              ),
+    ogCards([
+      { kind: 'home', path: '/' },
+      ...copiedPages.flatMap((copy) =>
+        copy.pages.map((page) =>
+          docCard(
+            page,
+            copy.version.id,
+            copyPageUrl(
+              copy.version,
+              page.path.slice(`${copy.version.basePath}/`.length),
             ),
           ),
         ),
-        OgCard.Post({
-          description: blog.description,
-          eyebrow: '',
-          path: '/blog',
-          title: `The ${site.name} blog`,
-          url: absoluteUrl('/blog'),
-        }),
-        OgCard.Sponsor({
-          headline: sponsorPage.headline,
-          lede: sponsorCardLede,
-          partners,
-          path: sponsorPage.path,
-          url: absoluteUrl(sponsorPage.path),
-        }),
-        ...[mediaPage, searchPage].map((page) =>
-          OgCard.Page({
-            ...page,
-            eyebrow: '',
-            pill: 'MIT licensed',
-            url: absoluteUrl(page.path),
-          }),
-        ),
-        ...posts.map((post) =>
-          OgCard.Post({
-            description: post.description,
-            eyebrow: `${postDate(post.date)} · ${post.authors.map((author) => author.name).join(', ')}`,
-            path: `/blog/${post.slug}`,
-            title: post.title,
-            url: trpcPostUrl(post.slug),
-          }),
-        ),
-      ],
-    }),
+      ),
+      {
+        description: blog.description,
+        eyebrow: '',
+        kind: 'post',
+        path: '/blog',
+        title: `The ${site.name} blog`,
+        url: absoluteUrl('/blog'),
+      },
+      {
+        headline: sponsorPage.headline,
+        kind: 'sponsor',
+        lede: sponsorCardLede,
+        partners,
+        path: sponsorPage.path,
+        url: absoluteUrl(sponsorPage.path),
+      },
+      ...[mediaPage, searchPage].map((page) => ({
+        ...page,
+        eyebrow: '',
+        kind: 'page' as const,
+        pill: 'MIT licensed',
+        url: absoluteUrl(page.path),
+      })),
+      ...posts.map((post) => ({
+        description: post.description,
+        eyebrow: `${postDate(post.date)} · ${post.authors.map((author) => author.name).join(', ')}`,
+        kind: 'post' as const,
+        path: `/blog/${post.slug}`,
+        title: post.title,
+        url: trpcPostUrl(post.slug),
+      })),
+    ]),
     tailwindcss(),
     bundledServer(),
     tanstackStart({

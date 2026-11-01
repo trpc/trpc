@@ -1,15 +1,8 @@
 /**
- * Each page's social card (`og:image`), rendered at build time: satori lays
- * out the card as SVG and resvg rasterizes it. A modern take on trpc.io's
- * cards (`v11/www/og-image`), with its pattern and per-page
- * title, description and URL, and without its network calls.
+ * Each page's social card (`og:image`), laid out for satori: tRPC's
+ * pattern, logo and colors, with the page's title, description and URL.
+ * `render.ts` draws a card; `routes/og.$.ts` serves it.
  */
-import { createHash } from 'node:crypto';
-import { availableParallelism } from 'node:os';
-
-import { NodeServices } from '@effect/platform-node';
-import { renderAsync, Resvg } from '@resvg/resvg-js';
-import { Data, Effect, FileSystem, Option, Path } from 'effect';
 import { Heart } from 'lucide-react';
 import {
   type CSSProperties,
@@ -18,70 +11,68 @@ import {
   type ReactNode,
 } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import satori, { type Font } from 'satori';
-import type { Plugin } from 'vite';
 
-import { partnerLogos } from '../src/components/sponsors/partner-logos.tsx';
-import { stripInlineCode } from '../src/content/inline-code.ts';
-import { ogImagePath, ogImageSize } from '../src/seo.ts';
-import { type CopiedVersion, site } from '../src/site.ts';
+import { partnerLogos } from '~/components/sponsors/partner-logos.tsx';
+import { stripInlineCode } from '~/content/inline-code.ts';
+import { type CopiedVersion, site } from '~/site.ts';
 
-export type OgCard = Data.TaggedEnum<{
-  Doc: {
-    /** May be empty: most of the older versions' pages have none. */
-    readonly description: string;
-    readonly path: string;
-    readonly section: string;
-    readonly title: string;
-    /** The page's canonical URL, which the card shows. */
-    readonly url: string;
-    readonly version: CopiedVersion['id'];
-  };
-  Home: { readonly path: string };
-  /** A page of its own, like `/media`. */
-  Page: {
-    readonly description: string;
-    readonly eyebrow: string;
-    readonly path: string;
-    /** Top right, where a doc's card has its version. */
-    readonly pill: string;
-    readonly title: string;
-    readonly url: string;
-  };
-  /** The blog, or one of its posts. */
-  Post: {
-    readonly description: string;
-    /** Above the title: the post's date and authors. */
-    readonly eyebrow: string;
-    readonly path: string;
-    readonly title: string;
-    readonly url: string;
-  };
-  /** `/sponsor`'s: its headline, and the partners' logos. */
-  Sponsor: {
-    readonly headline: string;
-    /** Under the headline. */
-    readonly lede: string;
-    readonly partners: ReadonlyArray<{
-      readonly login: string;
-      readonly name: string;
-    }>;
-    readonly path: string;
-    readonly url: string;
-  };
-}>;
-export const OgCard = Data.taggedEnum<OgCard>();
-
-class OgImageError extends Data.TaggedError('OgImageError')<{
-  readonly cause: unknown;
+export interface DocCard {
+  readonly kind: 'doc';
+  /** May be empty: most of the older versions' pages have none. */
+  readonly description: string;
   readonly path: string;
-}> {
-  override get message() {
-    return `Couldn't render the social card for ${this.path}: ${String(this.cause)}`;
-  }
+  readonly section: string;
+  readonly title: string;
+  /** The page's canonical URL, which the card shows. */
+  readonly url: string;
+  readonly version: CopiedVersion['id'];
 }
 
-const colors = {
+export interface HomeCard {
+  readonly kind: 'home';
+  readonly path: string;
+}
+
+/** A page of its own, like `/media`. */
+export interface PageCard {
+  readonly kind: 'page';
+  readonly description: string;
+  readonly eyebrow: string;
+  readonly path: string;
+  /** Top right, where a doc's card has its version. */
+  readonly pill: string;
+  readonly title: string;
+  readonly url: string;
+}
+
+/** The blog, or one of its posts. */
+export interface PostCard {
+  readonly kind: 'post';
+  readonly description: string;
+  /** Above the title: the post's date and authors. */
+  readonly eyebrow: string;
+  readonly path: string;
+  readonly title: string;
+  readonly url: string;
+}
+
+/** `/sponsor`'s: its headline, and the partners' logos. */
+export interface SponsorCard {
+  readonly kind: 'sponsor';
+  readonly headline: string;
+  /** Under the headline. */
+  readonly lede: string;
+  readonly partners: ReadonlyArray<{
+    readonly login: string;
+    readonly name: string;
+  }>;
+  readonly path: string;
+  readonly url: string;
+}
+
+export type OgCard = DocCard | HomeCard | PageCard | PostCard | SponsorCard;
+
+export const colors = {
   background: '#09090b',
   border: '#27272a',
   brand: '#398ccb',
@@ -101,13 +92,13 @@ const versionLabels = {
   v11: 'v11 · stable',
 } as const satisfies Record<CopiedVersion['id'], string>;
 
-interface Picture {
+export interface Picture {
   /** Width over height. */
   readonly aspect: number;
   readonly src: string;
 }
 
-interface Assets {
+export interface Assets {
   readonly heart: string;
   readonly logo: string;
   /** The drawn partner logos, by login, in the card's text color. */
@@ -304,20 +295,6 @@ const articleCard = (
   );
 };
 
-const docCard = (assets: Assets, doc: Data.TaggedEnum.Value<OgCard, 'Doc'>) =>
-  articleCard(assets, {
-    description: doc.description,
-    eyebrow: doc.section,
-    pill: versionLabels[doc.version],
-    title: doc.title,
-    url: doc.url,
-  });
-
-const postCard = (
-  assets: Assets,
-  post: Data.TaggedEnum.Value<OgCard, 'Post'>,
-) => articleCard(assets, { ...post, pill: 'blog' });
-
 const homeCard = (assets: Assets) =>
   card(
     assets,
@@ -385,10 +362,7 @@ const partnerMark = (
       });
 };
 
-const sponsorCard = (
-  assets: Assets,
-  sponsor: Data.TaggedEnum.Value<OgCard, 'Sponsor'>,
-) =>
+const sponsorCard = (assets: Assets, sponsor: SponsorCard) =>
   card(
     assets,
     box({
@@ -472,16 +446,28 @@ const sponsorCard = (
     ),
   );
 
-const cardElement = (assets: Assets, ogCard: OgCard) =>
-  OgCard.$match(ogCard, {
-    Doc: (doc) => docCard(assets, doc),
-    Home: () => homeCard(assets),
-    Page: (page) => articleCard(assets, page),
-    Post: (post) => postCard(assets, post),
-    Sponsor: (sponsor) => sponsorCard(assets, sponsor),
-  });
+export const cardElement = (assets: Assets, ogCard: OgCard) => {
+  switch (ogCard.kind) {
+    case 'doc':
+      return articleCard(assets, {
+        description: ogCard.description,
+        eyebrow: ogCard.section,
+        pill: versionLabels[ogCard.version],
+        title: ogCard.title,
+        url: ogCard.url,
+      });
+    case 'home':
+      return homeCard(assets);
+    case 'page':
+      return articleCard(assets, ogCard);
+    case 'post':
+      return articleCard(assets, { ...ogCard, pill: 'blog' });
+    case 'sponsor':
+      return sponsorCard(assets, ogCard);
+  }
+};
 
-const dataUri = (type: string, bytes: Uint8Array) =>
+export const dataUri = (type: string, bytes: Uint8Array) =>
   `data:${type};base64,${Buffer.from(bytes).toString('base64')}`;
 
 /** A component that draws an `<svg>` with a `viewBox`, as an image in `color`. */
@@ -501,205 +487,12 @@ const svgPicture = (element: JSX.Element, color: string): Picture => {
   };
 };
 
-const fontFiles = [
-  ['Inter', 400, '@fontsource/inter/files/inter-latin-400-normal.woff'],
-  ['Inter', 800, '@fontsource/inter/files/inter-latin-800-normal.woff'],
-  [
-    'JetBrains Mono',
-    500,
-    '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-500-normal.woff',
-  ],
-] as const;
-
-const rasterOptions = { font: { loadSystemFonts: false } } as const;
-
-/** Cached cards no build has read for this long are deleted. */
-const maxAgeMs = 14 * 24 * 60 * 60 * 1000;
-
-/**
- * Loads the fonts and images once; the result renders a card as PNG.
- *
- * Rasterizing is most of a card's time, so with a `cacheDir` a PNG is kept
- * there under a hash of its SVG and resvg's version, and a card whose SVG
- * didn't change is read back instead.
- */
-export const makeOgRenderer = Effect.fn('makeOgRenderer')(function* (
-  cacheDir?: string,
-) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const read = (url: URL) => Effect.flatMap(path.fromFileUrl(url), fs.readFile);
-  const resvgVersion = yield* Effect.map(
-    fs.readFileString(
-      path.join(
-        path.dirname(
-          yield* path.fromFileUrl(
-            new URL(import.meta.resolve('@resvg/resvg-js')),
-          ),
-        ),
-        'package.json',
-      ),
+/** The heart and the partners' logos, drawn for the cards. */
+export const drawnAssets = () => ({
+  heart: svgPicture(h(Heart, { fill: colors.heart }), colors.heart).src,
+  partnerLogos: new Map(
+    Object.entries(partnerLogos).flatMap(([login, Logo]) =>
+      Logo === undefined ? [] : [[login, svgPicture(h(Logo), colors.text)]],
     ),
-    (json) => String((JSON.parse(json) as { version?: unknown }).version),
-  );
-  const fonts: Array<Font> = yield* Effect.forEach(fontFiles, (font) =>
-    Effect.map(read(new URL(import.meta.resolve(font[2]))), (data) => ({
-      data: Buffer.from(data),
-      name: font[0],
-      style: 'normal' as const,
-      weight: font[1],
-    })),
-  );
-  const patternSvg = yield* fs.readFileString(
-    yield* path.fromFileUrl(new URL('og/pattern.svg', import.meta.url)),
-  );
-  const assets: Assets = {
-    heart: svgPicture(h(Heart, { fill: colors.heart }), colors.heart).src,
-    logo: dataUri(
-      'image/svg+xml',
-      yield* read(new URL('../public/favicon.svg', import.meta.url)),
-    ),
-    partnerLogos: new Map(
-      Object.entries(partnerLogos).flatMap(([login, Logo]) =>
-        Logo === undefined ? [] : [[login, svgPicture(h(Logo), colors.text)]],
-      ),
-    ),
-    // A bitmap, so each card composites it instead of redrawing its paths.
-    pattern: dataUri(
-      'image/png',
-      new Resvg(patternSvg, { fitTo: { mode: 'width', value: 1200 } })
-        .render()
-        .asPng(),
-    ),
-  };
-  return Effect.fn('renderOgImage')(function* (ogCard: OgCard) {
-    const fail = (cause: unknown) =>
-      new OgImageError({ cause, path: ogCard.path });
-    const svg = yield* Effect.tryPromise({
-      catch: fail,
-      try: () => satori(cardElement(assets, ogCard), { ...ogImageSize, fonts }),
-    });
-    // On libuv's threads, so a build's cards rasterize in parallel.
-    const rasterize = Effect.tryPromise({
-      catch: fail,
-      try: async () => (await renderAsync(svg, rasterOptions)).asPng(),
-    });
-    if (cacheDir === undefined) {
-      return yield* rasterize;
-    }
-    const file = path.join(
-      cacheDir,
-      `${createHash('sha256')
-        .update(JSON.stringify([resvgVersion, rasterOptions, svg]))
-        .digest('hex')}.png`,
-    );
-    const cached = yield* fs.readFile(file).pipe(Effect.option);
-    if (Option.isSome(cached)) {
-      const now = new Date();
-      yield* fs.utimes(file, now, now).pipe(Effect.ignore);
-      return cached.value;
-    }
-    const png = yield* rasterize;
-    yield* fs.makeDirectory(cacheDir, { recursive: true }).pipe(
-      Effect.andThen(fs.writeFile(file, png)),
-      Effect.catch((error) =>
-        Effect.logWarning(`Couldn't write the card cache: ${error.message}`),
-      ),
-    );
-    return png;
-  });
+  ),
 });
-
-/** Deletes cached cards no build has read for two weeks. */
-const pruneCache = Effect.fn('pruneCache')(function* (cacheDir: string) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const names = yield* fs
-    .readDirectory(cacheDir)
-    .pipe(Effect.orElseSucceed((): Array<string> => []));
-  yield* Effect.forEach(
-    names,
-    (name) =>
-      Effect.gen(function* () {
-        const file = path.join(cacheDir, name);
-        const info = yield* fs.stat(file);
-        const mtime = Option.getOrElse(info.mtime, () => new Date(0));
-        if (Date.now() - mtime.getTime() > maxAgeMs) {
-          yield* fs.remove(file);
-        }
-      }).pipe(Effect.ignore),
-    { concurrency: 64 },
-  );
-});
-
-/**
- * Writes `cards` to the client build at `ogImagePath(card.path)`, which
- * `pageHead` points `og:image` at. The dev server renders a card when it's
- * asked for.
- */
-export function ogImages(options: {
-  /** Where rasterized cards are kept between builds. */
-  readonly cacheDir?: string | undefined;
-  readonly cards: ReadonlyArray<OgCard>;
-}): Plugin {
-  const byFile = new Map(
-    options.cards.map((ogCard) => [ogImagePath(ogCard.path), ogCard]),
-  );
-  let renderer: ReturnType<typeof loadRenderer> | undefined;
-  const loadRenderer = () =>
-    Effect.runPromise(
-      Effect.provide(makeOgRenderer(options.cacheDir), NodeServices.layer),
-    );
-  const render = async (ogCard: OgCard) => {
-    renderer ??= loadRenderer();
-    return Effect.runPromise((await renderer)(ogCard));
-  };
-
-  return {
-    configureServer(server) {
-      server.middlewares.use((request, response, next) => {
-        const ogCard = byFile.get(
-          new URL(request.url ?? '/', 'http://localhost').pathname,
-        );
-        if (!ogCard) {
-          next();
-          return;
-        }
-        render(ogCard).then((png) => {
-          response.setHeader('Content-Type', 'image/png');
-          response.setHeader('Cache-Control', 'no-cache');
-          response.end(png);
-        }, next);
-      });
-    },
-    async generateBundle() {
-      if (this.environment.name !== 'client') {
-        return;
-      }
-      const started = performance.now();
-      const pngs = await Effect.runPromise(
-        Effect.forEach(
-          byFile,
-          ([file, ogCard]) =>
-            Effect.map(
-              Effect.promise(() => render(ogCard)),
-              (png) => [file, png] as const,
-            ),
-          { concurrency: availableParallelism() },
-        ),
-      );
-      for (const [file, png] of pngs) {
-        this.emitFile({ fileName: file.slice(1), source: png, type: 'asset' });
-      }
-      if (options.cacheDir !== undefined) {
-        await Effect.runPromise(
-          Effect.provide(pruneCache(options.cacheDir), NodeServices.layer),
-        );
-      }
-      this.environment.logger.info(
-        `og: ${byFile.size} social cards in ${Math.round(performance.now() - started)}ms`,
-      );
-    },
-    name: 'og-images',
-  };
-}

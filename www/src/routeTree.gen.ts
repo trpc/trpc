@@ -19,6 +19,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
+import { Route as OgSplatRouteImport } from './routes/og.$'
 import { Route as V10DocsRouteImport } from './routes/v10.docs'
 import { Route as V9DocsRouteImport } from './routes/v9.docs'
 import { Route as V10DocsIndexRouteImport } from './routes/v10.docs.index'
@@ -76,6 +77,11 @@ const DocsSplatRoute = DocsSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => DocsRoute,
 } as any)
+const OgSplatRoute = OgSplatRouteImport.update({
+  id: '/og/$',
+  path: '/og/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V10DocsRoute = V10DocsRouteImport.update({
   id: '/v10/docs',
   path: '/v10/docs',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
+  '/og/$': typeof OgSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
+  '/og/$': typeof OgSplatRoute
   '/blog': typeof BlogIndexRoute
   '/docs': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
+  '/og/$': typeof OgSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
+    | '/og/$'
     | '/v10/docs'
     | '/v9/docs'
     | '/blog/'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
+    | '/og/$'
     | '/blog'
     | '/docs'
     | '/v10/docs/$'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
+    | '/og/$'
     | '/v10/docs'
     | '/v9/docs'
     | '/blog/'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SponsorRoute: typeof SponsorRoute
   BlogSlugRoute: typeof BlogSlugRoute
+  OgSplatRoute: typeof OgSplatRoute
   V10DocsRoute: typeof V10DocsRouteWithChildren
   V9DocsRoute: typeof V9DocsRouteWithChildren
   BlogIndexRoute: typeof BlogIndexRoute
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/docs/$'
       preLoaderRoute: typeof DocsSplatRouteImport
       parentRoute: typeof DocsRoute
+    }
+    '/og/$': {
+      id: '/og/$'
+      path: '/og/$'
+      fullPath: '/og/$'
+      preLoaderRoute: typeof OgSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/v10/docs': {
       id: '/v10/docs'
@@ -389,6 +409,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SponsorRoute: SponsorRoute,
   BlogSlugRoute: BlogSlugRoute,
+  OgSplatRoute: OgSplatRoute,
   V10DocsRoute: V10DocsRouteWithChildren,
   V9DocsRoute: V9DocsRouteWithChildren,
   BlogIndexRoute: BlogIndexRoute,
