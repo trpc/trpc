@@ -13,6 +13,8 @@
 import { Effect, FileSystem, Path, Schema } from 'effect';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 
+import { site } from '../src/site.ts';
+
 /** Commits that touched pages without changing what they say. */
 export const notContentChanges: ReadonlySet<string> = new Set([
   // chore: replace ESLint and Prettier with oxlint and oxfmt (#7765)
@@ -180,14 +182,19 @@ export const lastChanges = Effect.fn('lastChanges')(
         (out) => out.trim() === 'true',
       );
     if (yield* shallow()) {
-      // Vercel clones a few commits deep.
-      yield* git([
-        'fetch',
-        '--unshallow',
-        '--no-tags',
-        '--quiet',
-        'origin',
-      ]).pipe(Effect.ignore);
+      // Vercel clones a few commits deep, without an `origin` to fetch the
+      // rest from; the repo is public.
+      for (const remote of ['origin', `${site.github}.git`]) {
+        if (yield* shallow()) {
+          yield* git([
+            'fetch',
+            '--unshallow',
+            '--no-tags',
+            '--quiet',
+            remote,
+          ]).pipe(Effect.ignore);
+        }
+      }
       if (yield* shallow()) {
         yield* Effect.logWarning(
           "The clone is shallow and couldn't fetch the rest of its history, so no page has a last-modified date.",
@@ -241,5 +248,12 @@ export const lastChanges = Effect.fn('lastChanges')(
       }),
     );
   },
-  Effect.orElseSucceed((): ReadonlyMap<string, string> => new Map()),
+  Effect.catch((error) =>
+    Effect.as(
+      Effect.logWarning(
+        `No page has a last-modified date: reading git's history failed: ${String(error)}`,
+      ),
+      new Map<string, string>() as ReadonlyMap<string, string>,
+    ),
+  ),
 );
