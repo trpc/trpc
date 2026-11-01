@@ -1,5 +1,14 @@
+import { Button } from '@shared/ui/components/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui/components/card';
 import { safe } from '@trpc/client';
 import { useState } from 'react';
+import { Result } from './Result';
 import { trpcClient } from './utils/trpc';
 
 /**
@@ -35,13 +44,21 @@ export function SafeCheckout() {
   }
 
   return (
-    <section>
-      <h2>
-        <code>safe()</code>
-      </h2>
-      <p>The same error shapes as values rather than throws.</p>
-      <button onClick={run}>run checkout</button>
-      <pre data-testid="safe-result">{result}</pre>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <code>safe()</code>
+        </CardTitle>
+        <CardDescription>
+          The same error shapes as values rather than throws.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <Button className="self-start" size="sm" onClick={run}>
+          run checkout
+        </Button>
+        <Result testId="safe-result">{result}</Result>
+      </CardContent>
+    </Card>
   );
 }

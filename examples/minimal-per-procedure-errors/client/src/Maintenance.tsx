@@ -1,4 +1,12 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui/components/card';
 import { useQuery } from '@tanstack/react-query';
+import { Result } from './Result';
 import { trpc } from './utils/trpc';
 
 /**
@@ -7,34 +15,47 @@ import { trpc } from './utils/trpc';
  * sees errors thrown above it in the chain.
  */
 export function Maintenance() {
-  const maintenance = useQuery(trpc.maintenance.queryOptions());
+  const maintenanceQuery = useQuery(trpc.maintenance.queryOptions());
 
   function result() {
-    if (maintenance.isPending) {
-      return 'loading...';
-    }
+    switch (maintenanceQuery.status) {
+      case 'pending':
+        return 'loading...';
+      case 'success':
+        return maintenanceQuery.data;
+      case 'error': {
+        const data = maintenanceQuery.error.data;
+        if (!data) {
+          return maintenanceQuery.error.message;
+        }
 
-    const data = maintenance.error?.data;
-    if (!data) {
-      return maintenance.data ?? 'no error';
-    }
+        if (!('kind' in data)) {
+          return `Formatted by the ${data.handledBy} instead`;
+        }
 
-    if (!('kind' in data)) {
-      return `Formatted by the ${data.handledBy} instead`;
+        return `Down for maintenance until ${data.until}`;
+      }
     }
-
-    return `Down for maintenance until ${data.until}`;
   }
 
   return (
-    <section>
-      <h2>
-        <code>maintenance</code>
-      </h2>
-      <p>
-        A throwing middleware, caught by the handler registered ahead of it.
-      </p>
-      <pre data-testid="maintenance-result">{result()}</pre>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <code>maintenance</code>
+        </CardTitle>
+        <CardDescription>
+          A throwing middleware, caught by the handler registered ahead of it.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Result
+          testId="maintenance-result"
+          tone={maintenanceQuery.status === 'error' ? 'error' : 'default'}
+        >
+          {result()}
+        </Result>
+      </CardContent>
+    </Card>
   );
 }
