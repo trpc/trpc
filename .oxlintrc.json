@@ -156,7 +156,13 @@
       }
     },
     {
-      "files": ["examples/**", "packages/**", "scripts/**", "www/**"],
+      "files": [
+        "examples/**",
+        "packages/**",
+        "scripts/**",
+        "tooling/ui/**",
+        "www/**"
+      ],
       "rules": {
         // Todo: enable these for even stronger linting! 💪
         "typescript/no-misused-promises": "off",
@@ -250,9 +256,9 @@
         "www/api-reference/**",
         "www/build/**",
         "www/samples/**",
-        "www/shared/**",
         "www/src/**",
-        "www/*.ts"
+        "www/*.ts",
+        "tooling/ui/**"
       ],
       "rules": {
         "unicorn/filename-case": "off",

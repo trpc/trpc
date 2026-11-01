@@ -10,7 +10,6 @@ packages:
   - 'www/api-reference'
   - 'www/og-image'
   - 'www/samples/*'
-  - 'www/shared/*'
   - 'tooling/*'
 publicHoistPattern:
   - '@types/*'

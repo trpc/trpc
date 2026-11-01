@@ -25,7 +25,7 @@
     ]
   },
   "sortTailwindcss": {
-    "stylesheet": "./www/shared/ui/src/styles/globals.css"
+    "stylesheet": "./tooling/ui/src/styles/globals.css"
   },
   "overrides": [
     {
@@ -35,7 +35,7 @@
       }
     },
     {
-      "files": ["www/**"],
+      "files": ["www/**", "tooling/ui/**"],
       "options": {
         "sortImports": false,
         "sortTailwindcss": false
