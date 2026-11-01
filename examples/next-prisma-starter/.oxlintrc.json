@@ -4,10 +4,6 @@
   "categories": {
     "correctness": "off"
   },
-  "options": {
-    "typeAware": true,
-    "reportUnusedDisableDirectives": "warn"
-  },
   "rules": {
     // React Hooks
     "react/rules-of-hooks": "error",
