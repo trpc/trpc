@@ -61,7 +61,7 @@ function setup(resource: ReturnType<typeof ctx>) {
     post: unstable_inferQueryHandle<TRPC['post']['byId']>;
   }) {
     const trpc = resource.useTRPC();
-    const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
+    const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
     return <p>{`${postQuery.data.title} v${postQuery.data.version}`}</p>;
   }
   function Comments(props: {
@@ -69,7 +69,7 @@ function setup(resource: ReturnType<typeof ctx>) {
   }) {
     const trpc = resource.useTRPC();
     const commentsQuery = useSuspenseInfiniteQuery(
-      trpc.unstable_fromHandle(props.comments, {
+      trpc.unstable_$fromHandle(props.comments, {
         getNextPageParam: (last) => last.nextCursor,
       }),
     );
@@ -79,9 +79,9 @@ function setup(resource: ReturnType<typeof ctx>) {
   }
   function PostPage(props: { id: string; flipKeys?: boolean }) {
     const trpc = resource.useTRPC();
-    const post = trpc.post.byId.unstable_prefetch({ id: props.id });
+    const post = trpc.post.byId.unstable_$prefetch({ id: props.id });
     // Same input, different key order
-    const comments = trpc.post.comments.unstable_prefetchInfinite(
+    const comments = trpc.post.comments.unstable_$prefetchInfinite(
       props.flipKeys
         ? { limit: 2, postId: props.id }
         : { postId: props.id, limit: 2 },
@@ -100,7 +100,7 @@ function setup(resource: ReturnType<typeof ctx>) {
   return { PostPage, Post };
 }
 
-describe('unstable_prefetch on useTRPC() during render', () => {
+describe('unstable_$prefetch on useTRPC() during render', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -108,7 +108,7 @@ describe('unstable_prefetch on useTRPC() during render', () => {
   test('returns typed handles', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    expectTypeOf(trpc.post.byId.unstable_prefetch({ id: '1' })).toEqualTypeOf<
+    expectTypeOf(trpc.post.byId.unstable_$prefetch({ id: '1' })).toEqualTypeOf<
       unstable_inferQueryHandle<TRPC['post']['byId']>
     >();
   });
@@ -186,8 +186,8 @@ describe('unstable_prefetch on useTRPC() during render', () => {
     await using resource = ctx();
     function Page() {
       const trpc = resource.useTRPC();
-      const post = trpc.post.byId.unstable_prefetch({ id: '1' });
-      const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(post));
+      const post = trpc.post.byId.unstable_$prefetch({ id: '1' });
+      const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(post));
       return <p>{`${postQuery.data.title} v${postQuery.data.version}`}</p>;
     }
     const utils = resource.renderApp(
@@ -206,12 +206,12 @@ describe('unstable_prefetch on useTRPC() during render', () => {
     await using resource = ctx();
     function Page() {
       const trpc = resource.useTRPC();
-      const post = trpc.post.byId.unstable_prefetch(
+      const post = trpc.post.byId.unstable_$prefetch(
         { id: 'missing' },
         { retry: false },
       );
       const postQuery = useSuspenseQuery(
-        trpc.unstable_fromHandle(post, { retry: false }),
+        trpc.unstable_$fromHandle(post, { retry: false }),
       );
       return <p>{postQuery.data.title}</p>;
     }

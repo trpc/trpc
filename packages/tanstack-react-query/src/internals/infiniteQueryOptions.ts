@@ -99,7 +99,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface DefinedTRPCInfiniteQueryOptionsOut<
+export interface DefinedTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
   TData,

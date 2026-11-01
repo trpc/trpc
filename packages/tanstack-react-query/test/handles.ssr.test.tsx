@@ -110,7 +110,7 @@ function Post(props: {
   post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
 }) {
   const trpc = trpcContext.useTRPC();
-  const postQuery = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
+  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
   return (
     <p>{`${postQuery.data.title} fetchedAt:${postQuery.data.fetchedAt.toISOString()}`}</p>
   );
@@ -122,10 +122,10 @@ describe('server rendering', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
 
-    const ensured = await server.trpc.post.byDay.unstable_ensure({
+    const ensured = await server.trpc.post.byDay.unstable_$ensure({
       day: new Date('2026-01-01'),
     });
-    const pending = server.trpc.post.byDay.unstable_prefetch({
+    const pending = server.trpc.post.byDay.unstable_$prefetch({
       day: new Date('2026-01-02'),
     });
     const state = dehydrate(server.queryClient);
@@ -159,10 +159,10 @@ describe('server rendering', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     function Page() {
       const trpc = trpcContext.useTRPC();
-      const a = trpc.post.byDay.unstable_prefetch({
+      const a = trpc.post.byDay.unstable_$prefetch({
         day: new Date('2026-03-01'),
       });
-      const b = trpc.post.byDay.unstable_prefetch({
+      const b = trpc.post.byDay.unstable_$prefetch({
         day: new Date('2026-03-02'),
       });
       return (
@@ -185,9 +185,10 @@ describe('server rendering', () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
-    const handle = await server.trpc.post.byDay.unstable_ensure({
+    const handle = server.trpc.post.byDay.unstable_$prefetch({
       day: new Date('2026-02-01'),
     });
+    await vi.waitFor(() => expect(resource.calls).toHaveBeenCalledTimes(1));
 
     // No dehydrated state: the client tree has to fetch the query again
     const render = () =>
@@ -200,6 +201,25 @@ describe('server rendering', () => {
     expect(trpcWarnings(warn)[0]).toContain(
       'The handle for "post.byDay" is being fetched again during server rendering',
     );
+    warn.mockRestore();
+  });
+
+  test('a handle with data renders without hydration, from its initialData', async () => {
+    await using resource = ctx();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const server = makeServer(resource);
+    const handle = await server.trpc.post.byDay.unstable_$ensure({
+      day: new Date('2026-02-01'),
+    });
+
+    const html = await renderClientTree(
+      resource,
+      undefined,
+      <Post post={handle} />,
+    );
+    expect(html).toContain('Posts on 2026-02-01');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+    expect(trpcWarnings(warn)).toEqual([]);
     warn.mockRestore();
   });
 });

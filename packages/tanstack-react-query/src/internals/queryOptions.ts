@@ -88,7 +88,7 @@ interface DefinedTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
-interface DefinedTRPCQueryOptionsOut<
+export interface DefinedTRPCQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,

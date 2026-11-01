@@ -11,7 +11,7 @@ import { twMerge } from 'tailwind-merge';
 
 export const Route = createFileRoute('/')({
   loader: (opts) => ({
-    channels: opts.context.trpc.channel.list.unstable_prefetch(),
+    channels: opts.context.trpc.channel.list.unstable_$prefetch(),
   }),
   component: Home,
 });
@@ -83,7 +83,7 @@ function ChannelList(
 ) {
   const trpc = useTRPC();
   const channelsQuery = useSuspenseQuery(
-    trpc.unstable_fromHandle(props.channels),
+    trpc.unstable_$fromHandle(props.channels),
   );
 
   return (

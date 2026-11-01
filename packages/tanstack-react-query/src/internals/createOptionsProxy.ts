@@ -400,7 +400,7 @@ export function createTRPCOptionsProxy<
       if (inRender && verb !== 'prefetch') {
         throw new Error(
           `\`${[...path, utilName].join('.')}()\` on \`useTRPC()\` waits for its query, which a render can't. ` +
-            `Start queries in components with \`unstable_prefetch\` or \`unstable_prefetchInfinite\`, ` +
+            `Start queries in components with \`unstable_$prefetch\` or \`unstable_$prefetchInfinite\`, ` +
             `and wait where you read the handle, with \`useSuspenseQuery\`. ` +
             `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
         );
@@ -533,13 +533,24 @@ export function createTRPCOptionsProxy<
         };
       },
 
-      unstable_fromHandle: () => {
+      unstable_$fromHandle: () => {
         const handle = readHandle(arg1, prefix);
+        const initialData =
+          'data' in arg1
+            ? {
+                initialData: arg1.data,
+                initialDataUpdatedAt: arg1.dataUpdatedAt,
+              }
+            : undefined;
         const options =
           handle.type === 'infinite'
             ? trpcInfiniteQueryOptions({
                 input: handle.input,
-                opts: { initialCursor: arg1.initialCursor, ...arg2 },
+                opts: {
+                  initialCursor: arg1.initialCursor,
+                  ...initialData,
+                  ...arg2,
+                },
                 path: handle.path,
                 queryClient: opts.queryClient,
                 queryKey: handle.queryKey,
@@ -547,7 +558,7 @@ export function createTRPCOptionsProxy<
               })
             : trpcQueryOptions({
                 input: handle.input,
-                opts: arg2,
+                opts: { ...initialData, ...arg2 },
                 path: handle.path,
                 queryClient: opts.queryClient,
                 queryKey: handle.queryKey,
@@ -559,12 +570,12 @@ export function createTRPCOptionsProxy<
           options,
         );
       },
-      unstable_prefetch: () => startQueryHandle('query', 'prefetch'),
-      unstable_ensure: () => startQueryHandle('query', 'ensure'),
-      unstable_fetch: () => startQueryHandle('query', 'fetch'),
-      unstable_prefetchInfinite: () => startQueryHandle('infinite', 'prefetch'),
-      unstable_ensureInfinite: () => startQueryHandle('infinite', 'ensure'),
-      unstable_fetchInfinite: () => startQueryHandle('infinite', 'fetch'),
+      unstable_$prefetch: () => startQueryHandle('query', 'prefetch'),
+      unstable_$ensure: () => startQueryHandle('query', 'ensure'),
+      unstable_$fetch: () => startQueryHandle('query', 'fetch'),
+      unstable_$prefetchInfinite: () => startQueryHandle('infinite', 'prefetch'),
+      unstable_$ensureInfinite: () => startQueryHandle('infinite', 'ensure'),
+      unstable_$fetchInfinite: () => startQueryHandle('infinite', 'fetch'),
 
       mutationOptions: () => {
         return trpcMutationOptions({

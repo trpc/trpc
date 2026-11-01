@@ -25,8 +25,8 @@ export const Route = createFileRoute('/channels/$channelId')({
   loader: (opts) => {
     const { trpc } = opts.context;
     return {
-      channels: trpc.channel.list.unstable_prefetch(),
-      posts: trpc.post.infinite.unstable_prefetchInfinite({
+      channels: trpc.channel.list.unstable_$prefetch(),
+      posts: trpc.post.infinite.unstable_$prefetchInfinite({
         channelId: opts.params.channelId,
       }),
     };
@@ -98,7 +98,7 @@ function ChannelList(
 ) {
   const trpc = useTRPC();
   const channelsQuery = useSuspenseQuery(
-    trpc.unstable_fromHandle(props.channels),
+    trpc.unstable_$fromHandle(props.channels),
   );
 
   return channelsQuery.data.map((channel) => (

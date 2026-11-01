@@ -47,7 +47,7 @@ export function useLivePosts(
   const channelId = posts.input.channelId;
   const trpc = useTRPC();
   const query = useSuspenseInfiniteQuery(
-    trpc.unstable_fromHandle(posts, {
+    trpc.unstable_$fromHandle(posts, {
       getNextPageParam: (d) => d.nextCursor,
       // No need to refetch as we have a subscription
       refetchOnReconnect: false,
