@@ -1,10 +1,11 @@
 import { defineConfig } from 'tsdown';
 
 export const input = ['src/index.ts'];
+const reactServerInput = 'src/index.react-server.ts';
 
 export default defineConfig({
   target: ['node18', 'es2017'],
-  entry: input,
+  entry: [...input, reactServerInput],
   dts: {
     sourcemap: true,
     tsconfig: './tsconfig.build.json',
@@ -19,8 +20,8 @@ export default defineConfig({
     const start = Date.now();
     const { generateEntrypoints } =
       await import('../../scripts/entrypoints.js');
-    await generateEntrypoints(input);
-    // oxlint-disable-next-line no-console
+    await generateEntrypoints(input, { reactServer: reactServerInput });
+    // eslint-disable-next-line no-console
     console.log(`Generated entrypoints in ${Date.now() - start}ms`);
   },
 });

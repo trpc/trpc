@@ -7,6 +7,7 @@ import type {
 import { hashKey, isCancelledError } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { isTRPCClientError } from '@trpc/client';
+import { dehydrateHandleQuery, hydrateHandleQuery } from './hydration';
 import type {
   UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
   UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
@@ -269,6 +270,7 @@ export function readHandle(
     path: data.path,
     input: data.args?.input,
     queryKey,
+    dehydratedQuery: (handle as { dehydratedQuery?: unknown }).dehydratedQuery,
   };
 }
 
@@ -285,40 +287,50 @@ export function startHandle(opts: {
   options: any;
   kind: 'query' | 'infinite';
   verb: HandleVerb;
+  selfHydrating: boolean;
 }) {
-  const { queryClient, options, kind, verb } = opts;
+  const { queryClient, options, kind, verb, selfHydrating } = opts;
   const input = readQueryKey(options.queryKey).args?.input;
+  const handle: Record<string, unknown> = { queryKey: options.queryKey, input };
+  if (kind === 'infinite' && options.initialPageParam != null) {
+    handle['initialCursor'] = options.initialPageParam;
+  }
+  const done = () => {
+    if (selfHydrating) {
+      const dehydratedQuery = dehydrateHandleQuery(
+        queryClient,
+        options.queryKey,
+      );
+      if (dehydratedQuery) {
+        handle['dehydratedQuery'] = dehydratedQuery;
+      }
+    }
+    return handle;
+  };
+
   if (kind === 'infinite') {
-    const handle = {
-      queryKey: options.queryKey,
-      input,
-      ...(options.initialPageParam != null && {
-        initialCursor: options.initialPageParam,
-      }),
-    };
     switch (verb) {
       case 'prefetch':
         void queryClient.prefetchInfiniteQuery(options);
-        return handle;
+        return done();
       case 'ensure':
         return queryClient
           .ensureInfiniteQueryData({ ...options, revalidateIfStale: true })
-          .then(() => handle);
+          .then(done);
       case 'fetch':
-        return queryClient.fetchInfiniteQuery(options).then(() => handle);
+        return queryClient.fetchInfiniteQuery(options).then(done);
     }
   }
-  const handle = { queryKey: options.queryKey, input };
   switch (verb) {
     case 'prefetch':
       void queryClient.prefetchQuery(options);
-      return handle;
+      return done();
     case 'ensure':
       return queryClient
         .ensureQueryData({ ...options, revalidateIfStale: true })
-        .then(() => handle);
+        .then(done);
     case 'fetch':
-      return queryClient.fetchQuery(options).then(() => handle);
+      return queryClient.fetchQuery(options).then(done);
   }
 }
 
@@ -341,7 +353,7 @@ function warnIfNotHydrated(
         console.warn(
           `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering: ` +
             `the query it refers to isn't in this QueryClient. ` +
-            `Render the reading component inside <HydrateClient>, and don't return handles from server functions or server actions. ` +
+            `Render the reading component inside <HydrateClient> (or use self-hydrating handles), and don't return handles from server functions or server actions. ` +
             `See https://trpc.io/docs/client/tanstack-react-query/handles#where-handles-dont-work`,
         );
       }
@@ -394,7 +406,7 @@ function refetchRejectedHydration(queryClient: QueryClient, options: any) {
  */
 export function prepareHandleRead<TOptions extends { queryFn?: unknown }>(
   queryClient: QueryClient,
-  path: readonly string[],
+  handle: ReturnType<typeof readHandle>,
   options: TOptions,
 ): TOptions {
   if (
@@ -402,10 +414,11 @@ export function prepareHandleRead<TOptions extends { queryFn?: unknown }>(
     typeof options.queryFn === 'function'
   ) {
     options.queryFn = warnIfNotHydrated(
-      path,
+      handle.path,
       options.queryFn as QueryFunction<any, any, any>,
     );
   }
+  hydrateHandleQuery(queryClient, handle.dehydratedQuery);
   refetchRejectedHydration(queryClient, options);
   return options;
 }

@@ -2,20 +2,27 @@ import fs from 'fs';
 import path from 'path';
 import { format } from 'oxfmt';
 
+type FormatExport = {
+  import: { types: string; default: string };
+  require: { types: string; default: string };
+};
+
+type ConditionalExport = FormatExport & { 'react-server'?: FormatExport };
+
+function formatExport(distPath: string): FormatExport {
+  return {
+    import: { types: `${distPath}.d.mts`, default: `${distPath}.mjs` },
+    require: { types: `${distPath}.d.cts`, default: `${distPath}.cjs` },
+  };
+}
+
 // minimal version of PackageJson type necessary
 export type PackageJson = {
   name: string;
   main: string;
   module: string;
   types: string;
-  exports: Record<
-    string,
-    | {
-        import: { default: string; types: string };
-        require: { types: string; default: string };
-      }
-    | string
-  >;
+  exports: Record<string, ConditionalExport | string>;
   files: string[];
   dependencies: Record<string, string>;
   pnpm: {
@@ -34,7 +41,13 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export async function generateEntrypoints(rawInputs: string[]) {
+export async function generateEntrypoints(
+  rawInputs: string[],
+  opts: {
+    /** A separate build of `src/index.ts` for the `react-server` export condition */
+    reactServer?: string;
+  } = {},
+) {
   const inputs = [...rawInputs];
   // set some defaults for the package.json
 
@@ -48,8 +61,14 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
-      import: { types: './dist/index.d.mts', default: './dist/index.mjs' },
-      require: { types: './dist/index.d.cts', default: './dist/index.cjs' },
+      // `react-server` has to come first: conditions match in order
+      ...(opts.reactServer && {
+        'react-server': formatExport(
+          './dist/' +
+            opts.reactServer.replace(/^src\//, '').replace(/\.(ts|tsx)$/, ''),
+        ),
+      }),
+      ...formatExport('./dist/index'),
     },
   };
 

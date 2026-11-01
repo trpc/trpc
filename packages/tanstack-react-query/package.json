@@ -23,6 +23,16 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
+      "react-server": {
+        "import": {
+          "types": "./dist/index.react-server.d.mts",
+          "default": "./dist/index.react-server.mjs"
+        },
+        "require": {
+          "types": "./dist/index.react-server.d.cts",
+          "default": "./dist/index.react-server.cjs"
+        }
+      },
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"

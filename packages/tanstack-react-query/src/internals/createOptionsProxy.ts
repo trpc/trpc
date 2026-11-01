@@ -311,6 +311,13 @@ export type TRPCOptionsProxyOptionsBase<
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
+  /**
+   * React Server Components only. Handles carry their query's data, or its
+   * pending request, and reading one with `unstable_fromHandle` writes it into
+   * the reading client's cache, so they need no `HydrateClient`.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#self-hydrating-handles
+   */
+  unstable_selfHydratingHandles?: boolean;
 } & KeyPrefixOptions<TFeatureFlags>;
 
 export interface TRPCOptionsProxyOptionsInternal<
@@ -342,6 +349,12 @@ export type TRPCOptionsProxyOptions<
  */
 export const disableHandleVerbs = Symbol('disableHandleVerbs');
 
+/**
+ * Set by the `react-server` build, the only one that allows `unstable_selfHydratingHandles`
+ * @internal
+ */
+export const reactServerProxy = Symbol('reactServerProxy');
+
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
   | keyof DecorateHandleReaders<any>
@@ -362,6 +375,17 @@ export function createTRPCOptionsProxy<
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
 ): TRPCOptionsProxy<TRouter, TFeatureFlags> {
   const prefix = opts.keyPrefix;
+  const selfHydratingHandles = opts.unstable_selfHydratingHandles === true;
+  if (
+    selfHydratingHandles &&
+    !(opts as { [reactServerProxy]?: boolean })[reactServerProxy]
+  ) {
+    throw new Error(
+      '`unstable_selfHydratingHandles` works only in React Server Components: ' +
+        'handles from other environments would carry data that never reaches the browser this way. ' +
+        'Create this proxy in a server component module, which resolves `@trpc/tanstack-react-query` with the `react-server` export condition.',
+    );
+  }
 
   const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
@@ -433,6 +457,7 @@ export function createTRPCOptionsProxy<
         options,
         kind,
         verb,
+        selfHydrating: selfHydratingHandles,
       });
     };
 
@@ -549,7 +574,7 @@ export function createTRPCOptionsProxy<
               });
         return prepareHandleRead(
           unwrapLazyArg(opts.queryClient),
-          handle.path,
+          handle,
           options,
         );
       },
