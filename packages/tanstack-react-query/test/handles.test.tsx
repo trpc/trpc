@@ -9,7 +9,7 @@ import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { TRPC_ERROR_CODE_KEY } from '@trpc/server';
@@ -23,7 +23,11 @@ import type {
   unstable_TRPCInfiniteQueryHandle,
   unstable_TRPCQueryHandle,
 } from '../src';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src';
+import {
+  createTRPCContext,
+  createTRPCOptionsProxy,
+  unstable_useWaterfall,
+} from '../src';
 
 const ctx = () => {
   const t = initTRPC.create();
@@ -589,6 +593,54 @@ describe('runtime', () => {
         .getQueryData(handle.queryKey)
         ?.pages.flatMap((page) => page.items),
     ).toEqual([0, 1, 2, 3]);
+  });
+
+  test('unstable_useWaterfall starts a query in render and returns a handle', async () => {
+    await using resource = ctx();
+    let setId!: (id: string) => void;
+    let rerender!: () => void;
+
+    function Post(p: {
+      handle: unstable_inferQueryHandle<TRPC['post']['byId']>;
+    }) {
+      const trpc = resource.useTRPC();
+      const { data } = useSuspenseQuery(trpc.unstable_fromHandle(p.handle));
+      return <p>title:{data.title}</p>;
+    }
+    function Parent() {
+      const [id, _setId] = React.useState('1');
+      const [, forceRender] = React.useReducer((n: number) => n + 1, 0);
+      setId = _setId;
+      rerender = forceRender;
+      const trpc = resource.useTRPC();
+      const handle = unstable_useWaterfall(trpc.post.byId, { id });
+      expectTypeOf(handle).toEqualTypeOf<
+        unstable_inferQueryHandle<TRPC['post']['byId']>
+      >();
+      expect(handle.input).toEqual({ id });
+      return (
+        <React.Suspense fallback="loading">
+          <Post handle={handle} />
+        </React.Suspense>
+      );
+    }
+
+    const utils = resource.renderApp(<Parent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('title:Post 1');
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    act(() => rerender());
+    expect(utils.container).toHaveTextContent('title:Post 1');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    act(() => setId('2'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('title:Post 2');
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    expect(resource.calls).toHaveBeenLastCalledWith('post.byId', { id: '2' });
   });
 
   test('handles carry their input', async () => {
