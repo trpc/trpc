@@ -69,7 +69,7 @@ jobs:
   typecheck-www:
     # only run on PRs and in the merge queue
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -82,6 +82,8 @@ jobs:
       - uses: ./.github/setup
 
       - run: pnpm typecheck-www
+      - run: pnpm --filter www test
+      - run: pnpm --filter www check-twoslash
 
   test:
     name: unit and integration tests

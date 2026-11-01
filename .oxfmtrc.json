@@ -25,7 +25,7 @@
     ]
   },
   "sortTailwindcss": {
-    "config": "./www/tailwind.config.ts"
+    "stylesheet": "./tooling/ui/src/styles/globals.css"
   },
   "overrides": [
     {
@@ -33,15 +33,19 @@
       "options": {
         "embeddedLanguageFormatting": "off"
       }
+    },
+    {
+      "files": ["www/**", "tooling/ui/**"],
+      "options": {
+        "sortImports": false,
+        "sortTailwindcss": false
+      }
     }
   ],
   "ignorePatterns": [
     "__generated__/",
-    ".docusaurus/",
     "**/.next/",
     "**/.nuxt",
-    "**/www/build/",
-    "**/www/typedoc/",
     "dist/",
     "examples/next-big-router/src/server/routers/*.ts",
     "examples/.test/diagnostics-big-router/**/*",
@@ -49,17 +53,23 @@
     "packages/server/src/vendor/",
     "packages/coverage/",
     "pnpm-lock.yaml",
-    "www/docs/main/quickstart.mdx",
     ".turbo",
     ".vinxi",
     ".output",
-    "www/docs/typedoc",
     "packages/server/src/openapi/__testRouter.ts.json",
     "examples/openapi-codegen/src/client/generated",
     "examples/openapi-codegen/openapi.json",
     "packages/openapi/test/routers/*/",
     "packages/openapi/test/routers/*.json",
     "**/routeTree.gen.ts",
-    "**/prisma/migrations/migration_lock.toml"
+    "**/prisma/migrations/migration_lock.toml",
+    "www/v11/**",
+    "www/v10/**",
+    "www/v9/**",
+    "www/blog/**",
+    "www/old-docs.json",
+    "www/sponsors.json",
+    "www/api-reference/out/",
+    "www/.vercel/"
   ]
 }

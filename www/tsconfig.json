@@ -1,16 +1,42 @@
 {
-  "extends": "@docusaurus/tsconfig",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "baseUrl": null,
-    "strict": true,
-    "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true,
+    "target": "ES2024",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "types": ["node", "vite/client"],
     "noEmit": true,
-    "types": [
-      "node",
-      "@docusaurus/module-type-aliases",
-      "@docusaurus/theme-classic"
-    ]
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "erasableSyntaxOnly": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedSideEffectImports": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   },
-  "include": ["src", "*.ts", "*.js", "global.d.ts"]
+  "include": [
+    "src",
+    "build",
+    "not-found-check.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
 }

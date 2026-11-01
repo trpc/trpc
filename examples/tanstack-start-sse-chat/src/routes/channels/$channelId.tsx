@@ -38,7 +38,7 @@ function ChannelPage() {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <nav className="hidden w-64 flex-col border-r bg-white p-4 dark:border-gray-800 dark:bg-gray-900 sm:flex">
+      <nav className="hidden w-64 flex-col border-r bg-white p-4 sm:flex dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <HashtagIcon className="size-4 text-gray-500 dark:text-gray-400" />

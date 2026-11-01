@@ -1,0 +1,97 @@
+name: sponsors
+
+# Syncs www/sponsors.json and the README's sponsors section from GitHub
+# Sponsors, and pushes a commit only when a sponsor joined, left or changed
+# tier (new weights or ranks alone wait for the next such commit).
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sponsors
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.repository == 'trpc/trpc'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # A classic token of KATT's with read:user and read:org.
+      SPONSORS_SYNC_GITHUB_TOKEN: ${{ secrets.SPONSORS_SYNC_GITHUB_TOKEN }}
+    steps:
+      - name: Decide
+        id: go
+        run: |
+          if [ -z "$SPONSORS_SYNC_GITHUB_TOKEN" ]; then
+            echo "::warning::No SPONSORS_SYNC_GITHUB_TOKEN secret; skipping the sync."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.go.outputs.run == 'true'
+        uses: actions/checkout@v7
+        with:
+          # The branch's tip, not the triggering commit: a later push may be in.
+          ref: ${{ github.ref }}
+          # The "main" rule set rejects pushes made with GITHUB_TOKEN; the
+          # commit-and-push step's fetch and push use this one.
+          token: ${{ secrets.ACCESS_TOKEN }}
+      - if: steps.go.outputs.run == 'true'
+        uses: pnpm/action-setup@v6
+      - if: steps.go.outputs.run == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - if: steps.go.outputs.run == 'true'
+        run: pnpm --filter root --filter www install --frozen-lockfile
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - if: steps.go.outputs.run == 'true'
+        working-directory: www
+        run: node build/sponsors-sync.ts --only-when-sponsors-change
+
+      # Someone may push in between: then the commit is made again on the
+      # branch's new tip (the synced sponsors.json, and the README's sponsors
+      # section redone from it), rather than rebased, so it can't conflict
+      # and the history stays linear.
+      - if: steps.go.outputs.run == 'true'
+        name: Commit and push if a sponsor joined, left or changed tier
+        run: |
+          if git diff --quiet -- www/sponsors.json README.md; then
+            echo "No sponsor joined, left or changed tier."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          synced="$RUNNER_TEMP/sponsors.json"
+          cp www/sponsors.json "$synced"
+          branch="${GITHUB_REF#refs/heads/}"
+          for attempt in 1 2 3 4 5 6; do
+            if [ "$attempt" -gt 1 ]; then
+              sleep $((attempt * 5 + RANDOM % 10))
+              git fetch --depth=1 origin "$branch"
+              git reset --hard FETCH_HEAD
+              cp "$synced" www/sponsors.json
+              (cd www && node build/sponsors-sync.ts --readme-only)
+              if git diff --quiet -- www/sponsors.json README.md; then
+                echo "$branch has these sponsors already."
+                exit 0
+              fi
+            fi
+            git add -- www/sponsors.json README.md
+            git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            echo "::warning::$branch moved on (attempt $attempt); redoing the commit on its tip."
+          done
+          echo "::error::Couldn't push the sponsors commit to $branch."
+          exit 1

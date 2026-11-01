@@ -156,7 +156,13 @@
       }
     },
     {
-      "files": ["examples/**", "packages/**", "scripts/**", "www/**"],
+      "files": [
+        "examples/**",
+        "packages/**",
+        "scripts/**",
+        "tooling/ui/**",
+        "www/**"
+      ],
       "rules": {
         // Todo: enable these for even stronger linting! 💪
         "typescript/no-misused-promises": "off",
@@ -244,9 +250,33 @@
       }
     },
     {
-      "files": ["www/og-image/utils/env.js"],
+      // The site, as the v12 branch writes it: kebab-case files, Effect's
+      // `A`/`E` type parameters, `||` for empty-string fallbacks.
+      "files": [
+        "www/api-reference/**",
+        "www/build/**",
+        "www/samples/**",
+        "www/src/**",
+        "www/*.ts",
+        "tooling/ui/**"
+      ],
       "rules": {
-        "sort-keys": "error"
+        "unicorn/filename-case": "off",
+        "max-params": "off",
+        "no-empty-function": "off",
+        "trpc/type-parameter-naming": "off",
+        "typescript/prefer-nullish-coalescing": "off",
+        "typescript/prefer-string-starts-ends-with": "off",
+        "typescript/dot-notation": "off",
+        // TanStack Router's `throw redirect()` and `throw notFound()`.
+        "typescript/only-throw-error": "off"
+      }
+    },
+    {
+      "files": ["www/build/markdown.ts", "www/src/routes/**"],
+      "rules": {
+        // Vite's `useEnvironment`, and routes' inline `component`s.
+        "react-hooks/rules-of-hooks": "off"
       }
     }
   ]

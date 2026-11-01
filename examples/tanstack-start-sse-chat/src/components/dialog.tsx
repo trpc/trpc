@@ -37,7 +37,7 @@ export function Dialog({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 flex w-screen justify-center overflow-y-auto bg-gray-950/25 px-2 py-2 focus:outline-0 dark:bg-gray-950/50 sm:px-6 sm:py-8 lg:px-8 lg:py-16" />
+          <div className="fixed inset-0 flex w-screen justify-center overflow-y-auto bg-gray-950/25 px-2 py-2 focus:outline-0 sm:px-6 sm:py-8 lg:px-8 lg:py-16 dark:bg-gray-950/50" />
         </Headless.TransitionChild>
 
         <div className="fixed inset-0 w-screen overflow-y-auto pt-6 sm:pt-0">

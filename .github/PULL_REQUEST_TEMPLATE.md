@@ -30,7 +30,7 @@ Where a reviewer can see this change: the docs pages it touches, and the example
   - The WebSockets example is `next-prisma-websockets-starter` (`examples/next-prisma-websockets-starter`).
   - The TanStack Start SSE chat example is `tanstack-start-sse-chat` (`examples/tanstack-start-sse-chat`).
   - The TodoMVC example is `examples-todomvc` (`examples/next-prisma-todomvc`). Routes are `/all`, `/active` and `/completed`.
-  - The OG image service is `og-image` (`www/og-image`). Routes are `/api/docs` and `/api/blog`, with the card's fields as JSON in `?input=`.
+  - A page's social card (OG image) is on `www` at `/og/<page path>.png`: `/docs/client/links/httpBatchLink` has `/og/docs/client/links/httpBatchLink.png`, and the home page has `/og/index.png`.
 - When a project builds no preview for this PR, say so, link each page's file in this PR's diff (`https://github.com/trpc/trpc/pull/<number>/files#diff-<sha256 of the path>`), and name its sections without links.
 - One bullet per page or route, with a link to it. Under it, one bullet per change on that page: a link to the section it's in, then what changed. A page with a single change can say it on the page's own line, after a colon.
 - Delete the placeholder bullets this change does not use. If none apply, replace the list with "None".

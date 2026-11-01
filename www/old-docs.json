@@ -1,0 +1,661 @@
+{
+  "blog/2021-05-05-hello-world.mdx": [
+    "blog/introducing-trpc.md"
+  ],
+  "blog/2022-11-21-announcing-trpc-10.mdx": [
+    "blog/announcing-trpc-10.md"
+  ],
+  "blog/2023-01-14-typescript-performance-lessons.mdx": [
+    "blog/typescript-performance-lessons.md"
+  ],
+  "blog/2023-01-17-tinyrpc-client.mdx": [
+    "blog/tinyrpc-client.md"
+  ],
+  "blog/2024-05-23-trpc-actions.mdx": [
+    "blog/trpc-actions.md"
+  ],
+  "blog/2025-02-17-new-tanstack-react-query-integration.mdx": [
+    "blog/introducing-tanstack-react-query-client.md"
+  ],
+  "blog/2025-03-21-announcing-trpc-11.mdx": [
+    "blog/announcing-trpc-v11.md"
+  ],
+  "blog/authors.yml": "The posts' authors, written into each post's frontmatter",
+  "docs/.gitignore": "Ignores the generated API reference, which links to trpc.io",
+  "docs/client/cors.md": [
+    "v11/docs/client/cors.md"
+  ],
+  "docs/client/headers.md": [
+    "v11/docs/client/headers.md"
+  ],
+  "docs/client/links/httpBatchLink.md": [
+    "v11/docs/client/links/httpBatchLink.md"
+  ],
+  "docs/client/links/httpBatchStreamLink.md": [
+    "v11/docs/client/links/httpBatchStreamLink.md"
+  ],
+  "docs/client/links/httpLink.md": [
+    "v11/docs/client/links/httpLink.md"
+  ],
+  "docs/client/links/httpSubscriptionLink.md": [
+    "v11/docs/client/links/httpSubscriptionLink.md"
+  ],
+  "docs/client/links/localLink.mdx": [
+    "v11/docs/client/links/localLink.md"
+  ],
+  "docs/client/links/loggerLink.md": [
+    "v11/docs/client/links/loggerLink.md"
+  ],
+  "docs/client/links/overview.md": [
+    "v11/docs/client/links.md"
+  ],
+  "docs/client/links/retryLink.md": [
+    "v11/docs/client/links/retryLink.md"
+  ],
+  "docs/client/links/splitLink.mdx": [
+    "v11/docs/client/links/splitLink.md"
+  ],
+  "docs/client/links/wsLink.md": [
+    "v11/docs/client/links/wsLink.md"
+  ],
+  "docs/client/nextjs/app-router/server-actions.mdx": [
+    "v11/docs/client/nextjs/server-actions.md"
+  ],
+  "docs/client/nextjs/app-router/setup.mdx": [
+    "v11/docs/client/nextjs/app-router-setup.md"
+  ],
+  "docs/client/nextjs/overview.mdx": [
+    "v11/docs/client/nextjs.md"
+  ],
+  "docs/client/nextjs/pages-router/aborting-procedures.md": [
+    "v11/docs/client/nextjs/pages-router/aborting-procedure-calls.md"
+  ],
+  "docs/client/nextjs/pages-router/server-side-helpers.md": [
+    "v11/docs/client/nextjs/pages-router/server-side-helpers.md"
+  ],
+  "docs/client/nextjs/pages-router/setup.mdx": [
+    "v11/docs/client/nextjs/pages-router/setup.md"
+  ],
+  "docs/client/nextjs/pages-router/ssg.md": [
+    "v11/docs/client/nextjs/pages-router/ssg.md"
+  ],
+  "docs/client/nextjs/pages-router/ssr.md": [
+    "v11/docs/client/nextjs/pages-router/ssr.md"
+  ],
+  "docs/client/nextjs/starter-projects.md": [
+    "v11/docs/client/nextjs/starter-projects.md"
+  ],
+  "docs/client/openapi.md": [
+    "v11/docs/openapi.md"
+  ],
+  "docs/client/overview.md": [
+    "v11/docs/client.md"
+  ],
+  "docs/client/react/aborting-procedures.md": [
+    "v11/docs/client/react/aborting-procedure-calls.md"
+  ],
+  "docs/client/react/createTRPCQueryUtils.md": [
+    "v11/docs/client/react/createTRPCQueryUtils.md"
+  ],
+  "docs/client/react/disabling-queries.md": [
+    "v11/docs/client/react/disabling-queries.md"
+  ],
+  "docs/client/react/getQueryKey.md": [
+    "v11/docs/client/react/getQueryKey.md"
+  ],
+  "docs/client/react/infer-types.md": [
+    "v11/docs/client/react/infer-types.md"
+  ],
+  "docs/client/react/overview.mdx": [
+    "v11/docs/client/react.md"
+  ],
+  "docs/client/react/server-components.mdx": [
+    "v11/docs/client/react/server-components.md"
+  ],
+  "docs/client/react/setup.mdx": [
+    "v11/docs/client/react/setup.md"
+  ],
+  "docs/client/react/suspense.md": [
+    "v11/docs/client/react/suspense.md"
+  ],
+  "docs/client/react/useInfiniteQuery.md": [
+    "v11/docs/client/react/useInfiniteQuery.md"
+  ],
+  "docs/client/react/useMutation.md": [
+    "v11/docs/client/react/useMutation.md"
+  ],
+  "docs/client/react/useQueries.md": [
+    "v11/docs/client/react/useQueries.md"
+  ],
+  "docs/client/react/useQuery.md": [
+    "v11/docs/client/react/useQuery.md"
+  ],
+  "docs/client/react/useSubscription.md": [
+    "v11/docs/client/react/useSubscription.md"
+  ],
+  "docs/client/react/useUtils.mdx": [
+    "v11/docs/client/react/useUtils.md"
+  ],
+  "docs/client/tanstack-react-query/migrating.mdx": [
+    "v11/docs/client/tanstack-react-query/migrating.md"
+  ],
+  "docs/client/tanstack-react-query/overview.md": [
+    "v11/docs/client/tanstack-react-query.md"
+  ],
+  "docs/client/tanstack-react-query/server-components.mdx": [
+    "v11/docs/client/tanstack-react-query/server-components.md"
+  ],
+  "docs/client/tanstack-react-query/setup.mdx": [
+    "v11/docs/client/tanstack-react-query/setup.md"
+  ],
+  "docs/client/tanstack-react-query/usage.mdx": [
+    "v11/docs/client/tanstack-react-query/usage.md"
+  ],
+  "docs/client/vanilla/aborting-procedures.md": [
+    "v11/docs/client/vanilla/aborting-procedure-calls.md"
+  ],
+  "docs/client/vanilla/error-handling.md": [
+    "v11/docs/client/vanilla/error-handling.md"
+  ],
+  "docs/client/vanilla/infer-types.md": [
+    "v11/docs/client/vanilla/infer-types.md"
+  ],
+  "docs/client/vanilla/overview.md": [
+    "v11/docs/client/vanilla.md"
+  ],
+  "docs/client/vanilla/setup.mdx": [
+    "v11/docs/client/vanilla/setup.md"
+  ],
+  "docs/community/awesome-trpc.mdx": [
+    "v11/docs/community/awesome-trpc.md"
+  ],
+  "docs/community/contributing.mdx": [
+    "v11/docs/community/contributing.md"
+  ],
+  "docs/community/love.mdx": [
+    "v11/docs/community/love.md"
+  ],
+  "docs/community/sponsors.mdx": [
+    "v11/docs/community/sponsors.md"
+  ],
+  "docs/further/faq.mdx": [
+    "v11/docs/faq.md"
+  ],
+  "docs/further/further-reading.md": [
+    "v11/docs/further-reading.md"
+  ],
+  "docs/further/rpc.md": [
+    "v11/docs/rpc.md"
+  ],
+  "docs/landing-intro/Step1.md": [
+    "v11/home/step-1.md"
+  ],
+  "docs/landing-intro/Step2.md": [
+    "v11/home/step-2.md"
+  ],
+  "docs/landing-intro/Step3.md": [
+    "v11/home/step-3.md"
+  ],
+  "docs/main/concepts.mdx": [
+    "v11/docs/concepts.md"
+  ],
+  "docs/main/example-apps.mdx": [
+    "v11/docs/example-apps.md"
+  ],
+  "docs/main/introduction.mdx": [
+    "v11/docs/introduction.md"
+  ],
+  "docs/main/quickstart.mdx": [
+    "v11/docs/quickstart.md"
+  ],
+  "docs/main/videos-and-community-resources.mdx": [
+    "v11/docs/videos-and-community-resources.md"
+  ],
+  "docs/migration/migrate-from-v10-to-v11.mdx": [
+    "v11/docs/migrate-from-v10-to-v11.md"
+  ],
+  "docs/partials/_import-approuter.mdx": [
+    "v11/docs/client/react/setup.md",
+    "v11/docs/client/tanstack-react-query/setup.md",
+    "v11/docs/client/vanilla/setup.md"
+  ],
+  "docs/server/adapters-intro.md": [
+    "v11/docs/server/adapters.md"
+  ],
+  "docs/server/adapters/aws-lambda.md": [
+    "v11/docs/server/adapters/aws-lambda.md"
+  ],
+  "docs/server/adapters/express.md": [
+    "v11/docs/server/adapters/express.md"
+  ],
+  "docs/server/adapters/fastify.md": [
+    "v11/docs/server/adapters/fastify.md"
+  ],
+  "docs/server/adapters/fetch.mdx": [
+    "v11/docs/server/adapters/fetch.md"
+  ],
+  "docs/server/adapters/nextjs.md": [
+    "v11/docs/server/adapters/nextjs.md"
+  ],
+  "docs/server/adapters/standalone.md": [
+    "v11/docs/server/adapters/standalone.md"
+  ],
+  "docs/server/authorization.md": [
+    "v11/docs/server/authorization.md"
+  ],
+  "docs/server/caching.md": [
+    "v11/docs/server/caching.md"
+  ],
+  "docs/server/context.md": [
+    "v11/docs/server/context.md"
+  ],
+  "docs/server/data-transformers.md": [
+    "v11/docs/server/data-transformers.md"
+  ],
+  "docs/server/error-formatting.md": [
+    "v11/docs/server/error-formatting.md"
+  ],
+  "docs/server/error-handling.md": [
+    "v11/docs/server/error-handling.md"
+  ],
+  "docs/server/merging-routers.md": [
+    "v11/docs/server/merging-routers.md"
+  ],
+  "docs/server/metadata.md": [
+    "v11/docs/server/metadata.md"
+  ],
+  "docs/server/middlewares.md": [
+    "v11/docs/server/middlewares.md"
+  ],
+  "docs/server/non-json-content-types.md": [
+    "v11/docs/server/non-json-content-types.md"
+  ],
+  "docs/server/overview.md": [
+    "v11/docs/server/overview.md"
+  ],
+  "docs/server/procedures.md": [
+    "v11/docs/server/procedures.md"
+  ],
+  "docs/server/routers.md": [
+    "v11/docs/server/routers.md"
+  ],
+  "docs/server/server-side-calls.md": [
+    "v11/docs/server/server-side-calls.md"
+  ],
+  "docs/server/subscriptions.md": [
+    "v11/docs/server/subscriptions.md"
+  ],
+  "docs/server/validators.md": [
+    "v11/docs/server/validators.md"
+  ],
+  "docs/server/websockets.md": [
+    "v11/docs/server/websockets.md"
+  ],
+  "docs/test-sub.md": "A Twoslash test page no sidebar lists",
+  "src/components/ConceptsChart.tsx": [
+    "v10/docs/concepts.md",
+    "v11/docs/concepts.md"
+  ],
+  "src/components/GithubSponsorButton.tsx": [
+    "blog/announcing-trpc-10.md",
+    "blog/announcing-trpc-v11.md",
+    "v10/docs/community/contributing.md",
+    "v10/docs/community/sponsors.md",
+    "v11/docs/community/contributing.md",
+    "v11/docs/community/sponsors.md",
+    "v9/docs/contributing.md",
+    "v9/docs/sponsors.md"
+  ],
+  "static/img/links-diagram.svg": [
+    "public/v10/img/links-diagram.svg",
+    "public/v11/img/links-diagram.svg"
+  ],
+  "static/img/logo-text-white.svg": [
+    "public/v9/img/logo-text-white.svg"
+  ],
+  "static/img/split-link-diagram.svg": [
+    "public/v10/img/split-link-diagram.svg",
+    "public/v11/img/split-link-diagram.svg"
+  ],
+  "unversioned/_contributing.mdx": [
+    "v10/docs/community/contributing.md",
+    "v11/docs/community/contributing.md",
+    "v9/docs/contributing.md"
+  ],
+  "unversioned/_love.mdx": [
+    "v10/docs/community/love.md",
+    "v11/docs/community/love.md",
+    "v9/docs/love.md"
+  ],
+  "unversioned/_sponsors.mdx": [
+    "v10/docs/community/sponsors.md",
+    "v11/docs/community/sponsors.md",
+    "v9/docs/sponsors.md"
+  ],
+  "versioned_docs/version-10.x/.gitignore": "Ignores the generated API reference, which links to trpc.io",
+  "versioned_docs/version-10.x/client/cors.md": [
+    "v10/docs/client/cors.md"
+  ],
+  "versioned_docs/version-10.x/client/headers.md": [
+    "v10/docs/client/headers.md"
+  ],
+  "versioned_docs/version-10.x/client/links/httpBatchLink.md": [
+    "v10/docs/client/links/httpBatchLink.md"
+  ],
+  "versioned_docs/version-10.x/client/links/httpBatchStreamLink.md": [
+    "v10/docs/client/links/httpBatchStreamLink.md"
+  ],
+  "versioned_docs/version-10.x/client/links/httpLink.md": [
+    "v10/docs/client/links/httpLink.md"
+  ],
+  "versioned_docs/version-10.x/client/links/loggerLink.md": [
+    "v10/docs/client/links/loggerLink.md"
+  ],
+  "versioned_docs/version-10.x/client/links/overview.md": [
+    "v10/docs/client/links.md"
+  ],
+  "versioned_docs/version-10.x/client/links/splitLink.mdx": [
+    "v10/docs/client/links/splitLink.md"
+  ],
+  "versioned_docs/version-10.x/client/links/wsLink.md": [
+    "v10/docs/client/links/wsLink.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/aborting-procedures.md": [
+    "v10/docs/client/nextjs/aborting-procedure-calls.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/introduction.mdx": [
+    "v10/docs/client/nextjs.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/server-side-helpers.md": [
+    "v10/docs/client/nextjs/server-side-helpers.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/setup.mdx": [
+    "v10/docs/client/nextjs/setup.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/ssg.md": [
+    "v10/docs/client/nextjs/ssg.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/ssr.md": [
+    "v10/docs/client/nextjs/ssr.md"
+  ],
+  "versioned_docs/version-10.x/client/nextjs/starter-projects.md": [
+    "v10/docs/client/nextjs/starter-projects.md"
+  ],
+  "versioned_docs/version-10.x/client/overview.md": [
+    "v10/docs/client.md"
+  ],
+  "versioned_docs/version-10.x/client/react/aborting-procedures.md": [
+    "v10/docs/client/react/aborting-procedure-calls.md"
+  ],
+  "versioned_docs/version-10.x/client/react/getQueryKey.md": [
+    "v10/docs/client/react/getQueryKey.md"
+  ],
+  "versioned_docs/version-10.x/client/react/infer-types.md": [
+    "v10/docs/client/react/infer-types.md"
+  ],
+  "versioned_docs/version-10.x/client/react/introduction.mdx": [
+    "v10/docs/client/react.md"
+  ],
+  "versioned_docs/version-10.x/client/react/setup.mdx": [
+    "v10/docs/client/react/setup.md"
+  ],
+  "versioned_docs/version-10.x/client/react/suspense.md": [
+    "v10/docs/client/react/suspense.md"
+  ],
+  "versioned_docs/version-10.x/client/react/useInfiniteQuery.md": [
+    "v10/docs/client/react/useInfiniteQuery.md"
+  ],
+  "versioned_docs/version-10.x/client/react/useMutation.md": [
+    "v10/docs/client/react/useMutation.md"
+  ],
+  "versioned_docs/version-10.x/client/react/useQueries.md": [
+    "v10/docs/client/react/useQueries.md"
+  ],
+  "versioned_docs/version-10.x/client/react/useQuery.md": [
+    "v10/docs/client/react/useQuery.md"
+  ],
+  "versioned_docs/version-10.x/client/react/useUtils.mdx": [
+    "v10/docs/client/react/useUtils.md"
+  ],
+  "versioned_docs/version-10.x/client/vanilla/aborting-procedures.md": [
+    "v10/docs/client/vanilla/aborting-procedure-calls.md"
+  ],
+  "versioned_docs/version-10.x/client/vanilla/infer-types.md": [
+    "v10/docs/client/vanilla/infer-types.md"
+  ],
+  "versioned_docs/version-10.x/client/vanilla/introduction.md": [
+    "v10/docs/client/vanilla.md"
+  ],
+  "versioned_docs/version-10.x/client/vanilla/setup.mdx": [
+    "v10/docs/client/vanilla/setup.md"
+  ],
+  "versioned_docs/version-10.x/community/awesome-trpc.mdx": [
+    "v10/docs/community/awesome-trpc.md"
+  ],
+  "versioned_docs/version-10.x/community/contributing.mdx": [
+    "v10/docs/community/contributing.md"
+  ],
+  "versioned_docs/version-10.x/community/love.mdx": [
+    "v10/docs/community/love.md"
+  ],
+  "versioned_docs/version-10.x/community/sponsors.mdx": [
+    "v10/docs/community/sponsors.md"
+  ],
+  "versioned_docs/version-10.x/further/faq.mdx": [
+    "v10/docs/faq.md"
+  ],
+  "versioned_docs/version-10.x/further/further-reading.md": [
+    "v10/docs/further-reading.md"
+  ],
+  "versioned_docs/version-10.x/further/rpc.md": [
+    "v10/docs/rpc.md"
+  ],
+  "versioned_docs/version-10.x/further/subscriptions.md": [
+    "v10/docs/subscriptions.md"
+  ],
+  "versioned_docs/version-10.x/landing-intro/Step1.md": "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
+  "versioned_docs/version-10.x/landing-intro/Step2.md": "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
+  "versioned_docs/version-10.x/landing-intro/Step3.md": "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
+  "versioned_docs/version-10.x/main/concepts.mdx": [
+    "v10/docs/concepts.md"
+  ],
+  "versioned_docs/version-10.x/main/example-apps.mdx": [
+    "v10/docs/example-apps.md"
+  ],
+  "versioned_docs/version-10.x/main/getting-started.mdx": [
+    "v10/docs/getting-started.md"
+  ],
+  "versioned_docs/version-10.x/main/introduction.mdx": [
+    "v10/docs/introduction.md"
+  ],
+  "versioned_docs/version-10.x/main/quickstart.mdx": [
+    "v10/docs/quickstart.md"
+  ],
+  "versioned_docs/version-10.x/main/videos-and-community-resources.mdx": [
+    "v10/docs/videos-and-community-resources.md"
+  ],
+  "versioned_docs/version-10.x/migration/migrate-from-v9-to-v10.mdx": [
+    "v10/docs/migrate-from-v9-to-v10.md"
+  ],
+  "versioned_docs/version-10.x/partials/_import-approuter.mdx": [
+    "v10/docs/client/react/setup.md",
+    "v10/docs/client/vanilla/setup.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters-intro.md": [
+    "v10/docs/server/adapters.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters/aws-lambda.md": [
+    "v10/docs/server/adapters/aws-lambda.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters/express.md": [
+    "v10/docs/server/adapters/express.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters/fastify.md": [
+    "v10/docs/server/adapters/fastify.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters/fetch.mdx": [
+    "v10/docs/server/adapters/fetch.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters/nextjs.md": [
+    "v10/docs/server/adapters/nextjs.md"
+  ],
+  "versioned_docs/version-10.x/server/adapters/standalone.md": [
+    "v10/docs/server/adapters/standalone.md"
+  ],
+  "versioned_docs/version-10.x/server/authorization.md": [
+    "v10/docs/server/authorization.md"
+  ],
+  "versioned_docs/version-10.x/server/caching.md": [
+    "v10/docs/server/caching.md"
+  ],
+  "versioned_docs/version-10.x/server/context.md": [
+    "v10/docs/server/context.md"
+  ],
+  "versioned_docs/version-10.x/server/data-transformers.md": [
+    "v10/docs/server/data-transformers.md"
+  ],
+  "versioned_docs/version-10.x/server/error-formatting.md": [
+    "v10/docs/server/error-formatting.md"
+  ],
+  "versioned_docs/version-10.x/server/error-handling.md": [
+    "v10/docs/server/error-handling.md"
+  ],
+  "versioned_docs/version-10.x/server/merging-routers.md": [
+    "v10/docs/server/merging-routers.md"
+  ],
+  "versioned_docs/version-10.x/server/metadata.md": [
+    "v10/docs/server/metadata.md"
+  ],
+  "versioned_docs/version-10.x/server/middlewares.md": [
+    "v10/docs/server/middlewares.md"
+  ],
+  "versioned_docs/version-10.x/server/procedures.md": [
+    "v10/docs/server/procedures.md"
+  ],
+  "versioned_docs/version-10.x/server/routers.md": [
+    "v10/docs/server/routers.md"
+  ],
+  "versioned_docs/version-10.x/server/server-side-calls.md": [
+    "v10/docs/server/server-side-calls.md"
+  ],
+  "versioned_docs/version-10.x/server/validators.md": [
+    "v10/docs/server/validators.md"
+  ],
+  "versioned_docs/version-9.x/client/cors.md": [
+    "v9/docs/cors.md"
+  ],
+  "versioned_docs/version-9.x/client/header.md": [
+    "v9/docs/header.md"
+  ],
+  "versioned_docs/version-9.x/client/links.md": [
+    "v9/docs/links.md"
+  ],
+  "versioned_docs/version-9.x/client/vanilla.md": [
+    "v9/docs/vanilla.md"
+  ],
+  "versioned_docs/version-9.x/further/further-reading.md": [
+    "v9/docs/further-reading.md"
+  ],
+  "versioned_docs/version-9.x/further/rpc.md": [
+    "v9/docs/rpc.md"
+  ],
+  "versioned_docs/version-9.x/further/subscriptions.md": [
+    "v9/docs/subscriptions.md"
+  ],
+  "versioned_docs/version-9.x/main/awesome-trpc.mdx": [
+    "v9/docs/awesome-trpc.md"
+  ],
+  "versioned_docs/version-9.x/main/contributing.mdx": [
+    "v9/docs/contributing.md"
+  ],
+  "versioned_docs/version-9.x/main/example-apps.md": [
+    "v9/docs/example-apps.md"
+  ],
+  "versioned_docs/version-9.x/main/introduction.mdx": [
+    "v9/docs/introduction.md"
+  ],
+  "versioned_docs/version-9.x/main/love.mdx": [
+    "v9/docs/love.md"
+  ],
+  "versioned_docs/version-9.x/main/quickstart.mdx": [
+    "v9/docs/quickstart.md"
+  ],
+  "versioned_docs/version-9.x/main/sponsors.mdx": [
+    "v9/docs/sponsors.md"
+  ],
+  "versioned_docs/version-9.x/nextjs/introduction.md": [
+    "v9/docs/nextjs.md"
+  ],
+  "versioned_docs/version-9.x/nextjs/ssg-helpers.md": [
+    "v9/docs/ssg-helpers.md"
+  ],
+  "versioned_docs/version-9.x/nextjs/ssg.md": [
+    "v9/docs/ssg.md"
+  ],
+  "versioned_docs/version-9.x/nextjs/ssr.md": [
+    "v9/docs/ssr.md"
+  ],
+  "versioned_docs/version-9.x/nextjs/starter-projects.md": [
+    "v9/docs/starter-projects.md"
+  ],
+  "versioned_docs/version-9.x/reactjs/introduction.md": [
+    "v9/docs/react.md"
+  ],
+  "versioned_docs/version-9.x/reactjs/invalidateQueries.md": [
+    "v9/docs/invalidateQueries.md"
+  ],
+  "versioned_docs/version-9.x/reactjs/useInfiniteQuery.md": [
+    "v9/docs/useInfiniteQuery.md"
+  ],
+  "versioned_docs/version-9.x/reactjs/useMutation.md": [
+    "v9/docs/react-mutations.md"
+  ],
+  "versioned_docs/version-9.x/reactjs/useQuery.md": [
+    "v9/docs/react-queries.md"
+  ],
+  "versioned_docs/version-9.x/server/authorization.md": [
+    "v9/docs/authorization.md"
+  ],
+  "versioned_docs/version-9.x/server/aws-lambda.md": [
+    "v9/docs/aws-lambda.md"
+  ],
+  "versioned_docs/version-9.x/server/caching.md": [
+    "v9/docs/caching.md"
+  ],
+  "versioned_docs/version-9.x/server/context.md": [
+    "v9/docs/context.md"
+  ],
+  "versioned_docs/version-9.x/server/data-transformers.md": [
+    "v9/docs/data-transformers.md"
+  ],
+  "versioned_docs/version-9.x/server/error-formatting.md": [
+    "v9/docs/error-formatting.md"
+  ],
+  "versioned_docs/version-9.x/server/error-handling.md": [
+    "v9/docs/error-handling.md"
+  ],
+  "versioned_docs/version-9.x/server/express.md": [
+    "v9/docs/express.md"
+  ],
+  "versioned_docs/version-9.x/server/fastify.md": [
+    "v9/docs/fastify.md"
+  ],
+  "versioned_docs/version-9.x/server/infer-types.md": [
+    "v9/docs/infer-types.md"
+  ],
+  "versioned_docs/version-9.x/server/merging-routers.md": [
+    "v9/docs/merging-routers.md"
+  ],
+  "versioned_docs/version-9.x/server/metadata.md": [
+    "v9/docs/metadata.md"
+  ],
+  "versioned_docs/version-9.x/server/middlewares.md": [
+    "v9/docs/middlewares.md"
+  ],
+  "versioned_docs/version-9.x/server/output-validation.md": [
+    "v9/docs/output-validation.md"
+  ],
+  "versioned_docs/version-9.x/server/router.md": [
+    "v9/docs/router.md"
+  ]
+}
