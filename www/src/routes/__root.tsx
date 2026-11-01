@@ -2,10 +2,8 @@
 import {
   createRootRoute,
   HeadContent,
-  Outlet,
   retainSearchParams,
   Scripts,
-  useSearch,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
@@ -13,19 +11,9 @@ import { SiteFooter } from '~/components/site-footer.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
 import { ThemeProvider } from '~/components/theme-provider.tsx';
-import {
-  UnpublishedBanner,
-  UnpublishedCopyWarning,
-} from '~/components/unpublished.tsx';
-import { useRememberHomeVersion } from '~/content/docs.ts';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
-import {
-  homeVersionOf,
-  homeVersionScript,
-  v12Attribute,
-} from '~/home-version.ts';
 import { indexable } from '~/seo.ts';
-import { blog, site, v12 } from '~/site.ts';
+import { blog, site } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRoute({
@@ -83,36 +71,17 @@ export const Route = createRootRoute({
         ? []
         : [{ content: 'noindex', name: 'robots' }]),
     ],
-    scripts: [{ children: themeScript }, { children: homeVersionScript }],
+    scripts: [{ children: themeScript }],
   }),
-  component: RootComponent,
   // Every navigation keeps `?flags=`, so the flags stay on page to page.
   search: { middlewares: [retainSearchParams<FlagSearch>(['flags'])] },
   shellComponent: RootDocument,
   validateSearch: validateFlagSearch,
 });
 
-function RootComponent() {
-  useRememberHomeVersion();
-  return <Outlet />;
-}
-
 function RootDocument(props: { readonly children: ReactNode }) {
-  // `homeVersionScript` sets it again before the first paint, for the hosts
-  // and remembered versions that open `/` on v12 without `?version=`.
-  const homeVersion = useSearch({
-    select: (search) => homeVersionOf({ version: search.version }),
-    strict: false,
-  });
   return (
-    <html
-      data-home-version={homeVersion}
-      // While v12 is hidden, homeVersionScript sets it for a session that
-      // has been to v12.
-      {...(v12.hidden ? {} : { [v12Attribute]: '' })}
-      lang="en"
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
@@ -124,13 +93,11 @@ function RootDocument(props: { readonly children: ReactNode }) {
           >
             Skip to content
           </a>
-          <UnpublishedBanner />
           <SiteHeader />
           <div className="flex-1" id="content">
             {props.children}
           </div>
           <SiteFooter />
-          <UnpublishedCopyWarning />
         </ThemeProvider>
         <Scripts />
       </body>

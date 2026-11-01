@@ -17,7 +17,6 @@ import {
 import { useState } from 'react';
 
 import { absoluteUrl } from '~/seo.ts';
-import { v12 } from '~/site.ts';
 
 interface PageLink {
   readonly external: boolean;
@@ -31,8 +30,11 @@ interface PageLink {
  * start a chat that reads it. On a phone the links don't fit beside the copy
  * button, so they're in a menu there.
  */
-export function PageActions(props: { readonly slug: string }) {
-  const markdownPath = `${v12.basePath}/${props.slug}.md`;
+export function PageActions(props: {
+  readonly basePath: string;
+  readonly slug: string;
+}) {
+  const markdownPath = `${props.basePath}/${props.slug}.md`;
   const prompt = `Read ${absoluteUrl(markdownPath)} so I can ask questions about it.`;
   const [status, setStatus] = useState<'Copied' | 'Copy failed' | 'Copy page'>(
     'Copy page',

@@ -20,17 +20,11 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
 import { Route as V10DocsRouteImport } from './routes/v10.docs'
-import { Route as V12DocsRouteImport } from './routes/v12.docs'
 import { Route as V9DocsRouteImport } from './routes/v9.docs'
 import { Route as V10DocsIndexRouteImport } from './routes/v10.docs.index'
 import { Route as V10DocsSplatRouteImport } from './routes/v10.docs.$'
-import { Route as V12DecisionsIndexRouteImport } from './routes/v12.decisions.index'
-import { Route as V12DecisionsSlugRouteImport } from './routes/v12.decisions.$slug'
-import { Route as V12DocsIndexRouteImport } from './routes/v12.docs.index'
-import { Route as V12DocsSplatRouteImport } from './routes/v12.docs.$'
 import { Route as V9DocsIndexRouteImport } from './routes/v9.docs.index'
 import { Route as V9DocsSplatRouteImport } from './routes/v9.docs.$'
-import { Route as V12DecisionsOpenSlugRouteImport } from './routes/v12.decisions.open.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -87,11 +81,6 @@ const V10DocsRoute = V10DocsRouteImport.update({
   path: '/v10/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const V12DocsRoute = V12DocsRouteImport.update({
-  id: '/v12/docs',
-  path: '/v12/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const V9DocsRoute = V9DocsRouteImport.update({
   id: '/v9/docs',
   path: '/v9/docs',
@@ -107,26 +96,6 @@ const V10DocsSplatRoute = V10DocsSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => V10DocsRoute,
 } as any)
-const V12DecisionsIndexRoute = V12DecisionsIndexRouteImport.update({
-  id: '/v12/decisions/',
-  path: '/v12/decisions/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const V12DecisionsSlugRoute = V12DecisionsSlugRouteImport.update({
-  id: '/v12/decisions/$slug',
-  path: '/v12/decisions/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const V12DocsIndexRoute = V12DocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => V12DocsRoute,
-} as any)
-const V12DocsSplatRoute = V12DocsSplatRouteImport.update({
-  id: '/$',
-  path: '/$',
-  getParentRoute: () => V12DocsRoute,
-} as any)
 const V9DocsIndexRoute = V9DocsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -136,11 +105,6 @@ const V9DocsSplatRoute = V9DocsSplatRouteImport.update({
   id: '/$',
   path: '/$',
   getParentRoute: () => V9DocsRoute,
-} as any)
-const V12DecisionsOpenSlugRoute = V12DecisionsOpenSlugRouteImport.update({
-  id: '/v12/decisions/open/$slug',
-  path: '/v12/decisions/open/$slug',
-  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -153,19 +117,13 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
-  '/v12/docs': typeof V12DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
-  '/v12/docs/$': typeof V12DocsSplatRoute
   '/v9/docs/$': typeof V9DocsSplatRoute
   '/v10/docs/': typeof V10DocsIndexRoute
-  '/v12/decisions/': typeof V12DecisionsIndexRoute
-  '/v12/docs/': typeof V12DocsIndexRoute
   '/v9/docs/': typeof V9DocsIndexRoute
-  '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -178,14 +136,9 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/docs': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
-  '/v12/docs/$': typeof V12DocsSplatRoute
   '/v9/docs/$': typeof V9DocsSplatRoute
   '/v10/docs': typeof V10DocsIndexRoute
-  '/v12/decisions': typeof V12DecisionsIndexRoute
-  '/v12/docs': typeof V12DocsIndexRoute
   '/v9/docs': typeof V9DocsIndexRoute
-  '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -198,19 +151,13 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
-  '/v12/docs': typeof V12DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
-  '/v12/docs/$': typeof V12DocsSplatRoute
   '/v9/docs/$': typeof V9DocsSplatRoute
   '/v10/docs/': typeof V10DocsIndexRoute
-  '/v12/decisions/': typeof V12DecisionsIndexRoute
-  '/v12/docs/': typeof V12DocsIndexRoute
   '/v9/docs/': typeof V9DocsIndexRoute
-  '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -224,19 +171,13 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/docs/$'
     | '/v10/docs'
-    | '/v12/docs'
     | '/v9/docs'
     | '/blog/'
     | '/docs/'
     | '/v10/docs/$'
-    | '/v12/decisions/$slug'
-    | '/v12/docs/$'
     | '/v9/docs/$'
     | '/v10/docs/'
-    | '/v12/decisions/'
-    | '/v12/docs/'
     | '/v9/docs/'
-    | '/v12/decisions/open/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -249,14 +190,9 @@ export interface FileRouteTypes {
     | '/blog'
     | '/docs'
     | '/v10/docs/$'
-    | '/v12/decisions/$slug'
-    | '/v12/docs/$'
     | '/v9/docs/$'
     | '/v10/docs'
-    | '/v12/decisions'
-    | '/v12/docs'
     | '/v9/docs'
-    | '/v12/decisions/open/$slug'
   id:
     | '__root__'
     | '/'
@@ -268,19 +204,13 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/docs/$'
     | '/v10/docs'
-    | '/v12/docs'
     | '/v9/docs'
     | '/blog/'
     | '/docs/'
     | '/v10/docs/$'
-    | '/v12/decisions/$slug'
-    | '/v12/docs/$'
     | '/v9/docs/$'
     | '/v10/docs/'
-    | '/v12/decisions/'
-    | '/v12/docs/'
     | '/v9/docs/'
-    | '/v12/decisions/open/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -292,12 +222,8 @@ export interface RootRouteChildren {
   SponsorRoute: typeof SponsorRoute
   BlogSlugRoute: typeof BlogSlugRoute
   V10DocsRoute: typeof V10DocsRouteWithChildren
-  V12DocsRoute: typeof V12DocsRouteWithChildren
   V9DocsRoute: typeof V9DocsRouteWithChildren
   BlogIndexRoute: typeof BlogIndexRoute
-  V12DecisionsSlugRoute: typeof V12DecisionsSlugRoute
-  V12DecisionsIndexRoute: typeof V12DecisionsIndexRoute
-  V12DecisionsOpenSlugRoute: typeof V12DecisionsOpenSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -379,13 +305,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V10DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/v12/docs': {
-      id: '/v12/docs'
-      path: '/v12/docs'
-      fullPath: '/v12/docs'
-      preLoaderRoute: typeof V12DocsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/v9/docs': {
       id: '/v9/docs'
       path: '/v9/docs'
@@ -407,34 +326,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V10DocsSplatRouteImport
       parentRoute: typeof V10DocsRoute
     }
-    '/v12/decisions/': {
-      id: '/v12/decisions/'
-      path: '/v12/decisions'
-      fullPath: '/v12/decisions/'
-      preLoaderRoute: typeof V12DecisionsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/v12/decisions/$slug': {
-      id: '/v12/decisions/$slug'
-      path: '/v12/decisions/$slug'
-      fullPath: '/v12/decisions/$slug'
-      preLoaderRoute: typeof V12DecisionsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/v12/docs/': {
-      id: '/v12/docs/'
-      path: '/'
-      fullPath: '/v12/docs/'
-      preLoaderRoute: typeof V12DocsIndexRouteImport
-      parentRoute: typeof V12DocsRoute
-    }
-    '/v12/docs/$': {
-      id: '/v12/docs/$'
-      path: '/$'
-      fullPath: '/v12/docs/$'
-      preLoaderRoute: typeof V12DocsSplatRouteImport
-      parentRoute: typeof V12DocsRoute
-    }
     '/v9/docs/': {
       id: '/v9/docs/'
       path: '/'
@@ -448,13 +339,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/v9/docs/$'
       preLoaderRoute: typeof V9DocsSplatRouteImport
       parentRoute: typeof V9DocsRoute
-    }
-    '/v12/decisions/open/$slug': {
-      id: '/v12/decisions/open/$slug'
-      path: '/v12/decisions/open/$slug'
-      fullPath: '/v12/decisions/open/$slug'
-      preLoaderRoute: typeof V12DecisionsOpenSlugRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -484,19 +368,6 @@ const V10DocsRouteChildren: V10DocsRouteChildren = {
 const V10DocsRouteWithChildren =
   V10DocsRoute._addFileChildren(V10DocsRouteChildren)
 
-interface V12DocsRouteChildren {
-  V12DocsSplatRoute: typeof V12DocsSplatRoute
-  V12DocsIndexRoute: typeof V12DocsIndexRoute
-}
-
-const V12DocsRouteChildren: V12DocsRouteChildren = {
-  V12DocsSplatRoute: V12DocsSplatRoute,
-  V12DocsIndexRoute: V12DocsIndexRoute,
-}
-
-const V12DocsRouteWithChildren =
-  V12DocsRoute._addFileChildren(V12DocsRouteChildren)
-
 interface V9DocsRouteChildren {
   V9DocsSplatRoute: typeof V9DocsSplatRoute
   V9DocsIndexRoute: typeof V9DocsIndexRoute
@@ -519,12 +390,8 @@ const rootRouteChildren: RootRouteChildren = {
   SponsorRoute: SponsorRoute,
   BlogSlugRoute: BlogSlugRoute,
   V10DocsRoute: V10DocsRouteWithChildren,
-  V12DocsRoute: V12DocsRouteWithChildren,
   V9DocsRoute: V9DocsRouteWithChildren,
   BlogIndexRoute: BlogIndexRoute,
-  V12DecisionsSlugRoute: V12DecisionsSlugRoute,
-  V12DecisionsIndexRoute: V12DecisionsIndexRoute,
-  V12DecisionsOpenSlugRoute: V12DecisionsOpenSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -164,26 +164,6 @@ export const retiredPages: Readonly<Record<string, string>> = {
 };
 
 /**
- * v12 pages that moved, and where they are now. The old URL redirects to
- * the new one, and its markdown's (`.md`) to the new one's, where the new
- * page has one (the decisions' pages don't).
- */
-export const movedPages: Readonly<Record<string, string>> = {
-  '/v12/decisions/replaceable-serializers':
-    '/v12/decisions/replaceable-transformers',
-  '/v12/decisions/serializer': '/v12/decisions/progressive-json',
-  '/v12/docs/server/serializers': '/v12/docs/server/transformers',
-};
-
-/**
- * What trpc.io serves that this site has no copy of at all: v11's API
- * reference, which trpc.io's own build generates. It redirects to trpc.io's
- * own site (`oldSite.url` in `src/site.ts`), which has to be somewhere
- * else once this site is trpc.io.
- */
-export const onTrpcIo = { prefixes: ['/docs/typedoc'] } as const;
-
-/**
  * Every URL trpc.io serves a page at, as this site's copies have them
  * (`/v10/docs/x` was `/docs/v10/x`), and each copied image's.
  */
@@ -306,16 +286,7 @@ export function oldRedirects(opts: {
       status: followed.permanent ? 308 : 307,
     });
   }
-  const moved = Object.entries(movedPages).flatMap(([source, location]) => [
-    [source, location] as const,
-    ...(opts.served.has(`${location}.md`)
-      ? [[`${source}.md`, `${location}.md`] as const]
-      : []),
-  ]);
-  for (const [source, location] of [
-    ...Object.entries(retiredPages),
-    ...moved,
-  ]) {
+  for (const [source, location] of Object.entries(retiredPages)) {
     if (sources.includes(source) || opts.served.has(source)) {
       continue;
     }
@@ -405,25 +376,6 @@ export function redirectRoutes(
   return [...grouped, ...single];
 }
 
-/**
- * Routes to trpc.io's own site, at `oldSiteUrl`, for what only it has
- * (`onTrpcIo`), or none when it's nowhere (`routeProblems` fails then).
- */
-export function onTrpcIoRoutes(
-  oldSiteUrl: string | undefined,
-): ReadonlyArray<VercelRoute> {
-  if (oldSiteUrl === undefined) {
-    return [];
-  }
-  return [
-    {
-      headers: { Location: `${new URL(oldSiteUrl).origin}$1` },
-      src: `^((?:${onTrpcIo.prefixes.map(escapeRegex).join('|')})(?:/.*)?)$`,
-      status: 307,
-    },
-  ];
-}
-
 /** How Vercel answers a `GET`: a redirect, a static file, or a 404. */
 export type Response =
   | { readonly kind: 'file'; readonly path: string }
@@ -482,16 +434,12 @@ export function respond(
 
 /**
  * What's wrong with `routes`: an old URL that doesn't redirect once to
- * where `redirects` says, onto a file; a served file the routes hide; or
- * one of `onTrpcIo` that doesn't go to trpc.io's own site, at
- * `oldSiteUrl`, which can't be this site.
+ * where `redirects` says, onto a file, or a served file the routes hide.
  */
 export function routeProblems(opts: {
-  readonly oldSiteUrl: string | undefined;
   readonly redirects: ReadonlyArray<OldRedirect>;
   readonly routes: ReadonlyArray<VercelRoute>;
   readonly served: ReadonlySet<string>;
-  readonly siteUrl: string;
 }): ReadonlyArray<string> {
   const problems: Array<string> = [];
   for (const redirect of opts.redirects) {
@@ -509,20 +457,6 @@ export function routeProblems(opts: {
   for (const pathname of opts.served) {
     if (respond(opts.routes, opts.served, pathname).kind !== 'file') {
       problems.push(`${pathname}: a route hides the file`);
-    }
-  }
-  const oldSite =
-    opts.oldSiteUrl === undefined ? undefined : new URL(opts.oldSiteUrl).origin;
-  if (oldSite === undefined || oldSite === new URL(opts.siteUrl).origin) {
-    return [
-      ...problems,
-      `${onTrpcIo.prefixes.join(', ')}: trpc.io's own site has to be somewhere else than ${opts.siteUrl}, to send them there: set \`oldSite.url\` in www/src/site.ts`,
-    ];
-  }
-  for (const pathname of onTrpcIo.prefixes.map((prefix) => `${prefix}/x`)) {
-    const result = land(opts.routes, opts.served, pathname);
-    if (result.hops.at(-1) !== `${oldSite}${pathname}`) {
-      problems.push(`${pathname}: doesn't redirect to ${oldSite}`);
     }
   }
   return problems;

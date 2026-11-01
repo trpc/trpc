@@ -90,8 +90,6 @@ function NavSection(props: {
           aria-expanded={open}
           className={cn(
             'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
-            // v11's sections are cased as trpc.io has them: "tRPC".
-            props.version.id === 'v12' && 'tracking-wide uppercase',
             props.active && 'text-foreground',
           )}
           onClick={() => setOpen(!open)}

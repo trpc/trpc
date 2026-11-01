@@ -2,8 +2,6 @@ import { useRouter } from '@tanstack/react-router';
 
 import { cn } from '@shared/ui/lib/utils';
 
-import { unpublishedCommandIn, warnUnpublished } from './unpublished.tsx';
-
 const tabStorageKey = (group: string) => `trpc-docs:tab:${group}`;
 
 function isElement(target: EventTarget | null): target is Element {
@@ -21,7 +19,7 @@ function internalHref(target: EventTarget | null, root: HTMLElement) {
   const url = new URL(anchor.href, window.location.href);
   if (
     url.origin !== window.location.origin ||
-    !/^\/(?:(?:v\d+\/)?docs|v\d+\/decisions|blog)\//.test(url.pathname) ||
+    !/^\/(?:(?:v\d+\/)?docs|blog)\//.test(url.pathname) ||
     url.pathname.endsWith('.md')
   ) {
     return undefined;
@@ -200,17 +198,6 @@ function copyCode(target: EventTarget | null) {
   if (code) {
     void navigator.clipboard.writeText(code).then(() => {
       copy.textContent = 'Copied';
-      const command = unpublishedCommandIn(code);
-      if (command) {
-        warnUnpublished(command);
-        const badge = copy
-          .closest('.code-tabs')
-          ?.querySelector(':scope > .code-unpublished');
-        badge?.removeAttribute('data-flash');
-        // Reading layout restarts the animation on a second copy.
-        void badge?.getBoundingClientRect();
-        badge?.setAttribute('data-flash', '');
-      }
       setTimeout(() => {
         copy.textContent = 'Copy';
       }, 1500);

@@ -701,7 +701,7 @@ export function docsContent(options: ContentOptions): Plugin {
       ...(experiment === undefined
         ? []
         : [
-            `Experimental: ${experiments[experiment].label} might change or go away in any release.`,
+            `Experimental: ${experiments[experiment]?.label ?? experiment} might change or go away in any release.`,
             '',
           ]),
       body.trim(),

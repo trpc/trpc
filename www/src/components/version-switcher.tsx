@@ -3,21 +3,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@shared/ui/components/dropdown-menu';
 import { Link, useLocation } from '@tanstack/react-router';
-import { Check, ChevronDown, ExternalLink } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 
 import {
   type DocsVersion,
-  offeredVersions,
   slugAt,
   switchedSlug,
   useDocsVersion,
+  versions,
 } from '~/content/docs.ts';
-import { useV12Shown } from '~/home-version.ts';
-import { atTrpcIo, v11 } from '~/site.ts';
 
 /**
  * Picks the docs' version, as Docusaurus's version dropdown does: switching
@@ -32,8 +29,6 @@ export function VersionSwitcher(props: {
   const current = props.version ?? atPath;
   const pathname = useLocation({ select: (location) => location.pathname });
   const slug = slugAt(current, pathname);
-  const trpcVersion = current.copied ?? v11;
-  const v12Shown = useV12Shown();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -53,7 +48,7 @@ export function VersionSwitcher(props: {
         <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-auto min-w-52">
-        {offeredVersions(current, v12Shown).map((version) => (
+        {versions.map((version) => (
           <DropdownMenuItem
             key={version.id}
             render={
@@ -72,23 +67,6 @@ export function VersionSwitcher(props: {
             ) : null}
           </DropdownMenuItem>
         ))}
-        {atTrpcIo ? null : (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              render={
-                <a
-                  href={`${trpcVersion.url}${trpcVersion.trpcPath}`}
-                  rel="noopener"
-                  target="_blank"
-                />
-              }
-            >
-              {trpcVersion.id} on trpc.io
-              <ExternalLink className="ml-auto" />
-            </DropdownMenuItem>
-          </>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

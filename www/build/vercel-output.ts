@@ -267,15 +267,12 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
         { concurrency: 'unbounded' },
       )
     : [];
-  const allRoutes = routes(
-    redirectRoutes(old.redirects),
-    [
-      noindexRoute(site.url, vercelEnv),
-      ...noindexPageRoutes(
-        noindexPages.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
-      ),
-    ],
-  );
+  const allRoutes = routes(redirectRoutes(old.redirects), [
+    noindexRoute(site.url, vercelEnv),
+    ...noindexPageRoutes(
+      noindexPages.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
+    ),
+  ]);
   const missingAnchors = yield* Effect.filter(old.redirects, (redirect) => {
     const url = new URL(redirect.location, site.url);
     if (url.origin !== new URL(site.url).origin || url.hash === '') {
@@ -326,7 +323,6 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
       redirects: old.redirects,
       routes: allRoutes,
       served,
-      siteUrl: site.url,
     }),
   ];
   if (problems.length > 0) {

@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useEffectEvent, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { type ExperimentId, experimentIds } from './experiments.ts';
 
@@ -189,11 +189,12 @@ export function useEnableOnVisit(
     strict: false,
   });
   const setFlags = useSetFlags();
-  const enable = useEffectEvent(() => {
+  const enable = useRef(() => {});
+  enable.current = () => {
     const on = flagsIn(param);
     if (experiment !== undefined && !on.includes(experiment)) {
       setFlags(withFlag(on, experiment, true));
     }
-  });
-  useEffect(() => enable(), [experiment, slug]);
+  };
+  useEffect(() => enable.current(), [experiment, slug]);
 }
