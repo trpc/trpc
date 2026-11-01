@@ -33,7 +33,7 @@ export function Avatar({
     >
       {initials && (
         <svg
-          className="size-full select-none fill-current text-[48px] font-medium uppercase"
+          className="size-full fill-current text-[48px] font-medium uppercase select-none"
           viewBox="0 0 100 100"
           aria-hidden={alt ? undefined : 'true'}
         >

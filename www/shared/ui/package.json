@@ -8,6 +8,7 @@
   ],
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./theme.css": "./src/styles/theme.css",
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts"
