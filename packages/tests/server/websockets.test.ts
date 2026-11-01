@@ -218,6 +218,105 @@ test('query', async () => {
   expect(states).toContain('pending');
 });
 
+test.each([
+  [1n, 'valid'],
+  ['valid', 1n],
+])(
+  'rejects every request when a batch cannot be encoded (%#)',
+  async (...inputs) => {
+    const t = initTRPC.create();
+    const resolver = vi.fn((opts: { input: unknown }) => opts.input);
+    const pending = createDeferred<string>();
+    const pendingResolver = vi.fn(() => pending.promise);
+    const router = t.router({
+      echo: t.procedure.input(z.unknown()).query(resolver),
+      pending: t.procedure.query(pendingResolver),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+    });
+    const ac = new AbortController();
+    const pendingResult = ctx.client.pending.query().then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    );
+    await vi.waitFor(() => expect(pendingResolver).toHaveBeenCalledTimes(1));
+    const settled = vi.fn();
+    const results = Promise.allSettled(
+      inputs.map((input) =>
+        ctx.client.echo.query(input, { signal: ac.signal }).finally(settled),
+      ),
+    );
+
+    try {
+      await vi.waitFor(() => expect(settled).toHaveBeenCalledTimes(2));
+      expect(await results).toEqual(
+        inputs.map(() => ({
+          status: 'rejected',
+          reason: expect.objectContaining({
+            message: expect.stringContaining('BigInt'),
+          }),
+        })),
+      );
+      expect(resolver).not.toHaveBeenCalled();
+      pending.resolve('pending result');
+      expect(await pendingResult).toEqual({ value: 'pending result' });
+      expect(await ctx.client.echo.query('after failure')).toBe(
+        'after failure',
+      );
+      expect(resolver).toHaveBeenCalledTimes(1);
+      await ctx.wsClient.close();
+    } finally {
+      ac.abort();
+      pending.resolve('pending result');
+      await results;
+      await pendingResult;
+    }
+  },
+);
+
+test.each([false, true])(
+  'rejects a failed batch without sending a stop for an unsent subscription (throwing error observer: %s)',
+  async (throwsInObserver) => {
+    await using ctx = factory();
+    await ctx.client.greeting.query();
+    const connection = ctx.wsClient.connection;
+    assert(connection?.state === 'open');
+    const error = new Error('transport send failed');
+    const send = vi.spyOn(connection.ws, 'send').mockImplementation(() => {
+      throw error;
+    });
+    const onError = vi.fn();
+    const ac = new AbortController();
+    const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
+      onError(error) {
+        onError(error);
+        if (throwsInObserver) {
+          throw new Error('Error observer failed');
+        }
+      },
+    });
+    const query = ctx.client.greeting
+      .query(undefined, { signal: ac.signal })
+      .catch(onError);
+
+    try {
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(onError.mock.calls.map((call) => call[0])).toEqual([
+        expect.objectContaining({ cause: error }),
+        expect.objectContaining({ cause: error }),
+      ]);
+      await ctx.wsClient.close();
+    } finally {
+      send.mockRestore();
+      subscription.unsubscribe();
+      ac.abort();
+      await query;
+    }
+  },
+);
+
 test('mutation', async () => {
   await using ctx = factory();
   expect(

@@ -69,8 +69,11 @@ export class RequestManager {
           resolve();
         },
         error: (e) => {
-          callbacks.error(e);
-          resolve();
+          try {
+            callbacks.error(e);
+          } finally {
+            resolve();
+          }
         },
       },
     });
