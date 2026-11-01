@@ -20,16 +20,6 @@ export const site = {
   x: '@trpcio',
 } as const;
 
-/**
- * trpc.io's Algolia DocSearch index, which Algolia's crawler fills from the
- * live site. The key is DocSearch's public, search-only one.
- */
-export const algolia = {
-  apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
-  appId: 'BTGPSR4MOE',
-  indexName: 'trpc',
-} as const;
-
 /** Where the docs and blog are served. */
 const trpcIo = 'https://trpc.io';
 

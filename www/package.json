@@ -21,8 +21,6 @@
     "sponsors:readme": "node build/sponsors-sync.ts --readme-only"
   },
   "dependencies": {
-    "@docsearch/css": "4.7.0",
-    "@docsearch/react": "4.7.0",
     "@sentry/tanstackstart-react": "11.8.0",
     "@shared/ui": "workspace:*",
     "@tanstack/react-router": "catalog:www",
