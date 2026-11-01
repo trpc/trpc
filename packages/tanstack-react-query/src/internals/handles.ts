@@ -1,5 +1,4 @@
 import type {
-  DataTag,
   FetchQueryOptions,
   GetNextPageParamFunction,
   QueryClient,
@@ -20,7 +19,6 @@ import type {
   ExtractCursorType,
   FeatureFlags,
   ResolverDef,
-  TRPCInfiniteData,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
 } from './types';
@@ -33,6 +31,22 @@ type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
   errorShape: TDef['errorShape'];
 }>;
 
+type InfiniteHandleInput<TInput> = TInput extends object
+  ? Omit<TInput, 'cursor' | 'direction'>
+  : TInput;
+
+/**
+ * A plain tuple typed with the procedure's input. TanStack Router's serializability check
+ * rejects `unknown` inputs and `DataTag`-ged keys, so handles in `beforeLoad` need this shape.
+ */
+type HandleQueryKey<
+  TDef extends ResolverDef,
+  TInput,
+  TType extends 'query' | 'infinite',
+> = TDef['featureFlags']['keyPrefix'] extends true
+  ? [prefix: string[], path: string[], opts?: { input?: TInput; type?: TType }]
+  : [path: string[], opts?: { input?: TInput; type?: TType }];
+
 /**
  * A serializable reference to a query started on the server (or in a loader).
  * Pass it to a client component and read it with `trpc.unstable_fromHandle(handle)`.
@@ -42,18 +56,10 @@ export interface unstable_TRPCQueryHandle<
 > {
   /** Type-only: never present at runtime. */
   readonly [handleDef]?: TDef & { kind: 'query' };
-  readonly queryKey: DataTag<
-    TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
-    TDef['output'],
-    ErrorOf<TDef>
-  >;
+  readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
   /** The input the query was started with */
   readonly input: TDef['input'];
 }
-
-type InfiniteHandleInput<TInput> = TInput extends object
-  ? Omit<TInput, 'cursor' | 'direction'>
-  : TInput;
 
 /**
  * A serializable reference to an infinite query started on the server (or in a loader).
@@ -64,10 +70,10 @@ export interface unstable_TRPCInfiniteQueryHandle<
 > {
   /** Type-only: never present at runtime. */
   readonly [handleDef]?: TDef & { kind: 'infinite' };
-  readonly queryKey: DataTag<
-    TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
-    TRPCInfiniteData<TDef['input'], TDef['output']>,
-    ErrorOf<TDef>
+  readonly queryKey: HandleQueryKey<
+    TDef,
+    InfiniteHandleInput<TDef['input']>,
+    'infinite'
   >;
   /** The input the query was started with, without `cursor` and `direction` */
   readonly input: InfiniteHandleInput<TDef['input']>;

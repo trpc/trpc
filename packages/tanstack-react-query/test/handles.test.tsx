@@ -540,9 +540,9 @@ describe('runtime', () => {
     queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
 
     const handle = await serverTrpc.post.byId.unstable_ensure({ id: '1' });
-    expect(queryClient.getQueryData(handle.queryKey)?.title).toBe('stale');
+    expect(queryClient.getQueryData(queryKey)?.title).toBe('stale');
     await vi.waitFor(() =>
-      expect(queryClient.getQueryData(handle.queryKey)?.title).toBe('Post 1'),
+      expect(queryClient.getQueryData(queryKey)?.title).toBe('Post 1'),
     );
     expect(resource.calls).toHaveBeenCalledTimes(1);
   });
@@ -559,7 +559,7 @@ describe('runtime', () => {
     queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
 
     const handle = await serverTrpc.post.byId.unstable_fetch({ id: '1' });
-    expect(queryClient.getQueryData(handle.queryKey)?.title).toBe('Post 1');
+    expect(queryClient.getQueryData(queryKey)?.title).toBe('Post 1');
     expect(resource.calls).toHaveBeenCalledTimes(1);
 
     const fresh = await serverTrpc.post.byId.unstable_fetch(
@@ -586,7 +586,11 @@ describe('runtime', () => {
     >();
     expect(
       resource.queryClient
-        .getQueryData(handle.queryKey)
+        .getQueryData(
+          trpc.unstable_fromHandle(handle, {
+            getNextPageParam: (last) => last.nextCursor,
+          }).queryKey,
+        )
         ?.pages.flatMap((page) => page.items),
     ).toEqual([0, 1, 2, 3]);
   });
@@ -601,12 +605,19 @@ describe('runtime', () => {
     const post = trpc.post.byId.unstable_prefetch({ id: '1' });
     expectTypeOf(post.input).toEqualTypeOf<{ id: string }>();
     expect(post.input).toEqual({ id: '1' });
+    // A plain tuple with a typed input: no `unknown` and no tag, so router serializability checks accept it
+    expectTypeOf(post.queryKey).toEqualTypeOf<
+      [path: string[], opts?: { input?: { id: string }; type?: 'query' }]
+    >();
 
     const list = trpc.post.list.unstable_prefetchInfinite({
       limit: 2,
       cursor: 4,
     });
     expectTypeOf(list.input).toEqualTypeOf<{ limit: number }>();
+    expectTypeOf(list.queryKey).toEqualTypeOf<
+      [path: string[], opts?: { input?: { limit: number }; type?: 'infinite' }]
+    >();
     expect(list.input).toEqual({ limit: 2 });
     expect(list.initialCursor).toBe(4);
 
@@ -634,7 +645,11 @@ describe('runtime', () => {
     );
     expect(
       resource.queryClient
-        .getQueryData(handle.queryKey)
+        .getQueryData(
+          trpc.unstable_fromHandle(handle, {
+            getNextPageParam: (last) => last.nextCursor,
+          }).queryKey,
+        )
         ?.pages.flatMap((page) => page.items),
     ).toEqual([0, 1, 2, 3]);
   });
