@@ -1,0 +1,23 @@
+{
+  "name": "@tooling/subtree",
+  "private": true,
+  "description": "Makes an example standalone before .github/workflows/subtree.yml publishes it to trpc/examples-<name>",
+  "type": "module",
+  "scripts": {
+    "lint": "oxlint .",
+    "standalone": "node src/bin/standalone.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.1.1",
+    "effect": "catalog:www",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
