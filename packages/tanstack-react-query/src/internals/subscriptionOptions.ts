@@ -6,8 +6,6 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type { inferAsyncIterableYield } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type {
-  DefaultFeatureFlags,
-  FeatureFlags,
   ResolverDef,
   TRPCQueryKey,
   TRPCQueryOptionsResult,
@@ -29,25 +27,18 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
-interface TRPCSubscriptionOptionsOut<
-  TOutput,
-  TError,
-  TFeatureFlags extends FeatureFlags,
->
+interface TRPCSubscriptionOptionsOut<TOutput, TError>
   extends
     UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
     TRPCQueryOptionsResult {
   enabled: boolean;
-  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
+  queryKey: TRPCQueryKey;
   subscribe: (
     innerOpts: UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
   ) => Unsubscribable;
 }
 
-export interface TRPCSubscriptionOptions<
-  TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> {
+export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
   (
     input: TDef['input'],
     opts?: UnusedSkipTokenTRPCSubscriptionOptionsIn<
@@ -56,8 +47,7 @@ export interface TRPCSubscriptionOptions<
     >,
   ): TRPCSubscriptionOptionsOut<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>,
-    TFeatureFlags
+    TRPCClientErrorLike<TDef>
   >;
   (
     input: TDef['input'] | SkipToken,
@@ -67,8 +57,7 @@ export interface TRPCSubscriptionOptions<
     >,
   ): TRPCSubscriptionOptionsOut<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>,
-    TFeatureFlags
+    TRPCClientErrorLike<TDef>
   >;
 }
 export type TRPCSubscriptionStatus =
@@ -128,31 +117,31 @@ type AnyTRPCSubscriptionOptionsIn =
   | BaseTRPCSubscriptionOptionsIn<unknown, unknown>
   | UnusedSkipTokenTRPCSubscriptionOptionsIn<unknown, unknown>;
 
-type AnyTRPCSubscriptionOptionsOut<TFeatureFlags extends FeatureFlags> =
-  TRPCSubscriptionOptionsOut<unknown, unknown, TFeatureFlags>;
+type AnyTRPCSubscriptionOptionsOut = TRPCSubscriptionOptionsOut<
+  unknown,
+  unknown
+>;
 
 /**
  * @internal
  */
-export const trpcSubscriptionOptions = <
-  TFeatureFlags extends FeatureFlags,
->(args: {
+export const trpcSubscriptionOptions = (args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: string[];
-  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
+  queryKey: TRPCQueryKey;
   /**
    * The raw input before queryKey serialization. Required to correctly detect
    * `skipToken` because `getQueryKeyInternal` strips it from the queryKey args.
    */
   input: unknown;
   opts?: AnyTRPCSubscriptionOptionsIn;
-}): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
+}): AnyTRPCSubscriptionOptionsOut => {
   const { subscribe, path, queryKey, input, opts = {} } = args;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
-  const _subscribe: ReturnType<
-    TRPCSubscriptionOptions<any, TFeatureFlags>
-  >['subscribe'] = (innerOpts) => {
+  const _subscribe: ReturnType<TRPCSubscriptionOptions<any>>['subscribe'] = (
+    innerOpts,
+  ) => {
     return subscribe(
       path.join('.'),
       input === skipToken ? undefined : input,
@@ -170,7 +159,7 @@ export const trpcSubscriptionOptions = <
 };
 
 export function useSubscription<TOutput, TError>(
-  opts: TRPCSubscriptionOptionsOut<TOutput, TError, any>,
+  opts: TRPCSubscriptionOptionsOut<TOutput, TError>,
 ): TRPCSubscriptionResult<TOutput, TError> {
   type $Result = TRPCSubscriptionResult<TOutput, TError>;
 

@@ -4,29 +4,23 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
-import type {
-  DefaultFeatureFlags,
-  FeatureFlags,
-  KeyPrefixOptions,
-} from './types';
+import type { FeatureFlags, KeyPrefixOptions } from './types';
 
-type TRPCProviderType<
-  TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> = React.FC<
+type TRPCProviderType<TRouter extends AnyTRPCRouter> = React.FC<
   {
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
-  } & KeyPrefixOptions<TFeatureFlags>
+  } & KeyPrefixOptions
 >;
 
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  /** @deprecated `keyPrefix` no longer needs a feature flag */
+  _TFeatureFlags extends FeatureFlags = FeatureFlags,
 > {
-  TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags>;
-  useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
+  TRPCProvider: TRPCProviderType<TRouter>;
+  useTRPC: () => TRPCOptionsProxy<TRouter>;
   useTRPCClient: () => TRPCClient<TRouter>;
 }
 
@@ -37,23 +31,23 @@ export interface CreateTRPCContextResult<
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
->(): CreateTRPCContextResult<TRouter, TFeatureFlags> {
+  /** @deprecated `keyPrefix` no longer needs a feature flag */
+  _TFeatureFlags extends FeatureFlags = FeatureFlags,
+>(): CreateTRPCContextResult<TRouter> {
   const TRPCClientContext = React.createContext<TRPCClient<TRouter> | null>(
     null,
   );
-  const TRPCContext = React.createContext<TRPCOptionsProxy<
-    TRouter,
-    TFeatureFlags
-  > | null>(null);
+  const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
+    null,
+  );
 
-  const TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags> = (props) => {
+  const TRPCProvider: TRPCProviderType<TRouter> = (props) => {
     const value = React.useMemo(
       () =>
-        createTRPCOptionsProxy<TRouter, TFeatureFlags>({
+        createTRPCOptionsProxy<TRouter>({
           client: props.trpcClient,
           queryClient: props.queryClient,
-          keyPrefix: props.keyPrefix as any,
+          keyPrefix: props.keyPrefix,
         }),
       [props.trpcClient, props.queryClient, props.keyPrefix],
     );

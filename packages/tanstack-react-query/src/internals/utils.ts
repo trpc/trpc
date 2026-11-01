@@ -7,7 +7,6 @@ import {
 import type {
   AnyTRPCMutationKey,
   AnyTRPCQueryKey,
-  FeatureFlags,
   QueryType,
   TRPCMutationKeyWithoutPrefix,
   TRPCQueryKey,
@@ -56,8 +55,8 @@ export function readQueryKey(queryKey: AnyTRPCQueryKey) {
 /**
  * @internal
  */
-export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
-  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>,
+export function getClientArgs<TOptions>(
+  queryKey: TRPCQueryKey,
   opts: TOptions,
   infiniteParams?: {
     pageParam: any;
@@ -139,7 +138,7 @@ export function getQueryKeyInternal(opts: {
 
       // for `utils.invalidate()` to match all queries (including vanilla react-query)
       // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
-      return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
+      return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKeyWithoutPrefix);
     }
 
     if (

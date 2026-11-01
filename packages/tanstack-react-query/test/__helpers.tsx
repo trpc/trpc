@@ -8,7 +8,6 @@ import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
-import type { ofFeatureFlags } from '../src';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
 export function testReactResource<
@@ -24,29 +23,22 @@ export function testReactResource<
 
   const queryClient = new QueryClient();
 
-  type $Flags = undefined extends TExtras['keyPrefix']
-    ? ofFeatureFlags<{ keyPrefix: false }>
-    : ofFeatureFlags<{ keyPrefix: true }>;
+  const keyPrefix = opts?.keyPrefix;
 
-  const keyPrefix = opts?.keyPrefix as any;
-
-  const optionsProxyClient = createTRPCOptionsProxy<TRouter, $Flags>({
+  const optionsProxyClient = createTRPCOptionsProxy<TRouter>({
     client: getUntypedClient(ctx.client),
     queryClient,
     keyPrefix,
   });
 
-  const optionsProxyServer = createTRPCOptionsProxy<TRouter, $Flags>({
+  const optionsProxyServer = createTRPCOptionsProxy<TRouter>({
     router: appRouter,
     ctx: {},
     queryClient,
     keyPrefix,
   });
 
-  const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<
-    TRouter,
-    $Flags
-  >();
+  const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<TRouter>();
 
   function renderApp(ui: React.ReactNode) {
     return render(
@@ -68,7 +60,7 @@ export function testReactResource<
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          keyPrefix={opts?.keyPrefix as any}
+          keyPrefix={keyPrefix}
         >
           {ui}
         </TRPCProvider>

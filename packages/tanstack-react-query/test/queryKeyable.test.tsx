@@ -10,6 +10,7 @@ import { initTRPC } from '@trpc/server';
 import {
   createTRPCContext,
   type AnyTRPCQueryKey,
+  type TRPCMutationKey,
   type TRPCMutationKeyWithoutPrefix,
   type TRPCMutationKeyWithPrefix,
   type TRPCQueryKey,
@@ -504,13 +505,13 @@ test('types of testReactResource', async () => {
       {
         const key = trpc.q.pathKey();
 
-        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKey>();
         expect(key).toEqual([[prefix], ['q']]);
       }
 
       {
         const key = trpc.m.mutationKey();
-        expectTypeOf<typeof key>().toEqualTypeOf<TRPCMutationKeyWithPrefix>();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCMutationKey>();
         expect(key).toEqual([[prefix], ['m']]);
       }
       return null;
@@ -527,20 +528,31 @@ test('types of testReactResource', async () => {
       {
         const key = trpc.q.pathKey();
 
-        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKey>();
         expect(key).toEqual([['q']]);
       }
       {
         const key = trpc.m.mutationKey();
-        expectTypeOf<
-          typeof key
-        >().toEqualTypeOf<TRPCMutationKeyWithoutPrefix>();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCMutationKey>();
         expect(key).toEqual([['m']]);
       }
       return null;
     }
     ctx.renderApp(<Component />);
   }
+});
+
+test('key types cover both shapes', () => {
+  expectTypeOf<TRPCQueryKey>().toEqualTypeOf<
+    TRPCQueryKeyWithoutPrefix | TRPCQueryKeyWithPrefix
+  >();
+  expectTypeOf<TRPCMutationKey>().toEqualTypeOf<
+    TRPCMutationKeyWithoutPrefix | TRPCMutationKeyWithPrefix
+  >();
+  expectTypeOf<TRPCQueryKey<true>>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+  expectTypeOf<
+    TRPCQueryKey<false>
+  >().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
 });
 
 test('types of normal usage', async () => {
@@ -550,35 +562,34 @@ test('types of normal usage', async () => {
     m: t.procedure.mutation(() => 'mutation'),
   });
 
+  function useClients() {
+    const [queryClient] = useState(() => new QueryClient());
+    const [trpcClient] = useState(() =>
+      createTRPCClient<typeof appRouter>({
+        links: [
+          httpBatchLink({
+            url: 'http://localhost:3000',
+          }),
+        ],
+      }),
+    );
+    return { queryClient, trpcClient };
+  }
+
   {
     const { TRPCProvider } = createTRPCContext<typeof appRouter>();
     function Component() {
-      const [queryClient] = useState(() => new QueryClient());
-      const [trpcClient] = useState(() =>
-        createTRPCClient<typeof appRouter>({
-          links: [
-            httpBatchLink({
-              url: 'http://localhost:3000',
-            }),
-          ],
-        }),
-      );
+      const { queryClient, trpcClient } = useClients();
 
       return (
         <>
-          <TRPCProvider
-            //
-            queryClient={queryClient}
-            trpcClient={trpcClient}
-          >
+          <TRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
             {null}
           </TRPCProvider>
 
           <TRPCProvider
-            //
             queryClient={queryClient}
             trpcClient={trpcClient}
-            // @ts-expect-error - test
             keyPrefix="test"
           >
             {null}
@@ -589,42 +600,22 @@ test('types of normal usage', async () => {
   }
 
   {
+    // the feature flag that used to enable `keyPrefix` is still accepted
     const { TRPCProvider } = createTRPCContext<
       typeof appRouter,
       { keyPrefix: true }
     >();
     function Component() {
-      const [queryClient] = useState(() => new QueryClient());
-      const [trpcClient] = useState(() =>
-        createTRPCClient<typeof appRouter>({
-          links: [
-            httpBatchLink({
-              url: 'http://localhost:3000',
-            }),
-          ],
-        }),
-      );
+      const { queryClient, trpcClient } = useClients();
 
       return (
-        <>
-          {/* @ts-expect-error - test keyPrefix */}
-          <TRPCProvider
-            //
-            queryClient={queryClient}
-            trpcClient={trpcClient}
-          >
-            {null}
-          </TRPCProvider>
-
-          <TRPCProvider
-            //
-            queryClient={queryClient}
-            trpcClient={trpcClient}
-            keyPrefix="test"
-          >
-            {null}
-          </TRPCProvider>
-        </>
+        <TRPCProvider
+          queryClient={queryClient}
+          trpcClient={trpcClient}
+          keyPrefix="test"
+        >
+          {null}
+        </TRPCProvider>
       );
     }
   }

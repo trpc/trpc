@@ -9,9 +9,6 @@ import type {
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
-  DefaultFeatureFlags,
-  FeatureFlags,
-  KeyPrefixOptions,
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
@@ -26,50 +23,33 @@ import {
 
 type ReservedOptions = 'mutationKey' | 'mutationFn';
 
-type TRPCMutationOptionsIn<
-  TInput,
-  TError,
-  TOutput,
-  TContext,
-  TFeatureFlags extends FeatureFlags,
-> = DistributiveOmit<
-  UseMutationOptions<TOutput, TError, TInput, TContext>,
-  ReservedOptions
-> &
-  TRPCQueryBaseOptions &
-  KeyPrefixOptions<TFeatureFlags>;
+type TRPCMutationOptionsIn<TInput, TError, TOutput, TContext> =
+  DistributiveOmit<
+    UseMutationOptions<TOutput, TError, TInput, TContext>,
+    ReservedOptions
+  > &
+    TRPCQueryBaseOptions;
 
-interface TRPCMutationOptionsOut<
-  TInput,
-  TError,
-  TOutput,
-  TContext,
-  TFeatureFlags extends FeatureFlags,
->
+interface TRPCMutationOptionsOut<TInput, TError, TOutput, TContext>
   extends
     UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
-  mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
+  mutationKey: TRPCMutationKey;
 }
 
-export interface TRPCMutationOptions<
-  TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> {
+export interface TRPCMutationOptions<TDef extends ResolverDef> {
   <TContext = unknown>(
     opts?: TRPCMutationOptionsIn<
       TDef['input'],
       TRPCClientErrorLike<TDef>,
       TDef['output'],
-      TContext,
-      TFeatureFlags
+      TContext
     >,
   ): TRPCMutationOptionsOut<
     TDef['input'],
     TRPCClientErrorLike<TDef>,
     TDef['output'],
-    TContext,
-    TFeatureFlags
+    TContext
   >;
 }
 
@@ -90,30 +70,38 @@ export interface MutationOptionsOverride {
   }) => MaybePromise<unknown>;
 }
 
-type AnyTRPCMutationOptionsIn<TFeatureFlags extends FeatureFlags> =
-  TRPCMutationOptionsIn<unknown, unknown, unknown, unknown, TFeatureFlags>;
+type AnyTRPCMutationOptionsIn = TRPCMutationOptionsIn<
+  unknown,
+  unknown,
+  unknown,
+  unknown
+>;
 
-type AnyTRPCMutationOptionsOut<TFeatureFlags extends FeatureFlags> =
-  TRPCMutationOptionsOut<unknown, unknown, unknown, unknown, TFeatureFlags>;
+type AnyTRPCMutationOptionsOut = TRPCMutationOptionsOut<
+  unknown,
+  unknown,
+  unknown,
+  unknown
+>;
 
 /**
  * @internal
  */
-export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
+export function trpcMutationOptions(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
   prefix: string | undefined;
-  opts: AnyTRPCMutationOptionsIn<TFeatureFlags> | undefined;
+  opts: AnyTRPCMutationOptionsIn | undefined;
   overrides: MutationOptionsOverride | undefined;
-}): AnyTRPCMutationOptionsOut<TFeatureFlags> {
+}): AnyTRPCMutationOptionsOut {
   const { mutate, path, prefix, opts, overrides } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
   const mutationKey = getMutationKeyInternal({
     path,
-    prefix: opts?.keyPrefix ?? prefix,
-  }) as TRPCMutationKey<TFeatureFlags['keyPrefix']>;
+    prefix: (opts as { keyPrefix?: string } | undefined)?.keyPrefix ?? prefix,
+  }) as TRPCMutationKey;
 
   const defaultOpts = queryClient.defaultMutationOptions(
     queryClient.getMutationDefaults(mutationKey),

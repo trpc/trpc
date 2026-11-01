@@ -17,7 +17,6 @@ export type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
-  featureFlags: FeatureFlags;
 };
 
 /**
@@ -97,7 +96,11 @@ export type TRPCQueryKeyWithPrefix = [
   ...TRPCQueryKeyWithoutPrefix,
 ];
 
-export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
+/**
+ * The key has a leading prefix segment only when the proxy has a `keyPrefix`
+ * @public
+ */
+export type TRPCQueryKey<TPrefixEnabled extends boolean = boolean> =
   TPrefixEnabled extends true
     ? TRPCQueryKeyWithPrefix
     : TRPCQueryKeyWithoutPrefix;
@@ -122,42 +125,34 @@ export type AnyTRPCMutationKey =
   TRPCMutationKeyWithoutPrefix | TRPCMutationKeyWithPrefix;
 
 /**
+ * The key has a leading prefix segment only when the proxy has a `keyPrefix`
  * @public
  */
-export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
+export type TRPCMutationKey<TPrefixEnabled extends boolean = boolean> =
   TPrefixEnabled extends true
     ? TRPCMutationKeyWithPrefix
     : TRPCMutationKeyWithoutPrefix;
 
 /**
- * Feature flags for configuring tRPC behavior
- * @public
+ * @internal
+ */
+export interface KeyPrefixOptions {
+  /**
+   * Prefix every query and mutation key, so procedures with the same path
+   * from different routers don't share cache entries
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#keyPrefix
+   */
+  keyPrefix?: string;
+}
+
+/**
+ * @deprecated `keyPrefix` no longer needs a feature flag: pass it to the
+ * provider or the proxy directly
  */
 export type FeatureFlags = { keyPrefix: boolean };
 
 /**
- * @internal
+ * @deprecated `keyPrefix` no longer needs a feature flag: pass it to the
+ * provider or the proxy directly
  */
-export type ofFeatureFlags<T extends FeatureFlags> = T;
-
-/**
- * @internal
- */
-export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
-  TFeatureFlags['keyPrefix'] extends true
-    ? {
-        keyPrefix: string;
-      }
-    : {
-        /**
-         * In order to use a query key prefix, you have to initialize the context with the `keyPrefix`
-         */
-        keyPrefix?: never;
-      };
-/**
- * Default feature flags with query key prefix disabled
- * @public
- */
-export type DefaultFeatureFlags = ofFeatureFlags<{
-  keyPrefix: false;
-}>;
+export type DefaultFeatureFlags = { keyPrefix: false };
