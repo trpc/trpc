@@ -255,6 +255,10 @@ export class WsClient {
    */
   private reconnecting: Promise<void> | null = null;
   private reconnect(closedError: TRPCWebSocketClosedError) {
+    if (!this.allowReconnect) {
+      return;
+    }
+
     this.connectionState.next({
       type: 'state',
       state: 'connecting',
