@@ -101,7 +101,7 @@ describe('createServerSideHelpers', () => {
     expect(byIdResolver).not.toHaveBeenCalled();
   });
 
-  test('types', () => {
+  test('checks input types and rejects input for no-input procedures and routers', () => {
     const { appRouter } = createAppRouter();
     const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
@@ -197,7 +197,7 @@ describe('createHydrationHelpers', () => {
     expect(state?.data).toEqual({ id: 1, text: 'first' });
   });
 
-  test('types', () => {
+  test('checks input types and rejects input for no-input procedures and routers', () => {
     const { appRouter, caller } = createAppRouter();
     const { trpc } = createHydrationHelpers<typeof appRouter>(
       caller,
