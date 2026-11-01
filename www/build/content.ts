@@ -1,6 +1,6 @@
+import { fileURLToPath } from 'node:url';
 import { NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Path, Schema } from 'effect';
-import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { removeTwoslashNotations } from 'twoslash/fallback';
 import type { Connect, Plugin } from 'vite';
 import { parse as parseYaml } from 'yaml';
@@ -14,6 +14,7 @@ import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { type DocLink, releaseTwoslashers, resolveLink } from './markdown.ts';
 import { closeRenderPool, makePageRenderer } from './page-renderer.ts';
+import { lastChanges } from './last-change.ts';
 import { expandSnippets } from './snippets.ts';
 import type { TwoslashCacheOptions } from './twoslash-cache.ts';
 
@@ -27,12 +28,6 @@ export interface ContentDirs {
 export interface PageDirs extends ContentDirs {
   /** Where the pages are served: `/docs` serves `client/links` at `/docs/client/links`. */
   readonly basePath: string;
-  /**
-   * Whether a page's last-modified date skips the commits that renamed it, so
-   * a moved page keeps its date. Not for copies: following their renames
-   * reaches the history they were copied from.
-   */
-  readonly datesSkipRenames?: boolean | undefined;
 }
 
 /** The files `docsContent` writes for agents. */
@@ -210,92 +205,19 @@ const parseSource = Effect.fn('parseSource')(function* (
   return source;
 });
 
-/**
- * When each committed file under `dir` last changed in git, by absolute path.
- * One `git log` for the dir, as starting a process per page from the build's
- * large one took seconds. With `skipRenames`, a rename doesn't count, even
- * with edits: a file's date is its last add or edit under any of its names,
- * as `git log -1 --follow --diff-filter=AM` gives it.
- */
-const commitDates = Effect.fn('commitDates')(
-  function* (dir: string, skipRenames = false) {
-    const path = yield* Path.Path;
-    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-    const git = (args: ReadonlyArray<string>) =>
-      spawner.string(
-        ChildProcess.make('git', ['-c', 'core.quotePath=false', ...args], {
-          cwd: dir,
-          stderr: 'ignore',
-        }),
-      );
-    const dates = new Map<string, string>();
-    if (!skipRenames) {
-      const log = yield* git([
-        'log',
-        '--format=%x00%cI',
-        '--name-only',
-        '--relative',
-        '--',
-        '.',
-      ]);
-      // Newest first, so a file's first commit is its last change.
-      for (const commit of log.split('\0').slice(1)) {
-        const [date = '', ...files] = commit.split('\n');
-        for (const file of files) {
-          const absolute = path.join(dir, file);
-          if (file !== '' && !dates.has(absolute)) {
-            dates.set(absolute, date);
-          }
-        }
-      }
-      return dates;
-    }
-    const [root, files, log] = yield* Effect.all(
-      [
-        git(['rev-parse', '--show-toplevel']),
-        git(['ls-files', '--full-name', '-z']),
-        // The whole repo's, as a page may have moved in from outside `dir`.
-        git(['log', '-M', '--format=%x00%cI', '--name-status']),
-      ],
-      { concurrency: 'unbounded' },
-    );
-    // The name each file had at the commit being read, to the files.
-    const pending = new Map<string, Array<string>>();
-    for (const file of files.split('\0')) {
-      if (file !== '') {
-        pending.set(file, [path.join(root.trim(), file)]);
-      }
-    }
-    for (const commit of log.split('\0').slice(1)) {
-      if (pending.size === 0) {
-        break;
-      }
-      const [date = '', ...lines] = commit.split('\n');
-      const renamed: Array<readonly [string, Array<string>]> = [];
-      for (const line of lines) {
-        const [status = '', from = '', to = from] = line.split('\t');
-        const targets = pending.get(to);
-        if (targets === undefined) {
-          continue;
-        }
-        if (status.startsWith('R')) {
-          pending.delete(to);
-          renamed.push([from, targets]);
-        } else if (status === 'A' || status === 'M') {
-          pending.delete(to);
-          for (const target of targets) {
-            dates.set(target, date);
-          }
-        }
-      }
-      for (const [from, targets] of renamed) {
-        pending.set(from, [...(pending.get(from) ?? []), ...targets]);
-      }
-    }
-    return dates;
-  },
-  Effect.orElseSucceed((): ReadonlyMap<string, string> => new Map()),
-);
+/** The site's dir, where `old-docs.json` says what each copied page was copied from. */
+const wwwDir = fileURLToPath(new URL('..', import.meta.url));
+
+/** When each page under `dir` last changed, by absolute path (`last-change.ts`). */
+const commitDates = Effect.fn('commitDates')(function* (dir: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const names = yield* fs.glob('**/*.md', { root: dir });
+  return yield* lastChanges(
+    wwwDir,
+    names.map((name) => path.join(dir, name)),
+  );
+});
 
 /** Every page: `**\/*.md` under the content dir, except `README.md` files, which index the folder on GitHub. */
 const readSources = Effect.fn('readSources')(function* (dirs: ContentDirs) {
@@ -317,7 +239,7 @@ const readSources = Effect.fn('readSources')(function* (dirs: ContentDirs) {
 /** Pages for prerendering, the sitemap and their social cards. */
 export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   const [sources, dates] = yield* Effect.all(
-    [readSources(dirs), commitDates(dirs.contentDir, dirs.datesSkipRenames)],
+    [readSources(dirs), commitDates(dirs.contentDir)],
     { concurrency: 'unbounded' },
   );
   return sources.map((source) => ({
@@ -471,7 +393,7 @@ export function docsContent(options: ContentOptions): Plugin {
   /** The pages' commit dates, read again after an edit, as the pages are. */
   let commits: Promise<ReadonlyMap<string, string>> | undefined;
   const lastModifiedDates = () => {
-    commits ??= run(commitDates(options.contentDir, options.datesSkipRenames));
+    commits ??= run(commitDates(options.contentDir));
     return commits;
   };
   const renderOn = renderer.render;

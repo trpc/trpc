@@ -39,6 +39,11 @@ import {
   servedPaths,
   type VercelRoute,
 } from './old-routes.ts';
+import {
+  missingFromSitemap,
+  SitemapPages,
+  withRealLastmods,
+} from './sitemap.ts';
 
 const TrpcRedirects = Schema.Array(
   Schema.Struct({
@@ -267,11 +272,46 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
         { concurrency: 'unbounded' },
       )
     : [];
+  const sitemapFile = path.join(staticDir, 'sitemap.xml');
+  const sitemapPages = yield* fs
+    .readFileString(path.join(staticDir, 'pages.json'))
+    .pipe(
+      Effect.flatMap((json) =>
+        Schema.decodeUnknownEffect(Schema.fromJsonString(SitemapPages))(json),
+      ),
+      Effect.mapError(
+        (cause) =>
+          new VercelOutputError({ message: `pages.json: ${cause.message}` }),
+      ),
+    );
+  const sitemap = withRealLastmods(
+    yield* fs.readFileString(sitemapFile),
+    sitemapPages,
+    site.url,
+  );
+  yield* fs.writeFileString(sitemapFile, sitemap);
+  const noindexPaths = new Set(
+    noindexPages.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
+  );
+  const unlisted = missingFromSitemap({
+    files,
+    host: site.url,
+    sitemap,
+    unlisted: (page) =>
+      page === '/404' ||
+      noindexPaths.has(page) ||
+      [...hiddenPaths, ...unindexedPaths].some(
+        (basePath) => page === basePath || page.startsWith(`${basePath}/`),
+      ),
+  });
+  if (unlisted.length > 0) {
+    return yield* new VercelOutputError({
+      message: `sitemap.xml doesn't list every page; add them to \`pages\` in vite.config.ts:\n${unlisted.join('\n')}`,
+    });
+  }
   const allRoutes = routes(redirectRoutes(old.redirects), [
     noindexRoute(site.url, vercelEnv),
-    ...noindexPageRoutes(
-      noindexPages.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
-    ),
+    ...noindexPageRoutes([...noindexPaths]),
   ]);
   const missingAnchors = yield* Effect.filter(old.redirects, (redirect) => {
     const url = new URL(redirect.location, site.url);

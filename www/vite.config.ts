@@ -9,6 +9,7 @@ import { referenceSection } from './api-reference/convert.ts';
 import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
 import { blogFeeds } from './build/feeds.ts';
+import { lastChanges } from './build/last-change.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
@@ -63,6 +64,28 @@ const [copiedPages, posts, favicon] = await Effect.runPromise(
     }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
+/** Each post's last content change, by slug. */
+const postChanges = await Effect.runPromise(
+  lastChanges(
+    new URL('.', import.meta.url).pathname,
+    posts.map((post) => `${blogDir}/${post.slug}.md`),
+  ).pipe(
+    Effect.map(
+      (dates) =>
+        new Map(
+          posts.map((post) => [
+            post.slug,
+            dates.get(`${blogDir}/${post.slug}.md`),
+          ]),
+        ),
+    ),
+    Effect.provide(NodeServices.layer),
+  ),
+);
+const newestPostChange = [...postChanges.values()]
+  .filter((date) => date !== undefined)
+  .toSorted()
+  .at(-1);
 /** Each version's `llms.txt` lists the others', as trpc.io's do. */
 const llmsVersions = copiedVersions.map((version) => ({
   id: version.id,
@@ -200,9 +223,19 @@ export default defineConfig({
       pages: [
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
         ...copiedPages.flatMap((copy) =>
-          copy.pages.map((page) => ({ path: page.path, sitemap: copySitemap })),
+          copy.pages.map((page) => ({
+            path: page.path,
+            sitemap: { ...copySitemap, lastmod: page.lastModified },
+          })),
         ),
-        { path: '/blog', sitemap: { changefreq: 'monthly', priority: 0.5 } },
+        {
+          path: '/blog',
+          sitemap: {
+            changefreq: 'monthly',
+            lastmod: newestPostChange,
+            priority: 0.5,
+          },
+        },
         {
           path: sponsorPage.path,
           sitemap: { changefreq: 'monthly', priority: 0.5 },
@@ -213,7 +246,7 @@ export default defineConfig({
         })),
         ...posts.map((post) => ({
           path: `/blog/${post.slug}`,
-          sitemap: copySitemap,
+          sitemap: { ...copySitemap, lastmod: postChanges.get(post.slug) },
         })),
         {
           path: '/404',

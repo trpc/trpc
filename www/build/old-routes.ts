@@ -161,6 +161,8 @@ export const retiredPages: Readonly<Record<string, string>> = {
   '/docs/v10/landing-intro/Step3': '/',
   // Its "Pro" plan is the Silver partner tier now.
   '/pricing': '/sponsor',
+  // Never a page, but the one people guess.
+  '/sponsors': '/sponsor',
 };
 
 /**

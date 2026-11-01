@@ -237,6 +237,7 @@ describe('oldRedirects', () => {
       source: '/pricing',
       status: 308,
     });
+    expect(bySource.get('/sponsors')?.location).toBe('/sponsor');
   });
 
   it('names each URL that lands nowhere', () => {

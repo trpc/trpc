@@ -29,6 +29,31 @@ const llmsTxt = [
   '',
 ].join('\n');
 
+const sitemapPages = [
+  '/',
+  '/blog',
+  '/docs/client/links',
+  '/docs/introduction',
+  '/docs/server/routers',
+  '/sponsor',
+  '/v10/docs/introduction',
+  '/v9/docs/introduction',
+];
+
+const introductionChange = '2026-10-19T12:00:00+02:00';
+
+/** The sitemap TanStack Start writes, which dates the pages without a `lastmod` with the build. */
+const sitemapOf = (pages: ReadonlyArray<string>) =>
+  [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...pages.map(
+      (page) =>
+        `<url><loc>${site.url}${page}</loc><lastmod>${page === '/docs/introduction' ? introductionChange : '2026-11-01'}</lastmod></url>`,
+    ),
+    '</urlset>',
+  ].join('\n');
+
 /** A prerendered site in a temp dir, removed when the test ends. */
 const setup = Effect.fn('setup')(function* (
   llms: string,
@@ -39,6 +64,7 @@ const setup = Effect.fn('setup')(function* (
       source: '/docs/router',
     },
   ],
+  listed: ReadonlyArray<string> = sitemapPages,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -58,6 +84,14 @@ const setup = Effect.fn('setup')(function* (
     'llms.txt': llms,
     'logo.svg': '',
     'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
+    'pages.json': JSON.stringify({
+      pages: listed.map((page) =>
+        page === '/docs/introduction'
+          ? { path: page, sitemap: { lastmod: introductionChange } }
+          : { path: page },
+      ),
+    }),
+    'sitemap.xml': sitemapOf(listed),
     'robots.txt': siteTextFiles().get('/robots.txt')?.source ?? '',
     'sponsor/index.html': '',
     'v10/docs/introduction/index.html': '',
@@ -202,6 +236,7 @@ describe('writeVercelOutput', () => {
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
         'llms.txt': { contentType: 'text/plain; charset=utf-8' },
         'robots.txt': { contentType: 'text/plain; charset=utf-8' },
+        'sitemap.xml': { contentType: 'application/xml; charset=utf-8' },
         'sponsor/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'sponsor',
@@ -333,6 +368,35 @@ describe('writeVercelOutput', () => {
         const headingError = yield* Effect.flip(writeVercelOutput(noHeading));
         expect(headingError.message).toContain(
           "/docs/router: redirects to /docs/server/routers#gone, a heading the page doesn't have",
+        );
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    'keeps only the real lastmods, and fails on a page the sitemap leaves out',
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* setup(llmsTxt);
+        yield* writeVercelOutput(root);
+        const sitemap = yield* fs.readFileString(
+          path.join(root, '.vercel/output/static/sitemap.xml'),
+        );
+        expect(sitemap).toContain(
+          `<loc>${site.url}/docs/introduction</loc><lastmod>${introductionChange}</lastmod>`,
+        );
+        expect(sitemap).toContain(`<loc>${site.url}/sponsor</loc></url>`);
+        expect(sitemap).not.toContain('2026-11-01');
+
+        const unlisted = yield* setup(
+          llmsTxt,
+          undefined,
+          sitemapPages.filter((page) => page !== '/sponsor'),
+        );
+        const error = yield* Effect.flip(writeVercelOutput(unlisted));
+        expect(error.message).toContain(
+          "sitemap.xml doesn't list every page; add them to `pages` in vite.config.ts:\n/sponsor",
         );
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
