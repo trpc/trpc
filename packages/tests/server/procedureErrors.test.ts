@@ -666,6 +666,46 @@ test('the handler sees the context added by earlier middlewares', async () => {
   expect(err.data).toMatchObject({ userId: 'user_1' });
 });
 
+test('a shared error instance is formatted again on every call', async () => {
+  const local = initTRPC.context<{ userId: string }>().create();
+
+  // errors are often defined once and reused
+  const notFound = new TRPCError({ code: 'NOT_FOUND' });
+
+  const router = local.router({
+    formatted: local.procedure
+      .errors((opts) => ({
+        ...opts.shape,
+        data: { ...opts.shape.data, userId: opts.ctx.userId },
+      }))
+      .query((): string => {
+        throw notFound;
+      }),
+    unformatted: local.procedure.query((): string => {
+      throw notFound;
+    }),
+  });
+
+  let userId = 'user_1';
+  await using ctx = testServerAndClientResource(router, {
+    server: { createContext: () => ({ userId }) },
+  });
+
+  const first = await waitError(ctx.client.formatted.query(), TRPCClientError);
+  expect(first.data).toMatchObject({ path: 'formatted', userId: 'user_1' });
+
+  userId = 'user_2';
+  const second = await waitError(ctx.client.formatted.query(), TRPCClientError);
+  expect(second.data).toMatchObject({ path: 'formatted', userId: 'user_2' });
+
+  const unformatted = await waitError(
+    ctx.client.unformatted.query(),
+    TRPCClientError,
+  );
+  expect(unformatted.data).toMatchObject({ path: 'unformatted' });
+  expect(unformatted.data).not.toHaveProperty('userId');
+});
+
 test('the handler receives the default shape, including the dev stack', async () => {
   const local = initTRPC.create({ isDev: true });
 
