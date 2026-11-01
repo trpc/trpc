@@ -23,11 +23,16 @@ import type {
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { getQueryKeyInternal } from './internals/getQueryKey';
+import {
+  getQueryKeyInternal,
+  getQueryKeyMarker,
+} from './internals/getQueryKey';
 import type {
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
 } from './shared';
+
+export { getQueryKey } from './internals/getQueryKey';
 
 const HELPERS = ['prefetch', 'prefetchInfinite'];
 
@@ -100,11 +105,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
 ) {
   type RootTypes = inferRouterRootTypes<TRouter>;
 
-  const wrappedProxy = createRecursiveProxy<
-    DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
-  >(async (opts) => {
-    const path = [...opts.path];
-    const args = [...opts.args];
+  async function callOrPrefetch(path: string[], args: unknown[]) {
     const proc = path.reduce(
       (acc, key) =>
         // @ts-expect-error - ??
@@ -141,6 +142,20 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     }
 
     return promise;
+  }
+
+  const wrappedProxy = createRecursiveProxy<
+    DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
+  >((opts) => {
+    const path = [...opts.path];
+    if (
+      path[path.length - 1] === '_def' &&
+      opts.args[0] === getQueryKeyMarker
+    ) {
+      // used by `getQueryKey()`, must not call the procedure
+      return { path: path.slice(0, -1) };
+    }
+    return callOrPrefetch(path, [...opts.args]);
   });
 
   function HydrateClient(props: { children: React.ReactNode }) {

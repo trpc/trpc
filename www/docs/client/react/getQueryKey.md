@@ -93,3 +93,39 @@ import { getMutationKey } from '@trpc/react-query';
 
 const mutationKey = getMutationKey(trpc.user.create);
 ```
+
+## On the server
+
+`getQueryKey` also accepts the procedures and routers of the [server-side helpers](/docs/client/nextjs/pages-router/server-side-helpers) and the [Server Components hydration helpers](/docs/client/react/server-components). Import it from the same entry point as the helpers. Getting a key does not call the procedure.
+
+These examples assume an `appRouter` with `post.list` and `post.byId` procedures.
+
+```ts
+import { createServerSideHelpers, getQueryKey } from '@trpc/react-query/server';
+import { appRouter } from './server/routers/_app';
+
+const helpers = createServerSideHelpers({ router: appRouter, ctx: {} });
+
+// Fetch the list once, then fill the cache for each `post.byId` query
+const posts = await helpers.post.list.fetch();
+for (const post of posts) {
+  helpers.queryClient.setQueryData(
+    getQueryKey(helpers.post.byId, { id: post.id }, 'query'),
+    post,
+  );
+}
+```
+
+```ts
+import { getQueryKey } from '@trpc/react-query/rsc';
+import { getQueryClient, trpc } from '../trpc/server';
+
+await trpc.post.byId.prefetch({ id: '1' });
+
+const state = getQueryClient().getQueryState(
+  getQueryKey(trpc.post.byId, { id: '1' }, 'query'),
+);
+if (state?.error) throw state.error;
+```
+
+Pass `'query'` or `'infinite'` as the type when you read or write a single query's data, so the key matches the one `useQuery` or `useInfiniteQuery` uses on the client.

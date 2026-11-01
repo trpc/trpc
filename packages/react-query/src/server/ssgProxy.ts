@@ -163,7 +163,12 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     const args = opts.args;
     const input = args[0];
     const arrayPath = [...opts.path];
-    const utilName = arrayPath.pop() as keyof AnyDecoratedProcedure;
+    const utilName = arrayPath.pop() as keyof AnyDecoratedProcedure | '_def';
+
+    if (utilName === '_def') {
+      // used by `getQueryKey()`
+      return { path: arrayPath };
+    }
 
     const queryFn = () =>
       resolvedOpts.query({ path: arrayPath.join('.'), input });
