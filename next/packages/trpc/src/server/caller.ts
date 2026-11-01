@@ -19,8 +19,11 @@ import {
 import type { RuntimeOption } from './handler/index.ts';
 import {
   checkRouterKeys,
-  type Procedure,
+  type DefCtx,
+  type DefServices,
+  type AnyProcedure,
   type ProcedureDef,
+  type ProcedureDefOf,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -100,13 +103,13 @@ export function createRouterClient<TRouter extends AnyRouter>(
  * @since 0.1.0
  * @stability stable
  */
-export type CallOptions<TDef extends ProcedureDef> = ({} extends TDef['ctx']
-  ? { ctx?: TDef['ctx'] }
-  : { ctx: TDef['ctx'] }) & {
+export type CallOptions<TDef extends ProcedureDef> = ({} extends DefCtx<TDef>
+  ? { ctx?: DefCtx<TDef> }
+  : { ctx: DefCtx<TDef> }) & {
   signal?: AbortSignal;
   /** Passed to middleware and the resolver. @default '' */
   path?: string;
-} & CallServicesOption<TDef['services']>;
+} & CallServicesOption<DefServices<TDef>>;
 
 /** A returned `HttpServerResponse` reaches {@link call}'s caller as a web `Response`. */
 type CallOutput<T> = [Extract<T, ProcedureResponse>] extends [never]
@@ -126,13 +129,13 @@ type CallOutput<T> = [Extract<T, ProcedureResponse>] extends [never]
  * @since 0.1.0
  * @stability stable
  */
-export async function call<TDef extends ProcedureDef>(
-  procedure: Procedure<TDef>,
-  input: TDef['input'],
-  ...[opts]: {} extends CallOptions<TDef>
-    ? [opts?: CallOptions<TDef>]
-    : [opts: CallOptions<TDef>]
-): Promise<CallOutput<TDef['output']>> {
+export async function call<P extends AnyProcedure>(
+  procedure: P,
+  input: ProcedureDefOf<P>['input'],
+  ...[opts]: {} extends CallOptions<ProcedureDefOf<P>>
+    ? [opts?: CallOptions<ProcedureDefOf<P>>]
+    : [opts: CallOptions<ProcedureDefOf<P>>]
+): Promise<CallOutput<ProcedureDefOf<P>['output']>> {
   const o = (opts ?? {}) as {
     ctx?: object;
     signal?: AbortSignal;
@@ -167,7 +170,11 @@ export async function call<TDef extends ProcedureDef>(
       ? Effect.provide(effect, o.layer)
       : effect;
   const exit = await Effect.runPromiseExit(
-    provided as Effect.Effect<CallOutput<TDef['output']>, never, never>,
+    provided as Effect.Effect<
+      CallOutput<ProcedureDefOf<P>['output']>,
+      never,
+      never
+    >,
     { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;

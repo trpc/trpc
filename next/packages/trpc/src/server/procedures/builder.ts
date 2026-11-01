@@ -36,8 +36,13 @@ import {
   mergeMeta,
   type ErrorMap,
   type ErrorSpec,
+  type BuiltDef,
+  type DefFields,
+  type ShapeKey,
   type MetaMerge,
-  type Procedure,
+  type MutationProcedure,
+  type QueryProcedure,
+  type SubscriptionProcedure,
   type Step,
 } from './procedure.ts';
 import type {
@@ -269,6 +274,135 @@ export type SplitStream<R> =
         errors: StreamErrorsOf<Awaited<R>>;
         services: ServicesOf<Awaited<R>>;
       };
+
+// A query's or mutation's def for each `ShapeKey`, as `BuiltDef` makes it
+// but with the fields written out: reading each through `DefFields` costs
+// 2% more on most procedures. The key checks `servicesKey`'s way: requires
+// and the resolver's services, before `Scope` and provided ones are taken
+// out.
+interface ReturnShapes<TDef extends BuilderDef, $Ret> {
+  '000': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+  };
+  '001': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    outputValidated: TDef['outputValidated'];
+    declared: keyof TDef['declared'] & string;
+  };
+  '010': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    services:
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
+  };
+  '011': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    services:
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
+    outputValidated: TDef['outputValidated'];
+    declared: keyof TDef['declared'] & string;
+  };
+  '100': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    ctx: TDef['ctx'];
+  };
+  '101': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    ctx: TDef['ctx'];
+    outputValidated: TDef['outputValidated'];
+    declared: keyof TDef['declared'] & string;
+  };
+  '110': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    ctx: TDef['ctx'];
+    services:
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
+  };
+  '111': {
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    ctx: TDef['ctx'];
+    services:
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
+    outputValidated: TDef['outputValidated'];
+    declared: keyof TDef['declared'] & string;
+  };
+}
+
+type ReturnDef<TDef extends BuilderDef, $Ret> = ReturnShapes<
+  TDef,
+  $Ret
+>[ShapeKey<
+  keyof TDef['ctx'],
+  TDef['requires'] | ServicesKey<$Ret>,
+  TDef['outputValidated']
+>];
+
+// `never` whenever `ServicesOf<Awaited<R>>` is, without `Awaited` on what
+// isn't a promise: the key is worked out for every procedure in a program,
+// read or not, and `SplitReturn` costs 6% more on a client checking a
+// router from source. A `TrpcError`'s brand requires `never`.
+type ServicesKey<R> =
+  R extends Promise<infer U>
+    ? ServicesKey<U>
+    : R extends { readonly [Effect.TypeId]: Effect.Variance<any, any, infer S> }
+      ? S
+      : R extends Stream.Variance<any, any, infer S>
+        ? S
+        : R extends { then: unknown }
+          ? ServicesKey<Awaited<R>>
+          : never;
+
+interface StreamFields<TDef extends BuilderDef, $Ret> extends DefFields {
+  input: Value<TDef['inputIn']>;
+  output: TDef['outputOut'] extends Unset
+    ? SplitStream<$Ret>['output']
+    : SplitStream<$Ret>['output'] extends TrackedEnvelope<any>
+      ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
+      : EventOutput<TDef['outputOut']>;
+  errors: TDef['errors'] | SplitStream<$Ret>['errors'];
+  ctx: TDef['ctx'];
+  services:
+    | TDef['requires']
+    | Exclude<SplitStream<$Ret>['services'], TDef['provided']>;
+  outputValidated: TDef['outputValidated'];
+  declared: keyof TDef['declared'] & string;
+  servicesKey: TDef['requires'] | SplitStream<$Ret>['services'];
+}
 
 // --- resolver checks ------------------------------------------------------------------
 
@@ -954,10 +1088,10 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     >
   >;
 
-  // The terminals spell out their `Procedure` rather than use an alias:
-  // declaration emit prints an alias with its arguments (the builder state
-  // and input schemas), which every package reading the declarations then
-  // works out again; spelled out, it prints the resolved input and output.
+  // The terminals' defs resolve to an object of fields (a member of
+  // `ReturnShapes` or `DefShapes`): declaration emit would print an alias
+  // with its arguments (the builder state and input schemas), which every
+  // package reading the declarations then works out again.
 
   /**
    * A read. The resolver can return a value, a `Promise`, an `Effect`, or a
@@ -971,21 +1105,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   query<$Ret extends ReturnsFor<TDef>>(
     resolver: (opts: ResolverOpts<TDef>) => ResolverReturn<TDef, $Ret>,
-  ): Procedure<{
-    type: 'query';
-    ctx: TDef['ctx'];
-    meta: TDef['meta'];
-    input: Value<TDef['inputIn']>;
-    output: TDef['outputOut'] extends Unset
-      ? SplitReturn<$Ret>['output']
-      : StreamedOutput<TDef['outputOut']>;
-    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
-    services:
-      | Exclude<TDef['requires'], Scope.Scope>
-      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
-    outputValidated: TDef['outputValidated'];
-    declared: TDef['declared'];
-  }>;
+  ): QueryProcedure<ReturnDef<TDef, $Ret>>;
 
   /**
    * A write. Same resolver forms as `query`.
@@ -997,21 +1117,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   mutation<$Ret extends ReturnsFor<TDef>>(
     resolver: (opts: ResolverOpts<TDef>) => ResolverReturn<TDef, $Ret>,
-  ): Procedure<{
-    type: 'mutation';
-    ctx: TDef['ctx'];
-    meta: TDef['meta'];
-    input: Value<TDef['inputIn']>;
-    output: TDef['outputOut'] extends Unset
-      ? SplitReturn<$Ret>['output']
-      : StreamedOutput<TDef['outputOut']>;
-    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
-    services:
-      | Exclude<TDef['requires'], Scope.Scope>
-      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
-    outputValidated: TDef['outputValidated'];
-    declared: TDef['declared'];
-  }>;
+  ): MutationProcedure<ReturnDef<TDef, $Ret>>;
 
   /**
    * A stream of events, over SSE (or a WebSocket). The resolver returns an
@@ -1029,23 +1135,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     resolver: (
       opts: SubscriptionResolverOpts<TDef>,
     ) => SubscriptionReturn<TDef, $Ret>,
-  ): Procedure<{
-    type: 'subscription';
-    ctx: TDef['ctx'];
-    meta: TDef['meta'];
-    input: Value<TDef['inputIn']>;
-    output: TDef['outputOut'] extends Unset
-      ? SplitStream<$Ret>['output']
-      : SplitStream<$Ret>['output'] extends TrackedEnvelope<any>
-        ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
-        : EventOutput<TDef['outputOut']>;
-    errors: TDef['errors'] | SplitStream<$Ret>['errors'];
-    services:
-      | TDef['requires']
-      | Exclude<SplitStream<$Ret>['services'], TDef['provided']>;
-    outputValidated: TDef['outputValidated'];
-    declared: TDef['declared'];
-  }>;
+  ): SubscriptionProcedure<BuiltDef<StreamFields<TDef, $Ret>>>;
 }
 
 /**

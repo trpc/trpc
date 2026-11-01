@@ -61,6 +61,8 @@ import {
   type Procedure,
   type ProcedureDef,
   type ProcedureDefOf,
+  type ProcedureOfType,
+  type ProcedureTypeOf,
   type Step,
   type BuilderDef,
   type ProcedureBuilder,
@@ -159,15 +161,11 @@ export interface ContractProcedureDef<
   TType extends ProcedureType,
   TDef extends ContractDef,
 > {
-  type: TType;
-  ctx: {};
-  meta: TDef['meta'];
   input: Value<TDef['inputIn']>;
   output: ContractOutput<TDef, TType>;
   errors: TDef['errors'];
-  services: never;
   outputValidated: TDef['outputOut'] extends Unset ? never : true;
-  declared: TDef['declared'];
+  declared: keyof TDef['declared'] & string;
   contract: TDef;
 }
 
@@ -180,7 +178,7 @@ export interface ContractProcedureDef<
 export type ContractProcedure<
   TType extends ProcedureType,
   TDef extends ContractDef,
-> = Procedure<ContractProcedureDef<TType, TDef>>;
+> = Procedure<ContractProcedureDef<TType, TDef>, TType>;
 
 /**
  * Any contract procedure.
@@ -432,15 +430,14 @@ export function experimental_isContractProcedure(
  * @stability experimental
  */
 export type inferContract<TRouter> = TRouter extends AnyProcedure
-  ? Procedure<{
-      type: ProcedureDefOf<TRouter>['type'];
-      ctx: {};
-      meta: ProcedureDefOf<TRouter>['meta'];
-      input: ProcedureDefOf<TRouter>['input'];
-      output: ProcedureDefOf<TRouter>['output'];
-      errors: ProcedureDefOf<TRouter>['errors'];
-      services: never;
-    }>
+  ? ProcedureOfType<
+      ProcedureTypeOf<TRouter>,
+      {
+        input: ProcedureDefOf<TRouter>['input'];
+        output: ProcedureDefOf<TRouter>['output'];
+        errors: ProcedureDefOf<TRouter>['errors'];
+      }
+    >
   : { [K in keyof TRouter]: inferContract<Unlazy<TRouter[K]>> };
 
 /**

@@ -17,6 +17,7 @@ import {
   stream,
   tracked,
   TrpcError,
+  type AnyProcedure,
   type inferInputIssue,
   type InputValidationErrorData,
   type inferProcedureErrors,
@@ -870,7 +871,9 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
   };
   const failure = async (procedure: keyof typeof procedures) => {
     const [, err] = await safe<unknown, TrpcError>(
-      call(procedures[procedure] as never, undefined, { ctx: {} } as never),
+      call(procedures[procedure] as AnyProcedure, undefined, {
+        ctx: {},
+      } as never),
     );
     return err && { code: err.code, message: err.message };
   };

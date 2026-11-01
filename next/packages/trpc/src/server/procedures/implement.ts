@@ -34,7 +34,11 @@ import {
   isProcedure,
   mergeMeta,
   type AnyProcedure,
+  type BuiltDef,
+  type DefFields,
   type Procedure,
+  type ProcedureOfType,
+  type ProcedureTypeOf,
 } from './procedure.ts';
 import type { EventOutput, ResultOf } from '../validation/index.ts';
 import type { TrackedEnvelope } from '../subscriptions/index.ts';
@@ -99,17 +103,25 @@ export type ImplementedProcedure<
   TDef extends BuilderDef,
   TContract extends AnyProcedure,
   TServices,
-> = Procedure<{
-  type: ContractDefOf<TContract>['type'];
-  ctx: TDef['ctx'];
-  meta: TDef['meta'];
+> = ProcedureOfType<
+  ProcedureTypeOf<TContract>,
+  BuiltDef<ImplementedFields<TDef, TContract, TServices>>
+>;
+
+interface ImplementedFields<
+  TDef extends BuilderDef,
+  TContract extends AnyProcedure,
+  TServices,
+> extends DefFields {
   input: ContractDefOf<TContract>['input'];
   output: ContractDefOf<TContract>['output'];
   errors: ContractDefOf<TContract>['errors'];
+  ctx: TDef['ctx'];
   services: TDef['requires'] | Exclude<TServices, TDef['provided']>;
   outputValidated: ContractDefOf<TContract>['outputValidated'];
   declared: ContractDefOf<TContract>['declared'];
-}>;
+  servicesKey: TDef['requires'] | TServices;
+}
 
 // The same split as the builder's terminals: see `Returns`.
 type ContractReturns<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
@@ -288,7 +300,7 @@ export type ProcedureImplementer<
   TDef extends BuilderDef,
   TContract extends AnyProcedure,
 > = ImplementerMethods<TDef, TContract> &
-  Pick<Terminals<TDef, TContract>, ContractDefOf<TContract>['type']>;
+  Pick<Terminals<TDef, TContract>, ProcedureTypeOf<TContract>>;
 
 /**
  * The mirror tree `t.implement(contract)` returns.
@@ -312,15 +324,14 @@ export type Implementer<
  * @stability stable
  */
 export type ImplementedRouter<TContract> = TContract extends AnyProcedure
-  ? Procedure<{
-      type: ContractDefOf<TContract>['type'];
-      ctx: any;
-      meta: any;
-      input: ContractDefOf<TContract>['input'];
-      output: ContractDefOf<TContract>['output'];
-      errors: ContractDefOf<TContract>['errors'];
-      services: any;
-    }>
+  ? Procedure<
+      {
+        input: ContractDefOf<TContract>['input'];
+        output: ContractDefOf<TContract>['output'];
+        errors: ContractDefOf<TContract>['errors'];
+      },
+      ProcedureTypeOf<TContract>
+    >
   : { readonly [K in keyof TContract]: ImplementedRouter<TContract[K]> };
 
 /**
@@ -521,7 +532,7 @@ export interface ImplementerRoot<
 }
 
 type ContractMeta<TContract> = TContract extends AnyProcedure
-  ? ContractDefOf<TContract>['meta']
+  ? ContractDefOf<TContract>['contract']['meta']
   : { [K in keyof TContract]: ContractMeta<TContract[K]> }[keyof TContract];
 
 type MetaMismatch<TMeta, TContractMeta> = TContractMeta extends object

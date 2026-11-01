@@ -18,6 +18,7 @@ import type {
   AnyProcedure,
   ProcedureDef,
   ProcedureDefOf,
+  ProcedureTypeOf,
   Unlazy,
 } from '../server/procedures/index.ts';
 import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
@@ -371,25 +372,27 @@ export type DecorateProcedure<
   TForm extends OutputForm | undefined = undefined,
   TLinks extends ChainTypes = {},
 > = P extends AnyProcedure
-  ? DecorateDef<ProcedureDefOf<P>, TContext, TForm, TLinks>
+  ? DecorateDef<ProcedureDefOf<P>, ProcedureTypeOf<P>, TContext, TForm, TLinks>
   : never;
 
 type DecorateDef<
   D extends ProcedureDef,
+  TType extends ProcedureType,
   TContext extends object,
   TForm extends OutputForm | undefined,
   TLinks extends ChainTypes,
 > =
-  Carries<D['type'], TLinks> extends false
-    ? NoLinkCarries<D['type']>
-    : DecorateCarried<D, TContext, TForm, TLinks>;
+  Carries<TType, TLinks> extends false
+    ? NoLinkCarries<TType>
+    : DecorateCarried<D, TType, TContext, TForm, TLinks>;
 
 type DecorateCarried<
   D extends ProcedureDef,
+  TType extends ProcedureType,
   TContext extends object,
   TForm extends OutputForm | undefined,
   TLinks extends ChainTypes,
-> = D['type'] extends 'query'
+> = TType extends 'query'
   ? {
       query(
         ...args: ProcedureCallArgs<
@@ -413,7 +416,7 @@ type DecorateCarried<
             | DefinedError<ChainErrors<TLinks>>
           >;
     }
-  : D['type'] extends 'mutation'
+  : TType extends 'mutation'
     ? {
         mutate(
           ...args: ProcedureCallArgs<
@@ -566,7 +569,7 @@ export type DecodedDef<P, C, F extends OutputForm> = F['streaming'] extends true
     ? true extends V
       ? ProcedureDefOf<P>['output'] extends AsyncIterable<any>
         ? ProcedureDefOf<P>
-        : UndecodedErrors<ProcedureDefOf<P>, keyof M, F>
+        : UndecodedErrors<ProcedureDefOf<P>, unknown extends M ? never : M, F>
       : ProcedureDefOf<P>
     : ProcedureDefOf<P>;
 
@@ -576,13 +579,9 @@ interface UndecodedErrors<
   TCodes,
   F extends OutputForm,
 > {
-  type: D['type'];
-  ctx: D['ctx'];
-  meta: D['meta'];
   input: D['input'];
   output: D['output'];
   errors: EncodedErrors<D['errors'], TCodes, F>;
-  services: D['services'];
 }
 
 type EncodedErrors<E, TCodes, F extends OutputForm> =
@@ -616,6 +615,7 @@ type DecodingRouter<
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateDef<
         DecodedDef<TRouter[K], ContractAt<C, K>, F>,
+        ProcedureTypeOf<TRouter[K]>,
         TContext,
         DecodedForm<TRouter[K], ContractAt<C, K>, F, TDecoded>,
         TLinks

@@ -23,7 +23,10 @@ type Args<I> = undefined extends I ? [input?: I] : [input: I];
 
 type Def<P extends AnyProcedure> = NonNullable<P['~trpc']['~types']>;
 
-type Call<D extends ProcedureDef> = D['type'] extends 'mutation'
+type Call<
+  P extends AnyProcedure,
+  D extends ProcedureDef = Def<P>,
+> = P['~trpc']['type'] extends 'mutation'
   ? {
       mutate(
         ...args: Args<D['input']>
@@ -35,7 +38,10 @@ type Call<D extends ProcedureDef> = D['type'] extends 'mutation'
       ): RegistryPromise<D['output'], CallError<D['errors']>>;
     };
 
-type EffectCall<D extends ProcedureDef> = D['type'] extends 'mutation'
+type EffectCall<
+  P extends AnyProcedure,
+  D extends ProcedureDef = Def<P>,
+> = P['~trpc']['type'] extends 'mutation'
   ? {
       mutate(
         ...args: Args<D['input']>
@@ -50,14 +56,14 @@ type EffectCall<D extends ProcedureDef> = D['type'] extends 'mutation'
 /** The Promise client: each call fails with its own procedure's errors. */
 export type RegistryClient<R> = {
   [K in keyof R & string]: R[K] extends AnyProcedure
-    ? Call<Def<R[K]>>
+    ? Call<R[K]>
     : RegistryClient<R[K]>;
 };
 
 /** The Effect client: each call an `Effect` failing with its own errors. */
 export type RegistryEffectClient<R> = {
   [K in keyof R & string]: R[K] extends AnyProcedure
-    ? EffectCall<Def<R[K]>>
+    ? EffectCall<R[K]>
     : RegistryEffectClient<R[K]>;
 };
 

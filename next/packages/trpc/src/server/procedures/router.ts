@@ -20,7 +20,6 @@ import type {
 import {
   isProcedure,
   type AnyProcedure,
-  type ProcedureDef,
   type ProcedureDefOf,
 } from './procedure.ts';
 
@@ -486,12 +485,15 @@ export type inferRouterOutputs<T> = [SourceClient<T>] extends [never]
   ? OutputMap<T, JsonForm>
   : ClientOutputMap<SourceClient<T>['router'], SourceClient<T>['links']>;
 
-/** One field of every procedure's def; an untyped (`any`) subtree adds none. */
-type DefField<R, F extends keyof ProcedureDef> =
+/**
+ * What every procedure's def gives `F` (`never` from a def without it, as
+ * `ctx` and `services` may be); an untyped (`any`) subtree adds none.
+ */
+type DefField<R, F extends 'errors' | 'ctx' | 'services'> =
   IsAny<R> extends true
     ? never
     : R extends AnyProcedure
-      ? ProcedureDefOf<R>[F]
+      ? ProcedureDefOf<R>[F & keyof ProcedureDefOf<R>]
       : { [K in keyof R]: DefField<Unlazy<R[K]>, F> }[keyof R];
 
 /**

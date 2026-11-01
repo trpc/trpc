@@ -145,7 +145,10 @@ export function createErrorBoundary<
 
 type Def<P extends AnyProcedure> = NonNullable<P['~trpc']['~types']>;
 
-type ProcedureOptions<D extends ProcedureDef> = D['type'] extends 'mutation'
+type ProcedureOptions<
+  P extends AnyProcedure,
+  D extends ProcedureDef = Def<P>,
+> = P['~trpc']['type'] extends 'mutation'
   ? {
       mutationOptions(): MutationOptionsOut<
         D['input'],
@@ -163,7 +166,7 @@ type ProcedureOptions<D extends ProcedureDef> = D['type'] extends 'mutation'
 /** TanStack options over the client: each call's error is its own. */
 export type RegistryQueryUtils<R> = {
   [K in keyof R & string]: R[K] extends AnyProcedure
-    ? ProcedureOptions<Def<R[K]>>
+    ? ProcedureOptions<R[K]>
     : RegistryQueryUtils<R[K]>;
 };
 

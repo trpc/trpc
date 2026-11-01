@@ -6,30 +6,31 @@
  */
 import type { Stream } from 'effect';
 import type {
+  AnyProcedure,
   AnyTrpcError,
   CallOptions,
-  Procedure,
-  ProcedureDef,
+  inferProcedureInput,
+  inferProcedureOutput,
 } from '@trpc12/trpc/server';
 
 /** A: a subscription resolves to `Stream<Event, Errors>`. */
-export declare function callA<TDef extends ProcedureDef>(
-  procedure: Procedure<TDef>,
-  input: TDef['input'],
-  opts?: CallOptions<TDef>,
+export declare function callA<P extends AnyProcedure>(
+  procedure: P,
+  input: inferProcedureInput<P>,
+  opts?: CallOptions<NonNullable<P['~trpc']['~types']>>,
 ): Promise<
-  TDef['type'] extends 'subscription'
-    ? Stream.Stream<TDef['output'], AnyTrpcError>
-    : TDef['output']
+  P['~trpc']['type'] extends 'subscription'
+    ? Stream.Stream<inferProcedureOutput<P>, AnyTrpcError>
+    : inferProcedureOutput<P>
 >;
 
 /** B: a subscription resolves to an `AsyncIterable` of events. */
-export declare function callB<TDef extends ProcedureDef>(
-  procedure: Procedure<TDef>,
-  input: TDef['input'],
-  opts?: CallOptions<TDef>,
+export declare function callB<P extends AnyProcedure>(
+  procedure: P,
+  input: inferProcedureInput<P>,
+  opts?: CallOptions<NonNullable<P['~trpc']['~types']>>,
 ): Promise<
-  TDef['type'] extends 'subscription'
-    ? AsyncIterable<TDef['output']>
-    : TDef['output']
+  P['~trpc']['type'] extends 'subscription'
+    ? AsyncIterable<inferProcedureOutput<P>>
+    : inferProcedureOutput<P>
 >;

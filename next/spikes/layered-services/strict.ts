@@ -51,17 +51,18 @@ type Resolve<TDef extends BuilderDef, TType extends 'query' | 'mutation'> = <
     Result<TDef> &
     StrictErrors<$Ret> &
     UndeclaredCheck<TDef, SplitReturn<$Ret>['errors']>,
-) => Procedure<{
-  type: TType;
-  ctx: TDef['ctx'];
-  meta: TDef['meta'];
-  input: Value<TDef['inputIn']>;
-  output: TDef['outputOut'];
-  errors: TDef['errors'];
-  services:
-    | TDef['requires']
-    | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
-}>;
+) => Procedure<
+  {
+    ctx: TDef['ctx'];
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'];
+    errors: TDef['errors'];
+    services:
+      | TDef['requires']
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+  },
+  TType
+>;
 
 /** The terminals of a strict procedure. */
 export interface StrictBuilder<TDef extends BuilderDef> {

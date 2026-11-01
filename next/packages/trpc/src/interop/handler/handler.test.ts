@@ -695,7 +695,7 @@ type V11Procedure<
   subscription: TRPCSubscriptionProcedure<
     D & { output: AsyncIterable<D['output'], void, any> }
   >;
-}[NonNullable<P['~trpc']['~types']>['type']];
+}[P['~trpc']['type']];
 type V11AppRouter<
   TRouter,
   TTransformer extends boolean = false,

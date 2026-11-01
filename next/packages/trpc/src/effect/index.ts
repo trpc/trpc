@@ -62,11 +62,16 @@ import type {
   SubscribeOptions,
   UnmetNeedCheck,
 } from '../client/types.ts';
-import type { ClientValue, OutputForm } from '../internal/types.ts';
+import type {
+  ClientValue,
+  OutputForm,
+  ProcedureType,
+} from '../internal/types.ts';
 import type {
   AnyProcedure,
   ProcedureDef,
   ProcedureDefOf,
+  ProcedureTypeOf,
   Unlazy,
 } from '../server/procedures/index.ts';
 
@@ -82,28 +87,30 @@ export type DecorateEffectProcedure<
   TContext extends object = {},
   TLinks extends ChainTypes = {},
 > = P extends AnyProcedure
-  ? DecorateEffectDef<ProcedureDefOf<P>, TContext, TLinks>
+  ? DecorateEffectDef<ProcedureDefOf<P>, ProcedureTypeOf<P>, TContext, TLinks>
   : never;
 
 type DecorateEffectDef<
   D extends ProcedureDef,
+  TType extends ProcedureType,
   TContext extends object,
   TLinks extends ChainTypes,
   TForm extends OutputForm | undefined = undefined,
 > =
-  Carries<D['type'], TLinks> extends false
-    ? NoLinkCarries<D['type']>
-    : DecorateEffectCarried<D, TContext, TLinks, TForm>;
+  Carries<TType, TLinks> extends false
+    ? NoLinkCarries<TType>
+    : DecorateEffectCarried<D, TType, TContext, TLinks, TForm>;
 
 /** A query's or mutation's Effect for a streamed output, as on the Promise client. */
 type StreamedEffect<V, E> = Effect.Effect<Streamed<V, E>, E>;
 
 type DecorateEffectCarried<
   D extends ProcedureDef,
+  TType extends ProcedureType,
   TContext extends object,
   TLinks extends ChainTypes,
   TForm extends OutputForm | undefined,
-> = D['type'] extends 'query'
+> = TType extends 'query'
   ? {
       query(
         ...args: ProcedureCallArgs<
@@ -127,7 +134,7 @@ type DecorateEffectCarried<
             | DefinedError<ChainErrors<TLinks>>
           >;
     }
-  : D['type'] extends 'mutation'
+  : TType extends 'mutation'
     ? {
         mutate(
           ...args: ProcedureCallArgs<
@@ -203,6 +210,7 @@ type DecodingEffectRouter<
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateEffectDef<
         DecodedDef<TRouter[K], ContractAt<C, K>, F>,
+        ProcedureTypeOf<TRouter[K]>,
         TContext,
         TLinks,
         DecodedForm<TRouter[K], ContractAt<C, K>, F, TDecoded>

@@ -8,6 +8,10 @@
 export type {
   BuilderDef,
   BuilderInternals,
+  BuiltDef,
+  DefFields,
+  DefShapes,
+  ShapeKey,
   ConcatCheck,
   EveryLeafDeclares,
   ImplementMetaCheck,
@@ -24,6 +28,7 @@ export type {
   With,
   ExactRouter,
   ImplementedProcedure,
+  ProcedureOfType,
   ImplementerDef,
   ImplementerMethods,
   UndeclaredCheck,

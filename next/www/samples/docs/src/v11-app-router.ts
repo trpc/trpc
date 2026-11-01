@@ -39,7 +39,7 @@ type V11Procedure<
   subscription: TRPCSubscriptionProcedure<
     D & { output: AsyncIterable<D['output'], void, any> }
   >;
-}[NonNullable<P['~trpc']['~types']>['type']];
+}[P['~trpc']['type']];
 
 /** What `@trpc/client` 11 apps are typed against. */
 export type V11AppRouter = TRPCBuiltRouter<

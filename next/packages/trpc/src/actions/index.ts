@@ -27,7 +27,11 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
-import type { ProgressiveJsonForm, MaybePromise } from '../internal/types.ts';
+import type {
+  ProgressiveJsonForm,
+  MaybePromise,
+  ProcedureType,
+} from '../internal/types.ts';
 import {
   experimental_parseBracketNotation,
   experimental_coerceBySchema,
@@ -41,6 +45,8 @@ import {
 import type { RuntimeOption } from '../server/handler/index.ts';
 import type {
   AnyProcedure,
+  DefCtx,
+  DefServices,
   Procedure,
   ProcedureDef,
 } from '../server/procedures/index.ts';
@@ -205,13 +211,16 @@ export type Callable<
  * Why a procedure can't be wrapped by a factory, as a rest-argument error.
  * @internal
  */
-type Fits<TDef extends ProcedureDef, TCtx, TServices> = TDef['type'] extends
-  | 'query'
-  | 'mutation'
-  ? TCtx extends TDef['ctx']
-    ? [TDef['services']] extends [never]
+type Fits<
+  TDef extends ProcedureDef,
+  TType extends ProcedureType,
+  TCtx,
+  TServices,
+> = TType extends 'query' | 'mutation'
+  ? TCtx extends DefCtx<TDef>
+    ? [DefServices<TDef>] extends [never]
       ? []
-      : [TDef['services']] extends [TServices]
+      : [DefServices<TDef>] extends [TServices]
         ? []
         : [
             error: 'The factory runtime does not provide the services this procedure needs',
@@ -339,9 +348,9 @@ export function experimental_createAction<
   TMode extends ActionResultMode = 'safe',
 >(
   opts?: CreateActionOptions<TCtx, TServices, TMode>,
-): <TDef extends ProcedureDef>(
-  procedure: Procedure<TDef>,
-  ...fits: Fits<TDef, TCtx, TServices>
+): <TDef extends ProcedureDef, TType extends ProcedureType>(
+  procedure: Procedure<TDef, TType>,
+  ...fits: Fits<TDef, TType, TCtx, TServices>
 ) => Action<TDef, TMode> {
   return makeFactory(opts as never, plainResult) as never;
 }
@@ -367,9 +376,9 @@ export function experimental_createCallable<
   TMode extends ActionResultMode = 'safe',
 >(
   opts?: CreateActionOptions<TCtx, TServices, TMode>,
-): <TDef extends ProcedureDef>(
-  procedure: Procedure<TDef>,
-  ...fits: Fits<TDef, TCtx, TServices>
+): <TDef extends ProcedureDef, TType extends ProcedureType>(
+  procedure: Procedure<TDef, TType>,
+  ...fits: Fits<TDef, TType, TCtx, TServices>
 ) => Callable<TDef, TMode> {
   return makeFactory(opts as never, dualResult) as never;
 }

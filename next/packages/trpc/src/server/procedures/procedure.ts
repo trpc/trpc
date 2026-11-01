@@ -59,35 +59,37 @@ export function mergeMeta(
 }
 
 /**
- * Everything the type system knows about a procedure.
+ * What a built procedure's type carries: what clients read (`input`,
+ * `output`, `errors`) and what the handler that serves it must provide
+ * (`ctx`, `services`). A field that would say nothing is left out, so
+ * hovers and declarations show only what the procedure needs. The
+ * procedure's type (`'query'`, …) is {@link Procedure}'s.
  * @since 0.1.0
  * @stability stable
  */
 export interface ProcedureDef {
-  type: ProcedureType;
-  /** The root ctx the handler must provide. */
-  ctx: object;
-  meta: object;
   /** What the client sends. */
   input: unknown;
   /** What the client receives (for subscriptions, each event). */
   output: unknown;
   /** The typed error union. */
   errors: AnyTrpcError;
-  /** Effect services the handler's `layer` must provide. */
-  services: unknown;
+  /** The root ctx the handler must provide; left out when that's `{}`. */
+  ctx?: object;
+  /** Effect services the handler's `layer` must provide; left out when none. */
+  services?: unknown;
   /**
-   * `true` when an output schema validates the result (a contract's always
-   * does), else `never`: what `experimental_validationLink` checks, and
-   * with `output: 'json'` decodes.
+   * Set when an output schema validates the result (a contract's may):
+   * what `experimental_validationLink` checks, and with `output: 'json'`
+   * decodes.
    */
   outputValidated?: true;
   /**
-   * Type only: the errors `.errors()` declares, by code. Their schemas are
-   * what `experimental_validationLink` decodes errors' `data` with, so
+   * With `outputValidated`, the codes `.errors()` declares: their schemas
+   * are what `experimental_validationLink` decodes errors' `data` with, so
    * only these codes' `data` is typed decoded behind it.
    */
-  declared?: object;
+  declared?: string;
 }
 
 /** @internal */
@@ -113,8 +115,10 @@ export type Step =
  * @since 0.1.0
  * @stability stable
  */
-export interface ProcedureInternals {
-  readonly type: ProcedureType;
+export interface ProcedureInternals<
+  TType extends ProcedureType = ProcedureType,
+> {
+  readonly type: TType;
   readonly meta: object;
   readonly steps: ReadonlyArray<Step>;
   readonly output: OutputSchema | undefined;
@@ -128,13 +132,67 @@ export interface ProcedureInternals {
 }
 
 /**
- * A procedure: a leaf of a router.
+ * A procedure: a leaf of a router. Built ones are a
+ * {@link QueryProcedure}, {@link MutationProcedure} or
+ * {@link SubscriptionProcedure}.
  * @since 0.1.0
  * @stability stable
  */
-export interface Procedure<TDef extends ProcedureDef> {
-  readonly '~trpc': ProcedureInternals & { readonly '~types'?: TDef };
+export interface Procedure<
+  TDef extends ProcedureDef = ProcedureDef,
+  TType extends ProcedureType = ProcedureType,
+> {
+  readonly '~trpc': ProcedureInternals<TType> & { readonly '~types'?: TDef };
 }
+
+// The three are aliases, not interfaces extending `Procedure`: hovers and
+// declarations print an alias of an interface by its name all the same, and
+// `Procedure<D, 'query'>` against `AnyProcedure` is compared by its type
+// arguments where a sub-interface is compared member by member (+14% on a
+// handler reading 1000 procedures from `.d.ts`).
+
+/**
+ * A query procedure.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type QueryProcedure<TDef extends ProcedureDef> = Procedure<
+  TDef,
+  'query'
+>;
+
+/**
+ * A mutation procedure.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type MutationProcedure<TDef extends ProcedureDef> = Procedure<
+  TDef,
+  'mutation'
+>;
+
+/**
+ * A subscription procedure.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type SubscriptionProcedure<TDef extends ProcedureDef> = Procedure<
+  TDef,
+  'subscription'
+>;
+
+/**
+ * The procedure of type `TType` with def `TDef`.
+ * @internal
+ */
+export type ProcedureOfType<
+  TType extends ProcedureType,
+  TDef extends ProcedureDef,
+> = {
+  query: QueryProcedure<TDef>;
+  mutation: MutationProcedure<TDef>;
+  subscription: SubscriptionProcedure<TDef>;
+}[TType];
 
 /**
  * Any procedure.
@@ -142,6 +200,110 @@ export interface Procedure<TDef extends ProcedureDef> {
  * @stability stable
  */
 export type AnyProcedure = Procedure<any>;
+
+/**
+ * Which of a built def's optional fields say something: `1` for `ctx` unless
+ * it's `{}` (`C` its keys), for `services` unless `S` is `never`, and for
+ * `outputValidated` (with `declared`) unless `V` is `never`. The key of
+ * {@link DefShapes}.
+ * @internal
+ */
+// Its arguments are types many procedures share (`never`, a ctx's keys), so
+// TypeScript works each combination out once, where the same checks in a
+// def's own type ran for every procedure.
+export type ShapeKey<C, S, V> =
+  `${[C] extends [never] ? 0 : 1}${[S] extends [never] ? 0 : 1}${[V] extends [never] ? 0 : 1}`;
+
+/**
+ * Every field a built def may carry, for {@link BuiltDef}. `servicesKey` is
+ * `never` when `services` surely is, and cheaper to work out.
+ * @internal
+ */
+export interface DefFields {
+  input: unknown;
+  output: unknown;
+  errors: unknown;
+  ctx: unknown;
+  services: unknown;
+  outputValidated: unknown;
+  declared: unknown;
+  servicesKey: unknown;
+}
+
+/**
+ * A built def for each {@link ShapeKey}: the fields that say something.
+ * @internal
+ */
+// Interface members are worked out when read, so only the one the key picks
+// is; a conditional per field would resolve every branch's check for every
+// procedure (twice the instantiations, with a key-filtering mapped type).
+export interface DefShapes<F extends DefFields> {
+  '000': { input: F['input']; output: F['output']; errors: F['errors'] };
+  '001': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    outputValidated: F['outputValidated'];
+    declared: F['declared'];
+  };
+  '010': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    services: F['services'];
+  };
+  '011': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    services: F['services'];
+    outputValidated: F['outputValidated'];
+    declared: F['declared'];
+  };
+  '100': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    ctx: F['ctx'];
+  };
+  '101': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    ctx: F['ctx'];
+    outputValidated: F['outputValidated'];
+    declared: F['declared'];
+  };
+  '110': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    ctx: F['ctx'];
+    services: F['services'];
+  };
+  '111': {
+    input: F['input'];
+    output: F['output'];
+    errors: F['errors'];
+    ctx: F['ctx'];
+    services: F['services'];
+    outputValidated: F['outputValidated'];
+    declared: F['declared'];
+  };
+}
+
+/**
+ * A built procedure's def from every field, leaving out those that say
+ * nothing: `ctx` when it's `{}`, `services` when `never`, and
+ * `outputValidated` and `declared` unless the output is validated. Hovers
+ * and declarations print the fields, not this alias.
+ * @internal
+ */
+export type BuiltDef<F extends DefFields> = DefShapes<F>[ShapeKey<
+  keyof F['ctx'],
+  F['servicesKey'],
+  F['outputValidated']
+>];
 
 /**
  * A procedure's def, read by index rather than inferred from
@@ -156,6 +318,28 @@ export type ProcedureDefOf<P> =
     : P extends AnyProcedure
       ? NonNullable<P['~trpc']['~types']>
       : never;
+
+/**
+ * A procedure's type: `'query'`, `'mutation'` or `'subscription'`.
+ * @internal
+ */
+export type ProcedureTypeOf<P> = P extends AnyProcedure
+  ? P['~trpc']['type']
+  : never;
+
+/**
+ * The root ctx a procedure's handler must provide (`{}` when none).
+ * @internal
+ */
+export type DefCtx<D> = D extends { readonly ctx: infer C } ? C : {};
+
+/**
+ * The Effect services a procedure's handler must provide (`never` when none).
+ * @internal
+ */
+export type DefServices<D> = D extends { readonly services: infer S }
+  ? S
+  : never;
 
 /**
  * What the client sends to a procedure.
