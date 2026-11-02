@@ -2,6 +2,7 @@
 id: ssg
 title: Static Site Generation
 sidebar_label: Static Site Generation (SSG)
+description: Prefetch tRPC queries in getStaticProps with the server-side helpers and stop the client from refetching them
 slug: /client/nextjs/pages-router/ssg
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"

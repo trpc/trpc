@@ -2,6 +2,7 @@
 id: useQuery
 title: useQuery()
 sidebar_label: useQuery()
+description: Fetch data with the classic trpc.procedure.useQuery() hook, its tRPC-specific options and streaming
 slug: /client/react/useQuery
 section: "Client Usage"
 parent: "client/react"

@@ -2,6 +2,7 @@
 id: server-side-helpers
 title: Server-Side Helpers
 sidebar_label: Server-Side Helpers
+description: Prefetch or fetch tRPC queries in getServerSideProps and getStaticProps with createServerSideHelpers, then pass them to the page as trpcState
 slug: /client/nextjs/pages-router/server-side-helpers
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"

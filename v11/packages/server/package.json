@@ -17,6 +17,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "prepack": "node ../../../www/build/skills.ts --package .",
     "dev": "tsdown --watch",
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "lint": "oxlint src",
@@ -187,7 +188,8 @@
     "shared",
     "unstable-core-do-not-import",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills"
   ],
   "publishConfig": {
     "access": "public"
@@ -195,6 +197,7 @@
   "devDependencies": {
     "@fastify/websocket": "catalog:",
     "@oxc-project/runtime": "0.152.0",
+    "@tanstack/intent": "0.5.6",
     "@tanstack/react-query": "^5.105.0",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
@@ -250,5 +253,8 @@
     "next": {
       "optional": true
     }
-  }
+  },
+  "keywords": [
+    "tanstack-intent"
+  ]
 }

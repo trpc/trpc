@@ -5,6 +5,27 @@ sidebar_label: Authorization
 slug: /server/authorization
 section: "Backend Usage"
 order: 20
+skill:
+  name: auth
+  package: "@trpc/server"
+  type: composition
+  requires:
+    - server-setup
+    - middlewares
+    - client-setup
+  description: Implement JWT/cookie authentication and authorization in tRPC using
+    createContext for user extraction, t.middleware with opts.next({ ctx }) for
+    context narrowing to non-null user, protectedProcedure base pattern,
+    client-side Authorization headers via httpBatchLink headers(), WebSocket
+    connectionParams, and SSE auth via cookies or EventSource polyfill custom
+    headers. UNAUTHORIZED vs FORBIDDEN, role checks stacked on
+    protectedProcedure, and why createContext shouldn't throw for a bad token.
+  include:
+    - client/headers
+    - client/links/httpSubscriptionLink#headers-and-authorization--authentication
+    - server/websockets#connectionParams
+  references:
+    - client/cors
 ---
 
 The `createContext` function is called for each incoming request, so here you can add contextual information about the calling user from the request object.
@@ -117,3 +138,45 @@ t.router({
   }),
 });
 ```
+
+## Building on a protected procedure
+
+Since a procedure's middlewares run in order, you can add more checks on top of `protectedProcedure`, where `ctx.user` is already non-null:
+
+```ts twoslash title='server/trpc.ts'
+import { initTRPC, TRPCError } from '@trpc/server';
+
+type Context = { user: { name: string; role: 'admin' | 'user' } | null };
+
+export const t = initTRPC.context<Context>().create();
+
+export const protectedProcedure = t.procedure.use(async (opts) => {
+  if (!opts.ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return opts.next({ ctx: { user: opts.ctx.user } });
+});
+
+export const adminProcedure = protectedProcedure.use(async (opts) => {
+  if (opts.ctx.user.role !== 'admin') {
+    //           ^?
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+  return opts.next();
+});
+```
+
+Throw `UNAUTHORIZED` (401) when the caller isn't signed in, and `FORBIDDEN` (403) when they are, but aren't allowed to do this.
+
+## Sending credentials from the client
+
+- **Cookies** are sent with every request when the client and server are on the same origin. For another origin, see [CORS & Cookies](../client/cors.md).
+- **Headers** like `Authorization` can be set on any HTTP link with the [`headers`](../client/headers.md) option.
+- **Subscriptions** over SSE can't send custom headers with the browser's `EventSource`. See [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md#headers-and-authorization--authentication) for the options.
+- **WebSockets** send [connection params](./websockets.md#connectionParams) when the connection opens, which `createContext` reads from `opts.info.connectionParams`.
+
+## Common mistakes
+
+- **Calling `opts.next()` without the narrowed `ctx`.** Procedures after the middleware still see `ctx.user` as nullable. Pass `opts.next({ ctx: { user: opts.ctx.user } })`, as in [Option 2](#option-2-authorize-using-middleware).
+- **Throwing in `createContext` for a missing or invalid token.** That fails every procedure in the request, public ones too. Return `user: null` instead, and let a middleware reject the procedures that need a user.
+- **Putting tokens in `httpSubscriptionLink`'s `connectionParams`.** They are sent in the URL, where servers and proxies may log them. Prefer cookies, or headers through an `EventSource` ponyfill.

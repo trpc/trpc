@@ -5,6 +5,18 @@ sidebar_label: Middlewares
 slug: /server/middlewares
 section: "Backend Usage"
 order: 10
+skill:
+  name: middlewares
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Create and compose tRPC middleware with t.procedure.use(), extend
+    context via opts.next({ ctx }), build reusable middleware with .concat() and
+    .unstable_pipe(), define base procedures like adminProcedure and
+    protectedProcedure. Read unvalidated input with opts.getRawInput() before
+    .input(), check result.ok from opts.next(). Authorization, logging and
+    timing patterns.
 ---
 
 You can add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must call `opts.next()` and return its result.
@@ -160,6 +172,38 @@ protectedProcedure.query((opts) => {
   //     ^?
 });
 ```
+
+The `ctx` you pass to `opts.next()` is merged into the existing context, so you only need to pass the keys you add or override.
+
+## Middleware order and input
+
+Middlewares run in the order they're chained, and the parser you pass to `.input()` runs at its position in that chain. A middleware chained before `.input()` gets `opts.input` as `undefined`; it can read the unvalidated input with `opts.getRawInput()` instead.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+// ---cut---
+const auditedProcedure = publicProcedure.use(async (opts) => {
+  const rawInput = await opts.getRawInput();
+  console.log(`${opts.type} ${opts.path}`, rawInput);
+  return opts.next();
+});
+
+auditedProcedure
+  .input(z.object({ id: z.string() }))
+  .use((opts) => {
+    // after `.input()`, `opts.input` is parsed and typed
+    console.log(opts.input.id);
+    return opts.next();
+  })
+  .query((opts) => opts.input.id);
+```
+
+Besides `ctx`, `input`, `getRawInput` and `next`, a middleware receives the procedure's `path`, `type` (`'query'`, `'mutation'` or `'subscription'`), [`meta`](metadata.md), and the request's `signal`.
 
 ## Using `.concat()` to create reusable middlewares and plugins {#concat}
 
@@ -336,6 +380,27 @@ fooMiddleware.unstable_pipe(barMiddleware);
 
 // ✅ `ctx.a` overlaps from `barMiddleware` and `fooMiddleware`
 barMiddleware.unstable_pipe(fooMiddleware);
+```
+
+## Common mistakes
+
+- **Not returning `opts.next()`.** Every middleware must call `opts.next()` and return its result. Otherwise TypeScript reports an error, and at runtime the call fails with an `INTERNAL_SERVER_ERROR` ("No result from middlewares - did you forget to `return next()`?").
+- **Wrapping `opts.next()` in `try`/`catch`.** `opts.next()` doesn't throw when a later middleware or the procedure fails: it resolves to a result with `ok: false` and the `TRPCError`. Check `result.ok`, like the [logging example](#logging) does:
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+// ---cut---
+const reportedProcedure = publicProcedure.use(async (opts) => {
+  const result = await opts.next();
+  if (!result.ok) {
+    console.error(`${opts.path} failed`, result.error);
+  }
+  return result;
+});
 ```
 
 ## Experimental: standalone middlewares

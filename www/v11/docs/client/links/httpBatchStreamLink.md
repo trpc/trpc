@@ -1,6 +1,7 @@
 ---
 id: httpBatchStreamLink
 title: HTTP Batch Stream Link
+description: A terminating link that batches tRPC calls and streams each response as soon as it is ready
 sidebar_label: HTTP Batch Stream Link
 slug: /client/links/httpBatchStreamLink
 section: "Client Usage"
@@ -179,10 +180,11 @@ This includes support for `undici`, `node-fetch`, native Node.js fetch implement
 
 Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which are not available in React Native. It's important to note that if your `TextDecoderStream` polyfill does not automatically polyfill `ReadableStream` and `WritableStream` those will also need to be polyfilled. If you still want to enable streaming, you need to polyfill those.
 
-You will also need to override the default fetch in the `httpBatchStreamLink` configuration options. In the below example we will be using the [Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/) package for the fetch implementation.
+You will also need to override the default fetch in the `httpBatchStreamLink` configuration options with one that can stream. In the below example we will be using [`react-native-fetch-api`](https://github.com/react-native-community/fetch), which streams text when you pass its `reactNative` option. On Expo, you can pass `fetch` from [`expo/fetch`](https://docs.expo.dev/versions/latest/sdk/expo/) instead, which streams without extra options.
 
 ```ts
 import { httpBatchStreamLink } from '@trpc/client';
+import { fetch } from 'react-native-fetch-api';
 
 httpBatchStreamLink({
   fetch: (url, opts) =>

@@ -69,6 +69,31 @@ process.on('SIGTERM', () => {
 });
 ```
 
+### Sharing a port with your HTTP server
+
+To serve HTTP and WebSockets on the same port, pass your HTTP server to `WebSocketServer`. `ws` then handles the upgrade requests, and your adapter handles the rest.
+
+```ts twoslash title='server/index.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// @types: node
+// ---cut---
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { WebSocketServer } from 'ws';
+import { appRouter } from './router';
+
+const server = createHTTPServer({ router: appRouter });
+const wss = new WebSocketServer({ server });
+applyWSSHandler({ wss, router: appRouter });
+
+server.listen(3000);
+```
+
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
@@ -153,7 +178,9 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-### Automatic tracking of id using `tracked()` (recommended)
+`createContext` runs once per connection (after the connection params arrive, if you send them), and every call over that connection shares its result. If it throws, the server sends the error and closes the connection. A token is only checked when the connection opens, so it stays accepted on that connection after it expires.
+
+## Automatic tracking of id using `tracked()` (recommended)
 
 If you `yield` an event using our `tracked()`-helper and include an `id`, the client will automatically reconnect when it gets disconnected and send the last known ID when reconnecting as part of the `lastEventId`-input.
 

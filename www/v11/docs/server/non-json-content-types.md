@@ -5,6 +5,22 @@ sidebar_label: Content Types (JSON, FormData, File, Blob)
 slug: /server/non-json-content-types
 section: "Backend Usage"
 order: 24
+skill:
+  name: non-json-content-types
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+    - links
+  description: Handle FormData, file uploads, Blob, Uint8Array, and ReadableStream
+    inputs in tRPC mutations. Use octetInputParser from @trpc/server/http for
+    binary data. Route non-JSON requests with splitLink and
+    isNonJsonSerializable() from @trpc/client, since batching links send them
+    as `{}`. FormData and binary inputs only work with mutations (POST) and
+    skip the transformer. Keep Express or Next.js body parsers off tRPC
+    routes.
+  include:
+    - server/adapters/express#body-parsers
 ---
 
 tRPC supports multiple content types as procedure inputs: JSON-serializable data, FormData, File, Blob, and other binary types.
@@ -151,33 +167,10 @@ createTRPCClient<AppRouter>({
 
 :::info
 When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
-If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it.
+If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it:
 
-```ts twoslash
-// @filename: router.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-
-// @filename: app.ts
-// ---cut---
-// Example in express
-import express from 'express';
-import * as trpcExpress from '@trpc/server/adapters/express';
-import { appRouter } from './router';
-
-// incorrect
-const app1 = express();
-app1.use(express.json()); // this tries to parse body before tRPC.
-app1.post('/express/hello', (req, res) => { res.end(); }); // normal express route handler
-app1.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC fails to parse body
-
-// correct
-const app2 = express();
-app2.use('/express', express.json()); // do it only in "/express/*" path
-app2.post('/express/hello', (req, res) => { res.end(); });
-app2.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC can parse body
-```
+- Express: see [Body parsers](./adapters/express.md#body-parsers).
+- Next.js Pages Router: turn off Next's body parser in the tRPC API route with `export const config = { api: { bodyParser: false } }`, as in our [FormData example](https://github.com/trpc/trpc/tree/main/examples/next-formdata).
 
 :::
 
@@ -206,6 +199,35 @@ export const appRouter = t.router({
 });
 ```
 
+On the client, pass a `FormData` instance to the mutation:
+
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(z.instanceof(FormData))
+    .mutation((opts) => ({ greeting: `Hello ${opts.input.get('name')}` })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpLink({ url: 'http://localhost:2022' })],
+});
+// ---cut---
+const form = new FormData();
+form.append('name', 'Bilbo');
+
+const result = await client.hello.mutate(form);
+//    ^?
+```
+
 For a more advanced code sample you can see our [example project here](https://github.com/juliusmarminge/trpc-interop/blob/66aa760141030ffc421cae1a3bda9b5f1ab340b6/src/server.ts#L28-L43)
 
 #### `File` and other Binary Type Inputs
@@ -223,12 +245,49 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  upload: publicProcedure.input(octetInputParser).mutation((opts) => {
+  upload: publicProcedure.input(octetInputParser).mutation(async (opts) => {
     const data = opts.input;
     //    ^?
-    return {
-      valid: true,
-    };
+    const reader = data.getReader();
+    let bytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+    }
+    return { bytes };
   }),
 });
 ```
+
+On the client, pass a `File`, `Blob` or `Uint8Array` to the mutation:
+
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { octetInputParser } from '@trpc/server/http';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  upload: t.procedure.input(octetInputParser).mutation(() => ({ bytes: 0 })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpLink({ url: 'http://localhost:2022' })],
+});
+// ---cut---
+const file = new File(['hello world'], 'hello.txt', { type: 'text/plain' });
+
+await client.upload.mutate(file);
+```
+
+## Common mistakes
+
+- **Using a query.** FormData and binary inputs are sent as the body of a `POST` request, so they only work with mutations: `httpLink` throws `FormData is only supported for mutations` for a query.
+- **Sending them through a batching link.** `httpBatchLink`, `httpBatchStreamLink` and `wsLink` serialize inputs as JSON, which turns a `FormData` or `File` into `{}`, so input validation fails. Route them to `httpLink` with a [`splitLink`](#client-setup).
+- **Transforming the request.** tRPC passes FormData and binary inputs to your procedure as they are, without your `transformer`. If you use one, give the non-JSON `httpLink` a transformer that leaves the request alone, as [shown above](#client-setup).
+- **Letting your server parse the body first.** See [Server Setup](#server-setup).

@@ -6,6 +6,22 @@ slug: /server/adapters/aws-lambda
 section: "Backend Usage"
 parent: "server/adapters"
 order: 17
+skill:
+  name: adapter-aws-lambda
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Deploy tRPC on AWS Lambda with awsLambdaRequestHandler() from
+    @trpc/server/adapters/aws-lambda for API Gateway v1 (REST,
+    APIGatewayProxyEvent) and v2 (HTTP, APIGatewayProxyEventV2), and Lambda
+    Function URLs. Enable response streaming with
+    awsLambdaStreamingRequestHandler() wrapped in awslambda.streamifyResponse().
+    CreateAWSLambdaContextOptions provides event and context for context
+    creation. Use one {proxy+} resource for httpBatchLink, or httpLink for a
+    resource per procedure.
+  include:
+    - server/adapters#common-options
 ---
 
 ## AWS Lambda adapter
@@ -104,6 +120,8 @@ export const handler = awsLambdaRequestHandler({
 })
 ```
 
+`awsLambdaRequestHandler` accepts the [options every adapter takes](../adapters.md#common-options), like `onError` and `maxBatchSize`.
+
 Build & deploy your code, now use your API Gateway URL to call your function.
 
 | Endpoint  | HTTP URI                                                                                                     |
@@ -148,6 +166,8 @@ The signature of a streaming handler is different from the default handler. The 
 
 > Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
 
+With streaming, a procedure that returns an async generator, like `iterable` below, sends each value as it's yielded to clients using [`httpBatchStreamLink`](../../client/links/httpBatchStreamLink.md).
+
 ```ts twoslash title='server.ts'
 /// <reference types="aws-lambda" />
 // @filename: router.ts
@@ -186,3 +206,9 @@ export const handler = awslambda.streamifyResponse(
   }),
 );
 ```
+
+## Common mistakes
+
+- **Using `httpBatchLink` with a resource per procedure.** A batch request puts several procedures in one path, like `/getUser,createUser`, which none of those resources match. Use one greedy resource like `/trpc/{proxy+}`, which tRPC reads the procedure path from, or switch to `httpLink`.
+- **Forgetting `awslambda.streamifyResponse()`.** Without it, Lambda calls `awsLambdaStreamingRequestHandler` as a regular handler, which has no response stream to write to.
+- **Expecting the default handler to stream.** `awsLambdaRequestHandler` buffers the whole response before returning it, so `httpBatchStreamLink` responses arrive all at once. Use the [streaming handler](#response-streaming) instead.

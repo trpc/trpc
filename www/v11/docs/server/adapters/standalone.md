@@ -6,6 +6,21 @@ slug: /server/adapters/standalone
 section: "Backend Usage"
 parent: "server/adapters"
 order: 13
+skill:
+  name: adapter-standalone
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Mount tRPC on Node.js built-in HTTP server with createHTTPServer()
+    from @trpc/server/adapters/standalone, createHTTPHandler() for custom
+    http.createServer, createHTTP2Handler() for HTTP/2 with TLS. Configure
+    basePath to slice URL prefix, CORS via the cors npm package passed as
+    middleware option. CreateHTTPContextOptions provides req and res for context
+    creation. Pass the common adapter options (onError, maxBatchSize,
+    maxBodySize) to createHTTPServer.
+  include:
+    - server/adapters#common-options
 ---
 
 tRPC's Standalone Adapter is the simplest way to get a new project working. It's ideal for local development, and for server-based production environments. In essence it's just a wrapper around the standard [Node.js HTTP Server](https://nodejs.org/api/http.html) with the normal options related to tRPC.
@@ -98,6 +113,8 @@ createHTTPServer({
   // basePath: '/trpc/', // optional, defaults to '/'
 }).listen(2022);
 ```
+
+`createHTTPServer` accepts the [options every adapter takes](../adapters.md#common-options), like `onError` and `maxBatchSize`, plus `middleware`, `maxBodySize` and [`basePath`](#custom-basePath).
 
 ## Handling CORS & OPTIONS
 
@@ -277,3 +294,7 @@ export async function createContext(opts: CreateHTTP2ContextOptions) {
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
+
+## Common mistakes
+
+- **Calling the server from another origin without CORS.** The browser's preflight `OPTIONS` request gets no CORS headers, so the browser blocks the call. Pass [`middleware: cors()`](#handling-cors--options), with the origins you allow.

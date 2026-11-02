@@ -89,6 +89,9 @@ jobs:
       - uses: ./.github/actions/setup
 
       - run: pnpm build
+      # Generates the agent skills we publish for TanStack Intent from the docs (https://trpc.io/docs/skills) and checks them
+      - name: Generate and validate agent skills
+        run: pnpm validate-skills
       - run: pnpm verify-packed
 
   test:

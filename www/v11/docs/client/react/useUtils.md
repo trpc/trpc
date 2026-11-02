@@ -2,6 +2,7 @@
 id: useUtils
 title: useUtils
 sidebar_label: useUtils()
+description: Invalidate, refetch, prefetch and update cached query data with the classic trpc.useUtils() helpers
 slug: /client/react/useUtils
 section: "Client Usage"
 parent: "client/react"

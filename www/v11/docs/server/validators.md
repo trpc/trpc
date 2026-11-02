@@ -5,6 +5,17 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 section: "Backend Usage"
 order: 9
+skill:
+  name: validators
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Configure input and output validation with .input() and .output()
+    using Zod, Yup, Superstruct, ArkType, Valibot, Effect, any Standard Schema
+    library, or custom validator functions. Chain multiple .input() calls to
+    merge object schemas. Invalid input fails with BAD_REQUEST (the validator's
+    error is the cause); invalid output fails with INTERNAL_SERVER_ERROR.
 ---
 
 tRPC procedures may define validation logic for their input and/or output, and validators are also used to infer the types of inputs and outputs (using the [Standard Schema](https://standardschema.dev) interface if available, or custom interfaces for supported validators if not). We have first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
@@ -41,11 +52,13 @@ export const appRouter = t.router({
 });
 ```
 
+If the input fails validation, the procedure doesn't run and the call fails with a `BAD_REQUEST` error whose `cause` is the error your validator threw. To send structured validation errors (e.g. Zod's field errors) to the client, use [error formatting](error-formatting.md).
+
 ### Input Merging
 
 `.input()` can be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](./middlewares.md).
 
-Input merging works by spreading object properties together. This means only **object types** can be chained — non-object types (like `z.string()`) cannot be merged. If two chained `.input()` calls define the same property, the later one takes precedence.
+Input merging works by spreading object properties together. This means only **object types** can be chained — non-object types (like `z.string()`) cannot be merged. If two chained `.input()` calls define the same property, the later one takes precedence. An optional input (e.g. `z.object({...}).optional()`) can only be chained after another optional input.
 
 ```ts twoslash
 // @target: esnext
@@ -94,6 +107,8 @@ Validating outputs is not always as important as defining inputs, since tRPC giv
 :::info
 If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
 :::
+
+The client receives the value your output validator returns, so a schema that strips unknown keys (like `z.object()`) also strips them from the response.
 
 ```ts twoslash
 // @target: esnext
