@@ -1,7 +1,7 @@
 ---
 id: setup
-title: Set up with Next.js Pages Router
-sidebar_label: "Pages Router"
+title: Set up with Next.js Pages Router (deprecated)
+sidebar_label: "Pages Router (deprecated)"
 slug: /client/nextjs/pages-router/setup
 section: "Client Usage"
 parent: "client/nextjs"
@@ -30,6 +30,10 @@ skill:
     - client/react/useMutation
     - client/react/useUtils
 ---
+
+:::warning Deprecated
+The Next.js Pages Router integration (`@trpc/next`) is deprecated in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To use it with Next.js, follow [Set up with Next.js App Router](/docs/client/nextjs/app-router-setup).
+:::
 
 :::caution
 This guide is for the **Next.js Pages Router**. If you are using the **Next.js App Router**, see the [App Router setup guide](/docs/client/nextjs/app-router-setup) instead.

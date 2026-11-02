@@ -9,6 +9,10 @@ parent: "client/nextjs/pages-router/setup"
 order: 74
 ---
 
+:::warning Deprecated
+The Next.js Pages Router integration (`@trpc/next`) is deprecated in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To use it with Next.js, follow [Set up with Next.js App Router](/docs/client/nextjs/app-router-setup).
+:::
+
 By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration callback.
 
 ### Globally
