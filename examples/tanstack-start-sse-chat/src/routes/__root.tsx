@@ -1,3 +1,12 @@
+import { buttonVariants } from '@shared/ui/components/button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@shared/ui/components/empty';
 /// <reference types="vite/client" />
 import type { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -8,6 +17,7 @@ import {
   Outlet,
   Scripts,
 } from '@tanstack/react-router';
+import { CodeXmlIcon, SearchXIcon } from 'lucide-react';
 import type { TRPC } from '~/lib/trpc';
 import { sessionQuery } from '~/queries';
 import appCss from '~/styles.css?url';
@@ -22,32 +32,37 @@ export const Route = createRootRouteWithContext<{
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'tRPC SSE Chat' },
     ],
-    links: [
-      { rel: 'stylesheet', href: appCss },
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossOrigin: 'anonymous',
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap',
-      },
-    ],
+    links: [{ rel: 'stylesheet', href: appCss }],
   }),
   // Pages can't lay out without knowing who is signed in
   loader: async (opts) => {
     await opts.context.queryClient.ensureQueryData(sessionQuery());
   },
   component: Outlet,
-  notFoundComponent: () => (
-    <div className="flex flex-1 items-center justify-center italic">
-      Nothing here.
-    </div>
-  ),
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 });
+
+function NotFound() {
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <SearchXIcon />
+        </EmptyMedia>
+        <EmptyTitle>Nothing here</EmptyTitle>
+        <EmptyDescription>
+          This page or channel doesn&apos;t exist.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Link to="/" className={buttonVariants({ variant: 'outline' })}>
+          All channels
+        </Link>
+      </EmptyContent>
+    </Empty>
+  );
+}
 
 function RootDocument(props: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -55,9 +70,9 @@ function RootDocument(props: Readonly<{ children: React.ReactNode }>) {
       <head>
         <HeadContent />
       </head>
-      <body className="font-sans">
-        <div className="flex h-screen flex-col bg-gray-100 dark:bg-gray-950">
-          <header className="flex h-14 items-center justify-between border-b bg-white px-4 sm:px-6 lg:px-8 dark:border-gray-800 dark:bg-gray-900">
+      <body>
+        <div className="flex h-svh flex-col bg-muted/40">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
             <Link className="flex items-center gap-2" to="/">
               <svg viewBox="0 0 512 512" fill="none" className="size-6">
                 <rect width="512" height="512" rx="150" fill="#398CCB" />
@@ -68,8 +83,19 @@ function RootDocument(props: Readonly<{ children: React.ReactNode }>) {
                   fill="white"
                 />
               </svg>
-              <span className="font-semibold">tRPC SSE Chat</span>
+              <span className="font-semibold tracking-tight">
+                tRPC SSE Chat
+              </span>
             </Link>
+            <a
+              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+              href="https://github.com/trpc/examples-tanstack-start-sse-chat"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <CodeXmlIcon />
+              Source
+            </a>
           </header>
           {props.children}
         </div>

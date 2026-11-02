@@ -1,76 +1,80 @@
-import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@shared/ui/components/alert';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@shared/ui/components/avatar';
+import { Badge } from '@shared/ui/components/badge';
+import { Bubble, BubbleContent } from '@shared/ui/components/bubble';
+import { Button, buttonVariants } from '@shared/ui/components/button';
+import {
+  Message,
+  MessageAvatar,
+  MessageContent,
+  MessageFooter,
+} from '@shared/ui/components/message';
+import { Spinner } from '@shared/ui/components/spinner';
+import { Textarea } from '@shared/ui/components/textarea';
 import { useMutation } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
-import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
+import { CircleAlertIcon, HashIcon, SendHorizontalIcon } from 'lucide-react';
 import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
-import { Avatar } from '~/components/avatar';
-import { Button } from '~/components/button';
-import { Textarea } from '~/components/input';
 import { useTRPC } from '~/lib/trpc';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
-import { listWithAnd, pluralize, run } from './utils';
+import { listWithAnd, pluralize } from './utils';
 
 function SubscriptionStatus(props: {
   subscription: ReturnType<typeof useLivePosts>['subscription'];
 }) {
   const { subscription } = props;
-  return (
-    <div
-      className={cx(
-        'rounded-full p-2 text-sm transition-colors',
-        run(() => {
-          switch (subscription.status) {
-            case 'idle':
-            case 'connecting':
-              return 'bg-white text-gray-500 dark:bg-gray-900 dark:text-gray-400';
-            case 'error':
-              return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-            case 'pending':
-              return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
-          }
-        }),
-      )}
-    >
-      {run(() => {
-        switch (subscription.status) {
-          case 'idle':
-          case 'connecting':
-            // treat idle and connecting the same
-
-            return (
-              <div>
-                Connecting...
-                {subscription.error && ' (There are connection problems)'}
-              </div>
-            );
-          case 'error':
-            // something went wrong
-            return (
-              <div>
-                Error - <em>{subscription.error.message}</em>
-                <a
-                  href="#"
-                  onClick={() => {
-                    subscription.reset();
-                  }}
-                  className="hover underline"
-                >
-                  Try Again
-                </a>
-              </div>
-            );
-          case 'pending':
-            // we are polling for new messages
-            return <div>Connected - awaiting messages</div>;
-        }
-      })}
-    </div>
-  );
+  switch (subscription.status) {
+    case 'idle':
+    case 'connecting':
+      // treat idle and connecting the same
+      return (
+        <Badge variant="secondary">
+          <Spinner />
+          {subscription.error ? 'Reconnecting' : 'Connecting'}
+        </Badge>
+      );
+    case 'error':
+      // something went wrong
+      return (
+        <div className="flex min-w-0 items-center gap-2">
+          <Badge variant="destructive" title={subscription.error.message}>
+            Disconnected
+          </Badge>
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() => {
+              subscription.reset();
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      );
+    case 'pending':
+      // we are polling for new messages
+      return (
+        <Badge variant="outline">
+          <span className="size-1.5 rounded-full bg-emerald-500" />
+          Live
+        </Badge>
+      );
+  }
 }
 
-export function Chat(props: Readonly<{ channelId: string }>) {
+export function Chat(
+  props: Readonly<{ channelId: string; title: React.ReactNode }>,
+) {
   const { channelId } = props;
   const trpc = useTRPC();
   const livePosts = useLivePosts(channelId);
@@ -83,103 +87,92 @@ export function Chat(props: Readonly<{ channelId: string }>) {
   const signInHref = useSignInHref();
 
   return (
-    <main className="flex-1 overflow-hidden">
-      <div className="flex h-full flex-col">
-        {/* connection status indicator */}
-        <div className="relative flex items-center justify-center gap-2 p-4 sm:p-6 lg:p-8">
-          {/* connection status indicator - centered */}
-          <div className="absolute top-0 right-0 flex items-center justify-center gap-2 rounded-full p-2 text-sm">
-            <SubscriptionStatus subscription={livePosts.subscription} />
-          </div>
-        </div>
-        <div
-          className="flex flex-1 flex-col-reverse overflow-y-scroll p-4 sm:p-6 lg:p-8"
-          ref={scrollRef}
-        >
-          {/* Inside this div things will not be reversed. */}
-          <div>
-            <div className="grid gap-4">
-              <div>
-                <Button
-                  disabled={
-                    !livePosts.query.hasNextPage ||
-                    livePosts.query.isFetchingNextPage
-                  }
-                  onClick={() => {
-                    void livePosts.query.fetchNextPage();
-                  }}
-                >
-                  {livePosts.query.isFetchingNextPage
-                    ? 'Loading...'
-                    : !livePosts.query.hasNextPage
-                      ? 'Fetched everything!'
-                      : 'Load more'}
-                </Button>
-              </div>
-
-              {livePosts.messages?.map((item) => {
-                const isMe = item.name === session?.user?.name;
-
-                return (
-                  <div
-                    key={item.id}
-                    className={cx(
-                      'flex items-start gap-3',
-                      isMe ? 'justify-end' : 'justify-start',
-                    )}
-                  >
-                    <Avatar
-                      alt="Avatar"
-                      className="size-8"
-                      initials={item.name.substring(0, 2)}
-                      src={`https://github.com/${item.name}.png`}
-                    />
-
-                    <div className="flex flex-col gap-1">
-                      <div
-                        className={cx(
-                          'rounded-lg bg-gray-100 p-3 text-sm',
-                          isMe
-                            ? 'bg-gray-300 dark:bg-gray-800'
-                            : 'bg-gray-200 dark:bg-gray-700',
-                        )}
-                      >
-                        <p>{item.text}</p>
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        <a
-                          href={`https://github.com/${item.name}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline"
-                        >
-                          {item.name}
-                        </a>{' '}
-                        ·{' '}
-                        {isToday(item.createdAt)
-                          ? formatDistanceToNow(item.createdAt) + ' ago'
-                          : format(item.createdAt, 'MMM d, yyyy h:mm a')}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-sm text-gray-400 italic">
-              {currentlyTyping.data?.length ? (
-                `${listWithAnd(currentlyTyping.data)} ${pluralize(
-                  currentlyTyping.data.length,
-                  'is',
-                  'are',
-                )} typing...`
+    <main className="flex min-w-0 flex-1 flex-col">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-6">
+        <h2 className="flex min-w-0 items-center gap-1.5 font-semibold">
+          <HashIcon className="size-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">{props.title}</span>
+        </h2>
+        <SubscriptionStatus subscription={livePosts.subscription} />
+      </header>
+      <div
+        className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto"
+        ref={scrollRef}
+      >
+        {/* Inside this div things will not be reversed. */}
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-6">
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={
+                !livePosts.query.hasNextPage ||
+                livePosts.query.isFetchingNextPage
+              }
+              onClick={() => {
+                void livePosts.query.fetchNextPage();
+              }}
+            >
+              {livePosts.query.isFetchingNextPage ? (
+                <>
+                  <Spinner />
+                  Loading...
+                </>
+              ) : !livePosts.query.hasNextPage ? (
+                'Fetched everything!'
               ) : (
-                <>&nbsp;</>
+                'Load more'
               )}
-            </p>
+            </Button>
           </div>
-        </div>
 
-        <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
+          {livePosts.messages?.map((item) => {
+            const isMe = item.name === session?.user?.name;
+
+            return (
+              <Message key={item.id} align={isMe ? 'end' : 'start'}>
+                <MessageAvatar>
+                  <Avatar>
+                    <AvatarImage
+                      src={`https://github.com/${item.name}.png`}
+                      alt=""
+                    />
+                    <AvatarFallback className="text-xs font-medium">
+                      {item.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </MessageAvatar>
+                <MessageContent>
+                  <Bubble variant={isMe ? 'default' : 'outline'}>
+                    <BubbleContent className="whitespace-pre-wrap">
+                      {item.text}
+                    </BubbleContent>
+                  </Bubble>
+                  <MessageFooter className="gap-1">
+                    <a
+                      href={`https://github.com/${item.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
+                      {item.name}
+                    </a>
+                    ·
+                    <time dateTime={item.createdAt.toISOString()}>
+                      {isToday(item.createdAt)
+                        ? formatDistanceToNow(item.createdAt) + ' ago'
+                        : format(item.createdAt, 'MMM d, yyyy h:mm a')}
+                    </time>
+                  </MessageFooter>
+                </MessageContent>
+              </Message>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="shrink-0 border-t bg-background">
+        <div className="mx-auto flex max-w-3xl flex-col gap-1 px-6 py-3">
           {session ? (
             <AddMessageForm
               channelId={channelId}
@@ -192,10 +185,24 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               }}
             />
           ) : (
-            <Button asChild className="w-full" variant="ghost">
-              <a href={signInHref}>Sign in to post a message</a>
-            </Button>
+            <div className="flex items-center justify-between gap-4 rounded-xl border bg-card p-3 pl-4">
+              <p className="text-sm text-muted-foreground">
+                Sign in to post a message.
+              </p>
+              <a href={signInHref} className={buttonVariants()}>
+                Sign in
+              </a>
+            </div>
           )}
+          <p className="h-4 text-xs text-muted-foreground italic">
+            {currentlyTyping.data?.length
+              ? `${listWithAnd(currentlyTyping.data)} ${pluralize(
+                  currentlyTyping.data.length,
+                  'is',
+                  'are',
+                )} typing...`
+              : null}
+          </p>
         </div>
       </div>
     </main>
@@ -211,7 +218,13 @@ function AddMessageForm(props: {
   const addPost = useMutation(trpc.post.add.mutationOptions());
 
   const [message, setMessage] = React.useState('');
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    // `autoFocus` applies before hydration, when `onFocus` isn't attached yet
+    setIsFocused(document.activeElement === textareaRef.current);
+  }, []);
 
   function postMessage() {
     const input = {
@@ -223,8 +236,7 @@ function AddMessageForm(props: {
       onSuccess() {
         props.onMessagePost();
       },
-      onError(error) {
-        alert(error.message);
+      onError() {
         setMessage(input.text);
       },
     });
@@ -238,21 +250,31 @@ function AddMessageForm(props: {
   }, [isFocused, message, isTypingMutation]);
 
   return (
-    <div className="relative">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @see https://react-hook-form.com/
-           */
-          postMessage();
-        }}
-      >
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        /**
+         * In a real app you probably don't want to use this manually
+         * Checkout React Hook Form - it works great with tRPC
+         * @see https://react-hook-form.com/
+         */
+        postMessage();
+      }}
+    >
+      {addPost.status === 'error' && (
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertTitle>Couldn&apos;t send the message</AlertTitle>
+          <AlertDescription>{addPost.error.message}</AlertDescription>
+        </Alert>
+      )}
+      <div className="flex items-end gap-2 rounded-xl border bg-card p-2 transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
         <Textarea
-          className="pr-12"
+          ref={textareaRef}
+          className="max-h-40 min-h-9 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
           placeholder="Type your message..."
+          aria-label="Message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={message.split(/\r|\n/).length}
@@ -266,16 +288,10 @@ function AddMessageForm(props: {
           onBlur={() => setIsFocused(false)}
           autoFocus
         />
-        <Button
-          className="absolute top-2 right-2"
-          size="icon"
-          type="submit"
-          variant="ghost"
-        >
-          <PaperAirplaneIcon className="size-5" />
-          <span className="sr-only">Send message</span>
+        <Button type="submit" size="icon" aria-label="Send message">
+          {addPost.status === 'pending' ? <Spinner /> : <SendHorizontalIcon />}
         </Button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
