@@ -98,7 +98,8 @@ const readPages = Effect.fn('readPages')(function* () {
 
 /** A link in a page, absolute: pages at trpc.io, other files on GitHub. */
 function absoluteUrl(path: Path.Path, page: Page, url: string) {
-  if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('#')) return url;
+  if (/^[a-z][a-z\d+.-]*:/i.test(url)) return url;
+  if (url.startsWith('#')) return `${pageUrl(page.slug)}${url}`;
   if (url.startsWith('/')) return `${siteUrl}${url}`;
   const [pathname = '', hash] = url.split('#');
   const target = path.resolve(path.dirname(page.file), pathname);
@@ -179,8 +180,10 @@ function demote(markdown: string, levels: number) {
     .join('\n');
 }
 
+const headingId = /\s*\{#([\w-]+)\}\s*$/;
+
 /** The section under the heading with id `anchor`: its heading and the lines up to the next of its level or higher. */
-function section(markdown: string, anchor: string) {
+export function section(markdown: string, anchor: string) {
   const lines = markdown.split('\n');
   const fenced = inFences(lines);
   const slugger = new GithubSlugger();
@@ -192,12 +195,27 @@ function section(markdown: string, anchor: string) {
     if (start >= 0 && heading[1].length <= level) {
       return lines.slice(start, index).join('\n').trim();
     }
-    if (start < 0 && slugger.slug(heading[2] ?? '') === anchor) {
+    const text = heading[2] ?? '';
+    const id = headingId.exec(text)?.[1] ?? slugger.slug(text);
+    if (start < 0 && id === anchor) {
       start = index;
       level = heading[1].length;
     }
   }
   return start >= 0 ? lines.slice(start).join('\n').trim() : undefined;
+}
+
+/** `markdown` without its headings' `{#id}`s, which only the site reads. */
+export function withoutHeadingIds(markdown: string) {
+  const lines = markdown.split('\n');
+  const fenced = inFences(lines);
+  return lines
+    .map((line, index) =>
+      !fenced[index] && /^#{1,6} /.test(line)
+        ? line.replace(headingId, '')
+        : line,
+    )
+    .join('\n');
 }
 
 /** `client/links/httpLink` as a reference's file name. */
@@ -228,7 +246,9 @@ const renderSkill = Effect.fn('renderSkill')(function* (
     const found = pages.get(slug);
     return found
       ? Effect.succeed(found)
-      : fail(`${page.file}: skill ${skill.name} names ${slug}, which isn't a page`);
+      : fail(
+          `${page.file}: skill ${skill.name} names ${slug}, which isn't a page`,
+        );
   };
   const sources = [page.file];
   const body = [yield* pageMarkdown(page)];
@@ -271,7 +291,7 @@ const renderSkill = Effect.fn('renderSkill')(function* (
         ...(referenced.description ? [`> ${referenced.description}`, ''] : []),
         `From ${pageUrl(slug)}`,
         '',
-        yield* pageMarkdown(referenced),
+        withoutHeadingIds(yield* pageMarkdown(referenced)),
         '',
       ].join('\n'),
     );
@@ -292,7 +312,9 @@ const renderSkill = Effect.fn('renderSkill')(function* (
       name: skill.name,
       description: skill.description.trim().replaceAll(/\s+/g, ' '),
       ...(skill.requires?.length ? { requires: skill.requires } : {}),
-      sources: sources.map((file) => path.relative(repoRoot, file)),
+      sources: [...new Set(sources)].map((file) =>
+        path.relative(repoRoot, file),
+      ),
       metadata: { type: skill.type, library: 'trpc', library_version: version },
     },
     { lineWidth: 0 },
@@ -309,10 +331,8 @@ const renderSkill = Effect.fn('renderSkill')(function* (
       ...(page.description ? [`> ${page.description}`, ''] : []),
       `From ${pageUrl(page.slug)}`,
       '',
-      body.join('\n\n'),
-      ...(references.length
-        ? ['', '## References', '', ...references]
-        : []),
+      withoutHeadingIds(body.join('\n\n')),
+      ...(references.length ? ['', '## References', '', ...references] : []),
       ...(related.length ? ['', '## Related skills', '', ...related] : []),
       '',
     ].join('\n'),
@@ -376,6 +396,32 @@ export const writeSkills = Effect.fn('writeSkills')(function* (only?: string) {
       if (!byName.has(required)) {
         return yield* fail(
           `${page.file}: skill ${skill.name} requires ${required}, which no page defines`,
+        );
+      }
+    }
+  }
+  const skillsPage = pages.get('skills');
+  if (skillsPage) {
+    const listed = new Set(
+      [...skillsPage.body.matchAll(/`(@trpc\/[\w-]+#[\w-]+)`/g)].map(
+        (match) => match[1],
+      ),
+    );
+    const shipped = new Set(
+      skills.map(({ skill }) => `${skill.package}#${skill.name}`),
+    );
+    for (const id of shipped) {
+      if (
+        !listed.has(id) &&
+        id !== `${skillsPage.skill?.package}#${skillsPage.skill?.name}`
+      ) {
+        return yield* fail(`${skillsPage.file}: doesn't list skill ${id}`);
+      }
+    }
+    for (const id of listed) {
+      if (id !== undefined && !shipped.has(id)) {
+        return yield* fail(
+          `${skillsPage.file}: lists ${id}, which no page defines`,
         );
       }
     }

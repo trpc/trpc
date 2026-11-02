@@ -2,6 +2,7 @@
 id: useMutation
 title: useMutation()
 sidebar_label: useMutation()
+description: Call mutations with the classic trpc.procedure.useMutation() hook
 slug: /client/react/useMutation
 section: "Client Usage"
 parent: "client/react"

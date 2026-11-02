@@ -17,7 +17,10 @@ skill:
     createContext, onError). Enable WebSocket subscriptions with useWSS and
     @fastify/websocket. Set routerOptions.maxParamLength for batch requests.
     Requires Fastify v5+. FastifyTRPCPluginOptions for type-safe onError.
-    CreateFastifyContextOptions provides req, res.
+    CreateFastifyContextOptions provides req, res. Register @fastify/websocket
+    before the tRPC plugin.
+  include:
+    - server/adapters#common-options
 ---
 
 ## Example app
@@ -303,3 +306,11 @@ You can now subscribe to the `randomNumber` topic and should receive a random nu
 | prefix      | `string`                                           | `true`   | `"/trpc"` | URL prefix for tRPC routes                                     |
 | useWSS      | `boolean`                                          | `true`   | `false`   | Enable WebSocket support via `@fastify/websocket`              |
 | trpcOptions | `FastifyHandlerOptions<AppRouter, Request, Reply>` | `false`  | `n/a`     | tRPC handler options including `router`, `createContext`, etc. |
+
+`trpcOptions` accepts the [options every adapter takes](../adapters.md#common-options), like `onError` and `maxBatchSize`. With `useWSS`, it also accepts the WebSocket options `keepAlive`, `dangerouslyDisablePong` and `experimental_encoder`.
+
+## Common mistakes
+
+- **Registering `@fastify/websocket` after the tRPC plugin.** It only adds WebSocket support to routes registered after it, so register it first.
+- **Leaving `maxParamLength` at Fastify's default of `100`.** A batch request puts every procedure in one path parameter, like `/trpc/getUserById,createUser`, and Fastify answers `414 URI Too Long` once that gets longer than `maxParamLength`.
+- **Using Fastify v4.** The tRPC v11 adapter requires Fastify v5 or later.

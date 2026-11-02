@@ -1,6 +1,7 @@
 ---
 id: wsLink
 title: WebSocket Link
+description: A terminating link that sends tRPC operations over a WebSocket
 sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 section: "Client Usage"

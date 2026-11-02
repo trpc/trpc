@@ -11,10 +11,11 @@ skill:
   type: core
   requires:
     - server-setup
-  description: Set HTTP cache headers on tRPC query responses via responseMeta
-    callback for CDN and browser caching. Configure Cache-Control, s-maxage,
-    stale-while-revalidate. Handle caching with batching and authenticated
-    requests. Avoid caching mutations, errors, and authenticated responses.
+  description: Set HTTP cache headers on tRPC query responses via the adapter's
+    responseMeta callback (info, ctx, type, errors, eagerGeneration) for CDN and
+    browser caching. Configure Cache-Control, s-maxage, stale-while-revalidate.
+    Handle caching with batching, streaming and authenticated requests. Avoid
+    caching mutations, errors, and authenticated responses.
 ---
 
 Since all tRPC queries are normal HTTP `GET` requests, you can use standard HTTP cache headers to cache responses. This can make responses snappy, give your database a rest, and help scale your API.
@@ -75,11 +76,14 @@ const server = createHTTPServer({
   router: appRouter,
   createContext,
   responseMeta(opts) {
-    const { paths, errors, type } = opts;
-    // assuming you have all your public routes with the keyword `public` in them
-    const allPublic = paths && paths.every((path) => path.includes('public'));
+    const { info, errors, type, eagerGeneration } = opts;
+    // assuming all your public routes are in the `public` router
+    const allPublic = info?.calls.every((call) =>
+      call.path.startsWith('public.'),
+    );
     // checking that no procedures errored
-    const allOk = errors.length === 0;
+    // (when streaming, headers are sent before any results are known)
+    const allOk = !eagerGeneration && errors.length === 0;
     // checking we're doing a query request
     const isQuery = type === 'query';
 
@@ -101,6 +105,8 @@ const server = createHTTPServer({
 
 server.listen(3000);
 ```
+
+`responseMeta` runs once per HTTP response, so with batching it decides the headers for every procedure in the batch: only cache if all of them are public. It also gets the request's `ctx`, e.g. to skip caching for signed-in users. For streamed responses, like those of [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), the headers are sent before any procedure has finished, so `responseMeta` runs with `eagerGeneration: true` and an empty `errors` array.
 
 :::tip
 If you are using Next.js, see the [Next.js SSR caching guide](/docs/client/nextjs/pages-router/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.

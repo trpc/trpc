@@ -201,6 +201,10 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 </details>
 
+Headers you set on `resHeaders`, like `Set-Cookie`, are added to the response.
+
+`fetchRequestHandler` takes an `endpoint`, the URL path the handler is mounted on, plus the [options every adapter takes](../adapters.md#common-options), like `onError` and `maxBatchSize`.
+
 ## Runtime-specific setup
 
 ### Astro
@@ -554,3 +558,7 @@ Run `edge-runtime --listen server.ts --port 3000` and your endpoints will be ava
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+
+## Common mistakes
+
+- **An `endpoint` that doesn't match the route.** tRPC removes `endpoint` from the start of the URL path to find the procedure, so a handler that serves `/api/trpc/*` needs `endpoint: '/api/trpc'`. With the wrong `endpoint`, every call returns `404 NOT_FOUND`.

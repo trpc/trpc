@@ -2,6 +2,7 @@
 id: server-actions
 title: Server Actions
 sidebar_label: Server Actions
+description: Define Next.js Server Actions as tRPC procedures with experimental_caller, so they get input validation, middlewares and metadata
 slug: /client/nextjs/server-actions
 section: "Client Usage"
 parent: "client/nextjs/app-router-setup"

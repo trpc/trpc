@@ -1,6 +1,7 @@
 ---
 id: loggerLink
 title: Logger Link
+description: A link that logs tRPC operations and their results
 sidebar_label: Logger Link
 slug: /client/links/loggerLink
 section: "Client Usage"

@@ -12,10 +12,12 @@ skill:
   requires:
     - server-setup
   description: Call tRPC procedures directly from server code using
-    t.createCallerFactory() and router.createCaller(context) for integration
-    testing, internal server logic, and custom API endpoints. Catch TRPCError
-    and extract HTTP status with getHTTPStatusCodeFromError(). Error handling
-    via onError option.
+    t.createCallerFactory(router) and router.createCaller(ctx) for integration
+    testing, internal server logic, and custom API endpoints. Pass the context
+    as an object or a function, e.g. an inner context without a request. Catch
+    TRPCError and extract HTTP status with getHTTPStatusCodeFromError(), report
+    errors with createCaller's onError option. Don't use a caller inside
+    another procedure; share a plain function instead.
 ---
 
 You may need to call your procedure(s) directly from the same server they're hosted in, `createCallerFactory()` can be used to achieve this. This is useful for server-side calls and for integration testing of your tRPC procedures.
@@ -25,8 +27,8 @@ You may need to call your procedure(s) directly from the same server they're hos
 `createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
 
 <div class="flex gap-2 w-full justify-between pt-2">
-  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png" class="w-[49.5%]" />
-  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png" class="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png" alt="Instead of this: procedures in paymentRouter call customerRouter.createCaller(ctx).byUserId(ctx.user.id) to reuse its logic" class="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png" alt="Do this: a standalone getCustomerId(userId, prisma) function holds the shared logic, and every procedure calls it with values from ctx and input" class="w-[49.5%]" />
 </div>
 
 :::
@@ -98,6 +100,29 @@ const addedPost = await caller.post.add({
 
 const postList = await caller.post.list();
 //     ^?
+```
+
+The caller doesn't run your adapter's `createContext`, so pass everything your procedures and middlewares expect. An [inner context](/docs/server/context#inner-and-outer-context) works well here, as it doesn't need a request.
+
+Instead of a context object, you can also pass a function that returns the context, or a promise of it. The caller calls it for every procedure call, so cache it (e.g. with React's `cache()`) if it's expensive:
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+
+type Context = { foo: string };
+const t = initTRPC.context<Context>().create();
+const appRouter = t.router({
+  hello: t.procedure.query((opts) => opts.ctx.foo),
+});
+async function createContext(): Promise<Context> {
+  return { foo: 'bar' };
+}
+// ---cut---
+const createCaller = t.createCallerFactory(appRouter);
+
+const caller = createCaller(async () => createContext());
+const greeting = await caller.hello();
 ```
 
 ### Example usage in an integration test
@@ -355,7 +380,9 @@ export default async (
 
 ### Error handling
 
-The `createCallerFactory` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
+A procedure called through a caller throws its error as a `TRPCError`; errors that weren't thrown as one become an `INTERNAL_SERVER_ERROR` with the original error as their `cause`.
+
+The `createCaller` function can also take an error handler through the `onError` option, for example to log or report errors. The caller still throws the error after the handler runs. Its options also take a `signal`, which your procedures receive as `opts.signal`.
 The handler is called with the same arguments as an error formatter would be, except for the shape field:
 
 ```ts twoslash

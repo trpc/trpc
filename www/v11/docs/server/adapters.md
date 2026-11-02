@@ -20,3 +20,44 @@ We support many modes of hosting an API, which you will find documented here.
 :::tip
 For local development or serverful infrastructure, the simplest Adapter to use is the [Standalone Adapter](./adapters/standalone.md), which can be used to run a standard Node.js HTTP Server. We recommend this when you need to get started quickly and have no existing HTTP Server to integrate with. Swapping out later is trivial if your needs change.
 :::
+
+## Common options
+
+Every HTTP adapter accepts these options, next to its own (like `endpoint` for Fetch, or `basePath` for Standalone):
+
+| Option                | Description                                                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `router`              | Your app router. Required.                                                                                                                          |
+| `createContext`       | Creates the [context](./context.md) for each request. It receives the adapter's own objects (e.g. `req` and `res`) plus `info`.                     |
+| `onError`             | Called with `{ error, type, path, input, ctx, req }` for every error, e.g. to report it. See [Error handling](./error-handling.md#handling-errors). |
+| `responseMeta`        | Returns `{ status, headers }` for the response, e.g. for [caching](./caching.md).                                                                   |
+| `allowBatching`       | Set to `false` to reject batch requests. Defaults to `true`.                                                                                        |
+| `maxBatchSize`        | Rejects batch requests with more calls than this with a `400 Bad Request`. Set `maxItems` on your batch link to the same or a lower value.          |
+| `allowMethodOverride` | Accepts queries sent as `POST`, for clients that set `methodOverride: 'POST'` on their link. Defaults to `false`.                                   |
+
+The Node.js adapters (Standalone, Express and Next.js) also accept:
+
+- `maxBodySize`: the largest request body in bytes; larger ones are rejected with `413 PAYLOAD_TOO_LARGE`.
+- `middleware`: a connect-style `(req, res, next)` function that runs before tRPC, e.g. [`cors()`](./adapters/standalone.md#handling-cors--options).
+
+```ts twoslash title="server.ts"
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+createHTTPServer({
+  router: appRouter,
+  createContext: () => ({}),
+  onError({ error, path }) {
+    console.error(`tRPC error on '${path}':`, error);
+  },
+  maxBatchSize: 10,
+  maxBodySize: 1_000_000, // 1 MB
+}).listen(3000);
+```

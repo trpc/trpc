@@ -1,6 +1,7 @@
 ---
 id: retryLink
 title: Retry Link
+description: A link that retries failed operations
 sidebar_label: Retry Link
 slug: /client/links/retryLink
 section: "Client Usage"

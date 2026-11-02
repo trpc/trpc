@@ -2,6 +2,7 @@
 id: ssr
 title: Server-Side Rendering
 sidebar_label: Server-Side Rendering (SSR)
+description: "Render every tRPC query on the server with ssr: true and ssrPrepass, forward request headers, and cache SSR responses with responseMeta"
 slug: /client/nextjs/pages-router/ssr
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
@@ -227,14 +228,12 @@ export const trpc = createTRPCNext<AppRouter>({
     }
 
     // cache request for 1 day + revalidate once every second
+    // (a plain object: `createTRPCNext` ignores a `Headers` instance)
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     return {
-      headers: new Headers([
-        [
-          'cache-control',
-          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-        ],
-      ]),
+      headers: {
+        'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+      },
     };
   },
 });

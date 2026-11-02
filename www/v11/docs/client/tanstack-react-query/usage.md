@@ -2,7 +2,7 @@
 id: usage
 title: TanStack React Query
 sidebar_label: Usage
-description: TanStack React Query usage
+description: The options and key factories on the trpc proxy, such as queryOptions, infiniteQueryOptions, mutationOptions, subscriptionOptions, queryKey, queryFilter and pathFilter, plus key prefixing and type inference
 slug: /client/tanstack-react-query/usage
 section: "Client Usage"
 parent: "client/tanstack-react-query"

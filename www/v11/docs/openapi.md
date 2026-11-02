@@ -12,9 +12,11 @@ skill:
   requires:
     - server-setup
   description: Generate OpenAPI 3.1 spec from a tRPC router with @trpc/openapi CLI
-    or programmatic API. Generate typed REST client with @hey-api/openapi-ts and
-    configureTRPCHeyApiClient(). Configure transformers (superjson, EJSON) for
-    generated clients. Alpha status.
+    (trpc-openapi) or generateOpenAPIDocument(). Generate typed REST client with
+    @hey-api/openapi-ts, createTRPCHeyApiTypeResolvers() and
+    configureTRPCHeyApiClient(), and read results from result.data. Configure
+    transformers (superjson, EJSON) for generated clients. Compare spec
+    versions with oasdiff. Alpha status.
 ---
 
 :::caution
@@ -79,7 +81,7 @@ const doc = await generateOpenAPIDocument('./src/server/router.ts', {
 });
 ```
 
-The generator statically analyses your router's TypeScript types — it never executes your code.
+The generator builds the spec by statically analysing your router's TypeScript types. It also tries to import the router file to pick up Zod `.describe()` text, and carries on from the types alone if that import fails. Because of that, point it at a module that only defines the router, not one that starts your server.
 
 ## Generate a client from the spec
 
@@ -163,6 +165,7 @@ At runtime configure the generated client with your transformer, you can then pa
 import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import superjson from 'superjson';
 import { client } from './generated/client.gen';
+import { Sdk } from './generated/sdk.gen';
 
 configureTRPCHeyApiClient(client, {
   baseUrl: 'http://localhost:3000',
@@ -179,6 +182,26 @@ const event = await sdk.getEvent({
 const created = await sdk.createEvent({
   body: { name: 'Conference', at: new Date('2025-09-01T09:00:00Z') },
 });
+```
+
+#### Reading results and errors
+
+The SDK returns tRPC's [response envelope](/docs/rpc#http-response-specification), so a procedure's return value is under `result.data`. A failed call resolves with `error` set to the tRPC error envelope instead of throwing:
+
+```ts title='src/usage.ts'
+import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
+import { client } from './generated/client.gen';
+import { Sdk } from './generated/sdk.gen';
+
+configureTRPCHeyApiClient(client, { baseUrl: 'http://localhost:3000' });
+const sdk = new Sdk({ client });
+
+const { data, error } = await sdk.user.byId({ query: { input: '1' } });
+if (error) {
+  console.log(error.error.data.code); // e.g. 'NOT_FOUND'
+} else {
+  console.log(data?.result.data); // what the procedure returned
+}
 ```
 
 ### Using a different generator or language
@@ -241,6 +264,7 @@ pnpm add bson
 
 ```ts title='src/transformer.ts'
 import { EJSON } from 'bson';
+import type { Document } from 'bson';
 import type { TRPCDataTransformer } from '@trpc/server';
 
 export const ejsonTransformer: TRPCDataTransformer = {
@@ -295,7 +319,7 @@ Pass it to both `initTRPC.create({ transformer })` on the server and `configureT
 
 ### Full example
 
-For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen).
+For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen). Its [codegen script](https://github.com/trpc/trpc/blob/main/examples/openapi-codegen/src/scripts/codegen.ts) generates the spec with `generateOpenAPIDocument` and then the SDK with Hey API in one step.
 
 ## API changelog and breaking-change checks with `oasdiff`
 
@@ -329,3 +353,11 @@ error [new-required-request-property] in API POST /createEvent
 error [api-path-removed-without-deprecation] in API GET /getBigInt
   api path removed without deprecation
 ```
+
+## Common mistakes
+
+- **Using the wrong export name.** `--export` (`exportName`) defaults to `AppRouter`. If your file exports the router as `appRouter`, pass `-e appRouter`. When the name isn't found, the error lists the file's exports.
+- **Leaving the tRPC prefix out of the base URL.** The spec's paths are relative to where tRPC is mounted (`/user.create`), so if your adapter serves tRPC under `/trpc`, both `--server-url` and the client's `baseUrl` need to end in `/trpc`.
+- **Skipping `createTRPCHeyApiTypeResolvers()` when you use a transformer.** Without it, Hey API types `Date` fields as `string` and `bigint` fields as `number`.
+- **Configuring a transformer on the server only.** `configureTRPCHeyApiClient` needs the same `transformer` as your `initTRPC`, or rich types arrive still encoded.
+- **Expecting subscriptions in the spec.** The generator skips subscription procedures.

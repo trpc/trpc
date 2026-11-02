@@ -7,6 +7,7 @@ type PackageJson = {
   name: string;
   version: string;
   private?: boolean;
+  keywords?: string[];
   main?: string;
   module?: string;
   types?: string;
@@ -65,9 +66,12 @@ for (const dir of fs.readdirSync(path.join(root, 'packages'))) {
   packages.set(pkg.name, { pkg, tarball: path.join(tarballDir, tarball) });
 
   const files = new Set(listFiles(pkgRoot));
-  const skillsDir = path.join(pkgDir, 'skills');
-  if (fs.existsSync(skillsDir)) {
-    for (const file of listFiles(skillsDir)) {
+  // `prepack` writes the agent skills from the docs (https://trpc.io/docs/skills)
+  if (pkg.keywords?.includes('tanstack-intent')) {
+    if (![...files].some((file) => /^skills\/[^/]+\/SKILL\.md$/.test(file)))
+      failures.push(`${pkg.name}: no skills/*/SKILL.md in the tarball`);
+    const skillsDir = path.join(pkgDir, 'skills');
+    for (const file of fs.existsSync(skillsDir) ? listFiles(skillsDir) : []) {
       if (!files.has(`skills/${file}`))
         failures.push(
           `${pkg.name}: skill file "skills/${file}" is not in the tarball`,

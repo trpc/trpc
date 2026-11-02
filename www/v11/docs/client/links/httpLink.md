@@ -1,6 +1,7 @@
 ---
 id: httpLink
 title: HTTP Link
+description: A terminating link that sends each tRPC call as its own HTTP request
 sidebar_label: HTTP Link
 slug: /client/links/httpLink
 section: "Client Usage"

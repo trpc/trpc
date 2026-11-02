@@ -12,11 +12,17 @@ skill:
   type: core
   requires:
     - server-setup
-  description: Create a vanilla tRPC client with createTRPCClient<AppRouter>(),
-    configure link chain with httpBatchLink/httpLink, dynamic headers for auth,
-    transformer on links (not client constructor). Infer types with
-    inferRouterInputs and inferRouterOutputs. AbortController signal support.
-    TRPCClientError typing.
+  description: Create a vanilla tRPC client with createTRPCClient<AppRouter>()
+    and a terminating link such as httpBatchLink, import AppRouter with `import
+    type`, set dynamic auth headers, and put the transformer on links (not the
+    client constructor). Infer types with inferRouterInputs and
+    inferRouterOutputs, handle TRPCClientError with try/catch or safe(), and
+    abort calls with an AbortSignal.
+  include:
+    - client/vanilla/infer-types
+    - client/vanilla/error-handling
+    - client/vanilla/aborting-procedure-calls
+    - client/headers
 ---
 
 ### 1. Install the tRPC Client library
@@ -121,3 +127,12 @@ const frodo = await client.createUser.mutate({ name: 'Frodo' });
 ```
 
 You're all set!
+
+## Common mistakes
+
+- **Leaving out the `AppRouter` type parameter.** `createTRPCClient({ links })` without `<AppRouter>` compiles, but none of your procedures are typed. If the `AppRouter` import doesn't resolve (often a monorepo path or `tsconfig` issue), fix the import rather than reaching for `createTRPCClient<any>`.
+- **Importing the router value instead of its type.** `import { appRouter } from '../server/router'` pulls your server code into the client bundle. Export `type AppRouter = typeof appRouter` from the server and import it with `import type`.
+- **Passing `transformer` to `createTRPCClient`.** The transformer belongs on each terminating link (`httpBatchLink`, `httpLink`, `wsLink`, ...), and TypeScript rejects it on the client itself. See [Data Transformers](../../server/data-transformers.md).
+- **Using `createTRPCProxyClient`.** It's the v10 name, kept as a deprecated alias of `createTRPCClient`.
+- **Calling procedures like REST endpoints.** Procedures are addressed by their dot-separated path, for example `GET /trpc/post.byId?input=...`, not `/trpc/post/1`. Call them through the client, or see the [HTTP RPC Specification](../../rpc.md) for the wire format.
+- **A JSON parse error like `Unexpected token '<'`.** The request reached something that answered with an HTML page, usually a 404, so the link's `url` doesn't match where your adapter serves tRPC (check the `/trpc` prefix).
