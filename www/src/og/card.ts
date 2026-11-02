@@ -129,6 +129,35 @@ export const truncateWords = (text: string, max: number) => {
   return `${cut.slice(0, cut.lastIndexOf(' '))} …`;
 };
 
+/**
+ * A character's width in Inter ExtraBold, in ems, as the widest in its
+ * class: `W` for the widest, `Q` for the other capitals and digits, `g`
+ * for the other lowercase. Satori can't measure text before it lays it
+ * out, so names are fitted to this, which errs wide.
+ */
+const charWidth = (char: string) => {
+  if (char === ' ') {
+    return 0.22;
+  }
+  if (/[iIjl.,:;'!]/.test(char)) {
+    return 0.36;
+  }
+  if (/[frt1()[\]{}/\\|`^_-]/.test(char)) {
+    return 0.5;
+  }
+  if (/[a-ln-vx-z]/.test(char)) {
+    return 0.64;
+  }
+  if (/[\u0021-\u007e]/.test(char) && !/[WM@%mw]/.test(char)) {
+    return 0.79;
+  }
+  return 1.06;
+};
+
+/** About how wide `text` is in Inter ExtraBold at `fontSize`, erring wide. */
+export const textWidth = (text: string, fontSize: number) =>
+  [...text].reduce((sum, char) => sum + charWidth(char), 0) * fontSize;
+
 /** `https://trpc.io/docs/v10/a` as `trpc.io/docs/v10/a`. */
 export const displayUrl = (url: string) => {
   const parsed = new URL(url);
@@ -171,6 +200,9 @@ const wordmark = (assets: Assets, height: number) =>
     src: assets.wordmark,
     width: Math.round(height * wordmarkRatio),
   });
+
+/** The card's width inside its margins. */
+const innerWidth = 1200 - 2 * 72;
 
 const gradient = `linear-gradient(90deg, ${colors.link}, ${colors.brandLight})`;
 
@@ -515,9 +547,44 @@ export const drawnBackers = (card: SponsorCard, live: Live) =>
     )
     .slice(0, card.backerSlots);
 
+/** The sizes a partner's name may take on `/sponsor`'s card, largest first. */
+export const partnerNameSizes = [28, 26, 24, 22, 20] as const;
+
+const partnerLabel = (partner: SponsorCard['partners'][number]) =>
+  `${partner.tier} partner`;
+
+/**
+ * The largest name size at which `partners` fit on one line in
+ * `width`, each beside their avatar with their tier under their name. When
+ * none does, they wrap at the largest, each whole.
+ */
+export function partnerRowLayout(
+  partners: SponsorCard['partners'],
+  width: number,
+) {
+  const rowWidth = (size: number) =>
+    partners.reduce(
+      (sum, partner) =>
+        sum +
+        72 +
+        18 +
+        Math.max(
+          textWidth(plainText(partner.name), size),
+          textWidth(partnerLabel(partner), size - 6),
+        ),
+      0,
+    ) +
+    44 * Math.max(0, partners.length - 1);
+  const nameSize =
+    partnerNameSizes.find((size) => rowWidth(size) <= width) ??
+    partnerNameSizes[0];
+  return { nameSize, wraps: rowWidth(nameSize) > width };
+}
+
 const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
   const backers = drawnBackers(card, live);
   const more = card.sponsorCount - card.partners.length - backers.length;
+  const row = partnerRowLayout(card.partners, innerWidth);
   return frame(
     assets,
     undefined,
@@ -535,25 +602,35 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
       ? []
       : [
           box(
-            { alignItems: 'center', gap: 44 },
+            {
+              alignItems: 'center',
+              columnGap: 44,
+              flexWrap: row.wraps ? 'wrap' : 'nowrap',
+              rowGap: 16,
+            },
             ...card.partners.map((partner) =>
               box(
-                { alignItems: 'center', gap: 18 },
+                { alignItems: 'center', flexShrink: 0, gap: 18 },
                 avatar(partner.name, live.avatars.get(partner.image)),
                 box(
                   { flexDirection: 'column' },
                   box(
-                    { fontSize: 28, fontWeight: 800 },
+                    {
+                      fontSize: row.nameSize,
+                      fontWeight: 800,
+                      whiteSpace: 'nowrap',
+                    },
                     plainText(partner.name),
                   ),
                   box(
                     {
                       color: colors.link,
-                      fontSize: 22,
+                      fontSize: row.nameSize - 6,
                       fontWeight: 800,
                       marginTop: 2,
+                      whiteSpace: 'nowrap',
                     },
-                    `${partner.tier} partner`,
+                    partnerLabel(partner),
                   ),
                 ),
               ),

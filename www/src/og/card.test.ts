@@ -11,9 +11,12 @@ import {
   docTitle,
   drawnBackers,
   initials,
+  partnerNameSizes,
+  partnerRowLayout,
   plainText,
   type SponsorCard,
   sectionLabel,
+  textWidth,
   titleSize,
   truncateWords,
 } from './card.ts';
@@ -182,5 +185,65 @@ describe('colors', () => {
       ).exec(theme)?.[1];
       expect(light, token).toBe(colors[key as keyof typeof colors]);
     }
+  });
+});
+
+describe('textWidth', () => {
+  // Inter ExtraBold's own widths, in ems, from its font file.
+  const inter = {
+    CodeRabbit: 5.79,
+    Greptile: 3.96,
+    'Liminity AB': 5.63,
+    SerpApi: 4.01,
+    'Some Company Name GmbH & Co. KG': 18.68,
+    WWW: 3.18,
+    iii: 0.85,
+  };
+
+  it('errs wide, but not by much', () => {
+    for (const [text, ems] of Object.entries(inter)) {
+      expect(textWidth(text, 10)).toBeGreaterThanOrEqual(ems * 10);
+      expect(textWidth(text, 10)).toBeLessThan(ems * 10 * 1.3);
+    }
+  });
+
+  it('counts a character outside Latin as the widest', () => {
+    expect(textWidth('é', 1)).toBe(textWidth('W', 1));
+  });
+});
+
+describe('partnerRowLayout', () => {
+  const partner = (name: string) => ({ image: name, name, tier: 'Silver' });
+
+  it("draws today's partners at the largest size", () => {
+    expect(
+      partnerRowLayout(
+        ['CodeRabbit', 'Greptile', 'SerpApi'].map(partner),
+        1056,
+      ),
+    ).toEqual({ nameSize: partnerNameSizes[0], wraps: false });
+  });
+
+  it('makes a long name smaller to fit on one line', () => {
+    const layout = partnerRowLayout(
+      ['CodeRabbit', 'Greptile', 'A Rather Long Partner Name'].map(partner),
+      1056,
+    );
+    expect(layout.nameSize).toBeLessThan(partnerNameSizes[0]);
+    expect(layout.wraps).toBe(false);
+  });
+
+  it('wraps names that fit at no size, each whole, at the largest', () => {
+    expect(
+      partnerRowLayout(
+        [
+          'CodeRabbit',
+          'Greptile',
+          'SerpApi',
+          'Some Company Name GmbH & Co. KG',
+        ].map(partner),
+        1056,
+      ),
+    ).toEqual({ nameSize: partnerNameSizes[0], wraps: true });
   });
 });
