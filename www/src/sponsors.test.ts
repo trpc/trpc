@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { partners, sponsorCard, sponsorCardAlt, sponsors } from './sponsors.ts';
+import {
+  type Partner,
+  partners,
+  type Sponsor,
+  sponsorCard,
+  sponsorCardAlt,
+  sponsorCardOf,
+  sponsors,
+} from './sponsors.ts';
 
 describe('sponsorCard', () => {
   it('draws the partners first, by rank, with their tier', () => {
@@ -33,6 +41,48 @@ describe('sponsorCard', () => {
       (sponsor) => sponsor.image,
     );
     expect(new Set(images).size).toBe(images.length);
+  });
+
+  it('puts the partners past the fourth before the others, who go by what they gave', () => {
+    const sponsor = (login: string, weight: number): Sponsor => ({
+      createdAt: 0,
+      imgSrc: `https://example.com/${login}.png`,
+      link: `https://example.com/${login}`,
+      login,
+      name: login,
+      weight,
+    });
+    const ranked = ['a', 'b', 'c', 'd', 'e', 'f'].map(
+      (login, index): Partner => ({
+        ...sponsor(login, 1),
+        accent: '#888888',
+        blurb: login,
+        domain: 'example.com',
+        rank: index + 1,
+        tier: 'silver',
+      }),
+    );
+    const card = sponsorCardOf(ranked, [
+      sponsor('low', 5),
+      sponsor('high', 90),
+      ...ranked,
+      sponsor('mid', 40),
+    ]);
+    expect(card.partners.map((partner) => partner.name)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ]);
+    expect(card.backers.map((backer) => backer.name)).toEqual([
+      'e',
+      'f',
+      'high',
+      'mid',
+      'low',
+    ]);
+    expect(card.more).toBe(0);
+    expect(card.description).toContain('9 sponsors');
   });
 
   it("is /sponsor's, and its alt text says what it shows", () => {

@@ -147,7 +147,10 @@ export const partners: ReadonlyArray<Partner> = sponsors
   );
 
 /** Under the headline on `/sponsor`'s social card (`og/card.ts`). */
-export const sponsorCardLede = `MIT licensed, and kept going by ${sponsors.length} sponsors.`;
+const cardLede = (count: number) =>
+  `MIT licensed, and kept going by ${count} sponsors.`;
+
+export const sponsorCardLede = cardLede(sponsors.length);
 
 /** As many partners and other sponsors as fit on the card's two rows. */
 const cardPartners = 4;
@@ -157,15 +160,19 @@ const tierLabel = (tier: SponsorTier) =>
   sponsorTiers.find((entry) => entry.tier === tier)?.label ?? tier;
 
 /**
- * `/sponsor`'s social card: the partners by rank, then the other sponsors'
- * avatars by what they've given, and a count of the ones that don't fit.
+ * `/sponsor`'s social card, from `ranked` partners and `all` the sponsors:
+ * the partners by rank, then the other sponsors' avatars by what they've
+ * given, and a count of the ones that don't fit.
  */
-export const sponsorCard: SponsorCard = (() => {
-  const shown = partners.slice(0, cardPartners);
+export function sponsorCardOf(
+  ranked: ReadonlyArray<Partner>,
+  all: ReadonlyArray<Sponsor>,
+): SponsorCard {
+  const shown = ranked.slice(0, cardPartners);
   const backers = [
-    ...partners.slice(cardPartners),
-    ...sponsors
-      .filter((sponsor) => !partners.some((p) => p.login === sponsor.login))
+    ...ranked.slice(cardPartners),
+    ...all
+      .filter((sponsor) => !ranked.some((p) => p.login === sponsor.login))
       .toSorted((a, b) => b.weight - a.weight),
   ].slice(0, cardBackers);
   return {
@@ -173,9 +180,9 @@ export const sponsorCard: SponsorCard = (() => {
       image: sponsor.imgSrc,
       name: sponsor.name,
     })),
-    description: sponsorCardLede,
+    description: cardLede(all.length),
     kind: 'sponsor',
-    more: sponsors.length - shown.length - backers.length,
+    more: all.length - shown.length - backers.length,
     partners: shown.map((partner) => ({
       image: partner.imgSrc,
       name: partner.name,
@@ -185,7 +192,9 @@ export const sponsorCard: SponsorCard = (() => {
     title: sponsorPage.headline,
     url: sponsorUrl,
   };
-})();
+}
+
+export const sponsorCard = sponsorCardOf(partners, sponsors);
 
 /** `/sponsor`'s social card's alt text: what the card says. */
 export const sponsorCardAlt = [
