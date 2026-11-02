@@ -19,7 +19,7 @@ export interface unstable_HydrateClientProps {
  * React Server Components only: the package resolves to the server build
  * through the `react-server` export condition.
  *
- * @see https://trpc.io/docs/client/tanstack-react-query/server-components#using-your-api
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#hydrate-client
  */
 export function unstable_createHydrateClient(
   _queryClient: QueryClient | (() => QueryClient),

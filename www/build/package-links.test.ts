@@ -16,15 +16,6 @@ const contentDir = fileURLToPath(new URL('../v11/docs', import.meta.url));
 const docsLink = /(?:https?:\/\/)?(?:www\.)?trpc\.io\/docs[^\s'"`)>\]},]*/g;
 const canonical = /^https:\/\/trpc\.io(\/docs[^#]*)(?:#(.+))?$/;
 
-/**
- * Links in runtime error messages to the query handles page, which isn't
- * published yet. Remove them from here when it is.
- */
-const unpublished = new Set([
-  'https://trpc.io/docs/client/tanstack-react-query/handles#in-render',
-  'https://trpc.io/docs/client/tanstack-react-query/handles#where-handles-dont-work',
-]);
-
 /** Each `trpc.io/docs` link in the published packages' sources, by file and line. */
 const packageLinks = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -74,9 +65,6 @@ describe('packages/*/src', () => {
       const links = yield* packageLinks;
       const pages = yield* servedPages;
       const problems = links.flatMap(({ at, url }) => {
-        if (unpublished.has(url)) {
-          return [];
-        }
         const match = canonical.exec(url);
         if (!match?.[1]) {
           return [`${at}: ${url} isn't https://trpc.io/docs/<page>`];
