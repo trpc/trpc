@@ -1,4 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
+import { Heart } from 'lucide-react';
 
 import { buttonVariants } from '@shared/ui/components/button';
 import { v11Docs } from '~/content/docs.ts';
@@ -103,6 +104,19 @@ export function SiteHeader() {
               <link.Icon />
             </a>
           ))}
+          <Link
+            activeProps={{ className: 'text-pink-500 *:fill-current' }}
+            aria-label="Sponsor tRPC"
+            className={cn(
+              buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
+              'hidden hover:text-pink-500 hover:*:fill-current md:inline-flex',
+            )}
+            inactiveProps={{ className: 'text-muted-foreground' }}
+            title="Sponsor tRPC"
+            to="/sponsor"
+          >
+            <Heart />
+          </Link>
           <VersionSwitcher />
           <ThemeToggle />
           <SearchButton />
