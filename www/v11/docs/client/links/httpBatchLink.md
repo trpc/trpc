@@ -9,7 +9,7 @@ parent: "client/links"
 order: 32
 ---
 
-`httpBatchLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
+`httpBatchLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request. A batch can include calls to different procedures (queries and mutations are batched separately).
 
 ## Usage
 
@@ -37,7 +37,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
+After that, calls made in the same event loop tick are batched together, so you don't need `Promise.all`, though it's a common way to do it. The code below will produce exactly **one** HTTP request, and the server will call `createContext` **once** for it. Each procedure still runs on its own, so batching saves requests, not resolver calls:
 
 ```ts twoslash
 // @target: esnext
