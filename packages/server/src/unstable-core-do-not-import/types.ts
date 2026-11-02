@@ -18,7 +18,7 @@ export type Simplify<TType> = TType extends any[] | Date
   : { [K in keyof TType]: TType[K] };
 
 /**
- * An object of `TType` values by string key.
+ * An object with string keys whose values may be `undefined`.
  * @public
  */
 export type Dict<TType> = Record<string, TType | undefined>;

@@ -10,15 +10,18 @@ export type LimitedErrorShape = {
         code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
         httpStatus: number;
         /**
-         * Path to the procedure that threw the error
+         * The path of the procedure that threw.
          */
         path?: string;
         /**
-         * Stack trace of the error (only in development)
+         * The error's stack trace, only when `isDev` is set.
          */
         stack?: string;
     };
     message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
 } | {
     data: {
@@ -27,15 +30,18 @@ export type LimitedErrorShape = {
         code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
         httpStatus: number;
         /**
-         * Path to the procedure that threw the error
+         * The path of the procedure that threw.
          */
         path?: string;
         /**
-         * Stack trace of the error (only in development)
+         * The error's stack trace, only when `isDev` is set.
          */
         stack?: string;
     };
     message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
 };
 
@@ -45,15 +51,18 @@ export type ChainedErrorShape = {
         code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
         httpStatus: number;
         /**
-         * Path to the procedure that threw the error
+         * The path of the procedure that threw.
          */
         path?: string;
         /**
-         * Stack trace of the error (only in development)
+         * The error's stack trace, only when `isDev` is set.
          */
         stack?: string;
     };
     message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
 } | {
     data: {
@@ -62,15 +71,18 @@ export type ChainedErrorShape = {
         code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
         httpStatus: number;
         /**
-         * Path to the procedure that threw the error
+         * The path of the procedure that threw.
          */
         path?: string;
         /**
-         * Stack trace of the error (only in development)
+         * The error's stack trace, only when `isDev` is set.
          */
         stack?: string;
     };
     message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
 } | {
     data: {
@@ -79,15 +91,18 @@ export type ChainedErrorShape = {
         code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
         httpStatus: number;
         /**
-         * Path to the procedure that threw the error
+         * The path of the procedure that threw.
          */
         path?: string;
         /**
-         * Stack trace of the error (only in development)
+         * The error's stack trace, only when `isDev` is set.
          */
         stack?: string;
     };
     message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
 };
 
@@ -113,15 +128,18 @@ export type PlainErrors = {
                 code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
-                 * Path to the procedure that threw the error
+                 * The path of the procedure that threw.
                  */
                 path?: string;
                 /**
-                 * Stack trace of the error (only in development)
+                 * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
             };
             message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
@@ -267,15 +285,18 @@ export type NeverClaimsErrors = {
                 code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
-                 * Path to the procedure that threw the error
+                 * The path of the procedure that threw.
                  */
                 path?: string;
                 /**
-                 * Stack trace of the error (only in development)
+                 * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
             };
             message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
