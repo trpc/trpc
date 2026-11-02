@@ -106,8 +106,8 @@ function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
 }
 
 /**
- * Resolves with an observable's first value, then unsubscribes. Rejects
- * if it errors or completes first.
+ * Resolves with an observable's first value. Rejects if it errors or
+ * completes first. It doesn't unsubscribe after the first value.
  * @internal
  */
 export function observableToPromise<TValue>(
@@ -187,8 +187,8 @@ function observableToReadableStream<TValue>(
 }
 
 /**
- * Turns an observable into an async iterable, which ends when `signal`
- * aborts.
+ * Turns an observable into an async iterable. Aborting `signal`
+ * unsubscribes from the observable but doesn't end a pending `next()`.
  * @internal
  */
 export function observableToAsyncIterable<TValue>(

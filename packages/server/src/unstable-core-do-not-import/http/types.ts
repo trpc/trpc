@@ -147,7 +147,8 @@ interface HTTPErrorHandlerOptions<
   req: TRequest;
 }
 /**
- * Called with each error a procedure throws, before the response is sent.
+ * Called with each error a procedure throws. With streamed responses the
+ * response may have started already, so don't rely on setting headers.
  * @see https://trpc.io/docs/server/error-handling#handling-errors
  * @internal
  */
@@ -177,7 +178,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   /** The router to serve. */
   router: TRouter;
   /**
-   * Lets clients call queries with POST, and mutations with GET.
+   * Lets clients call queries with POST. Mutations still need POST.
    * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
    * @default false
    */

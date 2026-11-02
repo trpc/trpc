@@ -29,7 +29,10 @@ export type OctetInput = Blob | Uint8Array | FileLike;
  * resolver gets the input as a `ReadableStream`.
  * @example
  * ```ts
- * t.procedure.input(octetInputParser).mutation(({ input }) => input);
+ * t.procedure.input(octetInputParser).mutation(async ({ input }) => {
+ *   const bytes = await new Response(input).arrayBuffer();
+ *   return { size: bytes.byteLength };
+ * });
  * ```
  * @see https://trpc.io/docs/server/non-json-content-types#file-and-other-binary-type-inputs
  */

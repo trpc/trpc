@@ -201,7 +201,11 @@ const isDeepEqual = <T>(a: T, b: T): boolean => {
     Object.entries(a).every(([k, v]) => isDeepEqual(v, b[k as keyof T]))
   );
 };
-/** Skips values deeply equal to the one before. */
+/**
+ * Skips values equal to the one before, comparing objects and arrays by
+ * their own enumerable keys. Objects without such keys, like two `Date`s,
+ * always count as equal.
+ */
 export function distinctUntilDeepChanged<
   TValue,
   TError,

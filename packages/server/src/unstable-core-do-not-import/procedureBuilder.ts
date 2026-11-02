@@ -287,7 +287,9 @@ export interface ProcedureBuilder<
   /**
    * Adds an error formatter for this procedure. An error goes to the last
    * `.errors()` formatter first, and on to earlier ones and the root
-   * `errorFormatter` until one returns a shape.
+   * `errorFormatter` until one returns a shape. A formatter only sees
+   * errors from the steps after it, so put `.errors()` before `.input()`
+   * to format input errors.
    * @see https://trpc.io/docs/server/error-formatting#per-procedure-error-formatting
    */
   errors<$Shape extends TRPCErrorShape | undefined | void>(

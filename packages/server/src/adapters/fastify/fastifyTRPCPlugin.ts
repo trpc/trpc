@@ -44,7 +44,8 @@ export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
 
 /**
  * What `createContext` gets in the Fastify adapter: `req`, `res` and the
- * request's `info`.
+ * request's `info`. With `useWSS`, WebSocket connections get the raw
+ * `IncomingMessage` as `req` and the `WebSocket` as `res` instead.
  * @see https://trpc.io/docs/server/adapters/fastify#create-the-context
  */
 export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<

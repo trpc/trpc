@@ -639,7 +639,10 @@ export function handleKeepAlive(
  * ```ts
  * const wss = new WebSocketServer({ port: 3001 });
  * const handler = applyWSSHandler({ wss, router: appRouter, createContext });
- * process.on('SIGTERM', () => handler.broadcastReconnectNotification());
+ * process.on('SIGTERM', () => {
+ *   handler.broadcastReconnectNotification();
+ *   wss.close();
+ * });
  * ```
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */

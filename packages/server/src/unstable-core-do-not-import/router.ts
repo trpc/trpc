@@ -74,7 +74,10 @@ export type RouterCaller<
   options?: {
     /** Called when a procedure throws, before the error is rethrown. */
     onError?: RouterCallerErrorHandler<TRoot['ctx']>;
-    /** Aborts the calls made through this caller. */
+    /**
+     * Passed to middleware and resolvers as `signal`. It doesn't stop a
+     * call by itself; the resolver has to check it.
+     */
     signal?: AbortSignal;
   },
 ) => DecorateRouterRecord<TRecord>;
@@ -108,11 +111,12 @@ function once<T>(fn: () => T): () => T {
 
 /**
  * Loads a router on its first call instead of at startup, which can make
- * cold starts faster. Pass a function that imports the router's module.
+ * cold starts faster. Pass a function that imports the router, or a module
+ * whose only export is the router.
  * @example
  * ```ts
  * const appRouter = router({
- *   slow: lazy(() => import('./slow.js')),
+ *   slow: lazy(() => import('./slow.js').then((m) => m.slowRouter)),
  * });
  * ```
  * @see https://trpc.io/docs/server/merging-routers#lazy-load

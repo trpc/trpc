@@ -98,7 +98,9 @@ export type NodeHTTPHandlerOptions<
   middleware?: ConnectMiddleware<TRequest, TResponse>;
   /**
    * The largest request body, in bytes. A larger one gets a
-   * `PAYLOAD_TOO_LARGE` error.
+   * `PAYLOAD_TOO_LARGE` error. It only applies to bodies tRPC reads from
+   * the stream; if a body-parsing middleware sets `req.body`, limit the
+   * size there.
    */
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
