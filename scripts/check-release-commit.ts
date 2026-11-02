@@ -1,7 +1,7 @@
 /**
  * Runs as the root `postversion` script: lerna has committed and tagged the
  * release, and hasn't pushed or published anything yet. Any failure here
- * stops the release with nothing pushed.
+ * stops the release with nothing pushed, and removes the commit and tag.
  *
  * The release commit may only change versions: `lerna.json` and the
  * packages' `package.json`. Their dependencies on each other are
@@ -16,13 +16,30 @@ function run(command: string, args: string[]) {
   execFileSync(command, args, { stdio: 'inherit' });
 }
 
-function fail(message: string): never {
-  console.error(`\n✖ ${message}\nNothing was pushed or published.`);
-  process.exit(1);
-}
-
 const git = (...args: string[]) =>
   execFileSync('git', args, { encoding: 'utf8' }).trim();
+
+/**
+ * Drops the release commit and its tag, so a later `lerna publish` can't
+ * push them with `--follow-tags`. lerna only commits from a clean tree, so
+ * the reset loses nothing but the version bump.
+ */
+function undoRelease() {
+  const tags = git('tag', '--points-at', 'HEAD').split('\n').filter(Boolean);
+  for (const tag of tags) {
+    git('tag', '--delete', tag);
+  }
+  git('reset', '--quiet', '--hard', 'HEAD^');
+  return tags;
+}
+
+function fail(message: string): never {
+  const tags = undoRelease();
+  console.error(
+    `\n✖ ${message}\nNothing was pushed or published. Removed the release commit and its tag (${tags.join(', ')}).`,
+  );
+  process.exit(1);
+}
 
 const allowed = (file: string) =>
   file === 'lerna.json' || /^packages\/[^/]+\/package\.json$/.test(file);
