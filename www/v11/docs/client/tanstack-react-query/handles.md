@@ -181,7 +181,7 @@ const post = trpc.post.byId.unstable_$prefetch({ id });
 
 - It returns a handle at once. The request runs in the background.
 - The page doesn't wait. It renders, and the data arrives when the request finishes.
-- The component that reads the handle renders before the data arrives, so it shows a loading state. With `useSuspenseQuery`, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`: see [Reading with `useQuery`](#use-query).
+- If the cache has no data for the query yet, the component that reads the handle renders before the data arrives, so it shows a loading state. If the cache has data, the component shows it while the request runs. With `useSuspenseQuery`, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`: see [Reading with `useQuery`](#use-query).
 
   ```tsx twoslash
   // @include: handles-router
@@ -251,7 +251,7 @@ const post = await trpc.post.byId.unstable_$fetch({ id });
 | Returns                | A handle                          | A promise for a handle | A promise for a handle |
 | Page waits for data    | No                                | Yes                    | Yes                    |
 | With stale data        | Refetches in the background       | Resolves at once       | Waits for the refetch  |
-| Reader's first render  | Shows its loading state           | Shows the data         | Shows the data         |
+| Reader's first render  | Loading state, or cached data     | The data               | The data               |
 | When the request fails | An error boundary shows the error | The promise rejects    | The promise rejects    |
 
 ```demo starting-queries
@@ -653,7 +653,9 @@ Waiting for a query with `unstable_$ensure` or `unstable_$fetch` puts its data i
 
 So give every reader a loading state, even when the page waited for its data: put a `useSuspenseQuery` reader under a `Suspense` boundary, or handle `'pending'` in a `useQuery` reader. Without a boundary of its own, a reader that suspends shows the fallback of the nearest boundary above it, which may cover the whole page.
 
-The reader always loads the query again with a new request. A handle doesn't bring back the data the loader started with.
+The reader loads the query again with a new request. A handle doesn't bring back the data the loader started with.
+
+This is how readers behave with the default options. Some options change it: with `initialData`, `resetQueries()` puts that data back, and with `enabled: false`, a reader that lost its data stays `pending` and starts no request.
 
 ### Using the data in a loader {#loader-data}
 
@@ -839,7 +841,7 @@ export function PostPage(props: { id: string }) {
 
 - On `useTRPC()`, `unstable_$prefetch` and `unstable_$prefetchInfinite` follow the rule of TanStack Query's [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery): they start a query only if the cache has no entry for it, with no data, no error and no request in flight. The cache looks it up by TanStack Query's query hash, which ignores the order of keys in the input, so re-renders with the same input start nothing. When an input changes, the new query starts.
 - They're plain calls, not hooks: you can call them conditionally, and React Compiler can memoize them.
-- A query with cached data renders it at once. The component that reads the handle refetches it in the background if it's stale, as `useQuery` and `useSuspenseQuery` always do.
+- A query with cached data renders it at once. The component that reads the handle refetches it in the background if it's stale, as `useQuery` and `useSuspenseQuery` do by default.
 - A render can't wait, so on `useTRPC()`, `unstable_$ensure` and `unstable_$fetch` throw. Read the handle with `useSuspenseQuery` to suspend until the data arrives, or with `useQuery` to show a [loading state](#use-query).
 - Start queries high in the tree: in the page, not in the components that read the handles. Starting queries where they're read brings back the waterfall.
 - With server rendering, the queries start in the server render too. TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start) streams them to the browser. Elsewhere, such as React Router's framework mode, nothing sends their data to the browser, which fetches them again: start them in a [loader](#react-router) instead.
