@@ -13,6 +13,7 @@ import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
 import { indexable, indexedHost } from '../src/seo.ts';
 import {
+  atTrpcIo,
   copiedVersions,
   hiddenPaths,
   llmsTxtPath,
@@ -359,6 +360,15 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     unlisted: (page) =>
       page === '/404' ||
       noindexPaths.has(page) ||
+      // Off trpc.io, the copies' canonical links point there, and so does
+      // their place in a sitemap (`copySitemap` in vite.config.ts).
+      (!atTrpcIo &&
+        (page.startsWith('/blog/') ||
+          copiedVersions.some(
+            (version) =>
+              page === version.basePath ||
+              page.startsWith(`${version.basePath}/`),
+          ))) ||
       [...hiddenPaths, ...unindexedPaths].some(
         (basePath) => page === basePath || page.startsWith(`${basePath}/`),
       ),
