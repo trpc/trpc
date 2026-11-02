@@ -31,15 +31,19 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/posts/[id].tsx
 // ---cut---
-import { useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
 import { useTRPC } from '../../utils/trpc';
 
 export default function PostViewPage() {
-  const id = useRouter().query.id as string;
+  const router = useRouter();
+  // `query.id` is undefined until the router is ready
+  const id = router.query.id;
   const trpc = useTRPC();
   const postQuery = useQuery(
-    trpc.post.byId.queryOptions({ id }, { trpc: { abortOnUnmount: true } }),
+    trpc.post.byId.queryOptions(typeof id === 'string' ? { id } : skipToken, {
+      trpc: { abortOnUnmount: true },
+    }),
   );
 
   switch (postQuery.status) {

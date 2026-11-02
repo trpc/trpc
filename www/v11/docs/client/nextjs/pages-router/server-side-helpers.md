@@ -45,12 +45,15 @@ import { createContext } from './server/context';
 import { appRouter } from './server/routers/_app';
 import { makeQueryClient } from './utils/query-client';
 
-const queryClient = makeQueryClient();
-const trpc = createTRPCOptionsProxy({
-  router: appRouter,
-  ctx: await createContext(),
-  queryClient,
-});
+export async function getStaticProps() {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: await createContext(),
+    queryClient,
+  });
+  // ...
+}
 ```
 
 ### 2. External router
@@ -75,20 +78,23 @@ import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server/router';
 import { makeQueryClient } from './utils/query-client';
 
-const queryClient = makeQueryClient();
-const trpc = createTRPCOptionsProxy({
-  client: createTRPCClient<AppRouter>({
-    links: [
-      httpBatchLink({
-        url: 'http://localhost:3000/api/trpc',
-      }),
-    ],
-  }),
-  queryClient,
-});
+export async function getStaticProps() {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    client: createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:3000/api/trpc',
+        }),
+      ],
+    }),
+    queryClient,
+  });
+  // ...
+}
 ```
 
-Make a new query client for each call of `getServerSideProps` or `getStaticProps`. One at module scope would share one user's data with the next.
+Make the query client and the proxy inside `getServerSideProps` or `getStaticProps`, so each call gets new ones. A query client at module scope would share one user's data with the next.
 
 ## Prefetch, fetch and dehydrate
 

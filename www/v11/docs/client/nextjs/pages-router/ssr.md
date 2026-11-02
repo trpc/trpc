@@ -167,26 +167,28 @@ import { QueryClient } from '@tanstack/react-query';
 export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: pages/posts/[id].tsx
-import type { GetServerSidePropsContext } from 'next';
-declare const context: GetServerSidePropsContext;
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { GetServerSidePropsContext } from 'next';
 import type { AppRouter } from '../../server/routers/_app';
 import { makeQueryClient } from '../../utils/query-client';
 
-const queryClient = makeQueryClient();
-const trpc = createTRPCOptionsProxy({
-  client: createTRPCClient<AppRouter>({
-    links: [
-      httpBatchLink({
-        url: 'https://api.example.com/trpc',
-        headers: () => ({ cookie: context.req.headers.cookie }),
-      }),
-    ],
-  }),
-  queryClient,
-});
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    client: createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: 'https://api.example.com/trpc',
+          headers: () => ({ cookie: context.req.headers.cookie }),
+        }),
+      ],
+    }),
+    queryClient,
+  });
+  // prefetch and dehydrate as above
+}
 ```
 
 </details>
