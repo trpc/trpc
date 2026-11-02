@@ -7,6 +7,7 @@ import { buttonVariants } from '@shared/ui/components/button';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { HashIcon, LogInIcon, LogOutIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { z } from 'zod';
@@ -17,8 +18,7 @@ import {
   useSignInHref,
 } from '~/components/auth';
 import { CreateChannelDialog } from '~/components/create-channel';
-import { useTRPC } from '~/lib/trpc';
-import { channelListQuery, postListQuery } from '~/queries';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 import { Chat } from './-components/chat';
 
 export const Route = createFileRoute('/channels/$channelId')({
@@ -29,17 +29,21 @@ export const Route = createFileRoute('/channels/$channelId')({
     }
   },
   loader: (opts) => {
-    const { queryClient, trpc } = opts.context;
-    void queryClient.prefetchQuery(channelListQuery(trpc));
-    void queryClient.prefetchInfiniteQuery(
-      postListQuery(trpc, { channelId: opts.params.channelId }),
-    );
+    const { trpc } = opts.context;
+    return {
+      channels: trpc.channel.list.unstable_$prefetch(),
+      posts: trpc.post.infinite.unstable_$prefetchInfinite(
+        { channelId: opts.params.channelId },
+        { getNextPageParam: (d) => d.nextCursor },
+      ),
+    };
   },
   component: ChannelPage,
 });
 
 function ChannelPage() {
   const { channelId } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const signInHref = useSignInHref();
 
   return (
@@ -53,7 +57,7 @@ function ChannelPage() {
         </div>
         <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
           <Suspense>
-            <ChannelList />
+            <ChannelList channels={loaderData.channels} />
           </Suspense>
         </div>
         <div className="border-t p-3">
@@ -108,10 +112,13 @@ function ChannelPage() {
       >
         <Chat
           key={channelId}
-          channelId={channelId}
+          posts={loaderData.posts}
           title={
             <Suspense>
-              <ChannelName channelId={channelId} />
+              <ChannelName
+                channels={loaderData.channels}
+                channelId={channelId}
+              />
             </Suspense>
           }
         />
@@ -120,16 +127,24 @@ function ChannelPage() {
   );
 }
 
-function ChannelName(props: Readonly<{ channelId: string }>) {
+type ChannelsHandle = unstable_inferQueryHandle<TRPC['channel']['list']>;
+
+function ChannelName(
+  props: Readonly<{ channels: ChannelsHandle; channelId: string }>,
+) {
   const trpc = useTRPC();
-  const channelsQuery = useSuspenseQuery(channelListQuery(trpc));
+  const channelsQuery = useSuspenseQuery(
+    trpc.unstable_$fromHandle(props.channels),
+  );
   return channelsQuery.data.find((channel) => channel.id === props.channelId)
     ?.name;
 }
 
-function ChannelList() {
+function ChannelList(props: Readonly<{ channels: ChannelsHandle }>) {
   const trpc = useTRPC();
-  const channelsQuery = useSuspenseQuery(channelListQuery(trpc));
+  const channelsQuery = useSuspenseQuery(
+    trpc.unstable_$fromHandle(props.channels),
+  );
 
   return channelsQuery.data.map((channel) => (
     <Link
