@@ -454,12 +454,32 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
    * @see https://trpc.io/docs/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
+  /**
+   * Provides the tRPC client and `QueryClient` to the hooks.
+   * @see https://trpc.io/docs/client/react/setup#4-add-trpc-providers
+   */
   Provider: TRPCProvider<TRouter, TSSRContext>;
+  /**
+   * Same as `createTRPCClient`, typed for this router.
+   */
   createClient: typeof createTRPCClient<TRouter>;
+  /**
+   * @see https://trpc.io/docs/client/react/useQueries
+   */
   useQueries: TRPCUseQueries<TRouter>;
+  /**
+   * @see https://trpc.io/docs/client/react/suspense#usesuspensequeries
+   */
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
 };
 
+/**
+ * The hooks object returned by {@link createTRPCReact}.
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ */
 export type CreateTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext,
@@ -505,6 +525,19 @@ export function createHooksInternal<
   });
 }
 
+/**
+ * Creates typed React hooks for your router, built on TanStack React Query.
+ *
+ * @example
+ * ```ts
+ * export const trpc = createTRPCReact<AppRouter>();
+ * ```
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/react/setup
+ */
 export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,

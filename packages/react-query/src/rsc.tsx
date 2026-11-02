@@ -74,6 +74,9 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
 
 // ts-prune-ignore-next
 /**
+ * Creates a server-side caller that can also prefetch queries, plus a
+ * `HydrateClient` component that sends the prefetched data to the client.
+ *
  * @note This requires `@tanstack/react-query@^5.49.0`
  * @note Make sure to have `dehydrate.serializeData` and `hydrate.deserializeData`
  * set to your data transformer in your `QueryClient` factory.
@@ -91,6 +94,11 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
  *     },
  *   });
  * ```
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/react/server-components
  */
 export function createHydrationHelpers<TRouter extends AnyRouter>(
   caller: AnyRouter extends TRouter

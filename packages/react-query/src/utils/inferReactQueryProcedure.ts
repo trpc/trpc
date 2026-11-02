@@ -87,6 +87,14 @@ type inferReactQueryProcedureOptionsInner<
     : never;
 };
 
+/**
+ * Infers the hook options of every procedure in a router.
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/react/infer-types#infer-react-query-options-based-on-your-router
+ */
 export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> =
   inferReactQueryProcedureOptionsInner<
     TRouter['_def']['_config']['$types'],
