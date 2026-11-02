@@ -2,7 +2,7 @@
  * The sponsors section of a README, between its `SPONSORS:LIST` markers:
  * a table per tier (`sponsorTiers` in `src/sponsors.ts`), by rank, avatars
  * smaller down the tiers, then everyone else as backers, by who has given
- * the most.
+ * the most. A small sponsor whose avatar didn't load is left out.
  */
 import {
   avatarUrl,
@@ -56,9 +56,9 @@ function table(sponsors: ReadonlyArray<Sponsor>, tier: Tier) {
 
 /** The tiers' Markdown (HTML tables, which GitHub renders with avatars). */
 export function sponsorsMarkdown(sponsors: ReadonlyArray<Sponsor>) {
-  const byWeight = sponsors.toSorted(
-    (a, b) => b.weight - a.weight || a.createdAt - b.createdAt,
-  );
+  const byWeight = sponsors
+    .filter((sponsor) => sponsor.imageless !== true)
+    .toSorted((a, b) => b.weight - a.weight || a.createdAt - b.createdAt);
   const byRank = byWeight.toSorted(
     (a, b) =>
       (a.rank ?? Number.POSITIVE_INFINITY) -

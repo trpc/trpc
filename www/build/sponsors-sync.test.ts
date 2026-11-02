@@ -11,6 +11,7 @@ import {
   type SentQuery,
   sponsorshipNode,
 } from './fake-github.ts';
+import { Avatars, AvatarStatusError } from '../src/og/avatar.ts';
 import type { SponsorsConfig } from './sponsors-list.ts';
 import { endMarker, startMarker } from './sponsors-readme.ts';
 import {
@@ -66,6 +67,18 @@ const fixture = Effect.gen(function* () {
 function github(respond: (sent: SentQuery) => ReadonlyArray<unknown>) {
   return fakeGithub((sent) => ({ body: connectionPage(respond(sent)) }));
 }
+
+/** `Avatars` that load, but those whose URL has one of `broken` in it. */
+const avatars = (broken: () => ReadonlyArray<string> = () => []) =>
+  Layer.succeed(
+    Avatars,
+    Avatars.of({
+      fetch: (image) =>
+        broken().some((login) => image.includes(login))
+          ? Effect.fail(new AvatarStatusError({ status: 404, url: image }))
+          : Effect.succeed('data:'),
+    }),
+  );
 
 const sync = (files: SponsorsFiles) =>
   syncSponsors({
@@ -153,7 +166,11 @@ describe('syncSponsors', () => {
         expect(at('### Backers')).toBeGreaterThan(at('alt="SerpApi"'));
         expect(at('alt="FAN"')).toBeGreaterThan(at('### Backers'));
         expect(fake.sent).toHaveLength(4);
-      }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, fake.layer)));
+      }).pipe(
+        Effect.provide(
+          Layer.mergeAll(NodeServices.layer, fake.layer, avatars()),
+        ),
+      );
     },
   );
 
@@ -217,7 +234,71 @@ describe('syncSponsors', () => {
           'coderabbitai',
           'newcomer',
         ]);
-      }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, fake.layer)));
+      }).pipe(
+        Effect.provide(
+          Layer.mergeAll(NodeServices.layer, fake.layer, avatars()),
+        ),
+      );
+    },
+  );
+
+  it.effect(
+    'marks a small sponsor whose avatar does not load imageless, and writes when that changes',
+    () => {
+      let broken: ReadonlyArray<string> = ['fan', 'coderabbitai'];
+      const fake = github((sent) =>
+        isPaymentsQuery(sent)
+          ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', 2_000)]
+          : [
+              sponsorshipNode('coderabbitai', {
+                tier: { isOneTime: false, monthlyPriceInDollars: 500 },
+              }),
+              sponsorshipNode('fan'),
+            ],
+      );
+      return Effect.gen(function* () {
+        const files = yield* fixture;
+        const fs = yield* FileSystem.FileSystem;
+        const syncWhenSponsorsChange = syncSponsors({
+          ...files,
+          accounts: [{ kind: 'user', login: 'KATT' }],
+          config: { ...config, direct: [] },
+          onlyWhenSponsorsChange: true,
+          token: Redacted.make('test-token'),
+        });
+        const imageless = Effect.map(
+          fs.readFileString(files.sponsorsFile),
+          (json) =>
+            (
+              JSON.parse(json) as ReadonlyArray<{
+                readonly imageless?: true;
+                readonly login: string;
+              }>
+            ).flatMap((sponsor) =>
+              sponsor.imageless === true ? [sponsor.login] : [],
+            ),
+        );
+        yield* syncWhenSponsorsChange;
+        expect(yield* imageless).toEqual(['fan']);
+        expect(yield* fs.readFileString(files.readme)).not.toContain(
+          'alt="FAN"',
+        );
+
+        broken = ['coderabbitai'];
+        expect(yield* syncWhenSponsorsChange).toBe(
+          `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+        );
+        expect(yield* imageless).toEqual([]);
+        expect(yield* fs.readFileString(files.readme)).toContain('alt="FAN"');
+      }).pipe(
+        Effect.provide(
+          Layer.mergeAll(
+            NodeServices.layer,
+            fake.layer,
+            avatars(() => broken),
+          ),
+        ),
+      );
     },
   );
 
@@ -245,7 +326,7 @@ describe('syncSponsors', () => {
         );
         expect(yield* fs.readFileString(files.sponsorsFile)).toBe('[]\n');
         expect(yield* fs.readFileString(files.readme)).toBe(readme);
-      }).pipe(Effect.provide(NodeServices.layer));
+      }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, avatars())));
     },
   );
 });

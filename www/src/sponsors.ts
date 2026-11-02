@@ -43,7 +43,17 @@ export interface Sponsor {
   readonly tier?: SponsorTier;
   /** How much they've given, relative to the others: 1 to about 100. */
   readonly weight: number;
+  /**
+   * A small sponsor whose avatar didn't load at the last sync
+   * (`build/sponsors-sync.ts`). The site leaves them out where it draws
+   * small sponsors, rather than draw a broken image.
+   */
+  readonly imageless?: true;
 }
+
+/** A sponsor below the partner tiers: bronze, or no tier at all. */
+export const isSmallSponsor = (sponsor: Pick<Sponsor, 'tier'>) =>
+  sponsor.tier === undefined || !partnerTiers.includes(sponsor.tier);
 
 const entries: ReadonlyArray<
   Omit<Sponsor, 'tier'> & { readonly tier?: string }
@@ -55,8 +65,13 @@ export const sponsors: ReadonlyArray<Sponsor> = entries.map(
     isSponsorTier(tier) ? { ...sponsor, tier } : sponsor,
 );
 
+/** Every sponsor the site draws: all but the imageless. */
+export const drawnSponsors = sponsors.filter(
+  (sponsor) => sponsor.imageless !== true,
+);
+
 /** The sponsors who have given the most, most first. */
-export const topSponsors = sponsors
+export const topSponsors = drawnSponsors
   .toSorted((a, b) => b.weight - a.weight)
   .slice(0, 5);
 
@@ -162,7 +177,8 @@ const tierLabel = (tier: SponsorTier) =>
 /**
  * `/sponsor`'s social card, from `ranked` partners and `all` the sponsors:
  * the partners by rank, then the other sponsors' avatars by what they've
- * given, and a count of the ones that don't fit.
+ * given, and a count of the ones it doesn't draw. It gets twice as many
+ * others as fit, and draws the first whose avatars load (`og/card.ts`).
  */
 export function sponsorCardOf(
   ranked: ReadonlyArray<Partner>,
@@ -170,25 +186,32 @@ export function sponsorCardOf(
 ): SponsorCard {
   const shown = ranked.slice(0, cardPartners);
   const backers = [
-    ...ranked.slice(cardPartners),
-    ...all
-      .filter((sponsor) => !ranked.some((p) => p.login === sponsor.login))
-      .toSorted((a, b) => b.weight - a.weight),
-  ].slice(0, cardBackers);
-  return {
-    backers: backers.map((sponsor) => ({
-      image: sponsor.imgSrc,
-      name: sponsor.name,
+    ...ranked.slice(cardPartners).map((partner) => ({
+      image: partner.imgSrc,
+      name: partner.name,
+      partner: true as const,
     })),
+    ...all
+      .filter(
+        (sponsor) =>
+          sponsor.imageless !== true &&
+          !ranked.some((p) => p.login === sponsor.login),
+      )
+      .toSorted((a, b) => b.weight - a.weight)
+      .map((sponsor) => ({ image: sponsor.imgSrc, name: sponsor.name })),
+  ].slice(0, cardBackers * 2);
+  return {
+    backerSlots: cardBackers,
+    backers,
     description: cardLede(all.length),
     kind: 'sponsor',
-    more: all.length - shown.length - backers.length,
     partners: shown.map((partner) => ({
       image: partner.imgSrc,
       name: partner.name,
       tier: tierLabel(partner.tier),
     })),
     path: sponsorPage.path,
+    sponsorCount: all.length,
     title: sponsorPage.headline,
     url: sponsorUrl,
   };

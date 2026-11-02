@@ -9,12 +9,50 @@ import {
   displayUrl,
   docDescription,
   docTitle,
+  drawnBackers,
   initials,
   plainText,
+  type SponsorCard,
   sectionLabel,
   titleSize,
   truncateWords,
 } from './card.ts';
+
+describe('drawnBackers', () => {
+  const card: SponsorCard = {
+    backerSlots: 2,
+    backers: [
+      { image: 'big', name: 'Big', partner: true },
+      { image: 'gone', name: 'Gone' },
+      { image: 'a', name: 'A' },
+      { image: 'b', name: 'B' },
+    ],
+    description: '',
+    kind: 'sponsor',
+    partners: [],
+    path: '/sponsor',
+    sponsorCount: 4,
+    title: 'Sponsor',
+    url: 'https://github.com/sponsors/trpc',
+  };
+  const loaded = (...images: ReadonlyArray<string>) => ({
+    avatars: new Map(images.map((image) => [image, 'data:'])),
+    stats: {},
+  });
+
+  it("keeps a partner without an avatar, and leaves out a small sponsor's", () => {
+    expect(drawnBackers(card, loaded('a', 'b')).map((b) => b.name)).toEqual([
+      'Big',
+      'A',
+    ]);
+  });
+
+  it('fills the slots with the next small sponsors whose avatars loaded', () => {
+    expect(
+      drawnBackers({ ...card, backers: card.backers.slice(1) }, loaded('b')),
+    ).toEqual([{ image: 'b', name: 'B' }]);
+  });
+});
 
 describe('ogImagePath', () => {
   it('mirrors the page path under /og', () => {

@@ -6,11 +6,11 @@ import {
 import { cn } from '@shared/ui/lib/utils';
 import { type CSSProperties, useState } from 'react';
 
-import { avatarUrl, sponsors } from '~/sponsors.ts';
+import { avatarUrl, drawnSponsors } from '~/sponsors.ts';
 
 import { packSponsors } from './pack.ts';
 
-const bubbles = packSponsors(sponsors, 0.006);
+const bubbles = packSponsors(drawnSponsors, 0.006);
 
 /** The cloud's widest, in px: `max-w-3xl`. */
 const maxWidth = 768;
@@ -34,7 +34,7 @@ const since = new Intl.DateTimeFormat('en', {
  */
 type Entrance = 'none' | 'waiting' | 'shown';
 
-/** Every sponsor as a circle, sized by what they've given. */
+/** Every sponsor the site draws as a circle, sized by what they've given. */
 export function SponsorCloud(props: { readonly className?: string }) {
   const [entrance, setEntrance] = useState<Entrance>('none');
   return (
