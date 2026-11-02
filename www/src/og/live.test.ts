@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { v12 } from '~/site.ts';
+
 import type { OgCard } from './card.ts';
 import {
   avatarUrl,
   cacheControl,
+  downloadPackages,
+  downloadPackagesFor,
   fetchAvatar,
   fetchLive,
   fetchStats,
@@ -42,18 +46,71 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const lastWeek = 'https://api.npmjs.org/downloads/point/last-week';
+
+describe('downloadPackages', () => {
+  it("counts @trpc/server where v12 is hidden, and adds v12's core where it's offered", () => {
+    expect(downloadPackagesFor(true)).toEqual(['@trpc/server']);
+    expect(downloadPackagesFor(false)).toEqual([
+      '@trpc/server',
+      '@trpc12/trpc',
+    ]);
+    expect(downloadPackages).toEqual(downloadPackagesFor(v12.hidden));
+  });
+});
+
 describe('fetchStats', () => {
   it("reads the repo's stars and @trpc/server's weekly downloads", async () => {
     respond({
       'https://api.github.com/repos/trpc/trpc': () =>
         Response.json({ stargazers_count: 40_759 }),
-      'https://api.npmjs.org/downloads/point/last-week/@trpc/server': () =>
+      [`${lastWeek}/@trpc/server`]: () =>
         Response.json({ downloads: 7_926_494 }),
     });
-    expect(await fetchStats(undefined)).toEqual({
+    expect(await fetchStats(undefined, ['@trpc/server'])).toEqual({
       downloads: 7_926_494,
       stars: 40_759,
     });
+  });
+
+  it("adds up the packages' downloads", async () => {
+    respond({
+      'https://api.github.com/': () => Response.json({ stargazers_count: 1 }),
+      [`${lastWeek}/@trpc/server`]: () =>
+        Response.json({ downloads: 7_926_494 }),
+      [`${lastWeek}/@trpc12/trpc`]: () => Response.json({ downloads: 1_234 }),
+    });
+    expect(
+      (await fetchStats(undefined, ['@trpc/server', '@trpc12/trpc'])).downloads,
+    ).toBe(7_927_728);
+  });
+
+  it("counts a package npm doesn't have yet as 0", async () => {
+    respond({
+      'https://api.github.com/': () => Response.json({ stargazers_count: 1 }),
+      [`${lastWeek}/@trpc/server`]: () =>
+        Response.json({ downloads: 7_926_494 }),
+      [`${lastWeek}/@trpc12/trpc`]: () =>
+        Response.json(
+          { error: 'package @trpc12/trpc not found' },
+          { status: 404 },
+        ),
+    });
+    expect(
+      (await fetchStats(undefined, ['@trpc/server', '@trpc12/trpc'])).downloads,
+    ).toBe(7_926_494);
+  });
+
+  it('leaves the downloads out when one package fails', async () => {
+    respond({
+      'https://api.github.com/': () => Response.json({ stargazers_count: 1 }),
+      [`${lastWeek}/@trpc/server`]: () =>
+        Response.json({ downloads: 7_926_494 }),
+      [`${lastWeek}/@trpc12/trpc`]: () => new Response('', { status: 503 }),
+    });
+    expect(
+      (await fetchStats(undefined, ['@trpc/server', '@trpc12/trpc'])).downloads,
+    ).toBeUndefined();
   });
 
   it('leaves out a number that fails', async () => {

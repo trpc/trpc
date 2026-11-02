@@ -4,10 +4,13 @@
  * post's authors' avatars. A fetch that fails leaves its part out, and the
  * card is cached briefly (`cacheControl`), so the next request tries again.
  */
+import trpc12Package from '../../../next/packages/trpc/package.json' with { type: 'json' };
+import { v12 } from '~/site.ts';
+
 import type { OgCard } from './card.ts';
 
 export interface Stats {
-  /** `@trpc/server`'s npm downloads last week. */
+  /** `downloadPackages`' npm downloads last week, added up. */
   readonly downloads?: number | undefined;
   readonly stars?: number | undefined;
 }
@@ -41,9 +44,42 @@ const numberAt = (data: unknown, key: string) => {
   return typeof value === 'number' ? value : undefined;
 };
 
+/**
+ * The packages whose downloads the home card adds up: v11's `@trpc/server`,
+ * and where v12 is offered, v12's core too (`decisions/npm-downloads.md`).
+ */
+export const downloadPackagesFor = (v12Hidden: boolean) =>
+  v12Hidden ? ['@trpc/server'] : ['@trpc/server', trpc12Package.name];
+
+export const downloadPackages = downloadPackagesFor(v12.hidden);
+
+/** A package npm doesn't know, one not published yet, had no downloads. */
+const weeklyDownloads = async (name: string) => {
+  const url = `https://api.npmjs.org/downloads/point/last-week/${name}`;
+  const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  if (response.status === 404) {
+    return 0;
+  }
+  if (!response.ok) {
+    throw new Error(`${url}: ${response.status}`);
+  }
+  return numberAt(await response.json(), 'downloads');
+};
+
+/** The packages' downloads added up, or `undefined` if one of them failed. */
+const totalDownloads = async (packages: ReadonlyArray<string>) => {
+  const counts = await Promise.all(packages.map(weeklyDownloads));
+  return counts.reduce<number | undefined>(
+    (total, count) =>
+      total === undefined || count === undefined ? undefined : total + count,
+    0,
+  );
+};
+
 /** GitHub's API answers 60 requests an hour without a token; one raises that. */
 export async function fetchStats(
   token = process.env['GITHUB_TOKEN'],
+  packages: ReadonlyArray<string> = downloadPackages,
 ): Promise<Stats> {
   const [stars, downloads] = await Promise.all([
     getJson('https://api.github.com/repos/trpc/trpc', {
@@ -53,12 +89,7 @@ export async function fetchStats(
       (data) => numberAt(data, 'stargazers_count'),
       () => undefined,
     ),
-    getJson(
-      'https://api.npmjs.org/downloads/point/last-week/@trpc/server',
-    ).then(
-      (data) => numberAt(data, 'downloads'),
-      () => undefined,
-    ),
+    totalDownloads(packages).catch(() => undefined),
   ]);
   return { downloads, stars };
 }
