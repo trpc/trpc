@@ -25,7 +25,8 @@ export const referencePackages = [
 ] as const;
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
-const packagesDir = here('../../packages');
+// `main`'s are at `packages/`.
+const packagesDir = here('../../v11/packages');
 const outDir = here('out');
 
 interface ExportEntry {
