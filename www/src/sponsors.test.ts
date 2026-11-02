@@ -12,12 +12,16 @@ describe('sponsorCard', () => {
     }
   });
 
-  it('then the other sponsors, most given first, and counts the rest', () => {
-    const weights = sponsorCard.backers.map(
-      (backer) =>
-        sponsors.find((sponsor) => sponsor.imgSrc === backer.image)?.weight ??
-        0,
-    );
+  it('then the partners past the fourth, the others most given first, and counts the rest', () => {
+    const later = partners.slice(4).map((partner) => partner.imgSrc);
+    const backerImages = sponsorCard.backers.map((backer) => backer.image);
+    expect(backerImages.slice(0, later.length)).toEqual(later.slice(0, 12));
+    const weights = backerImages
+      .slice(later.length)
+      .map(
+        (image) =>
+          sponsors.find((sponsor) => sponsor.imgSrc === image)?.weight ?? 0,
+      );
     expect(weights).toEqual(weights.toSorted((a, b) => b - a));
     expect(sponsorCard.backers.length).toBeLessThanOrEqual(12);
     expect(
