@@ -9,6 +9,10 @@ parent: "client/nextjs/pages-router/setup"
 order: 71
 ---
 
+:::warning Deprecated
+The Next.js Pages Router integration (`@trpc/next`) is deprecated in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To use it with Next.js, follow [Set up with Next.js App Router](/docs/client/nextjs/app-router-setup).
+:::
+
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
 
 :::info
