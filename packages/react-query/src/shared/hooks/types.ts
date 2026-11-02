@@ -291,7 +291,8 @@ export interface TRPCSubscriptionConnectingResult<
 }
 
 /**
- * `useSubscription` result while connected and waiting for data.
+ * `useSubscription` result while the subscription is active. It stays
+ * `pending` after data arrives, so `data` may be set.
  */
 export interface TRPCSubscriptionPendingResult<
   TOutput,

@@ -106,7 +106,7 @@ export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
 }
 
 /**
- * Options you pass to `queryOptions` when the input can't be `skipToken`.
+ * Options you pass to `queryOptions` when `queryFn` can't be `skipToken`.
  */
 export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
@@ -122,7 +122,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
     TRPCQueryBaseOptions {}
 
 /**
- * What `queryOptions` returns when the input can't be `skipToken`.
+ * What `queryOptions` returns when `queryFn` can't be `skipToken`.
  */
 export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
@@ -245,7 +245,7 @@ export interface DefinedTRPCInfiniteQueryOptionsOut<
 }
 
 /**
- * Options you pass to `infiniteQueryOptions` when the input can't be `skipToken`.
+ * Options you pass to `infiniteQueryOptions` when `queryFn` can't be `skipToken`.
  */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -272,7 +272,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
 }
 
 /**
- * What `infiniteQueryOptions` returns when the input can't be `skipToken`.
+ * What `infiniteQueryOptions` returns when `queryFn` can't be `skipToken`.
  */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
