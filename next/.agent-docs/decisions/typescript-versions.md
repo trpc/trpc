@@ -8,4 +8,4 @@
 - Why: v11 supports TypeScript 5.7.2 and later, so v11 apps can install the preview without upgrading their compiler first.
 - Lost: a peer range that says the OpenAPI type generator needs 7.1. CI type-checks with 7.1 only, `tooling/portability` included; the range below it is re-checked by hand.
 - Open: move the peer to `>=7.1` once Next, svelte-check and Twoslash run on 7, if the types then use something 7.1 adds. Re-check the range by hand when the declarations start using newer syntax. `vp check`'s type-aware lint runs oxlint-tsgolint, which embeds TypeScript 7.0 until it ships a 7.1 build.
-- Lives in: `packages/trpc/package.json` (`peerDependencies.typescript`), `pnpm-workspace.yaml` (`minimumReleaseAgeExclude`), `www/build/markdown.ts`, `www/docs/getting-started.md`, `www/docs/openapi/document.md`, `packages/trpc/src/openapi/typescript.ts`.
+- Lives in: `packages/trpc/package.json` (`peerDependencies.typescript`), `pnpm-workspace.yaml` (`minimumReleaseAgeExclude`), `www/build/markdown.ts`, `www/v12/docs/getting-started.md`, `www/v12/docs/openapi/document.md`, `packages/trpc/src/openapi/typescript.ts`.

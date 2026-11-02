@@ -7,4 +7,4 @@
 - Why: until v12 replaces v11 at trpc.io, its docs shouldn't compete in search with trpc.io's, and keying on the site's URL and the deployment means the cutover is one edit that can't leave the old host or previews indexed.
 - Lost: search traffic to v12's docs before the cutover; per-host meta (prerendered HTML is the same at every host, so off trpc.io after the cutover only the header says `noindex`).
 - Open: at the cutover, what [`old-urls-and-seo.md`](./old-urls-and-seo.md) leaves open; the copies' canonical links and the `onTrpcIo` redirects are settled in [`trpc-io-cutover-and-hidden-v12.md`](./trpc-io-cutover-and-hidden-v12.md).
-- Lives in: `next/www/src/site.ts` (`url`), `next/www/src/seo.ts` (`indexedHost`, `indexable`), `next/www/src/routes/__root.tsx`, `next/www/build/vercel-output.ts` (`noindexRoute`), `next/www/build/site-files.ts`.
+- Lives in: `www/src/site.ts` (`url`), `www/src/seo.ts` (`indexedHost`, `indexable`), `www/src/routes/__root.tsx`, `www/build/vercel-output.ts` (`noindexRoute`), `www/build/site-files.ts`.

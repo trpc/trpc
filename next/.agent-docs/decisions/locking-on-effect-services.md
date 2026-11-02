@@ -17,4 +17,4 @@
   - The lockers are already Layers of one service.
   - `experimental_lock`'s options are per-procedure (key, ttl, timeout), not something to share as a service.
   - `experimental_durableLockObject` stays synchronous host code, because its `fetch` and `close` are what the Durable Object's class methods return to Workers.
-- Lives in: `packages/trpc/src/middleware/lock.ts`, `src/cloudflare/lock.ts`, `src/cloudflare/lock.test.ts`, `src/middleware/index.ts`, `packages/trpc/src/middleware/lock.test.ts` (memory; Redis when `REDIS_URL` is set, as in CI), `examples/cloudflare` (a seat locked across two room objects, run on workerd by `pnpm example`), `www/docs/middleware/lock.md`, `www/docs/adapters/cloudflare.md` (Locks).
+- Lives in: `packages/trpc/src/middleware/lock.ts`, `src/cloudflare/lock.ts`, `src/cloudflare/lock.test.ts`, `src/middleware/index.ts`, `packages/trpc/src/middleware/lock.test.ts` (memory; Redis when `REDIS_URL` is set, as in CI), `examples/cloudflare` (a seat locked across two room objects, run on workerd by `pnpm example`), `www/v12/docs/middleware/lock.md`, `www/v12/docs/adapters/cloudflare.md` (Locks).

@@ -1,0 +1,36 @@
+# One pnpm workspace at the root holds v11, v12 and the site, which is the root's `www/` (human)
+
+- Human, 2026-11-01 (via the coordinator): "once #7771 lands, do a merge commit of main to v12 / the website should live in root www and we should only have one pnpm monorepo with the old and new packages combined. this should work for now as they are different package names etc / the root www is the point of truth and you should port over all the functionality of v12 to that - docs, the homepage, samples, etc. we've done some refinements of the site on that pr - read commit history or pr body for reference"
+- Human, 2026-11-01 (via the coordinator): "be cognisent of the commits so that files end up in the right places"
+- The root's `pnpm-workspace.yaml`, `pnpm-lock.yaml` and `turbo.json` are the one workspace: v11's packages, examples and tooling in `v11/` (`@trpc/*`), v12's in `next/` (`@trpc12/*`), the site in `www/` (with `www/api-reference` and `www/samples/*`) and `tooling/ui`. `pnpm install` at the root installs all of it; `v11/` and `next/` have no lockfile or workspace file of their own. The two versions' packages don't share a name. Where tooling did, v12's was renamed: next's oxlint plugin is `@tooling/oxlint-plugin-v12`, v12's docs sample `@samples/v12` (beside `main`'s `@samples/v11`), and the site is `www`, not `@trpc12/www`. v11 stays in the workspace until 12.0.0 ([`v11-stays-until-12.md`](./v11-stays-until-12.md)).
+- The site is `main`'s after #7771 (its header, routes, `/docs/v10` and `/docs/v9`, on-request social cards, `vercel.json` redirects, API reference and `docusaurus-syntax.ts`), with v12's features ported onto it: v12's docs at `/v12/docs/<slug>` (from `www/v12/docs/`, its sections in `www/v12/sections.json`), the home page's version bar, the kitchen sink, the decisions pages, the codemod playground, the experiments menu, the hidden-v12 reveal, the benchmarks page and their checks. Where the two sites differed, `main`'s refinements won unless v12's feature needed its version.
+- (agent) Where files went, each move a commit of pure renames so `git log --follow` reaches its history:
+  - `main`'s site was the `v11/www/` that merges from `main` produced; it moved to `www/`, its path on `main`, so later merges land `www/` in place, without rename detection.
+  - v12's site files went from `next/www/` to the same paths under `www/`. `next/www/docs/` went to `www/v12/docs/`, beside `www/v11/docs/` ([`docs-in-www.md`](./docs-in-www.md)), and `next/www/samples/docs/` to `www/samples/v12/`.
+  - `next/shared/ui/` went to `tooling/ui/`, `main`'s path for the same package, and `main`'s copy went. So `tooling/ui`'s history is v12's.
+  - `v11/turbo.json` and `v11/pnpm-workspace.yaml` went to the root and took next's tasks, catalogs and settings. The lockfiles were replaced by one resolved at the root.
+  - `next/.changeset/` went to `.changeset/`: Changesets reads the workspace from its root.
+  - `.github/actions/v11-setup` became `.github/actions/setup`, which every workflow uses. It sets up the root's pnpm and Node and installs the whole workspace.
+- (agent) The files both sites had (`build/markdown.ts`, `content.ts`, `vercel-output.ts`, `src/routes/__root.tsx`, the header, the search, the sponsors and so on) were the hard part. v12's changes to them were made to `main`'s copies in `www/` (`fc6dceb3c`), and `next/www/`'s copies were deleted (`5376d5a30`). So their history before 2026-11-01 is at the old path: `git log -- next/www/build/markdown.ts`. Deleted with nothing in their place:
+  - `og-image.ts` and its pattern, replaced by #7771's cards ([`og-images.md`](./og-images.md));
+  - `trpc-io-redirects.json`, replaced by `www/vercel.json`'s redirects ([`old-urls-and-seo.md`](./old-urls-and-seo.md));
+  - the `v10.docs.*` and `v9.docs.*` routes, replaced by #7771's;
+  - `next/www/samples/v11`, replaced by `main`'s;
+  - the old-docs copy ([`old-docs.md`](./old-docs.md)).
+- (agent) Where a new file goes:
+  - v11 code goes in `v11/`, which `main`'s merges update.
+  - v12 code goes in `next/`.
+  - Anything on the site, every version's docs included, goes in `www/`. v12's pages are edited here. v11's, v10's, v9's and the blog are edited on `main`, and a merge brings them.
+  - Workspace config, `.changeset/` and `.github/` go at the root.
+- (agent) One `turbo.json` runs and caches every package's tasks, locally and in CI's remote cache ([`task-cache.md`](./task-cache.md)). The root's `pnpm build`, `typecheck`, `lint` and `test` cover the workspace. `pnpm check:www` lints, typechecks and tests the site and `tooling/`. `next/` and `v11/` keep their own `pnpm` scripts.
+- (agent) The root hoists neither `@types/bun` nor `@types/lodash`: TypeScript reads every `@types` package in an ancestor `node_modules` for a tsconfig without `types`. v12's `@types/bun` needs a newer `@types/node` than v11's examples have, and serverless's `@types/lodash` declares a `WeakMap` that TypeScript 5.9's lib doesn't match.
+- (agent) The root's `build` and `typecheck` leave out `v11/examples/`. Its Prisma examples share one generated `@prisma/client`, so they're only right one at a time, as v11 CI's matrix runs them, and so is `examples-lambda-api-gateway-streaming`, which `main` never typechecks. Three of v11's examples run their `client/` and `server/` packages' scripts with `npm run -w`, so `turbo.json` lists the `@trpc/*` builds they need.
+- Why: one install and one task graph instead of two workspaces that each held a copy of the other's site. The site is `main`'s, so a merge from `main` lands site changes where they are, with nothing to copy.
+- Lost:
+  - v11 and v12 resolve their dependencies together. The merged lockfile moved 186 of v11's dependencies to the newest version within their ranges, and v11's tests were fixed for the ones that changed behavior (`1d3a289ca`).
+  - An install is the whole workspace's.
+  - The precommit hook (`vp staged`) no longer lints the docs' blocks. `pnpm check` and CI still do ([`docs-in-www.md`](./docs-in-www.md)).
+- Open:
+  - The `trpc-v12` Vercel project's root directory is `next/www` and has to become `www` before `v12` deploys again ([`docs-website-on-vercel.md`](./docs-website-on-vercel.md)).
+  - Deleting `old-docs-copy.ts`, `old-docs-convert.ts` and `old-docs.json` on `main` too would spare the next merge their modify/delete conflicts.
+- Lives in: `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `.changeset/`, `.github/actions/setup/`, `www/`, `tooling/ui/`.

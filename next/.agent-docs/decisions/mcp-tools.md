@@ -17,4 +17,4 @@
 - Lost: following MCP's spec through the SDK for free; progress and server-to-client requests; zero-configuration publishing.
 - (agent, experimental) The tentative picks are built in `@trpc12/trpc/mcp` as `experimental_mcp()`, `experimental_createMcpHandler()` and `experimental_describeTools()`, with a docs page in the `mcp` docs experiment. Q25.8's decoding isn't built. The questions stay open; other answers change or replace the build.
 - Open: awaiting the human's answers to proposal 25.
-- Lives in: `proposals/25-mcp.md`, `packages/trpc/src/mcp/`, `www/docs/integrations/mcp.md`, `examples/experimental/mcp/`.
+- Lives in: `proposals/25-mcp.md`, `packages/trpc/src/mcp/`, `www/v12/docs/integrations/mcp.md`, `examples/experimental/mcp/`.

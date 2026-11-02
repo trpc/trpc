@@ -12,4 +12,4 @@
 - Why: ten experiments with their descriptions and page links made the menu a tall list to read through, and sharing "turn on X and look here" needed a URL that opens the menu where X is.
 - Lost: "no turn all on" ([`docs-experiments.md`](./docs-experiments.md)): there is one now, for reviewers who want everything at once. The filter text isn't in the URL. Every row's pages at a glance (they're one click away).
 - Open: whether to group experiments under headings once there are more of them.
-- Lives in: `next/www/src/components/experiments-menu.tsx`, `next/www/src/flags.ts` (`menuParam`, `useMenuState`, `useSetMenuState`), `next/www/src/flags.test.ts`, `next/www/src/components/site-header.tsx`, `next/shared/ui/src/components/popover.tsx` (`anchor`), `next/shared/ui/src/components/switch.tsx` (`nativeButton`), `next/www/smoke.ts`.
+- Lives in: `www/src/components/experiments-menu.tsx`, `www/src/flags.ts` (`menuParam`, `useMenuState`, `useSetMenuState`), `www/src/flags.test.ts`, `www/src/components/site-header.tsx`, `tooling/ui/src/components/popover.tsx` (`anchor`), `tooling/ui/src/components/switch.tsx` (`nativeButton`), `www/smoke.ts`.

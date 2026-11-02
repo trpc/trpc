@@ -9,4 +9,4 @@
 - Why: the companies vouch for tRPC without the page advertising them; one color keeps ten brands from fighting the page's own.
 - Lost: the companies' colors, and v11's hover that brought them back.
 - Open: nothing regenerates the paths; a new logo goes through the same steps by hand.
-- Lives in: `next/www/src/components/used-by/`, `next/www/src/routes/index.tsx`, `next/www/src/styles.css`.
+- Lives in: `www/src/components/used-by/`, `www/src/routes/index.tsx`, `www/src/styles.css`.

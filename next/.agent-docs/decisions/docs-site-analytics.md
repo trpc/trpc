@@ -20,4 +20,4 @@
   - The hidden-paths and noindex checks see no change: no link, no meta tag, nothing in the HTML.
 - Why: trpc.io's numbers go on through the cutover, comparable with before, and the 160 KB third-party script leaves the critical path.
 - Lost: page views of readers who leave before the page is idle, a few seconds at most. If the GA4 stream's enhanced measurement counts history changes, each navigation is counted twice, as it already is on trpc.io.
-- Lives in: `next/www/src/analytics.ts`, `next/www/src/when-idle.ts`, `next/www/src/router.tsx`.
+- Lives in: `www/src/analytics.ts`, `www/src/when-idle.ts`, `www/src/router.tsx`.

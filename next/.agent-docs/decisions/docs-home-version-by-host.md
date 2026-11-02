@@ -7,4 +7,4 @@
 - Why: until trpc.io serves v12, the site's other hosts exist to show v12, so they should open on it; trpc.io's readers should still get the tRPC they can install.
 - Lost: a v12-host visitor who last read v11's docs gets v11 on `/`, not v12, because remembering wins. A client navigation to a bare `/` (the v11 pill, the logo from v11's docs) shows v11 on every host.
 - Open: dropping the host check when v12 becomes the default everywhere.
-- Lives in: `next/www/src/home-version.ts` (`stableHosts`, `hostHomeVersion`, `landingHomeVersion`, `rememberHomeVersion`), `next/www/src/home-version.test.ts`.
+- Lives in: `www/src/home-version.ts` (`stableHosts`, `hostHomeVersion`, `landingHomeVersion`, `rememberHomeVersion`), `www/src/home-version.test.ts`.

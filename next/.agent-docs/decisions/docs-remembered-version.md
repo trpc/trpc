@@ -6,4 +6,4 @@
 - Why: a reader trying v12 shouldn't have to pick it again on every visit, and a URL-only switch keeps the prerendered page and its links unchanged.
 - Lost: forwarding the docs too. `/docs/*` stays v11's even with v12 remembered, because a docs URL names its version in the path and a shared or search-result link should land on the page it names.
 - Open: what to remember once v12 is the default.
-- Lives in: `next/www/src/home-version.ts` (`homeVersionAt`, `rememberHomeVersion`, `landingHomeVersion`), `next/www/src/content/docs.ts` (`useRememberHomeVersion`), `next/www/src/routes/__root.tsx`, `next/www/src/home-version.test.ts`.
+- Lives in: `www/src/home-version.ts` (`homeVersionAt`, `rememberHomeVersion`, `landingHomeVersion`), `www/src/content/docs.ts` (`useRememberHomeVersion`), `www/src/routes/__root.tsx`, `www/src/home-version.test.ts`.

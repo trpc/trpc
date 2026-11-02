@@ -2,7 +2,7 @@
 
 - Human, 2026-10-15 (decisions round 3, Q16 = proposal 22 Q22.4): "B".
 - Human, 2026-10-18 (example-apps research, which candidates of 1–9): "all of them".
-- Human, 2026-10-18 (same round, UI and `next/www`): "create them, they should all use the same ui lib as next/www and they shouldn't touch that".
+- Human, 2026-10-18 (same round, UI and `www`): "create them, they should all use the same ui lib as www and they shouldn't touch that".
 - Human, 2026-10-18 (same round, runnable examples): "always make them runnable even if you're just showing server code so there's a 'full example' … like a server.ts + client.ts and a script that runs both is a good general practice".
 - Human, 2026-10-18 (same round, which examples the layout is for): "i mean it doesn't apply if you do e.g. a next.js or a tanstack start app etc".
 - (agent) The layout that makes every example runnable, `server.ts` + `client.ts` + `start.ts` with `pnpm start` running both, is in [`examples/README.md`](../../examples/README.md). Framework apps (Next.js, TanStack Start, …) keep their framework's own layout and scripts.
@@ -27,8 +27,8 @@
 - (agent) "Without tanstack" is without TanStack Query, so both are TanStack Start apps, one per package: `react-suspense/` (`@trpc12/experimental-react`, `use()` and Suspense) and `react-atom/` (`@trpc12/experimental-react-atom`, Effect atoms). That is the split the code already had: two clients with their own cache, hydration and mutation model, sharing only the router. Each server-renders through `localLink`, dehydrates its cache or registry with the router's `dehydrate`/`hydrate`, and serves `/api/trpc` from a Start server route; the smoke builds the app, serves it with Vite's preview server and checks in headless Chrome that hydration makes no request and a mutation refetches once.
 - (agent) What the `react-atom` smoke found: a query atom with `reactivityKeys` refetched after hydration, because the serializable atom was the reactivity wrapper and not the atom that runs the query; fixed in `@trpc12/experimental-react-atom`. A browser registry also needs an idle TTL so a hydrated atom survives from a component's first read to its subscribe ([docs](https://v12.trpc.io/v12/docs/integrations/experimental-react-atom#server-rendering)).
 - `react-spa` reverses the earlier "Lost: a plain React single-page-app example (`react-vite`)": "all of them" includes it.
-- Every example with a UI uses `next/www`'s UI library and stack (the shadcn components in `@shared/ui`, Tailwind, React), as dependencies. No example imports code from `next/www`, and building them changes nothing under `next/www/`.
-- Experimental examples live in `next/examples/experimental/`, not the research's `next/www/.experimental/`: the human said the examples "shouldn't touch" `next/www`.
+- Every example with a UI uses `www`'s UI library and stack (the shadcn components in `@shared/ui`, Tailwind, React), as dependencies. No example imports code from `www`, and building them changes nothing under `www/`.
+- Experimental examples live in `next/examples/experimental/`, not the research's `www/.experimental/`: the human said the examples "shouldn't touch" `www`.
 - (agent) Each depends on `@trpc12/trpc: workspace:*` and runs in CI with a typecheck and a smoke run, like `pnpm example` does for `minimal` today. An example that needs a CI service (Deno, Postgres, a headless browser) adds it to the `check` job in the smallest way.
 - Why: one example per distinct runtime or feature; docs snippets already come from tested code. The research found most of the stable, listed surface never runs in a real app; the nine candidates cover almost all of it, so the release ships with each stable feature run end to end.
 - Lost: a small set that is cheap to keep green. Every example is another smoke in `pnpm example` and another thing a breaking change must update.
