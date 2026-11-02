@@ -1,5 +1,7 @@
 import list from '../sponsors.json' with { type: 'json' };
 
+import type { SponsorCard } from './og/card.ts';
+
 /**
  * The sponsor tiers, by the least a sponsor gives a month (across KATT and
  * the trpc organization), highest first.
@@ -145,7 +147,54 @@ export const partners: ReadonlyArray<Partner> = sponsors
   );
 
 /** Under the headline on `/sponsor`'s social card (`og/card.ts`). */
-export const sponsorCardLede = `MIT licensed, and kept going by ${sponsors.length} sponsors.`;
+const cardLede = (count: number) =>
+  `MIT licensed, and kept going by ${count} sponsors.`;
+
+export const sponsorCardLede = cardLede(sponsors.length);
+
+/** As many partners and other sponsors as fit on the card's two rows. */
+const cardPartners = 4;
+const cardBackers = 12;
+
+const tierLabel = (tier: SponsorTier) =>
+  sponsorTiers.find((entry) => entry.tier === tier)?.label ?? tier;
+
+/**
+ * `/sponsor`'s social card, from `ranked` partners and `all` the sponsors:
+ * the partners by rank, then the other sponsors' avatars by what they've
+ * given, and a count of the ones that don't fit.
+ */
+export function sponsorCardOf(
+  ranked: ReadonlyArray<Partner>,
+  all: ReadonlyArray<Sponsor>,
+): SponsorCard {
+  const shown = ranked.slice(0, cardPartners);
+  const backers = [
+    ...ranked.slice(cardPartners),
+    ...all
+      .filter((sponsor) => !ranked.some((p) => p.login === sponsor.login))
+      .toSorted((a, b) => b.weight - a.weight),
+  ].slice(0, cardBackers);
+  return {
+    backers: backers.map((sponsor) => ({
+      image: sponsor.imgSrc,
+      name: sponsor.name,
+    })),
+    description: cardLede(all.length),
+    kind: 'sponsor',
+    more: all.length - shown.length - backers.length,
+    partners: shown.map((partner) => ({
+      image: partner.imgSrc,
+      name: partner.name,
+      tier: tierLabel(partner.tier),
+    })),
+    path: sponsorPage.path,
+    title: sponsorPage.headline,
+    url: sponsorUrl,
+  };
+}
+
+export const sponsorCard = sponsorCardOf(partners, sponsors);
 
 /** `/sponsor`'s social card's alt text: what the card says. */
 export const sponsorCardAlt = [
@@ -156,4 +205,5 @@ export const sponsorCardAlt = [
     : [
         `Partners: ${new Intl.ListFormat('en').format(partners.map((partner) => partner.name))}.`,
       ]),
+  `Sponsor at ${sponsorUrl.replace(/^https:\/\//, '')}.`,
 ].join(' ');

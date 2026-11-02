@@ -1,6 +1,9 @@
+import { isValidElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { OgCard } from './card.ts';
+import { cardElement, drawnAssets, initials, type OgCard } from './card.ts';
+import { sponsorCard } from '~/sponsors.ts';
+
 import { fetchLive, type Live } from './live.ts';
 import { renderOgImage } from './render.ts';
 
@@ -67,6 +70,7 @@ const cards: ReadonlyArray<OgCard> = [
       'Interface: TRPCProcedureBuilder<TContext, TMeta, TContextOverrides, TInputIn, TInputOut, TOutputIn, TOutputOut, TCaller, TErrorShape>',
     url: 'https://trpc.io/docs/typedoc/server/index/interfaces/TRPCProcedureBuilder',
   },
+  sponsorCard,
 ];
 
 /** What the cards show live, as `live.ts` fetches it, but the avatars: initials. */
@@ -117,16 +121,41 @@ describe('renderOgImage with SVG avatars', () => {
       ),
     );
 
-  it("draws initials for an SVG satori can't size", async () => {
-    serve('<svg/>');
-    const card = postBy('https://example.com/unsized.svg');
-    const fetched = await fetchLive(card);
-    expect(fetched.avatars.size).toBe(0);
-    expect(pngSize(await renderOgImage(card, fetched))).toEqual({
-      height: 630,
-      width: 1200,
-    });
-  });
+  /** Each string `node` draws. */
+  const textsOf = (node: ReactNode): ReadonlyArray<string> =>
+    typeof node === 'string'
+      ? [node]
+      : Array.isArray(node)
+        ? node.flatMap(textsOf)
+        : isValidElement<{ children?: ReactNode }>(node)
+          ? textsOf(node.props.children)
+          : [];
+
+  const namesOn = (card: OgCard) =>
+    card.kind === 'post'
+      ? card.authors.map((author) => author.name)
+      : card.kind === 'sponsor'
+        ? [...card.partners, ...card.backers].map((sponsor) => sponsor.name)
+        : [];
+
+  it.each([postBy('https://example.com/unsized.svg'), sponsorCard])(
+    "draws initials on the $kind card for an SVG satori can't size",
+    async (card) => {
+      serve('<svg/>');
+      const fetched = await fetchLive(card);
+      expect(fetched.avatars.size).toBe(0);
+      const texts = textsOf(
+        cardElement({ ...drawnAssets(), wordmark: '' }, card, fetched),
+      );
+      for (const name of namesOn(card)) {
+        expect(texts).toContain(initials(name));
+      }
+      expect(pngSize(await renderOgImage(card, fetched))).toEqual({
+        height: 630,
+        width: 1200,
+      });
+    },
+  );
 
   it('draws an SVG with a viewBox', async () => {
     serve(
