@@ -109,5 +109,5 @@ server.listen(3000);
 `responseMeta` runs once per HTTP response, so with batching it decides the headers for every procedure in the batch: only cache if all of them are public. It also gets the request's `ctx`, e.g. to skip caching for signed-in users. For streamed responses, like those of [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), the headers are sent before any procedure has finished, so `responseMeta` runs with `eagerGeneration: true` and an empty `errors` array.
 
 :::tip
-If you are using the deprecated Next.js Pages Router integration (`@trpc/next`), see the [Next.js SSR caching guide](/docs/client/nextjs/pages-router/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
+If you are using Next.js, see the [Next.js SSR caching guide](/docs/client/nextjs/pages-router/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
 :::

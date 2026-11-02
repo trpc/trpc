@@ -27,9 +27,7 @@ Key features:
 
 ## Pages Router
 
-Uses `@trpc/next`, which is deprecated in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query). New projects should follow the [App Router setup](/docs/client/nextjs/app-router-setup) instead.
-
-`@trpc/next` provides a higher-order component (HOC) and integrated hooks for the Pages Router data-fetching patterns. Its hooks come from the [classic React Query integration](/docs/client/react) (`@trpc/react-query`), which only gets bug fixes and will be removed in the next major version of tRPC. To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+Uses `@trpc/next` which provides a higher-order component (HOC) and integrated hooks for the Pages Router data-fetching patterns. Its hooks come from the [classic React Query integration](/docs/client/react) (`@trpc/react-query`), which only gets bug fixes and will be removed in the next major version of tRPC. New projects should use [`@trpc/tanstack-react-query`](/docs/client/tanstack-react-query), and existing ones can follow the [migration guide](/docs/client/tanstack-react-query/migrating).
 
 Key features:
 
@@ -50,5 +48,5 @@ Key features:
 | **Provider setup**  | Manual `QueryClientProvider` + `TRPCProvider` | Automatic via `withTRPC()` HOC                      |
 
 :::tip
-If you're starting a new project, use the App Router setup with `@trpc/tanstack-react-query`. The Pages Router integration (`@trpc/next`) is deprecated in favor of the TanStack React Query integration.
+If you're starting a new project, we recommend the App Router. If you have an existing Pages Router project, the Pages Router integration works well and is fully supported.
 :::

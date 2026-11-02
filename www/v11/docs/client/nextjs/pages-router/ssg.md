@@ -9,10 +9,6 @@ parent: "client/nextjs/pages-router/setup"
 order: 72
 ---
 
-:::warning Deprecated
-The Next.js Pages Router integration (`@trpc/next`) is deprecated in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To use it with Next.js, follow [Set up with Next.js App Router](/docs/client/nextjs/app-router-setup).
-:::
-
 :::tip
 Reference project: https://github.com/trpc/examples-next-prisma-todomvc
 :::
