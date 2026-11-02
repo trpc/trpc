@@ -44,7 +44,7 @@ describe('JSDoc source filtering', () => {
       'TRPCRequestInfo.accept',
     );
 
-    expect(acceptSchema.description).toBe('The `trpc-accept` header');
+    expect(acceptSchema.description).toBe('The `trpc-accept` header.');
   });
 
   it('ignores JSDoc from external packages resolved from local node_modules', () => {

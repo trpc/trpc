@@ -1,21 +1,25 @@
 import { observable } from './observable';
 import type { Observable, Observer } from './types';
 
+/** An observable that holds a current value. */
 export interface BehaviorSubject<TValue> extends Observable<TValue, never> {
   observable: Observable<TValue, never>;
+  /** Sets the value and sends it to subscribers, if it changed. */
   next: (value: TValue) => void;
+  /** The current value. */
   get: () => TValue;
 }
 
+/** A `BehaviorSubject` that can't be set. */
 export interface ReadonlyBehaviorSubject<TValue> extends Omit<
   BehaviorSubject<TValue>,
   'next'
 > {}
 
 /**
+ * Creates an observable that holds a current value. New subscribers get
+ * it right away, unless it's `undefined`.
  * @internal
- * An observable that maintains and provides a "current value" to subscribers
- * @see https://www.learnrxjs.io/learn-rxjs/subjects/behaviorsubject
  */
 export function behaviorSubject<TValue>(
   initialValue: TValue,

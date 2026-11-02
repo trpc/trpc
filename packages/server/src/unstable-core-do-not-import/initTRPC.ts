@@ -27,7 +27,10 @@ import type { UnsetMarker } from './utils';
 
 type inferErrorFormatterShape<TType> =
   TType extends ErrorFormatter<any, infer TShape> ? TShape : DefaultErrorShape;
-/** @internal */
+/**
+ * The options `initTRPC.create()` takes.
+ * @internal
+ */
 export interface RuntimeConfigOptions<
   TContext extends object,
   TMeta extends object,
@@ -43,7 +46,8 @@ export interface RuntimeConfigOptions<
   >
 > {
   /**
-   * Use a data transformer
+   * Serializes inputs and outputs, so they can carry types JSON can't, such
+   * as `Date`. The client's links must use the same transformer.
    * @see https://trpc.io/docs/server/data-transformers
    */
   transformer?: DataTransformerOptions;
@@ -51,6 +55,11 @@ export interface RuntimeConfigOptions<
 
 type ContextCallback = (...args: any[]) => object | Promise<object>;
 
+/**
+ * What `initTRPC.create()` returns: the builders for your procedures,
+ * middlewares and routers. Create it once per backend.
+ * @see https://trpc.io/docs/server/routers#initialize-trpc
+ */
 export interface TRPCRootObject<
   TContext extends object,
   TMeta extends object,
@@ -65,13 +74,14 @@ export interface TRPCRootObject<
   },
 > {
   /**
-   * Your router config
+   * The config the root object was created with.
    * @internal
    */
   _config: RootConfig<$Root>;
 
   /**
-   * Builder object for creating procedures
+   * The base procedure builder. Add inputs, middlewares and a resolver to
+   * make a query, mutation or subscription.
    * @see https://trpc.io/docs/server/procedures
    */
   procedure: ProcedureBuilder<
@@ -87,7 +97,7 @@ export interface TRPCRootObject<
   >;
 
   /**
-   * Create reusable middlewares
+   * Creates a middleware you can reuse across procedures with `.use()`.
    * @see https://trpc.io/docs/server/middlewares
    */
   middleware: <$ContextOverrides>(
@@ -95,30 +105,37 @@ export interface TRPCRootObject<
   ) => MiddlewareBuilder<TContext, TMeta, $ContextOverrides, unknown>;
 
   /**
-   * Create a router
+   * Creates a router from a record of procedures and sub-routers.
    * @see https://trpc.io/docs/server/routers
    */
   router: RouterBuilder<$Root>;
 
   /**
-   * Merge Routers
-   * @see https://trpc.io/docs/server/merging-routers
+   * Merges routers into one, flattening their procedures into the same
+   * namespace.
+   * @see https://trpc.io/docs/server/merging-routers#merging-with-tmergerouters
    */
   mergeRouters: <TRouters extends AnyRouter[]>(
     ...routerList: [...TRouters]
   ) => MergeRouters<TRouters>;
 
   /**
-   * Create a server-side caller for a router
+   * Creates a factory for callers, which call a router's procedures
+   * directly on the server, without HTTP.
    * @see https://trpc.io/docs/server/server-side-calls
    */
   createCallerFactory: RouterCallerFactory<$Root>;
 }
 
+/**
+ * The type of `initTRPC`. Chain `.context()` and `.meta()` to set their
+ * types, then call `.create()`.
+ */
 class TRPCBuilder<TContext extends object, TMeta extends object> {
   /**
-   * Add a context shape as a generic to the root object
-   * @see https://trpc.io/docs/server/context
+   * Sets the type of the context every procedure gets. Pass the type, or
+   * the type of your `createContext` function.
+   * @see https://trpc.io/docs/server/context#defining-the-context-type
    */
   context<TNewContext extends object | ContextCallback>() {
     return new TRPCBuilder<
@@ -128,15 +145,16 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
   }
 
   /**
-   * Add a meta shape as a generic to the root object
-   * @see https://trpc.io/docs/quickstart
+   * Sets the type of the metadata procedures can set with `.meta()`.
+   * @see https://trpc.io/docs/server/metadata
    */
   meta<TNewMeta extends object>() {
     return new TRPCBuilder<TContext, TNewMeta>();
   }
 
   /**
-   * Create the root object
+   * Creates the root object, which holds the builders for your procedures,
+   * middlewares and routers.
    * @see https://trpc.io/docs/server/routers#initialize-trpc
    */
   create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
@@ -218,8 +236,14 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
 }
 
 /**
- * Builder to initialize the tRPC root object - use this exactly once per backend
- * @see https://trpc.io/docs/quickstart
+ * The starting point of every tRPC backend. Call it once.
+ * @example
+ * ```ts
+ * const t = initTRPC.context<Context>().create();
+ * export const router = t.router;
+ * export const publicProcedure = t.procedure;
+ * ```
+ * @see https://trpc.io/docs/server/routers#initialize-trpc
  */
 export const initTRPC = new TRPCBuilder();
 export type { TRPCBuilder };

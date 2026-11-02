@@ -151,7 +151,7 @@
                 "type": "null"
               }
             ],
-            "description": "The `trpc-accept` header"
+            "description": "The `trpc-accept` header."
           },
           "type": {
             "type": "string",
@@ -161,18 +161,18 @@
               "subscription",
               "unknown"
             ],
-            "description": "The type of the request"
+            "description": "The type of the procedures called."
           },
           "isBatchCall": {
             "type": "boolean",
-            "description": "If the content type handler has detected that this is a batch call"
+            "description": "Whether the request is a batch."
           },
           "calls": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TRPCRequestInfoProcedureCall"
             },
-            "description": "The calls being made"
+            "description": "The procedure calls in the request."
           },
           "connectionParams": {
             "oneOf": [
@@ -180,13 +180,14 @@
                 "type": "object",
                 "additionalProperties": {
                   "type": "string"
-                }
+                },
+                "description": "An object with string keys whose values may be `undefined`."
               },
               {
                 "type": "null"
               }
             ],
-            "description": "Connection params when using `httpSubscriptionLink` or `createWSClient`"
+            "description": "The connection params the client sent with `httpSubscriptionLink` or\n`createWSClient`."
           },
           "signal": {
             "$ref": "#/components/schemas/AbortSignal"
@@ -200,7 +201,7 @@
                 "type": "null"
               }
             ],
-            "description": "The URL of the request if available"
+            "description": "The request's URL, if known."
           }
         },
         "required": [
@@ -591,7 +592,8 @@
               -32028,
               -32029,
               -32099
-            ]
+            ],
+            "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
           },
           "data": {
             "$ref": "#/components/schemas/DefaultErrorData"
@@ -638,11 +640,11 @@
           },
           "path": {
             "type": "string",
-            "description": "Path to the procedure that threw the error"
+            "description": "The path of the procedure that threw."
           },
           "stack": {
             "type": "string",
-            "description": "Stack trace of the error (only in development)"
+            "description": "The error's stack trace, only when `isDev` is set."
           }
         },
         "required": [
