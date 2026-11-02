@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { ogImagePath } from '../seo.ts';
-import { displayUrl, initials, plainText, truncateWords } from './card.ts';
+import {
+  displayUrl,
+  docDescription,
+  docTitle,
+  initials,
+  plainText,
+  sectionLabel,
+  titleSize,
+  truncateWords,
+} from './card.ts';
 
 describe('ogImagePath', () => {
   it('mirrors the page path under /og', () => {
@@ -45,6 +54,59 @@ describe('truncateWords', () => {
     expect(truncateWords('Ever wondered how tRPC works?', 20)).toBe(
       'Ever wondered how …',
     );
+  });
+});
+
+describe('sectionLabel', () => {
+  it('names the part of the site a page is in', () => {
+    expect(sectionLabel('/docs')).toBe('Docs');
+    expect(sectionLabel('/docs/client/links')).toBe('Docs');
+    expect(sectionLabel('/docs/v10/client/react')).toBe('Docs · v10');
+    expect(sectionLabel('/docs/v9')).toBe('Docs · v9');
+    expect(sectionLabel('/docs/typedoc/server')).toBe('API reference');
+    expect(sectionLabel('/blog')).toBe('Blog');
+    expect(sectionLabel('/sponsor')).toBe('Sponsor');
+    expect(sectionLabel('/')).toBe('tRPC');
+  });
+});
+
+describe('docTitle', () => {
+  it("shortens a long title's trailing type parameters", () => {
+    expect(
+      docTitle(
+        'Interface: TRPCProcedureBuilder<TContext, TMeta, TContextOverrides, TInputIn, TInputOut, TOutputIn, TOutputOut, TCaller, TErrorShape>',
+      ),
+    ).toBe('Interface: TRPCProcedureBuilder<…>');
+    expect(docTitle('Function: initTRPC<TContext>')).toBe(
+      'Function: initTRPC<TContext>',
+    );
+  });
+});
+
+describe('docDescription', () => {
+  it("uses the site's subtitle for a page without a description of its own", () => {
+    expect(docDescription({ description: '', title: 'tRPC' })).toBe(
+      'End-to-end typesafe APIs made easy.',
+    );
+    expect(
+      docDescription({
+        description: 'React Query Integration',
+        title: 'React Query Integration',
+      }),
+    ).toBe('End-to-end typesafe APIs made easy.');
+    expect(
+      docDescription({ description: 'Links in `tRPC`', title: 'Links' }),
+    ).toBe('Links in tRPC');
+  });
+});
+
+describe('titleSize', () => {
+  it('gets smaller as a title gets longer', () => {
+    expect(titleSize('Links', 72)).toBe(72);
+    expect(
+      titleSize('Introducing the new TanStack React Query integration', 72),
+    ).toBe(64);
+    expect(titleSize('x'.repeat(80), 72)).toBe(52);
   });
 });
 

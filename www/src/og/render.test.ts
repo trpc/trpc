@@ -38,6 +38,35 @@ const cards: ReadonlyArray<OgCard> = [
     readingMinutes: 4,
     title: 'Announcing tRPC v11',
   },
+  {
+    authors: [
+      {
+        image: 'https://github.com/KATT.png',
+        name: 'Alex / KATT 🐱',
+        title: 'Creator of tRPC',
+      },
+      {
+        image: 'https://github.com/claude.png',
+        name: 'Claude',
+        title: 'Opus 5.5',
+      },
+    ],
+    date: '2026-11-01',
+    description:
+      'New in the TanStack React Query integration: a loader starts a query and passes it down, and the component reads it without repeating its input.',
+    kind: 'post',
+    path: '/blog/query-handles',
+    readingMinutes: 6,
+    title: 'Query handles: pass the query, not the input',
+  },
+  {
+    description: '',
+    kind: 'doc',
+    path: '/docs/typedoc/server/index/interfaces/TRPCProcedureBuilder',
+    title:
+      'Interface: TRPCProcedureBuilder<TContext, TMeta, TContextOverrides, TInputIn, TInputOut, TOutputIn, TOutputOut, TCaller, TErrorShape>',
+    url: 'https://trpc.io/docs/typedoc/server/index/interfaces/TRPCProcedureBuilder',
+  },
 ];
 
 /** What the cards show live, as `live.ts` fetches it, but the avatars: initials. */
