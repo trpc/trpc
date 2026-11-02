@@ -79,7 +79,7 @@ See more on the [Videos & Community Resources](./videos-and-community-resources.
 ## Try tRPC
 
 - [Minimal Example](https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal?file=server%2Findex.ts&file=client%2Findex.ts&view=editor) — Node.js http server + client.
-- [Minimal Next.js Example](https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?file=src%2Fpages%2Fapi%2Ftrpc%2F[trpc].ts&file=src%2Fpages%2Findex.tsx) — single endpoint + page.
+- [Minimal Next.js Example](https://stackblitz.com/github/trpc/examples-next-minimal-starter?file=src%2Fpages%2Fapi%2Ftrpc%2F[trpc].ts&file=src%2Fpages%2Findex.tsx) — single endpoint + page.
 
 Or use an [example app](./example-apps.md) to get started locally.
 
