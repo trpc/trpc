@@ -69,6 +69,8 @@
     "@effect/platform-node": "4.1.1",
     "@effect/vitest": "4.1.1",
     "@resvg/resvg-js": "2.6.2",
+    "@samples/decisions": "workspace:*",
+    "@samples/home": "workspace:*",
     "@samples/kitchen-sink-files": "workspace:*",
     "@samples/kitchen-sink-forms": "workspace:*",
     "@samples/kitchen-sink-optimistic": "workspace:*",
