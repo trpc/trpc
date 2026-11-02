@@ -151,7 +151,7 @@
         "$TURBO_ROOT$/pnpm-lock.yaml",
         "$TURBO_ROOT$/pnpm-workspace.yaml"
       ],
-      "outputs": ["coverage/**"]
+      "outputs": []
     },
     "trpc-next#lint": {
       "dependsOn": ["^build"],
