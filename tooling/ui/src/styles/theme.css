@@ -74,18 +74,22 @@
 }
 
 /*
- * tRPC's branding: the blue the logo's gradient starts from (#066dfc) is the
- * primary, the focus ring and the selection, with white on it (4.6:1). Text
- * links are a shade darker or lighter, so they keep 4.5:1 on the page and on
- * the brand's tints. The rest is neutral: zinc grays, and the near-black
- * #111111 page of the dark theme.
+ * tRPC's branding. The light theme uses the blue the logo's gradient starts
+ * from (#066dfc) for accents and buttons, with white on it (4.6:1), and a
+ * shade darker (#0a5fe0) for text links, which keeps 4.5:1 on the brand's
+ * tints. On the dark theme's near-black that saturated blue reads as navy
+ * (4.1:1), so the dark theme uses a calmer blue from the logo's blue-to-cyan
+ * range, oklch(0.64 0.15 252): #3d8fe4 for accents, links, the ring and the
+ * selection (5.6:1 on the page, 4.7:1 on the brand's tints), and the same
+ * hue darker, #2076c9, for buttons, with white on it (4.7:1). The rest is
+ * neutral: zinc grays, and the #111111 page of the dark theme.
  */
 :root {
   color-scheme: light dark;
   --radius: 0.625rem;
-  --brand: #066dfc;
   --brand-dark: #0a5fe0;
-  --brand-light: #4f9bff;
+  --brand-light: #3d8fe4;
+  --brand: light-dark(#066dfc, var(--brand-light));
   --link: light-dark(var(--brand-dark), var(--brand-light));
   --background: light-dark(#ffffff, #111111);
   --foreground: light-dark(#18181b, #f4f4f5);
@@ -93,7 +97,7 @@
   --card-foreground: var(--foreground);
   --popover: light-dark(#ffffff, #18181b);
   --popover-foreground: var(--foreground);
-  --primary: var(--brand);
+  --primary: light-dark(#066dfc, #2076c9);
   --primary-foreground: #ffffff;
   --secondary: light-dark(#f4f4f5, #27272a);
   --secondary-foreground: var(--foreground);
