@@ -1189,7 +1189,7 @@ export default function PostPage({ loaderData }: Route.ComponentProps) {
 
 ## Next.js App Router {#nextjs-app-router}
 
-This builds on the [Next.js App Router setup](/docs/client/nextjs/app-router-setup). The query client factory and the server proxy in `trpc/server.tsx` stay as they are. Add `export type TRPC = TRPCOptionsProxy<AppRouter>` to `trpc/client.tsx`, and create a `HydrateClient` in `trpc/server.tsx`:
+This builds on the [Next.js App Router setup](/docs/client/nextjs/app-router-setup). The query client factory, `getQueryClient` and the server proxy in `trpc/server.tsx` stay as they are. Add `export type TRPC = TRPCOptionsProxy<AppRouter>` to `trpc/client.tsx`, and in `trpc/server.tsx`, replace the setup's `HydrateClient` with one from `unstable_createHydrateClient`:
 
 ```tsx twoslash title='trpc/server.tsx'
 // @include: handles-router
@@ -1199,11 +1199,11 @@ export const makeQueryClient = () => new QueryClient();
 // @filename: trpc/server.tsx
 import { cache } from 'react';
 import { makeQueryClient } from './query-client';
+export const getQueryClient = cache(makeQueryClient);
 // ---cut---
 import { unstable_createHydrateClient } from '@trpc/tanstack-react-query';
 
-export const getQueryClient = cache(makeQueryClient);
-// ... `trpc` proxy as before
+// ... `getQueryClient` and the `trpc` proxy as before
 
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
@@ -1234,7 +1234,9 @@ export default async function PostPage(props: { params: Promise<{ id: string }> 
   const post = trpc.post.byId.unstable_$prefetch({ id });
   return (
     <HydrateClient>
-      <Post post={post} />
+      <Suspense fallback={<p>Loading post…</p>}>
+        <Post post={post} />
+      </Suspense>
       <Suspense fallback={<p>Loading comments…</p>}>
         <CommentsSection id={id} />
       </Suspense>
@@ -1343,7 +1345,7 @@ To wait for some queries and stream others on the same page, see [Combining both
 
 ### Handle inputs {#nextjs-handle-inputs}
 
-Handle inputs cross to the client inside the handle, through React's own serialization, not your tRPC data transformer. Plain JSON values, `Date`, `Map`, `Set` and `BigInt` work. This isn't new: dehydrated query keys already cross the same way.
+Handle inputs cross to the client inside the handle, through React's own serialization, not your tRPC data transformer. This isn't new: dehydrated query keys already cross the same way. Keep inputs to plain JSON values and `Date`s. React can send a `Map`, `Set` or `BigInt` too, but TanStack Query hashes query keys with `JSON.stringify`: a `BigInt` input throws, and two different `Map` or `Set` inputs share one cache entry.
 
 ## Errors {#errors}
 
