@@ -10,7 +10,7 @@ import { initWasm, Resvg } from '@resvg/resvg-wasm';
 import resvgWasm from '@resvg/resvg-wasm/index_bg.wasm?inline';
 import satori, { type Font } from 'satori';
 
-import logoSvg from '../../public/favicon.svg?raw';
+import wordmarkSvg from '../../public/img/logo-text-black.svg?raw';
 import { ogImageSize } from '../seo.ts';
 import {
   type Assets,
@@ -20,7 +20,6 @@ import {
   type OgCard,
 } from './card.ts';
 import { type Live, noLive } from './live.ts';
-import patternSvg from './pattern.svg?raw';
 
 /** The bytes of a `data:` URI that `?inline` made. */
 const inlined = (uri: string) =>
@@ -45,14 +44,7 @@ const load = async (): Promise<Assets> => {
   });
   return {
     ...drawnAssets(),
-    logo: dataUri('image/svg+xml', Buffer.from(logoSvg)),
-    // A bitmap, so each card composites it instead of redrawing its paths.
-    pattern: dataUri(
-      'image/png',
-      new Resvg(patternSvg, { fitTo: { mode: 'width', value: 1280 } })
-        .render()
-        .asPng(),
-    ),
+    wordmark: dataUri('image/svg+xml', Buffer.from(wordmarkSvg)),
   };
 };
 

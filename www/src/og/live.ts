@@ -75,6 +75,52 @@ export const avatarUrl = (image: string) => {
   return url.href;
 };
 
+/** A `width` or `height` in pixels on `tag`, the only kind satori reads. */
+const svgLength = (tag: string, name: string) => {
+  const value = new RegExp(
+    `\\s${name}=['"]((?:\\d+(?:\\.\\d+)?|\\.\\d+))(?:px)?['"]`,
+  ).exec(tag)?.[1];
+  return value === undefined ? undefined : Number(value);
+};
+
+/** The size satori draws an SVG at, as it reads it off the `<svg>` tag. */
+const svgSize = (tag: string): readonly [number, number] | undefined => {
+  const width = svgLength(tag, 'width');
+  const height = svgLength(tag, 'height');
+  if (width !== undefined && height !== undefined) {
+    return [width, height];
+  }
+  const box = /viewBox=['"]([^'"]+)['"]/
+    .exec(tag)?.[1]
+    ?.split(/[, ]/)
+    .filter(Boolean)
+    .map(Number);
+  const [, , boxWidth, boxHeight] = box ?? [];
+  if (box?.length !== 4 || boxWidth === undefined || boxHeight === undefined) {
+    return undefined;
+  }
+  if (width !== undefined) {
+    return [width, (width * boxHeight) / boxWidth];
+  }
+  if (height !== undefined) {
+    return [(height * boxWidth) / boxHeight, height];
+  }
+  return [boxWidth, boxHeight];
+};
+
+/**
+ * Whether satori can draw an SVG: it sizes one by the first `<svg>` tag's
+ * `width` and `height` in pixels, either of them with the `viewBox`'s
+ * aspect ratio, or the `viewBox` alone, and throws without them.
+ */
+export const sizableSvg = (svg: string) => {
+  const tag = /<svg[^>]*>/i.exec(svg)?.[0];
+  const size = tag === undefined ? undefined : svgSize(tag);
+  return (
+    size?.every((length) => Number.isFinite(length) && length > 0) ?? false
+  );
+};
+
 /** An avatar as a `data:` URI satori draws, or `undefined` if it's not to be had. */
 export async function fetchAvatar(image: string) {
   try {
@@ -82,10 +128,17 @@ export async function fetchAvatar(image: string) {
       signal: AbortSignal.timeout(timeoutMs),
     });
     const type = response.headers.get('content-type')?.split(';')[0] ?? '';
-    if (!response.ok || !['image/jpeg', 'image/png'].includes(type)) {
+    // An SVG too, such as the tRPC team's logo (`https://trpc.io/img/logo.svg`).
+    if (
+      !response.ok ||
+      !['image/jpeg', 'image/png', 'image/svg+xml'].includes(type)
+    ) {
       return undefined;
     }
     const bytes = Buffer.from(await response.arrayBuffer());
+    if (type === 'image/svg+xml' && !sizableSvg(bytes.toString('utf8'))) {
+      return undefined;
+    }
     return `data:${type};base64,${bytes.toString('base64')}`;
   } catch {
     return undefined;
