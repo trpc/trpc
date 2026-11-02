@@ -5,6 +5,16 @@ sidebar_label: OpenAPI (alpha)
 slug: /openapi
 section: "Client Usage"
 order: 76
+skill:
+  name: openapi
+  package: "@trpc/openapi"
+  type: composition
+  requires:
+    - server-setup
+  description: Generate OpenAPI 3.1 spec from a tRPC router with @trpc/openapi CLI
+    or programmatic API. Generate typed REST client with @hey-api/openapi-ts and
+    configureTRPCHeyApiClient(). Configure transformers (superjson, EJSON) for
+    generated clients. Alpha status.
 ---
 
 :::caution

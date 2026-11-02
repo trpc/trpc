@@ -126,12 +126,9 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.files.push('!**/*.test.*');
   pkgJson.files.push('!**/__tests__');
 
-  // Ship the package's agent skills for TanStack Intent (https://trpc.io/docs/skills)
-  if (fs.existsSync('skills')) {
+  // Ship the agent skills that `prepack` writes from the docs, for TanStack Intent (https://trpc.io/docs/skills)
+  if (pkgJson.keywords?.includes('tanstack-intent')) {
     pkgJson.files.push('skills');
-    pkgJson.keywords = [
-      ...new Set([...(pkgJson.keywords ?? []), 'tanstack-intent']),
-    ];
   }
 
   // Add `funding` in all packages

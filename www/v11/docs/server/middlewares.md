@@ -5,6 +5,17 @@ sidebar_label: Middlewares
 slug: /server/middlewares
 section: "Backend Usage"
 order: 10
+skill:
+  name: middlewares
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Create and compose tRPC middleware with t.procedure.use(), extend
+    context via opts.next({ ctx }), build reusable middleware with .concat() and
+    .unstable_pipe(), define base procedures like publicProcedure and
+    authedProcedure. Access raw input with getRawInput(). Logging, timing, OTEL
+    tracing patterns.
 ---
 
 You can add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must call `opts.next()` and return its result.

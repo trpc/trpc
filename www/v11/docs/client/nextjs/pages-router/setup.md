@@ -6,6 +6,17 @@ slug: /client/nextjs/pages-router/setup
 section: "Client Usage"
 parent: "client/nextjs"
 order: 70
+skill:
+  name: nextjs-pages-router
+  package: "@trpc/next"
+  type: framework
+  requires:
+    - server-setup
+    - client-setup
+  description: Set up tRPC in Next.js Pages Router with createNextApiHandler,
+    createTRPCNext, withTRPC HOC, SSR via ssr option and ssrPrepass, SSG via
+    createServerSideHelpers with getStaticProps, and server-side helpers for
+    getServerSideProps prefetching.
 ---
 
 :::caution

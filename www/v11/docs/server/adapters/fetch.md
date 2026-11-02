@@ -6,6 +6,18 @@ slug: /server/adapters/fetch
 section: "Backend Usage"
 parent: "server/adapters"
 order: 18
+skill:
+  name: adapter-fetch
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Deploy tRPC on WinterCG-compliant edge runtimes with
+    fetchRequestHandler() from @trpc/server/adapters/fetch. Supports Cloudflare
+    Workers, Deno Deploy, Vercel Edge Runtime, Astro, Remix, SolidStart.
+    FetchCreateContextFnOptions provides req (Request) and resHeaders (Headers)
+    for context creation. The endpoint option must match the URL path prefix
+    where the handler is mounted.
 ---
 
 You can create a tRPC server within any edge runtime that follow the [WinterCG](https://wintercg.org/), specifically the [Minimum Common Web Platform API](https://min-common-api.proposal.wintertc.org/) specification.

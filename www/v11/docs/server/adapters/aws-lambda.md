@@ -6,6 +6,19 @@ slug: /server/adapters/aws-lambda
 section: "Backend Usage"
 parent: "server/adapters"
 order: 17
+skill:
+  name: adapter-aws-lambda
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Deploy tRPC on AWS Lambda with awsLambdaRequestHandler() from
+    @trpc/server/adapters/aws-lambda for API Gateway v1 (REST,
+    APIGatewayProxyEvent) and v2 (HTTP, APIGatewayProxyEventV2), and Lambda
+    Function URLs. Enable response streaming with
+    awsLambdaStreamingRequestHandler() wrapped in awslambda.streamifyResponse().
+    CreateAWSLambdaContextOptions provides event and context for context
+    creation.
 ---
 
 ## AWS Lambda adapter

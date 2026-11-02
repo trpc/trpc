@@ -5,6 +5,17 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 section: "Backend Usage"
 order: 9
+skill:
+  name: validators
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Configure input and output validation with .input() and .output()
+    using Zod, Yup, Superstruct, ArkType, Valibot, Effect, or custom validator
+    functions. Chain multiple .input() calls to merge object schemas. Standard
+    Schema protocol support. Output validation returns INTERNAL_SERVER_ERROR on
+    failure.
 ---
 
 tRPC procedures may define validation logic for their input and/or output, and validators are also used to infer the types of inputs and outputs (using the [Standard Schema](https://standardschema.dev) interface if available, or custom interfaces for supported validators if not). We have first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.

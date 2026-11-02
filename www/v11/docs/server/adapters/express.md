@@ -6,6 +6,18 @@ slug: /server/adapters/express
 section: "Backend Usage"
 parent: "server/adapters"
 order: 14
+skill:
+  name: adapter-express
+  package: '@trpc/server'
+  type: core
+  requires:
+    - server-setup
+  description: >
+    Mount tRPC as Express middleware with createExpressMiddleware() from
+    @trpc/server/adapters/express. Access Express req/res in createContext via
+    CreateExpressContextOptions. Mount at a path prefix like
+    app.use('/trpc', ...). Avoid global express.json() conflicting with tRPC
+    body parsing for FormData.
 ---
 
 ## Example app

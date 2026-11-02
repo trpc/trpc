@@ -6,6 +6,18 @@ slug: /server/adapters/fastify
 section: "Backend Usage"
 parent: "server/adapters"
 order: 15
+skill:
+  name: adapter-fastify
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Mount tRPC as a Fastify plugin with fastifyTRPCPlugin from
+    @trpc/server/adapters/fastify. Configure prefix, trpcOptions (router,
+    createContext, onError). Enable WebSocket subscriptions with useWSS and
+    @fastify/websocket. Set routerOptions.maxParamLength for batch requests.
+    Requires Fastify v5+. FastifyTRPCPluginOptions for type-safe onError.
+    CreateFastifyContextOptions provides req, res.
 ---
 
 ## Example app

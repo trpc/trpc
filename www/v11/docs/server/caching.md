@@ -5,6 +5,16 @@ sidebar_label: Response Caching
 slug: /server/caching
 section: "Backend Usage"
 order: 26
+skill:
+  name: caching
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Set HTTP cache headers on tRPC query responses via responseMeta
+    callback for CDN and browser caching. Configure Cache-Control, s-maxage,
+    stale-while-revalidate. Handle caching with batching and authenticated
+    requests. Avoid caching mutations, errors, and authenticated responses.
 ---
 
 Since all tRPC queries are normal HTTP `GET` requests, you can use standard HTTP cache headers to cache responses. This can make responses snappy, give your database a rest, and help scale your API.

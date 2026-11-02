@@ -6,6 +6,20 @@ slug: /client/nextjs/app-router-setup
 section: "Client Usage"
 parent: "client/nextjs"
 order: 68
+skill:
+  name: nextjs-app-router
+  package: "@trpc/next"
+  type: framework
+  requires:
+    - server-setup
+    - client-setup
+    - react-query-setup
+    - adapter-fetch
+  description: Full end-to-end tRPC setup for Next.js App Router. Covers route
+    handler with fetchRequestHandler (GET + POST exports), TRPCProvider with
+    QueryClientProvider, createTRPCOptionsProxy for RSC prefetching,
+    HydrateClient/HydrationBoundary for hydration, useSuspenseQuery for
+    Suspense, and server-side callers.
 ---
 
 :::note

@@ -5,6 +5,20 @@ sidebar_label: Authorization
 slug: /server/authorization
 section: "Backend Usage"
 order: 20
+skill:
+  name: auth
+  package: "@trpc/server"
+  type: composition
+  requires:
+    - server-setup
+    - middlewares
+    - client-setup
+  description: Implement JWT/cookie authentication and authorization in tRPC using
+    createContext for user extraction, t.middleware with opts.next({ ctx }) for
+    context narrowing to non-null user, protectedProcedure base pattern,
+    client-side Authorization headers via httpBatchLink headers(), WebSocket
+    connectionParams, and SSE auth via cookies or EventSource polyfill custom
+    headers.
 ---
 
 The `createContext` function is called for each incoming request, so here you can add contextual information about the calling user from the request object.

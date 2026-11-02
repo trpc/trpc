@@ -6,6 +6,18 @@ slug: /server/adapters/standalone
 section: "Backend Usage"
 parent: "server/adapters"
 order: 13
+skill:
+  name: adapter-standalone
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Mount tRPC on Node.js built-in HTTP server with createHTTPServer()
+    from @trpc/server/adapters/standalone, createHTTPHandler() for custom
+    http.createServer, createHTTP2Handler() for HTTP/2 with TLS. Configure
+    basePath to slice URL prefix, CORS via the cors npm package passed as
+    middleware option. CreateHTTPContextOptions provides req and res for context
+    creation.
 ---
 
 tRPC's Standalone Adapter is the simplest way to get a new project working. It's ideal for local development, and for server-based production environments. In essence it's just a wrapper around the standard [Node.js HTTP Server](https://nodejs.org/api/http.html) with the normal options related to tRPC.

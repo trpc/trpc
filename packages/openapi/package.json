@@ -17,6 +17,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "prepack": "node ../../www/build/skills.ts --package .",
     "dev": "tsdown --watch",
     "lint": "oxlint src",
     "codegen": "tsx test/scripts/codegen.run.ts",

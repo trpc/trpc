@@ -7,6 +7,17 @@ slug: /client/tanstack-react-query/migrating
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 50
+skill:
+  name: react-query-classic-migration
+  package: "@trpc/tanstack-react-query"
+  type: lifecycle
+  requires:
+    - react-query-setup
+  description: "Migrate from @trpc/react-query (classic) to
+    @trpc/tanstack-react-query. Run npx @trpc/upgrade CLI for automated codemod.
+    Manually migrate remaining patterns: hook-based to options-factory,
+    utils.invalidate to queryClient.invalidateQueries with queryFilter, provider
+    changes."
 ---
 
 There are a few approaches to migrate over, and this library is a significant departure from the classic client, so we're not expecting anybody to do it in one shot. But you will probably want to try a combination of...

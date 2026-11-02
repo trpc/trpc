@@ -5,6 +5,18 @@ sidebar_label: "Links"
 slug: /client/links
 section: "Client Usage"
 order: 30
+skill:
+  name: links
+  package: "@trpc/client"
+  type: core
+  requires:
+    - client-setup
+  description: "Configure the tRPC client link chain: httpLink, httpBatchLink,
+    httpBatchStreamLink, splitLink, loggerLink, wsLink, createWSClient,
+    httpSubscriptionLink, unstable_localLink, retryLink. Choose the right
+    terminating link. Route subscriptions via splitLink. Build custom links for
+    SOA routing. Link options: url, headers, transformer, maxURLLength,
+    maxItems, connectionParams, EventSource ponyfill."
 ---
 
 Links enable you to customize the flow of data between the tRPC Client and Server. A link should do only one thing, which can be either a self-contained modification to a tRPC operation (query, mutation, or subscription) or a side-effect based on the operation (such as logging).

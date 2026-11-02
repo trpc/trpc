@@ -7,6 +7,17 @@ slug: /client/tanstack-react-query/setup
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 48
+skill:
+  name: react-query-setup
+  package: "@trpc/tanstack-react-query"
+  type: framework
+  requires:
+    - client-setup
+    - links
+  description: Set up @trpc/tanstack-react-query with createTRPCContext(),
+    TRPCProvider, useTRPC() hook, queryOptions/mutationOptions factories, query
+    invalidation via queryClient.invalidateQueries with queryFilter, and type
+    inference with inferInput/inferOutput.
 ---
 
 Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.

@@ -5,6 +5,18 @@ sidebar_label: Data Transformers
 slug: /server/data-transformers
 section: "Backend Usage"
 order: 23
+skill:
+  name: superjson
+  package: "@trpc/client"
+  type: composition
+  requires:
+    - server-setup
+    - client-setup
+  description: "Configure SuperJSON transformer on both server initTRPC.create({
+    transformer: superjson }) and every client terminating link (httpBatchLink,
+    httpLink, wsLink, httpSubscriptionLink) to support Date, Map, Set, BigInt
+    over the wire. Transformer must match on both sides. In v11, transformer
+    goes on individual links, not the client constructor."
 ---
 
 You are able to serialize the response data & input args. The transformers need to be added both to the server and the client.

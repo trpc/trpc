@@ -6,6 +6,17 @@ slug: /client/vanilla/setup
 section: "Client Usage"
 parent: "client/vanilla"
 order: 43
+skill:
+  name: client-setup
+  package: "@trpc/client"
+  type: core
+  requires:
+    - server-setup
+  description: Create a vanilla tRPC client with createTRPCClient<AppRouter>(),
+    configure link chain with httpBatchLink/httpLink, dynamic headers for auth,
+    transformer on links (not client constructor). Infer types with
+    inferRouterInputs and inferRouterOutputs. AbortController signal support.
+    TRPCClientError typing.
 ---
 
 ### 1. Install the tRPC Client library

@@ -5,6 +5,17 @@ sidebar_label: Error Handling
 slug: /server/error-handling
 section: "Backend Usage"
 order: 21
+skill:
+  name: error-handling
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Throw typed errors with TRPCError and error codes (NOT_FOUND,
+    UNAUTHORIZED, BAD_REQUEST, INTERNAL_SERVER_ERROR), configure errorFormatter
+    for client-side Zod error display, handle errors globally with onError
+    callback, map tRPC errors to HTTP status codes with
+    getHTTPStatusCodeFromError().
 ---
 
 Whenever an error occurs in a procedure, tRPC responds to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.

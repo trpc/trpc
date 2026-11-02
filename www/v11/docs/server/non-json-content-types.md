@@ -5,6 +5,18 @@ sidebar_label: Content Types (JSON, FormData, File, Blob)
 slug: /server/non-json-content-types
 section: "Backend Usage"
 order: 24
+skill:
+  name: non-json-content-types
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+    - links
+  description: Handle FormData, file uploads, Blob, Uint8Array, and ReadableStream
+    inputs in tRPC mutations. Use octetInputParser from @trpc/server/http for
+    binary data. Route non-JSON requests with splitLink and
+    isNonJsonSerializable() from @trpc/client. FormData and binary inputs only
+    work with mutations (POST).
 ---
 
 tRPC supports multiple content types as procedure inputs: JSON-serializable data, FormData, File, Blob, and other binary types.

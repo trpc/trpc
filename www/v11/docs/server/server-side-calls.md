@@ -5,6 +5,17 @@ sidebar_label: Server Side Calls
 slug: /server/server-side-calls
 section: "Backend Usage"
 order: 19
+skill:
+  name: server-side-calls
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Call tRPC procedures directly from server code using
+    t.createCallerFactory() and router.createCaller(context) for integration
+    testing, internal server logic, and custom API endpoints. Catch TRPCError
+    and extract HTTP status with getHTTPStatusCodeFromError(). Error handling
+    via onError option.
 ---
 
 You may need to call your procedure(s) directly from the same server they're hosted in, `createCallerFactory()` can be used to achieve this. This is useful for server-side calls and for integration testing of your tRPC procedures.

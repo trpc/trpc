@@ -6,6 +6,14 @@ slug: /skills
 description: Set up and use TanStack Intent to provide AI agent skills for tRPC
 section: "tRPC"
 order: 1.5
+skill:
+  name: trpc-router
+  package: "@trpc/server"
+  type: core
+  description: "Entry point for all tRPC skills. Decision tree routing by task:
+    initTRPC.create(), t.router(), t.procedure, createTRPCClient, adapters,
+    subscriptions, React Query, Next.js, links, middleware, validators, error
+    handling, caching, FormData."
 ---
 
 tRPC ships [TanStack Intent](https://tanstack.com/intent/latest/docs/getting-started/quick-start-consumers) skills to help AI coding agents work with tRPC. When your agent works on a task that matches a skill, it loads the skill's `SKILL.md` into context.
