@@ -32,6 +32,16 @@ const appRouter = t.router({
         const cursor = input.cursor ?? 0;
         return { cursor, nextCursor: cursor + 1 };
       }),
+    optionalCursor: t.procedure
+      .input(
+        z.object({
+          cursor: z.number().optional(),
+        }),
+      )
+      .query(({ input }) => {
+        const cursor = input.cursor ?? 0;
+        return { cursor, nextCursor: cursor + 1 };
+      }),
   }),
 });
 
@@ -147,4 +157,45 @@ test('using infiniteQueryOptions with initialCursor', async () => {
     pages: [{ cursor: 5, nextCursor: 6 }],
     pageParams: [5],
   });
+});
+
+test('infinite helpers without initialCursor on an optional cursor', async () => {
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+  const expected = {
+    pages: [
+      { cursor: 0, nextCursor: 1 },
+      { cursor: 1, nextCursor: 2 },
+    ],
+    pageParams: [null, 1],
+  };
+
+  const fetched = await ssg.post.optionalCursor.fetchInfinite(
+    {},
+    {
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+  expect(fetched).toStrictEqual(expected);
+
+  const fromOptions = await new QueryClient().fetchInfiniteQuery({
+    ...ssg.post.optionalCursor.infiniteQueryOptions(
+      {},
+      { getNextPageParam: (lastPage) => lastPage.nextCursor },
+    ),
+    pages: 2,
+  });
+  expect(fromOptions).toStrictEqual(expected);
+
+  const prefetchSsg = createServerSideHelpers({ router: appRouter, ctx: {} });
+  await prefetchSsg.post.optionalCursor.prefetchInfinite(
+    {},
+    {
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+  const [query] = prefetchSsg.dehydrate().queries;
+  expect(query?.state.status).toBe('success');
+  expect(query?.state.data).toStrictEqual(expected);
 });

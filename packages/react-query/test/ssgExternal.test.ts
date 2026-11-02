@@ -35,6 +35,16 @@ const ctx = konn()
             const cursor = input.cursor ?? 0;
             return { cursor, nextCursor: cursor + 1 };
           }),
+        optionalCursor: t.procedure
+          .input(
+            z.object({
+              cursor: z.number().optional(),
+            }),
+          )
+          .query(({ input }) => {
+            const cursor = input.cursor ?? 0;
+            return { cursor, nextCursor: cursor + 1 };
+          }),
         throwsError: t.procedure.query(() => {
           throw new Error('__error');
         }),
@@ -91,6 +101,29 @@ test('fetchInfinite with initialCursor and pages', async () => {
       { cursor: 6, nextCursor: 7 },
     ],
     pageParams: [5, 6],
+  });
+});
+
+test('fetchInfinite without initialCursor on an optional cursor', async () => {
+  const { opts } = ctx;
+  const ssg = createServerSideHelpers({
+    client: opts.client,
+  });
+
+  const data = await ssg.post.optionalCursor.fetchInfinite(
+    {},
+    {
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  expect(data).toStrictEqual({
+    pages: [
+      { cursor: 0, nextCursor: 1 },
+      { cursor: 1, nextCursor: 2 },
+    ],
+    pageParams: [null, 1],
   });
 });
 
