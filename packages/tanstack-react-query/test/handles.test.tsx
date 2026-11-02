@@ -19,9 +19,7 @@ import { z } from 'zod';
 import type {
   TRPCOptionsProxy,
   unstable_inferInfiniteQueryHandle,
-  unstable_inferInfiniteQueryHandleWithData,
   unstable_inferQueryHandle,
-  unstable_inferQueryHandleWithData,
   unstable_TRPCInfiniteQueryHandle,
   unstable_TRPCQueryHandle,
 } from '../src';
@@ -97,21 +95,13 @@ describe('types', () => {
     expectTypeOf(
       trpc.post.byId.unstable_$prefetch({ id: '1' }),
     ).toEqualTypeOf<PostHandle>();
-    type PostHandleWithData = unstable_inferQueryHandleWithData<
-      TRPC['post']['byId']
-    >;
+    // The verbs that wait return the same handle
     expectTypeOf(trpc.post.byId.unstable_$ensure({ id: '1' })).toEqualTypeOf<
-      Promise<PostHandleWithData>
+      Promise<PostHandle>
     >();
     expectTypeOf(trpc.post.byId.unstable_$fetch({ id: '1' })).toEqualTypeOf<
-      Promise<PostHandleWithData>
+      Promise<PostHandle>
     >();
-    expectTypeOf<PostHandleWithData['data']>().toEqualTypeOf<{
-      id: string;
-      title: string;
-    }>();
-    // A handle with data is still a handle
-    expectTypeOf<PostHandleWithData>().toMatchTypeOf<PostHandle>();
 
     // @ts-expect-error input is required
     trpc.post.byId.unstable_$prefetch();
@@ -601,7 +591,7 @@ describe('runtime', () => {
       { pages: 2, getNextPageParam: (last) => last.nextCursor },
     );
     expectTypeOf(handle).toEqualTypeOf<
-      unstable_inferInfiniteQueryHandleWithData<TRPC['post']['list']>
+      unstable_inferInfiniteQueryHandle<TRPC['post']['list']>
     >();
     expect(
       resource.queryClient
@@ -628,9 +618,11 @@ describe('runtime', () => {
       { limit: 2 },
       { getNextPageParam },
     );
-    expect(handle.data.pages.flatMap((page) => page.items)).toEqual([
-      0, 1, 2, 3,
-    ]);
+    expect(
+      resource.queryClient
+        .getQueryData(trpc.post.list.infiniteQueryKey({ limit: 2 }))
+        ?.pages.flatMap((page) => page.items),
+    ).toEqual([0, 1, 2, 3]);
     expect(
       resource.calls.mock.calls.map(([, input]) => input.cursor ?? null),
     ).toEqual([null, 2]);
@@ -673,8 +665,6 @@ describe('runtime', () => {
     const handle = await trpc.viewer.unstable_$ensure();
     expect(handle).toEqual({
       queryKey: [['viewer'], { type: 'query' }],
-      data: { name: 'KATT' },
-      dataUpdatedAt: expect.any(Number),
     });
     await expect(
       resource.queryClient.fetchQuery(trpc.unstable_$fromHandle(handle)),

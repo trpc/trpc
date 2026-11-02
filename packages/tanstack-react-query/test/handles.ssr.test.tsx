@@ -204,12 +204,12 @@ describe('server rendering', () => {
     warn.mockRestore();
   });
 
-  test('a handle with data renders without hydration, from its initialData', async () => {
+  test('a handle from unstable_$ensure needs hydration too', async () => {
     await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    using warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
     const handle = await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-02-01'),
+      day: new Date('2026-02-02'),
     });
 
     const html = await renderClientTree(
@@ -217,9 +217,8 @@ describe('server rendering', () => {
       undefined,
       <Post post={handle} />,
     );
-    expect(html).toContain('Posts on 2026-02-01');
-    expect(resource.calls).toHaveBeenCalledTimes(1);
-    expect(trpcWarnings(warn)).toEqual([]);
-    warn.mockRestore();
+    expect(html).toContain('Posts on 2026-02-02');
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    expect(trpcWarnings(warn)).toHaveLength(1);
   });
 });
