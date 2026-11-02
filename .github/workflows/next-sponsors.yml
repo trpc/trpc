@@ -1,6 +1,6 @@
 name: next-sponsors
 
-# Syncs next/www/sponsors.json and the README's sponsors section from GitHub
+# Syncs www/sponsors.json and the README's sponsors section from GitHub
 # Sponsors, and pushes a commit only when a sponsor joined, left or
 # changed tier (new weights or ranks alone wait for the next such commit).
 
@@ -61,22 +61,16 @@ jobs:
           # The branch's tip, not the pushed commit: a later push may be in.
           ref: ${{ github.ref }}
       - if: steps.go.outputs.run == 'true'
-        uses: pnpm/action-setup@v6
+        uses: ./.github/actions/setup
         with:
-          package_json_file: next/package.json
+          install: 'false'
       - if: steps.go.outputs.run == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - if: steps.go.outputs.run == 'true'
-        working-directory: next
-        run: pnpm install --frozen-lockfile
+        run: pnpm --filter trpc-repo --filter www install --frozen-lockfile
         env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
           VP_GIT_HOOKS: '0'
       - if: steps.go.outputs.run == 'true'
-        working-directory: next/www
+        working-directory: www
         run: node build/sponsors-sync.ts --only-when-sponsors-change
 
       # Someone may push in between: then the commit is made again on the
@@ -86,28 +80,28 @@ jobs:
       - if: steps.go.outputs.run == 'true'
         name: Commit and push if a sponsor joined, left or changed tier
         run: |
-          if git diff --quiet -- next/www/sponsors.json README.md; then
+          if git diff --quiet -- www/sponsors.json README.md; then
             echo "No sponsor joined, left or changed tier."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           synced="$RUNNER_TEMP/sponsors.json"
-          cp next/www/sponsors.json "$synced"
+          cp www/sponsors.json "$synced"
           branch="${GITHUB_REF#refs/heads/}"
           for attempt in 1 2 3 4 5 6; do
             if [ "$attempt" -gt 1 ]; then
               sleep $((attempt * 5 + RANDOM % 10))
               git fetch --depth=1 origin "$branch"
               git reset --hard FETCH_HEAD
-              cp "$synced" next/www/sponsors.json
-              (cd next/www && node build/sponsors-sync.ts --readme-only)
-              if git diff --quiet -- next/www/sponsors.json README.md; then
+              cp "$synced" www/sponsors.json
+              (cd www && node build/sponsors-sync.ts --readme-only)
+              if git diff --quiet -- www/sponsors.json README.md; then
                 echo "$branch has these sponsors already."
                 exit 0
               fi
             fi
-            git add -- next/www/sponsors.json README.md
+            git add -- www/sponsors.json README.md
             git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
             if git push origin "HEAD:$branch"; then
               exit 0

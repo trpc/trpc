@@ -1,0 +1,31 @@
+name: setup
+description: Installs the repository's one pnpm workspace (v11/, next/ and www/) with the root's pnpm and Node
+inputs:
+  node-version:
+    description: A Node version to use instead of the root's `.nvmrc`
+    required: false
+    default: ''
+  install:
+    description: "'false' sets up pnpm and Node without installing"
+    required: false
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - uses: pnpm/action-setup@v6
+      with:
+        package_json_file: package.json
+    - uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        node-version-file: ${{ inputs.node-version == '' && '.nvmrc' || '' }}
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+    - if: inputs.install == 'true'
+      run: pnpm install --frozen-lockfile
+      shell: bash
+      env:
+        # `playwright@1.28.1` (via `konn`) downloads browsers on install; the
+        # e2e tests and the site's checks use the runner's Chrome.
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        VP_GIT_HOOKS: '0'
