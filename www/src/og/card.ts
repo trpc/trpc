@@ -55,11 +55,11 @@ export type OgCard = DocCard | HomeCard | PostCard;
 export const colors = {
   background: '#ffffff',
   border: '#e4e4e7',
-  /** The logo's blue, where its gradient starts. */
-  brand: '#066dfc',
+  /** The site's blue since before the new logo. */
+  brand: '#398ccb',
   foreground: '#18181b',
   /** Text links' blue on a light page (`--brand-dark`). */
-  link: '#0a5fe0',
+  link: '#116eab',
   mutedForeground: '#52525b',
 } as const;
 
@@ -141,15 +141,15 @@ const wordmark = (assets: Assets, height: number) =>
 const gradient = `linear-gradient(90deg, ${colors.brand}, ${cyan})`;
 
 /**
- * White under the home page's dot grid and its blue glow, over a rule in
- * the logo's gradient.
+ * White under the home page's dot grid and its blue glow, over a rule from
+ * the brand's blue to the logo's cyan.
  */
 const frame = (assets: Assets, ...children: ReadonlyArray<ReactNode>) =>
   box(
     {
       backgroundColor: colors.background,
       backgroundImage: [
-        'radial-gradient(ellipse 60% 70% at 85% 0%, rgba(6, 109, 252, 0.2), rgba(6, 109, 252, 0) 100%)',
+        'radial-gradient(ellipse 60% 70% at 85% 0%, rgba(57, 140, 203, 0.2), rgba(57, 140, 203, 0) 100%)',
         'radial-gradient(ellipse 45% 55% at 0% 100%, rgba(34, 212, 252, 0.12), rgba(34, 212, 252, 0) 100%)',
       ].join(', '),
       boxSizing: 'border-box',
