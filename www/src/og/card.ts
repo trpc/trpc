@@ -57,14 +57,21 @@ export interface CardSponsor {
 /** `/sponsor`'s: its headline, its partners, and the other sponsors' avatars. */
 export interface SponsorCard {
   readonly kind: 'sponsor';
-  /** The sponsors it draws only as an avatar, most given first. */
-  readonly backers: ReadonlyArray<CardSponsor>;
+  /**
+   * The sponsors it may draw only as an avatar, most given first. It
+   * draws the first `backerSlots` of them whose avatars load, and leaves
+   * out a small sponsor whose avatar doesn't; a partner gets initials.
+   */
+  readonly backers: ReadonlyArray<
+    CardSponsor & { readonly partner?: true | undefined }
+  >;
+  readonly backerSlots: number;
   readonly description: string;
-  /** How many sponsors it leaves out, which it shows as a count. */
-  readonly more: number;
   /** The partners, first by rank, each with their tier's name: `Silver`. */
   readonly partners: ReadonlyArray<CardSponsor & { readonly tier: string }>;
   readonly path: string;
+  /** Every sponsor, which the count of those it doesn't draw is out of. */
+  readonly sponsorCount: number;
   readonly title: string;
   /** Where to sponsor, which the card shows. */
   readonly url: string;
@@ -485,8 +492,18 @@ const sponsorButton = (assets: Assets) =>
 
 const backerSize = 52;
 
-const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) =>
-  frame(
+/** The backers `card` draws: a partner always, a small sponsor if their avatar loaded. */
+export const drawnBackers = (card: SponsorCard, live: Live) =>
+  card.backers
+    .filter(
+      (backer) => backer.partner === true || live.avatars.has(backer.image),
+    )
+    .slice(0, card.backerSlots);
+
+const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
+  const backers = drawnBackers(card, live);
+  const more = card.sponsorCount - card.partners.length - backers.length;
+  return frame(
     assets,
     box(
       { alignItems: 'center', justifyContent: 'space-between', width: '100%' },
@@ -536,13 +553,13 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) =>
       },
       box(
         { alignItems: 'center' },
-        ...card.backers.map((backer, index) =>
+        ...backers.map((backer, index) =>
           avatar(backer.name, live.avatars.get(backer.image), backerSize, {
             border: `3px solid ${colors.background}`,
             marginLeft: index === 0 ? 0 : -14,
           }),
         ),
-        ...(card.more === 0
+        ...(more === 0
           ? []
           : [
               box(
@@ -550,9 +567,9 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) =>
                   color: colors.mutedForeground,
                   fontSize: 26,
                   fontWeight: 800,
-                  marginLeft: 16,
+                  marginLeft: backers.length === 0 ? 0 : 16,
                 },
-                `+${card.more}`,
+                `+${more}`,
               ),
             ]),
       ),
@@ -568,6 +585,7 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) =>
       ),
     ),
   );
+};
 
 export const cardElement = (
   assets: Assets,
