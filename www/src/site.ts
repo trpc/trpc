@@ -148,12 +148,16 @@ export const docPath = (
 
 /**
  * The top bar's links to v11 pages, by slug: trpc.io's navbar's, in its
- * order. On phones they're in the menu.
+ * order. On phones they're in the menu; `wide`, as `linksOf`'s.
  */
 export const docsLinks = [
   { label: 'Docs', slug: v11.firstDoc },
   { label: 'Quickstart', slug: 'quickstart' },
-  { label: 'Awesome tRPC Collection', slug: 'community/awesome-trpc' },
+  {
+    label: 'Awesome tRPC Collection',
+    slug: 'community/awesome-trpc',
+    wide: true,
+  },
   { label: 'Using Next.js', slug: 'client/nextjs' },
 ] as const;
 
