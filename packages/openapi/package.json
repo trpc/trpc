@@ -70,7 +70,7 @@
     "@hey-api/openapi-ts": "catalog:",
     "@swagger-api/apidom-ls": "^1.6.0",
     "@tanstack/intent": "0.5.6",
-    "@trpc/server": "11.23.0",
+    "@trpc/server": "workspace:*",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
     "ion-js": "^5.2.1",

@@ -4,8 +4,7 @@
   "npmClient": "pnpm",
   "command": {
     "version": {
-      "exact": true,
-      "syncWorkspaceLock": true
+      "exact": true
     }
   },
   "$schema": "node_modules/@lerna-lite/cli/schemas/lerna-schema.json"

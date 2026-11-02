@@ -164,6 +164,9 @@ settings:
 
 catalogs:
   default:
+    '@effect/platform-node':
+      specifier: 4.1.1
+      version: 4.1.1
     '@fastify/websocket':
       specifier: ^11.3.0
       version: 11.3.0
@@ -191,6 +194,9 @@ catalogs:
     devalue:
       specifier: ^6.0.0
       version: 6.0.2
+    effect:
+      specifier: 4.1.1
+      version: 4.1.1
     fastify:
       specifier: ^5.12.4
       version: 5.12.4
@@ -348,6 +354,9 @@ importers:
       '@actions/github':
         specifier: ^9.0.0
         version: 9.0.0
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.1.1(effect@4.1.1)(redis@6.3.1(@opentelemetry/api@1.10.0))
       '@lerna-lite/cli':
         specifier: 'catalog:'
         version: 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
@@ -387,6 +396,9 @@ importers:
       concurrently:
         specifier: ^9.0.0
         version: 9.0.0
+      effect:
+        specifier: 'catalog:'
+        version: 4.1.1
       event-source-polyfill:
         specifier: ^1.0.31
         version: 1.0.31
@@ -2375,7 +2387,7 @@ importers:
         specifier: 0.5.6
         version: 0.5.6
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -2423,13 +2435,13 @@ importers:
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
       '@trpc/client':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2490,7 +2502,7 @@ importers:
         specifier: 0.5.6
         version: 0.5.6
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -2550,10 +2562,10 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2700,10 +2712,10 @@ importers:
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
       '@trpc/client':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -2760,10 +2772,10 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -2866,16 +2878,16 @@ importers:
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
       '@trpc/client':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../server
       '@trpc/tanstack-react-query':
-        specifier: 11.23.0
+        specifier: workspace:*
         version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 17.3.0
