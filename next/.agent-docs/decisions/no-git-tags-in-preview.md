@@ -6,4 +6,4 @@
 - Lost: per-version git refs and GitHub release notes for the preview. Changelogs, if any, live elsewhere.
 - (agent) Releases use Changesets ([`versioning.md`](./versioning.md)): `privatePackages.tag: false` in `.changeset/config.json`, and publishing runs `changeset publish --no-git-tag`, with no `gh release create`. This stops applying at `12.0.0`. The v11 `release.yml` on `main` keeps tagging `v11.x.y`.
 - Open: there's no release workflow yet ([`versioning.md`](./versioning.md)).
-- Lives in: `next/.changeset/config.json`; the future vNext release workflow.
+- Lives in: `.changeset/config.json`; the future vNext release workflow.

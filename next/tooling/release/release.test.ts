@@ -26,7 +26,7 @@ const bumps = (releases: Readonly<Record<string, VersionType>>) =>
   );
 
 const published = workspace.packages.packages
-  .filter((pkg) => pkg.relativeDir.startsWith('packages/'))
+  .filter((pkg) => pkg.relativeDir.startsWith('next/packages/'))
   .map((pkg) => pkg.packageJson);
 
 test('a bump releases every package that depends on the bumped one, peers included', () => {
@@ -61,7 +61,7 @@ test('packages version independently', () => {
   });
 });
 
-test('only the packages in packages/ are released', () => {
+test('only the packages in next/packages/ are released', () => {
   const names = published.map((json) => json.name);
   expect(names).toContain('@trpc12/trpc');
   expect(

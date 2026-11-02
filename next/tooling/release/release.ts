@@ -16,8 +16,11 @@ import type {
 import { getPackages, type Packages } from '@manypkg/get-packages';
 import { Data, Effect } from 'effect';
 
-/** `next/`, the pnpm workspace Changesets versions. */
-export const root: string = fileURLToPath(new URL('../..', import.meta.url));
+/**
+ * The repository's root: Changesets reads the pnpm workspace there, v11's
+ * packages too, which it leaves alone (lerna versions them).
+ */
+export const root: string = fileURLToPath(new URL('../../..', import.meta.url));
 
 export class ReleaseConfigError extends Data.TaggedError('ReleaseConfigError')<{
   readonly message: string;
