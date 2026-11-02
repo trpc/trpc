@@ -109,7 +109,7 @@ type HandleGetNextPageParam<TDef extends ResolverDef> =
 /**
  * Options for starting an infinite query that returns a handle. Pass
  * `pages` and `getNextPageParam` to load several pages up front.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
  */
 export type unstable_TRPCPrefetchInfiniteOptions<TDef extends ResolverDef> =
   unstable_TRPCPrefetchOptions & {
@@ -258,7 +258,7 @@ export interface DecorateHandleReaders<TFeatureFlags extends FeatureFlags> {
  * The handle type a query procedure's `unstable_$prefetch()` returns, for
  * typing props. `unstable_$ensure()` and `unstable_$fetch()` resolve to the
  * same type.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
  */
 export type unstable_inferQueryHandle<
   TProcedure extends DecorateQueryHandleVerbs<any>,
@@ -267,7 +267,7 @@ export type unstable_inferQueryHandle<
 /**
  * The handle type an infinite query procedure's
  * `unstable_$prefetchInfinite()` returns, for typing props.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
  */
 export type unstable_inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryHandleVerbs<any>,
