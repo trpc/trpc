@@ -453,6 +453,9 @@ importers:
       '@js-temporal/polyfill':
         specifier: ^0.4.4
         version: 0.4.4
+      '@shared/ui':
+        specifier: workspace:*
+        version: file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react-is@17.0.2)(react@19.1.0)(redux@5.0.1)(supports-color@10.0.0)
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -480,6 +483,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.1
         version: 19.1.1(@types/react@19.1.0)
+      lucide-react:
+        specifier: 1.55.0
+        version: 1.55.0(@types/react@19.1.0)(react@19.1.0)
       next:
         specifier: ^15.5.25
         version: 15.5.25(@babel/core@7.27.4(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -513,10 +519,16 @@ importers:
       zod:
         specifier: ^4.2.1
         version: 4.2.1
+    dependenciesMeta:
+      '@shared/ui':
+        injected: true
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
         version: 1.51.1
+      '@tailwindcss/postcss':
+        specifier: 4.3.3
+        version: 4.3.3
       oxlint:
         specifier: ^1.90.0
         version: 1.90.0(oxlint-tsgolint@7.0.2005)
@@ -526,6 +538,9 @@ importers:
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
+      tailwindcss:
+        specifier: catalog:www
+        version: 4.3.3
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4(supports-color@10.0.0)
