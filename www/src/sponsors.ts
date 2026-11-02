@@ -174,14 +174,22 @@ const cardBackers = 12;
 const tierLabel = (tier: SponsorTier) =>
   sponsorTiers.find((entry) => entry.tier === tier)?.label ?? tier;
 
+const tierOrder = (tier: SponsorTier) =>
+  sponsorTiers.findIndex((entry) => entry.tier === tier);
+
+/** `ranked` partners, gold first, then each lower tier, by rank within a tier. */
+const byTier = (ranked: ReadonlyArray<Partner>) =>
+  ranked.toSorted((a, b) => tierOrder(a.tier) - tierOrder(b.tier));
+
 /** As many other sponsors' faces as a card's foot draws at most. */
 const footerFaces = 12;
 
 /**
  * What every social card but `/sponsor`'s names along its foot
  * (`og/card.ts`), from `ranked` partners and `all` the sponsors: every
- * partner by rank, and the other drawn sponsors by what they've given,
- * twice as many as it draws faces of.
+ * partner, gold first, then each lower tier, by rank within a tier; and the
+ * other drawn sponsors by what they've given, twice as many as it draws
+ * faces of.
  */
 export function cardFooterOf(
   ranked: ReadonlyArray<Partner>,
@@ -202,7 +210,7 @@ export function cardFooterOf(
         name: sponsor.name,
       })),
     faceSlots: footerFaces,
-    partners: ranked.map((partner) => ({
+    partners: byTier(ranked).map((partner) => ({
       image: partner.imgSrc,
       name: partner.name,
     })),
@@ -214,17 +222,19 @@ export const cardFooter = cardFooterOf(partners, sponsors);
 
 /**
  * `/sponsor`'s social card, from `ranked` partners and `all` the sponsors:
- * the partners by rank, then the other sponsors' avatars by what they've
- * given, and a count of the ones it doesn't draw. It gets twice as many
- * others as fit, and draws the first whose avatars load (`og/card.ts`).
+ * the partners, gold first, then each lower tier, by rank within a tier;
+ * then the other sponsors' avatars by what they've given, and a count of
+ * the ones it doesn't draw. It gets twice as many others as fit, and draws
+ * the first whose avatars load (`og/card.ts`).
  */
 export function sponsorCardOf(
   ranked: ReadonlyArray<Partner>,
   all: ReadonlyArray<Sponsor>,
 ): SponsorCard {
-  const shown = ranked.slice(0, cardPartners);
+  const ordered = byTier(ranked);
+  const shown = ordered.slice(0, cardPartners);
   const backers = [
-    ...ranked.slice(cardPartners).map((partner) => ({
+    ...ordered.slice(cardPartners).map((partner) => ({
       image: partner.imgSrc,
       name: partner.name,
       partner: true as const,
@@ -264,7 +274,7 @@ export const sponsorCardAlt = [
   ...(partners.length === 0
     ? []
     : [
-        `Partners: ${new Intl.ListFormat('en').format(partners.map((partner) => partner.name))}.`,
+        `Partners: ${new Intl.ListFormat('en').format(byTier(partners).map((partner) => partner.name))}.`,
       ]),
   `Sponsor at ${sponsorUrl.replace(/^https:\/\//, '')}.`,
 ].join(' ');
