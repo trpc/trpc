@@ -218,6 +218,30 @@ describe('land', () => {
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    "checks every changed file, and reinstalls, for the repository's root workspace",
+    () =>
+      Effect.gen(function* () {
+        const repo = yield* setup;
+        const a = yield* repo.clone('a');
+        const b = yield* repo.clone('b');
+        yield* write(b, 'package.json', '{"name":"repo"}\n');
+        yield* write(b, 'pnpm-lock.yaml', yield* lockfileFor(b));
+        yield* commit(b, 'root');
+        yield* git(b, 'push', '--quiet', 'origin', 'v12');
+        yield* write(a, 'next/x.ts', 'export const x = 1;\n');
+        yield* write(a, 'www/y.ts', 'export const y = 1;\n');
+        yield* commit(a, 'x and y');
+
+        const run = recording();
+        yield* land(a, { ...target, workspace: '.' }, run.steps);
+
+        assert.deepStrictEqual(yield* repo.history, ['x and y', 'root', 'seed']);
+        assert.deepStrictEqual(run.checks, [['next/x.ts', 'www/y.ts']]);
+        assert.deepStrictEqual(run.installs, [a]);
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+  );
+
   it.effect('stops on any other conflict, mid-rebase, without pushing', () =>
     Effect.gen(function* () {
       const repo = yield* setup;

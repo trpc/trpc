@@ -88,10 +88,10 @@ const build = (docs: string): Index => {
 
 const cache = new Map<string, Index>();
 
-/** The nearest `www/docs/` above `root`, the package's directory. */
+/** The nearest `www/v12/docs/` above `root`, the package's directory. */
 const docsDir = (root: string): string | undefined => {
   for (let dir = dirname(root); dir !== dirname(dir); dir = dirname(dir)) {
-    const docs = join(dir, 'www', 'docs');
+    const docs = join(dir, 'www', 'v12', 'docs');
     if (existsSync(docs) && statSync(docs).isDirectory()) return docs;
   }
   return undefined;

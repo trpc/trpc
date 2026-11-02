@@ -9,7 +9,7 @@ export class LandError extends Data.TaggedError('LandError')<{
 export interface Target {
   readonly remote: string;
   readonly branch: string;
-  /** The pnpm workspace, relative to the repository's root. */
+  /** The pnpm workspace, relative to the repository's root: `.` for the root. */
   readonly workspace: string;
   /** Pushes to try before giving up, rebasing again after each rejection. */
   readonly attempts: number;
@@ -30,11 +30,15 @@ const git = (root: string, ...args: ReadonlyArray<string>) =>
 
 const fail = (message: string) => Effect.fail(new LandError({ message }));
 
+/** `file`, relative to `workspace`, as a path from the repository's root. */
+const inWorkspace = (workspace: string, file: string) =>
+  workspace === '.' ? file : `${workspace}/${file}`;
+
 /** The files that `pnpm install` reads, as pathspecs from the repository's root. */
 const installInputs = (workspace: string) => [
-  `${workspace}/pnpm-lock.yaml`,
-  `${workspace}/pnpm-workspace.yaml`,
-  `:(glob)${workspace}/**/package.json`,
+  inWorkspace(workspace, 'pnpm-lock.yaml'),
+  inWorkspace(workspace, 'pnpm-workspace.yaml'),
+  `:(glob)${inWorkspace(workspace, '**/package.json')}`,
 ];
 
 const rebasing = Effect.fn('rebasing')(function* (root: string) {
@@ -62,7 +66,7 @@ const rebase = <R, E>(
 ) =>
   Effect.gen(function* () {
     const path = yield* Path.Path;
-    const lockfile = `${target.workspace}/pnpm-lock.yaml`;
+    const lockfile = inWorkspace(target.workspace, 'pnpm-lock.yaml');
     let result = yield* capture(root, 'git', ['rebase', '--quiet', upstream]);
     while (result.exitCode !== 0) {
       const conflicts = lines(
@@ -176,7 +180,9 @@ export const land = <R, E>(cwd: string, target: Target, steps: Steps<R, E>) =>
           'diff',
           '--name-only',
           '--diff-filter=d',
-          `--relative=${target.workspace}`,
+          ...(target.workspace === '.'
+            ? []
+            : [`--relative=${target.workspace}`]),
           upstream,
           'HEAD',
         ),
