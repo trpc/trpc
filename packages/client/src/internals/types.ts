@@ -102,7 +102,8 @@ export interface TRPCProcedureOptions {
    */
   context?: ClientContext;
   /**
-   * Aborts the call.
+   * Aborts the call. With `httpBatchLink`, the request is only aborted once
+   * every call in its batch is, so an aborted call can still get a result.
    * @see https://trpc.io/docs/client/vanilla/aborting-procedure-calls
    */
   signal?: AbortSignal;

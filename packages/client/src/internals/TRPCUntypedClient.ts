@@ -28,21 +28,27 @@ export interface TRPCRequestOptions {
    * @see https://trpc.io/docs/client/links#managing-context
    */
   context?: OperationContext;
-  /** Aborts the call. */
+  /**
+   * Aborts the call. With `httpBatchLink`, the request is only aborted once
+   * every call in its batch is, so an aborted call can still get a result.
+   */
   signal?: AbortSignal;
 }
 
 /** The callbacks a subscription takes on the client. */
 export interface TRPCSubscriptionObserver<TValue, TError> {
-  /** Called when the server has started the subscription. */
+  /** Called when the link sends a `started` result. */
   onStarted: (opts: { context: OperationContext | undefined }) => void;
   /** Called with each event. */
   onData: (value: inferAsyncIterableYield<TValue>) => void;
   /** Called when the subscription ends with an error. */
   onError: (err: TError) => void;
-  /** Called when the subscription is stopped, by either side. */
+  /**
+   * Called when the link sends a `stopped` result. Not every link sends
+   * one; `localLink` doesn't.
+   */
   onStopped: () => void;
-  /** Called when the server ends the subscription. */
+  /** Called when the subscription's observable completes, for any reason. */
   onComplete: () => void;
   /** Called when the connection connects, drops or reconnects. */
   onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;

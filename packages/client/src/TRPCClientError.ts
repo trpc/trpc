@@ -75,8 +75,9 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
 
   /**
-   * More about the error. For HTTP errors, the `response` and maybe its
-   * `responseJSON`.
+   * More about the error, if any. HTTP errors may have the `response` and
+   * its `responseJSON`; a failed fetch or unparsable response may have
+   * neither.
    */
   public meta;
 
@@ -105,7 +106,8 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   }
 
   /**
-   * Turns an error response, or anything thrown, into a `TRPCClientError`.
+   * Turns an error response, an `Error` or another object into a
+   * `TRPCClientError`. A `TRPCClientError` is returned as it is.
    */
   public static from<TRouterOrProcedure extends InferrableClientTypes>(
     _cause: Error | TRPCErrorResponse<any> | object,

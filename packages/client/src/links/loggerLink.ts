@@ -65,8 +65,8 @@ type ColorMode = 'ansi' | 'css' | 'none';
  */
 export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   /**
-   * Replaces the built-in logger. Called once when a call starts and once when
-   * it ends.
+   * Replaces the built-in logger. Called when a call starts and for each
+   * result or error, so a subscription calls it for every event.
    */
   logger?: LoggerLinkFn<TRouter>;
   /**
@@ -222,7 +222,8 @@ const defaultLogger =
   };
 
 /**
- * Logs each call, its result and how long it took.
+ * Logs each call when it starts, and each result or error it gets with the
+ * time since the start.
  *
  * @see https://trpc.io/docs/client/links/loggerLink
  */

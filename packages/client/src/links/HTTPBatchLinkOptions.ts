@@ -11,7 +11,8 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
      * The longest URL a batched GET request can have. Calls that would
-     * make it longer go in another batch.
+     * make it longer go in another batch. A call too long on its own
+     * fails.
      * @see https://trpc.io/docs/client/links/httpBatchLink#setting-a-maximum-url-length
      * @default Infinity
      */

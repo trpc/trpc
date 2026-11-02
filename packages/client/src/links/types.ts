@@ -62,7 +62,8 @@ export interface TRPCClientRuntime {
 }
 
 /**
- * A result a link passes back: data, or a change of connection state.
+ * A result a link passes back: data, a subscription's `started` or
+ * `stopped` event, or a change of connection state.
  * @internal
  */
 export interface OperationResultEnvelope<TOutput, TError> {
