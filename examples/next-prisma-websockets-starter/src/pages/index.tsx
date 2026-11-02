@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   AlertTitle,
 } from '@shared/ui/components/alert';
@@ -257,15 +258,24 @@ export default function IndexPage() {
                 Showcases WebSocket + subscription support
               </p>
             </div>
-            <a
-              className={buttonVariants({ variant: 'outline', size: 'sm' })}
-              href="https://github.com/trpc/examples-next-prisma-starter-websockets"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <CodeXmlIcon />
-              View source on GitHub
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a
+                className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                href="https://github.com/trpc/examples-next-prisma-starter-websockets"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <CodeXmlIcon />
+                View source on GitHub
+              </a>
+              <Link
+                href="/about"
+                className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+              >
+                <DicesIcon />
+                Random numbers over a subscription
+              </Link>
+            </div>
           </div>
           <Separator className="hidden md:block" />
           <div className="hidden flex-1 flex-col gap-6 overflow-y-auto p-6 md:flex">
@@ -295,17 +305,6 @@ export default function IndexPage() {
                 </li>
               </ul>
             </section>
-            <Link
-              href="/about"
-              className={buttonVariants({
-                variant: 'ghost',
-                size: 'sm',
-                className: 'self-start',
-              })}
-            >
-              <DicesIcon />
-              Random numbers over a subscription
-            </Link>
           </div>
           {userName && (
             <div className="hidden items-center gap-3 border-t p-4 md:flex">
@@ -347,99 +346,115 @@ export default function IndexPage() {
                       </div>
                     ));
                   case 'error':
-                    return (
-                      <Alert variant="destructive">
-                        <CircleAlertIcon />
-                        <AlertTitle>Couldn't load messages</AlertTitle>
-                        <AlertDescription>
-                          {postsQuery.error.message}
-                        </AlertDescription>
-                      </Alert>
-                    );
                   case 'success':
                     return (
                       <>
-                        <div className="flex justify-center">
-                          {(() => {
-                            switch (loadMoreStatus) {
-                              case 'fetching':
-                                return (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled
-                                    data-testid="loadMore"
-                                  >
-                                    <Spinner />
-                                    Loading…
-                                  </Button>
-                                );
-                              case 'paused':
-                                return (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled
-                                    data-testid="loadMore"
-                                  >
-                                    Waiting for network…
-                                  </Button>
-                                );
-                              case 'idle':
-                                return postsQuery.hasNextPage ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    data-testid="loadMore"
-                                    onClick={() => postsQuery.fetchNextPage()}
-                                  >
-                                    Load older messages
-                                  </Button>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">
-                                    The beginning of the conversation
-                                  </p>
-                                );
-                            }
-                          })()}
-                        </div>
-                        <ol className="flex flex-col gap-5">
-                          {messages?.map((item) => (
-                            <li key={item.id} className="flex gap-3">
-                              <UserAvatar name={item.name} />
-                              <article className="min-w-0 flex-1">
-                                <header className="flex items-baseline gap-2">
-                                  <h3 className="text-sm font-semibold">
-                                    {item.source === 'RAW' ? (
-                                      item.name
-                                    ) : (
-                                      <a
-                                        className="hover:underline"
-                                        href={`https://github.com/${item.name}`}
-                                        target="_blank"
-                                        rel="noreferrer"
+                        {postsQuery.status === 'error' && (
+                          <Alert variant="destructive">
+                            <CircleAlertIcon />
+                            <AlertTitle>Couldn't load messages</AlertTitle>
+                            <AlertDescription>
+                              {postsQuery.error.message}
+                            </AlertDescription>
+                            <AlertAction>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => postsQuery.refetch()}
+                              >
+                                Try again
+                              </Button>
+                            </AlertAction>
+                          </Alert>
+                        )}
+                        {/* A failed refetch or older page keeps the messages */}
+                        {messages && (
+                          <>
+                            <div className="flex justify-center">
+                              {(() => {
+                                switch (loadMoreStatus) {
+                                  case 'fetching':
+                                    return (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                        data-testid="loadMore"
                                       >
-                                        {item.name}
-                                      </a>
-                                    )}
-                                  </h3>
-                                  <time
-                                    dateTime={item.createdAt.toISOString()}
-                                    className="text-xs text-muted-foreground"
-                                  >
-                                    {new Intl.DateTimeFormat('en-GB', {
-                                      dateStyle: 'short',
-                                      timeStyle: 'short',
-                                    }).format(item.createdAt)}
-                                  </time>
-                                </header>
-                                <p className="leading-relaxed break-words whitespace-pre-line">
-                                  {item.text}
-                                </p>
-                              </article>
-                            </li>
-                          ))}
-                        </ol>
+                                        <Spinner />
+                                        Loading…
+                                      </Button>
+                                    );
+                                  case 'paused':
+                                    return (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                        data-testid="loadMore"
+                                      >
+                                        Waiting for network…
+                                      </Button>
+                                    );
+                                  case 'idle':
+                                    return postsQuery.hasNextPage ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        data-testid="loadMore"
+                                        onClick={() =>
+                                          postsQuery.fetchNextPage()
+                                        }
+                                      >
+                                        Load older messages
+                                      </Button>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground">
+                                        The beginning of the conversation
+                                      </p>
+                                    );
+                                }
+                              })()}
+                            </div>
+                            <ol className="flex flex-col gap-5">
+                              {messages?.map((item) => (
+                                <li key={item.id} className="flex gap-3">
+                                  <UserAvatar name={item.name} />
+                                  <article className="min-w-0 flex-1">
+                                    <header className="flex items-baseline gap-2">
+                                      <h3 className="text-sm font-semibold">
+                                        {item.source === 'RAW' ? (
+                                          item.name
+                                        ) : (
+                                          <a
+                                            className="hover:underline"
+                                            href={`https://github.com/${item.name}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                          >
+                                            {item.name}
+                                          </a>
+                                        )}
+                                      </h3>
+                                      <time
+                                        dateTime={item.createdAt.toISOString()}
+                                        className="text-xs text-muted-foreground"
+                                      >
+                                        {new Intl.DateTimeFormat('en-GB', {
+                                          dateStyle: 'short',
+                                          timeStyle: 'short',
+                                        }).format(item.createdAt)}
+                                      </time>
+                                    </header>
+                                    <p className="leading-relaxed break-words whitespace-pre-line">
+                                      {item.text}
+                                    </p>
+                                  </article>
+                                </li>
+                              ))}
+                            </ol>
+                          </>
+                        )}
                       </>
                     );
                 }
