@@ -126,6 +126,11 @@ describe('fetchAvatar', () => {
     ['<svg width="24"/>', false],
     ['<svg width="100%" height="100%"/>', false],
     ['<svg viewBox="0 0 0 24"/>', false],
+    ['<svg width="0" height="24"/>', false],
+    ['<svg width="0" height="24" viewBox="0 0 24 24"/>', false],
+    ['<svg width="24" viewBox="0 0 24 12"/>', true],
+    ['<svg height="24" viewBox="0 0 0 24"/>', false],
+    ['<svg width="24" viewBox="nope"/>', false],
     ['<svg viewBox="nope"/>', false],
     ['<html>not an svg</html>', false],
   ])('sizes %s: %s', (svg, sizable) => {

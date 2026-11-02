@@ -75,30 +75,50 @@ export const avatarUrl = (image: string) => {
   return url.href;
 };
 
-const svgLength = (tag: string, name: string) =>
-  new RegExp(`\\s${name}=['"](?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px)?['"]`).test(
-    tag,
-  );
+/** A `width` or `height` in pixels on `tag`, the only kind satori reads. */
+const svgLength = (tag: string, name: string) => {
+  const value = new RegExp(
+    `\\s${name}=['"]((?:\\d+(?:\\.\\d+)?|\\.\\d+))(?:px)?['"]`,
+  ).exec(tag)?.[1];
+  return value === undefined ? undefined : Number(value);
+};
+
+/** The size satori draws an SVG at, as it reads it off the `<svg>` tag. */
+const svgSize = (tag: string): readonly [number, number] | undefined => {
+  const width = svgLength(tag, 'width');
+  const height = svgLength(tag, 'height');
+  if (width !== undefined && height !== undefined) {
+    return [width, height];
+  }
+  const box = /viewBox=['"]([^'"]+)['"]/
+    .exec(tag)?.[1]
+    ?.split(/[, ]/)
+    .filter(Boolean)
+    .map(Number);
+  const [, , boxWidth, boxHeight] = box ?? [];
+  if (box?.length !== 4 || boxWidth === undefined || boxHeight === undefined) {
+    return undefined;
+  }
+  if (width !== undefined) {
+    return [width, (width * boxHeight) / boxWidth];
+  }
+  if (height !== undefined) {
+    return [(height * boxWidth) / boxHeight, height];
+  }
+  return [boxWidth, boxHeight];
+};
 
 /**
- * Whether satori can size an SVG, which it reads off the first `<svg>` tag:
- * a `viewBox`, or a `width` and a `height` in pixels. It throws on any other.
+ * Whether satori can draw an SVG: it sizes one by the first `<svg>` tag's
+ * `width` and `height` in pixels, either of them with the `viewBox`'s
+ * aspect ratio, or the `viewBox` alone, and throws without them.
  */
 export const sizableSvg = (svg: string) => {
   const tag = /<svg[^>]*>/i.exec(svg)?.[0];
-  if (tag === undefined) {
-    return false;
-  }
-  const [, , width = 0, height = 0, ...rest] =
-    /viewBox=['"]([^'"]+)['"]/
-      .exec(tag)?.[1]
-      ?.split(/[, ]/)
-      .filter(Boolean)
-      .map(Number) ?? [];
-  if (rest.length === 0 && width > 0 && height > 0) {
-    return true;
-  }
-  return svgLength(tag, 'width') && svgLength(tag, 'height');
+  const size = tag === undefined ? undefined : svgSize(tag);
+  return (
+    size?.every((length) => Number.isFinite(length) && length > 0) ?? false
+  );
 };
 
 /** An avatar as a `data:` URI satori draws, or `undefined` if it's not to be had. */
