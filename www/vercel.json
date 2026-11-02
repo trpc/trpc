@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "[ \"$VERCEL_PROJECT_ID\" = prj_ZOOws1jtnft6a9uEXDOhLBqvWOcu ]",
   "installCommand": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 pnpm --filter root --filter \"www...\" install --frozen-lockfile",
   "buildCommand": "cd .. && NODE_OPTIONS=--max-old-space-size=4096 pnpm turbo --filter www build",
   "framework": "tanstack-start",
