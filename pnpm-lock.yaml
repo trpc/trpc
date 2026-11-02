@@ -357,6 +357,9 @@ importers:
       '@manypkg/cli':
         specifier: ^0.22.0
         version: 0.22.0
+      '@tanstack/intent':
+        specifier: 0.5.6
+        version: 0.5.6
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -2368,6 +2371,9 @@ importers:
 
   packages/client:
     devDependencies:
+      '@tanstack/intent':
+        specifier: 0.5.6
+        version: 0.5.6
       '@trpc/server':
         specifier: 11.22.1
         version: link:../server
@@ -2410,6 +2416,9 @@ importers:
 
   packages/next:
     devDependencies:
+      '@tanstack/intent':
+        specifier: 0.5.6
+        version: 0.5.6
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -2477,6 +2486,9 @@ importers:
       '@swagger-api/apidom-ls':
         specifier: ^1.6.0
         version: 1.6.0(debug@4.4.3(supports-color@10.0.0))
+      '@tanstack/intent':
+        specifier: 0.5.6
+        version: 0.5.6
       '@trpc/server':
         specifier: 11.22.1
         version: link:../server
@@ -2594,6 +2606,9 @@ importers:
       '@oxc-project/runtime':
         specifier: 0.152.0
         version: 0.152.0
+      '@tanstack/intent':
+        specifier: 0.5.6
+        version: 0.5.6
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -2678,6 +2693,9 @@ importers:
 
   packages/tanstack-react-query:
     devDependencies:
+      '@tanstack/intent':
+        specifier: 0.5.6
+        version: 0.5.6
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -2719,7 +2737,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
       ws:
         specifier: 'catalog:'
         version: 8.21.3
@@ -9733,6 +9751,11 @@ packages:
   '@tanstack/history@1.162.5':
     resolution: {integrity: sha512-w1+YvwmTkwt5n8yUqEH3IWZ9DsmorCZW/EQ3KYHnqEgIkOZpH54NvW6/Epq3Dzb8H0ifIeYX8PExvrNLIH5FIA==}
     engines: {node: '>=20.19'}
+
+  '@tanstack/intent@0.5.6':
+    resolution: {integrity: sha512-9Ta/GMGPcqBIqlbrqeYyqBVKEP7XyAXy6nn90bPiE2oHB6KPgjEweUbHNXLQ6Pim01VtMMNf0dmUFMGKKHXmlw==}
+    engines: {node: '>=20.12.0'}
+    hasBin: true
 
   '@tanstack/match-sorter-utils@9.2.6':
     resolution: {integrity: sha512-DIpUSOhPfQ7u/qfUi/Wgm0wBO56MyBYXGvnlI0NcauDRPqdBUlAZZjW2Dxm92m+k1UWVhKw8YJ4f47+75Aujyw==}
@@ -27091,6 +27114,8 @@ snapshots:
 
   '@tanstack/history@1.162.5': {}
 
+  '@tanstack/intent@0.5.6': {}
+
   '@tanstack/match-sorter-utils@9.2.6':
     dependencies:
       remove-accents: 0.5.0
@@ -28147,6 +28172,15 @@ snapshots:
       magic-string: 1.3.1
     optionalDependencies:
       vite: 8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
+
+  '@vitest/mocker@5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      '@vitest/spy': 5.0.0
+      estree-walker: 3.0.3
+      magic-string: 1.3.1
+    optionalDependencies:
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/mocker@5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
@@ -38101,6 +38135,22 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.9.1
 
+  vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.32
+      rolldown: 1.2.16
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 24.13.4
+      esbuild: 0.27.7
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      terser: 5.34.0
+      tsx: 4.21.0
+      yaml: 2.8.2
+
   vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
@@ -38144,6 +38194,32 @@ snapshots:
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
       vite: 8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@edge-runtime/vm': 2.0.2
+      '@opentelemetry/api': 1.10.0
+      '@types/node': 24.13.4
+      '@vitest/coverage-istanbul': 5.0.0(vitest@5.0.0)
+      '@vitest/ui': 5.0.0(vitest@5.0.0)
+      jsdom: 29.0.0
+    transitivePeerDependencies:
+      - msw
+
+  vitest@5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+    dependencies:
+      '@types/chai': 5.2.3
+      '@vitest/mocker': 5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      chai: 6.2.2
+      es-module-lexer: 2.3.2
+      expect-type: 1.4.0
+      magic-string: 1.3.1
+      obug: 2.2.1
+      picomatch: 4.0.7
+      std-env: 4.2.0
+      tinybench: 6.1.4
+      tinyexec: 1.3.0
+      tinyglobby: 0.2.17
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@edge-runtime/vm': 2.0.2

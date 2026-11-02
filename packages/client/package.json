@@ -101,13 +101,15 @@
     "links",
     "unstable-internals",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills"
   ],
   "peerDependencies": {
     "@trpc/server": "11.22.1",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
+    "@tanstack/intent": "0.5.6",
     "@trpc/server": "11.22.1",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "catalog:",
@@ -127,5 +129,8 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
+  ],
+  "keywords": [
+    "tanstack-intent"
   ]
 }

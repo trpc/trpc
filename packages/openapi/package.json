@@ -56,7 +56,8 @@
     "!**/*.test.*",
     "!**/__tests__",
     "!test",
-    "heyapi"
+    "heyapi",
+    "skills"
   ],
   "publishConfig": {
     "access": "public"
@@ -67,6 +68,7 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "catalog:",
     "@swagger-api/apidom-ls": "^1.6.0",
+    "@tanstack/intent": "0.5.6",
     "@trpc/server": "11.22.1",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
@@ -96,5 +98,8 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
+  ],
+  "keywords": [
+    "tanstack-intent"
   ]
 }

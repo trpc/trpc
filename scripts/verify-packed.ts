@@ -65,6 +65,15 @@ for (const dir of fs.readdirSync(path.join(root, 'packages'))) {
   packages.set(pkg.name, { pkg, tarball: path.join(tarballDir, tarball) });
 
   const files = new Set(listFiles(pkgRoot));
+  const skillsDir = path.join(pkgDir, 'skills');
+  if (fs.existsSync(skillsDir)) {
+    for (const file of listFiles(skillsDir)) {
+      if (!files.has(`skills/${file}`))
+        failures.push(
+          `${pkg.name}: skill file "skills/${file}" is not in the tarball`,
+        );
+    }
+  }
   const bins =
     typeof pkg.bin === 'string' ? [pkg.bin] : Object.values(pkg.bin ?? {});
   const targets = new Set([
