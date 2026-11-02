@@ -1,4 +1,8 @@
 {
   "extends": "@tooling/tsconfig/node.json",
+  // `docs.test.ts` compiles the site's `www/site`, written for ES2024.
+  "compilerOptions": {
+    "lib": ["ES2024", "ESNext.Disposable", "DOM"]
+  },
   "include": ["*.ts"]
 }

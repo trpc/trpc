@@ -13,7 +13,7 @@
     "start": "vite preview --port 3000",
     "lint": "oxlint src build",
     "test": "vitest run",
-    "typecheck": "tsc && pnpm --filter './samples/*' --filter @shared/ui typecheck",
+    "typecheck": "tsc",
     "typedoc": "pnpm --filter @www/api-reference generate",
     "smoke": "node smoke.ts",
     "check-legacy-urls": "node build/legacy-urls-check.ts",

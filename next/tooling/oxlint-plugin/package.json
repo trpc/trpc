@@ -1,5 +1,5 @@
 {
-  "name": "@tooling/oxlint-plugin",
+  "name": "@tooling/oxlint-plugin-v12",
   "private": true,
   "type": "module",
   "exports": {

@@ -8,11 +8,23 @@
     "pnpm": "^12.0.0"
   },
   "scripts": {
+    "build": "turbo run build --filter=!root --filter=!trpc-next",
+    "typecheck": "turbo run typecheck --filter=!trpc-next",
+    "lint": "turbo run lint --filter=!root",
+    "test": "turbo run test --filter=root --filter=trpc-next --filter=www",
+    "format": "oxfmt --check",
+    "format-fix": "oxfmt",
     "next": "pnpm -C next",
     "v11": "pnpm -C v11",
     "www": "pnpm -C www"
   },
   "devDependencies": {
-    "turbo": "catalog:"
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "tsx": "^4.19.3",
+    "turbo": "catalog:",
+    "typescript": "catalog:ts-api",
+    "vite": "catalog:"
   }
 }

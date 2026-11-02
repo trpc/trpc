@@ -12,7 +12,7 @@
     "oxlint": "1.87.0"
   },
   "devDependencies": {
-    "@tooling/oxlint-plugin": "workspace:*",
+    "@tooling/oxlint-plugin-v12": "workspace:*",
     "@tooling/tsconfig": "workspace:*",
     "@types/node": "^26.0.0",
     "typescript": "7.1.0-beta",

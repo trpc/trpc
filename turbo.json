@@ -1,11 +1,16 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  // `root` (v11/) and `trpc-next` (next/) are packages that hold packages:
+  // their own `build`, `lint` and `typecheck` run turbo on what they hold,
+  // so the root's scripts leave them out (`--filter=!root`), and only their
+  // `test`, one Vitest run each over everything they hold, is a task here.
   "globalDependencies": [
     ".oxlintrc.json",
-    "tooling/oxlint-plugin/**",
-    "tsconfig.json",
-    "tsconfig.build.json",
-    "scripts/**"
+    "v11/.oxlintrc.json",
+    "v11/tooling/oxlint-plugin/**",
+    "v11/tsconfig.json",
+    "v11/tsconfig.build.json",
+    "v11/scripts/**"
   ],
   "globalEnv": [
     "CI",
@@ -20,6 +25,15 @@
     "VERCEL_ENV",
     "VERCEL_BRANCH_URL",
     "VERCEL_PROJECT_PRODUCTION_URL"
+  ],
+  // Read by the tools a task runs, not by what it makes.
+  "globalPassThroughEnv": [
+    "CHROME_PATH",
+    "GITHUB_ACTIONS",
+    "GITHUB_TOKEN",
+    "PLAYWRIGHT_*",
+    "RUNNER_*",
+    "VP_*"
   ],
   "tasks": {
     "prebuild": {
@@ -46,6 +60,14 @@
         "VERCEL_URL",
         "GITHUB_REF_NAME",
         "GITHUB_SHA"
+      ],
+      // The decisions pages render v12's design docs; the benchmarks page, the
+      // oRPC parity matrix's feature tables.
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/next/.agent-docs/open/**",
+        "$TURBO_ROOT$/next/.agent-docs/decisions/**",
+        "$TURBO_ROOT$/next/.agent-docs/reference/orpc-parity.md"
       ],
       "outputs": [".vercel/output/**", "dist/**"]
     },
@@ -77,8 +99,72 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    // It reads `www/site`'s source, and has no `lint`: building the site
+    // would only slow these.
+    "@tooling/pack#typecheck": {},
+    "@tooling/pack#lint": {},
     "test-start": {
       "dependsOn": ["^build", "build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["REDIS_URL", "MUTE_REACT_ACT_WARNINGS"],
+      "outputs": ["coverage/**"]
+    },
+    // One run over every package in v11/ or next/: the packages' npm
+    // dependencies are in the lockfile, not in either's package.json.
+    "root#test": {
+      "env": ["REDIS_URL", "MUTE_REACT_ACT_WARNINGS"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/pnpm-workspace.yaml"
+      ],
+      "outputs": ["coverage/**"]
+    },
+    "trpc-next#lint": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/pnpm-workspace.yaml"
+      ],
+      "outputs": []
+    },
+    // `test` is every project, `coverage` the packages' and `test:rest` the
+    // others'. `tooling/pack/docs.test.ts` checks v12's docs list every package.
+    "trpc-next#test": {
+      "env": ["REDIS_URL", "DATABASE_URL"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/pnpm-workspace.yaml",
+        "$TURBO_ROOT$/www/v12/docs/**",
+        "$TURBO_ROOT$/www/src/site.ts"
+      ],
+      "outputs": ["coverage/**"]
+    },
+    "trpc-next#coverage": {
+      "env": ["REDIS_URL"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/pnpm-workspace.yaml",
+        "$TURBO_ROOT$/www/v12/docs/**",
+        "$TURBO_ROOT$/www/src/site.ts"
+      ],
+      "outputs": ["coverage/**"]
+    },
+    "trpc-next#test:rest": {
+      "env": ["REDIS_URL", "DATABASE_URL"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/pnpm-workspace.yaml",
+        "$TURBO_ROOT$/www/v12/docs/**",
+        "$TURBO_ROOT$/www/src/site.ts"
+      ],
+      "outputs": []
     }
   }
 }
