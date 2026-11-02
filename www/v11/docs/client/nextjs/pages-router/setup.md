@@ -333,9 +333,10 @@ If your router uses a [data transformer](/docs/server/data-transformers) such as
 import type { DehydratedState } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import superjson from 'superjson';
-import type { SuperJSONResult } from 'superjson';
 
-export function useTRPCState(trpcState: SuperJSONResult | undefined) {
+export type TRPCState = ReturnType<typeof superjson.serialize>;
+
+export function useTRPCState(trpcState: TRPCState | undefined) {
   return useMemo(
     () => trpcState && superjson.deserialize<DehydratedState>(trpcState),
     [trpcState],
@@ -345,7 +346,7 @@ export function useTRPCState(trpcState: SuperJSONResult | undefined) {
 
 In the `_app` from [step 6](#6-configure-_apptsx), change three things:
 
-- Type the props as `AppProps<{ trpcState?: SuperJSONResult }>`.
+- Type the props as `AppProps<{ trpcState?: TRPCState }>`.
 - Pass `transformer: superjson` to `httpBatchLink`.
 - Call `const trpcState = useTRPCState(pageProps.trpcState)`, and pass `trpcState` to `HydrationBoundary` instead of `pageProps.trpcState`.
 
