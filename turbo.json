@@ -71,15 +71,42 @@
       ],
       "outputs": [".vercel/output/**", "dist/**"]
     },
+    // These three run their `client/` and `server/` packages' scripts with
+    // `npm run -w`, so turbo can't see what those depend on.
     "examples-minimal-react#build": {
+      "dependsOn": [
+        "@trpc/client#build",
+        "@trpc/server#build",
+        "@trpc/tanstack-react-query#build"
+      ],
       "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "examples-minimal-content-types#build": {
+      "dependsOn": [
+        "@trpc/client#build",
+        "@trpc/react-query#build",
+        "@trpc/server#build"
+      ],
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "examples-minimal-per-procedure-errors#build": {
+      "dependsOn": [
+        "@trpc/client#build",
+        "@trpc/server#build",
+        "@trpc/tanstack-react-query#build"
+      ],
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "examples-minimal-per-procedure-errors#typecheck": {
+      "dependsOn": [
+        "@trpc/client#build",
+        "@trpc/server#build",
+        "@trpc/tanstack-react-query#build"
+      ]
     },
     "examples-tanstack-start-sse-chat#build": {
       "dependsOn": ["^build", "prebuild"],
       "outputs": [".output/**", ".vercel/output/**"]
-    },
-    "examples-minimal-per-procedure-errors#build": {
-      "outputs": ["client/dist/**", "server/dist/**"]
     },
     "dev": {
       "cache": false,

@@ -28,6 +28,11 @@ packages:
 publicHoistPattern:
   - '@types/*'
   - '!@types/parse-path'
+  # The root's `@types` reach every tsconfig without `types`: v12's Bun needs a
+  # newer `@types/node` than v11's examples have, and serverless's lodash
+  # declares a `WeakMap` TypeScript 5.9's doesn't match.
+  - '!@types/bun'
+  - '!@types/lodash'
   - 'playwright-core'
   - 'zod'
   - '!@prisma/*'

@@ -8,8 +8,8 @@
     "pnpm": "^12.0.0"
   },
   "scripts": {
-    "build": "turbo run build --filter=!root --filter=!trpc-next",
-    "typecheck": "turbo run typecheck --filter=!trpc-next",
+    "build": "turbo run build --filter=!root --filter=!trpc-next --filter='!./v11/examples/**'",
+    "typecheck": "turbo run typecheck --filter=!trpc-next --filter='!./v11/examples/**'",
     "lint": "turbo run lint --filter=!root",
     "test": "turbo run test --filter=root --filter=trpc-next --filter=www",
     "check:www": "turbo run lint typecheck test --filter='!root' --filter='!trpc-next' --filter='!./v11/**' --filter='!./next/**'",
