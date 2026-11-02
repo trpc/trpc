@@ -568,8 +568,18 @@ export const writeStandalone = Effect.fn('writeStandalone')(
     const example = path.resolve(options.example);
     const out = path.resolve(options.out);
     const root = path.resolve(options.root);
-    if (out === example || out.startsWith(example + path.sep)) {
-      return yield* fail(`${out} is inside ${example}`);
+    const contains = (parent: string, child: string) => {
+      const relative = path.relative(parent, child);
+      return (
+        relative === '' ||
+        (relative !== '..' &&
+          !relative.startsWith(`..${path.sep}`) &&
+          !path.isAbsolute(relative))
+      );
+    };
+    // `out` is removed first, so it can't hold the example either
+    if (contains(example, out) || contains(out, example)) {
+      return yield* fail(`${out} overlaps ${example}`);
     }
 
     const catalogs = parseCatalogs(

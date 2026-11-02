@@ -402,4 +402,48 @@ describe('writeStandalone', () => {
         expect(error.message).toContain('must list the @shared/ui files');
       }),
     ));
+
+  it.each([
+    ['inside the example', 'examples/app/out'],
+    ['the example', 'examples/app'],
+    ['around the example', 'examples'],
+  ])('fails when the output is %s, and leaves it in place', (_, out) =>
+    run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* fs.makeTempDirectoryScoped();
+        yield* write(root, monorepo);
+        const error = yield* writeStandalone({
+          example: path.join(root, 'examples/app'),
+          out: path.join(root, out),
+          root,
+        }).pipe(Effect.flip);
+        expect(error.message).toContain('overlaps');
+        expect(
+          yield* fs.exists(path.join(root, 'examples/app/package.json')),
+        ).toBe(true);
+      }),
+    ),
+  );
+
+  it('allows an output next to the example with a similar name', () =>
+    run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* fs.makeTempDirectoryScoped();
+        yield* write(root, monorepo);
+        yield* writeStandalone({
+          example: path.join(root, 'examples/app'),
+          out: path.join(root, 'examples/app-standalone'),
+          root,
+        });
+        expect(
+          yield* fs.exists(
+            path.join(root, 'examples/app-standalone/package.json'),
+          ),
+        ).toBe(true);
+      }),
+    ));
 });
