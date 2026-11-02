@@ -161,7 +161,7 @@ export interface Router<
 > {
   _def: RouterDef<TRoot, TRecord>;
   /**
-   * @see https://trpc.io/docs/v11/server/server-side-calls
+   * @see https://trpc.io/docs/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
 }

@@ -29,7 +29,7 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
-     * @see http://trpc.io/docs/client/headers
+     * @see https://trpc.io/docs/client/headers
      */
     headers?:
       | HTTPHeaders
