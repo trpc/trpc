@@ -11,7 +11,16 @@ import type {
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {
+  /**
+   * How many seconds Next.js caches a response. `false` caches it until it is
+   * revalidated. A call can override this with `context.revalidate`.
+   * @default false
+   */
   revalidate?: number | false;
+  /**
+   * Send each call with `httpBatchLink` instead of `httpLink`. Each call
+   * gets its own link, so calls aren't combined into one request.
+   */
   batch?: boolean;
 }
 
@@ -25,6 +34,13 @@ type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
     batch: true;
   };
 
+/**
+ * A terminating link that sends calls over HTTP with Next.js cache tags, so
+ * they can be revalidated.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   opts:

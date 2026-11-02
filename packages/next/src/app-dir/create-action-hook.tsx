@@ -34,7 +34,15 @@ type ActionError<TDef extends ActionHandlerDef> = TRPCClientError<{
 }>;
 
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
+  /**
+   * Calls the action. It never throws: `onError` gets the error while the
+   * component is mounted, and `error` is set if no newer call has started.
+   */
   mutate: (...args: MutationArgs<TDef>) => void;
+  /**
+   * Like `mutate`, but returns a promise. It rejects on error, unless a
+   * newer call has started or the component has unmounted.
+   */
   mutateAsync: (...args: MutationArgs<TDef>) => Promise<TDef['output']>;
 }
 
@@ -70,6 +78,13 @@ interface UseTRPCActionLoadingResult<
   status: 'loading';
 }
 
+/**
+ * The result of a hook from {@link experimental_createActionHook}. Check
+ * `status` to narrow it.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
   | UseTRPCActionErrorResult<TDef>
@@ -81,6 +96,13 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
+/**
+ * A terminating link that calls a server action.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/server-actions
+ */
 // ts-prune-ignore-next
 export function experimental_serverActionLink<
   TInferrable extends InferrableClientTypes,
@@ -137,6 +159,14 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
   onError?: (result: ActionError<TDef>) => MaybePromise<void>;
 }
+/**
+ * Creates a React hook that calls a server action made with
+ * `experimental_createServerActionHandler`.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/server-actions
+ */
 // ts-prune-ignore-next
 export function experimental_createActionHook<
   TInferrable extends InferrableClientTypes,

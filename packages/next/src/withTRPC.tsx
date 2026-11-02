@@ -35,22 +35,51 @@ import type {
 import type { NextRouter } from 'next/router';
 import React, { useState } from 'react';
 
+/**
+ * What the `config` callback returns: tRPC client options, `QueryClient` options and `abortOnUnmount`.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#config-callback
+ */
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
     CreateTRPCReactQueryClientConfig & {
+      /**
+       * Abort pending queries when their component unmounts.
+       * @default false
+       */
       abortOnUnmount?: boolean;
     };
 
 type WithTRPCOptions<TRouter extends AnyRouter> =
   CreateTRPCReactOptions<TRouter> & {
+    /**
+     * Returns the client config. Gets the Next.js `ctx` during the SSR
+     * prepass; other calls may get no `ctx`.
+     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#config-callback
+     */
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   } & TransformerOptions<inferClientTypes<TRouter>>;
 
+/**
+ * The type of {@link ssrPrepass}.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 export type TRPCPrepassHelper = (opts: {
   parent: WithTRPCSSROptions<AnyRouter>;
   WithTRPC: NextComponentType<any, any, any>;
   AppOrPage: NextComponentType<any, any, any>;
 }) => void;
+/**
+ * Options for `createTRPCNext` and `withTRPC` with SSR on.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
+ */
 export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
     /**
@@ -60,6 +89,10 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
     ssr:
       | true
       | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
+    /**
+     * Sets the status code and headers of the SSR response.
+     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#responsemeta-callback
+     */
     responseMeta?: (opts: {
       ctx: NextPageContext;
       clientErrors: TRPCClientError<TRouter>[];
@@ -71,22 +104,59 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
     ssrPrepass: TRPCPrepassHelper;
   };
 
+/**
+ * Options for `createTRPCNext` and `withTRPC` with SSR off.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#createtrpcnext-options
+ */
 export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
+    /**
+     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#ssr-boolean-default-false
+     */
     ssr?: false;
   };
 
+/**
+ * The props `ssrPrepass` passes to the wrapped app during the prepass.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 export type TRPCPrepassProps<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 > = {
+  /**
+   * The client config from the `config` callback.
+   */
   config: WithTRPCConfig<TRouter>;
+  /**
+   * The `QueryClient` that collects the prefetched queries.
+   */
   queryClient: QueryClient;
+  /**
+   * The tRPC client used during the prepass.
+   */
   trpcClient: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
   ssrState: 'prepass';
+  /**
+   * The Next.js page context.
+   */
   ssrContext: TSSRContext;
 };
 
+/**
+ * Wraps a Next.js app or page with the tRPC and TanStack Query providers.
+ * `createTRPCNext` returns it, and you wrap your app with it:
+ * `export default trpc.withTRPC(MyApp)`.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup
+ */
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,

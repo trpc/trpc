@@ -17,12 +17,25 @@ import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
+  /**
+   * The router to call.
+   */
   router: TRouter;
+  /**
+   * Creates the context for each call.
+   */
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
+/**
+ * A terminating link that calls the router directly and caches query
+ * results with Next.js `unstable_cache`.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
