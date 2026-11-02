@@ -3,8 +3,8 @@
  * Vercel's "Ignored Build Step" for the docs site, run by `../../ignore.sh`
  * from `www` once this package is installed: exit 0 skips the deployment,
  * exit 1 builds it. Any failure builds: Vercel fails the deployment on other
- * exit codes. trpc.io's project (`www`) has the same root directory, and
- * builds from `main`, so it skips this tree.
+ * exit codes. trpc.io's project (`www`) builds both `main` and this tree;
+ * v12.trpc.io is its domain for the `v12` branch.
  */
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Cause, Console, Effect, Exit } from 'effect';
@@ -35,7 +35,7 @@ decide(
   },
   {
     production: 'v12',
-    project: 'prj_ZOOws1jtnft6a9uEXDOhLBqvWOcu',
+    project: 'prj_c5CXAea2uGBuHaIfJeWjXbW6c4Jn',
     remote: 'https://github.com/trpc/trpc.git',
   },
 ).pipe(

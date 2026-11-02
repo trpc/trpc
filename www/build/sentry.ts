@@ -15,6 +15,10 @@ export interface SentrySettings {
   readonly branch: string;
   /** `''` turns Sentry off. */
   readonly dsn: string;
+  /**
+   * `v12` for the `v12` branch, which v12.trpc.io serves from trpc.io's
+   * project; otherwise Vercel's environment.
+   */
   readonly environment: string;
   /** The commit's SHA, or `''`. */
   readonly release: string;
@@ -38,7 +42,10 @@ function sampleRate(value: string | undefined) {
 export const sentrySettings = (env: Env): SentrySettings => ({
   branch: env['VERCEL_GIT_COMMIT_REF'] || env['GITHUB_REF_NAME'] || '',
   dsn: env['SENTRY_DSN'] || env['NEXT_PUBLIC_SENTRY_DSN'] || '',
-  environment: env['VERCEL_ENV'] || 'development',
+  environment:
+    env['VERCEL_GIT_COMMIT_REF'] === 'v12'
+      ? 'v12'
+      : env['VERCEL_ENV'] || 'development',
   release: env['VERCEL_GIT_COMMIT_SHA'] || env['GITHUB_SHA'] || '',
   tracesSampleRate: sampleRate(env['SENTRY_TRACES_SAMPLE_RATE']),
 });

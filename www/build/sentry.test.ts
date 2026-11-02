@@ -41,6 +41,16 @@ describe('sentrySettings', () => {
     });
   });
 
+  it('names the v12 branch’s deployments v12, whatever their Vercel environment', () => {
+    expect(
+      sentrySettings({
+        ...vercelPreview,
+        VERCEL_ENV: 'production',
+        VERCEL_GIT_COMMIT_REF: 'v12',
+      }).environment,
+    ).toBe('v12');
+  });
+
   it('takes the DSN Sentry’s Vercel integration sets', () => {
     expect(
       sentrySettings({ NEXT_PUBLIC_SENTRY_DSN: 'https://public@sentry/1' }).dsn,
