@@ -12,6 +12,23 @@ describe('workspaceGlobs', () => {
       'libs/*',
     ]);
   });
+
+  it('reads past comments and blank lines, up to the next key', () => {
+    const yaml = [
+      'packages:',
+      '  # tRPC v11',
+      "  - 'v11/packages/*' # published",
+      '',
+      '# tRPC v12',
+      '  - next/packages/*',
+      'catalog:',
+      '  - not-a-glob',
+    ].join('\n');
+    assert.deepStrictEqual(workspaceGlobs(yaml), [
+      'v11/packages/*',
+      'next/packages/*',
+    ]);
+  });
 });
 
 describe('workspaceRoot', () => {

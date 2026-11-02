@@ -26,12 +26,21 @@ const readManifest = Effect.fn('readManifest')(function* (dir: string) {
   );
 });
 
-/** The `packages` globs of `pnpm-workspace.yaml`. */
+/** The `packages` globs of `pnpm-workspace.yaml`, past comments and blank lines. */
 export const workspaceGlobs = (yaml: string): ReadonlyArray<string> => {
-  const block = /^packages:\n((?:[ \t]+-.*\n?)+)/m.exec(yaml)?.[1] ?? '';
-  return [...block.matchAll(/-\s*["']?([^"'\n]+?)["']?\s*$/gm)].flatMap(
-    (match) => (match[1] === undefined ? [] : [match[1]]),
-  );
+  const lines = yaml.split('\n');
+  const start = lines.findIndex((line) => /^packages:\s*$/.test(line));
+  const globs: Array<string> = [];
+  for (const line of start === -1 ? [] : lines.slice(start + 1)) {
+    if (/^[^\s#]/.test(line)) {
+      break;
+    }
+    const entry = /^\s+-\s*["']?([^"'#\s][^"'#]*?)["']?\s*(?:#.*)?$/.exec(line);
+    if (entry?.[1] !== undefined) {
+      globs.push(entry[1]);
+    }
+  }
+  return globs;
 };
 
 /**

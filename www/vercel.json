@@ -2,11 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "v12": false
+      "**": false,
+      "v12": true,
+      "v12-*": true
     }
   },
-  "installCommand": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 pnpm --filter root --filter \"www...\" install --frozen-lockfile",
-  "buildCommand": "cd .. && NODE_OPTIONS=--max-old-space-size=4096 pnpm turbo --filter www build",
+  "ignoreCommand": "sh ../next/tooling/vercel-ignore/ignore.sh",
+  "installCommand": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 VP_GIT_HOOKS=0 pnpm --filter trpc-repo --filter \"www...\" install --frozen-lockfile",
+  "buildCommand": "cd .. && NODE_OPTIONS=--max-old-space-size=4096 pnpm turbo run build --filter www",
   "framework": "tanstack-start",
   "redirects": [
     {

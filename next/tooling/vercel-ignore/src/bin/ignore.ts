@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Vercel's "Ignored Build Step" for the docs site, run by `../../ignore.sh`
- * from `next/www` once this package is installed: exit 0 skips the deployment,
+ * from `www` once this package is installed: exit 0 skips the deployment,
  * exit 1 builds it. Any failure builds: Vercel fails the deployment on other
- * exit codes.
+ * exit codes. trpc.io's project (`www`) has the same root directory, and
+ * builds from `main`, so it skips this tree.
  */
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Cause, Console, Effect, Exit } from 'effect';
@@ -15,17 +16,28 @@ decide(
     dir: process.cwd(),
     // The packages' tests: the site imports, compiles and links their
     // sources, never a test.
-    ignored: ['packages/**/*.test.ts', 'packages/**/*.test.tsx'],
-    // The docs are in `www/docs`, so the project's own directory has them;
-    // the decisions pages render the first two, the benchmarks page the
-    // parity matrix's feature tables.
+    ignored: [
+      'next/packages/**/*.test.ts',
+      'next/packages/**/*.test.tsx',
+      'v11/packages/**/*.test.ts',
+      'v11/packages/**/*.test.tsx',
+      'v11/packages/*/test/**',
+    ],
+    // Every version's docs are in `www/`, so the project's own directory has
+    // them; the decisions pages render the first two, the benchmarks page the
+    // parity matrix's feature tables, and turbo runs the build.
     inputs: [
-      '.agent-docs/open',
-      '.agent-docs/decisions',
-      '.agent-docs/reference/orpc-parity.md',
+      'next/.agent-docs/open',
+      'next/.agent-docs/decisions',
+      'next/.agent-docs/reference/orpc-parity.md',
+      'turbo.json',
     ],
   },
-  { production: 'v12', remote: 'https://github.com/trpc/trpc.git' },
+  {
+    production: 'v12',
+    project: 'prj_ZOOws1jtnft6a9uEXDOhLBqvWOcu',
+    remote: 'https://github.com/trpc/trpc.git',
+  },
 ).pipe(
   Effect.catchCause((cause) =>
     Effect.succeed({

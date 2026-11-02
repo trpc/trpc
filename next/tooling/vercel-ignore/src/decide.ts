@@ -25,6 +25,11 @@ export interface Repo {
   readonly production: string;
   /** Where a branch's first deployment fetches {@link production} from. */
   readonly remote: string;
+  /**
+   * The Vercel project (`VERCEL_PROJECT_ID`) that deploys this tree. Another
+   * project with the same root directory skips it.
+   */
+  readonly project?: string | undefined;
 }
 
 export interface Project {
@@ -140,6 +145,19 @@ export const decide = Effect.fn('decide')(function* (
   repo: Repo,
 ) {
   const path = yield* Path.Path;
+  const vercelProject = yield* Config.String('VERCEL_PROJECT_ID').pipe(
+    Config.withDefault(''),
+  );
+  if (
+    repo.project !== undefined &&
+    vercelProject !== '' &&
+    vercelProject !== repo.project
+  ) {
+    return {
+      build: false,
+      reason: `${vercelProject} isn't ${repo.project}, the project that deploys this tree.`,
+    };
+  }
   const root = yield* workspaceRoot(project.dir);
   const watched = [
     ...(yield* dependencyDirs(root, path.relative(root, project.dir))),

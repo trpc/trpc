@@ -115,6 +115,33 @@ describe('decide', () => {
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 
+  it.effect('skips for another project with the same root directory', () =>
+    Effect.gen(function* () {
+      const path = yield* Path.Path;
+      const commits = yield* setup;
+      yield* touch(commits.root, 'next/apps/web/a.ts');
+      const decideAs = (id: string) =>
+        decide(
+          { dir: path.join(commits.root, 'next', 'apps/web'), inputs: [] },
+          {
+            production: 'v12',
+            project: 'prj_v12',
+            remote: `file://${commits.root}`,
+          },
+        ).pipe(
+          run({
+            VERCEL_GIT_COMMIT_REF: 'feature',
+            VERCEL_GIT_PREVIOUS_SHA: commits.production,
+            VERCEL_PROJECT_ID: id,
+          }),
+        );
+      const other = yield* decideAs('prj_trpc_io');
+      assert.isFalse(other.build);
+      assert.include(other.reason, 'prj_trpc_io');
+      assert.isTrue((yield* decideAs('prj_v12')).build);
+    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+  );
+
   it.effect("builds v12's first deployment", () =>
     Effect.gen(function* () {
       const root = (yield* setup).root;

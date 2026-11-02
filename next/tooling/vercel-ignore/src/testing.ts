@@ -52,7 +52,7 @@ export const workspace = {
     "packages:\n  - 'apps/*'\n  - libs/*\n\noverrides:\n  vite@*: 8\n",
 } as const;
 
-/** A repository with {@link workspace} in `next/`, as tRPC's v12 tree is. */
+/** A repository with {@link workspace} in `next/`: a workspace needn't be the repository's root. */
 export const repo: Readonly<Record<string, string>> = {
   'README.md': '',
   ...Object.fromEntries(
