@@ -685,6 +685,9 @@ function SubscriptionExample() {
         onError: (error) => {
           // you can handle the error here
         },
+        onComplete: () => {
+          // the subscription was ended by the server, `status` is now `'idle'`
+        },
         onConnectionStateChange: (state) => {
           // you can handle the connection state here
         },
