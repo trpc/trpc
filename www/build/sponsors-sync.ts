@@ -85,13 +85,19 @@ const SponsorSchema = Schema.Struct({
 /**
  * `sponsors`, with each small sponsor whose avatar doesn't load marked
  * `imageless`, so the site leaves them out rather than draw a broken image.
- * Partners keep their place whatever their avatar does.
+ * Partners keep their place whatever their avatar does. Fails if no small
+ * sponsor's avatar loads, which says more about the network than them.
  */
 export const markImageless = Effect.fn('markImageless')(function* (
   sponsors: ReadonlyArray<Sponsor>,
 ) {
   const small = sponsors.filter(isSmallSponsor);
   const loaded = yield* fetchAvatars(small.map((sponsor) => sponsor.imgSrc));
+  if (small.length > 0 && loaded.size === 0) {
+    return yield* new SponsorsSyncError({
+      message: `No avatar loaded for any of the ${small.length} small sponsors; is the network or GitHub's avatar host down? Wrote nothing.`,
+    });
+  }
   return sponsors.map((sponsor): Sponsor =>
     isSmallSponsor(sponsor) && !loaded.has(sponsor.imgSrc)
       ? { ...sponsor, imageless: true }

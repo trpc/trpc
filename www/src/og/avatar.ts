@@ -17,6 +17,7 @@ import {
   Match,
   Option,
   Schedule,
+  type Types,
 } from 'effect';
 import { HttpClient } from 'effect/http';
 
@@ -216,12 +217,13 @@ export class Avatars extends Context.Service<
     );
 }
 
-/** How many avatars to fetch at once. */
-const concurrency = 8;
-
-/** The avatars of `images` that loaded, by URL; the rest are left out. */
+/**
+ * The avatars of `images` that loaded, by URL; the rest are left out.
+ * `concurrency` is how many it fetches at once.
+ */
 export const fetchAvatars = Effect.fn('fetchAvatars')(function* (
   images: Iterable<string>,
+  concurrency: Types.Concurrency = 8,
 ) {
   const avatars = yield* Avatars;
   const loaded = yield* Effect.forEach(

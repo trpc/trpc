@@ -248,12 +248,17 @@ describe('syncSponsors', () => {
       let broken: ReadonlyArray<string> = ['fan', 'coderabbitai'];
       const fake = github((sent) =>
         isPaymentsQuery(sent)
-          ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', 2_000)]
+          ? [
+              paymentNode('coderabbitai', 300_000),
+              paymentNode('fan', 2_000),
+              paymentNode('pal', 1_000),
+            ]
           : [
               sponsorshipNode('coderabbitai', {
                 tier: { isOneTime: false, monthlyPriceInDollars: 500 },
               }),
               sponsorshipNode('fan'),
+              sponsorshipNode('pal'),
             ],
       );
       return Effect.gen(function* () {
@@ -286,7 +291,7 @@ describe('syncSponsors', () => {
 
         broken = ['coderabbitai'];
         expect(yield* syncWhenSponsorsChange).toBe(
-          `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+          `Wrote 3 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
         );
         expect(yield* imageless).toEqual([]);
         expect(yield* fs.readFileString(files.readme)).toContain('alt="FAN"');
@@ -301,6 +306,39 @@ describe('syncSponsors', () => {
       );
     },
   );
+
+  it.effect("writes nothing when no small sponsor's avatar loads", () => {
+    const fake = github((sent) =>
+      isPaymentsQuery(sent)
+        ? [paymentNode('fan', 2_000), paymentNode('pal', 1_000)]
+        : [sponsorshipNode('fan'), sponsorshipNode('pal')],
+    );
+    return Effect.gen(function* () {
+      const files = yield* fixture;
+      const fs = yield* FileSystem.FileSystem;
+      const synced = yield* Effect.result(
+        syncSponsors({
+          ...files,
+          accounts: [{ kind: 'user', login: 'KATT' }],
+          config: { ...config, direct: [] },
+          token: Redacted.make('test-token'),
+        }),
+      );
+      expect(Result.isFailure(synced) && synced.failure.message).toBe(
+        "No avatar loaded for any of the 2 small sponsors; is the network or GitHub's avatar host down? Wrote nothing.",
+      );
+      expect(yield* fs.readFileString(files.sponsorsFile)).toBe('[]\n');
+      expect(yield* fs.readFileString(files.readme)).toBe(readme);
+    }).pipe(
+      Effect.provide(
+        Layer.mergeAll(
+          NodeServices.layer,
+          fake.layer,
+          avatars(() => ['fan', 'pal']),
+        ),
+      ),
+    );
+  });
 
   it.effect(
     'writes nothing when GitHub reports no sponsors or no payments',

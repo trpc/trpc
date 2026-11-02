@@ -83,14 +83,17 @@ const imagesOf = (card: OgCard): ReadonlyArray<string> => {
   }
 };
 
-/** What `card` shows live. */
+/**
+ * What `card` shows live. It fetches all of a card's avatars at once, a few
+ * dozen at most, so a slow host costs one avatar's wait, not one per batch.
+ */
 export const live = Effect.fn('live')(function* (card: OgCard) {
   const [stats, avatars] = yield* Effect.all(
     [
       card.kind === 'home'
         ? Effect.promise(() => fetchStats())
         : Effect.succeed<Stats>({}),
-      fetchAvatars(imagesOf(card)),
+      fetchAvatars(imagesOf(card), 'unbounded'),
     ],
     { concurrency: 'unbounded' },
   );

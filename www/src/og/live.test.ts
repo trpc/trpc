@@ -64,6 +64,28 @@ describe('fetchStats', () => {
   });
 });
 
+describe('live', () => {
+  it("fetches all of a card's avatars at once", async () => {
+    const paths = Array.from({ length: 24 }, (_, index) => `/${index}.png`);
+    await using server = await serveAvatars(
+      Object.fromEntries(paths.map((path) => [path, { ...png(), delay: 50 }])),
+    );
+    const fetched = await liveOf({
+      backerSlots: 12,
+      backers: paths.map((path) => ({ image: server.url(path), name: path })),
+      description: '',
+      kind: 'sponsor',
+      partners: [],
+      path: '/sponsor',
+      sponsorCount: paths.length,
+      title: 'Sponsor',
+      url: 'https://github.com/sponsors/trpc',
+    });
+    expect(fetched.avatars.size).toBe(paths.length);
+    expect(server.mostInFlight).toBeGreaterThan(8);
+  });
+});
+
 describe('cacheControl', () => {
   it('keeps the home card a day, and one missing a number ten minutes', () => {
     expect(
