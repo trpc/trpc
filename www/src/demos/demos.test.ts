@@ -56,6 +56,7 @@ describe('url state', () => {
     });
     expect(parseListUrl(`/posts?page=${lastPage + 1}`).page).toBe(1);
     expect(parseListUrl('  ')).toEqual({ page: 1, sort: 'new' });
+    expect(parseListUrl('http://')).toEqual({ page: 1, sort: 'new' });
   });
 
   it('round-trips through listUrl', () => {

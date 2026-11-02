@@ -21,7 +21,7 @@ The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/tanstack-
 ## 1. Install deps
 
 ```sh
-npm install @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query @tanstack/react-router-ssr-query superjson
+npm install @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query @tanstack/react-router-ssr-query superjson zod
 ```
 
 ## 2. Create a query client factory
@@ -236,6 +236,56 @@ const getLinks = createIsomorphicFn()
 
 export const makeTRPCClient = () =>
   createTRPCClient<AppRouter>({ links: getLinks() });
+```
+
+The browser's link calls `/api/trpc`. Serve it from a [server route](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes) with the [fetch adapter](/docs/server/adapters/fetch):
+
+```ts twoslash title='src/routes/api/trpc.$.ts'
+// @include: start-app
+// @include: start-lib
+// @filename: routeTree.gen.ts
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc.$';
+
+const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
+  id: '/api/trpc/$',
+  path: '/api/trpc/$',
+  getParentRoute: () => rootRouteImport,
+} as any);
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/api/trpc/$': {
+      id: '/api/trpc/$';
+      path: '/api/trpc/$';
+      fullPath: '/api/trpc/$';
+      preLoaderRoute: typeof ApiTrpcSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+  }
+}
+
+export const routeTree = rootRouteImport.addChildren({ ApiTrpcSplatRoute });
+
+import type { createStart } from '@tanstack/react-start';
+// @filename: routes/api/trpc.$.ts
+// ---cut---
+import { createFileRoute } from '@tanstack/react-router';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from '~/server/context';
+import { appRouter } from '~/server/routers/_app';
+
+const handler = ({ request }: { request: Request }) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req: request,
+    router: appRouter,
+    createContext,
+  });
+
+export const Route = createFileRoute('/api/trpc/$')({
+  server: { handlers: { GET: handler, POST: handler } },
+});
 ```
 
 ## 4. Put the proxy in the router context

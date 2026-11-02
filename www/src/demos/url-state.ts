@@ -15,7 +15,12 @@ export const lastPage = 5;
  * anything missing or invalid falls back to the default.
  */
 export function parseListUrl(url: string): ListInput {
-  const parsed = new URL(url.trim() || '/', 'https://example.com');
+  let parsed: URL;
+  try {
+    parsed = new URL(url.trim() || '/', 'https://example.com');
+  } catch {
+    return defaultInput;
+  }
   const sort = parsed.searchParams.get('sort');
   const page = Number(parsed.searchParams.get('page'));
   return {

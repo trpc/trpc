@@ -1031,10 +1031,10 @@ export const trpcClient = createTRPCClient<AppRouter>({
 });
 export const trpc = createTRPCOptionsProxy({ client: trpcClient, queryClient });
 // @filename: app/routes/post.tsx
+// ---cut---
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 import { Post } from '~/components/post';
-// ---cut---
 import { trpc } from '~/trpc';
 import type { Route } from './+types/post';
 
@@ -1054,6 +1054,55 @@ export default function PostPage({ loaderData }: Route.ComponentProps) {
     </>
   );
 }
+```
+
+In Data Mode, the same function is a route object's `loader`, and the component reads it with `useLoaderData`:
+
+```tsx twoslash title='app/router.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: app/trpc.ts
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '~/server/router';
+
+export const queryClient = new QueryClient();
+export const trpcClient = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: '/api/trpc' })],
+});
+export const trpc = createTRPCOptionsProxy({ client: trpcClient, queryClient });
+// @filename: app/router.tsx
+// ---cut---
+import { Suspense } from 'react';
+import { createBrowserRouter, useLoaderData, type LoaderFunctionArgs } from 'react-router';
+import { Comments } from '~/components/comments';
+import { Post } from '~/components/post';
+import { trpc } from '~/trpc';
+
+async function postLoader({ params }: LoaderFunctionArgs) {
+  const id = params.id!;
+  const comments = trpc.post.comments.unstable_$prefetchInfinite({ postId: id, limit: 20 });
+  const post = await trpc.post.byId.unstable_$ensure({ id });
+  return { comments, post };
+}
+
+function PostPage() {
+  const { comments, post } = useLoaderData<typeof postLoader>();
+  return (
+    <>
+      <Post post={post} />
+      <Suspense key={post.input.id} fallback={<p>Loading comments…</p>}>
+        <Comments comments={comments} />
+      </Suspense>
+    </>
+  );
+}
+
+export const router = createBrowserRouter([
+  { path: '/posts/:id', loader: postLoader, Component: PostPage },
+]);
 ```
 
 - There is nothing to hydrate: the loader starts queries in the same `QueryClient` the components read.
@@ -1095,6 +1144,7 @@ export function createServerTRPC() {
 // @include: rr-root-types
 // @include: rr-ssr-trpc
 // @filename: app/root.tsx
+// ---cut---
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient } from '@trpc/client';
 import { useState } from 'react';
@@ -1104,7 +1154,7 @@ import { TRPCProvider } from '~/trpc/client';
 import type { Route } from './+types/root';
 import { makeQueryClient } from './trpc/query-client';
 import { createServerTRPC, trpcContext } from './trpc/server';
-// ---cut---
+
 export const middleware: Route.MiddlewareFunction[] = [
   ({ context }) => {
     context.set(trpcContext, createServerTRPC());
@@ -1131,13 +1181,13 @@ export default function App() {
 // @include: rr-types
 // @include: rr-ssr-trpc
 // @filename: app/routes/post.tsx
+// ---cut---
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 import { Post } from '~/components/post';
 import { trpcContext } from '../trpc/server';
 import type { Route } from './+types/post';
-// ---cut---
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { queryClient, trpc } = context.get(trpcContext);
@@ -1200,11 +1250,12 @@ export { Comments } from '~/components/comments';
 // @filename: app/posts/[id]/post.tsx
 export { Post } from '~/components/post';
 // @filename: app/posts/[id]/page.tsx
+// ---cut---
 import { Suspense } from 'react';
 import { HydrateClient, trpc } from '~/trpc/server';
 import { Comments } from './comments';
 import { Post } from './post';
-// ---cut---
+
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const post = trpc.post.byId.unstable_$prefetch({ id });
