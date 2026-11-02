@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Menu, Newspaper } from 'lucide-react';
+import { Heart, Menu, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, buttonVariants } from '@shared/ui/components/button';
@@ -73,6 +73,19 @@ export function MobileNav() {
           >
             <DiscordIcon />
           </a>
+          <Link
+            activeProps={{ 'aria-current': 'page' }}
+            aria-label="Sponsor tRPC"
+            className={cn(
+              buttonVariants({ size: 'icon-sm', variant: 'outline' }),
+              'hover:text-pink-500 hover:*:fill-current aria-[current=page]:bg-accent aria-[current=page]:text-pink-500 aria-[current=page]:*:fill-current',
+            )}
+            onClick={() => setOpen(false)}
+            title="Sponsor tRPC"
+            to="/sponsor"
+          >
+            <Heart />
+          </Link>
         </nav>
         <nav aria-label="Main" className="flex flex-col border-b pb-4">
           {docsLinks.map((link) => (
