@@ -181,7 +181,7 @@ const post = trpc.post.byId.unstable_$prefetch({ id });
 
 - It returns a handle at once. The request runs in the background.
 - The page doesn't wait. It renders, and the data arrives when the request finishes.
-- **You need a `Suspense` boundary.** The component that reads the handle suspends until the data arrives. Wrap it in `<Suspense>` to show a fallback in its place:
+- The component that reads the handle renders before the data arrives, so it shows a loading state. With `useSuspenseQuery`, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`: see [Reading with `useQuery`](#use-query).
 
   ```tsx twoslash
   // @include: handles-router
@@ -220,7 +220,7 @@ const post = await trpc.post.byId.unstable_$ensure({ id });
 - It returns a promise. The promise resolves to a handle once the cache has data for the query.
 - The handle carries no data. To use the data in the loader, read it from the cache: see [Using the data in a loader](#loader-data).
 - The page waits for that promise, so the data is ready before anything renders.
-- **You don't need a `Suspense` boundary** for this query. The component that reads the handle with `useSuspenseQuery` finds the data in the cache and renders at once.
+- The component that reads the handle finds the data in the cache and renders it at once, with `useSuspenseQuery` or `useQuery`. It still needs a loading state for when the cache loses the data: see [When the cache loses the data](#cache-loses-data).
 - It rejects if the request fails, so you can handle the error where you start the query, for example to show a not-found page.
 - If the cache already has stale data, it resolves at once and refetches in the background.
 
@@ -251,7 +251,7 @@ const post = await trpc.post.byId.unstable_$fetch({ id });
 | Returns                | A handle                          | A promise for a handle | A promise for a handle |
 | Page waits for data    | No                                | Yes                    | Yes                    |
 | With stale data        | Refetches in the background       | Resolves at once       | Waits for the refetch  |
-| `Suspense` boundary    | Needed around the reader          | Not needed             | Not needed             |
+| Reader's first render  | Shows its loading state           | Shows the data         | Shows the data         |
 | When the request fails | An error boundary shows the error | The promise rejects    | The promise rejects    |
 
 ```demo starting-queries
@@ -289,7 +289,7 @@ const related = trpc.post.related.unstable_$prefetch({ id });
 const post = await trpc.post.byId.unstable_$ensure({ id });
 ```
 
-Here the post is ready when the page renders, and the related posts stream in behind their own `Suspense` boundary.
+Here the post is ready when the page renders, and the related posts stream in behind their own loading state.
 
 ### Options {#start-options}
 
@@ -602,13 +602,58 @@ A handle can only come from `unstable_$prefetch`, `unstable_$ensure` or `unstabl
 
 `unstable_inferQueryHandle` accepts a handle from any of the three methods: they all return the same type.
 
+### Reading with `useQuery` {#use-query}
+
+You don't need `useSuspenseQuery` or a `Suspense` boundary to read a handle. `useQuery` works with every method, as for any query. Switch on its `status` to show each state:
+
+```tsx twoslash title='app/posts/[id]/post.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @filename: app/posts/[id]/post.tsx
+// ---cut---
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '~/trpc/client';
+
+export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId']> }) {
+  const trpc = useTRPC();
+  const postQuery = useQuery(trpc.unstable_$fromHandle(props.post));
+  switch (postQuery.status) {
+    case 'pending':
+      return <p>Loading post…</p>;
+    case 'error':
+      return <p>Couldn't load the post: {postQuery.error.message}</p>;
+    case 'success':
+      return <h1>{postQuery.data.title}</h1>;
+  }
+}
+```
+
+- `useQuery` doesn't suspend. Until the data arrives, it renders with `status: 'pending'`.
+- After `unstable_$ensure` or `unstable_$fetch`, the cache has the data, so the first render has `status: 'success'`.
+- With server rendering, `useQuery` doesn't wait for an `unstable_$prefetch` query. The HTML shows the loading state, and the data shows once it reaches the browser. To stream the data into the HTML, read the handle with `useSuspenseQuery`.
+
 ## Handles carry no data {#no-data}
 
 A handle is only the query's key and input, whichever method made it. The data lives in the cache, so the reader decides how to wait for it:
 
-- `useSuspenseQuery` types `data` as defined. After `unstable_$ensure` or `unstable_$fetch`, the cache already has the data, so the reader renders at once, with no fallback.
-- `useQuery` types `data` as possibly `undefined`, as for any query.
-- If the cache loses the query, for example after `queryClient.clear()` on logout, the reader fetches it again. A `clear()` doesn't bring back the data the loader started with.
+- `useSuspenseQuery` types `data` as defined. The component suspends until the cache has the data.
+- `useQuery` types `data` as possibly `undefined`, as for any query. Switch on `status` to narrow it.
+
+### When the cache loses the data {#cache-loses-data}
+
+Waiting for a query with `unstable_$ensure` or `unstable_$fetch` puts its data in the cache before the reader renders. The cache can still lose that data later, and the reader then has to load it again:
+
+- `queryClient.resetQueries()` clears the data and refetches the queries on screen at once. A `useSuspenseQuery` reader suspends and shows the nearest `Suspense` fallback. A `useQuery` reader renders with `status: 'pending'`.
+- `queryClient.removeQueries()` and `queryClient.clear()`, for example on logout, drop the query from the cache. A reader on screen keeps its data until it renders again. Then it loads the query as above.
+- TanStack Query also drops a query no component has used for its `gcTime`. A reader that mounts after that loads it again.
+- `queryClient.invalidateQueries()` keeps the data and refetches in the background, so the reader shows no loading state.
+
+So give every reader a loading state, even when the page waited for its data: put a `useSuspenseQuery` reader under a `Suspense` boundary, or handle `'pending'` in a `useQuery` reader. Without a boundary of its own, a reader that suspends shows the fallback of the nearest boundary above it, which may cover the whole page.
+
+The reader always loads the query again with a new request. A handle doesn't bring back the data the loader started with.
 
 ### Using the data in a loader {#loader-data}
 
@@ -794,8 +839,8 @@ export function PostPage(props: { id: string }) {
 
 - On `useTRPC()`, `unstable_$prefetch` and `unstable_$prefetchInfinite` follow the rule of TanStack Query's [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery): they start a query only if the cache has no entry for it, with no data, no error and no request in flight. The cache looks it up by TanStack Query's query hash, which ignores the order of keys in the input, so re-renders with the same input start nothing. When an input changes, the new query starts.
 - They're plain calls, not hooks: you can call them conditionally, and React Compiler can memoize them.
-- A query with cached data renders it at once. The component that reads the handle refetches it in the background if it's stale, as `useSuspenseQuery` always does.
-- To wait for a query, read its handle with `useSuspenseQuery`. On `useTRPC()`, `unstable_$ensure` and `unstable_$fetch` throw, since a render can't wait.
+- A query with cached data renders it at once. The component that reads the handle refetches it in the background if it's stale, as `useQuery` and `useSuspenseQuery` always do.
+- A render can't wait, so on `useTRPC()`, `unstable_$ensure` and `unstable_$fetch` throw. Read the handle with `useSuspenseQuery` to suspend until the data arrives, or with `useQuery` to show a [loading state](#use-query).
 - Start queries high in the tree: in the page, not in the components that read the handles. Starting queries where they're read brings back the waterfall.
 - With server rendering, the queries start in the server render too. TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start) streams them to the browser. Elsewhere, such as React Router's framework mode, nothing sends their data to the browser, which fetches them again: start them in a [loader](#react-router) instead.
 - Only the proxy from `useTRPC()` behaves this way. A proxy from `createTRPCOptionsProxy` is for loaders and server components, where `unstable_$prefetch` refetches stale data like `queryClient.prefetchQuery`. During render, it would refetch on every render.
@@ -1208,7 +1253,7 @@ import { unstable_createHydrateClient } from '@trpc/tanstack-react-query';
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
-The client components are the same either way: they read the handle with `useSuspenseQuery(trpc.unstable_$fromHandle(...))`, as in [Typing props](#typing-props).
+The client components are the same either way: they read the handle with `useSuspenseQuery` or `useQuery`, as in [Typing props](#typing-props).
 
 ### `HydrateClient` {#hydrate-client}
 
@@ -1338,7 +1383,7 @@ export default async function PostPage(props: {
 }
 ```
 
-- `Post` needs no `Suspense` boundary: the data is in the cache before it renders.
+- The data is in the cache before `Post` renders, so it shows the post at once. If the cache loses the post later, `Post` suspends and shows the nearest `loading.tsx` or `Suspense` fallback: see [When the cache loses the data](#cache-loses-data).
 - To use the data on the server, read it from the cache: see [Using the data in a loader](#loader-data).
 
 To wait for some queries and stream others on the same page, see [Combining both](#combining-both).
