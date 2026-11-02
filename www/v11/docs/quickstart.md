@@ -419,14 +419,14 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 
 ```ts twoslash title="client/index.ts"
 // @target: esnext
-// @filename: trpc.ts
+// @filename: server/trpc.ts
 // @include: trpc
-// @filename: appRouter.ts
+// @filename: server/appRouter.ts
 // @include: appRouter
-// @filename: client.ts
+// @filename: client/index.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './appRouter';
+import type { AppRouter } from '../server/appRouter';
 //     👆 **type-only** imports are stripped at build time
 
 // Pass AppRouter as a type parameter. 👇 This lets `trpc` know
@@ -448,13 +448,13 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 
 ```ts twoslash title="client/index.ts"
 // @target: esnext
-// @filename: trpc.ts
+// @filename: server/trpc.ts
 // @include: trpc
-// @filename: appRouter.ts
+// @filename: server/appRouter.ts
 // @include: appRouter
-// @filename: client.ts
+// @filename: client/index.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './appRouter';
+import type { AppRouter } from '../server/appRouter';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -477,13 +477,13 @@ You can also use your autocomplete to explore the API on your client
 
 ```ts twoslash title="client/index.ts"
 // @target: esnext
-// @filename: trpc.ts
+// @filename: server/trpc.ts
 // @include: trpc
-// @filename: appRouter.ts
+// @filename: server/appRouter.ts
 // @include: appRouter
-// @filename: client.ts
+// @filename: client/index.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './appRouter';
+import type { AppRouter } from '../server/appRouter';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [

@@ -5,6 +5,26 @@ sidebar_label: Subscriptions
 slug: /server/subscriptions
 section: "Backend Usage"
 order: 27
+skill:
+  name: subscriptions
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+    - links
+  description: "Set up real-time event streams with async generator subscriptions
+    using .subscription(async function*() { yield }). SSE via
+    httpSubscriptionLink is recommended over WebSocket. Use tracked(id, data)
+    from @trpc/server for reconnection recovery with lastEventId. WebSocket via
+    wsLink and createWSClient from @trpc/client, applyWSSHandler from
+    @trpc/server/adapters/ws. Configure SSE ping with initTRPC.create({ sse: {
+    ping: { enabled, intervalMs } } }). AbortSignal via opts.signal for cleanup.
+    splitLink to route subscriptions. Consume them with the client's
+    .subscribe(input, { onData, onError }) and .unsubscribe()."
+  references:
+    - server/websockets
+    - client/links/httpSubscriptionLink
+    - client/links/wsLink
 ---
 
 ## Introduction
@@ -131,6 +151,66 @@ export const subRouter = router({
     }),
 });
 ```
+
+## Subscribing from the client
+
+Route subscriptions to [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md) (SSE) or [`wsLink`](../client/links/wsLink.md) with a [`splitLink`](../client/links/splitLink.md), then call `.subscribe()` with the input and your callbacks. Tracked events arrive in `onData` as `{ id, data }`.
+
+```ts twoslash title="client.ts"
+// @types: node
+// @filename: server.ts
+import { initTRPC, tracked } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+type Post = { id: string; title: string };
+export const appRouter = t.router({
+  onPostAdd: t.procedure
+    .input(z.object({ lastEventId: z.string().nullish() }).optional())
+    .subscription(async function* () {
+      const post: Post = { id: '1', title: 'Hello' };
+      yield tracked(post.id, post);
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpSubscriptionLink,
+  splitLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: httpSubscriptionLink({ url: 'http://localhost:3000' }),
+      false: httpBatchLink({ url: 'http://localhost:3000' }),
+    }),
+  ],
+});
+
+const subscription = client.onPostAdd.subscribe(
+  { lastEventId: null },
+  {
+    onData(event) {
+      //   ^?
+      console.log(event.id, event.data.title);
+    },
+    onError(err) {
+      console.error(err);
+    },
+  },
+);
+
+// stop listening
+subscription.unsubscribe();
+```
+
+For React, see [`subscriptionOptions`](../client/tanstack-react-query/usage.md#subscriptionOptions) with TanStack React Query, or the classic [`useSubscription()`](../client/react/useSubscription.md).
 
 ## Pull data in a loop
 
@@ -447,3 +527,11 @@ export const appRouter = router({
     }),
 });
 ```
+
+## Common mistakes
+
+- **Not passing `opts.signal` on.** Pass it to what you're waiting on, like `on(ee, 'add', { signal: opts.signal })`, or check `opts.signal.aborted` in loops. Otherwise your generator can keep waiting, with its listeners attached, after the client is gone.
+- **Fetching missed events before listening for new ones.** Events emitted in between are lost. Start listening first, as in the [`tracked()` example](#tracked).
+- **Tracking an event with an empty id.** `tracked('', data)` throws, since an empty id means "no id" in SSE.
+- **Returning an `observable()`.** Observable subscriptions are deprecated and will be removed in v12. Use an async generator.
+- **Pinging less often than the client reconnects.** With SSE, keep `sse.ping.intervalMs` lower than `sse.client.reconnectAfterInactivityMs`, or the client reconnects between pings. tRPC throws when the ping interval is the longer one. See [Server Ping Configuration](../client/links/httpSubscriptionLink.md#server-ping).

@@ -90,6 +90,30 @@ export function MyComponent() {
 }
 ```
 
+## Hiding internal error messages
+
+The default shape includes the error's `message`, even for unexpected errors such as a failed database query. To keep those details out of production responses, replace the message of `INTERNAL_SERVER_ERROR`s:
+
+```ts twoslash title='server.ts'
+// @types: node
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create({
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+    if (
+      error.code === 'INTERNAL_SERVER_ERROR' &&
+      process.env.NODE_ENV === 'production'
+    ) {
+      return { ...shape, message: 'Internal server error' };
+    }
+    return shape;
+  },
+});
+```
+
+The full error, with its `cause`, still reaches your [`onError`](./error-handling.md#handling-errors) handler.
+
 ## Per-procedure error formatting
 
 Errors can be formatted on a per-procedure basis using the `.errors()` method, which can be chained to produce a union of possible error shapes for each procedure.

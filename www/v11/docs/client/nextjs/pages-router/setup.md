@@ -6,6 +6,29 @@ slug: /client/nextjs/pages-router/setup
 section: "Client Usage"
 parent: "client/nextjs"
 order: 70
+skill:
+  name: nextjs-pages-router
+  package: "@trpc/next"
+  type: framework
+  requires:
+    - server-setup
+    - client-setup
+  description: Set up tRPC in Next.js Pages Router with createNextApiHandler,
+    createTRPCNext (config, transformer, ssr, ssrPrepass, responseMeta) and the
+    withTRPC HOC over @trpc/react-query hooks. Prefetch selected pages with
+    createServerSideHelpers in getServerSideProps or getStaticProps and return
+    trpcState, or SSR every query with ssr true, forwarding request headers.
+  include:
+    - client/nextjs/pages-router/server-side-helpers
+    - client/nextjs#choosing-between-app-router-and-pages-router
+  references:
+    - client/nextjs/pages-router/ssr
+    - client/nextjs/pages-router/ssg
+    - server/adapters/nextjs
+    - client/nextjs/pages-router/aborting-procedure-calls
+    - client/react/useQuery
+    - client/react/useMutation
+    - client/react/useUtils
 ---
 
 :::caution
@@ -305,8 +328,11 @@ The `config`-argument is a function that returns an object that configures the t
 - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v5/docs/reference/QueryClient)
 - `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v5/docs/reference/QueryClient)
   - **Note:** You can only provide either a `queryClient` or a `queryClientConfig`.
-- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
+
+### `transformer`
+
+If your router uses a [data transformer](/docs/server/data-transformers), pass it here as well as to your links. tRPC uses it to read the `trpcState` that [SSR](./ssr.md), [SSG](./ssg.md) and the [server-side helpers](./server-side-helpers.md) send to the page.
 
 ### `overrides`: (default: `undefined`) {#overrides}
 
@@ -314,11 +340,11 @@ Configure [overrides for React Query's hooks](/docs/client/react/useUtils#invali
 
 ### `ssr`-boolean (default: `false`)
 
-Whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
+Whether tRPC should await queries when server-side rendering a page. Defaults to `false`. Enabling it requires the `ssrPrepass` option, imported from `@trpc/next/ssrPrepass`, and you can pass a function of the request instead of `true`. See [SSR](./ssr.md).
 
 ### `responseMeta`-callback
 
-Ability to set request headers and HTTP status when server-side rendering.
+Ability to set response headers and HTTP status when server-side rendering, so it requires `ssr`. It receives the request's `ctx` and the `clientErrors` of the queries that failed. Return `headers` as a plain object: a `Headers` instance is ignored here.
 
 #### Example
 
@@ -332,6 +358,7 @@ export type AppRouter = typeof appRouter;
 // @filename: utils/trpc.ts
 // ---cut---
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -342,8 +369,28 @@ export const trpc = createTRPCNext<AppRouter>({
       ],
     };
   },
+  ssr: true,
+  ssrPrepass,
+  responseMeta(opts) {
+    const error = opts.clientErrors[0];
+    if (error) {
+      // propagate the HTTP status of the first failed query
+      return { status: error.data?.httpStatus ?? 500 };
+    }
+    return {
+      headers: { 'cache-control': 's-maxage=1, stale-while-revalidate=86400' },
+    };
+  },
 });
 ```
+
+## Common mistakes
+
+- **Turning on `ssr: true` without weighing the cost.** It adds a `getInitialProps` to your app, which turns off Next.js' Automatic Static Optimization and [doesn't mix well with `getServerSideProps`](./ssr.md). It also renders the page repeatedly until no query is fetching, so every query delays the response. To prefetch only some pages, keep `ssr: false` and use the [server-side helpers](./server-side-helpers.md) in `getServerSideProps` or `getStaticProps`.
+- **Not forwarding the request's headers during SSR.** The server-side render calls your API without the user's cookies unless the link's `headers()` passes on `ctx.req.headers`, and it needs an absolute URL. See [SSR](./ssr.md).
+- **Using Suspense with `ssr: true`.** If a query fails while rendering on the server, the whole page fails, even inside an `<ErrorBoundary />`.
+- **Returning the dehydrated state under another key.** `withTRPC` only reads `pageProps.trpcState`, so return `{ props: { trpcState: helpers.dehydrate() } }`. Otherwise the client fetches every query again.
+- **Mixing in App Router setup.** `createTRPCNext` and `withTRPC` are for the Pages Router. In the App Router, follow the [App Router setup](/docs/client/nextjs/app-router-setup) instead.
 
 ## Next steps
 

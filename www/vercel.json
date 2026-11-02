@@ -576,11 +576,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/skills",
-      "destination": "/docs/quickstart",
-      "permanent": true
-    },
-    {
       "source": "/docs/introduction",
       "destination": "/docs",
       "permanent": true

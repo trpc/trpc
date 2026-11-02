@@ -2,11 +2,28 @@
 id: setup
 title: TanStack React Query
 sidebar_label: Setup
-description: TanStack React Query setup
+description: Set up the TanStack React Query integration with or without React context, then query, mutate and invalidate
 slug: /client/tanstack-react-query/setup
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 48
+skill:
+  name: react-query-setup
+  package: "@trpc/tanstack-react-query"
+  type: framework
+  requires:
+    - client-setup
+    - links
+  description: Set up @trpc/tanstack-react-query with createTRPCContext(),
+    TRPCProvider and the useTRPC() hook, or createTRPCOptionsProxy() without
+    React context. Pass queryOptions/infiniteQueryOptions/mutationOptions/
+    subscriptionOptions factories to TanStack Query hooks, invalidate with
+    queryClient.invalidateQueries and queryFilter/pathFilter, read and write the
+    cache with queryKey, prefix keys with keyPrefix, and infer types with
+    inferInput/inferOutput.
+  references:
+    - client/tanstack-react-query/usage
+    - client/tanstack-react-query/server-components
 ---
 
 Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.
@@ -311,3 +328,66 @@ export default function UserList() {
   );
 }
 ```
+
+### 5. Invalidate queries after a mutation
+
+There is no tRPC-specific cache API: use TanStack's `QueryClient` with the keys and filters from `trpc`. `queryFilter()` matches one procedure, for every input if you leave the input out, `pathFilter()` matches every query under a router, and `trpc.pathFilter()` matches every tRPC query. See [Usage](./usage.md) for all of them.
+
+```tsx twoslash title='components/create-user.tsx'
+// @jsx: react-jsx
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  user: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => ({ id: input.id, name: 'Bilbo' })),
+    create: t.procedure
+      .input(z.object({ name: z.string() }))
+      .mutation(({ input }) => ({ id: 'id_frodo', name: input.name })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: components/create-user.tsx
+// ---cut---
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from '../utils/trpc';
+
+export function CreateUser() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const userCreator = useMutation(
+    trpc.user.create.mutationOptions({
+      onSuccess: async (user) => {
+        // Write the new user into the cache...
+        queryClient.setQueryData(trpc.user.byId.queryKey({ id: user.id }), user);
+        // ...and refetch every query under the `user` router
+        await queryClient.invalidateQueries(trpc.user.pathFilter());
+      },
+    }),
+  );
+
+  return (
+    <button onClick={() => userCreator.mutate({ name: 'Frodo' })}>
+      Create Frodo
+    </button>
+  );
+}
+```
+
+## Common mistakes
+
+- **Calling `queryFilter()` on a router.** `queryOptions`, `queryKey` and `queryFilter` only exist on query procedures. For a router, use `pathKey()` and `pathFilter()`.
+- **Writing query keys by hand.** A `useQuery({ queryKey: ['user', id], queryFn })` that calls the tRPC client works, but its key isn't tRPC's, so `queryFilter()`/`pathFilter()` invalidations and server-prefetched data never match it. Use the `trpc` factories instead.
+- **Using the classic hooks.** `trpc.user.byId.useQuery()` and `trpc.useUtils()` belong to the [classic `@trpc/react-query` client](/docs/client/react). In this package, pass `trpc.*.queryOptions()` to TanStack's hooks and use `useQueryClient()` for the cache. See [Migrating](./migrating.md).
+- **Calling `useTRPC()` outside the provider.** It throws `useTRPC() can only be used inside of a <TRPCProvider>`. Mount `TRPCProvider`, with the same `queryClient` you give `QueryClientProvider`, above every component that calls `useTRPC()`. The [singleton setup](#3c-set-up-without-react-context) has no provider: import `trpc` instead.
+- **Sharing one `QueryClient` across server requests.** A module-level `new QueryClient()` is fine in a client-only SPA, but with server rendering it leaks one user's cache into another's. Create one per request on the server, as `getQueryClient()` does above.

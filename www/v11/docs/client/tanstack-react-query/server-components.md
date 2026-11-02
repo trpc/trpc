@@ -2,6 +2,7 @@
 id: server-components
 title: Set up with React Server Components
 sidebar_label: Server Components
+description: Prefetch tRPC queries in React Server Components, hydrate them into client components, and call procedures directly on the server
 slug: /client/tanstack-react-query/server-components
 section: "Client Usage"
 parent: "client/tanstack-react-query"

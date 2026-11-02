@@ -3,6 +3,7 @@ id: nextjs
 title: Next.js Adapter
 sidebar_label: Next.js
 slug: /server/adapters/nextjs
+description: Serve tRPC from a Next.js API route with createNextApiHandler, or from an App Router route handler with fetchRequestHandler
 section: "Backend Usage"
 parent: "server/adapters"
 order: 16

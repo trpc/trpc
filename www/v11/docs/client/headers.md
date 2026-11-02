@@ -51,7 +51,7 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-### Example with auth login
+## Example with auth login
 
 ```ts twoslash title='auth.ts'
 // @target: esnext

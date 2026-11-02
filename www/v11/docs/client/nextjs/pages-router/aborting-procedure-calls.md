@@ -2,6 +2,7 @@
 id: aborting-procedure-calls
 title: Aborting Procedure Calls
 sidebar_label: Aborting Procedure Calls
+description: Cancel in-flight requests when a component unmounts with abortOnUnmount, globally or per request
 slug: /client/nextjs/pages-router/aborting-procedure-calls
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"

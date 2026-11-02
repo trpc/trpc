@@ -1,6 +1,7 @@
 ---
 id: splitLink
 title: Split Link
+description: A link that routes each operation down one of two link chains based on a condition
 sidebar_label: Split Link
 slug: /client/links/splitLink
 section: "Client Usage"

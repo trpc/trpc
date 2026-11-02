@@ -6,6 +6,22 @@ slug: /server/adapters/express
 section: "Backend Usage"
 parent: "server/adapters"
 order: 14
+skill:
+  name: adapter-express
+  package: '@trpc/server'
+  type: core
+  requires:
+    - server-setup
+  description: >
+    Mount tRPC as Express middleware with createExpressMiddleware() from
+    @trpc/server/adapters/express. Access Express req/res in createContext via
+    CreateExpressContextOptions. Mount at a path prefix like
+    app.use('/trpc', ...). Adapter options: onError, maxBatchSize,
+    maxBodySize, middleware. Body parsers registered before tRPC (Express 4's
+    express.json(), or express.raw()) break FormData and binary inputs, so
+    scope them to non-tRPC routes.
+  include:
+    - server/adapters#common-options
 ---
 
 ## Example app
@@ -109,3 +125,39 @@ Your endpoints are now available via HTTP!
 | ------------ | ---------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:4000/trpc/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `{name: string}`            |
+
+`createContext` receives Express's `req` and `res`, so you can, for example, read `req.headers.authorization` to [authorize the user](../authorization.md). The middleware accepts the [options every adapter takes](../adapters.md#common-options), like `onError` and `maxBatchSize`, plus `middleware` and `maxBodySize`.
+
+## Body parsers
+
+tRPC parses request bodies itself, so tRPC routes don't need `express.json()`. If a body parser runs before tRPC anyway, tRPC uses the `req.body` it parsed, which works for JSON. For [FormData and binary inputs](../non-json-content-types.md) it depends on your Express version:
+
+- **Express 5**: `express.json()` and `express.urlencoded()` leave other content types unread, so tRPC still reads them.
+- **Express 4**: the parsers set `req.body` to `{}` on content types they skip, so tRPC receives `{}` instead of the form data or file.
+- In both versions, a parser that reads the body you upload, like `express.raw()` for `application/octet-stream`, breaks binary inputs.
+
+To be safe, register body parsers only on the routes that need them:
+
+```ts twoslash title='server.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
+import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
+import { appRouter } from './router';
+
+const app = express();
+
+app.use('/api', express.json()); // only for your own `/api/*` routes
+app.post('/api/webhook', (req, res) => {
+  res.json({ received: req.body });
+});
+
+app.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter }));
+
+app.listen(4000);
+```

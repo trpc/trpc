@@ -5,6 +5,20 @@ sidebar_label: Error Handling
 slug: /server/error-handling
 section: "Backend Usage"
 order: 21
+skill:
+  name: error-handling
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Throw typed errors with TRPCError and error codes (NOT_FOUND,
+    UNAUTHORIZED, FORBIDDEN, BAD_REQUEST, INTERNAL_SERVER_ERROR), configure
+    errorFormatter for client-side Zod error display or to hide internal error
+    messages, format errors per procedure with .errors(), handle errors globally
+    with the adapter's onError callback, map tRPC errors to HTTP status codes
+    with getHTTPStatusCodeFromError(), control stack traces with isDev.
+  include:
+    - server/error-formatting
 ---
 
 Whenever an error occurs in a procedure, tRPC responds to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.
@@ -139,6 +153,12 @@ Results in the following response:
   }
 }
 ```
+
+Throw a `TRPCError` with the code that fits, like `NOT_FOUND` or `FORBIDDEN`, so the client gets the right HTTP status. Any other error thrown in a procedure or middleware becomes an `INTERNAL_SERVER_ERROR` with the original error as its `cause`.
+
+:::warning
+The `message` of an error you didn't throw as a `TRPCError` is still sent to the client, in production too. If your errors may contain internal details, [hide them in your error formatter](./error-formatting.md#hiding-internal-error-messages).
+:::
 
 ## Handling errors
 

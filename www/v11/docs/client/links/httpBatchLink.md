@@ -1,6 +1,7 @@
 ---
 id: httpBatchLink
 title: HTTP Batch Link
+description: A terminating link that batches concurrent tRPC calls into a single HTTP request
 sidebar_label: HTTP Batch Link
 slug: /client/links/httpBatchLink
 section: "Client Usage"
@@ -104,6 +105,12 @@ export interface HTTPLinkOptions {
   headers?:
     | HTTPHeaders
     | ((opts: { opList: NonEmptyArray<Operation> }) => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Send all requests as POST requests regardless of the procedure type
+   * The server must separately allow overriding the method. See:
+   * @see https://trpc.io/docs/rpc
+   */
+  methodOverride?: 'POST';
 }
 ```
 
@@ -141,18 +148,38 @@ const client = createTRPCClient<AppRouter>({
 
 `maxBatchSize` limits how many operations may be sent in a single batch request. Requests exceeding this limit will be rejected with a `400 Bad Request` error. This can be passed to any tRPC adapter.
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
 
 createHTTPServer({
+  router: appRouter,
   maxBatchSize: 10,
 });
 ```
 
 or for example if using Next.js:
 
-```ts title='pages/api/trpc/[trpc].ts'
-export default trpcNext.createNextApiHandler({
+```ts twoslash title='pages/api/trpc/[trpc].ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: pages/api/trpc/[trpc].ts
+// ---cut---
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../router';
+
+export default createNextApiHandler({
+  router: appRouter,
   maxBatchSize: 10,
 });
 ```

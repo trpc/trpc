@@ -96,7 +96,7 @@ export type AppRouter = typeof appRouter;
 
 ## Merging with `t.mergeRouters`
 
-If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
+If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`. It throws if two routers define the same procedure path, so keep the names unique. Merge routers from the same [`t`](/docs/server/routers#initialize-trpc): it also throws if they come from separate tRPC instances that each set a transformer or error formatter.
 
 ```ts twoslash title='routers/user.ts'
 // @filename: trpc.ts
