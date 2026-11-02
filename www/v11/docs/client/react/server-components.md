@@ -345,7 +345,10 @@ export const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
 Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
 we can take advantage of the RSC capabilities by prefetching queries in a server component high up the tree. You may be familiar with this
 concept as "render as you fetch" commonly implemented as loaders. This means the request fires as soon as possible but without suspending until
-the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
+the data is needed by using the `useSuspenseQuery` hook.
+
+Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch.
+For a component on `useQuery`, like the one below, `await` the `prefetch` call instead.
 
 ```tsx twoslash title='app/page.tsx'
 // @filename: trpc/init.ts
@@ -379,7 +382,7 @@ import { trpc, HydrateClient } from '../trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  void trpc.hello.prefetch();
+  await trpc.hello.prefetch();
 
   return (
     <HydrateClient>
