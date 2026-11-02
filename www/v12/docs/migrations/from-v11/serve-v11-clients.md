@@ -89,7 +89,7 @@ What differs from a v11 server:
 A deployed app needs no types, but an app you keep working on while it's still on `@trpc/client` 11 does, and the v12 `AppRouter` doesn't fit `createTRPCClient<AppRouter>()`. Either keep the old router's type until the app moves, or build a v11 router type from the new router with `@trpc/server`'s own types, so procedures you add show up in the old app too:
 
 ```sample title="v11-app-router.ts"
-docs/src/v11-app-router.ts
+v12/src/v11-app-router.ts
 ```
 
 The old app imports it as its `AppRouter`:

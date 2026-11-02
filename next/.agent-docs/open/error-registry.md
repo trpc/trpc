@@ -218,7 +218,7 @@ createCodeErrorBoundary({
 
 ```tsx twoslash
 // ---cut-start---
-import { createErrorBoundary } from '../../../../packages/tanstack-react-query/src/error-boundary.ts';
+import { createErrorBoundary } from '../../../../next/packages/tanstack-react-query/src/error-boundary.ts';
 // ---cut-end---
 // Today: no source, so any string is a claim, and the error is unknown
 const [, useAuthBoundary] = createErrorBoundary({
@@ -1059,7 +1059,7 @@ function PostTitle(props: { id: string }) {
 import { useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { z } from 'zod';
-import { createErrorBoundary } from '../../../../packages/tanstack-react-query/src/error-boundary.ts';
+import { createErrorBoundary } from '../../../../next/packages/tanstack-react-query/src/error-boundary.ts';
 import { authed } from './server.ts';
 const router = {
   post: {

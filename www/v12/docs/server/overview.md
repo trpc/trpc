@@ -10,7 +10,7 @@ v11: server/overview
 A server is a few plain values. `initTrpc()` makes the root `t` from the context type, `t.procedure` builds procedures, a router is an object of procedures, and `createFetchHandler` serves the router over HTTP, SSE and WebSockets. This is the blog app that most code blocks in these docs build on:
 
 ```sample title="server.ts"
-docs/src/server.ts
+v12/src/server.ts
 ```
 
 ## Building procedures

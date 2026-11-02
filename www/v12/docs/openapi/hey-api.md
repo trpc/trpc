@@ -13,7 +13,7 @@ experiment: contracts
 This router serves the blog over REST: a query with a declared `NOT_FOUND` error, a mutation behind a bearer token that takes a file, and a subscription. The document declares the `bearer` scheme that `authed` routes require ([Security and tags](./document.md#security-and-tags)):
 
 ```sample title="rest.ts"
-docs/src/rest.ts
+v12/src/rest.ts
 ```
 
 A script writes it where Hey API reads it:
