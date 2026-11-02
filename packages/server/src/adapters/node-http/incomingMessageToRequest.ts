@@ -91,6 +91,10 @@ function createBody(
     },
   });
 }
+/**
+ * The full URL of a Node.js request, from its `Host` header and socket.
+ * Throws a `BAD_REQUEST` error if it isn't a valid URL.
+ */
 export function createURL(req: NodeHTTPRequest): URL {
   try {
     const protocol =
@@ -137,7 +141,8 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
 }
 
 /**
- * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
+ * Turns a Node.js `IncomingMessage` into a Fetch API `Request`. The
+ * request's signal aborts when the client disconnects.
  */
 export function incomingMessageToRequest(
   req: NodeHTTPRequest,

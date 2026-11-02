@@ -6,6 +6,7 @@ import type {
   Unsubscribable,
 } from './types';
 
+/** Maps each value with `project`. */
 export function map<TValueBefore, TError, TValueAfter>(
   project: (value: TValueBefore, index: number) => TValueAfter,
 ): OperatorFunction<TValueBefore, TError, TValueAfter, TError> {
@@ -29,6 +30,10 @@ export function map<TValueBefore, TError, TValueAfter>(
 }
 
 interface ShareConfig {}
+/**
+ * Shares one subscription to the source between all subscribers. It
+ * starts with the first subscriber and ends when the last unsubscribes.
+ */
 export function share<TValue, TError>(
   _opts?: ShareConfig,
 ): MonoTypeOperatorFunction<TValue, TError> {
@@ -131,6 +136,7 @@ export function share<TValue, TError>(
   };
 }
 
+/** Calls `observer` with each value, error and completion, and passes them on unchanged. */
 export function tap<TValue, TError>(
   observer: Partial<Observer<TValue, TError>>,
 ): MonoTypeOperatorFunction<TValue, TError> {
@@ -155,6 +161,7 @@ export function tap<TValue, TError>(
 }
 
 const distinctUnsetMarker = Symbol();
+/** Skips values equal to the one before, by `compare` (`===` by default). */
 export function distinctUntilChanged<TValue, TError>(
   compare: (a: TValue, b: TValue) => boolean = (a, b) => a === b,
 ): MonoTypeOperatorFunction<TValue, TError> {
@@ -194,6 +201,7 @@ const isDeepEqual = <T>(a: T, b: T): boolean => {
     Object.entries(a).every(([k, v]) => isDeepEqual(v, b[k as keyof T]))
   );
 };
+/** Skips values deeply equal to the one before. */
 export function distinctUntilDeepChanged<
   TValue,
   TError,

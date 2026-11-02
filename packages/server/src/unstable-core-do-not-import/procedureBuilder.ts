@@ -102,7 +102,8 @@ type ProcedureBuilderDef<TMeta> = {
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 /**
- * Procedure resolver options (what the `.query()`, `.mutation()`, and `.subscription()` functions receive)
+ * What a resolver passed to `.query()`, `.mutation()` or `.subscription()`
+ * gets.
  * @internal
  */
 export interface ProcedureResolverOptions<
@@ -111,19 +112,20 @@ export interface ProcedureResolverOptions<
   TContextOverridesIn,
   TInputOut,
 > {
+  /** The context, with what middlewares added to it. */
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
+  /** The input, as the validators returned it. */
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
   /**
-   * The AbortSignal of the request
+   * Aborts when the client cancels the request or disconnects.
    */
   signal: AbortSignal | undefined;
   /**
-   * The path of the procedure
+   * The procedure's path, such as `post.byId`.
    */
   path: string;
   /**
-   * The index of this call in a batch request.
-   * Will be set when the procedure is called as part of a batch.
+   * The call's index in its batch, when it was batched.
    */
   batchIndex?: number;
 }
@@ -159,8 +161,9 @@ export type AnyProcedureBuilder = ProcedureBuilder<
 >;
 
 /**
- * Infer the context type from a procedure builder
- * Useful to create common helper functions for different procedures
+ * The options a resolver built from this procedure builder gets: its
+ * `ctx`, `input` and so on. Use it to type helpers that resolvers call.
+ * @see https://trpc.io/docs/server/procedures#inferProcedureBuilderResolverOptions
  */
 export type inferProcedureBuilderResolverOptions<
   TProcedureBuilder extends AnyProcedureBuilder,
@@ -196,6 +199,11 @@ export type inferProcedureBuilderResolverOptions<
       >
     : never;
 
+/**
+ * Builds a procedure step by step. Each method returns a new builder, so a
+ * builder can be the base of many procedures.
+ * @see https://trpc.io/docs/server/procedures
+ */
 export interface ProcedureBuilder<
   TContext,
   TMeta,
@@ -214,8 +222,8 @@ export interface ProcedureBuilder<
   TErrorShape = unknown,
 > {
   /**
-   * Add an input parser to the procedure.
-   * @see https://trpc.io/docs/server/validators
+   * Adds a validator for the input. Chain several to merge object inputs.
+   * @see https://trpc.io/docs/server/validators#input-validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
@@ -241,8 +249,9 @@ export interface ProcedureBuilder<
     TErrorShape
   >;
   /**
-   * Add an output parser to the procedure.
-   * @see https://trpc.io/docs/server/validators
+   * Adds a validator for the output, which checks what the resolver
+   * returns.
+   * @see https://trpc.io/docs/server/validators#output-validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -258,7 +267,8 @@ export interface ProcedureBuilder<
     TErrorShape
   >;
   /**
-   * Add a meta data to the procedure.
+   * Sets the procedure's metadata, which middlewares can read. It's
+   * shallow-merged with any metadata set before.
    * @see https://trpc.io/docs/server/metadata
    */
   meta(
@@ -275,12 +285,10 @@ export interface ProcedureBuilder<
     TErrorShape
   >;
   /**
-   * Add per procedure error formatters.
-   *
-   * An error will bubble until a `.errors()` handler returns a shape
-   * or it reaches the global errorFormatter
-   *
-   * @see https://trpc.io/docs/server/error-formatting
+   * Adds an error formatter for this procedure. An error goes to the last
+   * `.errors()` formatter first, and on to earlier ones and the root
+   * `errorFormatter` until one returns a shape.
+   * @see https://trpc.io/docs/server/error-formatting#per-procedure-error-formatting
    */
   errors<$Shape extends TRPCErrorShape | undefined | void>(
     formatter: ProcedureErrorFormatter<TContext, TContextOverrides, $Shape>,
@@ -296,7 +304,8 @@ export interface ProcedureBuilder<
     FoldErrorShape<TErrorShape, $Shape>
   >;
   /**
-   * Add a middleware to the procedure.
+   * Adds a middleware, which runs before the resolver and can change the
+   * context.
    * @see https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
@@ -327,7 +336,7 @@ export interface ProcedureBuilder<
   >;
 
   /**
-   * @deprecated use {@link concat} instead
+   * @deprecated Use {@link concat} instead.
    */
   unstable_concat<
     $Context,
@@ -367,7 +376,9 @@ export interface ProcedureBuilder<
   >;
 
   /**
-   * Combine two procedure builders
+   * Adds another procedure builder's inputs, middlewares and context to
+   * this one. Useful for plugins that ship their own procedure builder.
+   * @see https://trpc.io/docs/server/middlewares#concat
    */
   concat<
     $Context,
@@ -406,8 +417,8 @@ export interface ProcedureBuilder<
     FoldErrorShape<TErrorShape, $ErrorShape>
   >;
   /**
-   * Query procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * Ends the builder with a query: a procedure that reads data.
+   * @see https://trpc.io/docs/server/procedures#writing-procedures
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -430,8 +441,8 @@ export interface ProcedureBuilder<
       }>;
 
   /**
-   * Mutation procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * Ends the builder with a mutation: a procedure that changes data.
+   * @see https://trpc.io/docs/server/procedures#writing-procedures
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -454,7 +465,8 @@ export interface ProcedureBuilder<
       }>;
 
   /**
-   * Subscription procedure
+   * Ends the builder with a subscription: a procedure that streams events
+   * from an async generator.
    * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends AsyncIterable<any, void, any>>(
@@ -475,8 +487,9 @@ export interface ProcedureBuilder<
         errorShape: TErrorShape;
       }>;
   /**
-   * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
-   * This feature will be removed in v12 of tRPC.
+   * Ends the builder with a subscription that returns an observable.
+   * @deprecated Return an async generator instead. Observable subscriptions
+   * will be removed in v12.
    * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends Observable<any, any>>(
@@ -497,8 +510,9 @@ export interface ProcedureBuilder<
         errorShape: TErrorShape;
       }>;
   /**
-   * Overrides the way a procedure is invoked
-   * Do not use this unless you know what you're doing - this is an experimental API
+   * Replaces how the procedure is called, for example to make it a server
+   * action. Experimental: it may change in any release.
+   * @see https://trpc.io/docs/client/nextjs/server-actions#1-define-a-base-procedure-with-experimental_caller
    */
   experimental_caller(
     caller: CallerOverride<TContext>,
@@ -677,6 +691,7 @@ function createResolver(
 }
 
 /**
+ * What calling a procedure takes.
  * @internal
  */
 export interface ProcedureCallOptions<TContext> {

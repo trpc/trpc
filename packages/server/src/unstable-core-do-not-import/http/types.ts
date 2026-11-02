@@ -13,60 +13,74 @@ import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
 
 /**
- * @deprecated use `Headers` instead, this will be removed in v12
+ * @deprecated Use `Headers` instead. This will be removed in v12.
  */
 type HTTPHeaders = Dict<string[] | string>;
 
+/**
+ * The status and headers `responseMeta` sets on a response.
+ * @see https://trpc.io/docs/server/caching#using-responsemeta-to-cache-responses
+ */
 export interface ResponseMeta {
+  /** The HTTP status. Defaults to the one tRPC picks from the results. */
   status?: number;
+  /** Headers to add to the response. */
   headers?: Headers | HTTPHeaders;
 }
 
 /**
+ * Sets a response's status and headers from the request and its results.
+ * @see https://trpc.io/docs/server/caching#using-responsemeta-to-cache-responses
  * @internal
  */
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**
-   * The different tRPC paths requested
-   * @deprecated use `info` instead, this will be removed in v12
+   * The paths of the procedures called.
+   * @deprecated Use `info` instead. This will be removed in v12.
    **/
   paths: readonly string[] | undefined;
+  /** The request, if it could be parsed. */
   info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
+  /** The errors the calls threw. */
   errors: TRPCError[];
   /**
-   * `true` if the `ResponseMeta` is being generated without knowing the response data (e.g. for streamed requests).
+   * `true` when it's called before the results are known, as for streamed
+   * responses.
    */
   eagerGeneration: boolean;
 }) => ResponseMeta;
 
 /**
- * Base interface for anything using HTTP
+ * The options every HTTP adapter takes.
  */
 export interface HTTPBaseHandlerOptions<
   TRouter extends AnyRouter,
   TRequest,
 > extends BaseHandlerOptions<TRouter, TRequest> {
   /**
-   * Add handler to be called before response is sent to the user
-   * Useful for setting cache headers
-   * @see https://trpc.io/docs/server/caching
+   * Sets the response's status and headers before it's sent, for example
+   * to cache it.
+   * @see https://trpc.io/docs/server/caching#using-responsemeta-to-cache-responses
    */
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
+/** The `trpc-accept` header's value for a streamed response. */
 export type TRPCAcceptHeader = 'application/jsonl';
 
+/** One procedure call in a request. */
 export interface TRPCRequestInfoProcedureCall {
   path: string;
   /**
-   * Read the raw input (deduped and memoized)
+   * Reads the call's input as the client sent it. It's read once, however
+   * often it's called.
    */
   getRawInput: () => Promise<unknown>;
   /**
-   * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+   * The input if it was read already. Doesn't read the body.
    */
   result: () => unknown;
   /**
@@ -81,43 +95,46 @@ export interface TRPCRequestInfoProcedureCall {
 }
 
 /**
- * Information about the incoming request
+ * What tRPC knows about a request, which `createContext` gets as `info`.
+ * @see https://trpc.io/docs/server/context#creating-the-context
  * @public
  */
 export interface TRPCRequestInfo {
   /**
-   * The `trpc-accept` header
+   * The `trpc-accept` header.
    */
   accept: TRPCAcceptHeader | null;
   /**
-   * The type of the request
+   * The type of the procedures called.
    */
   type: ProcedureType | 'unknown';
   /**
-   * If the content type handler has detected that this is a batch call
+   * Whether the request is a batch.
    */
   isBatchCall: boolean;
   /**
-   * The calls being made
+   * The procedure calls in the request.
    */
   calls: TRPCRequestInfoProcedureCall[];
   /**
-   * Connection params when using `httpSubscriptionLink` or `createWSClient`
+   * The connection params the client sent with `httpSubscriptionLink` or
+   * `createWSClient`.
    */
   connectionParams: Dict<string> | null;
   /**
-   * Signal when the request is aborted
-   * Can be used to abort async operations during the request, e.g. `fetch()`-requests
+   * Aborts when the request does. Pass it on to work the request starts,
+   * such as `fetch()` calls.
    */
   signal: AbortSignal;
   /**
-   * The URL of the request if available
+   * The request's URL, if known.
    */
   url: URL | null;
 }
 
 /**
- * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`
+ * The `createContext` that `resolveResponse` takes: it gets the request's
+ * `info`.
  * @internal
  */
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
@@ -130,6 +147,8 @@ interface HTTPErrorHandlerOptions<
   req: TRequest;
 }
 /**
+ * Called with each error a procedure throws, before the response is sent.
+ * @see https://trpc.io/docs/server/error-handling#handling-errors
  * @internal
  */
 export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
@@ -137,13 +156,17 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
 ) => void;
 
 /**
- * Base interface for any response handler
+ * The options every adapter takes.
  * @internal
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
+  /**
+   * Called with each error a procedure throws, for example to log it.
+   * @see https://trpc.io/docs/server/error-handling#handling-errors
+   */
   onError?: HTTPErrorHandler<TRouter, TRequest>;
   /**
-   * @deprecated use `allowBatching` instead, this will be removed in v12
+   * @deprecated Use `allowBatching` instead. This will be removed in v12.
    */
   batching?: {
     /**
@@ -151,21 +174,24 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
      */
     enabled: boolean;
   };
+  /** The router to serve. */
   router: TRouter;
   /**
-   * Allow method override - will skip the method check
+   * Lets clients call queries with POST, and mutations with GET.
+   * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
    * @default false
    */
   allowMethodOverride?: boolean;
   /**
-   * Allow request batching
+   * Whether clients can batch calls into one request.
+   * @see https://trpc.io/docs/client/links/httpBatchLink#disabling-request-batching
    * @default true
    */
   allowBatching?: boolean;
   /**
-   * Restrict the maximum size of a batch call, invalid requests will be rejected with a 400 error
-   *
-   * @important Ensure you set the same or lower limit on your client batch link
+   * The most calls a batch can have. Larger batches get a 400 error. Set
+   * the client's `maxItems` to the same or a lower number.
+   * @see https://trpc.io/docs/client/links/httpBatchLink#limiting-batch-size
    * @default unlimited
    */
   maxBatchSize?: number;

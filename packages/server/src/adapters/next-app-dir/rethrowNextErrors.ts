@@ -41,7 +41,9 @@ function isNotFoundError(error: unknown) {
 }
 
 /**
- * Rethrow errors that should be handled by Next.js
+ * Rethrows the errors Next.js must handle itself: `notFound()`,
+ * `redirect()` and its other control-flow errors. Call it in `catch`
+ * blocks around tRPC calls in server components and actions.
  */
 export const rethrowNextErrors = (error: TRPCError) => {
   if (error.code === 'NOT_FOUND') {

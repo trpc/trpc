@@ -18,11 +18,22 @@ import { getWSConnectionHandler, type WSSHandlerOptions } from '../ws';
 import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
+/**
+ * The options of `fastifyTRPCPlugin`.
+ * @see https://trpc.io/docs/server/adapters/fastify#fastify-plugin-options
+ */
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
+  /** The path the router is served at, such as `/trpc`. */
   prefix?: string;
+  /**
+   * Whether to serve WebSockets too. Needs `@fastify/websocket` to be
+   * registered first.
+   * @see https://trpc.io/docs/server/adapters/fastify#enable-websockets
+   */
   useWSS?: boolean;
   /**
-   * `keepAlive`, `dangerouslyDisablePong` and `experimental_encoder` are only used when `useWSS` is enabled
+   * The router and handler options. `keepAlive`, `dangerouslyDisablePong`
+   * and `experimental_encoder` only apply with `useWSS`.
    */
   trpcOptions: FastifyHandlerOptions<TRouter, FastifyRequest, FastifyReply> &
     Pick<
@@ -31,11 +42,28 @@ export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
     >;
 }
 
+/**
+ * What `createContext` gets in the Fastify adapter: `req`, `res` and the
+ * request's `info`.
+ * @see https://trpc.io/docs/server/adapters/fastify#create-the-context
+ */
 export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<
   FastifyRequest,
   FastifyReply
 >;
 
+/**
+ * A Fastify plugin that serves a router over HTTP, and over WebSockets
+ * with `useWSS`.
+ * @example
+ * ```ts
+ * server.register(fastifyTRPCPlugin, {
+ *   prefix: '/trpc',
+ *   trpcOptions: { router: appRouter, createContext },
+ * });
+ * ```
+ * @see https://trpc.io/docs/server/adapters/fastify#create-fastify-server
+ */
 export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   fastify: FastifyInstance,
   opts: FastifyTRPCPluginOptions<TRouter>,

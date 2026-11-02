@@ -1,5 +1,6 @@
 import type { AnyRootTypes } from '../rootConfig';
 
+/** The root types a client needs: the error shape and whether there's a transformer. */
 export type AnyClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 
 /**
@@ -26,7 +27,8 @@ type RootConfigLike = {
 };
 
 /**
- * Anything that can be inferred to the root config types needed for a TRPC client
+ * Anything a client's root types can be read from: a router, a root
+ * object, a root config or the types themselves.
  */
 export type InferrableClientTypes =
   | RouterLike
@@ -39,7 +41,8 @@ type PickTypes<T extends AnyClientTypes> = {
   errorShape: T['errorShape'];
 };
 /**
- * Infer the root types from a InferrableClientTypes
+ * The root types a client needs, read from a router, a root object or a
+ * root config.
  */
 export type inferClientTypes<TInferrable extends InferrableClientTypes> =
   TInferrable extends AnyClientTypes

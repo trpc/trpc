@@ -49,6 +49,10 @@ import { jsonEncoder } from './wsEncoder';
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
 /**
+ * What `createContext` gets in the WebSocket adapter: the upgrade request
+ * as `req`, the socket as `res`, and `info`. It's called once per
+ * connection.
+ * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  * @public
  */
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
@@ -57,12 +61,14 @@ export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
 >;
 
 /**
+ * The `createContext` function the WebSocket adapter takes.
  * @public
  */
 export type CreateWSSContextFn<TRouter extends AnyRouter> = (
   opts: CreateWSSContextFnOptions,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
+/** The options of `getWSConnectionHandler`. */
 export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
   BaseHandlerOptions<TRouter, IncomingMessage> &
     CreateContextCallback<
@@ -71,42 +77,54 @@ export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
     >;
 
 /**
- * Web socket server handler
+ * The options of `applyWSSHandler`.
+ * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
+    /** The `ws` server to serve the router on. */
     wss: WebSocketServer;
+    /** Only connections whose URL starts with this are served. */
     prefix?: string;
+    /**
+     * Sends pings to each client and closes connections that stop
+     * answering.
+     */
     keepAlive?: {
       /**
-       * Enable heartbeat messages
+       * Whether to send pings.
        * @default false
        */
       enabled: boolean;
       /**
-       * Heartbeat interval in milliseconds
+       * How long a connection can be quiet before a ping, in milliseconds.
        * @default 30_000
        */
       pingMs?: number;
       /**
-       * Terminate the WebSocket if no pong is received after this many milliseconds
+       * How long to wait for a pong before closing the connection, in
+       * milliseconds.
        * @default 5_000
        */
       pongWaitMs?: number;
     };
     /**
-     * Disable responding to ping messages from the client
-     * **Not recommended** - this is mainly used for testing
+     * Stops answering clients' pings. Meant for tests.
      * @default false
      */
     dangerouslyDisablePong?: boolean;
     /**
-     * Custom encoder for wire encoding (e.g. custom binary formats)
+     * Encodes and decodes messages, for formats other than JSON.
+     * Experimental: it may change in any release.
      * @default jsonEncoder
      */
     experimental_encoder?: Encoder;
   };
 
+/**
+ * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
+ * uses it; call it to attach tRPC to your own WebSocket server.
+ */
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
@@ -572,7 +590,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 }
 
 /**
- * Handle WebSocket keep-alive messages
+ * Pings a client after `pingMs` of quiet, and closes the connection if no
+ * message comes within `pongWaitMs`.
  */
 export function handleKeepAlive(
   client: WsWebSocket,
@@ -612,6 +631,18 @@ export function handleKeepAlive(
   schedulePing();
 }
 
+/**
+ * Serves a router on a `ws` WebSocket server. Returns
+ * `broadcastReconnectNotification()`, which tells every client to
+ * reconnect, for example before a deploy.
+ * @example
+ * ```ts
+ * const wss = new WebSocketServer({ port: 3001 });
+ * const handler = applyWSSHandler({ wss, router: appRouter, createContext });
+ * process.on('SIGTERM', () => handler.broadcastReconnectNotification());
+ * ```
+ * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
+ */
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
