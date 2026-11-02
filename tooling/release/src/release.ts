@@ -73,7 +73,9 @@ export const branchMoved = Effect.fn('branchMoved')(function* (
  * as it is, and pnpm must accept it for the bumped manifests without
  * resolving anything (`--frozen-lockfile`). v11.23.0's lockfile
  * sync re-resolved vitest and broke typecheck on main, so typecheck runs
- * here too, before anything is published or pushed.
+ * here too, before anything is published or pushed. Then it builds, and
+ * checks the tree once more: `pnpm publish` packs the working tree, which
+ * must still be the release commit.
  */
 export const checkRelease = Effect.fn('checkRelease')(function* (
   root: string,
@@ -115,6 +117,11 @@ export const checkRelease = Effect.fn('checkRelease')(function* (
     return yield* fail('pnpm install', afterInstall);
   }
   yield* run(root, 'pnpm', ['typecheck-packages']);
+  yield* run(root, 'pnpm', ['build']);
+  const afterBuild = yield* changed();
+  if (afterBuild.length > 0) {
+    return yield* fail('Typechecking or building', afterBuild);
+  }
 });
 
 export interface PublishOptions {
@@ -249,7 +256,6 @@ export const stable = Effect.fn('stable')(function* (
   const bumped =
     (yield* git(root, 'status', '--porcelain', '--', ...files)) !== '';
   yield* checkRelease(root, files);
-  yield* run(root, 'pnpm', ['build']);
 
   if (opts.dryRun) {
     yield* publish(root, opts);
