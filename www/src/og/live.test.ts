@@ -90,6 +90,18 @@ describe('fetchAvatar', () => {
     );
   });
 
+  it('takes an SVG, such as the tRPC team logo', async () => {
+    respond({
+      'https://trpc.io/img/logo.svg': () =>
+        new Response('<svg/>', {
+          headers: { 'content-type': 'image/svg+xml' },
+        }),
+    });
+    expect(await fetchAvatar('https://trpc.io/img/logo.svg')).toBe(
+      `data:image/svg+xml;base64,${Buffer.from('<svg/>').toString('base64')}`,
+    );
+  });
+
   it("is undefined when there's no image to be had", async () => {
     respond({
       'https://github.com/nobody.png': () => new Response('', { status: 404 }),

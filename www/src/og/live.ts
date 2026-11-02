@@ -82,7 +82,11 @@ export async function fetchAvatar(image: string) {
       signal: AbortSignal.timeout(timeoutMs),
     });
     const type = response.headers.get('content-type')?.split(';')[0] ?? '';
-    if (!response.ok || !['image/jpeg', 'image/png'].includes(type)) {
+    // An SVG too, such as the tRPC team's logo (`https://trpc.io/img/logo.svg`).
+    if (
+      !response.ok ||
+      !['image/jpeg', 'image/png', 'image/svg+xml'].includes(type)
+    ) {
       return undefined;
     }
     const bytes = Buffer.from(await response.arrayBuffer());
