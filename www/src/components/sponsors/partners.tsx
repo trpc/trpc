@@ -143,8 +143,9 @@ export function PartnersRail(props: { readonly className?: string }) {
 }
 
 /**
- * The partners in a line under the site header on small screens, gold first,
- * as the social cards name them. It scrolls sideways once they don't fit.
+ * The partners in a line under the site header on small screens, on the
+ * pages `partners-bar.ts` picks; gold first, as the social cards name them.
+ * It scrolls sideways once they don't fit.
  */
 export function PartnersBar(props: { readonly className?: string }) {
   return (

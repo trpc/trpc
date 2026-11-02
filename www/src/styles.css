@@ -6,9 +6,9 @@ html {
   scroll-padding-top: 4.5rem;
 }
 
-/* Below `md` the header has the partners' line (`PartnersBar`) too. */
+/* Below `md`, on the pages that show it, the header has the partners' line (`PartnersBar`) too. */
 @media (width < 48rem) {
-  html {
+  html:has([data-partners-bar='shown']) {
     scroll-padding-top: 6.75rem;
   }
 }
