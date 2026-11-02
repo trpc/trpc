@@ -16,7 +16,7 @@ export type TRPC = TRPCOptionsProxy<AppRouter>;
 /** How long a demo's data stays fresh. */
 export const staleTime = 5000;
 
-export function createQueryClient() {
+function createQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: { refetchOnWindowFocus: false, retry: false, staleTime },

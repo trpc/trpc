@@ -154,7 +154,7 @@ Handles fix a gap in the usual prefetch pattern: the server prefetches `trpc.pos
 
 With handles, the client reads exactly what the server started. They work best when a page can start every query from its URL: see [Start every query from the URL](#url-as-input).
 
-A handle from `unstable_$prefetch` carries the query's key and input, but no data. Handles from `unstable_$ensure` and `unstable_$fetch` also carry the data, so loaders can read it and `useQuery` has it from the first render: see [Handles with data](#handles-with-data). Either way, the cache fills through TanStack Query's dehydrate and hydrate, as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start). In a server loader, return `dehydrate(queryClient)` with the handles, as in [React Router](#react-router-ssr).
+A handle carries the query's key and input, but no data, whichever method made it. The data lives in the cache: see [Handles carry no data](#no-data). The cache fills through TanStack Query's dehydrate and hydrate, as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start). In a server loader, return `dehydrate(queryClient)` with the handles, as in [React Router](#react-router-ssr).
 
 The components that read handles are the same everywhere: with or without server components, and whether the handle came from a loader or from render.
 
@@ -218,9 +218,9 @@ const post = await trpc.post.byId.unstable_$ensure({ id });
 ```
 
 - It returns a promise. The promise resolves to a handle once the cache has data for the query.
-- The handle carries that data as `post.data`, so the loader can use it, and `useQuery` has it from the first render. See [Handles with data](#handles-with-data).
+- The handle carries no data. To use the data in the loader, read it from the cache: see [Using the data in a loader](#loader-data).
 - The page waits for that promise, so the data is ready before anything renders.
-- **You don't need a `Suspense` boundary** for this query. The component that reads the handle finds the data in the cache and renders at once.
+- **You don't need a `Suspense` boundary** for this query. The component that reads the handle with `useSuspenseQuery` finds the data in the cache and renders at once.
 - It rejects if the request fails, so you can handle the error where you start the query, for example to show a not-found page.
 - If the cache already has stale data, it resolves at once and refetches in the background.
 
@@ -249,7 +249,6 @@ const post = await trpc.post.byId.unstable_$fetch({ id });
 |                        | `unstable_$prefetch`              | `unstable_$ensure`     | `unstable_$fetch`      |
 | ---------------------- | --------------------------------- | ---------------------- | ---------------------- |
 | Returns                | A handle                          | A promise for a handle | A promise for a handle |
-| Handle carries data    | No                                | Yes                    | Yes                    |
 | Page waits for data    | No                                | Yes                    | Yes                    |
 | With stale data        | Refetches in the background       | Resolves at once       | Waits for the refetch  |
 | `Suspense` boundary    | Needed around the reader          | Not needed             | Not needed             |
@@ -269,7 +268,7 @@ Each `$` method makes one TanStack Query call with the procedure's `queryOptions
 | `await trpc.x.unstable_$fetch(input, opts)`                                         | `await queryClient.fetchQuery(trpc.x.queryOptions(input, opts))`                                                                                                         |
 | `unstable_$prefetchInfinite`, `unstable_$ensureInfinite`, `unstable_$fetchInfinite` | `prefetchInfiniteQuery`, `ensureInfiniteQueryData` (with `revalidateIfStale: true`), `fetchInfiniteQuery`                                                                |
 | `trpc.x.unstable_$prefetch(input)` on `useTRPC()`, in render                        | [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery)`(trpc.x.queryOptions(input))`, as a plain call instead of a hook |
-| `trpc.unstable_$fromHandle(handle, opts)`                                           | `trpc.x.queryOptions(handle.input, { initialData: handle.data, ...opts })`, with `x` taken from the handle                                                               |
+| `trpc.unstable_$fromHandle(handle, opts)`                                           | `trpc.x.queryOptions(handle.input, opts)`, with `x` taken from the handle                                                                                                |
 
 The `queryClient` is the one the proxy was created with.
 
@@ -453,19 +452,20 @@ export const appRouter = t.router({
 // @include: url-db
 // @include: url-before
 // @filename: before-loader.ts
-import { trpc } from './before/server';
+import { queryClient, trpc } from './before/server';
 // ---cut---
 async function loader(params: { slug: string }) {
   const post = await trpc.post.bySlug.unstable_$ensure({
     slug: params.slug,
   });
   // Nothing below can start until the post has arrived
+  const { id, authorId } = await queryClient.ensureQueryData(
+    trpc.unstable_$fromHandle(post),
+  );
   const comments = trpc.post.comments.unstable_$prefetchInfinite({
-    postId: post.data.id,
+    postId: id,
   });
-  const author = trpc.author.byId.unstable_$prefetch({
-    id: post.data.authorId,
-  });
+  const author = trpc.author.byId.unstable_$prefetch({ id: authorId });
   return { post, comments, author };
 }
 ```
@@ -532,7 +532,7 @@ post.bySlug     |-------|
 post.comments   |-------|
 ```
 
-The page is ready after one round trip instead of two, and the loader no longer reads `post.data` to start the other queries.
+The page is ready after one round trip instead of two, and the loader no longer reads the post to start the other queries.
 
 ## Reading a handle {#reading-a-handle}
 
@@ -564,7 +564,6 @@ const [aQuery, bQuery] = useSuspenseQueries({
 - `unstable_$fromHandle` is available on every router level: `trpc.unstable_$fromHandle` and `trpc.post.unstable_$fromHandle` behave the same.
 - Reads use the same query key as `trpc.<path>.queryOptions(input)`, so old and new code share cache entries.
 - `handle.queryKey` is the cache entry's key. For a typed `queryClient.getQueryData`, pass `trpc.unstable_$fromHandle(handle).queryKey`. The handle's own key isn't tagged with its data type, so the handle stays serializable everywhere, including TanStack Router's `beforeLoad`.
-- `handle.data` is the data an `unstable_$ensure` or `unstable_$fetch` handle was resolved with. See [Handles with data](#handles-with-data).
 - `handle.input` is the typed input the query was started with, so a component doesn't need it as a separate prop. Infinite handles leave out `cursor` and `direction`.
 
 ### Typing props {#typing-props}
@@ -601,57 +600,33 @@ export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId
 
 A handle can only come from `unstable_$prefetch`, `unstable_$ensure` or `unstable_$fetch`. A raw input, or an object with the right `queryKey` and `input` written by hand, doesn't type-check. In tests, start a handle against a test `QueryClient` instead: see [Testing components that take handles](#testing). At runtime, `unstable_$fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
 
-`unstable_inferQueryHandle` accepts every handle for the procedure, with or without data. To require data, use `unstable_inferQueryHandleWithData`.
+`unstable_inferQueryHandle` accepts a handle from any of the three methods: they all return the same type.
 
-## Handles with data {#handles-with-data}
+## Handles carry no data {#no-data}
 
-A handle from `unstable_$ensure` or `unstable_$fetch` extends the plain handle with the data it was resolved with:
+A handle is only the query's key and input, whichever method made it. The data lives in the cache, so the reader decides how to wait for it:
 
-- `data` is the query's output. A loader can read it straight away, for example to start a [dependent query](#waterfall-in-a-loader) or set the page title.
-- `dataUpdatedAt` is when the cache got that data.
+- `useSuspenseQuery` types `data` as defined. After `unstable_$ensure` or `unstable_$fetch`, the cache already has the data, so the reader renders at once, with no fallback.
+- `useQuery` types `data` as possibly `undefined`, as for any query.
+- If the cache loses the query, for example after `queryClient.clear()` on logout, the reader fetches it again. A `clear()` doesn't bring back the data the loader started with.
 
-`unstable_$fromHandle` passes them on as `initialData` and `initialDataUpdatedAt`. So `useQuery` has the data on its first render and types `data` as defined, with no `Suspense` boundary and no hydrated cache. If the cache already has the query, the cache wins: as in TanStack Query, `initialData` only fills an empty entry, so the handle's copy never replaces a newer refetch or a `setQueryData`. The demo below runs a loader with its own `QueryClient`, as on a server, and a browser whose cache starts empty.
+### Using the data in a loader {#loader-data}
 
-```tsx twoslash title='app/posts/$slug/post.tsx'
-// @jsx: react-jsx
-// @include: url-db
-// @include: url-after
-// @filename: post.tsx
-import React from 'react';
-import { trpc as serverTRPC } from './after/server';
-const useTRPC = () => serverTRPC;
+To use the data where you started the query, for example to set the page title or redirect, read it from the cache. After `unstable_$ensure`, `ensureQueryData` returns it without a request:
+
+```ts twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: snippet.ts
+import { getQueryClient, trpc } from '~/trpc/server';
+declare const id: string;
 // ---cut---
-import { useQuery } from '@tanstack/react-query';
-import type { unstable_inferQueryHandleWithData } from '@trpc/tanstack-react-query';
-
-export function Post(props: {
-  post: unstable_inferQueryHandleWithData<typeof serverTRPC.post.bySlug>;
-}) {
-  const trpc = useTRPC();
-  const postQuery = useQuery(trpc.unstable_$fromHandle(props.post));
-  // `data` is defined: no `?.` needed
-  return <h1>{postQuery.data.title}</h1>;
-}
+const post = await trpc.post.byId.unstable_$ensure({ id });
+const data = await getQueryClient().ensureQueryData(trpc.unstable_$fromHandle(post));
+//    ^?
 ```
 
-- `unstable_$prefetch` handles carry no data. They're returned before the request finishes, so with `useQuery` the data stays possibly `undefined` until the request lands. Read them with `useSuspenseQuery`, or wait with `unstable_$ensure`.
-- `placeholderData` and `initialData` you pass to `unstable_$fromHandle` must match the procedure's output, so they can't widen `data`'s type.
-- `data` crosses to the client through your framework's serialization, like `input`: React Server Components, TanStack Router's serializer, or React Router's. Not through your tRPC data transformer. See [Handle inputs](#nextjs-handle-inputs).
-
-```demo handles-with-data
-```
-
-### Size {#handles-with-data-size}
-
-With server rendering, the data travels twice: once inside the dehydrated cache and once inside the handle. Measured with a list of posts, the copy adds this much to the payload:
-
-| Data in the query       | Uncompressed | gzip    | Brotli |
-| ----------------------- | ------------ | ------- | ------ |
-| 20 posts, about 8 KB    | +80–100%     | +3–12%  | +0–9%  |
-| 100 posts, about 37 KB  | +80–100%     | +84–94% | +0–9%  |
-| 500 posts, about 187 KB | +80–100%     | +92–99% | +0–11% |
-
-The low end is when both copies are encoded the same way, the high end when the framework encodes the handle differently from the dehydrated cache. gzip only finds a copy within 32 KB of the original, so past that it sends both in full. For large data that the page doesn't need in the loader, prefer `unstable_$prefetch`.
+If the data only decides which query to start next, try to start that query from the URL instead, as in [Start every query from the URL](#url-as-input). Otherwise, see [Dependent queries](#dependent-queries).
 
 ## Infinite queries {#infinite-queries}
 
@@ -708,8 +683,6 @@ const comments = trpc.post.comments.unstable_$prefetchInfinite(
   { getNextPageParam: (last) => last.nextCursor },
 );
 ```
-
-Handles from `unstable_$ensureInfinite` and `unstable_$fetchInfinite` carry the loaded pages as `data`, with `pages` and `pageParams`, so `useInfiniteQuery` has them on its first render. To require them in a prop, use `unstable_inferInfiniteQueryHandleWithData`.
 
 ### Changing the input when you read {#changing-the-input}
 
@@ -866,17 +839,17 @@ When the data really can't be reshaped, for example a third-party API you don't 
 
 ### In a loader or server component {#waterfall-in-a-loader}
 
-Wait for the first query, then start the second from its data:
+Wait for the first query, read its data from the cache, then start the second:
 
 ```ts twoslash
 // @include: handles-router
 // @include: handles-trpc
 // @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-declare const id: string;
+import { getQueryClient, trpc } from '~/trpc/server';
 // ---cut---
 const viewer = await trpc.viewer.unstable_$ensure();
-const org = trpc.org.byId.unstable_$prefetch({ orgId: viewer.data.orgId });
+const { orgId } = await getQueryClient().ensureQueryData(trpc.unstable_$fromHandle(viewer));
+const org = trpc.org.byId.unstable_$prefetch({ orgId });
 ```
 
 The page waits for the first request, and the second starts only after it.
@@ -1364,7 +1337,7 @@ export default async function PostPage(props: {
 ```
 
 - `Post` needs no `Suspense` boundary: the data is in the cache before it renders.
-- To use the data on the server, read `post.data`.
+- To use the data on the server, read it from the cache: see [Using the data in a loader](#loader-data).
 
 To wait for some queries and stream others on the same page, see [Combining both](#combining-both).
 
@@ -1441,7 +1414,7 @@ queryClient.setQueryData(trpc.post.byId.queryKey({ id: '1' }), {
 const post = await trpc.post.byId.unstable_$ensure({ id: '1' });
 ```
 
-- Render the component under a `QueryClientProvider` and `TRPCProvider` with the same `queryClient`. The component reads the fixture from the cache, and `post.data` holds it too.
+- Render the component under a `QueryClientProvider` and `TRPCProvider` with the same `queryClient`. The component reads the fixture from the cache.
 - Leave out `setQueryData` to run the real procedure, or use a client with [`localLink`](/docs/client/links/localLink) instead of `router` to test through your links.
 - `unstable_$prefetch` gives a handle for a loading state: with a procedure that never resolves, the reader suspends.
 

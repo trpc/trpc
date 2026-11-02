@@ -29,7 +29,7 @@ export const latencies = [
 ] as const;
 
 /** A value as code: `{ id: 1 }`. */
-export function formatValue(value: unknown): string {
+function formatValue(value: unknown): string {
   if (typeof value === 'string') {
     return `'${value}'`;
   }

@@ -13,11 +13,6 @@ import { createPortal } from 'react-dom';
 import { type DemoName, type DemoProps, isDemoName } from './names.ts';
 
 const demos: Record<DemoName, ComponentType<DemoProps>> = {
-  'handles-with-data': lazy(() =>
-    import('./handles-with-data.tsx').then((module) => ({
-      default: module.HandlesWithData,
-    })),
-  ),
   'loader-handles': lazy(() =>
     import('./loader-handles.tsx').then((module) => ({
       default: module.LoaderHandles,

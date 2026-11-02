@@ -6,7 +6,6 @@
  * the demo replaces it in the browser.
  */
 export const demoNames = [
-  'handles-with-data',
   'loader-handles',
   'request-timeline',
   'starting-queries',
