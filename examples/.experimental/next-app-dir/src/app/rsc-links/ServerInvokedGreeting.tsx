@@ -36,8 +36,9 @@ export async function ServerInvokedGreeting() {
       <CardHeader>
         <CardTitle>Cached greetings</CardTitle>
         <CardDescription>
-          Each <code>greeting</code> ends in a random number. Reload and it
-          stays the same; revalidate its cache and it changes.
+          Each <code>greeting</code> ends in a random number. Its cache keeps
+          the number for five seconds, or until you revalidate it; after that, a
+          reload gets a new one.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

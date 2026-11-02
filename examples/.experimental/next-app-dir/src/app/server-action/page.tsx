@@ -74,7 +74,7 @@ export default async function Home() {
       />
       <Card className="py-2">
         <CardContent>
-          <Accordion defaultValue={[0]}>
+          <Accordion defaultValue={[0]} keepMounted>
             {components.map((it, index) => (
               <AccordionItem key={index} value={index}>
                 <AccordionTrigger className="py-4 text-base">

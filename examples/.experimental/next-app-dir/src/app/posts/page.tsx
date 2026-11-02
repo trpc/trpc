@@ -6,15 +6,14 @@ import {
   CardTitle,
 } from '@shared/ui/components/card';
 import { ChevronRightIcon } from 'lucide-react';
-import Link from 'next/link';
 import {
-  Item,
   ItemActions,
   ItemContent,
   ItemDescription,
   ItemGroup,
   ItemTitle,
 } from '../_components/client-ui';
+import { ItemLink, LinkItem } from '../_components/link-item';
 import { PageHeader } from '../_components/page-header';
 import { listPosts } from './_data';
 import { AddPostForm } from './AddPostForm';
@@ -47,18 +46,19 @@ export default async function Home() {
           <CardContent>
             <ItemGroup className="-mx-3">
               {posts.map((post) => (
-                <Item
-                  key={post.id}
-                  render={<Link href={`/posts/${post.id}`} />}
-                >
+                <LinkItem key={post.id}>
                   <ItemContent>
-                    <ItemTitle>{post.title}</ItemTitle>
+                    <ItemTitle>
+                      <ItemLink href={`/posts/${post.id}`}>
+                        {post.title}
+                      </ItemLink>
+                    </ItemTitle>
                     <ItemDescription>{post.content}</ItemDescription>
                   </ItemContent>
                   <ItemActions>
                     <ChevronRightIcon className="size-4 text-muted-foreground" />
                   </ItemActions>
-                </Item>
+                </LinkItem>
               ))}
             </ItemGroup>
           </CardContent>

@@ -17,11 +17,9 @@ import {
   ServerIcon,
   ZapIcon,
 } from 'lucide-react';
-import Link from 'next/link';
 import { auth } from '~/auth';
 import {
   Badge,
-  Item,
   ItemActions,
   ItemContent,
   ItemDescription,
@@ -29,6 +27,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from './_components/client-ui';
+import { ItemLink, LinkItem } from './_components/link-item';
 
 const showcase = [
   {
@@ -84,7 +83,11 @@ const showcase = [
 
 export default async function Index() {
   const session = await auth();
-  const userName = session?.user?.name;
+  const title = !session
+    ? 'Session'
+    : session.user?.name
+      ? `Signed in as ${session.user.name}`
+      : 'Signed in';
 
   return (
     <>
@@ -101,11 +104,9 @@ export default async function Index() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {userName ? `Signed in as ${userName}` : 'Session'}
-          </CardTitle>
+          <CardTitle>{title}</CardTitle>
           <CardDescription>
-            {userName ? (
+            {session ? (
               <>
                 Procedures like <code>secret</code> now see your session.
               </>
@@ -141,18 +142,17 @@ export default async function Index() {
         </h2>
         <ItemGroup className="grid gap-3 sm:grid-cols-2">
           {showcase.map((page) => (
-            <Item
+            <LinkItem
               key={page.href}
               variant="outline"
               className="bg-background"
-              render={<Link href={page.href} />}
             >
               <ItemMedia variant="icon">
                 <page.icon />
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>
-                  {page.title}
+                  <ItemLink href={page.href}>{page.title}</ItemLink>
                   {page.badge && <Badge variant="outline">{page.badge}</Badge>}
                 </ItemTitle>
                 <ItemDescription>{page.description}</ItemDescription>
@@ -160,7 +160,7 @@ export default async function Index() {
               <ItemActions>
                 <ChevronRightIcon className="size-4 text-muted-foreground" />
               </ItemActions>
-            </Item>
+            </LinkItem>
           ))}
         </ItemGroup>
       </section>

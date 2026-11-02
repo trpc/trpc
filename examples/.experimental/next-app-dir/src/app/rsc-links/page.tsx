@@ -65,8 +65,8 @@ export default async function Home() {
         description={
           <>
             <code>experimental_nextCacheLink</code> calls procedures from Server
-            Components without an HTTP request, and caches each result until you
-            revalidate it.
+            Components without an HTTP request, and caches each result for five
+            seconds, or until you revalidate it.
           </>
         }
       />
