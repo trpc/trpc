@@ -6,6 +6,13 @@ html {
   scroll-padding-top: 4.5rem;
 }
 
+/* Below `md` the header has the partners' line (`PartnersBar`) too. */
+@media (width < 48rem) {
+  html {
+    scroll-padding-top: 6.75rem;
+  }
+}
+
 /* The home page's "As used by" marquee (`UsedBy`). */
 @theme {
   --animate-used-by: used-by 60s linear infinite;

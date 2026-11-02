@@ -5,11 +5,13 @@ import { buttonVariants } from '@shared/ui/components/button';
 import { v11Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import { docsLinks, site } from '~/site.ts';
+import { partners } from '~/sponsors.ts';
 
 import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
 import { Logo } from './logo.tsx';
 import { MobileNav } from './mobile-nav.tsx';
 import { SearchButton } from './search.tsx';
+import { PartnersBar } from './sponsors/partners.tsx';
 import { ThemeToggle } from './theme-toggle.tsx';
 import { VersionSwitcher } from './version-switcher.tsx';
 
@@ -127,6 +129,9 @@ export function SiteHeader() {
           <SearchButton />
         </div>
       </div>
+      {partners.length > 0 ? (
+        <PartnersBar className="px-4 sm:px-6 md:hidden" />
+      ) : null}
     </header>
   );
 }

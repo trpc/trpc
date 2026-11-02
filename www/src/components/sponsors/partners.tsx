@@ -3,7 +3,13 @@ import { Link } from '@tanstack/react-router';
 import { ArrowUpRight } from 'lucide-react';
 import type { CSSProperties } from 'react';
 
-import { avatarUrl, type Partner, partners, sponsorTiers } from '~/sponsors.ts';
+import {
+  avatarUrl,
+  type Partner,
+  partners,
+  partnersByTier,
+  sponsorTiers,
+} from '~/sponsors.ts';
 
 import { partnerLogos } from './partner-logos.tsx';
 
@@ -132,6 +138,39 @@ export function PartnersRail(props: { readonly className?: string }) {
       >
         Become a partner →
       </Link>
+    </section>
+  );
+}
+
+/**
+ * The partners in a line under the site header on small screens, gold first,
+ * as the social cards name them. It scrolls sideways once they don't fit.
+ */
+export function PartnersBar(props: { readonly className?: string }) {
+  return (
+    <section
+      aria-label="Partners"
+      className={cn('flex h-9 items-center gap-4 border-t', props.className)}
+    >
+      <p className="shrink-0 text-[0.625rem] font-semibold tracking-wide text-muted-foreground uppercase">
+        Partners
+      </p>
+      {/* The fade is over the end's padding until the logos run under it. */}
+      <ul className="flex h-full min-w-0 gap-5 overflow-x-auto overflow-y-hidden pr-4 [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {partnersByTier.map((partner) => (
+          <li className="shrink-0" key={partner.login}>
+            <a
+              className="flex h-full items-center text-xs text-foreground/60 grayscale transition-[color,filter] duration-300 hover:text-foreground hover:grayscale-0"
+              href={partner.link}
+              rel="sponsored noopener"
+              target="_blank"
+              title={partner.blurb}
+            >
+              <PartnerLogo className="h-3.5 w-auto" partner={partner} />
+            </a>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
