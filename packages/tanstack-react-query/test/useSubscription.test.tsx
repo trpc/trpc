@@ -1,7 +1,7 @@
 import { EventEmitter, on } from 'node:events';
 import { testReactResource } from './__helpers';
 import { fireEvent } from '@testing-library/react';
-import { httpSubscriptionLink, wsLink } from '@trpc/client';
+import { httpSubscriptionLink, localLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
@@ -59,6 +59,10 @@ function diff(list: any[]) {
 
 const getCtx = (protocol: 'http' | 'ws') => {
   const abortState: Record<number, 'aborted'> = {};
+  let yieldOnceThenListenCalls = 0;
+  const gate = {
+    wait: Promise.resolve(),
+  };
 
   const ee = new EventEmitter();
   const t = initTRPC.create({
@@ -94,6 +98,22 @@ const getCtx = (protocol: 'http' | 'ws') => {
       .input(z.number())
       .subscription(async function* (opts) {
         yield opts.input;
+      }),
+    yieldOnceThenListen: t.procedure
+      .use(async (opts) => {
+        await gate.wait;
+        return opts.next();
+      })
+      .input(z.number())
+      .subscription(async function* (opts) {
+        yieldOnceThenListenCalls++;
+        if (yieldOnceThenListenCalls === 1) {
+          yield opts.input;
+          return;
+        }
+        for await (const [data] of on(ee, 'data', { signal: opts.signal })) {
+          yield (data as number) + opts.input;
+        }
       }),
     /**
      * @deprecated delete in v12
@@ -133,6 +153,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
     ...ctx,
     ee,
     abortState,
+    gate,
   };
 };
 
@@ -228,6 +249,7 @@ describe.each([
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
     const onStoppedMock = vi.fn();
+    const onCompleteMock = vi.fn();
     const statuses: TRPCSubscriptionResult<number, unknown>['status'][] = [];
 
     const { useTRPC } = ctx;
@@ -239,6 +261,7 @@ describe.each([
           onData: onDataMock,
           onError: onErrorMock,
           onStopped: onStoppedMock,
+          onComplete: onCompleteMock,
         }),
       );
 
@@ -262,11 +285,132 @@ describe.each([
     expect(onDataMock).toHaveBeenCalledWith(10);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
     expect(onStoppedMock).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(onCompleteMock).toHaveBeenCalledTimes(1);
+    });
     expect(utils.container).toHaveTextContent('error:NO_ERROR');
     expect(statuses[0]).toBe('connecting');
     expect(statuses.at(-1)).toBe('idle');
+    expect(statuses.filter((status) => status === 'idle')).toHaveLength(1);
 
     utils.unmount();
+  });
+
+  test('onComplete is not called when the client unsubscribes', async () => {
+    await using ctx = getCtx(protocol);
+
+    let resetSubscription = () => {
+      // noop
+    };
+    const onCompleteMock = vi.fn(() => {
+      resetSubscription();
+    });
+
+    function MyComponent(props: { input: number }) {
+      const trpc = ctx.useTRPC();
+      const result = useSubscription(
+        trpc.onEventIterable.subscriptionOptions(props.input, {
+          onComplete: onCompleteMock,
+        }),
+      );
+      React.useEffect(() => {
+        resetSubscription = result.reset;
+      });
+
+      return (
+        <>
+          <div>status:{result.status}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent input={10} />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:pending');
+    });
+
+    ctx.rerenderApp(utils, <MyComponent input={20} />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:pending');
+    });
+    ctx.ee.emit('data', 1);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('data:21');
+    });
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+
+    utils.unmount();
+
+    await vi.waitFor(() => {
+      expect(ctx.ee.listenerCount('data')).toBe(0);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+    expect(onCompleteMock).toHaveBeenCalledTimes(0);
+  });
+
+  test('reset() inside onStopped restarts the subscription', async () => {
+    await using ctx = getCtx(protocol);
+
+    let releaseGate = () => {
+      // noop
+    };
+    let resetSubscription = () => {
+      // noop
+    };
+    const onStoppedMock = vi.fn(() => {
+      if (onStoppedMock.mock.calls.length === 1) {
+        ctx.gate.wait = new Promise<void>((resolve) => {
+          releaseGate = resolve;
+        });
+        resetSubscription();
+      }
+    });
+    const onCompleteMock = vi.fn();
+
+    function MyComponent() {
+      const trpc = ctx.useTRPC();
+      const result = useSubscription(
+        trpc.yieldOnceThenListen.subscriptionOptions(10, {
+          onStopped: onStoppedMock,
+          onComplete: onCompleteMock,
+        }),
+      );
+      React.useEffect(() => {
+        resetSubscription = result.reset;
+      });
+
+      return (
+        <>
+          <div>status:{result.status}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(onStoppedMock).toHaveBeenCalledTimes(1);
+    });
+    // the restarted subscription is held in a middleware
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(utils.container).toHaveTextContent('status:connecting');
+
+    releaseGate();
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:pending');
+    });
+
+    ctx.ee.emit('data', 20);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('data:30');
+    });
+
+    utils.unmount();
+    // the replaced subscription was unsubscribed by the hook, not ended by the server
+    expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
 
   test('observable()', async () => {
@@ -328,6 +472,148 @@ describe.each([
       // no event listeners
       expect(ctx.ee.listenerCount('data')).toBe(0);
     });
+  });
+});
+
+describe('useSubscription - localLink', () => {
+  const getLocalCtx = () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      yieldOnce: t.procedure
+        .input(z.number())
+        .subscription(async function* (opts) {
+          yield opts.input;
+        }),
+    });
+
+    const contextState = {
+      calls: 0,
+      wait: Promise.resolve(),
+    };
+
+    const ctx = testReactResource(appRouter, {
+      client() {
+        return {
+          links: [
+            localLink({
+              router: appRouter,
+              createContext: async () => {
+                contextState.calls++;
+                await contextState.wait;
+                return {};
+              },
+            }),
+          ],
+        };
+      },
+    });
+
+    return {
+      ...ctx,
+      contextState,
+    };
+  };
+
+  test('server ends the subscription', async () => {
+    await using ctx = getLocalCtx();
+
+    const onDataMock = vi.fn();
+    const onCompleteMock = vi.fn();
+    const statuses: TRPCSubscriptionResult<number, unknown>['status'][] = [];
+
+    function MyComponent() {
+      const trpc = ctx.useTRPC();
+      const result = useSubscription(
+        trpc.yieldOnce.subscriptionOptions(10, {
+          onData: onDataMock,
+          onComplete: onCompleteMock,
+        }),
+      );
+
+      statuses.push(result.status);
+
+      return (
+        <>
+          <div>status:{result.status}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:idle');
+    });
+
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledWith(10);
+    expect(onCompleteMock).toHaveBeenCalledTimes(1);
+    expect(utils.container).toHaveTextContent('data:NO_DATA');
+    expect(statuses[0]).toBe('connecting');
+    expect(statuses.at(-1)).toBe('idle');
+
+    utils.unmount();
+  });
+
+  test('reset() inside onComplete restarts the subscription', async () => {
+    await using ctx = getLocalCtx();
+
+    let releaseContext = () => {
+      // noop
+    };
+    let resetSubscription = () => {
+      // noop
+    };
+    const onDataMock = vi.fn();
+    const onCompleteMock = vi.fn(() => {
+      if (onCompleteMock.mock.calls.length === 1) {
+        ctx.contextState.wait = new Promise<void>((resolve) => {
+          releaseContext = resolve;
+        });
+        resetSubscription();
+      }
+    });
+
+    function MyComponent() {
+      const trpc = ctx.useTRPC();
+      const result = useSubscription(
+        trpc.yieldOnce.subscriptionOptions(10, {
+          onData: onDataMock,
+          onComplete: onCompleteMock,
+        }),
+      );
+      React.useEffect(() => {
+        resetSubscription = result.reset;
+      });
+
+      return <div>status:{result.status}</div>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(onCompleteMock).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.contextState.calls).toBe(2);
+
+    // the restarted subscription is held in `createContext()`, so it must
+    // not have been overwritten with the completed subscription's `idle`
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:connecting');
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(utils.container).toHaveTextContent('status:connecting');
+
+    releaseContext();
+
+    await vi.waitFor(() => {
+      expect(onCompleteMock).toHaveBeenCalledTimes(2);
+    });
+    expect(onDataMock).toHaveBeenCalledTimes(2);
+    expect(utils.container).toHaveTextContent('status:idle');
+
+    utils.unmount();
   });
 });
 
