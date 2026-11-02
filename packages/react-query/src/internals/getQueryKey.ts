@@ -109,8 +109,10 @@ type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
  * input and the matching type.
  *
  * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
- * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * the next major version. Use `@trpc/tanstack-react-query` instead, where
+ * each query has a `queryKey()` method.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
  * @see https://trpc.io/docs/client/react/getQueryKey
  */
 export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
@@ -135,8 +137,10 @@ export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
  * Returns the TanStack Query mutation key for a procedure.
  *
  * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
- * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * the next major version. Use `@trpc/tanstack-react-query` instead, where
+ * each mutation has a `mutationKey()` method.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
  * @see https://trpc.io/docs/client/react/getQueryKey#mutations
  */
 export function getMutationKey<TProcedure extends DecoratedMutation<any>>(
