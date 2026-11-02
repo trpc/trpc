@@ -10,6 +10,7 @@ import {
   initials,
   type OgCard,
   type PostCard,
+  plainText,
   type SponsorCard,
 } from './card.ts';
 import { cardFooterPartners, sponsorCard } from '~/sponsors.ts';
@@ -175,7 +176,7 @@ describe('renderOgImage with SVG avatars', () => {
       expect(textsOf(drawn(card, withPartners, cardFooterPartners))).toEqual(
         expect.arrayContaining([
           'SUPPORTED BY',
-          ...cardFooterPartners.map((partner) => partner.name),
+          ...cardFooterPartners.map((partner) => plainText(partner.name)),
         ]),
       );
     },
