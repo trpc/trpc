@@ -1,10 +1,40 @@
-import { HashtagIcon } from '@heroicons/react/24/outline';
+import { Badge } from '@shared/ui/components/badge';
+import { buttonVariants } from '@shared/ui/components/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui/components/card';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '@shared/ui/components/empty';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from '@shared/ui/components/item';
+import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import {
+  ChevronRightIcon,
+  HashIcon,
+  KeyboardIcon,
+  LogInIcon,
+  NetworkIcon,
+  RadioIcon,
+} from 'lucide-react';
 import { Suspense } from 'react';
-import { twMerge } from 'tailwind-merge';
 import { SignedIn, SignedOut, useSignInHref } from '~/components/auth';
-import { buttonVariants } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC } from '~/lib/trpc';
 import { channelListQuery } from '~/queries';
@@ -23,55 +53,77 @@ function Home() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="flex h-full flex-col">
-        <header className="p-4">
-          <h1 className="text-3xl font-bold text-gray-950 dark:text-gray-50">
-            tRPC SSE starter
-          </h1>
-          <p className="text-sm text-gray-700 dark:text-gray-400">
-            Showcases Server-sent Events + subscription support
-            <br />
-            <a
-              className="text-gray-700 underline dark:text-gray-400"
-              href="https://github.com/trpc/examples-tanstack-start-sse-chat"
-              target="_blank"
-              rel="noreferrer"
-            >
-              View Source on GitHub
-            </a>
+      <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-10">
+        <section className="flex flex-col items-start gap-4">
+          <Badge variant="secondary">Server-sent Events</Badge>
+          <h1 className="text-4xl font-bold tracking-tight">tRPC SSE Chat</h1>
+          <p className="max-w-2xl text-lg text-muted-foreground">
+            A chat on TanStack Start where new messages and typing indicators
+            arrive through tRPC subscriptions over Server-sent Events.
           </p>
-        </header>
+        </section>
 
-        <article className="space-y-2 p-4 text-sm text-gray-700 dark:text-gray-400">
-          <h2 className="text-lg font-medium text-gray-950 dark:text-gray-50">
-            Introduction
-          </h2>
-          <ul className="list-inside list-disc space-y-2">
-            <li>Open inspector and head to Network tab</li>
-            <li>All client requests are handled through HTTP</li>
-            <li>
-              We have a simple backend subscription on new messages that adds
-              the newly added message to the current state
-            </li>
-          </ul>
-        </article>
+        <Card>
+          <CardHeader>
+            <CardTitle>How it works</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
+              <li className="flex gap-3">
+                <NetworkIcon className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  Open the inspector&apos;s Network tab: every request goes over
+                  HTTP, and subscriptions are EventStream responses
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <RadioIcon className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  <code>post.onAdd</code> adds new messages as they&apos;re
+                  posted, and resumes from the last event id after a reconnect
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <KeyboardIcon className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  <code>channel.whoIsTyping</code> shows who&apos;s writing in
+                  each channel
+                </span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
 
-        <div className="mt-6 space-y-2 p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-950 dark:text-gray-50">
-              Channels
-            </h2>
-            <SignedIn>
-              <CreateChannelDialog />
-            </SignedIn>
-            <SignedOut>
-              <a href={signInHref}>Login</a>
-            </SignedOut>
-          </div>
-          <Suspense fallback={<div className="text-sm italic">Loading...</div>}>
-            <ChannelList />
-          </Suspense>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Channels</CardTitle>
+            <CardDescription>Pick one to start chatting.</CardDescription>
+            <CardAction>
+              <SignedIn>
+                <CreateChannelDialog />
+              </SignedIn>
+              <SignedOut>
+                <a href={signInHref} className={buttonVariants()}>
+                  <LogInIcon />
+                  Sign in
+                </a>
+              </SignedOut>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <Suspense
+              fallback={
+                <div className="flex flex-col gap-2">
+                  {Array.from({ length: 3 }, (_, index) => (
+                    <Skeleton key={index} className="h-10 w-full" />
+                  ))}
+                </div>
+              }
+            >
+              <ChannelList />
+            </Suspense>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -79,24 +131,45 @@ function Home() {
 
 function ChannelList() {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(channelListQuery(trpc)).data;
+  const channelsQuery = useSuspenseQuery(channelListQuery(trpc));
+
+  if (channelsQuery.data.length === 0) {
+    return (
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyTitle>No channels yet</EmptyTitle>
+          <EmptyDescription>
+            Sign in and create the first one with the + button.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
 
   return (
-    <div className="flex w-full flex-col items-start">
-      {channels.map((channel) => (
-        <Link
+    <ItemGroup className="-mx-3">
+      {channelsQuery.data.map((channel) => (
+        <Item
           key={channel.id}
-          className={twMerge(
-            buttonVariants({ variant: 'link' }),
-            'w-full justify-start',
-          )}
-          to="/channels/$channelId"
-          params={{ channelId: channel.id }}
+          size="sm"
+          render={
+            <Link
+              to="/channels/$channelId"
+              params={{ channelId: channel.id }}
+            />
+          }
         >
-          <HashtagIcon className="mr-2 size-4 shrink-0" />
-          <span className="truncate">{channel.name}</span>
-        </Link>
+          <ItemMedia variant="icon">
+            <HashIcon />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle className="truncate">{channel.name}</ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <ChevronRightIcon className="size-4 text-muted-foreground" />
+          </ItemActions>
+        </Item>
       ))}
-    </div>
+    </ItemGroup>
   );
 }

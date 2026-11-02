@@ -1,16 +1,26 @@
-import * as Headless from '@headlessui/react';
-import { PlusIcon } from '@heroicons/react/24/outline';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
-import * as React from 'react';
-import { Button } from '~/components/button';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@shared/ui/components/alert';
+import { Button } from '@shared/ui/components/button';
 import {
   Dialog,
-  DialogActions,
-  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
-} from '~/components/dialog';
-import { Input, Label } from '~/components/input';
+  DialogTrigger,
+} from '@shared/ui/components/dialog';
+import { Field, FieldLabel } from '@shared/ui/components/field';
+import { Input } from '@shared/ui/components/input';
+import { Spinner } from '@shared/ui/components/spinner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
+import { CircleAlertIcon, PlusIcon } from 'lucide-react';
+import * as React from 'react';
 import { useTRPC } from '~/lib/trpc';
 
 export function CreateChannelDialog() {
@@ -18,7 +28,7 @@ export function CreateChannelDialog() {
   const navigate = useNavigate();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const mutation = useMutation(
+  const createChannel = useMutation(
     trpc.channel.create.mutationOptions({
       onSuccess: async (id) => {
         await queryClient.invalidateQueries({
@@ -30,55 +40,72 @@ export function CreateChannelDialog() {
           params: { channelId: id },
         });
       },
-      onError(err) {
-        alert('Error: ' + err.message);
-      },
     }),
   );
+  const pending = createChannel.status === 'pending';
 
   return (
-    <>
-      <Button size="icon" className="!size-8" onClick={() => setOpen(true)}>
-        <PlusIcon className="size-4" />
-      </Button>
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Create New Channel</DialogTitle>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          createChannel.reset();
+        }
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button size="icon-sm" variant="outline" aria-label="New channel" />
+        }
+      >
+        <PlusIcon />
+      </DialogTrigger>
+      <DialogContent>
         <form
+          className="grid gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             const name = new FormData(e.currentTarget).get('name') as string;
-            mutation.mutate({ name });
+            createChannel.mutate({ name });
           }}
         >
-          <DialogBody>
-            <Headless.Field>
-              <Label className="text-sm/6 font-medium">Name</Label>
-              <Input
-                type="text"
-                name="name"
-                placeholder="general"
-                className="w-full"
-              />
-            </Headless.Field>
-          </DialogBody>
-          <DialogActions>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-            >
+          <DialogHeader>
+            <DialogTitle>New channel</DialogTitle>
+            <DialogDescription>
+              Everyone sees it in the channel list straight away.
+            </DialogDescription>
+          </DialogHeader>
+          <Field>
+            <FieldLabel htmlFor="channel-name">Name</FieldLabel>
+            <Input
+              id="channel-name"
+              type="text"
+              name="name"
+              placeholder="general"
+              required
+              minLength={2}
+              autoFocus
+            />
+          </Field>
+          {createChannel.status === 'error' && (
+            <Alert variant="destructive">
+              <CircleAlertIcon />
+              <AlertTitle>Couldn&apos;t create the channel</AlertTitle>
+              <AlertDescription>{createChannel.error.message}</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
               Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="default"
-              disabled={mutation.isPending}
-            >
+            </DialogClose>
+            <Button type="submit" disabled={pending}>
+              {pending && <Spinner />}
               Create
             </Button>
-          </DialogActions>
+          </DialogFooter>
         </form>
-      </Dialog>
-    </>
+      </DialogContent>
+    </Dialog>
   );
 }

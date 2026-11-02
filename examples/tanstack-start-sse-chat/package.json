@@ -15,9 +15,7 @@
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
-    "@headlessui/react": "^2.2.0",
-    "@heroicons/react": "^2.2.0",
-    "@radix-ui/react-slot": "^1.1.0",
+    "@shared/ui": "workspace:*",
     "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-query-devtools": "^5.105.0",
     "@tanstack/react-router": "^1.170.46",
@@ -26,17 +24,17 @@
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
-    "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.45.2",
+    "lucide-react": "1.55.0",
     "postgres": "^3.4.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
-    "tailwind-merge": "^2.0.0",
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
     "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
@@ -45,9 +43,13 @@
     "drizzle-kit": "^0.31.10",
     "nitro": "3.0.260903-beta",
     "npm-run-all": "^4.1.5",
-    "postcss": "^8.5.28",
-    "tailwindcss": "^3.4.6",
+    "tailwindcss": "catalog:www",
     "typescript": "^5.9.2",
     "vite": "^8.3.0"
+  },
+  "dependenciesMeta": {
+    "@shared/ui": {
+      "injected": true
+    }
   }
 }
