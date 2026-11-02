@@ -22,13 +22,13 @@ type QueryResult = {
   promise?: Promise<unknown>;
 };
 
-// ts-prune-ignore-next
 /**
  * Creates a tRPC client for App Router client components.
  *
  * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
+// ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterOptions<TRouter>) {

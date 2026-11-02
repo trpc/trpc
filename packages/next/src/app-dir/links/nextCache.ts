@@ -29,7 +29,6 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   revalidate?: number | false;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
-// ts-prune-ignore-next
 /**
  * A terminating link that calls the router directly and caches results with
  * Next.js `unstable_cache`.
@@ -37,6 +36,7 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
  * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
+// ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {

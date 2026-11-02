@@ -45,7 +45,10 @@ function transformQueryOrMutationCacheErrors<
 }
 
 /**
- * Renders the app on the server once to find its queries, fetches them, then renders again with the data. Pass it to `createTRPCNext` with `ssr: true`.
+ * Renders the app on the server to find its queries and fetches them. It
+ * renders again until no queries are fetching, so queries that depend on
+ * other data can take several renders. Pass it to `createTRPCNext` with
+ * `ssr: true`.
  *
  * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup

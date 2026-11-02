@@ -18,7 +18,8 @@ interface NextLinkBaseOptions {
    */
   revalidate?: number | false;
   /**
-   * Batch calls with `httpBatchLink` instead of `httpLink`.
+   * Send each call with `httpBatchLink` instead of `httpLink`. Each call
+   * gets its own link, so calls aren't combined into one request.
    */
   batch?: boolean;
 }
@@ -33,7 +34,6 @@ type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
     batch: true;
   };
 
-// ts-prune-ignore-next
 /**
  * A terminating link that sends calls over HTTP with Next.js cache tags, so
  * they can be revalidated.
@@ -41,6 +41,7 @@ type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
  * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
+// ts-prune-ignore-next
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   opts:
     | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>

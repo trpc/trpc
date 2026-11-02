@@ -55,7 +55,8 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
 type WithTRPCOptions<TRouter extends AnyRouter> =
   CreateTRPCReactOptions<TRouter> & {
     /**
-     * Returns the client config. Gets the Next.js `ctx` during SSR.
+     * Returns the client config. Gets the Next.js `ctx` during the SSR
+     * prepass; other calls may get no `ctx`.
      * @see https://trpc.io/docs/client/nextjs/pages-router/setup#config-callback
      */
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
@@ -148,7 +149,9 @@ export type TRPCPrepassProps<
 };
 
 /**
- * Wraps a Next.js app or page with the tRPC and TanStack Query providers. `createTRPCNext` calls it for you.
+ * Wraps a Next.js app or page with the tRPC and TanStack Query providers.
+ * `createTRPCNext` returns it, and you wrap your app with it:
+ * `export default trpc.withTRPC(MyApp)`.
  *
  * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
