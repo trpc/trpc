@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { OgCard } from './card.ts';
@@ -8,6 +11,7 @@ import {
   fetchLive,
   fetchStats,
   noLive,
+  sizableSvg,
 } from './live.ts';
 
 const home: OgCard = { kind: 'home', path: '/' };
@@ -91,15 +95,41 @@ describe('fetchAvatar', () => {
   });
 
   it('takes an SVG, such as the tRPC team logo', async () => {
+    const logo = readFileSync(
+      fileURLToPath(new URL('../../public/img/logo.svg', import.meta.url)),
+    );
     respond({
       'https://trpc.io/img/logo.svg': () =>
+        new Response(logo, { headers: { 'content-type': 'image/svg+xml' } }),
+    });
+    expect(await fetchAvatar('https://trpc.io/img/logo.svg')).toBe(
+      `data:image/svg+xml;base64,${logo.toString('base64')}`,
+    );
+  });
+
+  it("leaves out an SVG satori can't size", async () => {
+    respond({
+      'https://example.com/a.svg': () =>
         new Response('<svg/>', {
           headers: { 'content-type': 'image/svg+xml' },
         }),
     });
-    expect(await fetchAvatar('https://trpc.io/img/logo.svg')).toBe(
-      `data:image/svg+xml;base64,${Buffer.from('<svg/>').toString('base64')}`,
-    );
+    expect(await fetchAvatar('https://example.com/a.svg')).toBeUndefined();
+  });
+
+  it.each([
+    ['<svg viewBox="0 0 24 24"/>', true],
+    ["<svg viewBox='0,0,24,24'/>", true],
+    ['<svg width="24" height="24px"/>', true],
+    ['<?xml version="1.0"?>\n<SVG viewBox="0 0 1 1"></SVG>', true],
+    ['<svg/>', false],
+    ['<svg width="24"/>', false],
+    ['<svg width="100%" height="100%"/>', false],
+    ['<svg viewBox="0 0 0 24"/>', false],
+    ['<svg viewBox="nope"/>', false],
+    ['<html>not an svg</html>', false],
+  ])('sizes %s: %s', (svg, sizable) => {
+    expect(sizableSvg(svg)).toBe(sizable);
   });
 
   it("is undefined when there's no image to be had", async () => {

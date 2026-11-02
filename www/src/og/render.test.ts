@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { OgCard } from './card.ts';
-import type { Live } from './live.ts';
+import { fetchLive, type Live } from './live.ts';
 import { renderOgImage } from './render.ts';
 
 /** A PNG's width and height, from its `IHDR` chunk. */
@@ -90,5 +90,54 @@ describe('renderOgImage without what it fetches', () => {
   it('renders the home card without its numbers', async () => {
     const png = await renderOgImage({ kind: 'home', path: '/' });
     expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
+  });
+});
+
+describe('renderOgImage with SVG avatars', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const postBy = (image: string): OgCard => ({
+    authors: [{ image, name: 'tRPC' }],
+    date: '2026-11-01',
+    description: '',
+    kind: 'post',
+    path: '/blog/a',
+    readingMinutes: 4,
+    title: 'A',
+  });
+
+  const serve = (svg: string) =>
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(svg, { headers: { 'content-type': 'image/svg+xml' } }),
+      ),
+    );
+
+  it("draws initials for an SVG satori can't size", async () => {
+    serve('<svg/>');
+    const card = postBy('https://example.com/unsized.svg');
+    const fetched = await fetchLive(card);
+    expect(fetched.avatars.size).toBe(0);
+    expect(pngSize(await renderOgImage(card, fetched))).toEqual({
+      height: 630,
+      width: 1200,
+    });
+  });
+
+  it('draws an SVG with a viewBox', async () => {
+    serve(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
+    );
+    const card = postBy('https://example.com/logo.svg');
+    const fetched = await fetchLive(card);
+    expect(fetched.avatars.size).toBe(1);
+    expect(pngSize(await renderOgImage(card, fetched))).toEqual({
+      height: 630,
+      width: 1200,
+    });
   });
 });
