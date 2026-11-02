@@ -9,7 +9,7 @@ env:
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 permissions:
-  contents: write # For pushing the release commit and tag, and the GitHub release
+  contents: read
   id-token: write # For OIDC publishing and provenance
 
 on:
@@ -48,6 +48,9 @@ jobs:
     timeout-minutes: 45 # npm can take a while to serve what it accepted
     runs-on: ubuntu-latest
     environment: npm-publish # npm trusted publishing is bound to this environment
+    permissions:
+      contents: write # For the GitHub release
+      id-token: write # For OIDC publishing and provenance
 
     steps:
       - name: Require a repo admin
