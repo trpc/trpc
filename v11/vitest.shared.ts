@@ -65,6 +65,11 @@ export default defineConfig({
     execArgv: ['--expose-gc'],
     restoreMocks: true,
     retry: process.env['CI'] ? 2 : 0,
+    // jest-dom imports `vitest` without depending on it, so Node gives it
+    // whichever of the workspace's vitest copies pnpm hoisted, which needn't
+    // be the one running the tests (whose snapshots it then can't find).
+    // Inlined, its import resolves to the running vitest.
+    server: { deps: { inline: ['@testing-library/jest-dom'] } },
   },
   resolve: {
     alias: aliases,
