@@ -31,6 +31,7 @@
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune -o -name '*.tsbuildinfo' | xargs rm -rf",
     "prepublish": "pnpm build",
     "prepack": "tsx scripts/version.ts",
+    "preversion": "tsx scripts/check-release-commit.ts preversion",
     "version": "tsx scripts/version.ts",
     "postversion": "tsx scripts/check-release-commit.ts",
     "link-all": "cd packages/server && cd ../server && pnpm link --global && cd ../client && pnpm link --global && cd ../react-query && pnpm link --global && cd ../next && pnpm link --global",

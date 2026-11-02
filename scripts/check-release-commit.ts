@@ -3,6 +3,10 @@
  * release, and hasn't pushed or published anything yet. Any failure here
  * stops the release with nothing pushed, and removes the commit and tag.
  *
+ * As the root `preversion` script (`check-release-commit.ts preversion`), it
+ * only requires a clean tree, before lerna writes any version: lerna commits
+ * the index, and with `--force-publish` it doesn't check the tree itself.
+ *
  * The release commit may only change versions: `lerna.json` and the
  * packages' `package.json`. Their dependencies on each other are
  * `workspace:*`, so `pnpm-lock.yaml` stays the same, and pnpm must accept it
@@ -66,6 +70,39 @@ const lines = (text: string) => text.split('\n').filter((line) => line !== '');
 const versionFile = (file: string) =>
   file === 'lerna.json' || /^packages\/[^/]+\/package\.json$/.test(file);
 
+const dependencyFields = [
+  'dependencies',
+  'devDependencies',
+  'optionalDependencies',
+  'peerDependencies',
+] as const;
+
+/**
+ * A version file without what a release may change: `version`, and the
+ * `@trpc/*` ranges that `scripts/version.ts` pins (`workspace:` ones stay).
+ */
+const withoutVersions = (text: string) => {
+  const { version: _version, ...json } = JSON.parse(text) as Record<
+    string,
+    unknown
+  >;
+  for (const field of dependencyFields) {
+    const deps = json[field] as Record<string, string> | undefined;
+    if (deps === undefined) {
+      continue;
+    }
+    json[field] = Object.fromEntries(
+      Object.entries(deps).map(([name, range]) => [
+        name,
+        name.startsWith('@trpc/') && !range.startsWith('workspace:')
+          ? '<version>'
+          : range,
+      ]),
+    );
+  }
+  return JSON.stringify(json);
+};
+
 const check = Effect.fn('check')(function* (
   root: string,
   changed: ReadonlyArray<string>,
@@ -86,6 +123,23 @@ const check = Effect.fn('check')(function* (
   if (others.length > 0) {
     return yield* new CheckError({
       message: `The release commit changes files other than versions: ${others.join(', ')}`,
+    });
+  }
+  // lerna writes the bump over whatever the manifests hold and commits the
+  // index, so an edit made before the release would ride along.
+  const edited: Array<string> = [];
+  for (const file of changed) {
+    const [before, after] = [
+      yield* git(root, 'show', `HEAD^:${file}`),
+      yield* git(root, 'show', `HEAD:${file}`),
+    ];
+    if (withoutVersions(before) !== withoutVersions(after)) {
+      edited.push(file);
+    }
+  }
+  if (edited.length > 0) {
+    return yield* new CheckError({
+      message: `The release commit changes more than versions in: ${edited.join(', ')}`,
     });
   }
 
@@ -145,9 +199,21 @@ const undoRelease = Effect.fn('undoRelease')(function* (
   );
 });
 
+const ensureClean = Effect.fn('ensureClean')(function* (root: string) {
+  const status = yield* git(root, 'status', '--porcelain');
+  if (status !== '') {
+    return yield* new CheckError({
+      message: `The working tree has changes, and lerna would commit some of them with the release. Commit or stash them, then release again:\n${status}`,
+    });
+  }
+});
+
 Effect.gen(function* () {
   const path = yield* Path.Path;
   const root = path.join(import.meta.dirname, '..');
+  if (process.argv[2] === 'preversion') {
+    return yield* ensureClean(root);
+  }
   const changed = lines(
     yield* git(root, 'diff', '--name-only', 'HEAD^', 'HEAD'),
   );
