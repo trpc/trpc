@@ -1,0 +1,16 @@
+diff --git a/dist/config.js b/dist/config.js
+index e8b2392f97f2362a61ada39405e322f3881ae93d..1e27f4511fdc2fce814ec2dfc46806dd2e7758f8 100644
+--- a/dist/config.js
++++ b/dist/config.js
+@@ -96,7 +96,10 @@ function initWitnesses(options) {
+         witnesses.push(new sign_1.RekorWitness({
+             rekorBaseURL: options.rekorURL,
+             entryType: options.legacyCompatibility ? 'intoto' : 'dsse',
+-            fetchOnConflict: false,
++            // A POST that times out after Rekor stored the entry is retried
++            // with the same body, and Rekor answers 409 with the entry's
++            // location. That entry is ours, so fetch it instead of failing.
++            fetchOnConflict: true,
+             retry: options.retry ?? exports.DEFAULT_RETRY,
+             timeout: options.timeout ?? exports.DEFAULT_TIMEOUT,
+         }));

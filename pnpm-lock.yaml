@@ -338,6 +338,9 @@ catalogs:
       specifier: 4.6.5
       version: 4.6.5
 
+patchedDependencies:
+  sigstore@4.0.0: 20e2373e349dccb67473399ea50992b34a08323b08209bd5d8f9dfae91f9d192
+
 importers:
 
   .:
@@ -2919,6 +2922,27 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
+
+  tooling/release:
+    devDependencies:
+      '@trpc/server':
+        specifier: workspace:*
+        version: link:../../packages/server
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.4
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.90.0(oxlint-tsgolint@7.0.2005)
+      oxlint-tsgolint:
+        specifier: 'catalog:'
+        version: 7.0.2005
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@30.0.1)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
 
   tooling/subtree:
     dependencies:
@@ -32603,7 +32627,7 @@ snapshots:
       npm-registry-fetch: 19.1.1(supports-color@7.2.0)
       proc-log: 6.0.0
       semver: 7.8.5
-      sigstore: 4.0.0(supports-color@7.2.0)
+      sigstore: 4.0.0(patch_hash=20e2373e349dccb67473399ea50992b34a08323b08209bd5d8f9dfae91f9d192)(supports-color@7.2.0)
       ssri: 13.0.1
     transitivePeerDependencies:
       - supports-color
@@ -34582,7 +34606,7 @@ snapshots:
       npm-pick-manifest: 11.0.3
       npm-registry-fetch: 19.1.1(supports-color@7.2.0)
       proc-log: 6.0.0
-      sigstore: 4.0.0(supports-color@7.2.0)
+      sigstore: 4.0.0(patch_hash=20e2373e349dccb67473399ea50992b34a08323b08209bd5d8f9dfae91f9d192)(supports-color@7.2.0)
       ssri: 13.0.1
       tar: 7.5.22
     transitivePeerDependencies:
@@ -36476,7 +36500,7 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  sigstore@4.0.0(supports-color@7.2.0):
+  sigstore@4.0.0(patch_hash=20e2373e349dccb67473399ea50992b34a08323b08209bd5d8f9dfae91f9d192)(supports-color@7.2.0):
     dependencies:
       '@sigstore/bundle': 4.0.0
       '@sigstore/core': 3.0.0

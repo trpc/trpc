@@ -107,3 +107,5 @@ catalogs:
     ws: 8.21.3
     yup: 1.7.1
     zod: 4.6.5
+patchedDependencies:
+  sigstore@4.0.0: patches/sigstore@4.0.0.patch
