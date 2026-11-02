@@ -11,14 +11,26 @@ import {
 
 type inferErrorShape<TInferrable extends InferrableClientTypes> =
   inferClientTypes<TInferrable>['errorShape'];
+/** What a client error has, whatever its router. */
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
+  /** The error as the server's error formatter shaped it, if it came from the server. */
   readonly shape: Maybe<TShape>;
+  /** The shape's `data`, such as the tRPC code and HTTP status. */
   readonly data: Maybe<TShape['data']>;
 }
+/**
+ * The shape of a client error for a router or procedure, without the
+ * class. Use it to type errors you pass around, such as in React state.
+ * @see https://trpc.io/docs/client/vanilla/infer-types#infer-trpcclienterror-types
+ */
 export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
   TRPCClientErrorBase<inferErrorShape<TInferrable>>;
 
+/**
+ * Whether a value is a `TRPCClientError`, typed for a router or procedure.
+ * @see https://trpc.io/docs/client/vanilla/error-handling#catching-a-thrown-error
+ */
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
 ): cause is TRPCClientError<TInferrable> {
@@ -44,19 +56,27 @@ function getMessageFromUnknownError(err: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * The error a client call throws, whether the server sent an error or the
+ * request failed.
+ * @see https://trpc.io/docs/client/vanilla/error-handling
+ */
 export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
   // oxlint-disable-next-line typescript/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
+  /** The error this one wraps, such as a network error. */
   public override readonly cause;
+  /** The error as the server's error formatter shaped it, if it came from the server. */
   public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
+  /** The shape's `data`, such as the tRPC code and HTTP status. */
   public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
 
   /**
-   * Additional meta data about the error
-   * In the case of HTTP-errors, we'll have `response` and potentially `responseJSON` here
+   * More about the error. For HTTP errors, the `response` and maybe its
+   * `responseJSON`.
    */
   public meta;
 
@@ -84,6 +104,9 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
+  /**
+   * Turns an error response, or anything thrown, into a `TRPCClientError`.
+   */
   public static from<TRouterOrProcedure extends InferrableClientTypes>(
     _cause: Error | TRPCErrorResponse<any> | object,
     opts: { meta?: Record<string, unknown>; cause?: Error } = {},

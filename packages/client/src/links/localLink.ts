@@ -26,14 +26,32 @@ import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from './internals/subscriptions';
 import type { TRPCLink } from './types';
 
+/**
+ * Options for {@link localLink}.
+ *
+ * @see https://trpc.io/docs/client/links/localLink#options
+ */
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
+  /**
+   * The router to call.
+   * @see https://trpc.io/docs/client/links/localLink#router
+   */
   router: TRouter;
+  /**
+   * Creates the context for each call.
+   * @see https://trpc.io/docs/client/links/localLink#createcontext
+   */
   createContext: () => Promise<inferRouterContext<TRouter>>;
+  /**
+   * Called when a procedure throws.
+   * @see https://trpc.io/docs/client/links/localLink#onerror
+   */
   onError?: (opts: ErrorHandlerOptions<inferRouterContext<TRouter>>) => void;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
 /**
- * localLink is a terminating link that allows you to make tRPC procedure calls directly in your application without going through HTTP.
+ * A terminating link that calls procedures on a router in the same process,
+ * without HTTP.
  *
  * @see https://trpc.io/docs/client/links/localLink
  */
@@ -288,12 +306,13 @@ export function localLink<TRouter extends AnyRouter>(
 }
 
 /**
- * @deprecated use {@link localLink} instead
+ * @deprecated Use {@link localLink} instead.
  * @function
  */
 export const unstable_localLink = localLink;
 
 /**
- * @deprecated use {@link localLink} instead
+ * @deprecated Use {@link localLink} instead. This alias will be removed in a
+ * future major release.
  */
 export const experimental_localLink = localLink;

@@ -34,6 +34,9 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
 }
 
 /**
+ * Retries failed operations. Subscriptions resume from the last tracked event
+ * id.
+ *
  * @see https://trpc.io/docs/client/links/retryLink
  */
 export function retryLink<TInferrable extends InferrableClientTypes>(
