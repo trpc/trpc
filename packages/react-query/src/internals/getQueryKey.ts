@@ -100,10 +100,21 @@ type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
     : [];
 
 /**
- * Method to extract the query key for a procedure
- * @param procedureOrRouter - procedure or AnyRouter
- * @param input - input to procedureOrRouter
- * @param type - defaults to `any`
+ * Returns the TanStack Query key for a procedure or router.
+ * @param procedureOrRouter - a procedure or router from `createTRPCReact`
+ * @param input - the procedure input. Leave it out to match every input in
+ * fuzzy operations like `invalidateQueries`.
+ * @param type - `'query'`, `'infinite'` or `'any'` (default). `'any'` leaves
+ * the type out of the key, so exact reads like `getQueryData` need the same
+ * input the query used and the matching type. Infinite query keys leave out
+ * `cursor` and `direction`.
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead, where
+ * each query procedure has a `queryKey()` method and each router has a
+ * `pathKey()` method.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
  * @see https://trpc.io/docs/client/react/getQueryKey
  */
 export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
@@ -125,8 +136,13 @@ export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
 ];
 
 /**
- * Method to extract the mutation key for a procedure
- * @param procedure - procedure
+ * Returns the TanStack Query mutation key for a procedure.
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead, where
+ * each mutation has a `mutationKey()` method.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
  * @see https://trpc.io/docs/client/react/getQueryKey#mutations
  */
 export function getMutationKey<TProcedure extends DecoratedMutation<any>>(
