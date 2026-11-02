@@ -20,6 +20,11 @@ interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
   onStopped?: () => void;
+  /**
+   * Called when the subscription is completed on the server.
+   * The status will transition to `'idle'` with `data: undefined`.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -28,6 +33,11 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
   onStopped?: () => void;
+  /**
+   * Called when the subscription is completed on the server.
+   * The status will transition to `'idle'` with `data: undefined`.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -201,6 +211,25 @@ export function useSubscription<TOutput, TError>(
     if (!opts.enabled) {
       return;
     }
+
+    // links complete the observable when it's unsubscribed, which must not
+    // be treated as the server ending the subscription
+    let isUnsubscribed = false;
+    let isEnded = false;
+    // runs before the user's callback, so a `reset()` from inside it wins
+    const setEnded = () => {
+      if (isEnded) {
+        return;
+      }
+      isEnded = true;
+      updateState((prev) => ({
+        ...prev,
+        status: 'idle',
+        data: undefined,
+        error: null,
+      }));
+    };
+
     const subscription = opts.subscribe({
       onStarted: () => {
         optsRef.current.onStarted?.();
@@ -228,13 +257,18 @@ export function useSubscription<TOutput, TError>(
         }));
       },
       onStopped: () => {
-        updateState((prev) => ({
-          ...prev,
-          status: 'idle',
-          data: undefined,
-          error: null,
-        }));
+        if (isUnsubscribed) {
+          return;
+        }
+        setEnded();
         optsRef.current.onStopped?.();
+      },
+      onComplete: () => {
+        if (isUnsubscribed) {
+          return;
+        }
+        setEnded();
+        optsRef.current.onComplete?.();
       },
       onConnectionStateChange: (result) => {
         optsRef.current.onConnectionStateChange?.(result);
@@ -262,6 +296,7 @@ export function useSubscription<TOutput, TError>(
     });
 
     currentSubscriptionRef.current = () => {
+      isUnsubscribed = true;
       subscription.unsubscribe();
     };
     // oxlint-disable-next-line react/exhaustive-deps
