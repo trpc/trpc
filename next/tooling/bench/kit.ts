@@ -144,7 +144,7 @@ export const fixtureTsconfig = (include: ReadonlyArray<string>) =>
  * (`runtime`, `typecheck`, `bundle`), each written by its `--snapshot`.
  * `www/build/benchmarks.ts` reads it and fails the build on another shape.
  */
-export const snapshotFile = `${here}/../../www/benchmarks.json`;
+export const snapshotFile = `${here}/../../../www/benchmarks.json`;
 
 const Sections = Schema.fromJsonString(
   Schema.Record(Schema.String, Schema.Unknown),
