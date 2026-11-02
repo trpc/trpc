@@ -52,6 +52,10 @@ interface TRPCMutationOptionsOut<
   mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 }
 
+/**
+ * The `mutationOptions` helper on a mutation procedure. Returns options for `useMutation`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
+ */
 export interface TRPCMutationOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,

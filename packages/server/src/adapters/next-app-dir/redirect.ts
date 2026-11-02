@@ -2,6 +2,8 @@ import type { RedirectType } from 'next/navigation.js';
 import { TRPCError } from '../../@trpc/server';
 
 /**
+ * The error `redirect()` returns, which `nextAppDirCaller` turns into a
+ * Next.js redirect.
  * @internal
  */
 export class TRPCRedirectError extends TRPCError {
@@ -18,11 +20,11 @@ export class TRPCRedirectError extends TRPCError {
 }
 
 /**
- * Like `next/navigation`'s `redirect()` but throws a `TRPCError` that later will be handled by Next.js
- * This provides better typesafety than the `next/navigation`'s `redirect()` since the action continues
- * to execute on the frontend even if Next's `redirect()` has a return type of `never`.
+ * Like `redirect()` from `next/navigation`, for procedures called through
+ * `nextAppDirCaller`. Return it from a resolver; the caller then
+ * redirects. Its type is `undefined`, which matches what the client gets,
+ * unlike Next.js's `never`.
  * @public
- * @remark You should only use this if you're also using `nextAppDirCaller`.
  */
 export const redirect = (url: URL | string, redirectType?: RedirectType) => {
   // We rethrow this internally so the returntype on the client is undefined.

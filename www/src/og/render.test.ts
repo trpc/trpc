@@ -1,11 +1,24 @@
+import { Effect } from 'effect';
 import { isValidElement, type ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { cardElement, drawnAssets, initials, type OgCard } from './card.ts';
+import {
+  cardElement,
+  drawnAssets,
+  drawnBackers,
+  initials,
+  type OgCard,
+  type PostCard,
+  type SponsorCard,
+} from './card.ts';
 import { sponsorCard } from '~/sponsors.ts';
 
-import { fetchLive, type Live } from './live.ts';
+import { serveAvatars, svg, testAvatars } from './fake-avatars.ts';
+import { type Live, live } from './live.ts';
 import { renderOgImage } from './render.ts';
+
+const liveOf = (card: OgCard) =>
+  Effect.runPromise(live(card).pipe(Effect.provide(testAvatars)));
 
 /** A PNG's width and height, from its `IHDR` chunk. */
 const pngSize = (png: Uint8Array) => {
@@ -74,7 +87,7 @@ const cards: ReadonlyArray<OgCard> = [
 ];
 
 /** What the cards show live, as `live.ts` fetches it, but the avatars: initials. */
-const live: Live = {
+const shown: Live = {
   avatars: new Map(),
   stats: { downloads: 7_926_494, stars: 40_759 },
 };
@@ -83,7 +96,7 @@ describe('renderOgImage', () => {
   it.each(cards)(
     'renders the $kind card for $path as a 1200×630 PNG',
     async (card) => {
-      const png = await renderOgImage(card, live);
+      const png = await renderOgImage(card, shown);
       expect([...png.subarray(1, 4)]).toEqual([0x50, 0x4e, 0x47]);
       expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
     },
@@ -98,11 +111,7 @@ describe('renderOgImage without what it fetches', () => {
 });
 
 describe('renderOgImage with SVG avatars', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  const postBy = (image: string): OgCard => ({
+  const postBy = (image: string): PostCard => ({
     authors: [{ image, name: 'tRPC' }],
     date: '2026-11-01',
     description: '',
@@ -112,14 +121,18 @@ describe('renderOgImage with SVG avatars', () => {
     title: 'A',
   });
 
-  const serve = (svg: string) =>
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(svg, { headers: { 'content-type': 'image/svg+xml' } }),
-      ),
-    );
+  /** `sponsorCard` with each avatar at `url(index)`. */
+  const sponsorCardAt = (url: (path: string) => string): SponsorCard => ({
+    ...sponsorCard,
+    backers: sponsorCard.backers.map((backer, index) => ({
+      ...backer,
+      image: url(`/backer-${index}.svg`),
+    })),
+    partners: sponsorCard.partners.map((partner, index) => ({
+      ...partner,
+      image: url(`/partner-${index}.svg`),
+    })),
+  });
 
   /** Each string `node` draws. */
   const textsOf = (node: ReactNode): ReadonlyArray<string> =>
@@ -131,38 +144,62 @@ describe('renderOgImage with SVG avatars', () => {
           ? textsOf(node.props.children)
           : [];
 
-  const namesOn = (card: OgCard) =>
-    card.kind === 'post'
-      ? card.authors.map((author) => author.name)
-      : card.kind === 'sponsor'
-        ? [...card.partners, ...card.backers].map((sponsor) => sponsor.name)
-        : [];
+  const drawn = (card: OgCard, fetched: Live) =>
+    cardElement({ ...drawnAssets(), wordmark: '' }, card, fetched);
 
-  it.each([postBy('https://example.com/unsized.svg'), sponsorCard])(
-    "draws initials on the $kind card for an SVG satori can't size",
-    async (card) => {
-      serve('<svg/>');
-      const fetched = await fetchLive(card);
-      expect(fetched.avatars.size).toBe(0);
-      const texts = textsOf(
-        cardElement({ ...drawnAssets(), wordmark: '' }, card, fetched),
-      );
-      for (const name of namesOn(card)) {
-        expect(texts).toContain(initials(name));
-      }
-      expect(pngSize(await renderOgImage(card, fetched))).toEqual({
-        height: 630,
-        width: 1200,
-      });
-    },
-  );
+  const unsized = (paths: ReadonlyArray<string>) =>
+    Object.fromEntries(paths.map((path) => [path, svg('<svg/>')]));
+
+  it("draws initials for an author whose SVG satori can't size", async () => {
+    await using server = await serveAvatars(unsized(['/unsized.svg']));
+    const card = postBy(server.url('/unsized.svg'));
+    const fetched = await liveOf(card);
+    expect(fetched.avatars.size).toBe(0);
+    expect(textsOf(drawn(card, fetched))).toEqual(
+      expect.arrayContaining(
+        card.authors.map((author) => initials(author.name)),
+      ),
+    );
+    expect(pngSize(await renderOgImage(card, fetched))).toEqual({
+      height: 630,
+      width: 1200,
+    });
+  });
+
+  it("draws initials for a partner, and leaves out a small sponsor, whose SVG satori can't size", async () => {
+    const paths = [
+      ...sponsorCard.partners.map((_, index) => `/partner-${index}.svg`),
+      ...sponsorCard.backers.map((_, index) => `/backer-${index}.svg`),
+    ];
+    await using server = await serveAvatars(unsized(paths));
+    const card = sponsorCardAt(server.url);
+    const fetched = await liveOf(card);
+    expect(fetched.avatars.size).toBe(0);
+    const partnerBackers = card.backers.filter(
+      (backer) => backer.partner === true,
+    );
+    expect(drawnBackers(card, fetched)).toEqual(partnerBackers);
+    expect(textsOf(drawn(card, fetched))).toEqual(
+      expect.arrayContaining(
+        [...card.partners, ...partnerBackers].map((sponsor) =>
+          initials(sponsor.name),
+        ),
+      ),
+    );
+    expect(pngSize(await renderOgImage(card, fetched))).toEqual({
+      height: 630,
+      width: 1200,
+    });
+  });
 
   it('draws an SVG with a viewBox', async () => {
-    serve(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
-    );
-    const card = postBy('https://example.com/logo.svg');
-    const fetched = await fetchLive(card);
+    await using server = await serveAvatars({
+      '/logo.svg': svg(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
+      ),
+    });
+    const card = postBy(server.url('/logo.svg'));
+    const fetched = await liveOf(card);
     expect(fetched.avatars.size).toBe(1);
     expect(pngSize(await renderOgImage(card, fetched))).toEqual({
       height: 630,

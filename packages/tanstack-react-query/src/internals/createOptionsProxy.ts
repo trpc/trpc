@@ -56,6 +56,9 @@ import {
   unwrapLazyArg,
 } from './utils';
 
+/**
+ * Key and filter helpers for a router path.
+ */
 export interface DecorateRouterKeyable<TFeatureFlags extends FeatureFlags> {
   /**
    * Calculate the TanStack Query Key for any path, could be used to invalidate every procedure beneath this path
@@ -90,6 +93,10 @@ interface TypeHelper<TDef extends ResolverDef> {
   };
 }
 
+/**
+ * The input type of a procedure on the options proxy.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ */
 export type inferInput<
   TProcedure extends
     | DecorateInfiniteQueryProcedure<any>
@@ -97,6 +104,10 @@ export type inferInput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['input'];
 
+/**
+ * The output type of a procedure on the options proxy.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ */
 export type inferOutput<
   TProcedure extends
     | DecorateInfiniteQueryProcedure<any>
@@ -104,6 +115,10 @@ export type inferOutput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
 
+/**
+ * The helpers for a query procedure whose input has a `cursor`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ */
 export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
   extends TypeHelper<TDef>, DecorateInfiniteQueryHandleVerbs<TDef> {
   /**
@@ -161,6 +176,11 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
     'queryKey'
   >;
 }
+
+/**
+ * The helpers for a query procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
+ */
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
   extends
     TypeHelper<TDef>,
@@ -222,6 +242,10 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
   >;
 }
 
+/**
+ * The helpers for a mutation procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
+ */
 export interface DecorateMutationProcedure<
   TDef extends ResolverDef,
 > extends TypeHelper<TDef> {
@@ -240,6 +264,10 @@ export interface DecorateMutationProcedure<
   mutationKey: () => TRPCMutationKey<TDef['featureFlags']['keyPrefix']>;
 }
 
+/**
+ * The helpers for a subscription procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ */
 export interface DecorateSubscriptionProcedure<
   TDef extends ResolverDef,
 > extends TypeHelper<TDef> {
@@ -251,6 +279,9 @@ export interface DecorateSubscriptionProcedure<
   subscriptionOptions: TRPCSubscriptionOptions<TDef>;
 }
 
+/**
+ * The helpers for a procedure of the given type.
+ */
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
@@ -293,6 +324,10 @@ export type DecoratedRouterRecord<
     : never;
 };
 
+/**
+ * The object returned by `useTRPC()` and `createTRPCOptionsProxy`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage
+ */
 export type TRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -304,30 +339,57 @@ export type TRPCOptionsProxy<
   DecorateRouterKeyable<TFeatureFlags> &
   DecorateHandleReaders<TFeatureFlags>;
 
+/**
+ * Options shared by every {@link createTRPCOptionsProxy} call.
+ */
 export type TRPCOptionsProxyOptionsBase<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > = {
+  /**
+   * The `QueryClient`, or a function that returns it.
+   */
   queryClient: QueryClient | (() => QueryClient);
+  /**
+   * @internal
+   */
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
 } & KeyPrefixOptions<TFeatureFlags>;
 
+/**
+ * Call procedures on a router directly, for example on the server.
+ */
 export interface TRPCOptionsProxyOptionsInternal<
   TRouter extends AnyTRPCRouter,
 > {
+  /**
+   * The router to call.
+   */
   router: TRouter;
+  /**
+   * The context for each call, or a function that returns it.
+   */
   ctx:
     | inferRouterContext<TRouter>
     | (() => MaybePromise<inferRouterContext<TRouter>>);
 }
 
+/**
+ * Call procedures through a tRPC client.
+ */
 export interface TRPCOptionsProxyOptionsExternal<
   TRouter extends AnyTRPCRouter,
 > {
+  /**
+   * The tRPC client to call procedures with.
+   */
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
 }
 
+/**
+ * Options for {@link createTRPCOptionsProxy}. Pass either `client` or `router` and `ctx`.
+ */
 export type TRPCOptionsProxyOptions<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -351,7 +413,15 @@ type UtilsMethods =
   | keyof DecorateSubscriptionProcedure<any>;
 
 /**
- * Create a typed proxy from your router types. Can also be used on the server.
+ * Creates the options proxy without React context. Works on the server too.
+ *
+ * @example
+ * ```ts
+ * export const trpc = createTRPCOptionsProxy<AppRouter>({
+ *   client: trpcClient,
+ *   queryClient,
+ * });
+ * ```
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
  * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components

@@ -17,20 +17,22 @@ import { getTransformer } from '../../unstable-internals';
 import type { HTTPHeaders } from '../types';
 
 /**
+ * The options every HTTP link takes.
  * @internal
  */
 export type HTTPLinkBaseOptions<
   TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = {
+  /** The URL of your tRPC endpoint, such as `http://localhost:3000/trpc`. */
   url: string | URL;
   /**
-   * Add ponyfill for fetch
+   * The `fetch` to use, if not the global one.
    */
   fetch?: FetchEsque;
   /**
-   * Send all requests `as POST`s requests regardless of the procedure type
-   * The HTTP handler must separately allow overriding the method. See:
-   * @see https://trpc.io/docs/rpc
+   * Sends every call as a POST, whatever its type. The server must set
+   * `allowMethodOverride: true`.
+   * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
    */
   methodOverride?: 'POST';
 } & TransformerOptions<TRoot>;

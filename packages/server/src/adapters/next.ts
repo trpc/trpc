@@ -20,16 +20,28 @@ import type {
 } from './node-http';
 import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
 
+/**
+ * What `createContext` gets in the Next.js API route adapter: `req`, `res`
+ * and the request's `info`.
+ * @see https://trpc.io/docs/server/adapters/nextjs
+ */
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
 
 /**
- * Preventing "TypeScript where it's tough not to get "The inferred type of 'xxxx' cannot be named without a reference to [...]"
+ * Re-exported so declaration emit can name these types without importing
+ * `next` ("The inferred type of 'x' cannot be named").
  */
 export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
+/**
+ * Creates a Next.js API route handler for a router, for the Pages Router.
+ * The file must be named `[trpc].ts`. For the App Router, use
+ * `fetchRequestHandler`.
+ * @see https://trpc.io/docs/server/adapters/nextjs#nextjs-example
+ */
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {

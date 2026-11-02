@@ -86,6 +86,7 @@ export interface unstable_TRPCInfiniteQueryHandle<
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
 }
 
+/** Any query or infinite query handle. */
 export type unstable_AnyTRPCHandle =
   | unstable_TRPCQueryHandle<any>
   | unstable_TRPCInfiniteQueryHandle<any>;
@@ -105,6 +106,11 @@ type HandleGetNextPageParam<TDef extends ResolverDef> =
     TDef['output']
   >;
 
+/**
+ * Options for starting an infinite query that returns a handle. Pass
+ * `pages` and `getNextPageParam` to load several pages up front.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ */
 export type unstable_TRPCPrefetchInfiniteOptions<TDef extends ResolverDef> =
   unstable_TRPCPrefetchOptions & {
     initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
@@ -133,7 +139,7 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
    * Same as `void queryClient.prefetchQuery(trpc.<path>.queryOptions(input, opts))`.
    * On `useTRPC()`, call it during render: like TanStack's `usePrefetchQuery`, it only
    * starts a query the cache has no state for.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
    */
   unstable_$prefetch: (
     ...args: undefined extends TDef['input']
@@ -147,7 +153,7 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
    *
    * Same as `await queryClient.ensureQueryData({ ...trpc.<path>.queryOptions(input, opts), revalidateIfStale: true })`.
    * Not available on `useTRPC()`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
    */
   unstable_$ensure: (
     ...args: undefined extends TDef['input']
@@ -160,7 +166,7 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
    *
    * Same as `await queryClient.fetchQuery(trpc.<path>.queryOptions(input, opts))`.
    * Not available on `useTRPC()`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
    */
   unstable_$fetch: (
     ...args: undefined extends TDef['input']
@@ -176,7 +182,7 @@ export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
    *
    * Same as `void queryClient.prefetchInfiniteQuery(trpc.<path>.infiniteQueryOptions(input, opts))`.
    * On `useTRPC()`, call it during render, like `unstable_$prefetch`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
    */
   unstable_$prefetchInfinite: (
     input: TDef['input'],
@@ -187,7 +193,7 @@ export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
    *
    * Same as `await queryClient.ensureInfiniteQueryData({ ...trpc.<path>.infiniteQueryOptions(input, opts), revalidateIfStale: true })`.
    * Not available on `useTRPC()`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
    */
   unstable_$ensureInfinite: (
     input: TDef['input'],
@@ -198,7 +204,7 @@ export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
    *
    * Same as `await queryClient.fetchInfiniteQuery(trpc.<path>.infiniteQueryOptions(input, opts))`.
    * Not available on `useTRPC()`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
    */
   unstable_$fetchInfinite: (
     input: TDef['input'],
@@ -212,7 +218,7 @@ export interface DecorateHandleReaders<TFeatureFlags extends FeatureFlags> {
    * Options for a handle: the same options `trpc.<path>.queryOptions(input)` or
    * `trpc.<path>.infiniteQueryOptions(input, opts)` return for the handle's procedure and input.
    * Pass them to `useQuery`, `useSuspenseQuery`, `useSuspenseInfiniteQuery`, etc.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#reading-a-handle
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
    */
   unstable_$fromHandle: {
     <TDef extends ResolverDef, TData = TDef['output']>(
@@ -248,10 +254,21 @@ export interface DecorateHandleReaders<TFeatureFlags extends FeatureFlags> {
   };
 }
 
+/**
+ * The handle type a query procedure's `unstable_$prefetch()` returns, for
+ * typing props. `unstable_$ensure()` and `unstable_$fetch()` resolve to the
+ * same type.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ */
 export type unstable_inferQueryHandle<
   TProcedure extends DecorateQueryHandleVerbs<any>,
 > = ReturnType<TProcedure['unstable_$prefetch']>;
 
+/**
+ * The handle type an infinite query procedure's
+ * `unstable_$prefetchInfinite()` returns, for typing props.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ */
 export type unstable_inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryHandleVerbs<any>,
 > = ReturnType<TProcedure['unstable_$prefetchInfinite']>;

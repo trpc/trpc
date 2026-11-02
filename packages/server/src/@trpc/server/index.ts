@@ -145,8 +145,8 @@ export {
 } from '../../unstable-core-do-not-import';
 
 /**
- * @deprecated
- * Use `Awaited<ReturnType<typeof myFunction>>` instead
+ * The type a function's promise resolves to.
+ * @deprecated Use `Awaited<ReturnType<typeof myFunction>>` instead.
  */
 export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
   Awaited<ReturnType<TFunction>>;

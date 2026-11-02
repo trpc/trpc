@@ -37,6 +37,12 @@ import type { NextAppDirDecorateRouterRecord } from './types';
 
 export type { ActionHandlerDef };
 
+/**
+ * Creates a tRPC client for React Server Components, with a `revalidate`
+ * helper on each procedure.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
@@ -78,6 +84,12 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
   input: FormData | TDef['input'],
 ) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
+/**
+ * Turns procedures into Next.js server actions.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/server-actions
+ */
 export function experimental_createServerActionHandler<
   TInstance extends {
     _config: RootConfig<AnyRootTypes>;
@@ -195,6 +207,11 @@ export function experimental_createServerActionHandler<
   };
 }
 
+/**
+ * A route handler that revalidates a cache tag sent in the request body.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export async function experimental_revalidateEndpoint(req: Request) {
   const { cacheTag } = await req.json();

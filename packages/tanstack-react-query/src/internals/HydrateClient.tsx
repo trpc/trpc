@@ -4,7 +4,9 @@ import * as React from 'react';
 import { dehydrateUnsent } from './hydration';
 import { unwrapLazyArg } from './utils';
 
+/** The props of the component `unstable_createHydrateClient` returns. */
 export interface unstable_HydrateClientProps {
+  /** Rendered inside the hydration boundary. */
   children?: React.ReactNode;
 }
 
@@ -17,7 +19,7 @@ export interface unstable_HydrateClientProps {
  * React Server Components only: the package resolves to the server build
  * through the `react-server` export condition.
  *
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#hydrate-client
+ * @see https://trpc.io/docs/client/tanstack-react-query/server-components#using-your-api
  */
 export function unstable_createHydrateClient(
   _queryClient: QueryClient | (() => QueryClient),

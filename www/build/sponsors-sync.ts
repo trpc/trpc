@@ -35,7 +35,8 @@ import {
 import { Command, Flag, Prompt } from 'effect/cli';
 import { FetchHttpClient } from 'effect/http';
 
-import { type Sponsor, sponsorTiers } from '../src/sponsors.ts';
+import { Avatars, fetchAvatars } from '../src/og/avatar.ts';
+import { isSmallSponsor, type Sponsor, sponsorTiers } from '../src/sponsors.ts';
 import {
   fetchLifetimeValues,
   fetchSponsorships,
@@ -78,6 +79,30 @@ const SponsorSchema = Schema.Struct({
     Schema.Literals(sponsorTiers.map((entry) => entry.tier)),
   ),
   weight: Schema.Number,
+  imageless: Schema.optionalKey(Schema.Literal(true)),
+});
+
+/**
+ * `sponsors`, with each small sponsor whose avatar doesn't load marked
+ * `imageless`, so the site leaves them out rather than draw a broken image.
+ * Partners keep their place whatever their avatar does. Fails if no small
+ * sponsor's avatar loads, which says more about the network than them.
+ */
+export const markImageless = Effect.fn('markImageless')(function* (
+  sponsors: ReadonlyArray<Sponsor>,
+) {
+  const small = sponsors.filter(isSmallSponsor);
+  const loaded = yield* fetchAvatars(small.map((sponsor) => sponsor.imgSrc));
+  if (small.length > 0 && loaded.size === 0) {
+    return yield* new SponsorsSyncError({
+      message: `No avatar loaded for any of the ${small.length} small sponsors; is the network or GitHub's avatar host down? Wrote nothing.`,
+    });
+  }
+  return sponsors.map((sponsor): Sponsor =>
+    isSmallSponsor(sponsor) && !loaded.has(sponsor.imgSrc)
+      ? { ...sponsor, imageless: true }
+      : sponsor,
+  );
 });
 
 /** Where the sync writes. */
@@ -180,15 +205,23 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
       message: `GitHub reports nothing paid to ${logins}; is SPONSORS_SYNC_GITHUB_TOKEN theirs? Wrote nothing.`,
     });
   }
-  const sponsors = sponsorsList({
-    config: opts.config,
-    lifetimeValues,
-    now: yield* Clock.currentTimeMillis,
-    sponsorships,
-  });
+  const sponsors = yield* markImageless(
+    sponsorsList({
+      config: opts.config,
+      lifetimeValues,
+      now: yield* Clock.currentTimeMillis,
+      sponsorships,
+    }),
+  );
+  const imageless = sponsors.filter((sponsor) => sponsor.imageless === true);
+  if (imageless.length > 0) {
+    yield* Console.log(
+      `No avatar loaded for ${imageless.map((sponsor) => sponsor.login).join(', ')}; the site leaves them out.`,
+    );
+  }
   if (opts.onlyWhenSponsorsChange === true) {
     const lineup = (sponsor: Sponsor) =>
-      `${sponsor.login} ${sponsor.tier ?? ''}`;
+      `${sponsor.login} ${sponsor.tier ?? ''} ${sponsor.imageless === true ? 'imageless' : ''}`;
     const listed = new Set(
       (yield* readSponsorsFile(opts.sponsorsFile)).map(lineup),
     );
@@ -286,7 +319,12 @@ if (import.meta.main) {
     ),
   );
   Command.run(command, { version: '0.0.0' }).pipe(
-    Effect.provide(Layer.mergeAll(NodeServices.layer, FetchHttpClient.layer)),
+    Effect.provide(
+      Layer.mergeAll(
+        NodeServices.layer,
+        Layer.provideMerge(Avatars.layer(), FetchHttpClient.layer),
+      ),
+    ),
     NodeRuntime.runMain,
   );
 }

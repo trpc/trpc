@@ -25,11 +25,16 @@ import {
   type TRPCLink,
 } from './types';
 
+/**
+ * The options of `httpLink`.
+ * @see https://trpc.io/docs/client/links/httpLink#httplink-options
+ */
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
-     * Headers to be set on outgoing requests or a callback that of said headers
-     * @see http://trpc.io/docs/client/headers
+     * Headers for each request: an object, or a function of the operation
+     * that returns them.
+     * @see https://trpc.io/docs/client/headers
      */
     headers?:
       | HTTPHeaders
@@ -71,6 +76,8 @@ const universalRequester: Requester = (opts) => {
 };
 
 /**
+ * A terminating link that sends each call in its own HTTP request. It can
+ * send `FormData` and binary inputs.
  * @see https://trpc.io/docs/client/links/httpLink
  */
 export function httpLink<TRouter extends AnyRouter = AnyRouter>(

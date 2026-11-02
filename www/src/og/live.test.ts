@@ -1,34 +1,25 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { Effect } from 'effect';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { OgCard } from './card.ts';
-import {
-  avatarUrl,
-  cacheControl,
-  fetchAvatar,
-  fetchLive,
-  fetchStats,
-  noLive,
-  sizableSvg,
-} from './live.ts';
+import { png, serveAvatars, testAvatars } from './fake-avatars.ts';
+import { cacheControl, fetchStats, live, noLive } from './live.ts';
 
 const home: OgCard = { kind: 'home', path: '/' };
-const post: OgCard = {
-  authors: [
-    { image: 'https://github.com/KATT.png', name: 'Alex / KATT' },
-    { name: 'Someone' },
-  ],
+
+const postBy = (image: string): OgCard => ({
+  authors: [{ image, name: 'Alex / KATT' }, { name: 'Someone' }],
   date: '2025-03-21',
   description: '',
   kind: 'post',
   path: '/blog/a',
   readingMinutes: 4,
   title: 'A',
-};
+});
 
-const respond = (routes: Record<string, () => Response>) =>
+/** `fetch` answering each URL that starts with a key, until disposed. */
+const stubFetch = (routes: Record<string, () => Response>) => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -41,14 +32,15 @@ const respond = (routes: Record<string, () => Response>) =>
       return route[1]();
     }),
   );
+  return makeResource({}, () => vi.unstubAllGlobals());
+};
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+const liveOf = (card: OgCard) =>
+  Effect.runPromise(live(card).pipe(Effect.provide(testAvatars)));
 
 describe('fetchStats', () => {
   it("reads the repo's stars and @trpc/server's weekly downloads", async () => {
-    respond({
+    using _fetch = stubFetch({
       'https://api.github.com/repos/trpc/trpc': () =>
         Response.json({ stargazers_count: 40_759 }),
       'https://api.npmjs.org/downloads/point/last-week/@trpc/server': () =>
@@ -61,7 +53,7 @@ describe('fetchStats', () => {
   });
 
   it('leaves out a number that fails', async () => {
-    respond({
+    using _fetch = stubFetch({
       'https://api.github.com/': () => new Response('', { status: 403 }),
       'https://api.npmjs.org/': () => Response.json({ error: 'nope' }),
     });
@@ -72,77 +64,25 @@ describe('fetchStats', () => {
   });
 });
 
-describe('fetchAvatar', () => {
-  it('asks GitHub for 128 pixels, and gives the image as a data URI', async () => {
-    expect(avatarUrl('https://github.com/KATT.png')).toBe(
-      'https://github.com/KATT.png?size=128',
+describe('live', () => {
+  it("fetches all of a card's avatars at once", async () => {
+    const paths = Array.from({ length: 24 }, (_, index) => `/${index}.png`);
+    await using server = await serveAvatars(
+      Object.fromEntries(paths.map((path) => [path, { ...png(), delay: 50 }])),
     );
-    expect(
-      avatarUrl('https://avatars.githubusercontent.com/u/459267?v=4'),
-    ).toBe('https://avatars.githubusercontent.com/u/459267?v=4&size=128');
-    expect(avatarUrl('https://evilgithubusercontent.com/a.png')).toBe(
-      'https://evilgithubusercontent.com/a.png',
-    );
-    respond({
-      'https://github.com/KATT.png?size=128': () =>
-        new Response(new Uint8Array([1, 2, 3]), {
-          headers: { 'content-type': 'image/jpeg' },
-        }),
+    const fetched = await liveOf({
+      backerSlots: 12,
+      backers: paths.map((path) => ({ image: server.url(path), name: path })),
+      description: '',
+      kind: 'sponsor',
+      partners: [],
+      path: '/sponsor',
+      sponsorCount: paths.length,
+      title: 'Sponsor',
+      url: 'https://github.com/sponsors/trpc',
     });
-    expect(await fetchAvatar('https://github.com/KATT.png')).toBe(
-      'data:image/jpeg;base64,AQID',
-    );
-  });
-
-  it('takes an SVG, such as the tRPC team logo', async () => {
-    const logo = readFileSync(
-      fileURLToPath(new URL('../../public/img/logo.svg', import.meta.url)),
-    );
-    respond({
-      'https://trpc.io/img/logo.svg': () =>
-        new Response(logo, { headers: { 'content-type': 'image/svg+xml' } }),
-    });
-    expect(await fetchAvatar('https://trpc.io/img/logo.svg')).toBe(
-      `data:image/svg+xml;base64,${logo.toString('base64')}`,
-    );
-  });
-
-  it("leaves out an SVG satori can't size", async () => {
-    respond({
-      'https://example.com/a.svg': () =>
-        new Response('<svg/>', {
-          headers: { 'content-type': 'image/svg+xml' },
-        }),
-    });
-    expect(await fetchAvatar('https://example.com/a.svg')).toBeUndefined();
-  });
-
-  it.each([
-    ['<svg viewBox="0 0 24 24"/>', true],
-    ["<svg viewBox='0,0,24,24'/>", true],
-    ['<svg width="24" height="24px"/>', true],
-    ['<?xml version="1.0"?>\n<SVG viewBox="0 0 1 1"></SVG>', true],
-    ['<svg/>', false],
-    ['<svg width="24"/>', false],
-    ['<svg width="100%" height="100%"/>', false],
-    ['<svg viewBox="0 0 0 24"/>', false],
-    ['<svg width="0" height="24"/>', false],
-    ['<svg width="0" height="24" viewBox="0 0 24 24"/>', false],
-    ['<svg width="24" viewBox="0 0 24 12"/>', true],
-    ['<svg height="24" viewBox="0 0 0 24"/>', false],
-    ['<svg width="24" viewBox="nope"/>', false],
-    ['<svg viewBox="nope"/>', false],
-    ['<html>not an svg</html>', false],
-  ])('sizes %s: %s', (svg, sizable) => {
-    expect(sizableSvg(svg)).toBe(sizable);
-  });
-
-  it("is undefined when there's no image to be had", async () => {
-    respond({
-      'https://github.com/nobody.png': () => new Response('', { status: 404 }),
-    });
-    expect(await fetchAvatar('https://github.com/nobody.png')).toBeUndefined();
-    expect(await fetchAvatar('https://example.com/a.png')).toBeUndefined();
+    expect(fetched.avatars.size).toBe(paths.length);
+    expect(server.mostInFlight).toBeGreaterThan(8);
   });
 });
 
@@ -160,48 +100,35 @@ describe('cacheControl', () => {
   });
 
   it("keeps a post as a page, unless an author's avatar didn't load", async () => {
-    respond({
-      'https://github.com/KATT.png': () =>
-        new Response(new Uint8Array([1]), {
-          headers: { 'content-type': 'image/png' },
-        }),
-    });
-    const live = await fetchLive(post);
-    expect(live.stats).toEqual({});
-    expect([...live.avatars.keys()]).toEqual(['https://github.com/KATT.png']);
-    expect(cacheControl(post, live)).toBeUndefined();
+    await using server = await serveAvatars({ '/katt.png': png() });
+    const post = postBy(server.url('/katt.png'));
+    const fetched = await liveOf(post);
+    expect(fetched.stats).toEqual({});
+    expect([...fetched.avatars.keys()]).toEqual([server.url('/katt.png')]);
+    expect(cacheControl(post, fetched)).toBeUndefined();
     expect(cacheControl(post, noLive)).toContain('s-maxage=600');
   });
 
   it("fetches each sponsor's avatar, and keeps the card briefly if one didn't load", async () => {
+    await using server = await serveAvatars({ '/a.png': png() });
     const sponsor: OgCard = {
-      backers: [{ image: 'https://example.com/b.png', name: 'B' }],
+      backerSlots: 12,
+      backers: [{ image: server.url('/b.png'), name: 'B' }],
       description: '',
       kind: 'sponsor',
-      more: 0,
-      partners: [
-        { image: 'https://example.com/a.png', name: 'A', tier: 'Silver' },
-      ],
+      partners: [{ image: server.url('/a.png'), name: 'A', tier: 'Silver' }],
       path: '/sponsor',
+      sponsorCount: 2,
       title: 'Sponsor',
       url: 'https://github.com/sponsors/trpc',
     };
-    respond({
-      'https://example.com/a.png': () =>
-        new Response(new Uint8Array([1]), {
-          headers: { 'content-type': 'image/png' },
-        }),
-    });
-    const live = await fetchLive(sponsor);
-    expect([...live.avatars.keys()]).toEqual(['https://example.com/a.png']);
-    expect(cacheControl(sponsor, live)).toContain('s-maxage=600');
+    const fetched = await liveOf(sponsor);
+    expect([...fetched.avatars.keys()]).toEqual([server.url('/a.png')]);
+    expect(cacheControl(sponsor, fetched)).toContain('s-maxage=600');
     expect(
       cacheControl(sponsor, {
-        ...live,
-        avatars: new Map([
-          ...live.avatars,
-          ['https://example.com/b.png', 'data:'],
-        ]),
+        ...fetched,
+        avatars: new Map([...fetched.avatars, [server.url('/b.png'), 'data:']]),
       }),
     ).toBeUndefined();
   });
