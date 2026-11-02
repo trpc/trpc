@@ -178,7 +178,8 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   /** The router to serve. */
   router: TRouter;
   /**
-   * Lets clients call queries with POST. Mutations still need POST.
+   * Lets clients call queries and subscriptions with POST as well as GET.
+   * Mutations always use POST.
    * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
    * @default false
    */

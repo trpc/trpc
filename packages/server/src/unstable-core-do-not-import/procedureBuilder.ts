@@ -112,9 +112,12 @@ export interface ProcedureResolverOptions<
   TContextOverridesIn,
   TInputOut,
 > {
-  /** The context, with what middlewares added to it. */
+  /** The context, after middlewares have added to or changed it. */
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
-  /** The input, as the validators returned it. */
+  /**
+   * The input, after the validators and any middleware that replaced it
+   * with `next({ input })`.
+   */
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
   /**
    * Aborts when the client cancels the request or disconnects.
@@ -125,7 +128,8 @@ export interface ProcedureResolverOptions<
    */
   path: string;
   /**
-   * The call's index in its batch, when it was batched.
+   * The call's zero-based index in its batch. A call that wasn't batched
+   * gets `0`.
    */
   batchIndex?: number;
 }
@@ -468,7 +472,7 @@ export interface ProcedureBuilder<
 
   /**
    * Ends the builder with a subscription: a procedure that streams events
-   * from an async generator.
+   * from an async iterable, such as an async generator.
    * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends AsyncIterable<any, void, any>>(
