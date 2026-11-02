@@ -10,7 +10,7 @@ import {
   initials,
   type OgCard,
   type PostCard,
-  plainText,
+  partnerName,
   type SponsorCard,
 } from './card.ts';
 import { cardFooter, sponsorCard } from '~/sponsors.ts';
@@ -176,7 +176,7 @@ describe('renderOgImage with SVG avatars', () => {
       expect(textsOf(drawn(card, withSponsors, cardFooter))).toEqual(
         expect.arrayContaining([
           'SUPPORTED BY',
-          ...cardFooter.partners.map((partner) => plainText(partner.name)),
+          ...cardFooter.partners.map((partner) => partnerName(partner.name)),
         ]),
       );
     },
@@ -268,7 +268,7 @@ describe('renderOgImage with SVG avatars', () => {
     });
   });
 
-  it("draws every partner's full name along a card's foot, however long, with the other sponsors' faces", async () => {
+  it("draws every partner's name along a card's foot, a long one cut short, with the other sponsors' faces", async () => {
     const square = svg(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
     );
@@ -295,8 +295,16 @@ describe('renderOgImage with SVG avatars', () => {
     const card = postBy(server.url('/p0.svg'));
     const fetched = await liveOf(card, footer);
     const texts = textsOf(drawn(card, fetched, footer));
-    expect(texts).toEqual(expect.arrayContaining(names));
-    expect(texts.join(' ')).not.toContain('…');
+    expect(texts).toEqual(
+      expect.arrayContaining([
+        'CodeRabbit',
+        'Greptile',
+        'SerpApi',
+        'Some Company N…',
+        'Wonderfully Long…',
+      ]),
+    );
+    expect(texts).not.toContain('Some Company Name GmbH & Co. KG');
     expect(pngSize(await renderOgImage(card, fetched, footer))).toEqual({
       height: 630,
       width: 1200,

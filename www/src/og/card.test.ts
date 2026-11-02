@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 import { ogImagePath } from '../seo.ts';
+import { partners } from '../sponsors.ts';
 import {
   colors,
   displayUrl,
@@ -13,6 +14,8 @@ import {
   footerLayout,
   footerNameSizes,
   initials,
+  partnerName,
+  partnerNameEms,
   partnerNameSizes,
   partnerRowLayout,
   plainText,
@@ -214,6 +217,30 @@ describe('textWidth', () => {
   });
 });
 
+describe('partnerName', () => {
+  it("draws every one of sponsors.json's partners' names whole", () => {
+    expect(partners.length).toBeGreaterThan(0);
+    for (const partner of partners) {
+      expect(partnerName(partner.name)).toBe(partner.name);
+    }
+  });
+
+  it('cuts a longer name at the last character that fits, with …', () => {
+    expect(partnerName('Northwind Traders')).toBe('Northwind Traders');
+    expect(partnerName('Some Company Name GmbH & Co. KG')).toBe(
+      'Some Company N…',
+    );
+    expect(partnerName('Wonderfully Long Partner Name')).toBe(
+      'Wonderfully Long…',
+    );
+    for (const name of ['Some Company Name GmbH & Co. KG', 'W'.repeat(40)]) {
+      expect(textWidth(partnerName(name), 1)).toBeLessThanOrEqual(
+        partnerNameEms,
+      );
+    }
+  });
+});
+
 describe('footerLayout', () => {
   const today = ['CodeRabbit', 'Greptile', 'SerpApi'];
 
@@ -230,7 +257,7 @@ describe('footerLayout', () => {
     expect(footerLayout(today, 0, 20, 1056).faces).toBe(0);
   });
 
-  it('makes the names smaller, not shorter, to leave room for a few faces', () => {
+  it('makes names that fit in full smaller, not shorter, to leave room for a few faces', () => {
     const long = [...today, 'Proxidize'];
     const layout = footerLayout(long, 12, 20, 1056);
     expect(layout.nameSize).toBeLessThan(footerNameSizes[0]);
@@ -249,7 +276,13 @@ describe('footerLayout', () => {
     expect(layout.wraps).toBe(false);
   });
 
-  it('wraps names that fit at no size, each whole, at the smallest, with no faces', () => {
+  it('measures a long name as it is cut short', () => {
+    expect(
+      footerLayout([...today, 'Some Company Name GmbH & Co. KG'], 12, 20, 1056),
+    ).toEqual(footerLayout([...today, 'Some Company N…'], 12, 20, 1056));
+  });
+
+  it('wraps names that fit on one line at no size, at the smallest, with no faces', () => {
     const many = [
       ...today,
       'Some Company Name GmbH & Co. KG',
@@ -277,21 +310,35 @@ describe('partnerRowLayout', () => {
 
   it('makes a long name smaller to fit on one line', () => {
     const layout = partnerRowLayout(
-      ['CodeRabbit', 'Greptile', 'A Rather Long Partner Name'].map(partner),
+      ['CodeRabbit', 'Greptile', 'SerpApi', 'A Rather Long Partner Name'].map(
+        partner,
+      ),
       1056,
     );
     expect(layout.nameSize).toBeLessThan(partnerNameSizes[0]);
     expect(layout.wraps).toBe(false);
   });
 
-  it('wraps names that fit at no size, each whole, at the largest', () => {
+  it('cuts a very long name short before it makes the names smaller', () => {
+    const names = ['CodeRabbit', 'Greptile', 'SerpApi'];
+    expect(
+      partnerRowLayout(
+        [...names, 'Some Company Name GmbH & Co. KG'].map(partner),
+        1056,
+      ),
+    ).toEqual(
+      partnerRowLayout([...names, 'Some Company N…'].map(partner), 1056),
+    );
+  });
+
+  it('wraps names that fit on one line at no size, at the largest', () => {
     expect(
       partnerRowLayout(
         [
           'CodeRabbit',
-          'Greptile',
-          'SerpApi',
           'Some Company Name GmbH & Co. KG',
+          'Wonderfully Long Partner Name',
+          'A Rather Long Partner Name',
         ].map(partner),
         1056,
       ),

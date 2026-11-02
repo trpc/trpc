@@ -75,10 +75,7 @@ export async function fetchStats(
  * The avatars `card` draws: the sponsor card's sponsors', or the sponsors'
  * along any other card's `footer`, and a post's authors'.
  */
-const imagesOf = (
-  card: OgCard,
-  footer: CardFooter,
-): ReadonlyArray<string> => {
+const imagesOf = (card: OgCard, footer: CardFooter): ReadonlyArray<string> => {
   const images = [...footer.partners, ...footer.backers].map(
     (sponsor) => sponsor.image,
   );

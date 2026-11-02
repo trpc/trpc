@@ -65,7 +65,10 @@ export interface CardFooter {
    */
   readonly backers: ReadonlyArray<CardSponsor>;
   readonly faceSlots: number;
-  /** Every partner, by rank, each drawn beside their full name. */
+  /**
+   * Every partner, gold first, then each lower tier, by rank within a
+   * tier, each drawn beside their name (`partnerName`).
+   */
   readonly partners: ReadonlyArray<CardSponsor>;
   /** Every sponsor, which the count of those it doesn't draw is out of. */
   readonly sponsorCount: number;
@@ -84,7 +87,10 @@ export interface SponsorCard {
   >;
   readonly backerSlots: number;
   readonly description: string;
-  /** The partners, first by rank, each with their tier's name: `Silver`. */
+  /**
+   * The first partners, gold first, then each lower tier, by rank within a
+   * tier, each with their tier's name: `Silver`.
+   */
   readonly partners: ReadonlyArray<CardSponsor & { readonly tier: string }>;
   readonly path: string;
   /** Every sponsor, which the count of those it doesn't draw is out of. */
@@ -172,6 +178,30 @@ const charWidth = (char: string) => {
 /** About how wide `text` is in Inter ExtraBold at `fontSize`, erring wide. */
 export const textWidth = (text: string, fontSize: number) =>
   [...text].reduce((sum, char) => sum + charWidth(char), 0) * fontSize;
+
+/**
+ * The widest a partner's name is drawn, in ems by `textWidth`: room for
+ * every partner's today, the widest of which, `CodeRabbit`, is about 6.3.
+ */
+export const partnerNameEms = 11;
+
+/**
+ * A partner's `name` as the cards draw it: whole when it fits in
+ * `partnerNameEms`, else cut at the last character that fits with `…`.
+ */
+export const partnerName = (name: string) => {
+  const text = plainText(name);
+  if (textWidth(text, 1) <= partnerNameEms) {
+    return text;
+  }
+  const chars = [...text];
+  const cut = (end: number) => `${chars.slice(0, end).join('').trimEnd()}…`;
+  let end = chars.length;
+  while (end > 0 && textWidth(cut(end), 1) > partnerNameEms) {
+    end -= 1;
+  }
+  return cut(end);
+};
 
 /** `https://trpc.io/docs/v10/a` as `trpc.io/docs/v10/a`. */
 export const displayUrl = (url: string) => {
@@ -570,8 +600,8 @@ const partnerLabel = (partner: SponsorCard['partners'][number]) =>
 
 /**
  * The largest name size at which `partners` fit on one line in
- * `width`, each beside their avatar with their tier under their name. When
- * none does, they wrap at the largest, each whole.
+ * `width`, each beside their avatar with their tier under their name as
+ * `partnerName` draws it. When none does, they wrap at the largest.
  */
 export function partnerRowLayout(
   partners: SponsorCard['partners'],
@@ -584,7 +614,7 @@ export function partnerRowLayout(
         72 +
         18 +
         Math.max(
-          textWidth(plainText(partner.name), size),
+          textWidth(partnerName(partner.name), size),
           textWidth(partnerLabel(partner), size - 6),
         ),
       0,
@@ -635,7 +665,7 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
                       fontWeight: 800,
                       whiteSpace: 'nowrap',
                     },
-                    plainText(partner.name),
+                    partnerName(partner.name),
                   ),
                   box(
                     {
@@ -726,16 +756,16 @@ export interface FooterLayout {
   readonly nameSize: number;
   /**
    * When the names don't fit on one line at any size, they wrap at the
-   * smallest, each whole, so the foot takes as few lines as it can.
+   * smallest, so the foot takes as few lines as it can.
    */
   readonly wraps: boolean;
 }
 
 /**
- * How the foot fits `names` and up to `faces` faces into `width`: the
- * largest name size that leaves room for a few faces, else the largest
- * at which the names fit, then as many faces as fit. A partner's name is
- * never cut short.
+ * How the foot fits the partners' `names`, as `partnerName` draws them, and
+ * up to `faces` faces into `width`: the largest name size that leaves room
+ * for a few faces, else the largest at which the names fit, then as many
+ * faces as fit.
  */
 export function footerLayout(
   names: ReadonlyArray<string>,
@@ -750,7 +780,8 @@ export function footerLayout(
     32;
   const namesWidth = (size: number) =>
     names.reduce(
-      (sum, name) => sum + footerAvatarSize(size) + 10 + textWidth(name, size),
+      (sum, name) =>
+        sum + footerAvatarSize(size) + 10 + textWidth(partnerName(name), size),
       0,
     ) +
     28 * Math.max(0, names.length - 1);
@@ -784,8 +815,8 @@ export function footerLayout(
 
 /**
  * Along the foot of every card but `/sponsor`'s, which draws them larger:
- * the partners whose avatars loaded, each beside their full name, as the
- * home page's "Supported by" has their logos, then the faces of as many
+ * the partners whose avatars loaded, each beside their name, as the home
+ * page's "Supported by" has their logos, then the faces of as many
  * other sponsors as fit, and a count of the rest. With no partner and no
  * face loaded, there's no strip.
  */
@@ -852,7 +883,7 @@ const sponsorsFooter = (footer: CardFooter, live: Live): ReactNode => {
                 fontWeight: 800,
                 whiteSpace: 'nowrap',
               },
-              partner.name,
+              partnerName(partner.name),
             ),
           ),
         ),
