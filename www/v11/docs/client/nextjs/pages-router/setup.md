@@ -200,36 +200,6 @@ export function makeQueryClient() {
 }
 ```
 
-<details>
-<summary>Using a data transformer</summary>
-
-If your router uses a [data transformer](/docs/server/data-transformers) such as superjson, pass it to the link in `_app`, and tell the query client how to send prefetched data to the page:
-
-```ts twoslash title='utils/query-client.ts'
-import { QueryClient } from '@tanstack/react-query';
-import superjson from 'superjson';
-
-export function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 30 * 1000,
-      },
-      dehydrate: {
-        serializeData: superjson.serialize,
-      },
-      hydrate: {
-        deserializeData: superjson.deserialize,
-      },
-    },
-  });
-}
-```
-
-Next.js sends page props as JSON, so without a transformer a prefetched query can only return JSON values. A `Date`, for instance, makes `getServerSideProps` fail.
-
-</details>
-
 ### 5. Create tRPC hooks
 
 Use `createTRPCContext` to create a provider and a `useTRPC` hook from your API's type signature.
@@ -353,6 +323,78 @@ export default function IndexPage() {
 
 This page fetches in the browser. To put the data in the first HTML, prefetch it in [`getServerSideProps`](./ssr.md) or [`getStaticProps`](./ssg.md).
 
+## Using a data transformer
+
+Next.js sends page props as JSON, and checks that they are. So without a transformer, the queries you prefetch can only hold JSON values, in their inputs as well as their results: a `Date` or an `undefined` field makes `getServerSideProps` fail.
+
+If your router uses a [data transformer](/docs/server/data-transformers) such as superjson, pass it to the link, and run the whole prefetched cache through it. In `getServerSideProps` or `getStaticProps`, return:
+
+```ts
+trpcState: superjson.serialize(dehydrate(queryClient)),
+```
+
+In `_app`, read it back before you pass it to `HydrationBoundary`:
+
+```tsx twoslash title='pages/_app.tsx'
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: pages/_app.tsx
+// ---cut---
+import type { DehydratedState } from '@tanstack/react-query';
+import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppProps } from 'next/app';
+import { useMemo, useState } from 'react';
+import superjson from 'superjson';
+import type { SuperJSONResult } from 'superjson';
+import type { AppRouter } from '../server/routers/_app';
+import { makeQueryClient } from '../utils/query-client';
+import { TRPCProvider } from '../utils/trpc';
+
+export default function App({
+  Component,
+  pageProps,
+}: AppProps<{ trpcState?: SuperJSONResult }>) {
+  const [queryClient] = useState(makeQueryClient);
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [httpBatchLink({ transformer: superjson, url: '/api/trpc' })],
+    }),
+  );
+  const trpcState = useMemo(
+    () =>
+      pageProps.trpcState &&
+      superjson.deserialize<DehydratedState>(pageProps.trpcState),
+    [pageProps.trpcState],
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <HydrationBoundary state={trpcState}>
+          <Component {...pageProps} />
+        </HydrationBoundary>
+      </TRPCProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
 ## Moving from `createTRPCNext`
 
 `createTRPCNext` combined the classic React Query hooks with a higher-order component for `_app`. Here's what replaces each part:
@@ -379,7 +421,7 @@ The [migration guide](/docs/client/tanstack-react-query/migrating) covers the ho
 - **Sharing one `QueryClient` across requests.** Make it in `_app` with `useState`, and make a new one in each `getServerSideProps` or `getStaticProps`. A query client at module scope would hand one user's data to the next.
 - **Returning the dehydrated state under another key.** `_app` reads `pageProps.trpcState`, so return `{ props: { trpcState: dehydrate(queryClient) } }`. Otherwise the client fetches every query again.
 - **Prefetching with a different input than the page uses.** The input is part of the query key, so the page misses the prefetched data and fetches again.
-- **Returning values JSON can't hold from a prefetched query.** Next.js sends page props as JSON. Use a [data transformer](#4-create-a-query-client-factory) for `Date`, `Map` and the like.
+- **Prefetching values JSON can't hold.** Next.js sends page props as JSON, so a `Date` or an `undefined` field in a query's input or result makes the page fail. Run the prefetched cache through a [data transformer](#using-a-data-transformer).
 - **Mixing in App Router setup.** `HydrateClient` and `server-only` are for the App Router. In the Pages Router, prefetch in `getServerSideProps` or `getStaticProps` instead.
 
 ## Next steps

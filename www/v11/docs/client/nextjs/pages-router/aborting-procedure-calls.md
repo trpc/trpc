@@ -59,6 +59,8 @@ export default function PostViewPage() {
 
 There's no global switch: `createTRPCContext()` takes no options, so set it on each query that needs it. It works for `queryOptions` and `infiniteQueryOptions`, since TanStack React Query only cancels queries.
 
+With `httpBatchLink` or `httpBatchStreamLink`, the HTTP request only stops once every query in its batch is cancelled. Cancelling one query alone just drops its result. To stop the request for a single query, send it through `httpLink`, for instance with a [`splitLink`](/docs/client/links/splitLink).
+
 :::note
 `createTRPCNext`'s `abortOnUnmount` in `config` set this for every query. Like the rest of `createTRPCNext`, it's deprecated. See [Moving from `createTRPCNext`](./setup.md#moving-from-createtrpcnext).
 :::

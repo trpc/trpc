@@ -23,10 +23,14 @@ In `getServerSideProps`, make a query client and a tRPC proxy that calls your ro
 
 ```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
+// @filename: server/auth.ts
+export declare function getUserFromCookie(cookie: string | undefined): Promise<{ id: string } | null>;
+
 // @filename: server/context.ts
 import type { IncomingHttpHeaders } from 'node:http';
+import { getUserFromCookie } from './auth';
 export async function createContext(opts: { headers: IncomingHttpHeaders }) {
-  return { userId: opts.headers['x-user-id'] };
+  return { user: await getUserFromCookie(opts.headers.cookie) };
 }
 
 // @filename: server/routers/_app.ts
@@ -117,19 +121,31 @@ The page reads the query as it would without prefetching, so `status` is `'succe
 The proxy calls your procedures in the same process, so there's no URL to set and no headers to forward. Build the context from `context.req` instead, as the API handler does. Sharing one `createContext` that only needs the headers keeps the two the same:
 
 ```ts twoslash title='server/context.ts'
+// @filename: server/auth.ts
+export declare function getUserFromCookie(cookie: string | undefined): Promise<{ id: string } | null>;
+
+// @filename: server/context.ts
+// ---cut---
 import type { IncomingHttpHeaders } from 'node:http';
+import { getUserFromCookie } from './auth';
 
 export async function createContext(opts: { headers: IncomingHttpHeaders }) {
-  // const user = await getUserFromCookie(opts.headers.cookie);
-  return { userId: opts.headers['x-user-id'] };
+  // verify the session here: headers come from the client, so don't
+  // trust a user ID that's simply sent in one
+  const user = await getUserFromCookie(opts.headers.cookie);
+  return { user };
 }
 ```
 
 ```ts twoslash title='pages/api/trpc/[trpc].ts'
+// @filename: server/auth.ts
+export declare function getUserFromCookie(cookie: string | undefined): Promise<{ id: string } | null>;
+
 // @filename: server/context.ts
 import type { IncomingHttpHeaders } from 'node:http';
+import { getUserFromCookie } from './auth';
 export async function createContext(opts: { headers: IncomingHttpHeaders }) {
-  return { userId: opts.headers['x-user-id'] };
+  return { user: await getUserFromCookie(opts.headers.cookie) };
 }
 
 // @filename: server/routers/_app.ts
@@ -330,7 +346,7 @@ export default trpcNext.createNextApiHandler({
 
 ### Q: Why does the client still fetch data the server prefetched?
 
-TanStack React Query refetches stale data when a component mounts and when the window regains focus. The query client from the [setup](./setup.md#4-create-a-query-client-factory) keeps data fresh for 30 seconds with `staleTime`, so the first render uses what the server sent. Raise `staleTime` to fetch less, or see [SSG](./ssg.md#stop-the-client-from-refetching) to turn refetching off.
+TanStack React Query refetches stale data when a component mounts, when the window regains focus, and when the network reconnects. The query client from the [setup](./setup.md#4-create-a-query-client-factory) keeps data fresh for 30 seconds with `staleTime`, so the first render uses what the server sent. Raise `staleTime` to fetch less, or see [SSG](./ssg.md#stop-the-client-from-refetching) to turn refetching off.
 
 ### Q: Can I use `useSuspenseQuery`?
 

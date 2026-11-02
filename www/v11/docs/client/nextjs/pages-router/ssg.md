@@ -17,7 +17,7 @@ This page builds on the [Pages Router setup](./setup.md).
 
 Make a query client and a tRPC proxy that calls your router directly, prefetch the queries, and return the cache as `trpcState`. There's no request to build the context from, so pass one that doesn't need it.
 
-This example uses superjson, so the post's `createdAt` reaches the page as a `Date`. It needs the [data transformer setup](./setup.md#4-create-a-query-client-factory) in `makeQueryClient`.
+This example uses superjson, so the post's `createdAt` reaches the page as a `Date`. It needs the matching `_app` from [Using a data transformer](./setup.md#using-a-data-transformer).
 
 ```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
@@ -49,15 +49,7 @@ export type AppRouter = typeof appRouter;
 
 // @filename: utils/query-client.ts
 import { QueryClient } from '@tanstack/react-query';
-import superjson from 'superjson';
-export function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      dehydrate: { serializeData: superjson.serialize },
-      hydrate: { deserializeData: superjson.deserialize },
-    },
-  });
-}
+export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: utils/trpc.ts
 import { createTRPCContext } from '@trpc/tanstack-react-query';
@@ -74,6 +66,7 @@ import type {
   InferGetStaticPropsType,
 } from 'next';
 import { prisma } from '../../server/context';
+import superjson from 'superjson';
 import { appRouter } from '../../server/routers/_app';
 import { makeQueryClient } from '../../utils/query-client';
 import { useTRPC } from '../../utils/trpc';
@@ -93,7 +86,7 @@ export async function getStaticProps(
 
   return {
     props: {
-      trpcState: dehydrate(queryClient),
+      trpcState: superjson.serialize(dehydrate(queryClient)),
       id,
     },
     revalidate: 1,
@@ -145,7 +138,7 @@ export default function PostViewPage(
 
 ## Stop the client from refetching
 
-TanStack React Query refetches stale data on the client when a component mounts and when the window regains focus. If you only want the data from `getStaticProps`, for instance because your API is rate-limited, turn that off.
+TanStack React Query refetches stale data on the client when a component mounts, when the window regains focus, and when the network reconnects. If you only want the data from `getStaticProps`, for instance because your API is rate-limited, turn that off.
 
 Per query:
 
@@ -174,6 +167,7 @@ function Example() {
     trpc.example.queryOptions(undefined, {
       refetchOnMount: false,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     }),
   );
 }
@@ -190,6 +184,7 @@ export function makeQueryClient() {
       queries: {
         refetchOnMount: false,
         refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
       },
     },
   });
