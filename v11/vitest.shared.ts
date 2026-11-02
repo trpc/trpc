@@ -69,4 +69,11 @@ export default defineConfig({
   resolve: {
     alias: aliases,
   },
+  server: {
+    fs: {
+      // Vite takes `lerna.json`'s directory as the workspace root, but the
+      // dependencies are installed in the repository root's `node_modules`.
+      allow: [path.resolve(__dirname, '..')],
+    },
+  },
 });

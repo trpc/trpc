@@ -32,7 +32,7 @@ const cacheFilePath = path.resolve(cacheDir, 'codegen.json');
 const CACHE_VERSION = 1;
 const CACHE_INPUT_PATTERNS = [
   'package.json',
-  '../../pnpm-lock.yaml',
+  '../../../pnpm-lock.yaml',
   'src/**',
   '../server/src/**',
   'test/scripts/**',

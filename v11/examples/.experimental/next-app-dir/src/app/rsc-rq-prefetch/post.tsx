@@ -40,7 +40,7 @@ export function Post() {
         }}
         onSubmit={(e) => {
           e.preventDefault();
-          const data = new FormData(e.target as HTMLFormElement);
+          const data = new FormData(e.currentTarget);
           createPost({
             title: data.get('title') as string,
             content: data.get('content') as string,
