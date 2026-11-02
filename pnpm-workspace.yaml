@@ -58,6 +58,10 @@ minimumReleaseAgeExclude:
 # Vite+ runs every Vite and Vitest in the workspace on its own core.
 overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@1.1.0
+  # Except v11's Nuxt 3 example: its dev server on Vite 8 handles each
+  # WebSocket upgrade twice, and the WebSocket test fails.
+  '@nuxt/vite-builder>vite': 7.3.6
+  'vite-node>vite': 7.3.6
   vitest@*: 5.0.3
   # vendor-src's `effect` is 4.0; platform-node-shared 4.1 needs effect 4.1.
   '@effect/platform-node@4.0.1>@effect/platform-node-shared': 4.0.2
