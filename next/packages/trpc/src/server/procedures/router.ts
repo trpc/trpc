@@ -437,9 +437,7 @@ export function resolveProcedure(
   return resolveFrom(walk(router, path.split('.')));
 }
 
-const resolveFrom = (
-  found: unknown,
-): Effect.Effect<AnyProcedure | undefined> =>
+const resolveFrom = (found: unknown): Effect.Effect<AnyProcedure | undefined> =>
   found instanceof Pending
     ? Effect.flatMap(found.lazy['~lazy'].loadEffect, (loaded) =>
         resolveFrom(walk(loaded, found.rest)),

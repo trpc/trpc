@@ -17,7 +17,7 @@ import {
 /** The HTML's text, without its tags. */
 const textOf = (html: string) => {
   let text = html;
-  for (let previous = ''; previous !== text; ) {
+  for (let previous = ''; previous !== text;) {
     previous = text;
     text = text.replace(/<[^>]*>/g, '');
   }

@@ -254,9 +254,7 @@ const validated = (def: ProcedureInternals): OutputSchema | undefined =>
   def.validateOutput === false ? undefined : def.output;
 
 /** A subscription's event schema: `.output(Event)` or `.output(stream(Event))`. */
-const eventSchema = (
-  output: OutputSchema | undefined,
-): AnySchema | undefined =>
+const eventSchema = (output: OutputSchema | undefined): AnySchema | undefined =>
   isStreamSchema(output) ? output['~trpc.stream'].item : output;
 
 /**

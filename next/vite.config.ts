@@ -183,21 +183,6 @@ export default defineConfig({
         },
       },
       {
-        // A docs page shows a sample one `#region` at a time, so a region
-        // imports what it shows even when another region already did.
-        files: ['www/samples/**'],
-        rules: {
-          'import/no-duplicates': 'off',
-        },
-      },
-      {
-        // The kitchen sink runs the demo code the reader edits, in the page.
-        files: ['www/src/kitchen-sink/modules.ts'],
-        rules: {
-          'typescript/no-implied-eval': 'off',
-        },
-      },
-      {
         files: ['spikes/**'],
         rules: {
           'no-console': 'off',
@@ -262,8 +247,6 @@ export default defineConfig({
           include: [
             'spikes/**/*.test.ts',
             'tooling/**/*.test.ts',
-            'www/build/**/*.test.ts',
-            'www/src/**/*.test.ts',
             'examples/*/*.test.ts',
             'examples/*/src/**/*.test.ts',
           ],
@@ -320,6 +303,5 @@ export default defineConfig({
   staged: {
     '*': 'vp check --fix',
     '*.ts': 'vp test related --run',
-    'www/docs/**/*.md': 'node tooling/docs-lint/docs-lint.ts',
   },
 });

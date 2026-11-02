@@ -11,10 +11,10 @@
   },
   "devDependencies": {
     "@tooling/tsconfig": "workspace:*",
-    "www": "workspace:*",
     "@types/node": "^26.0.0",
     "rolldown": "1.2.13",
     "typescript": "7.1.0-beta",
-    "vite-plus": "1.1.0"
+    "vite-plus": "1.1.0",
+    "www": "workspace:*"
   }
 }

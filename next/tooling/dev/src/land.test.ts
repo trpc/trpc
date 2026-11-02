@@ -236,7 +236,11 @@ describe('land', () => {
         const run = recording();
         yield* land(a, { ...target, workspace: '.' }, run.steps);
 
-        assert.deepStrictEqual(yield* repo.history, ['x and y', 'root', 'seed']);
+        assert.deepStrictEqual(yield* repo.history, [
+          'x and y',
+          'root',
+          'seed',
+        ]);
         assert.deepStrictEqual(run.checks, [['next/x.ts', 'www/y.ts']]);
         assert.deepStrictEqual(run.installs, [a]);
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
