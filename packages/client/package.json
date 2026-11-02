@@ -111,7 +111,7 @@
   },
   "devDependencies": {
     "@tanstack/intent": "0.5.6",
-    "@trpc/server": "11.23.0",
+    "@trpc/server": "workspace:*",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "catalog:",
     "dataloader": "^2.2.2",

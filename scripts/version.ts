@@ -60,10 +60,15 @@ for (const { name, packageJSON } of packages) {
 for (const { name, packageJSON } of packages) {
   const content = fs.readFileSync(packageJSON).toString();
 
-  // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "${depVersion}""`
+  // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "${depVersion}""`.
+  // `workspace:` ranges stay: they keep pnpm-lock.yaml the same across
+  // releases, and publishing turns them into exact versions.
   const newContent = content.replace(
-    /\"(@trpc\/(?:\w|-)+)\": "(?:[^"]|\\")*"/g,
-    (match, depName: string) => {
+    /\"(@trpc\/(?:\w|-)+)\": "((?:[^"]|\\")*)"/g,
+    (match, depName: string, range: string) => {
+      if (range.startsWith('workspace:')) {
+        return match;
+      }
       const depVersion = versions.get(depName);
       if (!depVersion) {
         console.warn(`  ⚠️ ${name} depends on unknown package ${depName}`);
