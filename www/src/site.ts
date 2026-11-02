@@ -148,7 +148,8 @@ export const docPath = (
 
 /**
  * The top bar's links to v11 pages, by slug: trpc.io's navbar's, in its
- * order. On phones they're in the menu; `wide`, as `linksOf`'s.
+ * order. On phones they're in the menu. `wide`: only from `lg`, as from `md`
+ * the header has no room for it and the sidebar links it.
  */
 export const docsLinks = [
   { label: 'Docs', slug: v11.firstDoc },
