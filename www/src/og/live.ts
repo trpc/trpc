@@ -1,7 +1,7 @@
 /**
  * What a social card shows that changes after a deploy, fetched when the
- * card is drawn: the home card's GitHub stars and npm downloads, and a
- * post's authors' avatars. A fetch that fails leaves its part out, and the
+ * card is drawn: the home card's GitHub stars and npm downloads, and the
+ * avatars of a post's authors and of the sponsors. A fetch that fails leaves its part out, and the
  * card is cached briefly (`cacheControl`), so the next request tries again.
  */
 import type { OgCard } from './card.ts';
@@ -13,7 +13,7 @@ export interface Stats {
 }
 
 export interface Live {
-  /** Each author's avatar as a `data:` URI, by their `image`. */
+  /** Each avatar as a `data:` URI, by its URL. */
   readonly avatars: ReadonlyMap<string, string>;
   readonly stats: Stats;
 }
@@ -145,13 +145,24 @@ export async function fetchAvatar(image: string) {
   }
 }
 
-const authorsOf = (card: OgCard) => (card.kind === 'post' ? card.authors : []);
+/** The avatars `card` draws: a post's authors', or the sponsor card's sponsors'. */
+const imagesOf = (card: OgCard): ReadonlyArray<string> => {
+  switch (card.kind) {
+    case 'post':
+      return card.authors.flatMap((author) => author.image ?? []);
+    case 'sponsor':
+      return [...card.partners, ...card.backers].map(
+        (sponsor) => sponsor.image,
+      );
+    case 'doc':
+    case 'home':
+      return [];
+  }
+};
 
 /** What `card` shows live. */
 export async function fetchLive(card: OgCard): Promise<Live> {
-  const images = [
-    ...new Set(authorsOf(card).flatMap((author) => author.image ?? [])),
-  ];
+  const images = [...new Set(imagesOf(card))];
   const [stats, avatars] = await Promise.all([
     card.kind === 'home' ? fetchStats() : {},
     Promise.all(
@@ -177,9 +188,7 @@ export function cacheControl(card: OgCard, live: Live) {
   const missing =
     (card.kind === 'home' &&
       (live.stats.stars === undefined || live.stats.downloads === undefined)) ||
-    authorsOf(card).some(
-      (author) => author.image !== undefined && !live.avatars.has(author.image),
-    );
+    imagesOf(card).some((image) => !live.avatars.has(image));
   if (missing) {
     return 'public, max-age=0, s-maxage=600';
   }

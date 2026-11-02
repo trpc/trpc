@@ -172,4 +172,37 @@ describe('cacheControl', () => {
     expect(cacheControl(post, live)).toBeUndefined();
     expect(cacheControl(post, noLive)).toContain('s-maxage=600');
   });
+
+  it("fetches each sponsor's avatar, and keeps the card briefly if one didn't load", async () => {
+    const sponsor: OgCard = {
+      backers: [{ image: 'https://example.com/b.png', name: 'B' }],
+      description: '',
+      kind: 'sponsor',
+      more: 0,
+      partners: [
+        { image: 'https://example.com/a.png', name: 'A', tier: 'Silver' },
+      ],
+      path: '/sponsor',
+      title: 'Sponsor',
+      url: 'https://github.com/sponsors/trpc',
+    };
+    respond({
+      'https://example.com/a.png': () =>
+        new Response(new Uint8Array([1]), {
+          headers: { 'content-type': 'image/png' },
+        }),
+    });
+    const live = await fetchLive(sponsor);
+    expect([...live.avatars.keys()]).toEqual(['https://example.com/a.png']);
+    expect(cacheControl(sponsor, live)).toContain('s-maxage=600');
+    expect(
+      cacheControl(sponsor, {
+        ...live,
+        avatars: new Map([
+          ...live.avatars,
+          ['https://example.com/b.png', 'data:'],
+        ]),
+      }),
+    ).toBeUndefined();
+  });
 });

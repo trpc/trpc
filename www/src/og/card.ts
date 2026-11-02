@@ -2,8 +2,9 @@
  * Each page's social card (`og:image`), laid out for satori in the site's
  * light theme: the home page's white, dot grid and blue glow, with the
  * logo's wordmark. The home card shows the GitHub stars and npm downloads, a
- * post its date, reading time and authors, and every other page its title,
- * description and URL. `render.ts` draws a card; `routes/og.$.ts` serves it.
+ * post its date, reading time and authors, `/sponsor` its partners and the
+ * other sponsors' avatars, and every other page its title, description and
+ * URL. `render.ts` draws a card; `routes/og.$.ts` serves it.
  */
 import { type CSSProperties, createElement as h, type ReactNode } from 'react';
 
@@ -46,7 +47,30 @@ export interface PostCard {
   readonly title: string;
 }
 
-export type OgCard = DocCard | HomeCard | PostCard;
+/** A sponsor the sponsor card draws. */
+export interface CardSponsor {
+  /** Their avatar's URL, which the card fetches (`live.ts`). */
+  readonly image: string;
+  readonly name: string;
+}
+
+/** `/sponsor`'s: its headline, its partners, and the other sponsors' avatars. */
+export interface SponsorCard {
+  readonly kind: 'sponsor';
+  /** The sponsors it draws only as an avatar, most given first. */
+  readonly backers: ReadonlyArray<CardSponsor>;
+  readonly description: string;
+  /** How many sponsors it leaves out, which it shows as a count. */
+  readonly more: number;
+  /** The partners, first by rank, each with their tier's name: `Silver`. */
+  readonly partners: ReadonlyArray<CardSponsor & { readonly tier: string }>;
+  readonly path: string;
+  readonly title: string;
+  /** Where to sponsor, which the card shows. */
+  readonly url: string;
+}
+
+export type OgCard = DocCard | HomeCard | PostCard | SponsorCard;
 
 /**
  * The light theme's tokens in `@shared/ui/theme.css`, keyed by name, which
@@ -69,6 +93,8 @@ export interface Assets {
   /** The home page's dot grid, fading out toward the bottom. */
   readonly dots: string;
   readonly github: string;
+  /** A heart in white, for the sponsor card's button. */
+  readonly heart: string;
   readonly npm: string;
   /** The logo with its name in black. */
   readonly wordmark: string;
@@ -345,9 +371,16 @@ const docCard = (assets: Assets, doc: DocCard) =>
     ),
   );
 
-const avatarSize = 72;
-
-const avatar = (author: CardAuthor, image: string | undefined) =>
+/**
+ * A round avatar, or the person's initials on the brand blue when it
+ * didn't load (`live.ts` leaves it out).
+ */
+const avatar = (
+  name: string,
+  image: string | undefined,
+  size = 72,
+  style: CSSProperties = {},
+) =>
   image === undefined
     ? box(
         {
@@ -356,23 +389,25 @@ const avatar = (author: CardAuthor, image: string | undefined) =>
           borderRadius: 999,
           color: colors.background,
           flexShrink: 0,
-          fontSize: 28,
+          fontSize: Math.round(size * 0.39),
           fontWeight: 800,
-          height: avatarSize,
+          height: size,
           justifyContent: 'center',
-          width: avatarSize,
+          width: size,
+          ...style,
         },
-        initials(author.name),
+        initials(name),
       )
     : h('img', {
-        height: avatarSize,
+        height: size,
         src: image,
         style: {
           border: `3px solid ${colors.border}`,
           borderRadius: 999,
           flexShrink: 0,
+          ...style,
         },
-        width: avatarSize,
+        width: size,
       });
 
 const postDate = (date: string) =>
@@ -405,7 +440,7 @@ const postCard = (assets: Assets, post: PostCard, live: Live) =>
         box(
           { alignItems: 'center', gap: 18 },
           avatar(
-            author,
+            author.name,
             author.image === undefined
               ? undefined
               : live.avatars.get(author.image),
@@ -431,6 +466,109 @@ const postCard = (assets: Assets, post: PostCard, live: Live) =>
     ),
   );
 
+/** A filled button, as the site's primary ones are: `♥ Sponsor tRPC`. */
+const sponsorButton = (assets: Assets) =>
+  box(
+    {
+      alignItems: 'center',
+      backgroundColor: colors.brand,
+      borderRadius: 999,
+      color: colors.background,
+      fontSize: 28,
+      fontWeight: 800,
+      gap: 12,
+      padding: '12px 28px',
+    },
+    h('img', { height: 28, src: assets.heart, width: 28 }),
+    `Sponsor ${site.name}`,
+  );
+
+const backerSize = 52;
+
+const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) =>
+  frame(
+    assets,
+    box(
+      { alignItems: 'center', justifyContent: 'space-between', width: '100%' },
+      wordmark(assets, 52),
+      sponsorButton(assets),
+    ),
+    box(
+      { flex: 1, flexDirection: 'column', justifyContent: 'center' },
+      title(plainText(card.title), 64),
+      ...description(plainText(card.description)),
+    ),
+    ...(card.partners.length === 0
+      ? []
+      : [
+          box(
+            { alignItems: 'center', gap: 44 },
+            ...card.partners.map((partner) =>
+              box(
+                { alignItems: 'center', gap: 18 },
+                avatar(partner.name, live.avatars.get(partner.image)),
+                box(
+                  { flexDirection: 'column' },
+                  box(
+                    { fontSize: 28, fontWeight: 800 },
+                    plainText(partner.name),
+                  ),
+                  box(
+                    {
+                      color: colors.link,
+                      fontSize: 22,
+                      fontWeight: 800,
+                      marginTop: 2,
+                    },
+                    `${partner.tier} partner`,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ]),
+    box(
+      {
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 32,
+        width: '100%',
+      },
+      box(
+        { alignItems: 'center' },
+        ...card.backers.map((backer, index) =>
+          avatar(backer.name, live.avatars.get(backer.image), backerSize, {
+            border: `3px solid ${colors.background}`,
+            marginLeft: index === 0 ? 0 : -14,
+          }),
+        ),
+        ...(card.more === 0
+          ? []
+          : [
+              box(
+                {
+                  color: colors.mutedForeground,
+                  fontSize: 26,
+                  fontWeight: 800,
+                  marginLeft: 16,
+                },
+                `+${card.more}`,
+              ),
+            ]),
+      ),
+      box(
+        {
+          color: colors.link,
+          flexShrink: 0,
+          fontSize: 28,
+          fontWeight: 800,
+          marginLeft: 32,
+        },
+        displayUrl(card.url),
+      ),
+    ),
+  );
+
 export const cardElement = (
   assets: Assets,
   ogCard: OgCard,
@@ -443,6 +581,8 @@ export const cardElement = (
       return homeCard(assets, live.stats);
     case 'post':
       return postCard(assets, ogCard, live);
+    case 'sponsor':
+      return sponsorCard(assets, ogCard, live);
   }
 };
 
@@ -459,9 +599,12 @@ const npmMark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fil
  */
 const dots = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><defs><pattern id="p" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="2" fill="${colors.border}"/></pattern><linearGradient id="f" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="m"><rect width="1200" height="630" fill="url(#f)"/></mask></defs><rect width="1200" height="630" fill="url(#p)" mask="url(#m)"/></svg>`;
 
-/** The dot grid, and the marks the home card draws its numbers beside. */
+const heartMark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${colors.background}"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z"/></svg>`;
+
+/** The dot grid, the marks the home card draws its numbers beside, and the sponsor card's heart. */
 export const drawnAssets = () => ({
   dots: dataUri('image/svg+xml', Buffer.from(dots)),
   github: dataUri('image/svg+xml', Buffer.from(githubMark)),
+  heart: dataUri('image/svg+xml', Buffer.from(heartMark)),
   npm: dataUri('image/svg+xml', Buffer.from(npmMark)),
 });
