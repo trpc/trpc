@@ -443,7 +443,6 @@ export type CreateQueryUtils<TRouter extends AnyRouter> =
 
 /**
  * Maps a `useUtils` helper name to the kind of query it works on.
- * @internal
  */
 export const getQueryType = (
   utilName: keyof AnyDecoratedProcedure,

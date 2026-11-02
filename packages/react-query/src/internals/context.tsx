@@ -135,7 +135,6 @@ export interface TRPCContextProps<
 
 /**
  * The keys of {@link TRPCContextPropsBase}.
- * @internal
  */
 export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
   'client',
