@@ -26,6 +26,8 @@ The request's `Content-Type` header determines how tRPC parses the input. tRPC p
 | `application/octet-stream`                         | `POST` only     | Other methods respond with `METHOD_NOT_SUPPORTED` (`405`).                                                                                                                              |
 | anything else (or missing, on a non-`GET` request) | —               | Responds with `UNSUPPORTED_MEDIA_TYPE` (`415`).                                                                                                                                         |
 
+`HEAD` requests skip this and always respond with `204`, which is useful for warming up serverless functions.
+
 See [Content Types](/docs/server/non-json-content-types) for how to send `FormData` and binary (`File`/`Blob`/`Uint8Array`) inputs, and which client links support them.
 
 ## Accessing nested procedures

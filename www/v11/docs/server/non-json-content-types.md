@@ -16,7 +16,8 @@ skill:
     inputs in tRPC mutations. Use octetInputParser from @trpc/server/http for
     binary data. Route non-JSON requests with splitLink and
     isNonJsonSerializable() from @trpc/client, since batching links send them
-    as `{}`. FormData and binary inputs only work with mutations (POST) and
+    as `{}`. FormData and binary inputs are sent as POST, so they only work
+    with mutations unless httpLink uses methodOverride: 'POST', and they
     skip the transformer. Keep Express or Next.js body parsers off tRPC
     routes.
   include:
@@ -287,7 +288,7 @@ await client.upload.mutate(file);
 
 ## Common mistakes
 
-- **Using a query.** FormData and binary inputs are sent as the body of a `POST` request, so they only work with mutations: `httpLink` throws `FormData is only supported for mutations` for a query. The exception is an `httpLink` with `methodOverride: 'POST'`, which sends every call as a `POST` and so also sends FormData and binary inputs for queries; the server must [allow the method override](/docs/rpc#overriding-the-default-http-method).
+- **Using a query.** FormData and binary inputs are sent as the body of a `POST` request, so they only work with mutations: for a query, `httpLink` throws `FormData is only supported for mutations` or `Octet type input is only supported for mutations`. The exception is an `httpLink` with `methodOverride: 'POST'`, which sends every call as a `POST` and so also sends FormData and binary inputs for queries; the server must [allow the method override](/docs/rpc#overriding-the-default-http-method).
 - **Sending them through a batching link.** `httpBatchLink`, `httpBatchStreamLink` and `wsLink` serialize inputs as JSON, which turns a `FormData` or `File` into `{}`, so input validation fails. Route them to `httpLink` with a [`splitLink`](#client-setup). Only `httpLink` sends non-JSON inputs:
 
   | Link                                                            | `application/json` | `FormData`  | `File` / `Blob` / `Uint8Array` |
