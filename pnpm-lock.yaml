@@ -1893,6 +1893,9 @@ importers:
       '@prisma/client':
         specifier: ^6.7.0
         version: 6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2)
+      '@shared/ui':
+        specifier: workspace:*
+        version: file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react-is@17.0.2)(react@19.1.0)(supports-color@10.0.0)
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -1917,6 +1920,9 @@ importers:
       cookie:
         specifier: ^1.1.1
         version: 1.1.1
+      lucide-react:
+        specifier: 1.55.0
+        version: 1.55.0(@types/react@19.1.0)(react@19.1.0)
       next:
         specifier: ^15.5.25
         version: 15.5.25(@babel/core@7.26.9(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1944,10 +1950,16 @@ importers:
       zod:
         specifier: ^4.2.1
         version: 4.2.1
+    dependenciesMeta:
+      '@shared/ui':
+        injected: true
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
         version: 1.51.1
+      '@tailwindcss/postcss':
+        specifier: 4.3.3
+        version: 4.3.3
       '@tanstack/react-query-devtools':
         specifier: ^5.105.0
         version: 5.105.0(@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.1.0))(@types/react@19.1.0)(csstype@3.2.3)(react@19.1.0)
@@ -1960,9 +1972,6 @@ importers:
       '@types/ws':
         specifier: ^8.2.0
         version: 8.5.10
-      autoprefixer:
-        specifier: ^10.4.7
-        version: 10.5.6(postcss@8.5.28)
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -1988,8 +1997,8 @@ importers:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
       tailwindcss:
-        specifier: ^3.4.6
-        version: 3.4.6
+        specifier: catalog:www
+        version: 4.3.3
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
