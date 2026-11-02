@@ -2,7 +2,7 @@ import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { Effect } from 'effect';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { OgCard } from './card.ts';
+import type { CardSponsor, OgCard } from './card.ts';
 import { png, serveAvatars, testAvatars } from './fake-avatars.ts';
 import { cacheControl, fetchStats, live, noLive } from './live.ts';
 
@@ -35,8 +35,9 @@ const stubFetch = (routes: Record<string, () => Response>) => {
   return makeResource({}, () => vi.unstubAllGlobals());
 };
 
-const liveOf = (card: OgCard) =>
-  Effect.runPromise(live(card).pipe(Effect.provide(testAvatars)));
+/** What `card` shows live, with `partners` along its foot: none unless given. */
+const liveOf = (card: OgCard, partners: ReadonlyArray<CardSponsor> = []) =>
+  Effect.runPromise(live(card, partners).pipe(Effect.provide(testAvatars)));
 
 describe('fetchStats', () => {
   it("reads the repo's stars and @trpc/server's weekly downloads", async () => {
@@ -89,13 +90,14 @@ describe('live', () => {
 describe('cacheControl', () => {
   it('keeps the home card a day, and one missing a number ten minutes', () => {
     expect(
-      cacheControl(home, {
-        avatars: new Map(),
-        stats: { downloads: 1, stars: 1 },
-      }),
+      cacheControl(
+        home,
+        { avatars: new Map(), stats: { downloads: 1, stars: 1 } },
+        [],
+      ),
     ).toContain('s-maxage=86400');
     expect(
-      cacheControl(home, { avatars: new Map(), stats: { stars: 1 } }),
+      cacheControl(home, { avatars: new Map(), stats: { stars: 1 } }, []),
     ).toContain('s-maxage=600');
   });
 
@@ -105,8 +107,27 @@ describe('cacheControl', () => {
     const fetched = await liveOf(post);
     expect(fetched.stats).toEqual({});
     expect([...fetched.avatars.keys()]).toEqual([server.url('/katt.png')]);
-    expect(cacheControl(post, fetched)).toBeUndefined();
-    expect(cacheControl(post, noLive)).toContain('s-maxage=600');
+    expect(cacheControl(post, fetched, [])).toBeUndefined();
+    expect(cacheControl(post, noLive, [])).toContain('s-maxage=600');
+  });
+
+  it("fetches the partners' avatars for any other card's foot, and keeps it briefly if one didn't load", async () => {
+    await using server = await serveAvatars({ '/a.png': png() });
+    const partners = [
+      { image: server.url('/a.png'), name: 'A' },
+      { image: server.url('/b.png'), name: 'B' },
+    ];
+    const doc: OgCard = {
+      description: '',
+      kind: 'doc',
+      path: '/docs/quickstart',
+      title: 'Quickstart',
+      url: 'https://trpc.io/docs/quickstart',
+    };
+    const fetched = await liveOf(doc, partners);
+    expect([...fetched.avatars.keys()]).toEqual([server.url('/a.png')]);
+    expect(cacheControl(doc, fetched, partners)).toContain('s-maxage=600');
+    expect(cacheControl(doc, fetched, partners.slice(0, 1))).toBeUndefined();
   });
 
   it("fetches each sponsor's avatar, and keeps the card briefly if one didn't load", async () => {

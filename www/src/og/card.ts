@@ -4,12 +4,14 @@
  * logo's wordmark. The home card shows the GitHub stars and npm downloads, a
  * post its date, reading time and authors, `/sponsor` its partners and the
  * other sponsors' avatars, and every other page its title, description and
- * URL. `render.ts` draws a card; `routes/og.$.ts` serves it.
+ * URL. Every card but `/sponsor`'s names the partners along its foot.
+ * `render.ts` draws a card; `routes/og.$.ts` serves it.
  */
 import { type CSSProperties, createElement as h, type ReactNode } from 'react';
 
 import { stripInlineCode } from '~/content/inline-code.ts';
 import { site } from '~/site.ts';
+import { cardFooterPartners } from '~/sponsors.ts';
 
 import { type Live, noLive, type Stats } from './live.ts';
 
@@ -174,9 +176,13 @@ const gradient = `linear-gradient(90deg, ${colors.link}, ${colors.brandLight})`;
 
 /**
  * White under the home page's dot grid and its blue glow, over a rule in
- * the brand's blues.
+ * the brand's blues, with `footer` above the rule if there is one.
  */
-const frame = (assets: Assets, ...children: ReadonlyArray<ReactNode>) =>
+const frame = (
+  assets: Assets,
+  footer: ReactNode | undefined,
+  ...children: ReadonlyArray<ReactNode>
+) =>
   box(
     {
       backgroundColor: colors.background,
@@ -201,15 +207,16 @@ const frame = (assets: Assets, ...children: ReadonlyArray<ReactNode>) =>
     box(
       {
         boxSizing: 'border-box',
+        flex: 1,
         flexDirection: 'column',
-        height: '100%',
-        padding: '56px 72px 64px',
+        padding: footer === undefined ? '56px 72px 64px' : '56px 72px 28px',
         // Above the dot grid, which is positioned.
         position: 'relative',
         width: '100%',
       },
       ...children,
     ),
+    ...(footer === undefined ? [] : [footer]),
     box({
       backgroundImage: gradient,
       bottom: 0,
@@ -314,9 +321,10 @@ const statsRow = (assets: Assets, stats: Stats) =>
     ),
   );
 
-const homeCard = (assets: Assets, stats: Stats) =>
+const homeCard = (assets: Assets, stats: Stats, footer: ReactNode) =>
   frame(
     assets,
+    footer,
     box(
       {
         alignItems: 'center',
@@ -363,9 +371,10 @@ export const docDescription = (doc: Pick<DocCard, 'description' | 'title'>) => {
     : truncateWords(text, 130);
 };
 
-const docCard = (assets: Assets, doc: DocCard) =>
+const docCard = (assets: Assets, doc: DocCard, footer: ReactNode) =>
   frame(
     assets,
+    footer,
     header(assets, sectionLabel(doc.path)),
     box(
       { flex: 1, flexDirection: 'column', justifyContent: 'center' },
@@ -423,9 +432,15 @@ const postDate = (date: string) =>
     timeZone: 'UTC',
   }).format(new Date(`${date}T00:00:00Z`));
 
-const postCard = (assets: Assets, post: PostCard, live: Live) =>
+const postCard = (
+  assets: Assets,
+  post: PostCard,
+  live: Live,
+  footer: ReactNode,
+) =>
   frame(
     assets,
+    footer,
     header(assets, 'Blog'),
     box(
       { flex: 1, flexDirection: 'column', justifyContent: 'center' },
@@ -505,6 +520,7 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
   const more = card.sponsorCount - card.partners.length - backers.length;
   return frame(
     assets,
+    undefined,
     box(
       { alignItems: 'center', justifyContent: 'space-between', width: '100%' },
       wordmark(assets, 52),
@@ -587,18 +603,77 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
   );
 };
 
+/**
+ * Along the foot of every card but `/sponsor`'s, which draws them larger:
+ * the partners whose avatars loaded, each beside their name, as the home
+ * page's "Supported by" has their logos. Without one, there's no strip.
+ */
+const partnersFooter = (
+  partners: ReadonlyArray<CardSponsor>,
+  live: Live,
+): ReactNode => {
+  const drawn = partners.flatMap((partner) => {
+    const image = live.avatars.get(partner.image);
+    return image === undefined ? [] : [{ image, name: partner.name }];
+  });
+  return drawn.length === 0
+    ? undefined
+    : box(
+        {
+          boxSizing: 'border-box',
+          padding: '0 72px 30px',
+          position: 'relative',
+          width: '100%',
+        },
+        box(
+          {
+            alignItems: 'center',
+            borderTop: `2px solid ${colors.border}`,
+            paddingTop: 18,
+            width: '100%',
+          },
+          box(
+            {
+              color: colors.mutedForeground,
+              fontSize: 17,
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              marginRight: 32,
+            },
+            'SUPPORTED BY',
+          ),
+          box(
+            { alignItems: 'center', gap: 32 },
+            ...drawn.map((partner) =>
+              box(
+                { alignItems: 'center', gap: 10 },
+                avatar(partner.name, partner.image, 34, {
+                  border: `2px solid ${colors.border}`,
+                }),
+                box(
+                  { color: colors.foreground, fontSize: 22, fontWeight: 800 },
+                  plainText(partner.name),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+};
+
 export const cardElement = (
   assets: Assets,
   ogCard: OgCard,
   live: Live = noLive,
+  partners: ReadonlyArray<CardSponsor> = cardFooterPartners,
 ) => {
   switch (ogCard.kind) {
     case 'doc':
-      return docCard(assets, ogCard);
+      return docCard(assets, ogCard, partnersFooter(partners, live));
     case 'home':
-      return homeCard(assets, live.stats);
+      return homeCard(assets, live.stats, partnersFooter(partners, live));
     case 'post':
-      return postCard(assets, ogCard, live);
+      return postCard(assets, ogCard, live, partnersFooter(partners, live));
     case 'sponsor':
       return sponsorCard(assets, ogCard, live);
   }

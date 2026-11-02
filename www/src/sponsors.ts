@@ -1,6 +1,6 @@
 import list from '../sponsors.json' with { type: 'json' };
 
-import type { SponsorCard } from './og/card.ts';
+import type { CardSponsor, SponsorCard } from './og/card.ts';
 
 /**
  * The sponsor tiers, by the least a sponsor gives a month (across KATT and
@@ -173,6 +173,14 @@ const cardBackers = 12;
 
 const tierLabel = (tier: SponsorTier) =>
   sponsorTiers.find((entry) => entry.tier === tier)?.label ?? tier;
+
+/**
+ * The partners along the foot of every social card but `/sponsor`'s
+ * (`og/card.ts`), by rank, as many as `/sponsor`'s draws.
+ */
+export const cardFooterPartners: ReadonlyArray<CardSponsor> = partners
+  .slice(0, cardPartners)
+  .map((partner) => ({ image: partner.imgSrc, name: partner.name }));
 
 /**
  * `/sponsor`'s social card, from `ranked` partners and `all` the sponsors:

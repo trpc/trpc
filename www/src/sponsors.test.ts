@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  cardFooterPartners,
   drawnSponsors,
   isSmallSponsor,
   type Partner,
@@ -11,6 +12,17 @@ import {
   sponsorCardOf,
   sponsors,
 } from './sponsors.ts';
+
+describe('cardFooterPartners', () => {
+  it("are sponsors.json's partners, by rank, as /sponsor's card draws them", () => {
+    expect(cardFooterPartners).toEqual(
+      sponsorCard.partners.map(({ image, name }) => ({ image, name })),
+    );
+    expect(cardFooterPartners.map((partner) => partner.image)).toEqual(
+      partners.slice(0, 4).map((partner) => partner.imgSrc),
+    );
+  });
+});
 
 describe('isSmallSponsor', () => {
   it('is a sponsor below the partner tiers', () => {
