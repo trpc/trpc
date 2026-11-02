@@ -6,7 +6,7 @@ Push commits straight to `v12`; don't open pull requests against it ([Landing on
 
 The repository root is one pnpm workspace: v11 (`v11/`, `@trpc/*`), v12 (`next/`, `@trpc12/*`), the site (`www/`) and `tooling/`, with one lockfile and one `turbo.json` ([`one-workspace.md`](./next/.agent-docs/decisions/one-workspace.md)). `pnpm install` anywhere installs all of it. Run the gates and `pnpm land` from `next/`. At the root, `pnpm build`, `typecheck`, `lint` and `test` run every package's through turbo, cached locally and in CI ([`task-cache.md`](./next/.agent-docs/decisions/task-cache.md)), and `pnpm check:www` checks the site and `tooling/`.
 
-Name every branch cut from `v12` `v12-<name>`: only those get `trpc-v12` preview deployments ([`docs-website-on-vercel.md`](./next/.agent-docs/decisions/docs-website-on-vercel.md)).
+Name every branch cut from `v12` `v12-<name>`: only those get preview deployments ([`docs-website-on-vercel.md`](./next/.agent-docs/decisions/docs-website-on-vercel.md)).
 
 - Brief and constraints: `next/.agent-docs/decisions/brief.md`
 - Design docs (proposals, decisions, notes): `next/.agent-docs/`

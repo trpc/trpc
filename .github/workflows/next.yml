@@ -59,7 +59,7 @@ defaults:
     working-directory: next
 
 jobs:
-  # trpc-v12 builds previews only for v12-<name> branches (www/vercel.json),
+  # Vercel builds v12's previews only for v12-<name> branches (www/vercel.json),
   # so a pull request from a cursor/… or other branch has no preview to link.
   branch-name:
     if: github.event_name == 'pull_request' && github.base_ref == 'v12'
@@ -72,7 +72,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
         run: |
           if [[ ! "$HEAD_REF" =~ ^v12-[^/]+$ ]]; then
-            echo "::error::'$HEAD_REF' isn't v12-<name>: trpc-v12 deploys no preview for it. Push the commits to a v12-<name> branch and open the pull request from there."
+            echo "::error::'$HEAD_REF' isn't v12-<name>: Vercel deploys no preview for it. Push the commits to a v12-<name> branch and open the pull request from there."
             exit 1
           fi
 

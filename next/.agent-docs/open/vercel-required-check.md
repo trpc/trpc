@@ -25,7 +25,7 @@ links:
 
 ## Why it matters
 
-The docs site deploys from `v12` to `v12.trpc.io` as the `trpc-v12` project, and each deploy posts a `Vercel – trpc-v12` status on its commit. Agents push straight to `v12` with `pnpm land`; the branch's rules today are only no deletion, no force push and linear history. From 2026-10-18 20:05 to 2026-10-19 23:42, 79 production deploys failed while nothing stopped commits landing: Vercel's build ran out of memory compiling Twoslash blocks, and each failure left the next build a staler cache. The heap fix landed on 2026-10-20, and every deploy since has passed.
+The docs site deploys from `v12` to `v12.trpc.io` from trpc.io's `www` project (the `trpc-v12` project until 2026-11-02), and each deploy posts a `Vercel – www` status on its commit. Agents push straight to `v12` with `pnpm land`; the branch's rules today are only no deletion, no force push and linear history. From 2026-10-18 20:05 to 2026-10-19 23:42, 79 production deploys failed while nothing stopped commits landing: Vercel's build ran out of memory compiling Twoslash blocks, and each failure left the next build a staler cache. The heap fix landed on 2026-10-20, and every deploy since has passed.
 
 ## Options
 
@@ -44,10 +44,10 @@ pnpm ci:wait    # next.yml's jobs, www included; Vercel's status is only shown o
 
 ### B) Required in the `v12` ruleset
 
-Add `Vercel – trpc-v12` as a required status check.
+Add `Vercel – www` as a required status check.
 
 ```text
-Settings → Rules → v12 ruleset → Require status checks to pass: "Vercel – trpc-v12"
+Settings → Rules → v12 ruleset → Require status checks to pass: "Vercel – www"
 Bypass list: every agent and human who pushes to v12
 ```
 
@@ -60,7 +60,7 @@ Bypass list: every agent and human who pushes to v12
 `pnpm land` pushes the commits to a `v12-<name>` branch, waits for its preview's check, then fast-forwards `v12`.
 
 ```bash
-pnpm land    # push v12-<name>, wait for "Vercel – trpc-v12", then push HEAD:v12
+pnpm land    # push v12-<name>, wait for "Vercel – www", then push HEAD:v12
 ```
 
 - ✅ The check is real and nothing needs a bypass

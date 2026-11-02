@@ -32,7 +32,5 @@
   - v11 and v12 resolve their dependencies together. The merged lockfile moved 186 of v11's dependencies to the newest version within their ranges, and v11's tests were fixed for the ones that changed behavior (`1cbfa72d7`).
   - An install is the whole workspace's.
   - The precommit hook (`vp staged`) no longer lints the docs' blocks. `pnpm check` and CI still do ([`docs-in-www.md`](./docs-in-www.md)).
-- Open:
-  - `main` still has `old-docs-copy.ts`, `old-docs-convert.ts` and `old-docs.json`, so the next merge has modify/delete conflicts on them (keep `v12`'s deletions). Human, 2026-11-02 (via the coordinator): "do a pr". Branch `v12-delete-old-docs-copy` deletes them on `main`, for a pull request.
-  - `main`'s `www/vercel.json` doesn't skip `trpc-v12`, which builds `main`'s branches since its root directory became `www` ([`docs-website-on-vercel.md`](./docs-website-on-vercel.md)).
+- Open: `main` still has `old-docs-copy.ts`, `old-docs-convert.ts` and `old-docs.json` until #7801 merges, so a merge before it has modify/delete conflicts on them (keep `v12`'s deletions). Human, 2026-11-02 (via the coordinator): "do a pr".
 - Lives in: `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `.changeset/`, `.github/actions/setup/`, `www/`, `tooling/ui/`.
