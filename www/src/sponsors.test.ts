@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  cardFooterPartners,
+  avatarUrl,
+  cardFooter,
   drawnSponsors,
   isSmallSponsor,
   type Partner,
@@ -13,14 +14,27 @@ import {
   sponsors,
 } from './sponsors.ts';
 
-describe('cardFooterPartners', () => {
-  it("are sponsors.json's partners, by rank, as /sponsor's card draws them", () => {
-    expect(cardFooterPartners).toEqual(
-      sponsorCard.partners.map(({ image, name }) => ({ image, name })),
+describe('cardFooter', () => {
+  it("names every one of sponsors.json's partners, by rank", () => {
+    expect(cardFooter.partners).toEqual(
+      partners.map((partner) => ({
+        image: partner.imgSrc,
+        name: partner.name,
+      })),
     );
-    expect(cardFooterPartners.map((partner) => partner.image)).toEqual(
-      partners.slice(0, 4).map((partner) => partner.imgSrc),
+  });
+
+  it('then the other drawn sponsors most given first, twice as many as it draws faces of, small', () => {
+    const others = drawnSponsors
+      .filter((sponsor) => !partners.some((p) => p.login === sponsor.login))
+      .toSorted((a, b) => b.weight - a.weight);
+    expect(cardFooter.backers).toEqual(
+      others.slice(0, cardFooter.faceSlots * 2).map((sponsor) => ({
+        image: avatarUrl(sponsor, 68),
+        name: sponsor.name,
+      })),
     );
+    expect(cardFooter.sponsorCount).toBe(sponsors.length);
   });
 });
 

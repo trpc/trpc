@@ -1,18 +1,18 @@
 /**
  * What a social card shows that changes after a deploy, fetched when the
  * card is drawn: the home card's GitHub stars and npm downloads, and the
- * avatars of a post's authors, the sponsors and the partners along a
- * card's foot (`avatar.ts`). A fetch
+ * avatars of a post's authors, and the sponsors on `/sponsor`'s card or
+ * along any other card's foot (`avatar.ts`). A fetch
  * that fails leaves its part out, and the card is cached briefly
  * (`cacheControl`), so the next request tries again.
  */
 import { Effect, Layer } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 
-import { cardFooterPartners } from '~/sponsors.ts';
+import { cardFooter } from '~/sponsors.ts';
 
 import { Avatars, fetchAvatars } from './avatar.ts';
-import type { CardSponsor, OgCard } from './card.ts';
+import type { CardFooter, OgCard } from './card.ts';
 
 export interface Stats {
   /** `@trpc/server`'s npm downloads last week. */
@@ -72,14 +72,14 @@ export async function fetchStats(
 }
 
 /**
- * The avatars `card` draws: the sponsor card's sponsors', or the
- * `partners`' along any other card's foot, and a post's authors'.
+ * The avatars `card` draws: the sponsor card's sponsors', or the sponsors'
+ * along any other card's `footer`, and a post's authors'.
  */
 const imagesOf = (
   card: OgCard,
-  partners: ReadonlyArray<CardSponsor>,
+  { backers, partners }: CardFooter,
 ): ReadonlyArray<string> => {
-  const footer = partners.map((partner) => partner.image);
+  const footer = [...partners, ...backers].map((sponsor) => sponsor.image);
   switch (card.kind) {
     case 'post':
       return [
@@ -97,20 +97,20 @@ const imagesOf = (
 };
 
 /**
- * What `card` shows live, with `partners` along its foot. It fetches all of a
+ * What `card` shows live, with the sponsors in `footer` along its foot. It fetches all of a
  * card's avatars at once, a few dozen at most, so a slow host costs one
  * avatar's wait, not one per batch.
  */
 export const live = Effect.fn('live')(function* (
   card: OgCard,
-  partners: ReadonlyArray<CardSponsor> = cardFooterPartners,
+  footer: CardFooter = cardFooter,
 ) {
   const [stats, avatars] = yield* Effect.all(
     [
       card.kind === 'home'
         ? Effect.promise(() => fetchStats())
         : Effect.succeed<Stats>({}),
-      fetchAvatars(imagesOf(card, partners), 'unbounded'),
+      fetchAvatars(imagesOf(card, footer), 'unbounded'),
     ],
     { concurrency: 'unbounded' },
   );
@@ -137,12 +137,12 @@ export const fetchLive = (card: OgCard) =>
 export function cacheControl(
   card: OgCard,
   live: Live,
-  partners: ReadonlyArray<CardSponsor> = cardFooterPartners,
+  footer: CardFooter = cardFooter,
 ) {
   const missing =
     (card.kind === 'home' &&
       (live.stats.stars === undefined || live.stats.downloads === undefined)) ||
-    imagesOf(card, partners).some((image) => !live.avatars.has(image));
+    imagesOf(card, footer).some((image) => !live.avatars.has(image));
   if (missing) {
     return 'public, max-age=0, s-maxage=600';
   }

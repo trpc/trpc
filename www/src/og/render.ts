@@ -14,7 +14,7 @@ import wordmarkSvg from '../../public/img/logo-text-black.svg?raw';
 import { ogImageSize } from '../seo.ts';
 import {
   type Assets,
-  type CardSponsor,
+  type CardFooter,
   cardElement,
   dataUri,
   drawnAssets,
@@ -51,17 +51,17 @@ const load = async (): Promise<Assets> => {
 
 let assets: Promise<Assets> | undefined;
 
-/** `ogCard` as a 1200×630 PNG, with what it shows `live`, and `partners` along its foot. */
+/** `ogCard` as a 1200×630 PNG, with what it shows `live`, and the sponsors in `footer` along its foot. */
 export async function renderOgImage(
   ogCard: OgCard,
   live: Live = noLive,
-  partners?: ReadonlyArray<CardSponsor>,
+  footer?: CardFooter,
 ) {
   assets ??= load().catch((error: unknown) => {
     assets = undefined;
     throw error;
   });
-  const svg = await satori(cardElement(await assets, ogCard, live, partners), {
+  const svg = await satori(cardElement(await assets, ogCard, live, footer), {
     ...ogImageSize,
     fonts,
   });

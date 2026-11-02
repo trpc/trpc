@@ -4,14 +4,15 @@
  * logo's wordmark. The home card shows the GitHub stars and npm downloads, a
  * post its date, reading time and authors, `/sponsor` its partners and the
  * other sponsors' avatars, and every other page its title, description and
- * URL. Every card but `/sponsor`'s names the partners along its foot.
+ * URL. Every card but `/sponsor`'s names the partners along its foot, with
+ * other sponsors' faces.
  * `render.ts` draws a card; `routes/og.$.ts` serves it.
  */
 import { type CSSProperties, createElement as h, type ReactNode } from 'react';
 
 import { stripInlineCode } from '~/content/inline-code.ts';
 import { site } from '~/site.ts';
-import { cardFooterPartners } from '~/sponsors.ts';
+import { cardFooter } from '~/sponsors.ts';
 
 import { type Live, noLive, type Stats } from './live.ts';
 
@@ -54,6 +55,20 @@ export interface CardSponsor {
   /** Their avatar's URL, which the card fetches (`live.ts`). */
   readonly image: string;
   readonly name: string;
+}
+
+/** What every card but `/sponsor`'s names along its foot. */
+export interface CardFooter {
+  /**
+   * The other sponsors, most given first. It draws the faces of those
+   * whose avatars load, at most `faceSlots` and as many as fit.
+   */
+  readonly backers: ReadonlyArray<CardSponsor>;
+  readonly faceSlots: number;
+  /** Every partner, by rank, each drawn beside their full name. */
+  readonly partners: ReadonlyArray<CardSponsor>;
+  /** Every sponsor, which the count of those it doesn't draw is out of. */
+  readonly sponsorCount: number;
 }
 
 /** `/sponsor`'s: its headline, its partners, and the other sponsors' avatars. */
@@ -680,77 +695,211 @@ const sponsorCard = (assets: Assets, card: SponsorCard, live: Live) => {
   );
 };
 
+/** `sponsors` whose avatars loaded, each with its avatar's `data:` URI. */
+const loaded = (sponsors: ReadonlyArray<CardSponsor>, live: Live) =>
+  sponsors.flatMap((sponsor) => {
+    const image = live.avatars.get(sponsor.image);
+    return image === undefined
+      ? []
+      : [{ image, name: plainText(sponsor.name) }];
+  });
+
+const footerLabel = 'SUPPORTED BY';
+const footerLabelSize = 17;
+const footerLabelSpacing = 0.08;
+const faceSize = 34;
+/** How far each face sits from the one before, over which it overlaps. */
+const faceStep = faceSize - 10;
+const moreSize = 20;
+
+const footerAvatarSize = (nameSize: number) => nameSize + 12;
+
+/** The sizes a partner's name may take along the foot, largest first. */
+export const footerNameSizes = [22, 20, 18, 16] as const;
+
+/** The foot gives up the largest name size to draw at least this many faces. */
+const fewestFaces = 6;
+
+/** The foot's partners, each beside their name, at what fits. */
+export interface FooterLayout {
+  readonly faces: number;
+  readonly nameSize: number;
+  /**
+   * When the names don't fit on one line at any size, they wrap at the
+   * smallest, each whole, so the foot takes as few lines as it can.
+   */
+  readonly wraps: boolean;
+}
+
+/**
+ * How the foot fits `names` and up to `faces` faces into `width`: the
+ * largest name size that leaves room for a few faces, else the largest
+ * at which the names fit, then as many faces as fit. A partner's name is
+ * never cut short.
+ */
+export function footerLayout(
+  names: ReadonlyArray<string>,
+  faces: number,
+  sponsorCount: number,
+  width: number,
+): FooterLayout {
+  const room =
+    width -
+    textWidth(footerLabel, footerLabelSize) -
+    footerLabel.length * footerLabelSpacing * footerLabelSize -
+    32;
+  const namesWidth = (size: number) =>
+    names.reduce(
+      (sum, name) => sum + footerAvatarSize(size) + 10 + textWidth(name, size),
+      0,
+    ) +
+    28 * Math.max(0, names.length - 1);
+  const facesWidth = (count: number) => {
+    if (count === 0) {
+      return 0;
+    }
+    const more = sponsorCount - names.length - count;
+    return (
+      32 +
+      faceSize +
+      faceStep * (count - 1) +
+      (more > 0 ? 10 + textWidth(`+${more}`, moreSize) : 0)
+    );
+  };
+  const fewest = Math.min(fewestFaces, faces);
+  const nameSize =
+    footerNameSizes.find(
+      (size) => namesWidth(size) + facesWidth(fewest) <= room,
+    ) ??
+    footerNameSizes.find((size) => namesWidth(size) <= room) ??
+    footerNameSizes[footerNameSizes.length - 1] ??
+    16;
+  const wraps = namesWidth(nameSize) > room;
+  let drawn = wraps ? 0 : faces;
+  while (drawn > 0 && namesWidth(nameSize) + facesWidth(drawn) > room) {
+    drawn -= 1;
+  }
+  return { faces: drawn, nameSize, wraps };
+}
+
 /**
  * Along the foot of every card but `/sponsor`'s, which draws them larger:
- * the partners whose avatars loaded, each beside their name, as the home
- * page's "Supported by" has their logos. Without one, there's no strip.
+ * the partners whose avatars loaded, each beside their full name, as the
+ * home page's "Supported by" has their logos, then the faces of as many
+ * other sponsors as fit, and a count of the rest. With no partner and no
+ * face loaded, there's no strip.
  */
-const partnersFooter = (
-  partners: ReadonlyArray<CardSponsor>,
-  live: Live,
-): ReactNode => {
-  const drawn = partners.flatMap((partner) => {
-    const image = live.avatars.get(partner.image);
-    return image === undefined ? [] : [{ image, name: partner.name }];
-  });
-  return drawn.length === 0
-    ? undefined
-    : box(
+const sponsorsFooter = (footer: CardFooter, live: Live): ReactNode => {
+  const partners = loaded(footer.partners, live);
+  const backers = loaded(footer.backers, live).slice(0, footer.faceSlots);
+  if (partners.length === 0 && backers.length === 0) {
+    return undefined;
+  }
+  const layout = footerLayout(
+    partners.map((partner) => partner.name),
+    backers.length,
+    footer.sponsorCount,
+    innerWidth,
+  );
+  const faces = backers.slice(0, layout.faces);
+  const more = footer.sponsorCount - partners.length - faces.length;
+  return box(
+    {
+      boxSizing: 'border-box',
+      padding: '0 72px 30px',
+      position: 'relative',
+      width: '100%',
+    },
+    box(
+      {
+        alignItems: 'center',
+        borderTop: `2px solid ${colors.border}`,
+        paddingTop: 18,
+        width: '100%',
+      },
+      box(
         {
-          boxSizing: 'border-box',
-          padding: '0 72px 30px',
-          position: 'relative',
-          width: '100%',
+          color: colors.mutedForeground,
+          flexShrink: 0,
+          fontSize: footerLabelSize,
+          fontWeight: 800,
+          letterSpacing: `${footerLabelSpacing}em`,
+          marginRight: 32,
         },
-        box(
-          {
-            alignItems: 'center',
-            borderTop: `2px solid ${colors.border}`,
-            paddingTop: 18,
-            width: '100%',
-          },
+        footerLabel,
+      ),
+      box(
+        {
+          alignItems: 'center',
+          columnGap: 28,
+          flexShrink: layout.wraps ? 1 : 0,
+          flexWrap: layout.wraps ? 'wrap' : 'nowrap',
+          rowGap: 8,
+        },
+        ...partners.map((partner) =>
           box(
-            {
-              color: colors.mutedForeground,
-              fontSize: 17,
-              fontWeight: 800,
-              letterSpacing: '0.08em',
-              marginRight: 32,
-            },
-            'SUPPORTED BY',
-          ),
-          box(
-            { alignItems: 'center', gap: 32 },
-            ...drawn.map((partner) =>
-              box(
-                { alignItems: 'center', gap: 10 },
-                avatar(partner.name, partner.image, 34, {
-                  border: `2px solid ${colors.border}`,
-                }),
-                box(
-                  { color: colors.foreground, fontSize: 22, fontWeight: 800 },
-                  plainText(partner.name),
-                ),
-              ),
+            { alignItems: 'center', flexShrink: 0, gap: 10 },
+            avatar(
+              partner.name,
+              partner.image,
+              footerAvatarSize(layout.nameSize),
+              { border: `2px solid ${colors.border}` },
+            ),
+            box(
+              {
+                color: colors.foreground,
+                fontSize: layout.nameSize,
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+              },
+              partner.name,
             ),
           ),
         ),
-      );
+      ),
+      ...(faces.length === 0
+        ? []
+        : [
+            box(
+              { alignItems: 'center', flexShrink: 0, marginLeft: 'auto' },
+              ...faces.map((face, index) =>
+                avatar(face.name, face.image, faceSize, {
+                  border: `2px solid ${colors.background}`,
+                  marginLeft: index === 0 ? 0 : faceStep - faceSize,
+                }),
+              ),
+              ...(more > 0
+                ? [
+                    box(
+                      {
+                        color: colors.mutedForeground,
+                        fontSize: moreSize,
+                        fontWeight: 800,
+                        marginLeft: 10,
+                      },
+                      `+${more}`,
+                    ),
+                  ]
+                : []),
+            ),
+          ]),
+    ),
+  );
 };
 
 export const cardElement = (
   assets: Assets,
   ogCard: OgCard,
   live: Live = noLive,
-  partners: ReadonlyArray<CardSponsor> = cardFooterPartners,
+  footer: CardFooter = cardFooter,
 ) => {
   switch (ogCard.kind) {
     case 'doc':
-      return docCard(assets, ogCard, partnersFooter(partners, live));
+      return docCard(assets, ogCard, sponsorsFooter(footer, live));
     case 'home':
-      return homeCard(assets, live.stats, partnersFooter(partners, live));
+      return homeCard(assets, live.stats, sponsorsFooter(footer, live));
     case 'post':
-      return postCard(assets, ogCard, live, partnersFooter(partners, live));
+      return postCard(assets, ogCard, live, sponsorsFooter(footer, live));
     case 'sponsor':
       return sponsorCard(assets, ogCard, live);
   }

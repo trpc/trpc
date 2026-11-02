@@ -10,6 +10,8 @@ import {
   docDescription,
   docTitle,
   drawnBackers,
+  footerLayout,
+  footerNameSizes,
   initials,
   partnerNameSizes,
   partnerRowLayout,
@@ -209,6 +211,55 @@ describe('textWidth', () => {
 
   it('counts a character outside Latin as the widest', () => {
     expect(textWidth('é', 1)).toBe(textWidth('W', 1));
+  });
+});
+
+describe('footerLayout', () => {
+  const today = ['CodeRabbit', 'Greptile', 'SerpApi'];
+
+  it("draws today's partners at the largest size, with a dozen faces", () => {
+    expect(footerLayout(today, 12, 20, 1056)).toEqual({
+      faces: 10,
+      nameSize: footerNameSizes[0],
+      wraps: false,
+    });
+  });
+
+  it('draws only the faces that loaded', () => {
+    expect(footerLayout(today, 2, 20, 1056).faces).toBe(2);
+    expect(footerLayout(today, 0, 20, 1056).faces).toBe(0);
+  });
+
+  it('makes the names smaller, not shorter, to leave room for a few faces', () => {
+    const long = [...today, 'Proxidize'];
+    const layout = footerLayout(long, 12, 20, 1056);
+    expect(layout.nameSize).toBeLessThan(footerNameSizes[0]);
+    expect(layout.faces).toBeGreaterThanOrEqual(6);
+    expect(layout.wraps).toBe(false);
+  });
+
+  it('keeps the names as large as fit, and draws the faces that fit, when no size leaves room for a few', () => {
+    const layout = footerLayout(
+      [...today, 'Some Company Name GmbH & Co. KG'],
+      12,
+      20,
+      1056,
+    );
+    expect(layout.faces).toBeLessThan(6);
+    expect(layout.wraps).toBe(false);
+  });
+
+  it('wraps names that fit at no size, each whole, at the smallest, with no faces', () => {
+    const many = [
+      ...today,
+      'Some Company Name GmbH & Co. KG',
+      'Wonderfully Long Partner Name',
+    ];
+    expect(footerLayout(many, 12, 20, 1056)).toEqual({
+      faces: 0,
+      nameSize: footerNameSizes.at(-1),
+      wraps: true,
+    });
   });
 });
 
