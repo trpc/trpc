@@ -18,81 +18,13 @@
 
 ## Documentation
 
-Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/client/nextjs)
+Full documentation for tRPC with Next.js can be found [here](https://trpc.io/docs/client/nextjs).
 
-## Installation
+## Deprecated: `createTRPCNext` and `withTRPC`
 
-```bash
-# npm
-npm install @trpc/next @trpc/react-query @tanstack/react-query
+`createTRPCNext`, `withTRPC` and `ssr: true` (with `@trpc/next/ssrPrepass`) are built on `@trpc/react-query`, which only gets bug fixes and will be removed in the next major version of tRPC. For both the App Router and the Pages Router, use [`@trpc/tanstack-react-query`](https://trpc.io/docs/client/tanstack-react-query) instead:
 
-# Yarn
-yarn add @trpc/next @trpc/react-query @tanstack/react-query
+- [Set up with the App Router](https://trpc.io/docs/client/nextjs/app-router-setup)
+- [Set up with the Pages Router](https://trpc.io/docs/client/nextjs/pages-router/setup), and [move from `createTRPCNext`](https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext)
 
-# pnpm
-pnpm add @trpc/next @trpc/react-query @tanstack/react-query
-
-# Bun
-bun add @trpc/next @trpc/react-query @tanstack/react-query
-```
-
-## Basic Example
-
-Setup tRPC in `utils/trpc.ts`.
-
-```ts
-import { createTRPCNext, httpBatchLink } from '@trpc/next';
-// Import the router type from your server file
-import type { AppRouter } from '../pages/api/[trpc].ts';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    return {
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:3000/trpc',
-        }),
-      ],
-    };
-  },
-  ssr: false,
-});
-```
-
-Hook up tRPC inside `_app.tsx`.
-
-```ts
-import { trpc } from '~/utils/trpc';
-
-const App = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default trpc.withTRPC(App);
-```
-
-Now you can query your API in any component.
-
-```ts
-import { trpc } from '~/utils/trpc';
-
-export function Hello() {
-  const { data, error, status } = trpc.greeting.useQuery({
-    name: 'tRPC',
-  });
-
-  if (error) {
-    return <p>{error.message}</p>;
-  }
-
-  if (status !== 'success') {
-    return <p>Loading...</p>;
-  }
-
-  return <div>{data && <p>{data.greeting}</p>}</div>;
-}
-```
-
-## Server components
-
-See https://trpc.io/docs/client/react/server-components
+The experimental App Router helpers in `@trpc/next/app-dir/*` aren't deprecated.

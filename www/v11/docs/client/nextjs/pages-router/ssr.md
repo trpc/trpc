@@ -2,242 +2,262 @@
 id: ssr
 title: Server-Side Rendering
 sidebar_label: Server-Side Rendering (SSR)
-description: "Render every tRPC query on the server with ssr: true and ssrPrepass, forward request headers, and cache SSR responses with responseMeta"
+description: "Prefetch a page's tRPC queries in getServerSideProps with createTRPCOptionsProxy, build the context from the request, and set the status and cache headers"
 slug: /client/nextjs/pages-router/ssr
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
 order: 71
 ---
 
-To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
+To render a page's data on the server, prefetch its queries in `getServerSideProps`. Next.js then renders the page with the data in the cache, so it's in the first HTML, and the client doesn't fetch it again.
 
-:::info
-When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps`, and solving it is out of our hands.
+This page builds on the [Pages Router setup](./setup.md).
 
-&nbsp;  
-Alternatively, you can leave SSR disabled (the default) and use [Server-Side Helpers](./server-side-helpers.md) to prefetch queries in `getStaticProps` or `getServerSideProps`.
+:::warning Deprecated
+`ssr: true` and `ssrPrepass` from `@trpc/next` are deprecated, along with `createTRPCNext`. They rendered every page over and over until no query was fetching. Nothing does that for you now: prefetch each page's queries in `getServerSideProps` instead. You choose what runs on the server, and pages without `getServerSideProps` stay static.
 :::
 
-In order to execute queries properly during the server-side render step, we need to add extra logic inside our `config`. Additionally, consider [`Response Caching`](../../../server/caching.md).
+## Prefetch in `getServerSideProps`
 
-```tsx twoslash title='utils/trpc.ts'
-// @filename: utils/api/trpc/[trpc].ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
+In `getServerSideProps`, make a query client and a tRPC proxy that calls your router directly, with no HTTP request. Prefetch the queries the page needs, and return the cache as `trpcState`. `_app`'s `HydrationBoundary` puts it into the client's cache.
 
-// @filename: utils/trpc.ts
-declare function getBaseUrl(): string;
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import type { AppRouter } from './api/trpc/[trpc]';
-
-export const trpc = createTRPCNext<AppRouter>({
-  ssr: true,
-  ssrPrepass,
-  config(info) {
-    const { ctx } = info;
-    if (typeof window !== 'undefined') {
-      // during client requests
-      return {
-        links: [
-          httpBatchLink({
-            url: '/api/trpc',
-          }),
-        ],
-      };
-    }
-
-    return {
-      links: [
-        httpBatchLink({
-          // The server needs to know your app's full url
-          url: `${getBaseUrl()}/api/trpc`,
-          /**
-           * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/client/headers
-           */
-          headers() {
-            if (!ctx?.req?.headers) {
-              return {};
-            }
-            // To use SSR properly, you need to forward client headers to the server
-            // This is so you can pass through things like cookies when we're server-side rendering
-            return {
-              cookie: ctx.req.headers.cookie,
-            };
-          },
-        }),
-      ],
-    };
-  },
-});
-```
-
-or, if you want to SSR conditional on a given request, you can pass a callback to `ssr`. This callback can return a boolean, or a Promise resolving to a boolean:
-
-```tsx twoslash title='utils/trpc.ts'
-// @filename: utils/api/trpc/[trpc].ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.ts
-declare function getBaseUrl(): string;
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import type { AppRouter } from './api/trpc/[trpc]';
-
-export const trpc = createTRPCNext<AppRouter>({
-  ssrPrepass,
-  config(info) {
-    const { ctx } = info;
-    if (typeof window !== 'undefined') {
-      // during client requests
-      return {
-        links: [
-          httpBatchLink({
-            url: '/api/trpc',
-          }),
-        ],
-      };
-    }
-
-    return {
-      links: [
-        httpBatchLink({
-          // The server needs to know your app's full url
-          url: `${getBaseUrl()}/api/trpc`,
-          /**
-           * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/client/headers
-           */
-          headers() {
-            if (!ctx?.req?.headers) {
-              return {};
-            }
-            // To use SSR properly, you need to forward client headers to the server
-            // This is so you can pass through things like cookies when we're server-side rendering
-            return {
-              cookie: ctx.req.headers.cookie,
-            };
-          },
-        }),
-      ],
-    };
-  },
-  ssr(opts) {
-    // only SSR if the request is coming from a bot
-    return opts.ctx?.req?.headers['user-agent']?.includes('bot') ?? false;
-  },
-});
-```
-
-```tsx twoslash title='pages/_app.tsx'
+```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
+// @filename: server/context.ts
+import type { IncomingHttpHeaders } from 'node:http';
+export async function createContext(opts: { headers: IncomingHttpHeaders }) {
+  return { userId: opts.headers['x-user-id'] };
+}
+
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import type { createContext } from '../context';
+const t = initTRPC.context<Awaited<ReturnType<typeof createContext>>>().create();
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Example Post', text: 'Hello world' })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: pages/posts/[id].tsx
+// ---cut---
+import { dehydrate, useQuery } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type {
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
+} from 'next';
+import { createContext } from '../../server/context';
+import { appRouter } from '../../server/routers/_app';
+import { makeQueryClient } from '../../utils/query-client';
+import { useTRPC } from '../../utils/trpc';
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext<{ id: string }>,
+) {
+  const id = context.params?.id as string;
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: await createContext({ headers: context.req.headers }),
+    queryClient,
+  });
+
+  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+
+  return {
+    props: {
+      trpcState: dehydrate(queryClient),
+      id,
+    },
+  };
+}
+
+export default function PostPage(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+) {
+  const trpc = useTRPC();
+  const postQuery = useQuery(trpc.post.byId.queryOptions({ id: props.id }));
+
+  switch (postQuery.status) {
+    case 'pending':
+      return <p>Loading...</p>;
+    case 'error':
+      return <p>Error: {postQuery.error.message}</p>;
+    case 'success':
+      return (
+        <article>
+          <h1>{postQuery.data.title}</h1>
+          <p>{postQuery.data.text}</p>
+        </article>
+      );
+  }
+}
+```
+
+The page reads the query as it would without prefetching, so `status` is `'success'` on the first render. Use the same input in both places: it's part of the query key.
+
+`prefetchQuery` never throws, and the cache only sends queries that succeeded, so a failed query fetches again in the browser. To act on an error on the server, use `fetchQuery`, which returns the data or throws. See [Set the status and cache headers](#set-the-status-and-cache-headers).
+
+### Build the context from the request
+
+The proxy calls your procedures in the same process, so there's no URL to set and no headers to forward. Build the context from `context.req` instead, as the API handler does. Sharing one `createContext` that only needs the headers keeps the two the same:
+
+```ts twoslash title='server/context.ts'
+import type { IncomingHttpHeaders } from 'node:http';
+
+export async function createContext(opts: { headers: IncomingHttpHeaders }) {
+  // const user = await getUserFromCookie(opts.headers.cookie);
+  return { userId: opts.headers['x-user-id'] };
+}
+```
+
+```ts twoslash title='pages/api/trpc/[trpc].ts'
+// @filename: server/context.ts
+import type { IncomingHttpHeaders } from 'node:http';
+export async function createContext(opts: { headers: IncomingHttpHeaders }) {
+  return { userId: opts.headers['x-user-id'] };
+}
+
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import type { createContext } from '../context';
+const t = initTRPC.context<Awaited<ReturnType<typeof createContext>>>().create();
+export const appRouter = t.router({});
+
+// @filename: pages/api/trpc/[trpc].ts
+// ---cut---
+import * as trpcNext from '@trpc/server/adapters/next';
+import { createContext } from '../../../server/context';
+import { appRouter } from '../../../server/routers/_app';
+
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext: (opts) => createContext({ headers: opts.req.headers }),
+});
+```
+
+<details>
+<summary>If your API runs on another server</summary>
+
+Pass a tRPC client to `createTRPCOptionsProxy` instead of the router. The request now goes over HTTP, so it needs the API's full URL, and you forward the headers the API needs, such as the cookie:
+
+```ts twoslash title='pages/posts/[id].tsx'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
-// @filename: utils/trpc.tsx
-import { createTRPCNext } from '@trpc/next';
-import { httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../server/routers/_app';
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    return { links: [httpBatchLink({ url: '/api/trpc' })] };
-  },
-});
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
 
-// @filename: pages/_app.tsx
-import React from 'react';
+// @filename: pages/posts/[id].tsx
+import type { GetServerSidePropsContext } from 'next';
+declare const context: GetServerSidePropsContext;
 // ---cut---
-import { trpc } from '../utils/trpc';
-import type { AppProps } from 'next/app';
-import type { AppType } from 'next/app';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../../server/routers/_app';
+import { makeQueryClient } from '../../utils/query-client';
 
-const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
-  return <Component {...pageProps} />;
-};
-
-export default trpc.withTRPC(MyApp);
+const queryClient = makeQueryClient();
+const trpc = createTRPCOptionsProxy({
+  client: createTRPCClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        url: 'https://api.example.com/trpc',
+        headers: () => ({ cookie: context.req.headers.cookie }),
+      }),
+    ],
+  }),
+  queryClient,
+});
 ```
 
-## Response Caching with SSR
+</details>
 
-If you turn on SSR in your app, you might discover that your app loads slowly on, for instance, Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
+## Set the status and cache headers
 
-You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
+`getServerSideProps` gets the response as `context.res`, so you set headers on it directly. To send a 404 when a post doesn't exist, use `fetchQuery`, catch the `TRPCError`, and return `notFound`:
 
-```tsx twoslash title='utils/trpc.tsx'
+```tsx twoslash title='pages/posts/[id].tsx'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.tsx
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import type { AppRouter } from '../server/routers/_app';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    if (typeof window !== 'undefined') {
-      return {
-        links: [
-          httpBatchLink({
-            url: '/api/trpc',
-          }),
-        ],
-      };
-    }
-
-    const url = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : 'http://localhost:3000/api/trpc';
-
-    return {
-      links: [
-        httpBatchLink({
-          url,
-        }),
-      ],
-    };
-  },
-  ssr: true,
-  ssrPrepass,
-  responseMeta(opts) {
-    const { clientErrors } = opts;
-
-    if (clientErrors.length) {
-      // propagate http first error from API calls
-      return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
-      };
-    }
-
-    // cache request for 1 day + revalidate once every second
-    // (a plain object: `createTRPCNext` ignores a `Headers` instance)
-    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-    return {
-      headers: {
-        'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-      },
-    };
-  },
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Example Post' })),
+  }),
 });
+
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
+// @filename: pages/posts/[id].tsx
+// ---cut---
+import { dehydrate } from '@tanstack/react-query';
+import { TRPCError } from '@trpc/server';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { GetServerSidePropsContext } from 'next';
+import { appRouter } from '../../server/routers/_app';
+import { makeQueryClient } from '../../utils/query-client';
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext<{ id: string }>,
+) {
+  const id = context.params?.id as string;
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: {},
+    queryClient,
+  });
+
+  try {
+    await queryClient.fetchQuery(trpc.post.byId.queryOptions({ id }));
+  } catch (cause) {
+    if (cause instanceof TRPCError && cause.code === 'NOT_FOUND') {
+      return { notFound: true };
+    }
+    throw cause;
+  }
+
+  // cache the page for 1 day, and revalidate it once a second at most
+  const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+  context.res.setHeader(
+    'cache-control',
+    `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+  );
+
+  return {
+    props: {
+      trpcState: dehydrate(queryClient),
+      id,
+    },
+  };
+}
 ```
+
+Only cache pages that look the same for everyone. If the page depends on the user's cookie, leave out the `cache-control` header. See also the general [Response Caching](../../../server/caching.md) docs.
 
 ### API Response Caching with Next.js Adapter
 
@@ -306,14 +326,10 @@ export default trpcNext.createNextApiHandler({
 
 ## FAQ
 
-### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically do that for me?
+### Q: Why does the client still fetch data the server prefetched?
 
-While it's rare that you wouldn't want to forward the client's headers to the server when doing SSR, you might want to add things dynamically in the headers. Therefore, tRPC doesn't want to take responsibility for header keys colliding, etc.
+TanStack React Query refetches stale data when a component mounts and when the window regains focus. The query client from the [setup](./setup.md#4-create-a-query-client-factory) keeps data fresh for 30 seconds with `staleTime`, so the first render uses what the server sent. Raise `staleTime` to fetch less, or see [SSG](./ssg.md#stop-the-client-from-refetching) to turn refetching off.
 
-### Q: Why do I need to delete the `connection` header when using SSR on Node 18?
+### Q: Can I use `useSuspenseQuery`?
 
-If you don't remove the `connection` header, the data fetching will fail with `TRPCClientError: fetch failed` because `connection` is a [forbidden header name](https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name).
-
-### Q: Why do I still see network requests being made in the Network tab?
-
-By default, `@tanstack/react-query` (which we use for the data fetching hooks) refetches data on mount and window refocus, even if it's already got initial data via SSR. This ensures data is always up-to-date. See the page on [SSG](./ssg.md) if you'd like to disable this behavior.
+Yes, for queries the page prefetched. A query that isn't in the cache suspends during the server render too, and the server can't reach your API's relative URL. Prefetch it in `getServerSideProps`, or use `useQuery`, which only fetches in the browser.

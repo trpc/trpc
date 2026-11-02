@@ -45,6 +45,7 @@ export interface CreateTRPCNextBase<
 
 /**
  * @internal
+ * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
  */
 export type CreateTRPCNext<
   TRouter extends AnyRouter,
@@ -57,6 +58,11 @@ export type CreateTRPCNext<
   >
 >;
 
+/**
+ * @deprecated built on `@trpc/react-query`, which only gets bug fixes. Use
+ * `createTRPCContext` from `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
+ */
 export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,

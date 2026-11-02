@@ -2,49 +2,16 @@
 id: aborting-procedure-calls
 title: Aborting Procedure Calls
 sidebar_label: Aborting Procedure Calls
-description: Cancel in-flight requests when a component unmounts with abortOnUnmount, globally or per request
+description: Cancel in-flight requests when a component unmounts with the abortOnUnmount option on a query
 slug: /client/nextjs/pages-router/aborting-procedure-calls
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
 order: 74
 ---
 
-By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration callback.
+By default, tRPC doesn't cancel a request when the component that made it unmounts. To cancel it, set `abortOnUnmount` in the `trpc` option of the query:
 
-### Globally
-
-```ts twoslash title="client.ts"
-// @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: client.ts
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from './server/routers/_app';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    return {
-      links: [
-        httpBatchLink({
-          url: '/api/trpc',
-        }),
-      ],
-      abortOnUnmount: true,
-    };
-  },
-});
-```
-
-### Per-request
-
-You may also override this behavior at the request level.
-
-```tsx twoslash title="client.ts"
+```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -57,20 +24,37 @@ export const appRouter = t.router({
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const trpc = createTRPCReact<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
-// @filename: client.ts
+// @filename: pages/posts/[id].tsx
 // ---cut---
-import { trpc } from './utils/trpc';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
+import { useTRPC } from '../../utils/trpc';
 
-function PostViewPage() {
+export default function PostViewPage() {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id }, { trpc: { abortOnUnmount: true } });
+  const trpc = useTRPC();
+  const postQuery = useQuery(
+    trpc.post.byId.queryOptions({ id }, { trpc: { abortOnUnmount: true } }),
+  );
 
-  return null;
+  switch (postQuery.status) {
+    case 'pending':
+      return <p>Loading...</p>;
+    case 'error':
+      return <p>Error: {postQuery.error.message}</p>;
+    case 'success':
+      return <h1>{postQuery.data.title}</h1>;
+  }
 }
 ```
+
+There's no global switch: `createTRPCContext()` takes no options, so set it on each query that needs it. It works for `queryOptions` and `infiniteQueryOptions`, since TanStack React Query only cancels queries.
+
+:::note
+`createTRPCNext`'s `abortOnUnmount` in `config` set this for every query. Like the rest of `createTRPCNext`, it's deprecated. See [Moving from `createTRPCNext`](./setup.md#moving-from-createtrpcnext).
+:::
