@@ -289,7 +289,7 @@ await client.upload.mutate(file);
 ## Common mistakes
 
 - **Using a query.** FormData and binary inputs are sent as the body of a `POST` request, so they only work with mutations: for a query, `httpLink` throws `FormData is only supported for mutations` or `Octet type input is only supported for mutations`. The exception is an `httpLink` with `methodOverride: 'POST'`, which sends every call as a `POST` and so also sends FormData and binary inputs for queries; the server must [allow the method override](/docs/rpc#overriding-the-default-http-method).
-- **Sending them through a batching link.** `httpBatchLink`, `httpBatchStreamLink` and `wsLink` serialize inputs as JSON, which turns a `FormData` or `File` into `{}`, so input validation fails. Route them to `httpLink` with a [`splitLink`](#client-setup). Only `httpLink` sends non-JSON inputs:
+- **Sending them through a batching link.** `httpBatchLink`, `httpBatchStreamLink` and `wsLink` (with its default encoder) serialize inputs as JSON, which turns a `FormData` or `File` into `{}`, so input validation fails. Route them to `httpLink` with a [`splitLink`](#client-setup). Only `httpLink` sends non-JSON inputs:
 
   | Link                                                            | `application/json` | `FormData`  | `File` / `Blob` / `Uint8Array` |
   | --------------------------------------------------------------- | :----------------: | :---------: | :----------------------------: |
@@ -297,5 +297,7 @@ await client.upload.mutate(file);
   | [`httpBatchLink`](/docs/client/links/httpBatchLink)             |         ✅         |     ❌      |               ❌               |
   | [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink) |         ✅         |     ❌      |               ❌               |
   | [`wsLink`](/docs/server/websockets)                             |         ✅         |     ❌      |               ❌               |
+
+  With a binary `experimental_encoder` such as MessagePack, `wsLink` can carry `Uint8Array` values, as in the [WebSocket encoder example](https://github.com/trpc/trpc/tree/main/examples/next-websockets-encoder).
 - **Transforming the request.** tRPC passes FormData and binary inputs to your procedure as they are, without your `transformer`. If you use one, give the non-JSON `httpLink` a transformer that leaves the request alone, as [shown above](#client-setup).
 - **Letting your server parse the body first.** See [Server Setup](#server-setup).
