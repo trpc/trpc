@@ -12,7 +12,7 @@ links:
     url: ../decisions/site-noindex-until-trpc-io.md
   - kind: code
     label: llmsTxt (www/build/content.ts)
-    url: ../../www/build/content.ts
+    url: ../../../www/build/content.ts
   - kind: docs
     label: llms.txt on v12.trpc.io
     url: https://v12.trpc.io/llms.txt

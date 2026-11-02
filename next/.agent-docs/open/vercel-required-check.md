@@ -12,7 +12,7 @@ links:
     url: ../decisions/landing-on-v12.md
   - kind: code
     label: www/vercel.json
-    url: ../../www/vercel.json
+    url: ../../../www/vercel.json
   - kind: code
     label: tooling/vercel-ignore
     url: ../../tooling/vercel-ignore/

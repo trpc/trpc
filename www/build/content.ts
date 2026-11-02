@@ -86,7 +86,7 @@ export interface ContentOptions extends PageDirs {
   readonly siteUrl: string;
   /** Where the files around `contentDir` are browsable, for links to them. */
   readonly sourceUrl: string;
-  /** `contentDir`'s path under `sourceUrl` (`www/docs`), which links out of it resolve from: `docs` unless named. */
+  /** `contentDir`'s path under `sourceUrl` (`www/v12/docs`), which links out of it resolve from: `docs` unless named. */
   readonly contentPath?: string | undefined;
   /** What the project is, one line, for `llms.txt`. */
   readonly summary: string;

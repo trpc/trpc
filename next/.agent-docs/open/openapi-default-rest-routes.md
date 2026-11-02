@@ -141,4 +141,4 @@ const doc = experimental_generateOpenApi(appRouter, { info, filter });
 
 ## Blocked until answered
 
-- Nothing. A is what's built and documented in `www/docs/openapi/routes.md`.
+- Nothing. A is what's built and documented in `www/v12/docs/openapi/routes.md`.

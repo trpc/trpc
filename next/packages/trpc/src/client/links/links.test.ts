@@ -393,7 +393,7 @@ test('the untyped client takes paths as strings', async () => {
   expect(events).toEqual([1, 2]);
 });
 
-test('one client for routers on two servers with different contexts (www/docs/client/links.md)', async () => {
+test('one client for routers on two servers with different contexts (www/v12/docs/client/links.md)', async () => {
   const blogT = initTrpc<{ ctx: { locale: string } }>();
   const shopT = initTrpc<{ ctx: { cart: string[] } }>();
   const blogRouter = blogT.router({

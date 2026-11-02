@@ -970,7 +970,7 @@ export interface RenderOptions {
   readonly slug: string;
   /** Where the files around the docs folder are browsable, for links to them. */
   readonly sourceUrl: string;
-  /** The docs folder's path under `sourceUrl` (`www/docs`), which links out of it resolve from: `docs` unless named. */
+  /** The docs folder's path under `sourceUrl` (`www/v12/docs`), which links out of it resolve from: `docs` unless named. */
   readonly contentPath?: string | undefined;
   /** Where compiled blocks are kept between renders and builds. */
   readonly twoslashCache?: TwoslashCache | undefined;

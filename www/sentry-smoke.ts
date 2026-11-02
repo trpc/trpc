@@ -4,7 +4,7 @@
  * Sentry's ingest to accept it, then prints what to look for in Sentry's
  * Issues (`decisions/docs-site-sentry.md`). It fails if the deployment was
  * built without a DSN, or the ingest refuses the event. `CHROME_PATH` picks
- * the browser. Run with `pnpm --filter @trpc12/www sentry:smoke`.
+ * the browser. Run with `pnpm --filter www sentry:smoke`.
  */
 import { chromium, type Request } from 'playwright-core';
 

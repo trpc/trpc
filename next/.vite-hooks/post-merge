@@ -1,16 +1,16 @@
-# The README's sponsors section is written from next/www/sponsors.json
+# The README's sponsors section is written from www/sponsors.json
 # (www/build/sponsors-sync.ts). When a merge brings `main`'s version of the
 # README, write that section from sponsors.json again.
 
 # In a worktree, git runs hooks with GIT_DIR set, which makes git (here and
-# in the copy) take the cwd for the top of the tree.
+# in sponsors-sync) take the cwd for the top of the tree.
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 cd "$(git rev-parse --show-toplevel)" || exit 1
 status=0
 if ! git diff --quiet ORIG_HEAD HEAD -- README.md; then
-  echo "post-merge: the merge changed README.md, so writing its sponsors from next/www/sponsors.json"
-  if ! (cd next && pnpm --filter @trpc12/www sponsors:readme); then
-    echo "post-merge: writing the sponsors failed; fix what it says, then run \`pnpm --filter @trpc12/www sponsors:readme\` in next/"
+  echo "post-merge: the merge changed README.md, so writing its sponsors from www/sponsors.json"
+  if ! pnpm --filter www sponsors:readme; then
+    echo "post-merge: writing the sponsors failed; fix what it says, then run \`pnpm --filter www sponsors:readme\` at the repo's root"
     status=1
   fi
 fi

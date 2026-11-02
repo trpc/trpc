@@ -9,16 +9,16 @@ links:
     url: ../decisions/www-build-speed.md
   - kind: code
     label: docsContent's manifest (www/build/content.ts)
-    url: ../../www/build/content.ts
+    url: ../../../www/build/content.ts
   - kind: code
     label: parsing and renderMarkdown (www/build/markdown.ts)
-    url: ../../www/build/markdown.ts
+    url: ../../../www/build/markdown.ts
   - kind: code
     label: Twoslash cache dir (www/build/paths.ts)
-    url: ../../www/build/paths.ts
+    url: ../../../www/build/paths.ts
   - kind: code
     label: dev renders in-process, builds in the pool (www/build/page-renderer.ts)
-    url: ../../www/build/page-renderer.ts
+    url: ../../../www/build/page-renderer.ts
   - kind: code
     label: docs:dev in the README
     url: ../../README.md
@@ -37,7 +37,7 @@ In dev, `virtual:docs-manifest` (the nav, search and SEO list) renders every pag
 The README tells a fresh checkout to fill the cache with a build first, and to restart a dev server that started cold.
 
 ```md
-- `pnpm docs:dev`: the docs site at http://localhost:3012, reloading as `www/docs/` changes.
+- `pnpm docs:dev`: the docs site at http://localhost:3012, reloading as `www/v12/docs/` changes.
   On an empty Twoslash cache (a fresh clone), run `pnpm docs:build` once first (about 4 minutes);
   a dev server that started cold answers 500 until it's restarted.
 ```

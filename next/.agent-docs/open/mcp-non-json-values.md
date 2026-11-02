@@ -59,7 +59,7 @@ t.procedure.input(Schema.Struct({ at: Schema.Date })); // described as { type: '
 t.procedure.input(Schema.Struct({ at: Schema.DateFromString })); // accepts the string
 ```
 
-- ✅ Nothing to build. The zod side is documented in `www/docs/openapi/document.md`.
+- ✅ Nothing to build. The zod side is documented in `www/v12/docs/openapi/document.md`.
 - ❌ An Effect `Schema.Date` input says it takes a string and then rejects one, so the agent can't satisfy the tool.
 
 ### B) Decode arguments with the input schema's JSON codec

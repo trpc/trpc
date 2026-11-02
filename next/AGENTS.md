@@ -4,7 +4,7 @@
 
 This repo is a **from-scratch rewrite** of tRPC (vNext / `v12` branch), not maintenance of current tRPC.
 
-**New code lives here, in `next/`.** Do not add vNext packages to `../v11/` (the v11 monorepo: `packages/`, `examples/`, `www/`). Design docs live in [`.agent-docs/`](./.agent-docs/).
+**New code lives here, in `next/`.** Do not add vNext packages to `../v11/` (the v11 monorepo: `packages/`, `examples/`). The docs and the site are in [`../www/`](../www/AGENTS.md). Design docs live in [`.agent-docs/`](./.agent-docs/).
 
 Start here (paths relative to `next/`):
 
@@ -27,7 +27,7 @@ Agent skills live in the repo-root `.agents/skills/<name>/SKILL.md` (for example
 
 ## Running
 
-`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc` and the repo root's `../.nvmrc`; bump all three together). From `next/`:
+`next/` is part of the repository root's pnpm workspace, with `../v11/`, `../www/` and `../tooling/` ([`decisions/one-workspace.md`](./.agent-docs/decisions/one-workspace.md)); `pnpm install` anywhere installs all of it. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc` and the repo root's `../.nvmrc`; bump all three together). From `next/`:
 
 ```bash
 nvm use
@@ -40,7 +40,7 @@ pnpm example
 
 - TypeScript is `7.1.0-beta` in every `package.json`, pinned exactly: `^7.1.0-beta` resolves to the newer-sorting `7.1.0-dev.*` nightlies. Twoslash still compiles the docs' blocks with TypeScript 6 ([`decisions/typescript-versions.md`](./.agent-docs/decisions/typescript-versions.md)).
 - `pnpm test <file or folder>` runs only those tests, and so does `pnpm test -- --watch false <file>`. Tests run through `vp test`; there is no `vitest` binary.
-- Import test APIs from `vite-plus/test`, or from `@effect/vitest` in a package that depends on it, never from `vitest` (lint fails on it). No package here depends on `vitest`: a checkout with a v11 install in `../node_modules` resolves it from there, and CI doesn't. The same goes for any package a `package.json` here doesn't list.
+- Import test APIs from `vite-plus/test`, or from `@effect/vitest` in a package that depends on it, never from `vitest` (lint fails on it). No package here depends on `vitest`, though v11's does, so don't rely on a package a `package.json` here doesn't list resolving: the root's `node_modules` holds the root's own dependencies and its hoisted `@types`, which a fresh `pnpm install` may hoist differently.
 - Cloud Agents' `core.hooksPath` is Cursor's, so `pnpm install` skips `.vite-hooks` and `pre-commit` doesn't run: run `pnpm fix` before committing.
 - `pnpm example` needs Redis and Postgres for `examples/realtime`, at CI's `REDIS_URL` and `DATABASE_URL` (in `../.github/workflows/next.yml`).
 
@@ -63,7 +63,7 @@ Many agents push to `v12` at once, about a hundred commits a day, so a change th
 
 ## Docs
 
-User docs are Markdown in `www/docs/`, one short page per topic in a folder per sidebar section, which the site in `www/` renders ([`decisions/docs-website.md`](./.agent-docs/decisions/docs-website.md), [`decisions/docs-in-www.md`](./.agent-docs/decisions/docs-in-www.md)). Update the page a change affects, in the same commit. How to write a page, link it and compile its code, and what's generated (the old docs, redirects, sponsors) is in [`www/AGENTS.md`](./www/AGENTS.md): read it before editing anything under `www/`.
+User docs are Markdown in `www/v12/docs/`, one short page per topic in a folder per sidebar section, which the site in `www/` renders ([`decisions/docs-website.md`](./.agent-docs/decisions/docs-website.md), [`decisions/docs-in-www.md`](./.agent-docs/decisions/docs-in-www.md)). Update the page a change affects, in the same commit. How to write a page, link it and compile its code, what's generated (the sponsors) and what's `main`'s (the older docs, the blog, trpc.io's redirects) is in [`www/AGENTS.md`](../www/AGENTS.md): read it before editing anything under `www/`.
 
 ## Tests
 
@@ -80,7 +80,7 @@ Folders under `packages/trpc/src/server/`, `transformer/`, `interop/`, `client/`
 
 Effect code follows the `anti-slop-effect` rules. Build tagged values with `Data.taggedEnum` or tagged classes, not `{ _tag: … }` literals. Test them with `Predicate.isTagged`, `Option.isSome`/`isNone` or `Result.isFailure`, not by comparing `_tag`; recover with `Effect.catchReason`, not by branching on `err.reason._tag`. Use `Match` or a `Record` lookup instead of chained literal ternaries. In tests, assert with `expect(x).toSatisfy(Predicate.isTagged('X'))` or `toBeInstanceOf`, not `toMatchObject({ _tag })`.
 
-Destructuring (`trpc/no-overzealous-destructuring`, also checked in `www/docs/` code blocks by `pnpm lint:docs`): take one parameter and read its members, named `opts` by default, `args` where `opts` would shadow, and `props` for components. Destructure only keys read three or more times. Name a call's result instead of destructuring it (`const serialized = serializeDeferred(…)`). After a bulk codemod, compare `eslint/no-shadow` counts before and after, and check that renamed locals don't collide with existing functions.
+Destructuring (`trpc/no-overzealous-destructuring`, also checked in `www/v12/docs/` code blocks by `pnpm lint:docs`): take one parameter and read its members, named `opts` by default, `args` where `opts` would shadow, and `props` for components. Destructure only keys read three or more times. Name a call's result instead of destructuring it (`const serialized = serializeDeferred(…)`). After a bulk codemod, compare `eslint/no-shadow` counts before and after, and check that renamed locals don't collide with existing functions.
 
 ## Vendored Source
 
@@ -96,6 +96,6 @@ Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependen
 
 Every repo ignores `.repos/**`, so a vendored repo's own vendored sources stay out of the tree. `ignore` paths are pruned on `add` and `sync`; after adding one to a repo you don't want to sync, delete the matching paths by hand.
 
-Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.1.1` follows `effect@*`; prereleases only from a prerelease), a SHA to the default branch's `HEAD`.
+Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root's `package.json`, which lists none of them (they're `next/`'s packages' dependencies), so it can't tie a checkout to the lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.1.1` follows `effect@*`; prereleases only from a prerelease), a SHA to the default branch's `HEAD`.
 
 So sync `effect` only when bumping its installed version to the same release (`pnpm vendor:sync effect`). `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. Sync needs only the checkouts it touches to be clean, and commits the new tree and the pruned `ignore` paths itself. Then commit `../vendor-src.json` (`.repos/AGENTS.md` is rewritten for you) and update the list above by hand.

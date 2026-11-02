@@ -12,10 +12,10 @@ links:
     url: ../decisions/site-noindex-until-trpc-io.md
   - kind: code
     label: commitDates (www/build/content.ts)
-    url: ../../www/build/content.ts
+    url: ../../../www/build/content.ts
   - kind: code
     label: sitemap pages (www/vite.config.ts)
-    url: ../../www/vite.config.ts
+    url: ../../../www/vite.config.ts
   - kind: code
     label: vercel-ignore's fetch (decide.ts)
     url: ../../tooling/vercel-ignore/src/decide.ts
