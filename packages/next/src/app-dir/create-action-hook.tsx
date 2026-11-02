@@ -34,7 +34,13 @@ type ActionError<TDef extends ActionHandlerDef> = TRPCClientError<{
 }>;
 
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
+  /**
+   * Calls the action. Errors go to `error` and `onError`.
+   */
   mutate: (...args: MutationArgs<TDef>) => void;
+  /**
+   * Calls the action and returns a promise that rejects on error.
+   */
   mutateAsync: (...args: MutationArgs<TDef>) => Promise<TDef['output']>;
 }
 
@@ -71,6 +77,13 @@ interface UseTRPCActionLoadingResult<
 }
 
 // ts-prune-ignore-next
+/**
+ * The result of a hook from {@link experimental_createActionHook}. Check
+ * `status` to narrow it.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
   | UseTRPCActionErrorResult<TDef>
   | UseTRPCActionIdleResult<TDef>
@@ -82,6 +95,12 @@ type ActionContext = {
 };
 
 // ts-prune-ignore-next
+/**
+ * A terminating link that calls a server action.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 export function experimental_serverActionLink<
   TInferrable extends InferrableClientTypes,
 >(
@@ -138,6 +157,13 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onError?: (result: ActionError<TDef>) => MaybePromise<void>;
 }
 // ts-prune-ignore-next
+/**
+ * Creates a React hook that calls a server action made with
+ * `experimental_createServerActionHandler`.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 export function experimental_createActionHook<
   TInferrable extends InferrableClientTypes,
 >(

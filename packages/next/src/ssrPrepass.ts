@@ -44,6 +44,13 @@ function transformQueryOrMutationCacheErrors<
   return result;
 }
 
+/**
+ * Renders the app on the server once to find its queries, fetches them, then renders again with the data. Pass it to `createTRPCNext` with `ssr: true`.
+ *
+ * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
+ */
 export const ssrPrepass: TRPCPrepassHelper = (opts) => {
   const { parent, WithTRPC, AppOrPage } = opts;
   type $PrepassProps = TRPCPrepassProps<AnyRouter, any>;
