@@ -70,7 +70,7 @@ We recommend a file structure like this one, although it is not enforced by tRPC
 @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@latest zod
 ```
 
-The Next.js integration is actually a combination of our [React Query Integration](../../react.md) and some Next.js specific integrations.
+The Next.js integration is actually a combination of our [classic React Query Integration](../../react.md) (deprecated: it only gets bug fixes, and will be removed in the next major version of tRPC in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query)) and some Next.js-specific integrations.
 
 ### 2. Enable strict mode
 

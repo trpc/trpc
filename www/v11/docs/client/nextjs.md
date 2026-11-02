@@ -27,7 +27,7 @@ Key features:
 
 ## Pages Router
 
-Uses `@trpc/next` which provides a higher-order component (HOC) and integrated hooks for the Pages Router data-fetching patterns.
+Uses `@trpc/next` which provides a higher-order component (HOC) and integrated hooks for the Pages Router data-fetching patterns. Its hooks come from the [classic React Query integration](/docs/client/react) (`@trpc/react-query`), which only gets bug fixes and will be removed in the next major version of tRPC. New projects should use [`@trpc/tanstack-react-query`](/docs/client/tanstack-react-query), and existing ones can follow the [migration guide](/docs/client/tanstack-react-query/migrating).
 
 Key features:
 
