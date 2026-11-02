@@ -515,8 +515,8 @@ post.input;
 
 There are three ways to start a query, and you choose for each query on the page:
 
-- `trpc.x.unstable_$prefetch(input)` **doesn't wait**. It returns a handle at once, the page renders, and the data streams in behind a `Suspense` boundary. It never throws: if the request fails, the component that reads the handle gets the error.
-- `await trpc.x.unstable_$ensure(input)` **waits** until the cache has data. A component that reads the handle with `useSuspenseQuery` renders at once, with no `Suspense` boundary, and `data` is typed as defined. You handle errors where you started the query, for example with `notFound()`.
+- `trpc.x.unstable_$prefetch(input)` **doesn't wait**. It returns a handle at once, the page renders, and the data streams in behind a loading state: a `Suspense` fallback, or `useQuery`'s `pending` status. It never throws: if the request fails, the component that reads the handle gets the error.
+- `await trpc.x.unstable_$ensure(input)` **waits** until the cache has data. A component that reads the handle renders the data at once, with no fallback. It still needs a loading state, since the cache [can lose the data](/docs/client/tanstack-react-query/handles#no-data) later. You handle errors where you started the query, for example with `notFound()`.
 - `await trpc.x.unstable_$fetch(input)` waits too, and refetches stale data first, for code that needs fresh data.
 
 Procedures with a `cursor` input also get `unstable_$prefetchInfinite`, `unstable_$ensureInfinite` and `unstable_$fetchInfinite`.
