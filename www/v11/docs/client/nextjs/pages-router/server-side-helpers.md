@@ -9,10 +9,6 @@ parent: "client/nextjs/pages-router/setup"
 order: 73
 ---
 
-:::warning Deprecated
-The Next.js Pages Router integration (`@trpc/next`) is deprecated in favor of the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To use it with Next.js, follow [Set up with Next.js App Router](/docs/client/nextjs/app-router-setup).
-:::
-
 The server-side helpers provide you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
 
 Prefetching via the server-side helpers allows populating the query cache on the server, which means that these queries do not have to fetch on the client initially.
