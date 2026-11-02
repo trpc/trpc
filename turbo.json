@@ -111,6 +111,10 @@
       "env": ["REDIS_URL", "MUTE_REACT_ACT_WARNINGS"],
       "outputs": ["coverage/**"]
     },
+    "www#test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     // One run over every package in v11/ or next/: the packages' npm
     // dependencies are in the lockfile, not in either's package.json.
     "root#test": {

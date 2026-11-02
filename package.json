@@ -12,6 +12,7 @@
     "typecheck": "turbo run typecheck --filter=!trpc-next",
     "lint": "turbo run lint --filter=!root",
     "test": "turbo run test --filter=root --filter=trpc-next --filter=www",
+    "check:www": "turbo run lint typecheck test --filter='!root' --filter='!trpc-next' --filter='!./v11/**' --filter='!./next/**'",
     "format": "oxfmt --check",
     "format-fix": "oxfmt",
     "next": "pnpm -C next",

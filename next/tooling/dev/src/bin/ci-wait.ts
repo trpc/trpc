@@ -4,16 +4,16 @@
  * includes the commit (HEAD by default) and isn't cancelled, then reports it.
  * Exits 1 when that run failed.
  */
+import { readFileSync } from 'node:fs';
+
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Cause, Console, Duration, Effect, Schema } from 'effect';
 
 import { capture, lines, output } from '../command.ts';
-import { CiTimeout, Run, waitForRun } from '../ci.ts';
+import { CiTimeout, pushPaths, Run, waitForRun } from '../ci.ts';
 
 const branch = 'v12';
 const workflow = 'next.yml';
-/** The paths `next.yml` runs for (`on.push.paths`). */
-const watched = ['next', 'vendor-src.json', '.github/workflows/next.yml'];
 
 const Runs = Schema.fromJsonString(Schema.Array(Run));
 
@@ -26,6 +26,10 @@ const program = Effect.gen(function* () {
       Effect.map((result) => result.exitCode === 0),
     );
 
+  /** The paths `next.yml` runs for. */
+  const watched = pushPaths(
+    readFileSync(`${root}/.github/workflows/${workflow}`, 'utf8'),
+  );
   const commit = yield* git(
     'rev-parse',
     `${process.argv[2] ?? 'HEAD'}^{commit}`,

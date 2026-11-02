@@ -5,12 +5,36 @@ on:
     branches: [v12]
     paths:
       - 'next/**'
+      - 'www/**'
+      - 'tooling/**'
+      # The site's v11 docs compile against v11's packages.
+      - 'v11/packages/**'
       - 'vendor-src.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - '.nvmrc'
+      - '.oxfmtrc.json'
+      - '.oxlintrc.json'
+      - '.github/actions/setup/**'
       - '.github/workflows/next.yml'
   pull_request:
     paths:
       - 'next/**'
+      - 'www/**'
+      - 'tooling/**'
+      # The site's v11 docs compile against v11's packages.
+      - 'v11/packages/**'
       - 'vendor-src.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - '.nvmrc'
+      - '.oxfmtrc.json'
+      - '.oxlintrc.json'
+      - '.github/actions/setup/**'
       - '.github/workflows/next.yml'
   schedule:
     # New effect@4 releases reach users without a push here.
@@ -24,12 +48,18 @@ concurrency:
   group: next-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Turborepo's remote cache (Vercel's, for the team in TURBO_TEAM): a task
+# whose inputs an earlier run or a laptop already ran replays its output.
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
 defaults:
   run:
     working-directory: next
 
 jobs:
-  # trpc-v12 builds previews only for v12-<name> branches (next/www/vercel.json),
+  # trpc-v12 builds previews only for v12-<name> branches (www/vercel.json),
   # so a pull request from a cursor/… or other branch has no preview to link.
   branch-name:
     if: github.event_name == 'pull_request' && github.base_ref == 'v12'
@@ -68,38 +98,18 @@ jobs:
           --health-timeout 2s --health-retries 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
-      # `pnpm typecheck` replays a package's `tsc` when nothing it read
-      # changed (`vp run --cache`). Vite Task fingerprints the inputs, so the
-      # key is per run and the newest run's cache is restored.
-      - uses: actions/cache/restore@v4
-        id: task-cache
-        with:
-          path: next/node_modules/.vite/task-cache
-          key: vite-task-check-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: vite-task-check-
+      - uses: ./.github/actions/setup
       - run: pnpm typecheck
-      - uses: actions/cache/save@v4
-        with:
-          path: next/node_modules/.vite/task-cache
-          key: ${{ steps.task-cache.outputs.cache-primary-key }}
       - run: pnpm check
-      # The packages' tests, failing under 98% coverage on any metric.
-      - run: pnpm coverage
+      # The packages' tests, failing under 98% coverage on any metric. One
+      # turbo run at a time: both use the one Redis.
+      - run: pnpm turbo run coverage --filter=trpc-next
         env:
           REDIS_URL: redis://127.0.0.1:6379
-      # The docs site's, tooling's, examples' and spikes' tests, without coverage.
-      - run: pnpm test --project '!packages*'
+      # Tooling's, examples' and spikes' tests, without coverage.
+      - run: pnpm turbo run test:rest --filter=trpc-next
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
       # examples/runtime-matrix serves its router on Bun and Deno too.
       - uses: oven-sh/setup-bun@v2
         with:
@@ -117,68 +127,58 @@ jobs:
       - run: pnpm bench budget
 
   www:
-    # The docs site: compiles every twoslash block in www/docs/ and the v11 docs'
-    # copies, and fails on broken links between pages.
+    # The docs site (www/): its lint, types and tests, the formatting of
+    # everything outside v11/ and next/, then the build, which compiles every
+    # twoslash block in every version's docs and the blog, and fails on broken
+    # links between pages.
     runs-on: ubuntu-latest
-    # A cold twoslash cache compiles all ~590 blocks.
-    timeout-minutes: 20
+    # A cold twoslash cache compiles all ~670 blocks.
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+      - uses: ./.github/actions/setup
+      - run: pnpm format
+      - run: pnpm check:www
       # Compiled blocks and social cards. Each entry is keyed by what it was
       # made from (the part of the lockfile a block's app installs from,
       # say), so any earlier run's cache is safe to start from.
       - uses: actions/cache@v4
         with:
-          path: next/www/node_modules/.cache
+          path: www/node_modules/.cache
           key: www-cache-${{ github.sha }}
           restore-keys: www-cache-
-      - run: pnpm --filter @trpc12/www build
+      - run: pnpm turbo run build --filter=www
       # Every decisions page fits a phone, a tablet and a laptop.
-      - run: pnpm --filter @trpc12/www decisions:layout
+      - run: pnpm --filter www decisions:layout
       # A URL without a page gets 404.html, which hydrates without a mismatch.
-      - run: pnpm --filter @trpc12/www not-found:check
+      - run: pnpm --filter www not-found:check
       # The codemod runs on its page without cross-origin isolation, and the
       # playground fits a phone.
-      - run: pnpm --filter @trpc12/www codemod-playground:check
+      - run: pnpm --filter www codemod-playground:check
       # Search finds every experiment's pages with every experiment off, from
       # v12's home page too, and opening one turns its experiment on.
-      - run: pnpm --filter @trpc12/www search:check
+      - run: pnpm --filter www search:check
 
   www-trpc-io:
     # The docs site as trpc.io's build (`site.url` at https://trpc.io), where
     # v12 is hidden: its UI shows only to a session that has been to v12.
     # Beside `www`, so it adds a build's minutes but no wait.
     runs-on: ubuntu-latest
-    # A cold twoslash cache compiles all ~590 blocks.
-    timeout-minutes: 20
+    # A cold twoslash cache compiles all ~670 blocks.
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+      - uses: ./.github/actions/setup
       # Only `www` saves it, under this run's key.
       - uses: actions/cache/restore@v4
         with:
-          path: next/www/node_modules/.cache
+          path: www/node_modules/.cache
           key: www-cache-${{ github.sha }}
           restore-keys: www-cache-
       # A no-op once the cutover has made it the URL.
@@ -186,10 +186,10 @@ jobs:
         run: |
           sed -i "s|^  url: 'https://v12.trpc.io',|  url: 'https://trpc.io',|" www/src/site.ts
           grep -q "^  url: 'https://trpc.io'," www/src/site.ts
-          pnpm --filter @trpc12/www build
+          pnpm turbo run build --filter=www
       # v12's UI is hidden, then shown for the session after ?version=12 or
       # /v12, with no hydration error.
-      - run: pnpm --filter @trpc12/www v12-reveal:check
+      - run: pnpm --filter www v12-reveal:check
 
   effect-latest:
     # `@trpc12/trpc` has `effect@^4.1` as a peer; users get the latest 4.x, the lockfile pins one.
@@ -197,14 +197,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: ./.github/actions/setup
         with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
+          install: 'false'
+      # next/'s packages only (`git ls-files` and `--filter` are relative to
+      # next/): v11 and the site keep the lockfile's.
       - name: Widen effect pins to ^4.1 and update to the latest 4.x
         run: |
           for f in $(git ls-files '*package.json'); do
@@ -212,27 +209,18 @@ jobs:
           done
           pnpm install --no-frozen-lockfile
           # Direct dependencies only: vendor-src pins its own effect 4.0.1 stack.
-          pnpm update -r --depth 0 effect '@effect/*'
-          grep -E '^  effect@' pnpm-lock.yaml
+          pnpm update --filter './**' --depth 0 effect '@effect/*'
+          grep -E '^  effect@' ../pnpm-lock.yaml
         env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
           VP_GIT_HOOKS: '0'
-      # Its own cache: Vite Task keeps one entry per task, and these installs
-      # differ from the check job's.
-      - uses: actions/cache/restore@v4
-        id: task-cache
-        with:
-          path: next/node_modules/.vite/task-cache
-          key: vite-task-effect-latest-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: vite-task-effect-latest-
+      # Turbo hashes each package's resolved dependencies, so these installs
+      # replay nothing of the check job's.
       - run: pnpm typecheck
-      - uses: actions/cache/save@v4
-        with:
-          path: next/node_modules/.vite/task-cache
-          key: ${{ steps.task-cache.outputs.cache-primary-key }}
       - run: pnpm test
 
   node-lts:
-    # The repo develops on next/.nvmrc's Node; users still run the active LTS.
+    # The repo develops on .nvmrc's Node; users still run the active LTS.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -244,17 +232,9 @@ jobs:
           --health-timeout 2s --health-retries 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
           node-version: 24
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
       - run: pnpm test --project 'packages*'
         env:
           REDIS_URL: redis://127.0.0.1:6379
@@ -265,20 +245,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+      - uses: ./.github/actions/setup
       - run: pnpm test:bun
 
   cloudflare-deploy:
@@ -303,19 +273,7 @@ jobs:
       - if: steps.credentials.outputs.present == 'true'
         uses: actions/checkout@v7
       - if: steps.credentials.outputs.present == 'true'
-        uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - if: steps.credentials.outputs.present == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - if: steps.credentials.outputs.present == 'true'
-        run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+        uses: ./.github/actions/setup
       - if: steps.credentials.outputs.present == 'true'
         name: Deploy
         id: deploy

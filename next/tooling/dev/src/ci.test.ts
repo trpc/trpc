@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs';
+
 import { assert, describe, it } from '@effect/vitest';
 import { Duration, Effect, Predicate } from 'effect';
 
-import { type Run, Verdict, verdict, waitForRun } from './ci.ts';
+import { pushPaths, type Run, Verdict, verdict, waitForRun } from './ci.ts';
 
 const run = (headSha: string, status: string, conclusion = ''): Run => ({
   databaseId: headSha.length,
@@ -75,4 +77,34 @@ describe('waitForRun', () => {
       assert.isTrue(Predicate.isTagged(error, 'CiTimeout'));
     }),
   );
+});
+
+describe('pushPaths', () => {
+  it("reads the push trigger's paths as pathspecs", () => {
+    const workflow = [
+      'on:',
+      '  push:',
+      '    branches: [v12]',
+      '    paths:',
+      "      - 'next/**'",
+      '      # The docs.',
+      "      - 'www/**'",
+      '',
+      "      - 'turbo.json'",
+      '  pull_request:',
+      '    paths:',
+      "      - 'other/**'",
+    ].join('\n');
+    assert.deepStrictEqual(pushPaths(workflow), ['next', 'www', 'turbo.json']);
+  });
+
+  it("reads next.yml's", () => {
+    const workflow = readFileSync(
+      new URL('../../../../.github/workflows/next.yml', import.meta.url),
+      'utf8',
+    );
+    const paths = pushPaths(workflow);
+    assert.includeMembers([...paths], ['next', 'www', 'turbo.json']);
+    assert.notInclude(paths.join(' '), '*');
+  });
 });

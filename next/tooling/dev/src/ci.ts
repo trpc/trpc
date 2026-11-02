@@ -34,6 +34,33 @@ export const verdict = (covering: ReadonlyArray<Run>): Verdict => {
     : Verdict.Finished({ run: first, later: finished.slice(0, -1) });
 };
 
+/**
+ * A workflow's `on.push.paths`, as `git diff` pathspecs (`next/**` is
+ * `next`). Reads the YAML line by line: the first `paths:` under `push:`.
+ */
+export const pushPaths = (workflow: string): ReadonlyArray<string> => {
+  const lines = workflow.split('\n');
+  const push = lines.findIndex((line) => /^ {2}push:\s*$/.test(line));
+  const paths = lines.findIndex(
+    (line, index) => index > push && /^ {4}paths:\s*$/.test(line),
+  );
+  if (push === -1 || paths === -1) {
+    return [];
+  }
+  const entries: Array<string> = [];
+  for (const line of lines.slice(paths + 1)) {
+    if (/^\s*(#.*)?$/.test(line)) {
+      continue;
+    }
+    const entry = /^ {6}- '(?<path>[^']+)'\s*$/.exec(line)?.groups?.['path'];
+    if (entry === undefined) {
+      break;
+    }
+    entries.push(entry.replace(/\/\*\*$/, ''));
+  }
+  return entries;
+};
+
 export interface Ci<R> {
   /** The workflow's latest runs on the branch, newest first. */
   readonly runs: Effect.Effect<ReadonlyArray<Run>, unknown, R>;
