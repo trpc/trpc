@@ -9,15 +9,20 @@ import {
   renderMarkdown,
   resolveLink,
 } from './markdown.ts';
-import { removeAll } from './old-docs-convert.ts';
 
 /**
  * A samples dir whose `docs` and `v11` apps compile inline blocks, each with
  * its own `greeting`, removed when the test ends.
  */
 /** The HTML's text, without its tags. */
-const textOf = (html: string) =>
-  removeAll(html, /<[^>]*>/g).replaceAll('<', '');
+const textOf = (html: string) => {
+  let text = html;
+  for (let previous = ''; previous !== text;) {
+    previous = text;
+    text = text.replace(/<[^>]*>/g, '');
+  }
+  return text.replaceAll('<', '');
+};
 
 const samples = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;

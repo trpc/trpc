@@ -67,7 +67,6 @@
     "www/v10/**",
     "www/v9/**",
     "www/blog/**",
-    "www/old-docs.json",
     "www/sponsors.json",
     "www/api-reference/out/",
     "www/.vercel/"
