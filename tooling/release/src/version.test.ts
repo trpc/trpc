@@ -37,7 +37,18 @@ describe('canaryVersion', () => {
         sha: 'd3cd94bdd',
         preid: 'canary',
       }),
-    ).toBe('11.22.2-canary.42.d3cd94bdd');
+    ).toBe('11.22.2-canary.42.gd3cd94bdd');
+  });
+
+  it('keeps an all-digit sha a valid prerelease identifier', () => {
+    expect(
+      canaryVersion({
+        version: '11.22.1',
+        commits: 1,
+        sha: '012345678',
+        preid: 'canary',
+      }),
+    ).toBe('11.22.2-canary.1.g012345678');
   });
 });
 

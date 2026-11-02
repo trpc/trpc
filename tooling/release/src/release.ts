@@ -51,9 +51,8 @@ const ensureClean = Effect.fn('ensureClean')(function* (root: string) {
 });
 
 /**
- * Whether `branch` on `remote` is still HEAD. If it moved, the version just
- * written misses commits, and pushing the release commit would be rejected
- * after the packages are on npm.
+ * Whether `branch` on `remote` moved away from HEAD. If it did, the version
+ * just written misses commits, and pushing the release commit is rejected.
  */
 export const branchMoved = Effect.fn('branchMoved')(function* (
   root: string,
@@ -226,10 +225,15 @@ export interface StableOptions extends PublishOptions {
 }
 
 /**
- * Bumps every package from the latest tag, checks the bump (`checkRelease`),
- * builds and publishes, then commits, tags and pushes the release and
- * creates its GitHub release. Stops before publishing if `branch` moved since checkout,
- * so a push can't be rejected after the packages are out.
+ * Bumps every package from the latest tag, checks the bump (`checkRelease`)
+ * and builds. Then pushes the release commit, publishes, tags and pushes the
+ * tag, and creates the GitHub release.
+ *
+ * The commit goes out before the packages and the tag after them. If
+ * `branch` moved, the push is rejected and nothing is published. If
+ * publishing fails, running the release again finds the versions already on
+ * `branch`, publishes what npm doesn't have yet (`pnpm publish` skips the
+ * rest) and tags it.
  */
 export const stable = Effect.fn('stable')(function* (
   root: string,
@@ -242,37 +246,55 @@ export const stable = Effect.fn('stable')(function* (
   yield* Console.log(`Releasing ${tag} (${opts.bump} after ${previousTag})`);
 
   const { files, published } = yield* writeVersions(root, version);
+  const bumped =
+    (yield* git(root, 'status', '--porcelain', '--', ...files)) !== '';
   yield* checkRelease(root, files);
   yield* run(root, 'pnpm', ['build']);
 
-  if (yield* branchMoved(root, opts.remote, opts.branch)) {
-    const message = `${opts.branch} moved since this run checked it out; release again from the new ${opts.branch}`;
-    if (!opts.dryRun) {
-      return yield* new ReleaseError({ message });
-    }
-    yield* Console.log(
-      `Dry run: HEAD isn't ${opts.remote}/${opts.branch}, so a real run would stop here: ${message}`,
-    );
-  }
-  yield* publish(root, opts);
   if (opts.dryRun) {
+    yield* publish(root, opts);
     yield* Console.log(
-      `Dry run: would commit "${releaseCommitMessage(tag)}", tag ${tag}, push both to ${opts.remote} ${opts.branch} and create the GitHub release. The version bump is left in the working tree.`,
+      `Dry run: would push "${releaseCommitMessage(tag)}" to ${opts.remote} ${opts.branch}, publish, then tag ${tag}, push the tag and create the GitHub release. The version bump is left in the working tree.`,
     );
     return tag;
   }
 
-  yield* git(root, 'add', '--', ...files);
-  yield* git(root, 'commit', '--quiet', '--message', releaseCommitMessage(tag));
+  if (bumped) {
+    yield* git(root, 'add', '--', ...files);
+    yield* git(
+      root,
+      'commit',
+      '--quiet',
+      '--message',
+      releaseCommitMessage(tag),
+    );
+    const pushed = yield* git(
+      root,
+      'push',
+      '--quiet',
+      opts.remote,
+      `HEAD:refs/heads/${opts.branch}`,
+    ).pipe(
+      Effect.as(true),
+      Effect.orElseSucceed(() => false),
+    );
+    if (!pushed) {
+      const reason = (yield* branchMoved(root, opts.remote, opts.branch))
+        ? `${opts.branch} moved since this run checked it out; release again from the new ${opts.branch}`
+        : `Pushing the release commit to ${opts.remote} ${opts.branch} failed`;
+      return yield* new ReleaseError({
+        message: `${reason}. Nothing was published.`,
+      });
+    }
+  } else {
+    yield* Console.log(
+      `HEAD already has the ${tag} versions: an earlier run pushed them and stopped. Publishing what npm doesn't have yet.`,
+    );
+  }
+
+  yield* publish(root, opts);
   yield* git(root, 'tag', '--annotate', tag, '--message', tag);
-  yield* git(
-    root,
-    'push',
-    '--atomic',
-    opts.remote,
-    `HEAD:refs/heads/${opts.branch}`,
-    `refs/tags/${tag}`,
-  );
+  yield* git(root, 'push', '--quiet', opts.remote, `refs/tags/${tag}`);
 
   yield* waitForVersions(
     published,
@@ -295,7 +317,7 @@ export interface CanaryOptions extends PublishOptions {
 }
 
 /**
- * Publishes HEAD as `11.22.2-canary.42.d3cd94bdd`: the patch after the latest
+ * Publishes HEAD as `11.22.2-canary.42.gd3cd94bdd`: the patch after the latest
  * tag, the number of commits since it, and HEAD's short sha. Nothing is
  * committed or pushed.
  */

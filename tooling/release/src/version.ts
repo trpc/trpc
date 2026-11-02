@@ -34,8 +34,10 @@ export function bumpVersion(version: string, bump: Bump) {
 
 /**
  * The canary for the commit `sha`, `commits` commits after the release
- * `version`: `11.22.1` → `11.22.2-canary.42.d3cd94bdd`. npm drops `+build`
- * metadata, so the sha goes in the prerelease.
+ * `version`: `11.22.1` → `11.22.2-canary.42.gd3cd94bdd`. npm drops `+build`
+ * metadata, so the sha goes in the prerelease, after a `g` as in
+ * `git describe`: an all-digit sha like `012345678` is a numeric identifier
+ * with a leading zero, which semver rejects.
  */
 export function canaryVersion(opts: {
   readonly version: string;
@@ -44,7 +46,7 @@ export function canaryVersion(opts: {
   readonly preid: string;
 }) {
   const next = bumpVersion(opts.version, 'patch');
-  return `${next}-${opts.preid}.${opts.commits}.${opts.sha}`;
+  return `${next}-${opts.preid}.${opts.commits}.g${opts.sha}`;
 }
 
 /** Packages that stay on a prerelease, with their prerelease id. */
