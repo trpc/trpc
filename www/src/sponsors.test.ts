@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  cardFooterPartners,
+  avatarUrl,
+  cardFooter,
+  cardFooterOf,
   drawnSponsors,
   isSmallSponsor,
   type Partner,
@@ -11,16 +13,63 @@ import {
   sponsorCardAlt,
   sponsorCardOf,
   sponsors,
+  sponsorTiers,
+  type SponsorTier,
 } from './sponsors.ts';
 
-describe('cardFooterPartners', () => {
-  it("are sponsors.json's partners, by rank, as /sponsor's card draws them", () => {
-    expect(cardFooterPartners).toEqual(
-      sponsorCard.partners.map(({ image, name }) => ({ image, name })),
+const sponsor = (login: string, weight: number): Sponsor => ({
+  createdAt: 0,
+  imgSrc: `https://example.com/${login}.png`,
+  link: `https://example.com/${login}`,
+  login,
+  name: login,
+  weight,
+});
+
+/** Partners `a`, `b`, … by rank, each of the tier it's given. */
+const rankedOf = (tiers: ReadonlyArray<SponsorTier>) =>
+  tiers.map((tier, index): Partner => ({
+    ...sponsor(String.fromCodePoint(97 + index), 1),
+    accent: '#888888',
+    blurb: '',
+    domain: 'example.com',
+    rank: index + 1,
+    tier,
+  }));
+
+const tierOrder = (partner: Partner) =>
+  sponsorTiers.findIndex((entry) => entry.tier === partner.tier);
+
+describe('cardFooter', () => {
+  it("names every one of sponsors.json's partners, gold first, then by rank", () => {
+    expect(cardFooter.partners).toEqual(
+      partners
+        .toSorted((a, b) => tierOrder(a) - tierOrder(b))
+        .map((partner) => ({
+          image: partner.imgSrc,
+          name: partner.name,
+        })),
     );
-    expect(cardFooterPartners.map((partner) => partner.image)).toEqual(
-      partners.slice(0, 4).map((partner) => partner.imgSrc),
+  });
+
+  it('lists gold partners first, then each lower tier, by rank within a tier', () => {
+    const ranked = rankedOf(['silver', 'gold', 'silver', 'gold']);
+    expect(
+      cardFooterOf(ranked, ranked).partners.map((partner) => partner.name),
+    ).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('then the other drawn sponsors most given first, twice as many as it draws faces of, small', () => {
+    const others = drawnSponsors
+      .filter((sponsor) => !partners.some((p) => p.login === sponsor.login))
+      .toSorted((a, b) => b.weight - a.weight);
+    expect(cardFooter.backers).toEqual(
+      others.slice(0, cardFooter.faceSlots * 2).map((sponsor) => ({
+        image: avatarUrl(sponsor, 68),
+        name: sponsor.name,
+      })),
     );
+    expect(cardFooter.sponsorCount).toBe(sponsors.length);
   });
 });
 
@@ -45,9 +94,12 @@ describe('drawnSponsors', () => {
 });
 
 describe('sponsorCard', () => {
-  it('draws the partners first, by rank, with their tier', () => {
+  it('draws the partners first, gold first, then by rank, with their tier', () => {
     expect(sponsorCard.partners.map((partner) => partner.name)).toEqual(
-      partners.slice(0, 4).map((partner) => partner.name),
+      partners
+        .toSorted((a, b) => tierOrder(a) - tierOrder(b))
+        .slice(0, 4)
+        .map((partner) => partner.name),
     );
     for (const partner of sponsorCard.partners) {
       expect(['Gold', 'Silver']).toContain(partner.tier);
@@ -77,23 +129,8 @@ describe('sponsorCard', () => {
   });
 
   it('puts the partners past the fourth before the others, who go by what they gave, and leaves out the imageless', () => {
-    const sponsor = (login: string, weight: number): Sponsor => ({
-      createdAt: 0,
-      imgSrc: `https://example.com/${login}.png`,
-      link: `https://example.com/${login}`,
-      login,
-      name: login,
-      weight,
-    });
-    const ranked = ['a', 'b', 'c', 'd', 'e', 'f'].map(
-      (login, index): Partner => ({
-        ...sponsor(login, 1),
-        accent: '#888888',
-        blurb: login,
-        domain: 'example.com',
-        rank: index + 1,
-        tier: 'silver',
-      }),
+    const ranked = rankedOf(
+      Array.from({ length: 6 }, (): SponsorTier => 'silver'),
     );
     const card = sponsorCardOf(ranked, [
       sponsor('low', 5),
@@ -117,6 +154,27 @@ describe('sponsorCard', () => {
     ]);
     expect(card.sponsorCount).toBe(10);
     expect(card.description).toContain('10 sponsors');
+  });
+
+  it('draws gold partners first, then each lower tier, by rank within a tier', () => {
+    const ranked = rankedOf([
+      'silver',
+      'silver',
+      'gold',
+      'silver',
+      'silver',
+      'gold',
+    ]);
+    const card = sponsorCardOf(ranked, ranked);
+    expect(
+      card.partners.map((partner) => [partner.name, partner.tier]),
+    ).toEqual([
+      ['c', 'Gold'],
+      ['f', 'Gold'],
+      ['a', 'Silver'],
+      ['b', 'Silver'],
+    ]);
+    expect(card.backers.map((backer) => backer.name)).toEqual(['d', 'e']);
   });
 
   it("is /sponsor's, and its alt text says what it shows", () => {

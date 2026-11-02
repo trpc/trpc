@@ -11,6 +11,7 @@ import { Layer } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 
 import { Avatars } from './avatar.ts';
+import type { CardFooter, CardSponsor } from './card.ts';
 
 export interface Answer {
   readonly body?: string | Uint8Array;
@@ -85,6 +86,17 @@ export async function serveAvatars(
     close,
   );
 }
+
+/** A card's foot with `partners` and `backers`: none unless given. */
+export const footerWith = (
+  partners: ReadonlyArray<CardSponsor> = [],
+  backers: ReadonlyArray<CardSponsor> = [],
+): CardFooter => ({
+  backers,
+  faceSlots: 12,
+  partners,
+  sponsorCount: partners.length + backers.length,
+});
 
 /** `Avatars` with a 200ms timeout, tried again twice. */
 export const testAvatars = Avatars.layer({

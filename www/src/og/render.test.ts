@@ -3,24 +3,24 @@ import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import {
-  type CardSponsor,
+  type CardFooter,
   cardElement,
   drawnAssets,
   drawnBackers,
   initials,
   type OgCard,
   type PostCard,
-  plainText,
+  partnerName,
   type SponsorCard,
 } from './card.ts';
-import { cardFooterPartners, sponsorCard } from '~/sponsors.ts';
+import { cardFooter, sponsorCard } from '~/sponsors.ts';
 
-import { serveAvatars, svg, testAvatars } from './fake-avatars.ts';
+import { footerWith, serveAvatars, svg, testAvatars } from './fake-avatars.ts';
 import { type Live, live } from './live.ts';
 import { renderOgImage } from './render.ts';
 
-const liveOf = (card: OgCard, partners: ReadonlyArray<CardSponsor> = []) =>
-  Effect.runPromise(live(card, partners).pipe(Effect.provide(testAvatars)));
+const liveOf = (card: OgCard, footer: CardFooter = footerWith()) =>
+  Effect.runPromise(live(card, footer).pipe(Effect.provide(testAvatars)));
 
 /** A PNG's width and height, from its `IHDR` chunk. */
 const pngSize = (png: Uint8Array) => {
@@ -94,12 +94,12 @@ const shown: Live = {
   stats: { downloads: 7_926_494, stars: 40_759 },
 };
 
-/** `shown`, with every partner's avatar loaded: a blue square. */
-const withPartners: Live = {
+/** `shown`, with the avatar of every sponsor along the foot loaded: a blue square. */
+const withSponsors: Live = {
   ...shown,
   avatars: new Map(
-    cardFooterPartners.map((partner) => [
-      partner.image,
+    [...cardFooter.partners, ...cardFooter.backers].map((sponsor) => [
+      sponsor.image,
       `data:image/svg+xml;base64,${Buffer.from(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
       ).toString('base64')}`,
@@ -111,7 +111,7 @@ describe('renderOgImage', () => {
   it.each(cards)(
     'renders the $kind card for $path as a 1200×630 PNG',
     async (card) => {
-      for (const fetched of [shown, withPartners]) {
+      for (const fetched of [shown, withSponsors]) {
         const png = await renderOgImage(card, fetched);
         expect([...png.subarray(1, 4)]).toEqual([0x50, 0x4e, 0x47]);
         expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
@@ -164,8 +164,8 @@ describe('renderOgImage with SVG avatars', () => {
   const drawn = (
     card: OgCard,
     fetched: Live,
-    partners: ReadonlyArray<CardSponsor> = [],
-  ) => cardElement({ ...drawnAssets(), wordmark: '' }, card, fetched, partners);
+    footer: CardFooter = footerWith(),
+  ) => cardElement({ ...drawnAssets(), wordmark: '' }, card, fetched, footer);
 
   const unsized = (paths: ReadonlyArray<string>) =>
     Object.fromEntries(paths.map((path) => [path, svg('<svg/>')]));
@@ -173,10 +173,10 @@ describe('renderOgImage with SVG avatars', () => {
   it.each(cards.filter((card) => card.kind === 'home' || card.kind === 'doc'))(
     "names the partners along the $kind card's foot for $path",
     (card) => {
-      expect(textsOf(drawn(card, withPartners, cardFooterPartners))).toEqual(
+      expect(textsOf(drawn(card, withSponsors, cardFooter))).toEqual(
         expect.arrayContaining([
           'SUPPORTED BY',
-          ...cardFooterPartners.map((partner) => plainText(partner.name)),
+          ...cardFooter.partners.map((partner) => partnerName(partner.name)),
         ]),
       );
     },
@@ -236,20 +236,20 @@ describe('renderOgImage with SVG avatars', () => {
       { image: server.url('/unsized.svg'), name: 'Unsized' },
     ];
     const card = postBy(server.url('/unsized.svg'));
-    const fetched = await liveOf(card, partners);
-    const texts = textsOf(drawn(card, fetched, partners));
+    const fetched = await liveOf(card, footerWith(partners));
+    const texts = textsOf(drawn(card, fetched, footerWith(partners)));
     expect(texts).toEqual(expect.arrayContaining(['SUPPORTED BY', 'Drawn']));
     expect(texts).not.toContain('Unsized');
     expect(texts).not.toContain('U');
-    expect(textsOf(drawn(card, fetched, partners.slice(1)))).not.toContain(
-      'SUPPORTED BY',
-    );
-    expect(textsOf(drawn(sponsorCard, fetched, partners))).not.toContain(
-      'SUPPORTED BY',
-    );
-    const png = await renderOgImage(card, fetched, partners);
+    expect(
+      textsOf(drawn(card, fetched, footerWith(partners.slice(1)))),
+    ).not.toContain('SUPPORTED BY');
+    expect(
+      textsOf(drawn(sponsorCard, fetched, footerWith(partners))),
+    ).not.toContain('SUPPORTED BY');
+    const png = await renderOgImage(card, fetched, footerWith(partners));
     expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
-    // The default partners' avatars aren't in `fetched`, so it has no foot.
+    // The default footer's avatars aren't in `fetched`, so it has no foot.
     expect(png).not.toEqual(await renderOgImage(card, fetched));
   });
 
@@ -263,6 +263,49 @@ describe('renderOgImage with SVG avatars', () => {
     const fetched = await liveOf(card);
     expect(fetched.avatars.size).toBe(1);
     expect(pngSize(await renderOgImage(card, fetched))).toEqual({
+      height: 630,
+      width: 1200,
+    });
+  });
+
+  it("draws every partner's name along a card's foot, a long one cut short, with the other sponsors' faces", async () => {
+    const square = svg(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
+    );
+    const names = [
+      'CodeRabbit',
+      'Greptile',
+      'SerpApi',
+      'Some Company Name GmbH & Co. KG',
+      'Wonderfully Long Partner Name',
+    ];
+    await using server = await serveAvatars({
+      ...Object.fromEntries(
+        names.map((_, index) => [`/p${index}.svg`, square]),
+      ),
+      '/face.svg': square,
+    });
+    const footer = footerWith(
+      names.map((name, index) => ({
+        image: server.url(`/p${index}.svg`),
+        name,
+      })),
+      [{ image: server.url('/face.svg'), name: 'Face' }],
+    );
+    const card = postBy(server.url('/p0.svg'));
+    const fetched = await liveOf(card, footer);
+    const texts = textsOf(drawn(card, fetched, footer));
+    expect(texts).toEqual(
+      expect.arrayContaining([
+        'CodeRabbit',
+        'Greptile',
+        'SerpApi',
+        'Some Company N…',
+        'Wonderfully Long…',
+      ]),
+    );
+    expect(texts).not.toContain('Some Company Name GmbH & Co. KG');
+    expect(pngSize(await renderOgImage(card, fetched, footer))).toEqual({
       height: 630,
       width: 1200,
     });
