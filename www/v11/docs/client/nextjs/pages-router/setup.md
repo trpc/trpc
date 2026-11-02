@@ -327,73 +327,27 @@ This page fetches in the browser. To put the data in the first HTML, prefetch it
 
 Next.js sends page props as JSON, and checks that they are. So without a transformer, the queries you prefetch can only hold JSON values, in their inputs as well as their results: a `Date` or an `undefined` field makes `getServerSideProps` fail.
 
-If your router uses a [data transformer](/docs/server/data-transformers) such as superjson, pass it to the link, and run the whole prefetched cache through it. In `getServerSideProps` or `getStaticProps`, return:
+If your router uses a [data transformer](/docs/server/data-transformers) such as superjson, run the whole prefetched cache through it. In `getServerSideProps` or `getStaticProps`, return `trpcState: superjson.serialize(dehydrate(queryClient))`, as the [SSG example](./ssg.md#fetch-data-in-getstaticprops) does. Then read it back with a hook:
 
-```ts
-trpcState: superjson.serialize(dehydrate(queryClient)),
-```
-
-In `_app`, read it back before you pass it to `HydrationBoundary`:
-
-```tsx twoslash title='pages/_app.tsx'
-// @jsx: react-jsx
-// @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
-const t = initTRPC.create({ transformer: superjson });
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
-// @filename: utils/trpc.ts
-import { createTRPCContext } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '../server/routers/_app';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
-
-// @filename: pages/_app.tsx
-// ---cut---
+```ts twoslash title='utils/use-trpc-state.ts'
 import type { DehydratedState } from '@tanstack/react-query';
-import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppProps } from 'next/app';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import superjson from 'superjson';
 import type { SuperJSONResult } from 'superjson';
-import type { AppRouter } from '../server/routers/_app';
-import { makeQueryClient } from '../utils/query-client';
-import { TRPCProvider } from '../utils/trpc';
 
-export default function App({
-  Component,
-  pageProps,
-}: AppProps<{ trpcState?: SuperJSONResult }>) {
-  const [queryClient] = useState(makeQueryClient);
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
-      links: [httpBatchLink({ transformer: superjson, url: '/api/trpc' })],
-    }),
-  );
-  const trpcState = useMemo(
-    () =>
-      pageProps.trpcState &&
-      superjson.deserialize<DehydratedState>(pageProps.trpcState),
-    [pageProps.trpcState],
-  );
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        <HydrationBoundary state={trpcState}>
-          <Component {...pageProps} />
-        </HydrationBoundary>
-      </TRPCProvider>
-    </QueryClientProvider>
+export function useTRPCState(trpcState: SuperJSONResult | undefined) {
+  return useMemo(
+    () => trpcState && superjson.deserialize<DehydratedState>(trpcState),
+    [trpcState],
   );
 }
 ```
+
+In the `_app` from [step 6](#6-configure-_apptsx), change three things:
+
+- Type the props as `AppProps<{ trpcState?: SuperJSONResult }>`.
+- Pass `transformer: superjson` to `httpBatchLink`.
+- Call `const trpcState = useTRPCState(pageProps.trpcState)`, and pass `trpcState` to `HydrationBoundary` instead of `pageProps.trpcState`.
 
 ## Moving from `createTRPCNext`
 
