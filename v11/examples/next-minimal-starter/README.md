@@ -5,7 +5,7 @@ This example shows how you can make a typed query using a minimal implementation
 ## Setup
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-minimal-starter trpc-minimal-starter
+npx create-next-app --example https://github.com/trpc/examples-next-minimal-starter trpc-minimal-starter
 cd trpc-minimal-starter
 npm i
 npm run dev

@@ -15,7 +15,7 @@
 ## Setup
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 pnpm
 pnpm dx
@@ -23,7 +23,7 @@ pnpm dx
 
 ### Requirements
 
-- Node >= 18.0.0
+- Node >= 20
 - Postgres
 
 ## Development
@@ -31,7 +31,7 @@ pnpm dx
 ### Start project
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 pnpm
 pnpm dx

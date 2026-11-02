@@ -1,4 +1,12 @@
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@shared/ui/components/accordion';
+import { Card, CardContent } from '@shared/ui/components/card';
 import type { ReactNode } from 'react';
+import { PageHeader } from '../_components/page-header';
 import { FormWithUseActionExample } from './FormWithUseActionExample';
 import { RawExample } from './RawExample';
 import { RawFormExample } from './RawFormExample';
@@ -12,88 +20,74 @@ export default async function Home() {
   }[] = [
     {
       title: (
-        <>
-          <code>UseActionTestMutation</code> -{' '}
+        <span>
           <code>useAction(testAction)</code>
-        </>
+        </span>
       ),
       Component: UseActionExample,
     },
     {
       title: (
-        <>
-          <code>RawTestMutation</code>
-          Raw inline call <code>testAction(....)</code>
-        </>
+        <span>
+          Raw inline call: <code>testAction(…)</code>
+        </span>
       ),
       Component: RawExample,
     },
     {
       title: (
-        <>
-          <code>&lt;form action=x</code> without any extras
-        </>
+        <span>
+          <code>&lt;form action=&#123;testAction&#125;&gt;</code> without any
+          extras
+        </span>
       ),
       Component: RawFormExample,
     },
     {
       title: (
-        <>
+        <span>
           <code>&lt;form&gt;</code> with <code>useAction</code>
-        </>
+        </span>
       ),
       Component: FormWithUseActionExample,
     },
     {
       title: (
-        <>
+        <span>
           <code>&lt;form&gt;</code> with <code>react-hook-form</code> (verbose)
-        </>
+        </span>
       ),
       Component: ReactHookFormExample,
     },
   ];
   return (
     <>
-      <ul className="details-ul">
-        {components.map((it, index) => (
-          <details key={index}>
-            <summary>{it.title}</summary>
-            <div>
-              <it.Component />
-            </div>
-          </details>
-        ))}
-      </ul>
-
-      <style
-        type="text/css"
-        dangerouslySetInnerHTML={{
-          __html: `
-            .details-ul {
-              display: grid;
-              grid-gap: 1rem;
-              list-style: none;
-              margin: 0;
-              padding: 0;
-            }
-        
-            .details-ul > details {
-              padding: 1rem 0.5rem;
-              background: rgba(255, 255, 255, 0.1);
-              border-radius: 0.5rem;
-            }
-            .details-ul > details > summary {
-              padding: 0.5rem;
-            }
-            .details-ul > details > div {
-              padding: 1rem;
-              background: rgba(255, 255, 255, 0.1);
-              border-radius: 0.25rem;
-            }
-          `,
-        }}
+      <PageHeader
+        title="Server Actions"
+        description={
+          <>
+            Procedures wrapped in <code>createAction</code> work as Server
+            Actions. Open an example to call <code>testAction</code> or{' '}
+            <code>rhfAction</code>; their logs are in the server console.
+          </>
+        }
       />
+      <Card className="py-2">
+        <CardContent>
+          <Accordion defaultValue={[0]} keepMounted>
+            {components.map((it, index) => (
+              <AccordionItem key={index} value={index}>
+                <AccordionTrigger className="py-4 text-base">
+                  {it.title}
+                </AccordionTrigger>
+                <AccordionContent className="pb-6">
+                  <it.Component />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
     </>
   );
 }

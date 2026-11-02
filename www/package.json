@@ -40,6 +40,7 @@
     "@emnapi/runtime": "2.0.0-alpha.6",
     "@fontsource/inter": "5.3.0",
     "@fontsource/jetbrains-mono": "5.3.0",
+    "@giscus/react": "3.1.0",
     "@hookform/resolvers": "5.9.2",
     "@lezer/highlight": "1.2.5",
     "@napi-rs/wasm-runtime": "1.2.5",

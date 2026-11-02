@@ -4,12 +4,36 @@ on:
   push:
     branches:
       - 'main'
+  pull_request:
+    paths:
+      - '.github/workflows/v11-subtree.yml'
+      - 'v11/examples/**'
+      - 'pnpm-workspace.yaml'
+      - 'tooling/subtree/**'
+      - 'tooling/ui/**'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false # true causes the workflow to cancel and look failed on `main` (which is done after a release)
+# Downstream pushes use the deploy key, not `GITHUB_TOKEN`
+permissions:
+  contents: read
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
+    # The Prisma and Drizzle examples migrate a database when they install or build.
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     strategy:
       fail-fast: false
@@ -28,12 +52,14 @@ jobs:
             tanstack-start-sse-chat,
           ]
 
-    name: Update downstream ${{ matrix.path }} package
+    name: ${{ github.event_name == 'pull_request' && 'Check standalone' || 'Update downstream' }} ${{ matrix.path }} package
 
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # Pull requests run the examples' install and build scripts
+          persist-credentials: ${{ github.event_name != 'pull_request' }}
 
       - name: Run find-and-replace to remove '.experimental/' from above paths
         uses: mad9000/actions-find-and-replace-string@5
@@ -49,14 +75,59 @@ jobs:
         with:
           install: 'false'
 
+      # Copies the `@shared/ui` files the example uses into it, and replaces
+      # `catalog:` versions and `@trpc/*` (with `canary`), which only resolve
+      # in the monorepo. See tooling/subtree.
+      - name: Make the example standalone
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts --filter @tooling/subtree
+          pnpm --filter @tooling/subtree standalone "v11/examples/${{ matrix.path }}" "$RUNNER_TEMP/standalone"
+          rm -rf "v11/examples/${{ matrix.path }}"
+          mv "$RUNNER_TEMP/standalone" "v11/examples/${{ matrix.path }}"
+
       - name: Install dependencies and create separate lockfile
         run: |
           cd ./v11/examples/${{ matrix.path }}
-          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g'
           pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
+      # Installs and builds the copy outside the monorepo, the way its README
+      # says: npm for the npm workspaces (minimal-react), pnpm otherwise. The
+      # copy doesn't list which dependencies may run build scripts (Prisma,
+      # esbuild), which CI's pnpm otherwise refuses.
+      - name: Build the standalone example
+        if: github.event_name == 'pull_request'
+        env:
+          # For the examples without a committed `.env` (tanstack-start-sse-chat)
+          DATABASE_URL: postgresql://postgres@localhost:5432/postgres
+        run: |
+          cp -r "v11/examples/${{ matrix.path }}" "$RUNNER_TEMP/example"
+          cd "$RUNNER_TEMP/example"
+          rm -rf node_modules
+          build() {
+            if node -e "process.exit(require('./package.json').workspaces ? 0 : 1)"; then
+              npm install --no-audit --no-fund && npm run build
+            else
+              pnpm install --ignore-workspace --config.dangerously-allow-all-builds=true && pnpm build
+            fi
+          }
+          # The canary @trpc/server's next-app-dir adapter imports
+          # `next/navigation` without `.js`, which Node can't resolve. Only that
+          # failure is a warning.
+          if [ "${{ matrix.path }}" = ".experimental/next-app-dir" ]; then
+            set -o pipefail
+            if ! build 2>&1 | tee "$RUNNER_TEMP/build.log"; then
+              if grep -qF 'Did you mean to import "next/navigation.js"?' "$RUNNER_TEMP/build.log"; then
+                echo "::warning::The standalone next-app-dir build fails until @trpc/server imports next/navigation.js"
+              else
+                exit 1
+              fi
+            fi
+          else
+            build
+          fi
+
       - name: Commit changes
+        if: github.event_name != 'pull_request'
         run: |
           git config --global user.email "<>"
           git config --global user.name "trpc-bot"
@@ -64,6 +135,7 @@ jobs:
           git commit -m "chore: sync lockfile"
 
       - name: Sync downstream
+        if: github.event_name != 'pull_request'
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
           repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'

@@ -12,6 +12,7 @@ import {
   AvatarGroup,
   AvatarImage,
 } from '@shared/ui/components/avatar';
+import { BlogComments } from '~/components/blog-comments.tsx';
 import { DocBody } from '~/components/doc-body.tsx';
 import {
   CollapsedTableOfContents,
@@ -277,6 +278,9 @@ export function BlogPost(props: { readonly post: Post }) {
               </a>
             )}
           </div>
+          {post.discussion === undefined ? null : (
+            <BlogComments discussion={post.discussion} key={post.slug} />
+          )}
           <nav aria-label="More posts" className="grid gap-3 sm:grid-cols-2">
             {around.newer ? (
               <Link

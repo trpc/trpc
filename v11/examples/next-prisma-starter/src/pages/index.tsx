@@ -1,12 +1,76 @@
 import { trpc } from '../utils/trpc';
 import type { NextPageWithLayout } from './_app';
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from '@shared/ui/components/alert';
+import { Badge } from '@shared/ui/components/badge';
+import { Button } from '@shared/ui/components/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui/components/card';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@shared/ui/components/field';
+import { Input } from '@shared/ui/components/input';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from '@shared/ui/components/item';
+import { Skeleton } from '@shared/ui/components/skeleton';
+import { Spinner } from '@shared/ui/components/spinner';
+import { Textarea } from '@shared/ui/components/textarea';
 import type { inferProcedureInput } from '@trpc/server';
+import { ChevronRightIcon, CircleAlertIcon } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
+import type { RouterOutput } from '~/utils/trpc';
 
-const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.useUtils();
+type Post = RouterOutput['post']['list']['items'][number];
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-us', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  });
+}
+
+function PostItem(props: { post: Post }) {
+  const { post } = props;
+  return (
+    <Item variant="outline" render={<Link href={`/post/${post.id}`} />}>
+      <ItemContent>
+        <ItemTitle>{post.title}</ItemTitle>
+        <ItemDescription>{post.text}</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <time
+          dateTime={post.createdAt.toISOString()}
+          className="text-xs text-muted-foreground"
+        >
+          {formatDate(post.createdAt)}
+        </time>
+        <ChevronRightIcon className="size-4 text-muted-foreground" />
+      </ItemActions>
+    </Item>
+  );
+}
+
+function PostsCard() {
   const postsQuery = trpc.post.list.useInfiniteQuery(
     {
       limit: 5,
@@ -18,13 +82,6 @@ const IndexPage: NextPageWithLayout = () => {
     },
   );
 
-  const addPost = trpc.post.add.useMutation({
-    async onSuccess() {
-      // refetches posts after a post is added
-      await utils.post.list.invalidate();
-    },
-  });
-
   // prefetch all posts for instant navigation
   // useEffect(() => {
   //   const allPosts = postsQuery.data?.pages.flatMap((page) => page.items) ?? [];
@@ -34,69 +91,115 @@ const IndexPage: NextPageWithLayout = () => {
   // }, [postsQuery.data, utils]);
 
   return (
-    <div className="flex flex-col bg-gray-800 py-8">
-      <h1 className="text-4xl font-bold">
-        Welcome to your tRPC with Prisma starter!
-      </h1>
-      <p className="text-gray-400">
-        If you get stuck, check{' '}
-        <Link className="underline" href="https://trpc.io">
-          the docs
-        </Link>
-        , write a message in our{' '}
-        <Link className="underline" href="https://trpc.io/discord">
-          Discord-channel
-        </Link>
-        , or write a message in{' '}
-        <Link
-          className="underline"
-          href="https://github.com/trpc/trpc/discussions"
-        >
-          GitHub Discussions
-        </Link>
-        .
-      </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Latest posts</CardTitle>
+        <CardDescription>
+          <code>post.list</code> with <code>useInfiniteQuery</code>, five posts
+          a page
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {(() => {
+          switch (postsQuery.status) {
+            case 'pending':
+              return (
+                <ItemGroup className="gap-2">
+                  {Array.from({ length: 3 }, (_, index) => (
+                    <Skeleton key={index} className="h-16 w-full" />
+                  ))}
+                </ItemGroup>
+              );
+            case 'error':
+              return (
+                <Alert variant="destructive">
+                  <CircleAlertIcon />
+                  <AlertTitle>Couldn't load posts</AlertTitle>
+                  <AlertDescription>
+                    {postsQuery.error.message}
+                  </AlertDescription>
+                  <AlertAction>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => postsQuery.refetch()}
+                    >
+                      Try again
+                    </Button>
+                  </AlertAction>
+                </Alert>
+              );
+            case 'success':
+              return (
+                <ItemGroup className="gap-2">
+                  {postsQuery.data.pages.flatMap((page) =>
+                    page.items.map((post) => (
+                      <PostItem key={post.id} post={post} />
+                    )),
+                  )}
+                </ItemGroup>
+              );
+          }
+        })()}
+      </CardContent>
+      {postsQuery.status === 'success' && (
+        <CardFooter className="justify-center">
+          {(() => {
+            switch (postsQuery.fetchStatus) {
+              case 'fetching':
+                return (
+                  <Button variant="outline" disabled>
+                    <Spinner />
+                    Loading…
+                  </Button>
+                );
+              case 'paused':
+                return (
+                  <Button variant="outline" disabled>
+                    Waiting for network…
+                  </Button>
+                );
+              case 'idle':
+                return postsQuery.hasNextPage ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => postsQuery.fetchNextPage()}
+                  >
+                    Load more
+                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    That's every post
+                  </p>
+                );
+            }
+          })()}
+        </CardFooter>
+      )}
+    </Card>
+  );
+}
 
-      <div className="flex flex-col py-8 items-start gap-y-2">
-        <div className="flex flex-col"></div>
-        <h2 className="text-3xl font-semibold">
-          Latest Posts
-          {postsQuery.status === 'pending' && '(loading)'}
-        </h2>
+function AddPostCard() {
+  const utils = trpc.useUtils();
+  const addPost = trpc.post.add.useMutation({
+    async onSuccess() {
+      // refetches posts after a post is added
+      await utils.post.list.invalidate();
+    },
+  });
+  const pending = addPost.status === 'pending';
 
-        <button
-          className="bg-gray-900 p-2 rounded-md font-semibold disabled:bg-gray-700 disabled:text-gray-400"
-          onClick={() => postsQuery.fetchNextPage()}
-          disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
-        >
-          {postsQuery.isFetchingNextPage
-            ? 'Loading more...'
-            : postsQuery.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
-        </button>
-
-        {postsQuery.data?.pages.map((page, index) => (
-          <Fragment key={page.items[0]?.id || index}>
-            {page.items.map((item) => (
-              <article key={item.id}>
-                <h3 className="text-2xl font-semibold">{item.title}</h3>
-                <Link className="text-gray-400" href={`/post/${item.id}`}>
-                  View more
-                </Link>
-              </article>
-            ))}
-          </Fragment>
-        ))}
-      </div>
-
-      <hr />
-
-      <div className="flex flex-col py-8 items-center">
-        <h2 className="text-3xl font-semibold pb-2">Add a Post</h2>
-
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add a post</CardTitle>
+        <CardDescription>
+          <code>post.add</code>, then the list refetches
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <form
-          className="py-2 w-4/6"
           onSubmit={async (e) => {
             /**
              * In a real app you probably don't want to use this manually
@@ -122,36 +225,82 @@ const IndexPage: NextPageWithLayout = () => {
             }
           }}
         >
-          <div className="flex flex-col gap-y-4 font-semibold">
-            <input
-              className="focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
-              id="title"
-              name="title"
-              type="text"
-              placeholder="Title"
-              disabled={addPost.isPending}
-            />
-            <textarea
-              className="resize-none focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
-              id="text"
-              name="text"
-              placeholder="Text"
-              disabled={addPost.isPending}
-              rows={6}
-            />
-
-            <div className="flex justify-center">
-              <input
-                className="cursor-pointer bg-gray-900 p-2 rounded-md px-16"
-                type="submit"
-                disabled={addPost.isPending}
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="title">Title</FieldLabel>
+              <Input
+                id="title"
+                name="title"
+                type="text"
+                placeholder="Hello, world"
+                disabled={pending}
               />
-              {addPost.error && (
-                <p style={{ color: 'red' }}>{addPost.error.message}</p>
-              )}
-            </div>
-          </div>
+              <FieldDescription>Up to 32 characters</FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="text">Text</FieldLabel>
+              <Textarea
+                id="text"
+                name="text"
+                placeholder="What's on your mind?"
+                disabled={pending}
+                rows={5}
+              />
+            </Field>
+            {addPost.status === 'error' && (
+              <Alert variant="destructive">
+                <CircleAlertIcon />
+                <AlertTitle>Couldn't add the post</AlertTitle>
+                <AlertDescription className="break-all">
+                  {addPost.error.message}
+                </AlertDescription>
+              </Alert>
+            )}
+            <Button type="submit" size="lg" disabled={pending}>
+              {pending && <Spinner />}
+              Add post
+            </Button>
+          </FieldGroup>
         </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+const IndexPage: NextPageWithLayout = () => {
+  return (
+    <div className="flex flex-col gap-10">
+      <section className="flex flex-col items-start gap-4">
+        <Badge variant="secondary">Next.js · tRPC · Prisma</Badge>
+        <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+          Welcome to your tRPC with Prisma starter!
+        </h1>
+        <p className="max-w-2xl text-muted-foreground">
+          If you get stuck, check{' '}
+          <Link className="text-foreground underline" href="https://trpc.io">
+            the docs
+          </Link>
+          , write a message in our{' '}
+          <Link
+            className="text-foreground underline"
+            href="https://trpc.io/discord"
+          >
+            Discord-channel
+          </Link>
+          , or write a message in{' '}
+          <Link
+            className="text-foreground underline"
+            href="https://github.com/trpc/trpc/discussions"
+          >
+            GitHub Discussions
+          </Link>
+          .
+        </p>
+      </section>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+        <PostsCard />
+        <AddPostCard />
       </div>
     </div>
   );

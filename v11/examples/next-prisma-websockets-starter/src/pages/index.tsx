@@ -1,8 +1,75 @@
-import { trpc } from '~/utils/trpc';
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from '@shared/ui/components/alert';
+import { Avatar, AvatarFallback } from '@shared/ui/components/avatar';
+import { Badge } from '@shared/ui/components/badge';
+import { Button, buttonVariants } from '@shared/ui/components/button';
+import { Separator } from '@shared/ui/components/separator';
+import { Skeleton } from '@shared/ui/components/skeleton';
+import { Spinner } from '@shared/ui/components/spinner';
+import { Textarea } from '@shared/ui/components/textarea';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import {
+  CircleAlertIcon,
+  CodeXmlIcon,
+  DicesIcon,
+  KeyboardIcon,
+  LogOutIcon,
+  NetworkIcon,
+  RadioIcon,
+  SendHorizontalIcon,
+} from 'lucide-react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { trpc } from '~/utils/trpc';
+
+type SubscriptionStatus = ReturnType<
+  typeof trpc.post.onAdd.useSubscription
+>['status'];
+
+function LiveBadge(props: { status: SubscriptionStatus }) {
+  switch (props.status) {
+    case 'idle':
+      return <Badge variant="outline">Idle</Badge>;
+    case 'connecting':
+      return (
+        <Badge variant="secondary">
+          <Spinner />
+          Connecting
+        </Badge>
+      );
+    case 'pending':
+      return (
+        <Badge variant="outline">
+          <span className="size-1.5 rounded-full bg-emerald-500" />
+          Live
+        </Badge>
+      );
+    case 'error':
+      return <Badge variant="destructive">Disconnected</Badge>;
+  }
+}
+
+function UserAvatar(props: { name: string }) {
+  return (
+    <Avatar>
+      <AvatarFallback className="text-xs font-medium">
+        {props.name.slice(0, 2).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const addPost = trpc.post.add.useMutation();
@@ -25,83 +92,77 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const userName = session?.user?.name;
   if (!userName) {
     return (
-      <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
-        <p className="font-bold">
-          You have to{' '}
-          <button
-            className="inline font-bold underline"
-            onClick={() => signIn()}
-          >
-            sign in
-          </button>{' '}
-          to write.
+      <div className="flex items-center justify-between gap-4 rounded-xl border bg-card p-3 pl-4">
+        <p className="text-sm text-muted-foreground">
+          Sign in to write a message.
         </p>
-        <button
-          onClick={() => signIn()}
-          data-testid="signin"
-          className="h-full rounded bg-indigo-500 px-4"
-        >
-          Sign In
-        </button>
+        <Button onClick={() => signIn()} data-testid="signin">
+          Sign in
+        </Button>
       </div>
     );
   }
+  const pending = addPost.status === 'pending';
   return (
-    <>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @see https://react-hook-form.com/
-           */
-          await postMessage();
-        }}
-      >
-        <fieldset disabled={addPost.isPending} className="min-w-0">
-          <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1 bg-transparent outline-0"
-              rows={message.split(/\r|\n/).length}
-              id="text"
-              name="text"
-              autoFocus
-              onKeyDown={async (e) => {
-                if (e.key === 'Shift') {
-                  setEnterToPostMessage(false);
-                }
-                if (e.key === 'Enter' && enterToPostMessage) {
-                  void postMessage();
-                }
-                isTyping.mutate({ typing: true });
-              }}
-              onKeyUp={(e) => {
-                if (e.key === 'Shift') {
-                  setEnterToPostMessage(true);
-                }
-              }}
-              onBlur={() => {
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        /**
+         * In a real app you probably don't want to use this manually
+         * Checkout React Hook Form - it works great with tRPC
+         * @see https://react-hook-form.com/
+         */
+        await postMessage();
+      }}
+    >
+      <fieldset disabled={pending} className="min-w-0">
+        <div className="flex items-end gap-2 rounded-xl border bg-card p-2 transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="max-h-40 min-h-9 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
+            rows={message.split(/\r|\n/).length}
+            id="text"
+            name="text"
+            placeholder={`Message as ${userName}`}
+            autoFocus
+            onKeyDown={async (e) => {
+              if (e.key === 'Shift') {
+                setEnterToPostMessage(false);
+              }
+              if (e.key === 'Enter' && enterToPostMessage) {
+                void postMessage();
+              }
+              isTyping.mutate({ typing: true });
+            }}
+            onKeyUp={(e) => {
+              if (e.key === 'Shift') {
                 setEnterToPostMessage(true);
-                isTyping.mutate({ typing: false });
-              }}
-            />
-            <div>
-              <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
-                Submit
-              </button>
-            </div>
-          </div>
-        </fieldset>
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
-    </>
+              }
+            }}
+            onBlur={() => {
+              setEnterToPostMessage(true);
+              isTyping.mutate({ typing: false });
+            }}
+          />
+          <Button type="submit" size="icon" aria-label="Send">
+            {pending ? <Spinner /> : <SendHorizontalIcon />}
+          </Button>
+        </div>
+      </fieldset>
+      {addPost.status === 'error' && (
+        <Alert variant="destructive">
+          <CircleAlertIcon />
+          <AlertTitle>Couldn't send the message</AlertTitle>
+          <AlertDescription>{addPost.error.message}</AlertDescription>
+        </Alert>
+      )}
+    </form>
   );
 }
+
+const subscribeToNothing = () => () => undefined;
 
 export default function IndexPage() {
   const postsQuery = trpc.post.infinite.useInfiniteQuery(
@@ -111,7 +172,6 @@ export default function IndexPage() {
     },
   );
   const utils = trpc.useUtils();
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -122,6 +182,14 @@ export default function IndexPage() {
   const { data: session } = useSession();
   const userName = session?.user?.name;
   const scrollTargetRef = useRef<HTMLDivElement>(null);
+  // The server-rendered page is refetched on mount, so the first client render
+  // is already `fetching`. Keep the server's `idle` until hydration is done.
+  const hydrated = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+  const loadMoreStatus = hydrated ? postsQuery.fetchStatus : 'idle';
 
   // fn to add and dedupe new messages onto state
   const addMessages = useCallback((incoming?: Post[]) => {
@@ -160,7 +228,7 @@ export default function IndexPage() {
     // oxlint-disable-next-line react/exhaustive-deps
   }, []);
   // subscribe to new posts and add
-  trpc.post.onAdd.useSubscription(undefined, {
+  const onAdd = trpc.post.onAdd.useSubscription(undefined, {
     onData(post) {
       addMessages([post]);
     },
@@ -171,136 +239,247 @@ export default function IndexPage() {
     },
   });
 
-  const whoIsTypingResult = trpc.post.whoIsTyping.useSubscription();
+  const whoIsTyping = trpc.post.whoIsTyping.useSubscription();
 
   return (
     <>
       <Head>
-        <title>Prisma Starter</title>
+        <title>tRPC WebSocket Starter</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div className="flex h-screen flex-col md:flex-row">
-        <section className="flex w-full flex-col bg-gray-800 md:w-72">
-          <div className="flex-1 overflow-y-hidden">
-            <div className="flex h-full flex-col divide-y divide-gray-700">
-              <header className="p-4">
-                <h1 className="text-3xl font-bold text-gray-50">
-                  tRPC WebSocket starter
-                </h1>
-                <p className="text-sm text-gray-400">
-                  Showcases WebSocket + subscription support
-                  <br />
-                  <a
-                    className="text-gray-100 underline"
-                    href="https://github.com/trpc/examples-next-prisma-starter-websockets"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View Source on GitHub
-                  </a>
-                </p>
-              </header>
-              <div className="hidden flex-1 space-y-6 overflow-y-auto p-4 text-gray-400 md:block">
-                <article className="space-y-2">
-                  <h2 className="text-lg text-gray-200">Introduction</h2>
-                  <ul className="list-inside list-disc space-y-2">
-                    <li>Open inspector and head to Network tab</li>
-                    <li>All client requests are handled through WebSockets</li>
-                    <li>
-                      We have a simple backend subscription on new messages that
-                      adds the newly added message to the current state
-                    </li>
-                  </ul>
-                </article>
-                {userName && (
-                  <article>
-                    <h2 className="text-lg text-gray-200">User information</h2>
-                    <ul className="space-y-2">
-                      <li className="text-lg">
-                        You&apos;re{' '}
-                        <input
-                          id="name"
-                          name="name"
-                          type="text"
-                          disabled
-                          className="bg-transparent"
-                          value={userName}
-                        />
-                      </li>
-                      <li>
-                        <button onClick={() => signOut()}>Sign Out</button>
-                      </li>
-                    </ul>
-                  </article>
-                )}
-              </div>
+      <div className="flex h-svh flex-col bg-muted/40 md:flex-row">
+        <aside className="flex w-full shrink-0 flex-col border-b bg-background md:w-80 md:border-r md:border-b-0">
+          <div className="flex flex-col items-start gap-3 p-6">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">
+                <span className="text-brand">tRPC</span> WebSocket Starter
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Showcases WebSocket + subscription support
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <a
+                className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                href="https://github.com/trpc/examples-next-prisma-starter-websockets"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <CodeXmlIcon />
+                View source on GitHub
+              </a>
+              <Link
+                href="/about"
+                className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+              >
+                <DicesIcon />
+                Random numbers over a subscription
+              </Link>
             </div>
           </div>
-          <div className="hidden h-16 shrink-0 md:block"></div>
-        </section>
-        <div className="flex-1 overflow-y-hidden md:h-screen">
-          <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
-            <div className="space-y-4 overflow-y-auto">
-              <button
-                data-testid="loadMore"
-                onClick={() => fetchNextPage()}
-                disabled={!hasNextPage || isFetchingNextPage}
-                className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
-              >
-                {isFetchingNextPage
-                  ? 'Loading more...'
-                  : hasNextPage
-                    ? 'Load More'
-                    : 'Nothing more to load'}
-              </button>
-              <div className="space-y-4">
-                {messages?.map((item) => (
-                  <article key={item.id} className=" text-gray-50">
-                    <header className="flex space-x-2 text-sm">
-                      <h3 className="text-base">
-                        {item.source === 'RAW' ? (
-                          item.name
-                        ) : (
-                          <a
-                            href={`https://github.com/${item.name}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {item.name}
-                          </a>
-                        )}
-                      </h3>
-                      <span className="text-gray-500">
-                        {new Intl.DateTimeFormat('en-GB', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        }).format(item.createdAt)}
-                      </span>
-                    </header>
-                    <p className="whitespace-pre-line text-xl leading-tight">
-                      {item.text}
-                    </p>
-                  </article>
-                ))}
-                <div ref={scrollTargetRef}></div>
+          <Separator className="hidden md:block" />
+          <div className="hidden flex-1 flex-col gap-6 overflow-y-auto p-6 md:flex">
+            <section className="flex flex-col gap-3">
+              <h2 className="text-sm font-medium">How it works</h2>
+              <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
+                <li className="flex gap-3">
+                  <NetworkIcon className="mt-0.5 size-4 shrink-0" />
+                  <span>
+                    Open the inspector's Network tab: every request goes through
+                    a WebSocket
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <RadioIcon className="mt-0.5 size-4 shrink-0" />
+                  <span>
+                    The <code>onAdd</code> subscription adds new messages to the
+                    list as they're posted
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <KeyboardIcon className="mt-0.5 size-4 shrink-0" />
+                  <span>
+                    <code>whoIsTyping</code> shows who's writing, in every open
+                    tab
+                  </span>
+                </li>
+              </ul>
+            </section>
+          </div>
+          {userName && (
+            <div className="hidden items-center gap-3 border-t p-4 md:flex">
+              <UserAvatar name={userName} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{userName}</p>
+                <p className="text-xs text-muted-foreground">Signed in</p>
               </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Sign out"
+                onClick={() => signOut()}
+              >
+                <LogOutIcon />
+              </Button>
             </div>
-            <div className="w-full">
+          )}
+        </aside>
+
+        <main className="flex min-h-0 flex-1 flex-col">
+          <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-6">
+            <h2 className="font-semibold">Messages</h2>
+            <LiveBadge status={onAdd.status} />
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-end gap-6 p-6">
+              {(() => {
+                switch (postsQuery.status) {
+                  case 'pending':
+                    return Array.from({ length: 4 }, (_, index) => (
+                      <div key={index} className="flex gap-3">
+                        <Skeleton className="size-8 rounded-full" />
+                        <div className="flex flex-1 flex-col gap-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                      </div>
+                    ));
+                  case 'error':
+                  case 'success':
+                    return (
+                      <>
+                        {postsQuery.status === 'error' && (
+                          <Alert variant="destructive">
+                            <CircleAlertIcon />
+                            <AlertTitle>Couldn't load messages</AlertTitle>
+                            <AlertDescription>
+                              {postsQuery.error.message}
+                            </AlertDescription>
+                            <AlertAction>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => postsQuery.refetch()}
+                              >
+                                Try again
+                              </Button>
+                            </AlertAction>
+                          </Alert>
+                        )}
+                        {/* A failed refetch or older page keeps the messages */}
+                        {messages && (
+                          <>
+                            <div className="flex justify-center">
+                              {(() => {
+                                switch (loadMoreStatus) {
+                                  case 'fetching':
+                                    return (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                        data-testid="loadMore"
+                                      >
+                                        <Spinner />
+                                        Loading…
+                                      </Button>
+                                    );
+                                  case 'paused':
+                                    return (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                        data-testid="loadMore"
+                                      >
+                                        Waiting for network…
+                                      </Button>
+                                    );
+                                  case 'idle':
+                                    return postsQuery.hasNextPage ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        data-testid="loadMore"
+                                        onClick={() =>
+                                          postsQuery.fetchNextPage()
+                                        }
+                                      >
+                                        Load older messages
+                                      </Button>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground">
+                                        The beginning of the conversation
+                                      </p>
+                                    );
+                                }
+                              })()}
+                            </div>
+                            <ol className="flex flex-col gap-5">
+                              {messages?.map((item) => (
+                                <li key={item.id} className="flex gap-3">
+                                  <UserAvatar name={item.name} />
+                                  <article className="min-w-0 flex-1">
+                                    <header className="flex items-baseline gap-2">
+                                      <h3 className="text-sm font-semibold">
+                                        {item.source === 'RAW' ? (
+                                          item.name
+                                        ) : (
+                                          <a
+                                            className="hover:underline"
+                                            href={`https://github.com/${item.name}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                          >
+                                            {item.name}
+                                          </a>
+                                        )}
+                                      </h3>
+                                      <time
+                                        dateTime={item.createdAt.toISOString()}
+                                        className="text-xs text-muted-foreground"
+                                      >
+                                        {new Intl.DateTimeFormat('en-GB', {
+                                          dateStyle: 'short',
+                                          timeStyle: 'short',
+                                        }).format(item.createdAt)}
+                                      </time>
+                                    </header>
+                                    <p className="leading-relaxed break-words whitespace-pre-line">
+                                      {item.text}
+                                    </p>
+                                  </article>
+                                </li>
+                              ))}
+                            </ol>
+                          </>
+                        )}
+                      </>
+                    );
+                }
+              })()}
+              <div ref={scrollTargetRef}></div>
+            </div>
+          </div>
+
+          <div className="shrink-0 border-t bg-background">
+            <div className="mx-auto flex max-w-3xl flex-col gap-1 px-6 py-4">
               <AddMessageForm onMessagePost={() => scrollToBottomOfList()} />
-              <p className="h-2 italic text-gray-400">
-                {whoIsTypingResult.data?.length
-                  ? `${whoIsTypingResult.data.join(', ')} typing...`
+              <p className="h-4 text-xs text-muted-foreground italic">
+                {whoIsTyping.data?.length
+                  ? `${whoIsTyping.data.join(', ')} typing…`
                   : ''}
               </p>
             </div>
+          </div>
+        </main>
 
-            {process.env.NODE_ENV !== 'production' && (
-              <div className="hidden md:block">
-                <ReactQueryDevtools initialIsOpen={false} />
-              </div>
-            )}
-          </section>
-        </div>
+        {process.env.NODE_ENV !== 'production' && (
+          <div className="hidden md:block">
+            <ReactQueryDevtools initialIsOpen={false} />
+          </div>
+        )}
       </div>
     </>
   );
