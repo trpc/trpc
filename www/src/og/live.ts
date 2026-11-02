@@ -75,6 +75,32 @@ export const avatarUrl = (image: string) => {
   return url.href;
 };
 
+const svgLength = (tag: string, name: string) =>
+  new RegExp(`\\s${name}=['"](?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:px)?['"]`).test(
+    tag,
+  );
+
+/**
+ * Whether satori can size an SVG, which it reads off the first `<svg>` tag:
+ * a `viewBox`, or a `width` and a `height` in pixels. It throws on any other.
+ */
+export const sizableSvg = (svg: string) => {
+  const tag = /<svg[^>]*>/i.exec(svg)?.[0];
+  if (tag === undefined) {
+    return false;
+  }
+  const [, , width = 0, height = 0, ...rest] =
+    /viewBox=['"]([^'"]+)['"]/
+      .exec(tag)?.[1]
+      ?.split(/[, ]/)
+      .filter(Boolean)
+      .map(Number) ?? [];
+  if (rest.length === 0 && width > 0 && height > 0) {
+    return true;
+  }
+  return svgLength(tag, 'width') && svgLength(tag, 'height');
+};
+
 /** An avatar as a `data:` URI satori draws, or `undefined` if it's not to be had. */
 export async function fetchAvatar(image: string) {
   try {
@@ -82,10 +108,17 @@ export async function fetchAvatar(image: string) {
       signal: AbortSignal.timeout(timeoutMs),
     });
     const type = response.headers.get('content-type')?.split(';')[0] ?? '';
-    if (!response.ok || !['image/jpeg', 'image/png'].includes(type)) {
+    // An SVG too, such as the tRPC team's logo (`https://trpc.io/img/logo.svg`).
+    if (
+      !response.ok ||
+      !['image/jpeg', 'image/png', 'image/svg+xml'].includes(type)
+    ) {
       return undefined;
     }
     const bytes = Buffer.from(await response.arrayBuffer());
+    if (type === 'image/svg+xml' && !sizableSvg(bytes.toString('utf8'))) {
+      return undefined;
+    }
     return `data:${type};base64,${bytes.toString('base64')}`;
   } catch {
     return undefined;
