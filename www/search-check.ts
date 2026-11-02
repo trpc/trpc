@@ -5,7 +5,7 @@
  * checked too) lists that page, marked experimental, and opening it from
  * the home page turns its experiment on (`?flags=`), as visiting it does.
  * `SITE_URL` points it at a deployment; without it, it serves the last build
- * with `vp preview` (`pnpm build` first). `CHROME_PATH` picks the browser.
+ * with `vite preview` (`pnpm build` first). `CHROME_PATH` picks the browser.
  * Run with `pnpm search:check`.
  */
 import { spawn } from 'node:child_process';
@@ -19,7 +19,7 @@ import { stripInlineCode } from './src/content/inline-code.ts';
 import { v12 } from './src/site.ts';
 
 const cwd = new URL('.', import.meta.url).pathname;
-const vp = new URL('node_modules/.bin/vp', import.meta.url).pathname;
+const vite = new URL('node_modules/.bin/vite', import.meta.url).pathname;
 const port = 3018;
 const origin = process.env['SITE_URL'] ?? `http://localhost:${port}`;
 const v12Page = `${v12.basePath}/getting-started`;
@@ -33,7 +33,7 @@ const pages = (
   await Effect.runPromise(
     docPages({
       basePath: v12.basePath,
-      contentDir: new URL('docs', import.meta.url).pathname,
+      contentDir: new URL('v12/docs', import.meta.url).pathname,
       samplesDir,
     }).pipe(Effect.provide(NodeServices.layer)),
   )
@@ -63,11 +63,11 @@ const answers = () =>
 if (!process.env['SITE_URL'] && (await answers())) {
   throw new Error(`${origin} is taken: stop what serves it`);
 }
-// Its own process group: `vp` starts the server as a child, which killing
-// `vp` alone leaves holding the port.
+// Its own process group, so killing it frees the port even if the server
+// runs in a child.
 const preview = process.env['SITE_URL']
   ? undefined
-  : spawn(vp, ['preview', '--port', String(port), '--strictPort'], {
+  : spawn(vite, ['preview', '--port', String(port), '--strictPort'], {
       cwd,
       detached: true,
       stdio: 'ignore',
@@ -86,7 +86,7 @@ process.on('exit', () => {
 const waitForServer = async () => {
   for (let attempt = 0; attempt < 60; attempt++) {
     if (previewExit !== undefined) {
-      throw new Error(`vp preview exited (${previewExit})`);
+      throw new Error(`vite preview exited (${previewExit})`);
     }
     if (await answers()) return;
     await new Promise((resolve) => setTimeout(resolve, 500));

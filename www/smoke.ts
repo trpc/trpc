@@ -4,14 +4,14 @@
  * row's name, its description, its switch, its pages, "Turn all on" and
  * "Turn all off") and checks that `?flags=` follows and the page doesn't
  * move. `SITE_URL` points it at a deployment; without it, it builds the site
- * and serves it with `vp preview`. `CHROME_PATH` picks the browser. Run with
+ * and serves it with `vite preview`. `CHROME_PATH` picks the browser. Run with
  * `pnpm smoke`.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { chromium, type Page } from 'playwright-core';
 
 const cwd = new URL('.', import.meta.url).pathname;
-const vp = new URL('node_modules/.bin/vp', import.meta.url).pathname;
+const vite = new URL('node_modules/.bin/vite', import.meta.url).pathname;
 const port = 3019;
 
 const assert = (ok: boolean, message: string): void => {
@@ -23,7 +23,7 @@ const preview = process.env['SITE_URL']
   : (() => {
       const build = spawnSync('pnpm', ['build'], { cwd, stdio: 'inherit' });
       if (build.status !== 0) process.exit(build.status ?? 1);
-      return spawn(vp, ['preview', '--port', String(port), '--strictPort'], {
+      return spawn(vite, ['preview', '--port', String(port), '--strictPort'], {
         cwd,
         stdio: 'inherit',
       });

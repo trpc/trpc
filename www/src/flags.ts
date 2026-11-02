@@ -86,8 +86,8 @@ export function validateFlagSearch(search: Record<string, unknown>) {
 }
 
 /**
- * Where the site runs: `vp dev`, a build that isn't Vercel's production
- * deployment (a local `vp preview`, a Vercel preview), or production.
+ * Where the site runs: `vite dev`, a build that isn't Vercel's production
+ * deployment (a local `vite preview`, a Vercel preview), or production.
  */
 export type SiteEnv = 'development' | 'preview' | 'production';
 

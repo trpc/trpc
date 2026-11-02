@@ -4,14 +4,14 @@
  * side too, fits its window, and nothing in its `<main>` reaches past it
  * (long code scrolls inside its block). It also fails on a console error,
  * such as a hydration mismatch. `SITE_URL` points it at a deployment;
- * without it, it serves the last build with `vp preview` (`pnpm build`
+ * without it, it serves the last build with `vite preview` (`pnpm build`
  * first). `CHROME_PATH` picks the browser. Run with `pnpm decisions:layout`.
  */
 import { spawn } from 'node:child_process';
 import { chromium, type Page } from 'playwright-core';
 
 const cwd = new URL('.', import.meta.url).pathname;
-const vp = new URL('node_modules/.bin/vp', import.meta.url).pathname;
+const vite = new URL('node_modules/.bin/vite', import.meta.url).pathname;
 const port = 3018;
 const widths = [360, 820, 1280] as const;
 
@@ -27,11 +27,11 @@ const answers = () =>
 if (!process.env['SITE_URL'] && (await answers())) {
   throw new Error(`${origin} is taken: stop what serves it`);
 }
-// Its own process group: `vp` starts the server as a child, which killing
-// `vp` alone leaves holding the port.
+// Its own process group, so killing it frees the port even if the server
+// runs in a child.
 const preview = process.env['SITE_URL']
   ? undefined
-  : spawn(vp, ['preview', '--port', String(port), '--strictPort'], {
+  : spawn(vite, ['preview', '--port', String(port), '--strictPort'], {
       cwd,
       detached: true,
       stdio: 'ignore',
@@ -50,7 +50,7 @@ process.on('exit', () => {
 const waitForServer = async () => {
   for (let attempt = 0; attempt < 60; attempt++) {
     if (previewExit !== undefined) {
-      throw new Error(`vp preview exited (${previewExit})`);
+      throw new Error(`vite preview exited (${previewExit})`);
     }
     if (await answers()) return;
     await new Promise((resolve) => setTimeout(resolve, 500));

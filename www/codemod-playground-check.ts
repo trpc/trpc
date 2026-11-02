@@ -6,14 +6,14 @@
  * step puts the cursor on its line, "Reset code" brings the sample back, and
  * the page fits a phone and a laptop. It fails on a console error, such as a
  * hydration mismatch. `SITE_URL` points it at a deployment; without it, it
- * serves the last build with `vp preview` (`pnpm build` first). `CHROME_PATH`
+ * serves the last build with `vite preview` (`pnpm build` first). `CHROME_PATH`
  * picks the browser. Run with `pnpm codemod-playground:check`.
  */
 import { spawn } from 'node:child_process';
 import { chromium, type Page } from 'playwright-core';
 
 const cwd = new URL('.', import.meta.url).pathname;
-const vp = new URL('node_modules/.bin/vp', import.meta.url).pathname;
+const vite = new URL('node_modules/.bin/vite', import.meta.url).pathname;
 const port = 3017;
 const path = '/v12/docs/migrations/from-v11/try-the-codemod';
 
@@ -29,11 +29,11 @@ const answers = () =>
 if (!process.env['SITE_URL'] && (await answers())) {
   throw new Error(`${origin} is taken: stop what serves it`);
 }
-// Its own process group: `vp` starts the server as a child, which killing
-// `vp` alone leaves holding the port.
+// Its own process group, so killing it frees the port even if the server
+// runs in a child.
 const preview = process.env['SITE_URL']
   ? undefined
-  : spawn(vp, ['preview', '--port', String(port), '--strictPort'], {
+  : spawn(vite, ['preview', '--port', String(port), '--strictPort'], {
       cwd,
       detached: true,
       stdio: 'ignore',
@@ -52,7 +52,7 @@ process.on('exit', () => {
 const waitForServer = async () => {
   for (let attempt = 0; attempt < 60; attempt++) {
     if (previewExit !== undefined) {
-      throw new Error(`vp preview exited (${previewExit})`);
+      throw new Error(`vite preview exited (${previewExit})`);
     }
     if (await answers()) return;
     await new Promise((resolve) => setTimeout(resolve, 500));
