@@ -51,8 +51,9 @@ const ensureClean = Effect.fn('ensureClean')(function* (root: string) {
 });
 
 /**
- * Whether `branch` on `remote` moved away from HEAD. If it did, the version
- * just written misses commits, and pushing the release commit is rejected.
+ * Whether `branch` on `remote` has commits HEAD doesn't. If it does, the
+ * version just written misses them, and pushing the release commit is
+ * rejected. A release commit on top of HEAD doesn't count as moving.
  */
 export const branchMoved = Effect.fn('branchMoved')(function* (
   root: string,
@@ -60,11 +61,8 @@ export const branchMoved = Effect.fn('branchMoved')(function* (
   branch: string,
 ) {
   yield* git(root, 'fetch', '--quiet', '--no-tags', remote, branch);
-  const [fetched, head] = [
-    yield* git(root, 'rev-parse', 'FETCH_HEAD'),
-    yield* git(root, 'rev-parse', 'HEAD'),
-  ];
-  return fetched !== head;
+  const missing = yield* git(root, 'rev-list', '--count', 'HEAD..FETCH_HEAD');
+  return Number(missing) > 0;
 });
 
 /**

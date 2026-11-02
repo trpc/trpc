@@ -71,13 +71,15 @@ describe('latestTag', () => {
 });
 
 describe('branchMoved', () => {
-  it('tells whether the remote branch is still HEAD', () =>
+  it('tells whether the remote branch has commits HEAD lacks', () =>
     run(
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const remote = yield* repo;
         const clone = yield* fs.makeTempDirectoryScoped();
         yield* git(clone, 'clone', '--quiet', remote, '.');
+        expect(yield* branchMoved(clone, 'origin', 'main')).toBe(false);
+        yield* commit(clone, 'chore: release v11.23.1');
         expect(yield* branchMoved(clone, 'origin', 'main')).toBe(false);
         yield* commit(remote, 'fix: merged meanwhile');
         expect(yield* branchMoved(clone, 'origin', 'main')).toBe(true);
