@@ -2,6 +2,7 @@ import { trpc } from '../utils/trpc';
 import type { NextPageWithLayout } from './_app';
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   AlertTitle,
 } from '@shared/ui/components/alert';
@@ -117,6 +118,15 @@ function PostsCard() {
                   <AlertDescription>
                     {postsQuery.error.message}
                   </AlertDescription>
+                  <AlertAction>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => postsQuery.refetch()}
+                    >
+                      Try again
+                    </Button>
+                  </AlertAction>
                 </Alert>
               );
             case 'success':
@@ -132,38 +142,40 @@ function PostsCard() {
           }
         })()}
       </CardContent>
-      <CardFooter className="justify-center">
-        {(() => {
-          switch (postsQuery.fetchStatus) {
-            case 'fetching':
-              return (
-                <Button variant="outline" disabled>
-                  <Spinner />
-                  Loading…
-                </Button>
-              );
-            case 'paused':
-              return (
-                <Button variant="outline" disabled>
-                  Waiting for network…
-                </Button>
-              );
-            case 'idle':
-              return postsQuery.hasNextPage ? (
-                <Button
-                  variant="outline"
-                  onClick={() => postsQuery.fetchNextPage()}
-                >
-                  Load more
-                </Button>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  That's every post
-                </p>
-              );
-          }
-        })()}
-      </CardFooter>
+      {postsQuery.status === 'success' && (
+        <CardFooter className="justify-center">
+          {(() => {
+            switch (postsQuery.fetchStatus) {
+              case 'fetching':
+                return (
+                  <Button variant="outline" disabled>
+                    <Spinner />
+                    Loading…
+                  </Button>
+                );
+              case 'paused':
+                return (
+                  <Button variant="outline" disabled>
+                    Waiting for network…
+                  </Button>
+                );
+              case 'idle':
+                return postsQuery.hasNextPage ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => postsQuery.fetchNextPage()}
+                  >
+                    Load more
+                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    That's every post
+                  </p>
+                );
+            }
+          })()}
+        </CardFooter>
+      )}
     </Card>
   );
 }
