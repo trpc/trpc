@@ -175,10 +175,12 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       pageParam,
       direction,
     }: QueryFunctionContext<TRPCQueryKey, unknown>) => {
+      const initialCursor = (args[1] as Maybe<{ initialCursor?: unknown }>)
+        ?.initialCursor;
       const [path, infiniteInput] = getClientArgs(
         [arrayPath, { input }],
         undefined,
-        { pageParam, direction },
+        { pageParam: pageParam ?? initialCursor, direction },
       );
       return resolvedOpts.query({ path, input: infiniteInput });
     };
