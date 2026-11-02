@@ -105,12 +105,14 @@ type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
  * @param input - the procedure input. Leave it out to match every input in
  * fuzzy operations like `invalidateQueries`.
  * @param type - `'query'`, `'infinite'` or `'any'` (default). `'any'` leaves
- * the type out of the key, so exact reads like `getQueryData` need the full
- * input and the matching type.
+ * the type out of the key, so exact reads like `getQueryData` need the same
+ * input the query used and the matching type. Infinite query keys leave out
+ * `cursor` and `direction`.
  *
  * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
  * the next major version. Use `@trpc/tanstack-react-query` instead, where
- * each query has a `queryKey()` method.
+ * each query procedure has a `queryKey()` method and each router has a
+ * `pathKey()` method.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
  * @see https://trpc.io/docs/client/react/getQueryKey
