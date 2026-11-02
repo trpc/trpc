@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
+    "@giscus/react": "3.1.0",
     "@resvg/resvg-wasm": "catalog:www",
     "@sentry/tanstackstart-react": "11.8.0",
     "@shared/ui": "workspace:*",
