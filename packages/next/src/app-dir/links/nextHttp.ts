@@ -38,7 +38,6 @@ type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
  * A terminating link that sends calls over HTTP with Next.js cache tags, so
  * they can be revalidated.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
 // ts-prune-ignore-next

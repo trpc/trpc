@@ -2,25 +2,26 @@
 id: server-side-helpers
 title: Server-Side Helpers
 sidebar_label: Server-Side Helpers
-description: Prefetch or fetch tRPC queries in getServerSideProps and getStaticProps with createServerSideHelpers, then pass them to the page as trpcState
+description: Prefetch or fetch tRPC queries in getServerSideProps and getStaticProps with createTRPCOptionsProxy and a query client, then pass them to the page as trpcState
 slug: /client/nextjs/pages-router/server-side-helpers
 section: "Client Usage"
 parent: "client/nextjs/pages-router/setup"
 order: 73
 ---
 
-The server-side helpers provide you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
+To run queries on the server in `getServerSideProps` or `getStaticProps`, make a query client and pass it to `createTRPCOptionsProxy` from `@trpc/tanstack-react-query`. The proxy gives you the same `queryOptions` as `useTRPC()` in a component. You prefetch them into the query client, then send its cache to the page, so the page doesn't have to fetch them again.
 
-Prefetching via the server-side helpers allows populating the query cache on the server, which means that these queries do not have to fetch on the client initially.
+:::warning Deprecated
+`createServerSideHelpers` from `@trpc/react-query/server` belongs to the [classic React Query integration](/docs/client/react), which only gets bug fixes and will be removed in the next major version of tRPC. Use `createTRPCOptionsProxy` instead, as below.
+:::
 
-## There are 2 ways to use the server-side helpers.
+## Create the proxy
+
+There are two ways to create it, depending on where your router runs.
 
 ### 1. Internal router
 
-This method is used when you have direct access to your tRPC router, e.g., when developing a monolithic Next.js application.
-
-Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](/docs/server/server-side-calls).
-That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the server-side helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
+Use this when your router is in the same Next.js app. The proxy calls your procedures directly, with no HTTP request, as [server-side calls](/docs/server/server-side-calls) do. So pass it a context: build it from `context.req` in `getServerSideProps`, as [SSR](./ssr.md#build-the-context-from-the-request) shows. In `getStaticProps` there's no request, so the context can't need one. The ["inner" and "outer" context](/docs/server/context) pattern helps here.
 
 ```ts twoslash
 // @module: esnext
@@ -30,27 +31,34 @@ export declare function createContext(): Promise<{}>;
 
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
-const t = initTRPC.create({ transformer: superjson });
+const t = initTRPC.create();
 export const appRouter = t.router({});
+
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: example.ts
 // ---cut---
-import { createServerSideHelpers } from '@trpc/react-query/server';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createContext } from './server/context';
 import { appRouter } from './server/routers/_app';
-import superjson from 'superjson';
+import { makeQueryClient } from './utils/query-client';
 
-const helpers = createServerSideHelpers({
-  router: appRouter,
-  ctx: await createContext(),
-  transformer: superjson,
-});
+export async function getStaticProps() {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: await createContext(),
+    queryClient,
+  });
+  // ...
+}
 ```
 
 ### 2. External router
 
-This method is used when you don't have direct access to your tRPC router, e.g., when developing a Next.js application and a standalone API hosted separately.
+Use this when your API runs on another server. Pass a tRPC client instead of the router:
 
 ```ts twoslash
 // @filename: server/router.ts
@@ -59,114 +67,119 @@ const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
-// @filename: client.ts
-// ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import { createServerSideHelpers } from '@trpc/react-query/server';
-import type { AppRouter } from './server/router';
-import superjson from 'superjson';
-
-const proxyClient = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: 'http://localhost:3000/api/trpc',
-    }),
-  ],
-});
-
-const helpers = createServerSideHelpers({
-  client: proxyClient,
-});
-```
-
-## Helpers usage
-
-The server-side helpers methods return an object that mirrors your router structure, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
-
-The primary difference between `prefetch` and `fetch` is that `fetch` acts much like a normal function call, returning the result of the query, whereas `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead. Instead, `prefetch` will add the query to the cache, which you then dehydrate and send to the client.
-
-```ts twoslash
-// @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: example.ts
-import { createServerSideHelpers } from '@trpc/react-query/server';
-import { appRouter } from './server/routers/_app';
-declare const helpers: Awaited<ReturnType<typeof createServerSideHelpers<typeof appRouter>>>;
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server/router';
+import { makeQueryClient } from './utils/query-client';
+
+export async function getStaticProps() {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    client: createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:3000/api/trpc',
+        }),
+      ],
+    }),
+    queryClient,
+  });
+  // ...
+}
+```
+
+Make the query client and the proxy inside `getServerSideProps` or `getStaticProps`, so each call gets new ones. A query client at module scope would share one user's data with the next.
+
+## Prefetch, fetch and dehydrate
+
+Run the queries with the query client's methods:
+
+- `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))` puts the result in the cache. It never throws and returns nothing.
+- `queryClient.fetchQuery(trpc.post.byId.queryOptions(input))` also caches the result, but returns it, and throws if the query fails.
+- `prefetchInfiniteQuery` and `fetchInfiniteQuery` do the same with `trpc.post.list.infiniteQueryOptions(input)`.
+
+Use `prefetchQuery` for data the page shows, and `fetchQuery` when you need the result on the server, for instance to return `notFound`. Then send the cache to the page with `dehydrate`:
+
+```ts twoslash
+// @filename: example.ts
+import { dehydrate, QueryClient } from '@tanstack/react-query';
+declare const queryClient: QueryClient;
 // ---cut---
 // In getServerSideProps / getStaticProps:
 const props = {
-  // very important - use `trpcState` as the key
-  trpcState: helpers.dehydrate(),
+  // `_app` reads this key
+  trpcState: dehydrate(queryClient),
 };
 ```
 
-The rule of thumb is `prefetch` for queries that you know you'll need on the client, and `fetch` for queries that you want to use the result of on the server.
+These are TanStack React Query's own functions. See [their docs](https://tanstack.com/query/v5/docs/framework/react/guides/prefetching) for more.
 
-The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v5/docs/framework/react/overview) to learn more about them in detail.
+Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` is now `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))`, `fetch` is `fetchQuery`, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.
 
-:::info
-For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
-:::
-
-## Next.js Example
+## Next.js example
 
 ```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import superjson from 'superjson';
-const t = initTRPC.create({ transformer: superjson });
+const t = initTRPC.create();
 export const appRouter = t.router({
   post: t.router({
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(() => ({
-        id: '1',
+      .query((opts) => ({
+        id: opts.input.id,
         title: 'Example Post',
         text: 'Hello world',
-        createdAt: new Date(),
       })),
   }),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server/routers/_app';
-export const trpc = createTRPCReact<AppRouter>();
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
 
-// @filename: page.tsx
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: pages/posts/[id].tsx
 // ---cut---
-import { createServerSideHelpers } from '@trpc/react-query/server';
-import { appRouter } from './server/routers/_app';
-import { trpc } from './utils/trpc';
-import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import superjson from 'superjson';
+import { dehydrate, useQuery } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type {
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
+} from 'next';
+import { appRouter } from '../../server/routers/_app';
+import { makeQueryClient } from '../../utils/query-client';
+import { useTRPC } from '../../utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const helpers = createServerSideHelpers({
+  const id = context.params?.id as string;
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
     router: appRouter,
     ctx: {},
-    transformer: superjson,
+    queryClient,
   });
-  const id = context.params?.id as string;
 
-  /*
-   * Prefetching the `post.byId` query.
-   * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
-   */
-  await helpers.post.byId.prefetch({ id });
+  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
 
-  // Make sure to return { props: { trpcState: helpers.dehydrate() } }
   return {
     props: {
-      trpcState: helpers.dehydrate(),
+      trpcState: dehydrate(queryClient),
       id,
     },
   };
@@ -175,21 +188,21 @@ export async function getServerSideProps(
 export default function PostViewPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>,
 ) {
-  const { id } = props;
-  const postQuery = trpc.post.byId.useQuery({ id });
-  if (postQuery.status !== 'success') {
-    // won't happen since the query has been prefetched
-    return <>Loading...</>;
+  const trpc = useTRPC();
+  const postQuery = useQuery(trpc.post.byId.queryOptions({ id: props.id }));
+
+  switch (postQuery.status) {
+    case 'pending':
+      return <p>Loading...</p>;
+    case 'error':
+      return <p>Error: {postQuery.error.message}</p>;
+    case 'success':
+      return (
+        <article>
+          <h1>{postQuery.data.title}</h1>
+          <p>{postQuery.data.text}</p>
+        </article>
+      );
   }
-  const { data } = postQuery;
-  return (
-    <>
-      <h1>{data.title}</h1>
-      <em>Created {data.createdAt.toLocaleDateString()}</em>
-      <p>{data.text}</p>
-      <h2>Raw data:</h2>
-      <pre>{JSON.stringify(data, null, 4)}</pre>
-    </>
-  );
 }
 ```

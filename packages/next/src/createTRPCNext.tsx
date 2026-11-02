@@ -40,7 +40,7 @@ export interface CreateTRPCNextBase<
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   /**
    * Wraps your `_app` with the tRPC providers.
-   * @see https://trpc.io/docs/client/nextjs/pages-router/setup#5-configure-_apptsx
+   * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
    */
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   /**
@@ -55,6 +55,7 @@ export interface CreateTRPCNextBase<
 
 /**
  * @internal
+ * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
  */
 export type CreateTRPCNext<
   TRouter extends AnyRouter,
@@ -79,9 +80,9 @@ export type CreateTRPCNext<
  * });
  * ```
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
- * @see https://trpc.io/docs/client/nextjs/pages-router/setup
+ * @deprecated built on `@trpc/react-query`, which only gets bug fixes. Use
+ * `createTRPCContext` from `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
  */
 export function createTRPCNext<
   TRouter extends AnyRouter,

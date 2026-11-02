@@ -38,9 +38,8 @@ import React, { useState } from 'react';
 /**
  * What the `config` callback returns: tRPC client options, `QueryClient` options and `abortOnUnmount`.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
- * @see https://trpc.io/docs/client/nextjs/pages-router/setup#config-callback
+ * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
  */
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
@@ -57,7 +56,7 @@ type WithTRPCOptions<TRouter extends AnyRouter> =
     /**
      * Returns the client config. Gets the Next.js `ctx` during the SSR
      * prepass; other calls may get no `ctx`.
-     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#config-callback
+     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
      */
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   } & TransformerOptions<inferClientTypes<TRouter>>;
@@ -65,8 +64,8 @@ type WithTRPCOptions<TRouter extends AnyRouter> =
 /**
  * The type of {@link ssrPrepass}.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @deprecated part of `ssr: true`, which is built on `@trpc/react-query`.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
  */
 export type TRPCPrepassHelper = (opts: {
   parent: WithTRPCSSROptions<AnyRouter>;
@@ -76,14 +75,15 @@ export type TRPCPrepassHelper = (opts: {
 /**
  * Options for `createTRPCNext` and `withTRPC` with SSR on.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
- * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
+ * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
  */
 export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
     /**
      * If you enable this, you also need to add a `ssrPrepass`-prop
+     * @deprecated built on `@trpc/react-query`. Prefetch each page's queries
+     * in `getServerSideProps` with `@trpc/tanstack-react-query` instead.
      * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
      */
     ssr:
@@ -91,7 +91,9 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
       | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
     /**
      * Sets the status code and headers of the SSR response.
-     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#responsemeta-callback
+     * @deprecated part of `ssr: true`. Set the status and headers in
+     * `getServerSideProps` instead.
+     * @see https://trpc.io/docs/client/nextjs/pages-router/ssr#set-the-status-and-cache-headers
      */
     responseMeta?: (opts: {
       ctx: NextPageContext;
@@ -99,6 +101,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
     }) => ResponseMeta;
     /**
      * use `import { ssrPrepass } from '@trpc/next/ssrPrepass'`
+     * @deprecated part of `ssr: true`, which is built on `@trpc/react-query`.
      * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
      */
     ssrPrepass: TRPCPrepassHelper;
@@ -107,14 +110,13 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
 /**
  * Options for `createTRPCNext` and `withTRPC` with SSR off.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
- * @see https://trpc.io/docs/client/nextjs/pages-router/setup#createtrpcnext-options
+ * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
  */
 export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
     /**
-     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#ssr-boolean-default-false
+     * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
      */
     ssr?: false;
   };
@@ -122,8 +124,8 @@ export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
 /**
  * The props `ssrPrepass` passes to the wrapped app during the prepass.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @deprecated part of `ssr: true`, which is built on `@trpc/react-query`.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
  */
 export type TRPCPrepassProps<
   TRouter extends AnyRouter,
@@ -153,9 +155,9 @@ export type TRPCPrepassProps<
  * `createTRPCNext` returns it, and you wrap your app with it:
  * `export default trpc.withTRPC(MyApp)`.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
- * @see https://trpc.io/docs/client/nextjs/pages-router/setup
+ * @deprecated built on `@trpc/react-query`, which only gets bug fixes. Mount
+ * `TRPCProvider` from `@trpc/tanstack-react-query` in `_app` instead.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
  */
 export function withTRPC<
   TRouter extends AnyRouter,

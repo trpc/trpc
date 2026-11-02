@@ -482,9 +482,16 @@ import { useTRPC } from '~/trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
-  const greeting = useQuery(trpc.hello.queryOptions({ text: 'world' }));
-  if (!greeting.data) return <div>Loading...</div>;
-  return <div>{greeting.data.greeting}</div>;
+  const greetingQuery = useQuery(trpc.hello.queryOptions({ text: 'world' }));
+
+  switch (greetingQuery.status) {
+    case 'pending':
+      return <div>Loading...</div>;
+    case 'error':
+      return <div>Error: {greetingQuery.error.message}</div>;
+    case 'success':
+      return <div>{greetingQuery.data.greeting}</div>;
+  }
 }
 ```
 
@@ -555,8 +562,8 @@ import { useTRPC } from '~/trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.hello.queryOptions());
-  return <div>{data.greeting}</div>;
+  const greetingQuery = useSuspenseQuery(trpc.hello.queryOptions());
+  return <div>{greetingQuery.data.greeting}</div>;
 }
 ```
 

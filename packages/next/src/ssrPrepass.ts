@@ -50,8 +50,9 @@ function transformQueryOrMutationCacheErrors<
  * other data can take several renders. Pass it to `createTRPCNext` with
  * `ssr: true`.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @deprecated built on `@trpc/react-query`, which only gets bug fixes.
+ * Prefetch each page's queries in `getServerSideProps` with
+ * `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
  */
 export const ssrPrepass: TRPCPrepassHelper = (opts) => {

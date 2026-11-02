@@ -33,7 +33,6 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
  * A terminating link that calls the router directly and caches query
  * results with Next.js `unstable_cache`.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
 // ts-prune-ignore-next
