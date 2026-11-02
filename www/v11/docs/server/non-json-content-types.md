@@ -17,7 +17,7 @@ skill:
     binary data. Route non-JSON requests with splitLink and
     isNonJsonSerializable() from @trpc/client, since batching links send them
     as `{}`. FormData and binary inputs are sent as POST, so they only work
-    with mutations unless httpLink uses methodOverride: 'POST', and they
+    with mutations unless httpLink sets methodOverride to 'POST', and they
     skip the transformer. Keep Express or Next.js body parsers off tRPC
     routes.
   include:
