@@ -169,6 +169,18 @@ describe('renderOgImage with SVG avatars', () => {
   const unsized = (paths: ReadonlyArray<string>) =>
     Object.fromEntries(paths.map((path) => [path, svg('<svg/>')]));
 
+  it.each(cards.filter((card) => card.kind === 'home' || card.kind === 'doc'))(
+    "names the partners along the $kind card's foot for $path",
+    (card) => {
+      expect(textsOf(drawn(card, withPartners, cardFooterPartners))).toEqual(
+        expect.arrayContaining([
+          'SUPPORTED BY',
+          ...cardFooterPartners.map((partner) => partner.name),
+        ]),
+      );
+    },
+  );
+
   it("draws initials for an author whose SVG satori can't size", async () => {
     await using server = await serveAvatars(unsized(['/unsized.svg']));
     const card = postBy(server.url('/unsized.svg'));
@@ -234,10 +246,10 @@ describe('renderOgImage with SVG avatars', () => {
     expect(textsOf(drawn(sponsorCard, fetched, partners))).not.toContain(
       'SUPPORTED BY',
     );
-    expect(pngSize(await renderOgImage(card, fetched, partners))).toEqual({
-      height: 630,
-      width: 1200,
-    });
+    const png = await renderOgImage(card, fetched, partners);
+    expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
+    // The default partners' avatars aren't in `fetched`, so it has no foot.
+    expect(png).not.toEqual(await renderOgImage(card, fetched));
   });
 
   it('draws an SVG with a viewBox', async () => {
