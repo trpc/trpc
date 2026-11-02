@@ -36,11 +36,11 @@ function MediaPage() {
           {mediaPage.description}
         </p>
       </header>
-      <dl className="grid gap-4 sm:grid-cols-3">
+      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {facts.map((fact) => (
           <div
             className={cn(
-              'flex h-28 items-end justify-between rounded-xl p-4 text-xl text-white',
+              'flex h-28 flex-col justify-end gap-1 rounded-xl p-4 text-xl text-white',
               fact.swatch,
             )}
             key={fact.label}
