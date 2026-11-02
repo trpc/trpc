@@ -5,6 +5,7 @@
   "compilerOptions": {
     "allowJs": false,
     "allowImportingTsExtensions": true,
+    "noEmit": true,
     "rootDir": ".",
     "paths": {
       "@trpc/client": ["./packages/client/src"],

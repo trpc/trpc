@@ -18,20 +18,21 @@ const packages = fs
   })
   .filter((file) => file.isDirectory())
   .map((dir) => dir.name)
-  .filter((dir) => !dir.startsWith('.'));
-
-for (const name of packages) {
-  const packageJSON = path.join(
-    import.meta.dirname,
-    '..',
-    'packages',
+  .filter((dir) => !dir.startsWith('.'))
+  .map((name) => ({
     name,
-    'package.json',
-  );
-  if (!fs.existsSync(packageJSON)) {
-    continue;
-  }
+    packageJSON: path.join(
+      import.meta.dirname,
+      '..',
+      'packages',
+      name,
+      'package.json',
+    ),
+  }))
+  .filter(({ packageJSON }) => fs.existsSync(packageJSON));
 
+const versions = new Map<string, string>();
+for (const { name, packageJSON } of packages) {
   let content = fs.readFileSync(packageJSON).toString();
 
   const parsed = JSON.parse(content);
@@ -48,17 +49,28 @@ for (const name of packages) {
         `"version": "${suffixedVersion}"`,
       );
       version = suffixedVersion;
+      fs.writeFileSync(packageJSON, content);
       console.log(`  🔖 Set ${name} version to ${suffixedVersion}`);
     }
   }
 
-  // For dependency pinning, use the base version (without prerelease suffix)
-  // so alpha packages correctly depend on the stable versions of other @trpc/* packages
-  const depVersion = version.replace(/-.*$/, '');
+  versions.set(parsed.name, version);
+}
+
+for (const { name, packageJSON } of packages) {
+  const content = fs.readFileSync(packageJSON).toString();
+
   // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "${depVersion}""`
   const newContent = content.replace(
-    /\"@trpc\/((\w|-)+)\": "([^"]|\\")*"/g,
-    `"@trpc/$1": "${depVersion}"`,
+    /\"(@trpc\/(?:\w|-)+)\": "(?:[^"]|\\")*"/g,
+    (match, depName: string) => {
+      const depVersion = versions.get(depName);
+      if (!depVersion) {
+        console.warn(`  ⚠️ ${name} depends on unknown package ${depName}`);
+        return match;
+      }
+      return `"${depName}": "${depVersion}"`;
+    },
   );
   fs.writeFileSync(packageJSON, newContent);
   console.log(`  📍 Pinned ${name} @trpc/* dependencies`);

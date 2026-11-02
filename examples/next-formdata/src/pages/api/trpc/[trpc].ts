@@ -3,9 +3,9 @@
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
 import * as trpcNext from '@trpc/server/adapters/next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { roomRouter } from '~/server/routers/room';
 import { createContext, router } from '~/server/trpc';
-import type { NextApiRequest, NextApiResponse } from 'next';
 
 const appRouter = router({
   room: roomRouter,

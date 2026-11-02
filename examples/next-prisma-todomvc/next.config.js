@@ -10,7 +10,7 @@ const config = {
     ];
   },
 
-  /** We run eslint as a separate task in CI */
+  /** Next.js only knows ESLint; we lint with oxlint as a separate task */
   eslint: {
     ignoreDuringBuilds: true,
   },

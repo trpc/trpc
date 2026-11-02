@@ -17,13 +17,14 @@ import type {
 import type {
   AppContextType,
   NextPageContext,
-} from 'next/dist/shared/lib/utils';
+} from 'next/dist/shared/lib/utils.js';
 import { createElement } from 'react';
 import type { TRPCPrepassHelper, TRPCPrepassProps } from './withTRPC';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
-    DehydratedState['mutations'][0] | DehydratedState['queries'][0],
+    | DehydratedState['mutations'][0]
+    | DehydratedState['queries'][0],
 >(result: TState): TState {
   const error = result.state.error as Maybe<TRPCClientError<any>>;
   if (error instanceof Error && error.name === 'TRPCClientError') {

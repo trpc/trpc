@@ -22,7 +22,7 @@ This codebase pushes TypeScript to its limits to provide seamless type safety ac
 
 ### Type Imports
 
-- **ALWAYS** use `import type` for type-only imports: `@typescript-eslint/consistent-type-imports`
+- **ALWAYS** use `import type` for type-only imports: `typescript/consistent-type-imports`
 - Separate type imports from value imports
 
 ```typescript
@@ -142,10 +142,10 @@ import * as React from 'react';
 import { z } from 'zod';
 ```
 
-#### Import Order (via Prettier)
+#### Import Order (via oxfmt)
 
-- Test helpers first (`___`, `__`)
-- tRPC test imports
+- Node.js built-ins
+- Test helpers (`___`, `__`, including tRPC's `__tests__` imports)
 - Third-party modules
 - Relative imports
 
@@ -177,7 +177,7 @@ try {
 
 #### Error Handling
 
-- **AVOID** non-null assertions (`@typescript-eslint/no-non-null-assertion`)
+- **AVOID** non-null assertions (`typescript/no-non-null-assertion`)
 - Use proper type guards and optional chaining
 
 ```typescript
@@ -210,7 +210,7 @@ const method = options!.method;
 
 ### Switch Statements
 
-- **ALWAYS** handle all cases (`@typescript-eslint/switch-exhaustiveness-check`)
+- **ALWAYS** handle all cases (`typescript/switch-exhaustiveness-check`)
 - Use exhaustive checking for union types
 
 ### Type Safety & Inference

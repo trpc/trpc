@@ -44,7 +44,7 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
 
   // Primitive types just get wrapped in an error
   if (type !== 'object') {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    // oxlint-disable-next-line typescript/no-base-to-string
     return new Error(String(cause));
   }
 
@@ -79,7 +79,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
 }
 
 export class TRPCError extends Error {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // oxlint-disable-next-line typescript/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
   public override readonly cause?: Error;
   public readonly code;
@@ -92,7 +92,7 @@ export class TRPCError extends Error {
     const cause = getCauseFromUnknown(opts.cause);
     const message = opts.message ?? cause?.message ?? opts.code;
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line typescript/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
     super(message, { cause });
 

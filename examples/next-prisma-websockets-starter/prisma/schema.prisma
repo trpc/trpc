@@ -4,6 +4,8 @@
 datasource db {
   provider = "postgres"
   url      = env("DATABASE_URL")
+  // Used for migrations, as they can't run through a transaction pooler
+  directUrl = env("DIRECT_URL")
   // provider = "sqlite"
   // url      = "file:./dev.db"
 }

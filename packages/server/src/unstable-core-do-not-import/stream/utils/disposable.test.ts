@@ -7,9 +7,9 @@ test('makeAsyncResource preserves `this` when chaining to a pre-existing Symbol.
   // Bun and Node 24+).
   let disposedWith: unknown;
   const thing = {
-    // eslint-disable-next-line no-restricted-syntax
+    // oxlint-disable-next-line trpc/no-symbol-dispose
     [Symbol.asyncDispose]: async function () {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      // oxlint-disable-next-line typescript/no-this-alias
       disposedWith = this;
     },
   };
@@ -19,7 +19,7 @@ test('makeAsyncResource preserves `this` when chaining to a pre-existing Symbol.
     calls.push('outer');
   });
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   await wrapped[Symbol.asyncDispose]();
 
   expect(calls).toEqual(['outer']);
@@ -29,9 +29,9 @@ test('makeAsyncResource preserves `this` when chaining to a pre-existing Symbol.
 test('makeResource preserves `this` when chaining to a pre-existing Symbol.dispose', () => {
   let disposedWith: unknown;
   const thing = {
-    // eslint-disable-next-line no-restricted-syntax
+    // oxlint-disable-next-line trpc/no-symbol-dispose
     [Symbol.dispose]: function () {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      // oxlint-disable-next-line typescript/no-this-alias
       disposedWith = this;
     },
   };
@@ -41,7 +41,7 @@ test('makeResource preserves `this` when chaining to a pre-existing Symbol.dispo
     calls.push('outer');
   });
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   wrapped[Symbol.dispose]();
 
   expect(calls).toEqual(['outer']);
@@ -66,7 +66,7 @@ test('makeAsyncResource disposal does not throw for an async generator with a na
     // outer cleanup, e.g. aborting an AbortController
   });
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   await expect(wrapped[Symbol.asyncDispose]()).resolves.toBeUndefined();
   expect(finallyRan.value).toBe(true);
 });

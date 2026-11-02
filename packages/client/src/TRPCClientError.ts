@@ -48,7 +48,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // oxlint-disable-next-line typescript/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
   public override readonly cause;
   public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
@@ -70,7 +70,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   ) {
     const cause = opts?.cause;
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // oxlint-disable-next-line typescript/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
     super(message, { cause });
 

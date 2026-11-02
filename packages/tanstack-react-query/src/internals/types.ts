@@ -103,7 +103,8 @@ export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
     : TRPCQueryKeyWithoutPrefix;
 
 export type AnyTRPCQueryKey =
-  TRPCQueryKeyWithoutPrefix | TRPCQueryKeyWithPrefix;
+  | TRPCQueryKeyWithoutPrefix
+  | TRPCQueryKeyWithPrefix;
 
 /**
  * @public
@@ -119,7 +120,8 @@ export type TRPCMutationKeyWithPrefix = [
 export type TRPCMutationKeyWithoutPrefix = [path: string[]];
 
 export type AnyTRPCMutationKey =
-  TRPCMutationKeyWithoutPrefix | TRPCMutationKeyWithPrefix;
+  | TRPCMutationKeyWithoutPrefix
+  | TRPCMutationKeyWithPrefix;
 
 /**
  * @public

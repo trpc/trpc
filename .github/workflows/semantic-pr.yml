@@ -34,7 +34,7 @@ jobs:
       - name: Validate PR title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-          ADDITIONAL_SCOPES: www,example,ci,docs,deps,monorepo
+          ADDITIONAL_SCOPES: www,example,examples,ci,docs,deps,monorepo
           TYPES: feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert
         run: |
           # Extract package names and combine with additional scopes

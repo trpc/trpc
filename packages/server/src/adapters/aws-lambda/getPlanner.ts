@@ -11,7 +11,8 @@ import { splitSetCookieString } from '../../vendor/cookie-es/set-cookie/split';
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
 export type APIGatewayResult =
-  APIGatewayProxyResult | APIGatewayProxyStructuredResultV2;
+  | APIGatewayProxyResult
+  | APIGatewayProxyStructuredResultV2;
 
 function determinePayloadFormat(event: LambdaEvent): string {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
@@ -64,7 +65,7 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
     }
     const matches = event.resource.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       const group = match[1]!;
       if (group.includes('+') && event.pathParameters) {
         return event.pathParameters[group.replace('+', '')] ?? '';
@@ -152,7 +153,7 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
   getTRPCPath: (event) => {
     const matches = event.routeKey.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       const group = match[1]!;
       if (group.includes('+') && event.pathParameters) {
         return event.pathParameters[group.replace('+', '')] ?? '';

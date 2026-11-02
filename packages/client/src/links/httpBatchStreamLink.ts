@@ -124,7 +124,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           const [head] = await jsonlStreamConsumer<
             Record<string, Promise<any>>
           >({
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            // oxlint-disable-next-line typescript/no-non-null-assertion
             from: res.body!,
             deserialize: (data) =>
               resolvedOpts.transformer.output.deserialize(data),

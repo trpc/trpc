@@ -20,7 +20,7 @@ import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import type {
   DistributiveOmit,
   MaybePromise,

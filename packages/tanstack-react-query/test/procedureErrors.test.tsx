@@ -96,7 +96,7 @@ describe('procedure-level .errors()', () => {
 
       React.useEffect(() => {
         mutation.mutate();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // oxlint-disable-next-line react/exhaustive-deps
       }, []);
 
       const data = mutation.error?.data;

@@ -1,4 +1,4 @@
-import type { RedirectType } from 'next/navigation';
+import type { RedirectType } from 'next/navigation.js';
 import { TRPCError } from '../../@trpc/server';
 
 /**

@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* oxlint-disable typescript/no-unused-vars */
 import type * as trpcNext from '@trpc/server/adapters/next';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// oxlint-disable-next-line typescript/no-empty-object-type
 interface CreateContextOptions {
   // session: Session | null
 }

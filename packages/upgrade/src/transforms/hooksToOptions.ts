@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-console */
+/* oxlint-disable typescript/no-non-null-assertion */
+/* oxlint-disable no-console */
 import type {
   API,
   ArrowFunctionExpression,
@@ -262,10 +262,12 @@ export default function transform(
                   return;
                 }
 
-                if (!(
-                  j.Identifier.check(memberExpr.property) &&
-                  memberExpr.property.name in utilMap
-                )) {
+                if (
+                  !(
+                    j.Identifier.check(memberExpr.property) &&
+                    memberExpr.property.name in utilMap
+                  )
+                ) {
                   console.warn(
                     'Failed to identify utilMethod from proxy call expression',
                     memberExpr,

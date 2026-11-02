@@ -256,13 +256,13 @@ export interface UseMutationOverride {
     /**
      * Calls the original function that was defined in the query's `onSuccess` option
      */
-    originalFn: () => MaybePromise<void>;
+    originalFn: () => MaybePromise<unknown>;
     queryClient: QueryClient;
     /**
      * Meta data passed in from the `useMutation()` hook
      */
     meta: Record<string, unknown>;
-  }) => MaybePromise<void>;
+  }) => MaybePromise<unknown>;
 }
 
 /**

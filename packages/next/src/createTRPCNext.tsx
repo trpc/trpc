@@ -16,7 +16,7 @@ import type {
   ProtectedIntersection,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
-import type { NextPageContext } from 'next/types';
+import type { NextPageContext } from 'next/types.js';
 import { useMemo } from 'react';
 import type { WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
 import { withTRPC } from './withTRPC';

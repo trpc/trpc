@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 /**
  * Generates hey-api SDK clients from all router files in test/routers/.
  * Used by both vitest globalSetup and the postinstall script.

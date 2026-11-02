@@ -17,7 +17,7 @@ import {
 } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { getErrorShape, run } from '../../unstable-core-do-not-import';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 import type {

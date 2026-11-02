@@ -62,7 +62,7 @@ export const rethrowNextErrors = (error: TRPCError) => {
 
   // Before Next.js 15, we have to check and rethrow the error manually.
   if (isRedirectError(cause) || isNotFoundError(cause)) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     throw cause!;
   }
 };

@@ -61,7 +61,7 @@ export function isAsyncIterable<TValue>(
  */
 export const run = <TValue>(fn: () => TValue): TValue => fn();
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+// oxlint-disable-next-line typescript/no-empty-function
 export function noop(): void {}
 
 export function identity<T>(it: T): T {

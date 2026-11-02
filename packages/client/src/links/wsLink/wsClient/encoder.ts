@@ -1,4 +1,4 @@
-import type { Encoder } from '@trpc/server/adapters/ws';
+import type { Encoder } from '@trpc/server/unstable-core-do-not-import';
 
 export type { Encoder };
 

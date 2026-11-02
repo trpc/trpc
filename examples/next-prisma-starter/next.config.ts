@@ -15,7 +15,7 @@ export default {
   publicRuntimeConfig: {
     NODE_ENV: env.NODE_ENV,
   },
-  /** We run eslint as a separate task in CI */
+  /** Next.js only knows ESLint; we lint with oxlint as a separate task */
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -23,4 +23,5 @@ export default {
   typescript: {
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['@shared/ui'],
 } satisfies NextConfig;

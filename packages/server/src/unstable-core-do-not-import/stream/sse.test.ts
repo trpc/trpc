@@ -9,7 +9,7 @@ import { isTrackedEnvelope, sse, tracked } from './tracked';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 export const suppressLogs = () => {
   const error = console.error;
   const noop = () => {

@@ -68,7 +68,7 @@ function createHttp2ServerResource(
 ) {
   const server = http2.createSecureServer(cert, (req, res) => {
     run(async () => handler(req, res)).catch((err) => {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.error(err);
       res.writeHead(500);
       res.end();

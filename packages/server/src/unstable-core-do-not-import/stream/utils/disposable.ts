@@ -1,9 +1,9 @@
 // @ts-expect-error - polyfilling symbol
-// eslint-disable-next-line no-restricted-syntax
+// oxlint-disable-next-line trpc/no-symbol-dispose
 Symbol.dispose ??= Symbol();
 
 // @ts-expect-error - polyfilling symbol
-// eslint-disable-next-line no-restricted-syntax
+// oxlint-disable-next-line trpc/no-symbol-dispose
 Symbol.asyncDispose ??= Symbol();
 
 /**
@@ -16,10 +16,10 @@ Symbol.asyncDispose ??= Symbol();
 export function makeResource<T>(thing: T, dispose: () => void): T & Disposable {
   const it = thing as T & Partial<Disposable>;
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   const existing = it[Symbol.dispose];
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   it[Symbol.dispose] = () => {
     dispose();
     existing?.call(it);
@@ -41,10 +41,10 @@ export function makeAsyncResource<T>(
 ): T & AsyncDisposable {
   const it = thing as T & Partial<AsyncDisposable>;
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   const existing = it[Symbol.asyncDispose];
 
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   it[Symbol.asyncDispose] = async () => {
     await dispose();
     await existing?.call(it);

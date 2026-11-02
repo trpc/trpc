@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 export const suppressLogs = () => {
   const log = console.log;
   const error = console.error;
@@ -26,7 +26,7 @@ export const suppressLogsUntil = async (fn: () => Promise<void>) => {
   }
 };
 export const ignoreErrors = async (fn: () => unknown) => {
-  /* eslint-enable no-console */
+  /* oxlint-enable no-console */
   const release = suppressLogs();
   try {
     await fn();

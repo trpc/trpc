@@ -1,0 +1,477 @@
+---
+title: "Using Server Actions with tRPC"
+description: "The builder-pattern for creating procedures which was introduced in tRPC v10 has been massively appreciated by the community, and many libraries have adopted similar patterns. There's even been coined a term tRPC like XYZ as evidence of the growing popularity of this pattern. In fact, the other day I saw someone wondering if there was a way to write CLI applications with a similar API to tRPC. Sidenote, you can even use tRPC directly to do this. But that's not what we're here to talk about today, we're going to talk about how to use tRPC with server actions from Next.js."
+date: "2024-05-23"
+authors: [{"image":"https://github.com/juliusmarminge.png","name":"Julius Marminge","title":"tRPC Core Team Member","url":"https://www.jumr.dev/"}]
+discussion: 5737
+---
+
+The builder-pattern for creating procedures which was introduced in tRPC v10 has been massively appreciated by the community, and many libraries have adopted similar patterns.
+There's even been coined a term `tRPC like XYZ` as evidence of the growing popularity of this pattern. In fact, the other day I saw [someone
+wondering if there was a way to write CLI applications with a similar API to tRPC](https://x.com/localhost_5173/status/1793259910723215835).
+Sidenote, you can even use [tRPC directly to do this](https://github.com/mmkal/trpc-cli). But that's not what we're here to talk about today,
+we're going to talk about how to use tRPC with server actions from Next.js.
+
+## What's a server action?
+
+In case you live under a rock and haven't kept up with the latest [React](https://react.dev/reference/rsc/server-actions) and [Next.js](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) features, server actions allows you to write regular functions that are executed on the server, import them on the client and call them just as if they were regular functions.
+You may think that this sounds similar to tRPC which is true. According to [Dan Abramov](https://x.com/dan_abramov2), server actions are tRPC as a bundler feature:
+
+<figure class="tweet">
+<div class="tweet-header"><a class="tweet-author" href="https://twitter.com/dan_abramov2"><img class="tweet-avatar" src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><span class="tweet-author-names"><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></span></a><svg class="tweet-bird" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z" /></svg></div>
+<blockquote class="tweet-text" cite="https://twitter.com/dan_abramov2/status/1756120297529368801">&quot;use client&quot; = Astro as a bundler feature<br />&quot;use server&quot; = tRPC as a bundler feature</blockquote>
+<div class="tweet-meta"><a href="https://twitter.com/dan_abramov2/status/1756120297529368801"><time datetime="2024-02-10T00:58:00.000Z">12:58 AM · Feb 10, 2024</time></a><span aria-hidden="true"> · </span><a class="tweet-archive" href="https://web.archive.org/web/20240526122424/https://react-tweet.vercel.app/api/tweet/1756120297529368801">Archived copy</a></div>
+<div class="tweet-footer"><a href="https://twitter.com/dan_abramov2/status/1756120297529368801">Read more on Twitter</a></div>
+</figure>
+
+And this is totally accurate, server actions are similar to tRPC, at the end of the day they're both [RPCs](https://en.wikipedia.org/wiki/Remote_procedure_call). Both allow you to write functions on the backend and call them with full typesafety on the frontend with the network layer abstracted away.
+
+So where does tRPC come in? Why would I need both tRPC and server actions? Server actions is a primitive, and as for all primitives they're quite barebones and thus lacking some fundamental aspects when it comes to building APIs. For any API endpoint that is exposed over the network, you need to validate and authorize requests to ensure your API is not maliciously used. As previously mentioned, tRPC's API is appreciated by the community, so wouldn't it be nice if we could use tRPC to define server actions and utilize all the awesome features that come built-in with tRPC such as input validation, authentication and authorization through middlewares, output validation, data transformers, etc, etc? I think so, so let's dig in.
+
+## Defining server actions with tRPC
+
+> [!NOTE]
+> **Prerequisites:** In order to use server actions, you need to use the Next.js App Router. Additionally, all the tRPC stuff we'll use are only available on tRPC v11, so make sure you're using the beta release channel of tRPC:
+>
+>
+> ```package-install
+> @trpc/server
+> ```
+
+Let's start off by initializing tRPC and defining our base server actions procedure.
+We'll use the `experimental_caller` method on the procedure builder, which is a new method that allows you to
+customize the way that the procedure is called when it's invoked as a function. We'll also use the adapter `experimental_nextAppDirCaller`
+to make it compatible with Next.js. This adapter will handle cases where the server action is wrapped in `useActionState` on the client,
+which [changes the call signature of the server action](https://react.dev/reference/react/useActionState#my-action-can-no-longer-read-the-submitted-form-data).
+
+We'll also be using a `span` property as [metadata](/docs/server/metadata), since there is no ordinary path like when you use a router (`user.byId` for example). You can use the span property to differentiate procedures, for example during logging or observability.
+
+```ts twoslash title="server/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
+
+interface Meta {
+  span: string;
+}
+
+export const t = initTRPC.meta<Meta>().create();
+
+const serverActionProcedure = t.procedure.experimental_caller(
+  experimental_nextAppDirCaller({
+    pathExtractor: ({ meta }) => (meta as Meta).span,
+  }),
+);
+```
+
+Next, we'll add some [context](/docs/server/context). Since we wont be hosting a router using a regular HTTP adapter, we won't have any context injected through the `createContext`
+method on the adapter. Instead, we'll use a middleware to inject our context. In this example, let's retrieve the current user from the session, and inject it into the context.
+
+```ts twoslash title="server/trpc.ts"
+// @filename: server/auth.ts
+interface User {
+  id: string;
+  name: string;
+}
+export async function currentUser(): Promise<User | null> {
+  return null
+}
+// @filename: server/trpc.ts
+// ---cut---
+import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
+import { currentUser } from './auth';
+
+interface Meta {
+  span: string;
+}
+
+export const t = initTRPC.meta<Meta>().create();
+
+export const serverActionProcedure = t.procedure
+  .experimental_caller(
+    experimental_nextAppDirCaller({
+      pathExtractor: ({ meta }) => (meta as Meta).span,
+    }),
+  )
+  .use(async (opts) => {
+    // Inject user into context
+    const user = await currentUser();
+    return opts.next({ ctx: { user } });
+  });
+```
+
+Lastly, we'll create a `protectedAction` procedure that will protect any action from unauthenticated users. If you have an existing middleware that does this you can use that, but I'll define one in-line for this example.
+
+```ts twoslash title="server/trpc.ts"
+// @filename: server/auth.ts
+interface User {
+  id: string;
+  name: string;
+}
+export async function currentUser(): Promise<User | null> {
+  return null
+}
+// @filename: server/trpc.ts
+// ---cut---
+import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
+import { currentUser } from './auth';
+
+interface Meta {
+  span: string;
+}
+
+export const t = initTRPC.meta<Meta>().create();
+
+export const serverActionProcedure = t.procedure
+  .experimental_caller(
+    experimental_nextAppDirCaller({
+      pathExtractor: ({ meta }) => (meta as Meta).span,
+    }),
+  )
+  .use(async (opts) => {
+    // Inject user into context
+    const user = await currentUser();
+    //    ^?
+    return opts.next({ ctx: { user } });
+  });
+
+export const protectedAction = serverActionProcedure.use((opts) => {
+  if (!opts.ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  return opts.next({
+    ctx: {
+      ...opts.ctx,
+      user: opts.ctx.user, // <-- ensures type is non-nullable
+      //             ^?
+    },
+  });
+});
+```
+
+Alright, let's write an actual server action. Create an `_actions.ts` file, decorate it with the `"use server"` directive, and define your action.
+
+```ts twoslash title="app/_actions.ts"
+// @filename: server/auth.ts
+interface User {
+  id: string;
+  name: string;
+}
+export async function currentUser(): Promise<User | null> {
+  return null
+}
+// @filename: server/trpc.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
+import { currentUser } from './auth';
+
+interface Meta {
+  span: string;
+}
+
+export const t = initTRPC.meta<Meta>().create();
+
+export const serverActionProcedure = t.procedure
+  .experimental_caller(
+    experimental_nextAppDirCaller({
+      pathExtractor: ({ meta }) => (meta as Meta).span,
+    }),
+  )
+  .use(async (opts) => {
+    // Inject user into context
+    const user = await currentUser();
+    return opts.next({ ctx: { user } });
+  });
+
+export const protectedAction = serverActionProcedure.use((opts) => {
+  if (!opts.ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  return opts.next({
+    ctx: {
+      ...opts.ctx,
+      user: opts.ctx.user, // <-- ensures type is non-nullable
+    },
+  });
+});
+// @filename: app/_actions.ts
+// ---cut---
+'use server';
+
+import { z } from 'zod';
+import { protectedAction } from '../server/trpc';
+
+export const createPost = protectedAction
+  .input(
+    z.object({
+      title: z.string(),
+    }),
+  )
+  .mutation(async (opts) => {
+    // Do something with the input
+  });
+
+// Since we're using the `experimental_caller`,
+// our procedure is now just an ordinary function:
+createPost;
+// ^?
+```
+
+Wow, it's that easy to define a server action that's protected from unauthenticated users, with input validation to protect against attacks such as SQL injections. Let's import this function on the client and call it.
+
+```tsx title="app/post-form.tsx"
+'use client';
+
+import { createPost } from './_actions';
+
+export function PostForm() {
+  return (
+    <form
+      // Use `action` to make form progressively enhanced
+      action={createPost}
+      // `Using `onSubmit` allows building rich interactive
+      // forms once JavaScript has loaded
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const title = new FormData(e.currentTarget).get('title') as string;
+        // Maybe show loading toast, etc etc. Endless possibilities
+        await createPost({ title });
+      }}
+    >
+      <input type="text" name="title" />
+      <button type="submit">Create Post</button>
+    </form>
+  );
+}
+```
+
+## Going further
+
+Using tRPC builders and it's composable way of defining reusable procedures, we can easily build more complex server actions. Below are some examples:
+
+### Observability
+
+You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in just a few lines of code:
+
+```diff
+--- server/trpc.ts
++++ server/trpc.ts
++ import { tracing } from '@baselime/node-opentelemetry/trpc';
+
+  export const serverActionProcedure = t.procedure
+    .experimental_caller(
+      experimental_nextAppDirCaller({
+        pathExtractor: (meta: Meta) => meta.span,
+      }),
+    )
+    .use(async (opts) => {
+      // Inject user into context
+      const user = await currentUser();
+      return opts.next({ ctx: { user } });
+    })
++  .use(tracing());
+
+--- app/_actions.ts
++++ app/_actions.ts
+  export const createPost = protectedAction
++   .meta({ span: 'create-post' })
+    .input(
+      z.object({
+        title: z.string(),
+      }),
+    )
+    .mutation(async (opts) => {
+      // Do something with the input
+    });
+```
+
+Checkout [the Baselime tRPC Integration](https://github.com/baselime/node-opentelemetry/blob/main/TRPC.md) for more information. Similar patterns should work for whatever observability playform you're using.
+
+### Rate Limiting
+
+You can use a service such as Unkey to rate limit your server actions. Here's an example of a protected server action that uses Unkey to rate limit the number of requests per user:
+
+```ts twoslash title="server/trpc.ts"
+// @filename: server/auth.ts
+interface User {
+  id: string;
+  name: string;
+}
+export async function currentUser(): Promise<User | null> {
+  return null
+}
+// @filename: server/trpc.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
+import { currentUser } from './auth';
+
+interface Meta {
+  span: string;
+}
+
+export const t = initTRPC.meta<Meta>().create();
+
+export const serverActionProcedure = t.procedure
+  .experimental_caller(
+    experimental_nextAppDirCaller({
+      pathExtractor: ({ meta }) => (meta as Meta).span,
+    }),
+  )
+  .use(async (opts) => {
+    // Inject user into context
+    const user = await currentUser();
+    return opts.next({ ctx: { user } });
+  });
+
+export const protectedAction = serverActionProcedure.use((opts) => {
+  if (!opts.ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  return opts.next({
+    ctx: {
+      ...opts.ctx,
+      user: opts.ctx.user, // <-- ensures type is non-nullable
+    },
+  });
+});
+// ---cut---
+import { Ratelimit } from '@unkey/ratelimit';
+
+export const rateLimitedAction = protectedAction.use(async (opts) => {
+  const unkey = new Ratelimit({
+    rootKey: process.env.UNKEY_ROOT_KEY!,
+    async: true,
+    duration: '10s',
+    limit: 5,
+    namespace: `trpc_${opts.path}`,
+  });
+
+  const ratelimit = await unkey.limit(opts.ctx.user.id);
+  if (!ratelimit.success) {
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: JSON.stringify(ratelimit),
+    });
+  }
+
+  return opts.next();
+});
+```
+
+```ts twoslash title="app/_actions.ts"
+// @filename: server/auth.ts
+interface User {
+  id: string;
+  name: string;
+}
+export async function currentUser(): Promise<User | null> {
+  return null
+}
+// @filename: server/trpc.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
+import { currentUser } from './auth';
+
+interface Meta {
+  span: string;
+}
+
+export const t = initTRPC.meta<Meta>().create();
+
+export const serverActionProcedure = t.procedure
+  .experimental_caller(
+    experimental_nextAppDirCaller({
+      pathExtractor: ({ meta }) => (meta as Meta).span,
+    }),
+  )
+  .use(async (opts) => {
+    // Inject user into context
+    const user = await currentUser();
+    return opts.next({ ctx: { user } });
+  });
+
+export const protectedAction = serverActionProcedure.use((opts) => {
+  if (!opts.ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  return opts.next({
+    ctx: {
+      ...opts.ctx,
+      user: opts.ctx.user, // <-- ensures type is non-nullable
+    },
+  });
+});
+import { Ratelimit } from '@unkey/ratelimit';
+
+export const rateLimitedAction = protectedAction.use(async (opts) => {
+  const unkey = new Ratelimit({
+    rootKey: process.env.UNKEY_ROOT_KEY!,
+    async: true,
+    duration: '10s',
+    limit: 5,
+    namespace: `trpc_${opts.path}`,
+  });
+
+  const ratelimit = await unkey.limit(opts.ctx.user.id);
+  if (!ratelimit.success) {
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: JSON.stringify(ratelimit),
+    });
+  }
+
+  return opts.next();
+});
+// @filename: app/_actions.ts
+// ---cut---
+'use server';
+
+import { z } from 'zod';
+import { rateLimitedAction } from '../server/trpc';
+
+export const commentOnPost = rateLimitedAction
+  .input(
+    z.object({
+      postId: z.string(),
+      content: z.string(),
+    }),
+  )
+  .mutation(async (opts) => {
+    console.log(
+      `${opts.ctx.user.name} commented on ${opts.input.postId} saying ${opts.input.content}`,
+    );
+  });
+```
+
+Read more on rate limiting your tRPC procedures [in this post by the folks over at Unkey](https://www.unkey.com/blog/ratelimit-trpc-routes).
+
+The possibilities are endless, and I bet you already got a ton of nice utility middlewares you're using in your tRPC applications today. If not, you might found some out there you can `npm install`!
+
+## Wrapping up
+
+Server Actions are by no means a silver bullet. In places that requires more dynamic data, you might want to keep your data in the client-side React Query cache, and do mutations using `useMutation` instead. That's totally valid. These new primitives should also be easy to incrementally adopt, so you can move individual procedures over from your existing tRPC API to server actions in places where it makes sense to do so. There's no need to rewrite your entire API.
+
+By defining your server actions using tRPC, you can share a lot of the same logic you're using today and choose where you expose the mutation as a server action or as a more traditional mutation. You as a developer have the power to pick what patterns works best for your application. In case you're not using tRPC today, there are some packages ([next-safe-action](https://github.com/TheEdoRan/next-safe-action) and [zsa](https://github.com/IdoPesok/zsa) comes to mind) that let's you define type-safe, input validated server actions worth checking out as well.
+
+If you wanna see an app using this in action, check out [Trellix tRPC](https://trellix-trpc.vercel.app), an app I made recently utilizing these new primitives.
+
+### What do you think? We want your feedback
+
+So, what do you think? Let us know over at [Github](https://github.com/trpc/trpc/discussions/5737) and help us iterate to get these primitives to a stable state.
+
+There's still some work to be done, especially regarding error handling. Next.js advocates for returning errors, and we'd like to make this as typesafe as possible. Check out [this WIP PR by Alex](https://github.com/trpc/trpc/pull/5554) for some early work on this.
+
+Until next time, happy coding!

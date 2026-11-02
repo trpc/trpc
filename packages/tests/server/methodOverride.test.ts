@@ -136,3 +136,37 @@ test('cannot use method overriding with mutations', async () => {
     `[TRPCClientError: Unsupported GET-request to mutation procedure at path "m"]`,
   );
 });
+
+test('server: 405 lists the methods the procedure accepts', async () => {
+  await using t = await startServer({
+    linkOptions: {},
+    allowMethodOverride: false,
+  });
+
+  const query = await fetch(`${t.httpUrl}/q`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  expect(query.status).toBe(405);
+  expect(query.headers.get('allow')).toBe('GET');
+
+  const mutation = await fetch(`${t.httpUrl}/m?input=${JSON.stringify({})}`);
+  expect(mutation.status).toBe(405);
+  expect(mutation.headers.get('allow')).toBe('POST');
+});
+
+test('server: 405 lists POST for queries when methodOverride is allowed', async () => {
+  await using t = await startServer({
+    linkOptions: {},
+    allowMethodOverride: true,
+  });
+
+  const res = await fetch(`${t.httpUrl}/q`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  expect(res.status).toBe(405);
+  expect(res.headers.get('allow')).toBe('GET, POST');
+});

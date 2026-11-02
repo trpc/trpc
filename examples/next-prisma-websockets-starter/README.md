@@ -10,7 +10,7 @@ Try demo http://websockets.trpc.io/
 - ⚡ Database with Prisma
 - 🔐 Authorization using [next-auth](https://next-auth.js.org/)
 - ⚙️ VSCode extensions
-- 🎨 ESLint + Prettier
+- 🎨 Oxlint + Oxfmt
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
@@ -18,7 +18,7 @@ Try demo http://websockets.trpc.io/
 ## Setup
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-websockets-starter trpc-prisma-websockets-starter
 cd trpc-prisma-websockets-starter
 pnpm i
 pnpm dx

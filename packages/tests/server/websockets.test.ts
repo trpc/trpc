@@ -1515,7 +1515,7 @@ describe('keep alive on the server', () => {
 
     wss.on('connection', (ws) => {
       ws.on('message', (raw) => {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // oxlint-disable-next-line typescript/no-base-to-string
         if (raw.toString() === 'PONG') {
           onPong();
         }

@@ -330,7 +330,7 @@ describe('experimental_encoder', () => {
       // Set up PONG listener
       const onPong = vi.fn();
       serverWs.on('message', (raw) => {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // oxlint-disable-next-line typescript/no-base-to-string
         if (raw.toString() === 'PONG') {
           onPong();
         }

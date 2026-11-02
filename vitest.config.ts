@@ -5,7 +5,7 @@ export default mergeConfig(
   shared,
   defineConfig({
     test: {
-      projects: ['./packages/*'],
+      projects: ['./packages/*', './tooling/*'],
     },
   }),
 );

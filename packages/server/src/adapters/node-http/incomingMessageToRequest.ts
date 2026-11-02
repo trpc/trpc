@@ -103,7 +103,7 @@ export function createURL(req: NodeHTTPRequest): URL {
 
     const host = req.headers.host ?? req.headers[':authority'] ?? 'localhost';
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     return new URL(req.url!, `${protocol}//${host}`);
   } catch (cause) {
     throw new TRPCError({

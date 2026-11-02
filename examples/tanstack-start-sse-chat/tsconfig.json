@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    /* Base Options: */
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+
+    /* Strictness */
+    "strict": true,
+    "checkJs": true,
+    "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true,
+
+    /* Bundled projects */
+    "lib": ["dom", "dom.iterable", "ES2023"],
+    "noEmit": true,
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
+
+    /* Path aliases */
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "*.ts", "*.js"],
+  "exclude": ["node_modules"]
+}

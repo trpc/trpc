@@ -2,7 +2,7 @@
   "name": "@trpc/server",
   "type": "module",
   "sideEffects": false,
-  "version": "11.22.0",
+  "version": "11.22.1",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -17,9 +17,10 @@
   },
   "scripts": {
     "build": "tsdown",
+    "prepack": "node ../../www/build/skills.ts --package .",
     "dev": "tsdown --watch",
     "benchmark": "tsc --project tsconfig.benchmark.json",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
@@ -188,9 +189,7 @@
     "unstable-core-do-not-import",
     "!**/*.test.*",
     "!**/__tests__",
-    "skills",
-    "!skills/_artifacts",
-    "bin"
+    "skills"
   ],
   "publishConfig": {
     "access": "public"
@@ -198,8 +197,8 @@
   "devDependencies": {
     "@fastify/websocket": "catalog:",
     "@oxc-project/runtime": "0.152.0",
-    "@tanstack/intent": "^0.0.27",
-    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/intent": "0.5.6",
+    "@tanstack/react-query": "^5.105.0",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",
@@ -208,13 +207,14 @@
     "@types/react-dom": "^19.1.1",
     "@types/ws": "^8.2.0",
     "devalue": "catalog:",
-    "eslint": "catalog:",
     "express": "^5.0.0",
     "fastify": "catalog:",
     "fastify-plugin": "catalog:",
     "hash-sum": "^2.0.0",
     "myzod": "^1.3.1",
     "next": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
@@ -230,12 +230,31 @@
     "https://trpc.io/sponsor"
   ],
   "peerDependencies": {
+    "@types/aws-lambda": "*",
+    "@types/express": "*",
+    "@types/ws": "*",
+    "fastify": "*",
+    "next": "*",
     "typescript": ">=5.7.2"
+  },
+  "peerDependenciesMeta": {
+    "@types/aws-lambda": {
+      "optional": true
+    },
+    "@types/express": {
+      "optional": true
+    },
+    "@types/ws": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
   },
   "keywords": [
     "tanstack-intent"
-  ],
-  "bin": {
-    "intent": "./bin/intent.js"
-  }
+  ]
 }
