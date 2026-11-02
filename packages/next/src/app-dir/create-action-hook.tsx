@@ -81,9 +81,6 @@ interface UseTRPCActionLoadingResult<
 /**
  * The result of a hook from {@link experimental_createActionHook}. Check
  * `status` to narrow it.
- *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
 // ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
@@ -99,8 +96,6 @@ type ActionContext = {
 /**
  * A terminating link that calls a server action.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
  * @see https://trpc.io/docs/client/nextjs/server-actions
  */
 // ts-prune-ignore-next
@@ -163,8 +158,6 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
  * Creates a React hook that calls a server action made with
  * `experimental_createServerActionHandler`.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
  * @see https://trpc.io/docs/client/nextjs/server-actions
  */
 // ts-prune-ignore-next

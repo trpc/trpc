@@ -40,9 +40,6 @@ export type { ActionHandlerDef };
 /**
  * Creates a tRPC client for React Server Components, with a `revalidate`
  * helper on each procedure.
- *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -88,8 +85,6 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 /**
  * Turns procedures into Next.js server actions.
  *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
  * @see https://trpc.io/docs/client/nextjs/server-actions
  */
 export function experimental_createServerActionHandler<
@@ -211,9 +206,6 @@ export function experimental_createServerActionHandler<
 
 /**
  * A route handler that revalidates a cache tag sent in the request body.
- *
- * @deprecated Deprecated in favor of `@trpc/tanstack-react-query`.
- * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */
 // ts-prune-ignore-next
 export async function experimental_revalidateEndpoint(req: Request) {
