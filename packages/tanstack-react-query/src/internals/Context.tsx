@@ -24,17 +24,39 @@ type TRPCProviderType<
   } & KeyPrefixOptions<TFeatureFlags>
 >;
 
+/**
+ * What {@link createTRPCContext} returns.
+ */
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
+  /**
+   * Provides the tRPC client and `QueryClient` to `useTRPC` and
+   * `useTRPCClient`.
+   */
   TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags>;
+  /**
+   * Returns the options proxy for your router.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage
+   */
   useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
+  /**
+   * Returns the tRPC client, for calling procedures directly.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#useTRPCClient
+   */
   useTRPCClient: () => TRPCClient<TRouter>;
 }
 
 /**
- * Create a set of type-safe provider-consumers
+ * Creates a `TRPCProvider` and the `useTRPC` and `useTRPCClient` hooks for
+ * your router.
+ *
+ * @example
+ * ```ts
+ * export const { TRPCProvider, useTRPC, useTRPCClient } =
+ *   createTRPCContext<AppRouter>();
+ * ```
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
  */

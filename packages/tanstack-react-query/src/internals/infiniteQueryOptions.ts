@@ -175,6 +175,10 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * The `infiniteQueryOptions` helper on a query procedure. Returns options for `useInfiniteQuery`, `prefetchInfiniteQuery` and so on.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ */
 export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,

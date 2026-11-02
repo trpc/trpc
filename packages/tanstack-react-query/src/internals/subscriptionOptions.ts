@@ -56,6 +56,10 @@ interface TRPCSubscriptionOptionsOut<
   ) => Unsubscribable;
 }
 
+/**
+ * The `subscriptionOptions` helper on a subscription procedure. Returns options for {@link useSubscription}.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ */
 export interface TRPCSubscriptionOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -83,15 +87,30 @@ export interface TRPCSubscriptionOptions<
     TFeatureFlags
   >;
 }
+/**
+ * The status of a subscription.
+ */
 export type TRPCSubscriptionStatus =
   | 'idle'
   | 'connecting'
   | 'pending'
   | 'error';
 
+/**
+ * Fields shared by every {@link useSubscription} result.
+ */
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
+  /**
+   * Where the subscription is in its lifecycle.
+   */
   status: TRPCSubscriptionStatus;
+  /**
+   * The last data received.
+   */
   data: undefined | TOutput;
+  /**
+   * The last error, if any.
+   */
   error: null | TError;
   /**
    * Reset the subscription
@@ -99,6 +118,9 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   reset: () => void;
 }
 
+/**
+ * Result while the subscription is not running.
+ */
 export interface TRPCSubscriptionIdleResult<
   TOutput,
 > extends TRPCSubscriptionBaseResult<TOutput, null> {
@@ -107,6 +129,9 @@ export interface TRPCSubscriptionIdleResult<
   error: null;
 }
 
+/**
+ * Result while connecting or reconnecting.
+ */
 export interface TRPCSubscriptionConnectingResult<
   TOutput,
   TError,
@@ -116,6 +141,9 @@ export interface TRPCSubscriptionConnectingResult<
   error: TError | null;
 }
 
+/**
+ * Result while connected and waiting for data.
+ */
 export interface TRPCSubscriptionPendingResult<
   TOutput,
 > extends TRPCSubscriptionBaseResult<TOutput, undefined> {
@@ -124,6 +152,9 @@ export interface TRPCSubscriptionPendingResult<
   error: null;
 }
 
+/**
+ * Result after an error that stopped the subscription.
+ */
 export interface TRPCSubscriptionErrorResult<
   TOutput,
   TError,
@@ -133,6 +164,9 @@ export interface TRPCSubscriptionErrorResult<
   error: TError;
 }
 
+/**
+ * The result of {@link useSubscription}. Check `status` to narrow it.
+ */
 export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
   | TRPCSubscriptionConnectingResult<TOutput, TError>
@@ -184,6 +218,19 @@ export const trpcSubscriptionOptions = <
   };
 };
 
+/**
+ * Runs a subscription while the component is mounted.
+ *
+ * @example
+ * ```ts
+ * const trpc = useTRPC();
+ * const sub = useSubscription(
+ *   trpc.chat.onMessage.subscriptionOptions({ roomId }),
+ * );
+ * ```
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ */
 export function useSubscription<TOutput, TError>(
   opts: TRPCSubscriptionOptionsOut<TOutput, TError, any>,
 ): TRPCSubscriptionResult<TOutput, TError> {
