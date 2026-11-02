@@ -70,6 +70,8 @@ catalog:
   next: ^15.5.25
   '@lerna-lite/cli': ^5.6.4
   '@lerna-lite/publish': ^5.6.4
+  '@effect/platform-node': 4.1.1
+  effect: 4.1.1
 
 catalogs:
   ts-api:

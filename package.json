@@ -44,6 +44,7 @@
   "dependencies": {
     "@actions/core": "^3.0.0",
     "@actions/github": "^9.0.0",
+    "@effect/platform-node": "catalog:",
     "@lerna-lite/cli": "catalog:",
     "@lerna-lite/publish": "catalog:",
     "@manypkg/cli": "^0.22.0",
@@ -57,6 +58,7 @@
     "@vitest/coverage-istanbul": "catalog:",
     "@vitest/ui": "catalog:",
     "concurrently": "^9.0.0",
+    "effect": "catalog:",
     "event-source-polyfill": "^1.0.31",
     "express": "^5.0.0",
     "fast-glob": "^3.2.12",
