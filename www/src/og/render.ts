@@ -10,7 +10,7 @@ import { initWasm, Resvg } from '@resvg/resvg-wasm';
 import resvgWasm from '@resvg/resvg-wasm/index_bg.wasm?inline';
 import satori, { type Font } from 'satori';
 
-import wordmarkSvg from '../../public/img/logo-text-white.svg?raw';
+import wordmarkSvg from '../../public/img/logo-text-black.svg?raw';
 import { ogImageSize } from '../seo.ts';
 import {
   type Assets,

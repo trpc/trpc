@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
 import { describe, expect, it } from 'vitest';
 
 import { ogImagePath } from '../seo.ts';
 import {
+  colors,
   displayUrl,
   docDescription,
   docTitle,
@@ -115,5 +119,29 @@ describe('initials', () => {
     expect(initials('Alex / KATT 🐱')).toBe('AK');
     expect(initials('Julius Marminge')).toBe('JM');
     expect(initials('sachinraja')).toBe('S');
+  });
+});
+
+describe('colors', () => {
+  const tokens: Record<keyof typeof colors, string> = {
+    background: '--background',
+    border: '--border',
+    brand: '--brand',
+    foreground: '--foreground',
+    link: '--brand-dark',
+    mutedForeground: '--muted-foreground',
+  };
+
+  it("are the site's light theme", () => {
+    const theme = readFileSync(
+      createRequire(import.meta.url).resolve('@shared/ui/theme.css'),
+      'utf8',
+    );
+    for (const [key, token] of Object.entries(tokens)) {
+      const light = new RegExp(
+        `${token}:\\s*(?:light-dark\\(\\s*)?(#[0-9a-f]{6})`,
+      ).exec(theme)?.[1];
+      expect(light, token).toBe(colors[key as keyof typeof colors]);
+    }
   });
 });
