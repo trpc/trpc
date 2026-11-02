@@ -535,20 +535,12 @@ export function createTRPCOptionsProxy<
 
       unstable_$fromHandle: () => {
         const handle = readHandle(arg1, prefix);
-        const initialData =
-          'data' in arg1
-            ? {
-                initialData: arg1.data,
-                initialDataUpdatedAt: arg1.dataUpdatedAt,
-              }
-            : undefined;
         const options =
           handle.type === 'infinite'
             ? trpcInfiniteQueryOptions({
                 input: handle.input,
                 opts: {
                   initialCursor: arg1.initialCursor,
-                  ...initialData,
                   ...arg2,
                 },
                 path: handle.path,
@@ -558,7 +550,7 @@ export function createTRPCOptionsProxy<
               })
             : trpcQueryOptions({
                 input: handle.input,
-                opts: { ...initialData, ...arg2 },
+                opts: arg2,
                 path: handle.path,
                 queryClient: opts.queryClient,
                 queryKey: handle.queryKey,
