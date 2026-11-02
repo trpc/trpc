@@ -77,14 +77,16 @@ export async function fetchStats(
  */
 const imagesOf = (
   card: OgCard,
-  { backers, partners }: CardFooter,
+  footer: CardFooter,
 ): ReadonlyArray<string> => {
-  const footer = [...partners, ...backers].map((sponsor) => sponsor.image);
+  const images = [...footer.partners, ...footer.backers].map(
+    (sponsor) => sponsor.image,
+  );
   switch (card.kind) {
     case 'post':
       return [
         ...card.authors.flatMap((author) => author.image ?? []),
-        ...footer,
+        ...images,
       ];
     case 'sponsor':
       return [...card.partners, ...card.backers].map(
@@ -92,7 +94,7 @@ const imagesOf = (
       );
     case 'doc':
     case 'home':
-      return footer;
+      return images;
   }
 };
 
