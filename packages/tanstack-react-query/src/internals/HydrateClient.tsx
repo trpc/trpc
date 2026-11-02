@@ -4,7 +4,9 @@ import * as React from 'react';
 import { dehydrateUnsent } from './hydration';
 import { unwrapLazyArg } from './utils';
 
+/** The props of the component `unstable_createHydrateClient` returns. */
 export interface unstable_HydrateClientProps {
+  /** Rendered inside the hydration boundary. */
   children?: React.ReactNode;
 }
 
