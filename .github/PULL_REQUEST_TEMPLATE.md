@@ -27,6 +27,7 @@ Where a reviewer can see this change: the docs pages it touches, and the example
   - Docs (trpc.io) is project `www`. A page lives at `/docs/<path>`, where `<path>` is its file under `www/docs/` without `.md`: `www/docs/client/links/httpBatchLink.md` is `/docs/client/links/httpBatchLink`.
   - The Next.js App Router example is `trpc-next-app-dir` (`examples/.experimental/next-app-dir`). Routes look like `/posts`, `/posts/<id>` and `/server-action`.
   - The Next.js Pages Router example is `next-prisma-starter` (`examples/next-prisma-starter`). Routes look like `/` and `/post/<id>`.
+  - The minimal Next.js starter is `examples-next-minimal-starter` (`examples/next-minimal-starter`). It has one route, `/`.
   - The WebSockets example is `next-prisma-websockets-starter` (`examples/next-prisma-websockets-starter`).
   - The TanStack Start SSE chat example is `tanstack-start-sse-chat` (`examples/tanstack-start-sse-chat`).
   - The TodoMVC example is `examples-todomvc` (`examples/next-prisma-todomvc`). Routes are `/all`, `/active` and `/completed`.
