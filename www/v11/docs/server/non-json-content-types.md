@@ -50,19 +50,6 @@ export const appRouter = t.router({
 
 In addition to JSON, tRPC can use FormData, File, and other binary types as procedure inputs.
 
-### Link Compatibility
-
-Not every client link supports every content type — batching requires a single JSON request body, so only `httpLink` can send `FormData` or binary input directly:
-
-| Link                                                            | `application/json` |     `FormData`      | `File` / `Blob` / `Uint8Array` |
-| --------------------------------------------------------------- | :----------------: | :-----------------: | :----------------------------: |
-| [`httpLink`](/docs/client/links/httpLink)                       |         ✅         | ✅ (mutations only) |      ✅ (mutations only)       |
-| [`httpBatchLink`](/docs/client/links/httpBatchLink)             |         ✅         |         ❌          |               ❌               |
-| [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink) |         ✅         |         ❌          |               ❌               |
-| [`wsLink`](/docs/server/websockets)                             |         ✅         |         ❌          |               ❌               |
-
-If you use `httpBatchLink` or `httpBatchStreamLink` alongside non-JSON inputs, route those calls to `httpLink` with `splitLink` as shown below.
-
 ### Client Setup
 
 :::info
@@ -300,7 +287,14 @@ await client.upload.mutate(file);
 
 ## Common mistakes
 
-- **Using a query.** FormData and binary inputs are sent as the body of a `POST` request, so they only work with mutations: `httpLink` throws `FormData is only supported for mutations` for a query.
-- **Sending them through a batching link.** `httpBatchLink`, `httpBatchStreamLink` and `wsLink` serialize inputs as JSON, which turns a `FormData` or `File` into `{}`, so input validation fails. Route them to `httpLink` with a [`splitLink`](#client-setup).
+- **Using a query.** FormData and binary inputs are sent as the body of a `POST` request, so they only work with mutations: `httpLink` throws `FormData is only supported for mutations` for a query. The exception is an `httpLink` with `methodOverride: 'POST'`, which sends every call as a `POST` and so also sends FormData and binary inputs for queries; the server must [allow the method override](/docs/rpc#overriding-the-default-http-method).
+- **Sending them through a batching link.** `httpBatchLink`, `httpBatchStreamLink` and `wsLink` serialize inputs as JSON, which turns a `FormData` or `File` into `{}`, so input validation fails. Route them to `httpLink` with a [`splitLink`](#client-setup). Only `httpLink` sends non-JSON inputs:
+
+  | Link                                                            | `application/json` | `FormData`  | `File` / `Blob` / `Uint8Array` |
+  | --------------------------------------------------------------- | :----------------: | :---------: | :----------------------------: |
+  | [`httpLink`](/docs/client/links/httpLink)                       |         ✅         | ✅ (`POST`) |          ✅ (`POST`)           |
+  | [`httpBatchLink`](/docs/client/links/httpBatchLink)             |         ✅         |     ❌      |               ❌               |
+  | [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink) |         ✅         |     ❌      |               ❌               |
+  | [`wsLink`](/docs/server/websockets)                             |         ✅         |     ❌      |               ❌               |
 - **Transforming the request.** tRPC passes FormData and binary inputs to your procedure as they are, without your `transformer`. If you use one, give the non-JSON `httpLink` a transformer that leaves the request alone, as [shown above](#client-setup).
 - **Letting your server parse the body first.** See [Server Setup](#server-setup).
