@@ -65,6 +65,9 @@ overrides:
   vitest@*: 5.0.3
   # vendor-src's `effect` is 4.0; platform-node-shared 4.1 needs effect 4.1.
   '@effect/platform-node@4.0.1>@effect/platform-node-shared': 4.0.2
+  # tsdown 0.23's rolldown-plugin-dts (0.28) only takes TypeScript 7.0 for 7;
+  # 0.29 emits v11's declarations with 7.1.
+  'tsdown>rolldown-plugin-dts': 0.29.0
 
 peerDependencyRules:
   allowedVersions:
@@ -93,7 +96,7 @@ allowBuilds:
 catalog:
   '@types/node': ^24.13.4
   tsdown: 0.23.0
-  typescript: ^7.0.2
+  typescript: 7.1.0-beta
   oxlint: ^1.90.0
   oxlint-tsgolint: ^7.0.2005
   '@oxlint/plugins': ^1.90.0
