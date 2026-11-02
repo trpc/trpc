@@ -156,12 +156,7 @@ const check = Effect.fn('check')(function* (
         }),
     ),
   );
-  const dirty = yield* git(root, 'status', '--porcelain');
-  if (dirty !== '') {
-    return yield* new CheckError({
-      message: `pnpm install changed files:\n${dirty}`,
-    });
-  }
+  yield* ensureUnchanged(root, 'pnpm install');
 
   yield* run(root, 'pnpm', ['typecheck-packages']).pipe(
     Effect.mapError(
@@ -171,6 +166,20 @@ const check = Effect.fn('check')(function* (
         }),
     ),
   );
+  // lerna builds and packs the working tree, which must still be the commit.
+  yield* ensureUnchanged(root, 'pnpm typecheck-packages');
+});
+
+const ensureUnchanged = Effect.fn('ensureUnchanged')(function* (
+  root: string,
+  step: string,
+) {
+  const dirty = yield* git(root, 'status', '--porcelain');
+  if (dirty !== '') {
+    return yield* new CheckError({
+      message: `The working tree changed during ${step}:\n${dirty}`,
+    });
+  }
 });
 
 /**
@@ -189,7 +198,11 @@ const undoRelease = Effect.fn('undoRelease')(function* (
     yield* git(root, 'tag', '--delete', tag);
   }
   if (startDirty === '') {
-    yield* git(root, 'reset', '--quiet', '--hard', 'HEAD^');
+    // `--keep` keeps edits made during the checks, and refuses if they touch
+    // the release commit's files; `--mixed` keeps those as they are.
+    yield* git(root, 'reset', '--quiet', '--keep', 'HEAD^').pipe(
+      Effect.catch(() => git(root, 'reset', '--quiet', '--mixed', 'HEAD^')),
+    );
   } else {
     yield* git(root, 'reset', '--quiet', '--mixed', 'HEAD^');
     yield* git(root, 'checkout', 'HEAD', '--', ...changed);
