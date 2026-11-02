@@ -420,7 +420,7 @@ Each framework passes the handle down its own way: see [your framework](#in-your
 
 ## How handles work
 
-A handle is the query's key and input: `{ queryKey, input }`. If you waited for the query, it carries the data too. It's plain data, so it crosses from a server component to a client component, or from a loader to a route component, like any other prop.
+A handle is the query's key and input: `{ queryKey, input }`. The data stays in the cache. A handle is a plain object, so it crosses from a server component to a client component, or from a loader to a route component, like any other prop.
 
 ```demo loader-handles
 route loader
@@ -516,7 +516,7 @@ post.input;
 There are three ways to start a query, and you choose for each query on the page:
 
 - `trpc.x.unstable_$prefetch(input)` **doesn't wait**. It returns a handle at once, the page renders, and the data streams in behind a `Suspense` boundary. It never throws: if the request fails, the component that reads the handle gets the error.
-- `await trpc.x.unstable_$ensure(input)` **waits** until the cache has data. The component renders with no `Suspense` boundary, and you handle errors where you started the query, for example with `notFound()`. The handle carries the data, so the loader can read it, and `useQuery` has it from the first render, with `data` typed as defined.
+- `await trpc.x.unstable_$ensure(input)` **waits** until the cache has data. A component that reads the handle with `useSuspenseQuery` renders at once, with no `Suspense` boundary, and `data` is typed as defined. You handle errors where you started the query, for example with `notFound()`.
 - `await trpc.x.unstable_$fetch(input)` waits too, and refetches stale data first, for code that needs fresh data.
 
 Procedures with a `cursor` input also get `unstable_$prefetchInfinite`, `unstable_$ensureInfinite` and `unstable_$fetchInfinite`.
@@ -604,13 +604,9 @@ async function load(id: string) {
   });
   // 2. Then wait for the one you need
   const post = await trpc.post.byId.unstable_$ensure({ id });
-  console.log(post.data.title);
-  //                 ^?
   return { post, comments };
 }
 ```
-
-With server rendering, a waited-for handle's data reaches the browser twice: in the hydrated cache, and in the handle. That's cheap for a post, but for a big list the loader doesn't read, `unstable_$prefetch` sends it once. The [docs](/docs/client/tanstack-react-query/handles#handles-with-data-size) have numbers.
 
 ## Keep it waterfall-free
 
