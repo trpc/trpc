@@ -21,29 +21,57 @@ import type {
 import { TRPCClientError } from '../TRPCClientError';
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
+/** The options of a call made with the untyped client. */
 export interface TRPCRequestOptions {
   /**
-   * Pass additional context to links
+   * Context for the links, such as a flag a `splitLink` reads.
+   * @see https://trpc.io/docs/client/links#managing-context
    */
   context?: OperationContext;
+  /**
+   * Aborts the call. With `httpBatchLink`, the request is only aborted once
+   * every call in its batch is, so an aborted call can still get a result.
+   */
   signal?: AbortSignal;
 }
 
+/** The callbacks a subscription takes on the client. */
 export interface TRPCSubscriptionObserver<TValue, TError> {
+  /** Called when the link sends a `started` result. */
   onStarted: (opts: { context: OperationContext | undefined }) => void;
+  /** Called with each event. */
   onData: (value: inferAsyncIterableYield<TValue>) => void;
+  /** Called when the subscription ends with an error. */
   onError: (err: TError) => void;
+  /**
+   * Called when the link sends a `stopped` result. Not every link sends
+   * one; `localLink` doesn't.
+   */
   onStopped: () => void;
+  /** Called when the subscription's observable completes, for any reason. */
   onComplete: () => void;
+  /** Called when the connection connects, drops or reconnects. */
   onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
 }
 
-/** @internal */
+/**
+ * The options of `createTRPCClient`.
+ * @internal
+ */
 export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
+  /**
+   * The links each call goes through, in order. The last one must send
+   * the call, such as `httpBatchLink`.
+   * @see https://trpc.io/docs/client/links
+   */
   links: TRPCLink<TRouter>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
 
+/**
+ * A client that calls procedures by path string, without types.
+ * `createTRPCClient` wraps one.
+ */
 export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
   private readonly links: OperationLink<TInferrable>[];
   public readonly runtime: TRPCClientRuntime;
@@ -94,6 +122,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       throw TRPCClientError.from(err as Error);
     }
   }
+  /** Calls a query. */
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
       type: 'query',
@@ -103,6 +132,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
+  /** Calls a mutation. */
   public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
       type: 'mutation',
@@ -112,6 +142,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
+  /** Starts a subscription. Returns what stops it. */
   public subscription(
     path: string,
     input: unknown,

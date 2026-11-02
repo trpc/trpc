@@ -3,11 +3,23 @@ import type { NonEmptyArray } from '../internals/types';
 import type { HTTPLinkBaseOptions } from './internals/httpUtils';
 import type { HTTPHeaders, Operation } from './types';
 
+/**
+ * The options of `httpBatchLink`.
+ * @see https://trpc.io/docs/client/links/httpBatchLink#options
+ */
 export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
+    /**
+     * The longest URL a batched GET request can have. Calls that would
+     * make it longer go in another batch. A call too long on its own
+     * fails.
+     * @see https://trpc.io/docs/client/links/httpBatchLink#setting-a-maximum-url-length
+     * @default Infinity
+     */
     maxURLLength?: number;
     /**
-     * Headers to be set on outgoing requests or a callback that of said headers
+     * Headers for each request: an object, or a function of the batch's
+     * operations that returns them.
      * @see https://trpc.io/docs/client/headers
      */
     headers?:
@@ -17,7 +29,9 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
         }) => HTTPHeaders | Promise<HTTPHeaders>);
 
     /**
-     * Maximum number of calls in a single batch request
+     * The most calls one batch can have. Set it to the server's
+     * `maxBatchSize` or lower.
+     * @see https://trpc.io/docs/client/links/httpBatchLink#limiting-batch-size
      * @default Infinity
      */
     maxItems?: number;

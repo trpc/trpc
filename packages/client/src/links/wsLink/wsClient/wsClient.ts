@@ -244,6 +244,9 @@ export class WsClient {
     });
   }
 
+  /**
+   * The current WebSocket and its state, or `null` when there is no socket.
+   */
   public get connection() {
     return backwardCompatibility(this.activeConnection);
   }

@@ -91,12 +91,20 @@ export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
 type ClientContext = Record<string, unknown>;
 
 /**
+ * The options of a call made with the client, such as
+ * `client.post.byId.query(input, opts)`.
  * @public
  */
 export interface TRPCProcedureOptions {
   /**
-   * Client-side context
+   * Context for the links, such as a flag a `splitLink` reads.
+   * @see https://trpc.io/docs/client/links#managing-context
    */
   context?: ClientContext;
+  /**
+   * Aborts the call. With `httpBatchLink`, the request is only aborted once
+   * every call in its batch is, so an aborted call can still get a result.
+   * @see https://trpc.io/docs/client/vanilla/aborting-procedure-calls
+   */
   signal?: AbortSignal;
 }

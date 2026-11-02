@@ -16,6 +16,9 @@ import {
 import type { Operation, TRPCLink } from './types';
 
 /**
+ * A terminating link that batches calls made in the same tick into one HTTP
+ * request.
+ *
  * @see https://trpc.io/docs/client/links/httpBatchLink
  */
 export function httpBatchLink<TRouter extends AnyRouter>(

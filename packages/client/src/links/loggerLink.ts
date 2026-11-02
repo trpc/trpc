@@ -58,11 +58,24 @@ type LoggerLinkFn<TRouter extends AnyRouter> = (
 
 type ColorMode = 'ansi' | 'css' | 'none';
 
+/**
+ * Options for {@link loggerLink}.
+ *
+ * @see https://trpc.io/docs/client/links/loggerLink#loggerlink-options
+ */
 export interface LoggerLinkOptions<TRouter extends AnyRouter> {
+  /**
+   * Replaces the built-in logger. Called when a call starts and for each
+   * result or error, so a subscription calls it for every event.
+   */
   logger?: LoggerLinkFn<TRouter>;
+  /**
+   * Decides whether to log a call.
+   * @default () => true
+   */
   enabled?: EnabledFn<TRouter>;
   /**
-   * Used in the built-in defaultLogger
+   * The console the built-in logger writes to.
    */
   console?: ConsoleEsque;
   /**
@@ -209,6 +222,9 @@ const defaultLogger =
   };
 
 /**
+ * Logs each call when it starts, and each result or error it gets with the
+ * time since the start.
+ *
  * @see https://trpc.io/docs/client/links/loggerLink
  */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
