@@ -66,10 +66,16 @@ const lines = (text: string) => text.split('\n').filter((line) => line !== '');
 const versionFile = (file: string) =>
   file === 'lerna.json' || /^packages\/[^/]+\/package\.json$/.test(file);
 
-const check = Effect.fn('check')(function* (root: string) {
-  const changed = lines(
-    yield* git(root, 'diff', '--name-only', 'HEAD^', 'HEAD'),
-  );
+const check = Effect.fn('check')(function* (
+  root: string,
+  changed: ReadonlyArray<string>,
+  startDirty: string,
+) {
+  if (startDirty !== '') {
+    return yield* new CheckError({
+      message: `The working tree has changes outside the release commit, so the checks wouldn't test what gets pushed. Commit or stash them, then release again:\n${startDirty}`,
+    });
+  }
   if (changed.includes('pnpm-lock.yaml')) {
     return yield* new CheckError({
       message:
@@ -115,15 +121,25 @@ const check = Effect.fn('check')(function* (root: string) {
 
 /**
  * Drops the release commit and its tag, so a later `lerna publish` can't
- * push them with `--follow-tags`. lerna only commits from a clean tree, so
- * the reset loses nothing but the version bump.
+ * push them with `--follow-tags`. With `--force-publish` lerna doesn't
+ * require a clean tree, so other changes the tree started with are kept:
+ * only the release commit's files go back to how they were.
  */
-const undoRelease = Effect.fn('undoRelease')(function* (root: string) {
+const undoRelease = Effect.fn('undoRelease')(function* (
+  root: string,
+  changed: ReadonlyArray<string>,
+  startDirty: string,
+) {
   const tags = lines(yield* git(root, 'tag', '--points-at', 'HEAD'));
   for (const tag of tags) {
     yield* git(root, 'tag', '--delete', tag);
   }
-  yield* git(root, 'reset', '--quiet', '--hard', 'HEAD^');
+  if (startDirty === '') {
+    yield* git(root, 'reset', '--quiet', '--hard', 'HEAD^');
+  } else {
+    yield* git(root, 'reset', '--quiet', '--mixed', 'HEAD^');
+    yield* git(root, 'checkout', 'HEAD', '--', ...changed);
+  }
   yield* Console.error(
     `Nothing was pushed or published. Removed the release commit and its tag (${tags.join(', ')}).`,
   );
@@ -132,5 +148,11 @@ const undoRelease = Effect.fn('undoRelease')(function* (root: string) {
 Effect.gen(function* () {
   const path = yield* Path.Path;
   const root = path.join(import.meta.dirname, '..');
-  yield* check(root).pipe(Effect.tapError(() => undoRelease(root)));
+  const changed = lines(
+    yield* git(root, 'diff', '--name-only', 'HEAD^', 'HEAD'),
+  );
+  const startDirty = yield* git(root, 'status', '--porcelain');
+  yield* check(root, changed, startDirty).pipe(
+    Effect.tapError(() => undoRelease(root, changed, startDirty)),
+  );
 }).pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);
