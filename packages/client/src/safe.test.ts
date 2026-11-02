@@ -5,7 +5,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { createTRPCClient } from './createTRPCClient';
-import { experimental_localLink as localLink } from './links/localLink';
+import { localLink } from './links/localLink';
 import { safe } from './safe';
 import { TRPCClientError } from './TRPCClientError';
 
