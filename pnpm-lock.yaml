@@ -316,8 +316,8 @@ catalogs:
       specifier: 5.2.1
       version: 5.2.1
     fastify:
-      specifier: 5.12.4
-      version: 5.12.4
+      specifier: 5.12.7
+      version: 5.12.7
     react:
       specifier: 19.3.0
       version: 19.3.0
@@ -5186,9 +5186,12 @@ importers:
       '@tanstack/db':
         specifier: 0.15.0
         version: 0.15.0(typescript@7.1.0-beta)
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
       '@tanstack/query-db-collection':
         specifier: 1.4.5
-        version: 1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)
+        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.1.0-beta)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
@@ -5461,7 +5464,7 @@ importers:
         version: 5.2.1(supports-color@10.0.0)
       fastify:
         specifier: catalog:www
-        version: 5.12.4
+        version: 5.12.7
       next:
         specifier: 'catalog:'
         version: 15.5.25(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(@types/node@24.13.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -5585,13 +5588,16 @@ importers:
         version: 0.15.0(typescript@7.1.0-beta)
       '@tanstack/lit-query':
         specifier: 0.2.26
-        version: 0.2.26(@tanstack/query-core@5.105.0)(lit@3.3.3)
+        version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
       '@tanstack/preact-query':
         specifier: 5.104.1
         version: 5.104.1(preact@10.29.8)
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
       '@tanstack/query-db-collection':
         specifier: 1.4.5
-        version: 1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)
+        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.1.0-beta)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
@@ -16194,9 +16200,6 @@ packages:
 
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
-
-  fastify@5.12.4:
-    resolution: {integrity: sha512-zATD676fP6tBMsn+jQ7Q5/cO/Qo+149TXH0dUqUKel+1/hcZxwIbnflqtPa9EjlrvpY8eCZcL3M1UYrMc31Y7g==}
 
   fastify@5.12.7:
     resolution: {integrity: sha512-v4pEPsTRPuqlDIYiQFB+BHjVN4SdHX9u0ABk0ZDUKbbdY1vsNryUd1j4Z+jQEZajvYIVk047Kimva9/AJ79GYw==}
@@ -30102,12 +30105,6 @@ snapshots:
       '@tanstack/query-core': 5.104.1
       lit: 3.3.3
 
-  '@tanstack/lit-query@0.2.26(@tanstack/query-core@5.105.0)(lit@3.3.3)':
-    dependencies:
-      '@lit/context': 1.1.6
-      '@tanstack/query-core': 5.105.0
-      lit: 3.3.3
-
   '@tanstack/match-sorter-utils@9.2.6':
     dependencies:
       remove-accents: 0.5.0
@@ -30135,13 +30132,6 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       '@tanstack/db': 0.15.0(typescript@7.1.0-beta)
       '@tanstack/query-core': 5.104.1
-      typescript: 7.1.0-beta
-
-  '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)':
-    dependencies:
-      '@standard-schema/spec': 1.1.0
-      '@tanstack/db': 0.15.0(typescript@7.1.0-beta)
-      '@tanstack/query-core': 5.105.0
       typescript: 7.1.0-beta
 
   '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.90.20)(typescript@7.1.0-beta)':
@@ -35559,24 +35549,6 @@ snapshots:
   fastest-levenshtein@1.0.16: {}
 
   fastify-plugin@6.0.0: {}
-
-  fastify@5.12.4:
-    dependencies:
-      '@fastify/ajv-compiler': 4.0.7
-      '@fastify/error': 4.2.1
-      '@fastify/fast-json-stringify-compiler': 5.1.1
-      '@fastify/proxy-addr': 5.1.2
-      abstract-logging: 2.0.1
-      avvio: 9.3.1
-      fast-json-stringify: 7.1.0
-      find-my-way: 9.10.0
-      light-my-request: 6.8.0
-      pino: 10.4.0
-      process-warning: 5.1.1
-      rfdc: 1.4.1
-      secure-json-parse: 4.1.1
-      semver: 7.8.5
-      toad-cache: 3.7.4
 
   fastify@5.12.7:
     dependencies:

@@ -135,7 +135,9 @@ catalogs:
     effect: 4.1.1
     event-source-polyfill: 1.0.31
     express: 5.2.1
-    fastify: 5.12.4
+    # The v11 docs' blocks pass it to `@trpc/server`'s adapter, whose
+    # `fastify: ^5.12.4` resolves to the workspace's newest.
+    fastify: 5.12.7
     react-dom: 19.3.0
     react: 19.3.0
     runtypes: 7.0.5
