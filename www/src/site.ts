@@ -46,6 +46,18 @@ export const docsearchVersions = {
   v11: 'current',
 } as const satisfies Record<CopiedVersion['id'], string>;
 
+/**
+ * Algolia `filters` for version `id`'s records: every record but the other
+ * versions'. Not `version:<id>`, which finds nothing once a crawl leaves the
+ * facet off, as one of a site without `docsearch:version` does.
+ */
+export function docsearchFilters(id: CopiedVersion['id']) {
+  return Object.entries(docsearchVersions)
+    .filter(([other]) => other !== id)
+    .map(([, version]) => `NOT version:"${version}"`)
+    .join(' AND ');
+}
+
 /** Where the docs and blog are served. */
 const trpcIo = 'https://trpc.io';
 

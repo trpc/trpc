@@ -5,8 +5,8 @@ import { DocSearchModal } from '@docsearch/react/modal';
 import { useRouter } from '@tanstack/react-router';
 import { createPortal } from 'react-dom';
 
-import { useSearchedDocs } from '~/content/docs.ts';
-import { algolia, docsearchVersions } from '~/site.ts';
+import { useSearchedDocs, versionAt } from '~/content/docs.ts';
+import { algolia, docsearchFilters } from '~/site.ts';
 
 /**
  * A hit's URL on this host: the index has trpc.io's, so on a preview or
@@ -14,7 +14,9 @@ import { algolia, docsearchVersions } from '~/site.ts';
  */
 function onThisSite(url: string) {
   const parsed = new URL(url, window.location.href);
-  return `${parsed.pathname.replace(/(?<=.)\/$/, '')}${parsed.search}${parsed.hash}`;
+  // The crawler anchors a page's title on the layout's `#content`.
+  const hash = parsed.hash === '#content' ? '' : parsed.hash;
+  return `${parsed.pathname.replace(/(?<=.)\/$/, '')}${parsed.search}${hash}`;
 }
 
 /** Algolia's DocSearch modal, over trpc.io's index, as Docusaurus had it. */
@@ -53,12 +55,7 @@ export default function AlgoliaSearch(props: { readonly onClose: () => void }) {
         {
           name: algolia.indexName,
           // The index has v11, v10 and v9's pages; this finds the reader's.
-          searchParameters: {
-            facetFilters: [
-              'language:en',
-              `version:${docsearchVersions[version.id]}`,
-            ],
-          },
+          searchParameters: { filters: docsearchFilters(version.id) },
         },
       ]}
       initialScrollY={window.scrollY}
@@ -71,7 +68,14 @@ export default function AlgoliaSearch(props: { readonly onClose: () => void }) {
       onClose={props.onClose}
       placeholder="Search docs"
       transformItems={(items) =>
-        items.map((item) => ({ ...item, url: onThisSite(item.url) }))
+        items
+          // Records without a `version` pass the filter, whatever their page.
+          .filter(
+            (item) =>
+              versionAt(new URL(item.url, window.location.href).pathname).id ===
+              version.id,
+          )
+          .map((item) => ({ ...item, url: onThisSite(item.url) }))
       }
     />,
     document.body,
