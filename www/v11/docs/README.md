@@ -2,4 +2,4 @@
 
 The v11 docs, which the site serves at `/docs`. Edit them here.
 
-`www/build/old-docs-copy.ts` converted them from trpc.io's Docusaurus docs (`www/docs` before the move); `www/old-docs.json` says which file each page came from.
+They were converted once from trpc.io's Docusaurus docs (`www/docs` before the move), by `www/build/old-docs-copy.ts`. Git's history keeps it, and `www/old-docs.json`, which said which file each page came from.

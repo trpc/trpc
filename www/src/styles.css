@@ -385,7 +385,7 @@ html:has(#hero-code) {
   --callout: oklch(0.6 0.2 25);
 }
 
-/* trpc.io's `StaticTweet`s (`build/old-docs-convert.ts`), styled like Twitter's embedded tweets, as on trpc.io */
+/* The blog's tweets (`blog/trpc-actions.md`), styled like Twitter's embedded tweets, as on trpc.io */
 figure.tweet {
   --tweet-background: #ffffff;
   --tweet-border: #cfd9de;
