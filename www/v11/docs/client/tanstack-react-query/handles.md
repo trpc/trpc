@@ -536,7 +536,7 @@ The page is ready after one round trip instead of two, and the loader no longer 
 
 ## Reading a handle {#reading-a-handle}
 
-`trpc.unstable_$fromHandle(handle, opts?)` returns the same options as `trpc.<path>.queryOptions(input, opts)` for the handle's procedure and input. Pass them to any TanStack Query hook or `QueryClient` method:
+`trpc.unstable_$fromHandle(handle, opts?)` returns the same options as `trpc.<path>.queryOptions(input, opts)` for the handle's procedure and input, or `trpc.<path>.infiniteQueryOptions(input, opts)` for an infinite handle. Pass them to any TanStack Query hook or `QueryClient` method:
 
 ```tsx twoslash
 // @include: handles-router
