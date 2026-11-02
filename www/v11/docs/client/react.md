@@ -1,15 +1,15 @@
 ---
 id: overview
-title: React Query Integration (Classic)
-sidebar_label: "React Query Integration (Classic)"
-description: React Query Integration
+title: React Query Integration (Classic, deprecated)
+sidebar_label: "React Query Integration (Classic, deprecated)"
+description: The classic React Query integration, which only gets bug fixes and will be removed in the next major version of tRPC
 slug: /client/react
 section: "Client Usage"
 order: 52
 ---
 
-:::tip
-These are the docs for our 'Classic' React Query integration, which (while still supported) is not the recommended way to start new tRPC projects with TanStack React Query. We recommend using the new [TanStack React Query Integration](/docs/client/tanstack-react-query/setup) instead.
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
 :::
 
 tRPC offers a first class integration with React. Under the hood this is simply a wrapper around the very popular [@tanstack/react-query](https://tanstack.com/query/latest), so we recommend that you familiarize yourself with React Query, as their docs go into much greater depth on its usage.

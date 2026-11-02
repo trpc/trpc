@@ -8,6 +8,10 @@ parent: "client/react"
 order: 64
 ---
 
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
+
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
 ```tsx twoslash
