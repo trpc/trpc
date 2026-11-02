@@ -15,6 +15,7 @@ export default {
   },
   // Bundling `ws` breaks its optional native helpers
   serverExternalPackages: ['ws'],
+  transpilePackages: ['@shared/ui'],
   /** Next.js only knows ESLint; we lint with oxlint as a separate task */
   eslint: { ignoreDuringBuilds: true },
 } satisfies NextConfig;

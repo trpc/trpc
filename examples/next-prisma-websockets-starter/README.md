@@ -18,7 +18,7 @@ Try demo http://websockets.trpc.io/
 ## Setup
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-websockets-starter trpc-prisma-websockets-starter
 cd trpc-prisma-websockets-starter
 pnpm i
 pnpm dx
