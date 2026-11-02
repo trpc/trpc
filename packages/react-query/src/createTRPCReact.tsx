@@ -410,7 +410,7 @@ export type DecorateProcedure<
     : TType extends 'subscription'
       ? {
           /**
-           * @see https://trpc.io/docs/server/subscriptions
+           * @see https://trpc.io/docs/client/react/useSubscription
            */
           useSubscription: ProcedureUseSubscription<TDef>;
         }

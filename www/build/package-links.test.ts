@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
@@ -8,8 +9,8 @@ import { fromDocusaurus } from './docusaurus-syntax.ts';
 import { anchorsOf } from './markdown.ts';
 import { samplesDir } from './paths.ts';
 
-const packagesDir = new URL('../../packages', import.meta.url).pathname;
-const contentDir = new URL('../v11/docs', import.meta.url).pathname;
+const packagesDir = fileURLToPath(new URL('../../packages', import.meta.url));
+const contentDir = fileURLToPath(new URL('../v11/docs', import.meta.url));
 
 /** Everything that names a trpc.io docs page, up to where a URL ends. */
 const docsLink = /(?:https?:\/\/)?(?:www\.)?trpc\.io\/docs[^\s'"`)>\]},]*/g;
