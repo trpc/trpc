@@ -6,9 +6,7 @@
     }
   },
   "framework": "tanstack-start",
-  "regions": [
-    "lhr1"
-  ],
+  "regions": ["lhr1"],
   "fluid": true,
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm turbo --filter=./examples/tanstack-start-sse-chat build"

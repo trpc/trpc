@@ -55,13 +55,13 @@ Send each item as its own short message, then stop and wait for the reply. Keep 
 
 ### Replies
 
-| Reply                 | Do                                                                                                                                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reply                 | Do                                                                                                                                                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | A letter or free text | Record the answer verbatim as the human's. Say in one line which decision it goes into, linking that record's page (`https://v12.trpc.io/v12/decisions/<topic>`, live once landed), then go to the next item. "Do recommended" is the recommended option, chosen by the human. |
-| A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                               |
-| `skip`                | Defer: the item stays open for a later round. Don't pick an option, don't record anything and don't touch its open file; say "Skipped, it stays open" in one line, then go to the next item. |
-| `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                  |
-| `back`                | Re-ask the previous item; the new answer replaces the old one.                                                                                                                                          |
+| A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                                                                                                      |
+| `skip`                | Defer: the item stays open for a later round. Don't pick an option, don't record anything and don't touch its open file; say "Skipped, it stays open" in one line, then go to the next item.                                                                                   |
+| `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                                                                                         |
+| `back`                | Re-ask the previous item; the new answer replaces the old one.                                                                                                                                                                                                                 |
 
 When the queue is empty, go to step 3 as if the human had said `done`.
 

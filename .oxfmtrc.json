@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "sortPackageJson": false,
+  "sortImports": false,
+  "sortTailwindcss": false,
+  "overrides": [
+    {
+      "files": ["**/*.md", "**/*.mdx"],
+      "options": {
+        "embeddedLanguageFormatting": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    // Each has its own: `v11/.oxfmtrc.json`, and `fmt` in `next/vite.config.ts`.
+    "v11/**",
+    "next/**",
+    "pnpm-lock.yaml",
+    // `vendor-src` writes it.
+    "vendor-src.json",
+    "**/dist/",
+    ".turbo",
+    "**/routeTree.gen.ts",
+    // `pnpm --filter @samples/v12 generate:api` writes these.
+    "www/samples/v12/openapi.json",
+    "www/samples/v12/src/api/**",
+    // Main's `www/` writes these; formatted as it does, a merge from main keeps them.
+    "www/v11/**",
+    "www/v10/**",
+    "www/v9/**",
+    "www/blog/**",
+    "www/sponsors.json",
+    "www/api-reference/out/",
+    "www/.vercel/",
+    "www/.output/"
+  ]
+}
