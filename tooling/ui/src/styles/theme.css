@@ -74,17 +74,18 @@
 }
 
 /*
- * tRPC's branding, as on trpc.io: the logo's blue (#398ccb) is the primary,
- * the focus ring and the selection, with white on it. Text links are a shade
- * darker or lighter, so they stay readable on the page. The rest is neutral:
- * zinc grays, and the near-black #111111 page of the dark theme.
+ * tRPC's branding: the blue the logo's gradient starts from (#066dfc) is the
+ * primary, the focus ring and the selection, with white on it (4.6:1). Text
+ * links are a shade darker or lighter, so they keep 4.5:1 on the page and on
+ * the brand's tints. The rest is neutral: zinc grays, and the near-black
+ * #111111 page of the dark theme.
  */
 :root {
   color-scheme: light dark;
   --radius: 0.625rem;
-  --brand: #398ccb;
-  --brand-dark: #2e77af;
-  --brand-light: #589ed3;
+  --brand: #066dfc;
+  --brand-dark: #0a5fe0;
+  --brand-light: #4f9bff;
   --link: light-dark(var(--brand-dark), var(--brand-light));
   --background: light-dark(#ffffff, #111111);
   --foreground: light-dark(#18181b, #f4f4f5);
