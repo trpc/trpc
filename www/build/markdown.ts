@@ -32,7 +32,9 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
 import type { DocHeading } from '../src/content/types.ts';
+import { parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
+import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
@@ -362,6 +364,47 @@ function remarkCharts() {
 }
 
 /**
+ * A `demo` fence becomes the slot `PageDemos` mounts its demo in
+ * (`src/demos/names.ts`). Until then, and without JavaScript, the slot shows
+ * the fence's body as a plain code block, or a placeholder the demo's size.
+ */
+function remarkDemos() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (node.lang !== 'demo' || !parent || index === undefined) {
+        return;
+      }
+      const demo = parseDemoFence(node.meta ?? '');
+      const fallback =
+        node.value.trim() === ''
+          ? {
+              type: 'html',
+              value: '<div class="demo-placeholder" aria-hidden="true"></div>',
+            }
+          : { lang: null, type: 'code', value: node.value };
+      const slot = {
+        children: [fallback] as unknown as Paragraph['children'],
+        data: {
+          hName: 'div',
+          hProperties: {
+            className: ['demo-slot'],
+            dataDemo: demo.name,
+            ...Object.fromEntries(
+              Object.entries(demo.options).map(([key, value]) => [
+                `data${key.charAt(0).toUpperCase()}${key.slice(1)}`,
+                value,
+              ]),
+            ),
+          },
+        },
+        type: 'paragraph',
+      } satisfies Paragraph;
+      parent.children[index] = slot;
+    });
+  };
+}
+
+/**
  * A fence's meta (`twoslash title="server.ts"`) is `data` on the hast
  * `<code>`, which `rehype-raw` drops. Shiki also reads it from the
  * `metastring` property, which survives.
@@ -473,7 +516,10 @@ function rehypeCodeBlocks() {
   };
 }
 
-/** Puts a button per tab above a `code-tabs` group's blocks. */
+/**
+ * Puts a button per tab above a `code-tabs` group's blocks, or a link to the
+ * tab (`?framework=nextjs`) in a group kept in the URL (`src/tabs.ts`).
+ */
 function rehypeCodeTabs() {
   return (tree: HastRoot) => {
     visit(tree, 'element', (node: Element) => {
@@ -509,6 +555,7 @@ function rehypeCodeTabs() {
           delete block.properties['dataActive'];
         }
       }
+      const inUrl = isUrlTabGroup(group);
       node.children.unshift({
         children: tabs.map((tab, index): Element => ({
           children: [{ type: 'text', value: tab }],
@@ -518,9 +565,13 @@ function rehypeCodeTabs() {
             dataTabGroup: group,
             dataTabSelect: tab,
             role: 'tab',
-            type: 'button',
+            ...(inUrl
+              ? {
+                  href: `?${new URLSearchParams({ [group]: tabSlug(tab) })}`,
+                }
+              : { type: 'button' }),
           },
-          tagName: 'button',
+          tagName: inUrl ? 'a' : 'button',
           type: 'element',
         })),
         properties: { className: ['code-tabs-list'], role: 'tablist' },
@@ -939,6 +990,7 @@ function parsing(
     .use(remarkHeadingIds)
     .use(remarkLinks(options, links))
     .use(remarkCharts)
+    .use(remarkDemos)
     .use(remarkPackageInstall)
     .use(remarkCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })

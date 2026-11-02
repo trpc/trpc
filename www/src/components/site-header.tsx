@@ -15,6 +15,11 @@ import { VersionSwitcher } from './version-switcher.tsx';
 
 const navLink = buttonVariants({ size: 'sm', variant: 'ghost' });
 
+const shownFrom = {
+  lg: 'hidden lg:inline-flex',
+  xl: 'hidden xl:inline-flex',
+};
+
 const socialLinks = [
   {
     className: 'hidden sm:inline-flex',
@@ -41,7 +46,7 @@ function DocsLinks() {
     <Link
       activeOptions={{ exact: true }}
       activeProps={{ className: 'text-foreground' }}
-      className={cn(navLink, 'wide' in link && 'hidden lg:inline-flex')}
+      className={cn(navLink, 'from' in link && shownFrom[link.from])}
       inactiveProps={{ className: 'text-muted-foreground' }}
       key={link.label}
       params={{ _splat: link.slug }}

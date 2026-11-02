@@ -101,8 +101,8 @@ export const docPath = (
 
 /**
  * The top bar's links to v11 pages, by slug: trpc.io's navbar's, in its
- * order. On phones they're in the menu. `wide`: only from `lg`, as from `md`
- * the header has no room for it and the sidebar links it.
+ * order. On phones they're in the menu. `from`: the breakpoint a link shows
+ * from, since the header has no room for it below that; the sidebar links it.
  */
 export const docsLinks = [
   { label: 'Docs', slug: v11.firstDoc },
@@ -110,9 +110,14 @@ export const docsLinks = [
   {
     label: 'Awesome tRPC Collection',
     slug: 'community/awesome-trpc',
-    wide: true,
+    from: 'lg',
   },
   { label: 'Using Next.js', slug: 'client/nextjs' },
+  {
+    label: 'Using TanStack Start',
+    slug: 'client/tanstack-react-query/tanstack-start',
+    from: 'xl',
+  },
 ] as const;
 
 /** Newest first, as the version switcher lists them. */

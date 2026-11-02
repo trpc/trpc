@@ -229,6 +229,37 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    'turns a `demo` fence into its slot, with its body as fallback',
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          [
+            '```demo request-timeline strategy=fetch-on-render',
+            '1. |-> post.byId',
+            '```',
+            '',
+            '```demo starting-queries',
+            '```',
+          ].join('\n'),
+        );
+        expect(rendered.html).toContain(
+          '<div class="demo-slot" data-demo="request-timeline" data-strategy="fetch-on-render">',
+        );
+        expect(textOf(rendered.html)).toContain('1. |-> post.byId');
+        expect(rendered.html).toContain(
+          '<div class="demo-slot" data-demo="starting-queries"><div class="demo-placeholder" aria-hidden="true"></div></div>',
+        );
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('fails on a `demo` fence naming no demo', () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(render('```demo nope\n```'));
+      expect(error.message).toContain('Unknown demo "nope"');
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
   it.effect('rewrites links to pages and to files outside the docs', () =>
     Effect.gen(function* () {
       const rendered = yield* render(
@@ -352,6 +383,34 @@ describe('renderMarkdown', () => {
       expect(rendered.html).toMatch(/aria-selected="true"[^>]*>Zod<\/button>/);
       expect(rendered.html).toMatch(/<div data-tab="Vanilla">/);
       expect(rendered.html).toMatch(/<div data-tab="Zod" data-active="">/);
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('links each tab of a group kept in the URL to it', () =>
+    Effect.gen(function* () {
+      const rendered = yield* render(
+        [
+          '<div class="code-tabs" data-tabs="framework">',
+          '<div data-tab="Next.js">',
+          '',
+          'A page.',
+          '',
+          '</div>',
+          '<div data-tab="TanStack Start">',
+          '',
+          'A route.',
+          '',
+          '</div>',
+          '</div>',
+        ].join('\n'),
+      );
+      expect(rendered.html).toMatch(
+        /<a [^>]*href="\?framework=nextjs"[^>]*>Next\.js<\/a>/,
+      );
+      expect(rendered.html).toMatch(
+        /<a [^>]*href="\?framework=tanstack-start"[^>]*>TanStack Start<\/a>/,
+      );
+      expect(rendered.html).not.toMatch(/<a [^>]*type="button"/);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

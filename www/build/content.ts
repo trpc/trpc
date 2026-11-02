@@ -631,6 +631,12 @@ export function docsContent(options: ContentOptions): Plugin {
         // `renderDoc` decoded the fence already.
         chartMarkdown(decodeChart(json)),
       )
+      // A demo is the web page's; agents get its static stand-in, if any.
+      .replaceAll(
+        /^```demo\b[^\n]*\n([\s\S]*?)^```$/gm,
+        (_fence, body: string) =>
+          body.trim() === '' ? '' : `\`\`\`\n${body}\`\`\``,
+      )
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
         const resolved = resolveLink(
           source.slug,
