@@ -215,7 +215,7 @@ export interface ProcedureBuilder<
 > {
   /**
    * Add an input parser to the procedure.
-   * @see https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
@@ -242,7 +242,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add an output parser to the procedure.
-   * @see https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -259,7 +259,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a meta data to the procedure.
-   * @see https://trpc.io/docs/v11/server/metadata
+   * @see https://trpc.io/docs/server/metadata
    */
   meta(
     meta: TMeta,
@@ -280,7 +280,7 @@ export interface ProcedureBuilder<
    * An error will bubble until a `.errors()` handler returns a shape
    * or it reaches the global errorFormatter
    *
-   * @see https://trpc.io/docs/v11/server/error-formatting
+   * @see https://trpc.io/docs/server/error-formatting
    */
   errors<$Shape extends TRPCErrorShape | undefined | void>(
     formatter: ProcedureErrorFormatter<TContext, TContextOverrides, $Shape>,
@@ -297,7 +297,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a middleware to the procedure.
-   * @see https://trpc.io/docs/v11/server/middlewares
+   * @see https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -407,7 +407,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Query procedure
-   * @see https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/concepts#vocabulary
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -431,7 +431,7 @@ export interface ProcedureBuilder<
 
   /**
    * Mutation procedure
-   * @see https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/concepts#vocabulary
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -455,7 +455,7 @@ export interface ProcedureBuilder<
 
   /**
    * Subscription procedure
-   * @see https://trpc.io/docs/v11/server/subscriptions
+   * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends AsyncIterable<any, void, any>>(
     resolver: ProcedureResolver<
@@ -477,7 +477,7 @@ export interface ProcedureBuilder<
   /**
    * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
    * This feature will be removed in v12 of tRPC.
-   * @see https://trpc.io/docs/v11/server/subscriptions
+   * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends Observable<any, any>>(
     resolver: ProcedureResolver<
@@ -694,7 +694,7 @@ export interface ProcedureCallOptions<TContext> {
 
 const codeblock = `
 This is a client-only function.
-If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
+If you want to call this function on the server, see https://trpc.io/docs/server/server-side-calls
 `.trim();
 
 // run the middlewares recursively with the resolver as the last one

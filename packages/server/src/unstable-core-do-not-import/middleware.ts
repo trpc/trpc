@@ -171,7 +171,7 @@ export function createMiddlewareFactory<
 
 /**
  * Create a standalone middleware
- * @see https://trpc.io/docs/v11/server/middlewares#experimental-standalone-middlewares
+ * @see https://trpc.io/docs/server/middlewares#experimental-standalone-middlewares
  * @deprecated use `.concat()` instead
  */
 export const experimental_standaloneMiddleware = <

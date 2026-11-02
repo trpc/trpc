@@ -77,7 +77,7 @@ type AnyDecoratedProcedure = Pick<DecorateQueryProcedure<any, any>, SSGFns>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @see https://trpc.io/docs/v11/client/nextjs/server-side-helpers
+ * @see https://trpc.io/docs/client/nextjs/pages-router/server-side-helpers
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,

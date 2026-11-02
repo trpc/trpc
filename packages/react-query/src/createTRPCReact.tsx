@@ -297,7 +297,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
   TDef['input'] extends CursorInput
     ? {
         /**
-         * @see https://trpc.io/docs/v11/client/react/useInfiniteQuery
+         * @see https://trpc.io/docs/client/react/useInfiniteQuery
          */
         useInfiniteQuery: useTRPCInfiniteQuery<TDef>;
         /**
@@ -321,12 +321,12 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
  */
 export type DecoratedQueryMethods<TDef extends ResolverDef> = {
   /**
-   * @see https://trpc.io/docs/v11/client/react/useQuery
+   * @see https://trpc.io/docs/client/react/useQuery
    */
   useQuery: ProcedureUseQuery<TDef>;
   usePrefetchQuery: ProcedureUsePrefetchQuery<TDef>;
   /**
-   * @see https://trpc.io/docs/v11/client/react/suspense#usesuspensequery
+   * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
    */
   useSuspenseQuery: <
     TQueryFnData extends TDef['output'] = TDef['output'],
@@ -352,7 +352,7 @@ export type DecoratedQuery<TDef extends ResolverDef> =
 
 export type DecoratedMutation<TDef extends ResolverDef> = {
   /**
-   * @see https://trpc.io/docs/v11/client/react/useMutation
+   * @see https://trpc.io/docs/client/react/useMutation
    */
   useMutation: <TContext = unknown>(
     opts?: UseTRPCMutationOptions<
@@ -410,7 +410,7 @@ export type DecorateProcedure<
     : TType extends 'subscription'
       ? {
           /**
-           * @see https://trpc.io/docs/v11/subscriptions
+           * @see https://trpc.io/docs/server/subscriptions
            */
           useSubscription: ProcedureUseSubscription<TDef>;
         }
@@ -447,11 +447,11 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @see https://trpc.io/docs/v11/client/react/useUtils
+   * @see https://trpc.io/docs/client/react/useUtils
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @see https://trpc.io/docs/v11/client/react/useUtils
+   * @see https://trpc.io/docs/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;

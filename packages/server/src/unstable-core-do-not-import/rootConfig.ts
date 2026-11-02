@@ -67,12 +67,12 @@ export interface RootConfig<TTypes extends RootTypes> {
   $types: TTypes;
   /**
    * Use a data transformer
-   * @see https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/server/data-transformers
    */
   transformer: CombinedDataTransformer;
   /**
    * Use custom error formatting
-   * @see https://trpc.io/docs/v11/error-formatting
+   * @see https://trpc.io/docs/server/error-formatting
    */
   errorFormatter: ErrorFormatter<TTypes['ctx'], TTypes['errorShape']>;
   /**
@@ -146,7 +146,7 @@ export type CreateContextCallback<
   object extends TContext ? true : false,
   {
     /**
-     * @see https://trpc.io/docs/v11/context
+     * @see https://trpc.io/docs/server/context
      **/
     createContext: TFunction;
   }
