@@ -23,4 +23,5 @@ export default {
   typescript: {
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['@shared/ui'],
 } satisfies NextConfig;

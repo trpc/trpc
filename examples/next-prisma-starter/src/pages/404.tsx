@@ -1,15 +1,25 @@
+import { buttonVariants } from '@shared/ui/components/button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '@shared/ui/components/empty';
 import Link from 'next/link';
 
 export default function Custom404() {
   return (
-    <div className="flex flex-col items-center justify-center h-screen text-center">
-      <Link href="/" className="text-gray-300 underline">
-        Home
-      </Link>
-      <div className="flex flex-col">
-        <h1 className="text-9xl font-bold">404</h1>
-        <h2 className="text-4xl font-bold">Page not found</h2>
-      </div>
-    </div>
+    <Empty className="border bg-background">
+      <EmptyHeader>
+        <EmptyTitle className="text-6xl font-bold">404</EmptyTitle>
+        <EmptyDescription>Page not found</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Link href="/" className={buttonVariants({ variant: 'outline' })}>
+          Home
+        </Link>
+      </EmptyContent>
+    </Empty>
   );
 }
