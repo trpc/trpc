@@ -4,9 +4,12 @@ permissions:
 on:
   pull_request:
   merge_group:
+  push:
+    branches: [main]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # a release commit gets a group of its own, so the next push can't cancel its checks
+  group: "${{ github.workflow }}-${{ github.ref }}${{ startsWith(github.event.head_commit.message, 'chore: release v') && format('-{0}', github.sha) || '' }}"
   cancel-in-progress: true
 
 env:
@@ -16,6 +19,8 @@ env:
 jobs:
   autofix:
     name: 'Lint and auto-fix'
+    # on `main`, only release commits, which skip the merge queue
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -43,7 +48,7 @@ jobs:
           commit-message: 'chore: apply lint and formatting fixes'
           fail-fast: false
 
-      # the merge queue can't receive autofix commits, so any fix means failure
+      # the merge queue and `main` can't receive autofix commits, so any fix means failure
       - name: Ensure no autofixes are needed
-        if: ${{ github.event_name == 'merge_group' && (failure() || success()) }}
+        if: ${{ github.event_name != 'pull_request' && (failure() || success()) }}
         run: git diff --exit-code

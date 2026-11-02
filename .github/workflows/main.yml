@@ -7,13 +7,14 @@ on:
     branches: [main, next, canary]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # a release commit gets a group of its own, so the next push can't cancel its checks
+  group: "${{ github.workflow }}-${{ github.ref }}${{ startsWith(github.event.head_commit.message, 'chore: release v') && format('-{0}', github.sha) || '' }}"
   cancel-in-progress: true
 
 jobs:
   build:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -30,8 +31,8 @@ jobs:
       - run: pnpm build
 
   typecheck:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -49,7 +50,7 @@ jobs:
 
   verify-packed:
     name: Verify packed packages as a consumer
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     timeout-minutes: 15
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -70,8 +71,8 @@ jobs:
       - run: pnpm verify-packed
 
   typecheck-www:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     timeout-minutes: 15
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -124,8 +125,8 @@ jobs:
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -183,8 +184,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -218,8 +219,8 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -253,8 +254,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
-    # only run on PRs and in the merge queue
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    # only run on PRs, in the merge queue and on release commits
+    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     needs: [build]
     services:
       postgres:
@@ -301,7 +302,7 @@ jobs:
   # https://pkg.pr.new
   release-tmp:
     name: Release using pkg.pr.new
-    if: github.event_name != 'merge_group'
+    if: github.event_name == 'pull_request'
     needs: [build]
     runs-on: ubuntu-latest
     env:
