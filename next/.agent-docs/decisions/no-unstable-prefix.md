@@ -1,0 +1,12 @@
+# No `unstable_` prefixes before 12.0.0; `experimental_` stays (human)
+
+- Human, 2026-11-03: "no point on unstable prefixes at all before we reach stable. experimental are still relevant as we can delete them".
+- So until 12.0.0, an unstable export has its final name (`createErrorBoundary`, not `unstable_createErrorBoundary`), and an experimental one keeps `experimental_`, which says it might be deleted. A new public API is named plainly or `experimental_*`, never `unstable_*`.
+- (agent) Unstable stays a stage, only without a prefix: the export is `@stability unstable`, its option types are tagged `unstable`, and its docs page keeps `stability: unstable` and the "Unstable" badge ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)). The human dropped the prefix, not the stage.
+- (agent) Renamed without aliases, since nothing has shipped: `unstable_createErrorBoundary` to `createErrorBoundary` in `@trpc12/tanstack-react-query` ([`error-boundaries.md`](./error-boundaries.md)), the only `unstable_` export v12 had.
+- (agent) `trpc/jsdoc` reports any export named `unstable_*`, whatever its tag, deprecated aliases included. Promoting an experimental export, to unstable or stable, renames `experimental_x` to `x`; a promoted `experimental-` package's exports that are still experimental get `experimental_` (the codemod's `PROMOTED_PACKAGES`).
+- (agent) `unstable_` names that aren't v12's stay: v11's (the codemod's inputs such as `unstable_httpBatchStreamLink`, the proposals and `reference/v11-inventory.md` describing v11, and v11's site demos in `www/src/demos/`) and other libraries' (Wrangler's `unstable_startWorker`, Vitest's `vi.unstable_mockModule`).
+- Why: before a stable release every export can still change, so `unstable_` warns about nothing a prerelease doesn't, and the prefix would cost a rename when the feature stabilizes. `experimental_` still says something a prerelease doesn't: the feature might go away.
+- Lost: an unstable export no longer says so at the import site, only in its JSDoc and on its docs page; v11's three visible stages are two.
+- Open: whether features added after 12.0.0 get `unstable_`; the rule covers the time before it.
+- Lives in: `tooling/oxlint-plugin/jsdoc.ts` (`unstablePrefix`), `tooling/oxlint-plugin/jsdoc.test.ts`, `packages/upgrade/src/promoted.ts`, `packages/tanstack-react-query/src/error-boundary.ts`, `www/v12/docs/packages.md` (Stability).
