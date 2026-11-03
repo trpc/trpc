@@ -23,7 +23,7 @@ It keeps your formatting, and rewrites:
 - `initTRPC.context<Ctx>().meta<Meta>().create()` to `initTrpc<{ ctx: Ctx; meta: Meta }>()`, `t.mergeRouters(a, b)` to `mergeRouters(a, b)`, and `router.createCaller(ctx)` to `createRouterClient(router, { ctx })`.
 - `httpBatchLink`, `httpBatchStreamLink` and `httpSubscriptionLink` to `httpLink`, with their `transformer` wrapped in `createSyncTransformer()`.
 - `createTRPCContext`'s result, destructured as a tuple, with `TRPCProvider`, `useTRPC` and `useTRPCClient` renamed wherever the project uses them.
-- Imports of `experimental_*` and `unstable_*` exports that moved on a stage, to their new names, and imports from `@trpc12/experimental-*` packages that were promoted, to the package's new name ([Stability](../../packages.md#stability)).
+- Imports of `experimental_*` exports that were promoted, to their new names, and imports from `@trpc12/experimental-*` packages that were promoted, to the package's new name ([Stability](../../packages.md#stability)).
 
 ## What it leaves to you
 
