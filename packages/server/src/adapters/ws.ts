@@ -426,9 +426,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
 
+        // A failed iterator cleanup is reported to the server only: the
+        // client still gets `stopped`, so a subscription that completed or
+        // was stopped doesn't turn into a failed one.
         if (abortController.signal.aborted) {
-          // dispose the iterator without consuming it
-          await using _iterator = iteratorResource(iterable);
+          try {
+            // dispose the iterator without consuming it
+            await using _iterator = iteratorResource(iterable);
+          } catch (cause) {
+            reportError(cause);
+          }
           return;
         }
 
@@ -440,6 +447,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           },
         });
 
+        let ended = false;
         try {
           await using iterator = iteratorResource(iterable);
           let completed = false;
@@ -506,9 +514,12 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             next = null;
             result = null;
           }
+          ended = true;
         } catch (cause) {
           abort();
-          if (isSuppressedError(cause)) {
+          if (ended) {
+            reportError(cause);
+          } else if (isSuppressedError(cause)) {
             // the client gets the iteration error, the server both
             respondWithError(cause.suppressed);
             reportError(cause.error);
