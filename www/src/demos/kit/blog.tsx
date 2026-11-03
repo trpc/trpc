@@ -7,7 +7,7 @@ import { Button } from '@shared/ui/components/button';
 import { Skeleton } from '@shared/ui/components/skeleton';
 
 import { DemoLink } from './browser.tsx';
-import { type TRPC, useNetwork, useTRPC } from './session.tsx';
+import { staleTime, type TRPC, useNetwork, useTRPC } from './session.tsx';
 
 /** The same components read the handles in every demo, as in an app. */
 export function Post(props: {
@@ -199,9 +199,15 @@ export function MoreByAuthor(props: {
     exclude: postQuery.data.id,
   };
   const start = () => {
+    const query = queryClient.getQueryCache().find({
+      exact: true,
+      queryKey: trpc.post.byAuthor.queryKey(input),
+    });
+    // The prefetch fetches when the data is missing or stale, unless a fetch
+    // is already running, and only a fetch should start a new trace.
     if (
-      queryClient.getQueryState(trpc.post.byAuthor.queryKey(input)) ===
-      undefined
+      query === undefined ||
+      (query.state.fetchStatus === 'idle' && query.isStaleByTime(staleTime))
     ) {
       network.begin(`More by ${author}`);
     }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { createDemoClient, procedureWeights } from './kit/backend.ts';
 import {
   chainLength,
   createNetwork,
@@ -54,6 +55,18 @@ describe('timeline', () => {
         parallel.steps.map((step) => step.at).toSorted((a, b) => a - b),
       );
     }
+  });
+
+  it('draws different times for different seeds', () => {
+    const postEnds = new Set(
+      Array.from(
+        { length: 20 },
+        (_, index) =>
+          timeline('render-as-you-fetch', 200, createRandom(index + 1))
+            .requests[0].end,
+      ),
+    );
+    expect(postEnds.size).toBeGreaterThan(1);
   });
 
   it('measures progress from 0 to 1', () => {
@@ -139,6 +152,35 @@ describe('network', () => {
       expect(delay).toBeGreaterThanOrEqual(Math.floor(600 * jitter.min));
       expect(delay).toBeLessThanOrEqual(Math.ceil(600 * jitter.max));
     }
+  });
+
+  it("delays each call by its procedure's weight", async () => {
+    const network = createNetwork(createRandom(1));
+    const weights: number[] = [];
+    network.delay = (weight) => {
+      weights.push(weight);
+      return 0;
+    };
+    const client = createDemoClient(network);
+    await client.post.byId.query({ id: 1 });
+    await client.post.comments.query({ postId: 1 });
+    expect(weights).toEqual([
+      procedureWeights['post.byId'],
+      procedureWeights['post.comments'],
+    ]);
+  });
+});
+
+describe('backend', () => {
+  it("lists the author's other posts", async () => {
+    const network = createNetwork(createRandom(1));
+    network.delay = () => 0;
+    const client = createDemoClient(network);
+    const morePosts = await client.post.byAuthor.query({
+      authorId: 1,
+      exclude: 1,
+    });
+    expect(morePosts.map((post) => post.id)).toEqual([4, 7]);
   });
 });
 
