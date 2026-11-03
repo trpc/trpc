@@ -87,8 +87,8 @@ export function directDollars(sponsor: DirectSponsor, now: number) {
 }
 
 /**
- * `website`'s host (without `www.`), path and query but for `ref` and
- * `utm_*`, to tell whether two are one site.
+ * `website`'s host (any case, without `www.`), path and query but for
+ * `ref` and `utm_*`, to tell whether two are one site.
  */
 function siteOf(website: string) {
   const withScheme = /^https?:\/\//i.test(website)
@@ -105,7 +105,7 @@ function siteOf(website: string) {
   }
   url.searchParams.sort();
   const host = url.hostname.toLowerCase().replace(/^www\./, '');
-  return `${host}${url.pathname.replace(/\/+$/, '').toLowerCase()}${url.search}`;
+  return `${host}${url.pathname.replace(/\/+$/, '')}${url.search}`;
 }
 
 /**
@@ -147,7 +147,9 @@ interface Tally {
   websiteUrl: string | null;
 }
 
-const githubKey = (login: string) => sponsorKey({ login, source: 'github' });
+/** A GitHub sponsor's tally key: GitHub logins are case-insensitive. */
+const githubKey = (login: string) =>
+  sponsorKey({ login: login.toLowerCase(), source: 'github' });
 
 /**
  * The sponsors to show, in the order they started (then by `sponsorKey`,
@@ -157,11 +159,12 @@ const githubKey = (login: string) => sponsorKey({ login, source: 'github' });
  * they first started. What they're worth is what GitHub says they've paid
  * the accounts in all; a new sponsor GitHub hasn't charged yet counts their
  * monthly tier. Open Collective backers count the same way, in dollars, if
- * they back trpc now; one who sponsors on GitHub too, or is another
+ * they back trpc now; one who sponsors on GitHub or directly too, or is another
  * backer (`isSameSponsor`), is one sponsor, worth both, with what they give
- * a month on each added up for their tier. One only on Open Collective is
- * an `opencollective` sponsor, by their slug. Direct sponsors count every
- * period they've started, and `extra` is added on top.
+ * a month on each added up for their tier, matched by GitHub account
+ * before website. One only on Open Collective is an `opencollective`
+ * sponsor, by their slug. Direct sponsors count every period they've
+ * started, and `extra` is added on top.
  */
 export function sponsorsList(opts: {
   readonly config: SponsorsConfig;
@@ -207,37 +210,6 @@ export function sponsorsList(opts: {
     );
   }
 
-  for (const backer of opts.openCollective ?? []) {
-    if (!backer.isCurrent) {
-      continue;
-    }
-    const dollars = Math.max(backer.paidCents / 100, backer.monthlyDollars);
-    const known = [...tallies.values()].find((tally) =>
-      isSameSponsor(backer, tally),
-    );
-    if (known !== undefined) {
-      known.createdAt = Math.min(known.createdAt, backer.createdAt);
-      known.dollars += dollars;
-      known.monthlyDollars += backer.monthlyDollars;
-      continue;
-    }
-    const identity: SponsorIdentity = {
-      source: 'opencollective',
-      slug: backer.slug,
-      profileUrl: `https://opencollective.com/${backer.slug}`,
-    };
-    tallies.set(sponsorKey(identity), {
-      avatarUrl: backer.avatarUrl,
-      createdAt: backer.createdAt,
-      dollars,
-      githubLogin: backer.githubLogin,
-      identity,
-      monthlyDollars: backer.monthlyDollars,
-      name: backer.name,
-      websiteUrl: backer.websiteUrl,
-    });
-  }
-
   for (const direct of opts.config.direct) {
     const dollars = directDollars(direct, opts.now);
     const createdAt = Date.parse(direct.since);
@@ -262,6 +234,40 @@ export function sponsorsList(opts: {
     known.dollars += dollars;
     known.monthlyDollars += monthlyDollars;
   }
+
+  for (const backer of opts.openCollective ?? []) {
+    if (!backer.isCurrent) {
+      continue;
+    }
+    const dollars = Math.max(backer.paidCents / 100, backer.monthlyDollars);
+    const others = [...tallies.values()];
+    const known =
+      others.find((tally) =>
+        isSameSponsor(backer, { ...tally, websiteUrl: null }),
+      ) ?? others.find((tally) => isSameSponsor(backer, tally));
+    if (known !== undefined) {
+      known.createdAt = Math.min(known.createdAt, backer.createdAt);
+      known.dollars += dollars;
+      known.monthlyDollars += backer.monthlyDollars;
+      continue;
+    }
+    const identity: SponsorIdentity = {
+      source: 'opencollective',
+      slug: backer.slug,
+      profileUrl: `https://opencollective.com/${backer.slug}`,
+    };
+    tallies.set(sponsorKey(identity), {
+      avatarUrl: backer.avatarUrl,
+      createdAt: backer.createdAt,
+      dollars,
+      githubLogin: backer.githubLogin,
+      identity,
+      monthlyDollars: backer.monthlyDollars,
+      name: backer.name,
+      websiteUrl: backer.websiteUrl,
+    });
+  }
+
   for (const extra of opts.config.extra) {
     const known = tallies.get(githubKey(extra.login));
     if (known !== undefined) {

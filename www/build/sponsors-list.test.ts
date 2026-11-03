@@ -432,7 +432,66 @@ describe('sponsorsList', () => {
     ]);
   });
 
-  it('merges Open Collective backers who are one another, and tells sites apart by their query', () => {
+  it('merges a direct sponsor with their Open Collective backer, and their extra payments, whatever the case of their login', () => {
+    const sponsors = sponsorsList({
+      config: {
+        ...noConfig,
+        direct: [serpApi],
+        extra: [{ dollars: 1000, login: 'SERPAPI', why: 'Paid by invoice' }],
+      },
+      lifetimeValues: [{ cents: 1_600_000, login: 'other' }],
+      now,
+      openCollective: [
+        backer('serp-api', {
+          githubLogin: 'serpapi',
+          monthlyDollars: 0,
+          paidCents: 100_000,
+        }),
+      ],
+      sponsorships: [sponsorship('other')],
+    });
+    expect(sponsors).toEqual([
+      expect.objectContaining({ login: 'other', weight: 100 }),
+      expect.objectContaining({
+        login: 'SerpApi',
+        source: 'github',
+        weight: 50,
+      }),
+    ]);
+  });
+
+  it('merges an Open Collective backer by GitHub account before website', () => {
+    const sponsors = sponsorsList({
+      config: noConfig,
+      lifetimeValues: [
+        { cents: 10_000, login: 'earlier' },
+        { cents: 10_000, login: 'later' },
+      ],
+      now,
+      openCollective: [
+        backer('later-oc', {
+          githubLogin: 'later',
+          paidCents: 10_000,
+          websiteUrl: 'https://earlier.dev',
+        }),
+      ],
+      sponsorships: [
+        sponsorship('earlier', {
+          createdAt: Date.parse('2024-01-01'),
+          websiteUrl: 'https://earlier.dev',
+        }),
+        sponsorship('later'),
+      ],
+    });
+    expect(
+      sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
+    ).toEqual([
+      ['github/earlier', 50],
+      ['github/later', 100],
+    ]);
+  });
+
+  it('merges Open Collective backers who are one another, and tells sites apart by their path and query', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [],
@@ -443,6 +502,8 @@ describe('sponsorsList', () => {
         backer('page-1', { websiteUrl: 'https://host.dev/?id=1&utm_source=x' }),
         backer('page-1-again', { websiteUrl: 'https://host.dev/?ref=y&id=1' }),
         backer('page-2', { websiteUrl: 'https://host.dev/?id=2' }),
+        backer('path-lower', { websiteUrl: 'https://HOST.dev/team' }),
+        backer('path-upper', { websiteUrl: 'https://host.dev/Team' }),
       ],
       sponsorships: [],
     });
@@ -452,6 +513,8 @@ describe('sponsorsList', () => {
       ['opencollective/alice', 'bronze'],
       ['opencollective/page-1', null],
       ['opencollective/page-2', null],
+      ['opencollective/path-lower', null],
+      ['opencollective/path-upper', null],
     ]);
   });
 

@@ -296,7 +296,7 @@ describe('fetchBackers', () => {
   );
 
   it.effect(
-    "ignores a GitHub link that isn't GitHub, and takes a bare handle",
+    "ignores a GitHub link that isn't GitHub for their GitHub handle, and takes a bare handle",
     () => {
       const fake = fakeOpenCollective(
         openCollectiveData({
@@ -309,6 +309,14 @@ describe('fetchBackers', () => {
               },
             }),
             memberNode('bare', { account: { githubHandle: 'bob' } }),
+            memberNode('both', {
+              account: {
+                githubHandle: 'carol',
+                socialLinks: [
+                  { type: 'GITHUB', url: 'https://gitlab.com/carol' },
+                ],
+              },
+            }),
           ],
         }),
       );
@@ -317,6 +325,7 @@ describe('fetchBackers', () => {
         expect(backers.map((backer) => backer.githubLogin)).toEqual([
           null,
           'bob',
+          'carol',
         ]);
       }).pipe(Effect.provide(fake.layer));
     },

@@ -280,6 +280,15 @@ const isCurrentOrder = (order: Order, now: number) =>
       now - Date.parse(order.processedAt ?? order.createdAt) <= oneTimeCountsMs
     : order.status === 'ACTIVE';
 
+/** The login in a GitHub URL, `handle` or `owner/repo` a profile gives. */
+const githubLoginOfField = (github: string | null | undefined) =>
+  github === null || github === undefined
+    ? null
+    : (githubLoginOf(github) ??
+      (/^[\w-]+(\/[\w.-]+)?$/.test(github)
+        ? githubLoginOf(`github.com/${github}`)
+        : null));
+
 const monthlyOf: Record<Order['frequency'], number> = {
   MONTHLY: 1,
   ONETIME: 0,
@@ -355,19 +364,14 @@ export const fetchBackers = Effect.fn('fetchBackers')(function* (slug: string) {
     );
     const link = (type: string) =>
       account.socialLinks.find((social) => social.type === type)?.url;
-    const github = link('GITHUB') ?? account.githubHandle;
     backers.set(account.slug, {
       avatarUrl:
         account.imageUrl ??
         `https://images.opencollective.com/${account.slug}/avatar.png`,
       createdAt: Date.parse(member.since),
       githubLogin:
-        github === null || github === undefined
-          ? null
-          : (githubLoginOf(github) ??
-            (/^[\w-]+(\/[\w.-]+)?$/.test(github)
-              ? githubLoginOf(`github.com/${github}`)
-              : null)),
+        githubLoginOfField(link('GITHUB')) ??
+        githubLoginOfField(account.githubHandle),
       isCurrent: current.length > 0,
       monthlyDollars:
         current.reduce(
