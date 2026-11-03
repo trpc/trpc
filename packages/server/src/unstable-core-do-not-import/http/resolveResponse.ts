@@ -130,7 +130,11 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | null;
-  errors: TRPCError[];
+  /**
+   * errors aligned with `untransformedJSON` by index; entries are `undefined`
+   * for successful responses
+   */
+  errors: (TRPCError | undefined)[];
   headers: Headers;
 }) {
   const {
@@ -142,7 +146,13 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     headers,
   } = initOpts;
 
-  let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
+  const definedErrors = errors.filter((error): error is TRPCError =>
+    Boolean(error),
+  );
+
+  let status = untransformedJSON
+    ? getHTTPStatusCode(untransformedJSON, errors)
+    : 200;
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -157,7 +167,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
       info,
       paths: info?.calls.map((call) => call.path),
       data,
-      errors,
+      errors: definedErrors,
       eagerGeneration,
       type:
         info?.calls.find((call) => call.procedure?._def.type)?.procedure?._def
@@ -797,9 +807,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
 
-    const errors = results
-      .map(([error]) => error)
-      .filter(Boolean) as TRPCError[];
+    const errors = results.map(([error]) => error);
 
     const headResponse = initResponse({
       ctx: ctxManager.valueOrUndefined(),
