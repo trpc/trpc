@@ -465,13 +465,20 @@ export function ClientGreeting(props: {
   greeting: unstable_inferQueryHandle<TRPC['hello']>;
 }) {
   const trpc = useTRPC();
-  const greeting = useQuery(trpc.unstable_$fromHandle(props.greeting));
-  if (!greeting.data) return <div>Loading...</div>;
-  return <div>{greeting.data.greeting}</div>;
+  const greetingQuery = useQuery(trpc.unstable_$fromHandle(props.greeting));
+
+  switch (greetingQuery.status) {
+    case 'pending':
+      return <div>Loading...</div>;
+    case 'error':
+      return <div>Error: {greetingQuery.error.message}</div>;
+    case 'success':
+      return <div>{greetingQuery.data.greeting}</div>;
+  }
 }
 ```
 
-After `unstable_$ensure`, `greeting.data` is there on the first render. Keep the loading state anyway: the cache can lose the data later, for example after `queryClient.resetQueries()`, and the component then loads it again. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
+After `unstable_$ensure`, the first render has `status: 'success'`. Keep the `'pending'` case anyway: the cache can lose the data later, for example after `queryClient.resetQueries()`, and the component then loads it again. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
 
 `HydrateClient` sends each query once per request, so nested server components can each render their own. See [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client).
 
