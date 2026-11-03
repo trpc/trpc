@@ -4,6 +4,9 @@ summary: 'Q10.2 kept `.` in URLs; an opt-in `experimental_pathSeparator` on the 
 area: server
 recommended: B
 links:
+  - kind: pr
+    label: 'Draft PR #7846'
+    url: https://github.com/trpc/trpc/pull/7846
   - kind: issue
     label: '#5752: dots blocked by firewalls'
     url: https://github.com/trpc/trpc/issues/5752
