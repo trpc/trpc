@@ -432,7 +432,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        const iterate = async () => {
+        respond({
+          id,
+          jsonrpc,
+          result: {
+            type: 'started',
+          },
+        });
+
+        try {
           await using iterator = iteratorResource(iterable);
           let completed = false;
           // Disposed before the iterator, so cleanup that waits for
@@ -498,26 +506,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             next = null;
             result = null;
           }
-        };
-
-        const iteration = settle(iterate());
-        respond({
-          id,
-          jsonrpc,
-          result: {
-            type: 'started',
-          },
-        });
-
-        const iterated = await iteration;
-        if (!iterated.ok) {
+        } catch (cause) {
           abort();
-          if (isSuppressedError(iterated.error)) {
+          if (isSuppressedError(cause)) {
             // the client gets the iteration error, the server both
-            respondWithError(iterated.error.suppressed);
-            reportError(iterated.error.error);
+            respondWithError(cause.suppressed);
+            reportError(cause.error);
           } else {
-            respondWithError(iterated.error);
+            respondWithError(cause);
           }
         }
       };
