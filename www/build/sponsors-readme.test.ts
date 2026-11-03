@@ -133,6 +133,9 @@ describe('sponsorCloudMarkdown', () => {
     );
     expect(src([sponsor('a', 41), sponsor('b', 20)])).not.toBe(src(sponsors));
     expect(src([sponsor('a', 40)])).not.toBe(src(sponsors));
+    expect(
+      src([sponsor('a', 40), { ...sponsor('b', 20), name: 'B Co' }]),
+    ).not.toBe(src(sponsors));
   });
 
   it('leaves the cloud out when it would draw no one', () => {
