@@ -7,6 +7,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  assertPathSeparator,
   retryableRpcCodes,
   run,
   sseStreamConsumer,
@@ -16,7 +17,7 @@ import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { getUrl } from './internals/httpUtils';
+import { getUrl, type HTTPLinkBaseOptions } from './internals/httpUtils';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -61,7 +62,8 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
-} & TransformerOptions<TRoot> &
+} & Pick<HTTPLinkBaseOptions<TRoot>, 'pathSeparator'> &
+  TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
 /**
@@ -79,6 +81,9 @@ export function httpSubscriptionLink<
   >,
 ): TRPCLink<TInferrable> {
   const transformer = getTransformer(opts.transformer);
+  if (opts.pathSeparator !== undefined) {
+    assertPathSeparator(opts.pathSeparator);
+  }
 
   return () => {
     return ({ op }) => {
@@ -107,6 +112,7 @@ export function httpSubscriptionLink<
               url: await urlWithConnectionParams(opts),
               input: inputWithTrackedEventId(input, lastEventId),
               path,
+              pathSeparator: opts.pathSeparator,
               type,
               signal: null,
             }),

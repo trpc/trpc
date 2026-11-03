@@ -1,5 +1,6 @@
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
+import type { PathSeparator } from './http/pathSeparator';
 import type { JSONLProducerOptions } from './stream/jsonl';
 import type { SSEStreamProducerOptions } from './stream/sse';
 
@@ -120,6 +121,16 @@ export interface RootConfig<TTypes extends RootTypes> {
    * @see https://trpc.io/docs/client/links/httpBatchStreamLink#configure-jsonl-streaming-options
    */
   jsonl?: JSONLConfig;
+  /**
+   * The character between a procedure path's segments in HTTP URLs, for
+   * networks that block `.` in URLs. With `'/'`, `post.byId` is served at
+   * `/trpc/post/byId`. Only URLs change: middlewares, errors and query keys
+   * still see `post.byId`. The client's HTTP links must use the same
+   * separator. Dotted URLs still work.
+   * @default '.'
+   * @see https://trpc.io/docs/rpc#path-separator
+   */
+  pathSeparator?: PathSeparator;
   /** Experimental options. None right now. */
   experimental?: {};
 }

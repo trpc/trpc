@@ -394,6 +394,18 @@ describe('generateOpenAPIDocument', () => {
     });
   });
 
+  describe('pathSeparator', () => {
+    it('joins path segments with the separator', async () => {
+      const doc = await generateOpenAPIDocument(appRouterPath, {
+        pathSeparator: '/',
+      });
+      const paths = Object.keys(doc.paths ?? {});
+
+      expect(paths).toContain('/complexTypes/passthrough');
+      expect(paths.some((p) => p.includes('.'))).toBe(false);
+    });
+  });
+
   describe('servers', () => {
     it('passes the servers array through to the document', async () => {
       const doc = await generateOpenAPIDocument(appRouterPath, {

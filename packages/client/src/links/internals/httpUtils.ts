@@ -2,9 +2,14 @@ import type {
   AnyClientTypes,
   CombinedDataTransformer,
   Maybe,
+  PathSeparator,
   ProcedureType,
   TRPCAcceptHeader,
   TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  assertPathSeparator,
+  procedurePathToURLPath,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import type {
@@ -35,6 +40,13 @@ export type HTTPLinkBaseOptions<
    * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
    */
   methodOverride?: 'POST';
+  /**
+   * The character between a procedure path's segments in URLs. Must match
+   * the server's `pathSeparator`.
+   * @default '.'
+   * @see https://trpc.io/docs/rpc#path-separator
+   */
+  pathSeparator?: PathSeparator;
 } & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
@@ -42,16 +54,21 @@ export interface ResolvedHTTPLinkOptions {
   fetch?: FetchEsque;
   transformer: CombinedDataTransformer;
   methodOverride?: 'POST';
+  pathSeparator?: PathSeparator;
 }
 
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
+  if (opts.pathSeparator !== undefined) {
+    assertPathSeparator(opts.pathSeparator);
+  }
   return {
     url: opts.url.toString(),
     fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
+    pathSeparator: opts.pathSeparator,
   };
 }
 
@@ -113,7 +130,7 @@ export const getUrl: GetUrl = (opts) => {
   const parts = opts.url.split('?') as [string, string?];
   const base = parts[0].replace(/\/$/, ''); // Remove any trailing slashes
 
-  let url = base + '/' + opts.path;
+  let url = base + '/' + procedurePathToURLPath(opts.path, opts.pathSeparator);
   const queryParts: string[] = [];
 
   if (parts[1]) {

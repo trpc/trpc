@@ -95,10 +95,17 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
     prefix = ''; // handled by fastify internally
   }
 
-  fastify.all(`${prefix}/:path`, async (req, res) => {
-    const path = (req.params as any).path;
-    await fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
-  });
+  if (opts.trpcOptions.router._def._config.pathSeparator === '/') {
+    fastify.all(`${prefix}/*`, async (req, res) => {
+      const path = (req.params as any)['*'];
+      await fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
+    });
+  } else {
+    fastify.all(`${prefix}/:path`, async (req, res) => {
+      const path = (req.params as any).path;
+      await fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
+    });
+  }
 
   if (opts.useWSS) {
     const trpcOptions =

@@ -3,6 +3,7 @@ import {
   type DefaultErrorShape,
   type ErrorFormatter,
 } from './error/formatter';
+import { assertPathSeparator } from './http/pathSeparator';
 import type { MiddlewareBuilder, MiddlewareFunction } from './middleware';
 import { createMiddlewareFactory } from './middleware';
 import type { ProcedureBuilder } from './procedureBuilder';
@@ -182,6 +183,10 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        */
       $types: null as any,
     };
+
+    if (opts?.pathSeparator !== undefined) {
+      assertPathSeparator(opts.pathSeparator);
+    }
 
     {
       // Server check

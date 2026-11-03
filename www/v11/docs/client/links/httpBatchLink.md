@@ -111,6 +111,13 @@ export interface HTTPLinkOptions {
    * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
+  /**
+   * The character between a procedure path's segments in URLs. Must match
+   * the server's `pathSeparator`.
+   * @default '.'
+   * @see https://trpc.io/docs/rpc#path-separator
+   */
+  pathSeparator?: '.' | '/' | '_' | '~';
 }
 ```
 
