@@ -23,7 +23,7 @@ export async function listen(port = 0) {
     router: appRouter,
     layer,
     transformer: progressiveJson,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const syncHandler = createFetchHandler({
     router: appRouter,

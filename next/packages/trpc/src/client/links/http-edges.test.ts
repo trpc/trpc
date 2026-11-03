@@ -30,7 +30,7 @@ const router = t.router({
   }),
 });
 
-const handler = createFetchHandler({ router, batch: true });
+const handler = createFetchHandler({ router, batch: { maxItems: 100 } });
 const real: typeof fetch = (input, init) =>
   handler.fetch(new Request(input as string, init as RequestInit));
 
@@ -177,7 +177,7 @@ test('calls with differing inits batch apart; ones JSON cannot key go alone', as
       );
       return real(input, init);
     },
-    { batch: {} },
+    { batch: { maxItems: 100 } },
   );
   const results = await Promise.all([
     client.echo.query('a', { init: { cache: 'no-store', mode: 'cors' } }),
@@ -196,7 +196,7 @@ test('calls with differing inits batch apart; ones JSON cannot key go alone', as
 });
 
 test('an input the transformer cannot write fails alone, outside the batch', async () => {
-  const client = clientWith(real, { batch: true });
+  const client = clientWith(real, { batch: { maxItems: 100 } });
   const loop: Record<string, unknown> = {};
   loop['self'] = loop;
   const [ok, [, err]] = await Promise.all([
@@ -209,7 +209,7 @@ test('an input the transformer cannot write fails alone, outside the batch', asy
 
 test('aborting every call in a batch aborts its request', async () => {
   const before = aborted;
-  const client = clientWith(real, { batch: true });
+  const client = clientWith(real, { batch: { maxItems: 100 } });
   const one = new AbortController();
   const two = new AbortController();
   const calls = Promise.all([
@@ -238,7 +238,7 @@ test('a batch response that ends early, or names calls it was not sent, fails th
           '',
         ].join('\n'),
       ),
-    { batch: true },
+    { batch: { maxItems: 100 } },
   );
   const [first, [, second]] = await Promise.all([
     client.echo.query('a'),
@@ -397,7 +397,7 @@ test('forged batch lines: a call answered twice keeps its first answer; unreadab
           body: { json: { error: { code: 'CONFLICT', message: 'second' } } },
         },
       ),
-    { batch: true },
+    { batch: { maxItems: 100 } },
   );
   const [[, zero], [, one]] = await Promise.all([
     safe(twice.echo.query('a')),
@@ -420,7 +420,7 @@ test('forged batch lines with unreadable bodies fail their calls alone; broken s
         { i: 0, status: 200, body: null },
         { i: 1, status: 500, body: null },
       ),
-    { batch: true },
+    { batch: { maxItems: 100 } },
   );
   const [[, result], [, error]] = await Promise.all([
     safe(unreadable.echo.query('a')),
@@ -447,7 +447,7 @@ test('forged batch lines with unreadable bodies fail their calls alone; broken s
     [() => Promise.reject(new TypeError('offline')), 'NETWORK_ERROR'],
   ];
   for (const [fetch, first] of cases) {
-    const broken = clientWith(fetch, { batch: true });
+    const broken = clientWith(fetch, { batch: { maxItems: 100 } });
     const [a, [, b]] = await Promise.all([
       safe(broken.echo.query('a')),
       safe(broken.echo.query('b')),
@@ -464,7 +464,7 @@ test('a batch whose calls were all aborted before it was sent sends nothing', as
       requests++;
       return real(input, init);
     },
-    { batch: true },
+    { batch: { maxItems: 100 } },
   );
   const controller = new AbortController();
   const call = safe(client.echo.query('a', { signal: controller.signal }));

@@ -115,7 +115,7 @@ export const allowedOrigin = 'https://app.example.com';
 /** What every entry point passes `createFetchHandler`, besides its context and layer. */
 export const handlerOptions = {
   router: appRouter,
-  batch: true,
+  batch: { maxItems: 100 },
   transformer,
   middleware: [cors({ allowedOrigins: [allowedOrigin] })],
 };

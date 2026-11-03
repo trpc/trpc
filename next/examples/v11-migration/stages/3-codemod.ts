@@ -32,6 +32,7 @@ const steps = [
   'app/client/app.tsx:31:49 queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
   'app/client/client.ts:27:11 createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/transformers',
   'app/client/client.ts:28:11 EventSource: httpLink streams SSE over fetch; use headers or init',
+  "app/client/client.ts:30:16 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and httpBatchLink had no limit; keep it at most the handler's batch.maxItems, which refuses bigger batches (https://v12.trpc.io/v12/docs/client/links/http#batching)",
   'app/client/client.ts:32:11 createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/transformers',
   'app/client/client.ts:42:20 createWSClient: pass its options to wsLink({ url })',
   'app/client/client.ts:47:22 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })',
@@ -41,6 +42,7 @@ const steps = [
   'app/client/queries.ts:9:16 createTrpcQueryUtils({ client, queryClient }): queryClient is only for the handle verbs ($prefetch, $ensure, $fetch); hooks use QueryClientProvider',
   "app/server/context.ts:1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, https://v12.trpc.io/v12/docs/server/responses",
   'app/server/index.ts:7:12 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)',
+  "app/server/index.ts:7:12 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and fetchRequestHandler batched by default with no limit; links' batch.maxItems must be at most this, since bigger batches are refused (https://v12.trpc.io/v12/docs/client/links/http#batching)",
   'app/server/router.ts:27:27 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
   'app/server/router.ts:28:37 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
   'app/server/trpc.ts:7:3 transformer: drop it here; pass the same createSyncTransformer(transformer) to the handler and every link',
@@ -75,12 +77,12 @@ export function run() {
       dry.filter((line) => /^app\/\S+:\d+:\d+ /.test(line)),
       steps,
     );
-    strictEqual(dry.at(-1), '7 file(s) to upgrade, 17 step(s) by hand');
+    strictEqual(dry.at(-1), '7 file(s) to upgrade, 19 step(s) by hand');
     for (const file of files) strictEqual(read(file), before.get(file));
 
     strictEqual(
       upgrade('--write').at(-1),
-      '7 file(s) upgraded, 17 step(s) by hand',
+      '7 file(s) upgraded, 19 step(s) by hand',
     );
 
     const server = read('server/trpc.ts');
@@ -101,11 +103,12 @@ export function run() {
     ok(index.includes('return createFetchHandler({'));
     ok(index.includes('}).fetch(req);'));
     ok(!index.includes('      req,'));
+    ok(index.includes('batch: { maxItems: 100 },'));
 
     const client = read('client/client.ts');
     ok(client.includes("from '@trpc12/trpc/client';"));
     ok(client.includes('router: routerType<AppRouter>(),'));
-    ok(client.includes('batch: true,'));
+    ok(client.includes('batch: { maxItems: 100 },'));
     ok(
       !client.includes('httpBatchLink') &&
         !client.includes('httpSubscriptionLink'),

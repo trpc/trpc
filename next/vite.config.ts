@@ -148,6 +148,7 @@ export default defineConfig({
         files: ['examples/**'],
         rules: {
           'trpc/infer-callback-params': 'error',
+          'trpc/explicit-batch-size': 'error',
         },
       },
       {

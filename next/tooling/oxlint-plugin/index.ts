@@ -1,6 +1,7 @@
 import { eslintCompatPlugin } from '@oxlint/plugins';
 
 import { acronymCase } from './acronym-case.ts';
+import { explicitBatchSize } from './explicit-batch-size.ts';
 import { inferCallbackParams } from './infer-callback-params.ts';
 import { jsdoc } from './jsdoc.ts';
 import { moduleBoundaries } from './module-boundaries.ts';
@@ -14,6 +15,7 @@ const plugin = eslintCompatPlugin({
   meta: { name: 'trpc' },
   rules: {
     'acronym-case': acronymCase,
+    'explicit-batch-size': explicitBatchSize,
     'infer-callback-params': inferCallbackParams,
     jsdoc,
     'module-boundaries': moduleBoundaries,

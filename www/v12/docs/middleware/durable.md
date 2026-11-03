@@ -24,7 +24,7 @@ createFetchHandler({ router, layer: Persistence.layerBackingMemory });
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [experimental_durableLink(), httpLink({ url, batch: true })],
+  links: [experimental_durableLink(), httpLink({ url, batch: { maxItems: 100 } })],
 });
 // After a reload, pick up the same call:
 await client.checkout.mutate(cart, { callId: sessionStorage.checkoutId });

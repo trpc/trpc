@@ -15,7 +15,7 @@ export interface Server {
 export async function startServer(port: number): Promise<Server> {
   const handler = createFetchHandler({
     router: appRouter,
-    batch: true,
+    batch: { maxItems: 100 },
     createContext: (opts) => ({
       user: opts.request.headers['authorization'] ?? null,
     }),

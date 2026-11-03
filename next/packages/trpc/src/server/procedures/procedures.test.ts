@@ -163,11 +163,14 @@ type AppRouter = typeof router;
 
 const ClockLive = Layer.succeed(Clock, { now: () => 1234 });
 
-async function setup(user: string | null = 'ada', batch = false) {
+async function setup(
+  user: string | null = 'ada',
+  batch: false | { maxItems: number } = false,
+) {
   const responses: Response[] = [];
   const server = await createTestServer({
     router,
-    batch: true,
+    batch: { maxItems: 100 },
     createContext: () => ({ user }),
     layer: ClockLive,
     exposeUnexpectedErrors: false,
@@ -283,7 +286,7 @@ test('the response handle sets headers and the success status', async () => {
 });
 
 test('inside a batch, headers from every call are merged', async () => {
-  await using ctx = await setup('ada', true);
+  await using ctx = await setup('ada', { maxItems: 100 });
   const [login, theme] = await Promise.all([
     ctx.client.login.mutate({ name: 'sam' }),
     ctx.client.theme.query(),

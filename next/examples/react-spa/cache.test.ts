@@ -33,7 +33,7 @@ const client = createTrpcClient({
     dedupeLink(),
     httpLink({
       url: 'http://localhost/trpc',
-      batch: true,
+      batch: { maxItems: 100 },
       transformer,
       fetch: (input, init) => trackerApi.fetch(new Request(input, init)),
     }),

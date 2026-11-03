@@ -38,7 +38,7 @@ const router = t.router({
 });
 
 function setup() {
-  const handler = createFetchHandler({ router, batch: true });
+  const handler = createFetchHandler({ router, batch: { maxItems: 100 } });
   const queryClient = new QueryClient();
   const requests: Request[] = [];
   const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -50,7 +50,11 @@ function setup() {
     router: routerType<typeof router>(),
     links: chain(
       invalidationLink({ queryClient }),
-      responseHttpLink({ url: 'http://localhost/trpc', fetch, batch: true }),
+      responseHttpLink({
+        url: 'http://localhost/trpc',
+        fetch,
+        batch: { maxItems: 100 },
+      }),
     ),
   });
   const keys = {

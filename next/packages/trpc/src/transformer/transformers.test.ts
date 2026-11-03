@@ -187,7 +187,10 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
 });
 
 test('no transformer: plain JSON, JSON-form client types, ?input= GET params', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [httpLink({ url: server.url })],
@@ -244,7 +247,7 @@ test('no transformer: plain JSON, JSON-form client types, ?input= GET params', a
 
   const batched = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: { maxItems: 100 } })],
   });
   const [a, b] = await Promise.all([
     batched.rich.query({ q: 'x' }),
@@ -456,7 +459,7 @@ test('devalue as a sync transformer', async () => {
   await using server = await createTestServer({
     router,
     transformer: devalueTransformer,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
@@ -464,7 +467,7 @@ test('devalue as a sync transformer', async () => {
       httpLink({
         url: server.url,
         transformer: devalueTransformer,
-        batch: true,
+        batch: { maxItems: 100 },
       }),
     ],
   });
@@ -491,9 +494,9 @@ test('nested deferred values stream with every transformer; files in inputs need
     await using server = await createTestServer({
       router: deferred,
       transformer,
-      batch: true,
+      batch: { maxItems: 100 },
     });
-    for (const batch of [false, true]) {
+    for (const batch of [false, { maxItems: 100 }] as const) {
       const client = createTrpcClient({
         router: routerType<typeof deferred>(),
         links: [httpLink({ url: server.url, transformer, batch })],

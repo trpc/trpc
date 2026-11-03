@@ -11,7 +11,13 @@ import type { AppRouter } from './server.ts';
 export async function main(url: string) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, batch: true, headers: { authorization: 'ada' } })],
+    links: [
+      httpLink({
+        url,
+        batch: { maxItems: 100 },
+        headers: { authorization: 'ada' },
+      }),
+    ],
   });
 
   const post = await client.post.byId.query({ id: '1' });

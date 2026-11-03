@@ -10,6 +10,7 @@ import {
   type CodeTags,
   type WireError,
 } from '../../internal/error.ts';
+import { batchMaxItems } from '../../internal/batch.ts';
 import { timerOption } from '../../internal/duration.ts';
 import type { PathSeparator } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
@@ -53,11 +54,15 @@ export const makeHttpHandler = (
     readonly sse?:
       | { readonly pingInterval?: Duration.Input | false | undefined }
       | undefined;
-    readonly batch?: boolean | { readonly maxItems?: number } | undefined;
+    readonly batch?: false | { readonly maxItems: number } | undefined;
   },
   core: HandlerCore,
 ): HttpHandler => {
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
+  const maxItems =
+    opts.batch === undefined
+      ? undefined
+      : batchMaxItems('createFetchHandler', opts.batch);
   return {
     router: opts.router,
     core,
@@ -67,12 +72,7 @@ export const makeHttpHandler = (
     paths: makeUrlPaths(opts.router, opts.experimental_pathSeparator ?? '.'),
     maxBodySize: opts.maxBodySize ?? 1_048_576,
     ssePing: timerOption(opts.sse?.pingInterval, '15 seconds'),
-    batch:
-      opts.batch === true
-        ? { maxItems: 20 }
-        : opts.batch
-          ? { maxItems: opts.batch.maxItems ?? 20 }
-          : undefined,
+    batch: maxItems === undefined ? undefined : { maxItems },
   };
 };
 

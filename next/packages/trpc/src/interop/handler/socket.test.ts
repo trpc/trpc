@@ -29,6 +29,7 @@ async function start(extra: Partial<V11HandlerOptions<typeof router>> = {}) {
       user:
         (opts.info.connectionParams?.['token'] as string | undefined) ?? null,
     }),
+    batch: { maxItems: 100 },
     ...extra,
   });
   const server = createServer();
@@ -377,6 +378,7 @@ test('dispose() closes the sockets handed to websocket() and ends their subscrip
       }),
     }),
     createContext: () => ({ user: null }),
+    batch: { maxItems: 100 },
   });
   const socket = new StandardSocket();
   handler.websocket(socket, { request: new Request('http://localhost/trpc') });
@@ -409,6 +411,7 @@ test('dispose() ends the session of a socket still connecting, and closes it wit
   const handler = createV11Handler({
     router,
     createContext: () => ({ user: null }),
+    batch: { maxItems: 100 },
   });
   const socket = new StandardSocket();
   const listening = new Set<string>();

@@ -20,7 +20,7 @@ export function makeClient(opts: {
       fromV11Link(callLogLink(opts.log)),
       httpLink({
         url: opts.url,
-        batch: true,
+        batch: { maxItems: 100 },
         transformer,
         headers: (): HeadersInit =>
           opts.token ? { authorization: opts.token } : {},

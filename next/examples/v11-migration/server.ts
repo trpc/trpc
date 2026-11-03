@@ -31,6 +31,8 @@ export async function listen(port = 0) {
     router: appRouter,
     createContext,
     transformer: superjson,
+    // v11 batched with no limit; v12 needs one. httpBatchLink's batches stay under it.
+    batch: { maxItems: 100 },
     // The v11 router's errorFormatter, so old clients still read `data.issues`.
     errorFormatter: (opts) => ({
       ...opts.shape,
@@ -44,7 +46,7 @@ export async function listen(port = 0) {
     router: appRouter,
     createContext,
     endpoint: '/rpc',
-    batch: true,
+    batch: { maxItems: 100 },
     transformer,
   });
   const routes = Layer.mergeAll(

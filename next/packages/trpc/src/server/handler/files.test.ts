@@ -131,12 +131,16 @@ test('a call with a file leaves the batch and goes alone', async () => {
   await using server = await createTestServer({
     router,
     transformer: progressiveJson,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({ url: server.url, transformer: progressiveJson, batch: true }),
+      httpLink({
+        url: server.url,
+        transformer: progressiveJson,
+        batch: { maxItems: 100 },
+      }),
     ],
   });
   const [size, a, b] = await Promise.all([
@@ -318,7 +322,10 @@ test('a JSON body cannot claim to hold files', async () => {
 });
 
 test('a root File output of an unbatched call is the response body, with any transformer', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, batch: false })],
@@ -347,7 +354,7 @@ test('a root File output of an unbatched call is the response body, with any tra
 
   const batching = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: { maxItems: 100 } })],
   });
   const alone = await batching.rawBlob.query(undefined, { batch: false });
   expect(alone.size).toBe(3);
@@ -379,12 +386,16 @@ test('a root File output in a batch streams like a nested one', async () => {
   await using server = await createTestServer({
     router,
     transformer: progressiveJson,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({ url: server.url, transformer: progressiveJson, batch: true }),
+      httpLink({
+        url: server.url,
+        transformer: progressiveJson,
+        batch: { maxItems: 100 },
+      }),
     ],
   });
   const [file, hello] = await Promise.all([
@@ -409,7 +420,7 @@ for (const transport of [
     await using server = await createTestServer({
       router,
       transformer: progressiveJson,
-      batch: true,
+      batch: { maxItems: 100 },
     });
     await using ws = wsLink({
       url: server.wsUrl,
@@ -432,7 +443,7 @@ for (const transport of [
                   url: server.url,
                   transformer: progressiveJson,
                   binary: true,
-                  batch: true,
+                  batch: { maxItems: 100 },
                 })
               : transport.startsWith('wsLink')
                 ? ws
@@ -469,7 +480,7 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
   await using server = await createTestServer({
     router,
     transformer: progressiveJson,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const get = async (accept?: string) => {
     const res = await fetch(`${server.url}/attachments`, {
@@ -497,7 +508,7 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
         url: server.url,
         transformer: progressiveJson,
         binary: true,
-        batch: true,
+        batch: { maxItems: 100 },
       }),
     ],
   });

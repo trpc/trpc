@@ -17,7 +17,7 @@ const url = () =>
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: url(), batch: true, transformer })],
+    links: [httpLink({ url: url(), batch: { maxItems: 100 }, transformer })],
   });
 
 // Typed from the client, so hooks see progressive JSON's `Date`s and files.

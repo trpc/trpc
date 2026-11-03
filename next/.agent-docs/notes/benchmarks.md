@@ -66,9 +66,9 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                              |    gzip | target |
 | ----------------------------------- | ------: | -----: |
-| minimal JSON (`httpLink`)           | 43.4 kB |  18 kB |
-| full (`retryLink`, `httpLink`, SSE) | 43.6 kB |  25 kB |
-| full with progressive JSON          | 48.0 kB |  25 kB |
+| minimal JSON (`httpLink`)           | 43.6 kB |  18 kB |
+| full (`retryLink`, `httpLink`, SSE) | 43.8 kB |  25 kB |
+| full with progressive JSON          | 48.2 kB |  25 kB |
 
 2026-10-21: the full client is measured without and with progressive JSON, which is opt-in (the human: "3. With and without", [`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). Progressive JSON adds 4.1 kB. The history below, before that day, is of the full client with it.
 

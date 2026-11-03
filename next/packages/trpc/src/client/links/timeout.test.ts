@@ -29,11 +29,12 @@ const slow = t.procedure.query(
 const router = t.router({ slow });
 type AppRouter = typeof router;
 
-const serve = () => createTestServer({ router, batch: true });
+const serve = () => createTestServer({ router, batch: { maxItems: 100 } });
 
 const LINKS = {
   httpLink: (server) => httpLink({ url: server.url }),
-  'httpLink, batched': (server) => httpLink({ url: server.url, batch: true }),
+  'httpLink, batched': (server) =>
+    httpLink({ url: server.url, batch: { maxItems: 100 } }),
   wsLink: (server) => wsLink({ url: server.wsUrl }),
   localLink: () => localLink({ router }),
 } satisfies Record<string, (server: NodeTestServer) => AnyLink>;

@@ -98,6 +98,7 @@ declare function createContext(): Context;
 const legacy = createV11Handler({
   router: appRouter,
   createContext,
+  batch: { maxItems: 100 },
   deferred: 'refuse', // 'settle' by default
 });
 ```

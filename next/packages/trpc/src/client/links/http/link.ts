@@ -1,4 +1,5 @@
 import { Stream, type Duration } from 'effect';
+import { batchMaxItems } from '../../../internal/batch.ts';
 import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
@@ -82,11 +83,17 @@ export interface HttpLinkOptions<
   longQuery?: 'post' | 'query';
   /**
    * Batch queries (and, separately, mutations) made in the same tick into
-   * one request. The server must enable batching too. A call opts out with
+   * requests of at most `maxItems` calls each. There's no default size, and
+   * the handler must accept batches at least that big
+   * (`createFetchHandler({ batch: { maxItems } })`). A call opts out with
    * `{ batch: false }`.
+   * @example
+   * ```ts
+   * httpLink({ url, batch: { maxItems: 100 } });
+   * ```
    * @default false
    */
-  batch?: boolean | { maxItems?: number };
+  batch?: false | { maxItems: number };
   /**
    * `false` turns subscriptions (SSE) off: procedures lose `.subscribe()`,
    * for a link that should only carry queries and mutations.
@@ -120,7 +127,8 @@ export interface HttpLinkOptions<
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
  * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
  * stops early), batching unless it's off (a `batch` that may be on, such
- * as a `boolean`, counts as on), and no subscriptions when they're off.
+ * as `false | { maxItems: number }`, counts as on), and no subscriptions
+ * when they're off.
  * @since 0.1.0
  * @stability stable
  */
@@ -148,7 +156,7 @@ export type HttpLinkDecl<TOpts> = {
  * ```ts
  * createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
+ *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: { maxItems: 100 } })],
  * });
  * ```
  * @since 0.1.0
@@ -161,7 +169,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const transformer = opts.transformer ?? jsonTransformer;
   const transport = makeTransport(opts, transformer);
   const maxItems =
-    opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;
+    opts.batch === undefined ? 0 : (batchMaxItems('httpLink', opts.batch) ?? 0);
   const batched = makeBatcher<Operation>({
     // Calls without an `initKey` are unbatchable, so they never get here.
     key: transport.batchKey,

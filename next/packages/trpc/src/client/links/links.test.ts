@@ -66,7 +66,7 @@ type AppRouter = typeof router;
 const serve = () =>
   createTestServer({
     router,
-    batch: true,
+    batch: { maxItems: 100 },
     createContext: (opts) => ({
       token: opts.request.headers['authorization'] ?? null,
     }),
@@ -159,7 +159,7 @@ test('splitLink routes subscriptions and batched calls differently', async () =>
       splitLink({
         condition: (op) => op.type === 'subscription',
         true: httpLink({ url: server.url }),
-        false: httpLink({ url: server.url, batch: true }),
+        false: httpLink({ url: server.url, batch: { maxItems: 100 } }),
       }),
     ],
   });
@@ -255,7 +255,7 @@ test('an aborted request.signal aborts the call on handler.fetch', async () => {
   const createContext = () => ({ token: null });
   for (const handler of [
     createFetchHandler({ router, createContext }),
-    createV11Handler({ router, createContext }),
+    createV11Handler({ router, createContext, batch: { maxItems: 100 } }),
   ]) {
     const before = signals.aborted;
     const controller = new AbortController();
@@ -443,7 +443,7 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
     links: [
       httpLink({
         url: server.url,
-        batch: true,
+        batch: { maxItems: 100 },
         headers: { authorization: 'link' },
         init: (opts) => {
           opsPerInit.push(opts.ops.map((op) => op.path));

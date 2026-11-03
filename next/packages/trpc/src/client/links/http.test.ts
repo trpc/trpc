@@ -63,14 +63,19 @@ const router = t.router({
 let ticksStopped = 0;
 type AppRouter = typeof router;
 
-async function setup(opts: { serverBatch?: boolean; clientBatch?: boolean }) {
+async function setup(opts: { serverBatch?: false; clientBatch?: false }) {
   const server = await createTestServer({
     router,
-    batch: opts.serverBatch ?? true,
+    batch: opts.serverBatch ?? { maxItems: 100 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: opts.clientBatch ?? true })],
+    links: [
+      httpLink({
+        url: server.url,
+        batch: opts.clientBatch ?? { maxItems: 100 },
+      }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -115,7 +120,10 @@ test('queries and mutations are batched separately', async () => {
 });
 
 test('the client splits batches above maxItems', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, batch: { maxItems: 2 } })],
@@ -296,12 +304,15 @@ test('a link before httpLink reads each response through onResponse', async () =
 test('each call in a batch gets its own line status with the batch headers', async () => {
   await using server = await createTestServer({
     router: versioned,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const seen: Array<{ path: string; status: number }> = [];
   const client = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [responsesLink(seen), httpLink({ url: server.url, batch: true })],
+    links: [
+      responsesLink(seen),
+      httpLink({ url: server.url, batch: { maxItems: 100 } }),
+    ],
   });
   const headers: Headers[] = [];
   const onResponse = (meta: { headers: Headers }) => headers.push(meta.headers);
@@ -324,7 +335,10 @@ test('each call in a batch gets its own line status with the batch headers', asy
   seen.length = 0;
   const rejected = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [responsesLink(seen), httpLink({ url: unbatched.url, batch: true })],
+    links: [
+      responsesLink(seen),
+      httpLink({ url: unbatched.url, batch: { maxItems: 100 } }),
+    ],
   });
   const [, err] = await safe(rejected.version.query());
   expect(err).toMatchObject({ code: 'BAD_REQUEST' });
@@ -334,7 +348,7 @@ test('each call in a batch gets its own line status with the batch headers', asy
 test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
   await using server = await createTestServer({
     router: versioned,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const throwing: BuiltinCallOptions = {
     onResponse: () => {
@@ -342,7 +356,7 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
     },
   };
   const failure = { code: 'CLIENT_ERROR', message: 'no thanks' };
-  for (const batch of [false, true]) {
+  for (const batch of [false, { maxItems: 100 }] as const) {
     const client = createTrpcClient({
       router: routerType<typeof versioned>(),
       links: [httpLink({ url: server.url, batch })],
@@ -356,7 +370,7 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
   }
   const client = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: { maxItems: 100 } })],
   });
   await using unbatched = await createTestServer({
     router: versioned,
@@ -364,7 +378,7 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
   });
   const rejected = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [httpLink({ url: unbatched.url, batch: true })],
+    links: [httpLink({ url: unbatched.url, batch: { maxItems: 100 } })],
   });
   const [, rejectedErr] = await safe(
     rejected.version.query(undefined, throwing),

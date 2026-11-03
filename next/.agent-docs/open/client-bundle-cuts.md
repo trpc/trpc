@@ -169,11 +169,11 @@ const router = routerType<AppRouter>();
 declare const url: string;
 declare function token(): string;
 // ---cut-end---
-// before: httpLink({ url, batch: true });
+// before: httpLink({ url, batch: { maxItems: 100 } });
 
 // after: httpLink, httpStreamLink and promiseLink from '@trpc12/trpc/client'
 httpLink({ url }); // fetch, queries and mutations, no Effect: 3.85 kB
-httpStreamLink({ url, batch: true }); // the old httpLink: batching, streams, SSE
+httpStreamLink({ url, batch: { maxItems: 100 } }); // the old httpLink: batching, streams, SSE
 
 const auth = promiseLink((opts) =>
   opts.next({

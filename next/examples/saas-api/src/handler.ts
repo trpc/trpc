@@ -22,7 +22,7 @@ export function contextFrom(
 export function createApiHandler(db: SaasDb = SaasDb.seeded()) {
   return createFetchHandler({
     router: appRouter,
-    batch: true,
+    batch: { maxItems: 100 },
     layer: appLayer(db),
     middleware: [cors({ allowedOrigins: [appOrigin], credentials: true })],
     createContext: (opts) => contextFrom(opts.request),

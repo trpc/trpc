@@ -29,7 +29,7 @@ const assert = (ok: boolean, message: string): void => {
 await using server = await listen();
 const tracker = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: server.url, batch: true, transformer })],
+  links: [httpLink({ url: server.url, batch: { maxItems: 100 }, transformer })],
 });
 const browser = await chromium.launch(
   process.env['CHROME_PATH']

@@ -195,7 +195,10 @@ test('a call takes the built-in options only when a link reads them', () => {
 });
 
 test('splitLink sees typed paths, and merges both branches', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const conditions: string[] = [];
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -209,7 +212,7 @@ test('splitLink sees typed paths, and merges both branches', async () => {
           return op.path === 'post.byId';
         },
         true: [dedupeLink(), httpLink({ url: server.url })],
-        false: httpLink({ url: server.url, batch: true }),
+        false: httpLink({ url: server.url, batch: { maxItems: 100 } }),
       }),
     ],
   });
@@ -267,7 +270,10 @@ test('custom links get an Operation typed with their declared context', () => {
 });
 
 test('switchLink picks a branch, and a typed call option forces one', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const picked: string[] = [];
   const tag = (name: string) =>
     link((opts) => {
@@ -280,7 +286,10 @@ test('switchLink picks a branch, and a typed call option forces one', async () =
       switchLink({
         name: 'transport',
         links: {
-          batched: [tag('batched'), httpLink({ url: server.url, batch: true })],
+          batched: [
+            tag('batched'),
+            httpLink({ url: server.url, batch: { maxItems: 100 } }),
+          ],
           single: [tag('single'), dedupeLink(), httpLink({ url: server.url })],
         },
         pick: (op) => {

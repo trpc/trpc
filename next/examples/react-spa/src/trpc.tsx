@@ -23,13 +23,22 @@ export const makeTrackerClient = () =>
   createTrpcClient({
     router: routerType<TrackerRouter>(),
     // Two components asking for the same query at once share one request.
-    links: [dedupeLink(), httpLink({ url: '/trpc', batch: true, transformer })],
+    links: [
+      dedupeLink(),
+      httpLink({ url: '/trpc', batch: { maxItems: 100 }, transformer }),
+    ],
   });
 
 const makeDirectoryClient = () =>
   createTrpcClient({
     router: routerType<DirectoryRouter>(),
-    links: [httpLink({ url: '/directory/trpc', batch: true, transformer })],
+    links: [
+      httpLink({
+        url: '/directory/trpc',
+        batch: { maxItems: 100 },
+        transformer,
+      }),
+    ],
   });
 
 export const [TrackerProvider, useTracker] =
