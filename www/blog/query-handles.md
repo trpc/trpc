@@ -521,7 +521,7 @@ There are three ways to start a query, and you choose for each query on the page
 
 Procedures with a `cursor` input also get `unstable_$prefetchInfinite`, `unstable_$ensureInfinite` and `unstable_$fetchInfinite`.
 
-Try all three in a browser loader. The demo runs the real handles API against a tRPC router in the page:
+Try all three in a browser loader, and the same blog with no loader. The demo runs the real handles API against a tRPC router in the page:
 
 ```demo starting-queries
 ```
@@ -707,7 +707,7 @@ export function PostPage(props: { id: string }) {
 
 `Post` is the same component a server component would feed. Every query starts before any component reads one, so they load side by side. During render, a query starts only if the cache has no entry for it, as with TanStack Query's `usePrefetchQuery`, so a re-render starts nothing. There's no wrapper hook and no dependency array: they're plain calls. Stale data shows at once, and the component that reads it refreshes it.
 
-The demo runs one page both ways:
+The demo runs one blog both ways, on the list and on each article:
 
 ```demo waterfalls variants=top,reader
 ```
