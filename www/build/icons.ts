@@ -56,30 +56,61 @@ const renderPng = (svg: string, size: number) =>
         .asPng(),
   });
 
-/** The icons, by URL path, rendered from the SVG favicon. */
-export const renderIcons = Effect.fn('renderIcons')(function* (svg: string) {
+/** A PNG rendered from an SVG, `width` pixels wide. */
+export interface Png {
+  readonly svg: string;
+  readonly width: number;
+}
+
+/**
+ * The icons, by URL path, rendered from the SVG favicon, with `pngs` rendered
+ * at theirs.
+ */
+export const renderIcons = Effect.fn('renderIcons')(function* (
+  svg: string,
+  pngs: Readonly<Record<string, Png>> = {},
+) {
   const images = yield* Effect.forEach(icoSizes, (size) =>
     Effect.map(renderPng(svg, size), (png) => ({ png, size })),
   );
   // iOS rounds the corners itself and fills transparent ones black, so the
   // touch icon is the favicon's square without its rounding.
   const square = svg.replace(/\s+rx="[\d.]+"/, '');
+  const favicon = ico(images);
+  const rendered = yield* Effect.forEach(
+    Object.entries(pngs),
+    ([pathname, png]) =>
+      Effect.map(
+        renderPng(png.svg, png.width),
+        (bytes) => [pathname, bytes] as const,
+      ),
+  );
   return new Map<string, Uint8Array>([
     ['/apple-touch-icon.png', yield* renderPng(square, appleTouchSize)],
-    ['/favicon.ico', ico(images)],
+    ['/favicon.ico', favicon],
+    // Docusaurus's favicon URL, which old links and bookmarks still ask for.
+    ['/img/favicon.ico', favicon],
+    ...rendered,
   ]);
 });
 
-const contentTypes: Readonly<Record<string, string>> = {
-  '/apple-touch-icon.png': 'image/png',
-  '/favicon.ico': 'image/x-icon',
-};
+const contentTypeOf = (pathname: string) =>
+  pathname.endsWith('.ico') ? 'image/x-icon' : 'image/png';
 
 /** Writes the icons to the client build; the dev server renders them when asked. */
-export function siteIcons(options: { readonly svg: string }): Plugin {
+export function siteIcons(options: {
+  readonly pngs?: Readonly<Record<string, Png>>;
+  readonly svg: string;
+}): Plugin {
+  const pathnames = new Set([
+    '/apple-touch-icon.png',
+    '/favicon.ico',
+    '/img/favicon.ico',
+    ...Object.keys(options.pngs ?? {}),
+  ]);
   let icons: Promise<ReadonlyMap<string, Uint8Array>> | undefined;
   const load = () => {
-    icons ??= Effect.runPromise(renderIcons(options.svg));
+    icons ??= Effect.runPromise(renderIcons(options.svg, options.pngs));
     return icons;
   };
   return {
@@ -87,13 +118,12 @@ export function siteIcons(options: { readonly svg: string }): Plugin {
       server.middlewares.use((request, response, next) => {
         const pathname = new URL(request.url ?? '/', 'http://localhost')
           .pathname;
-        const contentType = contentTypes[pathname];
-        if (contentType === undefined) {
+        if (!pathnames.has(pathname)) {
           next();
           return;
         }
         load().then((rendered) => {
-          response.setHeader('Content-Type', contentType);
+          response.setHeader('Content-Type', contentTypeOf(pathname));
           response.end(rendered.get(pathname));
         }, next);
       });
