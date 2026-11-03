@@ -60,6 +60,26 @@ const handler = createFetchHandler({
 
 `cors()` is Effect's `HttpMiddleware.cors` plus an origin check on WebSocket upgrades (403 for other origins). Browsers send cookies with cross-site upgrades and CORS doesn't cover them, so use it when you authenticate with cookies.
 
+## Request body size
+
+The handler doesn't limit request bodies unless you set `maxBodySize`. Cap them where the request arrives: in your proxy (like nginx's `client_max_body_size`), your platform (Workers and Lambda have request size limits) or your framework's body parser.
+
+On [Node](./node.md) with nothing in front of it, nothing caps the body, so set `maxBodySize` yourself. This applies to `NodeHttpServer`, `node:http`, and Express or Fastify handing the raw request to the handler. A larger JSON, multipart or form body gets a `413` with a `PAYLOAD_TOO_LARGE` error. 1 MiB is plenty for JSON inputs; allow more if you accept files.
+
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = t.router({ health: t.procedure.query(() => 'ok') });
+// ---cut-end---
+const handler = createFetchHandler({
+  router,
+  maxBodySize: 1024 * 1024, // 1 MiB
+});
+```
+
+`createV11Handler`, the OpenAPI handler and the MCP handler take the same option. A byte stream input has its own `maxBytes` instead.
+
 ## Rolling deploys
 
 A server that stops closes its WebSockets, and clients lose the queries and mutations in flight. Drain it first: `handler.drain()` sends every WebSocket and socket client a `reconnect` message, and `wsLink` sends new calls on a new connection, moves its subscriptions there from their last event id, and closes the old connection once the calls it sent there finish ([`wsLink`](../client/links/ws.md#rolling-deploys)). The drain ends when every client has moved, or at its timeout, when the handler closes what's left (code 1012, "service restart") and interrupts those calls. While it runs, the handler answers WebSocket upgrades with a 503 (and closes sockets handed to `handler.websocket` with 1012), so clients back off and reconnect to another server.
