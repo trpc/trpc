@@ -27,8 +27,10 @@ describe('pathSeparator', () => {
             url: httpUrl,
             pathSeparator: '/',
             fetch: (url, init) => {
-              urls.push(new URL(String(url)).pathname);
-              return fetch(url, init as RequestInit);
+              urls.push(
+                new URL(url instanceof Request ? url.url : url).pathname,
+              );
+              return fetch(url, init);
             },
           }),
         ],
