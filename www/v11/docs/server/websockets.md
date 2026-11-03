@@ -130,7 +130,7 @@ const wss = new WebSocketServer({
 applyWSSHandler({ wss, router: appRouter });
 ```
 
-If you handle upgrades yourself with `noServer: true`, check `req.headers.origin` in your server's `upgrade` listener instead, and for an origin you don't trust, write a `403` response and call `socket.destroy()` rather than `wss.handleUpgrade()`.
+If you handle upgrades yourself with `noServer: true`, check `req.headers.origin` in your server's `upgrade` listener instead. For an origin you don't trust, end the socket with a `403` response, such as `socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n')`, rather than calling `wss.handleUpgrade()`.
 
 ### Setting `TRPCClient` to use WebSockets
 
