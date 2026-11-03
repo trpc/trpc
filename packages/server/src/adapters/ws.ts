@@ -58,6 +58,21 @@ function settle<TValue>(promise: Promise<TValue>): Promise<Result<TValue>> {
 }
 
 /**
+ * What `await using` rejects with when disposal fails after the scope threw:
+ * `error` is the disposal failure and `suppressed` the original error.
+ */
+function isSuppressedError(
+  cause: unknown,
+): cause is { error: unknown; suppressed: unknown } {
+  return (
+    isObject(cause) &&
+    cause['name'] === 'SuppressedError' &&
+    'error' in cause &&
+    'suppressed' in cause
+  );
+}
+
+/**
  * A procedure that gives up because its subscription was cancelled rejects
  * with an `AbortError`, which is wrapped as an INTERNAL_SERVER_ERROR.
  */
@@ -310,9 +325,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
       const abortController = new AbortController();
-      const respondWithError = (cause: unknown) => {
+      const reportError = (cause: unknown) => {
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({ error, path, type, ctx, req, input });
+        return error;
+      };
+      const respondWithError = (cause: unknown) => {
+        const error = reportError(cause);
         respond({
           id,
           jsonrpc,
@@ -486,7 +505,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         const iterated = await iteration;
         if (!iterated.ok) {
           abortController.abort();
-          respondWithError(iterated.error);
+          if (isSuppressedError(iterated.error)) {
+            // the client gets the iteration error, the server both
+            respondWithError(iterated.error.suppressed);
+            reportError(iterated.error.error);
+          } else {
+            respondWithError(iterated.error);
+          }
         }
       };
 
