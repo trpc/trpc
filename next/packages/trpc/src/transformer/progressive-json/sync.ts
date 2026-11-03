@@ -1,5 +1,5 @@
 /**
- * Port of danSON 0.13.1 `sync.ts` (KATT/danson, MIT). Same wire format:
+ * Progressive JSON's sync format:
  * `{ json, refs? }`, inline `{ _: '$', type, value }` custom values,
  * `$name` placeholders, `$`-prefixed strings escaped as type `string`.
  *

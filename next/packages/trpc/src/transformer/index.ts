@@ -1,7 +1,7 @@
 /**
  * Wire transformers. The default is `jsonTransformer`, plain JSON.
- * `experimental_createProgressiveJson()` is a port of [danSON](https://github.com/KATT/danson),
- * and `createSyncTransformer` wraps superjson, devalue or your own.
+ * `experimental_createProgressiveJson()` is progressive JSON, and
+ * `createSyncTransformer` wraps superjson, devalue or your own.
  *
  * With progressive JSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
  * `BigInt`, `undefined`, typed arrays, …) become inline
