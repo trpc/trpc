@@ -49,12 +49,14 @@ function load(name: DemoName) {
 /**
  * Loads the code of the demos in a page's HTML. A route's loader waits for
  * it, so the server renders the demos into the page and a client-side
- * navigation shows them at once. Pages without demos load none of it.
+ * navigation shows them at once. Pages without demos load none of it. A demo
+ * whose code fails to load throws when it renders, so `DemoBoundary` hides it
+ * and the page still loads.
  */
 export async function loadPageDemos(html: string) {
   await Promise.all(
     splitAtDemos(html).flatMap((part) =>
-      typeof part === 'string' ? [] : [load(part.name)],
+      typeof part === 'string' ? [] : [load(part.name).catch(() => {})],
     ),
   );
 }

@@ -244,6 +244,8 @@ describe('renderMarkdown', () => {
             '',
             '```demo starting-queries',
             '```',
+            '',
+            'After.',
           ].join('\n'),
         );
         expect(rendered.html).toContain(
@@ -258,8 +260,18 @@ describe('renderMarkdown', () => {
             options: { strategy: 'fetch-on-render' },
           },
           { name: 'starting-queries', options: {} },
+          '\n<p>After.</p>',
         ]);
       }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('fails on an HTML comment that reads as a demo marker', () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        render('Before.\n\n<!--demo url-input-->'),
+      );
+      expect(error.message).toContain('demo marker');
+    }).pipe(Effect.provide(NodeServices.layer)),
   );
 
   it.effect('fails on a `demo` fence inside another block', () =>

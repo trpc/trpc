@@ -14,6 +14,7 @@ import type {
   Blockquote,
   Code,
   Heading,
+  Html,
   Link,
   Root as MdastRoot,
   Paragraph,
@@ -370,6 +371,13 @@ function remarkCharts() {
  */
 function remarkDemos() {
   return (tree: MdastRoot) => {
+    visit(tree, 'html', (node: Html) => {
+      if (node.value.includes('<!--demo ')) {
+        throw new Error(
+          `\`${node.value.trim()}\` reads as a demo marker; write a \`demo\` fence instead`,
+        );
+      }
+    });
     visit(tree, 'code', (node: Code, index, parent) => {
       if (node.lang !== 'demo' || !parent || index === undefined) {
         return;
