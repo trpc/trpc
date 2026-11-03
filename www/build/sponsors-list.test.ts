@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
+import { sponsorKey } from '../src/sponsors.ts';
 import type { Sponsorship } from './sponsors-github.ts';
 import {
   type DirectSponsor,
@@ -120,10 +121,12 @@ describe('sponsorsList', () => {
         }),
       ],
     });
-    expect(sponsors.map((sponsor) => [sponsor.login, sponsor.weight])).toEqual([
-      ['big', 100],
-      ['mid', 25],
-      ['tiny', 1],
+    expect(
+      sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
+    ).toEqual([
+      ['github/big', 100],
+      ['github/mid', 25],
+      ['github/tiny', 1],
     ]);
   });
 
@@ -137,9 +140,11 @@ describe('sponsorsList', () => {
         sponsorship('new', { monthlyDollars: 50 }),
       ],
     });
-    expect(sponsors.map((sponsor) => [sponsor.login, sponsor.weight])).toEqual([
-      ['new', 50],
-      ['old', 100],
+    expect(
+      sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
+    ).toEqual([
+      ['github/new', 50],
+      ['github/old', 100],
     ]);
   });
 
@@ -179,10 +184,7 @@ describe('sponsorsList', () => {
         sponsorship('fine', { isPublic: false }),
       ],
     });
-    expect(sponsors.map((sponsor) => sponsor.login)).toEqual([
-      'fine',
-      'public',
-    ]);
+    expect(sponsors.map(sponsorKey)).toEqual(['github/fine', 'github/public']);
   });
 
   it('adds direct sponsors and money GitHub does not attribute', () => {
@@ -211,6 +213,7 @@ describe('sponsorsList', () => {
         imgSrc: 'https://avatars.githubusercontent.com/greptileai?v=4',
         link: 'https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
         login: 'greptileai',
+        source: 'github',
         name: 'Greptile',
         weight: 100,
       },
@@ -221,6 +224,7 @@ describe('sponsorsList', () => {
         login: 'SerpApi',
         name: 'SerpApi',
         rank: 1,
+        source: 'github',
         tier: 'silver',
         weight: 100,
       },
@@ -251,18 +255,18 @@ describe('sponsorsList', () => {
       sponsors
         .filter((sponsor) => sponsor.rank !== undefined)
         .toSorted((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
-        .map((sponsor) => [sponsor.rank, sponsor.login, sponsor.tier]),
+        .map((sponsor) => [sponsor.rank, sponsorKey(sponsor), sponsor.tier]),
     ).toEqual([
-      [1, 'gold', 'gold'],
-      [2, 'SerpApi', 'silver'],
-      [3, 'oldSilver', 'silver'],
-      [4, 'newSilver', 'silver'],
-      [5, 'bronze', 'bronze'],
+      [1, 'github/gold', 'gold'],
+      [2, 'github/SerpApi', 'silver'],
+      [3, 'github/oldSilver', 'silver'],
+      [4, 'github/newSilver', 'silver'],
+      [5, 'github/bronze', 'bronze'],
     ]);
     const untiered = sponsors.filter((sponsor) => sponsor.tier === undefined);
-    expect(untiered.map((sponsor) => sponsor.login).toSorted()).toEqual([
-      'backer',
-      'once',
+    expect(untiered.map(sponsorKey).toSorted()).toEqual([
+      'github/backer',
+      'github/once',
     ]);
     expect(untiered.every((sponsor) => !('rank' in sponsor))).toBe(true);
   });
@@ -302,14 +306,18 @@ describe('sponsorsList', () => {
       ],
     });
     expect(
-      sponsors.map((sponsor) => [sponsor.login, sponsor.name, sponsor.link]),
+      sponsors.map((sponsor) => [
+        sponsorKey(sponsor),
+        sponsor.name,
+        sponsor.link,
+      ]),
     ).toEqual([
-      ['badsite', 'BADSITE', 'https://github.com/badsite'],
-      ['nosite', 'nosite', 'https://github.com/nosite'],
+      ['github/badsite', 'BADSITE', 'https://github.com/badsite'],
+      ['github/nosite', 'nosite', 'https://github.com/nosite'],
     ]);
   });
 
-  it('adds who backs on Open Collective now, tiered by what they give a month in dollars', () => {
+  it('adds who backs on Open Collective now as Open Collective sponsors, weighed against GitHub sponsors by what they paid and tiered by what they give a month', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [{ cents: 100_000, login: 'gh' }],
@@ -332,26 +340,40 @@ describe('sponsorsList', () => {
       sponsorships: [sponsorship('gh')],
     });
     expect(sponsors).toEqual([
-      expect.objectContaining({ login: 'gh', weight: 100 }),
-      expect.objectContaining({ login: 'LinkedOnGithub', name: 'LINKED' }),
+      expect.objectContaining({ login: 'gh', source: 'github', weight: 100 }),
       expect.objectContaining({
         link: 'https://opencollective.com/big',
-        login: 'big',
+        profileUrl: 'https://opencollective.com/big',
         rank: 1,
+        slug: 'big',
+        source: 'opencollective',
         tier: 'silver',
         weight: 60,
       }),
+      {
+        createdAt: Date.parse('2026-01-01'),
+        imgSrc: 'https://images.opencollective.com/linked/avatar.png',
+        link: 'https://opencollective.com/linked',
+        name: 'LINKED',
+        profileUrl: 'https://opencollective.com/linked',
+        slug: 'linked',
+        source: 'opencollective',
+        weight: 1,
+      },
       expect.objectContaining({
         link: 'https://opencollective.com/plain',
-        login: 'plain',
+        slug: 'plain',
+        source: 'opencollective',
         weight: 1,
       }),
       {
         createdAt: Date.parse('2026-05-27'),
         imgSrc: 'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
         link: 'https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
-        login: 'venue-ink',
         name: 'Venue.ink',
+        profileUrl: 'https://opencollective.com/venue-ink',
+        slug: 'venue-ink',
+        source: 'opencollective',
         weight: 15,
       },
     ]);
@@ -392,15 +414,21 @@ describe('sponsorsList', () => {
         createdAt: Date.parse('2024-01-01'),
         imgSrc: 'https://avatars.githubusercontent.com/byLogin?v=4',
         login: 'byLogin',
+        source: 'github',
         tier: 'silver',
         weight: 100,
       }),
       expect.objectContaining({
         login: 'bySite',
+        source: 'github',
         tier: 'bronze',
         weight: 60,
       }),
-      expect.objectContaining({ login: 'opencollective/bySite', weight: 5 }),
+      expect.objectContaining({
+        slug: 'bySite',
+        source: 'opencollective',
+        weight: 5,
+      }),
     ]);
   });
 
@@ -419,15 +447,15 @@ describe('sponsorsList', () => {
       sponsorships: [],
     });
     expect(
-      sponsors.map((sponsor) => [sponsor.login, sponsor.tier ?? null]),
+      sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.tier ?? null]),
     ).toEqual([
-      ['alice', 'bronze'],
-      ['page-1', null],
-      ['page-2', null],
+      ['opencollective/alice', 'bronze'],
+      ['opencollective/page-1', null],
+      ['opencollective/page-2', null],
     ]);
   });
 
-  it('orders sponsors by when they started, then by login', () => {
+  it('orders sponsors by when they started, then by source and login', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [],
@@ -438,6 +466,10 @@ describe('sponsorsList', () => {
         sponsorship('a', { createdAt: 2 }),
       ],
     });
-    expect(sponsors.map((sponsor) => sponsor.login)).toEqual(['c', 'a', 'b']);
+    expect(sponsors.map(sponsorKey)).toEqual([
+      'github/c',
+      'github/a',
+      'github/b',
+    ]);
   });
 });

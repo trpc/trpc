@@ -38,7 +38,12 @@ import { Command, Flag, Prompt } from 'effect/cli';
 import { FetchHttpClient } from 'effect/http';
 
 import { Avatars, fetchAvatars } from '../src/og/avatar.ts';
-import { isSmallSponsor, type Sponsor, sponsorTiers } from '../src/sponsors.ts';
+import {
+  isSmallSponsor,
+  type Sponsor,
+  sponsorKey,
+  sponsorTiers,
+} from '../src/sponsors.ts';
 import {
   fetchLifetimeValues,
   fetchSponsorships,
@@ -82,11 +87,10 @@ export const sponsorsConfig: SponsorsConfig = {
   shownPrivately: ['madisonredtfeldt'],
 };
 
-const SponsorSchema = Schema.Struct({
+const sponsorFields = {
   createdAt: Schema.Number,
   imgSrc: Schema.String,
   link: Schema.String,
-  login: Schema.String,
   name: Schema.String,
   rank: Schema.optionalKey(Schema.Number),
   tier: Schema.optionalKey(
@@ -94,7 +98,21 @@ const SponsorSchema = Schema.Struct({
   ),
   weight: Schema.Number,
   imageless: Schema.optionalKey(Schema.Literal(true)),
-});
+};
+
+const SponsorSchema = Schema.Union([
+  Schema.Struct({
+    source: Schema.Literal('github'),
+    login: Schema.String,
+    ...sponsorFields,
+  }),
+  Schema.Struct({
+    source: Schema.Literal('opencollective'),
+    slug: Schema.String,
+    profileUrl: Schema.String,
+    ...sponsorFields,
+  }),
+]);
 
 /**
  * `sponsors`, with each small sponsor whose avatar doesn't load marked
@@ -156,6 +174,7 @@ const readSponsorsFile = Effect.fn('readSponsorsFile')(function* (
     Effect.flatMap(
       Schema.decodeUnknownEffect(
         Schema.fromJsonString(Schema.Array(SponsorSchema)),
+        { onExcessProperty: 'error' },
       ),
     ),
     Effect.mapError(
@@ -192,7 +211,10 @@ export function openCollectiveSummary(
     sponsorships.some(
       (sponsorship) =>
         (sponsorship.isPublic || shownPrivately.includes(sponsorship.login)) &&
-        isSameSponsor(backer, sponsorship),
+        isSameSponsor(backer, {
+          githubLogin: sponsorship.login,
+          websiteUrl: sponsorship.websiteUrl,
+        }),
     )
       ? `${backer.name} (also on GitHub)`
       : backer.name,
@@ -273,12 +295,12 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
   const imageless = sponsors.filter((sponsor) => sponsor.imageless === true);
   if (imageless.length > 0) {
     yield* Console.log(
-      `No avatar loaded for ${imageless.map((sponsor) => sponsor.login).join(', ')}; the site leaves them out.`,
+      `No avatar loaded for ${imageless.map(sponsorKey).join(', ')}; the site leaves them out.`,
     );
   }
   if (opts.onlyWhenSponsorsChange === true) {
     const lineup = (sponsor: Sponsor) =>
-      `${sponsor.login} ${sponsor.tier ?? ''} ${sponsor.imageless === true ? 'imageless' : ''}`;
+      `${sponsorKey(sponsor)} ${sponsor.tier ?? ''} ${sponsor.imageless === true ? 'imageless' : ''}`;
     const listed = new Set(
       (yield* readSponsorsFile(opts.sponsorsFile)).map(lineup),
     );

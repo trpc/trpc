@@ -6,7 +6,7 @@ import {
 import { cn } from '@shared/ui/lib/utils';
 import { type CSSProperties, useState } from 'react';
 
-import { avatarUrl, drawnSponsors } from '~/sponsors.ts';
+import { avatarUrl, drawnSponsors, sponsorKey } from '~/sponsors.ts';
 
 import { packSponsors } from './pack.ts';
 
@@ -67,7 +67,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
       {bubbles.map((bubble, index) => (
         <span
           className="absolute -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10"
-          key={bubble.sponsor.login}
+          key={sponsorKey(bubble.sponsor)}
           style={
             {
               height: `${bubble.r * 200}%`,

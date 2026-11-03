@@ -8,7 +8,13 @@
  */
 import { Order } from 'effect';
 
-import { type Sponsor, tierFor } from '../src/sponsors.ts';
+import {
+  profileUrl,
+  type Sponsor,
+  type SponsorIdentity,
+  sponsorKey,
+  tierFor,
+} from '../src/sponsors.ts';
 import type { LifetimeValue, Sponsorship } from './sponsors-github.ts';
 import type { OpenCollectiveBacker } from './sponsors-opencollective.ts';
 
@@ -109,9 +115,15 @@ function siteOf(website: string) {
  */
 export function isSameSponsor(
   backer: Pick<OpenCollectiveBacker, 'githubLogin' | 'websiteUrl'>,
-  sponsor: { readonly login: string; readonly websiteUrl: string | null },
+  sponsor: {
+    readonly githubLogin: string | null;
+    readonly websiteUrl: string | null;
+  },
 ) {
-  if (backer.githubLogin?.toLowerCase() === sponsor.login.toLowerCase()) {
+  if (
+    backer.githubLogin !== null &&
+    backer.githubLogin.toLowerCase() === sponsor.githubLogin?.toLowerCase()
+  ) {
     return true;
   }
   const site =
@@ -127,17 +139,19 @@ interface Tally {
   avatarUrl: string;
   createdAt: number;
   dollars: number;
-  login: string;
+  /** Their GitHub account, to tell whether an Open Collective backer is them. */
+  githubLogin: string | null;
+  identity: SponsorIdentity;
   monthlyDollars: number;
   name: string;
-  /** Where they link to without a website. */
-  profileUrl: string;
   websiteUrl: string | null;
 }
 
+const githubKey = (login: string) => sponsorKey({ login, source: 'github' });
+
 /**
- * The sponsors to show, in the order they started (then by login, so the
- * file only changes when the sponsors do).
+ * The sponsors to show, in the order they started (then by `sponsorKey`,
+ * so the file only changes when the sponsors do).
  *
  * Someone sponsoring several of the accounts is one sponsor, from when
  * they first started. What they're worth is what GitHub says they've paid
@@ -145,8 +159,8 @@ interface Tally {
  * monthly tier. Open Collective backers count the same way, in dollars, if
  * they back trpc now; one who sponsors on GitHub too, or is another
  * backer (`isSameSponsor`), is one sponsor, worth both, with what they give
- * a month on each added up for their tier. One who doesn't goes by the GitHub login their profile
- * links, else their Open Collective slug. Direct sponsors count every
+ * a month on each added up for their tier. One only on Open Collective is
+ * an `opencollective` sponsor, by their slug. Direct sponsors count every
  * period they've started, and `extra` is added on top.
  */
 export function sponsorsList(opts: {
@@ -167,27 +181,29 @@ export function sponsorsList(opts: {
     if (!sponsorship.isPublic && !shownPrivately.has(sponsorship.login)) {
       continue;
     }
-    const known = tallies.get(sponsorship.login);
+    const key = githubKey(sponsorship.login);
+    const known = tallies.get(key);
     if (known === undefined) {
-      tallies.set(sponsorship.login, {
+      tallies.set(key, {
         avatarUrl: sponsorship.avatarUrl,
         createdAt: sponsorship.createdAt,
-        dollars: 0,
-        login: sponsorship.login,
+        dollars: Math.max(
+          (paidCents.get(sponsorship.login) ?? 0) / 100,
+          sponsorship.monthlyDollars,
+        ),
+        githubLogin: sponsorship.login,
+        identity: { source: 'github', login: sponsorship.login },
         monthlyDollars: sponsorship.monthlyDollars,
         name: sponsorship.name ?? sponsorship.login,
-        profileUrl: `https://github.com/${sponsorship.login}`,
         websiteUrl: sponsorship.websiteUrl,
       });
       continue;
     }
     known.createdAt = Math.min(known.createdAt, sponsorship.createdAt);
     known.monthlyDollars += sponsorship.monthlyDollars;
-  }
-  for (const tally of tallies.values()) {
-    tally.dollars = Math.max(
-      (paidCents.get(tally.login) ?? 0) / 100,
-      tally.monthlyDollars,
+    known.dollars = Math.max(
+      (paidCents.get(sponsorship.login) ?? 0) / 100,
+      known.monthlyDollars,
     );
   }
 
@@ -205,16 +221,19 @@ export function sponsorsList(opts: {
       known.monthlyDollars += backer.monthlyDollars;
       continue;
     }
-    const own = backer.githubLogin ?? backer.slug;
-    const login = tallies.has(own) ? `opencollective/${backer.slug}` : own;
-    tallies.set(login, {
+    const identity: SponsorIdentity = {
+      source: 'opencollective',
+      slug: backer.slug,
+      profileUrl: `https://opencollective.com/${backer.slug}`,
+    };
+    tallies.set(sponsorKey(identity), {
       avatarUrl: backer.avatarUrl,
       createdAt: backer.createdAt,
       dollars,
-      login,
+      githubLogin: backer.githubLogin,
+      identity,
       monthlyDollars: backer.monthlyDollars,
       name: backer.name,
-      profileUrl: `https://opencollective.com/${backer.slug}`,
       websiteUrl: backer.websiteUrl,
     });
   }
@@ -222,18 +241,19 @@ export function sponsorsList(opts: {
   for (const direct of opts.config.direct) {
     const dollars = directDollars(direct, opts.now);
     const createdAt = Date.parse(direct.since);
-    const known = tallies.get(direct.login);
+    const key = githubKey(direct.login);
+    const known = tallies.get(key);
     const monthlyDollars =
       direct.every === 'year' ? direct.dollars / 12 : direct.dollars;
     if (known === undefined) {
-      tallies.set(direct.login, {
+      tallies.set(key, {
         avatarUrl: direct.avatarUrl,
         createdAt,
         dollars,
-        login: direct.login,
+        githubLogin: direct.login,
+        identity: { source: 'github', login: direct.login },
         monthlyDollars,
         name: direct.name,
-        profileUrl: `https://github.com/${direct.login}`,
         websiteUrl: direct.websiteUrl,
       });
       continue;
@@ -243,7 +263,7 @@ export function sponsorsList(opts: {
     known.monthlyDollars += monthlyDollars;
   }
   for (const extra of opts.config.extra) {
-    const known = tallies.get(extra.login);
+    const known = tallies.get(githubKey(extra.login));
     if (known !== undefined) {
       known.dollars += extra.dollars;
     }
@@ -254,20 +274,20 @@ export function sponsorsList(opts: {
     [...tallies.values()]
       .filter((tally) => tierFor(tally.monthlyDollars) !== undefined)
       .toSorted(byMonthlyThenPaid)
-      .map((tally, index) => [tally.login, index + 1]),
+      .map((tally, index) => [sponsorKey(tally.identity), index + 1]),
   );
   return [...tallies.values()]
     .map((tally): Sponsor => {
       const tier = tierFor(tally.monthlyDollars);
-      const rank = ranks.get(tally.login);
+      const rank = ranks.get(sponsorKey(tally.identity));
       return {
+        ...tally.identity,
         createdAt: tally.createdAt,
         imgSrc: tally.avatarUrl,
         link:
           (tally.websiteUrl === null
             ? undefined
-            : trackingLink(tally.websiteUrl)) ?? tally.profileUrl,
-        login: tally.login,
+            : trackingLink(tally.websiteUrl)) ?? profileUrl(tally.identity),
         name: tally.name,
         ...(tier === undefined || rank === undefined ? {} : { rank, tier }),
         weight:
@@ -276,7 +296,7 @@ export function sponsorsList(opts: {
             : Math.max(1, Math.round((maxWeight * tally.dollars) / most)),
       };
     })
-    .toSorted(byStartThenLogin);
+    .toSorted(byStartThenKey);
 }
 
 const byMonthlyThenPaid = Order.combine(
@@ -284,10 +304,10 @@ const byMonthlyThenPaid = Order.combine(
     Order.flip(Order.mapInput(Order.Number, (t: Tally) => t.monthlyDollars)),
     Order.flip(Order.mapInput(Order.Number, (t: Tally) => t.dollars)),
   ),
-  Order.mapInput(Order.String, (t: Tally) => t.login),
+  Order.mapInput(Order.String, (t: Tally) => sponsorKey(t.identity)),
 );
 
-const byStartThenLogin = Order.combine(
+const byStartThenKey = Order.combine(
   Order.mapInput(Order.Number, (sponsor: Sponsor) => sponsor.createdAt),
-  Order.mapInput(Order.String, (sponsor: Sponsor) => sponsor.login),
+  Order.mapInput(Order.String, sponsorKey),
 );

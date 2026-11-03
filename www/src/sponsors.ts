@@ -27,13 +27,13 @@ export function tierFor(monthlyDollars: number): SponsorTier | undefined {
 const isSponsorTier = (tier: unknown): tier is SponsorTier =>
   sponsorTiers.some((entry) => entry.tier === tier);
 
-/** A sponsor, as `build/sponsors-sync.ts` writes them to `sponsors.json`. */
-export interface Sponsor {
+/** What every sponsor in `sponsors.json` has, wherever they sponsor. */
+interface SponsorFields {
   /** When they started, in ms since the epoch. */
   readonly createdAt: number;
   readonly imgSrc: string;
+  /** Their website, else their GitHub or Open Collective profile. */
   readonly link: string;
-  readonly login: string;
   readonly name: string;
   /**
    * A tiered sponsor's place among the tiered sponsors: by what they give a
@@ -52,19 +52,90 @@ export interface Sponsor {
   readonly imageless?: true;
 }
 
+/**
+ * Someone known by their GitHub account: a GitHub sponsor (who may back on
+ * Open Collective too), or one who pays directly (`sponsorsConfig`).
+ */
+export interface GithubSponsor extends SponsorFields {
+  readonly source: 'github';
+  readonly login: string;
+}
+
+/** Someone who backs trpc on Open Collective and not on GitHub. */
+export interface OpenCollectiveSponsor extends SponsorFields {
+  readonly source: 'opencollective';
+  readonly slug: string;
+  /** `https://opencollective.com/<slug>`. */
+  readonly profileUrl: string;
+}
+
+/** A sponsor, as `build/sponsors-sync.ts` writes them to `sponsors.json`. */
+export type Sponsor = GithubSponsor | OpenCollectiveSponsor;
+
+/** Who a sponsor is, on GitHub or Open Collective. */
+export type SponsorIdentity =
+  | Pick<GithubSponsor, 'login' | 'source'>
+  | Pick<OpenCollectiveSponsor, 'profileUrl' | 'slug' | 'source'>;
+
+/** `sponsor`'s key, unique among the sponsors whatever their source. */
+export function sponsorKey(sponsor: SponsorIdentity) {
+  switch (sponsor.source) {
+    case 'github':
+      return `github/${sponsor.login}`;
+    case 'opencollective':
+      return `opencollective/${sponsor.slug}`;
+  }
+}
+
+/** `sponsor`'s GitHub or Open Collective profile. */
+export function profileUrl(sponsor: SponsorIdentity) {
+  switch (sponsor.source) {
+    case 'github':
+      return `https://github.com/${sponsor.login}`;
+    case 'opencollective':
+      return sponsor.profileUrl;
+  }
+}
+
 /** A sponsor below the partner tiers: bronze, or no tier at all. */
 export const isSmallSponsor = (sponsor: Pick<Sponsor, 'tier'>) =>
   sponsor.tier === undefined || !partnerTiers.includes(sponsor.tier);
 
-const entries: ReadonlyArray<
-  Omit<Sponsor, 'tier'> & { readonly tier?: string }
-> = list;
+/** An entry of `sponsors.json`, as TypeScript reads JSON: strings, not literals. */
+type Entry = Omit<SponsorFields, 'tier'> & {
+  readonly login?: string;
+  readonly profileUrl?: string;
+  readonly slug?: string;
+  readonly source: string;
+  readonly tier?: string;
+};
+
+const entries: ReadonlyArray<Entry> = list;
+
+function fromEntry({
+  login,
+  profileUrl,
+  slug,
+  source,
+  tier,
+  ...fields
+}: Entry): Array<Sponsor> {
+  const shared = isSponsorTier(tier) ? { ...fields, tier } : fields;
+  if (source === 'github' && login !== undefined) {
+    return [{ source, login, ...shared }];
+  }
+  if (
+    source === 'opencollective' &&
+    slug !== undefined &&
+    profileUrl !== undefined
+  ) {
+    return [{ source, slug, profileUrl, ...shared }];
+  }
+  return [];
+}
 
 /** Every sponsor, in the order they started. */
-export const sponsors: ReadonlyArray<Sponsor> = entries.map(
-  ({ tier, ...sponsor }) =>
-    isSponsorTier(tier) ? { ...sponsor, tier } : sponsor,
-);
+export const sponsors: ReadonlyArray<Sponsor> = entries.flatMap(fromEntry);
 
 /** Every sponsor the site draws: all but the imageless. */
 export const drawnSponsors = sponsors.filter(
@@ -95,17 +166,21 @@ export const sponsorPage = {
 /** `sponsor`'s GitHub or Open Collective avatar, `size` pixels square. */
 export function avatarUrl(sponsor: Sponsor, size: number) {
   const url = new URL(sponsor.imgSrc);
-  url.searchParams.set(
-    url.hostname === 'images.opencollective.com' ? 'height' : 's',
-    String(size),
-  );
+  switch (sponsor.source) {
+    case 'github':
+      url.searchParams.set('s', String(size));
+      break;
+    case 'opencollective':
+      url.searchParams.set('height', String(size));
+      break;
+  }
   return url.toString();
 }
 
 /**
  * What the site says about partners it has drawn a logo for
- * (`components/sponsors/partner-logos.tsx`); a partner without an entry
- * shows their avatar and name.
+ * (`components/sponsors/partner-logos.tsx`), by `sponsorKey`; a partner
+ * without an entry shows their avatar and name.
  */
 const partnerDetails: Partial<
   Record<
@@ -113,30 +188,30 @@ const partnerDetails: Partial<
     { readonly accent: string; readonly blurb: string; readonly domain: string }
   >
 > = {
-  coderabbitai: {
+  'github/coderabbitai': {
     accent: '#FF570A',
     blurb: 'AI code reviews on every pull request, with fixes in one click.',
     domain: 'coderabbit.ai',
   },
-  greptileai: {
+  'github/greptileai': {
     accent: '#28E99F',
     blurb: 'AI code review that understands your whole codebase.',
     domain: 'greptile.com',
   },
-  SerpApi: {
+  'github/SerpApi': {
     accent: '#6F62EC',
     blurb: 'Search engine results from Google and others, through one API.',
     domain: 'serpapi.com',
   },
 };
 
-export interface Partner extends Sponsor {
+export type Partner = Sponsor & {
   /** The brand's color, for the card's glow. */
   readonly accent: string;
   readonly blurb: string;
   readonly domain: string;
   readonly tier: SponsorTier;
-}
+};
 
 const hostOf = (link: string) =>
   URL.canParse(link) ? new URL(link).hostname.replace(/^www\./, '') : link;
@@ -152,7 +227,7 @@ export const partners: ReadonlyArray<Partner> = sponsors
     if (tier === undefined || !partnerTiers.includes(tier)) {
       return [];
     }
-    const details = partnerDetails[sponsor.login] ?? {
+    const details = partnerDetails[sponsorKey(sponsor)] ?? {
       accent: '#888888',
       blurb: sponsor.name,
       domain: hostOf(sponsor.link),
@@ -207,7 +282,7 @@ export function cardFooterOf(
       .filter(
         (sponsor) =>
           sponsor.imageless !== true &&
-          !ranked.some((p) => p.login === sponsor.login),
+          !ranked.some((p) => sponsorKey(p) === sponsorKey(sponsor)),
       )
       .toSorted((a, b) => b.weight - a.weight)
       .slice(0, footerFaces * 2)
@@ -250,7 +325,7 @@ export function sponsorCardOf(
       .filter(
         (sponsor) =>
           sponsor.imageless !== true &&
-          !ranked.some((p) => p.login === sponsor.login),
+          !ranked.some((p) => sponsorKey(p) === sponsorKey(sponsor)),
       )
       .toSorted((a, b) => b.weight - a.weight)
       .map((sponsor) => ({ image: sponsor.imgSrc, name: sponsor.name })),

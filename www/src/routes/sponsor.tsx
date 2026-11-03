@@ -20,6 +20,7 @@ import { pageHead } from '~/seo.ts';
 import {
   partners,
   sponsorCardAlt,
+  sponsorKey,
   sponsorPage,
   sponsors,
   sponsorTierUrl,
@@ -337,7 +338,7 @@ function Placements() {
           <a
             className="flex h-14 items-center justify-center rounded-lg border bg-card px-4 text-foreground/80 transition-colors hover:text-foreground"
             href={partner.link}
-            key={partner.login}
+            key={sponsorKey(partner)}
             rel="sponsored noopener"
             target="_blank"
             title={partner.blurb}

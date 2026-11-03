@@ -145,6 +145,7 @@ describe('syncSponsors', () => {
             link: 'https://github.com/fan',
             login: 'fan',
             name: 'FAN',
+            source: 'github',
             weight: 1,
           },
           expect.objectContaining({
@@ -377,12 +378,18 @@ describe('syncSponsors', () => {
         expect(
           JSON.parse(yield* fs.readFileString(files.sponsorsFile)),
         ).toEqual([
-          expect.objectContaining({ login: 'fan', weight: 80 }),
+          expect.objectContaining({
+            login: 'fan',
+            source: 'github',
+            weight: 80,
+          }),
           expect.objectContaining({
             imgSrc: 'https://images.opencollective.com/venue-ink/avatar.png',
             link: 'https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
-            login: 'venue-ink',
             name: 'Venue.ink',
+            profileUrl: 'https://opencollective.com/venue-ink',
+            slug: 'venue-ink',
+            source: 'opencollective',
             weight: 100,
           }),
         ]);
@@ -529,19 +536,33 @@ describe('readmeFromSponsorsFile', () => {
             link: 'https://github.com/fan',
             login: 'fan',
             name: 'Fan',
+            source: 'github',
             weight: 4,
+          },
+          {
+            createdAt: 2,
+            imgSrc: 'https://images.opencollective.com/venue-ink/logo.png',
+            link: 'https://opencollective.com/venue-ink',
+            name: 'Venue.ink',
+            profileUrl: 'https://opencollective.com/venue-ink',
+            slug: 'venue-ink',
+            source: 'opencollective',
+            weight: 2,
           },
         ]),
       );
       expect(yield* readmeFromSponsorsFile(files)).toBe(
-        `Wrote 1 sponsors to ${files.readme}.`,
+        `Wrote 2 sponsors to ${files.readme}.`,
       );
       const written = yield* fs.readFileString(files.readme);
       expect(written).toContain(
         '<td align="center"><a href="https://github.com/fan"><img src="https://avatars.githubusercontent.com/u/1?v=4&amp;s=200" width="100" alt="Fan"/><br />Fan</a></td>',
       );
+      expect(written).toContain(
+        '<a href="https://opencollective.com/venue-ink"><img src="https://images.opencollective.com/venue-ink/logo.png?height=200"',
+      );
       expect(yield* readmeFromSponsorsFile(files)).toBe(
-        `${files.readme} already lists the 1 sponsors.`,
+        `${files.readme} already lists the 2 sponsors.`,
       );
       expect(yield* fs.readFileString(files.readme)).toBe(written);
     }).pipe(Effect.provide(NodeServices.layer)),
@@ -563,11 +584,28 @@ describe('readmeFromSponsorsFile', () => {
     Effect.gen(function* () {
       const files = yield* fixture;
       const fs = yield* FileSystem.FileSystem;
-      yield* fs.writeFileString(files.sponsorsFile, '[{"login":"fan"}]');
-      const result = yield* Effect.result(readmeFromSponsorsFile(files));
-      expect(Result.isFailure(result) && result.failure.message).toMatch(
-        new RegExp(`^${files.sponsorsFile}: `),
-      );
+      const sponsor = {
+        createdAt: 1,
+        imgSrc: 'https://images.opencollective.com/venue-ink/logo.png',
+        link: 'https://opencollective.com/venue-ink',
+        name: 'Venue.ink',
+        weight: 2,
+      };
+      for (const unexpected of [
+        [{ login: 'fan' }],
+        [{ ...sponsor, login: 'venue-ink' }],
+        [{ ...sponsor, login: 'venue-ink', source: 'github', slug: 'x' }],
+        [{ ...sponsor, login: 'venue-ink', source: 'opencollective' }],
+      ]) {
+        yield* fs.writeFileString(
+          files.sponsorsFile,
+          JSON.stringify(unexpected),
+        );
+        const result = yield* Effect.result(readmeFromSponsorsFile(files));
+        expect(Result.isFailure(result) && result.failure.message).toMatch(
+          new RegExp(`^${files.sponsorsFile}: `),
+        );
+      }
       expect(yield* fs.readFileString(files.readme)).toBe(readme);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
