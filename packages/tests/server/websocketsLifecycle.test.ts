@@ -461,7 +461,8 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
   async (outcome) => {
     const cleanup = createDeferred<IteratorReturnResult<undefined>>();
     const cleaning = createDeferred();
-    const onError = vi.fn();
+    const onError =
+      vi.fn<NonNullable<WSSHandlerOptions<AnyRouter>['onError']>>();
     const replacement = vi.fn(async function* () {
       yield 'replacement';
     });
@@ -470,7 +471,10 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
       old: t.procedure.subscription(() => ({
         [Symbol.asyncIterator]: () => ({
           next: async () => {
-            throw new Error('iteration failed');
+            throw new TRPCError({
+              code: 'UNAUTHORIZED',
+              message: 'iteration failed',
+            });
           },
           return: () => {
             cleaning.resolve();
@@ -511,16 +515,27 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
         cleanup.reject(new Error('cleanup failed'));
       }
       await vi.waitFor(() => expect(replacement).toHaveBeenCalledOnce());
-      expect(onError).toHaveBeenCalledOnce();
+      // a failed cleanup is reported to the server, not instead of the iteration error
+      expect(
+        onError.mock.calls.map(([opts]) => [
+          opts.error.code,
+          opts.error.message,
+        ]),
+      ).toEqual(
+        outcome === 'resolve'
+          ? [['UNAUTHORIZED', 'iteration failed']]
+          : [
+              ['UNAUTHORIZED', 'iteration failed'],
+              ['INTERNAL_SERVER_ERROR', 'cleanup failed'],
+            ],
+      );
       const terminalErrors = ctx.messages.filter(
         (message) => message.id === 1 && 'error' in message,
       );
       expect(terminalErrors).toHaveLength(1);
-      if (outcome === 'resolve') {
-        expect(terminalErrors[0]).toMatchObject({
-          error: { message: 'iteration failed' },
-        });
-      }
+      expect(terminalErrors[0]).toMatchObject({
+        error: { message: 'iteration failed', data: { code: 'UNAUTHORIZED' } },
+      });
       // the error is still followed by `stopped`, as before cleanup was awaited
       const errorIndex = ctx.messages.findIndex(
         (message) => message.id === 1 && 'error' in message,
