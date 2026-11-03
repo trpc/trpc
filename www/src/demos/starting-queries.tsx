@@ -20,7 +20,7 @@ const code = (text: string) => <span className="font-mono">{text}</span>;
 export function StartingQueries(props: DemoProps) {
   return (
     <DemoFrame
-      hint={`Change the page or open an article, then come back. Within ${staleTime / 1000} seconds, the loaders use the cache. After that, the data is stale. Each request takes its own time, a little different on every run.`}
+      hint={`Change the page or open an article, then come back. Within ${staleTime / 1000} seconds, the page uses the cache. After that, the data is stale. Each request takes its own time, a little different on every run.`}
       initial={props.options['variant']}
       only={props.options['variants']}
       title="Start queries in a loader"
