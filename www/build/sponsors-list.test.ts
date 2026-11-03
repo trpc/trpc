@@ -146,7 +146,7 @@ describe('sponsorsList', () => {
     ).toEqual([
       ['github/big', 100],
       ['github/mid', 55],
-      ['github/tiny', 15],
+      ['github/tiny', 14.5],
     ]);
   });
 
@@ -163,7 +163,7 @@ describe('sponsorsList', () => {
     expect(
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
-      ['github/new', 74],
+      ['github/new', 73.6],
       ['github/old', 100],
     ]);
   });
@@ -189,7 +189,7 @@ describe('sponsorsList', () => {
         login: 'both',
         weight: 100,
       }),
-      expect.objectContaining({ login: 'one', weight: 74 }),
+      expect.objectContaining({ login: 'one', weight: 73.6 }),
     ]);
   });
 
@@ -367,7 +367,7 @@ describe('sponsorsList', () => {
         slug: 'big',
         source: 'opencollective',
         tier: 'silver',
-        weight: 80,
+        weight: 79.7,
       }),
       {
         createdAt: Date.parse('2026-01-01'),
@@ -393,7 +393,7 @@ describe('sponsorsList', () => {
         profileUrl: 'https://opencollective.com/hooli',
         slug: 'hooli',
         source: 'opencollective',
-        weight: 50,
+        weight: 50.2,
       },
     ]);
   });
@@ -441,12 +441,12 @@ describe('sponsorsList', () => {
         login: 'bySite',
         source: 'github',
         tier: 'bronze',
-        weight: 80,
+        weight: 79.7,
       }),
       expect.objectContaining({
         slug: 'bySite',
         source: 'opencollective',
-        weight: 30,
+        weight: 30.1,
       }),
     ]);
   });
@@ -474,7 +474,7 @@ describe('sponsorsList', () => {
       expect.objectContaining({
         login: 'Acme',
         source: 'github',
-        weight: 74,
+        weight: 73.6,
       }),
     ]);
   });
@@ -505,7 +505,7 @@ describe('sponsorsList', () => {
     expect(
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
-      ['github/earlier', 74],
+      ['github/earlier', 73.6],
       ['github/later', 100],
     ]);
   });

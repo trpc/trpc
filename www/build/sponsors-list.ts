@@ -63,11 +63,17 @@ export const minWeight = 10;
  * has, from 0 to 1: the square root of their share, scaled from
  * `minWeight` to `maxWeight`. It never goes down as a sponsor pays more,
  * but the gap from the top to the bottom is compressed, so the smallest
- * circle in the cloud is still a fair fraction of the largest.
+ * circle in the cloud is still a fair fraction of the largest. It's kept
+ * to a tenth: the curve is flat near the top, so whole numbers would tie
+ * sponsors who paid nearly as much as the top one with them.
  */
 export function weightFor(share: number) {
   const clamped = Math.min(1, Math.max(0, share));
-  return Math.round(minWeight + (maxWeight - minWeight) * Math.sqrt(clamped));
+  return (
+    Math.round(
+      (minWeight + (maxWeight - minWeight) * Math.sqrt(clamped)) * 10,
+    ) / 10
+  );
 }
 
 /**
