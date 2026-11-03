@@ -758,6 +758,7 @@ test.each([{ lazy: false }, { lazy: true }])(
 
     const oldClientSocket = ctx.wsClient.connection?.ws;
     const [oldServerSocket] = ctx.wss.clients;
+    assert(oldServerSocket);
     // Hold back the old connection's closing handshake so that its `close`
     // event arrives after the replacement connection is open.
     oldServerSocket.pause();
@@ -819,6 +820,7 @@ test('a lazy connection closed for inactivity does not fail queries on the next 
   expect(await ctx.client.greeting.query()).toBe('hello');
   const oldClientSocket = ctx.wsClient.connection?.ws;
   const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
   // Hold back the idle connection's closing handshake so that its `close`
   // event arrives while a query is in flight on the next connection.
   oldServerSocket.pause();
