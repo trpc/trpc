@@ -16,7 +16,19 @@ export function createServer(opts: ServerOptions) {
   const prefix = opts.prefix ?? '/trpc';
   const server = fastify({ logger: dev });
 
-  void server.register(ws);
+  // Browsers don't apply CORS to WebSockets, so only accept pages from these origins
+  const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',') ?? [
+    `http://localhost:${port}`,
+  ];
+
+  void server.register(ws, {
+    options: {
+      verifyClient: ({ origin }, callback) => {
+        // Node clients like `src/client` don't send an `Origin` header
+        callback(!origin || allowedOrigins.includes(origin), 403);
+      },
+    },
+  });
   void server.register(fastifyTRPCPlugin, {
     prefix,
     useWSS: true,
