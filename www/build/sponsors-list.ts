@@ -2,9 +2,9 @@
  * The sponsor list the site and the README show, from what GitHub reports
  * (`sponsors-github.ts`), who backs trpc on Open Collective
  * (`sponsors-opencollective.ts`) and the sponsors who pay some other way. A
- * sponsor's weight is what they've paid in all, relative to whoever paid
- * the most: the cloud draws areas by it, and the hero and the README order
- * by it.
+ * sponsor's weight grows with what they've paid in all, relative to whoever
+ * paid the most (`weightFor`): the cloud draws areas by it, and the hero and
+ * the README order by it.
  */
 import { Order } from 'effect';
 
@@ -54,6 +54,21 @@ const periodMs: Record<DirectSponsor['every'], number> = {
 
 /** The weight of whoever paid the most. */
 export const maxWeight = 100;
+
+/** The weight of whoever paid the least, so the cloud still draws them clearly. */
+export const minWeight = 10;
+
+/**
+ * The weight of a sponsor who has paid `share` of what the top sponsor
+ * has, from 0 to 1: the square root of their share, scaled from
+ * `minWeight` to `maxWeight`. It never goes down as a sponsor pays more,
+ * but the gap from the top to the bottom is compressed, so the smallest
+ * circle in the cloud is still a fair fraction of the largest.
+ */
+export function weightFor(share: number) {
+  const clamped = Math.min(1, Math.max(0, share));
+  return Math.round(minWeight + (maxWeight - minWeight) * Math.sqrt(clamped));
+}
 
 /**
  * `website` with trpc's referral and UTM parameters, the way sponsors'
@@ -297,10 +312,7 @@ export function sponsorsList(opts: {
             : trackingLink(tally.websiteUrl)) ?? profileUrl(tally.identity),
         name: tally.name,
         ...(tier === undefined || rank === undefined ? {} : { rank, tier }),
-        weight:
-          most === 0
-            ? 1
-            : Math.max(1, Math.round((maxWeight * tally.dollars) / most)),
+        weight: weightFor(most === 0 ? 0 : tally.dollars / most),
       };
     })
     .toSorted(byStartThenKey);

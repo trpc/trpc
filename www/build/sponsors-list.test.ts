@@ -5,9 +5,12 @@ import type { Sponsorship } from './sponsors-github.ts';
 import {
   type DirectSponsor,
   directDollars,
+  maxWeight,
+  minWeight,
   type SponsorsConfig,
   sponsorsList,
   trackingLink,
+  weightFor,
 } from './sponsors-list.ts';
 import type { OpenCollectiveBacker } from './sponsors-opencollective.ts';
 
@@ -86,6 +89,23 @@ describe('trackingLink', () => {
   });
 });
 
+describe('weightFor', () => {
+  it('runs from the least weight for nothing paid to the most for the top sponsor', () => {
+    expect(weightFor(0)).toBe(minWeight);
+    expect(weightFor(1)).toBe(maxWeight);
+    expect(weightFor(-1)).toBe(minWeight);
+    expect(weightFor(2)).toBe(maxWeight);
+  });
+
+  it('never goes down as a share grows, and compresses the range by the square root', () => {
+    const shares = Array.from({ length: 1001 }, (_, index) => index / 1000);
+    const weights = shares.map(weightFor);
+    expect(weights).toEqual(weights.toSorted((a, b) => a - b));
+    expect(weightFor(0.25)).toBe(55);
+    expect(weightFor(0.01)).toBe(19);
+  });
+});
+
 describe('directDollars', () => {
   it('counts every period started, the current one included', () => {
     expect(directDollars(acme, Date.parse('2026-02-11'))).toBe(7_200);
@@ -103,7 +123,7 @@ describe('directDollars', () => {
 });
 
 describe('sponsorsList', () => {
-  it('weighs sponsors by what they paid in all, the most at 100', () => {
+  it('weighs sponsors by the square root of their share of what the top sponsor paid in all', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [
@@ -125,8 +145,8 @@ describe('sponsorsList', () => {
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
       ['github/big', 100],
-      ['github/mid', 25],
-      ['github/tiny', 1],
+      ['github/mid', 55],
+      ['github/tiny', 15],
     ]);
   });
 
@@ -143,7 +163,7 @@ describe('sponsorsList', () => {
     expect(
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
-      ['github/new', 50],
+      ['github/new', 74],
       ['github/old', 100],
     ]);
   });
@@ -169,7 +189,7 @@ describe('sponsorsList', () => {
         login: 'both',
         weight: 100,
       }),
-      expect.objectContaining({ login: 'one', weight: 50 }),
+      expect.objectContaining({ login: 'one', weight: 74 }),
     ]);
   });
 
@@ -347,7 +367,7 @@ describe('sponsorsList', () => {
         slug: 'big',
         source: 'opencollective',
         tier: 'silver',
-        weight: 60,
+        weight: 80,
       }),
       {
         createdAt: Date.parse('2026-01-01'),
@@ -357,13 +377,13 @@ describe('sponsorsList', () => {
         profileUrl: 'https://opencollective.com/linked',
         slug: 'linked',
         source: 'opencollective',
-        weight: 1,
+        weight: 19,
       },
       expect.objectContaining({
         link: 'https://opencollective.com/plain',
         slug: 'plain',
         source: 'opencollective',
-        weight: 1,
+        weight: 19,
       }),
       {
         createdAt: Date.parse('2026-05-27'),
@@ -373,7 +393,7 @@ describe('sponsorsList', () => {
         profileUrl: 'https://opencollective.com/hooli',
         slug: 'hooli',
         source: 'opencollective',
-        weight: 20,
+        weight: 50,
       },
     ]);
   });
@@ -421,12 +441,12 @@ describe('sponsorsList', () => {
         login: 'bySite',
         source: 'github',
         tier: 'bronze',
-        weight: 60,
+        weight: 80,
       }),
       expect.objectContaining({
         slug: 'bySite',
         source: 'opencollective',
-        weight: 5,
+        weight: 30,
       }),
     ]);
   });
@@ -454,7 +474,7 @@ describe('sponsorsList', () => {
       expect.objectContaining({
         login: 'Acme',
         source: 'github',
-        weight: 50,
+        weight: 74,
       }),
     ]);
   });
@@ -485,7 +505,7 @@ describe('sponsorsList', () => {
     expect(
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
-      ['github/earlier', 50],
+      ['github/earlier', 74],
       ['github/later', 100],
     ]);
   });

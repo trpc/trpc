@@ -170,7 +170,7 @@ describe('syncSponsors', () => {
             login: 'fan',
             name: 'FAN',
             source: 'github',
-            weight: 1,
+            weight: 15,
           },
           expect.objectContaining({
             createdAt: Date.parse('2025-01-23T15:14:59Z'),
@@ -409,7 +409,7 @@ describe('syncSponsors', () => {
           expect.objectContaining({
             login: 'fan',
             source: 'github',
-            weight: 60,
+            weight: 80,
           }),
           expect.objectContaining({
             imgSrc: 'https://images.opencollective.com/hooli/avatar.png',
