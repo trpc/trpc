@@ -59,12 +59,23 @@ describe('pathSeparator: "~"', () => {
   async function setup() {
     const { router, middlewarePaths } = createRouter('~');
     const rec = recordingFetch();
+    const sseUrls: string[] = [];
+    class RecordingEventSource extends EventSource {
+      constructor(url: string | URL, init?: EventSourceInit) {
+        sseUrls.push(new URL(url).pathname);
+        super(url, init);
+      }
+    }
     const ctx = testServerAndClientResource(router, {
       client: ({ httpUrl }) => ({
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
-            true: httpSubscriptionLink({ url: httpUrl, pathSeparator: '~' }),
+            true: httpSubscriptionLink({
+              url: httpUrl,
+              pathSeparator: '~',
+              EventSource: RecordingEventSource,
+            }),
             false: splitLink({
               condition: (op) => op.context['link'] === 'httpLink',
               true: httpLink({
@@ -90,7 +101,7 @@ describe('pathSeparator: "~"', () => {
         ],
       }),
     });
-    return { ...ctx, middlewarePaths, urls: rec.urls };
+    return { ...ctx, middlewarePaths, urls: rec.urls, sseUrls };
   }
 
   test('httpLink puts "~" in the URL', async () => {
@@ -149,6 +160,7 @@ describe('pathSeparator: "~"', () => {
       });
     });
     expect(values).toEqual([1, 2]);
+    expect(t.sseUrls).toEqual(['/post~onAdd']);
   });
 
   test('middlewares, onError and error shapes still see dotted paths', async () => {

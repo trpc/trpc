@@ -404,6 +404,14 @@ describe('generateOpenAPIDocument', () => {
       expect(paths).toContain('/complexTypes~passthrough');
       expect(paths.some((p) => p.includes('.'))).toBe(false);
     });
+
+    it("reads the router's separator when the option is omitted", async () => {
+      const doc = await generateOpenAPIDocument(
+        path.resolve(routersDir, 'pathSeparatorRouter.ts'),
+      );
+
+      expect(Object.keys(doc.paths ?? {})).toEqual(['/post~byId']);
+    });
   });
 
   describe('servers', () => {
