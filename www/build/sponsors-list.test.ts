@@ -8,6 +8,7 @@ import {
   sponsorsList,
   trackingLink,
 } from './sponsors-list.ts';
+import type { OpenCollectiveBacker } from './sponsors-opencollective.ts';
 
 const day = 24 * 60 * 60 * 1000;
 const now = Date.parse('2026-10-18');
@@ -25,6 +26,24 @@ function sponsorship(
     login,
     monthlyDollars: 10,
     name: login.toUpperCase(),
+    websiteUrl: null,
+    ...overrides,
+  };
+}
+
+function backer(
+  slug: string,
+  overrides: Partial<OpenCollectiveBacker> = {},
+): OpenCollectiveBacker {
+  return {
+    avatarUrl: `https://images.opencollective.com/${slug}/avatar.png`,
+    createdAt: Date.parse('2026-01-01'),
+    githubLogin: null,
+    isCurrent: true,
+    monthlyDollars: 10,
+    name: slug.toUpperCase(),
+    paidCents: 1_000,
+    slug,
     websiteUrl: null,
     ...overrides,
   };
@@ -287,6 +306,101 @@ describe('sponsorsList', () => {
     ).toEqual([
       ['badsite', 'BADSITE', 'https://github.com/badsite'],
       ['nosite', 'nosite', 'https://github.com/nosite'],
+    ]);
+  });
+
+  it('adds who backs on Open Collective now, tiered by what they give a month in dollars', () => {
+    const sponsors = sponsorsList({
+      config: noConfig,
+      lifetimeValues: [{ cents: 100_000, login: 'gh' }],
+      now,
+      openCollective: [
+        backer('venue-ink', {
+          avatarUrl:
+            'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
+          createdAt: Date.parse('2026-05-27'),
+          monthlyDollars: 25,
+          name: 'Venue.ink',
+          paidCents: 15_000,
+          websiteUrl: 'https://www.venue.ink',
+        }),
+        backer('big', { monthlyDollars: 600, paidCents: 60_000 }),
+        backer('plain', { monthlyDollars: 0, paidCents: 1_000 }),
+        backer('linked', { githubLogin: 'LinkedOnGithub' }),
+        backer('past', { isCurrent: false, paidCents: 10_000_000 }),
+      ],
+      sponsorships: [sponsorship('gh')],
+    });
+    expect(sponsors).toEqual([
+      expect.objectContaining({ login: 'gh', weight: 100 }),
+      expect.objectContaining({ login: 'LinkedOnGithub', name: 'LINKED' }),
+      expect.objectContaining({
+        link: 'https://opencollective.com/big',
+        login: 'big',
+        rank: 1,
+        tier: 'silver',
+        weight: 60,
+      }),
+      expect.objectContaining({
+        link: 'https://opencollective.com/plain',
+        login: 'plain',
+        weight: 1,
+      }),
+      {
+        createdAt: Date.parse('2026-05-27'),
+        imgSrc: 'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
+        link: 'https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+        login: 'venue-ink',
+        name: 'Venue.ink',
+        weight: 15,
+      },
+    ]);
+  });
+
+  it('merges an Open Collective backer who sponsors on GitHub too, by GitHub login or website', () => {
+    const sponsors = sponsorsList({
+      config: noConfig,
+      lifetimeValues: [
+        { cents: 40_000, login: 'byLogin' },
+        { cents: 40_000, login: 'bySite' },
+      ],
+      now,
+      openCollective: [
+        backer('by-login', {
+          createdAt: Date.parse('2024-01-01'),
+          githubLogin: 'BYLOGIN',
+          monthlyDollars: 300,
+          paidCents: 60_000,
+        }),
+        backer('by-site', {
+          monthlyDollars: 100,
+          paidCents: 20_000,
+          websiteUrl: 'http://www.bysite.dev/',
+        }),
+        backer('bySite', { paidCents: 5_000 }),
+      ],
+      sponsorships: [
+        sponsorship('byLogin', { monthlyDollars: 200 }),
+        sponsorship('bySite', {
+          monthlyDollars: 200,
+          websiteUrl: 'https://bysite.dev',
+        }),
+      ],
+    });
+    expect(sponsors).toEqual([
+      expect.objectContaining({
+        createdAt: Date.parse('2024-01-01'),
+        imgSrc: 'https://avatars.githubusercontent.com/byLogin?v=4',
+        login: 'byLogin',
+        tier: 'silver',
+        weight: 100,
+      }),
+      expect.objectContaining({
+        login: 'bySite',
+        tier: 'bronze',
+        weight: 60,
+      }),
+      expect.objectContaining({ login: 'opencollective/bySite', weight: 5 }),
     ]);
   });
 

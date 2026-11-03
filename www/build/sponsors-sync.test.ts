@@ -1,6 +1,7 @@
 import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Layer, Path, Redacted, Result } from 'effect';
+import { HttpClient } from 'effect/http';
 import { TestClock } from 'effect/testing';
 
 import {
@@ -11,10 +12,22 @@ import {
   type SentQuery,
   sponsorshipNode,
 } from './fake-github.ts';
+import {
+  fakeOpenCollective,
+  memberNode,
+  openCollectiveData,
+  orderNode,
+} from './fake-opencollective.ts';
 import { Avatars, AvatarStatusError } from '../src/og/avatar.ts';
+import type { Sponsorship } from './sponsors-github.ts';
 import type { SponsorsConfig } from './sponsors-list.ts';
+import {
+  type OpenCollectiveBacker,
+  openCollectiveUrl,
+} from './sponsors-opencollective.ts';
 import { endMarker, startMarker } from './sponsors-readme.ts';
 import {
+  openCollectiveSummary,
   readmeFromSponsorsFile,
   sponsoredAccounts,
   type SponsorsFiles,
@@ -307,6 +320,82 @@ describe('syncSponsors', () => {
     },
   );
 
+  it.effect(
+    'adds who backs on Open Collective now, as one sponsor with their GitHub sponsorship',
+    () => {
+      const gh = github((sent) =>
+        isPaymentsQuery(sent)
+          ? [paymentNode('fan', 2_000)]
+          : [sponsorshipNode('fan')],
+      );
+      const oc = fakeOpenCollective(
+        openCollectiveData({
+          members: [
+            memberNode('fan-oc', {
+              account: {
+                socialLinks: [
+                  { type: 'GITHUB', url: 'https://github.com/fan' },
+                ],
+              },
+              totalDonations: { currency: 'SEK', valueInCents: 100_000 },
+            }),
+            memberNode('venue-ink', {
+              account: { name: 'Venue.ink', website: 'https://www.venue.ink' },
+              totalDonations: { currency: 'SEK', valueInCents: 150_000 },
+            }),
+            memberNode('left'),
+          ],
+          orders: [
+            orderNode('fan-oc', {
+              amount: { currency: 'SEK', valueInCents: 25_000 },
+            }),
+            orderNode('venue-ink', {
+              amount: { currency: 'SEK', valueInCents: 25_000 },
+            }),
+          ],
+          rates: { SEK: 0.1 },
+        }),
+      );
+      const http = Layer.succeed(
+        HttpClient.HttpClient,
+        HttpClient.make((request) =>
+          (request.url === openCollectiveUrl ? oc.client : gh.client).execute(
+            request,
+          ),
+        ),
+      );
+      return Effect.gen(function* () {
+        const files = yield* fixture;
+        const fs = yield* FileSystem.FileSystem;
+        yield* syncSponsors({
+          ...files,
+          accounts: [{ kind: 'user', login: 'KATT' }],
+          config: { ...config, direct: [] },
+          openCollective: ['trpc'],
+          token: Redacted.make('test-token'),
+        });
+        expect(
+          JSON.parse(yield* fs.readFileString(files.sponsorsFile)),
+        ).toEqual([
+          expect.objectContaining({ login: 'fan', weight: 80 }),
+          expect.objectContaining({
+            imgSrc: 'https://images.opencollective.com/venue-ink/avatar.png',
+            link: 'https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+            login: 'venue-ink',
+            name: 'Venue.ink',
+            weight: 100,
+          }),
+        ]);
+        expect(yield* fs.readFileString(files.readme)).toContain(
+          'src="https://images.opencollective.com/venue-ink/avatar.png?height=200"',
+        );
+        expect(oc.sent.map((sent) => sent.variables.slug)).toContain('trpc');
+      }).pipe(
+        Effect.provide(Layer.mergeAll(NodeServices.layer, http, avatars())),
+      );
+    },
+  );
+
   it.effect("writes nothing when no small sponsor's avatar loads", () => {
     const fake = github((sent) =>
       isPaymentsQuery(sent)
@@ -367,6 +456,51 @@ describe('syncSponsors', () => {
       }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, avatars())));
     },
   );
+});
+
+describe('openCollectiveSummary', () => {
+  const backer = (
+    name: string,
+    overrides: Partial<OpenCollectiveBacker> = {},
+  ): OpenCollectiveBacker => ({
+    avatarUrl: '',
+    createdAt: 0,
+    githubLogin: null,
+    isCurrent: true,
+    monthlyDollars: 0,
+    name,
+    paidCents: 0,
+    slug: name,
+    websiteUrl: null,
+    ...overrides,
+  });
+  const fan: Sponsorship = {
+    avatarUrl: '',
+    createdAt: 0,
+    isPublic: true,
+    login: 'fan',
+    monthlyDollars: 10,
+    name: null,
+    websiteUrl: null,
+  };
+
+  it('names who backs now, and who sponsors on GitHub too', () => {
+    expect(
+      openCollectiveSummary(
+        [
+          backer('Venue.ink'),
+          backer('Fan', { githubLogin: 'fan' }),
+          backer('Guest', { isCurrent: false }),
+        ],
+        [fan],
+      ),
+    ).toBe(
+      'Open Collective: 2 backing now: Venue.ink, Fan (also on GitHub); 1 who backed before left out.',
+    );
+    expect(openCollectiveSummary([], [fan])).toBe(
+      'Open Collective: 0 backing now.',
+    );
+  });
 });
 
 describe('readmeFromSponsorsFile', () => {

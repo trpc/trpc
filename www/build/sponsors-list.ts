@@ -1,6 +1,7 @@
 /**
  * The sponsor list the site and the README show, from what GitHub reports
- * (`sponsors-github.ts`) and the sponsors who pay some other way. A
+ * (`sponsors-github.ts`), who backs trpc on Open Collective
+ * (`sponsors-opencollective.ts`) and the sponsors who pay some other way. A
  * sponsor's weight is what they've paid in all, relative to whoever paid
  * the most: the cloud draws areas by it, and the hero and the README order
  * by it.
@@ -9,6 +10,7 @@ import { Order } from 'effect';
 
 import { type Sponsor, tierFor } from '../src/sponsors.ts';
 import type { LifetimeValue, Sponsorship } from './sponsors-github.ts';
+import type { OpenCollectiveBacker } from './sponsors-opencollective.ts';
 
 /** Someone who sponsors outside GitHub Sponsors, paying up front. */
 export interface DirectSponsor {
@@ -78,6 +80,40 @@ export function directDollars(sponsor: DirectSponsor, now: number) {
   return periods * sponsor.dollars;
 }
 
+/** `website`'s host (without `www.`) and path, to tell whether two are one site. */
+function siteOf(website: string) {
+  const withScheme = /^https?:\/\//i.test(website)
+    ? website
+    : `https://${website}`;
+  if (!URL.canParse(withScheme)) {
+    return undefined;
+  }
+  const url = new URL(withScheme);
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  return `${host}${url.pathname.replace(/\/+$/, '').toLowerCase()}`;
+}
+
+/**
+ * Whether an Open Collective backer is `sponsor`, who sponsors on GitHub:
+ * their profile links `sponsor`'s GitHub account, or they have the same
+ * website.
+ */
+export function isSameSponsor(
+  backer: Pick<OpenCollectiveBacker, 'githubLogin' | 'websiteUrl'>,
+  sponsor: { readonly login: string; readonly websiteUrl: string | null },
+) {
+  if (backer.githubLogin?.toLowerCase() === sponsor.login.toLowerCase()) {
+    return true;
+  }
+  const site =
+    backer.websiteUrl === null ? undefined : siteOf(backer.websiteUrl);
+  return (
+    site !== undefined &&
+    sponsor.websiteUrl !== null &&
+    site === siteOf(sponsor.websiteUrl)
+  );
+}
+
 interface Tally {
   avatarUrl: string;
   createdAt: number;
@@ -85,6 +121,8 @@ interface Tally {
   login: string;
   monthlyDollars: number;
   name: string;
+  /** Where they link to without a website. */
+  profileUrl: string;
   websiteUrl: string | null;
 }
 
@@ -95,13 +133,18 @@ interface Tally {
  * Someone sponsoring several of the accounts is one sponsor, from when
  * they first started. What they're worth is what GitHub says they've paid
  * the accounts in all; a new sponsor GitHub hasn't charged yet counts their
- * monthly tier. Direct sponsors count every period they've started, and
- * `extra` is added on top.
+ * monthly tier. Open Collective backers count the same way, in dollars, if
+ * they back trpc now; one who sponsors on GitHub too (`isSameSponsor`) is
+ * one sponsor, worth both, with what they give a month on each added up
+ * for their tier. One who doesn't goes by the GitHub login their profile
+ * links, else their Open Collective slug. Direct sponsors count every
+ * period they've started, and `extra` is added on top.
  */
 export function sponsorsList(opts: {
   readonly config: SponsorsConfig;
   readonly lifetimeValues: ReadonlyArray<LifetimeValue>;
   readonly now: number;
+  readonly openCollective?: ReadonlyArray<OpenCollectiveBacker>;
   readonly sponsorships: ReadonlyArray<Sponsorship>;
 }): Array<Sponsor> {
   const shownPrivately = new Set(opts.config.shownPrivately);
@@ -124,6 +167,7 @@ export function sponsorsList(opts: {
         login: sponsorship.login,
         monthlyDollars: sponsorship.monthlyDollars,
         name: sponsorship.name ?? sponsorship.login,
+        profileUrl: `https://github.com/${sponsorship.login}`,
         websiteUrl: sponsorship.websiteUrl,
       });
       continue;
@@ -136,6 +180,33 @@ export function sponsorsList(opts: {
       (paidCents.get(tally.login) ?? 0) / 100,
       tally.monthlyDollars,
     );
+  }
+
+  const onGithub = [...tallies.values()];
+  for (const backer of opts.openCollective ?? []) {
+    if (!backer.isCurrent) {
+      continue;
+    }
+    const dollars = Math.max(backer.paidCents / 100, backer.monthlyDollars);
+    const known = onGithub.find((tally) => isSameSponsor(backer, tally));
+    if (known !== undefined) {
+      known.createdAt = Math.min(known.createdAt, backer.createdAt);
+      known.dollars += dollars;
+      known.monthlyDollars += backer.monthlyDollars;
+      continue;
+    }
+    const own = backer.githubLogin ?? backer.slug;
+    const login = tallies.has(own) ? `opencollective/${backer.slug}` : own;
+    tallies.set(login, {
+      avatarUrl: backer.avatarUrl,
+      createdAt: backer.createdAt,
+      dollars,
+      login,
+      monthlyDollars: backer.monthlyDollars,
+      name: backer.name,
+      profileUrl: `https://opencollective.com/${backer.slug}`,
+      websiteUrl: backer.websiteUrl,
+    });
   }
 
   for (const direct of opts.config.direct) {
@@ -152,6 +223,7 @@ export function sponsorsList(opts: {
         login: direct.login,
         monthlyDollars,
         name: direct.name,
+        profileUrl: `https://github.com/${direct.login}`,
         websiteUrl: direct.websiteUrl,
       });
       continue;
@@ -184,8 +256,7 @@ export function sponsorsList(opts: {
         link:
           (tally.websiteUrl === null
             ? undefined
-            : trackingLink(tally.websiteUrl)) ??
-          `https://github.com/${tally.login}`,
+            : trackingLink(tally.websiteUrl)) ?? tally.profileUrl,
         login: tally.login,
         name: tally.name,
         ...(tier === undefined || rank === undefined ? {} : { rank, tier }),

@@ -158,6 +158,14 @@
     "weight": 4
   },
   {
+    "createdAt": 1779889788231,
+    "imgSrc": "https://images.opencollective.com/venue-ink/49dbae6/logo.png",
+    "link": "https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "venue-ink",
+    "name": "Venue.ink",
+    "weight": 1
+  },
+  {
     "createdAt": 1786777883000,
     "imgSrc": "https://avatars.githubusercontent.com/u/203708130?v=4",
     "link": "https://usevault.app/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",

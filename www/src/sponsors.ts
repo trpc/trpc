@@ -3,8 +3,9 @@ import list from '../sponsors.json' with { type: 'json' };
 import type { CardFooter, SponsorCard } from './og/card.ts';
 
 /**
- * The sponsor tiers, by the least a sponsor gives a month (across KATT and
- * the trpc organization), highest first.
+ * The sponsor tiers, by the least a sponsor gives a month in dollars
+ * (across KATT and the trpc organization on GitHub, and trpc on Open
+ * Collective), highest first.
  */
 export const sponsorTiers = [
   { label: 'Gold', minMonthlyDollars: 1000, tier: 'gold' },
@@ -91,10 +92,13 @@ export const sponsorPage = {
   title: 'Sponsor tRPC',
 } as const;
 
-/** `sponsor`'s GitHub avatar, `size` pixels square. */
+/** `sponsor`'s GitHub or Open Collective avatar, `size` pixels square. */
 export function avatarUrl(sponsor: Sponsor, size: number) {
   const url = new URL(sponsor.imgSrc);
-  url.searchParams.set('s', String(size));
+  url.searchParams.set(
+    url.hostname === 'images.opencollective.com' ? 'height' : 's',
+    String(size),
+  );
   return url.toString();
 }
 
