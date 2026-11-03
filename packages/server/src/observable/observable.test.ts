@@ -265,6 +265,30 @@ test('observableToAsyncIterable() - completing during teardown does not throw on
   expect(ee.listenerCount('data')).toBe(0);
 });
 
+test('observableToAsyncIterable() - a throwing teardown still ends every pending next()', async () => {
+  const obs = observable<number, Error>(() => () => {
+    throw new Error('teardown');
+  });
+  const iterator = observableToAsyncIterable(obs, new AbortController().signal)[
+    Symbol.asyncIterator
+  ]();
+
+  const first = iterator.next();
+  const second = iterator.next();
+  // the teardown error goes to whoever ended the iteration
+  await expect(iterator.return!()).rejects.toThrowError('teardown');
+
+  const hung = new Promise((resolve) => setTimeout(resolve, 100, 'hung'));
+  expect(await Promise.race([first, hung])).toEqual({
+    value: undefined,
+    done: true,
+  });
+  expect(await Promise.race([second, hung])).toEqual({
+    value: undefined,
+    done: true,
+  });
+});
+
 test('observableToAsyncIterable() - return() resolves after the source completed', async () => {
   const obs = observable<number, Error>((observer) => {
     observer.next(1);

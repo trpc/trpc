@@ -170,9 +170,12 @@ export function observableToAsyncIterable<TValue>(
     }
     finished = true;
     signal.removeEventListener('abort', finish);
-    subscription?.unsubscribe();
-    for (const promise of pending.splice(0)) {
-      promise.resolve({ value: undefined, done: true });
+    try {
+      subscription?.unsubscribe();
+    } finally {
+      for (const promise of pending.splice(0)) {
+        promise.resolve({ value: undefined, done: true });
+      }
     }
   }
 
