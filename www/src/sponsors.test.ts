@@ -8,6 +8,7 @@ import {
   isSmallSponsor,
   type Partner,
   partners,
+  partnersByTier,
   type Sponsor,
   sponsorCard,
   sponsorCardAlt,
@@ -70,6 +71,19 @@ describe('cardFooter', () => {
       })),
     );
     expect(cardFooter.sponsorCount).toBe(sponsors.length);
+  });
+});
+
+describe('partnersByTier', () => {
+  it('is every partner in the order the social cards name them', () => {
+    expect(partnersByTier.map((partner) => partner.name)).toEqual(
+      cardFooter.partners.map((partner) => partner.name),
+    );
+    expect(partnersByTier.map((partner) => tierOrder(partner))).toEqual(
+      partnersByTier
+        .map((partner) => tierOrder(partner))
+        .toSorted((a, b) => a - b),
+    );
   });
 });
 

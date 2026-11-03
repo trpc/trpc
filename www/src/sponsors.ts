@@ -181,6 +181,9 @@ const tierOrder = (tier: SponsorTier) =>
 const byTier = (ranked: ReadonlyArray<Partner>) =>
   ranked.toSorted((a, b) => tierOrder(a.tier) - tierOrder(b.tier));
 
+/** The partners in the order the social cards name them (`cardFooterOf`). */
+export const partnersByTier = byTier(partners);
+
 /** As many other sponsors' faces as a card's foot draws at most. */
 const footerFaces = 12;
 
@@ -274,7 +277,7 @@ export const sponsorCardAlt = [
   ...(partners.length === 0
     ? []
     : [
-        `Partners: ${new Intl.ListFormat('en').format(byTier(partners).map((partner) => partner.name))}.`,
+        `Partners: ${new Intl.ListFormat('en').format(partnersByTier.map((partner) => partner.name))}.`,
       ]),
   `Sponsor at ${sponsorUrl.replace(/^https:\/\//, '')}.`,
 ].join(' ');
