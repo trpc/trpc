@@ -707,7 +707,7 @@ export function PostPage(props: { id: string }) {
 
 `Post` is the same component a server component would feed. Every query starts before any component reads one, so they load side by side. During render, a query starts only if the cache has no entry for it, as with TanStack Query's `usePrefetchQuery`, so a re-render starts nothing. There's no wrapper hook and no dependency array: they're plain calls. Stale data shows at once, and the component that reads it refreshes it.
 
-The demo runs one blog both ways, on the list and on each article:
+The demo runs one blog both ways:
 
 ```demo waterfalls variants=top,reader
 ```
