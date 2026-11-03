@@ -1,4 +1,7 @@
-import type { inferObservableValue } from '@trpc/server/observable';
+import type {
+  inferObservableValue,
+  Unsubscribable,
+} from '@trpc/server/observable';
 import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
@@ -17,7 +20,7 @@ import type {
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCSubscription } from './iterableSubscription';
-import { createIterableSubscription } from './iterableSubscription';
+import { iterableSubscription } from './iterableSubscription';
 
 export type { TRPCSubscription } from './iterableSubscription';
 
@@ -54,6 +57,27 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   /** Called when the connection connects, drops or reconnects. */
   onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
 }
+
+const subscriptionCallbacks: Record<
+  keyof TRPCSubscriptionObserver<unknown, unknown>,
+  true
+> = {
+  onStarted: true,
+  onData: true,
+  onError: true,
+  onStopped: true,
+  onComplete: true,
+  onConnectionStateChange: true,
+};
+
+/**
+ * Subscription options without callbacks, so `subscribe()` returns an
+ * `AsyncIterable`.
+ * @internal
+ */
+export type NoSubscriptionCallbacks = {
+  [TKey in keyof TRPCSubscriptionObserver<unknown, unknown>]?: never;
+};
 
 /**
  * The options of `createTRPCClient`.
@@ -143,10 +167,21 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
-  /**
-   * Starts a subscription. Returns what stops it, which is also an
-   * `AsyncIterable` of the subscription's data.
-   */
+  /** Starts a subscription without callbacks, to iterate with `for await`. */
+  public subscription(
+    path: string,
+    input: unknown,
+    opts?: TRPCRequestOptions & NoSubscriptionCallbacks,
+  ): TRPCSubscription<unknown>;
+  /** Starts a subscription with callbacks. Returns what stops it. */
+  public subscription(
+    path: string,
+    input: unknown,
+    opts: Partial<
+      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
+    > &
+      TRPCRequestOptions,
+  ): Unsubscribable;
   public subscription(
     path: string,
     input: unknown,
@@ -154,7 +189,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
     > &
       TRPCRequestOptions = {},
-  ): TRPCSubscription<unknown> {
+  ): Unsubscribable | TRPCSubscription<unknown> {
     const observable$ = this.$request({
       type: 'subscription',
       path,
@@ -162,10 +197,12 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       context: opts.context,
       signal: opts.signal,
     });
-    const iterable = createIterableSubscription<unknown>({
-      signal: opts.signal,
-      unsubscribe: () => subscription.unsubscribe(),
-    });
+    const hasCallbacks = Object.keys(subscriptionCallbacks).some(
+      (key) => opts[key as keyof typeof subscriptionCallbacks] !== undefined,
+    );
+    if (!hasCallbacks) {
+      return iterableSubscription(observable$, opts.signal);
+    }
     const subscription = observable$.subscribe({
       next(envelope) {
         switch (envelope.result.type) {
@@ -185,21 +222,25 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
           }
           case 'data':
           case undefined: {
-            iterable.next(envelope.result.data);
             opts.onData?.(envelope.result.data);
             break;
           }
         }
       },
       error(err) {
-        iterable.error(err);
         opts.onError?.(err);
       },
       complete() {
-        iterable.complete();
         opts.onComplete?.();
       },
     });
-    return iterable.subscription;
+    return {
+      unsubscribe: () => subscription.unsubscribe(),
+      [Symbol.asyncIterator]() {
+        throw new Error(
+          'Cannot iterate a subscription that was started with callbacks; omit the callbacks to use for-await',
+        );
+      },
+    };
   }
 }

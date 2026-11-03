@@ -236,37 +236,6 @@ test('async iterable', async () => {
   expect(ctx.onErrorSpy).not.toHaveBeenCalled();
 });
 
-test('async iterable - callbacks and iteration get the same data', async () => {
-  const { client } = ctx;
-
-  const onData = vi.fn<(data: number) => void>();
-  const onComplete = vi.fn<() => void>();
-  const subscription = client.sub.iterableEvent.subscribe(undefined, {
-    onData,
-    onComplete,
-  });
-
-  const results: number[] = [];
-  const done = (async () => {
-    for await (const value of subscription) {
-      results.push(value);
-    }
-  })();
-
-  await vi.waitFor(() => {
-    expect(ctx.ee.listenerCount('data')).toBe(1);
-  });
-
-  ctx.ee.emit('data', 1);
-  ctx.ee.emit('data', 2);
-  ctx.ee.emit('data', returnSymbol);
-
-  await done;
-  expect(results).toEqual([1, 2]);
-  expect(onData.mock.calls.map((call) => call[0])).toEqual([1, 2]);
-  expect(onComplete).toHaveBeenCalledTimes(1);
-});
-
 test('async iterable - abort signal ends iteration', async () => {
   const { client } = ctx;
 
@@ -335,13 +304,9 @@ test('async iterable - reconnects and continues', async () => {
 test('async iterable - stop iterating early unsubscribes', async () => {
   const { client } = ctx;
 
-  const onComplete = vi.fn<() => void>();
-  const subscription = client.sub.iterableInfinite.subscribe(
-    {
-      lastEventId: 5,
-    },
-    { onComplete },
-  );
+  const subscription = client.sub.iterableInfinite.subscribe({
+    lastEventId: 5,
+  });
 
   const results: number[] = [];
   for await (const value of subscription) {
@@ -359,7 +324,6 @@ test('async iterable - stop iterating early unsubscribes', async () => {
   await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
-  expect(onComplete).toHaveBeenCalledTimes(1);
 
   expect(ctx.onErrorSpy).not.toHaveBeenCalled();
 });

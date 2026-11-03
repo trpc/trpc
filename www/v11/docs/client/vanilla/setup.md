@@ -128,7 +128,7 @@ const frodo = await client.createUser.mutate({ name: 'Frodo' });
 
 ### 5. Use subscriptions
 
-Given a [subscription procedure](../../server/subscriptions.md) and a link that supports subscriptions, such as [`httpSubscriptionLink`](../links/httpSubscriptionLink.md) or [`wsLink`](../links/wsLink.md), `.subscribe()` starts the subscription. Pass callbacks, iterate the result with `for await`, or both:
+Given a [subscription procedure](../../server/subscriptions.md) and a link that supports subscriptions, such as [`httpSubscriptionLink`](../links/httpSubscriptionLink.md) or [`wsLink`](../links/wsLink.md), `.subscribe()` starts the subscription. Either pass callbacks, or leave them out and iterate the result with `for await`:
 
 ```ts twoslash title='client.ts'
 // @target: esnext
@@ -158,7 +158,7 @@ const sub = client.onUserAdd.subscribe(undefined, {
 // stop listening
 sub.unsubscribe();
 
-// or with `for await`, where the callbacks are optional
+// or without callbacks, with `for await`
 for await (const user of client.onUserAdd.subscribe(undefined)) {
   //               ^?
   console.log(user);
@@ -167,7 +167,8 @@ for await (const user of client.onUserAdd.subscribe(undefined)) {
 
 When you iterate a subscription:
 
-- The loop yields the same data as `onData`, starting from when the loop starts. Data that arrived before that only went to the callbacks, so start the loop right after calling `.subscribe()`.
+- Use callbacks or a loop, not both. Iterating a subscription that was started with any callback, such as `onData` or `onError`, throws, and TypeScript reports it as an error.
+- The loop yields the data that arrives after it starts, so start it right after calling `.subscribe()`.
 - Leaving the loop with `break`, `return` or a thrown error unsubscribes.
 - An error from the subscription is thrown from the loop as a `TRPCClientError`, after the data received before it.
 - The loop ends when the subscription completes, when you call `unsubscribe()`, or when the `signal` you passed is aborted.

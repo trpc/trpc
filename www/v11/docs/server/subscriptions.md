@@ -211,7 +211,7 @@ const subscription = client.onPostAdd.subscribe(
 subscription.unsubscribe();
 ```
 
-The object `.subscribe()` returns is also an `AsyncIterable`, so you can consume a subscription with `for await` and leave out the callbacks. Leaving the loop unsubscribes, and errors are thrown from the loop. See [the vanilla client](../client/vanilla/setup.md#5-use-subscriptions) for the details.
+Called without callbacks, `.subscribe()` returns an `AsyncIterable`, so you can consume the subscription with `for await` instead. Leaving the loop unsubscribes, and errors are thrown from the loop. See [the vanilla client](../client/vanilla/setup.md#5-use-subscriptions) for the details.
 
 ```ts twoslash title="client.ts"
 // @target: esnext

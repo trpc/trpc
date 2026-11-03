@@ -9,7 +9,7 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import type { Observer } from '@trpc/server/observable';
+import type { Observer, Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 
 const t = initTRPC.create();
@@ -61,20 +61,39 @@ function iteratorOf<T>(iterable: AsyncIterable<T>) {
   return iterable[Symbol.asyncIterator]();
 }
 
-test('callbacks and the loop get the same data', async () => {
+test('iterating a subscription started with callbacks throws', () => {
+  const callbacks = {
+    onStarted: vi.fn(),
+    onData: vi.fn(),
+    onError: vi.fn(),
+    onStopped: vi.fn(),
+    onComplete: vi.fn(),
+    onConnectionStateChange: vi.fn(),
+  };
+  for (const [name, callback] of Object.entries(callbacks)) {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, { [name]: callback });
+
+    expect(() => iteratorOf(sub as any)).toThrowError(
+      'Cannot iterate a subscription that was started with callbacks; omit the callbacks to use for-await',
+    );
+
+    sub.unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
+});
+
+test('callbacks work as before', () => {
   const ctx = createControlledClient();
   const onData = vi.fn<(data: number) => void>();
-  const sub = ctx.client.onEvent.subscribe(undefined, { onData });
-  const iterator = iteratorOf(sub);
+  const onComplete = vi.fn<() => void>();
+  ctx.client.onEvent.subscribe(undefined, { onData, onComplete });
 
   ctx.emit(1);
-  ctx.emit(2);
+  ctx.complete();
 
-  expect(await iterator.next()).toEqual({ value: 1, done: false });
-  expect(await iterator.next()).toEqual({ value: 2, done: false });
-  expect(onData.mock.calls.map((call) => call[0])).toEqual([1, 2]);
-
-  sub.unsubscribe();
+  expect(onData).toHaveBeenCalledWith(1);
+  expect(onComplete).toHaveBeenCalledTimes(1);
 });
 
 test('only one loop can iterate a subscription at a time', () => {
@@ -91,8 +110,7 @@ test('only one loop can iterate a subscription at a time', () => {
 
 test('data that arrives before iteration starts is not buffered', async () => {
   const ctx = createControlledClient();
-  const onData = vi.fn<(data: number) => void>();
-  const sub = ctx.client.onEvent.subscribe(undefined, { onData });
+  const sub = ctx.client.onEvent.subscribe(undefined);
 
   ctx.emit(1);
 
@@ -100,7 +118,6 @@ test('data that arrives before iteration starts is not buffered', async () => {
   ctx.emit(2);
 
   expect(await iterator.next()).toEqual({ value: 2, done: false });
-  expect(onData.mock.calls.map((call) => call[0])).toEqual([1, 2]);
 
   sub.unsubscribe();
 });
@@ -120,8 +137,7 @@ test('a pending next() resolves with the next value', async () => {
 
 test('breaking out of `for await` unsubscribes', async () => {
   const ctx = createControlledClient();
-  const onData = vi.fn<(data: number) => void>();
-  const sub = ctx.client.onEvent.subscribe(undefined, { onData });
+  const sub = ctx.client.onEvent.subscribe(undefined);
 
   setTimeout(() => {
     ctx.emit(1);
@@ -157,8 +173,7 @@ test('returning from inside `for await` unsubscribes', async () => {
 
 test('completion ends the loop', async () => {
   const ctx = createControlledClient();
-  const onComplete = vi.fn<() => void>();
-  const sub = ctx.client.onEvent.subscribe(undefined, { onComplete });
+  const sub = ctx.client.onEvent.subscribe(undefined);
 
   setTimeout(() => {
     ctx.emit(1);
@@ -171,13 +186,11 @@ test('completion ends the loop', async () => {
   }
 
   expect(results).toEqual([1]);
-  expect(onComplete).toHaveBeenCalledTimes(1);
 });
 
 test('an error rejects the iterator after the buffered data, once', async () => {
   const ctx = createControlledClient();
-  const onError = vi.fn<(err: TRPCClientError<AppRouter>) => void>();
-  const sub = ctx.client.onEvent.subscribe(undefined, { onError });
+  const sub = ctx.client.onEvent.subscribe(undefined);
   const iterator = iteratorOf(sub);
 
   ctx.emit(1);
@@ -188,8 +201,6 @@ test('an error rejects the iterator after the buffered data, once', async () => 
   expect(err).toBeInstanceOf(TRPCClientError);
   expect((err as Error).message).toBe('boom');
   expect(await iterator.next()).toEqual({ value: undefined, done: true });
-
-  expect(onError).toHaveBeenCalledWith(err);
 });
 
 test('an error rejects a pending next()', async () => {
@@ -235,11 +246,7 @@ test('iterating a subscription that already ended', async () => {
   }
   {
     const ctx = createControlledClient();
-    const sub = ctx.client.onEvent.subscribe(undefined, {
-      onError: () => {
-        // handled
-      },
-    });
+    const sub = ctx.client.onEvent.subscribe(undefined);
     ctx.error('boom');
     await expect(iteratorOf(sub).next()).rejects.toThrowError('boom');
   }
@@ -348,8 +355,33 @@ test('types', () => {
   expectTypeOf(sub).toMatchTypeOf<AsyncIterable<number>>();
   sub.unsubscribe();
 
+  // with callbacks, the result can't be iterated
+  const withCallbacks = ctx.client.onEvent.subscribe(undefined, {
+    onData: vi.fn(),
+  });
+  expectTypeOf(withCallbacks).toEqualTypeOf<Unsubscribable>();
+  const callbacks = { onData: vi.fn<(data: number) => void>() };
+  expectTypeOf(
+    ctx.client.onEvent.subscribe(undefined, callbacks),
+  ).toEqualTypeOf<Unsubscribable>();
+  withCallbacks.unsubscribe();
+
+  async function _iterateCallbackSubscription() {
+    /* oxlint-disable typescript/await-thenable */
+    // @ts-expect-error a subscription with callbacks isn't iterable
+    for await (const _ of withCallbacks) {
+      // noop
+    }
+    /* oxlint-enable typescript/await-thenable */
+  }
+
   const untyped = createTRPCUntypedClient<AppRouter>({ links: [] });
-  expectTypeOf<ReturnType<typeof untyped.subscription>>().toEqualTypeOf<
-    TRPCSubscription<unknown>
-  >();
+  function _untypedTypes() {
+    expectTypeOf(untyped.subscription('onEvent', undefined)).toEqualTypeOf<
+      TRPCSubscription<unknown>
+    >();
+    expectTypeOf(
+      untyped.subscription('onEvent', undefined, { onData: vi.fn() }),
+    ).toEqualTypeOf<Unsubscribable>();
+  }
 });

@@ -1,4 +1,5 @@
 /* oxlint-disable typescript/no-non-null-assertion */
+import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
@@ -17,6 +18,7 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
+  NoSubscriptionCallbacks,
   TRPCSubscription,
   TRPCSubscriptionObserver,
 } from './internals/TRPCUntypedClient';
@@ -89,13 +91,20 @@ export type Resolver<TDef extends TRPCResolverDef> = (
  * The `.subscribe()` of a subscription procedure on the client.
  * @internal
  */
-export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
-  input: TDef['input'],
-  opts?: Partial<
-    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
-  > &
-    TRPCProcedureOptions,
-) => TRPCSubscription<inferAsyncIterableYield<TDef['output']>>;
+export interface SubscriptionResolver<TDef extends TRPCResolverDef> {
+  /** Without callbacks, iterate the result with `for await`. */
+  (
+    input: TDef['input'],
+    opts?: TRPCProcedureOptions & NoSubscriptionCallbacks,
+  ): TRPCSubscription<inferAsyncIterableYield<TDef['output']>>;
+  (
+    input: TDef['input'],
+    opts: Partial<
+      TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
+    > &
+      TRPCProcedureOptions,
+  ): Unsubscribable;
+}
 
 type DecorateProcedure<
   TType extends ProcedureType,
