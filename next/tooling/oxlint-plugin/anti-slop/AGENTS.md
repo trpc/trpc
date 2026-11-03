@@ -1,10 +1,10 @@
 # anti-slop (vendored)
 
-Oxlint rules copied from [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-slop) (MIT, see [`LICENSE`](./LICENSE)). We found them through [raf-query](https://github.com/KATT/raf-query), which vendors the same rules under [`tooling/oxlint-plugins/anti-slop/`](https://github.com/KATT/raf-query/tree/a9f2aa7743c64b548c6d982f5caffaf53f9a695a/tooling/oxlint-plugins/anti-slop).
+Oxlint rules copied from [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-slop) (MIT, see [`LICENSE`](./LICENSE)).
 
 ## Pin
 
-- Upstream: `dmmulroy/anti-slop@13909c9e07590f5a85d93c62712259fe14a883f7` (`main`, 2026-10-13). `src/effect/` last changed in `e6676e8`; raf-query's copy is the same code.
+- Upstream: `dmmulroy/anti-slop@13909c9e07590f5a85d93c62712259fe14a883f7` (`main`, 2026-10-13). `src/effect/` last changed in `e6676e8`.
 - Synced: 2026-10-17.
 
 ## What's here
@@ -22,7 +22,7 @@ Oxlint rules copied from [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-s
 
 `no-manual-tag-comparison` skips `_tag` comparisons inside a broad `Effect.catch`/`catchAll`/`catchIf` handler, and `no-manual-effect-error-tag` reports exactly those, pointing at `catchTag`/`catchReason`; the two need each other.
 
-Not adopted: upstream's generic `src/rules/` (raf-query enables most of them; here they'd flag type assertions, `unknown`, `typeof` and options objects throughout the library), and the Effect rule `no-service-constructor-imports`, which reads any imported `make*` function as a service constructor (`makeEffectMiddleware`, `makeDeferredDecoder`).
+Not adopted: upstream's generic `src/rules/` (here they'd flag type assertions, `unknown`, `typeof` and options objects throughout the library), and the Effect rule `no-service-constructor-imports`, which reads any imported `make*` function as a service constructor (`makeEffectMiddleware`, `makeDeferredDecoder`).
 
 The plugin is registered in `vite.config.ts` (`lint.jsPlugins`), and the rules are switched on by an override for code built on Effect (`packages/*/src`, `tooling`, `test`, `examples/effect`), not for `spikes`.
 

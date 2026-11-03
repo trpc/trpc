@@ -69,7 +69,6 @@ export default defineConfig({
       'no-var': 'error',
       'unicorn/no-accessor-recursion': 'error',
       'unicorn/prefer-array-flat-map': 'error',
-      // From raf-query's.
       'no-empty': 'error',
       // A `let` read by a closure that can run before it's assigned stays.
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],

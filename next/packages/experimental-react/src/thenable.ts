@@ -1,7 +1,7 @@
 /**
  * Promises that carry their own result in the fields React's `use()` reads
- * before suspending (`status`, `value`, `reason`), as raf-query's and
- * TanStack Query's do. A settled one renders without a fallback.
+ * before suspending (`status`, `value`, `reason`), as TanStack Query's do. A
+ * settled one renders without a fallback.
  */
 
 /**
