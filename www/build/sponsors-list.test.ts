@@ -50,28 +50,28 @@ function backer(
   };
 }
 
-const serpApi: DirectSponsor = {
-  avatarUrl: 'https://github.com/serpapi.png',
-  dollars: 6000,
+const acme: DirectSponsor = {
+  avatarUrl: 'https://github.com/acme.png',
+  dollars: 7_200,
   every: 'year',
-  login: 'SerpApi',
-  name: 'SerpApi',
+  login: 'Acme',
+  name: 'Acme',
   since: '2026-02-11',
-  websiteUrl: 'https://serpapi.com/',
+  websiteUrl: 'https://acme.dev/',
 };
 
 describe('trackingLink', () => {
   it("adds trpc's ref and UTM parameters", () => {
-    expect(trackingLink('https://greptile.com/')).toBe(
-      'https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+    expect(trackingLink('https://globex.dev/')).toBe(
+      'https://globex.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
     );
   });
 
   it("keeps a sponsor's own ref, and replaces their UTM parameters", () => {
     expect(
-      trackingLink('https://www.coderabbit.ai/?ref=cr&utm_source=x&page=1'),
+      trackingLink('https://www.initech.dev/?ref=cr&utm_source=x&page=1'),
     ).toBe(
-      'https://www.coderabbit.ai/?ref=cr&utm_source=github&page=1&utm_medium=referral&utm_campaign=trpc',
+      'https://www.initech.dev/?ref=cr&utm_source=github&page=1&utm_medium=referral&utm_campaign=trpc',
     );
   });
 
@@ -88,17 +88,17 @@ describe('trackingLink', () => {
 
 describe('directDollars', () => {
   it('counts every period started, the current one included', () => {
-    expect(directDollars(serpApi, Date.parse('2026-02-11'))).toBe(6000);
-    expect(directDollars(serpApi, Date.parse('2027-02-10'))).toBe(6000);
-    expect(directDollars(serpApi, Date.parse('2027-02-12'))).toBe(12_000);
-    const monthly: DirectSponsor = { ...serpApi, dollars: 500, every: 'month' };
+    expect(directDollars(acme, Date.parse('2026-02-11'))).toBe(7_200);
+    expect(directDollars(acme, Date.parse('2027-02-10'))).toBe(7_200);
+    expect(directDollars(acme, Date.parse('2027-02-12'))).toBe(14_400);
+    const monthly: DirectSponsor = { ...acme, dollars: 300, every: 'month' };
     expect(directDollars(monthly, Date.parse('2026-02-11') + 45 * day)).toBe(
-      1000,
+      600,
     );
   });
 
   it('counts the first period for a sponsor who starts later', () => {
-    expect(directDollars(serpApi, Date.parse('2026-01-01'))).toBe(6000);
+    expect(directDollars(acme, Date.parse('2026-01-01'))).toBe(7_200);
   });
 });
 
@@ -190,39 +190,39 @@ describe('sponsorsList', () => {
   it('adds direct sponsors and money GitHub does not attribute', () => {
     const sponsors = sponsorsList({
       config: {
-        direct: [serpApi],
+        direct: [acme],
         extra: [
-          { dollars: 1500, login: 'greptileai', why: 'A private account' },
+          { dollars: 1_200, login: 'globex', why: 'A private account' },
           { dollars: 99, login: 'gone', why: 'No longer sponsors' },
         ],
         shownPrivately: [],
       },
-      lifetimeValues: [{ cents: 450_000, login: 'greptileai' }],
+      lifetimeValues: [{ cents: 600_000, login: 'globex' }],
       now,
       sponsorships: [
-        sponsorship('greptileai', {
+        sponsorship('globex', {
           createdAt: Date.parse('2025-03-27'),
-          name: 'Greptile',
-          websiteUrl: 'https://greptile.com',
+          name: 'Globex',
+          websiteUrl: 'https://globex.dev',
         }),
       ],
     });
     expect(sponsors).toEqual([
       {
         createdAt: Date.parse('2025-03-27'),
-        imgSrc: 'https://avatars.githubusercontent.com/greptileai?v=4',
-        link: 'https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
-        login: 'greptileai',
+        imgSrc: 'https://avatars.githubusercontent.com/globex?v=4',
+        link: 'https://globex.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+        login: 'globex',
         source: 'github',
-        name: 'Greptile',
+        name: 'Globex',
         weight: 100,
       },
       {
         createdAt: Date.parse('2026-02-11'),
-        imgSrc: 'https://github.com/serpapi.png',
-        link: 'https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
-        login: 'SerpApi',
-        name: 'SerpApi',
+        imgSrc: 'https://github.com/acme.png',
+        link: 'https://acme.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+        login: 'Acme',
+        name: 'Acme',
         rank: 1,
         source: 'github',
         tier: 'silver',
@@ -233,7 +233,7 @@ describe('sponsorsList', () => {
 
   it('tiers sponsors by what they give a month across accounts, ranked by that, then by what they paid in all', () => {
     const sponsors = sponsorsList({
-      config: { ...noConfig, direct: [serpApi] },
+      config: { ...noConfig, direct: [acme] },
       lifetimeValues: [
         { cents: 100_000, login: 'newSilver' },
         { cents: 500_000, login: 'oldSilver' },
@@ -258,7 +258,7 @@ describe('sponsorsList', () => {
         .map((sponsor) => [sponsor.rank, sponsorKey(sponsor), sponsor.tier]),
     ).toEqual([
       [1, 'github/gold', 'gold'],
-      [2, 'github/SerpApi', 'silver'],
+      [2, 'github/Acme', 'silver'],
       [3, 'github/oldSilver', 'silver'],
       [4, 'github/newSilver', 'silver'],
       [5, 'github/bronze', 'bronze'],
@@ -273,14 +273,14 @@ describe('sponsorsList', () => {
 
   it("adds a direct sponsor's payments to their GitHub sponsorship", () => {
     const sponsors = sponsorsList({
-      config: { ...noConfig, direct: [serpApi] },
+      config: { ...noConfig, direct: [acme] },
       lifetimeValues: [
-        { cents: 600_000, login: 'SerpApi' },
-        { cents: 1_200_000, login: 'other' },
+        { cents: 720_000, login: 'Acme' },
+        { cents: 1_440_000, login: 'other' },
       ],
       now,
       sponsorships: [
-        sponsorship('SerpApi', { createdAt: Date.parse('2026-05-01') }),
+        sponsorship('Acme', { createdAt: Date.parse('2026-05-01') }),
         sponsorship('other'),
       ],
     });
@@ -288,8 +288,8 @@ describe('sponsorsList', () => {
       expect.objectContaining({ login: 'other', weight: 100 }),
       expect.objectContaining({
         createdAt: Date.parse('2026-02-11'),
-        login: 'SerpApi',
-        name: 'SERPAPI',
+        login: 'Acme',
+        name: 'ACME',
         weight: 100,
       }),
     ]);
@@ -323,14 +323,13 @@ describe('sponsorsList', () => {
       lifetimeValues: [{ cents: 100_000, login: 'gh' }],
       now,
       openCollective: [
-        backer('venue-ink', {
-          avatarUrl:
-            'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
+        backer('hooli', {
+          avatarUrl: 'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
           createdAt: Date.parse('2026-05-27'),
-          monthlyDollars: 25,
-          name: 'Venue.ink',
-          paidCents: 15_000,
-          websiteUrl: 'https://www.venue.ink',
+          monthlyDollars: 30,
+          name: 'Hooli',
+          paidCents: 20_000,
+          websiteUrl: 'https://www.hooli.dev',
         }),
         backer('big', { monthlyDollars: 600, paidCents: 60_000 }),
         backer('plain', { monthlyDollars: 0, paidCents: 1_000 }),
@@ -368,13 +367,13 @@ describe('sponsorsList', () => {
       }),
       {
         createdAt: Date.parse('2026-05-27'),
-        imgSrc: 'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
-        link: 'https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
-        name: 'Venue.ink',
-        profileUrl: 'https://opencollective.com/venue-ink',
-        slug: 'venue-ink',
+        imgSrc: 'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
+        link: 'https://www.hooli.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+        name: 'Hooli',
+        profileUrl: 'https://opencollective.com/hooli',
+        slug: 'hooli',
         source: 'opencollective',
-        weight: 15,
+        weight: 20,
       },
     ]);
   });
@@ -436,16 +435,16 @@ describe('sponsorsList', () => {
     const sponsors = sponsorsList({
       config: {
         ...noConfig,
-        direct: [serpApi],
-        extra: [{ dollars: 1000, login: 'SERPAPI', why: 'Paid by invoice' }],
+        direct: [acme],
+        extra: [{ dollars: 1_400, login: 'ACME', why: 'Paid by invoice' }],
       },
-      lifetimeValues: [{ cents: 1_600_000, login: 'other' }],
+      lifetimeValues: [{ cents: 2_000_000, login: 'other' }],
       now,
       openCollective: [
-        backer('serp-api', {
-          githubLogin: 'serpapi',
+        backer('acme-oc', {
+          githubLogin: 'acme',
           monthlyDollars: 0,
-          paidCents: 100_000,
+          paidCents: 140_000,
         }),
       ],
       sponsorships: [sponsorship('other')],
@@ -453,7 +452,7 @@ describe('sponsorsList', () => {
     expect(sponsors).toEqual([
       expect.objectContaining({ login: 'other', weight: 100 }),
       expect.objectContaining({
-        login: 'SerpApi',
+        login: 'Acme',
         source: 'github',
         weight: 50,
       }),

@@ -50,13 +50,13 @@ const readme = [
 const config: SponsorsConfig = {
   direct: [
     {
-      avatarUrl: 'https://github.com/serpapi.png',
-      dollars: 6000,
+      avatarUrl: 'https://github.com/acme.png',
+      dollars: 7_200,
       every: 'year',
-      login: 'SerpApi',
-      name: 'SerpApi',
+      login: 'Acme',
+      name: 'Acme',
       since: '2026-02-11',
-      websiteUrl: 'https://serpapi.com/',
+      websiteUrl: 'https://acme.dev/',
     },
   ],
   extra: [],
@@ -109,22 +109,22 @@ describe('syncSponsors', () => {
         const login = sent.variables.login;
         if (isPaymentsQuery(sent)) {
           return login === 'KATT'
-            ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', 2_000)]
-            : [paymentNode('coderabbitai', 300_000)];
+            ? [paymentNode('initech', 360_000), paymentNode('fan', 2_000)]
+            : [paymentNode('initech', 360_000)];
         }
         return login === 'KATT'
           ? [
-              sponsorshipNode('coderabbitai', {
+              sponsorshipNode('initech', {
                 createdAt: '2025-01-23T15:14:59Z',
-                tier: { isOneTime: false, monthlyPriceInDollars: 500 },
+                tier: { isOneTime: false, monthlyPriceInDollars: 600 },
               }),
               sponsorshipNode('fan', { createdAt: '2021-09-20T13:12:22Z' }),
               sponsorshipNode('shy', { privacyLevel: 'PRIVATE' }),
             ]
           : [
-              sponsorshipNode('coderabbitai', {
+              sponsorshipNode('initech', {
                 createdAt: '2025-03-01T00:00:00Z',
-                tier: { isOneTime: false, monthlyPriceInDollars: 500 },
+                tier: { isOneTime: false, monthlyPriceInDollars: 600 },
               }),
             ];
       });
@@ -150,13 +150,13 @@ describe('syncSponsors', () => {
           },
           expect.objectContaining({
             createdAt: Date.parse('2025-01-23T15:14:59Z'),
-            login: 'coderabbitai',
+            login: 'initech',
             rank: 1,
             tier: 'gold',
             weight: 100,
           }),
           expect.objectContaining({
-            login: 'SerpApi',
+            login: 'Acme',
             rank: 2,
             tier: 'silver',
             weight: 100,
@@ -170,14 +170,10 @@ describe('syncSponsors', () => {
         expect(written).not.toContain('the old list');
         const at = (text: string) => written.indexOf(text);
         expect(at('### Gold partners')).toBeGreaterThan(-1);
-        expect(at('alt="CODERABBITAI"')).toBeGreaterThan(
-          at('### Gold partners'),
-        );
-        expect(at('### Silver partners')).toBeGreaterThan(
-          at('alt="CODERABBITAI"'),
-        );
-        expect(at('alt="SerpApi"')).toBeGreaterThan(at('### Silver partners'));
-        expect(at('### Backers')).toBeGreaterThan(at('alt="SerpApi"'));
+        expect(at('alt="INITECH"')).toBeGreaterThan(at('### Gold partners'));
+        expect(at('### Silver partners')).toBeGreaterThan(at('alt="INITECH"'));
+        expect(at('alt="Acme"')).toBeGreaterThan(at('### Silver partners'));
+        expect(at('### Backers')).toBeGreaterThan(at('alt="Acme"'));
         expect(at('alt="FAN"')).toBeGreaterThan(at('### Backers'));
         expect(fake.sent).toHaveLength(4);
       }).pipe(
@@ -191,17 +187,17 @@ describe('syncSponsors', () => {
   it.effect(
     'with onlyWhenSponsorsChange, writes only when a sponsor joined, left or changed tier',
     () => {
-      let logins = ['coderabbitai', 'fan'];
+      let logins = ['initech', 'fan'];
       let fanCents = 2_000;
       let fanMonthly = 10;
       const fake = github((sent) =>
         isPaymentsQuery(sent)
-          ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', fanCents)]
+          ? [paymentNode('initech', 360_000), paymentNode('fan', fanCents)]
           : logins.map((login) =>
               sponsorshipNode(login, {
                 tier: {
                   isOneTime: false,
-                  monthlyPriceInDollars: login === 'fan' ? fanMonthly : 500,
+                  monthlyPriceInDollars: login === 'fan' ? fanMonthly : 600,
                 },
               }),
             ),
@@ -237,7 +233,7 @@ describe('syncSponsors', () => {
           '"tier": "bronze"',
         );
 
-        logins = ['coderabbitai', 'newcomer'];
+        logins = ['initech', 'newcomer'];
         expect(yield* syncWhenSponsorsChange).toBe(
           `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
         );
@@ -245,7 +241,7 @@ describe('syncSponsors', () => {
           yield* fs.readFileString(files.sponsorsFile),
         );
         expect(after.map((sponsor) => sponsor.login).toSorted()).toEqual([
-          'coderabbitai',
+          'initech',
           'newcomer',
         ]);
       }).pipe(
@@ -259,17 +255,17 @@ describe('syncSponsors', () => {
   it.effect(
     'marks a small sponsor whose avatar does not load imageless, and writes when that changes',
     () => {
-      let broken: ReadonlyArray<string> = ['fan', 'coderabbitai'];
+      let broken: ReadonlyArray<string> = ['fan', 'initech'];
       const fake = github((sent) =>
         isPaymentsQuery(sent)
           ? [
-              paymentNode('coderabbitai', 300_000),
+              paymentNode('initech', 360_000),
               paymentNode('fan', 2_000),
               paymentNode('pal', 1_000),
             ]
           : [
-              sponsorshipNode('coderabbitai', {
-                tier: { isOneTime: false, monthlyPriceInDollars: 500 },
+              sponsorshipNode('initech', {
+                tier: { isOneTime: false, monthlyPriceInDollars: 600 },
               }),
               sponsorshipNode('fan'),
               sponsorshipNode('pal'),
@@ -303,7 +299,7 @@ describe('syncSponsors', () => {
           'alt="FAN"',
         );
 
-        broken = ['coderabbitai'];
+        broken = ['initech'];
         expect(yield* syncWhenSponsorsChange).toBe(
           `Wrote 3 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
         );
@@ -340,18 +336,18 @@ describe('syncSponsors', () => {
               },
               totalDonations: { currency: 'SEK', valueInCents: 100_000 },
             }),
-            memberNode('venue-ink', {
-              account: { name: 'Venue.ink', website: 'https://www.venue.ink' },
-              totalDonations: { currency: 'SEK', valueInCents: 150_000 },
+            memberNode('hooli', {
+              account: { name: 'Hooli', website: 'https://www.hooli.dev' },
+              totalDonations: { currency: 'SEK', valueInCents: 200_000 },
             }),
             memberNode('left'),
           ],
           orders: [
             orderNode('fan-oc', {
-              amount: { currency: 'SEK', valueInCents: 25_000 },
+              amount: { currency: 'SEK', valueInCents: 30_000 },
             }),
-            orderNode('venue-ink', {
-              amount: { currency: 'SEK', valueInCents: 25_000 },
+            orderNode('hooli', {
+              amount: { currency: 'SEK', valueInCents: 30_000 },
             }),
           ],
           rates: { SEK: 0.1 },
@@ -381,20 +377,20 @@ describe('syncSponsors', () => {
           expect.objectContaining({
             login: 'fan',
             source: 'github',
-            weight: 80,
+            weight: 60,
           }),
           expect.objectContaining({
-            imgSrc: 'https://images.opencollective.com/venue-ink/avatar.png',
-            link: 'https://www.venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
-            name: 'Venue.ink',
-            profileUrl: 'https://opencollective.com/venue-ink',
-            slug: 'venue-ink',
+            imgSrc: 'https://images.opencollective.com/hooli/avatar.png',
+            link: 'https://www.hooli.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
+            name: 'Hooli',
+            profileUrl: 'https://opencollective.com/hooli',
+            slug: 'hooli',
             source: 'opencollective',
             weight: 100,
           }),
         ]);
         expect(yield* fs.readFileString(files.readme)).toContain(
-          'src="https://images.opencollective.com/venue-ink/avatar.png?height=200"',
+          'src="https://images.opencollective.com/hooli/avatar.png?height=200"',
         );
         expect(oc.sent.map((sent) => sent.variables.slug)).toContain('trpc');
       }).pipe(
@@ -495,7 +491,7 @@ describe('openCollectiveSummary', () => {
     expect(
       openCollectiveSummary(
         [
-          backer('Venue.ink'),
+          backer('Hooli'),
           backer('Fan', { githubLogin: 'fan' }),
           backer('Guest', { isCurrent: false }),
         ],
@@ -503,7 +499,7 @@ describe('openCollectiveSummary', () => {
         [],
       ),
     ).toBe(
-      'Open Collective: 2 backing now: Venue.ink, Fan (also on GitHub); 1 who backed before left out.',
+      'Open Collective: 2 backing now: Hooli, Fan (also on GitHub); 1 who backed before left out.',
     );
     expect(openCollectiveSummary([], [fan], [])).toBe(
       'Open Collective: 0 backing now.',
@@ -541,11 +537,11 @@ describe('readmeFromSponsorsFile', () => {
           },
           {
             createdAt: 2,
-            imgSrc: 'https://images.opencollective.com/venue-ink/logo.png',
-            link: 'https://opencollective.com/venue-ink',
-            name: 'Venue.ink',
-            profileUrl: 'https://opencollective.com/venue-ink',
-            slug: 'venue-ink',
+            imgSrc: 'https://images.opencollective.com/hooli/logo.png',
+            link: 'https://opencollective.com/hooli',
+            name: 'Hooli',
+            profileUrl: 'https://opencollective.com/hooli',
+            slug: 'hooli',
             source: 'opencollective',
             weight: 2,
           },
@@ -559,7 +555,7 @@ describe('readmeFromSponsorsFile', () => {
         '<td align="center"><a href="https://github.com/fan"><img src="https://avatars.githubusercontent.com/u/1?v=4&amp;s=200" width="100" alt="Fan"/><br />Fan</a></td>',
       );
       expect(written).toContain(
-        '<a href="https://opencollective.com/venue-ink"><img src="https://images.opencollective.com/venue-ink/logo.png?height=200"',
+        '<a href="https://opencollective.com/hooli"><img src="https://images.opencollective.com/hooli/logo.png?height=200"',
       );
       expect(yield* readmeFromSponsorsFile(files)).toBe(
         `${files.readme} already lists the 2 sponsors.`,
@@ -586,16 +582,16 @@ describe('readmeFromSponsorsFile', () => {
       const fs = yield* FileSystem.FileSystem;
       const sponsor = {
         createdAt: 1,
-        imgSrc: 'https://images.opencollective.com/venue-ink/logo.png',
-        link: 'https://opencollective.com/venue-ink',
-        name: 'Venue.ink',
+        imgSrc: 'https://images.opencollective.com/hooli/logo.png',
+        link: 'https://opencollective.com/hooli',
+        name: 'Hooli',
         weight: 2,
       };
       for (const unexpected of [
         [{ login: 'fan' }],
-        [{ ...sponsor, login: 'venue-ink' }],
-        [{ ...sponsor, login: 'venue-ink', source: 'github', slug: 'x' }],
-        [{ ...sponsor, login: 'venue-ink', source: 'opencollective' }],
+        [{ ...sponsor, login: 'hooli' }],
+        [{ ...sponsor, login: 'hooli', source: 'github', slug: 'x' }],
+        [{ ...sponsor, login: 'hooli', source: 'opencollective' }],
       ]) {
         yield* fs.writeFileString(
           files.sponsorsFile,

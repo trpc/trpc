@@ -100,24 +100,22 @@ describe('avatarUrl and profileUrl', () => {
     const github = sponsor('fan', 1);
     const openCollective: Sponsor = {
       createdAt: 0,
-      imgSrc: 'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
-      link: 'https://www.venue.ink/',
-      name: 'Venue.ink',
-      profileUrl: 'https://opencollective.com/venue-ink',
-      slug: 'venue-ink',
+      imgSrc: 'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
+      link: 'https://www.hooli.dev/',
+      name: 'Hooli',
+      profileUrl: 'https://opencollective.com/hooli',
+      slug: 'hooli',
       source: 'opencollective',
       weight: 1,
     };
     expect(avatarUrl(github, 64)).toBe('https://example.com/fan.png?s=64');
     expect(avatarUrl(openCollective, 64)).toBe(
-      'https://images.opencollective.com/venue-ink/49dbae6/logo.png?height=64',
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=64',
     );
     expect(profileUrl(github)).toBe('https://github.com/fan');
-    expect(profileUrl(openCollective)).toBe(
-      'https://opencollective.com/venue-ink',
-    );
+    expect(profileUrl(openCollective)).toBe('https://opencollective.com/hooli');
     expect(sponsorKey(github)).toBe('github/fan');
-    expect(sponsorKey(openCollective)).toBe('opencollective/venue-ink');
+    expect(sponsorKey(openCollective)).toBe('opencollective/hooli');
   });
 });
 

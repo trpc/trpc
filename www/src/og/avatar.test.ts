@@ -36,9 +36,9 @@ describe('avatarUrl', () => {
       avatarUrl('https://avatars.githubusercontent.com/u/459267?v=4'),
     ).toBe('https://avatars.githubusercontent.com/u/459267?v=4&size=128');
     expect(
-      avatarUrl('https://images.opencollective.com/venue-ink/49dbae6/logo.png'),
+      avatarUrl('https://images.opencollective.com/hooli/1a2b3c4/logo.png'),
     ).toBe(
-      'https://images.opencollective.com/venue-ink/49dbae6/logo.png?height=128',
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=128',
     );
     expect(avatarUrl('https://evilgithubusercontent.com/a.png')).toBe(
       'https://evilgithubusercontent.com/a.png',

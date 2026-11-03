@@ -43,15 +43,15 @@ describe('fetchBackers', () => {
       const fake = fakeOpenCollective(
         openCollectiveData({
           members: [
-            memberNode('venue-ink', {
+            memberNode('hooli', {
               account: {
                 imageUrl:
-                  'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
-                name: 'Venue.ink',
-                website: 'https://www.venue.ink',
+                  'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
+                name: 'Hooli',
+                website: 'https://www.hooli.dev',
               },
               since: '2026-05-27T13:49:48Z',
-              totalDonations: { currency: 'SEK', valueInCents: 150_000 },
+              totalDonations: { currency: 'SEK', valueInCents: 200_000 },
             }),
             memberNode('yearly', {
               account: {
@@ -68,8 +68,8 @@ describe('fetchBackers', () => {
             memberNode('once-long-ago'),
           ],
           orders: [
-            orderNode('venue-ink', {
-              amount: { currency: 'SEK', valueInCents: 25_000 },
+            orderNode('hooli', {
+              amount: { currency: 'SEK', valueInCents: 30_000 },
             }),
             orderNode('yearly', {
               amount: { currency: 'USD', valueInCents: 120_000 },
@@ -97,15 +97,15 @@ describe('fetchBackers', () => {
         expect(backers).toEqual([
           {
             avatarUrl:
-              'https://images.opencollective.com/venue-ink/49dbae6/logo.png',
+              'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
             createdAt: Date.parse('2026-05-27T13:49:48Z'),
             githubLogin: null,
             isCurrent: true,
-            monthlyDollars: 25,
-            name: 'Venue.ink',
-            paidCents: 15_000,
-            slug: 'venue-ink',
-            websiteUrl: 'https://www.venue.ink',
+            monthlyDollars: 30,
+            name: 'Hooli',
+            paidCents: 20_000,
+            slug: 'hooli',
+            websiteUrl: 'https://www.hooli.dev',
           },
           expect.objectContaining({
             githubLogin: 'Yearly',
