@@ -18,6 +18,8 @@
 export {
   createTrpcQueryUtils,
   type CreateTrpcQueryUtilsOptions,
+  type HandleReader,
+  type inferQueryHandle,
   type InfiniteOptionsIn,
   type InfiniteOptionsOut,
   type MutationOptionsIn,
@@ -27,6 +29,7 @@ export {
   type PathUtils,
   type QueryData,
   type QueryFiltersIn,
+  type QueryHandleVerbs,
   type QueryOptionsIn,
   type QueryOptionsOut,
   type QueryProcedureUtils,
@@ -56,5 +59,10 @@ export {
   type SubscriptionStatus,
   type TrpcSubscriptionOptions,
 } from './subscription.ts';
+export {
+  type HandleOptions,
+  type QueryHandleTypes,
+  type TrpcQueryHandle,
+} from './handles.ts';
 export { hydrationOptions, type HydrationOptionsOptions } from './hydration.ts';
 export { structuralSharing } from './sharing.ts';

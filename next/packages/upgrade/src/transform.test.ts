@@ -657,7 +657,7 @@ const app = <TRPCProvider {...props} trpcClient={client} />;
     expect(messages(source, 'app.tsx')).toMatchInlineSnapshot(`
       [
         "4:10 TrpcError<TCode, TData> takes a code and data, not a router; use ClientError or safe()",
-        "6:15 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider",
+        "6:15 createTrpcQueryUtils({ client, queryClient }): queryClient is only for the handle verbs ($prefetch, $ensure, $fetch); hooks use QueryClientProvider",
       ]
     `);
   });
@@ -676,6 +676,10 @@ function Posts() {
   trpc.post.feed.infiniteQueryFilter();
   trpc.post.onAdd.subscriptionOptions(undefined, { onData });
   useMutation(trpc.post.add.mutationOptions({ onSuccess }));
+  trpc.viewer.unstable_$prefetch();
+  trpc.post.byId.unstable_$ensure({ id: '1' });
+  useSuspenseQuery(trpc.unstable_$fromHandle(handle));
+  trpc.post.feed.unstable_$prefetchInfinite({ limit: 10 });
 }
 `;
     expect(messages(source, 'posts.tsx')).toMatchInlineSnapshot(`
@@ -688,6 +692,10 @@ function Posts() {
         "10:18 infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12",
         "11:18 infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12",
         "12:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
+        "14:15 unstable_$prefetch(input, opts) is $prefetch({ input, ...opts }) in v12, on createTrpcQueryUtils({ client, queryClient })",
+        "15:18 unstable_$ensure(input, opts) is $ensure({ input, ...opts }) in v12, on createTrpcQueryUtils({ client, queryClient })",
+        "16:25 unstable_$fromHandle(handle) is $fromHandle(handle) in v12",
+        "17:18 unstable_$prefetchInfinite has no v12 version: prefetch infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) with queryClient.infiniteQuery",
       ]
     `);
     // Without v11's TanStack integration, queryOptions() is someone else's.

@@ -13,10 +13,11 @@
  *
  * // app/post/[id]/page.tsx (a server component)
  * export default async function Page({ params }) {
- *   prefetch(trpc.post.byId.queryOptions({ input: { id: params.id } }));
+ *   const post = trpc.post.byId.$prefetch({ input: { id: params.id } });
+ *   // <Post>, a client component, reads it with useSuspenseQuery(trpc.$fromHandle(props.post))
  *   return (
  *     <HydrationBoundary>
- *       <Post id={params.id} />
+ *       <Post post={post} />
  *     </HydrationBoundary>
  *   );
  * }
@@ -87,8 +88,11 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
  * @stability stable
  */
 export interface TrpcRsc<TRouter extends AnyRouter> {
-  /** Query helpers whose calls go straight to the router. */
-  trpc: TrpcQueryUtils<TrpcClient<TRouter, {}, ProgressiveJsonForm>>;
+  /**
+   * Query helpers whose calls go straight to the router. Their handle verbs
+   * (`$prefetch()`, `$ensure()`, `$fetch()`) use the request's query client.
+   */
+  trpc: TrpcQueryUtils<TrpcClient<TRouter, {}, ProgressiveJsonForm>, true>;
   /** Calls the router directly, without the query cache. */
   caller: TrpcClient<TRouter, {}, ProgressiveJsonForm>;
   /** The request's query client. */
@@ -148,6 +152,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
   const trpc = createTrpcQueryUtils({
     client: caller,
     keyPrefix: opts.keyPrefix,
+    queryClient: getQueryClient,
   });
 
   return {

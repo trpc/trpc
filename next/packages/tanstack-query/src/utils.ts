@@ -36,6 +36,15 @@ import {
   type SubscriptionCallbacks,
   type TrpcSubscriptionOptions,
 } from './subscription.ts';
+import {
+  readHandle,
+  startHandle,
+  type HandleOptions,
+  type HandleVerb,
+  type QueryClientOption,
+  type QueryHandleTypes,
+  type TrpcQueryHandle,
+} from './handles.ts';
 
 type AnyFn = (...args: any[]) => any;
 
@@ -109,6 +118,9 @@ type BagArgs<TInput, TOpts> = undefined extends TInput
 type KeyArgs<TInput> = undefined extends TInput
   ? [opts?: { input?: TInput | SkipToken }]
   : [opts: { input: TInput | SkipToken }];
+type HandleArgs<TInput, TContext> = undefined extends TInput
+  ? [opts?: { input?: TInput } & ContextBag<TContext> & HandleOptions]
+  : [opts: { input: TInput } & ContextBag<TContext> & HandleOptions];
 
 /**
  * TanStack's query options, minus what tRPC fills in.
@@ -290,6 +302,57 @@ export interface PathUtils {
 }
 
 /**
+ * Reads handles, on every router.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface HandleReader {
+  /**
+   * The options for the query a handle refers to: the same as
+   * `trpc.<path>.queryOptions({ input })` with the handle's procedure and
+   * input. Pass them to `useSuspenseQuery`, `useQuery`, …
+   *
+   * @example
+   * ```ts
+   * // a route's loader
+   * loader: async (opts) => ({ post: await trpc.post.byId.$ensure({ input: { id } }) }),
+   * // its component
+   * const post = useSuspenseQuery(trpc.$fromHandle(Route.useLoaderData().post));
+   * ```
+   */
+  $fromHandle<TTypes extends QueryHandleTypes, TData = TTypes['data']>(
+    handle: TrpcQueryHandle<TTypes>,
+    opts?: ContextBag<TTypes['context']> &
+      QueryOptionsIn<TTypes['data'], TTypes['error'], TData>,
+  ): QueryOptionsOut<TTypes['data'], TTypes['error'], TData>;
+}
+
+/**
+ * The handle a query procedure's `$prefetch()`, `$ensure()` and `$fetch()`
+ * make, for typing a prop: `inferQueryHandle<typeof trpc.post.byId>`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type inferQueryHandle<
+  TProcedure extends QueryProcedureUtils<any, any, any, any>,
+> =
+  TProcedure extends QueryProcedureUtils<
+    infer TInput,
+    infer TOutput,
+    infer TError,
+    infer TContext
+  >
+    ? QueryHandleOf<TInput, TOutput, TError, TContext>
+    : never;
+
+type QueryHandleOf<TInput, TOutput, TError, TContext> = TrpcQueryHandle<{
+  input: TInput;
+  data: QueryData<TOutput>;
+  error: TError;
+  context: TContext;
+}>;
+
+/**
  * The TanStack helpers for a query procedure.
  * @since 0.1.0
  * @stability stable
@@ -383,6 +446,46 @@ export interface QueryProcedureUtils<
   ): QueryFiltersIn & {
     queryKey: InfiniteKey<TOutput, TError, unknown>;
   };
+}
+
+/**
+ * The handle verbs of a query procedure, on helpers made with a
+ * `queryClient`. Each starts the query on it and returns a serializable
+ * handle for `trpc.$fromHandle()`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface QueryHandleVerbs<TInput, TOutput, TError, TContext> {
+  /**
+   * Starts the query without waiting, and returns its handle. Never throws:
+   * an error surfaces where the handle is read.
+   *
+   * Same as `void queryClient.query(trpc.<path>.queryOptions(opts)).catch(noop)`.
+   */
+  $prefetch(
+    ...args: HandleArgs<TInput, TContext>
+  ): QueryHandleOf<TInput, TOutput, TError, TContext>;
+  /**
+   * Waits until the cache has data for the query, however old, and returns
+   * its handle, so a loader can hold navigation until then. Stale data is
+   * refetched in the background. Rejects if the fetch fails.
+   *
+   * @example
+   * ```ts
+   * loader: async (opts) => ({ post: await trpc.post.byId.$ensure({ input: { id } }) }),
+   * ```
+   */
+  $ensure(
+    ...args: HandleArgs<TInput, TContext>
+  ): Promise<QueryHandleOf<TInput, TOutput, TError, TContext>>;
+  /**
+   * Like `$ensure()`, but waits for stale data to refetch too.
+   *
+   * Same as `await queryClient.query(trpc.<path>.queryOptions(opts))`.
+   */
+  $fetch(
+    ...args: HandleArgs<TInput, TContext>
+  ): Promise<QueryHandleOf<TInput, TOutput, TError, TContext>>;
 }
 
 /**
@@ -537,29 +640,42 @@ export interface SubscriptionProcedureUtils<
 
 /**
  * The TanStack helpers for a client: one entry per router and procedure,
- * typed from the client's methods.
+ * typed from the client's methods. `TBound` is `true` for helpers made with
+ * a `queryClient`, whose query procedures have the handle verbs.
  * @since 0.1.0
  * @stability stable
  */
-export type TrpcQueryUtils<TClient> = PathUtils & {
-  [K in keyof TClient]: TClient[K] extends { query: infer F extends AnyFn }
-    ? QueryProcedureUtils<InputOf<F>, OutputOf<F>, ErrorOf<F>, ContextOf<F>>
-    : TClient[K] extends { mutate: infer F extends AnyFn }
-      ? MutationProcedureUtils<
-          InputOf<F>,
-          OutputOf<F>,
-          ErrorOf<F>,
-          ContextOf<F>
-        >
-      : TClient[K] extends { subscribe: infer F extends AnyFn }
-        ? SubscriptionProcedureUtils<
+export type TrpcQueryUtils<
+  TClient,
+  TBound extends boolean = false,
+> = PathUtils &
+  HandleReader & {
+    [K in keyof TClient]: TClient[K] extends { query: infer F extends AnyFn }
+      ? TBound extends true
+        ? QueryProcedureUtils<
             InputOf<F>,
-            EventOf<F>,
+            OutputOf<F>,
+            ErrorOf<F>,
+            ContextOf<F>
+          > &
+            QueryHandleVerbs<InputOf<F>, OutputOf<F>, ErrorOf<F>, ContextOf<F>>
+        : QueryProcedureUtils<InputOf<F>, OutputOf<F>, ErrorOf<F>, ContextOf<F>>
+      : TClient[K] extends { mutate: infer F extends AnyFn }
+        ? MutationProcedureUtils<
+            InputOf<F>,
+            OutputOf<F>,
             ErrorOf<F>,
             ContextOf<F>
           >
-        : TrpcQueryUtils<TClient[K]>;
-};
+        : TClient[K] extends { subscribe: infer F extends AnyFn }
+          ? SubscriptionProcedureUtils<
+              InputOf<F>,
+              EventOf<F>,
+              ErrorOf<F>,
+              ContextOf<F>
+            >
+          : TrpcQueryUtils<TClient[K], TBound>;
+  };
 
 /**
  * The helpers for a router type, `routerType()` value or contract, for
@@ -590,18 +706,24 @@ export interface CreateTrpcQueryUtilsOptions<TClient> {
    * to query and mutation keys, `pathKey()` and `pathFilter()`.
    */
   keyPrefix?: string | undefined;
+  /**
+   * The `QueryClient` the handle verbs (`$prefetch()`, `$ensure()`,
+   * `$fetch()`) start queries on, or a function that returns it, such as a
+   * server's per-request one. Without it, the helpers have no handle verbs.
+   */
+  queryClient?: QueryClientOption | undefined;
 }
 
 /**
  * Options for a framework's `createTrpcContext()`: everything
  * {@link createTrpcQueryUtils} takes except the client, which the provider
- * gets.
+ * gets, and the query client: a provider's helpers have no handle verbs.
  * @since 0.1.0
  * @stability stable
  */
 export type TrpcContextOptions = Omit<
   CreateTrpcQueryUtilsOptions<unknown>,
-  'client'
+  'client' | 'queryClient'
 >;
 
 /** A client factory's client; anything else as is. */
@@ -715,36 +837,70 @@ function streamFrom(
  * options objects, so it works with every TanStack adapter: React, Preact,
  * Vue, Solid, Svelte, Angular and Lit.
  *
- * Every router and procedure also has `pathKey()` and `pathFilter()`, so
- * don't name a procedure `pathKey`, `pathFilter` or after one of the
- * helpers.
+ * Every router and procedure also has `pathKey()` and `pathFilter()`, and
+ * every router `$fromHandle()`, so don't name a procedure `pathKey`,
+ * `pathFilter` or after one of the helpers. With a `queryClient`, query
+ * procedures also get the handle verbs, `$prefetch()`, `$ensure()` and
+ * `$fetch()`.
  *
  * @example
  * ```ts
- * export const trpc = createTrpcQueryUtils({ client });
+ * export const trpc = createTrpcQueryUtils({ client, queryClient });
  *
- * const post = useQuery(trpc.post.byId.queryOptions({ input: { id } }));
+ * // a route's loader
+ * const post = await trpc.post.byId.$ensure({ input: { id } });
+ * // its component
+ * useSuspenseQuery(trpc.$fromHandle(post));
+ *
  * const create = useMutation(trpc.post.create.mutationOptions());
  * await queryClient.invalidateQueries(trpc.post.pathFilter());
  * ```
  * @since 0.1.0
  * @stability stable
  */
-export function createTrpcQueryUtils<TClient extends object>(
-  opts: CreateTrpcQueryUtilsOptions<TClient>,
-): TrpcQueryUtils<TClient> {
+export function createTrpcQueryUtils<
+  TClient extends object,
+  TQueryClient extends QueryClientOption | undefined = undefined,
+>(
+  opts: CreateTrpcQueryUtilsOptions<TClient> & { queryClient?: TQueryClient },
+): TrpcQueryUtils<TClient, undefined extends TQueryClient ? false : true> {
   const subscriptionCache = subscriptionCacheFor(opts.client);
   const method = (path: readonly string[], name: string): ClientMethod => {
     let target: any = opts.client;
     for (const key of path) target = target[key];
     return (input, callOpts) => target[name](input, callOpts);
   };
+  const keyPath = (callPath: readonly string[]) =>
+    opts.keyPrefix === undefined ? callPath : [opts.keyPrefix, ...callPath];
+  const queryOptions = (
+    callPath: readonly string[],
+    bag: Omit<Bag, 'input' | 'context'>,
+    input: unknown,
+    context: unknown,
+  ) => {
+    const query = method(callPath, 'query');
+    return {
+      structuralSharing,
+      ...bag,
+      queryKey: procedureKey(keyPath(callPath), input, 'query'),
+      queryFn:
+        input === skipToken
+          ? skipToken
+          : async (ctx: QueryFunctionContext) => {
+              const output = await query(input, {
+                ...(context as object),
+                signal: ctx.signal,
+              });
+              if (!isAsyncIterable(output)) return output;
+              return streamedQuery({ streamFn: () => output })(ctx);
+            },
+    };
+  };
 
   return createRecursiveProxy((fullPath, args) => {
     const name = fullPath.at(-1);
     const callPath = fullPath.slice(0, -1);
-    const path =
-      opts.keyPrefix === undefined ? callPath : [opts.keyPrefix, ...callPath];
+    const path = keyPath(callPath);
     const { input, context, ...rest } = (args[0] ?? {}) as Bag;
 
     switch (name) {
@@ -758,24 +914,30 @@ export function createTrpcQueryUtils<TClient extends object>(
         return { ...rest, queryKey: procedureKey(path, input, 'query') };
       case 'infiniteFilter':
         return { ...rest, queryKey: procedureKey(path, input, 'infinite') };
-      case 'queryOptions': {
-        const query = method(callPath, 'query');
-        return {
-          structuralSharing,
-          ...rest,
-          queryKey: procedureKey(path, input, 'query'),
-          queryFn:
-            input === skipToken
-              ? skipToken
-              : async (ctx: QueryFunctionContext) => {
-                  const output = await query(input, {
-                    ...(context as object),
-                    signal: ctx.signal,
-                  });
-                  if (!isAsyncIterable(output)) return output;
-                  return streamedQuery({ streamFn: () => output })(ctx);
-                },
-        };
+      case 'queryOptions':
+        return queryOptions(callPath, rest, input, context);
+      case '$prefetch':
+      case '$ensure':
+      case '$fetch': {
+        const queryClient =
+          typeof opts.queryClient === 'function'
+            ? opts.queryClient()
+            : opts.queryClient;
+        if (!queryClient) {
+          throw new TypeError(
+            `${fullPath.join('.')}() needs a QueryClient: createTrpcQueryUtils({ client, queryClient })`,
+          );
+        }
+        return startHandle({
+          queryClient,
+          verb: name as HandleVerb,
+          options: queryOptions(callPath, rest, input, context),
+        });
+      }
+      case '$fromHandle': {
+        const handle = readHandle(args[0], opts.keyPrefix);
+        const { context: readContext, ...readOpts } = (args[1] ?? {}) as Bag;
+        return queryOptions(handle.path, readOpts, handle.input, readContext);
       }
       case 'infiniteKey':
       case 'infiniteOptions': {
@@ -945,5 +1107,5 @@ export function createTrpcQueryUtils<TClient extends object>(
           `${fullPath.join('.')}() is not a TanStack Query helper`,
         );
     }
-  }) as TrpcQueryUtils<TClient>;
+  }) as TrpcQueryUtils<TClient, undefined extends TQueryClient ? false : true>;
 }

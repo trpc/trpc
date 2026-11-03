@@ -2,6 +2,7 @@ import {
   QueryClient,
   QueryClientProvider,
   useQuery,
+  useSuspenseQuery,
 } from '@tanstack/react-query';
 import { hydrationOptions } from '@trpc12/tanstack-query';
 import {
@@ -67,6 +68,41 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
     <QueryClientProvider client={browser}>
       <rsc.HydrationBoundary>
         <Title />
+      </rsc.HydrationBoundary>
+    </QueryClientProvider>,
+  );
+  expect(html).toContain('2026-01-03');
+  expect(db.calls).toEqual(['post.byId:2']);
+});
+
+test("createTrpcRsc's handle verbs use the request's query client, and client components read the handles", async () => {
+  await using app = await createApp();
+  const rsc = createTrpcRsc({
+    router: appRouter,
+    transformer,
+    ctx: { locale: null },
+    cache: requestCache(),
+  });
+
+  const post = await rsc.trpc.post.byId.$ensure({ input: { id: '2' } });
+  expect(
+    rsc.getQueryClient().getQueryData(rsc.trpc.$fromHandle(post).queryKey)
+      ?.title,
+  ).toBe('Post 2');
+
+  // A client component: it gets the handle as a prop, through RSC's serializer
+  function Title(props: { post: typeof post }) {
+    const query = useSuspenseQuery(app.trpc.$fromHandle(props.post));
+    expectTypeOf(query.data).toEqualTypeOf<Post>();
+    return <h1>{query.data.createdAt.toISOString().slice(0, 10)}</h1>;
+  }
+  const browser = new QueryClient({
+    defaultOptions: hydrationOptions({ transformer }),
+  });
+  const html = renderToString(
+    <QueryClientProvider client={browser}>
+      <rsc.HydrationBoundary>
+        <Title post={JSON.parse(JSON.stringify(post))} />
       </rsc.HydrationBoundary>
     </QueryClientProvider>,
   );

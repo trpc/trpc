@@ -137,6 +137,20 @@ const QUERY_HELPERS: Readonly<Record<string, string>> = {
     'infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12',
   infiniteQueryFilter:
     'infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12',
+  unstable_$prefetch:
+    'unstable_$prefetch(input, opts) is $prefetch({ input, ...opts }) in v12, on createTrpcQueryUtils({ client, queryClient })',
+  unstable_$ensure:
+    'unstable_$ensure(input, opts) is $ensure({ input, ...opts }) in v12, on createTrpcQueryUtils({ client, queryClient })',
+  unstable_$fetch:
+    'unstable_$fetch(input, opts) is $fetch({ input, ...opts }) in v12, on createTrpcQueryUtils({ client, queryClient })',
+  unstable_$fromHandle:
+    'unstable_$fromHandle(handle) is $fromHandle(handle) in v12',
+  unstable_$prefetchInfinite:
+    'unstable_$prefetchInfinite has no v12 version: prefetch infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) with queryClient.infiniteQuery',
+  unstable_$ensureInfinite:
+    'unstable_$ensureInfinite has no v12 version: await queryClient.infiniteQuery(infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }))',
+  unstable_$fetchInfinite:
+    'unstable_$fetchInfinite has no v12 version: await queryClient.infiniteQuery(infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }))',
 };
 
 /** Helpers v12 has no method of that name for, so a call without arguments breaks too. */
@@ -144,6 +158,13 @@ const GONE_HELPERS: ReadonlySet<string> = new Set([
   'infiniteQueryOptions',
   'infiniteQueryKey',
   'infiniteQueryFilter',
+  'unstable_$prefetch',
+  'unstable_$ensure',
+  'unstable_$fetch',
+  'unstable_$fromHandle',
+  'unstable_$prefetchInfinite',
+  'unstable_$ensureInfinite',
+  'unstable_$fetchInfinite',
 ]);
 
 const OLD_CLIENTS =
@@ -692,7 +713,7 @@ export function upgradeSource(
           if (typeArgs) take(typeArgs.start, typeArgs.end, '');
           note(
             node.start,
-            'createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider',
+            'createTrpcQueryUtils({ client, queryClient }): queryClient is only for the handle verbs ($prefetch, $ensure, $fetch); hooks use QueryClientProvider',
           );
         }
       }

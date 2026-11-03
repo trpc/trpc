@@ -11,6 +11,7 @@ import {
   type BuiltinErrorCode,
   type UndeclaredCode,
 } from '@trpc12/trpc/client';
+import type { inferQueryHandle } from '@trpc12/tanstack-query';
 import { createElement } from 'react';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import {
@@ -96,6 +97,13 @@ describe('the byId query', () => {
       // @ts-expect-error Root owns every defined: false error
       unexpected: () => 'Try again',
     });
+  });
+
+  test('a handle reads with the same narrowing', () => {
+    const handle = {} as inferQueryHandle<typeof app.trpc.doc.byId>;
+    const read = () =>
+      useSuspenseQuery(useAuthBoundary().query(app.trpc.$fromHandle(handle)));
+    expectTypeOf<ErrorOf<ReturnType<typeof read>>>().toEqualTypeOf<DocError>();
   });
 
   test("under Root alone, UNAUTHORIZED is the component's again, and the link codes are gone", () => {
