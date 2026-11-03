@@ -878,17 +878,18 @@ test.each(['close', 'error'] as const)(
 
     try {
       expect(await ctx.client.greeting.query()).toBe('hello');
-      const oldClientSocket = ctx.wsClient.connection!.ws;
-      oldServerSocket = [...ctx.wss.clients][0]!;
+      const oldClientSocket = ctx.wsClient.connection?.ws;
+      [oldServerSocket] = ctx.wss.clients;
+      assert(oldServerSocket);
       // Delay the old connection's closing handshake until its replacement is open.
       oldServerSocket.pause();
       ctx.wssHandler.broadcastReconnectNotification();
       await vi.waitFor(() => {
         expect(onOpen).toHaveBeenCalledTimes(2);
       });
-      const replacementSocket = ctx.wsClient.connection!.ws;
+      const replacementSocket = ctx.wsClient.connection?.ws;
       expect(replacementSocket).not.toBe(oldClientSocket);
-      expect(oldClientSocket.readyState).toBe(WebSocket.CLOSING);
+      expect(oldClientSocket?.readyState).toBe(WebSocket.CLOSING);
 
       const result = ctx.client.pending
         .query(undefined, { signal: abortController.signal })
@@ -902,13 +903,13 @@ test.each(['close', 'error'] as const)(
       }
       oldServerSocket.resume();
       await vi.waitFor(() => {
-        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+        expect(oldClientSocket?.readyState).toBe(WebSocket.CLOSED);
       });
       pendingResult.resolve('replacement query completed');
 
       expect(await result).toBe('replacement query completed');
       expect(await ctx.client.greeting.query()).toBe('hello');
-      expect(ctx.wsClient.connection!.ws).toBe(replacementSocket);
+      expect(ctx.wsClient.connection?.ws).toBe(replacementSocket);
       expect(onOpen).toHaveBeenCalledTimes(2);
       expect(onClose).toHaveBeenCalledTimes(1);
       expect(onError).toHaveBeenCalledTimes(event === 'error' ? 1 : 0);
