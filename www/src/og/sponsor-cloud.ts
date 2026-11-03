@@ -86,7 +86,9 @@ const fnv1a = (text: string) => {
 
 /**
  * What the PNG draws of `sponsors`, as a short hash: it changes when one
- * joins or leaves, or their weight, avatar or name does.
+ * joins or leaves, or their weight, avatar URL or name does. GitHub keeps
+ * an avatar's URL when its picture changes, so a new picture shows once
+ * the CDN's copy expires, within a day, as on the social cards.
  */
 export const sponsorCloudVersion = (sponsors: ReadonlyArray<Sponsor>) =>
   fnv1a(
