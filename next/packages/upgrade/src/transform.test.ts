@@ -151,6 +151,7 @@ export default {
       export default {
         fetch: (req: Request) =>
           createFetchHandler({
+            batch: { maxItems: 100 },
             endpoint: '/trpc',
             router: appRouter,
             createContext: () => ({}),
@@ -161,6 +162,42 @@ export default {
     expect(messages(source)).toMatchInlineSnapshot(`
       [
         "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
+        "6:5 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and fetchRequestHandler batched by default with no limit; links' batch.maxItems must be at most this, since bigger batches are refused (https://v12.trpc.io/v12/docs/client/links/http#batching)",
+      ]
+    `);
+  });
+
+  test("fetchRequestHandler's maxBatchSize becomes batch.maxItems, and allowBatching goes", () => {
+    const source = `import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+export const sized = (req: Request) =>
+  fetchRequestHandler({ router, req, maxBatchSize: 25 });
+export const short = (req: Request) =>
+  fetchRequestHandler({ router, req, maxBatchSize });
+export const on = (req: Request) =>
+  fetchRequestHandler({ router, req, allowBatching: true, maxBatchSize: 5 });
+export const off = (req: Request) =>
+  fetchRequestHandler({ router, req, allowBatching: false, maxBatchSize: 5 });
+export const unknown = (req: Request) =>
+  fetchRequestHandler({ router, req, allowBatching: flag });
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import { createFetchHandler } from '@trpc12/trpc/server';
+      export const sized = (req: Request) =>
+        createFetchHandler({ router, batch: { maxItems: 25 } }).fetch(req);
+      export const short = (req: Request) =>
+        createFetchHandler({ router, batch: { maxItems: maxBatchSize } }).fetch(req);
+      export const on = (req: Request) =>
+        createFetchHandler({ router, batch: { maxItems: 5 } }).fetch(req);
+      export const off = (req: Request) =>
+        createFetchHandler({ router }).fetch(req);
+      export const unknown = (req: Request) =>
+        createFetchHandler({ router, allowBatching: flag }).fetch(req);
+      "
+    `);
+    expect(messages(source).filter((m) => !m.includes('make the handler once')))
+      .toMatchInlineSnapshot(`
+      [
+        "11:38 allowBatching: createFetchHandler's batch is false or { maxItems }, an explicit size; set it by hand (https://v12.trpc.io/v12/docs/client/links/http#batching)",
       ]
     `);
   });
@@ -238,7 +275,7 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
           splitLink({
             condition: (op) => op.type === 'subscription',
             true: httpLink({ url: '/trpc', transformer: createSyncTransformer(transformer) }),
-            false: httpLink({ batch: true, url: '/trpc', transformer: createSyncTransformer(superjson), maxUrlLength: 2083 }),
+            false: httpLink({ batch: { maxItems: 100 }, url: '/trpc', transformer: createSyncTransformer(superjson), maxUrlLength: 2083 }),
           }),
         ],
       });
@@ -314,8 +351,31 @@ const link = httpBatchLink(options);
 `).code,
     ).toMatchInlineSnapshot(`
       "import { httpLink } from '@trpc12/trpc/client';
-      const link = httpLink({ ...options, batch: true });
+      const link = httpLink({ ...options, batch: { maxItems: 100 } });
       "
+    `);
+  });
+
+  test('a batch link gets batch: { maxItems: 100 } and a note saying why, or keeps its own maxItems', () => {
+    const source = `import { httpBatchLink, httpBatchStreamLink } from '@trpc/client';
+const plain = httpBatchLink({ url: '/trpc' });
+const stream = httpBatchStreamLink({ url: '/trpc' });
+const sized = httpBatchLink({ url: '/trpc', maxItems: 25 });
+const short = httpBatchStreamLink({ maxItems, url: '/trpc' });
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import { httpLink } from '@trpc12/trpc/client';
+      const plain = httpLink({ batch: { maxItems: 100 }, url: '/trpc' });
+      const stream = httpLink({ batch: { maxItems: 100 }, url: '/trpc' });
+      const sized = httpLink({ url: '/trpc', batch: { maxItems: 25 } });
+      const short = httpLink({ batch: { maxItems }, url: '/trpc' });
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "2:15 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and httpBatchLink had no limit; keep it at most the handler's batch.maxItems, which refuses bigger batches (https://v12.trpc.io/v12/docs/client/links/http#batching)",
+        "3:16 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and httpBatchStreamLink had no limit; keep it at most the handler's batch.maxItems, which refuses bigger batches (https://v12.trpc.io/v12/docs/client/links/http#batching)",
+      ]
     `);
   });
 });
@@ -543,9 +603,9 @@ const ws = wsLink({ client });
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
       "import { httpLink, wsLink, createWSClient } from '@trpc12/trpc/client';
-      const empty = httpLink({ batch: true });
+      const empty = httpLink({ batch: { maxItems: 100 } });
       const multiline = httpLink({
-        batch: true,
+        batch: { maxItems: 100 },
         url: '/trpc',
         maxUrlLength: 2000,
         [key]: 1,
@@ -557,6 +617,8 @@ const ws = wsLink({ client });
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
+        "2:15 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and httpBatchLink had no limit; keep it at most the handler's batch.maxItems, which refuses bigger batches (https://v12.trpc.io/v12/docs/client/links/http#batching)",
+        "3:19 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and httpBatchLink had no limit; keep it at most the handler's batch.maxItems, which refuses bigger batches (https://v12.trpc.io/v12/docs/client/links/http#batching)",
         "8:50 EventSource: httpLink streams SSE over fetch; use headers or init",
         "8:63 eventSourceOptions: httpLink streams SSE over fetch; use headers or init",
         "9:16 createWSClient: pass its options to wsLink({ url })",
@@ -624,13 +686,14 @@ export const handle = (request: Request) =>
       const none = mergeRouters();
       const factory = t.createCallerFactory(appRouter);
       export const handle = (request: Request) =>
-        createFetchHandler({ endpoint: '/trpc', router: appRouter }).fetch(request);
+        createFetchHandler({ batch: { maxItems: 100 }, endpoint: '/trpc', router: appRouter }).fetch(request);
       "
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
         "7:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
         "9:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
+        "9:3 batch: { maxItems: 100 } added: v12 batches only with an explicit size, and fetchRequestHandler batched by default with no limit; links' batch.maxItems must be at most this, since bigger batches are refused (https://v12.trpc.io/v12/docs/client/links/http#batching)",
       ]
     `);
   });

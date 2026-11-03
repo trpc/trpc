@@ -20,6 +20,7 @@ import { bareCode, fixBareCode, kinds } from './bare-code.ts';
 /** The `vite.config.ts` rules that hold for examples too. */
 const rules = {
   'trpc/no-overzealous-destructuring': 'error',
+  'trpc/explicit-batch-size': 'error',
 };
 
 type Extension = 'ts' | 'tsx' | 'js' | 'jsx';
