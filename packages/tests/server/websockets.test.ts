@@ -715,6 +715,88 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
   expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
 });
 
+test.each([{ lazy: false }, { lazy: true }])(
+  'a reconnect request restarts an active subscription once (lazy: $lazy)',
+  async ({ lazy }) => {
+    const t = initTRPC.create();
+    const ee = new EventEmitter();
+    let started = 0;
+    let cleaned = 0;
+    const router = t.router({
+      onNumber: t.procedure.subscription(async function* (opts) {
+        started++;
+        try {
+          for await (const [value] of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
+            yield Number(value);
+          }
+        } finally {
+          cleaned++;
+        }
+      }),
+    });
+    const onOpen = vi.fn();
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+      wsClient: {
+        lazy: { enabled: lazy, closeMs: 0 },
+        retryDelayMs: () => 0,
+        onOpen,
+      },
+    });
+
+    const onData = vi.fn();
+    const sub = ctx.client.onNumber.subscribe(undefined, { onData });
+    await vi.waitFor(() => {
+      expect(started).toBe(1);
+    });
+    ee.emit('data', 1);
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledWith(1);
+    });
+
+    const oldClientSocket = ctx.wsClient.connection?.ws;
+    const [oldServerSocket] = ctx.wss.clients;
+    // Hold back the old connection's closing handshake so that its `close`
+    // event arrives after the replacement connection is open.
+    oldServerSocket.pause();
+    try {
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+        expect(started).toBe(2);
+      });
+    } finally {
+      oldServerSocket.resume();
+    }
+    const replacementSocket = ctx.wsClient.connection?.ws;
+    expect(replacementSocket).toBeDefined();
+    expect(replacementSocket).not.toBe(oldClientSocket);
+
+    await vi.waitFor(() => {
+      expect(oldClientSocket?.readyState).toBe(WebSocket.CLOSED);
+      expect(ctx.wsClient.connectionState.get().state).toBe('pending');
+      expect(ctx.wss.clients.size).toBe(1);
+      expect(started - cleaned).toBe(1);
+    });
+    expect(started).toBe(2);
+    expect(onOpen).toHaveBeenCalledTimes(2);
+    expect(ctx.wsClient.connection?.ws).toBe(replacementSocket);
+
+    ee.emit('data', 2);
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledWith(2);
+    });
+    expect(onData.mock.calls).toEqual([[1], [2]]);
+
+    sub.unsubscribe();
+    await vi.waitFor(() => {
+      expect(cleaned).toBe(2);
+    });
+  },
+);
+
 test('subscriptions are automatically resumed if connection is lost', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
