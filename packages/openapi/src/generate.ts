@@ -1671,7 +1671,7 @@ function registerSchema(
 
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
-  options: GenerateOptions,
+  options: GenerateOptions & { pathSeparator: TRPCPathSeparator },
   meta: RouterMeta = { errorSchema: null },
 ): Document {
   const paths: PathsObject = {};
@@ -1686,9 +1686,8 @@ function buildOpenAPIDocument(
     schemas,
   );
 
-  const separator = options.pathSeparator ?? '.';
   for (const proc of included) {
-    const opPath = `/${proc.path.split('.').join(separator)}`;
+    const opPath = `/${proc.path.split('.').join(options.pathSeparator)}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
     const pathItem: PathItemObject = paths[opPath] ?? {};
@@ -1807,7 +1806,7 @@ export async function generateOpenAPIDocument(
 
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
   const pathSeparator =
-    options.pathSeparator ?? router?._def._config.pathSeparator;
+    options.pathSeparator ?? router?._def._config.pathSeparator ?? '.';
   return buildOpenAPIDocument(
     walkCtx.procedures,
     {

@@ -8,8 +8,8 @@ import type {
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
-  assertPathSeparator,
   procedurePathToURLPath,
+  resolvePathSeparator,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import type {
@@ -54,21 +54,18 @@ export interface ResolvedHTTPLinkOptions {
   fetch?: FetchEsque;
   transformer: CombinedDataTransformer;
   methodOverride?: 'POST';
-  pathSeparator?: PathSeparator;
+  pathSeparator: PathSeparator;
 }
 
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
-  if (opts.pathSeparator !== undefined) {
-    assertPathSeparator(opts.pathSeparator);
-  }
   return {
     url: opts.url.toString(),
     fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
-    pathSeparator: opts.pathSeparator,
+    pathSeparator: resolvePathSeparator(opts.pathSeparator),
   };
 }
 

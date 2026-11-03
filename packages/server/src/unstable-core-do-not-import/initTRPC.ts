@@ -3,7 +3,7 @@ import {
   type DefaultErrorShape,
   type ErrorFormatter,
 } from './error/formatter';
-import { assertPathSeparator } from './http/pathSeparator';
+import { resolvePathSeparator } from './http/pathSeparator';
 import type { MiddlewareBuilder, MiddlewareFunction } from './middleware';
 import { createMiddlewareFactory } from './middleware';
 import type { ProcedureBuilder } from './procedureBuilder';
@@ -177,16 +177,13 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       allowOutsideOfServer: opts?.allowOutsideOfServer ?? false,
       errorFormatter: opts?.errorFormatter ?? defaultFormatter,
       isServer: opts?.isServer ?? isServerDefault,
+      pathSeparator: resolvePathSeparator(opts?.pathSeparator),
       /**
        * These are just types, they can't be used at runtime
        * @internal
        */
       $types: null as any,
     };
-
-    if (opts?.pathSeparator !== undefined) {
-      assertPathSeparator(opts.pathSeparator);
-    }
 
     {
       // Server check

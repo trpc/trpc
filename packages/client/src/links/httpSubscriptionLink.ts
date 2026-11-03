@@ -7,7 +7,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
-  assertPathSeparator,
+  resolvePathSeparator,
   retryableRpcCodes,
   run,
   sseStreamConsumer,
@@ -81,9 +81,7 @@ export function httpSubscriptionLink<
   >,
 ): TRPCLink<TInferrable> {
   const transformer = getTransformer(opts.transformer);
-  if (opts.pathSeparator !== undefined) {
-    assertPathSeparator(opts.pathSeparator);
-  }
+  const pathSeparator = resolvePathSeparator(opts.pathSeparator);
 
   return () => {
     return ({ op }) => {
@@ -112,7 +110,7 @@ export function httpSubscriptionLink<
               url: await urlWithConnectionParams(opts),
               input: inputWithTrackedEventId(input, lastEventId),
               path,
-              pathSeparator: opts.pathSeparator,
+              pathSeparator,
               type,
               signal: null,
             }),

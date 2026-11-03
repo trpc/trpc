@@ -130,7 +130,7 @@ export interface RootConfig<TTypes extends RootTypes> {
    * @default '.'
    * @see https://trpc.io/docs/rpc#path-separator
    */
-  pathSeparator?: PathSeparator;
+  pathSeparator: PathSeparator;
   /** Experimental options. None right now. */
   experimental?: {};
 }

@@ -11,17 +11,21 @@ export type PathSeparator = '.' | '/' | '_' | '~';
 const pathSeparators: readonly PathSeparator[] = ['.', '/', '_', '~'];
 
 /**
- * Throws if `value` isn't a {@link PathSeparator}, for callers without types.
+ * Resolves a user-given `pathSeparator` option: `'.'` when it's left out,
+ * and an error when it isn't a {@link PathSeparator}. Call it once, where
+ * the option is read.
  * @internal
  */
-export function assertPathSeparator(
-  value: unknown,
-): asserts value is PathSeparator {
+export function resolvePathSeparator(value: unknown): PathSeparator {
+  if (value === undefined) {
+    return '.';
+  }
   if (!pathSeparators.includes(value as PathSeparator)) {
     throw new Error(
       `Invalid pathSeparator ${JSON.stringify(value)}. Use one of: ${pathSeparators.map((s) => JSON.stringify(s)).join(', ')}`,
     );
   }
+  return value as PathSeparator;
 }
 
 /**
@@ -30,9 +34,9 @@ export function assertPathSeparator(
  */
 export function procedurePathToURLPath(
   path: string,
-  separator: PathSeparator | undefined,
+  separator: PathSeparator,
 ): string {
-  if (!separator || separator === '.') {
+  if (separator === '.') {
     return path;
   }
   return path.split('.').join(separator);
@@ -45,9 +49,9 @@ export function procedurePathToURLPath(
  */
 export function urlPathToProcedurePath(
   path: string,
-  separator: PathSeparator | undefined,
+  separator: PathSeparator,
 ): string {
-  if (!separator || separator === '.') {
+  if (separator === '.') {
     return path;
   }
   return path.split(separator).join('.');
