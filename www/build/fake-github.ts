@@ -114,5 +114,5 @@ export function fakeGithub(respond: (sent: SentQuery) => FakeReply) {
       );
     }),
   );
-  return { layer: Layer.succeed(HttpClient.HttpClient, client), sent };
+  return { client, layer: Layer.succeed(HttpClient.HttpClient, client), sent };
 }

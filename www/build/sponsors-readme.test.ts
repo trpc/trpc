@@ -20,6 +20,7 @@ function sponsor(
     link: `https://${login}.dev/?ref=trpc&utm_source=github`,
     login,
     name: login,
+    source: 'github',
     ...tiered,
     weight,
   };

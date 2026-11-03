@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import list from '../sponsors.json';
+
 import {
   avatarUrl,
   cardFooter,
@@ -9,10 +11,12 @@ import {
   type Partner,
   partners,
   partnersByTier,
+  profileUrl,
   type Sponsor,
   sponsorCard,
   sponsorCardAlt,
   sponsorCardOf,
+  sponsorKey,
   sponsors,
   sponsorTiers,
   type SponsorTier,
@@ -24,6 +28,7 @@ const sponsor = (login: string, weight: number): Sponsor => ({
   link: `https://example.com/${login}`,
   login,
   name: login,
+  source: 'github',
   weight,
 });
 
@@ -62,7 +67,10 @@ describe('cardFooter', () => {
 
   it('then the other drawn sponsors most given first, twice as many as it draws faces of, small', () => {
     const others = drawnSponsors
-      .filter((sponsor) => !partners.some((p) => p.login === sponsor.login))
+      .filter(
+        (sponsor) =>
+          !partners.some((p) => sponsorKey(p) === sponsorKey(sponsor)),
+      )
       .toSorted((a, b) => b.weight - a.weight);
     expect(cardFooter.backers).toEqual(
       others.slice(0, cardFooter.faceSlots * 2).map((sponsor) => ({
@@ -87,12 +95,43 @@ describe('partnersByTier', () => {
   });
 });
 
+describe('avatarUrl and profileUrl', () => {
+  it("size the avatar and link the profile on the sponsor's own site", () => {
+    const github = sponsor('fan', 1);
+    const openCollective: Sponsor = {
+      createdAt: 0,
+      imgSrc: 'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
+      link: 'https://www.hooli.dev/',
+      name: 'Hooli',
+      profileUrl: 'https://opencollective.com/hooli',
+      slug: 'hooli',
+      source: 'opencollective',
+      weight: 1,
+    };
+    expect(avatarUrl(github, 64)).toBe('https://example.com/fan.png?s=64');
+    expect(avatarUrl(openCollective, 64)).toBe(
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=64',
+    );
+    expect(profileUrl(github)).toBe('https://github.com/fan');
+    expect(profileUrl(openCollective)).toBe('https://opencollective.com/hooli');
+    expect(sponsorKey(github)).toBe('github/fan');
+    expect(sponsorKey(openCollective)).toBe('opencollective/hooli');
+  });
+});
+
 describe('isSmallSponsor', () => {
   it('is a sponsor below the partner tiers', () => {
     expect(isSmallSponsor({})).toBe(true);
     expect(isSmallSponsor({ tier: 'bronze' })).toBe(true);
     expect(isSmallSponsor({ tier: 'silver' })).toBe(false);
     expect(isSmallSponsor({ tier: 'gold' })).toBe(false);
+  });
+});
+
+describe('sponsors', () => {
+  it('is every entry of sponsors.json, each a GitHub or an Open Collective sponsor', () => {
+    expect(sponsors).toHaveLength(list.length);
+    expect(new Set(sponsors.map(sponsorKey)).size).toBe(sponsors.length);
   });
 });
 

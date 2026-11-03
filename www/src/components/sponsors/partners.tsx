@@ -8,6 +8,7 @@ import {
   type Partner,
   partners,
   partnersByTier,
+  sponsorKey,
   sponsorTiers,
 } from '~/sponsors.ts';
 
@@ -18,7 +19,7 @@ export function PartnerLogo(props: {
   readonly className?: string;
   readonly partner: Partner;
 }) {
-  const Logo = partnerLogos[props.partner.login];
+  const Logo = partnerLogos[sponsorKey(props.partner)];
   if (Logo !== undefined) {
     return <Logo className={props.className} />;
   }
@@ -74,7 +75,7 @@ function PartnerCardRow(props: {
       <p className={label}>{props.title}</p>
       <ul className="grid gap-4 md:grid-cols-3">
         {props.partners.map((partner) => (
-          <li key={partner.login}>
+          <li key={sponsorKey(partner)}>
             <a
               className="group relative grid h-full content-between gap-6 overflow-hidden rounded-xl border bg-card p-6 transition-[border-color,box-shadow,translate] duration-300 hover:-translate-y-0.5 hover:border-(--accent)/50 hover:shadow-[0_12px_40px_-12px_var(--accent)]"
               href={partner.link}
@@ -116,7 +117,7 @@ export function PartnersRail(props: { readonly className?: string }) {
         <a
           className="group relative flex h-14 items-center justify-center overflow-hidden rounded-lg border bg-card px-4 text-foreground/80 transition-colors hover:border-(--accent)/50 hover:text-foreground"
           href={partner.link}
-          key={partner.login}
+          key={sponsorKey(partner)}
           rel="sponsored noopener"
           style={accentOf(partner)}
           target="_blank"
@@ -159,7 +160,7 @@ export function PartnersBar(props: { readonly className?: string }) {
       {/* The fade is over the end's padding until the logos run under it. */}
       <ul className="flex h-full min-w-0 gap-3 overflow-x-auto overflow-y-hidden pr-4 [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {partnersByTier.map((partner) => (
-          <li className="shrink-0" key={partner.login}>
+          <li className="shrink-0" key={sponsorKey(partner)}>
             <a
               className="flex h-full items-center rounded-sm px-1 text-xs text-foreground/60 grayscale transition-[color,filter] duration-300 outline-none hover:text-foreground hover:grayscale-0 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:grayscale-0 focus-visible:ring-inset"
               href={partner.link}
@@ -189,7 +190,7 @@ export function PartnersStrip(props: { readonly className?: string }) {
       <p className={label}>Partners</p>
       <ul className="flex flex-wrap items-center gap-x-6 gap-y-3">
         {partners.map((partner) => (
-          <li key={partner.login}>
+          <li key={sponsorKey(partner)}>
             <a
               className="block text-foreground/70 transition-colors hover:text-foreground"
               href={partner.link}

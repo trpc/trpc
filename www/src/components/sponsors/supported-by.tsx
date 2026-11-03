@@ -8,7 +8,13 @@ import { cn } from '@shared/ui/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { Heart } from 'lucide-react';
 
-import { avatarUrl, partners, sponsors, topSponsors } from '~/sponsors.ts';
+import {
+  avatarUrl,
+  partners,
+  sponsorKey,
+  sponsors,
+  topSponsors,
+} from '~/sponsors.ts';
 
 import { PartnerLogo } from './partners.tsx';
 
@@ -34,7 +40,7 @@ export function SupportedBy() {
             <a
               className="flex h-9 items-center text-foreground/60 grayscale transition-[color,filter] duration-300 hover:text-foreground hover:grayscale-0"
               href={partner.link}
-              key={partner.login}
+              key={sponsorKey(partner)}
               rel="sponsored noopener"
               target="_blank"
               title={partner.blurb}
@@ -50,7 +56,7 @@ export function SupportedBy() {
         <div className="flex flex-wrap items-center gap-3">
           <ul className="flex -space-x-2">
             {topSponsors.map((sponsor) => (
-              <li className="relative hover:z-10" key={sponsor.login}>
+              <li className="relative hover:z-10" key={sponsorKey(sponsor)}>
                 <Tooltip>
                   <TooltipTrigger
                     delay={80}

@@ -1,8 +1,9 @@
 name: sponsors
 
 # Syncs www/sponsors.json and the README's sponsors section from GitHub
-# Sponsors, and pushes a commit only when a sponsor joined, left or changed
-# tier (new weights or ranks alone wait for the next such commit).
+# Sponsors and Open Collective (whose public API needs no token), and pushes
+# a commit only when a sponsor joined, left or changed tier (new weights or
+# ranks alone wait for the next such commit).
 
 on:
   schedule:
@@ -87,7 +88,7 @@ jobs:
               fi
             fi
             git add -- www/sponsors.json README.md
-            git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
+            git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors and Open Collective"
             if git push origin "HEAD:$branch"; then
               exit 0
             fi

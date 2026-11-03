@@ -1,11 +1,13 @@
 /**
- * Syncs the sponsors from GitHub: `pnpm --filter www sponsors:sync`
- * reads who sponsors KATT and the trpc organization, and what each has paid,
- * then writes `sponsors.json` (which the site shows) and the sponsors
- * section of the repo's `README.md`. It needs a token of KATT's (an admin
- * of the organization) that can read both accounts' sponsorships: a classic
- * token with `read:user` and `read:org`, from `SPONSORS_SYNC_GITHUB_TOKEN` or, in a
- * terminal, asked for when that isn't set.
+ * Syncs the sponsors from GitHub and Open Collective:
+ * `pnpm --filter www sponsors:sync` reads who sponsors KATT and the trpc
+ * organization on GitHub, and who backs trpc on Open Collective, and what
+ * each has paid, then writes `sponsors.json` (which the site shows) and the
+ * sponsors section of the repo's `README.md`. GitHub needs a token of KATT's
+ * (an admin of the organization) that can read both accounts'
+ * sponsorships: a classic token with `read:user` and `read:org`, from
+ * `SPONSORS_SYNC_GITHUB_TOKEN` or, in a terminal, asked for when that isn't
+ * set. Open Collective's API needs none.
  *
  * `--only-when-sponsors-change` writes nothing while the same sponsors are
  * listed in the same tiers, so the daily CI run
@@ -15,7 +17,7 @@
  * `--readme-only` rewrites the README from `sponsors.json` without GitHub,
  * for after changing how it's laid out (`sponsors-readme.ts`).
  *
- * The weighing is in `sponsors-list.ts`; who sponsors outside GitHub, and
+ * The weighing is in `sponsors-list.ts`; who sponsors some other way, and
  * money GitHub doesn't attribute, is `sponsorsConfig` here.
  */
 import { fileURLToPath } from 'node:url';
@@ -36,14 +38,28 @@ import { Command, Flag, Prompt } from 'effect/cli';
 import { FetchHttpClient } from 'effect/http';
 
 import { Avatars, fetchAvatars } from '../src/og/avatar.ts';
-import { isSmallSponsor, type Sponsor, sponsorTiers } from '../src/sponsors.ts';
+import {
+  isSmallSponsor,
+  type Sponsor,
+  sponsorKey,
+  sponsorTiers,
+} from '../src/sponsors.ts';
 import {
   fetchLifetimeValues,
   fetchSponsorships,
   type SponsoredAccount,
+  type Sponsorship,
   SponsorsSyncError,
 } from './sponsors-github.ts';
-import { type SponsorsConfig, sponsorsList } from './sponsors-list.ts';
+import {
+  isSameSponsor,
+  type SponsorsConfig,
+  sponsorsList,
+} from './sponsors-list.ts';
+import {
+  fetchBackers,
+  type OpenCollectiveBacker,
+} from './sponsors-opencollective.ts';
 import { sponsorsMarkdown, withSponsorsBlock } from './sponsors-readme.ts';
 
 /** The accounts whose sponsors the site shows, together. */
@@ -51,6 +67,9 @@ export const sponsoredAccounts: ReadonlyArray<SponsoredAccount> = [
   { kind: 'user', login: 'KATT' },
   { kind: 'organization', login: 'trpc' },
 ];
+
+/** The Open Collective accounts whose backers the site shows with them. */
+export const openCollectiveAccounts: ReadonlyArray<string> = ['trpc'];
 
 export const sponsorsConfig: SponsorsConfig = {
   direct: [
@@ -68,11 +87,10 @@ export const sponsorsConfig: SponsorsConfig = {
   shownPrivately: ['madisonredtfeldt'],
 };
 
-const SponsorSchema = Schema.Struct({
+const sponsorFields = {
   createdAt: Schema.Number,
   imgSrc: Schema.String,
   link: Schema.String,
-  login: Schema.String,
   name: Schema.String,
   rank: Schema.optionalKey(Schema.Number),
   tier: Schema.optionalKey(
@@ -80,7 +98,21 @@ const SponsorSchema = Schema.Struct({
   ),
   weight: Schema.Number,
   imageless: Schema.optionalKey(Schema.Literal(true)),
-});
+};
+
+const SponsorSchema = Schema.Union([
+  Schema.Struct({
+    source: Schema.Literal('github'),
+    login: Schema.String,
+    ...sponsorFields,
+  }),
+  Schema.Struct({
+    source: Schema.Literal('opencollective'),
+    slug: Schema.String,
+    profileUrl: Schema.String,
+    ...sponsorFields,
+  }),
+]);
 
 /**
  * `sponsors`, with each small sponsor whose avatar doesn't load marked
@@ -142,6 +174,7 @@ const readSponsorsFile = Effect.fn('readSponsorsFile')(function* (
     Effect.flatMap(
       Schema.decodeUnknownEffect(
         Schema.fromJsonString(Schema.Array(SponsorSchema)),
+        { onExcessProperty: 'error' },
       ),
     ),
     Effect.mapError(
@@ -165,9 +198,40 @@ export const readmeFromSponsorsFile = Effect.fn('readmeFromSponsorsFile')(
 );
 
 /**
- * Fetches the accounts' sponsors, then writes them to `sponsorsFile` and
- * `readme`. Writes nothing when GitHub reports no sponsors or no payments,
- * which means the token can't see them, rather than emptying the list.
+ * Who backs on Open Collective now, and which of them sponsor on GitHub
+ * too, in public or `shownPrivately`.
+ */
+export function openCollectiveSummary(
+  backers: ReadonlyArray<OpenCollectiveBacker>,
+  sponsorships: ReadonlyArray<Sponsorship>,
+  shownPrivately: ReadonlyArray<string>,
+) {
+  const current = backers.filter((backer) => backer.isCurrent);
+  const names = current.map((backer) =>
+    sponsorships.some(
+      (sponsorship) =>
+        (sponsorship.isPublic || shownPrivately.includes(sponsorship.login)) &&
+        isSameSponsor(backer, {
+          githubLogin: sponsorship.login,
+          websiteUrl: sponsorship.websiteUrl,
+        }),
+    )
+      ? `${backer.name} (also on GitHub)`
+      : backer.name,
+  );
+  const past = backers.length - current.length;
+  return [
+    `Open Collective: ${current.length} backing now`,
+    ...(names.length === 0 ? [] : [`: ${names.join(', ')}`]),
+    past === 0 ? '.' : `; ${past} who backed before left out.`,
+  ].join('');
+}
+
+/**
+ * Fetches the accounts' sponsors and the Open Collective accounts'
+ * backers, then writes them to `sponsorsFile` and `readme`. Writes nothing
+ * when GitHub reports no sponsors or no payments, which means the token
+ * can't see them, rather than emptying the list.
  * With `onlyWhenSponsorsChange`, also writes nothing while `sponsorsFile`
  * lists the same sponsors in the same tiers, however their weights, ranks
  * or details changed.
@@ -177,19 +241,28 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
     readonly accounts: ReadonlyArray<SponsoredAccount>;
     readonly config: SponsorsConfig;
     readonly onlyWhenSponsorsChange?: boolean;
+    readonly openCollective?: ReadonlyArray<string>;
     readonly token: Redacted.Redacted;
   },
 ) {
-  const fetched = yield* Effect.forEach(
-    opts.accounts,
-    (account) =>
-      Effect.all(
-        {
-          lifetimeValues: fetchLifetimeValues(account, opts.token),
-          sponsorships: fetchSponsorships(account, opts.token),
-        },
+  const [fetched, backers] = yield* Effect.all(
+    [
+      Effect.forEach(
+        opts.accounts,
+        (account) =>
+          Effect.all(
+            {
+              lifetimeValues: fetchLifetimeValues(account, opts.token),
+              sponsorships: fetchSponsorships(account, opts.token),
+            },
+            { concurrency: 'unbounded' },
+          ),
         { concurrency: 'unbounded' },
       ),
+      Effect.forEach(opts.openCollective ?? [], fetchBackers, {
+        concurrency: 'unbounded',
+      }).pipe(Effect.map((perAccount) => perAccount.flat())),
+    ],
     { concurrency: 'unbounded' },
   );
   const sponsorships = fetched.flatMap((account) => account.sponsorships);
@@ -205,23 +278,29 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
       message: `GitHub reports nothing paid to ${logins}; is SPONSORS_SYNC_GITHUB_TOKEN theirs? Wrote nothing.`,
     });
   }
+  if ((opts.openCollective ?? []).length > 0) {
+    yield* Console.log(
+      openCollectiveSummary(backers, sponsorships, opts.config.shownPrivately),
+    );
+  }
   const sponsors = yield* markImageless(
     sponsorsList({
       config: opts.config,
       lifetimeValues,
       now: yield* Clock.currentTimeMillis,
+      openCollective: backers,
       sponsorships,
     }),
   );
   const imageless = sponsors.filter((sponsor) => sponsor.imageless === true);
   if (imageless.length > 0) {
     yield* Console.log(
-      `No avatar loaded for ${imageless.map((sponsor) => sponsor.login).join(', ')}; the site leaves them out.`,
+      `No avatar loaded for ${imageless.map(sponsorKey).join(', ')}; the site leaves them out.`,
     );
   }
   if (opts.onlyWhenSponsorsChange === true) {
     const lineup = (sponsor: Sponsor) =>
-      `${sponsor.login} ${sponsor.tier ?? ''} ${sponsor.imageless === true ? 'imageless' : ''}`;
+      `${sponsorKey(sponsor)} ${sponsor.tier ?? ''} ${sponsor.imageless === true ? 'imageless' : ''}`;
     const listed = new Set(
       (yield* readSponsorsFile(opts.sponsorsFile)).map(lineup),
     );
@@ -308,6 +387,7 @@ if (import.meta.main) {
                 accounts: sponsoredAccounts,
                 config: sponsorsConfig,
                 onlyWhenSponsorsChange: opts.onlyWhenSponsorsChange,
+                openCollective: openCollectiveAccounts,
                 token: value,
               }),
             ),
@@ -315,7 +395,7 @@ if (import.meta.main) {
       ),
   ).pipe(
     Command.withDescription(
-      "Sync the sponsors from GitHub into sponsors.json and the README's sponsors section",
+      "Sync the sponsors from GitHub and Open Collective into sponsors.json and the README's sponsors section",
     ),
   );
   Command.run(command, { version: '0.0.0' }).pipe(
