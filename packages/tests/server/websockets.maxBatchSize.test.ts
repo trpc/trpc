@@ -63,7 +63,7 @@ async function sendRaw(url: string, payload: unknown, expected: number) {
   }
 }
 
-function pickError(res: { error?: any }) {
+function pickError(res: any) {
   return {
     code: res.error?.code,
     message: res.error?.message,
