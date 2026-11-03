@@ -55,12 +55,12 @@ Bypass list: every agent and human who pushes to v12
 - ❌ A required check rejects a direct push, since a new commit has no status yet; every pusher needs a bypass, which makes the rule moot for them
 - ❌ Ignored deploys (nothing the site renders changed) must still report success, or unrelated commits are blocked
 
-### C) Required, landing through a `v12-*` preview branch
+### C) Required, landing through a preview branch
 
-`pnpm land` pushes the commits to a `v12-<name>` branch, waits for its preview's check, then fast-forwards `v12`.
+`pnpm land` pushes the commits to a branch of their own, waits for its preview's check, then fast-forwards `v12`.
 
 ```bash
-pnpm land    # push v12-<name>, wait for "Vercel – www", then push HEAD:v12
+pnpm land    # push a branch, wait for "Vercel – www", then push HEAD:v12
 ```
 
 - ✅ The check is real and nothing needs a bypass
