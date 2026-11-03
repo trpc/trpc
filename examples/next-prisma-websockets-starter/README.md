@@ -62,6 +62,10 @@ pnpm test:unit  # runs normal Vitest unit tests
 pnpm test:e2e   # runs e2e tests
 ```
 
+## Deployment
+
+Browsers don't apply CORS to WebSockets, so the WebSocket server only accepts connections from the app's own origin: `http://localhost:3000` locally, or the deployment's URL on Vercel. If you serve the app from other origins, list them in `WS_ALLOWED_ORIGINS`, separated by commas.
+
 ---
 
 Created by [@alexdotjs](https://twitter.com/alexdotjs).
