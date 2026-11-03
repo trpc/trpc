@@ -13,14 +13,14 @@ const blogs = {
 export function Waterfalls(props: DemoProps) {
   return (
     <DemoFrame
-      hint="Change the page, open an article, or reload, and watch when each request starts and ends. Each one takes its own time."
+      hint="Reload, open all posts, or open another article, and watch when each request starts and ends. Each one takes its own time."
       initial={props.options['variant']}
       only={props.options['variants']}
       title="Where the queries start"
       variants={[
         {
           description:
-            "The route loader starts every query from the URL: the list's page, or the article's id. One round trip.",
+            "The route loader starts every query from the URL: the article's id, or the list's page. One round trip.",
           label: 'the loader',
           value: 'loader',
         },
@@ -32,7 +32,7 @@ export function Waterfalls(props: DemoProps) {
         },
         {
           description:
-            "Each component fetches what it shows. The comment counts render inside the list, and an article's comments and more by its author inside the article, so they wait. Two round trips.",
+            "Each component fetches what it shows. An article's comments and more by its author render inside the article, and the comment counts inside the list, so they wait. Two round trips.",
           label: 'each component',
           value: 'reader',
         },
@@ -41,7 +41,7 @@ export function Waterfalls(props: DemoProps) {
     >
       {(run) => (
         <DemoBrowser
-          initial={run.location ?? '/posts'}
+          initial={run.location ?? '/posts/1'}
           reload={run.reload}
           routeTree={blogs[run.variant]}
           session={run.session}

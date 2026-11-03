@@ -148,7 +148,7 @@ function PostLayout(props: {
 }) {
   return (
     <div className="grid gap-4">
-      <DemoLink href="/posts">← All articles</DemoLink>
+      <DemoLink href="/posts">← All posts</DemoLink>
       {props.post}
       <CommentsSection>{props.comments}</CommentsSection>
       {props.more}

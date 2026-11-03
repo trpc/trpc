@@ -20,7 +20,7 @@ const code = (text: string) => <span className="font-mono">{text}</span>;
 export function StartingQueries(props: DemoProps) {
   return (
     <DemoFrame
-      hint={`Change the page or open an article, then come back. Within ${staleTime / 1000} seconds, the page uses the cache. After that, the data is stale. Each request takes its own time, a little different on every run.`}
+      hint={`Open all posts or another article, then come back. Within ${staleTime / 1000} seconds, the page uses the cache. After that, the data is stale. Each request takes its own time, a little different on every run.`}
       initial={props.options['variant']}
       only={props.options['variants']}
       title="Start queries in a loader"
@@ -45,7 +45,7 @@ export function StartingQueries(props: DemoProps) {
         },
         {
           description:
-            "Each component fetches what it shows. The comment counts render inside the list, so they can't start until it's in. Two round trips.",
+            "Each component fetches what it shows. The comments and more by the author render inside the article, so they can't start until it's in. Two round trips.",
           label: 'no loader',
           value: 'reader',
         },
@@ -54,7 +54,7 @@ export function StartingQueries(props: DemoProps) {
     >
       {(run) => (
         <DemoBrowser
-          initial={run.location ?? '/posts'}
+          initial={run.location ?? '/posts/1'}
           reload={run.reload}
           routeTree={blogs[run.variant]}
           session={run.session}
