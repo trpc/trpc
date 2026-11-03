@@ -12,6 +12,7 @@ order: 49
 ## Quick example query
 
 ```tsx twoslash
+// @jsx: react-jsx
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -31,12 +32,13 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from './trpc';
 
-function Users() {
+function Greeting() {
   const trpc = useTRPC();
 
   const greetingQuery = useQuery(trpc.greeting.queryOptions({ name: 'Jerry' }));
 
   // greetingQuery.data === 'Hello Jerry'
+  return <p>{greetingQuery.data}</p>;
 }
 ```
 
