@@ -158,6 +158,16 @@ export type BodyError =
   | Failure<'UnreadableBody' | 'BodyConsumed'>;
 
 /**
+ * A handler's `maxBodySize` option in bytes: 10 MiB when it's unset, and no
+ * limit when it's `false`.
+ * @internal
+ */
+export const resolveMaxBodySize = (
+  maxBodySize: number | false | undefined,
+): number =>
+  maxBodySize === false ? Infinity : (maxBodySize ?? 10 * 1024 * 1024);
+
+/**
  * The body, at most `maxBodySize` bytes. Past it, the rest is drained, not
  * cancelled: cancelling makes some servers (Node) drop the connection
  * before the 413 is sent.

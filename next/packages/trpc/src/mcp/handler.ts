@@ -30,6 +30,7 @@ import {
   CurrentPlatform,
   fromWebResponse,
   readBytes,
+  resolveMaxBodySize,
   textWebResponse,
   type ContextOption,
   type CreateContextOpts,
@@ -95,10 +96,11 @@ export interface BaseMcpHandlerOptions<
    */
   resourceMetadataUrl?: string;
   /**
-   * Max request body size, in bytes.
-   * @default 1_048_576
+   * Max request body size, in bytes. Larger bodies get a `413`; `false`
+   * removes the limit.
+   * @default 10 * 1024 * 1024 (10 MiB)
    */
-  maxBodySize?: number;
+  maxBodySize?: number | false;
   /**
    * Send the real message of unexpected errors to the model.
    * @default true only when `NODE_ENV` is `development` or `test`
@@ -266,7 +268,7 @@ export function experimental_createMcpHandler<
       layer?: Layer.Layer<any, any, never>;
     },
   );
-  const maxBodySize = opts.maxBodySize ?? 1_048_576;
+  const maxBodySize = resolveMaxBodySize(opts.maxBodySize);
   const serverInfo = opts.serverInfo ?? { name: 'trpc', version: '0.0.0' };
   type Ctx = inferRouterContext<TRouter>;
 

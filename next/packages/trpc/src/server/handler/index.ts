@@ -7,6 +7,7 @@
 export {
   drainingBodyStream,
   readBytes,
+  resolveMaxBodySize,
   responseOptions,
   type BodyError,
 } from './body.ts';

@@ -60,6 +60,24 @@ const handler = createFetchHandler({
 
 `cors()` is Effect's `HttpMiddleware.cors` plus an origin check on WebSocket upgrades (403 for other origins). Browsers send cookies with cross-site upgrades and CORS doesn't cover them, so use it when you authenticate with cookies.
 
+## Request body size
+
+The handler reads at most `maxBodySize` bytes of a request body, 10 MiB by default. A larger body gets a `413` with a `PAYLOAD_TOO_LARGE` error, and the bytes past the limit are dropped, not kept in memory. The limit covers JSON and multipart bodies, in `createFetchHandler`, `createV11Handler`, the OpenAPI handler and the MCP handler; a byte stream input has its own `maxBytes`.
+
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = t.router({ health: t.procedure.query(() => 'ok') });
+// ---cut-end---
+const handler = createFetchHandler({
+  router,
+  maxBodySize: 1024 * 1024, // 1 MiB
+});
+```
+
+`maxBodySize: false` removes the limit. Only use it when something in front of the handler, like your proxy or platform, already limits bodies.
+
 ## Rolling deploys
 
 A server that stops closes its WebSockets, and clients lose the queries and mutations in flight. Drain it first: `handler.drain()` sends every WebSocket and socket client a `reconnect` message, and `wsLink` sends new calls on a new connection, moves its subscriptions there from their last event id, and closes the old connection once the calls it sent there finish ([`wsLink`](../client/links/ws.md#rolling-deploys)). The drain ends when every client has moved, or at its timeout, when the handler closes what's left (code 1012, "service restart") and interrupts those calls. While it runs, the handler answers WebSocket upgrades with a 503 (and closes sockets handed to `handler.websocket` with 1012), so clients back off and reconnect to another server.

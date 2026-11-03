@@ -41,6 +41,7 @@ import {
 } from '../../transformer/progressive-json/index.ts';
 import {
   readBytes,
+  resolveMaxBodySize,
   responseOptions,
   createHandlerCore,
   type HandlerCore,
@@ -147,10 +148,11 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
   /** Accept POST for queries and subscriptions (v11's `methodOverride: 'POST'`). */
   allowMethodOverride?: boolean;
   /**
-   * Max request body size, in bytes.
-   * @default 1_048_576
+   * Max request body size, in bytes. Larger bodies get a `413`; `false`
+   * removes the limit.
+   * @default 10 * 1024 * 1024 (10 MiB)
    */
-  maxBodySize?: number;
+  maxBodySize?: number | false;
   /**
    * Send the real message of unexpected errors to the client.
    * @default true only when `NODE_ENV` is `development` or `test`
@@ -392,7 +394,7 @@ export function createV11Handler<
         ? transformer.output
         : transformer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
-  const maxBodySize = opts.maxBodySize ?? 1_048_576;
+  const maxBodySize = resolveMaxBodySize(opts.maxBodySize);
   const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
   const batch =
     opts.batch === false

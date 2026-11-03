@@ -19,6 +19,7 @@ import {
 } from '../../transformer/index.ts';
 import { unexpectedError } from '../execution/index.ts';
 import type { AnyRouter } from '../procedures/index.ts';
+import { resolveMaxBodySize } from './body.ts';
 import type { HandlerCore } from './core.ts';
 import { makeUrlPaths, type UrlPaths } from './path-separator.ts';
 
@@ -49,7 +50,7 @@ export const makeHttpHandler = (
     readonly transformer?: AnyTransformer | undefined;
     readonly endpoint?: string | undefined;
     readonly experimental_pathSeparator?: PathSeparator | undefined;
-    readonly maxBodySize?: number | undefined;
+    readonly maxBodySize?: number | false | undefined;
     readonly sse?:
       | { readonly pingInterval?: Duration.Input | false | undefined }
       | undefined;
@@ -65,7 +66,7 @@ export const makeHttpHandler = (
     endpoint,
     under: endpoint === '/' ? '/' : `${endpoint}/`,
     paths: makeUrlPaths(opts.router, opts.experimental_pathSeparator ?? '.'),
-    maxBodySize: opts.maxBodySize ?? 1_048_576,
+    maxBodySize: resolveMaxBodySize(opts.maxBodySize),
     ssePing: timerOption(opts.sse?.pingInterval, '15 seconds'),
     batch:
       opts.batch === true
