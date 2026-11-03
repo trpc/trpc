@@ -1933,9 +1933,6 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.3.0)
-      danson:
-        specifier: 0.13.1
-        version: 0.13.1
       devalue-async:
         specifier: 0.7.2
         version: 0.7.2(devalue@5.9.4)
@@ -15317,10 +15314,6 @@ packages:
 
   d@1.0.1:
     resolution: {integrity: sha512-m62ShEObQ39CfralilEQRjH6oAMtNCV1xJyEx5LpRYUVN+EviphDgUc/F3hnYbADmkiNs67Y+3ylmlG7Lnu+FA==}
-
-  danson@0.13.1:
-    resolution: {integrity: sha512-SG+H3jzdH3AsUsiiFNwSMicU9r9kV1g5YFyQ7d+zauzeKnghuxnpmosl7mb7JIcyW8j1EJPTZEz1TvWT+utFQw==}
-    engines: {node: '>=18.3.0'}
 
   data-uri-to-buffer@3.0.1:
     resolution: {integrity: sha512-WboRycPNsVw3B3TL559F7kuBUM4d8CgMEvk6xEJlOp7OBPjt6G7z8WMWlD2rOFZLk6OYfFIUGsCOWzcQH9K2og==}
@@ -34466,8 +34459,6 @@ snapshots:
     dependencies:
       es5-ext: 0.10.62
       type: 1.2.0
-
-  danson@0.13.1: {}
 
   data-uri-to-buffer@3.0.1: {}
 

@@ -23,7 +23,6 @@
     "@types/node": "^26.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.2.3",
-    "danson": "0.13.1",
     "devalue-async": "0.7.2",
     "effect": "4.1.1",
     "react": "19.3.0",
