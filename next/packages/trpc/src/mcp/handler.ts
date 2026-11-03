@@ -95,8 +95,9 @@ export interface BaseMcpHandlerOptions<
    */
   resourceMetadataUrl?: string;
   /**
-   * Max request body size, in bytes.
-   * @default 1_048_576
+   * Max request body size, in bytes; a larger body gets a `413`. Unset, there
+   * is no limit: cap bodies here, or in your server, framework or proxy.
+   * @default no limit
    */
   maxBodySize?: number;
   /**
@@ -266,7 +267,7 @@ export function experimental_createMcpHandler<
       layer?: Layer.Layer<any, any, never>;
     },
   );
-  const maxBodySize = opts.maxBodySize ?? 1_048_576;
+  const maxBodySize = opts.maxBodySize ?? Infinity;
   const serverInfo = opts.serverInfo ?? { name: 'trpc', version: '0.0.0' };
   type Ctx = inferRouterContext<TRouter>;
 

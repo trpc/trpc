@@ -70,7 +70,7 @@ export const makeHttpHandler = (
     endpoint,
     under: endpoint === '/' ? '/' : `${endpoint}/`,
     paths: makeUrlPaths(opts.router, opts.experimental_pathSeparator ?? '.'),
-    maxBodySize: opts.maxBodySize ?? 1_048_576,
+    maxBodySize: opts.maxBodySize ?? Infinity,
     ssePing: timerOption(opts.sse?.pingInterval, '15 seconds'),
     batch: maxItems === undefined ? undefined : { maxItems },
   };

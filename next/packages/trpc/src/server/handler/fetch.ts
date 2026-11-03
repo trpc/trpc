@@ -206,8 +206,9 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
    */
   batch?: false | { maxItems: number };
   /**
-   * Max request body size, in bytes.
-   * @default 1_048_576
+   * Max request body size, in bytes; a larger body gets a `413`. Unset, there
+   * is no limit: cap bodies here, or in your server, framework or proxy.
+   * @default no limit
    */
   maxBodySize?: number;
   /**

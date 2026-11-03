@@ -153,8 +153,9 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
   /** Accept POST for queries and subscriptions (v11's `methodOverride: 'POST'`). */
   allowMethodOverride?: boolean;
   /**
-   * Max request body size, in bytes.
-   * @default 1_048_576
+   * Max request body size, in bytes; a larger body gets a `413`. Unset, there
+   * is no limit: cap bodies here, or in your server, framework or proxy.
+   * @default no limit
    */
   maxBodySize?: number;
   /**
@@ -399,7 +400,7 @@ export function createV11Handler<
         ? transformer.output
         : transformer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
-  const maxBodySize = opts.maxBodySize ?? 1_048_576;
+  const maxBodySize = opts.maxBodySize ?? Infinity;
   const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
   const maxItems = batchMaxItems('createV11Handler', opts.batch);
   const batch = maxItems === undefined ? undefined : { maxItems };

@@ -112,7 +112,7 @@ The transport is MCP's stateless Streamable HTTP: every message is a `POST` with
 
 - A `GET` answers `405`, because there is no stream for the server to push on. Notifications answer `202`.
 - A request whose `Origin` is neither the request's own nor in `allowedOrigins` is refused with `403`, as MCP requires against DNS rebinding.
-- Bodies over `maxBodySize` (1 MiB) answer `413`.
+- Bodies over `maxBodySize` answer `413`. There's no limit unless you set it ([Request body size](../adapters/overview.md#request-body-size)).
 
 ## Which procedures become tools
 
