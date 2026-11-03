@@ -115,8 +115,8 @@ It reads well, but `Comments` doesn't exist until `PostPage` has its post. So th
 
 ```demo request-timeline strategy=fetch-on-render
 post.byId      |-------|
-post.comments          |-------|
-               0       200     400 ms
+post.comments          |-----------|
+               0       200         500 ms
 ```
 
 That's a request waterfall: a request that can't start until another one has finished. Each step costs a round trip, and on a slow network a round trip can take hundreds of milliseconds. Each level of nesting can add one, and they're easy to miss, since each component looks fine on its own.
@@ -222,8 +222,8 @@ Now both requests go out together, and the page is ready after one round trip:
 
 ```demo request-timeline strategy=render-as-you-fetch
 post.byId      |-------|
-post.comments  |-------|
-               0       200 ms
+post.comments  |-----------|
+               0       200 300 ms
 ```
 
 This is render-as-you-fetch, and it's what TanStack Query's prefetching is for.
