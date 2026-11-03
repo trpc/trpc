@@ -69,3 +69,5 @@ pnpm dev
 Then open [http://localhost:3000](http://localhost:3000).
 
 Open DevTools → Network → WS to see the binary MessagePack frames being sent over WebSocket.
+
+Browsers don't apply CORS to WebSockets, so the WebSocket server only accepts connections from `http://localhost:3000`. If you serve the app from other origins, list them in `WS_ALLOWED_ORIGINS`, separated by commas.

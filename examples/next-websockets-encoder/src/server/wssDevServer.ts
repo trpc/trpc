@@ -2,9 +2,12 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 import { msgpackEncoder } from '../utils/encoder';
 import { appRouter } from './routers/_app';
+import { isAllowedOrigin } from './wsOrigin';
 
 const wss = new WebSocketServer({
   port: 3001,
+  verifyClient: ({ origin }, callback) =>
+    callback(isAllowedOrigin(origin), 403),
 });
 
 const handler = applyWSSHandler({
