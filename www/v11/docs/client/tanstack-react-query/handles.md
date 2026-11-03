@@ -181,7 +181,7 @@ const post = trpc.post.byId.unstable_$prefetch({ id });
 
 - It returns a handle at once. The request runs in the background.
 - The page doesn't wait. It renders, and the data arrives when the request finishes.
-- If the cache has no data for the query yet, the component that reads the handle renders before the data arrives, so it shows a loading state. If the cache has data, the component shows it while the request runs. With `useSuspenseQuery`, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`, and with server rendering it can cause a hydration mismatch: see [Reading with `useQuery`](#use-query).
+- If the cache has no data for the query yet, the component that reads the handle renders before the data arrives, so it shows a loading state. If the cache has data, the component shows it while the request runs. With `useSuspenseQuery` and no cached data, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`, and with server rendering it can cause a hydration mismatch: see [Reading with `useQuery`](#use-query).
 
   ```tsx twoslash
   // @include: handles-router
