@@ -148,12 +148,12 @@ describe('sponsorsList', () => {
     ]);
   });
 
-  it('merges someone sponsoring several accounts into one sponsor, from when they first started', () => {
+  it('merges someone sponsoring several accounts into one sponsor, from when they first started, whatever the case of their login', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [
         { cents: 30_000, login: 'both' },
-        { cents: 10_000, login: 'both' },
+        { cents: 10_000, login: 'Both' },
         { cents: 20_000, login: 'one' },
       ],
       now,
@@ -491,7 +491,7 @@ describe('sponsorsList', () => {
     ]);
   });
 
-  it('merges Open Collective backers who are one another, and tells sites apart by their path and query', () => {
+  it('merges Open Collective backers who are one another, and tells sites apart by their port, path and query', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [],
@@ -504,6 +504,7 @@ describe('sponsorsList', () => {
         backer('page-2', { websiteUrl: 'https://host.dev/?id=2' }),
         backer('path-lower', { websiteUrl: 'https://HOST.dev/team' }),
         backer('path-upper', { websiteUrl: 'https://host.dev/Team' }),
+        backer('port', { websiteUrl: 'https://host.dev:8443/team' }),
       ],
       sponsorships: [],
     });
@@ -515,6 +516,7 @@ describe('sponsorsList', () => {
       ['opencollective/page-2', null],
       ['opencollective/path-lower', null],
       ['opencollective/path-upper', null],
+      ['opencollective/port', null],
     ]);
   });
 

@@ -87,7 +87,7 @@ export function directDollars(sponsor: DirectSponsor, now: number) {
 }
 
 /**
- * `website`'s host (any case, without `www.`), path and query but for
+ * `website`'s host and port (any case, without `www.`), path and query but for
  * `ref` and `utm_*`, to tell whether two are one site.
  */
 function siteOf(website: string) {
@@ -104,7 +104,7 @@ function siteOf(website: string) {
     }
   }
   url.searchParams.sort();
-  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  const host = url.host.toLowerCase().replace(/^www\./, '');
   return `${host}${url.pathname.replace(/\/+$/, '')}${url.search}`;
 }
 
@@ -176,7 +176,8 @@ export function sponsorsList(opts: {
   const shownPrivately = new Set(opts.config.shownPrivately);
   const paidCents = new Map<string, number>();
   for (const value of opts.lifetimeValues) {
-    paidCents.set(value.login, (paidCents.get(value.login) ?? 0) + value.cents);
+    const login = value.login.toLowerCase();
+    paidCents.set(login, (paidCents.get(login) ?? 0) + value.cents);
   }
 
   const tallies = new Map<string, Tally>();
@@ -191,7 +192,7 @@ export function sponsorsList(opts: {
         avatarUrl: sponsorship.avatarUrl,
         createdAt: sponsorship.createdAt,
         dollars: Math.max(
-          (paidCents.get(sponsorship.login) ?? 0) / 100,
+          (paidCents.get(sponsorship.login.toLowerCase()) ?? 0) / 100,
           sponsorship.monthlyDollars,
         ),
         githubLogin: sponsorship.login,
@@ -205,7 +206,7 @@ export function sponsorsList(opts: {
     known.createdAt = Math.min(known.createdAt, sponsorship.createdAt);
     known.monthlyDollars += sponsorship.monthlyDollars;
     known.dollars = Math.max(
-      (paidCents.get(sponsorship.login) ?? 0) / 100,
+      (paidCents.get(sponsorship.login.toLowerCase()) ?? 0) / 100,
       known.monthlyDollars,
     );
   }
