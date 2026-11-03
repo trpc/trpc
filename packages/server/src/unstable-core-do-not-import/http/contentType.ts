@@ -28,8 +28,6 @@ export function getLastEventId(opts: {
   );
 }
 
-const DEFAULT_MAX_BATCH_SIZE = 100;
-
 type GetRequestInfoOptions = {
   path: string;
   req: Request;
@@ -104,10 +102,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   async parse(opts) {
     const { req } = opts;
     const isBatchCall = opts.searchParams.get('batch') === '1';
-    const maxBatchSize = opts.maxBatchSize ?? DEFAULT_MAX_BATCH_SIZE;
+    const maxBatchSize = opts.maxBatchSize;
 
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    if (isBatchCall && paths.length > maxBatchSize) {
+    if (
+      isBatchCall &&
+      typeof maxBatchSize === 'number' &&
+      paths.length > maxBatchSize
+    ) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `Batch call exceeds maximum size`,

@@ -30,7 +30,7 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
 
     /**
      * The most calls one batch can have. Set it to the server's
-     * `maxBatchSize` (100 by default) or lower.
+     * `maxBatchSize` or lower.
      * @see https://trpc.io/docs/client/links/httpBatchLink#limiting-batch-size
      * @default Infinity
      */
