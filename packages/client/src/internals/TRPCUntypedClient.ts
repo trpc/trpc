@@ -164,6 +164,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
     });
     const iterable = createIterableSubscription<unknown>({
       signal: opts.signal,
+      unsubscribe: () => subscription.unsubscribe(),
     });
     const subscription = observable$.subscribe({
       next(envelope) {
@@ -184,28 +185,21 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
           }
           case 'data':
           case undefined: {
-            iterable.push(envelope.result.data);
+            iterable.next(envelope.result.data);
             opts.onData?.(envelope.result.data);
             break;
           }
         }
       },
       error(err) {
-        iterable.end({ ok: false, error: err });
+        iterable.error(err);
         opts.onError?.(err);
       },
       complete() {
-        iterable.end({ ok: true });
+        iterable.complete();
         opts.onComplete?.();
       },
     });
-    const unsubscribe = () => {
-      subscription.unsubscribe();
-      iterable.end({ ok: true });
-    };
-    return {
-      unsubscribe,
-      [Symbol.asyncIterator]: () => iterable.createIterator(unsubscribe),
-    };
+    return iterable.subscription;
   }
 }

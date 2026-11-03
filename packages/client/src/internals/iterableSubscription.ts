@@ -1,128 +1,81 @@
-import type { Unsubscribable } from '@trpc/server/observable';
+import type { Observer, Unsubscribable } from '@trpc/server/observable';
+import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 
 /**
  * What `subscribe()` returns. Call `unsubscribe()` to stop it, or iterate
- * it with `for await`. Each iterator yields the data that arrives after it
- * was created; leaving the loop early unsubscribes.
+ * it once with `for await`. The loop yields the data that arrives after it
+ * starts; leaving the loop early unsubscribes.
  * @see https://trpc.io/docs/client/vanilla/setup#5-use-subscriptions
  */
 export interface TRPCSubscription<TValue>
   extends Unsubscribable, AsyncIterable<TValue> {}
 
-type Ending = { ok: true } | { ok: false; error: unknown };
-
-interface IteratorSink<TValue> {
-  push(value: TValue): void;
-  end(ending: Ending): void;
-}
+type End<TValue> = (observer: Observer<TValue, unknown>) => void;
 
 /**
- * Fans a subscription's data and ending out to its async iterators.
- * Nothing is buffered until an iterator is created, so callback-only
- * subscriptions hold no data.
+ * Feeds a subscription's data to one `for await` loop at a time.
  * @internal
  */
 export function createIterableSubscription<TValue>(opts: {
   signal: AbortSignal | undefined;
+  unsubscribe: () => void;
 }) {
-  const sinks = new Set<IteratorSink<TValue>>();
-  let ending: Ending | null = null;
+  let consumer: Observer<TValue, unknown> | null = null;
+  // replayed to a loop that starts after the subscription ended, which
+  // would otherwise wait forever
+  let ended: End<TValue> | null = null;
 
-  function createIterator(unsubscribe: () => void): AsyncIterator<TValue> {
-    const buffer: TValue[] = [];
-    let iteratorEnding: Ending | null = ending;
-    let pending: {
-      resolve: (result: IteratorResult<TValue>) => void;
-      reject: (error: unknown) => void;
-    } | null = null;
-
-    const onAbort = () => sink.end({ ok: true });
-
-    function detach() {
-      sinks.delete(sink);
-      opts.signal?.removeEventListener('abort', onAbort);
-    }
-
-    const sink: IteratorSink<TValue> = {
-      push(value) {
-        if (pending) {
-          const { resolve } = pending;
-          pending = null;
-          resolve({ value, done: false });
-          return;
-        }
-        buffer.push(value);
-      },
-      end(nextEnding) {
-        if (iteratorEnding) {
-          return;
-        }
-        iteratorEnding = nextEnding;
-        detach();
-        if (pending) {
-          const { resolve, reject } = pending;
-          pending = null;
-          iteratorEnding = { ok: true };
-          if (nextEnding.ok) {
-            resolve({ value: undefined, done: true });
-          } else {
-            reject(nextEnding.error);
-          }
-        }
-      },
-    };
-
-    if (!iteratorEnding) {
-      if (opts.signal?.aborted) {
-        iteratorEnding = { ok: true };
-      } else {
-        sinks.add(sink);
-        opts.signal?.addEventListener('abort', onAbort, { once: true });
+  const end = (fn: End<TValue>) => {
+    if (!ended) {
+      ended = fn;
+      if (consumer) {
+        fn(consumer);
       }
     }
+  };
+  const unsubscribe = () => {
+    opts.unsubscribe();
+    end((observer) => observer.complete());
+  };
 
-    return {
-      async next() {
-        if (buffer.length > 0) {
-          return { value: buffer.shift() as TValue, done: false };
-        }
-        if (iteratorEnding) {
-          const current = iteratorEnding;
-          // an error is thrown once, then the iterator is done
-          iteratorEnding = { ok: true };
-          if (!current.ok) {
-            throw current.error;
-          }
-          return { value: undefined, done: true };
-        }
-        return new Promise<IteratorResult<TValue>>((resolve, reject) => {
-          pending = { resolve, reject };
-        });
-      },
-      async return() {
-        buffer.length = 0;
-        sink.end({ ok: true });
-        unsubscribe();
-        return { value: undefined, done: true };
-      },
+  const data$ = observable<TValue, unknown>((observer) => {
+    if (ended) {
+      ended(observer);
+      return;
+    }
+    if (opts.signal?.aborted) {
+      observer.complete();
+      return;
+    }
+    consumer = observer;
+    const onAbort = () => observer.complete();
+    opts.signal?.addEventListener('abort', onAbort, { once: true });
+    return () => {
+      // cleared first so whatever the link emits while it tears down is dropped
+      consumer = null;
+      opts.signal?.removeEventListener('abort', onAbort);
+      unsubscribe();
     };
-  }
+  });
+
+  const subscription: TRPCSubscription<TValue> = {
+    unsubscribe,
+    [Symbol.asyncIterator]() {
+      if (consumer) {
+        throw new Error('A subscription can only be iterated by one loop');
+      }
+      // `observableToAsyncIterable`'s signal doesn't end a pending `next()`,
+      // so `opts.signal` is handled above instead
+      return observableToAsyncIterable(data$, new AbortController().signal)[
+        Symbol.asyncIterator
+      ]();
+    },
+  };
 
   return {
-    push(value: TValue) {
-      for (const sink of sinks) {
-        sink.push(value);
-      }
-    },
-    end(nextEnding: Ending) {
-      if (ending) {
-        return;
-      }
-      ending = nextEnding;
-      for (const sink of [...sinks]) {
-        sink.end(nextEnding);
-      }
-    },
-    createIterator,
+    next: (value: TValue) => consumer?.next(value),
+    error: (error: unknown) => end((observer) => observer.error(error)),
+    complete: () => end((observer) => observer.complete()),
+    subscription,
   };
 }

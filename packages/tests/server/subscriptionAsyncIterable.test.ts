@@ -61,22 +61,30 @@ function iteratorOf<T>(iterable: AsyncIterable<T>) {
   return iterable[Symbol.asyncIterator]();
 }
 
-test('callbacks and every iterator get the same data', async () => {
+test('callbacks and the loop get the same data', async () => {
   const ctx = createControlledClient();
   const onData = vi.fn<(data: number) => void>();
   const sub = ctx.client.onEvent.subscribe(undefined, { onData });
-
-  const first = iteratorOf(sub);
-  const second = iteratorOf(sub);
+  const iterator = iteratorOf(sub);
 
   ctx.emit(1);
   ctx.emit(2);
 
-  expect(await first.next()).toEqual({ value: 1, done: false });
-  expect(await first.next()).toEqual({ value: 2, done: false });
-  expect(await second.next()).toEqual({ value: 1, done: false });
-  expect(await second.next()).toEqual({ value: 2, done: false });
+  expect(await iterator.next()).toEqual({ value: 1, done: false });
+  expect(await iterator.next()).toEqual({ value: 2, done: false });
   expect(onData.mock.calls.map((call) => call[0])).toEqual([1, 2]);
+
+  sub.unsubscribe();
+});
+
+test('only one loop can iterate a subscription at a time', () => {
+  const ctx = createControlledClient();
+  const sub = ctx.client.onEvent.subscribe(undefined);
+  iteratorOf(sub);
+
+  expect(() => iteratorOf(sub)).toThrowError(
+    'A subscription can only be iterated by one loop',
+  );
 
   sub.unsubscribe();
 });
@@ -266,6 +274,18 @@ test('aborting the signal ends iteration after the buffered data', async () => {
   expect(await pending).toEqual({ value: undefined, done: true });
 
   // an iterator created after the abort is done straight away
+  expect(await iteratorOf(sub).next()).toEqual({
+    value: undefined,
+    done: true,
+  });
+});
+
+test('iterating with an already aborted signal ends straight away', async () => {
+  const ctx = createControlledClient();
+  const ac = new AbortController();
+  ac.abort();
+  const sub = ctx.client.onEvent.subscribe(undefined, { signal: ac.signal });
+
   expect(await iteratorOf(sub).next()).toEqual({
     value: undefined,
     done: true,

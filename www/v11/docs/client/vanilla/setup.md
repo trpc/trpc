@@ -172,6 +172,7 @@ When you iterate a subscription:
 - An error from the subscription is thrown from the loop as a `TRPCClientError`, after the data received before it.
 - The loop ends when the subscription completes, when you call `unsubscribe()`, or when the `signal` you passed is aborted.
 - Values that arrive while your loop body is busy are buffered until the loop asks for them.
+- One loop at a time can iterate a subscription. To consume it twice, call `.subscribe()` twice.
 
 You're all set!
 
