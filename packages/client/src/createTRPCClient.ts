@@ -18,7 +18,9 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
+  SubscriptionEvent,
   TRPCSubscriptionCallbacks,
+  TRPCSubscriptionIterableOptions,
   TRPCSubscriptionObserver,
   TRPCSubscriptionWithoutCallbacks,
 } from './internals/TRPCUntypedClient';
@@ -95,12 +97,26 @@ export type SubscriptionResolver<TDef extends TRPCResolverDef> = {
   (
     input: TDef['input'],
     opts: TRPCSubscriptionCallbacks<TDef['output'], TRPCClientError<TDef>> &
-      TRPCProcedureOptions,
+      TRPCProcedureOptions &
+      TRPCSubscriptionIterableOptions<never>,
   ): Unsubscribable;
   <
     TOpts extends TRPCProcedureOptions &
-      Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> =
-      TRPCProcedureOptions,
+      Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> &
+      Required<TRPCSubscriptionIterableOptions<true>>,
+  >(
+    input: TDef['input'],
+    opts: TRPCSubscriptionWithoutCallbacks<TOpts>,
+  ): AsyncIterableIterator<
+    SubscriptionEvent<
+      inferAsyncIterableYield<TDef['output']>,
+      TRPCClientError<TDef>
+    >
+  >;
+  <
+    TOpts extends TRPCProcedureOptions &
+      Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> &
+      TRPCSubscriptionIterableOptions<false> = TRPCProcedureOptions,
   >(
     input: TDef['input'],
     opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,

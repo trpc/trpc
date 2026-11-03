@@ -9,6 +9,7 @@ import {
 } from '@trpc/server/__tests__/suppressLogs';
 import type {
   OperationResultEnvelope,
+  SubscriptionEvent,
   TRPCClientError,
   TRPCLink,
 } from '@trpc/client';
@@ -20,7 +21,7 @@ import {
 } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, tracked } from '@trpc/server';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type {
   Deferred,
@@ -337,6 +338,174 @@ test('async iterable - stop iterating early unsubscribes', async () => {
   });
 
   expect(ctx.onErrorSpy).not.toHaveBeenCalled();
+});
+
+type IterableEvent = SubscriptionEvent<
+  number,
+  TRPCClientError<typeof ctx.router>
+>;
+
+function describeEvent(event: IterableEvent) {
+  switch (event.type) {
+    case 'state':
+      return `state:${event.state}`;
+    case 'data':
+      return `data:${event.data}`;
+    default:
+      return event.type;
+  }
+}
+
+test(
+  'async iterable with events - yields data, started and connection-state changes',
+  { timeout: 60_000 },
+  async () => {
+    const { client } = ctx;
+
+    const subscription = client.sub.iterableEvent.subscribe(undefined, {
+      events: true,
+    });
+    expectTypeOf(subscription).toEqualTypeOf<
+      AsyncIterableIterator<IterableEvent>
+    >();
+
+    const events: IterableEvent[] = [];
+    const done = (async () => {
+      for await (const event of subscription) {
+        events.push(event);
+      }
+    })();
+
+    await vi.waitFor(() => {
+      expect(ctx.ee.listenerCount('data')).toBe(1);
+    });
+    ctx.ee.emit('data', 1);
+    await vi.waitFor(() => {
+      expect(events).toContainEqual({ type: 'data', data: 1 });
+    });
+
+    // a retryable error: the link reconnects instead of ending the loop
+    ctx.ee.emit('data', new Error('test error'));
+    await suppressLogsUntil(async () => {
+      await vi.waitFor(
+        () => {
+          expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+          expect(ctx.ee.listenerCount('data')).toBe(1);
+        },
+        { timeout: 5_000 },
+      );
+    });
+
+    ctx.ee.emit('data', 2);
+    ctx.ee.emit('data', returnSymbol);
+
+    // the server returning ends the loop
+    await done;
+
+    expect(events.map(describeEvent)).toEqual([
+      'state:connecting',
+      'started',
+      'state:pending',
+      'data:1',
+      'state:connecting',
+      'state:connecting',
+      'started',
+      'state:pending',
+      'data:2',
+    ]);
+    expect(
+      events.flatMap((event) =>
+        event.type === 'state' ? [event.error?.message ?? null] : [],
+      ),
+    ).toEqual([null, null, 'test error', 'Unknown error', null]);
+
+    const started = events.find((event) => event.type === 'started');
+    assert(started?.type === 'started');
+    expect(started.context?.['eventSource']).toBeInstanceOf(EventSource);
+
+    await vi.waitFor(() => {
+      expect(ctx.ee.listenerCount('data')).toBe(0);
+    });
+  },
+);
+
+test('async iterable with events - a non-retryable error is the last event and ends the loop', async () => {
+  const { client } = ctx;
+
+  const events: IterableEvent[] = [];
+  const done = (async () => {
+    // doesn't throw
+    for await (const event of client.sub.iterableEvent.subscribe(undefined, {
+      events: true,
+    })) {
+      events.push(event);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+  });
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit(
+    'data',
+    new TRPCError({ code: 'FORBIDDEN', message: 'not allowed' }),
+  );
+
+  await done;
+
+  expect(events.filter((event) => event.type === 'data')).toEqual([
+    { type: 'data', data: 1 },
+  ]);
+  const last = events.at(-1);
+  assert(last?.type === 'error');
+  expectTypeOf(last.error).toEqualTypeOf<TRPCClientError<typeof ctx.router>>();
+  expect(last.error.message).toBe('not allowed');
+  expect(last.error.data?.code).toBe('FORBIDDEN');
+  expect(events.filter((event) => event.type === 'error')).toHaveLength(1);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+  });
+});
+
+test('async iterable with events - events that arrive before the loop starts are queued', async () => {
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableEvent.subscribe(undefined, {
+    events: true,
+  });
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+  });
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 2);
+  // the link has delivered both before anything iterates
+  await vi.waitFor(() => {
+    expect(orderedResults.filter((value) => value !== undefined)).toEqual([
+      1, 2,
+    ]);
+  });
+
+  const events: IterableEvent[] = [];
+  for await (const event of subscription) {
+    events.push(event);
+    if (event.type === 'data' && event.data === 2) {
+      break;
+    }
+  }
+
+  expect(events.map(describeEvent)).toEqual([
+    'state:connecting',
+    'started',
+    'state:pending',
+    'data:1',
+    'data:2',
+  ]);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+  });
 });
 
 test(
