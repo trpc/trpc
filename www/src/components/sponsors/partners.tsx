@@ -151,17 +151,17 @@ export function PartnersBar(props: { readonly className?: string }) {
   return (
     <section
       aria-label="Partners"
-      className={cn('flex h-9 items-center gap-4 border-t', props.className)}
+      className={cn('flex h-9 items-center gap-3 border-t', props.className)}
     >
       <p className="shrink-0 text-[0.625rem] font-semibold tracking-wide text-muted-foreground uppercase">
         Partners
       </p>
       {/* The fade is over the end's padding until the logos run under it. */}
-      <ul className="flex h-full min-w-0 gap-5 overflow-x-auto overflow-y-hidden pr-4 [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="flex h-full min-w-0 gap-3 overflow-x-auto overflow-y-hidden pr-4 [mask-image:linear-gradient(to_right,#000_calc(100%-1rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {partnersByTier.map((partner) => (
           <li className="shrink-0" key={partner.login}>
             <a
-              className="flex h-full items-center text-xs text-foreground/60 grayscale transition-[color,filter] duration-300 hover:text-foreground hover:grayscale-0"
+              className="flex h-full items-center rounded-sm px-1 text-xs text-foreground/60 grayscale transition-[color,filter] duration-300 outline-none hover:text-foreground hover:grayscale-0 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:grayscale-0 focus-visible:ring-inset"
               href={partner.link}
               rel="sponsored noopener"
               target="_blank"
