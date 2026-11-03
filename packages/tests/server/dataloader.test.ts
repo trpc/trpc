@@ -67,6 +67,31 @@ test('errors', async () => {
 });
 
 describe('validation', () => {
+  test('a throwing validator rejects the item and allows later batches', async () => {
+    using fakeTimers = fakeTimersResource();
+    const error = new Error('Cannot serialize input');
+    const fetch = vi.fn(async (keys: number[]) => keys);
+    const loader = dataLoader<number, number>({
+      validate: (keys) => {
+        if (keys.includes(0)) {
+          throw error;
+        }
+        return true;
+      },
+      fetch,
+    });
+
+    const result = waitError(loader.load(0));
+    await fakeTimers.advanceTimersByTimeAsync(0);
+    expect(await result).toBe(error);
+    expect(fetch).not.toHaveBeenCalled();
+
+    const next = loader.load(1);
+    await fakeTimers.advanceTimersByTimeAsync(0);
+    expect(await next).toBe(1);
+    expect(fetch).toHaveBeenCalledExactlyOnceWith([1]);
+  });
+
   const validateFn = vi.fn();
   const fetchFn = vi.fn();
   const loader = dataLoader<number, number>({
