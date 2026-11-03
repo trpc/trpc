@@ -38,10 +38,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
   return (req, res) => {
     let path = '';
     run(async () => {
-      path =
-        opts.router._def._config.pathSeparator === '/'
-          ? req.path.slice(1)
-          : req.path.slice(req.path.lastIndexOf('/') + 1);
+      path = req.path.slice(req.path.lastIndexOf('/') + 1);
 
       await nodeHTTPRequestHandler({
         ...opts,

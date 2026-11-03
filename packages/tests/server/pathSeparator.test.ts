@@ -16,6 +16,7 @@ import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import express from 'express';
 import fastify from 'fastify';
 import fetch from 'node-fetch';
+import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
 function createRouter(pathSeparator?: TRPCPathSeparator) {
@@ -54,34 +55,34 @@ function recordingFetch() {
   return { urls, fetch: fn };
 }
 
-describe('pathSeparator: "/"', () => {
+describe('pathSeparator: "~"', () => {
   async function setup() {
-    const { router, middlewarePaths } = createRouter('/');
+    const { router, middlewarePaths } = createRouter('~');
     const rec = recordingFetch();
     const ctx = testServerAndClientResource(router, {
       client: ({ httpUrl }) => ({
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
-            true: httpSubscriptionLink({ url: httpUrl, pathSeparator: '/' }),
+            true: httpSubscriptionLink({ url: httpUrl, pathSeparator: '~' }),
             false: splitLink({
               condition: (op) => op.context['link'] === 'httpLink',
               true: httpLink({
                 url: httpUrl,
                 fetch: rec.fetch,
-                pathSeparator: '/',
+                pathSeparator: '~',
               }),
               false: splitLink({
                 condition: (op) => op.context['link'] === 'stream',
                 true: httpBatchStreamLink({
                   url: httpUrl,
                   fetch: rec.fetch,
-                  pathSeparator: '/',
+                  pathSeparator: '~',
                 }),
                 false: httpBatchLink({
                   url: httpUrl,
                   fetch: rec.fetch,
-                  pathSeparator: '/',
+                  pathSeparator: '~',
                 }),
               }),
             }),
@@ -92,7 +93,7 @@ describe('pathSeparator: "/"', () => {
     return { ...ctx, middlewarePaths, urls: rec.urls };
   }
 
-  test('httpLink puts "/" in the URL', async () => {
+  test('httpLink puts "~" in the URL', async () => {
     await using t = await setup();
     const context = { link: 'httpLink' };
 
@@ -101,10 +102,10 @@ describe('pathSeparator: "/"', () => {
     });
     expect(await t.client.post.add.mutate('x', { context })).toBe('x');
 
-    expect(t.urls).toEqual(['/post/byId', '/post/add']);
+    expect(t.urls).toEqual(['/post~byId', '/post~add']);
   });
 
-  test('httpBatchLink joins "/" paths with ","', async () => {
+  test('httpBatchLink joins "~" paths with ","', async () => {
     await using t = await setup();
 
     expect(
@@ -114,7 +115,7 @@ describe('pathSeparator: "/"', () => {
       ]),
     ).toEqual([{ id: 1 }, ['a', 'b']]);
 
-    expect(t.urls).toEqual(['/post/byId,post/list']);
+    expect(t.urls).toEqual(['/post~byId,post~list']);
   });
 
   test('httpBatchStreamLink', async () => {
@@ -128,7 +129,7 @@ describe('pathSeparator: "/"', () => {
       ]),
     ).toEqual([{ id: 2 }, ['a', 'b']]);
 
-    expect(t.urls).toEqual(['/post/byId,post/list']);
+    expect(t.urls).toEqual(['/post~byId,post~list']);
   });
 
   test('httpSubscriptionLink', async () => {
@@ -166,7 +167,7 @@ describe('pathSeparator: "/"', () => {
     await using t = await setup();
 
     expect(await t.client['flat.key'].query()).toBe('flat');
-    expect(t.urls).toEqual(['/flat/key']);
+    expect(t.urls).toEqual(['/flat~key']);
   });
 
   test('the server still accepts dotted URLs', async () => {
@@ -180,7 +181,7 @@ describe('pathSeparator: "/"', () => {
   });
 
   test('server-side callers still use dotted paths', async () => {
-    const { router, middlewarePaths } = createRouter('/');
+    const { router, middlewarePaths } = createRouter('~');
     const caller = router.createCaller({});
 
     expect(await caller.post.byId({ id: 4 })).toEqual({ id: 4 });
@@ -188,12 +189,12 @@ describe('pathSeparator: "/"', () => {
   });
 });
 
-test('pathSeparator: "~"', async () => {
-  const { router } = createRouter('~');
+test('pathSeparator: "-"', async () => {
+  const { router } = createRouter('-');
   await using t = testServerAndClientResource(router);
 
   const res = await fetch(
-    `${t.httpUrl}/post~byId,post~list?batch=1&input=${encodeURIComponent(JSON.stringify({ 0: { id: 5 } }))}`,
+    `${t.httpUrl}/post-byId,post-list?batch=1&input=${encodeURIComponent(JSON.stringify({ 0: { id: 5 } }))}`,
   );
   expect(await res.json()).toEqual([
     { result: { data: { id: 5 } } },
@@ -201,23 +202,23 @@ test('pathSeparator: "~"', async () => {
   ]);
 });
 
-test('default: "/" in the URL is not a separator', async () => {
+test('default: "~" in the URL is not a separator', async () => {
   const { router } = createRouter();
   await using t = testServerAndClientResource(router);
 
-  const res = await fetch(`${t.httpUrl}/post/list`);
+  const res = await fetch(`${t.httpUrl}/post~list`);
   expect(res.status).toBe(404);
 
   const dotted = await fetch(`${t.httpUrl}/post.list`);
   expect(dotted.status).toBe(200);
 });
 
-test('client with "/" against a server without it gets NOT_FOUND', async () => {
+test('client with "~" against a server without it gets NOT_FOUND', async () => {
   const { router } = createRouter();
   await using t = testServerAndClientResource(router, {
     client: ({ httpUrl }) => ({
       links: [
-        httpLink({ url: httpUrl, fetch: fetch as any, pathSeparator: '/' }),
+        httpLink({ url: httpUrl, fetch: fetch as any, pathSeparator: '~' }),
       ],
     }),
   });
@@ -277,18 +278,18 @@ describe('keys containing the separator', () => {
 
 describe('mergeRouters', () => {
   test('keeps the separator', () => {
-    const a = initTRPC.create({ pathSeparator: '/' });
+    const a = initTRPC.create({ pathSeparator: '~' });
     const b = initTRPC.create();
     const merged = a.mergeRouters(
       b.router({ x: b.procedure.query(() => null) }),
       a.router({ y: a.procedure.query(() => null) }),
     );
-    expect(merged._def._config.pathSeparator).toBe('/');
+    expect(merged._def._config.pathSeparator).toBe('~');
   });
 
   test('throws on different separators', () => {
-    const a = initTRPC.create({ pathSeparator: '/' });
-    const b = initTRPC.create({ pathSeparator: '~' });
+    const a = initTRPC.create({ pathSeparator: '~' });
+    const b = initTRPC.create({ pathSeparator: '_' });
     expect(() =>
       a.mergeRouters(
         a.router({ x: a.procedure.query(() => null) }),
@@ -298,27 +299,18 @@ describe('mergeRouters', () => {
   });
 });
 
-test('invalid separators are rejected', () => {
-  expect(() =>
-    initTRPC.create({ pathSeparator: ',' as any }),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Invalid pathSeparator ",". Use one of: ".", "/", "_", "~"]`,
-  );
-  expect(() =>
-    httpLink({ url: 'http://localhost', pathSeparator: '?' as any }),
-  ).toThrow('Invalid pathSeparator "?"');
+test('only URL-safe separators type-check', () => {
+  expectTypeOf<TRPCPathSeparator>().toEqualTypeOf<'.' | '_' | '~' | '-'>();
 
-  expect(() =>
-    initTRPC.create({
-      // @ts-expect-error - not a valid separator
-      pathSeparator: ',',
-    }),
-  ).toThrow();
+  // @ts-expect-error - "/" would need catch-all routes in every adapter
+  initTRPC.create({ pathSeparator: '/' });
+  // @ts-expect-error - "," separates batched calls
+  httpLink({ url: 'http://localhost', pathSeparator: ',' });
 });
 
-describe('adapters with "/"', () => {
+describe('adapters need no changes', () => {
   test('express', async () => {
-    const { router } = createRouter('/');
+    const { router } = createRouter('~');
     const app = express();
     app.use('/trpc', trpcExpress.createExpressMiddleware({ router }));
     const server = app.listen(0);
@@ -330,7 +322,7 @@ describe('adapters with "/"', () => {
         httpBatchLink({
           url: `http://localhost:${port}/trpc`,
           fetch: fetch as any,
-          pathSeparator: '/',
+          pathSeparator: '~',
         }),
       ],
     });
@@ -347,7 +339,7 @@ describe('adapters with "/"', () => {
   });
 
   test('fastify', async () => {
-    const { router } = createRouter('/');
+    const { router } = createRouter('~');
     const app = fastify();
     await app.register(fastifyTRPCPlugin, {
       prefix: '/trpc',
@@ -360,7 +352,7 @@ describe('adapters with "/"', () => {
         httpBatchLink({
           url: `${url}/trpc`,
           fetch: fetch as any,
-          pathSeparator: '/',
+          pathSeparator: '~',
         }),
       ],
     });

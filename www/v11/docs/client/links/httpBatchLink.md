@@ -117,7 +117,7 @@ export interface HTTPLinkOptions {
    * @default '.'
    * @see https://trpc.io/docs/rpc#path-separator
    */
-  pathSeparator?: '.' | '/' | '_' | '~';
+  pathSeparator?: '.' | '_' | '~' | '-';
 }
 ```
 

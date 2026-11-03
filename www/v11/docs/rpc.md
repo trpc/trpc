@@ -55,20 +55,19 @@ Some firewalls block URLs with a `.` in them. Set `pathSeparator` to use another
 
 ```ts
 // server
-const t = initTRPC.create({ pathSeparator: '/' });
+const t = initTRPC.create({ pathSeparator: '~' });
 
 // client
-httpBatchLink({ url: '/api/trpc', pathSeparator: '/' });
+httpBatchLink({ url: '/api/trpc', pathSeparator: '~' });
 ```
 
-Now `post.byId` is served at `/api/trpc/post/byId`, and a batch of `post.byId` and `post.list` at `/api/trpc/post/byId,post/list?batch=1`.
+Now `post.byId` is served at `/api/trpc/post~byId`, and a batch of `post.byId` and `post.list` at `/api/trpc/post~byId,post~list?batch=1`.
 
-- It can be `'.'` (the default), `'/'`, `'_'` or `'~'`.
+- It can be `'.'` (the default), `'~'`, `'_'` or `'-'`. These never need encoding in URLs, so routes and proxies leave them alone.
 - Only URLs change. Middlewares, `onError`, error shapes, server-side callers and query keys still see `post.byId`.
 - The server still accepts dotted URLs, so update the server before the clients.
-- A router key that contains the separator, such as `get_user` with `'_'`, throws when the router is built, since its URL would be ambiguous.
+- A router key that contains the separator, such as `get_user` with `'_'`, throws when the router is built, since its URL would be ambiguous. `'~'` is the least likely to clash with your keys.
 - WebSockets don't put the path in the URL, so `wsLink` doesn't need it.
-- With `'/'`, the route must catch every segment: name the Next.js file `[...trpc].ts` (or the App Router folder `[...trpc]`), and use a `{proxy+}` resource on AWS API Gateway. The Express, Fastify, Fetch and standalone adapters handle it.
 - Pass `pathSeparator` to [`generateOpenAPIDocument`](/docs/openapi) if it can't import your router at runtime.
 
 ## Batching

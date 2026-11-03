@@ -55,8 +55,8 @@ export interface GenerateOptions {
    */
   servers?: ServerObject[];
   /**
-   * The router's `pathSeparator`, for the generated paths: with `'/'`,
-   * `user.create` becomes `/user/create`. Read from the router when it can
+   * The router's `pathSeparator`, for the generated paths: with `'~'`,
+   * `user.create` becomes `/user~create`. Read from the router when it can
    * be imported at runtime.
    * @default '.'
    */

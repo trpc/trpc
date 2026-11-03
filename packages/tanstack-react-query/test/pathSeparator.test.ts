@@ -8,7 +8,7 @@ import { createTRPCOptionsProxy } from '../src';
 
 describe('pathSeparator', () => {
   test('query keys keep their shape and URLs use the separator', async () => {
-    const t = initTRPC.create({ pathSeparator: '/' });
+    const t = initTRPC.create({ pathSeparator: '~' });
     const router = t.router({
       post: {
         byId: t.procedure
@@ -25,7 +25,7 @@ describe('pathSeparator', () => {
         links: [
           httpLink({
             url: httpUrl,
-            pathSeparator: '/',
+            pathSeparator: '~',
             fetch: (url, init) => {
               urls.push(
                 new URL(url instanceof Request ? url.url : url).pathname,
@@ -56,6 +56,6 @@ describe('pathSeparator', () => {
     expect(await queryClient.fetchQuery(trpc['flat.key'].queryOptions())).toBe(
       'flat',
     );
-    expect(urls).toEqual(['/post/byId', '/flat/key']);
+    expect(urls).toEqual(['/post~byId', '/flat~key']);
   });
 });

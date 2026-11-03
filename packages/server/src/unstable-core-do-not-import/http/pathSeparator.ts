@@ -1,35 +1,28 @@
 /**
  * The character between a procedure path's segments in HTTP URLs, such as
- * the `/` in `/trpc/post/byId`. Procedure paths stay dotted everywhere else:
+ * the `~` in `/trpc/post~byId`. Procedure paths stay dotted everywhere else:
  * in middlewares, errors, `onError` and query keys.
  *
- * `,` separates batched calls, and the other URL-reserved characters would
- * need encoding, so only these are allowed.
+ * These are the URL "unreserved" punctuation characters (RFC 3986), which
+ * are never percent-encoded or normalised and mean nothing to routers. `/`
+ * would need catch-all routes in every adapter, and `,` separates batched
+ * calls.
  */
-export type PathSeparator = '.' | '/' | '_' | '~';
-
-const pathSeparators: readonly PathSeparator[] = ['.', '/', '_', '~'];
+export type PathSeparator = '.' | '_' | '~' | '-';
 
 /**
- * Resolves a user-given `pathSeparator` option: `'.'` when it's left out,
- * and an error when it isn't a {@link PathSeparator}. Call it once, where
- * the option is read.
+ * Applies the `'.'` default to a user-given `pathSeparator` option. Call it
+ * once, where the option is read.
  * @internal
  */
-export function resolvePathSeparator(value: unknown): PathSeparator {
-  if (value === undefined) {
-    return '.';
-  }
-  if (!pathSeparators.includes(value as PathSeparator)) {
-    throw new Error(
-      `Invalid pathSeparator ${JSON.stringify(value)}. Use one of: ${pathSeparators.map((s) => JSON.stringify(s)).join(', ')}`,
-    );
-  }
-  return value as PathSeparator;
+export function resolvePathSeparator(
+  value: PathSeparator | undefined,
+): PathSeparator {
+  return value ?? '.';
 }
 
 /**
- * `post.byId` → `post/byId`, for building URLs.
+ * `post.byId` → `post~byId`, for building URLs.
  * @internal
  */
 export function procedurePathToURLPath(
@@ -43,7 +36,7 @@ export function procedurePathToURLPath(
 }
 
 /**
- * `post/byId` → `post.byId`, for reading URLs. Dotted paths still resolve,
+ * `post~byId` → `post.byId`, for reading URLs. Dotted paths still resolve,
  * so clients can move to the separator after the server does.
  * @internal
  */
