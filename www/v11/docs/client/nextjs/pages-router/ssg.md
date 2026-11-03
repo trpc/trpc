@@ -15,7 +15,7 @@ This page builds on the [Pages Router setup](./setup.md).
 
 ## Fetch data in `getStaticProps`
 
-Make a query client and a tRPC proxy that calls your router directly, prefetch the queries, and return the cache as `trpcState`. There's no request to build the context from, so pass one that doesn't need it.
+Make a query client and a tRPC proxy that calls your router directly, start the queries with `unstable_$ensure`, and return the cache as `trpcState`, with the handles it returned. The page reads each query from its handle. There's no request to build the context from, so pass one that doesn't need it.
 
 This example uses superjson, so the post's `createdAt` reaches the page as a `Date`. It needs the matching `_app` from [Using a data transformer](./setup.md#using-a-data-transformer).
 
@@ -82,12 +82,12 @@ export async function getStaticProps(
     queryClient,
   });
 
-  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+  const post = await trpc.post.byId.unstable_$ensure({ id });
 
   return {
     props: {
       trpcState: superjson.serialize(dehydrate(queryClient)),
-      id,
+      post,
     },
     revalidate: 1,
   };
@@ -115,7 +115,7 @@ export default function PostViewPage(
   props: InferGetStaticPropsType<typeof getStaticProps>,
 ) {
   const trpc = useTRPC();
-  const postQuery = useQuery(trpc.post.byId.queryOptions({ id: props.id }));
+  const postQuery = useQuery(trpc.unstable_$fromHandle(props.post));
 
   switch (postQuery.status) {
     case 'pending':
@@ -140,31 +140,40 @@ export default function PostViewPage(
 
 TanStack React Query refetches stale data on the client when a component mounts, when the window regains focus, and when the network reconnects. If you only want the data from `getStaticProps`, for instance because your API is rate-limited, turn that off.
 
-Per query:
+Per query, pass the options when you read the handle:
 
 ```tsx twoslash
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 const t = initTRPC.create();
 const appRouter = t.router({
-  example: t.procedure.query(() => 'hello'),
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => ({ id: input.id, title: 'Example Post' })),
+  }),
 });
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
-import { createTRPCContext } from '@trpc/tanstack-react-query';
+import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 // @filename: component.tsx
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { TRPC } from './utils/trpc';
+declare const props: { post: unstable_inferQueryHandle<TRPC['post']['byId']> };
 // ---cut---
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from './utils/trpc';
 
 function Example() {
   const trpc = useTRPC();
-  const exampleQuery = useQuery(
-    trpc.example.queryOptions(undefined, {
+  const postQuery = useQuery(
+    trpc.unstable_$fromHandle(props.post, {
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,

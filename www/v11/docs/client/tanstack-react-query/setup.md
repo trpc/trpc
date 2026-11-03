@@ -123,10 +123,12 @@ export type AppRouter = typeof appRouter;
 ```twoslash include utils-a
 // @filename: utils/trpc.ts
 // ---cut---
-import { createTRPCContext } from '@trpc/tanstack-react-query';
+import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
 
 export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+// Types the query handles that components take as props
+export type TRPC = TRPCOptionsProxy<AppRouter>;
 ```
 
 Import your `AppRouter` type into the client application. This type holds the shape of your entire API.
@@ -299,27 +301,29 @@ export function App() {
 
 ### 4. Fetch data
 
-You can now use the tRPC React Query integration to call queries and mutations on your API.
+Start a page's queries before the components that show them render, and pass each component a **handle** to its query. The component reads the query from its handle, typed from the procedure, without repeating the procedure or its input.
 
-```tsx twoslash title='components/user-list.tsx'
+```tsx twoslash title='components/user-card.tsx'
 // @jsx: react-jsx
 // @include: router
 // @include: utils-a
 
-// @filename: components/user-list.tsx
+// @filename: components/user-card.tsx
 // ---cut---
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useTRPC } from '../utils/trpc';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '../utils/trpc';
 
-export default function UserList() {
-  const trpc = useTRPC(); // use `import { trpc } from './utils/trpc'` if you're using the singleton pattern
-
-  const userQuery = useQuery(trpc.getUser.queryOptions({ id: 'id_bilbo' }));
+export function UserCard(props: {
+  user: unstable_inferQueryHandle<TRPC['getUser']>;
+}) {
+  const trpc = useTRPC();
+  const userQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.user));
   const userCreator = useMutation(trpc.createUser.mutationOptions());
 
   return (
     <div>
-      <p>{userQuery.data?.name}</p>
+      <p>{userQuery.data.name}</p>
 
       <button onClick={() => userCreator.mutate({ name: 'Frodo' })}>
         Create Frodo
@@ -328,6 +332,94 @@ export default function UserList() {
   );
 }
 ```
+
+In a route loader or a server component, start the query with `unstable_$ensure`. It waits until the data is in the cache, so the page renders with it, and it rejects if the query fails, so you can handle the error before rendering. Here, in a React Router loader, `trpc` is the [singleton proxy](#3c-set-up-without-react-context), created with the same `queryClient` you give `TRPCProvider`:
+
+```tsx twoslash title='routes/user.tsx'
+// @jsx: react-jsx
+// @include: router
+// @include: utils-a
+// @filename: utils/trpc-singleton.ts
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+export const queryClient = new QueryClient();
+export const trpc = createTRPCOptionsProxy<AppRouter>({
+  client: createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:2022' })] }),
+  queryClient,
+});
+
+// @filename: components/user-card.tsx
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { TRPC } from '../utils/trpc';
+export declare function UserCard(props: {
+  user: unstable_inferQueryHandle<TRPC['getUser']>;
+}): React.ReactNode;
+
+// @filename: routes/user.tsx
+import { trpc } from '../utils/trpc-singleton';
+// ---cut---
+import { Suspense } from 'react';
+import { useLoaderData, type LoaderFunctionArgs } from 'react-router';
+import { UserCard } from '../components/user-card';
+
+export async function loader({ params }: LoaderFunctionArgs) {
+  const user = await trpc.getUser.unstable_$ensure({ id: params.id! });
+  return { user };
+}
+
+export function UserRoute() {
+  const { user } = useLoaderData<typeof loader>();
+  return (
+    <Suspense fallback={<p>Loading user…</p>}>
+      <UserCard user={user} />
+    </Suspense>
+  );
+}
+```
+
+Without a loader, start the query at the top of the page as it renders, with `unstable_$prefetch` on `useTRPC()`. It starts the query only if the cache doesn't have it yet, and `UserCard` suspends until the data arrives:
+
+```tsx twoslash title='pages/user-page.tsx'
+// @jsx: react-jsx
+// @include: router
+// @include: utils-a
+
+// @filename: components/user-card.tsx
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { TRPC } from '../utils/trpc';
+export declare function UserCard(props: {
+  user: unstable_inferQueryHandle<TRPC['getUser']>;
+}): React.ReactNode;
+
+// @filename: pages/user-page.tsx
+// ---cut---
+import { Suspense } from 'react';
+import { UserCard } from '../components/user-card';
+import { useTRPC } from '../utils/trpc';
+
+export function UserPage(props: { id: string }) {
+  const trpc = useTRPC();
+  const user = trpc.getUser.unstable_$prefetch({ id: props.id });
+
+  return (
+    <Suspense fallback={<p>Loading user…</p>}>
+      <UserCard user={user} />
+    </Suspense>
+  );
+}
+```
+
+- Every reader needs a loading state, even after `unstable_$ensure`: the cache can drop the data later, for example after `queryClient.resetQueries()`. Here, that's the `Suspense` fallback. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
+- Start queries in render only on `useTRPC()`. On the singleton proxy, `unstable_$prefetch` refetches stale data on every call, so start its queries in a loader.
+- To read a query without a handle, pass `trpc.getUser.queryOptions({ id })` to the hook. See [`queryOptions`](./usage.md#queryOptions).
+
+See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for streaming with `unstable_$prefetch`, infinite queries, and where to start queries in each framework.
+
+:::info
+We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
+:::
 
 ### 5. Invalidate queries after a mutation
 

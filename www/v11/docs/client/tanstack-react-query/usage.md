@@ -12,33 +12,54 @@ order: 49
 ## Quick example query
 
 ```tsx twoslash
+// @jsx: react-jsx
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 const t = initTRPC.create();
-const appRouter = t.router({
+export const appRouter = t.router({
   greeting: t.procedure.input(z.object({ name: z.string() })).query(({ input }) => `Hello ${input.name}` as const),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: trpc.ts
-import { createTRPCContext } from '@trpc/tanstack-react-query';
-import type { AppRouter } from './server/router';
+// @filename: trpc/client.ts
+import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export type TRPC = TRPCOptionsProxy<AppRouter>;
+
+// @filename: trpc/server.ts
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { appRouter } from '../server/router';
+export const trpc = createTRPCOptionsProxy({ router: appRouter, ctx: {}, queryClient: new QueryClient() });
 
 // @filename: component.tsx
 // ---cut---
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from './trpc';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from './trpc/client';
+import { trpc } from './trpc/server';
 
-function Users() {
+// In a route loader or a server component: start the query and wait for its data
+export async function loader() {
+  const greeting = await trpc.greeting.unstable_$ensure({ name: 'Jerry' });
+  return { greeting };
+}
+
+// In the component that gets the handle: no procedure, no input, fully typed
+function Greeting(props: { greeting: unstable_inferQueryHandle<TRPC['greeting']> }) {
   const trpc = useTRPC();
-
-  const greetingQuery = useQuery(trpc.greeting.queryOptions({ name: 'Jerry' }));
+  const greetingQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.greeting));
 
   // greetingQuery.data === 'Hello Jerry'
+  return <p>{greetingQuery.data}</p>;
 }
 ```
+
+`unstable_$ensure` returns a **handle** once the query's data is in the cache, so the page renders with it. Without a loader, start the query at the top of the page as it renders, with `trpc.greeting.unstable_$prefetch(input)` on `useTRPC()`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles), and the [setup guide](./setup.md#4-fetch-data) for a full example.
+
+The rest of this page covers the options and keys that handles are built on, which you can also pass to TanStack's hooks directly.
 
 ## Usage
 

@@ -283,7 +283,7 @@ The client only calls the API from the browser, so a relative URL is enough. On 
 
 ### 7. Make an API request
 
-You're all set! Get the options for a query from `useTRPC()`, and pass them to TanStack React Query's hooks. For more, see [TanStack React Query usage](/docs/client/tanstack-react-query/usage).
+You're all set! Start the page's queries ahead of time in `getServerSideProps` with `unstable_$ensure`, and pass the page the **handles** it returns. The page reads each query from its handle with TanStack React Query's hooks, typed from the procedure, without repeating the procedure or its input.
 
 ```tsx twoslash title='pages/index.tsx'
 // @jsx: react-jsx
@@ -296,6 +296,10 @@ export const appRouter = t.router({
 });
 export type AppRouter = typeof appRouter;
 
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
 // @filename: utils/trpc.ts
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
@@ -303,12 +307,32 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/index.tsx
 // ---cut---
-import { useQuery } from '@tanstack/react-query';
+import { dehydrate, useQuery } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { InferGetServerSidePropsType } from 'next';
+import { appRouter } from '../server/routers/_app';
+import { makeQueryClient } from '../utils/query-client';
 import { useTRPC } from '../utils/trpc';
 
-export default function IndexPage() {
+export async function getServerSideProps() {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({ router: appRouter, ctx: {}, queryClient });
+
+  const hello = await trpc.hello.unstable_$ensure({ text: 'world' });
+
+  return {
+    props: {
+      trpcState: dehydrate(queryClient),
+      hello,
+    },
+  };
+}
+
+export default function IndexPage(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+) {
   const trpc = useTRPC();
-  const helloQuery = useQuery(trpc.hello.queryOptions({ text: 'client' }));
+  const helloQuery = useQuery(trpc.unstable_$fromHandle(props.hello));
 
   switch (helloQuery.status) {
     case 'pending':
@@ -321,7 +345,13 @@ export default function IndexPage() {
 }
 ```
 
-This page fetches in the browser. To put the data in the first HTML, prefetch it in [`getServerSideProps`](./ssr.md) or [`getStaticProps`](./ssg.md).
+- `unstable_$ensure` waits until the data is in the cache, and `_app`'s `HydrationBoundary` puts that cache into the client's, so the data is in the first HTML. Keep the `'pending'` case anyway: the cache can lose the data later, for example after `queryClient.resetQueries()`. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
+- It rejects if the query fails, so you can act on the error on the server. [Server-Side Rendering](./ssr.md) shows how, and how to build the context from the request. For static pages, see [Static Site Generation](./ssg.md).
+- A page without `getServerSideProps` or `getStaticProps` fetches in the browser: pass `trpc.hello.queryOptions({ text: 'world' })` to `useQuery`. See [TanStack React Query usage](/docs/client/tanstack-react-query/usage).
+
+:::info
+We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable). See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for the full guide.
+:::
 
 ## Using a data transformer
 
@@ -375,9 +405,9 @@ The [migration guide](/docs/client/tanstack-react-query/migrating) covers the ho
 
 - **Sharing one `QueryClient` across requests.** Make it in `_app` with `useState`, and make a new one in each `getServerSideProps` or `getStaticProps`. A query client at module scope would hand one user's data to the next.
 - **Returning the dehydrated state under another key.** `_app` reads `pageProps.trpcState`, so return `{ props: { trpcState: dehydrate(queryClient) } }`. Otherwise the client fetches every query again.
-- **Prefetching with a different input than the page uses.** The input is part of the query key, so the page misses the prefetched data and fetches again.
-- **Prefetching values JSON can't hold.** Next.js sends page props as JSON, so a `Date` or an `undefined` field in a query's input or result makes the page fail. Run the prefetched cache through a [data transformer](#using-a-data-transformer).
-- **Mixing in App Router setup.** `HydrateClient` and `server-only` are for the App Router. In the Pages Router, prefetch in `getServerSideProps` or `getStaticProps` instead.
+- **Repeating the query in the page.** `useQuery(trpc.hello.queryOptions({ text }))` only finds the server's data if the procedure and input match exactly; the input is part of the query key. Return the handle from `getServerSideProps` and read it with `trpc.unstable_$fromHandle(props.hello)` instead.
+- **Prefetching values JSON can't hold.** Next.js sends page props as JSON, so a `Date` or an `undefined` field in a query's input or result makes the page fail. Run the prefetched cache through a [data transformer](#using-a-data-transformer). Handles go in props as they are, so keep their inputs to JSON values.
+- **Mixing in App Router setup.** `HydrateClient` and `server-only` are for the App Router. In the Pages Router, start queries in `getServerSideProps` or `getStaticProps` instead.
 
 ## Next steps
 

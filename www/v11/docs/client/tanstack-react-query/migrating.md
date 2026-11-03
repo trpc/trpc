@@ -183,6 +183,10 @@ function Users() {
 }
 ```
 
+:::tip
+Once you've migrated, start queries ahead of time instead: `await trpc.greeting.unstable_$ensure({ name: 'Jerry' })` in a route loader or server component returns a handle, and the component reads it with `useQuery(trpc.unstable_$fromHandle(props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+:::
+
 ### Migrating Invalidations and other QueryClient usages
 
 A classic invalidation pattern would look like this

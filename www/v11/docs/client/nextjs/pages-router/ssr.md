@@ -19,7 +19,7 @@ This page builds on the [Pages Router setup](./setup.md).
 
 ## Prefetch in `getServerSideProps`
 
-In `getServerSideProps`, make a query client and a tRPC proxy that calls your router directly, with no HTTP request. Prefetch the queries the page needs, and return the cache as `trpcState`. `_app`'s `HydrationBoundary` puts it into the client's cache.
+In `getServerSideProps`, make a query client and a tRPC proxy that calls your router directly, with no HTTP request. Start the queries the page needs with `unstable_$ensure`, and return the cache as `trpcState`, with the **handles** it returned. `_app`'s `HydrationBoundary` puts the cache into the client's, and the page reads each query from its handle, without repeating the procedure or its input.
 
 ```tsx twoslash title='pages/posts/[id].tsx'
 // @jsx: react-jsx
@@ -80,12 +80,12 @@ export async function getServerSideProps(
     queryClient,
   });
 
-  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+  const post = await trpc.post.byId.unstable_$ensure({ id });
 
   return {
     props: {
       trpcState: dehydrate(queryClient),
-      id,
+      post,
     },
   };
 }
@@ -94,7 +94,7 @@ export default function PostPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>,
 ) {
   const trpc = useTRPC();
-  const postQuery = useQuery(trpc.post.byId.queryOptions({ id: props.id }));
+  const postQuery = useQuery(trpc.unstable_$fromHandle(props.post));
 
   switch (postQuery.status) {
     case 'pending':
@@ -112,9 +112,14 @@ export default function PostPage(
 }
 ```
 
-The page reads the query as it would without prefetching, so `status` is `'success'` on the first render. Use the same input in both places: it's part of the query key.
+- `unstable_$ensure` waits until the data is in the cache, so `status` is `'success'` on the first render. Keep the `'pending'` case anyway: the cache can lose the data later, for example after `queryClient.resetQueries()`, and the page then loads it again. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
+- The handle carries the procedure and input, so the page reads the same query the server started. `InferGetServerSidePropsType` types it, and with it the query's data.
+- `unstable_$ensure` rejects if the query fails, so you can act on the error on the server. See [Set the status and cache headers](#set-the-status-and-cache-headers).
+- Next.js sends props as JSON, so handle inputs must be JSON too, as [Using a data transformer](./setup.md#using-a-data-transformer) explains. A handle for a procedure without an input has an `undefined` input, which Next.js rejects in props: read those queries in the page with `trpc.x.queryOptions()` instead.
 
-`prefetchQuery` never throws, and the cache only sends queries that succeeded, so a failed query fetches again in the browser. To act on an error on the server, use `fetchQuery`, which returns the data or throws. See [Set the status and cache headers](#set-the-status-and-cache-headers).
+:::info
+We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable). See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for the full guide.
+:::
 
 ### Build the context from the request
 
@@ -203,7 +208,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     }),
     queryClient,
   });
-  // prefetch and dehydrate as above
+  // start queries and dehydrate as above
 }
 ```
 
@@ -211,7 +216,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 ## Set the status and cache headers
 
-`getServerSideProps` gets the response as `context.res`, so you set headers on it directly. To send a 404 when a post doesn't exist, use `fetchQuery`, catch the `TRPCError`, and return `notFound`:
+`getServerSideProps` gets the response as `context.res`, so you set headers on it directly. To send a 404 when a post doesn't exist, catch the `TRPCError` that `unstable_$ensure` rejects with, and return `notFound`:
 
 ```tsx twoslash title='pages/posts/[id].tsx'
 // @filename: server/routers/_app.ts
@@ -250,13 +255,16 @@ export async function getServerSideProps(
     queryClient,
   });
 
-  try {
-    await queryClient.fetchQuery(trpc.post.byId.queryOptions({ id }));
-  } catch (cause) {
-    if (cause instanceof TRPCError && cause.code === 'NOT_FOUND') {
-      return { notFound: true };
-    }
-    throw cause;
+  const post = await trpc.post.byId
+    .unstable_$ensure({ id })
+    .catch((cause) => {
+      if (cause instanceof TRPCError && cause.code === 'NOT_FOUND') {
+        return null;
+      }
+      throw cause;
+    });
+  if (!post) {
+    return { notFound: true };
   }
 
   // cache the page for 1 day, and revalidate it once a second at most
@@ -269,7 +277,7 @@ export async function getServerSideProps(
   return {
     props: {
       trpcState: dehydrate(queryClient),
-      id,
+      post,
     },
   };
 }
@@ -350,4 +358,4 @@ TanStack React Query refetches stale data when a component mounts, when the wind
 
 ### Q: Can I use `useSuspenseQuery`?
 
-Yes, for queries the page prefetched. A query that isn't in the cache suspends during the server render too, and the server can't reach your API's relative URL. Prefetch it in `getServerSideProps`, or use `useQuery`, which only fetches in the browser.
+Yes, for queries `getServerSideProps` started: `useSuspenseQuery(trpc.unstable_$fromHandle(props.post))`. A query that isn't in the cache suspends during the server render too, and the server can't reach your API's relative URL. Start it in `getServerSideProps`, or use `useQuery`, which only fetches in the browser.

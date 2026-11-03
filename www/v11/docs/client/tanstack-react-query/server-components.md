@@ -229,12 +229,17 @@ export function makeQueryClient() {
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import { createTRPCContext } from '@trpc/tanstack-react-query';
+import {
+  createTRPCContext,
+  type TRPCOptionsProxy,
+} from '@trpc/tanstack-react-query';
 import { useState } from 'react';
 import { makeQueryClient } from './query-client';
 import type { AppRouter } from './routers/_app';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+// Types the query handles that client components take as props
+export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 let browserQueryClient: QueryClient;
 function getQueryClient() {
@@ -295,7 +300,7 @@ Mount the provider in the root of your application (e.g. `app/layout.tsx` when u
 
 ### 5. Create a tRPC caller for Server Components
 
-To prefetch queries from server components, we create a proxy from our router. You can also pass in a client if your router is on a separate server.
+To start queries from server components, we create a proxy from our router. You can also pass in a client if your router is on a separate server. We'll also add a `HydrateClient` component that sends the queries a request has started to client components.
 
 ```tsx twoslash title='trpc/server.tsx'
 // @filename: trpc/init.ts
@@ -326,7 +331,10 @@ declare module 'server-only' {}
 // ---cut---
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+} from '@trpc/tanstack-react-query';
 import { createTRPCClient, httpLink } from '@trpc/client';
 import { cache } from 'react';
 import { createTRPCContext } from './init';
@@ -351,293 +359,144 @@ createTRPCOptionsProxy<AppRouter>({
   }),
   queryClient: getQueryClient,
 });
+
+// Sends the queries started so far in this request to client components,
+// each one once, including pending ones, which stream in as they settle
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
 ## Using your API
 
-:::tip
-To avoid repeating the procedure and input in client components, start queries with `unstable_$prefetch` or `unstable_$ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+Now you can use your tRPC API in your app. Start each query in a server component high up the tree, and pass the **handle** it returns to the client component that shows it. You may be familiar with this
+concept as "render as you fetch" commonly implemented as loaders: the request fires as soon as possible, and the client component reads the query from its handle,
+typed from the procedure, without repeating the procedure or its input. See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for the full guide.
+
+:::info
+We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
 :::
 
-Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
-we can take advantage of the RSC capabilities by prefetching queries in a server component high up the tree. You may be familiar with this
-concept as "render as you fetch" commonly implemented as loaders. This means the request fires as soon as possible but without suspending until
-the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
-
-This approach leverages Next.js App Router's streaming capabilities, initiating the query on the server and streaming data to the client as it becomes available.
-It optimizes both the time to first byte in the browser and the data fetch time, resulting in faster page loads.
-However, `greeting.data` may initially be `undefined` before the data streams in.
-
-If you prefer to avoid this initial undefined state, you can `await` the `prefetchQuery` call.
-This ensures the query on the client always has data on first render, but it comes with a tradeoff -
-the page will load more slowly since the server must complete the query before sending HTML to the client.
-
-```tsx twoslash title='app/page.tsx'
+```twoslash include rsc
 // @jsx: react-jsx
-// @filename: trpc/init.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const createTRPCContext = async () => ({ userId: 'user_123' });
-export const createTRPCRouter = t.router;
-export const baseProcedure = t.procedure;
-
+// @target: esnext
+// @module: esnext
 // @filename: trpc/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 const t = initTRPC.create();
 export const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
-  })),
-});
-export type AppRouter = typeof appRouter;
-
-// @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
-// @filename: trpc/server.tsx
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import { cache } from 'react';
-import { createTRPCContext } from './init';
-import { makeQueryClient } from './query-client';
-import { appRouter } from './routers/_app';
-export const getQueryClient = cache(makeQueryClient);
-export const trpc = createTRPCOptionsProxy({
-  ctx: createTRPCContext,
-  router: appRouter,
-  queryClient: getQueryClient,
-});
-
-// @filename: app/client-greeting.tsx
-export function ClientGreeting() { return null; }
-
-// @filename: app/page.tsx
-// ---cut---
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient, trpc } from '../trpc/server';
-import { ClientGreeting } from './client-greeting';
-
-export default async function Home() {
-  const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
-    trpc.hello.queryOptions({
-      /** input */
-    }),
-  );
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div>...</div>
-      {/** ... */}
-      <ClientGreeting />
-    </HydrationBoundary>
-  );
-}
-```
-
-```tsx twoslash title='app/client-greeting.tsx'
-// @jsx: react-jsx
-// @filename: server/router.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-const appRouter = t.router({
   hello: t.procedure.input(z.object({ text: z.string() })).query((opts) => ({
     greeting: `hello ${opts.input.text}`,
   })),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: trpc/client.tsx
-import { createTRPCContext } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '../server/router';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+// @filename: trpc/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
 
+// @filename: trpc/client.tsx
+import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './routers/_app';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export type TRPC = TRPCOptionsProxy<AppRouter>;
+
+// @filename: trpc/server.tsx
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+} from '@trpc/tanstack-react-query';
+import { cache } from 'react';
+import { makeQueryClient } from './query-client';
+import { appRouter } from './routers/_app';
+export const getQueryClient = cache(makeQueryClient);
+export const trpc = createTRPCOptionsProxy({
+  ctx: async () => ({ userId: 'user_123' }),
+  router: appRouter,
+  queryClient: getQueryClient,
+});
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
+
+// @filename: app/client-greeting-props.ts
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { TRPC } from '../trpc/client';
+export type ClientGreetingProps = {
+  greeting: unstable_inferQueryHandle<TRPC['hello']>;
+};
+```
+
+`unstable_$ensure` waits until the query's data is in the cache, so the page renders with it, and `HydrateClient` sends it to the client. It rejects if the query fails, so you can handle the error on the server:
+
+```tsx twoslash title='app/page.tsx'
+// @include: rsc
+// @filename: app/client-greeting.tsx
+import type { ClientGreetingProps } from './client-greeting-props';
+export declare function ClientGreeting(props: ClientGreetingProps): React.ReactNode;
+
+// @filename: app/page.tsx
+// ---cut---
+import { HydrateClient, trpc } from '../trpc/server';
+import { ClientGreeting } from './client-greeting';
+
+export default async function Home() {
+  const greeting = await trpc.hello.unstable_$ensure({ text: 'world' });
+
+  return (
+    <HydrateClient>
+      <div>...</div>
+      {/** ... */}
+      <ClientGreeting greeting={greeting} />
+    </HydrateClient>
+  );
+}
+```
+
+```tsx twoslash title='app/client-greeting.tsx'
+// @include: rsc
 // @filename: app/client-greeting.tsx
 // ---cut---
 'use client';
 
 // <-- hooks can only be used in client components
 import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from '../trpc/client';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '../trpc/client';
 
-export function ClientGreeting() {
+export function ClientGreeting(props: {
+  greeting: unstable_inferQueryHandle<TRPC['hello']>;
+}) {
   const trpc = useTRPC();
-  const greeting = useQuery(trpc.hello.queryOptions({ text: 'world' }));
+  const greeting = useQuery(trpc.unstable_$fromHandle(props.greeting));
   if (!greeting.data) return <div>Loading...</div>;
   return <div>{greeting.data.greeting}</div>;
 }
 ```
 
-:::tip
-You can also create `prefetch` and `HydrateClient` helper functions to make it a bit more concise and reusable:
+After `unstable_$ensure`, `greeting.data` is there on the first render. Keep the loading state anyway: the cache can lose the data later, for example after `queryClient.resetQueries()`, and the component then loads it again. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
 
-```tsx twoslash title='trpc/server.tsx'
-// @jsx: react-jsx
-// @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
+`HydrateClient` sends each query once per request, so nested server components can each render their own. See [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client).
 
-// @filename: trpc/server.tsx
-import { cache } from 'react';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-import { makeQueryClient } from './query-client';
-const getQueryClient = cache(makeQueryClient);
-// ---cut---
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+### Streaming with Suspense
 
-export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
-  queryOptions: T,
-) {
-  const queryClient = getQueryClient();
-  if (queryOptions.queryKey[1]?.type === 'infinite') {
-    void queryClient.prefetchInfiniteQuery(queryOptions as any);
-  } else {
-    void queryClient.prefetchQuery(queryOptions);
-  }
-}
-```
+Waiting for the query delays the page's HTML until the server has the data. To send the HTML at once and stream the data in as it becomes available, start the query with `unstable_$prefetch`. It returns the handle without waiting,
+and `HydrateClient` sends the query to the client still pending. This leverages your framework's streaming, and optimizes both the time to first byte in the browser and the data fetch time.
 
-Then you can use it like this:
-
-```tsx twoslash
-// @jsx: react-jsx
-// @filename: trpc/init.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const createTRPCContext = async () => ({ userId: 'user_123' });
-export const createTRPCRouter = t.router;
-export const baseProcedure = t.procedure;
-
-// @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
-// @filename: trpc/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-export const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
-  })),
-});
-export type AppRouter = typeof appRouter;
-
-// @filename: trpc/server.tsx
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import { cache } from 'react';
-import { createTRPCContext } from './init';
-import { makeQueryClient } from './query-client';
-import { appRouter } from './routers/_app';
-export const getQueryClient = cache(makeQueryClient);
-export const trpc = createTRPCOptionsProxy({ ctx: createTRPCContext, router: appRouter, queryClient: getQueryClient });
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>;
-}
-export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
-  const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(queryOptions);
-}
-
-// @filename: app/client-greeting.tsx
-export function ClientGreeting() { return null; }
-
-// @filename: app/page.tsx
-// ---cut---
-import { HydrateClient, prefetch, trpc } from '../trpc/server';
-import { ClientGreeting } from './client-greeting';
-
-function Home() {
-  prefetch(
-    trpc.hello.queryOptions({
-      /** input */
-    }),
-  );
-
-  return (
-    <HydrateClient>
-      <div>...</div>
-      {/** ... */}
-      <ClientGreeting />
-    </HydrateClient>
-  );
-}
-```
-
-This `HydrateClient` sends every query in the cache each time it renders, so nested ones send the same queries again. `unstable_createHydrateClient(getQueryClient)` creates one that sends each query once per request. See [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client).
-
-:::
-
-### Leveraging Suspense
-
-You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
+Read the handle with `useSuspenseQuery`, and handle loading and error states with Suspense and Error Boundaries:
 
 ```tsx twoslash title='app/page.tsx'
-// @jsx: react-jsx
-// @filename: trpc/init.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const createTRPCContext = async () => ({ userId: 'user_123' });
-
-// @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
-// @filename: trpc/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-export const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
-  })),
-});
-export type AppRouter = typeof appRouter;
-
-// @filename: trpc/server.tsx
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import { cache } from 'react';
-import { createTRPCContext } from './init';
-import { makeQueryClient } from './query-client';
-import { appRouter } from './routers/_app';
-export const getQueryClient = cache(makeQueryClient);
-export const trpc = createTRPCOptionsProxy({ ctx: createTRPCContext, router: appRouter, queryClient: getQueryClient });
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>;
-}
-export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
-  const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(queryOptions);
-}
-
+// @include: rsc
 // @filename: app/client-greeting.tsx
-export function ClientGreeting() { return null; }
+import type { ClientGreetingProps } from './client-greeting-props';
+export declare function ClientGreeting(props: ClientGreetingProps): React.ReactNode;
 
 // @filename: app/page.tsx
 // ---cut---
-import { HydrateClient, prefetch, trpc } from '../trpc/server';
+import { HydrateClient, trpc } from '../trpc/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  prefetch(trpc.hello.queryOptions());
+  const greeting = trpc.hello.unstable_$prefetch({ text: 'world' });
 
   return (
     <HydrateClient>
@@ -645,7 +504,7 @@ export default async function Home() {
       {/** ... */}
       <ErrorBoundary fallback={<div>Something went wrong</div>}>
         <Suspense fallback={<div>Loading...</div>}>
-          <ClientGreeting />
+          <ClientGreeting greeting={greeting} />
         </Suspense>
       </ErrorBoundary>
     </HydrateClient>
@@ -654,36 +513,25 @@ export default async function Home() {
 ```
 
 ```tsx twoslash title='app/client-greeting.tsx'
-// @jsx: react-jsx
-// @filename: server/router.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
-  })),
-});
-export type AppRouter = typeof appRouter;
-
-// @filename: trpc/client.tsx
-import { createTRPCContext } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '../server/router';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
-
+// @include: rsc
 // @filename: app/client-greeting.tsx
 // ---cut---
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useTRPC } from '../trpc/client';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '../trpc/client';
 
-export function ClientGreeting() {
+export function ClientGreeting(props: {
+  greeting: unstable_inferQueryHandle<TRPC['hello']>;
+}) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.hello.queryOptions());
+  const { data } = useSuspenseQuery(trpc.unstable_$fromHandle(props.greeting));
   return <div>{data.greeting}</div>;
 }
 ```
+
+To wait for some queries and stream others on the same page, start every query first, then await: see [Combining both](/docs/client/tanstack-react-query/handles#combining-both).
 
 ### Getting data in a server component
 
@@ -703,8 +551,8 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 const t = initTRPC.create();
 export const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
+  hello: t.procedure.input(z.object({ text: z.string() })).query((opts) => ({
+    greeting: `hello ${opts.input.text}`,
   })),
 });
 export type AppRouter = typeof appRouter;
@@ -729,8 +577,8 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 const t = initTRPC.create();
 export const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
+  hello: t.procedure.input(z.object({ text: z.string() })).query((opts) => ({
+    greeting: `hello ${opts.input.text}`,
   })),
 });
 export type AppRouter = typeof appRouter;
@@ -745,7 +593,7 @@ export const caller = appRouter.createCaller(createTRPCContext);
 import { caller } from '../trpc/server';
 
 export default async function Home() {
-  const greeting = await caller.hello();
+  const greeting = await caller.hello({ text: 'world' });
   //    ^? { greeting: string }
 
   return <div>{greeting.greeting}</div>;
@@ -754,47 +602,13 @@ export default async function Home() {
 
 If you **really** need to use the data both on the server as well as inside client components and understand the tradeoffs explained in the
 [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
-guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
+guide, read it from the query client after `unstable_$ensure`. `ensureQueryData` returns it without another request, and the client component still gets the handle:
 
 ```tsx twoslash title='app/page.tsx'
-// @jsx: react-jsx
-// @filename: trpc/init.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const createTRPCContext = async () => ({ userId: 'user_123' });
-
-// @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
-// @filename: trpc/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-export const appRouter = t.router({
-  hello: t.procedure.input(z.object({ text: z.string().optional() }).optional()).query((opts) => ({
-    greeting: `hello ${opts.input?.text ?? 'world'}`,
-  })),
-});
-export type AppRouter = typeof appRouter;
-
-// @filename: trpc/server.tsx
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import { cache } from 'react';
-import { createTRPCContext } from './init';
-import { makeQueryClient } from './query-client';
-import { appRouter } from './routers/_app';
-export const getQueryClient = cache(makeQueryClient);
-export const trpc = createTRPCOptionsProxy({ ctx: createTRPCContext, router: appRouter, queryClient: getQueryClient });
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>;
-}
-
+// @include: rsc
 // @filename: app/client-greeting.tsx
-export function ClientGreeting() { return null; }
+import type { ClientGreetingProps } from './client-greeting-props';
+export declare function ClientGreeting(props: ClientGreetingProps): React.ReactNode;
 
 // @filename: app/page.tsx
 // ---cut---
@@ -802,16 +616,18 @@ import { getQueryClient, HydrateClient, trpc } from '../trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  const queryClient = getQueryClient();
-  const greeting = await queryClient.fetchQuery(trpc.hello.queryOptions());
+  const greeting = await trpc.hello.unstable_$ensure({ text: 'world' });
+  const data = await getQueryClient().ensureQueryData(
+    trpc.unstable_$fromHandle(greeting),
+  );
 
-  // Do something with greeting on the server
+  // Do something with data on the server
 
   return (
     <HydrateClient>
       <div>...</div>
       {/** ... */}
-      <ClientGreeting />
+      <ClientGreeting greeting={greeting} />
     </HydrateClient>
   );
 }

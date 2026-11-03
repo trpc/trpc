@@ -9,7 +9,7 @@ parent: "client/nextjs/pages-router/setup"
 order: 73
 ---
 
-To run queries on the server in `getServerSideProps` or `getStaticProps`, make a query client and pass it to `createTRPCOptionsProxy` from `@trpc/tanstack-react-query`. The proxy gives you the same `queryOptions` as `useTRPC()` in a component. You prefetch them into the query client, then send its cache to the page, so the page doesn't have to fetch them again.
+To run queries on the server in `getServerSideProps` or `getStaticProps`, make a query client and pass it to `createTRPCOptionsProxy` from `@trpc/tanstack-react-query`. You start the page's queries with the proxy, then send the query client's cache to the page, with a handle for each query, so the page doesn't have to fetch them again.
 
 :::warning Deprecated
 `createServerSideHelpers` from `@trpc/react-query/server` belongs to the [classic React Query integration](/docs/client/react), which only gets bug fixes and will be removed in the next major version of tRPC. Use `createTRPCOptionsProxy` instead, as below.
@@ -96,15 +96,16 @@ export async function getStaticProps() {
 
 Make the query client and the proxy inside `getServerSideProps` or `getStaticProps`, so each call gets new ones. A query client at module scope would share one user's data with the next.
 
-## Prefetch, fetch and dehydrate
+## Start queries and dehydrate
 
-Run the queries with the query client's methods:
+Start each query the page needs with the proxy, and pass the page the handle it returns:
 
-- `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))` puts the result in the cache. It never throws and returns nothing.
-- `queryClient.fetchQuery(trpc.post.byId.queryOptions(input))` also caches the result, but returns it, and throws if the query fails.
-- `prefetchInfiniteQuery` and `fetchInfiniteQuery` do the same with `trpc.post.list.infiniteQueryOptions(input)`.
+- `await trpc.post.byId.unstable_$ensure(input)` waits until the result is in the cache, and returns a handle. The page reads the query with `trpc.unstable_$fromHandle(handle)`, without repeating the procedure or its input. It rejects if the query fails, for instance so you can return `notFound`.
+- `unstable_$ensureInfinite` does the same for an infinite query, such as `trpc.post.list.unstable_$ensureInfinite(input)`.
+- To use the result on the server too, read it from the cache with `queryClient.ensureQueryData(trpc.unstable_$fromHandle(handle))`, which doesn't request it again.
+- `unstable_$prefetch` doesn't wait, and props can't hold a pending query, so use `unstable_$ensure` here.
 
-Use `prefetchQuery` for data the page shows, and `fetchQuery` when you need the result on the server, for instance to return `notFound`. Then send the cache to the page with `dehydrate`:
+See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for the full guide. Then send the cache to the page with `dehydrate`:
 
 ```ts twoslash
 // @filename: example.ts
@@ -118,9 +119,9 @@ const props = {
 };
 ```
 
-These are TanStack React Query's own functions. See [their docs](https://tanstack.com/query/v5/docs/framework/react/guides/prefetching) for more.
+Each handle method makes one TanStack React Query call with the procedure's `queryOptions`, such as `ensureQueryData` for `unstable_$ensure`, and you can make those calls yourself too. See [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents), and [TanStack's docs](https://tanstack.com/query/v5/docs/framework/react/guides/prefetching) for more.
 
-Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` is now `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))`, `fetch` is `fetchQuery`, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.
+Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` and `fetch(input)` are now `await trpc.post.byId.unstable_$ensure(input)`, which rejects where `prefetch` didn't, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.
 
 ## Next.js example
 
@@ -175,12 +176,12 @@ export async function getServerSideProps(
     queryClient,
   });
 
-  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+  const post = await trpc.post.byId.unstable_$ensure({ id });
 
   return {
     props: {
       trpcState: dehydrate(queryClient),
-      id,
+      post,
     },
   };
 }
@@ -189,7 +190,7 @@ export default function PostViewPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>,
 ) {
   const trpc = useTRPC();
-  const postQuery = useQuery(trpc.post.byId.queryOptions({ id: props.id }));
+  const postQuery = useQuery(trpc.unstable_$fromHandle(props.post));
 
   switch (postQuery.status) {
     case 'pending':
