@@ -1,14 +1,14 @@
 /**
- * The typing `.agent-docs/open/path-separator.md` proposes for C: procedure
- * paths are tuples everywhere inside, so what middleware, `onError` and
- * `createContext`'s calls get as `path` is one too. A and B keep
- * `path: string`, as it is.
+ * The typing `.agent-docs/open/path-separator.md` proposes for C: on the
+ * client, an operation's path is a tuple of router keys rather than a
+ * dotted string. A and B keep `op.path: 'post.byId' | …`, as it is.
  */
 
-/** C: a procedure's path, one entry per router key. */
-export type ProcedurePathC = readonly [string, ...string[]];
+type Segments<S extends string> = S extends `${infer Head}.${infer Rest}`
+  ? [Head, ...Segments<Rest>]
+  : [S];
 
-/** C: the `path` a middleware reads. */
-export interface MiddlewareOptsC {
-  readonly path: ProcedurePathC;
+/** C: what links get as `op`, for a router with the paths `TPath`. */
+export interface OperationC<TPath extends string> {
+  readonly path: TPath extends string ? Readonly<Segments<TPath>> : never;
 }
