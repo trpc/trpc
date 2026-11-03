@@ -4,30 +4,35 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "start": "next start",
     "lint": "oxlint src",
-    "start": "next start"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test-dev": "start-server-and-test dev 3000 test:e2e",
+    "test-start": "start-server-and-test start 3000 test:e2e"
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
     "@tanstack/react-query": "^5.105.0",
     "@trpc/client": "npm:@trpc/client",
-    "@trpc/next": "npm:@trpc/next",
-    "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
+    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
     "lucide-react": "1.55.0",
     "next": "^15.5.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "superjson": "^1.12.4",
+    "server-only": "^0.0.1",
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.50.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "oxlint": "^1.90.0",
     "oxlint-tsgolint": "^7.0.2005",
+    "start-server-and-test": "^1.12.0",
     "tailwindcss": "catalog:www",
     "typescript": "^5.9.2"
   },

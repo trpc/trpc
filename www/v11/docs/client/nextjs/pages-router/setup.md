@@ -177,7 +177,7 @@ export default trpcNext.createNextApiHandler({
 </details>
 
 :::note
-The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/main/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
+The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/db643ba428f4eaf75fcfeef13a53d29f446ee567/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
 :::
 
 ### 4. Create a Query Client factory

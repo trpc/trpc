@@ -1686,15 +1686,12 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next
-        version: link:../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query
+        version: link:../../packages/tanstack-react-query
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.1.0)(react@19.1.0)
@@ -1707,9 +1704,9 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
-      superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
       zod:
         specifier: ^4.2.1
         version: 4.2.1
@@ -1717,6 +1714,9 @@ importers:
       '@shared/ui':
         injected: true
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.50.1
+        version: 1.51.1
       '@tailwindcss/postcss':
         specifier: 4.3.3
         version: 4.3.3
@@ -1735,6 +1735,9 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2005
         version: 7.0.2005
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0(supports-color@10.0.0)
       tailwindcss:
         specifier: catalog:www
         version: 4.3.3
