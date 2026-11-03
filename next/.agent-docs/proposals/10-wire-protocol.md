@@ -99,11 +99,11 @@ content-type: application/json
 
 #### Bodies and responses
 
-- **Body:** the serialized input (11). With the default danSON-based serializer, inline markers only appear where there are non-JSON values, so most bodies read as plain JSON. **Open:** drop danSON's `{ json }` wrapper when there are no `refs`.
+- **Body:** the serialized input (11). With the default progressive JSON serializer, inline markers only appear where there are non-JSON values, so most bodies read as plain JSON. **Open:** drop progressive JSON's `{ json }` wrapper when there are no `refs`.
 - **Success:** `2xx` with the serialized output and no envelope. The default status is 200; 201 and others can be set via `response.status` (04).
 - **Error:** the status comes from the error (07), with body `{ error: { code, message, data, defined } }` (serialized). Clients detect errors by status ≥ 400.
 
-Shown with danSON's `{ json }` wrapper kept:
+Shown with progressive JSON's `{ json }` wrapper kept:
 
 ```http
 HTTP/1.1 200 OK
@@ -143,7 +143,7 @@ content-type: application/jsonl
 
 #### Streaming
 
-- Streams use the serializer's async format (danSON: a head chunk, then `[index, status, { json }]` chunks), so a stream can be the root value or nested anywhere in an output (14 (e)).
+- Streams use the serializer's async format (progressive JSON: a head chunk, then `[index, status, { json }]` chunks), so a stream can be the root value or nested anywhere in an output (14 (e)).
 - **JSONL:** one chunk per line.
 - **SSE:** one chunk per `data:` event. `id:` comes from `tracked()` (14), and streams resume with `Last-Event-ID`.
 

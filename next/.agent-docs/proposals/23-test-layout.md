@@ -196,7 +196,7 @@ import { createApp } from '../../tanstack-query/src/fixtures/app.ts';
   - `internal/testing/`: `testing.test.ts` (from `test-server`)
   - `interop/`: `handler.test.ts`, `handler-edges.test.ts`, `socket.test.ts`, `link.test.ts` (from `interop-v11*` and `v11-links`)
   - `openapi/`: `openapi.test.ts`, `openapi-edges.test.ts`, `coerce.test.ts`, `json-schema.test.ts`, `to-contract.test.ts`, `typescript.test.ts`, and `fixtures/` (typed router, shapes, generated files)
-  - `serializer/`: `danson.test.ts`, `serializers.test.ts`, `transport.test.ts`, `protocol.test.ts`
+  - `serializer/`: `progressive-json.test.ts`, `serializers.test.ts`, `transport.test.ts`, `protocol.test.ts`
   - `server/`: everything else
     - `basics`, `procedures`, `routers`, `composition`, `root-extensions` and `errors`
     - `tagged-errors`, `stream-output`, `subscriptions` and `publisher`

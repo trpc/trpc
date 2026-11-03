@@ -11,7 +11,7 @@ It contains:
 - **[`reference/`](./reference):** shared background.
   - [`orpc-parity.md`](./reference/orpc-parity.md): the oRPC comparison table mapped to proposals, and the decisions that could block parity.
   - [`v11-inventory.md`](./reference/v11-inventory.md): what v11 ships, and whether each item is kept, changed or deleted.
-  - [`prior-art.md`](./reference/prior-art.md): abandoned tRPC PRs, danSON, Effect v4 and oRPC.
+  - [`prior-art.md`](./reference/prior-art.md): abandoned tRPC PRs, progressive JSON, Effect v4 and oRPC.
 - **[`notes/`](./notes):** agent working notes and spike results.
 
 ## How to decide
@@ -79,7 +79,7 @@ These are treated as given:
 - **08** [Routers](./proposals/08-routers.md): Plain objects; optional `t.router()` for prefix/tags; keep `lazy()`; drop `mergeRouters`. 4 questions.
 - **09** [Contract-first](./proposals/09-contract-first.md) ⚠️: Contract builder with resolver-less terminals + `t.implement(contract)`; `inferContract` + `experimental_toContract()`. 4 questions.
 - **10** [Wire protocol](./proposals/10-wire-protocol.md) ⚠️: New path-based protocol, no envelopes, HTTP status errors, opt-in streamed batching, one message model for WebSocket/MessagePort, version header. 6 questions.
-- **11** [Serialization, query params and files](./proposals/11-serialization-and-files.md) ⚠️: Port **danSON** into `@trpc12/trpc/transformer` (rich types + streaming at any depth); legible bracket-notation GET params; files as multipart-backed types. 6 questions.
+- **11** [Serialization, query params and files](./proposals/11-serialization-and-files.md) ⚠️: Port **progressive JSON** into `@trpc12/trpc/transformer` (rich types + streaming at any depth); legible bracket-notation GET params; files as multipart-backed types. 6 questions.
 - **12** [Handlers, adapters and platforms](./proposals/12-handlers-adapters-platforms.md) ⚠️: Create-once web-standard handler; platform services via Effect Layers; thin adapters; no third-party dependencies. 4 questions.
 - **13** [Plugins](./proposals/13-plugins.md): One plugin interface (`onRequest`/`onCall`); body limit, strict methods and CSRF on by default. 4 questions.
 - **14** [Subscriptions and streaming](./proposals/14-subscriptions-and-streaming.md): Async iterables/Streams; `tracked()` with `lastEventId` in options; fetch-based SSE; hibernation-ready. 7 questions.
@@ -105,7 +105,7 @@ These have the most leverage: they shape every other proposal and every code sam
 1. **Q3.3** Generic builder: an internal generic core with a closed public builder and opt-in wrappers (recommended), or a public extension API?
 2. **Q2.1** Effect handlers in the same builder (recommended), or a separate Effect flavour?
 3. **Q7.1** Error model: returned/inferred errors + optional declared map + mapping middleware (recommended)?
-4. **Q11.1 / Q11.3** danSON as the serializer, and which legible GET encoding?
+4. **Q11.1 / Q11.3** progressive JSON as the serializer, and which legible GET encoding?
 5. **Q10.1 / Q10.2** New protocol? `/post/byId` or `/post.byId`?
 6. **Q17.3** How links inform call options: `createTrpcClient({ router: type<AppRouter>(), links })`, curried, or a second generic?
 7. **Q9.1** Contract syntax: resolver-less `.query()` terminals?

@@ -99,7 +99,7 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 | Link-informed call options (`router: type<AppRouter>()` vs curried)                     | 17 (c)         |
 | Effect middleware that provides services (removing them from `R`)                       | 06 (g), 02 (b) |
 | Returned-error inference through middleware chains and the client                       | 07             |
-| danSON port on Effect + QP-C legible query params                                       | 11 (b), 11 (c) |
+| Progressive JSON port on Effect + QP-C legible query params                             | 11 (b), 11 (c) |
 | Bundle size of a minimal client with Effect                                             | 02 (g)         |
 
 ### Testing

@@ -77,21 +77,21 @@ What we already tried, and what neighbouring libraries do. Proposals link here i
 
 ### Other KATT experiments worth remembering
 
-| PR                                                                                                                                                | Idea                                                                                           | Relevance |
-| ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------- |
-| [#5225](https://github.com/trpc/trpc/pull/5225), [#5331](https://github.com/trpc/trpc/pull/5331)                                                  | `@trpc/core` package                                                                           | 01        |
-| [#5242](https://github.com/trpc/trpc/pull/5242)                                                                                                   | `satisfies TRPCRouter` to keep `ctx` out of published types                                    | 01, 09    |
-| [#6423](https://github.com/trpc/trpc/pull/6423)                                                                                                   | Input callback with `ctx`; "now that Standard Schema is out, we can … only support schemas"    | 05        |
-| [#6587](https://github.com/trpc/trpc/pull/6587)                                                                                                   | `opts.next({ x })` instead of `opts.next({ ctx: { x } })`                                      | 06        |
-| [#6488](https://github.com/trpc/trpc/pull/6488)                                                                                                   | Return `Response`s from procedures                                                             | 04        |
-| [#4858](https://github.com/trpc/trpc/pull/4858), [#4911](https://github.com/trpc/trpc/pull/4911)                                                  | Superjson replacement / streaming serialization ([tupleson](https://github.com/KATT/tupleson)) | 11, 14    |
-| [#6184](https://github.com/trpc/trpc/pull/6184)                                                                                                   | Standalone `queryOptions` package on React 19                                                  | 19, 20    |
-| [#5676](https://github.com/trpc/trpc/pull/5676)                                                                                                   | Fetch-based response resolution (shipped in v11)                                               | 12        |
-| [#7348](https://github.com/trpc/trpc/pull/7348), [#7352](https://github.com/trpc/trpc/pull/7352), [#7205](https://github.com/trpc/trpc/pull/7205) | TS7/tsgo, replacing Lerna, oxfmt/oxlint                                                        | 22        |
+| PR                                                                                                                                                | Idea                                                                                        | Relevance |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------- |
+| [#5225](https://github.com/trpc/trpc/pull/5225), [#5331](https://github.com/trpc/trpc/pull/5331)                                                  | `@trpc/core` package                                                                        | 01        |
+| [#5242](https://github.com/trpc/trpc/pull/5242)                                                                                                   | `satisfies TRPCRouter` to keep `ctx` out of published types                                 | 01, 09    |
+| [#6423](https://github.com/trpc/trpc/pull/6423)                                                                                                   | Input callback with `ctx`; "now that Standard Schema is out, we can … only support schemas" | 05        |
+| [#6587](https://github.com/trpc/trpc/pull/6587)                                                                                                   | `opts.next({ x })` instead of `opts.next({ ctx: { x } })`                                   | 06        |
+| [#6488](https://github.com/trpc/trpc/pull/6488)                                                                                                   | Return `Response`s from procedures                                                          | 04        |
+| [#4858](https://github.com/trpc/trpc/pull/4858), [#4911](https://github.com/trpc/trpc/pull/4911)                                                  | Superjson replacement / streaming serialization                                             | 11, 14    |
+| [#6184](https://github.com/trpc/trpc/pull/6184)                                                                                                   | Standalone `queryOptions` package on React 19                                               | 19, 20    |
+| [#5676](https://github.com/trpc/trpc/pull/5676)                                                                                                   | Fetch-based response resolution (shipped in v11)                                            | 12        |
+| [#7348](https://github.com/trpc/trpc/pull/7348), [#7352](https://github.com/trpc/trpc/pull/7352), [#7205](https://github.com/trpc/trpc/pull/7205) | TS7/tsgo, replacing Lerna, oxfmt/oxlint                                                     | 22        |
 
-### danSON ([KATT/danson](https://github.com/KATT/danson), `danson@0.13.1`)
+### Progressive JSON
 
-Referenced in the [brief](../decisions/brief.md) as the model for tRPC's serializer. It is a "progressive JSON" serializer.
+Referenced in the [brief](../decisions/brief.md) as the model for tRPC's serializer.
 
 - **Sync API:** `stringifySync`/`parseSync` produce `{ json, refs? }`. Non-JSON values are inline markers, `{ "_": "$", "type": "Date", "value": "…" }`. Constants are placeholder strings (`"$undefined"`, `"$NaN"`), and `$`-prefixed strings are escaped. Optional de-duplication; circular references via `refs`.
 - **Async API:** `stringifyAsync`/`parseAsync` (and an event-stream variant). Streams `Promise`, `AsyncIterable` and `ReadableStream` values at any depth: a head chunk with placeholders, then `[index, status, { json }]` chunks (0 = value, 1 = failure, 2 = return).

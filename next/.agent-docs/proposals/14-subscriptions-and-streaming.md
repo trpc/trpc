@@ -14,7 +14,7 @@ Decide how procedures stream values, how subscriptions resume, how clients consu
 - Keep `tracked()`, and move `lastEventId` into the resolver options.
 - SSE over fetch streaming instead of `EventSource`.
 - Clients consume async iterables.
-- Nested deferred values are kept if the danSON-based serializer is adopted (11).
+- Nested deferred values are kept if the progressive JSON serializer is adopted (11).
 
 ## Today (v11)
 
@@ -160,7 +160,7 @@ const onPost = t.procedure.output(stream(Post)).subscription(async function* () 
   ```
 
 - oRPC supports root-level event iterators only.
-- If 11 adopts danSON, **D-A comes almost for free**. danSON streams `Promise`, `AsyncIterable` and `ReadableStream` values at any depth, which is what v11's JSONL codec does today with a separate implementation. The remaining cost is in types (nested `Promise<…>` in outputs) and in integrations (what TanStack Query does with a nested promise).
+- If 11 adopts progressive JSON, **D-A comes almost for free**. It streams `Promise`, `AsyncIterable` and `ReadableStream` values at any depth, which is what v11's JSONL codec does today with a separate implementation. The remaining cost is in types (nested `Promise<…>` in outputs) and in integrations (what TanStack Query does with a nested promise).
 
 ### (f) Publishing events
 
@@ -208,7 +208,7 @@ The WebSocket message model (10) lets a hibernated Durable Object rebuild subscr
 - (a) and (b) as above, with callbacks as a helper.
 - `.output()` validates subscription events; `stream()` is used for streamed queries.
 - Fetch-based SSE.
-- **D-A** if 11 adopts danSON; otherwise **D-B** (root-level only in v1).
+- **D-A** if 11 adopts progressive JSON; otherwise **D-B** (root-level only in v1).
 - A memory publisher, with Effect `PubSub` documented.
 - Hibernation-ready design, with the implementation later.
 

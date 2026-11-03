@@ -29,12 +29,12 @@
   - "Take no shortcuts to getting the best APIs"
   - "We want to have a design that allows for OpenAPI support like oRPC does (orpc.dev)"
   - "For now, we can publish everything under the `@trpcdev` scope rather than `@trpc` on npm (but we don't need to have releases for this anytime soon, just make sure we have examples that work with a linked local package)"
-  - "We push to https://github.com/KATT/trpc-playground rather than trpc. Create new `v12` branch for this for the main there based on origin/main in `trpc/trpc`"
+  - "We push to [another project] rather than trpc. Create new `v12` branch for this for the main there based on origin/main in `trpc/trpc`"
   - "YOLO semantic commits straight to the `v12` branch. No need to create PRs for now. Some precommit hook that auto-formats + runs tests on what is changed is enough"
   - "We should probably recreate all CI things to be a lot simpler than what is today"
   - "We should aim for feature parity with https://orpc.dev/docs/comparison. Highlight anything and prompt user when we make API decisions that may stop us from getting there."
   - "Rather than have a `@trpc/server` and a `@trpc/client` package, everything that doesn't have an external dependency (except Effect), eg. React etc, should be in a package just called `trpcdev` and exports can be in `/server` and `/client` folders etc"
-  - "We should probably have a library like https://github.com/KATT/danson as part of tRPC that we can use for serializing and deserializing data... I do like how oRPC does sort of semantic query params etc though, so maybe htat's something to consider for the sync serialization that it could be part of query params in a legible way"
+  - "We should probably have a library like [another project] as part of tRPC that we can use for serializing and deserializing data... I do like how oRPC does sort of semantic query params etc though, so maybe htat's something to consider for the sync serialization that it could be part of query params in a legible way"
   - "Tautological are considered harmful"
 - Human, dev dependencies: "The only dev deps I can think of that should be:"
   - "Vite family stuff (vitest, oxlint, oxfmt, their monorepo tooling) - generally anything from the Vite team is fine"
@@ -46,7 +46,7 @@
   - "Document API suggestions in bespoke files in a structured manner"
   - "Me: I go through and picks ideas and make decisions about APIs"
   - "Also document the approach"
-- (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-transformers.md`](./replaceable-transformers.md)); progressive JSON as an opt-in, not the default ([`progressive-json.md`](./progressive-json.md)); stability through `experimental_` and `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/*` instead of `@trpcdev` and `trpcdev` ([`npm-names.md`](./npm-names.md)); `v12` on trpc/trpc instead of KATT/trpc-playground ([`v12-on-trpc-trpc.md`](./v12-on-trpc-trpc.md)); the process in [`../approach.md`](../approach.md).
+- (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-transformers.md`](./replaceable-transformers.md)); progressive JSON as an opt-in, not the default ([`progressive-json.md`](./progressive-json.md)); stability through `experimental_` and `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/*` instead of `@trpcdev` and `trpcdev` ([`npm-names.md`](./npm-names.md)); `v12` on trpc/trpc instead of a staging repo ([`v12-on-trpc-trpc.md`](./v12-on-trpc-trpc.md)); the process in [`../approach.md`](../approach.md).
 - Human, 2026-10-16 (decision round, the parity target after oRPC v2): "A". Parity tracks oRPC v2's table, and its missing rows are built as `experimental_` ([`orpc-v2-parity.md`](./orpc-v2-parity.md)).
 - Why: one place for the founding constraints, searchable with `pnpm decisions brief`.
 - Lost: nothing; this is the brief moved, not changed.
