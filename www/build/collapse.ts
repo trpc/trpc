@@ -245,6 +245,6 @@ export function collapseRegions(nextId: () => string): ShikiTransformer {
         );
       }
     },
-    name: 'raf-query-docs:collapse',
+    name: 'trpc-docs:collapse',
   };
 }
