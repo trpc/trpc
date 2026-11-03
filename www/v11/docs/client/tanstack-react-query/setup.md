@@ -329,6 +329,10 @@ export default function UserList() {
 }
 ```
 
+:::tip
+A component that starts its own query can only fetch once it renders. If a route loader or server component knows the input, start the query there with `await trpc.getUser.unstable_$ensure({ id })`. It returns a **handle**: pass it to the component, which reads the query with `useQuery(trpc.unstable_$fromHandle(props.user))`, without repeating the procedure or its input. With no loader, start it at the top of the page with `unstable_$prefetch` on `useTRPC()`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+:::
+
 ### 5. Invalidate queries after a mutation
 
 There is no tRPC-specific cache API: use TanStack's `QueryClient` with the keys and filters from `trpc`. `queryFilter()` matches one procedure, for every input if you leave the input out, `pathFilter()` matches every query under a router, and `trpc.pathFilter()` matches every tRPC query. See [Usage](./usage.md) for all of them.
