@@ -3,7 +3,8 @@
  * `pnpm --filter www sponsors:sync` reads who sponsors KATT and the trpc
  * organization on GitHub, and who backs trpc on Open Collective, and what
  * each has paid, then writes `sponsors.json` (which the site shows) and the
- * sponsors section of the repo's `README.md`. GitHub needs a token of KATT's
+ * sponsors section of the repo's `README.md` and of each published
+ * package's (`publishedReadmes`). GitHub needs a token of KATT's
  * (an admin of the organization) that can read both accounts'
  * sponsorships: a classic token with `read:user` and `read:org`, from
  * `SPONSORS_SYNC_GITHUB_TOKEN` or, in a terminal, asked for when that isn't
@@ -14,7 +15,7 @@
  * (`.github/workflows/sponsors.yml`) commits only when one joined,
  * left or changed tier.
  *
- * `--readme-only` rewrites the README from `sponsors.json` without GitHub,
+ * `--readme-only` rewrites the READMEs from `sponsors.json` without GitHub,
  * for after changing how it's laid out (`sponsors-readme.ts`).
  *
  * The weighing is in `sponsors-list.ts`; who sponsors some other way, and
@@ -31,6 +32,7 @@ import {
   Layer,
   Match,
   Option,
+  Path,
   type Redacted,
   Schema,
 } from 'effect';
@@ -139,31 +141,87 @@ export const markImageless = Effect.fn('markImageless')(function* (
 
 /** Where the sync writes. */
 export interface SponsorsFiles {
-  readonly readme: string;
+  /** The repo's README, then each published package's (`publishedReadmes`). */
+  readonly readmes: ReadonlyArray<string>;
   readonly sponsorsFile: string;
 }
 
 export const sponsorsJson = (sponsors: ReadonlyArray<Sponsor>) =>
   `${JSON.stringify(sponsors, null, 2)}\n`;
 
-/** Rewrites `readme`'s sponsors section; `false` when it was current. */
-export const writeReadme = Effect.fn('writeReadme')(function* (opts: {
-  readonly readme: string;
+const PackageJson = Schema.Struct({
+  private: Schema.optionalKey(Schema.Boolean),
+});
+
+/**
+ * The README of each package in `packagesDir` that's published (not
+ * `private`), by name: npm shows it, so it lists the sponsors too.
+ */
+export const publishedReadmes = Effect.fn('publishedReadmes')(function* (
+  packagesDir: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const names = (yield* fs.readDirectory(packagesDir)).toSorted();
+  const readmes = yield* Effect.forEach(names, (name) =>
+    Effect.gen(function* () {
+      const packageJson = path.join(packagesDir, name, 'package.json');
+      const readme = path.join(packagesDir, name, 'README.md');
+      if (!(yield* fs.exists(packageJson)) || !(yield* fs.exists(readme))) {
+        return [];
+      }
+      const { private: isPrivate } = yield* fs
+        .readFileString(packageJson)
+        .pipe(
+          Effect.flatMap(
+            Schema.decodeUnknownEffect(Schema.fromJsonString(PackageJson)),
+          ),
+        );
+      return isPrivate === true ? [] : [readme];
+    }),
+  );
+  return readmes.flat();
+});
+
+/**
+ * Each of `readmes` with its sponsors section rewritten for `sponsors`,
+ * and whether that changed it. Fails, before anything is written, on a
+ * README without the markers.
+ */
+const readmeUpdates = Effect.fn('readmeUpdates')(function* (opts: {
+  readonly readmes: ReadonlyArray<string>;
   readonly sponsors: ReadonlyArray<Sponsor>;
 }) {
   const fs = yield* FileSystem.FileSystem;
-  const before = yield* fs.readFileString(opts.readme);
-  const after = withSponsorsBlock(before, sponsorsMarkdown(opts.sponsors));
-  if (after === undefined) {
-    return yield* new SponsorsSyncError({
-      message: `${opts.readme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
-    });
-  }
-  if (after === before) {
-    return false;
-  }
-  yield* fs.writeFileString(opts.readme, after);
-  return true;
+  const markdown = sponsorsMarkdown(opts.sponsors);
+  return yield* Effect.forEach(opts.readmes, (readme) =>
+    Effect.gen(function* () {
+      const before = yield* fs.readFileString(readme);
+      const after = withSponsorsBlock(before, markdown);
+      if (after === undefined) {
+        return yield* new SponsorsSyncError({
+          message: `${readme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
+        });
+      }
+      return { after, changed: after !== before, readme };
+    }),
+  );
+});
+
+/** Writes the READMEs `readmeUpdates` changed, and returns their paths. */
+const writeReadmes = Effect.fn('writeReadmes')(function* (
+  updates: ReadonlyArray<{
+    readonly after: string;
+    readonly changed: boolean;
+    readonly readme: string;
+  }>,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const changed = updates.filter((update) => update.changed);
+  yield* Effect.forEach(changed, (update) =>
+    fs.writeFileString(update.readme, update.after),
+  );
+  return changed.map((update) => update.readme);
 });
 
 const readSponsorsFile = Effect.fn('readSponsorsFile')(function* (
@@ -186,14 +244,16 @@ const readSponsorsFile = Effect.fn('readSponsorsFile')(function* (
   );
 });
 
-/** Rewrites `readme`'s sponsors section from `sponsorsFile`. */
+/** Rewrites the `readmes`' sponsors sections from `sponsorsFile`. */
 export const readmeFromSponsorsFile = Effect.fn('readmeFromSponsorsFile')(
   function* (opts: SponsorsFiles) {
     const sponsors = yield* readSponsorsFile(opts.sponsorsFile);
-    const changed = yield* writeReadme({ readme: opts.readme, sponsors });
-    return changed
-      ? `Wrote ${sponsors.length} sponsors to ${opts.readme}.`
-      : `${opts.readme} already lists the ${sponsors.length} sponsors.`;
+    const written = yield* writeReadmes(
+      yield* readmeUpdates({ readmes: opts.readmes, sponsors }),
+    );
+    return written.length === 0
+      ? `${opts.readmes.join(', ')} already list the ${sponsors.length} sponsors.`
+      : `Wrote ${sponsors.length} sponsors to ${written.join(', ')}.`;
   },
 );
 
@@ -229,7 +289,8 @@ export function openCollectiveSummary(
 
 /**
  * Fetches the accounts' sponsors and the Open Collective accounts'
- * backers, then writes them to `sponsorsFile` and `readme`. Writes nothing
+ * backers, then writes them to `sponsorsFile` and the `readmes`, or nothing
+ * when one of those lacks the markers. Writes nothing
  * when GitHub reports no sponsors or no payments, which means the token
  * can't see them, rather than emptying the list.
  * With `onlyWhenSponsorsChange`, also writes nothing while `sponsorsFile`
@@ -311,19 +372,22 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
       return `No sponsor joined, left or changed tier among the ${sponsors.length} in ${opts.sponsorsFile}; wrote nothing.`;
     }
   }
+  const updates = yield* readmeUpdates({ readmes: opts.readmes, sponsors });
   const fs = yield* FileSystem.FileSystem;
   yield* fs.writeFileString(opts.sponsorsFile, sponsorsJson(sponsors));
-  yield* writeReadme({ readme: opts.readme, sponsors });
-  return `Wrote ${sponsors.length} sponsors to ${opts.sponsorsFile} and ${opts.readme}.`;
+  yield* writeReadmes(updates);
+  return `Wrote ${sponsors.length} sponsors to ${[opts.sponsorsFile, ...opts.readmes].join(', ')}.`;
 });
 
 if (import.meta.main) {
   const here = (relative: string) =>
     fileURLToPath(new URL(relative, import.meta.url));
-  const paths: SponsorsFiles = {
-    readme: here('../../README.md'),
-    sponsorsFile: here('../sponsors.json'),
-  };
+  const paths = publishedReadmes(here('../../packages')).pipe(
+    Effect.map((packageReadmes): SponsorsFiles => ({
+      readmes: [here('../../README.md'), ...packageReadmes],
+      sponsorsFile: here('../sponsors.json'),
+    })),
+  );
   const tokenNeeded = "a token of KATT's with read:user and read:org";
   const token = Effect.gen(function* () {
     const fromEnv = yield* Config.option(
@@ -372,30 +436,32 @@ if (import.meta.main) {
       ),
       readmeOnly: Flag.Boolean('readme-only').pipe(
         Flag.withDescription(
-          "Rewrite the README's sponsors from sponsors.json, without GitHub",
+          "Rewrite the READMEs' sponsors from sponsors.json, without GitHub",
         ),
         Flag.withDefault(false),
       ),
     },
     (opts) =>
-      Effect.flatMap(
-        opts.readmeOnly
-          ? readmeFromSponsorsFile(paths)
-          : Effect.flatMap(token, (value) =>
-              syncSponsors({
-                ...paths,
-                accounts: sponsoredAccounts,
-                config: sponsorsConfig,
-                onlyWhenSponsorsChange: opts.onlyWhenSponsorsChange,
-                openCollective: openCollectiveAccounts,
-                token: value,
-              }),
-            ),
-        Console.log,
+      paths.pipe(
+        Effect.flatMap((files) =>
+          opts.readmeOnly
+            ? readmeFromSponsorsFile(files)
+            : Effect.flatMap(token, (value) =>
+                syncSponsors({
+                  ...files,
+                  accounts: sponsoredAccounts,
+                  config: sponsorsConfig,
+                  onlyWhenSponsorsChange: opts.onlyWhenSponsorsChange,
+                  openCollective: openCollectiveAccounts,
+                  token: value,
+                }),
+              ),
+        ),
+        Effect.flatMap(Console.log),
       ),
   ).pipe(
     Command.withDescription(
-      "Sync the sponsors from GitHub and Open Collective into sponsors.json and the README's sponsors section",
+      "Sync the sponsors from GitHub and Open Collective into sponsors.json and the READMEs' sponsors sections",
     ),
   );
   Command.run(command, { version: '0.0.0' }).pipe(

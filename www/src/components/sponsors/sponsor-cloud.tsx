@@ -8,9 +8,9 @@ import { type CSSProperties, useState } from 'react';
 
 import { avatarUrl, drawnSponsors, sponsorKey } from '~/sponsors.ts';
 
-import { packSponsors } from './pack.ts';
+import { cloudPadding, packSponsors } from './pack.ts';
 
-const bubbles = packSponsors(drawnSponsors, 0.006);
+const bubbles = packSponsors(drawnSponsors, cloudPadding);
 
 /** The cloud's widest, in px: `max-w-3xl`. */
 const maxWidth = 768;
