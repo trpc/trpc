@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createDemoClient } from './kit/backend.ts';
@@ -6,6 +8,8 @@ import {
   createNetwork,
   type NetworkRequest,
 } from './kit/network.ts';
+import { demoMarker, demoNames } from './names.ts';
+import { loadPageDemos, PageDemo } from './page-demos.tsx';
 import { createRandom, jitter } from './random.ts';
 import { longestTimeline, progress, timeline } from './timeline.ts';
 import {
@@ -277,4 +281,34 @@ describe('url state', () => {
     expect(listPosts({ page: 1, sort: 'new' })).not.toEqual(top);
     expect(listPosts({ page: lastPage, sort: 'new' })).toHaveLength(3);
   });
+});
+
+describe('first frame', () => {
+  it.each(demoNames)(
+    'renders %s on the server without the clock or random numbers',
+    async (name) => {
+      await loadPageDemos(demoMarker({ name, options: {} }));
+      const render = () =>
+        renderToString(createElement(PageDemo, { name, options: {} }));
+      const date = vi.spyOn(Date, 'now');
+      const random = vi.spyOn(Math, 'random');
+      const clock = vi.spyOn(performance, 'now');
+      try {
+        // React reads the clock for each render of its own.
+        renderToString(createElement('div'));
+        const reactReads = clock.mock.calls.length;
+        clock.mockClear();
+        const first = render();
+        expect(first).toContain('<figure');
+        expect(clock).toHaveBeenCalledTimes(reactReads);
+        expect(render()).toBe(first);
+        expect(date).not.toHaveBeenCalled();
+        expect(random).not.toHaveBeenCalled();
+      } finally {
+        date.mockRestore();
+        random.mockRestore();
+        clock.mockRestore();
+      }
+    },
+  );
 });

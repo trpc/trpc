@@ -8,11 +8,16 @@ function subscribeToReducedMotion(onChange: () => void) {
   return () => query.removeEventListener('change', onChange);
 }
 
+/**
+ * Whether the reader asked for reduced motion. The server renders the demos
+ * for readers who didn't, the most of them, so most pages hydrate without
+ * a change.
+ */
 export function usePrefersReducedMotion() {
   return useSyncExternalStore(
     subscribeToReducedMotion,
     () => window.matchMedia(reducedMotion).matches,
-    () => true,
+    () => false,
   );
 }
 

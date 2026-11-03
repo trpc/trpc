@@ -5,9 +5,9 @@ import { cn } from '@shared/ui/lib/utils';
 import { usePrefersReducedMotion } from '../use-playback.ts';
 import { chainLength, type Network, type NetworkRequest } from './network.ts';
 
-/** `performance.now()`, every frame while `active`. */
+/** `performance.now()`, every frame while `active`; 0 on the first render. */
 function useNow(active: boolean) {
-  const [now, setNow] = useState(() => performance.now());
+  const [now, setNow] = useState(0);
   useEffect(() => {
     if (!active) {
       setNow(performance.now());
@@ -59,7 +59,7 @@ function describe(request: NetworkRequest, origin: number) {
  * its own time.
  */
 export function NetworkPanel(props: {
-  readonly network: Network;
+  readonly network: Pick<Network, 'getTrace' | 'latency' | 'subscribe'>;
   readonly summary: boolean;
 }) {
   const network = props.network;

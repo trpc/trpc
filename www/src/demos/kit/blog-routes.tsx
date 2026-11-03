@@ -133,6 +133,20 @@ function PostLayout(props: {
   );
 }
 
+/** An article with nothing loaded yet, before the demo has started. */
+export function PostPageSkeleton() {
+  return (
+    <div className="grid gap-4">
+      <span className="text-brand-dark dark:text-brand-light">← All posts</span>
+      <PostSkeleton />
+      <CommentsSection>
+        <CommentsSkeleton />
+      </CommentsSection>
+      <MoreByAuthorSkeleton />
+    </div>
+  );
+}
+
 function PostFromHandles(props: PostHandles) {
   return (
     <PostLayout

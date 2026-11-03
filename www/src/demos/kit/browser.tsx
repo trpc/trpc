@@ -29,9 +29,10 @@ export interface DemoContext {
 
 const ReloadContext = createContext<(location: string) => void>(() => {});
 
-function AddressBar() {
-  const router = useRouter();
-  const href = useRouterState({ select: (state) => state.location.href });
+function AddressBar(props: {
+  readonly href: string;
+  readonly navigate: (href: string) => void;
+}) {
   const [draft, setDraft] = useState<string | undefined>(undefined);
   const id = useId();
   return (
@@ -40,9 +41,7 @@ function AddressBar() {
       onSubmit={(event) => {
         event.preventDefault();
         if (draft !== undefined) {
-          void router.navigate({
-            href: draft.startsWith('/') ? draft : `/${draft}`,
-          });
+          props.navigate(draft.startsWith('/') ? draft : `/${draft}`);
         }
         setDraft(undefined);
       }}
@@ -56,9 +55,51 @@ function AddressBar() {
         onBlur={() => setDraft(undefined)}
         onChange={(event) => setDraft(event.target.value)}
         spellCheck={false}
-        value={draft ?? href}
+        value={draft ?? props.href}
       />
     </form>
+  );
+}
+
+/** The tab's buttons, address bar and page. */
+function Tab(props: {
+  readonly back: () => void;
+  readonly canGoBack: boolean;
+  readonly children: ReactNode;
+  readonly href: string;
+  readonly navigate: (href: string) => void;
+  readonly pending: boolean;
+  readonly reload: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border bg-background">
+      <div className="flex items-center gap-1 border-b bg-muted/60 px-2 py-1.5">
+        <Button
+          aria-label="Back"
+          disabled={!props.canGoBack}
+          onClick={props.back}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <ArrowLeft />
+        </Button>
+        <Button
+          aria-label="Reload"
+          onClick={props.reload}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <RotateCw />
+        </Button>
+        <AddressBar href={props.href} navigate={props.navigate} />
+      </div>
+      <div aria-hidden className="relative h-0.5 overflow-hidden">
+        {props.pending ? (
+          <div className="absolute inset-0 bg-brand-dark motion-safe:animate-pulse dark:bg-brand-light" />
+        ) : null}
+      </div>
+      <div className="min-h-56 p-4 text-sm">{props.children}</div>
+    </div>
   );
 }
 
@@ -69,34 +110,16 @@ function Chrome(props: { readonly children: ReactNode }) {
   const status = useRouterState({ select: (state) => state.status });
   const href = useRouterState({ select: (state) => state.location.href });
   return (
-    <div className="overflow-hidden rounded-lg border bg-background">
-      <div className="flex items-center gap-1 border-b bg-muted/60 px-2 py-1.5">
-        <Button
-          aria-label="Back"
-          disabled={!canGoBack}
-          onClick={() => router.history.back()}
-          size="icon-xs"
-          variant="ghost"
-        >
-          <ArrowLeft />
-        </Button>
-        <Button
-          aria-label="Reload"
-          onClick={() => reload(href)}
-          size="icon-xs"
-          variant="ghost"
-        >
-          <RotateCw />
-        </Button>
-        <AddressBar />
-      </div>
-      <div aria-hidden className="relative h-0.5 overflow-hidden">
-        {status === 'pending' ? (
-          <div className="absolute inset-0 bg-brand-dark motion-safe:animate-pulse dark:bg-brand-light" />
-        ) : null}
-      </div>
-      <div className="min-h-56 p-4 text-sm">{props.children}</div>
-    </div>
+    <Tab
+      back={() => router.history.back()}
+      canGoBack={canGoBack}
+      href={href}
+      navigate={(next) => void router.navigate({ href: next })}
+      pending={status === 'pending'}
+      reload={() => reload(href)}
+    >
+      {props.children}
+    </Tab>
   );
 }
 
@@ -137,12 +160,7 @@ export function DemoLink(props: {
   );
 }
 
-/**
- * A browser tab running `routeTree` on its own router and memory history,
- * with the session's tRPC proxy in the loaders' context. Every load starts a
- * new trace in the network panel.
- */
-export function DemoBrowser(props: {
+function LiveBrowser(props: {
   readonly initial: string;
   readonly reload: (location: string) => void;
   readonly routeTree: AnyRoute;
@@ -173,5 +191,42 @@ export function DemoBrowser(props: {
     <ReloadContext value={props.reload}>
       <RouterProvider router={router} />
     </ReloadContext>
+  );
+}
+
+/**
+ * A browser tab running `routeTree` on its own router and memory history,
+ * with the session's tRPC proxy in the loaders' context. Every load starts a
+ * new trace in the network panel. Until the demo starts its session, the tab
+ * shows `initial` as `placeholder`, which is what the server renders.
+ */
+export function DemoBrowser(props: {
+  readonly initial: string;
+  readonly placeholder: ReactNode;
+  readonly reload: (location: string) => void;
+  readonly routeTree: AnyRoute;
+  readonly session: Session | undefined;
+}) {
+  if (!props.session) {
+    return (
+      <Tab
+        back={() => {}}
+        canGoBack={false}
+        href={props.initial}
+        navigate={() => {}}
+        pending={false}
+        reload={() => {}}
+      >
+        {props.placeholder}
+      </Tab>
+    );
+  }
+  return (
+    <LiveBrowser
+      initial={props.initial}
+      reload={props.reload}
+      routeTree={props.routeTree}
+      session={props.session}
+    />
   );
 }

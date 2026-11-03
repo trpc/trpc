@@ -629,19 +629,6 @@ figure.tweet .tweet-footer a:hover {
   }
 }
 
-/* A `demo` fence's slot (`build/markdown.ts`): its static content shows
-   until `PageDemos` has loaded and rendered the demo. */
-[data-demo][data-demo-ready] > :not([data-demo-root]) {
-  display: none;
-}
-
-.demo-placeholder {
-  min-height: 26rem;
-  margin-block: 2rem;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-xl, 0.75rem);
-}
-
 /* A `chart` fence's bars (`build/charts.ts`) */
 .bench-chart {
   margin-block: 1.5em;

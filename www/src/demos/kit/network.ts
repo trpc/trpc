@@ -179,3 +179,18 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
 }
 
 export type Network = ReturnType<typeof createNetwork>;
+
+const idleTrace: Trace = {
+  label: '',
+  requests: [],
+  shownAt: undefined,
+  startedAt: 0,
+};
+
+/** The network of a demo that hasn't started: no requests yet. */
+export const idleNetwork: Pick<Network, 'getTrace' | 'latency' | 'subscribe'> =
+  {
+    getTrace: () => idleTrace,
+    latency: latencies[1].ms,
+    subscribe: () => () => {},
+  };

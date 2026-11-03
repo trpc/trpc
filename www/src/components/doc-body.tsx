@@ -3,6 +3,8 @@ import type { KeyboardEvent, MouseEvent } from 'react';
 
 import { cn } from '@shared/ui/lib/utils';
 
+import { splitAtDemos } from '~/demos/names.ts';
+import { PageDemo } from '~/demos/page-demos.tsx';
 import { isUrlTabGroup, tabSlug, type UrlTabGroup } from '~/tabs.ts';
 
 const tabStorageKey = (group: string) => `trpc-docs:tab:${group}`;
@@ -303,9 +305,12 @@ function copyCode(target: EventTarget | null) {
   return true;
 }
 
+const prose = 'prose prose-neutral max-w-none dark:prose-invert';
+
 /**
- * A page's prerendered HTML. Links between pages navigate client-side and
- * preload on hover, like the router's `<Link>`.
+ * A page's prerendered HTML, with its demos (`PageDemo`) in prose blocks of
+ * their own between it. Links between pages navigate client-side and preload
+ * on hover, like the router's `<Link>`.
  */
 export function DocBody(props: {
   readonly className?: string;
@@ -324,12 +329,7 @@ export function DocBody(props: {
     });
   return (
     <div
-      className={cn(
-        'prose prose-neutral max-w-none dark:prose-invert',
-        props.className,
-      )}
-      // SAFETY: build-time HTML from the repo's own markdown.
-      dangerouslySetInnerHTML={{ __html: props.html }}
+      className={props.className}
       key={props.html}
       onClick={(event) => {
         if (
@@ -376,6 +376,26 @@ export function DocBody(props: {
         restoreTabs(element);
         return followPopups(element);
       }}
-    />
+    >
+      {splitAtDemos(props.html).map((part, index) =>
+        typeof part === 'string' ? (
+          <div
+            className={cn(
+              prose,
+              // Typography drops each block's first top margin, which a
+              // heading after a demo still needs.
+              index > 0 && '[&>h2:first-child]:mt-[2em]',
+            )}
+            // SAFETY: build-time HTML from the repo's own markdown.
+            dangerouslySetInnerHTML={{ __html: part }}
+            key={index}
+          />
+        ) : (
+          <div className={prose} key={index}>
+            <PageDemo name={part.name} options={part.options} />
+          </div>
+        ),
+      )}
+    </div>
   );
 }

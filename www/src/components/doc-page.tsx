@@ -33,7 +33,7 @@ import {
 } from '~/content/docs.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
 import type { Doc } from '~/content/types.ts';
-import { PageDemos } from '~/demos/page-demos.tsx';
+import { loadPageDemos } from '~/demos/page-demos.tsx';
 import { experiments } from '~/experiments.ts';
 import { useEnableOnVisit } from '~/flags.ts';
 import { absoluteUrl, ogImageUrl, pageHead } from '~/seo.ts';
@@ -60,7 +60,9 @@ export async function loadDocPage(version: DocsVersion, slug: string) {
   if (!findDoc(version, slug)) {
     throw notFound();
   }
-  return { doc: await version.load(slug) };
+  const doc = await version.load(slug);
+  await loadPageDemos(doc.html);
+  return { doc };
 }
 
 /** A page's breadcrumbs, for search results, by the URL of each page in them. */
@@ -237,7 +239,6 @@ export function DocPage(props: {
           key={doc.slug}
         />
         <DocBody html={doc.html} />
-        <PageDemos html={doc.html} />
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2
