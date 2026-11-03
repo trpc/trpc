@@ -797,6 +797,54 @@ test.each([{ lazy: false }, { lazy: true }])(
   },
 );
 
+test('a lazy connection closed for inactivity does not fail queries on the next connection', async () => {
+  const t = initTRPC.create();
+  const pendingResult = createDeferred<string>();
+  const queryStarted = vi.fn();
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hello'),
+    pending: t.procedure.query(() => {
+      queryStarted();
+      return pendingResult.promise;
+    }),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: {
+      lazy: { enabled: true, closeMs: 100 },
+      retryDelayMs: () => 0,
+    },
+  });
+
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  const oldClientSocket = ctx.wsClient.connection?.ws;
+  const [oldServerSocket] = ctx.wss.clients;
+  // Hold back the idle connection's closing handshake so that its `close`
+  // event arrives while a query is in flight on the next connection.
+  oldServerSocket.pause();
+  try {
+    await vi.waitFor(() => {
+      expect(oldClientSocket?.readyState).toBe(WebSocket.CLOSING);
+      expect(ctx.wsClient.connectionState.get().state).toBe('idle');
+    });
+    const result = ctx.client.pending.query().catch((error) => error);
+    await vi.waitFor(() => {
+      expect(queryStarted).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.wsClient.connection?.ws).not.toBe(oldClientSocket);
+
+    oldServerSocket.resume();
+    await vi.waitFor(() => {
+      expect(oldClientSocket?.readyState).toBe(WebSocket.CLOSED);
+    });
+    pendingResult.resolve('next connection');
+    expect(await result).toBe('next connection');
+  } finally {
+    oldServerSocket.resume();
+    pendingResult.resolve('cleanup');
+  }
+});
+
 test('subscriptions are automatically resumed if connection is lost', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
