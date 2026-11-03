@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -104,6 +105,59 @@ async function connectionResource(
 function subscribe(path: string): TRPCClientOutgoingMessage {
   return { id: 1, method: 'subscription', params: { path, input: null } };
 }
+
+test('wsLink unsubscribing during middleware never starts the resolver', async () => {
+  const entered = createDeferred();
+  const admission = createDeferred();
+  const stopReceived = createDeferred();
+  const started = vi.fn();
+  const t = initTRPC.create();
+  const router = t.router({
+    sub: t.procedure
+      .use(async (opts) => {
+        entered.resolve();
+        await admission.promise;
+        return opts.next();
+      })
+      .subscription(async function* () {
+        started();
+        yield 1;
+      }),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: { lazy: { enabled: false, closeMs: 0 } },
+  });
+  const sent: TRPCResponseMessage[] = [];
+  ctx.wss.on('connection', (socket) => {
+    const send = socket.send.bind(socket);
+    vi.spyOn(socket, 'send').mockImplementation((data: unknown) => {
+      assert(typeof data === 'string', 'expected a text frame');
+      const message: unknown = JSON.parse(data);
+      assert(isResponseMessage(message), 'not a tRPC response message');
+      sent.push(message);
+      send(data);
+    });
+    socket.on('message', (data) => {
+      const message: unknown = JSON.parse(text(data));
+      if (isObject(message) && message['method'] === 'subscription.stop') {
+        stopReceived.resolve();
+      }
+    });
+  });
+  try {
+    const subscription = ctx.client.sub.subscribe(undefined, {});
+    await entered.promise;
+    subscription.unsubscribe();
+    await stopReceived.promise;
+    admission.resolve();
+    await vi.waitFor(() => expect(sent.length).toBeGreaterThan(0));
+    expect(sent[0]).toMatchObject({ result: { type: 'stopped' } });
+    expect(started).not.toHaveBeenCalled();
+  } finally {
+    admission.resolve();
+  }
+});
 
 test('stop during shared context creation cancels only its procedure admission', async () => {
   const context = createDeferred<Record<string, never>>();
