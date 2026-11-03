@@ -6,7 +6,9 @@ import { vercelHost } from '../utils/vercelHost';
  * which always send `Origin`.
  * Set `WS_ALLOWED_ORIGINS` (comma-separated) when deploying elsewhere.
  */
-const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',') ?? [
+const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean) ?? [
   vercelHost ? `https://${vercelHost}` : 'http://localhost:3000',
 ];
 

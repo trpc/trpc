@@ -67,9 +67,9 @@ const server = createHTTPServer({
 });
 
 // Browsers don't apply CORS to WebSockets, so only accept pages from these origins
-const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',') ?? [
-  'http://localhost:2022',
-];
+const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean) ?? ['http://localhost:2022'];
 
 // ws server
 const wss = new WebSocketServer({

@@ -17,9 +17,9 @@ export function createServer(opts: ServerOptions) {
   const server = fastify({ logger: dev });
 
   // Browsers don't apply CORS to WebSockets, so only accept pages from these origins
-  const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',') ?? [
-    `http://localhost:${port}`,
-  ];
+  const allowedOrigins = process.env.WS_ALLOWED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [`http://localhost:${port}`];
 
   void server.register(ws, {
     options: {
