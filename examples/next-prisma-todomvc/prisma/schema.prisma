@@ -4,10 +4,13 @@
 datasource db {
   provider = "postgres"
   url      = env("DATABASE_URL")
+  // Used for migrations, as they can't run through a transaction pooler
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 model Task {

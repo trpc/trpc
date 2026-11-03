@@ -290,6 +290,31 @@ test('basic subscription test (observable)', async () => {
   expect(stateCalls).toContain('pending');
 });
 
+test('subscription is aborted when its signal aborts', async () => {
+  await using ctx = factory();
+
+  const ac = new AbortController();
+  const onStartedMock = vi.fn<() => void>();
+
+  ctx.client.onMessageObservable.subscribe(undefined, {
+    signal: ac.signal,
+    onStarted: onStartedMock,
+  });
+
+  await vi.waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(1);
+  });
+
+  ac.abort();
+
+  // Aborting the signal must tear the subscription down, sending
+  // `subscription.stop` so the server cleans up its listener.
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
 test('subscription observable with error', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
@@ -1291,6 +1316,24 @@ test('wsClient stops reconnecting after .close()', async () => {
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
   expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
+test('connection state settles on idle after .close()', async () => {
+  await using ctx = factory();
+
+  await vi.waitFor(() => {
+    expect(ctx.connectionState.mock.calls.map((c) => c[0]?.state)).toContain(
+      'pending',
+    );
+  });
+
+  await ctx.wsClient.close();
+  await vi.waitFor(() => {
+    expect(ctx.onCloseMock).toHaveBeenCalled();
+  });
+
+  const states = ctx.connectionState.mock.calls.map((c) => c[0]?.state);
+  expect(states.at(-1)).toBe('idle');
+});
+
 describe('lazy mode', () => {
   test('happy path', async () => {
     await using ctx = factory({
@@ -1585,7 +1628,7 @@ describe('keep alive on the server', () => {
 
     wss.on('connection', (ws) => {
       ws.on('message', (raw) => {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // oxlint-disable-next-line typescript/no-base-to-string
         if (raw.toString() === 'PONG') {
           onPong();
         }
@@ -1948,6 +1991,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
         meta: object;
+        errorShape: DefaultErrorShape;
       }>
     >();
     const abortController = new AbortController();
@@ -2006,6 +2050,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: Message;
         meta: object;
+        errorShape: DefaultErrorShape;
       }>
     >();
 

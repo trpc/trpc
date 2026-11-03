@@ -45,11 +45,17 @@ interface TRPCMutationOptionsOut<
   TOutput,
   TContext,
   TFeatureFlags extends FeatureFlags,
-> extends UseMutationOptions<TOutput, TError, TInput, TContext>,
+>
+  extends
+    UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
   mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 }
 
+/**
+ * The `mutationOptions` helper on a mutation procedure. Returns options for `useMutation`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
+ */
 export interface TRPCMutationOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -79,13 +85,13 @@ export interface MutationOptionsOverride {
     /**
      * Calls the original function that was defined in the query's `onSuccess` option
      */
-    originalFn: () => MaybePromise<void>;
+    originalFn: () => MaybePromise<unknown>;
     queryClient: QueryClient;
     /**
      * Meta data passed in from the `useMutation()` hook
      */
     meta: Record<string, unknown>;
-  }) => MaybePromise<void>;
+  }) => MaybePromise<unknown>;
 }
 
 type AnyTRPCMutationOptionsIn<TFeatureFlags extends FeatureFlags> =

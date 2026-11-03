@@ -1,4 +1,5 @@
 /// <reference types="vitest" />
+
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { httpLink } from '@trpc/client';
 import type { inferRouterOutputs } from '@trpc/server';

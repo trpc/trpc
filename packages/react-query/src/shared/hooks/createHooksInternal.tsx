@@ -1,5 +1,4 @@
 // TODO: Look into fixing react-compiler support
-/* eslint-disable react-hooks/react-compiler */
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
@@ -36,10 +35,17 @@ import {
   useHookResult,
 } from '../../internals/trpcResult';
 import type {
+  QueriesResults,
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
+  UseQueryOptionsForUseQueries,
+  UseQueryOptionsForUseSuspenseQueries,
 } from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
+import type {
+  UseQueriesProcedureRecord,
+  UseSuspenseQueriesProcedureRecord,
+} from '../proxy/useQueriesProxy';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
@@ -155,7 +161,7 @@ export function createRootHooks<
    * @see https://github.com/trpc/trpc/pull/1645
    */
   function useSSRQueryOptionsIfNeeded<
-    TOptions extends { retryOnMount?: boolean } | undefined,
+    TOptions extends { retryOnMount?: unknown } | undefined,
   >(queryKey: TRPCQueryKey, opts: TOptions): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
@@ -259,8 +265,9 @@ export function createRootHooks<
     _usePrefetchQuery({
       ...opts,
       queryKey: queryKey as any,
+      // usePrefetchQuery's types exclude skipToken, but query-core handles it at runtime
       queryFn: isInputSkipToken
-        ? input
+        ? (input as never)
         : (queryFunctionContext) => {
             const actualOpts = {
               trpc: {
@@ -431,6 +438,7 @@ export function createRootHooks<
         path.join('.'),
         input ?? undefined,
         {
+          context: optsRef.current?.trpc?.context,
           onStarted: () => {
             optsRef.current.onStarted?.();
             updateState((prev) => ({
@@ -498,7 +506,7 @@ export function createRootHooks<
 
       currentSubscriptionRef.current = subscription;
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, [client, queryKey, enabled, updateState]);
     React.useEffect(() => {
       reset();
@@ -621,7 +629,7 @@ export function createRootHooks<
       initialPageParam: opts.initialCursor ?? null,
       queryKey,
       queryFn: isInputSkipToken
-        ? input
+        ? (input as never)
         : (queryFunctionContext) => {
             const actualOpts = {
               ...ssrOpts,
@@ -693,11 +701,25 @@ export function createRootHooks<
       path,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     return [hook.data!, hook as any];
   }
 
-  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback, options) => {
+  const useQueries: TRPCUseQueries<TRouter> = (
+    queriesCallback: (
+      t: UseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly UseQueryOptionsForUseQueries<any, any, any, any>[],
+    options?: {
+      combine?: (
+        results: QueriesResults<
+          UseQueryOptionsForUseQueries<any, any, any, any>[]
+        >,
+      ) => unknown;
+    },
+  ) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
     const proxy = createUseQueries(client);
@@ -729,7 +751,12 @@ export function createRootHooks<
   };
 
   const useSuspenseQueries: TRPCUseSuspenseQueries<TRouter> = (
-    queriesCallback,
+    queriesCallback: (
+      t: UseSuspenseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly UseQueryOptionsForUseSuspenseQueries<any, any, any, any>[],
   ) => {
     const { queryClient, client } = useContext();
 

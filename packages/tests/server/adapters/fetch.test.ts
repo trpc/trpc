@@ -4,10 +4,18 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
 } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
+import {
+  run,
+  type RuntimeConfigOptions,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  makeAsyncResource,
+  makeResource,
+} from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { serve } from 'srvx';
 import { z } from 'zod';
 
@@ -29,8 +37,13 @@ const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
 
 type Context = Awaited<ReturnType<typeof createContext>>;
 
-function createAppRouter() {
-  const t = initTRPC.context<Context>().create();
+type AppRouterServerOptions = Pick<
+  RuntimeConfigOptions<Context, object>,
+  'jsonl'
+>;
+
+function createAppRouter(opts?: AppRouterServerOptions) {
+  const t = initTRPC.context<Context>().create(opts);
   const router = t.router;
   const publicProcedure = t.procedure;
 
@@ -72,8 +85,48 @@ function createAppRouter() {
 
 type AppRouter = ReturnType<typeof createAppRouter>;
 
-async function startServer(endpoint = '') {
-  const router = createAppRouter();
+function getResponseContentType(context: unknown) {
+  if (
+    typeof context === 'object' &&
+    context !== null &&
+    'response' in context &&
+    context.response instanceof Response
+  ) {
+    return context.response.headers.get('content-type');
+  }
+  return null;
+}
+
+function createStreamSpy() {
+  const data: unknown[] = [];
+  const contentTypes: (string | null)[] = [];
+  const link: TRPCLink<AppRouter> = () => {
+    return ({ next, op }) => {
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            data.push(value.result.data);
+            contentTypes.push(getResponseContentType(value.context));
+            observer.next(value);
+          },
+          error: observer.error,
+          complete() {
+            observer.complete();
+          },
+        });
+        return unsubscribe;
+      });
+    };
+  };
+
+  return { data, contentTypes, link };
+}
+
+async function startServer(
+  endpoint = '',
+  routerOptions?: AppRouterServerOptions,
+) {
+  const router = createAppRouter(routerOptions);
 
   const server = serve({
     port: 0,
@@ -141,32 +194,14 @@ describe('with default server', () => {
   });
 
   test('streaming', async () => {
-    const orderedResults: number[] = [];
-    const linkSpy: TRPCLink<AppRouter> = () => {
-      // here we just got initialized in the app - this happens once per app
-      // useful for storing cache for instance
-      return ({ next, op }) => {
-        // this is when passing the result to the next link
-        // each link needs to return an observable which propagates results
-        return observable((observer) => {
-          const unsubscribe = next(op).subscribe({
-            next(value) {
-              orderedResults.push(value.result.data as number);
-              observer.next(value);
-            },
-            error: observer.error,
-          });
-          return unsubscribe;
-        });
-      };
-    };
+    const spy = createStreamSpy();
 
     const client = createTRPCClient<AppRouter>({
       links: [
-        linkSpy,
+        spy.link,
         httpBatchStreamLink({
           url: t.url,
-          fetch: fetch as any,
+          fetch,
         }),
       ],
     });
@@ -178,7 +213,42 @@ describe('with default server', () => {
     ]);
 
     expect(results).toEqual([3, 1, 2]);
-    expect(orderedResults).toEqual([1, 2, 3]);
+    expect(spy.data).toEqual([1, 2, 3]);
+    expect([...new Set(spy.contentTypes)]).toEqual(['application/json']);
+  });
+
+  test.each([
+    'application/jsonl',
+    'application/x-ndjson',
+    'text/plain',
+  ] as const)('streaming can opt into %s content-type', async (contentType) => {
+    const server = await startServer('', {
+      jsonl: {
+        contentType,
+      },
+    });
+    await using custom = makeAsyncResource(server, server.close);
+    const spy = createStreamSpy();
+
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        spy.link,
+        httpBatchStreamLink({
+          url: custom.url,
+          fetch,
+        }),
+      ],
+    });
+
+    const results = await Promise.all([
+      client.deferred.query({ wait: 3 }),
+      client.deferred.query({ wait: 1 }),
+      client.deferred.query({ wait: 2 }),
+    ]);
+
+    expect(results).toEqual([3, 1, 2]);
+    expect(spy.data).toEqual([1, 2, 3]);
+    expect([...new Set(spy.contentTypes)]).toEqual([contentType]);
   });
 
   test('query with headers', async () => {
@@ -275,3 +345,112 @@ test('batching', async () => {
 
   expect(normalResult).toEqual(urlEncodedResult);
 });
+
+test.each([
+  ['completes', 'completes', { startsTimer: true }],
+  ['throws', 'throws', { startsTimer: false }],
+  ['is cancelled', 'infinite', { startsTimer: true }],
+  ['fails in responseMeta', 'responseMetaThrows', { startsTimer: false }],
+  ['errors the stream', 'streamErrors', { startsTimer: true }],
+] as const)(
+  'sse maxDurationMs timer is not left pending when the subscription %s',
+  async (_, path, { startsTimer }) => {
+    const nonce = Math.floor(Math.random() * 1000);
+    const MAX_DURATION_MS = 60_000 * 60 * 24 + nonce; // 1 day + nonce
+
+    using timeoutSpies = run(() => {
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+      return makeResource(
+        {
+          setTimeoutSpy,
+          clearTimeoutSpy,
+        },
+        () => {
+          setTimeoutSpy.mockRestore();
+          clearTimeoutSpy.mockRestore();
+        },
+      );
+    });
+
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+    const router = t.router({
+      completes: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
+      throws: t.procedure
+        .use(() => {
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
+        })
+        .subscription(async function* () {
+          yield 1;
+        }),
+      infinite: t.procedure.subscription(async function* () {
+        for (;;) {
+          yield 1;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }),
+      responseMetaThrows: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
+      streamErrors: t.procedure.subscription(async function* () {
+        yield 1;
+        throw new Error('subscription failed');
+      }),
+    });
+
+    // the signal of this request never aborts
+    const res = await fetchRequestHandler({
+      endpoint: '',
+      router,
+      req: new Request(`http://localhost/${path}`),
+      responseMeta(opts) {
+        if (
+          opts.info?.calls[0]?.path === 'responseMetaThrows' &&
+          opts.errors.length === 0
+        ) {
+          throw new Error('responseMeta failed');
+        }
+        return {};
+      },
+      onError(opts) {
+        if (opts.path === 'streamErrors') {
+          // a throwing `onError` makes the SSE stream itself error
+          throw new Error('onError failed');
+        }
+      },
+    });
+    if (path === 'infinite') {
+      assert(res.body);
+      const reader = res.body.getReader();
+      await reader.read();
+      await reader.cancel();
+    } else if (path === 'streamErrors') {
+      await expect(res.text()).rejects.toThrow();
+    } else {
+      await res.text();
+    }
+
+    const maxDurationTimers = timeoutSpies.setTimeoutSpy.mock.calls.flatMap(
+      (args, index) => {
+        const result = timeoutSpies.setTimeoutSpy.mock.results[index];
+        return args[1] === MAX_DURATION_MS && result?.type === 'return'
+          ? [result.value]
+          : [];
+      },
+    );
+    expect(maxDurationTimers).toHaveLength(startsTimer ? 1 : 0);
+
+    const clearedTimers = timeoutSpies.clearTimeoutSpy.mock.calls.map(
+      ([timer]) => timer,
+    );
+    expect(
+      maxDurationTimers.filter((timer) => !clearedTimers.includes(timer)),
+    ).toEqual([]);
+  },
+);

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
@@ -14,12 +14,13 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20250505.0",
-    "@types/node": "^22.13.5",
-    "eslint": "^9.26.0",
+    "@types/node": "^24.13.4",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.19.3",
     "typescript": "^5.9.2",
-    "wrangler": "^4.14.1"
+    "wrangler": "^4.131.1"
   },
   "publishConfig": {
     "access": "restricted"

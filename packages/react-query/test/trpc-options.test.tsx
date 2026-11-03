@@ -93,7 +93,7 @@ test('useMutation()', async () => {
       doSomethingMutation.mutate({
         id: '1',
       });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, []);
 
     return (

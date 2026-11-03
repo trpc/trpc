@@ -1,12 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    height: 100vh;
-    background-color: rgb(31 41 55);
-    color: #fff;
-    padding: 0 32px;
-  }
-}
+@import 'tailwindcss';
+@import '@shared/ui/theme.css';
+@source '../../../../tooling/ui/src/components/{alert,badge,breadcrumb,button,card,empty,field,input,item,label,separator,skeleton,spinner,textarea}.tsx';

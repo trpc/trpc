@@ -37,6 +37,12 @@ import type { NextAppDirDecorateRouterRecord } from './types';
 
 export type { ActionHandlerDef };
 
+/**
+ * Creates a tRPC client for React Server Components, with a `revalidate`
+ * helper on each procedure.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
@@ -56,15 +62,22 @@ export function experimental_createTRPCNextAppDirServer<
     const client = getClient();
 
     const pathCopy = [...callOpts.path];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const action = pathCopy.pop()!;
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
     const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === 'revalidate') {
-      revalidateTag(cacheTag);
-      return;
+      try {
+        revalidateTag(cacheTag);
+        return Promise.resolve({ revalidated: true });
+      } catch (cause) {
+        return Promise.resolve({
+          revalidated: false,
+          error: cause instanceof Error ? cause.message : 'Unknown error',
+        });
+      }
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
@@ -78,6 +91,12 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
   input: FormData | TDef['input'],
 ) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
+/**
+ * Turns procedures into Next.js server actions.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @see https://trpc.io/docs/client/nextjs/server-actions
+ */
 export function experimental_createServerActionHandler<
   TInstance extends {
     _config: RootConfig<AnyRootTypes>;
@@ -195,6 +214,11 @@ export function experimental_createServerActionHandler<
   };
 }
 
+/**
+ * A route handler that revalidates a cache tag sent in the request body.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export async function experimental_revalidateEndpoint(req: Request) {
   const { cacheTag } = await req.json();

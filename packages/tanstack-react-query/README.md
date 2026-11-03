@@ -12,11 +12,6 @@
 
 > A tRPC wrapper around `@tanstack/react-query`.
 
-> [!WARNING]
->
-> 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
-> This package is currently in beta as we stabilize the API. We might do breaking changes without respecting semver.
-
 ## Documentation
 
 Full documentation can be found at https://trpc.io/docs/client/tanstack-react-query/setup.
@@ -37,12 +32,4 @@ pnpm add @trpc/tanstack-react-query @tanstack/react-query
 
 # Bun
 bun add @trpc/tanstack-react-query @tanstack/react-query
-```
-
-## AI Agents
-
-If you use an AI coding agent, install tRPC skills for better code generation:
-
-```bash
-npx @tanstack/intent@latest install
 ```

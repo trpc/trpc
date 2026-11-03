@@ -1,0 +1,99 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript"],
+  "categories": {
+    "correctness": "off"
+  },
+  "rules": {
+    // React Hooks
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/error-boundaries": "error",
+    "react/globals": "error",
+    "react/incompatible-library": "warn",
+    "react/purity": "error",
+    "react/set-state-in-render": "error",
+    "react/static-components": "error",
+    "react/unsupported-syntax": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.js", "**/*.ts", "**/*.tsx"],
+      "rules": {
+        // TypeScript (recommended, type-checked and stylistic)
+        "no-array-constructor": "error",
+        "no-empty-function": "error",
+        "no-unused-expressions": "error",
+        "no-unused-vars": [
+          "error",
+          { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+        ],
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/array-type": "error",
+        "typescript/await-thenable": "error",
+        "typescript/ban-ts-comment": "error",
+        "typescript/ban-tslint-comment": "error",
+        "typescript/class-literal-property-style": "error",
+        "typescript/consistent-generic-constructors": "error",
+        "typescript/consistent-indexed-object-style": "error",
+        "typescript/consistent-type-assertions": "error",
+        "typescript/dot-notation": "error",
+        "typescript/no-array-delete": "error",
+        "typescript/no-base-to-string": "error",
+        "typescript/no-confusing-non-null-assertion": "error",
+        "typescript/no-duplicate-enum-values": "error",
+        "typescript/no-duplicate-type-constituents": "error",
+        "typescript/no-empty-object-type": "error",
+        "typescript/no-extra-non-null-assertion": "error",
+        "typescript/no-for-in-array": "error",
+        "typescript/no-implied-eval": "error",
+        "typescript/no-inferrable-types": "error",
+        "typescript/no-misused-new": "error",
+        "typescript/no-namespace": "error",
+        "typescript/no-non-null-asserted-optional-chain": "error",
+        "typescript/no-redundant-type-constituents": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/no-this-alias": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-unnecessary-type-constraint": "error",
+        "typescript/no-unsafe-enum-comparison": "error",
+        "typescript/no-unsafe-function-type": "error",
+        "typescript/no-unsafe-unary-minus": "error",
+        "typescript/no-wrapper-object-types": "error",
+        "typescript/non-nullable-type-assertion-style": "error",
+        "typescript/only-throw-error": "error",
+        "typescript/prefer-as-const": "error",
+        "typescript/prefer-find": "error",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-function-type": "error",
+        "typescript/prefer-includes": "error",
+        "typescript/prefer-namespace-keyword": "error",
+        "typescript/prefer-optional-chain": "error",
+        "typescript/prefer-promise-reject-errors": "error",
+        "typescript/prefer-regexp-exec": "error",
+        "typescript/prefer-string-starts-ends-with": "error",
+        "typescript/restrict-template-expressions": "error",
+        "typescript/triple-slash-reference": "error",
+        "typescript/unbound-method": "error"
+
+        // Consider enabling these for more type safety in your app ✨
+        // "typescript/no-explicit-any": "error",
+        // "typescript/no-floating-promises": "error",
+        // "typescript/no-misused-promises": "error",
+        // "typescript/no-unsafe-argument": "error",
+        // "typescript/no-unsafe-assignment": "error",
+        // "typescript/no-unsafe-call": "error",
+        // "typescript/no-unsafe-declaration-merging": "error",
+        // "typescript/no-unsafe-member-access": "error",
+        // "typescript/no-unsafe-return": "error",
+        // "typescript/prefer-nullish-coalescing": "error",
+        // "typescript/require-await": "error",
+        // "typescript/restrict-plus-operands": "error"
+      }
+    }
+  ]
+}

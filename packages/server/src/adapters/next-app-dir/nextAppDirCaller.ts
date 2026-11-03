@@ -1,15 +1,15 @@
 import type { CreateContextCallback } from '../../@trpc/server';
 import { getTRPCErrorFromUnknown, TRPCError } from '../../@trpc/server';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { formDataToObject } from '../../unstable-core-do-not-import';
 // FIXME: fix lint rule, this is ok
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import type { ErrorHandlerOptions } from '../../unstable-core-do-not-import/procedure';
 // FIXME: fix lint rule, this is ok
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import type { CallerOverride } from '../../unstable-core-do-not-import/procedureBuilder';
 // FIXME: fix lint rule, this is ok
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import type {
   MaybePromise,
   Simplify,
@@ -18,22 +18,26 @@ import { TRPCRedirectError } from './redirect';
 import { rethrowNextErrors } from './rethrowNextErrors';
 
 /**
- * Create a caller that works with Next.js React Server Components & Server Actions
+ * Makes procedures callable as Next.js server actions and from React
+ * Server Components. Pass it to `.experimental_caller()`.
+ * @see https://trpc.io/docs/client/nextjs/server-actions#1-define-a-base-procedure-with-experimental_caller
  */
 export function nextAppDirCaller<TContext, TMeta>(
   config: Simplify<
     {
       /**
-       * Extract the path from the procedure metadata
+       * Names the procedure from its metadata, for logs and errors, since
+       * server actions have no router path.
+       * @see https://trpc.io/docs/client/nextjs/server-actions#adding-observability-with-metadata
        */
       pathExtractor?: (opts: { meta: TMeta }) => string;
       /**
-       * Transform form data to a `Record` before passing it to the procedure
+       * Turns `FormData` input into an object before validation.
        * @default true
        */
       normalizeFormData?: boolean;
       /**
-       * Called when an error occurs in the handler
+       * Called when a procedure throws.
        */
       onError?: (opts: ErrorHandlerOptions<TContext>) => void;
     } & CreateContextCallback<TContext, () => MaybePromise<TContext>>

@@ -128,11 +128,11 @@ export const mockAPIGatewayContext = (): Context => {
     logGroupName: 'mock',
     logStreamName: 'mock',
     getRemainingTimeInMillis: () => -1,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // oxlint-disable-next-line typescript/no-empty-function
     done: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // oxlint-disable-next-line typescript/no-empty-function
     fail: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // oxlint-disable-next-line typescript/no-empty-function
     succeed: () => {},
   };
 };

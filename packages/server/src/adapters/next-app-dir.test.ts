@@ -62,7 +62,7 @@ test('with path extractor', async () => {
       const result = await opts.next();
       const duration = new Date().getTime() - start;
 
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(`${opts.path} took ${duration}ms`);
 
       return result;

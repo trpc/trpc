@@ -2,9 +2,14 @@ import type {
   AnyClientTypes,
   CombinedDataTransformer,
   Maybe,
+  PathSeparator,
   ProcedureType,
   TRPCAcceptHeader,
   TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  procedurePathToURLPath,
+  resolvePathSeparator,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import type {
@@ -17,22 +22,31 @@ import { getTransformer } from '../../unstable-internals';
 import type { HTTPHeaders } from '../types';
 
 /**
+ * The options every HTTP link takes.
  * @internal
  */
 export type HTTPLinkBaseOptions<
   TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = {
+  /** The URL of your tRPC endpoint, such as `http://localhost:3000/trpc`. */
   url: string | URL;
   /**
-   * Add ponyfill for fetch
+   * The `fetch` to use, if not the global one.
    */
   fetch?: FetchEsque;
   /**
-   * Send all requests `as POST`s requests regardless of the procedure type
-   * The HTTP handler must separately allow overriding the method. See:
-   * @see https://trpc.io/docs/rpc
+   * Sends every call as a POST, whatever its type. The server must set
+   * `allowMethodOverride: true`.
+   * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
    */
   methodOverride?: 'POST';
+  /**
+   * The character between a procedure path's segments in URLs. Must match
+   * the server's `pathSeparator`.
+   * @default '.'
+   * @see https://trpc.io/docs/rpc#path-separator
+   */
+  pathSeparator?: PathSeparator;
 } & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
@@ -40,6 +54,7 @@ export interface ResolvedHTTPLinkOptions {
   fetch?: FetchEsque;
   transformer: CombinedDataTransformer;
   methodOverride?: 'POST';
+  pathSeparator: PathSeparator;
 }
 
 export function resolveHTTPLinkOptions(
@@ -50,6 +65,7 @@ export function resolveHTTPLinkOptions(
     fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
+    pathSeparator: resolvePathSeparator(opts.pathSeparator),
   };
 }
 
@@ -111,7 +127,7 @@ export const getUrl: GetUrl = (opts) => {
   const parts = opts.url.split('?') as [string, string?];
   const base = parts[0].replace(/\/$/, ''); // Remove any trailing slashes
 
-  let url = base + '/' + opts.path;
+  let url = base + '/' + procedurePathToURLPath(opts.path, opts.pathSeparator);
   const queryParts: string[] = [];
 
   if (parts[1]) {
@@ -206,8 +222,13 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     }
     return heads;
   })();
+  // Header names are case-insensitive, so a `Content-Type` set by the caller
+  // replaces ours instead of being sent alongside it
+  const hasContentType = Object.keys(resolvedHeaders).some(
+    (key) => key.toLowerCase() === 'content-type',
+  );
   const headers = {
-    ...(opts.contentTypeHeader && method !== 'GET'
+    ...(opts.contentTypeHeader && method !== 'GET' && !hasContentType
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader

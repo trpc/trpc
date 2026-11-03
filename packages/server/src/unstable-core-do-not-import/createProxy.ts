@@ -72,8 +72,8 @@ function createInnerProxy(
 }
 
 /**
- * Creates a proxy that calls the callback with the path and arguments
- *
+ * Creates a proxy that records the property path it's accessed with, and
+ * calls `callback` with the path and arguments when it's called.
  * @internal
  */
 export const createRecursiveProxy = <TFaux = unknown>(
@@ -81,8 +81,8 @@ export const createRecursiveProxy = <TFaux = unknown>(
 ): TFaux => createInnerProxy(callback, [], emptyObject()) as TFaux;
 
 /**
- * Used in place of `new Proxy` where each handler will map 1 level deep to another value.
- *
+ * Creates a proxy that maps each property to `callback(name)`, one level
+ * deep. It's not thenable.
  * @internal
  */
 export const createFlatProxy = <TFaux>(

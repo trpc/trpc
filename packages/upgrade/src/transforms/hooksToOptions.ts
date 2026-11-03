@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-console */
+/* oxlint-disable typescript/no-non-null-assertion */
+/* oxlint-disable no-console */
 import type {
   API,
   ArrowFunctionExpression,
@@ -60,6 +60,13 @@ const utilMap = {
 } as const;
 type ProxyMethod = keyof typeof utilMap;
 
+/**
+ * Codemod that rewrites `@trpc/react-query` hook calls, such as
+ * `trpc.post.byId.useQuery()`, to TanStack Query hooks with
+ * `@trpc/tanstack-react-query` options.
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating#codemod-migration
+ */
 export default function transform(
   file: FileInfo,
   api: API,

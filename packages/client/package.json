@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
   "type": "module",
-  "version": "11.18.0",
+  "version": "11.23.0",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
@@ -14,18 +14,11 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/client"
   },
-  "eslintConfig": {
-    "rules": {
-      "no-restricted-imports": [
-        "error",
-        "@trpc/client"
-      ]
-    }
-  },
   "scripts": {
     "build": "tsdown",
+    "prepack": "node ../../www/build/skills.ts --package .",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
@@ -110,28 +103,27 @@
     "unstable-internals",
     "!**/*.test.*",
     "!**/__tests__",
-    "skills",
-    "!skills/_artifacts",
-    "bin"
+    "skills"
   ],
   "peerDependencies": {
-    "@trpc/server": "11.18.0",
+    "@trpc/server": "11.23.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/intent": "^0.0.27",
-    "@trpc/server": "11.18.0",
+    "@tanstack/intent": "0.5.6",
+    "@trpc/server": "workspace:*",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^22.13.5",
+    "@types/node": "catalog:",
     "dataloader": "^2.2.2",
-    "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "tsdown": "0.12.7",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "tsdown": "catalog:",
     "tslib": "^2.8.1",
-    "typescript": "^5.9.2",
-    "undici": "^8.0.0",
-    "ws": "^8.0.0"
+    "typescript": "catalog:",
+    "undici": "catalog:",
+    "ws": "catalog:"
   },
   "publishConfig": {
     "access": "public"
@@ -141,8 +133,5 @@
   ],
   "keywords": [
     "tanstack-intent"
-  ],
-  "bin": {
-    "intent": "./bin/intent.js"
-  }
+  ]
 }

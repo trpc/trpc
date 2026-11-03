@@ -5,8 +5,7 @@ import { prisma } from './prisma';
  * Defines your inner context shape.
  * Add fields here that the inner context brings.
  */
-export interface CreateInnerContextOptions
-  extends Partial<CreateNextContextOptions> {}
+export interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {}
 
 /**
  * Inner context. Will always be available in your procedures, in contrast to the outer context.

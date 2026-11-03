@@ -1,7 +1,7 @@
 {
   "name": "@trpc/tanstack-react-query",
   "type": "module",
-  "version": "11.18.0",
+  "version": "11.23.0",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -16,13 +16,24 @@
   },
   "scripts": {
     "build": "tsdown",
+    "prepack": "node ../../www/build/skills.ts --package .",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
+      "react-server": {
+        "import": {
+          "types": "./dist/index.react-server.d.mts",
+          "default": "./dist/index.react-server.mjs"
+        },
+        "require": {
+          "types": "./dist/index.react-server.d.cts",
+          "default": "./dist/index.react-server.cjs"
+        }
+      },
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
@@ -40,43 +51,33 @@
     "package.json",
     "!**/*.test.*",
     "!**/__tests__",
-    "skills",
-    "!skills/_artifacts",
-    "bin"
+    "skills"
   ],
-  "eslintConfig": {
-    "rules": {
-      "react-hooks/exhaustive-deps": "error",
-      "no-restricted-imports": [
-        "error",
-        "@trpc/tanstack-react-query"
-      ],
-      "@typescript-eslint/prefer-function-type": "off"
-    }
-  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.18.0",
-    "@trpc/server": "11.18.0",
+    "@trpc/client": "11.23.0",
+    "@trpc/server": "11.23.0",
     "react": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/intent": "^0.0.27",
-    "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.18.0",
-    "@trpc/server": "11.18.0",
-    "@types/node": "^22.13.5",
+    "@tanstack/intent": "0.5.6",
+    "@tanstack/react-query": "^5.105.0",
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "^19.1.0",
-    "eslint": "^9.26.0",
     "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tsdown": "0.12.7",
-    "typescript": "^5.9.2",
-    "vitest": "^4.0.18",
-    "ws": "^8.0.0",
+    "superjson": "^1.12.4",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "ws": "catalog:",
     "zod": "^4.2.1"
   },
   "publishConfig": {
@@ -87,8 +88,5 @@
   ],
   "keywords": [
     "tanstack-intent"
-  ],
-  "bin": {
-    "intent": "./bin/intent.js"
-  }
+  ]
 }

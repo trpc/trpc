@@ -1,4 +1,7 @@
-/** @internal */
+/**
+ * Marks a type a procedure builder hasn't set yet, such as its input.
+ * @internal
+ */
 export type UnsetMarker = 'unsetMarker' & {
   __brand: 'unsetMarker';
 };
@@ -61,7 +64,7 @@ export function isAsyncIterable<TValue>(
  */
 export const run = <TValue>(fn: () => TValue): TValue => fn();
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+// oxlint-disable-next-line typescript/no-empty-function
 export function noop(): void {}
 
 export function identity<T>(it: T): T {
@@ -81,6 +84,10 @@ export function assert(
   if (!condition) {
     throw new Error(`AssertionError: ${msg}`);
   }
+}
+
+export function assertNever(value: never): never {
+  throw new Error(`AssertionError: unexpected value ${String(value)}`);
 }
 
 export function sleep(ms = 0): Promise<void> {

@@ -4,18 +4,18 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "lint": "eslint src",
+    "lint": "oxlint src",
     "start": "next start"
   },
   "dependencies": {
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^5.2.2",
-    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query": "^5.105.0",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.3.8",
+    "next": "^15.5.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.69.0",
@@ -23,10 +23,11 @@
     "zod-form-data": "^3.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "eslint": "^9.26.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "typescript": "^5.9.2"
   }
 }

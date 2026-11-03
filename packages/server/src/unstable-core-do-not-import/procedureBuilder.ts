@@ -1,4 +1,5 @@
 import type { inferObservableValue, Observable } from '../observable';
+import type { ProcedureErrorFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -7,6 +8,7 @@ import type {
   MiddlewareResult,
 } from './middleware';
 import {
+  createErrorFormatterMiddleware,
   createInputMiddleware,
   createOutputMiddleware,
   middlewareMarker,
@@ -23,6 +25,9 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { AnyRootTypes, RootConfig } from './rootConfig';
+import { isDevDefault } from './rootConfig';
+import type { TRPCErrorShape } from './rpc';
 import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
@@ -43,6 +48,10 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
+
+type FoldErrorShape<TErrorShape, $Shape> =
+  | Extract<$Shape, TRPCErrorShape>
+  | TErrorShape;
 
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
@@ -87,12 +96,14 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
+  config?: RootConfig<AnyRootTypes>;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 /**
- * Procedure resolver options (what the `.query()`, `.mutation()`, and `.subscription()` functions receive)
+ * What a resolver passed to `.query()`, `.mutation()` or `.subscription()`
+ * gets.
  * @internal
  */
 export interface ProcedureResolverOptions<
@@ -101,19 +112,24 @@ export interface ProcedureResolverOptions<
   TContextOverridesIn,
   TInputOut,
 > {
+  /** The context, after middlewares have added to or changed it. */
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
+  /**
+   * The input, after the validators and any middleware that replaced it
+   * with `next({ input })`.
+   */
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
   /**
-   * The AbortSignal of the request
+   * Aborts when the client cancels the request or disconnects.
    */
   signal: AbortSignal | undefined;
   /**
-   * The path of the procedure
+   * The procedure's path, such as `post.byId`.
    */
   path: string;
   /**
-   * The index of this call in a batch request.
-   * Will be set when the procedure is called as part of a batch.
+   * The call's zero-based index in its batch. A call that wasn't batched
+   * gets `0`.
    */
   batchIndex?: number;
 }
@@ -144,12 +160,14 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
 /**
- * Infer the context type from a procedure builder
- * Useful to create common helper functions for different procedures
+ * The options a resolver built from this procedure builder gets: its
+ * `ctx`, `input` and so on. Use it to type helpers that resolvers call.
+ * @see https://trpc.io/docs/server/procedures#inferProcedureBuilderResolverOptions
  */
 export type inferProcedureBuilderResolverOptions<
   TProcedureBuilder extends AnyProcedureBuilder,
@@ -162,7 +180,8 @@ export type inferProcedureBuilderResolverOptions<
     infer TInputOut,
     infer _TOutputIn,
     infer _TOutputOut,
-    infer _TCaller
+    infer _TCaller,
+    infer _TErrorShape
   >
     ? ProcedureResolverOptions<
         TContext,
@@ -184,6 +203,11 @@ export type inferProcedureBuilderResolverOptions<
       >
     : never;
 
+/**
+ * Builds a procedure step by step. Each method returns a new builder, so a
+ * builder can be the base of many procedures.
+ * @see https://trpc.io/docs/server/procedures
+ */
 export interface ProcedureBuilder<
   TContext,
   TMeta,
@@ -193,10 +217,17 @@ export interface ProcedureBuilder<
   TOutputIn,
   TOutputOut,
   TCaller extends boolean,
+  /**
+   * Defaults to `unknown` so that an annotation written without it falls back
+   * to the router-wide error shape rather than pinning the procedure to the
+   * default one.
+   * @see inferProcedureErrorShape
+   */
+  TErrorShape = unknown,
 > {
   /**
-   * Add an input parser to the procedure.
-   * @see https://trpc.io/docs/v11/server/validators
+   * Adds a validator for the input. Chain several to merge object inputs.
+   * @see https://trpc.io/docs/server/validators#input-validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
@@ -218,11 +249,13 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
     TOutputOut,
-    TCaller
+    TCaller,
+    TErrorShape
   >;
   /**
-   * Add an output parser to the procedure.
-   * @see https://trpc.io/docs/v11/server/validators
+   * Adds a validator for the output, which checks what the resolver
+   * returns.
+   * @see https://trpc.io/docs/server/validators#output-validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -234,11 +267,13 @@ export interface ProcedureBuilder<
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
-    TCaller
+    TCaller,
+    TErrorShape
   >;
   /**
-   * Add a meta data to the procedure.
-   * @see https://trpc.io/docs/v11/server/metadata
+   * Sets the procedure's metadata, which middlewares can read. It's
+   * shallow-merged with any metadata set before.
+   * @see https://trpc.io/docs/server/metadata
    */
   meta(
     meta: TMeta,
@@ -250,11 +285,34 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    TCaller
+    TCaller,
+    TErrorShape
   >;
   /**
-   * Add a middleware to the procedure.
-   * @see https://trpc.io/docs/v11/server/middlewares
+   * Adds an error formatter for this procedure. An error goes to the last
+   * `.errors()` formatter first, and on to earlier ones and the root
+   * `errorFormatter` until one returns a shape. A formatter only sees
+   * errors from the steps after it, so put `.errors()` before `.input()`
+   * to format input errors.
+   * @see https://trpc.io/docs/server/error-formatting#per-procedure-error-formatting
+   */
+  errors<$Shape extends TRPCErrorShape | undefined | void>(
+    formatter: ProcedureErrorFormatter<TContext, TContextOverrides, $Shape>,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    TCaller,
+    FoldErrorShape<TErrorShape, $Shape>
+  >;
+  /**
+   * Adds a middleware, which runs before the resolver and can change the
+   * context.
+   * @see https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -279,11 +337,12 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    TCaller
+    TCaller,
+    TErrorShape
   >;
 
   /**
-   * @deprecated use {@link concat} instead
+   * @deprecated Use {@link concat} instead.
    */
   unstable_concat<
     $Context,
@@ -293,6 +352,7 @@ export interface ProcedureBuilder<
     $InputOut,
     $OutputIn,
     $OutputOut,
+    $ErrorShape,
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
       ? TMeta extends $Meta
@@ -304,7 +364,8 @@ export interface ProcedureBuilder<
             $InputOut,
             $OutputIn,
             $OutputOut,
-            TCaller
+            TCaller,
+            $ErrorShape
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -316,11 +377,14 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
-    TCaller
+    TCaller,
+    FoldErrorShape<TErrorShape, $ErrorShape>
   >;
 
   /**
-   * Combine two procedure builders
+   * Adds another procedure builder's inputs, middlewares and context to
+   * this one. Useful for plugins that ship their own procedure builder.
+   * @see https://trpc.io/docs/server/middlewares#concat
    */
   concat<
     $Context,
@@ -330,6 +394,7 @@ export interface ProcedureBuilder<
     $InputOut,
     $OutputIn,
     $OutputOut,
+    $ErrorShape,
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
       ? TMeta extends $Meta
@@ -341,7 +406,8 @@ export interface ProcedureBuilder<
             $InputOut,
             $OutputIn,
             $OutputOut,
-            TCaller
+            TCaller,
+            $ErrorShape
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -353,11 +419,12 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
-    TCaller
+    TCaller,
+    FoldErrorShape<TErrorShape, $ErrorShape>
   >;
   /**
-   * Query procedure
-   * @see https://trpc.io/docs/v11/concepts#vocabulary
+   * Ends the builder with a query: a procedure that reads data.
+   * @see https://trpc.io/docs/server/procedures#writing-procedures
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -376,11 +443,12 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
 
   /**
-   * Mutation procedure
-   * @see https://trpc.io/docs/v11/concepts#vocabulary
+   * Ends the builder with a mutation: a procedure that changes data.
+   * @see https://trpc.io/docs/server/procedures#writing-procedures
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -399,11 +467,13 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
 
   /**
-   * Subscription procedure
-   * @see https://trpc.io/docs/v11/server/subscriptions
+   * Ends the builder with a subscription: a procedure that streams events
+   * from an async iterable, such as an async generator.
+   * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends AsyncIterable<any, void, any>>(
     resolver: ProcedureResolver<
@@ -420,11 +490,13 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
   /**
-   * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
-   * This feature will be removed in v12 of tRPC.
-   * @see https://trpc.io/docs/v11/server/subscriptions
+   * Ends the builder with a subscription that returns an observable.
+   * @deprecated Return an async generator instead. Observable subscriptions
+   * will be removed in v12.
+   * @see https://trpc.io/docs/server/subscriptions
    */
   subscription<$Output extends Observable<any, any>>(
     resolver: ProcedureResolver<
@@ -441,10 +513,12 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
   /**
-   * Overrides the way a procedure is invoked
-   * Do not use this unless you know what you're doing - this is an experimental API
+   * Replaces how the procedure is called, for example to make it a server
+   * action. Experimental: it may change in any release.
+   * @see https://trpc.io/docs/client/nextjs/server-actions#1-define-a-base-procedure-with-experimental_caller
    */
   experimental_caller(
     caller: CallerOverride<TContext>,
@@ -456,7 +530,8 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    true
+    true,
+    TErrorShape
   >;
   /**
    * @internal
@@ -472,18 +547,19 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, ...rest } = def2;
+  const { middlewares = [], inputs, meta, config, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
+    config: def1.config ?? config,
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
 
-export function createBuilder<TContext, TMeta>(
+export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
   initDef: Partial<AnyProcedureBuilderDef> = {},
 ): ProcedureBuilder<
   TContext,
@@ -493,7 +569,8 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
-  false
+  false,
+  TErrorShape
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
@@ -521,6 +598,16 @@ export function createBuilder<TContext, TMeta>(
     meta(meta) {
       return createNewBuilder(_def, {
         meta,
+      });
+    },
+    errors(formatter) {
+      return createNewBuilder(_def, {
+        middlewares: [
+          createErrorFormatterMiddleware(
+            formatter,
+            _def.config?.isDev ?? isDevDefault(),
+          ),
+        ],
       });
     },
     use(middlewareBuilderOrFn) {
@@ -610,6 +697,7 @@ function createResolver(
 }
 
 /**
+ * What calling a procedure takes.
  * @internal
  */
 export interface ProcedureCallOptions<TContext> {
@@ -627,7 +715,7 @@ export interface ProcedureCallOptions<TContext> {
 
 const codeblock = `
 This is a client-only function.
-If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
+If you want to call this function on the server, see https://trpc.io/docs/server/server-side-calls
 `.trim();
 
 // run the middlewares recursively with the resolver as the last one
@@ -637,7 +725,7 @@ async function callRecursive(
   opts: ProcedureCallOptions<any>,
 ): Promise<MiddlewareResult<any>> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const middleware = _def.middlewares[index]!;
     const result = await middleware({
       ...opts,

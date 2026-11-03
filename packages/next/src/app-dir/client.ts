@@ -22,6 +22,11 @@ type QueryResult = {
   promise?: Promise<unknown>;
 };
 
+/**
+ * Creates a tRPC client for App Router client components.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
   TRouter extends AnyRouter,
@@ -34,7 +39,7 @@ export function experimental_createTRPCNextAppDirClient<
   return createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
     // const pathCopy = [key, ...path];
     const pathCopy = [...path];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 
     if (procedureType === 'query') {

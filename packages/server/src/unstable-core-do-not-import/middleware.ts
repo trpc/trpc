@@ -1,8 +1,16 @@
-import { TRPCError } from './error/TRPCError';
+import type { Observable } from '../observable';
+import { isObservable, observable } from '../observable';
+import type { AnyProcedureErrorFormatter } from './error/formatter';
+import {
+  getDefaultErrorShape,
+  isFormattedErrorShape,
+  setFormattedErrorShape,
+} from './error/formatter';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
-import { isObject } from './utils';
+import { isAsyncIterable, isObject } from './utils';
 
 /** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
@@ -24,13 +32,16 @@ interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   // this could be extended with `input`/`rawInput` later
 }
 
-interface MiddlewareErrorResult<_TContextOverride>
-  extends MiddlewareResultBase {
+interface MiddlewareErrorResult<
+  _TContextOverride,
+> extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
 }
 
 /**
+ * What a middleware's `next()` returns, and what the middleware must
+ * return in turn.
  * @internal
  */
 export type MiddlewareResult<_TContextOverride> =
@@ -38,6 +49,8 @@ export type MiddlewareResult<_TContextOverride> =
   | MiddlewareOKResult<_TContextOverride>;
 
 /**
+ * A reusable middleware, as `t.middleware()` returns it.
+ * @see https://trpc.io/docs/server/middlewares
  * @internal
  */
 export interface MiddlewareBuilder<
@@ -47,7 +60,9 @@ export interface MiddlewareBuilder<
   TInputOut,
 > {
   /**
-   * Create a new builder based on the current middleware builder
+   * Returns a new middleware that runs this one, then `fn`, which sees the
+   * context this one set.
+   * @see https://trpc.io/docs/server/middlewares#extending-middlewares
    */
   unstable_pipe<$ContextOverridesOut>(
     fn:
@@ -72,7 +87,7 @@ export interface MiddlewareBuilder<
   >;
 
   /**
-   * List of middlewares within this middleware builder
+   * The middlewares this builder runs, in order.
    */
   _middlewares: MiddlewareFunction<
     TContext,
@@ -84,6 +99,9 @@ export interface MiddlewareBuilder<
 }
 
 /**
+ * A middleware: it gets the call's options and must return the result of
+ * calling `next()`, optionally with a new `ctx` or `input`.
+ * @see https://trpc.io/docs/server/middlewares
  * @internal
  */
 export type MiddlewareFunction<
@@ -96,15 +114,23 @@ export type MiddlewareFunction<
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
     type: ProcedureType;
+    /** The procedure's path, such as `post.byId`. */
     path: string;
+    /** The input, as the validators that ran before this middleware left it. */
     input: TInputOut;
+    /** Reads the input as the client sent it, before any validator ran. */
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
+    /** Aborts when the client cancels the request or disconnects. */
     signal: AbortSignal | undefined;
     /**
      * The index of this call in a batch request.
      */
     batchIndex: number;
+    /**
+     * Runs the next middleware, or the resolver. Pass `ctx` to add to the
+     * context, or `input` to replace the input.
+     */
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
@@ -119,7 +145,9 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
+/** Any middleware function, for use in generic constraints. */
 export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+/** Any middleware builder, for use in generic constraints. */
 export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
@@ -161,9 +189,10 @@ export function createMiddlewareFactory<
 }
 
 /**
- * Create a standalone middleware
- * @see https://trpc.io/docs/v11/server/middlewares#experimental-standalone-middlewares
- * @deprecated use `.concat()` instead
+ * Creates a middleware that isn't tied to a root object, for the context,
+ * metadata and input types you give it.
+ * @deprecated Use `.concat()` with a procedure builder instead.
+ * @see https://trpc.io/docs/server/middlewares#concat
  */
 export const experimental_standaloneMiddleware = <
   TCtx extends {
@@ -211,6 +240,89 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     };
   inputMiddleware._type = 'input';
   return inputMiddleware;
+}
+
+/**
+ * @internal
+ */
+export function createErrorFormatterMiddleware(
+  formatter: AnyProcedureErrorFormatter,
+  isDev: boolean,
+) {
+  const errorMiddleware: AnyMiddlewareFunction =
+    async function errorFormatterMiddleware(opts) {
+      const tryFormat = (error: TRPCError): TRPCError => {
+        // a handler further down the chain already claimed this error
+        if (isFormattedErrorShape(error)) {
+          return error;
+        }
+
+        const shape = formatter({
+          error,
+          type: opts.type,
+          path: opts.path,
+          input: opts.input,
+          ctx: opts.ctx,
+          shape: getDefaultErrorShape({
+            error,
+            path: opts.path,
+            isDev,
+          }),
+        });
+
+        if (shape !== undefined) {
+          setFormattedErrorShape(error, shape);
+        }
+
+        return error;
+      };
+
+      const tryFormatThrown = (cause: unknown): unknown => {
+        const formatted = tryFormat(getTRPCErrorFromUnknown(cause));
+
+        return isFormattedErrorShape(formatted) ? formatted : cause;
+      };
+
+      async function* wrapIterable(iterable: AsyncIterable<unknown>) {
+        try {
+          return yield* iterable;
+        } catch (cause) {
+          throw tryFormatThrown(cause);
+        }
+      }
+
+      function wrapObservable(source: Observable<unknown, unknown>) {
+        return observable((observer) =>
+          source.subscribe({
+            next: (value) => observer.next(value),
+            error: (cause) => observer.error(tryFormatThrown(cause)),
+            complete: () => observer.complete(),
+          }),
+        );
+      }
+
+      const result = await opts.next();
+
+      // normal procedures return errors immediately
+      if (!result.ok) {
+        tryFormat(result.error);
+        return result;
+      }
+
+      // subscription/streaming procedures need to be enumerated to find errors
+      if (isAsyncIterable(result.data)) {
+        return { ...result, data: wrapIterable(result.data) };
+      }
+      if (opts.type === 'subscription' && isObservable(result.data)) {
+        return { ...result, data: wrapObservable(result.data) };
+      }
+
+      return result;
+    };
+
+  errorMiddleware._type = 'errors';
+
+  return errorMiddleware;
 }
 
 /**

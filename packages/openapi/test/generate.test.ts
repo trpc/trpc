@@ -394,6 +394,26 @@ describe('generateOpenAPIDocument', () => {
     });
   });
 
+  describe('pathSeparator', () => {
+    it('joins path segments with the separator', async () => {
+      const doc = await generateOpenAPIDocument(appRouterPath, {
+        pathSeparator: '~',
+      });
+      const paths = Object.keys(doc.paths ?? {});
+
+      expect(paths).toContain('/complexTypes~passthrough');
+      expect(paths.some((p) => p.includes('.'))).toBe(false);
+    });
+
+    it("reads the router's separator when the option is omitted", async () => {
+      const doc = await generateOpenAPIDocument(
+        path.resolve(routersDir, 'pathSeparatorRouter.ts'),
+      );
+
+      expect(Object.keys(doc.paths ?? {})).toEqual(['/post~byId']);
+    });
+  });
+
   describe('servers', () => {
     it('passes the servers array through to the document', async () => {
       const doc = await generateOpenAPIDocument(appRouterPath, {
@@ -960,13 +980,13 @@ describe('generateOpenAPIDocument', () => {
       const input = { id: 'evt_1', at: new Date('2025-06-15T10:00:00Z') };
 
       // inputs need serialising properly
-      await expect(async () => {
-        await sdk.getEvent({
-          query: {
-            input,
-          },
-        });
-      }).rejects.toThrowErrorMatchingInlineSnapshot(
+      const unserialized = await sdk.getEvent({
+        query: {
+          input,
+        },
+      });
+      expect(unserialized.data).toBeUndefined();
+      expect(unserialized.error).toMatchInlineSnapshot(
         `[Error: Deeply-nested arrays/objects aren’t supported. Provide your own \`querySerializer()\` to handle these.]`,
       );
 

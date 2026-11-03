@@ -1,6 +1,7 @@
 import { createQueryClient } from './__queryClient';
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
+import { skipToken } from '@tanstack/react-query';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -221,13 +222,14 @@ describe('createTRPCQueryUtils()', () => {
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
-    clientUtils.postById.fetch('1', {
+    const fetchPromise = clientUtils.postById.fetch('1', {
       queryFn: async () => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         return 'never returned' as any;
       },
     });
     await clientUtils.postById.cancel('1');
+    await expect(fetchPromise).rejects.toThrow('CancelledError');
     expect(factory.resolvers.postById.mock.calls.length).toBe(0);
   });
 
@@ -318,7 +320,24 @@ describe('createTRPCQueryUtils()', () => {
         return fn(variables);
       },
     }));
-    clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' });
+    clientUtils.addPost
+      .getMutationDefaults()
+      ?.mutationFn?.({ title: '' }, { client: queryClient, meta: undefined });
     expect(fn.mock.calls.length).toBe(1);
+  });
+
+  test('queryOptions() and infiniteQueryOptions() with skipToken', async () => {
+    const queryClient = createQueryClient();
+    const clientUtils = createTRPCQueryUtils({
+      queryClient,
+      client: factory.client,
+    });
+
+    const queryOptions = clientUtils.postById.queryOptions(skipToken);
+    expect(queryOptions.queryFn).toBe(skipToken);
+
+    const infiniteQueryOptions =
+      clientUtils.paginatedPosts.infiniteQueryOptions(skipToken);
+    expect(infiniteQueryOptions.queryFn).toBe(skipToken);
   });
 });

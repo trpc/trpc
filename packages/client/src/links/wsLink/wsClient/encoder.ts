@@ -1,7 +1,10 @@
-import type { Encoder } from '@trpc/server/adapters/ws';
+import type { Encoder } from '@trpc/server/unstable-core-do-not-import';
 
 export type { Encoder };
 
+/**
+ * The default WebSocket encoder. Sends messages as JSON text frames.
+ */
 export const jsonEncoder: Encoder = {
   encode: (data) => JSON.stringify(data),
   decode: (data) => {

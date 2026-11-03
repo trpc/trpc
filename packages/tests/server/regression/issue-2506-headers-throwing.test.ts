@@ -1,4 +1,5 @@
 /// <reference types="vitest" />
+
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { httpBatchLink, httpLink, TRPCClientError } from '@trpc/client';

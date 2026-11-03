@@ -12,13 +12,19 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult, readQueryKey } from './utils';
+import { createTRPCOptionsResult } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  onStopped?: () => void;
+  /**
+   * Called when the subscription is completed on the server.
+   * The status will transition to `'idle'` with `data: undefined`.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -26,6 +32,12 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  onStopped?: () => void;
+  /**
+   * Called when the subscription is completed on the server.
+   * The status will transition to `'idle'` with `data: undefined`.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -33,7 +45,9 @@ interface TRPCSubscriptionOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
+>
+  extends
+    UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
     TRPCQueryOptionsResult {
   enabled: boolean;
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
@@ -42,6 +56,10 @@ interface TRPCSubscriptionOptionsOut<
   ) => Unsubscribable;
 }
 
+/**
+ * The `subscriptionOptions` helper on a subscription procedure. Returns options for {@link useSubscription}.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ */
 export interface TRPCSubscriptionOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -69,15 +87,30 @@ export interface TRPCSubscriptionOptions<
     TFeatureFlags
   >;
 }
+/**
+ * The status of a subscription.
+ */
 export type TRPCSubscriptionStatus =
   | 'idle'
   | 'connecting'
   | 'pending'
   | 'error';
 
+/**
+ * Fields shared by every {@link useSubscription} result.
+ */
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
+  /**
+   * Where the subscription is in its lifecycle.
+   */
   status: TRPCSubscriptionStatus;
+  /**
+   * The last data received.
+   */
   data: undefined | TOutput;
+  /**
+   * The last error, if any.
+   */
   error: null | TError;
   /**
    * Reset the subscription
@@ -85,34 +118,55 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   reset: () => void;
 }
 
-export interface TRPCSubscriptionIdleResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, null> {
+/**
+ * Result while the subscription is not running.
+ */
+export interface TRPCSubscriptionIdleResult<
+  TOutput,
+> extends TRPCSubscriptionBaseResult<TOutput, null> {
   status: 'idle';
   data: undefined;
   error: null;
 }
 
-export interface TRPCSubscriptionConnectingResult<TOutput, TError>
-  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+/**
+ * Result while connecting or reconnecting.
+ */
+export interface TRPCSubscriptionConnectingResult<
+  TOutput,
+  TError,
+> extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'connecting';
   data: undefined | TOutput;
   error: TError | null;
 }
 
-export interface TRPCSubscriptionPendingResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
+/**
+ * Result while connected and waiting for data.
+ */
+export interface TRPCSubscriptionPendingResult<
+  TOutput,
+> extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
   data: TOutput | undefined;
   error: null;
 }
 
-export interface TRPCSubscriptionErrorResult<TOutput, TError>
-  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+/**
+ * Result after an error that stopped the subscription.
+ */
+export interface TRPCSubscriptionErrorResult<
+  TOutput,
+  TError,
+> extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'error';
   data: TOutput | undefined;
   error: TError;
 }
 
+/**
+ * The result of {@link useSubscription}. Check `status` to narrow it.
+ */
 export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
   | TRPCSubscriptionConnectingResult<TOutput, TError>
@@ -135,16 +189,24 @@ export const trpcSubscriptionOptions = <
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
+  /**
+   * The raw input before queryKey serialization. Required to correctly detect
+   * `skipToken` because `getQueryKeyInternal` strips it from the queryKey args.
+   */
+  input: unknown;
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
-  const { subscribe, path, queryKey, opts = {} } = args;
-  const input = readQueryKey(queryKey)?.args?.input;
+  const { subscribe, path, queryKey, input, opts = {} } = args;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<
     TRPCSubscriptionOptions<any, TFeatureFlags>
   >['subscribe'] = (innerOpts) => {
-    return subscribe(path.join('.'), input ?? undefined, innerOpts);
+    return subscribe(
+      path.join('.'),
+      input === skipToken ? undefined : input,
+      innerOpts,
+    );
   };
 
   return {
@@ -156,6 +218,19 @@ export const trpcSubscriptionOptions = <
   };
 };
 
+/**
+ * Runs a subscription while the component is mounted.
+ *
+ * @example
+ * ```ts
+ * const trpc = useTRPC();
+ * const sub = useSubscription(
+ *   trpc.chat.onMessage.subscriptionOptions({ roomId }),
+ * );
+ * ```
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ */
 export function useSubscription<TOutput, TError>(
   opts: TRPCSubscriptionOptionsOut<TOutput, TError, any>,
 ): TRPCSubscriptionResult<TOutput, TError> {
@@ -183,6 +258,25 @@ export function useSubscription<TOutput, TError>(
     if (!opts.enabled) {
       return;
     }
+
+    // links complete the observable when it's unsubscribed, which must not
+    // be treated as the server ending the subscription
+    let isUnsubscribed = false;
+    let isEnded = false;
+    // runs before the user's callback, so a `reset()` from inside it wins
+    const setEnded = () => {
+      if (isEnded) {
+        return;
+      }
+      isEnded = true;
+      updateState((prev) => ({
+        ...prev,
+        status: 'idle',
+        data: undefined,
+        error: null,
+      }));
+    };
+
     const subscription = opts.subscribe({
       onStarted: () => {
         optsRef.current.onStarted?.();
@@ -208,6 +302,20 @@ export function useSubscription<TOutput, TError>(
           status: 'error',
           error,
         }));
+      },
+      onStopped: () => {
+        if (isUnsubscribed) {
+          return;
+        }
+        setEnded();
+        optsRef.current.onStopped?.();
+      },
+      onComplete: () => {
+        if (isUnsubscribed) {
+          return;
+        }
+        setEnded();
+        optsRef.current.onComplete?.();
       },
       onConnectionStateChange: (result) => {
         optsRef.current.onConnectionStateChange?.(result);
@@ -235,10 +343,10 @@ export function useSubscription<TOutput, TError>(
     });
 
     currentSubscriptionRef.current = () => {
+      isUnsubscribed = true;
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/react-compiler
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [hashKey(opts.queryKey), opts.enabled]);
 
   const getInitialState = React.useCallback((): $Result => {

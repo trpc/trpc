@@ -57,6 +57,75 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(schema.properties).toHaveProperty('impossible');
   });
 
+  it('drops function-valued properties from the schema', () => {
+    const schema = requireOutputData({ doc, procPath: 'withFunctions' });
+
+    expect(requireProperty(schema, 'id')).toEqual({ type: 'string' });
+
+    expect(schema.properties).not.toHaveProperty('onEvent');
+    expect(schema.properties).not.toHaveProperty('optionalHook');
+    expect(schema.properties).not.toHaveProperty('ctor');
+
+    expect(schema.required ?? []).not.toContain('onEvent');
+    expect(schema.required ?? []).not.toContain('ctor');
+  });
+
+  it('treats Function, CallableFunction and NewableFunction as unserialisable', () => {
+    const schema = requireOutputData({
+      doc,
+      procPath: 'standardFunctionInterfaces',
+    });
+
+    expect(requireProperty(schema, 'id')).toEqual({ type: 'string' });
+
+    for (const prop of ['handler', 'callable', 'newable', 'optionalHandler']) {
+      expect(schema.properties).not.toHaveProperty(prop);
+      expect(schema.required ?? []).not.toContain(prop);
+    }
+
+    expect(schema.properties).not.toHaveProperty('nullableHandler');
+    expect(schema.required ?? []).not.toContain('nullableHandler');
+
+    for (const name of ['Function', 'CallableFunction', 'NewableFunction']) {
+      expect(doc.components?.schemas ?? {}).not.toHaveProperty(name);
+    }
+  });
+
+  it('drops a property that is only ever a function or null', () => {
+    const schema = requireOutputData({ doc, procPath: 'nullableFunction' });
+
+    expect(schema.properties).toEqual({ id: { type: 'string' } });
+    expect(schema.required).toEqual(['id']);
+  });
+
+  it('drops the callable member of a mixed union and makes it optional', () => {
+    const schema = requireOutputData({ doc, procPath: 'functionUnion' });
+
+    expect(schema.required ?? []).toEqual(['id']);
+
+    expect(requireProperty(schema, 'value')).toEqual({
+      oneOf: [
+        { $ref: '#/components/schemas/FunctionUnionTarget' },
+        { type: 'null' },
+      ],
+    });
+
+    expect(requireProperty(schema, 'inline')).toEqual({
+      $ref: '#/components/schemas/FunctionUnionTarget',
+    });
+  });
+
+  it('collapses an object whose properties are all callable', () => {
+    const schema = requireOutputData({ doc, procPath: 'onlyFunctions' });
+
+    // The shape was closed to begin with, so it stays closed: the value
+    // serialises to `{}`, not to an object with arbitrary unknown keys.
+    expect(schema).toEqual({
+      type: 'object',
+      additionalProperties: false,
+    });
+  });
+
   it('unwraps Promise<T> return types', () => {
     const schema = requireOutputData({ doc, procPath: 'asyncReturn' });
     expect(requireProperty(schema, 'data')).toEqual({ type: 'string' });

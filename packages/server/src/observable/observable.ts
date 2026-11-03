@@ -8,16 +8,34 @@ import type {
   Unsubscribable,
 } from './types';
 
-/** @public */
+/**
+ * The type of the values an observable emits.
+ * @public
+ */
 export type inferObservableValue<TObservable> =
   TObservable extends Observable<infer TValue, unknown> ? TValue : never;
 
-/** @public */
+/**
+ * Whether a value is an observable: an object with `subscribe`.
+ * @public
+ */
 export function isObservable(x: unknown): x is Observable<unknown, unknown> {
   return typeof x === 'object' && x !== null && 'subscribe' in x;
 }
 
-/** @public */
+/**
+ * Creates an observable. `subscribe` runs for each subscriber, and can
+ * return a function that cleans up when it unsubscribes.
+ * @example
+ * ```ts
+ * const ticks = observable<number>((observer) => {
+ *   const timer = setInterval(() => observer.next(Date.now()), 1000);
+ *   return () => clearInterval(timer);
+ * });
+ * ```
+ * @see https://trpc.io/docs/client/links#creating-a-custom-link
+ * @public
+ */
 export function observable<TValue, TError = unknown>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
 ): Observable<TValue, TError> {
@@ -87,7 +105,11 @@ function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
   return fn(prev);
 }
 
-/** @internal */
+/**
+ * Resolves with an observable's first value. Rejects if it errors or
+ * completes first. It doesn't unsubscribe after the first value.
+ * @internal
+ */
 export function observableToPromise<TValue>(
   observable: Observable<TValue, unknown>,
 ) {
@@ -204,7 +226,11 @@ function observableToReadableStream<TValue>(
   });
 }
 
-/** @internal */
+/**
+ * Turns an observable into an async iterable. Aborting `signal`
+ * unsubscribes from the observable but doesn't end a pending `next()`.
+ * @internal
+ */
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
   signal: AbortSignal,

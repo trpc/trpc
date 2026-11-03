@@ -13,6 +13,7 @@ import type {
   SkipToken,
   Updater,
 } from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
@@ -61,6 +62,10 @@ import type {
   UnusedSkipTokenTRPCQueryOptionsOut,
 } from '../types';
 
+/**
+ * The `useUtils` helpers for one query procedure.
+ * @see https://trpc.io/docs/client/react/useUtils#helpers
+ */
 export type DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
@@ -380,7 +385,7 @@ type DecorateMutationProcedure<
 type DecorateRouter = {
   /**
    * Invalidate the full router
-   * @see https://trpc.io/docs/v10/useContext#query-invalidation
+   * @see https://trpc.io/docs/client/react/useUtils#invalidating-across-whole-routers
    * @see https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
    */
   invalidate(
@@ -411,6 +416,10 @@ export type DecoratedProcedureUtilsRecord<
 type AnyDecoratedProcedure = DecorateQueryProcedure<any, any> &
   DecorateMutationProcedure<any, any>;
 
+/**
+ * What `useUtils()` returns: the context props plus helpers for every procedure.
+ * @see https://trpc.io/docs/client/react/useUtils
+ */
 export type CreateReactUtils<
   TRouter extends AnyRouter,
   TSSRContext,
@@ -422,12 +431,19 @@ export type CreateReactUtils<
   >
 >;
 
+/**
+ * What `createTRPCQueryUtils` returns.
+ * @see https://trpc.io/docs/client/react/createTRPCQueryUtils
+ */
 export type CreateQueryUtils<TRouter extends AnyRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   >;
 
+/**
+ * Maps a `useUtils` helper name to the kind of query it works on.
+ */
 export const getQueryType = (
   utilName: keyof AnyDecoratedProcedure,
 ): QueryType => {
@@ -475,10 +491,16 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     const queryType = getQueryType(utilName);
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
+    // `getQueryKeyInternal` strips `skipToken` from the query key, so the
+    // options helpers can't detect it and would return a real `queryFn`
+    const withSkipToken = <TOptions extends object>(options: TOptions) =>
+      input === skipToken ? { ...options, queryFn: skipToken } : options;
+
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
       infiniteQueryOptions: () =>
-        context.infiniteQueryOptions(path, queryKey, args[0]),
-      queryOptions: () => context.queryOptions(path, queryKey, ...args),
+        withSkipToken(context.infiniteQueryOptions(path, queryKey, args[0])),
+      queryOptions: () =>
+        withSkipToken(context.queryOptions(path, queryKey, ...args)),
       /**
        * DecorateQueryProcedure
        */

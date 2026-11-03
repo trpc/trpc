@@ -44,7 +44,7 @@ describe('JSDoc source filtering', () => {
       'TRPCRequestInfo.accept',
     );
 
-    expect(acceptSchema.description).toBe('The `trpc-accept` header');
+    expect(acceptSchema.description).toBe('The `trpc-accept` header.');
   });
 
   it('ignores JSDoc from external packages resolved from local node_modules', () => {
@@ -85,5 +85,14 @@ describe('JSDoc source filtering', () => {
     );
 
     expect(aliasOptionsSchema.description).toBeUndefined();
+  });
+
+  it('closes a third-party shape whose properties are all callable', () => {
+    // vite's `ResolverObject` is `{ buildStart?, resolveId }` — both hooks, so
+    // nothing survives serialisation and the shape must not claim open keys.
+    expect(doc.components?.schemas?.['ResolverObject']).toEqual({
+      type: 'object',
+      additionalProperties: false,
+    });
   });
 });

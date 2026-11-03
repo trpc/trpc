@@ -36,14 +36,6 @@ pnpm add @trpc/client
 bun add @trpc/client
 ```
 
-## AI Agents
-
-If you use an AI coding agent, install tRPC skills for better code generation:
-
-```bash
-npx @tanstack/intent@latest install
-```
-
 ## Basic Example
 
 ```ts

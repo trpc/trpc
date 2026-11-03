@@ -4,6 +4,10 @@ type AnyFn = (...args: any[]) => unknown;
 
 const isFunction = (fn: unknown): fn is AnyFn => typeof fn === 'function';
 
+/**
+ * The `fetch` to use: `customFetchImpl` if given, or else the global one.
+ * Throws if there's none.
+ */
 export function getFetch(
   customFetchImpl?: FetchEsque | NativeFetchEsque,
 ): FetchEsque {
@@ -12,11 +16,11 @@ export function getFetch(
   }
 
   if (typeof window !== 'undefined' && isFunction(window.fetch)) {
-    return window.fetch as FetchEsque;
+    return window.fetch.bind(window);
   }
 
   if (typeof globalThis !== 'undefined' && isFunction(globalThis.fetch)) {
-    return globalThis.fetch as FetchEsque;
+    return globalThis.fetch;
   }
 
   throw new Error('No fetch implementation found');

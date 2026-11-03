@@ -7,6 +7,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  resolvePathSeparator,
   retryableRpcCodes,
   run,
   sseStreamConsumer,
@@ -16,7 +17,7 @@ import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { getUrl } from './internals/httpUtils';
+import { getUrl, type HTTPLinkBaseOptions } from './internals/httpUtils';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -38,16 +39,21 @@ async function urlWithConnectionParams(
   return url;
 }
 
+/**
+ * @see https://trpc.io/docs/client/links/httpSubscriptionLink#httpsubscriptionlink-options
+ */
 type HTTPSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
   TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,
 > = {
   /**
-   * EventSource ponyfill
+   * The `EventSource` class to use, for runtimes that don't have one.
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#custom-headers-through-ponyfill
    */
   EventSource?: TEventSource;
   /**
-   * EventSource options or a callback that returns them
+   * Options passed to the `EventSource`, or a function that returns them for
+   * each subscription.
    */
   eventSourceOptions?:
     | EventSourceLike.InitDictOf<TEventSource>
@@ -56,10 +62,13 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
-} & TransformerOptions<TRoot> &
+} & Pick<HTTPLinkBaseOptions<TRoot>, 'pathSeparator'> &
+  TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
 /**
+ * A terminating link that runs subscriptions over Server-Sent Events.
+ *
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
  */
 export function httpSubscriptionLink<
@@ -72,6 +81,7 @@ export function httpSubscriptionLink<
   >,
 ): TRPCLink<TInferrable> {
   const transformer = getTransformer(opts.transformer);
+  const pathSeparator = resolvePathSeparator(opts.pathSeparator);
 
   return () => {
     return ({ op }) => {
@@ -100,15 +110,14 @@ export function httpSubscriptionLink<
               url: await urlWithConnectionParams(opts),
               input: inputWithTrackedEventId(input, lastEventId),
               path,
+              pathSeparator,
               type,
               signal: null,
             }),
           init: () => resultOf(opts.eventSourceOptions, { op }),
           signal,
           deserialize: (data) => transformer.output.deserialize(data),
-          EventSource:
-            opts.EventSource ??
-            (globalThis.EventSource as never as TEventSource),
+          EventSource: opts.EventSource ?? (globalThis.EventSource as never),
         });
 
         const connectionState = behaviorSubject<
@@ -240,6 +249,6 @@ export function httpSubscriptionLink<
 }
 
 /**
- * @deprecated use {@link httpSubscriptionLink} instead
+ * @deprecated Use {@link httpSubscriptionLink} instead.
  */
 export const unstable_httpSubscriptionLink = httpSubscriptionLink;

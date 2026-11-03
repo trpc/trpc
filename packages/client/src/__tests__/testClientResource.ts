@@ -36,8 +36,9 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   transformer: TransformerOptions<inferClientTypes<TRouter>>['transformer'];
 }) => Partial<CreateTRPCClientOptions<TRouter>>;
 
-export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
-  extends TRPCServerResourceOpts<TRouter> {
+export interface TestServerAndClientResourceOpts<
+  TRouter extends AnyTRPCRouter,
+> extends TRPCServerResourceOpts<TRouter> {
   /**
    * Defaults to being lazy
    */
@@ -162,7 +163,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
             httpUrl: serverResource.httpUrl,
             wssUrl: serverResource.wssUrl,
             wsClient,
-            transformer: router._def._config.transformer as any,
+            transformer: router._def._config.transformer,
           })
         : opts.client
       : {}),

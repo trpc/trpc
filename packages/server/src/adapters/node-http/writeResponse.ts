@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { isAbortError } from '../../unstable-core-do-not-import';
 import type { NodeHTTPResponse } from './types';
 
@@ -22,9 +22,11 @@ async function writeResponseBodyChunk(
       const cleanup = () => {
         res.off('error', onError);
         res.off('drain', onDrain);
+        res.off('close', onDrain);
       };
       res.once('error', onError);
       res.once('drain', onDrain);
+      res.once('close', onDrain);
     });
   }
 }

@@ -1,11 +1,10 @@
-import NextAuth from 'next-auth';
-import type { AppProviders } from 'next-auth/providers';
+import NextAuth, { type NextAuthOptions } from 'next-auth';
+import type { AppProviders } from 'next-auth/providers/index';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
 
 let useMockProvider =
-  process.env.NODE_ENV === 'test' ||
-  process.env.RAILWAY_ENVIRONMENT_NAME?.includes('-pr-'); // example: 'trpc-pr-5821'
+  process.env.NODE_ENV === 'test' || process.env.VERCEL_ENV === 'preview';
 
 const { GITHUB_CLIENT_ID, GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
 if (
@@ -51,12 +50,14 @@ if (useMockProvider) {
           name: profile.login,
           email: profile.email,
           image: profile.avatar_url,
-        } as any;
+        };
       },
     }),
   );
 }
-export default NextAuth({
+export const authOptions: NextAuthOptions = {
   // Configure one or more authentication providers
   providers,
-});
+};
+
+export default NextAuth(authOptions);

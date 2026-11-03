@@ -21,6 +21,6 @@ export default [
     entry: { cli: 'src/cli.ts' },
     format: 'esm',
     dts: false,
-    external: ['typescript'],
+    deps: { neverBundle: ['typescript'] },
   }),
 ];

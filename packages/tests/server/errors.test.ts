@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* oxlint-disable typescript/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
@@ -126,6 +126,28 @@ test('unauthorized()', async () => {
   const serverError = onError.mock.calls[0]![0]!.error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
+});
+
+test('malformed url-encoding in the path', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    server: {
+      onError,
+    },
+  });
+  const res = await fetch(`${ctx.httpUrl}/%`);
+
+  expect(res.status).toBe(400);
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0]![0]!.error;
+
+  expect(serverError).toBeInstanceOf(TRPCError);
+  expect(serverError.code).toBe('BAD_REQUEST');
 });
 
 test('getMessageFromUnknownError()', () => {

@@ -63,7 +63,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         const result = await untypedClient.query(
           ...getClientArgs(queryKey, actualOpts, {
             direction: queryFnContext.direction,
-            pageParam: queryFnContext.pageParam,
+            pageParam: queryFnContext.pageParam ?? opts?.initialCursor,
           }),
         );
 
@@ -138,7 +138,10 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         queryKey,
         queryFn: ({ pageParam, direction }) => {
           return untypedClient.query(
-            ...getClientArgs(queryKey, opts, { pageParam, direction }),
+            ...getClientArgs(queryKey, opts, {
+              pageParam: pageParam ?? opts?.initialCursor,
+              direction,
+            }),
           );
         },
         initialPageParam: opts?.initialCursor ?? null,
@@ -159,7 +162,10 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         queryKey,
         queryFn: ({ pageParam, direction }) => {
           return untypedClient.query(
-            ...getClientArgs(queryKey, opts, { pageParam, direction }),
+            ...getClientArgs(queryKey, opts, {
+              pageParam: pageParam ?? opts?.initialCursor,
+              direction,
+            }),
           );
         },
         initialPageParam: opts?.initialCursor ?? null,
@@ -213,10 +219,10 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setQueryData: (queryKey, updater, options) => {
-      return queryClient.setQueryData(queryKey, updater as any, options);
+      return queryClient.setQueryData(queryKey, updater, options);
     },
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     setQueriesData: (queryKey, filters, updater, options) => {
       return queryClient.setQueriesData(
         {
@@ -233,7 +239,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setInfiniteQueryData: (queryKey, updater, options) => {
-      return queryClient.setQueryData(queryKey, updater as any, options);
+      return queryClient.setQueryData(queryKey, updater, options);
     },
 
     getInfiniteQueryData: (queryKey) => {

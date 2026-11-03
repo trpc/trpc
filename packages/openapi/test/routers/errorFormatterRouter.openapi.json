@@ -148,11 +148,11 @@
                         },
                         "path": {
                           "type": "string",
-                          "description": "Path to the procedure that threw the error"
+                          "description": "The path of the procedure that threw."
                         },
                         "stack": {
                           "type": "string",
-                          "description": "Stack trace of the error (only in development)"
+                          "description": "The error's stack trace, only when `isDev` is set."
                         }
                       },
                       "required": [
@@ -185,7 +185,8 @@
                         -32028,
                         -32029,
                         -32099
-                      ]
+                      ],
+                      "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
                     }
                   },
                   "required": [

@@ -3,7 +3,10 @@ import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
-import { createTRPCOptionsProxy } from './createOptionsProxy';
+import {
+  createTRPCOptionsProxy,
+  renderHandleVerbs,
+} from './createOptionsProxy';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -21,19 +24,41 @@ type TRPCProviderType<
   } & KeyPrefixOptions<TFeatureFlags>
 >;
 
+/**
+ * What {@link createTRPCContext} returns.
+ */
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
+  /**
+   * Provides the tRPC client and `QueryClient` to `useTRPC` and
+   * `useTRPCClient`.
+   */
   TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags>;
+  /**
+   * Returns the options proxy for your router.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage
+   */
   useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
+  /**
+   * Returns the tRPC client, for calling procedures directly.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#useTRPCClient
+   */
   useTRPCClient: () => TRPCClient<TRouter>;
 }
 
 /**
- * Create a set of type-safe provider-consumers
+ * Creates a `TRPCProvider` and the `useTRPC` and `useTRPCClient` hooks for
+ * your router.
  *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider
+ * @example
+ * ```ts
+ * export const { TRPCProvider, useTRPC, useTRPCClient } =
+ *   createTRPCContext<AppRouter>();
+ * ```
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
@@ -54,6 +79,7 @@ export function createTRPCContext<
           client: props.trpcClient,
           queryClient: props.queryClient,
           keyPrefix: props.keyPrefix as any,
+          [renderHandleVerbs]: true,
         }),
       [props.trpcClient, props.queryClient, props.keyPrefix],
     );
@@ -85,8 +111,5 @@ export function createTRPCContext<
     return client;
   }
 
-  return { TRPCProvider, useTRPC, useTRPCClient } as CreateTRPCContextResult<
-    TRouter,
-    TFeatureFlags
-  >;
+  return { TRPCProvider, useTRPC, useTRPCClient };
 }

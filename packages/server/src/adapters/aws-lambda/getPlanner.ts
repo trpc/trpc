@@ -16,7 +16,7 @@ export type APIGatewayResult =
 
 function determinePayloadFormat(event: LambdaEvent): string {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-  // According to AWS support, version is is extracted from the version property in the event.
+  // According to AWS support, version is extracted from the version property in the event.
   // If there is no version property, then the version is implied as 1.0
   const unknownEvent = event as { version?: string };
   if (typeof unknownEvent.version === 'undefined') {
@@ -65,7 +65,7 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
     }
     const matches = event.resource.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       const group = match[1]!;
       if (group.includes('+') && event.pathParameters) {
         return event.pathParameters[group.replace('+', '')] ?? '';
@@ -153,7 +153,7 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
   getTRPCPath: (event) => {
     const matches = event.routeKey.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       const group = match[1]!;
       if (group.includes('+') && event.pathParameters) {
         return event.pathParameters[group.replace('+', '')] ?? '';

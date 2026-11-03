@@ -25,6 +25,26 @@ const ctx = konn()
             }),
           )
           .query(() => '__infResult' as const),
+        paginated: t.procedure
+          .input(
+            z.object({
+              cursor: z.number().nullish(),
+            }),
+          )
+          .query(({ input }) => {
+            const cursor = input.cursor ?? 0;
+            return { cursor, nextCursor: cursor + 1 };
+          }),
+        optionalCursor: t.procedure
+          .input(
+            z.object({
+              cursor: z.number().optional(),
+            }),
+          )
+          .query(({ input }) => {
+            const cursor = input.cursor ?? 0;
+            return { cursor, nextCursor: cursor + 1 };
+          }),
         throwsError: t.procedure.query(() => {
           throw new Error('__error');
         }),
@@ -58,6 +78,53 @@ test('fetchInfinite', async () => {
   expectTypeOf<InfiniteData<'__infResult', string | null>>(post);
 
   expect(post.pages).toStrictEqual(['__infResult']);
+});
+
+test('fetchInfinite with initialCursor and pages', async () => {
+  const { opts } = ctx;
+  const ssg = createServerSideHelpers({
+    client: opts.client,
+  });
+
+  const data = await ssg.post.paginated.fetchInfinite(
+    {},
+    {
+      initialCursor: 5,
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  expect(data).toStrictEqual({
+    pages: [
+      { cursor: 5, nextCursor: 6 },
+      { cursor: 6, nextCursor: 7 },
+    ],
+    pageParams: [5, 6],
+  });
+});
+
+test('fetchInfinite without initialCursor on an optional cursor', async () => {
+  const { opts } = ctx;
+  const ssg = createServerSideHelpers({
+    client: opts.client,
+  });
+
+  const data = await ssg.post.optionalCursor.fetchInfinite(
+    {},
+    {
+      pages: 2,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  expect(data).toStrictEqual({
+    pages: [
+      { cursor: 0, nextCursor: 1 },
+      { cursor: 1, nextCursor: 2 },
+    ],
+    pageParams: [null, 1],
+  });
 });
 
 test('prefetch and dehydrate', async () => {

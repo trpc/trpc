@@ -3,7 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
-import { allAbortSignals } from '../internals/signals';
+import { allAbortSignals, raceAbortSignals } from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -16,6 +16,9 @@ import {
 import type { Operation, TRPCLink } from './types';
 
 /**
+ * A terminating link that batches calls made in the same tick into one HTTP
+ * request.
+ *
  * @see https://trpc.io/docs/client/links/httpBatchLink
  */
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -98,12 +101,18 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
+        const ac = new AbortController();
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const promise = loader.load({
+          ...op,
+          signal: raceAbortSignals(op.signal, ac.signal),
+        });
 
+        let isDone = false;
         let _res = undefined as HTTPResult | undefined;
         promise
           .then((res) => {
+            isDone = true;
             _res = res;
             const transformed = transformResult(
               res.json,
@@ -125,6 +134,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
+            isDone = true;
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -133,7 +143,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          if (!isDone) {
+            ac.abort();
+          }
         };
       });
     };
