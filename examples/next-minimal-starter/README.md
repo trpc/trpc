@@ -30,5 +30,6 @@ npm run dev        # starts next.js
 ### Test
 
 ```bash
-npm run test-dev   # runs the Playwright test against `next dev`
+npx playwright install chromium   # once, to download the test browser
+npm run test-dev                  # runs the Playwright test against `next dev`
 ```
