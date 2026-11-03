@@ -1,11 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { ChevronRight, MessageSquare, UserRound } from 'lucide-react';
-import { type ReactNode, Suspense, useId } from 'react';
+import { type ReactNode, useId } from 'react';
 
 import { Skeleton } from '@shared/ui/components/skeleton';
 
-import { pageCount } from './backend.ts';
 import { DemoLink } from './browser.tsx';
 import { type TRPC, useTRPC } from './session.tsx';
 
@@ -117,6 +116,7 @@ export function CommentsSkeleton() {
 
 interface PostSummary {
   readonly author: string;
+  readonly commentCount?: number;
   readonly excerpt: string;
   readonly id: number;
   readonly minutes: number;
@@ -124,10 +124,7 @@ interface PostSummary {
 }
 
 /** An article to open: the whole card is the link. */
-function PostCard(props: {
-  readonly commentCount?: ReactNode;
-  readonly post: PostSummary;
-}) {
+function PostCard(props: { readonly post: PostSummary }) {
   const post = props.post;
   return (
     <DemoLink
@@ -145,7 +142,9 @@ function PostCard(props: {
           <span>
             {post.author} · {post.minutes} min read
           </span>
-          {props.commentCount}
+          {post.commentCount === undefined ? null : (
+            <CommentCount count={post.commentCount} />
+          )}
         </span>
       </span>
       <ChevronRight
@@ -156,22 +155,19 @@ function PostCard(props: {
   );
 }
 
-export function PostCards(props: {
-  readonly commentCount?: (postId: number) => ReactNode;
-  readonly posts: ReadonlyArray<PostSummary>;
-}) {
+function PostCards(props: { readonly posts: ReadonlyArray<PostSummary> }) {
   return (
     <ul className="grid gap-2">
       {props.posts.map((post) => (
         <li key={post.id}>
-          <PostCard commentCount={props.commentCount?.(post.id)} post={post} />
+          <PostCard post={post} />
         </li>
       ))}
     </ul>
   );
 }
 
-export function CommentCount(props: { readonly count: number }) {
+function CommentCount(props: { readonly count: number }) {
   return (
     <span className="inline-flex items-center gap-1">
       · <MessageSquare aria-hidden className="size-3" />
@@ -180,40 +176,33 @@ export function CommentCount(props: { readonly count: number }) {
   );
 }
 
-/** Waits inside the card, so the article shows before its count. */
-export function CommentCountSlot(props: { readonly children: ReactNode }) {
-  return (
-    <Suspense fallback={<Skeleton className="h-3 w-20" />}>
-      {props.children}
-    </Suspense>
-  );
-}
-
-function CommentCountFromHandle(props: {
-  readonly counts: unstable_inferQueryHandle<TRPC['post']['commentCounts']>;
-  readonly postId: number;
+/** A page of the list, and links to the others. */
+export function PostListPage(props: {
+  readonly list: {
+    readonly pageCount: number;
+    readonly posts: ReadonlyArray<PostSummary>;
+  };
+  readonly page: number;
 }) {
-  const trpc = useTRPC();
-  const countsQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.counts));
-  return <CommentCount count={countsQuery.data[props.postId] ?? 0} />;
+  return (
+    <>
+      {props.list.posts.length === 0 ? (
+        <p className="text-muted-foreground">No posts on this page.</p>
+      ) : (
+        <PostCards posts={props.list.posts} />
+      )}
+      <Pager page={props.page} pageCount={props.list.pageCount} />
+    </>
+  );
 }
 
 export function PostList(props: {
-  readonly counts: unstable_inferQueryHandle<TRPC['post']['commentCounts']>;
-  readonly posts: unstable_inferQueryHandle<TRPC['post']['list']>;
+  readonly list: unstable_inferQueryHandle<TRPC['post']['list']>;
+  readonly page: number;
 }) {
   const trpc = useTRPC();
-  const postsQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.posts));
-  return (
-    <PostCards
-      commentCount={(postId) => (
-        <CommentCountSlot>
-          <CommentCountFromHandle counts={props.counts} postId={postId} />
-        </CommentCountSlot>
-      )}
-      posts={postsQuery.data}
-    />
-  );
+  const listQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.list));
+  return <PostListPage list={listQuery.data} page={props.page} />;
 }
 
 export function PostListSkeleton(props: { readonly count?: number }) {
@@ -227,11 +216,11 @@ export function PostListSkeleton(props: { readonly count?: number }) {
 }
 
 /** Links to each page of the list, so the page is in the URL. */
-export function Pager(props: { readonly page: number }) {
+function Pager(props: { readonly page: number; readonly pageCount: number }) {
   return (
     <nav aria-label="Pages" className="flex items-center gap-1 text-xs">
       <span className="mr-1 text-muted-foreground">Page</span>
-      {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+      {Array.from({ length: props.pageCount }, (_, index) => index + 1).map(
         (page) => (
           <DemoLink
             aria-current={page === props.page ? 'page' : undefined}

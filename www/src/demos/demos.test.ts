@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createDemoClient, pageCount } from './kit/backend.ts';
+import { createDemoClient } from './kit/backend.ts';
 import {
   chainLength,
   createNetwork,
@@ -177,8 +177,7 @@ describe('network', () => {
     await client.post.comments.query({ postId: 1 });
     await client.post.moreByAuthor.query({ postId: 1 });
     await client.post.list.query({ page: 1 });
-    await client.post.commentCounts.query({ page: 1 });
-    expect(weights).toEqual([1, 1.5, 1.2, 0.8, 1.1]);
+    expect(weights).toEqual([1, 1.5, 1.2, 0.8]);
   });
 
   it('answers only once the delay has passed', async () => {
@@ -216,30 +215,24 @@ describe('backend', () => {
     expect(more.posts.map((post) => post.id)).toEqual([4, 7]);
   });
 
-  it('pages the list, three posts a page', async () => {
+  it('pages the list, three posts a page, and says how many pages', async () => {
     const pages = await Promise.all(
-      Array.from({ length: pageCount }, (_, index) =>
-        client().post.list.query({ page: index + 1 }),
-      ),
+      [1, 2, 3, 4].map((page) => client().post.list.query({ page })),
     );
-    expect(pages.map((page) => page.map((post) => post.id))).toEqual([
+    expect(pages.map((page) => page.pageCount)).toEqual([3, 3, 3, 3]);
+    expect(pages.map((page) => page.posts.map((post) => post.id))).toEqual([
       [1, 2, 3],
       [4, 5, 6],
       [7, 8, 9],
+      [],
     ]);
   });
 
-  it("counts each post's comments for one page", async () => {
-    expect(await client().post.commentCounts.query({ page: 1 })).toEqual({
-      1: 2,
-      2: 2,
-      3: 1,
-    });
-    expect(await client().post.commentCounts.query({ page: 3 })).toEqual({
-      7: 0,
-      8: 0,
-      9: 0,
-    });
+  it("gives each listed post's comment count in the same response", async () => {
+    const first = await client().post.list.query({ page: 1 });
+    expect(first.posts.map((post) => post.commentCount)).toEqual([2, 2, 1]);
+    const last = await client().post.list.query({ page: 3 });
+    expect(last.posts.map((post) => post.commentCount)).toEqual([0, 0, 0]);
   });
 });
 

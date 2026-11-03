@@ -7,10 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { type ReactNode, Suspense } from 'react';
 
-import { pageCount } from './backend.ts';
 import {
-  CommentCount,
-  CommentCountSlot,
   CommentList,
   Comments,
   CommentsSection,
@@ -19,11 +16,10 @@ import {
   MoreByAuthorList,
   MoreByAuthorSkeleton,
   NotFound,
-  Pager,
   Post,
   PostArticle,
-  PostCards,
   PostList,
+  PostListPage,
   PostListSkeleton,
   PostSkeleton,
 } from './blog.tsx';
@@ -41,7 +37,7 @@ type LoaderVerb = Extract<Strategy, 'ensure' | 'fetch' | 'prefetch'>;
 
 function pageFrom(search: Record<string, unknown>) {
   const page = Number(search['page']);
-  return Number.isInteger(page) && page >= 1 && page <= pageCount ? page : 1;
+  return Number.isInteger(page) && page >= 1 ? page : 1;
 }
 
 // The site's registered router doesn't know the demo's routes, so these read
@@ -57,10 +53,7 @@ function usePostId() {
 }
 
 function startList(trpc: TRPC, page: number) {
-  return {
-    counts: trpc.post.commentCounts.unstable_$prefetch({ page }),
-    posts: trpc.post.list.unstable_$prefetch({ page }),
-  };
+  return { list: trpc.post.list.unstable_$prefetch({ page }) };
 }
 
 function startPost(trpc: TRPC, id: number) {
@@ -75,20 +68,10 @@ async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
   switch (verb) {
     case 'prefetch':
       return startList(trpc, page);
-    case 'ensure': {
-      const [posts, counts] = await Promise.all([
-        trpc.post.list.unstable_$ensure({ page }),
-        trpc.post.commentCounts.unstable_$ensure({ page }),
-      ]);
-      return { counts, posts };
-    }
-    case 'fetch': {
-      const [posts, counts] = await Promise.all([
-        trpc.post.list.unstable_$fetch({ page }),
-        trpc.post.commentCounts.unstable_$fetch({ page }),
-      ]);
-      return { counts, posts };
-    }
+    case 'ensure':
+      return { list: await trpc.post.list.unstable_$ensure({ page }) };
+    case 'fetch':
+      return { list: await trpc.post.list.unstable_$fetch({ page }) };
   }
 }
 
@@ -118,25 +101,19 @@ async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
 type ListHandles = ReturnType<typeof startList>;
 type PostHandles = ReturnType<typeof startPost>;
 
-function ListLayout(props: {
-  readonly children: ReactNode;
-  readonly page: number;
-}) {
+function ListLayout(props: { readonly children: ReactNode }) {
   return (
     <div className="grid gap-3">
       <h3 className="text-base font-semibold">Latest articles</h3>
-      {props.children}
-      <Pager page={props.page} />
+      <Suspense fallback={<PostListSkeleton />}>{props.children}</Suspense>
     </div>
   );
 }
 
 function ListFromHandles(props: ListHandles & { readonly page: number }) {
   return (
-    <ListLayout page={props.page}>
-      <Suspense fallback={<PostListSkeleton />}>
-        <PostList counts={props.counts} posts={props.posts} />
-      </Suspense>
+    <ListLayout>
+      <PostList list={props.list} page={props.page} />
     </ListLayout>
   );
 }
@@ -189,42 +166,18 @@ function TopOfPost(): ReactNode {
   return <PostFromHandles {...startPost(trpc, usePostId())} />;
 }
 
-function CommentCountByPage(props: {
-  readonly page: number;
-  readonly postId: number;
-}) {
+function ListByPage(props: { readonly page: number }) {
   const trpc = useTRPC();
-  const countsQuery = useSuspenseQuery(
-    trpc.post.commentCounts.queryOptions({ page: props.page }),
-  );
-  return <CommentCount count={countsQuery.data[props.postId] ?? 0} />;
-}
-
-/** The list, then each card's count, which only renders once the list is in. */
-function ListThenCounts(props: { readonly page: number }) {
-  const trpc = useTRPC();
-  const postsQuery = useSuspenseQuery(
+  const listQuery = useSuspenseQuery(
     trpc.post.list.queryOptions({ page: props.page }),
   );
-  return (
-    <PostCards
-      commentCount={(postId) => (
-        <CommentCountSlot>
-          <CommentCountByPage page={props.page} postId={postId} />
-        </CommentCountSlot>
-      )}
-      posts={postsQuery.data}
-    />
-  );
+  return <PostListPage list={listQuery.data} page={props.page} />;
 }
 
 function ReaderList(): ReactNode {
-  const page = usePage();
   return (
-    <ListLayout page={page}>
-      <Suspense fallback={<PostListSkeleton />}>
-        <ListThenCounts page={page} />
-      </Suspense>
+    <ListLayout>
+      <ListByPage page={usePage()} />
     </ListLayout>
   );
 }
@@ -337,9 +290,9 @@ function createRenderRoutes(list: () => ReactNode, post: () => ReactNode) {
 }
 
 /**
- * A blog with a paged list, `/posts?page=2`, and articles, `/posts/1`. Each
- * card shows its comment count, and each article the author's other posts,
- * so every page has a query that renders inside another.
+ * A blog with a paged list, `/posts?page=2`, and articles, `/posts/1`. The
+ * list is one query. An article's comments and the author's other posts
+ * render inside the article, so their queries can wait for it.
  */
 export function createBlogRoutes(strategy: Strategy) {
   switch (strategy) {

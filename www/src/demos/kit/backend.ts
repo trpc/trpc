@@ -82,9 +82,7 @@ const posts: ReadonlyArray<Post> = [
 ];
 
 const perPage = 3;
-
-/** How many pages the list has. */
-export const pageCount = Math.ceil(posts.length / perPage);
+const pageCount = Math.ceil(posts.length / perPage);
 
 const comments = [
   { body: 'Finally, no more spinners inside spinners.', postId: 1 },
@@ -108,7 +106,6 @@ const comments = [
  */
 export const procedureWeights: Readonly<Record<string, number>> = {
   'post.byId': 1,
-  'post.commentCounts': 1.1,
   'post.comments': 1.5,
   'post.list': 0.8,
   'post.moreByAuthor': 1.2,
@@ -182,23 +179,17 @@ function createAppRouter(startedAt: number) {
           servedAt: servedAt(),
         };
       }),
-      /** Each post's comment count, by post id, for one page of the list. */
-      commentCounts: t.procedure
-        .input(numbersInput('page'))
-        .query(({ input }) =>
-          Object.fromEntries(
-            pageOf(input.page).map((post) => [
-              post.id,
-              commentsOf(post.id).length,
-            ]),
-          ),
-        ),
       comments: t.procedure
         .input(numbersInput('postId'))
         .query(({ input }) => commentsOf(input.postId)),
-      list: t.procedure
-        .input(numbersInput('page'))
-        .query(({ input }) => pageOf(input.page).map(summaryOf)),
+      /** One page of the list, with what the page shows in one response. */
+      list: t.procedure.input(numbersInput('page')).query(({ input }) => ({
+        pageCount,
+        posts: pageOf(input.page).map((post) => ({
+          ...summaryOf(post),
+          commentCount: commentsOf(post.id).length,
+        })),
+      })),
       /**
        * The other posts by a post's author. It takes the post's id, which is
        * in the URL, so a loader can start it with the post.

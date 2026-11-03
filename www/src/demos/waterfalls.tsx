@@ -32,7 +32,7 @@ export function Waterfalls(props: DemoProps) {
         },
         {
           description:
-            "Each component fetches what it shows. An article's comments and more by its author render inside the article, and the comment counts inside the list, so they wait. Two round trips.",
+            "Each component fetches what it shows. An article's comments and more by its author render inside the article, so they wait for it. Two round trips.",
           label: 'each component',
           value: 'reader',
         },
