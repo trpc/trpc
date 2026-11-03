@@ -5,7 +5,7 @@ import {
   retainSearchParams,
   Scripts,
 } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 import { SiteFooter } from '~/components/site-footer.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
@@ -84,6 +84,9 @@ export const Route = createRootRoute({
 });
 
 function RootDocument(props: { readonly children: ReactNode }) {
+  useEffect(() => {
+    document.documentElement.setAttribute('data-smooth-scroll', '');
+  }, []);
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

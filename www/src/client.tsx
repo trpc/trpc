@@ -4,9 +4,6 @@ import { StrictMode, startTransition } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 
 import { reactErrorOptions } from './sentry-client.ts';
-import { enableSmoothScrollOnInput } from './smooth-scroll.ts';
-
-enableSmoothScrollOnInput();
 
 startTransition(() => {
   hydrateRoot(
