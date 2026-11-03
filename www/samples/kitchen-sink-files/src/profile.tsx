@@ -18,11 +18,9 @@ import { drawAvatar, drawNoise, useObjectUrl } from './images.ts';
 import type { AppContext } from './trpc.ts';
 
 export const rootRoute = createRootRouteWithContext<AppContext>()({
-  loader: (opts) =>
-    opts.context.queryClient.query({
-      ...opts.context.trpc.profile.get.queryOptions(),
-      staleTime: 'static',
-    }),
+  loader: async (opts) => ({
+    profile: await opts.context.trpc.profile.get.$ensure(),
+  }),
   component: Profile,
 });
 
@@ -30,7 +28,8 @@ type Errors = Partial<Record<'avatar' | 'name' | 'form', string>>;
 
 function Profile(): ReactNode {
   const ctx = rootRoute.useRouteContext();
-  const profile = useSuspenseQuery(ctx.trpc.profile.get.queryOptions()).data;
+  const handles = rootRoute.useLoaderData();
+  const profile = useSuspenseQuery(ctx.trpc.$fromHandle(handles.profile)).data;
   // #region avatar
   // `data` is the `File` the procedure returned: its bytes were the
   // response's body.

@@ -18,17 +18,16 @@ import type { AppContext } from './trpc.ts';
 
 export const rootRoute = createRootRouteWithContext<AppContext>()({
   // The list is there when the page first renders.
-  loader: (opts) =>
-    opts.context.queryClient.query({
-      ...opts.context.trpc.todo.list.queryOptions(),
-      staleTime: 'static',
-    }),
+  loader: async (opts) => ({
+    todos: await opts.context.trpc.todo.list.$ensure(),
+  }),
   component: Todos,
 });
 
 function Todos(): ReactNode {
   const ctx = rootRoute.useRouteContext();
-  const todos = useSuspenseQuery(ctx.trpc.todo.list.queryOptions()).data;
+  const handles = rootRoute.useLoaderData();
+  const todos = useSuspenseQuery(ctx.trpc.$fromHandle(handles.todos)).data;
   const add = useMutation(addTodoOptions(ctx));
   const [text, setText] = useState('');
   const [undone, setUndone] = useState<string>();

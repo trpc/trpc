@@ -58,16 +58,16 @@ Returning an `error()` from the resolver makes this `matchError()` a type error 
 
 ## Loading in the loader
 
-A route's loader starts the page's queries before it renders, and its component reads them. The demo has a small helper for that: `prefetch()` starts a query without waiting, `ensure()` waits for it (or takes it from the cache), and `useLoaderQuery()` reads what the loader started, with no second list of query options:
+A route's loader starts the page's queries before it renders, and its component reads them with [query handles](../integrations/tanstack-query/handles.md). The helpers are made with the app's query client, so their queries start in its cache:
 
-```sample title="loader-query.ts"
-kitchen-sink-forms/src/loader-query.ts#loader-query
+```sample title="trpc.ts"
+kitchen-sink-forms/src/trpc.ts#client
 ```
 
-The profile page waits for the profile, and lets the list of recent changes arrive while it shows. With the network on **Slow**, the page appears with the profile and a placeholder where the changes come in:
+`$prefetch()` starts a query without waiting, `$ensure()` waits for it (or takes it from the cache), and each returns a handle; `$fromHandle()` reads what the loader started, with no second list of query options. The profile page waits for the profile, and lets the list of recent changes arrive while it shows. With the network on **Slow**, the page appears with the profile and a placeholder where the changes come in:
 
 ```sample title="routes.tsx"
 kitchen-sink-forms/src/routes.tsx#profile-route
 ```
 
-The edit page's loader waits for the profile too, so the form's default values are there when it first renders. Its topics are stored as an array, so the form joins them back into the text its field shows. After a save, the form puts the saved profile in the cache with `setQueryData()`, invalidates the changes, and navigates to the profile page, which shows the new profile without a request and refetches the changes.
+The edit page's loader waits for the profile too, so the form's default values are there when it first renders. Its topics are stored as an array, so the form joins them back into the text its field shows. After a save, the form puts the saved profile in the cache with `setQueryData()`, invalidates the changes, and navigates to the profile page, which shows the new profile at once and refetches the changes.

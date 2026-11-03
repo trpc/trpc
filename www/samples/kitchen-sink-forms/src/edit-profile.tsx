@@ -11,12 +11,12 @@ import {
 import { Input } from '@shared/ui/components/input';
 import { Switch } from '@shared/ui/components/switch';
 import { Textarea } from '@shared/ui/components/textarea';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { createRoute, useNavigate } from '@tanstack/react-router';
 import { matchError, safe } from '@trpc12/trpc/client';
 import { type ReactNode, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { ensure, useLoaderQuery } from './loader-query.ts';
 import { rootRoute } from './routes.tsx';
 import { type ProfileInput, profileSchema } from './schema.ts';
 
@@ -25,10 +25,7 @@ export const editProfileRoute = createRoute({
   path: '/edit',
   // The form's default values come from the loader, so it never renders empty.
   loader: async (opts) => ({
-    profile: await ensure(
-      opts.context.queryClient,
-      opts.context.trpc.profile.get.queryOptions(),
-    ),
+    profile: await opts.context.trpc.profile.get.$ensure(),
   }),
   component: EditProfile,
 });
@@ -45,8 +42,9 @@ const fields = [
 ] as const;
 
 function EditProfile(): ReactNode {
-  const profile = useLoaderQuery(editProfileRoute.useLoaderData().profile);
   const ctx = editProfileRoute.useRouteContext();
+  const handles = editProfileRoute.useLoaderData();
+  const profile = useSuspenseQuery(ctx.trpc.$fromHandle(handles.profile)).data;
   const navigate = useNavigate();
   // Off sends the form as it is, to see the server's checks.
   const [checkInBrowser, setCheckInBrowser] = useState(true);

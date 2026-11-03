@@ -74,7 +74,7 @@ A boundary throws on its first render without its parent above it (`<AuthBoundar
 
 ## Narrow the queries and mutations under it
 
-The hook returns `query`, `infiniteQuery` and `mutation`, which take tRPC's options for TanStack's own hooks: `useQuery`, `useSuspenseQuery`, `useQueries`, `usePrefetchQuery`, `useInfiniteQuery` and `useMutation`. The options they return type `error` without what the boundaries own:
+The hook returns `query`, `infiniteQuery` and `mutation`, which take tRPC's options for TanStack's own hooks: `useQuery`, `useSuspenseQuery`, `useQueries`, `usePrefetchQuery`, `useInfiniteQuery` and `useMutation`. The options they return type `error` without what the boundaries own. Here `PostTitle` reads the [handle](./handles.md) its route's loader ensured:
 
 ```tsx twoslash
 // ---cut-start---
@@ -82,6 +82,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   createErrorBoundary,
   createTrpcContext,
+  type inferQueryHandle,
 } from '@trpc12/tanstack-react-query';
 import {
   createTrpcClient,
@@ -107,13 +108,12 @@ const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   parent: RootBoundary,
   claims: { UNAUTHORIZED: () => 'Sign in' },
 });
+type PostHandle = inferQueryHandle<ReturnType<typeof useTrpc>['post']['byId']>;
 // ---cut-end---
-function PostTitle(props: { id: string }) {
+function PostTitle(props: { post: PostHandle }) {
   const trpc = useTrpc();
   const auth = useAuthBoundary();
-  const post = useQuery(
-    auth.query(trpc.post.byId.queryOptions({ input: { id: props.id } })),
-  );
+  const post = useQuery(auth.query(trpc.$fromHandle(props.post)));
   if (post.error) {
     // Auth owns UNAUTHORIZED and Root every `defined: false` error, so
     // NOT_FOUND and BAD_REQUEST are left, and matchError() needs no `unexpected`

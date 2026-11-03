@@ -17,28 +17,39 @@ The [`examples/react-spa`](../../../../../next/examples/react-spa/README.md) app
 
 ## A client for the whole app
 
-A single-page app with one client can make the helpers once, in a module, and import them where it needs them:
+A single-page app with one client can make the helpers once, in a module, with its `QueryClient`, and import them where it needs them. A route's loader starts the page's queries with `$ensure()`, and the component reads the [handle](./handles.md) it returns with `$fromHandle()`:
 
 ```tsx twoslash
 // ---cut-start---
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
+import {
+  QueryClient,
+  useMutation,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import {
+  createTrpcQueryUtils,
+  type inferQueryHandle,
+} from '@trpc12/tanstack-react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 // trpc.ts
+export const queryClient = new QueryClient(); // for <QueryClientProvider>
 export const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [httpLink({ url: '/trpc' })],
 });
-export const trpc = createTrpcQueryUtils({ client });
+export const trpc = createTrpcQueryUtils({ client, queryClient });
 
-// post.tsx
-function Post(props: { id: string }) {
-  const queryClient = useQueryClient();
-  const post = useQuery(
-    trpc.post.byId.queryOptions({ input: { id: props.id } }),
-  );
+// post.tsx: the route's loader waits for the post
+export async function loader(opts: { params: { id: string } }) {
+  return {
+    post: await trpc.post.byId.$ensure({ input: { id: opts.params.id } }),
+  };
+}
+
+function Post(props: { post: inferQueryHandle<typeof trpc.post.byId> }) {
+  const post = useSuspenseQuery(trpc.$fromHandle(props.post));
   const create = useMutation(
     trpc.post.create.mutationOptions({
       onSuccess: () => queryClient.invalidateQueries(trpc.post.pathFilter()),
@@ -46,7 +57,7 @@ function Post(props: { id: string }) {
   );
   return (
     <button onClick={() => create.mutate({ title: 'New' })}>
-      {post.data?.title}
+      {post.data.title}
     </button>
   );
 }
@@ -61,9 +72,12 @@ A client made per request (server rendering) or per test goes through context. `
 import {
   QueryClient,
   QueryClientProvider,
-  useQuery,
+  useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import {
+  createTrpcContext,
+  type inferQueryHandle,
+} from '@trpc12/tanstack-react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { useState } from 'react';
 import type { AppRouter } from './server.ts';
@@ -86,36 +100,39 @@ export function Providers(props: { children: React.ReactNode }) {
   );
 }
 
-function Post(props: { id: string }) {
+type PostHandle = inferQueryHandle<ReturnType<typeof useTrpc>['post']['byId']>;
+
+function Post(props: { post: PostHandle }) {
   const trpc = useTrpc();
-  const post = useQuery(
-    trpc.post.byId.queryOptions({ input: { id: props.id } }),
-  );
-  return <h1>{post.data?.title}</h1>;
+  const post = useSuspenseQuery(trpc.$fromHandle(props.post));
+  return <h1>{post.data.title}</h1>;
 }
 ```
 
-`useTrpcClient()` returns the client, for calls outside TanStack Query. The fourth item is the React context itself, for bridging it into another renderer (react-three-fiber, react-pdf): read it with `useContext`, then provide that value on the other side.
+The provider's helpers read handles; the loader or server component that makes them uses helpers with the request's `QueryClient`, `createTrpcQueryUtils({ client, queryClient })` or [`createTrpcRsc`](../rsc.md)'s. `useTrpcClient()` returns the client, for calls outside TanStack Query. The fourth item is the React context itself, for bridging it into another renderer (react-three-fiber, react-pdf): read it with `useContext`, then provide that value on the other side.
 
 ## Suspense
 
-The options work with every hook that takes them, `useSuspenseQuery` and `useSuspenseInfiniteQuery` included. `data` is then never `undefined`:
+`$fromHandle()` and `queryOptions()` work with every hook that takes options, `useSuspenseQuery` and `useSuspenseInfiniteQuery` included. `data` is then never `undefined`:
 
 ```tsx twoslash
 // ---cut-start---
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
+import {
+  createTrpcQueryUtils,
+  type inferQueryHandle,
+} from '@trpc12/tanstack-react-query';
 import { client } from './client.ts';
 const trpc = createTrpcQueryUtils({ client });
 // ---cut-end---
-function Post(props: { id: string }) {
-  const post = useSuspenseQuery(
-    trpc.post.byId.queryOptions({ input: { id: props.id } }),
-  );
+function Post(props: { post: inferQueryHandle<typeof trpc.post.byId> }) {
+  const post = useSuspenseQuery(trpc.$fromHandle(props.post));
   return <h1>{post.data.title}</h1>;
   //                ^?
 }
 ```
+
+A component that knows its input without a loader, a search box say, builds the options itself: `useQuery(trpc.post.byId.queryOptions({ input: { id } }))`.
 
 ## Subscriptions
 
@@ -160,4 +177,4 @@ What subscriptions share, and the query-cache forms (`liveOptions()`, `streamedO
 
 ## Server components and Next.js
 
-`createTrpcRsc` from `@trpc12/tanstack-react-query/rsc` prefetches in server components and streams the queries to these hooks ([React Server Components](../rsc.md)). Server Actions don't need TanStack Query ([Server Actions](../server-actions.md)).
+`createTrpcRsc` from `@trpc12/tanstack-react-query/rsc` ensures queries in server components and streams them to these hooks ([React Server Components](../rsc.md)). Server Actions don't need TanStack Query ([Server Actions](../server-actions.md)).

@@ -18,7 +18,7 @@ export function getRouter(env: {
   const queryClient = new QueryClient();
   return createRouter({
     routeTree,
-    context: { ...createTrpc(env.fetch), queryClient },
+    context: createTrpc(env.fetch, queryClient),
     history: env.history,
     Wrap: (props) => (
       <QueryClientProvider client={queryClient}>

@@ -6,7 +6,7 @@ order: 1
 v11: client/tanstack-react-query
 ---
 
-`@trpc12/tanstack-query` turns a client into plain TanStack options objects (`queryOptions()`, `mutationOptions()`, keys and filters), so it works with every TanStack adapter. `@trpc12/tanstack-react-query` re-exports it and adds a way to provide the client to components, and a subscription primitive:
+`@trpc12/tanstack-query` turns a client into plain TanStack options objects (`queryOptions()`, `mutationOptions()`, keys and filters), so it works with every TanStack adapter, and into [handles](./tanstack-query/handles.md): a loader starts a query with `$ensure()`, and the component reads it with `$fromHandle()`. `@trpc12/tanstack-react-query` re-exports it and adds a way to provide the client to components, and a subscription primitive:
 
 | Framework                          | Package                        | Provide the client            | Subscribe         |
 | ---------------------------------- | ------------------------------ | ----------------------------- | ----------------- |
@@ -20,7 +20,7 @@ Install the core with your framework's package and TanStack's adapter, for React
 
 ## The helpers
 
-`createTrpcQueryUtils({ client })` mirrors the client's router: each procedure gets the helpers for its type, and every router and procedure gets `pathKey()` and `pathFilter()`, which match everything under it.
+`createTrpcQueryUtils({ client, queryClient })` mirrors the client's router: each procedure gets the helpers for its type, and every router and procedure gets `pathKey()` and `pathFilter()`, which match everything under it. A loader or server component starts a query with `$ensure()` and passes its handle on, and the component reads it with `$fromHandle()`, so the input is named once ([Handles](./tanstack-query/handles.md)):
 
 ```ts twoslash
 // ---cut-start---
@@ -30,7 +30,7 @@ import {
   useMutation,
   useMutationState,
   useQueries,
-  useQuery,
+  useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
@@ -56,9 +56,13 @@ declare const ids: string[];
 // ---cut-end---
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 
-export const trpc = createTrpcQueryUtils({ client });
+export const trpc = createTrpcQueryUtils({ client, queryClient });
 
-useQuery(trpc.post.byId.queryOptions({ input: { id } }));
+// in a loader: wait for the post, and pass its handle on
+const post = await trpc.post.byId.$ensure({ input: { id } });
+// in the component
+useSuspenseQuery(trpc.$fromHandle(post));
+
 useInfiniteQuery(
   trpc.post.list.infiniteOptions({
     input: (cursor: string | undefined) => ({ limit: 10, cursor }),
@@ -79,11 +83,11 @@ useMutationState({
 
 | Procedure    | Helpers                                                                                                                                                                        |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| query        | `queryOptions()`, `queryKey()`, `queryFilter()`, `infiniteOptions()`, `infiniteKey()`, `infiniteFilter()`                                                                      |
+| query        | `queryOptions()`, `queryKey()`, `queryFilter()`, `infiniteOptions()`, `infiniteKey()`, `infiniteFilter()`, and with a `queryClient` `$ensure()`, `$prefetch()`, `$fetch()`     |
 | mutation     | `mutationOptions()`, `mutationKey()`, `mutationFilter()`, and for a streamed output `streamedMutationOptions()` ([Streamed mutations](./tanstack-query/streamed-mutations.md)) |
 | subscription | `subscriptionOptions()`, `liveOptions()`, `streamedOptions()` ([Subscriptions](./tanstack-query/subscriptions.md))                                                             |
 
-`input: skipToken` disables a query or a subscription. The options take TanStack's own options next to `input` (`staleTime`, `select`, `onSuccess`, …), and their types follow the procedure's output and errors.
+Every router also has `$fromHandle(handle)`, the options for a handle's query. `input: skipToken` disables a query or a subscription. The options take TanStack's own options next to `input` (`staleTime`, `select`, `onSuccess`, …), and their types follow the procedure's output and errors.
 
 ## Errors
 
@@ -91,15 +95,15 @@ The options carry the procedure's error type, so `useQuery` infers `error` as wh
 
 ```ts twoslash
 // ---cut-start---
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, useQuery } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import { client } from './client.ts';
-const trpc = createTrpcQueryUtils({ client });
-declare const id: string;
+const trpc = createTrpcQueryUtils({ client, queryClient: new QueryClient() });
+const handle = trpc.post.byId.$prefetch({ input: { id: '1' } });
 // ---cut-end---
 import { matchError } from '@trpc12/trpc/client';
 
-const post = useQuery(trpc.post.byId.queryOptions({ input: { id } }));
+const post = useQuery(trpc.$fromHandle(handle));
 if (post.error) {
   const message = matchError(post.error, {
     NOT_FOUND: (err) => `No post ${err.data.id}`,
@@ -119,7 +123,7 @@ TanStack carries the type as far as the options go:
 
 ## Call options
 
-Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })` ([Call options](../client/overview.md#call-options)).
+Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.$ensure({ input, context: { dedupe: false } })`, and the same in `queryOptions()` and `$fromHandle()` ([Call options](../client/overview.md#call-options)).
 
 ## Cancellation
 

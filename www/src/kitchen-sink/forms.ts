@@ -12,7 +12,6 @@ const forms: DemoDefinition = {
     'schema.ts',
     'server.ts',
     'routes.tsx',
-    'loader-query.ts',
     'trpc.ts',
     'router.tsx',
   ]),

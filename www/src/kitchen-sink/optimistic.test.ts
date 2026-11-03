@@ -21,7 +21,7 @@ async function optimisticApp() {
   const network = createNetwork(app.server);
   network.latency = 0;
   const queryClient = new QueryClient();
-  const ctx: AppContext = { ...createTrpc(network.fetch), queryClient };
+  const ctx: AppContext = createTrpc(network.fetch, queryClient);
   const key = ctx.trpc.todo.list.queryKey();
   await queryClient.query(ctx.trpc.todo.list.queryOptions());
   const todos = () => queryClient.getQueryData(key) ?? [];

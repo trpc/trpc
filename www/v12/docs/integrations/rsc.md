@@ -21,35 +21,48 @@ export const { trpc, caller, getQueryClient, prefetch, HydrationBoundary } =
   });
 ```
 
+A page ensures its queries with the request's query client and passes their [handles](./tanstack-query/handles.md) to client components, which read them with `$fromHandle()`:
+
 ```tsx twoslash
 // ---cut-start---
+import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  createTrpcContext,
+  type inferQueryHandle,
+} from '@trpc12/tanstack-react-query';
 import { createTrpcRsc } from '@trpc12/tanstack-react-query/rsc';
-import { appRouter } from './server.ts';
+import { appRouter, type AppRouter } from './server.ts';
 const rsc = createTrpcRsc({
   router: appRouter,
   ctx: { user: null },
 });
 const trpc = rsc.trpc;
-const prefetch = rsc.prefetch;
 const HydrationBoundary = rsc.HydrationBoundary;
-declare function Post(props: { id: string }): React.ReactNode;
+const [, useTrpc] = createTrpcContext<AppRouter>();
 // ---cut-end---
 // app/post/[id]/page.tsx
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  prefetch(trpc.post.byId.queryOptions({ input: { id: params.id } }));
+  const post = await trpc.post.byId.$ensure({ input: { id: params.id } });
   return (
     <HydrationBoundary>
-      {/* a client component using useSuspenseQuery */}
-      <Post id={params.id} />
+      <Post post={post} />
     </HydrationBoundary>
   );
+}
+
+// app/post/[id]/post.tsx, a client component ('use client')
+function Post(props: { post: inferQueryHandle<typeof trpc.post.byId> }) {
+  const trpc = useTrpc();
+  const post = useSuspenseQuery(trpc.$fromHandle(props.post));
+  return <h1>{post.data.title}</h1>;
 }
 ```
 
 - `ctx` and the query client are memoized per request with React's `cache()`.
-- `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions({ client })` ([Hydration](./tanstack-query/hydration.md)). Read a prefetch you don't `await` with `useSuspenseQuery`: with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, wait for the data instead: `await getQueryClient().query(…)`. If the router declares a [transformer](../server/transformers.md), `createTrpcRsc` requires the same one as `transformer`, so `Date`s and custom types survive.
-- `prefetch(trpc.post.list.infiniteOptions(…))` fetches the first page, for `useSuspenseInfiniteQuery`.
+- `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions({ client })` ([Hydration](./tanstack-query/hydration.md)).
+- `trpc.post.byId.$prefetch({ input })` returns the handle without waiting, so the page streams and the component suspends until the query arrives. Read it with `useSuspenseQuery`: with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, `await` `$ensure()`. If the router declares a [transformer](../server/transformers.md), `createTrpcRsc` requires the same one as `transformer`, so `Date`s and custom types survive.
+- Infinite queries have no handles yet: `prefetch(trpc.post.list.infiniteOptions(…))` fetches the first page, for `useSuspenseInfiniteQuery` with the same options.
 - `await getQueryClient().query(…)` reads data in the server component itself. `caller` calls the router without the cache.
 - A pending query that later fails is redacted in the dehydrated state, unless its error has a `digest`: Next has to see those to detect dynamic rendering. Set `dehydrate.shouldRedactErrors` on your `makeQueryClient` to change that.
 

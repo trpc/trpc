@@ -1,6 +1,6 @@
 import { Badge } from '@shared/ui/components/badge';
 import { Skeleton } from '@shared/ui/components/skeleton';
-import type { QueryClient } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   createRoute,
@@ -9,12 +9,9 @@ import {
 } from '@tanstack/react-router';
 import { Suspense, type ReactNode } from 'react';
 
-import { ensure, prefetch, useLoaderQuery } from './loader-query.ts';
 import type { createTrpc } from './trpc.ts';
 
-export interface RouterContext extends ReturnType<typeof createTrpc> {
-  readonly queryClient: QueryClient;
-}
+export type RouterContext = ReturnType<typeof createTrpc>;
 
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Layout,
@@ -43,25 +40,20 @@ export const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   loader: async (opts) => {
-    const ctx = opts.context;
+    const { trpc } = opts.context;
     // Starts now and isn't waited for: <Changes> suspends until it arrives.
-    const changes = prefetch(
-      ctx.queryClient,
-      ctx.trpc.profile.changes.queryOptions(),
-    );
+    const changes = trpc.profile.changes.$prefetch();
     // The page waits for the profile, so it renders with it.
-    const profile = await ensure(
-      ctx.queryClient,
-      ctx.trpc.profile.get.queryOptions(),
-    );
+    const profile = await trpc.profile.get.$ensure();
     return { changes, profile };
   },
   component: ProfilePage,
 });
 
 function ProfilePage(): ReactNode {
-  const data = profileRoute.useLoaderData();
-  const profile = useLoaderQuery(data.profile);
+  const { trpc } = profileRoute.useRouteContext();
+  const handles = profileRoute.useLoaderData();
+  const profile = useSuspenseQuery(trpc.$fromHandle(handles.profile)).data;
   return (
     <div className="grid gap-5">
       <div className="flex items-center gap-3">
@@ -94,7 +86,9 @@ function ProfilePage(): ReactNode {
 // #endregion profile-route
 
 function Changes(): ReactNode {
-  const changes = useLoaderQuery(profileRoute.useLoaderData().changes);
+  const { trpc } = profileRoute.useRouteContext();
+  const handles = profileRoute.useLoaderData();
+  const changes = useSuspenseQuery(trpc.$fromHandle(handles.changes)).data;
   if (changes.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">

@@ -1,3 +1,4 @@
+import { QueryClient } from '@tanstack/react-query';
 import { safe } from '@trpc12/trpc/client';
 import { createMemoryHistory } from '@tanstack/react-router';
 import { describe, expect, it, vi } from '@effect/vitest';
@@ -13,7 +14,8 @@ async function filesApp() {
   const app = await buildDemo(files, files.files);
   const network = createNetwork(app.server);
   network.latency = 0;
-  return { app, client: createTrpc(network.fetch).client, network };
+  const { client } = createTrpc(network.fetch, new QueryClient());
+  return { app, client, network };
 }
 
 /** A PNG's signature, then `size` bytes more: enough for the server's checks. */
