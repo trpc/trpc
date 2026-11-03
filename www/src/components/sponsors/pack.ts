@@ -68,9 +68,9 @@ function centerOut(radii: ReadonlyArray<number>): ReadonlyArray<Circle> {
     }
     let best: Circle | undefined;
     let bestDistance = Number.POSITIVE_INFINITY;
-    for (let i = 0; i < placed.length; i++) {
-      for (let j = i + 1; j < placed.length; j++) {
-        for (const spot of touching(placed[i]!, placed[j]!, r)) {
+    for (const [index, a] of placed.entries()) {
+      for (const b of placed.slice(index + 1)) {
+        for (const spot of touching(a, b, r)) {
           const distance = spot.x * spot.x + spot.y * spot.y;
           if (
             distance < bestDistance &&
@@ -120,10 +120,17 @@ export function packSponsors(
   const circles = centerOut(radii.map((r) => r + gap / 2));
   const enclosing = packEnclose([...circles]);
   const scale = 0.5 / enclosing.r;
-  return circles.map((circle, index) => ({
-    r: (circle.r - gap / 2) * scale,
-    sponsor: sorted[index]!,
-    x: 0.5 + (circle.x - enclosing.x) * scale,
-    y: 0.5 + (circle.y - enclosing.y) * scale,
-  }));
+  return sorted.flatMap((sponsor, index) => {
+    const circle = circles[index];
+    return circle === undefined
+      ? []
+      : [
+          {
+            r: (circle.r - gap / 2) * scale,
+            sponsor,
+            x: 0.5 + (circle.x - enclosing.x) * scale,
+            y: 0.5 + (circle.y - enclosing.y) * scale,
+          },
+        ];
+  });
 }
