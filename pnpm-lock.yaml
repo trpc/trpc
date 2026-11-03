@@ -1675,52 +1675,6 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
 
-  examples/next-minimal-app-router:
-    dependencies:
-      '@tanstack/react-query':
-        specifier: ^5.102.0
-        version: 5.105.0(@types/react@19.1.0)(react@19.3.0)
-      '@trpc/client':
-        specifier: npm:@trpc/client
-        version: link:../../packages/client
-      '@trpc/server':
-        specifier: npm:@trpc/server
-        version: link:../../packages/server
-      '@trpc/tanstack-react-query':
-        specifier: npm:@trpc/tanstack-react-query
-        version: link:../../packages/tanstack-react-query
-      next:
-        specifier: ^15.5.25
-        version: 15.5.25(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      react:
-        specifier: ^19.1.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.1.0
-        version: 19.3.0(react@19.3.0)
-      server-only:
-        specifier: ^0.0.1
-        version: 0.0.1
-      zod:
-        specifier: ^4.2.1
-        version: 4.6.7
-    devDependencies:
-      '@types/node':
-        specifier: ^24.13.4
-        version: 24.13.4
-      '@types/react':
-        specifier: ^19.1.0
-        version: 19.1.0
-      '@types/react-dom':
-        specifier: ^19.1.1
-        version: 19.1.1(@types/react@19.1.0)
-      eslint:
-        specifier: ^10.10.0
-        version: 10.10.0(jiti@2.7.0)(supports-color@10.0.0)
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-
   examples/next-minimal-starter:
     dependencies:
       '@shared/ui':
@@ -1732,15 +1686,12 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next
-        version: link:../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query
+        version: link:../../packages/tanstack-react-query
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.1.0)(react@19.1.0)
@@ -1753,9 +1704,9 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
-      superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
       zod:
         specifier: ^4.2.1
         version: 4.2.1
@@ -1763,6 +1714,9 @@ importers:
       '@shared/ui':
         injected: true
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.50.1
+        version: 1.51.1
       '@tailwindcss/postcss':
         specifier: 4.3.3
         version: 4.3.3
@@ -1781,6 +1735,9 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2005
         version: 7.0.2005
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0(supports-color@10.0.0)
       tailwindcss:
         specifier: catalog:www
         version: 4.3.3
@@ -19307,7 +19264,8 @@ snapshots:
       d: 1.0.1
       es5-ext: 0.10.62
 
-  '@aashutoshrathi/word-wrap@1.2.6': {}
+  '@aashutoshrathi/word-wrap@1.2.6':
+    optional: true
 
   '@actions/core@3.0.0':
     dependencies:
@@ -21948,11 +21906,13 @@ snapshots:
       '@keyv/bigmap': 1.3.1(keyv@5.6.0)
       hookified: 1.15.1
       keyv: 5.6.0
+    optional: true
 
   '@cacheable/utils@2.5.0':
     dependencies:
       hashery: 1.5.1
       keyv: 5.6.0
+    optional: true
 
   '@capsizecss/unpack@4.0.1':
     dependencies:
@@ -22613,8 +22573,10 @@ snapshots:
     dependencies:
       eslint: 10.10.0(jiti@2.7.0)(supports-color@10.0.0)
       eslint-visitor-keys: 3.4.3
+    optional: true
 
-  '@eslint-community/regexpp@4.12.2': {}
+  '@eslint-community/regexpp@4.12.2':
+    optional: true
 
   '@eslint/config-array@0.23.5(supports-color@10.0.0)':
     dependencies:
@@ -22623,21 +22585,26 @@ snapshots:
       minimatch: 10.2.6
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@eslint/config-helpers@0.7.0':
     dependencies:
       '@eslint/core': 1.2.1
+    optional: true
 
   '@eslint/core@1.2.1':
     dependencies:
       '@types/json-schema': 7.0.15
+    optional: true
 
-  '@eslint/object-schema@3.0.5': {}
+  '@eslint/object-schema@3.0.5':
+    optional: true
 
   '@eslint/plugin-kit@0.7.3':
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+    optional: true
 
   '@exodus/bytes@1.15.0': {}
 
@@ -22984,18 +22951,23 @@ snapshots:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.69.0(react@19.1.0)
 
-  '@humanfs/core@0.19.1': {}
+  '@humanfs/core@0.19.1':
+    optional: true
 
   '@humanfs/node@0.16.6':
     dependencies:
       '@humanfs/core': 0.19.1
       '@humanwhocodes/retry': 0.3.1
+    optional: true
 
-  '@humanwhocodes/module-importer@1.0.1': {}
+  '@humanwhocodes/module-importer@1.0.1':
+    optional: true
 
-  '@humanwhocodes/retry@0.3.1': {}
+  '@humanwhocodes/retry@0.3.1':
+    optional: true
 
-  '@humanwhocodes/retry@0.4.2': {}
+  '@humanwhocodes/retry@0.4.2':
+    optional: true
 
   '@img/colour@1.1.0': {}
 
@@ -23327,8 +23299,10 @@ snapshots:
       hashery: 1.5.1
       hookified: 1.15.1
       keyv: 5.6.0
+    optional: true
 
-  '@keyv/serialize@1.1.1': {}
+  '@keyv/serialize@1.1.1':
+    optional: true
 
   '@kobalte/core@0.13.14(solid-js@1.9.18)':
     dependencies:
@@ -28060,7 +28034,8 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
-  '@types/esrecurse@4.3.1': {}
+  '@types/esrecurse@4.3.1':
+    optional: true
 
   '@types/estree-jsx@1.0.5':
     dependencies:
@@ -28808,6 +28783,7 @@ snapshots:
   acorn-jsx@5.3.2(acorn@8.18.0):
     dependencies:
       acorn: 8.18.0
+    optional: true
 
   acorn-walk@8.3.2: {}
 
@@ -28858,6 +28834,7 @@ snapshots:
       fast-json-stable-stringify: 2.1.0
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
+    optional: true
 
   ajv@8.17.1:
     dependencies:
@@ -29532,6 +29509,7 @@ snapshots:
       hookified: 1.15.1
       keyv: 5.6.0
       qified: 0.10.1
+    optional: true
 
   cachedir@2.3.0: {}
 
@@ -30318,7 +30296,8 @@ snapshots:
 
   deep-extend@0.6.0: {}
 
-  deep-is@0.1.4: {}
+  deep-is@0.1.4:
+    optional: true
 
   deepmerge@4.3.1: {}
 
@@ -30946,7 +30925,8 @@ snapshots:
 
   escape-string-regexp@1.0.5: {}
 
-  escape-string-regexp@4.0.0: {}
+  escape-string-regexp@4.0.0:
+    optional: true
 
   escape-string-regexp@5.0.0: {}
 
@@ -30962,10 +30942,13 @@ snapshots:
       '@types/estree': 1.0.9
       esrecurse: 4.3.0
       estraverse: 5.3.0
+    optional: true
 
-  eslint-visitor-keys@3.4.3: {}
+  eslint-visitor-keys@3.4.3:
+    optional: true
 
-  eslint-visitor-keys@5.0.1: {}
+  eslint-visitor-keys@5.0.1:
+    optional: true
 
   eslint@10.10.0(jiti@2.7.0)(supports-color@10.0.0):
     dependencies:
@@ -31003,6 +30986,7 @@ snapshots:
       jiti: 2.7.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   esniff@1.1.0:
     dependencies:
@@ -31014,16 +30998,19 @@ snapshots:
       acorn: 8.18.0
       acorn-jsx: 5.3.2(acorn@8.18.0)
       eslint-visitor-keys: 5.0.1
+    optional: true
 
   esprima@4.0.1: {}
 
   esquery@1.7.0:
     dependencies:
       estraverse: 5.3.0
+    optional: true
 
   esrecurse@4.3.0:
     dependencies:
       estraverse: 5.3.0
+    optional: true
 
   essentials@1.2.0:
     dependencies:
@@ -31032,7 +31019,8 @@ snapshots:
   estraverse@4.3.0:
     optional: true
 
-  estraverse@5.3.0: {}
+  estraverse@5.3.0:
+    optional: true
 
   estree-walker@2.0.2: {}
 
@@ -31040,7 +31028,8 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.6
 
-  esutils@2.0.3: {}
+  esutils@2.0.3:
+    optional: true
 
   etag@1.8.1: {}
 
@@ -31273,7 +31262,8 @@ snapshots:
 
   fast-json-parse@1.0.3: {}
 
-  fast-json-stable-stringify@2.1.0: {}
+  fast-json-stable-stringify@2.1.0:
+    optional: true
 
   fast-json-stringify@6.3.0:
     dependencies:
@@ -31293,7 +31283,8 @@ snapshots:
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
-  fast-levenshtein@2.0.6: {}
+  fast-levenshtein@2.0.6:
+    optional: true
 
   fast-npm-meta@2.2.0:
     dependencies:
@@ -31391,6 +31382,7 @@ snapshots:
   file-entry-cache@11.1.5:
     dependencies:
       flat-cache: 6.1.23
+    optional: true
 
   file-type@16.5.4:
     dependencies:
@@ -31480,12 +31472,14 @@ snapshots:
     dependencies:
       locate-path: 6.0.0
       path-exists: 4.0.0
+    optional: true
 
   flat-cache@6.1.23:
     dependencies:
       cacheable: 2.5.0
       flatted: 3.4.4
       hookified: 1.15.1
+    optional: true
 
   flat@5.0.2: {}
 
@@ -31957,6 +31951,7 @@ snapshots:
   hashery@1.5.1:
     dependencies:
       hookified: 1.15.1
+    optional: true
 
   hasown@2.0.2:
     dependencies:
@@ -32043,9 +32038,11 @@ snapshots:
 
   hookable@6.1.1: {}
 
-  hookified@1.15.1: {}
+  hookified@1.15.1:
+    optional: true
 
-  hookified@2.2.0: {}
+  hookified@2.2.0:
+    optional: true
 
   hosted-git-info@2.8.9: {}
 
@@ -32678,7 +32675,8 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  json-schema-traverse@0.4.1: {}
+  json-schema-traverse@0.4.1:
+    optional: true
 
   json-schema-traverse@1.0.0: {}
 
@@ -32689,7 +32687,8 @@ snapshots:
   json-source-map@0.6.1:
     optional: true
 
-  json-stable-stringify-without-jsonify@1.0.1: {}
+  json-stable-stringify-without-jsonify@1.0.1:
+    optional: true
 
   json-stringify-nice@1.1.4: {}
 
@@ -32737,6 +32736,7 @@ snapshots:
   keyv@5.6.0:
     dependencies:
       '@keyv/serialize': 1.1.1
+    optional: true
 
   kind-of@6.0.3: {}
 
@@ -32779,6 +32779,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+    optional: true
 
   libnpmaccess@10.0.3(supports-color@7.2.0):
     dependencies:
@@ -32992,6 +32993,7 @@ snapshots:
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
+    optional: true
 
   lodash.debounce@4.0.8:
     optional: true
@@ -33703,7 +33705,8 @@ snapshots:
 
   native-promise-only@0.8.1: {}
 
-  natural-compare@1.4.0: {}
+  natural-compare@1.4.0:
+    optional: true
 
   ncjsm@4.3.1:
     dependencies:
@@ -34472,6 +34475,7 @@ snapshots:
       levn: 0.4.1
       prelude-ls: 1.2.1
       type-check: 0.4.0
+    optional: true
 
   ora@5.4.1:
     dependencies:
@@ -34696,6 +34700,7 @@ snapshots:
   p-limit@3.1.0:
     dependencies:
       yocto-queue: 0.1.0
+    optional: true
 
   p-limit@7.3.3:
     dependencies:
@@ -34712,6 +34717,7 @@ snapshots:
   p-locate@5.0.0:
     dependencies:
       p-limit: 3.1.0
+    optional: true
 
   p-map@4.0.0:
     dependencies:
@@ -35228,7 +35234,8 @@ snapshots:
 
   preact@10.24.3: {}
 
-  prelude-ls@1.2.1: {}
+  prelude-ls@1.2.1:
+    optional: true
 
   prettier@3.9.6: {}
 
@@ -35359,6 +35366,7 @@ snapshots:
   qified@0.10.1:
     dependencies:
       hookified: 2.2.0
+    optional: true
 
   qs@6.14.0:
     dependencies:
@@ -37625,6 +37633,7 @@ snapshots:
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
+    optional: true
 
   type-fest@0.21.3: {}
 
@@ -39045,7 +39054,8 @@ snapshots:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
 
-  yocto-queue@0.1.0: {}
+  yocto-queue@0.1.0:
+    optional: true
 
   yocto-queue@1.2.2: {}
 
