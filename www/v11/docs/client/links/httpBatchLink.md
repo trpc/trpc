@@ -157,6 +157,8 @@ const client = createTRPCClient<AppRouter>({
 
 `maxBatchSize` limits how many operations may be sent in a single batch request. Requests exceeding this limit will be rejected with a `400 Bad Request` error. This can be passed to any tRPC adapter.
 
+It defaults to `100`. Set a lower number to tighten it, a higher one to allow larger batches, or `Infinity` to turn the limit off.
+
 ```ts twoslash title="server.ts"
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
@@ -195,7 +197,7 @@ export default createNextApiHandler({
 
 ### 2. Set a matching limit on the client:
 
-Use the `maxItems` option on your batch link to ensure the client doesn't exceed the server's limit. This splits large batches into multiple HTTP requests automatically
+Use the `maxItems` option on your batch link to ensure the client doesn't exceed the server's limit. This splits large batches into multiple HTTP requests automatically. `maxItems` defaults to `Infinity`, so if your client can queue more than 100 calls in one tick and the server uses the default limit, set `maxItems: 100` or lower.
 
 ```ts title="client/index.ts"
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
