@@ -1,4 +1,3 @@
-import type { Result } from '../unstable-core-do-not-import';
 import type {
   Observable,
   Observer,
@@ -145,83 +144,94 @@ export function observableToPromise<TValue>(
 }
 
 /**
- * @internal
- */
-function observableToReadableStream<TValue>(
-  observable: Observable<TValue, unknown>,
-  signal: AbortSignal,
-): ReadableStream<Result<TValue>> {
-  let unsub: Unsubscribable | null = null;
-
-  const onAbort = () => {
-    unsub?.unsubscribe();
-    unsub = null;
-    signal.removeEventListener('abort', onAbort);
-  };
-
-  return new ReadableStream<Result<TValue>>({
-    start(controller) {
-      unsub = observable.subscribe({
-        next(data) {
-          controller.enqueue({ ok: true, value: data });
-        },
-        error(error) {
-          controller.enqueue({ ok: false, error });
-          controller.close();
-        },
-        complete() {
-          controller.close();
-        },
-      });
-
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener('abort', onAbort, { once: true });
-      }
-    },
-    cancel() {
-      onAbort();
-    },
-  });
-}
-
-/**
- * Turns an observable into an async iterable. Aborting `signal`
- * unsubscribes from the observable but doesn't end a pending `next()`.
+ * Turns an observable into an async iterable, like Node's `events.on()`.
+ * Values wait in a queue until `next()` reads them. An error rejects the
+ * `next()` after the queued values, once. Completion, `return()` and aborting
+ * `signal` unsubscribe and end every pending `next()` with `{ done: true }`;
+ * anything the observable sends after that is ignored.
  * @internal
  */
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
   signal: AbortSignal,
 ): AsyncIterable<TValue> {
-  const stream = observableToReadableStream(observable, signal);
+  const values: TValue[] = [];
+  const pending: {
+    resolve: (result: IteratorResult<TValue>) => void;
+    reject: (cause: unknown) => void;
+  }[] = [];
+  let error: { cause: unknown } | null = null;
+  let finished = false;
+  let subscription: Unsubscribable | null = null;
 
-  const reader = stream.getReader();
+  function finish() {
+    if (finished) {
+      return;
+    }
+    finished = true;
+    signal.removeEventListener('abort', finish);
+    subscription?.unsubscribe();
+    for (const promise of pending.splice(0)) {
+      promise.resolve({ value: undefined, done: true });
+    }
+  }
+
+  subscription = observable.subscribe({
+    next(value) {
+      if (finished) {
+        return;
+      }
+      const promise = pending.shift();
+      if (promise) {
+        promise.resolve({ value, done: false });
+      } else {
+        values.push(value);
+      }
+    },
+    error(cause) {
+      if (finished) {
+        return;
+      }
+      const promise = pending.shift();
+      if (promise) {
+        promise.reject(cause);
+      } else {
+        error = { cause };
+      }
+      finish();
+    },
+    complete: finish,
+  });
+  if (finished) {
+    subscription.unsubscribe();
+  } else if (signal.aborted) {
+    finish();
+  } else {
+    signal.addEventListener('abort', finish, { once: true });
+  }
+
   const iterator: AsyncIterator<TValue> = {
     async next() {
-      const value = await reader.read();
-      if (value.done) {
-        return {
-          value: undefined,
-          done: true,
-        };
+      if (values.length > 0) {
+        return { value: values.shift() as TValue, done: false };
       }
-      const { value: result } = value;
-      if (!result.ok) {
-        throw result.error;
+      if (error) {
+        const { cause } = error;
+        error = null;
+        throw cause;
       }
-      return {
-        value: result.value,
-        done: false,
-      };
+      if (finished) {
+        return { value: undefined, done: true };
+      }
+      return new Promise((resolve, reject) => {
+        pending.push({ resolve, reject });
+      });
     },
     async return() {
-      await reader.cancel();
-      return {
-        value: undefined,
-        done: true,
-      };
+      values.length = 0;
+      error = null;
+      finish();
+      return { value: undefined, done: true };
     },
   };
   return {

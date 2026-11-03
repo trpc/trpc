@@ -1,6 +1,7 @@
 import { EventEmitter } from 'stream';
 import { observable, observableToAsyncIterable } from './observable';
 import { share, tap } from './operators';
+import type { Observer } from './types';
 
 test('vanilla observable - complete()', () => {
   const obs = observable<number, Error>((observer) => {
@@ -194,4 +195,119 @@ test('observableToAsyncIterable() - doesnt hang', async () => {
   }
 
   expect(ee.listenerCount('data')).toBe(0);
+});
+
+test('observableToAsyncIterable() - aborting ends a pending next()', async () => {
+  const teardown = vi.fn();
+  const obs = observable<number, Error>(() => teardown);
+  const ac = new AbortController();
+  const iterator = observableToAsyncIterable(obs, ac.signal)[
+    Symbol.asyncIterator
+  ]();
+
+  const first = iterator.next();
+  const second = iterator.next();
+  ac.abort();
+
+  const hung = new Promise((resolve) => setTimeout(resolve, 100, 'hung'));
+  expect(await Promise.race([first, hung])).toEqual({
+    value: undefined,
+    done: true,
+  });
+  expect(await Promise.race([second, hung])).toEqual({
+    value: undefined,
+    done: true,
+  });
+  expect(teardown).toHaveBeenCalledTimes(1);
+});
+
+test('observableToAsyncIterable() - aborting still yields the queued values', async () => {
+  const ac = new AbortController();
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    observer.next(2);
+  });
+
+  const iterable = observableToAsyncIterable(obs, ac.signal);
+  ac.abort();
+
+  const aggregate: number[] = [];
+  for await (const value of iterable) {
+    aggregate.push(value);
+  }
+  expect(aggregate).toEqual([1, 2]);
+});
+
+test('observableToAsyncIterable() - completing during teardown does not throw on break', async () => {
+  // like `httpSubscriptionLink`, which completes when it is torn down
+  const ee = new EventEmitter();
+  const obs = observable<number, Error>((observer) => {
+    const onData = (data: number) => observer.next(data);
+    ee.on('data', onData);
+    return () => {
+      ee.off('data', onData);
+      observer.complete();
+    };
+  });
+
+  setTimeout(() => ee.emit('data', 1));
+
+  const aggregate: number[] = [];
+  for await (const value of observableToAsyncIterable(
+    obs,
+    new AbortController().signal,
+  )) {
+    aggregate.push(value);
+    break;
+  }
+
+  expect(aggregate).toEqual([1]);
+  expect(ee.listenerCount('data')).toBe(0);
+});
+
+test('observableToAsyncIterable() - return() resolves after the source completed', async () => {
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    observer.complete();
+  });
+  const iterator = observableToAsyncIterable(obs, new AbortController().signal)[
+    Symbol.asyncIterator
+  ]();
+
+  expect(await iterator.return!()).toEqual({ value: undefined, done: true });
+  expect(await iterator.next()).toEqual({ value: undefined, done: true });
+});
+
+test('observableToAsyncIterable() - an error rejects the next next() once, after the queued values', async () => {
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    observer.error(new Error('boom'));
+  });
+  const iterator = observableToAsyncIterable(obs, new AbortController().signal)[
+    Symbol.asyncIterator
+  ]();
+
+  expect(await iterator.next()).toEqual({ value: 1, done: false });
+  await expect(iterator.next()).rejects.toThrowError('boom');
+  expect(await iterator.next()).toEqual({ value: undefined, done: true });
+});
+
+test('observableToAsyncIterable() - an error rejects a pending next() and ends the others', async () => {
+  let observer!: Observer<number, Error>;
+  const obs = observable<number, Error>((o) => {
+    observer = o;
+  });
+  const iterator = observableToAsyncIterable(obs, new AbortController().signal)[
+    Symbol.asyncIterator
+  ]();
+
+  const first = iterator.next();
+  const second = iterator.next();
+  const third = iterator.next();
+  observer.next(1);
+  observer.error(new Error('boom'));
+
+  expect(await first).toEqual({ value: 1, done: false });
+  await expect(second).rejects.toThrowError('boom');
+  expect(await third).toEqual({ value: undefined, done: true });
 });
