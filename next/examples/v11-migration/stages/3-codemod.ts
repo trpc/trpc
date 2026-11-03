@@ -38,7 +38,7 @@ const steps = [
   'app/client/client.ts:47:40 createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/transformers',
   'app/client/links.ts:1:15 TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
   'app/client/links.ts:2:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
-  'app/client/queries.ts:9:16 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider',
+  'app/client/queries.ts:9:16 createTrpcQueryUtils({ client, queryClient }): queryClient is only for the handle verbs ($prefetch, $ensure, $fetch); hooks use QueryClientProvider',
   "app/server/context.ts:1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, https://v12.trpc.io/v12/docs/server/responses",
   'app/server/index.ts:7:12 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)',
   'app/server/router.ts:27:27 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
