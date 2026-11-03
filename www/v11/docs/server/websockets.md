@@ -102,7 +102,7 @@ server.listen(3000);
 
 ### Rejecting cross-origin connections
 
-Browsers don't apply CORS to WebSockets: a page on any origin can open a connection to your server, and the browser sends its cookies with it. If you authenticate with cookies, check the `Origin` header against the origins you trust. With `ws`, do this in `verifyClient`, which rejects the upgrade with `401` when it returns `false`:
+Browsers don't apply CORS to WebSockets: a page on any origin can open a connection to your server, and the browser sends its cookies with it. If you authenticate with cookies, check the `Origin` header against the origins you trust. With `ws`, do this in `verifyClient`, and pass `403` to its callback so a rejected upgrade gets `403 Forbidden`:
 
 ```ts twoslash title='server/wsServer.ts'
 // @filename: router.ts
@@ -115,19 +115,18 @@ export const appRouter = t.router({});
 // ---cut---
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
-import type { VerifyClientCallbackSync } from 'ws';
 import { appRouter } from './router';
 
 const allowedOrigins = new Set(['https://app.example.com']);
 
-const verifyClient: VerifyClientCallbackSync = ({ origin }) => {
-  // Browsers always send `Origin`, but other clients may not.
-  // Decide whether your app accepts connections without one.
-  if (!origin) return true;
-  return allowedOrigins.has(origin);
-};
-
-const wss = new WebSocketServer({ port: 3001, verifyClient });
+const wss = new WebSocketServer({
+  port: 3001,
+  verifyClient: ({ origin }, callback) => {
+    // Browsers always send `Origin`, but other clients may not.
+    // Decide whether your app accepts connections without one.
+    callback(!origin || allowedOrigins.has(origin), 403);
+  },
+});
 applyWSSHandler({ wss, router: appRouter });
 ```
 
