@@ -33,3 +33,47 @@ test('behaviorSubject', () => {
   expect(onNext2).not.toHaveBeenCalledWith(4);
   expect(onNext1).not.toHaveBeenCalledWith(4);
 });
+
+test('next() notifies every observer when one unsubscribes inside next', () => {
+  const subject = behaviorSubject(0);
+
+  const first: number[] = [];
+  const second: number[] = [];
+
+  const subRef: { current?: { unsubscribe: () => void } } = {};
+  subRef.current = subject.subscribe({
+    next(value) {
+      first.push(value);
+      subRef.current?.unsubscribe();
+    },
+  });
+  subject.subscribe({
+    next(value) {
+      second.push(value);
+    },
+  });
+
+  subject.next(1);
+
+  expect(first).toEqual([0, 1]);
+  expect(second).toEqual([0, 1]);
+});
+
+test('next() skips an observer cancelled by an earlier observer', () => {
+  const subject = behaviorSubject(0);
+
+  const secondSubRef: { current?: { unsubscribe: () => void } } = {};
+  const secondNext = vi.fn();
+
+  subject.subscribe({
+    next() {
+      secondSubRef.current?.unsubscribe();
+    },
+  });
+  secondSubRef.current = subject.subscribe({ next: secondNext });
+
+  subject.next(1);
+
+  expect(secondNext).toHaveBeenCalledTimes(1);
+  expect(secondNext).toHaveBeenCalledWith(0);
+});
