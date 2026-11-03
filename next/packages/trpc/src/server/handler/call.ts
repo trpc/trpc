@@ -11,7 +11,7 @@ import {
   unexpectedError,
   type FrameSink,
 } from '../execution/index.ts';
-import { resolveProcedure, type AnyProcedure } from '../procedures/index.ts';
+import type { AnyProcedure } from '../procedures/index.ts';
 import { CurrentPlatform } from './platform.ts';
 import {
   coerceError,
@@ -180,7 +180,7 @@ export const singleCall = (
   parent: Tracer.AnySpan | undefined,
 ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
   Effect.flatMapEager(
-    resolveProcedure(handler.router, path),
+    handler.paths.resolve(path),
     (
       procedure,
     ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {

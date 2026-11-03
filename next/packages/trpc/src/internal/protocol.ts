@@ -97,6 +97,22 @@ export function fromInputSearch(
 }
 
 /**
+ * What joins a procedure path's segments in RPC URLs (`experimental_pathSeparator`):
+ * RFC 3986's unreserved punctuation, which URLs never escape, normalizers
+ * leave alone and routes give no meaning. `/` would need a catch-all route
+ * in every adapter and framework, and `,` separates batched calls in v11's
+ * URLs. Checked by types only. @internal
+ */
+export type PathSeparator = '.' | '_' | '~' | '-';
+
+/**
+ * A dotted procedure path as it goes in a URL, segments joined by
+ * `separator`. @internal
+ */
+export const toUrlPath = (path: string, separator: PathSeparator): string =>
+  separator === '.' ? path : path.split('.').join(separator);
+
+/**
  * Header names the protocol uses.
  * @since 0.1.0
  * @stability stable

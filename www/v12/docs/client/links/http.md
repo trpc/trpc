@@ -22,6 +22,7 @@ const client = createTrpcClient({
 ```
 
 - `url`: the handler's endpoint.
+- `experimental_pathSeparator`: what joins path segments in URLs when `.` is blocked, `'~'`, `'_'` or `'-'` (`'~'` clashes with the fewest keys); must match the handler's ([URLs without dots](../../server/routers.md#urls-without-dots)).
 - `batch`: send the queries made in the same tick as one request, and the mutations as another (below).
 - `headers`: headers for every request, or a function of the calls a request carries. A call's `headers` option is merged in.
 - `init`: `fetch` options (below).

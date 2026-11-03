@@ -107,3 +107,33 @@ export const appRouter = t.router({
 
 - The RPC handlers, `createRouterClient` and `localLink` load it on the first call under it.
 - Tools that need the whole router ask for it loaded: `await loadRouter(appRouter)`.
+
+## URLs without dots
+
+Some firewalls and proxies block `.` in URLs. `experimental_pathSeparator` joins path segments with something else in URLs only; give the link the same one ([#5752](https://github.com/trpc/trpc/issues/5752)). It's experimental: it might change or go away in any release.
+
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { appRouter, type AppRouter } from './server.ts';
+const createContext = () => ({ user: null });
+// ---cut-end---
+// GET /trpc/post~byId?input=…
+const handler = createFetchHandler({
+  router: appRouter,
+  createContext,
+  experimental_pathSeparator: '~',
+});
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [
+    httpLink({ url: 'http://localhost:3000/trpc', experimental_pathSeparator: '~' }),
+  ],
+});
+```
+
+- It can be `'.'` (the default), `'~'`, `'_'` or `'-'`. URLs never escape these, so routes and proxies leave them alone. `/` isn't one: framework routes match one segment, and URL normalization rewrites `..` and `//`.
+- Paths stay `post.byId` everywhere else: middleware's `path`, `onError`, query keys, batch bodies, WebSocket messages and OpenAPI operation ids.
+- The handler still serves `/trpc/post.byId`, so you can update it before the clients.
+- No router key may contain the separator, since two paths would share a URL (`get_user` and `get.user` with `'_'`): the handler throws when it's created, or on the first call into a lazy subtree that has one. `'~'` is the least likely to clash with your keys.

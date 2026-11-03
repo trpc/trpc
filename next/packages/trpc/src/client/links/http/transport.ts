@@ -27,6 +27,7 @@ import {
   readBlob,
   textLines,
   toInputSearch,
+  toUrlPath,
   type BatchCall,
   type BatchLine,
 } from '../../../internal/protocol.ts';
@@ -150,6 +151,7 @@ export function makeTransport(
   transformer: AnyTransformer,
 ): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');
+  const separator = opts.experimental_pathSeparator ?? '.';
   const maxUrlLength = opts.maxUrlLength ?? 2048;
   const longQueryMethod = opts.longQuery === 'query' ? 'QUERY' : 'POST';
   const rawFetch = opts.fetch ?? globalThis.fetch;
@@ -372,7 +374,7 @@ export function makeTransport(
     extra: Record<string, string> = {},
   ): Effect.Effect<Reply, AnyTrpcError, Scope.Scope> =>
     Effect.gen(function* () {
-      const url = `${baseUrl}/${op.path}`;
+      const url = `${baseUrl}/${toUrlPath(op.path, separator)}`;
       const headers: Record<string, string> = { accept, ...extra };
       if (isByteStreamInput(op.input)) {
         return yield* execute(
