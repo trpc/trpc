@@ -49,6 +49,27 @@ export const appRouter = router({
 });
 ```
 
+### Path separator
+
+Some firewalls block URLs with a `.` in them. Set `pathSeparator` to use another character between path segments in URLs. Set it on the server and in every HTTP link:
+
+```ts
+// server
+const t = initTRPC.create({ pathSeparator: '~' });
+
+// client
+httpBatchLink({ url: '/api/trpc', pathSeparator: '~' });
+```
+
+Now `post.byId` is served at `/api/trpc/post~byId`, and a batch of `post.byId` and `post.list` at `/api/trpc/post~byId,post~list?batch=1`.
+
+- It can be `'.'` (the default), `'~'`, `'_'` or `'-'`. These never need encoding in URLs, so routes and proxies leave them alone.
+- Only URLs change. Middlewares, `onError`, error shapes, server-side callers and query keys still see `post.byId`.
+- The server still accepts dotted URLs, so update the server before the clients.
+- A router key that contains the separator, such as `get_user` with `'_'`, throws when the router is built, since its URL would be ambiguous. Keys inside a `lazy()` router throw when that router loads, on its first call. `'~'` is the least likely to clash with your keys.
+- WebSockets don't put the path in the URL, so `wsLink` doesn't need it.
+- Pass `pathSeparator` to [`generateOpenAPIDocument`](/docs/openapi) if it can't import your router at runtime.
+
 ## Batching
 
 When batching, we combine all parallel procedure calls of the same HTTP method in one request using a data loader.

@@ -2,6 +2,7 @@ import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import type { PathSeparator } from './http/pathSeparator';
 import type {
   AnyProcedure,
   ErrorHandlerOptions,
@@ -362,9 +363,17 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       };
     }
 
+    const separator = config.pathSeparator;
+
     function step(from: CreateRouterOptions, path: readonly string[] = []) {
       const aggregate: RouterRecord = emptyObject();
       for (const [key, item] of Object.entries(from ?? {})) {
+        if (separator !== '.' && key.includes(separator)) {
+          // The URL `a_b_c` couldn't say which `_` splits a segment
+          throw new Error(
+            `Key "${[...path, key].join('.')}" contains the pathSeparator ${JSON.stringify(separator)}, so its URL would be ambiguous. Rename it or pick another pathSeparator.`,
+          );
+        }
         if (isLazy(item)) {
           lazy[[...path, key].join('.')] = createLazyLoader({
             path,
@@ -620,9 +629,21 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     return prev;
   }, defaultTransformer);
 
+  const pathSeparator = routerList.reduce<PathSeparator>((prev, current) => {
+    const next = current._def._config.pathSeparator;
+    if (next === '.') {
+      return prev;
+    }
+    if (prev !== '.' && prev !== next) {
+      throw new Error('You seem to have several pathSeparators');
+    }
+    return next;
+  }, '.');
+
   const router = createRouterFactory({
     errorFormatter,
     transformer,
+    pathSeparator,
     isDev: routerList.every((r) => r._def._config.isDev),
     allowOutsideOfServer: routerList.every(
       (r) => r._def._config.allowOutsideOfServer,

@@ -23,6 +23,7 @@ import {
 } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
+import { urlPathToProcedurePath } from './pathSeparator';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -290,7 +291,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         undefined,
         await getRequestInfo({
           req,
-          path: decodePath(opts.path),
+          path: urlPathToProcedurePath(
+            decodePath(opts.path),
+            config.pathSeparator,
+          ),
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
