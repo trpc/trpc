@@ -20,7 +20,8 @@ skill:
     @trpc/server/adapters/ws. Configure SSE ping with initTRPC.create({ sse: {
     ping: { enabled, intervalMs } } }). AbortSignal via opts.signal for cleanup.
     splitLink to route subscriptions. Consume them with the client's
-    .subscribe(input, { onData, onError }) and .unsubscribe()."
+    .subscribe(input, { onData, onError }) and .unsubscribe(), or iterate the
+    returned subscription with for await."
   references:
     - server/websockets
     - client/links/httpSubscriptionLink
@@ -208,6 +209,37 @@ const subscription = client.onPostAdd.subscribe(
 
 // stop listening
 subscription.unsubscribe();
+```
+
+The object `.subscribe()` returns is also an `AsyncIterable`, so you can consume a subscription with `for await` and leave out the callbacks. Leaving the loop unsubscribes, and errors are thrown from the loop. See [the vanilla client](../client/vanilla/setup.md#5-use-subscriptions) for the details.
+
+```ts twoslash title="client.ts"
+// @target: esnext
+// @filename: server.ts
+import { initTRPC, tracked } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+type Post = { id: string; title: string };
+export const appRouter = t.router({
+  onPostAdd: t.procedure
+    .input(z.object({ lastEventId: z.string().nullish() }).optional())
+    .subscription(async function* () {
+      const post: Post = { id: '1', title: 'Hello' };
+      yield tracked(post.id, post);
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpSubscriptionLink({ url: 'http://localhost:3000' })],
+});
+// ---cut---
+for await (const event of client.onPostAdd.subscribe({ lastEventId: null })) {
+  console.log(event.id, event.data.title);
+}
 ```
 
 For React, see [`subscriptionOptions`](../client/tanstack-react-query/usage.md#subscriptionOptions) with TanStack React Query, or the classic [`useSubscription()`](../client/react/useSubscription.md).

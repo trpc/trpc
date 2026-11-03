@@ -1,4 +1,4 @@
-import type { Unsubscribable } from '@trpc/server/observable';
+/* oxlint-disable typescript/no-non-null-assertion */
 import type {
   AnyProcedure,
   AnyRouter,
@@ -16,7 +16,10 @@ import {
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
+import type {
+  TRPCSubscription,
+  TRPCSubscriptionObserver,
+} from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
 import type { TRPCTaggedPromise } from './safe';
@@ -88,17 +91,11 @@ export type Resolver<TDef extends TRPCResolverDef> = (
  */
 export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
-  opts: Partial<
+  opts?: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
     TRPCProcedureOptions,
-) => Unsubscribable;
-
-/** @internal */
-export type SubscriptionIterableResolver<TDef extends TRPCResolverDef> = (
-  input: TDef['input'],
-  opts?: TRPCProcedureOptions,
-) => AsyncIterable<inferAsyncIterableYield<TDef['output']>>;
+) => TRPCSubscription<inferAsyncIterableYield<TDef['output']>>;
 
 type DecorateProcedure<
   TType extends ProcedureType,
@@ -114,16 +111,6 @@ type DecorateProcedure<
     : TType extends 'subscription'
       ? {
           subscribe: SubscriptionResolver<TDef>;
-          /**
-           * Get an `AsyncIterable` that yields the data of this subscription.
-           *
-           * The iterable is cold: every new iterator starts a new
-           * subscription, which is torn down when iteration stops early
-           * (e.g. `break`/`return`). Aborting `opts.signal` ends the
-           * iteration - values that are already buffered are still yielded
-           * before it finishes.
-           */
-          iterate: SubscriptionIterableResolver<TDef>;
         }
       : never;
 
@@ -161,7 +148,6 @@ const clientCallTypeMap: Record<
   query: 'query',
   mutate: 'mutation',
   subscribe: 'subscription',
-  iterate: 'subscription',
 };
 
 /**
@@ -183,18 +169,9 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 ): TRPCClient<TRouter> {
   const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
     const pathCopy = [...path];
-    const clientCallType = pathCopy.pop();
-    if (!clientCallType) {
-      throw new Error('Missing client call type');
-    }
+    const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 
     const fullPath = pathCopy.join('.');
-
-    if (clientCallType === 'iterate') {
-      return (client.subscriptionAsIterable as any)(fullPath, ...(args as any));
-    }
-
-    const procedureType = clientCallTypeToProcedureType(clientCallType);
 
     return (client[procedureType] as any)(fullPath, ...(args as any));
   });

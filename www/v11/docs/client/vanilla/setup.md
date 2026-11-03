@@ -126,6 +126,53 @@ const frodo = await client.createUser.mutate({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 
+### 5. Use subscriptions
+
+Given a [subscription procedure](../../server/subscriptions.md) and a link that supports subscriptions, such as [`httpSubscriptionLink`](../links/httpSubscriptionLink.md) or [`wsLink`](../links/wsLink.md), `.subscribe()` starts the subscription. Pass callbacks, iterate the result with `for await`, or both:
+
+```ts twoslash title='client.ts'
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  onUserAdd: t.procedure.subscription(async function* () {
+    yield { name: 'Frodo' };
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpSubscriptionLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut---
+// with callbacks
+const sub = client.onUserAdd.subscribe(undefined, {
+  onData(user) {
+    console.log(user);
+  },
+});
+// stop listening
+sub.unsubscribe();
+
+// or with `for await`, where the callbacks are optional
+for await (const user of client.onUserAdd.subscribe(undefined)) {
+  //               ^?
+  console.log(user);
+}
+```
+
+When you iterate a subscription:
+
+- The loop yields the same data as `onData`, starting from when the loop starts. Data that arrived before that only went to the callbacks, so start the loop right after calling `.subscribe()`.
+- Leaving the loop with `break`, `return` or a thrown error unsubscribes.
+- An error from the subscription is thrown from the loop as a `TRPCClientError`, after the data received before it.
+- The loop ends when the subscription completes, when you call `unsubscribe()`, or when the `signal` you passed is aborted.
+- Values that arrive while your loop body is busy are buffered until the loop asks for them.
+
 You're all set!
 
 ## Common mistakes

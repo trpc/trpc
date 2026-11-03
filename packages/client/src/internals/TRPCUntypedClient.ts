@@ -1,13 +1,5 @@
-import type {
-  inferObservableValue,
-  Unsubscribable,
-} from '@trpc/server/observable';
-import {
-  observable,
-  observableToAsyncIterable,
-  observableToPromise,
-  share,
-} from '@trpc/server/observable';
+import type { inferObservableValue } from '@trpc/server/observable';
+import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
@@ -24,6 +16,10 @@ import type {
   TRPCLink,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
+import type { TRPCSubscription } from './iterableSubscription';
+import { createIterableSubscription } from './iterableSubscription';
+
+export type { TRPCSubscription } from './iterableSubscription';
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
 /** The options of a call made with the untyped client. */
@@ -147,15 +143,18 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
-  /** Starts a subscription. Returns what stops it. */
+  /**
+   * Starts a subscription. Returns what stops it, which is also an
+   * `AsyncIterable` of the subscription's data.
+   */
   public subscription(
     path: string,
     input: unknown,
     opts: Partial<
       TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
     > &
-      TRPCRequestOptions,
-  ): Unsubscribable {
+      TRPCRequestOptions = {},
+  ): TRPCSubscription<unknown> {
     const observable$ = this.$request({
       type: 'subscription',
       path,
@@ -163,7 +162,10 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       context: opts.context,
       signal: opts.signal,
     });
-    return observable$.subscribe({
+    const iterable = createIterableSubscription<unknown>({
+      signal: opts.signal,
+    });
+    const subscription = observable$.subscribe({
       next(envelope) {
         switch (envelope.result.type) {
           case 'state': {
@@ -182,68 +184,28 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
           }
           case 'data':
           case undefined: {
+            iterable.push(envelope.result.data);
             opts.onData?.(envelope.result.data);
             break;
           }
         }
       },
       error(err) {
+        iterable.end({ ok: false, error: err });
         opts.onError?.(err);
       },
       complete() {
+        iterable.end({ ok: true });
         opts.onComplete?.();
       },
     });
-  }
-  public subscriptionAsIterable(
-    path: string,
-    input: unknown,
-    opts?: TRPCRequestOptions,
-  ): AsyncIterable<unknown> {
+    const unsubscribe = () => {
+      subscription.unsubscribe();
+      iterable.end({ ok: true });
+    };
     return {
-      [Symbol.asyncIterator]: () => {
-        const signal =
-          opts?.signal ??
-          // teardown is driven by the consumer stopping iteration, so a
-          // never-aborted signal is fine when none is provided
-          new AbortController().signal;
-
-        const observable$ = this.$request({
-          type: 'subscription',
-          path,
-          input,
-          context: opts?.context,
-          signal,
-        });
-        const iterable$ = observable<unknown, unknown>((observer) => {
-          return observable$.subscribe({
-            next(envelope) {
-              switch (envelope.result.type) {
-                case 'state':
-                case 'started':
-                case 'stopped': {
-                  // ignore connection state envelopes
-                  break;
-                }
-                case 'data':
-                case undefined: {
-                  observer.next?.(envelope.result.data);
-                  break;
-                }
-              }
-            },
-            error(err) {
-              observer.error?.(err);
-            },
-            complete() {
-              observer.complete?.();
-            },
-          });
-        });
-        return observableToAsyncIterable(iterable$, signal)[
-          Symbol.asyncIterator
-        ]();
-      },
+      unsubscribe,
+      [Symbol.asyncIterator]: () => iterable.createIterator(unsubscribe),
     };
   }
 }

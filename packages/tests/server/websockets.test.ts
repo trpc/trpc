@@ -451,7 +451,7 @@ test('basic subscription test (iterator)', async () => {
   });
 });
 
-test('iterate() - basic subscription', async () => {
+test('subscribe() - async iterable', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -465,7 +465,7 @@ test('iterate() - basic subscription', async () => {
   });
 
   const aggregate: Message[] = [];
-  for await (const value of ctx.client.onMessageIterable.iterate(undefined)) {
+  for await (const value of ctx.client.onMessageIterable.subscribe(undefined)) {
     expectTypeOf(value).not.toBeAny();
     expectTypeOf(value).toMatchTypeOf<Message>();
     aggregate.push(value);
@@ -481,7 +481,7 @@ test('iterate() - basic subscription', async () => {
   });
 });
 
-test('iterate() - propagates errors', async () => {
+test('subscribe() - async iterable rejects on error', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -494,7 +494,7 @@ test('iterate() - propagates errors', async () => {
 
   const aggregate: Message[] = [];
   await expect(async () => {
-    for await (const value of ctx.client.onMessageObservable.iterate(
+    for await (const value of ctx.client.onMessageObservable.subscribe(
       undefined,
     )) {
       expectTypeOf(value).not.toBeAny();
@@ -505,21 +505,22 @@ test('iterate() - propagates errors', async () => {
 
   expect(aggregate).toEqual([{ id: '1' }]);
 
-  // the subscription is torn down after the error without needing `cancel`
+  // the subscription is torn down after the error
   await vi.waitFor(() => {
     expect(ctx.ee.listenerCount('server:msg')).toBe(0);
   });
 });
 
-test('iterate() - abort signal ends iteration', async () => {
+test('subscribe() - abort signal ends async iteration', async () => {
   await using ctx = factory();
 
   const ac = new AbortController();
   const aggregate: Message[] = [];
   const done = (async () => {
-    for await (const value of ctx.client.onMessageIterable.iterate(undefined, {
-      signal: ac.signal,
-    })) {
+    for await (const value of ctx.client.onMessageIterable.subscribe(
+      undefined,
+      { signal: ac.signal },
+    )) {
       aggregate.push(value);
     }
   })();

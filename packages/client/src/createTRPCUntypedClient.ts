@@ -15,5 +15,6 @@ export function createTRPCUntypedClient<TRouter extends AnyRouter>(
 export type {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
+  TRPCSubscription,
 } from './internals/TRPCUntypedClient';
 export { TRPCUntypedClient } from './internals/TRPCUntypedClient';
