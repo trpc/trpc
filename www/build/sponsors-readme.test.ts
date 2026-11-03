@@ -52,7 +52,7 @@ describe('sponsorsMarkdown', () => {
     expect(sponsorsMarkdown(sponsors)).toBe(
       [
         '<p align="center">',
-        `  <a href="https://trpc.io/sponsor"><img src="https://trpc.io/og/sponsor-cloud.png?v=${version}" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>`,
+        `  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=${version}" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>`,
         '</p>',
         '',
         '### Gold partners',
@@ -118,7 +118,7 @@ describe('sponsorsMarkdown', () => {
 });
 
 describe('sponsorCloudMarkdown', () => {
-  it('links the cloud to /sponsor, at a version that changes with who it draws', () => {
+  it('links the cloud to its place on /sponsor, at a version that changes with who it draws', () => {
     const sponsors = [sponsor('a', 40), sponsor('b', 20)];
     const src = (list: ReadonlyArray<Sponsor>) =>
       /src="([^"]+)"/.exec(sponsorCloudMarkdown(list))?.[1];
@@ -126,7 +126,7 @@ describe('sponsorCloudMarkdown', () => {
       /^https:\/\/trpc\.io\/og\/sponsor-cloud\.png\?v=[0-9a-f]{8}$/,
     );
     expect(sponsorCloudMarkdown(sponsors)).toContain(
-      '<a href="https://trpc.io/sponsor">',
+      '<a href="https://trpc.io/sponsor#sponsors">',
     );
     expect(src([...sponsors, { ...sponsor('c', 10), imageless: true }])).toBe(
       src(sponsors),

@@ -360,10 +360,13 @@ function Placements() {
 function Cloud() {
   return (
     <section
-      aria-labelledby="sponsors"
+      aria-labelledby={sponsorPage.cloudId}
       className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
     >
-      <h2 className={cn(sectionTitle, 'mb-2 text-center')} id="sponsors">
+      <h2
+        className={cn(sectionTitle, 'mb-2 text-center')}
+        id={sponsorPage.cloudId}
+      >
         Join {sponsors.length} sponsors
       </h2>
       <p className="mx-auto mb-10 max-w-2xl text-center text-muted-foreground">

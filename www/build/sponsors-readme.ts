@@ -1,6 +1,6 @@
 /**
  * The sponsors section of a README, between its `SPONSORS:LIST` markers:
- * the sponsor cloud as a picture linking to `/sponsor`
+ * the sponsor cloud as a picture linking to the cloud on `/sponsor`
  * (`src/og/sponsor-cloud.ts`), then a table per tier (`sponsorTiers` in
  * `src/sponsors.ts`), by rank, avatars smaller down the tiers, then
  * everyone else as backers, by who has given the most. A small sponsor
@@ -63,9 +63,9 @@ function table(sponsors: ReadonlyArray<Sponsor>, tier: Tier) {
   return [`### ${tier.title}`, '', '<table>', ...rows, '</table>'].join('\n');
 }
 
-/** The sponsor cloud's picture, centered, linking to `/sponsor`. */
+/** The sponsor cloud's picture, centered, linking to the cloud on `/sponsor`. */
 export function sponsorCloudMarkdown(sponsors: ReadonlyArray<Sponsor>) {
-  const href = `${site.url}${sponsorPage.path}`;
+  const href = `${site.url}${sponsorPage.path}#${sponsorPage.cloudId}`;
   const src = escapeHtml(sponsorCloudUrl(sponsors));
   return [
     '<p align="center">',
