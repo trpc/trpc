@@ -14,7 +14,7 @@ import {
   createErrorBoundary as createPortBoundary,
   type ErrorBoundaryComponent,
   type TrpcErrorBoundary,
-} from '../../../packages/tanstack-react-query/src/error-boundary.ts';
+} from './port.ts';
 import type { ErrorSource, ServerErrorsOf } from './sources.ts';
 
 /** A client's errors for `T`, by code: v12's `ClientError`. */

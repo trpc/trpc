@@ -8,8 +8,8 @@
  * claims. Below it, `query()` and `mutation()` take the owned tags out of
  * a call's union, as today's boundary takes codes out.
  *
- * The runtime is the internal boundary in
- * `packages/tanstack-react-query/src/error-boundary.ts`, as it is: an
+ * The runtime is the internal boundary as it was before
+ * `unstable_createErrorBoundary` (`./port.ts`): an
  * app error's `code` is its tag, and so is a tRPC failure's
  * (`toFailure()`), so claiming a tag is claiming a code, and
  * `unexpected: true` claims tRPC's unexpected tags by name.
@@ -21,7 +21,7 @@ import type {
 } from '@trpc12/tanstack-query';
 import type { AnyProcedure, ProcedureDef } from '@trpc12/trpc/server';
 import type { ReactNode } from 'react';
-import { createErrorBoundary as createCodeBoundary } from '../../../packages/tanstack-react-query/src/error-boundary.ts';
+import { createErrorBoundary as createCodeBoundary } from './port.ts';
 import {
   unexpectedTags,
   type CallError,
