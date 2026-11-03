@@ -6,6 +6,7 @@ import type { inferAsyncIterableYield, Maybe } from '../types';
 import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
+import { makeResource } from './utils/disposable';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
@@ -21,6 +22,36 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
+test.each(['connected', 'message', 'serialized-error'])(
+  'rejects malformed JSON in %s events and closes the EventSource',
+  async (event) => {
+    await using server = fetchServerResource(() => {
+      return new Response(`event: ${event}\ndata: invalid JSON\n\n`, {
+        headers: sseHeaders,
+      });
+    });
+    const ac = new AbortController();
+    using _abort = makeResource(ac, () => ac.abort());
+    const stream = sseStreamConsumer<{
+      data: unknown;
+      error: unknown;
+      EventSource: typeof EventSourcePolyfill;
+    }>({
+      url: () => server.url,
+      init: () => ({}),
+      signal: ac.signal,
+      EventSource: EventSourcePolyfill,
+    });
+    const iterator = stream[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    expect(first.value.type).toBe('connecting');
+    const eventSource = first.value.eventSource;
+
+    await expect(iterator.next()).rejects.toBeInstanceOf(SyntaxError);
+    expect(eventSource.readyState).toBe(eventSource.CLOSED);
+  },
+);
 
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
