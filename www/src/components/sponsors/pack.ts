@@ -106,7 +106,7 @@ function centerOut(radii: ReadonlyArray<number>): ReadonlyArray<Circle> {
 /**
  * Packs `list` into a circle in the unit square, each sponsor's area in
  * proportion to their weight, the heaviest in the middle and the rest
- * around them, `padding` (a fraction of the side) apart. The layout is the
+ * around them, about `padding` (a fraction of the side) apart. The layout is the
  * same on the server and in the browser, so it's prerendered and drawn in
  * percentages.
  */
