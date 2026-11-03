@@ -317,20 +317,11 @@ import { useTRPC } from '../utils/trpc';
 export async function getServerSideProps() {
   const queryClient = makeQueryClient();
   const trpc = createTRPCOptionsProxy({ router: appRouter, ctx: {}, queryClient });
-
   const hello = await trpc.hello.unstable_$ensure({ text: 'world' });
-
-  return {
-    props: {
-      trpcState: dehydrate(queryClient),
-      hello,
-    },
-  };
+  return { props: { trpcState: dehydrate(queryClient), hello } };
 }
 
-export default function IndexPage(
-  props: InferGetServerSidePropsType<typeof getServerSideProps>,
-) {
+export default function IndexPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const trpc = useTRPC();
   const helloQuery = useQuery(trpc.unstable_$fromHandle(props.hello));
 
@@ -345,13 +336,7 @@ export default function IndexPage(
 }
 ```
 
-- `unstable_$ensure` waits until the data is in the cache, and `_app`'s `HydrationBoundary` puts that cache into the client's, so the data is in the first HTML. Keep the `'pending'` case anyway: the cache can lose the data later, for example after `queryClient.resetQueries()`. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
-- It rejects if the query fails, so you can act on the error on the server. [Server-Side Rendering](./ssr.md) shows how, and how to build the context from the request. For static pages, see [Static Site Generation](./ssg.md).
-- A page without `getServerSideProps` or `getStaticProps` fetches in the browser: pass `trpc.hello.queryOptions({ text: 'world' })` to `useQuery`. See [TanStack React Query usage](/docs/client/tanstack-react-query/usage).
-
-:::info
-We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable). See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for the full guide.
-:::
+`unstable_$ensure` waits until the data is in the cache, which `_app`'s `HydrationBoundary` hands to the client, so the data is in the first HTML. Keep the `'pending'` case anyway: the cache can [lose the data](/docs/client/tanstack-react-query/handles#cache-loses-data) later. It rejects if the query fails: [Server-Side Rendering](./ssr.md) shows how to act on that, and how to build the context from the request. For static pages, see [Static Site Generation](./ssg.md), and for the handle APIs, which are [`unstable_` for now](/docs/faq#unstable), see [Prefetching with handles](/docs/client/tanstack-react-query/handles). A page without `getServerSideProps` or `getStaticProps` fetches in the browser: pass `trpc.hello.queryOptions({ text: 'world' })` to `useQuery`. See [TanStack React Query usage](/docs/client/tanstack-react-query/usage).
 
 ## Using a data transformer
 

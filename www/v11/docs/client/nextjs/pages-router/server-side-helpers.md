@@ -102,8 +102,7 @@ Start each query the page needs with the proxy, and pass the page the handle it 
 
 - `await trpc.post.byId.unstable_$ensure(input)` waits until the result is in the cache, and returns a handle. The page reads the query with `trpc.unstable_$fromHandle(handle)`, without repeating the procedure or its input. It rejects if the query fails, for instance so you can return `notFound`.
 - `unstable_$ensureInfinite` does the same for an infinite query, such as `trpc.post.list.unstable_$ensureInfinite(input)`.
-- To use the result on the server too, read it from the cache with `queryClient.ensureQueryData(trpc.unstable_$fromHandle(handle))`, which doesn't request it again.
-- `unstable_$prefetch` doesn't wait, and props can't hold a pending query, so use `unstable_$ensure` here.
+- To use the result on the server too, read it from the cache with `queryClient.ensureQueryData(trpc.unstable_$fromHandle(handle))`, which doesn't request it again. Props can't hold a pending query, so use `unstable_$ensure` here, not `unstable_$prefetch`.
 
 See [Prefetching with handles](/docs/client/tanstack-react-query/handles) for the full guide. Then send the cache to the page with `dehydrate`:
 
@@ -177,18 +176,10 @@ export async function getServerSideProps(
   });
 
   const post = await trpc.post.byId.unstable_$ensure({ id });
-
-  return {
-    props: {
-      trpcState: dehydrate(queryClient),
-      post,
-    },
-  };
+  return { props: { trpcState: dehydrate(queryClient), post } };
 }
 
-export default function PostViewPage(
-  props: InferGetServerSidePropsType<typeof getServerSideProps>,
-) {
+export default function PostViewPage(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const trpc = useTRPC();
   const postQuery = useQuery(trpc.unstable_$fromHandle(props.post));
 

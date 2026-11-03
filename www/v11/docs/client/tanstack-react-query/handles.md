@@ -1236,7 +1236,7 @@ export default function PostPage({ loaderData }: Route.ComponentProps) {
 
 ## Next.js App Router {#nextjs-app-router}
 
-This builds on the [Next.js App Router setup](/docs/client/nextjs/app-router-setup). The query client factory, `getQueryClient` and the server proxy in `trpc/server.tsx` stay as they are. Add `export type TRPC = TRPCOptionsProxy<AppRouter>` to `trpc/client.tsx`, and in `trpc/server.tsx`, replace the setup's `HydrateClient` with one from `unstable_createHydrateClient`:
+This builds on the [Next.js App Router setup](/docs/client/nextjs/app-router-setup), whose `trpc/client.tsx` exports `type TRPC = TRPCOptionsProxy<AppRouter>`, and whose `trpc/server.tsx` creates `HydrateClient` with `unstable_createHydrateClient`. If your project predates that, add both: in `trpc/server.tsx`, replace a hand-written `HydrateClient` with this one:
 
 ```tsx twoslash title='trpc/server.tsx'
 // @include: handles-router
