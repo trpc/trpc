@@ -35,7 +35,7 @@ import {
   v12,
   v12Indexable,
 } from './src/site.ts';
-import { sponsorCardLede, sponsorPage } from './src/sponsors.ts';
+import { sponsorCard, sponsorPage } from './src/sponsors.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
 import v11Sections from './v11/sections.json' with { type: 'json' };
@@ -210,14 +210,7 @@ export default defineConfig({
         },
         absoluteUrl('/blog'),
       ),
-      docCard(
-        {
-          description: sponsorCardLede,
-          path: sponsorPage.path,
-          title: sponsorPage.headline,
-        },
-        absoluteUrl(sponsorPage.path),
-      ),
+      sponsorCard,
       ...[mediaPage, searchPage].map((page) =>
         docCard(page, absoluteUrl(page.path)),
       ),

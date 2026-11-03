@@ -268,30 +268,4 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-or, if you're using Next.js:
-
-```tsx twoslash title='utils/trpc.ts'
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.ts
-// ---cut---
-import type { AppRouter } from '../server';
-import { httpLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    return {
-      links: [
-        httpLink({
-          url: '/api/trpc',
-        }),
-      ],
-    };
-  },
-});
-```
+With Next.js, it's the same: swap the link in the `createTRPCClient` you pass to `TRPCProvider`.

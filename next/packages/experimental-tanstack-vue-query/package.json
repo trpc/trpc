@@ -31,8 +31,8 @@
     "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/query-core": "5.104.1",
-    "@tanstack/vue-query": "5.104.1",
+    "@tanstack/query-core": "5.105.0",
+    "@tanstack/vue-query": "5.105.0",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^26.0.0",

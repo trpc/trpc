@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { Heart } from 'lucide-react';
 
 import { buttonVariants } from '@shared/ui/components/button';
 import {
@@ -24,6 +25,11 @@ import { ThemeToggle } from './theme-toggle.tsx';
 import { VersionSwitcher } from './version-switcher.tsx';
 
 const navLink = buttonVariants({ size: 'sm', variant: 'ghost' });
+
+const shownFrom = {
+  lg: 'hidden lg:inline-flex',
+  xl: 'hidden xl:inline-flex',
+};
 
 /** The GitHub link is the version's, `GitHubLink`. */
 const socialLinks = [
@@ -51,7 +57,7 @@ function DocsLinks(props: {
     <Link
       activeOptions={{ exact: true }}
       activeProps={{ className: 'text-foreground' }}
-      className={cn(navLink, 'wide' in link && 'hidden lg:inline-flex')}
+      className={cn(navLink, 'from' in link && shownFrom[link.from])}
       disabled={props.disabled === true}
       inactiveProps={{ className: 'text-muted-foreground' }}
       key={link.label}
@@ -168,6 +174,19 @@ export function SiteHeader() {
               <link.Icon />
             </a>
           ))}
+          <Link
+            activeProps={{ className: 'text-pink-500 *:fill-current' }}
+            aria-label="Sponsor tRPC"
+            className={cn(
+              buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
+              'hidden hover:text-pink-500 hover:*:fill-current md:inline-flex',
+            )}
+            inactiveProps={{ className: 'text-muted-foreground' }}
+            title="Sponsor tRPC"
+            to="/sponsor"
+          >
+            <Heart />
+          </Link>
           {onHome ? (
             allHomeVersions.map((home) => (
               <span data-home-panel={home} key={home}>

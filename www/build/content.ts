@@ -651,7 +651,7 @@ export function docsContent(options: ContentOptions): Plugin {
           return `\`\`\`${lang}${`${before.trimEnd()}${after}`.trimEnd()}\n${removeTwoslashNotations(withTypes(code, queries))}\`\`\``;
         },
       )
-      .replaceAll(/^```demo\n[\s\S]*?^```$/gm, () => {
+      .replaceAll(/^```kitchen-sink\n[\s\S]*?^```$/gm, () => {
         // `renderDoc` checked the fence: it's the page's one demo.
         const demo =
           page.doc.demo === undefined ? undefined : demos[page.doc.demo];
@@ -667,6 +667,12 @@ export function docsContent(options: ContentOptions): Plugin {
       .replaceAll(/^```chart\n([\s\S]*?)\n```$/gm, (_fence, json: string) =>
         // `renderDoc` decoded the fence already.
         chartMarkdown(decodeChart(json)),
+      )
+      // A demo is the web page's; agents get its static stand-in, if any.
+      .replaceAll(
+        /^```demo\b[^\n]*\n([\s\S]*?)^```$/gm,
+        (_fence, body: string) =>
+          body.trim() === '' ? '' : `\`\`\`\n${body}\`\`\``,
       )
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
         const resolved = resolveLink(

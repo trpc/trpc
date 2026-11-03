@@ -41,19 +41,24 @@ type StandaloneHandlerOptions<
   TResponse extends NodeHTTPResponse,
 > = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   /**
-   * The base path to handle requests for.
-   * This will be sliced from the beginning of the request path
+   * The path the router is served at, such as `/trpc/`. It's cut from the
+   * start of each request's path.
    * @default '/'
-   * @example '/trpc/'
-   * @example '/trpc/api/'
+   * @see https://trpc.io/docs/server/adapters/standalone#custom-basePath
    */
   basePath?: string;
 };
 
 // --- http1 ---
+/** The options of `createHTTPServer` and `createHTTPHandler`. */
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
   StandaloneHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
 
+/**
+ * What `createContext` gets in the standalone adapter: `req`, `res` and
+ * the request's `info`.
+ * @see https://trpc.io/docs/server/adapters/standalone#2-use-the-standalone-adapter
+ */
 export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   http.IncomingMessage,
   http.ServerResponse
@@ -95,6 +100,9 @@ function createHandler<
 }
 
 /**
+ * Creates a Node.js request listener for a router, to use with your own
+ * `http.createServer()`.
+ * @see https://trpc.io/docs/server/adapters/standalone#adding-a-handler-to-a-custom-http-server
  * @internal
  */
 export function createHTTPHandler<TRouter extends AnyRouter>(
@@ -103,6 +111,14 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   return createHandler(opts);
 }
 
+/**
+ * Creates a Node.js HTTP server for a router. Call `.listen()` on it.
+ * @example
+ * ```ts
+ * createHTTPServer({ router: appRouter, createContext }).listen(3000);
+ * ```
+ * @see https://trpc.io/docs/server/adapters/standalone#2-use-the-standalone-adapter
+ */
 export function createHTTPServer<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
@@ -110,6 +126,7 @@ export function createHTTPServer<TRouter extends AnyRouter>(
 }
 
 // --- http2 ---
+/** The options of `createHTTP2Handler`. */
 export type CreateHTTP2HandlerOptions<TRouter extends AnyRouter> =
   StandaloneHandlerOptions<
     TRouter,
@@ -117,11 +134,20 @@ export type CreateHTTP2HandlerOptions<TRouter extends AnyRouter> =
     http2.Http2ServerResponse
   >;
 
+/**
+ * What `createContext` gets in the HTTP/2 standalone adapter.
+ * @see https://trpc.io/docs/server/adapters/standalone#http2
+ */
 export type CreateHTTP2ContextOptions = NodeHTTPCreateContextFnOptions<
   http2.Http2ServerRequest,
   http2.Http2ServerResponse
 >;
 
+/**
+ * Creates a request listener for a router, to use with Node.js's
+ * `http2.createSecureServer()`.
+ * @see https://trpc.io/docs/server/adapters/standalone#http2
+ */
 export function createHTTP2Handler(opts: CreateHTTP2HandlerOptions<AnyRouter>) {
   return createHandler(opts);
 }

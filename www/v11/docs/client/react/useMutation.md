@@ -9,6 +9,10 @@ parent: "client/react"
 order: 57
 ---
 
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
+
 :::note
 The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://tanstack.com/query/v5/docs/framework/react/guides/mutations).
 :::

@@ -33,8 +33,8 @@
     "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/query-core": "5.104.1",
-    "@tanstack/svelte-query": "6.3.1",
+    "@tanstack/query-core": "5.105.0",
+    "@tanstack/svelte-query": "6.3.6",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^26.0.0",

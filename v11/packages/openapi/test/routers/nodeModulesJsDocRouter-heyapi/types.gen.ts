@@ -10,30 +10,31 @@ export type MonorepoImportOutput = {
 
 export type TrpcRequestInfo = {
     /**
-     * The `trpc-accept` header
+     * The `trpc-accept` header.
      */
     accept: 'application/jsonl' | null;
     /**
-     * The type of the request
+     * The type of the procedures called.
      */
     type: 'query' | 'mutation' | 'subscription' | 'unknown';
     /**
-     * If the content type handler has detected that this is a batch call
+     * Whether the request is a batch.
      */
     isBatchCall: boolean;
     /**
-     * The calls being made
+     * The procedure calls in the request.
      */
     calls: Array<TrpcRequestInfoProcedureCall>;
     /**
-     * Connection params when using `httpSubscriptionLink` or `createWSClient`
+     * The connection params the client sent with `httpSubscriptionLink` or
+     * `createWSClient`.
      */
     connectionParams: {
         [key: string]: string;
     } | null;
     signal: AbortSignal;
     /**
-     * The URL of the request if available
+     * The request's URL, if known.
      */
     url: Url | null;
 };
@@ -141,6 +142,9 @@ export type ResolverObject = {
 
 export type DefaultErrorShape = {
     message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
     data: DefaultErrorData;
 };
@@ -149,11 +153,11 @@ export type DefaultErrorData = {
     code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
     httpStatus: number;
     /**
-     * Path to the procedure that threw the error
+     * The path of the procedure that threw.
      */
     path?: string;
     /**
-     * Stack trace of the error (only in development)
+     * The error's stack trace, only when `isDev` is set.
      */
     stack?: string;
 };

@@ -18,6 +18,13 @@ import type {
 } from '@trpc/server';
 import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
 import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  DecorateHandleReaders,
+  DecorateInfiniteQueryHandleVerbs,
+  DecorateQueryHandleVerbs,
+  HandleVerb,
+} from './handles';
+import { prepareHandleRead, readHandle, startHandle } from './handles';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -50,6 +57,9 @@ import {
   unwrapLazyArg,
 } from './utils';
 
+/**
+ * Key and filter helpers for a router path.
+ */
 export interface DecorateRouterKeyable<TFeatureFlags extends FeatureFlags> {
   /**
    * Calculate the TanStack Query Key for any path, could be used to invalidate every procedure beneath this path
@@ -84,6 +94,10 @@ interface TypeHelper<TDef extends ResolverDef> {
   };
 }
 
+/**
+ * The input type of a procedure on the options proxy.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ */
 export type inferInput<
   TProcedure extends
     | DecorateInfiniteQueryProcedure<any>
@@ -91,6 +105,10 @@ export type inferInput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['input'];
 
+/**
+ * The output type of a procedure on the options proxy.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ */
 export type inferOutput<
   TProcedure extends
     | DecorateInfiniteQueryProcedure<any>
@@ -98,9 +116,12 @@ export type inferOutput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
 
-export interface DecorateInfiniteQueryProcedure<
-  TDef extends ResolverDef,
-> extends TypeHelper<TDef> {
+/**
+ * The helpers for a query procedure whose input has a `cursor`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ */
+export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
+  extends TypeHelper<TDef>, DecorateInfiniteQueryHandleVerbs<TDef> {
   /**
    * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
    *
@@ -156,8 +177,16 @@ export interface DecorateInfiniteQueryProcedure<
     'queryKey'
   >;
 }
+
+/**
+ * The helpers for a query procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
+ */
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef>, DecorateRouterKeyable<inferFeatureFlags<TDef>> {
+  extends
+    TypeHelper<TDef>,
+    DecorateRouterKeyable<inferFeatureFlags<TDef>>,
+    DecorateQueryHandleVerbs<TDef> {
   /**
    * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
    *
@@ -214,6 +243,10 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
   >;
 }
 
+/**
+ * The helpers for a mutation procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
+ */
 export interface DecorateMutationProcedure<
   TDef extends ResolverDef,
 > extends TypeHelper<TDef> {
@@ -232,6 +265,10 @@ export interface DecorateMutationProcedure<
   mutationKey: () => TRPCMutationKey<inferFeatureFlags<TDef>['keyPrefix']>;
 }
 
+/**
+ * The helpers for a subscription procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ */
 export interface DecorateSubscriptionProcedure<
   TDef extends ResolverDef,
 > extends TypeHelper<TDef> {
@@ -243,6 +280,9 @@ export interface DecorateSubscriptionProcedure<
   subscriptionOptions: TRPCSubscriptionOptions<TDef>;
 }
 
+/**
+ * The helpers for a procedure of the given type.
+ */
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
@@ -287,7 +327,8 @@ export type DecoratedRouterRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
       ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags> &
-          DecorateRouterKeyable<TFeatureFlags>
+          DecorateRouterKeyable<TFeatureFlags> &
+          DecorateHandleReaders<TFeatureFlags>
       : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
             $Value['_def']['type'],
@@ -297,6 +338,10 @@ export type DecoratedRouterRecord<
     : never;
 };
 
+/**
+ * The object returned by `useTRPC()` and `createTRPCOptionsProxy`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage
+ */
 export type TRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -305,32 +350,60 @@ export type TRPCOptionsProxy<
   TRouter['_def']['record'],
   TFeatureFlags
 > &
-  DecorateRouterKeyable<TFeatureFlags>;
+  DecorateRouterKeyable<TFeatureFlags> &
+  DecorateHandleReaders<TFeatureFlags>;
 
+/**
+ * Options shared by every {@link createTRPCOptionsProxy} call.
+ */
 export type TRPCOptionsProxyOptionsBase<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > = {
+  /**
+   * The `QueryClient`, or a function that returns it.
+   */
   queryClient: QueryClient | (() => QueryClient);
+  /**
+   * @internal
+   */
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
 } & KeyPrefixOptions<TFeatureFlags>;
 
+/**
+ * Call procedures on a router directly, for example on the server.
+ */
 export interface TRPCOptionsProxyOptionsInternal<
   TRouter extends AnyTRPCRouter,
 > {
+  /**
+   * The router to call.
+   */
   router: TRouter;
+  /**
+   * The context for each call, or a function that returns it.
+   */
   ctx:
     | inferRouterContext<TRouter>
     | (() => MaybePromise<inferRouterContext<TRouter>>);
 }
 
+/**
+ * Call procedures through a tRPC client.
+ */
 export interface TRPCOptionsProxyOptionsExternal<
   TRouter extends AnyTRPCRouter,
 > {
+  /**
+   * The tRPC client to call procedures with.
+   */
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
 }
 
+/**
+ * Options for {@link createTRPCOptionsProxy}. Pass either `client` or `router` and `ctx`.
+ */
 export type TRPCOptionsProxyOptions<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -340,8 +413,15 @@ export type TRPCOptionsProxyOptions<
     | TRPCOptionsProxyOptionsExternal<TRouter>
   );
 
+/**
+ * Marks the `useTRPC()` proxy, whose handle verbs run during render
+ * @internal
+ */
+export const renderHandleVerbs = Symbol('renderHandleVerbs');
+
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
+  | keyof DecorateHandleReaders<any>
   | keyof DecorateInfiniteQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
   | keyof DecorateSubscriptionProcedure<any>;
@@ -380,7 +460,15 @@ export type KeyPrefixInput<TKeyPrefix> = [TKeyPrefix] extends [FeatureFlags]
       { keyPrefix: TKeyPrefix };
 
 /**
- * Create a typed proxy from your router types. Can also be used on the server.
+ * Creates the options proxy without React context. Works on the server too.
+ *
+ * @example
+ * ```ts
+ * export const trpc = createTRPCOptionsProxy<AppRouter>({
+ *   client: trpcClient,
+ *   queryClient,
+ * });
+ * ```
  *
  * The router type comes from `client` (or `router`), and query and mutation
  * keys are typed with a prefix when you pass a `keyPrefix`, so no type
@@ -429,6 +517,54 @@ export function createTRPCOptionsProxy<
     const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
+
+    const startQueryHandle = (kind: 'query' | 'infinite', verb: HandleVerb) => {
+      const inRender =
+        (opts as { [renderHandleVerbs]?: boolean })[renderHandleVerbs] === true;
+      if (inRender && verb !== 'prefetch') {
+        throw new Error(
+          `\`${[...path, utilName].join('.')}()\` on \`useTRPC()\` waits for its query, which a render can't. ` +
+            `Start queries in components with \`unstable_$prefetch\` or \`unstable_$prefetchInfinite\`, ` +
+            `and wait where you read the handle, with \`useSuspenseQuery\`. ` +
+            `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
+        );
+      }
+      const options =
+        kind === 'infinite'
+          ? trpcInfiniteQueryOptions({
+              input: arg1,
+              opts: arg2,
+              path,
+              queryClient: opts.queryClient,
+              queryKey: getQueryKeyInternal({
+                path,
+                input: arg1,
+                type: 'infinite',
+                prefix,
+              }),
+              query: callIt('query'),
+            })
+          : trpcQueryOptions({
+              input: arg1,
+              opts: arg2,
+              path,
+              queryClient: opts.queryClient,
+              queryKey: getQueryKeyInternal({
+                path,
+                input: arg1,
+                type: 'query',
+                prefix,
+              }),
+              query: callIt('query'),
+            });
+      return startHandle({
+        queryClient: unwrapLazyArg(opts.queryClient),
+        options,
+        kind,
+        verb,
+        inRender,
+      });
+    };
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
@@ -520,6 +656,43 @@ export function createTRPCOptionsProxy<
           }),
         };
       },
+
+      unstable_$fromHandle: () => {
+        const handle = readHandle(arg1, prefix);
+        const options =
+          handle.type === 'infinite'
+            ? trpcInfiniteQueryOptions({
+                input: handle.input,
+                opts: {
+                  initialCursor: arg1.initialCursor,
+                  ...arg2,
+                },
+                path: handle.path,
+                queryClient: opts.queryClient,
+                queryKey: handle.queryKey,
+                query: callIt('query'),
+              })
+            : trpcQueryOptions({
+                input: handle.input,
+                opts: arg2,
+                path: handle.path,
+                queryClient: opts.queryClient,
+                queryKey: handle.queryKey,
+                query: callIt('query'),
+              });
+        return prepareHandleRead(
+          unwrapLazyArg(opts.queryClient),
+          handle,
+          options,
+        );
+      },
+      unstable_$prefetch: () => startQueryHandle('query', 'prefetch'),
+      unstable_$ensure: () => startQueryHandle('query', 'ensure'),
+      unstable_$fetch: () => startQueryHandle('query', 'fetch'),
+      unstable_$prefetchInfinite: () =>
+        startQueryHandle('infinite', 'prefetch'),
+      unstable_$ensureInfinite: () => startQueryHandle('infinite', 'ensure'),
+      unstable_$fetchInfinite: () => startQueryHandle('infinite', 'fetch'),
 
       mutationOptions: () => {
         return trpcMutationOptions({

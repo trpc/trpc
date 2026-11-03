@@ -28,6 +28,7 @@ import type {
 import { writeResponse } from './writeResponse';
 
 /**
+ * Answers with an error response when handling a request throws.
  * @internal
  */
 export function internal_exceptionHandler<
@@ -67,7 +68,8 @@ export function internal_exceptionHandler<
 }
 
 /**
- * @remark the promise never rejects
+ * Handles a Node.js request for a router. The adapters for Express,
+ * Next.js and the standalone server use it. The promise never rejects.
  */
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,

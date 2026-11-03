@@ -3,10 +3,10 @@ import type { InvertKeyValue, ValueOf } from '../types';
 // reference: https://www.jsonrpc.org/specification
 
 /**
- * JSON-RPC 2.0 Error codes
- *
- * `-32000` to `-32099` are reserved for implementation-defined server-errors.
- * For tRPC we're copying the last digits of HTTP 4XX errors.
+ * The JSON-RPC 2.0 error code of each tRPC error code. tRPC's own codes
+ * use the range JSON-RPC leaves for servers, `-32000` to `-32099`, ending
+ * in the digits of the matching HTTP status.
+ * @see https://trpc.io/docs/rpc#error-codes---json-rpc-20-error-codes
  */
 export const TRPC_ERROR_CODES_BY_KEY = {
   /**
@@ -43,7 +43,10 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
-// pure
+/**
+ * The tRPC error code of each JSON-RPC 2.0 error code.
+ * @see https://trpc.io/docs/rpc#error-codes---json-rpc-20-error-codes
+ */
 export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
   typeof TRPC_ERROR_CODES_BY_KEY
 > = {
@@ -66,7 +69,12 @@ export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
   [-32099]: 'CLIENT_CLOSED_REQUEST',
 };
 
+/** A JSON-RPC 2.0 error code tRPC sends, such as `-32004`. */
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
+/**
+ * A tRPC error code, such as `'NOT_FOUND'`.
+ * @see https://trpc.io/docs/server/error-handling#error-codes
+ */
 export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;
 
 /**

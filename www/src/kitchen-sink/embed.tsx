@@ -86,9 +86,9 @@ function Frame(props: { readonly className: string; readonly demo: DemoId }) {
 
 /**
  * Runs a page's demo: beside the text from `xl` up, in `aside`'s column,
- * and below that in place of the page's `demo` fence (its `data-demo`
- * element in `html`). Only in the browser: the prerendered page shows the
- * fence's text.
+ * and below that in place of the page's `kitchen-sink` fence (its
+ * `data-kitchen-sink` element in `html`). Only in the browser: the
+ * prerendered page shows the fence's text.
  */
 export function PageDemo(props: {
   readonly demo: DemoId;
@@ -103,11 +103,11 @@ export function PageDemo(props: {
       return undefined;
     }
     const element = document.querySelector<HTMLElement>(
-      `[data-demo="${props.demo}"]`,
+      `[data-kitchen-sink="${props.demo}"]`,
     );
     setSlot(element);
-    element?.setAttribute('data-demo-running', '');
-    return () => element?.removeAttribute('data-demo-running');
+    element?.setAttribute('data-kitchen-sink-running', '');
+    return () => element?.removeAttribute('data-kitchen-sink-running');
   }, [props.demo, props.html, props.mode]);
 
   if (wide === undefined) {

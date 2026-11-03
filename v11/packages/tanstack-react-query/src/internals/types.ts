@@ -36,6 +36,9 @@ export type inferFeatureFlags<TDef extends ResolverDef> = TDef extends {
  * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
  */
 type CursorInput = { cursor?: any };
+/**
+ * An input that may have a `cursor`, as used by infinite queries.
+ */
 export type OptionalCursorInput = CursorInput | void;
 
 /**
@@ -54,6 +57,7 @@ export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
 >;
 
 /**
+ * tRPC options for a single query or mutation, passed as `trpc`.
  * @public
  */
 export interface TRPCReactRequestOptions
@@ -70,6 +74,7 @@ export interface TRPCReactRequestOptions
 }
 
 /**
+ * Adds the `trpc` option to TanStack Query options.
  * @public
  */
 export interface TRPCQueryBaseOptions {
@@ -80,20 +85,30 @@ export interface TRPCQueryBaseOptions {
 }
 
 /**
+ * Extra fields that tRPC adds to the options it returns.
  * @public
  */
 export interface TRPCQueryOptionsResult {
+  /**
+   * tRPC details about the options, such as the procedure path.
+   */
   trpc: {
+    /**
+     * The dot-separated procedure path, such as `post.byId`.
+     */
     path: string;
   };
 }
 
 /**
+ * The kind of query a key matches. `any` matches both.
  * @public
  */
 export type QueryType = 'any' | 'infinite' | 'query';
 
 /**
+ * A tRPC query key: the procedure path, then the input and query type.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
  * @public
  */
 export type TRPCQueryKeyWithoutPrefix = [
@@ -102,6 +117,8 @@ export type TRPCQueryKeyWithoutPrefix = [
 ];
 
 /**
+ * A tRPC query key that starts with a key prefix.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#keyPrefix
  * @public
  */
 export type TRPCQueryKeyWithPrefix = [
@@ -109,16 +126,25 @@ export type TRPCQueryKeyWithPrefix = [
   ...TRPCQueryKeyWithoutPrefix,
 ];
 
+/**
+ * A tRPC query key, with a prefix if `TPrefixEnabled` is `true`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
+ */
 export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
     ? TRPCQueryKeyWithPrefix
     : TRPCQueryKeyWithoutPrefix;
 
+/**
+ * Any tRPC query key, with or without a prefix.
+ */
 export type AnyTRPCQueryKey =
   | TRPCQueryKeyWithoutPrefix
   | TRPCQueryKeyWithPrefix;
 
 /**
+ * A tRPC mutation key that starts with a key prefix.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#keyPrefix
  * @public
  */
 export type TRPCMutationKeyWithPrefix = [
@@ -127,15 +153,22 @@ export type TRPCMutationKeyWithPrefix = [
 ];
 
 /**
+ * A tRPC mutation key: the procedure path.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
  * @public
  */
 export type TRPCMutationKeyWithoutPrefix = [path: string[]];
 
+/**
+ * Any tRPC mutation key, with or without a prefix.
+ */
 export type AnyTRPCMutationKey =
   | TRPCMutationKeyWithoutPrefix
   | TRPCMutationKeyWithPrefix;
 
 /**
+ * A tRPC mutation key, with a prefix if `TPrefixEnabled` is `true`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
  * @public
  */
 export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
@@ -150,7 +183,13 @@ export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
  * `boolean` as either.
  * @public
  */
-export type FeatureFlags = { keyPrefix: boolean };
+export type FeatureFlags = {
+  /**
+   * Whether query and mutation keys start with a prefix.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#keyPrefix
+   */
+  keyPrefix: boolean;
+};
 
 /**
  * @internal
@@ -180,5 +219,8 @@ export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
  * @public
  */
 export type DefaultFeatureFlags = ofFeatureFlags<{
+  /**
+   * Query and mutation keys have no prefix.
+   */
   keyPrefix: false;
 }>;

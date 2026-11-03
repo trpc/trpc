@@ -244,6 +244,9 @@ export class WsClient {
     });
   }
 
+  /**
+   * The current WebSocket and its state, or `null` when there is no socket.
+   */
   public get connection() {
     return backwardCompatibility(this.activeConnection);
   }
@@ -255,6 +258,10 @@ export class WsClient {
    */
   private reconnecting: Promise<void> | null = null;
   private reconnect(closedError: TRPCWebSocketClosedError) {
+    if (!this.allowReconnect) {
+      return;
+    }
+
     this.connectionState.next({
       type: 'state',
       state: 'connecting',

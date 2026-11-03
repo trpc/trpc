@@ -418,6 +418,10 @@ export const caller = appRouter.createCaller(createContext);
 
 You're all set! You can now prefetch queries in server components and consume them in client components.
 
+:::tip
+To avoid repeating the procedure and input in client components, start queries with `unstable_$prefetch` or `unstable_$ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
+:::
+
 #### Prefetching in a Server Component
 
 `prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Until then the client's `data` is `undefined`; `await queryClient.prefetchQuery(...)` instead if you'd rather delay the page until the data is there.
@@ -482,9 +486,16 @@ import { useTRPC } from '~/trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
-  const greeting = useQuery(trpc.hello.queryOptions({ text: 'world' }));
-  if (!greeting.data) return <div>Loading...</div>;
-  return <div>{greeting.data.greeting}</div>;
+  const greetingQuery = useQuery(trpc.hello.queryOptions({ text: 'world' }));
+
+  switch (greetingQuery.status) {
+    case 'pending':
+      return <div>Loading...</div>;
+    case 'error':
+      return <div>Error: {greetingQuery.error.message}</div>;
+    case 'success':
+      return <div>{greetingQuery.data.greeting}</div>;
+  }
 }
 ```
 
@@ -555,8 +566,8 @@ import { useTRPC } from '~/trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.hello.queryOptions());
-  return <div>{data.greeting}</div>;
+  const greetingQuery = useSuspenseQuery(trpc.hello.queryOptions());
+  return <div>{greetingQuery.data.greeting}</div>;
 }
 ```
 

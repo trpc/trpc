@@ -88,7 +88,7 @@ interface DefinedTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
-interface DefinedTRPCQueryOptionsOut<
+export interface DefinedTRPCQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,
@@ -109,7 +109,7 @@ interface DefinedTRPCQueryOptionsOut<
   >;
 }
 
-interface UnusedSkipTokenTRPCQueryOptionsIn<
+export interface UnusedSkipTokenTRPCQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
@@ -127,7 +127,7 @@ interface UnusedSkipTokenTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
-interface UnusedSkipTokenTRPCQueryOptionsOut<
+export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
   TOutput,
   TError,
@@ -148,6 +148,10 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
   >;
 }
 
+/**
+ * The `queryOptions` helper on a query procedure. Returns options for `useQuery`, `prefetchQuery` and so on.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
+ */
 export interface TRPCQueryOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,

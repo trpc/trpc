@@ -46,6 +46,9 @@ interface TRPCUseUtilsOptions {
    */
   trpc?: TRPCRequestOptions;
 }
+/**
+ * Options for the `fetch` and `prefetch` helpers.
+ */
 export interface TRPCFetchQueryOptions<TOutput, TError>
   extends
     DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
@@ -53,6 +56,9 @@ export interface TRPCFetchQueryOptions<TOutput, TError>
   //
 }
 
+/**
+ * Options for the `fetchInfinite` and `prefetchInfinite` helpers.
+ */
 export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
     FetchInfiniteQueryOptions<
@@ -65,12 +71,18 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
     'queryKey' | 'initialPageParam'
   > &
     TRPCUseUtilsOptions & {
+      /**
+       * The cursor for the first page.
+       */
       initialCursor?: ExtractCursorType<TInput>;
     };
 
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
 
+/**
+ * Props shared by the tRPC React context and its `Provider`.
+ */
 export interface TRPCContextPropsBase<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`
@@ -108,6 +120,9 @@ export type DecoratedTRPCContextProps<
   client: TRPCClient<TRouter>;
 };
 
+/**
+ * Props for the tRPC React context: the base props plus a `QueryClient`.
+ */
 export interface TRPCContextProps<
   TRouter extends AnyRouter,
   TSSRContext,
@@ -118,6 +133,9 @@ export interface TRPCContextProps<
   queryClient: QueryClient;
 }
 
+/**
+ * The keys of {@link TRPCContextPropsBase}.
+ */
 export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
   'client',
   'ssrContext',
@@ -353,4 +371,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   isMutating: (filters: { mutationKey: TRPCMutationKey }) => number;
 }
+/**
+ * The React context that holds the tRPC client and `QueryClient`.
+ */
 export const TRPCContext = React.createContext?.(null as any);

@@ -9,7 +9,7 @@ experiment: kitchen-sink
 
 The demo is a chat with two rooms, open in two browsers, one for Ada and one for Grace. Each browser subscribes to its room's messages and to who's in the room. A message one sends arrives in the other as an event on its subscription, and the requests panel shows each subscription's events as they come in.
 
-```demo
+```kitchen-sink
 realtime
 ```
 

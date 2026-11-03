@@ -18,6 +18,9 @@ import type {
 import type { TRPCQueryKey } from '../internals/getQueryKey';
 import type { ExtractCursorType, TRPCReactRequestOptions } from './hooks/types';
 
+/**
+ * Adds the `trpc` option to TanStack Query options.
+ */
 export interface TRPCQueryBaseOptions {
   /**
    * tRPC-related options
@@ -25,8 +28,14 @@ export interface TRPCQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
+/**
+ * Extra fields that tRPC adds to the options it returns.
+ */
 export interface TRPCQueryOptionsResult {
   trpc: {
+    /**
+     * The dot-separated procedure path, such as `post.byId`.
+     */
     path: string;
   };
 }
@@ -35,7 +44,7 @@ type TRPCOptionOverrides = 'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash';
 type TRPCInfiniteOptionOverrides = TRPCOptionOverrides | 'initialPageParam';
 
 /**
- * QueryOptions API helpers
+ * Options you pass to `queryOptions` without `initialData`.
  */
 export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
@@ -50,6 +59,9 @@ export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
     >,
     TRPCQueryBaseOptions {}
 
+/**
+ * What `queryOptions` returns without `initialData`.
+ */
 export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
   extends
     UndefinedInitialDataOptions<
@@ -62,6 +74,9 @@ export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
   queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
 }
 
+/**
+ * Options you pass to `queryOptions` with `initialData`.
+ */
 export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
     DistributiveOmit<
@@ -75,6 +90,9 @@ export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
     >,
     TRPCQueryBaseOptions {}
 
+/**
+ * What `queryOptions` returns with `initialData`.
+ */
 export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
   extends
     DefinedInitialDataOptions<
@@ -87,6 +105,9 @@ export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
   queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>, TError>;
 }
 
+/**
+ * Options you pass to `queryOptions` when `queryFn` can't be `skipToken`.
+ */
 export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
     DistributiveOmit<
@@ -100,6 +121,9 @@ export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
     >,
     TRPCQueryBaseOptions {}
 
+/**
+ * What `queryOptions` returns when `queryFn` can't be `skipToken`.
+ */
 export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
   TOutput,
@@ -117,7 +141,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsOut<
 }
 
 /**
- * InifiniteQueryOptions helpers
+ * Options you pass to `infiniteQueryOptions` without `initialData`.
  */
 export interface UndefinedTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -137,9 +161,15 @@ export interface UndefinedTRPCInfiniteQueryOptionsIn<
       TRPCInfiniteOptionOverrides
     >,
     TRPCQueryBaseOptions {
+  /**
+   * The cursor for the first page.
+   */
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * What `infiniteQueryOptions` returns without `initialData`.
+ */
 export interface UndefinedTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
@@ -162,6 +192,9 @@ export interface UndefinedTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * Options you pass to `infiniteQueryOptions` with `initialData`.
+ */
 export interface DefinedTRPCInfiniteQueryOptionsIn<
   TInput,
   TQueryFnData,
@@ -180,9 +213,15 @@ export interface DefinedTRPCInfiniteQueryOptionsIn<
       TRPCInfiniteOptionOverrides
     >,
     TRPCQueryBaseOptions {
+  /**
+   * The cursor for the first page.
+   */
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * What `infiniteQueryOptions` returns with `initialData`.
+ */
 export interface DefinedTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
@@ -205,6 +244,9 @@ export interface DefinedTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * Options you pass to `infiniteQueryOptions` when `queryFn` can't be `skipToken`.
+ */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
   TQueryFnData,
@@ -223,9 +265,15 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
       TRPCInfiniteOptionOverrides
     >,
     TRPCQueryBaseOptions {
+  /**
+   * The cursor for the first page.
+   */
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * What `infiniteQueryOptions` returns when `queryFn` can't be `skipToken`.
+ */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,

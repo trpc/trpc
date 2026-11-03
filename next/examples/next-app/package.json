@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
-    "@tanstack/react-query": "5.104.1",
+    "@tanstack/react-query": "5.105.0",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "effect": "4.1.1",

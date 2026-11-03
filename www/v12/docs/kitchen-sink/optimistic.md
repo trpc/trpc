@@ -9,7 +9,7 @@ experiment: kitchen-sink
 
 The demo is a todo list on `@trpc12/tanstack-react-query`. Adding or ticking a todo changes the list in the cache at once, before the request is sent. When the call succeeds, the list refetches from the server; when it fails, the list goes back to what it was, and the app says why.
 
-```demo
+```kitchen-sink
 optimistic
 ```
 

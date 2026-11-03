@@ -165,8 +165,8 @@ export const homeDocs = {
 
 /**
  * The top bar's links to each version's pages, by slug; on phones they're in
- * the menu. `wide`: only from `lg`, as from `md` the header has no room for
- * it and the sidebar links it.
+ * the menu. `from`: the breakpoint a link shows from, since the header has
+ * no room for it below that; the sidebar links it.
  */
 export const linksOf = {
   v11: docsLinks,
@@ -174,11 +174,11 @@ export const linksOf = {
     { label: 'Docs', slug: v12Docs.firstDoc },
     { label: 'Client', slug: 'client/overview' },
     { label: 'Adapters', slug: 'adapters/overview' },
-    { label: 'Migrating from v11', slug: 'migrations/from-v11', wide: true },
+    { label: 'Migrating from v11', slug: 'migrations/from-v11', from: 'lg' },
   ],
 } as const satisfies Record<
   HomeVersion,
-  ReadonlyArray<{ label: string; slug: string; wide?: boolean }>
+  ReadonlyArray<{ label: string; slug: string; from?: 'lg' | 'xl' }>
 >;
 
 /** The version whose pages `pathname` is among, and v11, the stable release, off the docs. */

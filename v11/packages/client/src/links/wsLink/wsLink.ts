@@ -13,10 +13,23 @@ import type {
 } from './createWsClient';
 import { createWSClient, jsonEncoder } from './createWsClient';
 
+/**
+ * Options for {@link wsLink}.
+ *
+ * @see https://trpc.io/docs/client/links/wsLink#wslink--createwsclient-options
+ */
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
+  /**
+   * The client made with `createWSClient`.
+   */
   client: TRPCWebSocketClient;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
+/**
+ * A terminating link that sends calls over a WebSocket.
+ *
+ * @see https://trpc.io/docs/client/links/wsLink
+ */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {

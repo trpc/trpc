@@ -10,7 +10,7 @@ order: 35
 `localLink` is a [**terminating link**](../links.md#the-terminating-link) that allows you to make tRPC procedure calls directly in your application without going through HTTP.
 
 :::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+`localLink` used to be called `unstable_localLink`. The old name still works, but it's deprecated and will be removed in a future major release.
 :::
 
 ## Usage
@@ -24,13 +24,13 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, unstable_localLink } from '@trpc/client';
+import { createTRPCClient, localLink } from '@trpc/client';
 import type { AppRouter } from './server';
 import { appRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
-    unstable_localLink({
+    localLink({
       router: appRouter,
       createContext: async () => {
         // Create your context here

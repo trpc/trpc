@@ -56,6 +56,11 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
   return undefined;
 }
 
+/**
+ * Turns anything thrown into a `TRPCError`. A `TRPCError` is returned as
+ * is; anything else becomes an `INTERNAL_SERVER_ERROR` with it as the
+ * cause.
+ */
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {
     return cause;
@@ -78,15 +83,29 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   return trpcError;
 }
 
+/**
+ * An error with a tRPC error code, which sets the HTTP status and the code
+ * the client sees. Throw it from resolvers and middlewares.
+ * @example
+ * ```ts
+ * throw new TRPCError({ code: 'NOT_FOUND', message: 'No such post' });
+ * ```
+ * @see https://trpc.io/docs/server/error-handling#throwing-errors
+ */
 export class TRPCError extends Error {
   // oxlint-disable-next-line typescript/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
+  /** The error this one wraps, if any. */
   public override readonly cause?: Error;
+  /** The tRPC error code, such as `'NOT_FOUND'`. */
   public readonly code;
 
   constructor(opts: {
+    /** Defaults to the cause's message, or else the code. */
     message?: string;
+    /** @see https://trpc.io/docs/server/error-handling#error-codes */
     code: TRPC_ERROR_CODE_KEY;
+    /** The original error. Anything that isn't an `Error` is wrapped in one. */
     cause?: unknown;
   }) {
     const cause = getCauseFromUnknown(opts.cause);

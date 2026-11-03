@@ -1,6 +1,6 @@
 /**
  * The kitchen sink's demos, by the id a docs page embeds them with: a
- * `demo` fence holding the id. Each is a small app in `samples/<sample>/`,
+ * `kitchen-sink` fence holding the id. Each is a small app in `samples/<sample>/`,
  * typechecked there, run live and editable on the page, and shown in the
  * page's `sample` fences. Pure, so the build reads it too.
  */

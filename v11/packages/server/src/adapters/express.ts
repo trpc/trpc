@@ -17,11 +17,21 @@ import type {
 } from './node-http';
 import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
 
+/**
+ * What `createContext` gets in the Express adapter: `req`, `res` and the
+ * request's `info`.
+ * @see https://trpc.io/docs/server/adapters/express#2-create-a-trpc-router
+ */
 export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
   express.Request,
   express.Response
 >;
 
+/**
+ * Creates an Express middleware that serves a router. Mount it on a path,
+ * such as `/trpc`.
+ * @see https://trpc.io/docs/server/adapters/express#3-use-the-express-adapter
+ */
 export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {

@@ -68,6 +68,11 @@ export function getStatusKeyFromCode(
   return HTTP_CODE_TO_JSONRPC2[code] ?? 'INTERNAL_SERVER_ERROR';
 }
 
+/**
+ * The HTTP status for a response, or for a batch of them: `207` when the
+ * responses' statuses differ.
+ * @see https://trpc.io/docs/rpc#error-codes---http-status
+ */
 export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   const arr = Array.isArray(json) ? json : [json];
   const httpStatuses = new Set<number>(
@@ -93,6 +98,10 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   return httpStatus!;
 }
 
+/**
+ * The HTTP status of a `TRPCError`'s code.
+ * @see https://trpc.io/docs/rpc#error-codes---http-status
+ */
 export function getHTTPStatusCodeFromError(error: TRPCError) {
   return getStatusCodeFromKey(error.code);
 }

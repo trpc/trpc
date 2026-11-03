@@ -181,6 +181,9 @@ settings:
 
 catalogs:
   default:
+    '@effect/platform-node':
+      specifier: 4.1.1
+      version: 4.1.1
     '@fastify/websocket':
       specifier: ^11.3.0
       version: 11.3.0
@@ -208,6 +211,9 @@ catalogs:
     devalue:
       specifier: ^6.0.0
       version: 6.0.2
+    effect:
+      specifier: 4.1.1
+      version: 4.1.1
     fastify:
       specifier: ^5.12.4
       version: 5.12.7
@@ -544,14 +550,14 @@ importers:
         specifier: workspace:*
         version: link:../../../../tooling/ui
       '@tanstack/solid-query':
-        specifier: 5.104.1
-        version: 5.104.1(solid-js@1.9.17)
+        specifier: 5.105.0
+        version: 5.105.0(solid-js@1.9.17)
       '@tanstack/svelte-query':
-        specifier: 6.3.1
-        version: 6.3.1(svelte@5.57.2)
+        specifier: 6.3.6
+        version: 6.3.6(svelte@5.57.2)
       '@tanstack/vue-query':
-        specifier: 5.104.1
-        version: 5.104.1(vue@3.5.43(typescript@7.1.0-beta))
+        specifier: 5.105.0
+        version: 5.105.0(vue@3.5.43(typescript@7.1.0-beta))
       '@trpc12/experimental-tanstack-solid-query':
         specifier: workspace:*
         version: link:../../../packages/experimental-tanstack-solid-query
@@ -1052,8 +1058,8 @@ importers:
         specifier: workspace:*
         version: link:../../../tooling/ui
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-react-query
@@ -1110,14 +1116,14 @@ importers:
         specifier: workspace:*
         version: link:../../../tooling/ui
       '@tanstack/query-async-storage-persister':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-query-persist-client':
-        specifier: 5.104.1
-        version: 5.104.1(@tanstack/react-query@5.104.1(react@19.3.0))(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-react-query
@@ -1267,8 +1273,8 @@ importers:
         specifier: 4.1.1
         version: 4.1.1(effect@4.1.1)(redis@6.3.1(@opentelemetry/api@1.9.1))
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@trpc/client':
         specifier: 11.19.0
         version: 11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta)
@@ -1277,7 +1283,7 @@ importers:
         version: 11.19.0(typescript@7.1.0-beta)
       '@trpc/tanstack-react-query':
         specifier: 11.19.0
-        version: 11.19.0(@tanstack/react-query@5.104.1(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta))(@trpc/server@11.19.0(typescript@7.1.0-beta))(react@19.3.0)(typescript@7.1.0-beta)
+        version: 11.19.0(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta))(@trpc/server@11.19.0(typescript@7.1.0-beta))(react@19.3.0)(typescript@7.1.0-beta)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-react-query
@@ -1449,11 +1455,11 @@ importers:
         specifier: 22.2.2
         version: 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/compiler@22.2.2)(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/platform-browser@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@tanstack/angular-query-experimental':
-        specifier: 5.104.1
-        version: 5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
+        specifier: 5.105.0
+        version: 5.105.0(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1519,11 +1525,11 @@ importers:
         specifier: 1.1.6
         version: 1.1.6
       '@tanstack/lit-query':
-        specifier: 0.2.26
-        version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
+        specifier: 0.2.31
+        version: 0.2.31(@tanstack/query-core@5.105.0)(lit@3.3.3)
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1556,11 +1562,11 @@ importers:
         version: link:../tanstack-query
     devDependencies:
       '@tanstack/preact-query':
-        specifier: 5.104.1
-        version: 5.104.1(preact@10.29.8)
+        specifier: 5.105.0
+        version: 5.105.0(preact@10.29.8)
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1593,11 +1599,11 @@ importers:
         version: link:../tanstack-query
     devDependencies:
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/solid-query':
-        specifier: 5.104.1
-        version: 5.104.1(solid-js@1.9.17)
+        specifier: 5.105.0
+        version: 5.105.0(solid-js@1.9.17)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1630,11 +1636,11 @@ importers:
         version: link:../tanstack-query
     devDependencies:
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/svelte-query':
-        specifier: 6.3.1
-        version: 6.3.1(svelte@5.57.2)
+        specifier: 6.3.6
+        version: 6.3.6(svelte@5.57.2)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1667,11 +1673,11 @@ importers:
         version: link:../tanstack-query
     devDependencies:
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/vue-query':
-        specifier: 5.104.1
-        version: 5.104.1(vue@3.5.43(typescript@7.1.0-beta))
+        specifier: 5.105.0
+        version: 5.105.0(vue@3.5.43(typescript@7.1.0-beta))
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1706,11 +1712,11 @@ importers:
         specifier: 0.15.0
         version: 0.15.0(typescript@7.1.0-beta)
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/query-db-collection':
         specifier: 1.4.5
-        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.1.0-beta)
+        version: 1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1743,11 +1749,11 @@ importers:
         version: link:../tanstack-query
     devDependencies:
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1901,8 +1907,8 @@ importers:
         specifier: 1.4.5
         version: 1.4.5(@tanstack/query-core@5.90.20)(typescript@7.1.0-beta)
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../tooling/tsconfig
@@ -2183,8 +2189,8 @@ importers:
         specifier: 1.1.6
         version: 1.1.6
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@trpc12/experimental-tanstack-angular-query':
         specifier: workspace:*
         version: link:../../packages/experimental-tanstack-angular-query
@@ -2429,6 +2435,9 @@ importers:
       '@actions/github':
         specifier: ^9.0.0
         version: 9.0.0
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.1.1(effect@4.1.1)(redis@6.3.1(@opentelemetry/api@1.10.0))
       '@lerna-lite/cli':
         specifier: 'catalog:'
         version: 5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@lerna-lite/version@5.6.4(@lerna-lite/publish@5.6.4(@types/node@24.13.4)(conventional-commits-filter@6.0.1)(supports-color@7.2.0))(@types/node@24.13.4)(conventional-commits-filter@6.0.1))(@types/node@24.13.4)
@@ -2468,6 +2477,9 @@ importers:
       concurrently:
         specifier: ^9.0.0
         version: 9.0.0
+      effect:
+        specifier: 'catalog:'
+        version: 4.1.1
       event-source-polyfill:
         specifier: ^1.0.31
         version: 1.0.31
@@ -4456,7 +4468,7 @@ importers:
         specifier: 0.5.6
         version: 0.5.6
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -4504,13 +4516,13 @@ importers:
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@trpc/client':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -4571,7 +4583,7 @@ importers:
         specifier: 0.5.6
         version: 0.5.6
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -4631,10 +4643,10 @@ importers:
         specifier: ^14.4.3
         version: 14.6.7(@testing-library/dom@10.4.2)
       '@trpc/client':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -4781,10 +4793,10 @@ importers:
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@trpc/client':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -4810,6 +4822,9 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.3.0(react@19.3.0)
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
       tsdown:
         specifier: 'catalog:'
         version: 0.23.0(@vue/language-core@3.3.11)(tsx@4.21.0)(typescript@7.1.0-beta)
@@ -4838,10 +4853,10 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@types/node':
         specifier: 'catalog:'
@@ -4944,16 +4959,16 @@ importers:
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.3.0)
       '@trpc/client':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../server
       '@trpc/tanstack-react-query':
-        specifier: 11.22.1
+        specifier: workspace:*
         version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 17.3.0
@@ -5053,19 +5068,28 @@ importers:
         version: 2.6.2
       '@sentry/tanstackstart-react':
         specifier: 11.8.0
-        version: 11.8.0(@babel/core@7.29.7(supports-color@10.0.0))(react@19.3.0)(rollup@4.63.1)(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))
+        version: 11.8.0(@babel/core@7.29.7(supports-color@10.0.0))(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)(rollup@4.63.1)(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))
       '@shared/ui':
         specifier: workspace:*
         version: link:../tooling/ui
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-router':
         specifier: catalog:www
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/react-start':
         specifier: catalog:www
         version: 1.168.61(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.18)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))
+      '@trpc/client':
+        specifier: workspace:*
+        version: link:../v11/packages/client
+      '@trpc/server':
+        specifier: workspace:*
+        version: link:../v11/packages/server
+      '@trpc/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../v11/packages/tanstack-react-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../next/packages/tanstack-react-query
@@ -5157,21 +5181,12 @@ importers:
       '@tooling/decisions':
         specifier: workspace:*
         version: link:../next/tooling/decisions
-      '@trpc/client':
-        specifier: workspace:*
-        version: link:../v11/packages/client
       '@trpc/next':
         specifier: workspace:*
         version: link:../v11/packages/next
       '@trpc/react-query':
         specifier: workspace:*
         version: link:../v11/packages/react-query
-      '@trpc/server':
-        specifier: workspace:*
-        version: link:../v11/packages/server
-      '@trpc/tanstack-react-query':
-        specifier: workspace:*
-        version: link:../v11/packages/tanstack-react-query
       '@types/d3-hierarchy':
         specifier: 3.1.7
         version: 3.1.7
@@ -5296,14 +5311,14 @@ importers:
         specifier: 0.15.0
         version: 0.15.0(typescript@7.1.0-beta)
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/query-db-collection':
         specifier: 1.4.5
-        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.1.0-beta)
+        version: 1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@trpc12/experimental-nest':
         specifier: workspace:*
         version: link:../../../next/packages/experimental-nest
@@ -5373,8 +5388,8 @@ importers:
         specifier: workspace:*
         version: link:../../../tooling/ui
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-router':
         specifier: 1.170.42
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -5413,8 +5428,8 @@ importers:
         specifier: workspace:*
         version: link:../../../tooling/ui
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-router':
         specifier: 1.170.42
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -5453,8 +5468,8 @@ importers:
         specifier: workspace:*
         version: link:../../../tooling/ui
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-router':
         specifier: 1.170.42
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -5490,8 +5505,8 @@ importers:
         specifier: workspace:*
         version: link:../../../tooling/ui
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-router':
         specifier: 1.170.42
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -5535,6 +5550,15 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
+      '@tanstack/react-router':
+        specifier: catalog:www
+        version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-router-ssr-query':
+        specifier: ^1.167.3
+        version: 1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.39)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-start':
+        specifier: catalog:www
+        version: 1.168.61(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
       '@trpc/client':
         specifier: workspace:*
         version: link:../../../v11/packages/client
@@ -5589,6 +5613,9 @@ importers:
       react-error-boundary:
         specifier: 6.1.6
         version: 6.1.6(@types/react@19.3.0)(react@19.3.0)
+      react-router:
+        specifier: 8.5.1
+        version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       runtypes:
         specifier: catalog:www
         version: 7.0.5
@@ -5693,35 +5720,35 @@ importers:
         specifier: 12.1.3
         version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
       '@tanstack/angular-query-experimental':
-        specifier: 5.104.1
-        version: 5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
+        specifier: 5.105.0
+        version: 5.105.0(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
       '@tanstack/db':
         specifier: 0.15.0
         version: 0.15.0(typescript@7.1.0-beta)
       '@tanstack/lit-query':
-        specifier: 0.2.26
-        version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
+        specifier: 0.2.31
+        version: 0.2.31(@tanstack/query-core@5.105.0)(lit@3.3.3)
       '@tanstack/preact-query':
-        specifier: 5.104.1
-        version: 5.104.1(preact@10.29.8)
+        specifier: 5.105.0
+        version: 5.105.0(preact@10.29.8)
       '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
+        specifier: 5.105.0
+        version: 5.105.0
       '@tanstack/query-db-collection':
         specifier: 1.4.5
-        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.1.0-beta)
+        version: 1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)
       '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
+        specifier: 5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/solid-query':
-        specifier: 5.104.1
-        version: 5.104.1(solid-js@1.9.17)
+        specifier: 5.105.0
+        version: 5.105.0(solid-js@1.9.17)
       '@tanstack/svelte-query':
-        specifier: 6.3.1
-        version: 6.3.1(svelte@5.57.2)
+        specifier: 6.3.6
+        version: 6.3.6(svelte@5.57.2)
       '@tanstack/vue-query':
-        specifier: 5.104.1
-        version: 5.104.1(vue@3.5.43(typescript@7.1.0-beta))
+        specifier: 5.105.0
+        version: 5.105.0(vue@3.5.43(typescript@7.1.0-beta))
       '@trpc/client':
         specifier: 11.19.0
         version: 11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta)
@@ -11030,6 +11057,9 @@ packages:
       typescript:
         optional: true
 
+  '@remix-run/route-pattern@0.22.1':
+    resolution: {integrity: sha512-czdGJWh09Lapvcqt7Vb09KlrU2PhRJ8xQaI+AItTuD9aDJ5MAgxnS38lnys6Ll+6RJEqPiaUqTwIQhVLwFvv+w==}
+
   '@remix-run/router@1.23.3':
     resolution: {integrity: sha512-4An71tdz9X8+3sI4Qqqd2LWd9vS39J7sqd9EU4Scw7TJE/qB10Flv/UuqbPVgfQV9XoK8Np6jNquZitnZq5i+Q==}
     engines: {node: '>=14.0.0'}
@@ -12616,8 +12646,8 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@tanstack/angular-query-experimental@5.104.1':
-    resolution: {integrity: sha512-JyWbOPEzj63O96NFihyh+9zueQIMWP6U5QX+Cf3QpbmZS00n9Msd40LF2N3MmYDly3rLNqZeM3OOrHcN3Ut4eA==}
+  '@tanstack/angular-query-experimental@5.105.0':
+    resolution: {integrity: sha512-focrOzU1r8UF9D49elErfeGnSnoVUzz5FbFOT/1iDuwxujgcb2GHyb8YhLppAu4MBhAiJ+n5n7i9qvebS6fAYQ==}
     peerDependencies:
       '@angular/common': '>=16.0.0'
       '@angular/core': '>=16.0.0'
@@ -12641,10 +12671,10 @@ packages:
     engines: {node: '>=20.12.0'}
     hasBin: true
 
-  '@tanstack/lit-query@0.2.26':
-    resolution: {integrity: sha512-SVQN4uSsErLR984UCqbU15rbGUhX7onH1U5Md8HGZOmoTIat+J83qppCxYwdtC6kzM1GX8YES5TIzgfCh/WoEg==}
+  '@tanstack/lit-query@0.2.31':
+    resolution: {integrity: sha512-fiG41X67VIhveTG6E7rOF5YyiVCz/cjjvo3J/aFrzrcZgGPyzcnGgZ+lBkZ/6/ml8HhuFGqxlrjNGIEIc0+1Fg==}
     peerDependencies:
-      '@tanstack/query-core': ^5.104.1
+      '@tanstack/query-core': ^5.105.0
       lit: '>=2.8.0 <4'
 
   '@tanstack/match-sorter-utils@9.2.6':
@@ -12655,16 +12685,13 @@ packages:
     resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
     engines: {node: '>=18'}
 
-  '@tanstack/preact-query@5.104.1':
-    resolution: {integrity: sha512-3+EnqSDx3R8yzGoycJpR0REeKVND3g6Mp+SLa5+KXUyYw8Pt5Twmqn/8/9W4EiWTFQ7OBCW2YOlVJUHa7TGAtQ==}
+  '@tanstack/preact-query@5.105.0':
+    resolution: {integrity: sha512-1cLbN2QOf+8MjkW334xrmNMssc9syaXPwVeH//utZbu6HhyehGhDy3Kqp5sFteL1f66+p/0s+AtnIYecHtGEaw==}
     peerDependencies:
-      preact: ^10.0.0
+      preact: ^10.0.0 || ^11.0.0-0
 
-  '@tanstack/query-async-storage-persister@5.104.1':
-    resolution: {integrity: sha512-wSs/HrangoSMVW3zLifawRT9lA+fbiilPQmaY+YhxBOM/VS9oqx+MQvROHpW+hKwDpdvFmhyBjWiyDhTHL1YXg==}
-
-  '@tanstack/query-core@5.104.1':
-    resolution: {integrity: sha512-TiRghcrGkUTE+M4JBxvpPSpBhxvIzQairw+cksrHYGr+2uwC77yW1SY9nYxnYRYOppvucf8rEg6b5byoz4rTpw==}
+  '@tanstack/query-async-storage-persister@5.105.0':
+    resolution: {integrity: sha512-I2QmE8pKHdYjvAIy+hf5ARZx9QmsUehk2RxdwNX1cYqHip8y2MmPUDhlLzvGCudKmOVKW0gPVPdiiN4AKcU3lg==}
 
   '@tanstack/query-core@5.105.0':
     resolution: {integrity: sha512-7p56vRmT/z4UJ6sctGIdl5WRUQyUv53IUpUwEKi2g97zMbO7zh8ZsCLffGAvCPBR4xD72e3VXsDyLwXHhoNTMQ==}
@@ -12678,14 +12705,8 @@ packages:
       '@tanstack/query-core': ^5.90.15
       typescript: '>=4.7'
 
-  '@tanstack/query-devtools@5.104.1':
-    resolution: {integrity: sha512-wmXnQbnwEz+SctYMTrwsOWWNHKhCsVgtaliL9E+VI2vx2Xr773d/MpcrbIU1hEOUqC3p7x59swXFUPDLbplT3g==}
-
   '@tanstack/query-devtools@5.105.0':
     resolution: {integrity: sha512-vRJf9XRHB+P2aMSAEHWtMLsAf1nC9NSsHVqSHiT/FZYU/+5LEo2BOrXKskURQnJEzg6whaBeP6iMn0PS30KJrQ==}
-
-  '@tanstack/query-persist-client-core@5.104.1':
-    resolution: {integrity: sha512-ONiadXqe56iNrw6RESqKILpTIVG9ZMI/DageTQnrBDt/nZ6WiP4G13iIiMwJEsiO12gQ3Gychx8tcFIPw4k25g==}
 
   '@tanstack/query-persist-client-core@5.105.0':
     resolution: {integrity: sha512-bOy2lMzzEyacL6s9hIa0tKmaIr/TM24HZaK9a20ctZjPYlCs6NhGdgbxi20RcdJWZwWunkLqPDnxfClD7QIyKg==}
@@ -12703,12 +12724,6 @@ packages:
       '@types/react':
         optional: true
 
-  '@tanstack/react-query-persist-client@5.104.1':
-    resolution: {integrity: sha512-kU3YaqjkwEUzUUfPF0JVg56d6gJKWHaFVqOlQztwc4C2IT0P5sv/23orrSoQqjxKaUe6Ejw5IIQtA/G12uNmow==}
-    peerDependencies:
-      '@tanstack/react-query': ^5.104.1
-      react: ^18 || ^19
-
   '@tanstack/react-query-persist-client@5.105.0':
     resolution: {integrity: sha512-88XnwRDyGnlEGgnX2ePbUnEwGoQpQufLKR5bqCfs8CQbNoS2km3Ib/MNKWwrRTQDOdmJYhl6wBPJEdUBBMH5XA==}
     peerDependencies:
@@ -12718,11 +12733,6 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
-
-  '@tanstack/react-query@5.104.1':
-    resolution: {integrity: sha512-Zz70EgjahNI7aCz8BZxM3vUGU44ycxEAzMuCUjLeA7SVhhOkg3ZgPjPJPvHjs6Rmky/dtmnu1WzjGHNHmhCoZQ==}
-    peerDependencies:
-      react: ^18 || ^19
 
   '@tanstack/react-query@5.105.0':
     resolution: {integrity: sha512-y+hMuDERvgg6ay1da0V1a6ZC0ZONt7dELxSFkqRZuwm7p1TTZs0MoXrPlBRflIpRoYjvzQVYxycnLImpFLhWrw==}
@@ -12932,8 +12942,8 @@ packages:
     resolution: {integrity: sha512-3TSH3rwAQTqQOtTBF8IXMFXmGNJWnjwIm+l87uguyC/of0pSRKcU9GJrozaf0fY9it8dLQvUZJA2MOlfqbW1sA==}
     engines: {node: '>=20.19'}
 
-  '@tanstack/solid-query@5.104.1':
-    resolution: {integrity: sha512-o7xAwHOhgVpIY+/AY3jpVAkYprfY+kvh99msDGxXf/kXFltZtEZzffHFSfFou6vv7xxx8t8kt2Dq86Lpzhpk6g==}
+  '@tanstack/solid-query@5.105.0':
+    resolution: {integrity: sha512-ewPzDb6zPF53006Iebv+C2wEtZ+KrXgpcg8CdLkzMxrYN+0ndgqMaO5Cba+CUuf98s/ylLeZQ/OxsiR4UT/MAg==}
     peerDependencies:
       solid-js: ^1.6.0
 
@@ -12992,8 +13002,8 @@ packages:
   '@tanstack/store@0.11.2':
     resolution: {integrity: sha512-sJ4mjol8uQsHV0gOJzzjwXfh2Fwm+Sz0+8deqiTm4jGbMdjzNSW+xZCFm0kUa870uhd8yi+DpKnZb5Kc4apa0Q==}
 
-  '@tanstack/svelte-query@6.3.1':
-    resolution: {integrity: sha512-gyBkXdE1ZNOX6KWTumq7msd0kHHF1wLLUREb8zPxfadUUyVOy1qrgBfo8bNSf9918x0LSu2YuBDxEm7dBi9T4w==}
+  '@tanstack/svelte-query@6.3.6':
+    resolution: {integrity: sha512-t00PjiCTrv2nB/Lb39pOb+TIwe80p+FpKzDCFy+6FZC6mz2j++b8lUITQ6O/JrZvkQn8eEEUvaju0nQ81vjorA==}
     peerDependencies:
       svelte: ^5.25.0
 
@@ -13001,8 +13011,8 @@ packages:
     resolution: {integrity: sha512-uhOeFyxLcU41HzvrxsGpiWdcMbScY1EDgbZ5K7DVRMYInbLYWAC0EA/kx9wXAoSM8q82bUG2hRl8+EAjE6XAbA==}
     engines: {node: '>=20.19'}
 
-  '@tanstack/vue-query@5.104.1':
-    resolution: {integrity: sha512-3858wOmIoIazR9mZ2g8/QsKNccQlzxIY+4/g55OHbhhMeBEi+ig/8vne2e5N+Xx9g5MXuB7Nscfb6B4REPDWlw==}
+  '@tanstack/vue-query@5.105.0':
+    resolution: {integrity: sha512-LUjapoGf8RCHvy72kOaS6an0I6xpuxpuU/iksqVcRWh7UrKW2DsoV6WmiDo/IkYhAqa8YkWBz9HYlFxWs39WOw==}
     peerDependencies:
       '@vue/composition-api': ^1.1.2
       vue: ^2.6.0 || ^3.3.0
@@ -19642,6 +19652,22 @@ packages:
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
+
+  react-router@8.5.1:
+    resolution: {integrity: sha512-5u1eQ46QjuXjNfEnLwzrnou1Bm5dquO3xjVYkkMYCudtkicD2AQHtx+fvXzPATtPJx8TW6DR1x1TDRqsfHyZBw==}
+    engines: {node: '>=22.22.0'}
+    peerDependencies:
+      '@types/react': '>=19.2.0'
+      '@types/react-dom': '>=19.2.0'
+      react: '>=19.2.7'
+      react-dom: '>=19.2.7'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+      react-dom:
+        optional: true
 
   react-server-dom-turbopack@19.3.0:
     resolution: {integrity: sha512-8vg0WcRPGF4EG7Tq8W8QndBuuXcSdHa2i64Icklj8PFpIxHgJmROgHbRBs1wCOTmJDNoAob8pmV9ftrU90tMyA==}
@@ -28042,6 +28068,8 @@ snapshots:
     optionalDependencies:
       typescript: 7.1.0-beta
 
+  '@remix-run/route-pattern@0.22.1': {}
+
   '@remix-run/router@1.23.3': {}
 
   '@remix-run/server-runtime@2.17.5(typescript@7.1.0-beta)':
@@ -28533,12 +28561,14 @@ snapshots:
       '@sentry/conventions': 0.27.0
       '@sentry/core': 11.8.0
 
-  '@sentry/react@11.8.0(react@19.3.0)':
+  '@sentry/react@11.8.0(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@sentry/browser': 11.8.0
       '@sentry/conventions': 0.27.0
       '@sentry/core': 11.8.0
       react: 19.3.0
+    optionalDependencies:
+      react-router: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
 
   '@sentry/replay-canvas@11.8.0':
     dependencies:
@@ -28561,7 +28591,7 @@ snapshots:
       '@sentry/conventions': 0.27.0
       '@sentry/core': 11.8.0
 
-  '@sentry/tanstackstart-react@11.8.0(@babel/core@7.29.7(supports-color@10.0.0))(react@19.3.0)(rollup@4.63.1)(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))':
+  '@sentry/tanstackstart-react@11.8.0(@babel/core@7.29.7(supports-color@10.0.0))(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)(rollup@4.63.1)(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@sentry/browser-utils': 11.8.0
@@ -28569,7 +28599,7 @@ snapshots:
       '@sentry/conventions': 0.27.0
       '@sentry/core': 11.8.0
       '@sentry/node': 11.8.0(@babel/core@7.29.7(supports-color@10.0.0))(rollup@4.63.1)(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))
-      '@sentry/react': 11.8.0(react@19.3.0)
+      '@sentry/react': 11.8.0(react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       '@sentry/server-runtime-injection': 11.8.0
       '@sentry/server-utils': 11.8.0
     transitivePeerDependencies:
@@ -30095,13 +30125,13 @@ snapshots:
       tailwindcss: 4.3.3
       vite: 8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
 
-  '@tanstack/angular-query-experimental@5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)':
+  '@tanstack/angular-query-experimental@5.105.0(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)':
     dependencies:
       '@angular/common': 22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
     optionalDependencies:
-      '@tanstack/query-devtools': 5.104.1(csstype@3.2.3)
+      '@tanstack/query-devtools': 5.105.0(csstype@3.2.3)
     transitivePeerDependencies:
       - csstype
 
@@ -30121,10 +30151,10 @@ snapshots:
 
   '@tanstack/intent@0.5.6': {}
 
-  '@tanstack/lit-query@0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)':
+  '@tanstack/lit-query@0.2.31(@tanstack/query-core@5.105.0)(lit@3.3.3)':
     dependencies:
       '@lit/context': 1.1.6
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
       lit: 3.3.3
 
   '@tanstack/match-sorter-utils@9.2.6':
@@ -30133,27 +30163,25 @@ snapshots:
 
   '@tanstack/pacer-lite@0.2.2': {}
 
-  '@tanstack/preact-query@5.104.1(preact@10.29.8)':
+  '@tanstack/preact-query@5.105.0(preact@10.29.8)':
     dependencies:
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
       preact: 10.29.8(preact-render-to-string@6.5.11)
 
-  '@tanstack/query-async-storage-persister@5.104.1':
+  '@tanstack/query-async-storage-persister@5.105.0':
     dependencies:
-      '@tanstack/query-core': 5.104.1
-      '@tanstack/query-persist-client-core': 5.104.1
-
-  '@tanstack/query-core@5.104.1': {}
+      '@tanstack/query-core': 5.105.0
+      '@tanstack/query-persist-client-core': 5.105.0
 
   '@tanstack/query-core@5.105.0': {}
 
   '@tanstack/query-core@5.90.20': {}
 
-  '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.104.1)(typescript@7.1.0-beta)':
+  '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.105.0)(typescript@7.1.0-beta)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@tanstack/db': 0.15.0(typescript@7.1.0-beta)
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
       typescript: 7.1.0-beta
 
   '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.90.20)(typescript@7.1.0-beta)':
@@ -30162,23 +30190,6 @@ snapshots:
       '@tanstack/db': 0.15.0(typescript@7.1.0-beta)
       '@tanstack/query-core': 5.90.20
       typescript: 7.1.0-beta
-
-  '@tanstack/query-devtools@5.104.1(csstype@3.2.3)':
-    dependencies:
-      '@kobalte/core': 0.13.14(solid-js@1.9.17)
-      '@solid-primitives/keyed': 1.5.3(solid-js@1.9.17)
-      '@solid-primitives/resize-observer': 2.2.0(solid-js@1.9.17)
-      '@solid-primitives/storage': 1.3.11(solid-js@1.9.17)
-      '@tanstack/match-sorter-utils': 9.2.6
-      '@tanstack/query-core': 5.104.1
-      clsx: 2.1.1
-      goober: 2.1.19(csstype@3.2.3)
-      solid-js: 1.9.17
-      solid-transition-group: 0.2.3(solid-js@1.9.17)
-      superjson: 2.2.6
-    transitivePeerDependencies:
-      - csstype
-    optional: true
 
   '@tanstack/query-devtools@5.105.0(csstype@3.2.3)':
     dependencies:
@@ -30195,10 +30206,6 @@ snapshots:
       superjson: 2.2.6
     transitivePeerDependencies:
       - csstype
-
-  '@tanstack/query-persist-client-core@5.104.1':
-    dependencies:
-      '@tanstack/query-core': 5.104.1
 
   '@tanstack/query-persist-client-core@5.105.0':
     dependencies:
@@ -30219,12 +30226,6 @@ snapshots:
     transitivePeerDependencies:
       - csstype
 
-  '@tanstack/react-query-persist-client@5.104.1(@tanstack/react-query@5.104.1(react@19.3.0))(react@19.3.0)':
-    dependencies:
-      '@tanstack/query-persist-client-core': 5.104.1
-      '@tanstack/react-query': 5.104.1(react@19.3.0)
-      react: 19.3.0
-
   '@tanstack/react-query-persist-client@5.105.0(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0)':
     dependencies:
       '@tanstack/query-persist-client-core': 5.105.0
@@ -30232,11 +30233,6 @@ snapshots:
       react: 19.3.0
     optionalDependencies:
       '@types/react': 19.3.0
-
-  '@tanstack/react-query@5.104.1(react@19.3.0)':
-    dependencies:
-      '@tanstack/query-core': 5.104.1
-      react: 19.3.0
 
   '@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.3.0)':
     dependencies:
@@ -30251,6 +30247,17 @@ snapshots:
       react: 19.3.0
     optionalDependencies:
       '@types/react': 19.3.0
+
+  '@tanstack/react-router-ssr-query@1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.39)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@tanstack/query-core': 5.105.0
+      '@tanstack/react-query': 5.105.0(@types/react@19.3.0)(react@19.3.0)
+      '@tanstack/react-router': 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/router-ssr-query-core': 1.169.3(@tanstack/query-core@5.105.0)(@tanstack/router-core@1.171.39)
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+    transitivePeerDependencies:
+      - '@tanstack/router-core'
 
   '@tanstack/react-router-ssr-query@1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@tanstack/react-router@1.170.46(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.39)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
@@ -30333,6 +30340,32 @@ snapshots:
       '@tanstack/start-client-core': 1.170.35
       '@tanstack/start-fn-stubs': 1.162.0
       '@tanstack/start-plugin-core': 1.171.50(@rspack/core@1.7.12(@swc/helpers@0.5.23))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(@vue/language-core@3.3.11)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1))(crossws@0.4.12)(esbuild@0.28.2)(rolldown@1.2.13)(rollup@4.63.1)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(@vue/language-core@3.3.11)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1))(solid-js@1.9.18)(supports-color@10.2.2))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2)(uglify-js@3.19.3))
+      '@tanstack/start-storage-context': 1.167.37
+      pathe: 2.0.3
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+    transitivePeerDependencies:
+      - '@farmfe/core'
+      - '@rsbuild/core'
+      - bun-types-no-globals
+      - crossws
+      - esbuild
+      - rolldown
+      - rollup
+      - supports-color
+      - unloader
+      - vite
+      - vite-plugin-solid
+      - webpack
+
+  '@tanstack/react-start-rsc@0.1.60(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))':
+    dependencies:
+      '@tanstack/react-router': 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/router-core': 1.171.35
+      '@tanstack/router-utils': 1.162.3(supports-color@10.0.0)
+      '@tanstack/start-client-core': 1.170.35
+      '@tanstack/start-fn-stubs': 1.162.0
+      '@tanstack/start-plugin-core': 1.171.50(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
       '@tanstack/start-storage-context': 1.167.37
       pathe: 2.0.3
       react: 19.3.0
@@ -30516,6 +30549,35 @@ snapshots:
       react-dom: 19.3.0(react@19.3.0)
     optionalDependencies:
       vite: '@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(@vue/language-core@3.3.11)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)'
+    transitivePeerDependencies:
+      - '@farmfe/core'
+      - '@rspack/core'
+      - bun-types-no-globals
+      - crossws
+      - esbuild
+      - react-server-dom-rspack
+      - rolldown
+      - rollup
+      - supports-color
+      - unloader
+      - vite-plugin-solid
+      - webpack
+
+  '@tanstack/react-start@1.168.61(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))':
+    dependencies:
+      '@tanstack/react-router': 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-start-client': 1.168.40(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-start-rsc': 0.1.60(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
+      '@tanstack/react-start-server': 1.167.47(crossws@0.4.12)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/router-utils': 1.162.3(supports-color@10.0.0)
+      '@tanstack/start-client-core': 1.170.35
+      '@tanstack/start-plugin-core': 1.171.50(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
+      '@tanstack/start-server-core': 1.169.40(crossws@0.4.12)
+      pathe: 2.0.3
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+    optionalDependencies:
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@farmfe/core'
       - '@rspack/core'
@@ -30745,6 +30807,32 @@ snapshots:
       - supports-color
       - unloader
 
+  '@tanstack/router-plugin@1.168.43(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))':
+    dependencies:
+      '@babel/core': 7.29.7(supports-color@10.0.0)
+      '@babel/template': 7.29.7
+      '@babel/types': 7.29.8
+      '@tanstack/router-core': 1.171.35
+      '@tanstack/router-generator': 1.167.41(supports-color@10.0.0)
+      '@tanstack/router-utils': 1.162.3(supports-color@10.0.0)
+      chokidar: 5.0.0
+      unplugin: 3.4.0(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
+      zod: 4.6.5
+    optionalDependencies:
+      '@tanstack/react-router': 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
+      vite-plugin-solid: 2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
+      webpack: 5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3)
+    transitivePeerDependencies:
+      - '@farmfe/core'
+      - '@rspack/core'
+      - bun-types-no-globals
+      - esbuild
+      - rolldown
+      - rollup
+      - supports-color
+      - unloader
+
   '@tanstack/router-plugin@1.168.43(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.18)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))':
     dependencies:
       '@babel/core': 7.29.7(supports-color@10.0.0)
@@ -30909,9 +30997,9 @@ snapshots:
       - supports-color
     optional: true
 
-  '@tanstack/solid-query@5.104.1(solid-js@1.9.17)':
+  '@tanstack/solid-query@5.105.0(solid-js@1.9.17)':
     dependencies:
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
       solid-js: 1.9.17
 
   '@tanstack/start-client-core@1.170.35':
@@ -30955,6 +31043,45 @@ snapshots:
       zod: 4.6.5
     optionalDependencies:
       vite: '@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(@vue/language-core@3.3.11)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)'
+    transitivePeerDependencies:
+      - '@farmfe/core'
+      - '@rspack/core'
+      - '@tanstack/react-router'
+      - bun-types-no-globals
+      - crossws
+      - esbuild
+      - rolldown
+      - rollup
+      - supports-color
+      - unloader
+      - vite-plugin-solid
+      - webpack
+
+  '@tanstack/start-plugin-core@1.171.50(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@babel/core': 7.29.7(supports-color@10.0.0)
+      '@babel/types': 7.29.8
+      '@jridgewell/remapping': 2.3.5
+      '@tanstack/router-core': 1.171.35
+      '@tanstack/router-generator': 1.167.41(supports-color@10.0.0)
+      '@tanstack/router-plugin': 1.168.43(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
+      '@tanstack/router-utils': 1.162.3(supports-color@10.0.0)
+      '@tanstack/start-server-core': 1.169.40(crossws@0.4.12)
+      exsolve: 1.1.3
+      lightningcss: 1.33.0
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      seroval: 1.6.12
+      source-map: 0.7.6
+      srvx: 0.11.22
+      tinyglobby: 0.2.17
+      ufo: 1.6.4
+      vitefu: 1.1.3(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
+      xmlbuilder2: 4.0.3
+      zod: 4.6.5
+    optionalDependencies:
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@farmfe/core'
       - '@rspack/core'
@@ -31156,17 +31283,17 @@ snapshots:
 
   '@tanstack/store@0.11.2': {}
 
-  '@tanstack/svelte-query@6.3.1(svelte@5.57.2)':
+  '@tanstack/svelte-query@6.3.6(svelte@5.57.2)':
     dependencies:
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
       svelte: 5.57.2
 
   '@tanstack/virtual-file-routes@1.162.0': {}
 
-  '@tanstack/vue-query@5.104.1(vue@3.5.43(typescript@7.1.0-beta))':
+  '@tanstack/vue-query@5.105.0(vue@3.5.43(typescript@7.1.0-beta))':
     dependencies:
       '@tanstack/match-sorter-utils': 9.2.6
-      '@tanstack/query-core': 5.104.1
+      '@tanstack/query-core': 5.105.0
       '@vue/devtools-api': 6.6.4
       vue: 3.5.43(typescript@7.1.0-beta)
       vue-demi: 0.14.10(vue@3.5.43(typescript@7.1.0-beta))
@@ -31240,9 +31367,9 @@ snapshots:
     dependencies:
       typescript: 7.1.0-beta
 
-  '@trpc/tanstack-react-query@11.19.0(@tanstack/react-query@5.104.1(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta))(@trpc/server@11.19.0(typescript@7.1.0-beta))(react@19.3.0)(typescript@7.1.0-beta)':
+  '@trpc/tanstack-react-query@11.19.0(@tanstack/react-query@5.105.0(@types/react@19.3.0)(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta))(@trpc/server@11.19.0(typescript@7.1.0-beta))(react@19.3.0)(typescript@7.1.0-beta)':
     dependencies:
-      '@tanstack/react-query': 5.104.1(react@19.3.0)
+      '@tanstack/react-query': 5.105.0(@types/react@19.3.0)(react@19.3.0)
       '@trpc/client': 11.19.0(@trpc/server@11.19.0(typescript@7.1.0-beta))(typescript@7.1.0-beta)
       '@trpc/server': 11.19.0(typescript@7.1.0-beta)
       react: 19.3.0
@@ -40481,6 +40608,16 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
+  react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      '@remix-run/route-pattern': 0.22.1
+      cookie-es: 3.1.1
+      react: 19.3.0
+    optionalDependencies:
+      '@types/react': 19.3.0
+      '@types/react-dom': 19.3.0(@types/react@19.3.0)
+      react-dom: 19.3.0(react@19.3.0)
+
   react-server-dom-turbopack@19.3.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
       acorn-loose: 8.5.2
@@ -42967,6 +43104,18 @@ snapshots:
       webpack: 5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3)
     optional: true
 
+  unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3)):
+    dependencies:
+      '@jridgewell/remapping': 2.3.5
+      picomatch: 4.0.7
+      webpack-virtual-modules: 0.6.2
+    optionalDependencies:
+      esbuild: 0.28.2
+      rolldown: 1.2.16
+      rollup: 4.63.1
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
+      webpack: 5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3)
+
   unraw@3.0.0: {}
 
   unstorage@1.17.5(@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.21.3))(db0@0.3.4(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@opentelemetry/api@1.10.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@7.1.0-beta))(typescript@7.1.0-beta))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(kysely@0.29.6)(postgres@3.4.4)(prisma@6.8.1(typescript@7.1.0-beta))))(ioredis@5.11.1(supports-color@10.0.0)):
@@ -43304,6 +43453,22 @@ snapshots:
       solid-refresh: 0.6.3(solid-js@1.9.17)(supports-color@10.2.2)
       vite: 8.3.5(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
       vitefu: 1.1.3(vite@8.3.5(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
+    optionalDependencies:
+      '@testing-library/jest-dom': 6.9.1
+    transitivePeerDependencies:
+      - supports-color
+    optional: true
+
+  vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.17)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)):
+    dependencies:
+      '@babel/core': 7.29.7(supports-color@10.0.0)
+      '@types/babel__core': 7.20.5
+      babel-preset-solid: 1.9.16(@babel/core@7.29.7(supports-color@10.0.0))(solid-js@1.9.17)
+      merge-anything: 5.1.7
+      solid-js: 1.9.17
+      solid-refresh: 0.6.3(solid-js@1.9.17)(supports-color@10.0.0)
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
+      vitefu: 1.1.3(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
     optionalDependencies:
       '@testing-library/jest-dom': 6.9.1
     transitivePeerDependencies:

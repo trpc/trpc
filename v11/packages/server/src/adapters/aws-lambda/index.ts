@@ -24,12 +24,24 @@ import { resolveResponse } from '../../@trpc/server/http';
 import type { inferAPIGWReturn, LambdaEvent } from './getPlanner';
 import { getPlanner } from './getPlanner';
 
+/**
+ * What `createContext` gets in the AWS Lambda adapter: the event, the
+ * Lambda context and the request's `info`.
+ * @see https://trpc.io/docs/server/adapters/aws-lambda#2-create-a-trpc-router
+ */
 export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
+  /** The API Gateway or function URL event. */
   event: TEvent;
+  /** The Lambda invocation's context. */
   context: APIGWContext;
   info: TRPCRequestInfo;
 };
 
+/**
+ * The options of `awsLambdaRequestHandler` and
+ * `awsLambdaStreamingRequestHandler`.
+ * @see https://trpc.io/docs/server/adapters/aws-lambda
+ */
 export type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TEvent extends LambdaEvent,
@@ -39,6 +51,7 @@ export type AWSLambdaOptions<
     AWSLambdaCreateContextFn<TRouter, TEvent>
   >;
 
+/** The `createContext` function the AWS Lambda adapter takes. */
 export type AWSLambdaCreateContextFn<
   TRouter extends AnyRouter,
   TEvent extends LambdaEvent,
@@ -50,6 +63,11 @@ export type AWSLambdaCreateContextFn<
   | inferRouterContext<TRouter>
   | Promise<inferRouterContext<TRouter>>;
 
+/**
+ * Creates a Lambda handler for a router, for API Gateway (REST and HTTP
+ * APIs) and Lambda function URLs.
+ * @see https://trpc.io/docs/server/adapters/aws-lambda#3-use-the-amazon-api-gateway-adapter
+ */
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends LambdaEvent,
@@ -83,6 +101,11 @@ export function awsLambdaRequestHandler<
   };
 }
 
+/**
+ * Creates a Lambda handler that streams its response, for use with
+ * `awslambda.streamifyResponse()`.
+ * @see https://trpc.io/docs/server/adapters/aws-lambda#aws-lambda-response-streaming-adapter
+ */
 export function awsLambdaStreamingRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends LambdaEvent,

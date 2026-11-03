@@ -6,7 +6,10 @@ import {
   onlineManager,
   QueryClient,
 } from '@tanstack/react-query';
-import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
+import {
+  createTrpcQueryUtils,
+  hydrationOptions,
+} from '@trpc12/tanstack-react-query';
 import {
   createTrpcClient,
   dedupeLink,
@@ -24,20 +27,19 @@ import { tracker as trackerApi } from './server/api.ts';
 // The app's links, with `fetch` calling the API handler in process; the
 // test's helpers then have the same type as the app's, httpLink's errors
 // included.
-const trpc = createTrpcQueryUtils({
-  client: createTrpcClient({
-    router: routerType<typeof trackerRouter>(),
-    links: [
-      dedupeLink(),
-      httpLink({
-        url: 'http://localhost/trpc',
-        batch: true,
-        transformer,
-        fetch: (input, init) => trackerApi.fetch(new Request(input, init)),
-      }),
-    ],
-  }),
+const client = createTrpcClient({
+  router: routerType<typeof trackerRouter>(),
+  links: [
+    dedupeLink(),
+    httpLink({
+      url: 'http://localhost/trpc',
+      batch: true,
+      transformer,
+      fetch: (input, init) => trackerApi.fetch(new Request(input, init)),
+    }),
+  ],
 });
+const trpc = createTrpcQueryUtils({ client });
 const directory = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof directoryRouter>(),
@@ -53,6 +55,7 @@ const offline = (): Disposable => {
 
 test('an issue created offline shows as a draft, persists, and is created after a reload', async () => {
   const list = listOptions(trpc);
+  const hydration = hydrationOptions({ client });
   const before = new QueryClient();
   registerIssueMutations(before, trpc);
   await before.infiniteQuery(list);
@@ -68,14 +71,21 @@ test('an issue created offline shows as a draft, persists, and is created after 
     expect(draft?.title).toBe('Written offline');
     expect(draft && isDraft(draft)).toBe(true);
     expect(before.getMutationCache().getAll()[0]?.state.isPaused).toBe(true);
-    state = JSON.parse(JSON.stringify(dehydrate(before)));
+    // Persisted as the app does (`src/trpc.tsx`): through the transformer,
+    // which keeps the first page's `undefined` cursor that plain JSON makes
+    // `null`.
+    state = JSON.parse(
+      JSON.stringify(
+        dehydrate(before, { serializeData: hydration.dehydrate.serializeData }),
+      ),
+    );
   }
 
   // A new page: the mutation has only its key and variables, and resumes
   // with the function registered for that key.
   const after = new QueryClient();
   registerIssueMutations(after, trpc);
-  hydrate(after, state);
+  hydrate(after, state, { defaultOptions: hydration.hydrate });
   await after.resumePausedMutations();
   expect(after.getMutationCache().getAll()[0]?.state.status).toBe('success');
   const page = await after.infiniteQuery(list);

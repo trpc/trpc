@@ -1,13 +1,20 @@
 /**
  * What a social card shows that changes after a deploy, fetched when the
- * card is drawn: the home card's GitHub stars and npm downloads, and a
- * post's authors' avatars. A fetch that fails leaves its part out, and the
- * card is cached briefly (`cacheControl`), so the next request tries again.
+ * card is drawn: the home card's GitHub stars and npm downloads, and the
+ * avatars of a post's authors, and the sponsors on `/sponsor`'s card or
+ * along any other card's foot (`avatar.ts`). A fetch
+ * that fails leaves its part out, and the card is cached briefly
+ * (`cacheControl`), so the next request tries again.
  */
+import { Effect, Layer } from 'effect';
+import { FetchHttpClient } from 'effect/http';
+
 import trpc12Package from '../../../next/packages/trpc/package.json' with { type: 'json' };
 import { v12 } from '~/site.ts';
+import { cardFooter } from '~/sponsors.ts';
 
-import type { OgCard } from './card.ts';
+import { Avatars, fetchAvatars } from './avatar.ts';
+import type { CardFooter, OgCard } from './card.ts';
 
 export interface Stats {
   /** `downloadPackages`' npm downloads last week, added up. */
@@ -16,7 +23,7 @@ export interface Stats {
 }
 
 export interface Live {
-  /** Each author's avatar as a `data:` URI, by their `image`. */
+  /** Each avatar that loaded, as a `data:` URI, by its URL. */
   readonly avatars: ReadonlyMap<string, string>;
   readonly stats: Stats;
 }
@@ -94,70 +101,77 @@ export async function fetchStats(
   return { downloads, stars };
 }
 
-/** `https://github.com/KATT.png` at 128 pixels, the size the card needs. */
-export const avatarUrl = (image: string) => {
-  const url = new URL(image);
-  if (
-    url.hostname === 'github.com' ||
-    url.hostname.endsWith('.githubusercontent.com')
-  ) {
-    url.searchParams.set('size', '128');
+/**
+ * The avatars `card` draws: the sponsor card's sponsors', or the sponsors'
+ * along any other card's `footer`, and a post's authors'.
+ */
+const imagesOf = (card: OgCard, footer: CardFooter): ReadonlyArray<string> => {
+  const images = [...footer.partners, ...footer.backers].map(
+    (sponsor) => sponsor.image,
+  );
+  switch (card.kind) {
+    case 'post':
+      return [
+        ...card.authors.flatMap((author) => author.image ?? []),
+        ...images,
+      ];
+    case 'sponsor':
+      return [...card.partners, ...card.backers].map(
+        (sponsor) => sponsor.image,
+      );
+    case 'doc':
+    case 'home':
+      return images;
   }
-  return url.href;
 };
 
-/** An avatar as a `data:` URI satori draws, or `undefined` if it's not to be had. */
-export async function fetchAvatar(image: string) {
-  try {
-    const response = await fetch(avatarUrl(image), {
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    const type = response.headers.get('content-type')?.split(';')[0] ?? '';
-    if (!response.ok || !['image/jpeg', 'image/png'].includes(type)) {
-      return undefined;
-    }
-    const bytes = Buffer.from(await response.arrayBuffer());
-    return `data:${type};base64,${bytes.toString('base64')}`;
-  } catch {
-    return undefined;
-  }
-}
+/**
+ * What `card` shows live, with the sponsors in `footer` along its foot. It fetches all of a
+ * card's avatars at once, a few dozen at most, so a slow host costs one
+ * avatar's wait, not one per batch.
+ */
+export const live = Effect.fn('live')(function* (
+  card: OgCard,
+  footer: CardFooter = cardFooter,
+) {
+  const [stats, avatars] = yield* Effect.all(
+    [
+      card.kind === 'home'
+        ? Effect.promise(() => fetchStats())
+        : Effect.succeed<Stats>({}),
+      fetchAvatars(imagesOf(card, footer), 'unbounded'),
+    ],
+    { concurrency: 'unbounded' },
+  );
+  return { avatars, stats } satisfies Live;
+});
 
-const authorsOf = (card: OgCard) => (card.kind === 'post' ? card.authors : []);
+/**
+ * A card is drawn while a crawler waits for it, so a try at an avatar gets
+ * 3 seconds and one more chance, not the sponsor sync's patience.
+ */
+const onRequest = Avatars.layer({ retries: 1, timeout: '3 seconds' }).pipe(
+  Layer.provide(FetchHttpClient.layer),
+);
 
-/** What `card` shows live. */
-export async function fetchLive(card: OgCard): Promise<Live> {
-  const images = [
-    ...new Set(authorsOf(card).flatMap((author) => author.image ?? [])),
-  ];
-  const [stats, avatars] = await Promise.all([
-    card.kind === 'home' ? fetchStats() : {},
-    Promise.all(
-      images.map(async (image) => [image, await fetchAvatar(image)] as const),
-    ),
-  ]);
-  return {
-    avatars: new Map(
-      avatars.flatMap(([image, uri]) =>
-        uri === undefined ? [] : [[image, uri]],
-      ),
-    ),
-    stats,
-  };
-}
+/** What `card` shows live, for `routes/og.$.ts`. */
+export const fetchLive = (card: OgCard) =>
+  Effect.runPromise(live(card).pipe(Effect.provide(onRequest)));
 
 /**
  * How long the CDN keeps `card`'s image: the home card's numbers for a
  * day, a card that's missing something it fetches for ten minutes, and
  * the rest as a page (`undefined`).
  */
-export function cacheControl(card: OgCard, live: Live) {
+export function cacheControl(
+  card: OgCard,
+  live: Live,
+  footer: CardFooter = cardFooter,
+) {
   const missing =
     (card.kind === 'home' &&
       (live.stats.stars === undefined || live.stats.downloads === undefined)) ||
-    authorsOf(card).some(
-      (author) => author.image !== undefined && !live.avatars.has(author.image),
-    );
+    imagesOf(card, footer).some((image) => !live.avatars.has(image));
   if (missing) {
     return 'public, max-age=0, s-maxage=600';
   }

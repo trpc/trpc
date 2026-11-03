@@ -4,9 +4,9 @@ import {
   createTRPCClient,
   httpBatchStreamLink,
   httpSubscriptionLink,
+  localLink,
   loggerLink,
   splitLink,
-  unstable_localLink,
   type TRPCLink,
 } from '@trpc/client';
 import {
@@ -28,7 +28,7 @@ export type TRPC = TRPCOptionsProxy<AppRouter>;
  */
 const getLinks = createIsomorphicFn()
   .server((): TRPCLink<AppRouter>[] => [
-    unstable_localLink({
+    localLink({
       router: appRouter,
       createContext: () => createContext({ req: getRequest() }),
       /**

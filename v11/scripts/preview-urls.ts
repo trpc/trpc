@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 const projects: Record<string, string> = {
   www: 'www',
   'trpc-next-app-dir': 'examples/.experimental/next-app-dir',
+  'examples-next-minimal-starter': 'examples/next-minimal-starter',
   'next-prisma-starter': 'examples/next-prisma-starter',
   'next-prisma-websockets-starter': 'examples/next-prisma-websockets-starter',
   'examples-todomvc': 'examples/next-prisma-todomvc',

@@ -9,7 +9,7 @@ experiment: kitchen-sink
 
 The demo edits a profile. Its form is checked twice by one schema, in the browser before it's sent and by the procedure when it arrives, and whatever the server still rejects lands on the field it's about. The schema also transforms what's typed into what's stored, so the form and the procedure see different types. Its pages load their data in the route's loader, so they render with it.
 
-```demo
+```kitchen-sink
 forms
 ```
 

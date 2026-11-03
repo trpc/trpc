@@ -4,6 +4,12 @@ interface TransformOptions extends Options {
   trpcImportName?: string;
 }
 
+/**
+ * Codemod that replaces `createTRPCReact` with `createTRPCContext` from
+ * `@trpc/tanstack-react-query`.
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating#codemod-migration
+ */
 export default function transform(
   file: FileInfo,
   api: API,

@@ -18,11 +18,13 @@ export type Simplify<TType> = TType extends any[] | Date
   : { [K in keyof TType]: TType[K] };
 
 /**
+ * An object with string keys whose values may be `undefined`.
  * @public
  */
 export type Dict<TType> = Record<string, TType | undefined>;
 
 /**
+ * A value, or a promise of one.
  * @public
  */
 export type MaybePromise<TType> = Promise<TType> | TType;

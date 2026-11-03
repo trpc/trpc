@@ -9,6 +9,10 @@ parent: "client/react"
 order: 56
 ---
 
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
+
 `useQuery` is the primary hook for data fetching, it works similarly to `@tanstack/react-query`'s `useQuery`, but with some `trpc` specific options and additional features like streaming.
 
 :::note
@@ -39,8 +43,8 @@ interface UseTRPCQueryOptions
 
 Since `UseTRPCQueryOptions` extends `@tanstack/react-query`'s `UseQueryOptions`, you can use any of their options here such as `enabled`, `refetchOnWindowFocus`, etc. We also have some `trpc` specific options that let you opt in or out of certain behaviors on a per-procedure level:
 
-- **`trpc.ssr`:** If you have `ssr: true` in your [global config](/docs/client/nextjs/pages-router/setup#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
-- **`trpc.abortOnUnmount`:** Override the [global config](/docs/client/nextjs/pages-router/setup#config-callback) and opt in or out of aborting queries on unmount.
+- **`trpc.ssr`:** If you have `ssr: true` in `createTRPCNext` (deprecated, see [Moving from `createTRPCNext`](/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext)), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
+- **`trpc.abortOnUnmount`:** Override the global `abortOnUnmount` of `createTRPCReact` or `createTRPCNext`, and opt in or out of aborting queries on unmount.
 - **`trpc.context`:** Add extra meta data that could be used in [Links](/docs/client/links).
 
 :::tip

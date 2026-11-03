@@ -20,14 +20,22 @@ import {
 import { Spinner } from '@shared/ui/components/spinner';
 import { Textarea } from '@shared/ui/components/textarea';
 import { useMutation } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
+import {
+  useSubscription,
+  type unstable_inferInfiniteQueryHandle,
+} from '@trpc/tanstack-react-query';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
-import { CircleAlertIcon, HashIcon, SendHorizontalIcon } from 'lucide-react';
+import {
+  CircleAlertIcon,
+  HashIcon,
+  SendHorizontalIcon,
+  WifiOffIcon,
+} from 'lucide-react';
 import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
-import { useTRPC } from '~/lib/trpc';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
-import { listWithAnd, pluralize } from './utils';
+import { listWithAnd, pluralize, run } from './utils';
 
 function SubscriptionStatus(props: {
   subscription: ReturnType<typeof useLivePosts>['subscription'];
@@ -73,11 +81,14 @@ function SubscriptionStatus(props: {
 }
 
 export function Chat(
-  props: Readonly<{ channelId: string; title: React.ReactNode }>,
+  props: Readonly<{
+    posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+    title: React.ReactNode;
+  }>,
 ) {
-  const { channelId } = props;
+  const channelId = props.posts.input.channelId;
   const trpc = useTRPC();
-  const livePosts = useLivePosts(channelId);
+  const livePosts = useLivePosts(props.posts);
   const currentlyTyping = useSubscription(
     trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
   );
@@ -106,23 +117,35 @@ export function Chat(
               variant="outline"
               size="sm"
               disabled={
-                !livePosts.query.hasNextPage ||
-                livePosts.query.isFetchingNextPage
+                livePosts.query.fetchStatus !== 'idle' ||
+                !livePosts.query.hasNextPage
               }
               onClick={() => {
                 void livePosts.query.fetchNextPage();
               }}
             >
-              {livePosts.query.isFetchingNextPage ? (
-                <>
-                  <Spinner />
-                  Loading...
-                </>
-              ) : !livePosts.query.hasNextPage ? (
-                'Fetched everything!'
-              ) : (
-                'Load more'
-              )}
+              {run(() => {
+                switch (livePosts.query.fetchStatus) {
+                  case 'fetching':
+                    return (
+                      <>
+                        <Spinner />
+                        Loading...
+                      </>
+                    );
+                  case 'paused':
+                    return (
+                      <>
+                        <WifiOffIcon />
+                        Waiting for network...
+                      </>
+                    );
+                  case 'idle':
+                    return livePosts.query.hasNextPage
+                      ? 'Load more'
+                      : 'Fetched everything!';
+                }
+              })}
             </Button>
           </div>
 

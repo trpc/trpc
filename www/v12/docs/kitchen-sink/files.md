@@ -9,7 +9,7 @@ experiment: kitchen-sink
 
 The demo uploads an avatar. The image is a `File` inside the profile's input, next to the name, and the procedure checks its size and type. The avatar comes back from another procedure as a `File` too, whose bytes are the response's body, and the page shows it in an `<img>`. Both ways, the `File` is typed end to end, with no `FormData` or upload endpoint of your own ([Files](../server/files.md)).
 
-```demo
+```kitchen-sink
 files
 ```
 

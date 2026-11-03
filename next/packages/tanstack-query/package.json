@@ -30,7 +30,7 @@
   "devDependencies": {
     "@effect/platform-node": "4.1.1",
     "@tanstack/db": "0.15.0",
-    "@tanstack/query-core": "5.104.1",
+    "@tanstack/query-core": "5.105.0",
     "@tanstack/query-db-collection": "1.4.5",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",

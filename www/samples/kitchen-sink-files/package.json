@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
-    "@tanstack/react-query": "5.104.1",
+    "@tanstack/react-query": "5.105.0",
     "@tanstack/react-router": "1.170.42",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",

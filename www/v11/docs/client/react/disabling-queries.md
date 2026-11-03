@@ -8,6 +8,10 @@ parent: "client/react"
 order: 66
 ---
 
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
+
 To disable queries, you can pass `skipToken` as the first argument to `useQuery`, `useInfiniteQuery`, and `useSubscription`. This will prevent the query from being executed.
 
 ### Typesafe conditional queries using `skipToken`

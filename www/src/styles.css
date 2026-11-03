@@ -588,6 +588,12 @@ figure.tweet .tweet-footer a:hover {
   color: var(--foreground);
 }
 
+/* A tab kept in the URL is a link (`src/tabs.ts`). */
+.prose a.code-tab {
+  font-weight: inherit;
+  text-decoration: none;
+}
+
 .code-tab[aria-selected='true'] {
   background: var(--muted);
   color: var(--foreground);
@@ -653,6 +659,19 @@ figure.tweet .tweet-footer a:hover {
   .code-unpublished[data-flash] {
     animation: none;
   }
+}
+
+/* A `demo` fence's slot (`build/markdown.ts`): its static content shows
+   until `PageDemos` has loaded and rendered the demo. */
+[data-demo][data-demo-ready] > :not([data-demo-root]) {
+  display: none;
+}
+
+.demo-placeholder {
+  min-height: 26rem;
+  margin-block: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl, 0.75rem);
 }
 
 /* A `chart` fence's bars (`build/charts.ts`) */
@@ -737,12 +756,12 @@ figure.tweet .tweet-footer a:hover {
   }
 }
 
-/* A kitchen-sink demo's place in its page (`remarkDemos`), until `PageDemo` runs it */
-.demo-slot {
+/* A kitchen-sink demo's place in its page (`remarkKitchenSink`), until `PageDemo` runs it */
+.kitchen-sink-slot {
   margin-block: 1.5em;
 }
 
-.demo-slot > p {
+.kitchen-sink-slot > p {
   border: 1px dashed var(--border);
   border-radius: var(--radius-lg);
   padding: 1rem 1.125rem;
@@ -750,13 +769,13 @@ figure.tweet .tweet-footer a:hover {
   font-size: 0.875rem;
 }
 
-.demo-slot[data-demo-running] > p {
+.kitchen-sink-slot[data-kitchen-sink-running] > p {
   display: none;
 }
 
 /* From `xl` up, the page runs its demo beside the text instead. */
 @media (min-width: 80rem) {
-  .demo-slot {
+  .kitchen-sink-slot {
     display: none;
   }
 }

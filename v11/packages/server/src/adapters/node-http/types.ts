@@ -26,41 +26,39 @@ import type {
   MaybePromise,
 } from '../../unstable-core-do-not-import';
 
+/** A Node.js HTTP/1 or HTTP/2 request, as the Node.js adapters take it. */
 export type NodeHTTPRequest = DistributiveOmit<
   http.IncomingMessage | http2.Http2ServerRequest,
   'socket'
 > & {
   /**
-   * Many adapters will add a `body` property to the incoming message and pre-parse the body
+   * The body, if a framework or middleware parsed it already. tRPC reads
+   * it instead of the stream.
    */
   body?: unknown;
   /**
-   * Socket is not always available in all deployments, so we need to make it optional
-   * @see https://github.com/trpc/trpc/issues/6341
-   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
-   * @see https://github.com/trpc/trpc/pull/6358
+   * Optional, and maybe partial: some hosts don't give a full Node.js
+   * socket (https://github.com/trpc/trpc/issues/6341).
    */
   socket?:
     | Partial<http.IncomingMessage['socket']>
     | Partial<http2.Http2ServerRequest['socket']>;
 };
 
+/** A Node.js HTTP/1 or HTTP/2 response, as the Node.js adapters take it. */
 export type NodeHTTPResponse = DistributiveOmit<
   http.ServerResponse | http2.Http2ServerResponse,
   'write'
 > & {
   /**
-   * Force the partially-compressed response to be flushed to the client.
-   *
-   * Added by compression middleware
-   * (depending on the environment,
-   * e.g. Next 12 and below,
-   * e.g. Express w/ `compression()`)
+   * Sends what a compression middleware (such as Express's `compression()`)
+   * has buffered so far. tRPC calls it while streaming.
    */
   flush?: () => void;
 
   write: (chunk: string | Uint8Array) => boolean;
 };
+/** The Node.js adapters' `createContext` option. */
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
@@ -82,31 +80,32 @@ type ConnectMiddleware<
 // `opts` into an object literal merges the new properties into the trailing
 // non-generic member, which makes `{ ...opts, req, res, path }` unassignable
 // to `NodeHTTPRequestHandlerOptions` (https://github.com/trpc/trpc/issues/6057)
+/** The options of the Node.js adapters. */
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   /**
-   * By default, http `OPTIONS` requests are not handled, and CORS headers are not returned.
-   *
-   * This can be used to handle them manually or via the `cors` npm package: https://www.npmjs.com/package/cors
-   *
+   * A Connect-style middleware that runs before tRPC. tRPC doesn't answer
+   * `OPTIONS` requests or set CORS headers, so use this for `cors()`.
+   * @example
    * ```ts
-   * import cors from 'cors'
-   *
-   * nodeHTTPRequestHandler({
-   *   middleware: cors()
-   * })
+   * createHTTPServer({ middleware: cors(), router: appRouter });
    * ```
-   *
-   * You can also use it for other needs which a connect/node.js compatible middleware can solve,
-   *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
+   * @see https://trpc.io/docs/server/adapters/standalone#handling-cors--options
    */
   middleware?: ConnectMiddleware<TRequest, TResponse>;
+  /**
+   * The largest request body, in bytes. A larger one gets a
+   * `PAYLOAD_TOO_LARGE` error. It only applies to bodies tRPC reads from
+   * the stream; if a body-parsing middleware sets `req.body`, limit the
+   * size there.
+   */
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
+/** The options of `nodeHTTPRequestHandler`. */
 export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -115,17 +114,23 @@ export type NodeHTTPRequestHandlerOptions<
   req: TRequest;
   res: TResponse;
   /**
-   * The tRPC path to handle requests for
-   * @example 'post.all'
+   * The procedure path to handle, such as `post.all`, or several joined by
+   * commas for a batch.
    */
   path: string;
 };
 
+/**
+ * What `createContext` gets in the Node.js adapters: `req`, `res` and the
+ * request's `info`.
+ * @see https://trpc.io/docs/server/context#creating-the-context
+ */
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
   info: TRPCRequestInfo;
 };
+/** The `createContext` function the Node.js adapters take. */
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,
   TRequest,

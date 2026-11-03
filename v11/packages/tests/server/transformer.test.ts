@@ -529,6 +529,11 @@ describe('required transformers', () => {
       // @ts-expect-error missing transformer on backend
       transformer,
     });
+
+    type LinkTransformer = NonNullable<
+      Parameters<typeof httpBatchLink<typeof router>>[0]['transformer']
+    >;
+    expectTypeOf<LinkTransformer>().toExtend<'You must define a transformer on your `initTRPC`-object first'>();
   });
 });
 

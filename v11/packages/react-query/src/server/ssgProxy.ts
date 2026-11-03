@@ -2,6 +2,7 @@ import type {
   DehydratedState,
   DehydrateOptions,
   QueryClient,
+  QueryFunctionContext,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
@@ -27,6 +28,8 @@ import {
   createRecursiveProxy,
   run,
 } from '@trpc/server/unstable-core-do-not-import';
+import { getClientArgs } from '../internals/getClientArgs';
+import type { TRPCQueryKey } from '../internals/getQueryKey';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
@@ -37,11 +40,20 @@ import type {
 import { getQueryClient, getQueryType } from '../shared';
 
 type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
+  /**
+   * Call this router directly, without HTTP.
+   */
   router: TRouter;
+  /**
+   * The context to call procedures with.
+   */
   ctx: inferRouterContext<TRouter>;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
+  /**
+   * Call procedures through this tRPC client.
+   */
   client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
@@ -76,8 +88,13 @@ type DecoratedProcedureSSGRecord<
 type AnyDecoratedProcedure = Pick<DecorateQueryProcedure<any, any>, SSGFns>;
 
 /**
- * Create functions you can use for server-side rendering / static generation
- * @see https://trpc.io/docs/v11/client/nextjs/server-side-helpers
+ * Creates helpers that fetch or prefetch queries on the server, for
+ * server-side rendering and static generation.
+ *
+ * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
+ * the next major version. Use `@trpc/tanstack-react-query` instead.
+ * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @see https://trpc.io/docs/client/nextjs/pages-router/server-side-helpers
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,
@@ -168,6 +185,20 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     const queryFn = () =>
       resolvedOpts.query({ path: arrayPath.join('.'), input });
 
+    const infiniteQueryFn = ({
+      pageParam,
+      direction,
+    }: QueryFunctionContext<TRPCQueryKey, unknown>) => {
+      const initialCursor = (args[1] as Maybe<{ initialCursor?: unknown }>)
+        ?.initialCursor;
+      const [path, infiniteInput] = getClientArgs(
+        [arrayPath, { input }],
+        undefined,
+        { pageParam: pageParam ?? initialCursor, direction },
+      );
+      return resolvedOpts.query({ path, input: infiniteInput });
+    };
+
     const queryKey = getQueryKeyInternal(
       arrayPath,
       input,
@@ -181,7 +212,12 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       },
       infiniteQueryOptions: () => {
         const args1 = args[1] as Maybe<any>;
-        return { ...args1, queryKey, queryFn };
+        return {
+          ...args1,
+          queryKey,
+          queryFn: infiniteQueryFn,
+          initialPageParam: args1?.initialCursor ?? null,
+        };
       },
       fetch: () => {
         const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
@@ -194,7 +230,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         return queryClient.fetchInfiniteQuery({
           ...args1,
           queryKey,
-          queryFn,
+          queryFn: infiniteQueryFn,
           initialPageParam: args1?.initialCursor ?? null,
         });
       },
@@ -209,7 +245,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         return queryClient.prefetchInfiniteQuery({
           ...args1,
           queryKey,
-          queryFn,
+          queryFn: infiniteQueryFn,
           initialPageParam: args1?.initialCursor ?? null,
         });
       },

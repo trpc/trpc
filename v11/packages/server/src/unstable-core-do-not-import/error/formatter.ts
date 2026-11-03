@@ -10,18 +10,25 @@ import type { Overwrite, Simplify } from '../types';
 import type { TRPCError } from './TRPCError';
 
 /**
+ * What an error formatter gets.
+ * @see https://trpc.io/docs/server/error-formatting#all-properties-sent-to-errorformatter
  * @internal
  */
 export interface ErrorFormatterOptions<TContext> {
   error: TRPCError;
   type: ProcedureType | 'unknown';
+  /** The procedure's path, if the error came from one. */
   path: string | undefined;
   input: unknown;
+  /** The context, if it was created before the error. */
   ctx: TContext;
+  /** The shape tRPC sends by default, to extend or replace. */
   shape: DefaultErrorShape;
 }
 
 /**
+ * Shapes the errors a router sends to the client.
+ * @see https://trpc.io/docs/server/error-formatting
  * @internal
  */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
@@ -29,6 +36,9 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
 ) => TShape;
 
 /**
+ * An error formatter for one procedure, as `.errors()` takes it. Return
+ * `undefined` to leave the error to the next formatter.
+ * @see https://trpc.io/docs/server/error-formatting#per-procedure-error-formatting
  * @internal
  */
 export type ProcedureErrorFormatter<
@@ -45,22 +55,25 @@ export type ProcedureErrorFormatter<
 export type AnyProcedureErrorFormatter = ProcedureErrorFormatter<any, any, any>;
 
 /**
+ * The `data` of the default error shape.
  * @internal
  */
 export type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
   httpStatus: number;
   /**
-   * Path to the procedure that threw the error
+   * The path of the procedure that threw.
    */
   path?: string;
   /**
-   * Stack trace of the error (only in development)
+   * The error's stack trace, only when `isDev` is set.
    */
   stack?: string;
 };
 
 /**
+ * The error shape tRPC sends when there's no error formatter.
+ * @see https://trpc.io/docs/server/error-formatting
  * @internal
  */
 export interface DefaultErrorShape extends TRPCErrorShape<DefaultErrorData> {

@@ -13,11 +13,13 @@ skill:
   requires:
     - server-setup
     - client-setup
-  description: Set up tRPC in Next.js Pages Router with createNextApiHandler,
-    createTRPCNext (config, transformer, ssr, ssrPrepass, responseMeta) and the
-    withTRPC HOC over @trpc/react-query hooks. Prefetch selected pages with
-    createServerSideHelpers in getServerSideProps or getStaticProps and return
-    trpcState, or SSR every query with ssr true, forwarding request headers.
+  description: Set up tRPC in Next.js Pages Router with createNextApiHandler
+    and @trpc/tanstack-react-query. Covers a QueryClient factory, TRPCProvider,
+    QueryClientProvider and HydrationBoundary in _app, useTRPC() with useQuery
+    in pages, and prefetching a page's queries in getServerSideProps or
+    getStaticProps with createTRPCOptionsProxy and dehydrate, returned as
+    trpcState. Replaces the deprecated createTRPCNext, withTRPC, ssr true,
+    ssrPrepass and createServerSideHelpers.
   include:
     - client/nextjs/pages-router/server-side-helpers
     - client/nextjs#choosing-between-app-router-and-pages-router
@@ -26,18 +28,23 @@ skill:
     - client/nextjs/pages-router/ssg
     - server/adapters/nextjs
     - client/nextjs/pages-router/aborting-procedure-calls
-    - client/react/useQuery
-    - client/react/useMutation
-    - client/react/useUtils
+    - client/tanstack-react-query/usage
+    - client/tanstack-react-query/migrating
 ---
 
 :::caution
 This guide is for the **Next.js Pages Router**. If you are using the **Next.js App Router**, see the [App Router setup guide](/docs/client/nextjs/app-router-setup) instead.
 :::
 
+The Pages Router uses the same client as the App Router: the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). You mount its provider in `_app`, and prefetch a page's queries in `getServerSideProps` or `getStaticProps` when you want them in the first HTML.
+
+:::warning Deprecated
+`createTRPCNext`, `withTRPC` and `ssr: true` from `@trpc/next` are deprecated. They're built on the [classic React Query integration](/docs/client/react), which only gets bug fixes and will be removed in the next major version of tRPC. To move an existing app, see [Moving from `createTRPCNext`](#moving-from-createtrpcnext).
+:::
+
 ## Recommended file structure
 
-We recommend a file structure like this one, although it is not enforced by tRPC. This is what you'll see in [our examples](/docs/example-apps). The rest of this page will take you through the process of adding tRPC in to this structure.
+We recommend a file structure like this one, although it is not enforced by tRPC. The rest of this page will take you through the process of adding tRPC in to this structure.
 
 ```graphql
 .
@@ -45,7 +52,7 @@ We recommend a file structure like this one, although it is not enforced by tRPC
 │   └── [..]
 ├── src
 │   ├── pages
-│   │   ├── _app.tsx  # <-- add `withTRPC()`-HOC here
+│   │   ├── _app.tsx  # <-- mount the providers here
 │   │   ├── api
 │   │   │   └── trpc
 │   │   │       └── [trpc].ts  # <-- tRPC HTTP handler
@@ -58,7 +65,8 @@ We recommend a file structure like this one, although it is not enforced by tRPC
 │   │   ├── context.ts   # <-- create app context
 │   │   └── trpc.ts      # <-- procedure helpers
 │   └── utils
-│       └── trpc.ts  # <-- your typesafe tRPC hooks
+│       ├── query-client.ts  # <-- shared QueryClient factory
+│       └── trpc.ts          # <-- your typesafe tRPC hooks
 └── [..]
 ```
 
@@ -67,10 +75,8 @@ We recommend a file structure like this one, although it is not enforced by tRPC
 ### 1. Install deps
 
 ```package-install
-@trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@latest zod
+@trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query@latest zod
 ```
-
-The Next.js integration is actually a combination of our [React Query Integration](../../react.md) and some Next.js specific integrations.
 
 ### 2. Enable strict mode
 
@@ -174,11 +180,31 @@ export default trpcNext.createNextApiHandler({
 The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/main/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
 :::
 
-### 4. Create tRPC hooks
+### 4. Create a Query Client factory
 
-Use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
+Create `utils/query-client.ts`. Both `_app` and the pages that prefetch on the server use it.
 
-```tsx twoslash title='utils/trpc.ts'
+```ts twoslash title='utils/query-client.ts'
+import { QueryClient } from '@tanstack/react-query';
+
+export function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        // keep server-rendered data fresh for a while, so the
+        // client doesn't fetch it again as soon as the page loads
+        staleTime: 30 * 1000,
+      },
+    },
+  });
+}
+```
+
+### 5. Create tRPC hooks
+
+Use `createTRPCContext` to create a provider and a `useTRPC` hook from your API's type signature.
+
+```ts twoslash title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -187,62 +213,15 @@ export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 // ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
 
-function getBaseUrl() {
-  if (typeof window !== 'undefined')
-    // browser should use relative path
-    return '';
-
-  if (process.env.VERCEL_URL)
-    // reference for vercel.com
-    return `https://${process.env.VERCEL_URL}`;
-
-  if (process.env.RENDER_INTERNAL_HOSTNAME)
-    // reference for render.com
-    return `http://${process.env.RENDER_INTERNAL_HOSTNAME}:${process.env.PORT}`;
-
-  // assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
-}
-
-export const trpc = createTRPCNext<AppRouter>({
-  config(config) {
-    return {
-      links: [
-        httpBatchLink({
-          /**
-           * If you want to use SSR, you need to use the server's full URL
-           * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
-           **/
-          url: `${getBaseUrl()}/api/trpc`,
-
-          // You can pass any HTTP headers you wish here
-          async headers() {
-            return {
-              // authorization: getAuthCookie(),
-            };
-          },
-        }),
-      ],
-    };
-  },
-  /**
-   * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
-   **/
-  ssr: false,
-});
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 ```
 
-:::note
-`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](/docs/v9/nextjs#4-create-trpc-hooks).
-:::
+### 6. Configure `_app.tsx`
 
-### 5. Configure `_app.tsx`
-
-Wrap your root app page in the `trpc.withTRPC` HOC, similar to this:
+Create the query client and the tRPC client once per app, and wrap every page in the providers. `HydrationBoundary` puts the queries a page prefetched on the server, which it returns as `trpcState`, into the cache.
 
 ```tsx twoslash title='pages/_app.tsx'
 // @jsx: react-jsx
@@ -252,32 +231,59 @@ const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
+// @filename: utils/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+export function makeQueryClient() { return new QueryClient(); }
+
 // @filename: utils/trpc.ts
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const trpc = createTRPCNext<AppRouter>({
-  config() { return { links: [httpBatchLink({ url: '/api/trpc' })] }; },
-  ssr: false,
-});
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/_app.tsx
 // ---cut---
-import type { AppType } from 'next/app';
-import { trpc } from '../utils/trpc';
+import type { DehydratedState } from '@tanstack/react-query';
+import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppProps } from 'next/app';
+import { useState } from 'react';
+import type { AppRouter } from '../server/routers/_app';
+import { makeQueryClient } from '../utils/query-client';
+import { TRPCProvider } from '../utils/trpc';
 
-const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
+export default function App({
+  Component,
+  pageProps,
+}: AppProps<{ trpcState?: DehydratedState }>) {
+  const [queryClient] = useState(makeQueryClient);
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          // transformer: superjson, <-- if you use a data transformer
+          url: '/api/trpc',
+        }),
+      ],
+    }),
+  );
 
-export default trpc.withTRPC(MyApp);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <HydrationBoundary state={pageProps.trpcState}>
+          <Component {...pageProps} />
+        </HydrationBoundary>
+      </TRPCProvider>
+    </QueryClientProvider>
+  );
+}
 ```
 
-### 6. Make an API request
+The client only calls the API from the browser, so a relative URL is enough. On the server, pages call your procedures directly, as [Server-Side Rendering](./ssr.md) shows.
 
-You're all set!
+### 7. Make an API request
 
-You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../../react/setup.md)
+You're all set! Get the options for a query from `useTRPC()`, and pass them to TanStack React Query's hooks. For more, see [TanStack React Query usage](/docs/client/tanstack-react-query/usage).
 
 ```tsx twoslash title='pages/index.tsx'
 // @jsx: react-jsx
@@ -291,109 +297,90 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const trpc = createTRPCNext<AppRouter>({
-  config() { return { links: [httpBatchLink({ url: '/api/trpc' })] }; },
-  ssr: false,
-});
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/index.tsx
 // ---cut---
-import { trpc } from '../utils/trpc';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.hello.useQuery({ text: 'client' });
-  if (!hello.data) {
-    return <div>Loading...</div>;
+  const trpc = useTRPC();
+  const helloQuery = useQuery(trpc.hello.queryOptions({ text: 'client' }));
+
+  switch (helloQuery.status) {
+    case 'pending':
+      return <p>Loading...</p>;
+    case 'error':
+      return <p>Error: {helloQuery.error.message}</p>;
+    case 'success':
+      return <p>{helloQuery.data.greeting}</p>;
   }
-  return (
-    <div>
-      <p>{hello.data.greeting}</p>
-    </div>
+}
+```
+
+This page fetches in the browser. To put the data in the first HTML, prefetch it in [`getServerSideProps`](./ssr.md) or [`getStaticProps`](./ssg.md).
+
+## Using a data transformer
+
+Next.js sends page props as JSON, and checks that they are. So without a transformer, the queries you prefetch can only hold JSON values, in their inputs as well as their results: a `Date` or an `undefined` field makes `getServerSideProps` fail.
+
+If your router uses a [data transformer](/docs/server/data-transformers) such as superjson, run the whole prefetched cache through it. In `getServerSideProps` or `getStaticProps`, return `trpcState: superjson.serialize(dehydrate(queryClient))`, as the [SSG example](./ssg.md#fetch-data-in-getstaticprops) does. Then read it back with a hook:
+
+```ts twoslash title='utils/use-trpc-state.ts'
+import type { DehydratedState } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import superjson from 'superjson';
+
+export type TRPCState = ReturnType<typeof superjson.serialize>;
+
+export function useTRPCState(trpcState: TRPCState | undefined) {
+  return useMemo(
+    () => trpcState && superjson.deserialize<DehydratedState>(trpcState),
+    [trpcState],
   );
 }
 ```
 
-## `createTRPCNext()` options
+In the `_app` from [step 6](#6-configure-_apptsx), change three things:
 
-### `config`-callback
+- Type the props as `AppProps<{ trpcState?: TRPCState }>`.
+- Pass `transformer: superjson` to `httpBatchLink`.
+- Call `const trpcState = useTRPCState(pageProps.trpcState)`, and pass `trpcState` to `HydrationBoundary` instead of `pageProps.trpcState`.
 
-The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function receives an object with an optional `ctx` property (of type `NextPageContext`) that gives you access to the Next.js `req` object during server-side rendering. The returned value can contain the following properties:
+## Moving from `createTRPCNext`
 
-- **Required**:
-- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/client/links).
-- Optional:
-- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v5/docs/reference/QueryClient)
-- `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v5/docs/reference/QueryClient)
-  - **Note:** You can only provide either a `queryClient` or a `queryClientConfig`.
-- `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
+`createTRPCNext` combined the classic React Query hooks with a higher-order component for `_app`. Here's what replaces each part:
 
-### `transformer`
+| `@trpc/next`                                    | `@trpc/tanstack-react-query`                                                                                                           |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `createTRPCNext<AppRouter>({ config })`         | `createTRPCContext<AppRouter>()`, plus a `createTRPCClient` with your links in `_app`                                                  |
+| `trpc.withTRPC(MyApp)`                          | `QueryClientProvider`, `TRPCProvider` and `HydrationBoundary` in `_app`, as in [step 6](#6-configure-_apptsx)                          |
+| `trpc.post.byId.useQuery(input)`                | `useQuery(trpc.post.byId.queryOptions(input))`, with `trpc` from `useTRPC()`                                                           |
+| `trpc.useUtils()`                               | `useQueryClient()` with `trpc.post.byId.queryKey()` or `queryFilter()`                                                                 |
+| `ssr: true` and `ssrPrepass`                    | No direct replacement. Prefetch each page's queries in [`getServerSideProps`](./ssr.md)                                                |
+| `responseMeta`                                  | Set the status and headers in [`getServerSideProps`](./ssr.md#set-the-status-and-cache-headers)                                        |
+| `config({ ctx })` forwarding the request headers | Pass a context built from `context.req` to `createTRPCOptionsProxy` in `getServerSideProps`                                           |
+| `createServerSideHelpers` (`@trpc/react-query/server`) | `createTRPCOptionsProxy` with a query client, then `dehydrate(queryClient)`. See [Server-Side Helpers](./server-side-helpers.md) |
+| `abortOnUnmount` in `config`                    | `trpc: { abortOnUnmount: true }` on each query. See [Aborting Procedure Calls](./aborting-procedure-calls.md)                          |
+| `queryClientConfig`                             | The options you pass to `new QueryClient()` in `makeQueryClient`                                                                       |
 
-If your router uses a [data transformer](/docs/server/data-transformers), pass it here as well as to your links. tRPC uses it to read the `trpcState` that [SSR](./ssr.md), [SSG](./ssg.md) and the [server-side helpers](./server-side-helpers.md) send to the page.
+The [migration guide](/docs/client/tanstack-react-query/migrating) covers the hooks in detail, and has a codemod for them that's still a work in progress.
 
-### `overrides`: (default: `undefined`) {#overrides}
-
-Configure [overrides for React Query's hooks](/docs/client/react/useUtils#invalidate-full-cache-on-every-mutation).
-
-### `ssr`-boolean (default: `false`)
-
-Whether tRPC should await queries when server-side rendering a page. Defaults to `false`. Enabling it requires the `ssrPrepass` option, imported from `@trpc/next/ssrPrepass`, and you can pass a function of the request instead of `true`. See [SSR](./ssr.md).
-
-### `responseMeta`-callback
-
-Ability to set response headers and HTTP status when server-side rendering, so it requires `ssr`. It receives the request's `ctx` and the `clientErrors` of the queries that failed. Return `headers` as a plain object: a `Headers` instance is ignored here.
-
-#### Example
-
-```tsx twoslash title='utils/trpc.ts'
-// @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.ts
-// ---cut---
-import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import type { AppRouter } from '../server/routers/_app';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config(config) {
-    return {
-      links: [
-        /* [...] */
-      ],
-    };
-  },
-  ssr: true,
-  ssrPrepass,
-  responseMeta(opts) {
-    const error = opts.clientErrors[0];
-    if (error) {
-      // propagate the HTTP status of the first failed query
-      return { status: error.data?.httpStatus ?? 500 };
-    }
-    return {
-      headers: { 'cache-control': 's-maxage=1, stale-while-revalidate=86400' },
-    };
-  },
-});
-```
+`ssr: true` rendered the page over and over until no query was fetching. With `getServerSideProps`, you pick which queries run on the server, and Next.js keeps [Automatic Static Optimization](https://nextjs.org/docs/pages/building-your-application/rendering/automatic-static-optimization) for pages that don't need them.
 
 ## Common mistakes
 
-- **Turning on `ssr: true` without weighing the cost.** It adds a `getInitialProps` to your app, which turns off Next.js' Automatic Static Optimization and [doesn't mix well with `getServerSideProps`](./ssr.md). It also renders the page repeatedly until no query is fetching, so every query delays the response. To prefetch only some pages, keep `ssr: false` and use the [server-side helpers](./server-side-helpers.md) in `getServerSideProps` or `getStaticProps`.
-- **Not forwarding the request's headers during SSR.** The server-side render calls your API without the user's cookies unless the link's `headers()` passes on `ctx.req.headers`, and it needs an absolute URL. See [SSR](./ssr.md).
-- **Using Suspense with `ssr: true`.** If a query fails while rendering on the server, the whole page fails, even inside an `<ErrorBoundary />`.
-- **Returning the dehydrated state under another key.** `withTRPC` only reads `pageProps.trpcState`, so return `{ props: { trpcState: helpers.dehydrate() } }`. Otherwise the client fetches every query again.
-- **Mixing in App Router setup.** `createTRPCNext` and `withTRPC` are for the Pages Router. In the App Router, follow the [App Router setup](/docs/client/nextjs/app-router-setup) instead.
+- **Sharing one `QueryClient` across requests.** Make it in `_app` with `useState`, and make a new one in each `getServerSideProps` or `getStaticProps`. A query client at module scope would hand one user's data to the next.
+- **Returning the dehydrated state under another key.** `_app` reads `pageProps.trpcState`, so return `{ props: { trpcState: dehydrate(queryClient) } }`. Otherwise the client fetches every query again.
+- **Prefetching with a different input than the page uses.** The input is part of the query key, so the page misses the prefetched data and fetches again.
+- **Prefetching values JSON can't hold.** Next.js sends page props as JSON, so a `Date` or an `undefined` field in a query's input or result makes the page fail. Run the prefetched cache through a [data transformer](#using-a-data-transformer).
+- **Mixing in App Router setup.** `HydrateClient` and `server-only` are for the App Router. In the Pages Router, prefetch in `getServerSideProps` or `getStaticProps` instead.
 
 ## Next steps
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find information about [queries](/docs/client/react/useQuery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query`.
+You can also find information about [queries, mutations and invalidation](/docs/client/tanstack-react-query/usage) in the TanStack React Query docs.

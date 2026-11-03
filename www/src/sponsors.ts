@@ -1,5 +1,7 @@
 import list from '../sponsors.json' with { type: 'json' };
 
+import type { CardFooter, SponsorCard } from './og/card.ts';
+
 /**
  * The sponsor tiers, by the least a sponsor gives a month (across KATT and
  * the trpc organization), highest first.
@@ -41,7 +43,17 @@ export interface Sponsor {
   readonly tier?: SponsorTier;
   /** How much they've given, relative to the others: 1 to about 100. */
   readonly weight: number;
+  /**
+   * A small sponsor whose avatar didn't load at the last sync
+   * (`build/sponsors-sync.ts`). The site leaves them out where it draws
+   * small sponsors, rather than draw a broken image.
+   */
+  readonly imageless?: true;
 }
+
+/** A sponsor below the partner tiers: bronze, or no tier at all. */
+export const isSmallSponsor = (sponsor: Pick<Sponsor, 'tier'>) =>
+  sponsor.tier === undefined || !partnerTiers.includes(sponsor.tier);
 
 const entries: ReadonlyArray<
   Omit<Sponsor, 'tier'> & { readonly tier?: string }
@@ -53,8 +65,13 @@ export const sponsors: ReadonlyArray<Sponsor> = entries.map(
     isSponsorTier(tier) ? { ...sponsor, tier } : sponsor,
 );
 
+/** Every sponsor the site draws: all but the imageless. */
+export const drawnSponsors = sponsors.filter(
+  (sponsor) => sponsor.imageless !== true,
+);
+
 /** The sponsors who have given the most, most first. */
-export const topSponsors = sponsors
+export const topSponsors = drawnSponsors
   .toSorted((a, b) => b.weight - a.weight)
   .slice(0, 5);
 
@@ -145,7 +162,110 @@ export const partners: ReadonlyArray<Partner> = sponsors
   );
 
 /** Under the headline on `/sponsor`'s social card (`og/card.ts`). */
-export const sponsorCardLede = `MIT licensed, and kept going by ${sponsors.length} sponsors.`;
+const cardLede = (count: number) =>
+  `MIT licensed, and kept going by ${count} sponsors.`;
+
+export const sponsorCardLede = cardLede(sponsors.length);
+
+/** As many partners and other sponsors as fit on the card's two rows. */
+const cardPartners = 4;
+const cardBackers = 12;
+
+const tierLabel = (tier: SponsorTier) =>
+  sponsorTiers.find((entry) => entry.tier === tier)?.label ?? tier;
+
+const tierOrder = (tier: SponsorTier) =>
+  sponsorTiers.findIndex((entry) => entry.tier === tier);
+
+/** `ranked` partners, gold first, then each lower tier, by rank within a tier. */
+const byTier = (ranked: ReadonlyArray<Partner>) =>
+  ranked.toSorted((a, b) => tierOrder(a.tier) - tierOrder(b.tier));
+
+/** As many other sponsors' faces as a card's foot draws at most. */
+const footerFaces = 12;
+
+/**
+ * What every social card but `/sponsor`'s names along its foot
+ * (`og/card.ts`), from `ranked` partners and `all` the sponsors: every
+ * partner, gold first, then each lower tier, by rank within a tier; and the
+ * other drawn sponsors by what they've given, twice as many as it draws
+ * faces of.
+ */
+export function cardFooterOf(
+  ranked: ReadonlyArray<Partner>,
+  all: ReadonlyArray<Sponsor>,
+): CardFooter {
+  return {
+    backers: all
+      .filter(
+        (sponsor) =>
+          sponsor.imageless !== true &&
+          !ranked.some((p) => p.login === sponsor.login),
+      )
+      .toSorted((a, b) => b.weight - a.weight)
+      .slice(0, footerFaces * 2)
+      // The faces are small; GitHub sends a big avatar for every face otherwise.
+      .map((sponsor) => ({
+        image: avatarUrl(sponsor, 68),
+        name: sponsor.name,
+      })),
+    faceSlots: footerFaces,
+    partners: byTier(ranked).map((partner) => ({
+      image: partner.imgSrc,
+      name: partner.name,
+    })),
+    sponsorCount: all.length,
+  };
+}
+
+export const cardFooter = cardFooterOf(partners, sponsors);
+
+/**
+ * `/sponsor`'s social card, from `ranked` partners and `all` the sponsors:
+ * the partners, gold first, then each lower tier, by rank within a tier;
+ * then the other sponsors' avatars by what they've given, and a count of
+ * the ones it doesn't draw. It gets twice as many others as fit, and draws
+ * the first whose avatars load (`og/card.ts`).
+ */
+export function sponsorCardOf(
+  ranked: ReadonlyArray<Partner>,
+  all: ReadonlyArray<Sponsor>,
+): SponsorCard {
+  const ordered = byTier(ranked);
+  const shown = ordered.slice(0, cardPartners);
+  const backers = [
+    ...ordered.slice(cardPartners).map((partner) => ({
+      image: partner.imgSrc,
+      name: partner.name,
+      partner: true as const,
+    })),
+    ...all
+      .filter(
+        (sponsor) =>
+          sponsor.imageless !== true &&
+          !ranked.some((p) => p.login === sponsor.login),
+      )
+      .toSorted((a, b) => b.weight - a.weight)
+      .map((sponsor) => ({ image: sponsor.imgSrc, name: sponsor.name })),
+  ].slice(0, cardBackers * 2);
+  return {
+    backerSlots: cardBackers,
+    backers,
+    description: cardLede(all.length),
+    kind: 'sponsor',
+    partners: shown.map((partner) => ({
+      image: partner.imgSrc,
+      name: partner.name,
+      tier: tierLabel(partner.tier),
+    })),
+    path: sponsorPage.path,
+    sponsorCount: all.length,
+    title: sponsorPage.headline,
+    url: sponsorUrl,
+  };
+}
+
+export const sponsorCard = sponsorCardOf(partners, sponsors);
 
 /** `/sponsor`'s social card's alt text: what the card says. */
 export const sponsorCardAlt = [
@@ -154,6 +274,7 @@ export const sponsorCardAlt = [
   ...(partners.length === 0
     ? []
     : [
-        `Partners: ${new Intl.ListFormat('en').format(partners.map((partner) => partner.name))}.`,
+        `Partners: ${new Intl.ListFormat('en').format(byTier(partners).map((partner) => partner.name))}.`,
       ]),
+  `Sponsor at ${sponsorUrl.replace(/^https:\/\//, '')}.`,
 ].join(' ');

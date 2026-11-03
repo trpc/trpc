@@ -32,6 +32,10 @@ interface RouterMeta {
   schemas?: Record<string, SchemaObject>;
 }
 
+/**
+ * Options for {@link generateOpenAPIDocument}.
+ * @see https://trpc.io/docs/openapi#programmatic
+ */
 export interface GenerateOptions {
   /**
    * The name of the exported router symbol.
@@ -1710,12 +1714,20 @@ function buildOpenAPIDocument(
 // ---------------------------------------------------------------------------
 
 /**
- * Analyse the given TypeScript router file using the TypeScript compiler and
- * return an OpenAPI 3.1 document describing all query and mutation procedures.
+ * Reads your router file with the TypeScript compiler and returns an OpenAPI
+ * 3.1 document for its queries and mutations.
  *
- * @param routerFilePath - Absolute or relative path to the file that exports
- *   the AppRouter.
- * @param options - Optional generation settings (export name, title, version).
+ * @param routerFilePath - Path to the file that exports your router type.
+ * @param options - Export name, title, version and servers.
+ *
+ * @example
+ * ```ts
+ * const doc = await generateOpenAPIDocument('./src/server/router.ts', {
+ *   title: 'My API',
+ * });
+ * ```
+ *
+ * @see https://trpc.io/docs/openapi#programmatic
  */
 export async function generateOpenAPIDocument(
   routerFilePath: string,

@@ -32,7 +32,9 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
 import type { DocHeading } from '../src/content/types.ts';
+import { parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
+import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
@@ -50,7 +52,7 @@ export interface RenderedMarkdown {
   readonly anchors: ReadonlyArray<string>;
   /** The `h2` and `h3` headings, for the table of contents. */
   readonly headings: ReadonlyArray<DocHeading>;
-  /** The ids of the page's `demo` fences, in order. */
+  /** The ids of the page's `kitchen-sink` fences, in order. */
   readonly demos: ReadonlyArray<string>;
   readonly html: string;
   readonly links: ReadonlyArray<DocLink>;
@@ -346,26 +348,26 @@ function remarkPackageInstall() {
 }
 
 /**
- * A `demo` fence holds a kitchen-sink demo's id (`src/kitchen-sink/demos.ts`)
+ * A `kitchen-sink` fence holds a kitchen-sink demo's id (`src/kitchen-sink/demos.ts`)
  * and becomes the place the page runs it, which `DocPage` fills in the
  * browser. Its content shows until then.
  */
-function remarkDemos(demos: Array<string>) {
+function remarkKitchenSink(demos: Array<string>) {
   return () => (tree: MdastRoot) => {
     visit(tree, 'code', (node: Code, index, parent) => {
-      if (node.lang !== 'demo' || !parent || index === undefined) {
+      if (node.lang !== 'kitchen-sink' || !parent || index === undefined) {
         return;
       }
       const id = node.value.trim();
       if (!/^[a-z][a-z\d-]*$/.test(id)) {
         throw new Error(
-          `A demo fence holds a demo's id, not ${JSON.stringify(id)}`,
+          `A kitchen-sink fence holds a demo's id, not ${JSON.stringify(id)}`,
         );
       }
       demos.push(id);
       parent.children[index] = {
         type: 'html',
-        value: `<div class="demo-slot not-prose" data-demo="${id}"><p>The demo runs here, in your browser.</p></div>`,
+        value: `<div class="kitchen-sink-slot not-prose" data-kitchen-sink="${id}"><p>The demo runs here, in your browser.</p></div>`,
       };
     });
   };
@@ -408,6 +410,47 @@ function remarkCharts() {
         type: 'html',
         value: chartHtml(decodeChart(node.value)),
       };
+    });
+  };
+}
+
+/**
+ * A `demo` fence becomes the slot `PageDemos` mounts its demo in
+ * (`src/demos/names.ts`). Until then, and without JavaScript, the slot shows
+ * the fence's body as a plain code block, or a placeholder the demo's size.
+ */
+function remarkDemos() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (node.lang !== 'demo' || !parent || index === undefined) {
+        return;
+      }
+      const demo = parseDemoFence(node.meta ?? '');
+      const fallback =
+        node.value.trim() === ''
+          ? {
+              type: 'html',
+              value: '<div class="demo-placeholder" aria-hidden="true"></div>',
+            }
+          : { lang: null, type: 'code', value: node.value };
+      const slot = {
+        children: [fallback] as unknown as Paragraph['children'],
+        data: {
+          hName: 'div',
+          hProperties: {
+            className: ['demo-slot'],
+            dataDemo: demo.name,
+            ...Object.fromEntries(
+              Object.entries(demo.options).map(([key, value]) => [
+                `data${key.charAt(0).toUpperCase()}${key.slice(1)}`,
+                value,
+              ]),
+            ),
+          },
+        },
+        type: 'paragraph',
+      } satisfies Paragraph;
+      parent.children[index] = slot;
     });
   };
 }
@@ -524,7 +567,10 @@ function rehypeCodeBlocks() {
   };
 }
 
-/** Puts a button per tab above a `code-tabs` group's blocks. */
+/**
+ * Puts a button per tab above a `code-tabs` group's blocks, or a link to the
+ * tab (`?framework=nextjs`) in a group kept in the URL (`src/tabs.ts`).
+ */
 function rehypeCodeTabs() {
   return (tree: HastRoot) => {
     visit(tree, 'element', (node: Element) => {
@@ -560,6 +606,7 @@ function rehypeCodeTabs() {
           delete block.properties['dataActive'];
         }
       }
+      const inUrl = isUrlTabGroup(group);
       node.children.unshift({
         children: tabs.map((tab, index): Element => ({
           children: [{ type: 'text', value: tab }],
@@ -569,9 +616,13 @@ function rehypeCodeTabs() {
             dataTabGroup: group,
             dataTabSelect: tab,
             role: 'tab',
-            type: 'button',
+            ...(inUrl
+              ? {
+                  href: `?${new URLSearchParams({ [group]: tabSlug(tab) })}`,
+                }
+              : { type: 'button' }),
           },
-          tagName: 'button',
+          tagName: inUrl ? 'a' : 'button',
           type: 'element',
         })),
         properties: { className: ['code-tabs-list'], role: 'tablist' },
@@ -990,9 +1041,10 @@ function parsing(
     .use(remarkAlerts)
     .use(remarkHeadingIds)
     .use(remarkLinks(options, links))
-    .use(remarkDemos(demos))
+    .use(remarkKitchenSink(demos))
     .use(remarkCodemodPlayground)
     .use(remarkCharts)
+    .use(remarkDemos)
     .use(remarkPackageInstall)
     .use(remarkCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })

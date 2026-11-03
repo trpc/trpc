@@ -22,6 +22,11 @@ type QueryResult = {
   promise?: Promise<unknown>;
 };
 
+/**
+ * Creates a tRPC client for App Router client components.
+ *
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
   TRouter extends AnyRouter,

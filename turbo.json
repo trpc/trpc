@@ -120,16 +120,6 @@
     "lint-fix": {
       "cache": false
     },
-    // The Prisma examples share one `@prisma/client`, so its generated types
-    // are the last `prisma generate`'s. The websockets and TodoMVC examples'
-    // lint passes on this one's types, and this one's lint needs its own.
-    "examples-trpc-next-prisma-starter#generate": {
-      "cache": false
-    },
-    "examples-trpc-next-prisma-starter#lint": {
-      "dependsOn": ["^build", "examples-trpc-next-prisma-starter#generate"],
-      "outputs": []
-    },
     "test-dev": {
       "dependsOn": ["^build"]
     },

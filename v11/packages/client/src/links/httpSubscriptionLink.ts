@@ -38,16 +38,21 @@ async function urlWithConnectionParams(
   return url;
 }
 
+/**
+ * @see https://trpc.io/docs/client/links/httpSubscriptionLink#httpsubscriptionlink-options
+ */
 type HTTPSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
   TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,
 > = {
   /**
-   * EventSource ponyfill
+   * The `EventSource` class to use, for runtimes that don't have one.
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#custom-headers-through-ponyfill
    */
   EventSource?: TEventSource;
   /**
-   * EventSource options or a callback that returns them
+   * Options passed to the `EventSource`, or a function that returns them for
+   * each subscription.
    */
   eventSourceOptions?:
     | EventSourceLike.InitDictOf<TEventSource>
@@ -60,6 +65,8 @@ type HTTPSubscriptionLinkOptions<
   UrlOptionsWithConnectionParams;
 
 /**
+ * A terminating link that runs subscriptions over Server-Sent Events.
+ *
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
  */
 export function httpSubscriptionLink<
@@ -238,6 +245,6 @@ export function httpSubscriptionLink<
 }
 
 /**
- * @deprecated use {@link httpSubscriptionLink} instead
+ * @deprecated Use {@link httpSubscriptionLink} instead.
  */
 export const unstable_httpSubscriptionLink = httpSubscriptionLink;

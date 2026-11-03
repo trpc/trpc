@@ -1,11 +1,10 @@
 {
-  "version": "11.22.1",
+  "version": "11.23.0",
   "registry": "https://registry.npmjs.org/",
   "npmClient": "pnpm",
   "command": {
     "version": {
-      "exact": true,
-      "syncWorkspaceLock": true
+      "exact": true
     }
   },
   "$schema": "node_modules/@lerna-lite/cli/schemas/lerna-schema.json"

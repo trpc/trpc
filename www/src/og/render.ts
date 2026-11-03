@@ -10,17 +10,17 @@ import { initWasm, Resvg } from '@resvg/resvg-wasm';
 import resvgWasm from '@resvg/resvg-wasm/index_bg.wasm?inline';
 import satori, { type Font } from 'satori';
 
-import logoSvg from '../../public/favicon.svg?raw';
+import wordmarkSvg from '../../public/img/logo-text-black.svg?raw';
 import { ogImageSize } from '../seo.ts';
 import {
   type Assets,
+  type CardFooter,
   cardElement,
   dataUri,
   drawnAssets,
   type OgCard,
 } from './card.ts';
 import { type Live, noLive } from './live.ts';
-import patternSvg from './pattern.svg?raw';
 
 /** The bytes of a `data:` URI that `?inline` made. */
 const inlined = (uri: string) =>
@@ -45,26 +45,23 @@ const load = async (): Promise<Assets> => {
   });
   return {
     ...drawnAssets(),
-    logo: dataUri('image/svg+xml', Buffer.from(logoSvg)),
-    // A bitmap, so each card composites it instead of redrawing its paths.
-    pattern: dataUri(
-      'image/png',
-      new Resvg(patternSvg, { fitTo: { mode: 'width', value: 1280 } })
-        .render()
-        .asPng(),
-    ),
+    wordmark: dataUri('image/svg+xml', Buffer.from(wordmarkSvg)),
   };
 };
 
 let assets: Promise<Assets> | undefined;
 
-/** `ogCard` as a 1200×630 PNG, with what it shows `live`. */
-export async function renderOgImage(ogCard: OgCard, live: Live = noLive) {
+/** `ogCard` as a 1200×630 PNG, with what it shows `live`, and the sponsors in `footer` along its foot. */
+export async function renderOgImage(
+  ogCard: OgCard,
+  live: Live = noLive,
+  footer?: CardFooter,
+) {
   assets ??= load().catch((error: unknown) => {
     assets = undefined;
     throw error;
   });
-  const svg = await satori(cardElement(await assets, ogCard, live), {
+  const svg = await satori(cardElement(await assets, ogCard, live, footer), {
     ...ogImageSize,
     fonts,
   });

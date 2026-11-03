@@ -26,6 +26,17 @@ function sponsor(
 }
 
 describe('sponsorsMarkdown', () => {
+  it('leaves out a small sponsor whose avatar did not load', () => {
+    const markdown = sponsorsMarkdown([
+      sponsor('shown', 3),
+      { ...sponsor('broken', 9), imageless: true },
+      { ...sponsor('bronze', 20, 0, { rank: 1, tier: 'bronze' }) },
+    ]);
+    expect(markdown).toContain('alt="shown"');
+    expect(markdown).toContain('alt="bronze"');
+    expect(markdown).not.toContain('broken');
+  });
+
   it('puts each tier first, by rank, then everyone else by who gave the most', () => {
     expect(
       sponsorsMarkdown([

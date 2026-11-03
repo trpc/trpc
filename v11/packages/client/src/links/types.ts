@@ -16,14 +16,18 @@ export {
 } from './internals/contentTypes';
 
 /**
+ * Context an operation carries through the links, set per call.
+ * @see https://trpc.io/docs/client/links#managing-context
  * @internal
  */
 export interface OperationContext extends Record<string, unknown> {}
 
 /**
+ * A procedure call as it goes through the links.
  * @internal
  */
 export type Operation<TInput = unknown> = {
+  /** A number unique to the call within its client. */
   id: number;
   type: 'mutation' | 'query' | 'subscription';
   input: TInput;
@@ -37,6 +41,7 @@ interface HeadersInitEsque {
 }
 
 /**
+ * Request headers: a `Headers`-like iterable, or an object.
  * @internal
  */
 export type HTTPHeaders =
@@ -44,19 +49,21 @@ export type HTTPHeaders =
   | Record<string, string[] | string | undefined>;
 
 /**
- * The default `fetch` implementation has an overloaded signature. By convention this library
- * only uses the overload taking a string and options object.
+ * The `fetch` the HTTP links call: only its `(url, options)` form.
  */
 export type TRPCFetch = (
   url: string,
   options?: RequestInit,
 ) => Promise<ResponseEsque>;
 
+/** What a link gets when the client is created. Empty for now. */
 export interface TRPCClientRuntime {
   // nothing here anymore
 }
 
 /**
+ * A result a link passes back: data, a subscription's `started` or
+ * `stopped` event, or a change of connection state.
  * @internal
  */
 export interface OperationResultEnvelope<TOutput, TError> {
@@ -68,6 +75,7 @@ export interface OperationResultEnvelope<TOutput, TError> {
 }
 
 /**
+ * The observable of results a link returns for an operation.
  * @internal
  */
 export type OperationResultObservable<
@@ -79,6 +87,7 @@ export type OperationResultObservable<
 >;
 
 /**
+ * An observer of a link's results.
  * @internal
  */
 export type OperationResultObserver<
@@ -90,6 +99,9 @@ export type OperationResultObserver<
 >;
 
 /**
+ * Handles one operation: pass it on with `next(op)`, or send it and
+ * return the results.
+ * @see https://trpc.io/docs/client/links#creating-a-custom-link
  * @internal
  */
 export type OperationLink<
@@ -104,6 +116,9 @@ export type OperationLink<
 }) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
+ * A link: a step every call goes through, such as logging or sending it
+ * over HTTP. It's called once when the client is created.
+ * @see https://trpc.io/docs/client/links#creating-a-custom-link
  * @public
  */
 export type TRPCLink<TInferrable extends InferrableClientTypes> = (

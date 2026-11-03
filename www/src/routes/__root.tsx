@@ -26,6 +26,7 @@ import {
 } from '~/home-version.ts';
 import { indexable } from '~/seo.ts';
 import { blog, site, v12 } from '~/site.ts';
+import { validateTabSearch } from '~/tabs.ts';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRoute({
@@ -89,7 +90,10 @@ export const Route = createRootRoute({
   // Every navigation keeps `?flags=`, so the flags stay on page to page.
   search: { middlewares: [retainSearchParams<FlagSearch>(['flags'])] },
   shellComponent: RootDocument,
-  validateSearch: validateFlagSearch,
+  validateSearch: (search: Record<string, unknown>) => ({
+    ...validateTabSearch(search),
+    ...validateFlagSearch(search),
+  }),
 });
 
 function RootComponent() {

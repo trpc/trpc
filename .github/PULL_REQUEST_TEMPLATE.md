@@ -52,3 +52,7 @@ Write "None" if there was only one sensible way.
 ## Testing
 
 <!-- How you checked it works: new or updated tests, manual runs. -->
+
+## AI model
+
+<!-- The AI model that wrote or helped with this change, with its effort level if it has one: "Claude Opus 5.5 High". Write "None" if you used none. -->

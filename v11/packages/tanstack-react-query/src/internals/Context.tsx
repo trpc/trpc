@@ -3,7 +3,10 @@ import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
-import { createTRPCOptionsProxy } from './createOptionsProxy';
+import {
+  createTRPCOptionsProxy,
+  renderHandleVerbs,
+} from './createOptionsProxy';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -25,17 +28,39 @@ type TRPCProviderType<
   >
 >;
 
+/**
+ * What {@link createTRPCContext} returns.
+ */
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
+  /**
+   * Provides the tRPC client and `QueryClient` to `useTRPC` and
+   * `useTRPCClient`.
+   */
   TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags>;
+  /**
+   * Returns the options proxy for your router.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage
+   */
   useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
+  /**
+   * Returns the tRPC client, for calling procedures directly.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#useTRPCClient
+   */
   useTRPCClient: () => TRPCClient<TRouter>;
 }
 
 /**
- * Create a set of type-safe provider-consumers
+ * Creates a `TRPCProvider` and the `useTRPC` and `useTRPCClient` hooks for
+ * your router.
+ *
+ * @example
+ * ```ts
+ * export const { TRPCProvider, useTRPC, useTRPCClient } =
+ *   createTRPCContext<AppRouter>();
+ * ```
  *
  * Pass `keyPrefix` to `<TRPCProvider>` to prefix query and mutation keys.
  * Key types keep the unprefixed shape, since the prefix is only known at render.
@@ -57,15 +82,16 @@ export function createTRPCContext<
   > | null>(null);
 
   const TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags> = (props) => {
-    const value = React.useMemo(
-      () =>
-        createTRPCOptionsProxy({
-          client: props.trpcClient,
-          queryClient: props.queryClient,
-          keyPrefix: props.keyPrefix,
-        }) as TRPCOptionsProxy<TRouter, TFeatureFlags>,
-      [props.trpcClient, props.queryClient, props.keyPrefix],
-    );
+    const value = React.useMemo(() => {
+      // Not a literal argument: the options type doesn't list the internal flag.
+      const opts = {
+        client: props.trpcClient,
+        queryClient: props.queryClient,
+        keyPrefix: props.keyPrefix,
+        [renderHandleVerbs]: true,
+      };
+      return createTRPCOptionsProxy(opts);
+    }, [props.trpcClient, props.queryClient, props.keyPrefix]);
     return (
       <TRPCClientContext.Provider value={props.trpcClient}>
         <TRPCContext.Provider value={value}>
