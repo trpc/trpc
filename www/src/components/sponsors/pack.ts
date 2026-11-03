@@ -49,7 +49,8 @@ function touching(a: Circle, b: Circle, r: number): ReadonlyArray<Circle> {
 /**
  * Lays out circles of `radii`, in order, from the middle outward: the
  * first at the center, the second beside it, and each after where it
- * touches two placed circles nearest the center without overlapping any.
+ * touches two placed circles nearest their center of mass without
+ * overlapping any.
  * With the largest first, the largest sit in the middle and the cloud grows
  * round. It uses only arithmetic and square roots, so the server and the
  * browser place every circle at the same point.
@@ -66,12 +67,21 @@ function centerOut(radii: ReadonlyArray<number>): ReadonlyArray<Circle> {
       placed.push({ r, x: first.r + r, y: 0 });
       continue;
     }
+    const mass = placed.reduce((sum, circle) => sum + circle.r * circle.r, 0);
+    const cx =
+      placed.reduce((sum, circle) => sum + circle.x * circle.r * circle.r, 0) /
+      mass;
+    const cy =
+      placed.reduce((sum, circle) => sum + circle.y * circle.r * circle.r, 0) /
+      mass;
     let best: Circle | undefined;
     let bestDistance = Number.POSITIVE_INFINITY;
     for (const [index, a] of placed.entries()) {
       for (const b of placed.slice(index + 1)) {
         for (const spot of touching(a, b, r)) {
-          const distance = spot.x * spot.x + spot.y * spot.y;
+          const dx = spot.x - cx;
+          const dy = spot.y - cy;
+          const distance = dx * dx + dy * dy;
           if (
             distance < bestDistance &&
             !placed.some((other) => overlaps(spot, other))
