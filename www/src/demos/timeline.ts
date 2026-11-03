@@ -1,6 +1,8 @@
+import { jitter, type Random } from './random.ts';
+
 /**
  * The simulated requests of the post page in "Fetch-on-render" and
- * "Render-as-you-fetch": a post and its comments, each one round trip long.
+ * "Render-as-you-fetch": a post and its comments, each taking its own time.
  */
 export type LoadingStrategy = 'fetch-on-render' | 'render-as-you-fetch';
 
@@ -25,36 +27,60 @@ export interface Timeline {
   readonly readyAt: number;
 }
 
+/** Each request's usual time, in round trips. The comments are slower. */
+export const requestWeights = { comments: 1.5, post: 1 } as const;
+
+/** The longest a timeline can be, in round trips, so replays share an axis. */
+export const longestTimeline =
+  (requestWeights.post + requestWeights.comments) * jitter.max;
+
+/**
+ * The page's requests at `roundTrip` ms per round trip. Without `random`,
+ * each takes its usual time; with it, each strays by up to `jitter`.
+ */
 export function timeline(
   strategy: LoadingStrategy,
   roundTrip: number,
+  random?: Random,
 ): Timeline {
+  const duration = (weight: number) =>
+    Math.round(
+      (roundTrip * weight * (random?.between(jitter.min, jitter.max) ?? 1)) /
+        10,
+    ) * 10;
+  const postTime = duration(requestWeights.post);
+  const commentsTime = duration(requestWeights.comments);
   if (strategy === 'fetch-on-render') {
+    const readyAt = postTime + commentsTime;
     return {
-      readyAt: 2 * roundTrip,
+      readyAt,
       requests: [
-        { end: roundTrip, label: 'post.byId', start: 0 },
-        { end: 2 * roundTrip, label: 'post.comments', start: roundTrip },
+        { end: postTime, label: 'post.byId', start: 0 },
+        { end: readyAt, label: 'post.comments', start: postTime },
       ],
       steps: [
         { at: 0, text: 'PostPage renders and starts post.byId' },
         {
-          at: roundTrip,
+          at: postTime,
           text: 'The post arrives. Comments renders and starts post.comments',
         },
-        { at: 2 * roundTrip, text: 'The comments arrive' },
+        { at: readyAt, text: 'The comments arrive' },
       ],
     };
   }
+  const arrivals = [
+    { at: postTime, text: 'The post arrives and renders' },
+    { at: commentsTime, text: 'The comments arrive and render' },
+  ].toSorted((a, b) => a.at - b.at);
   return {
-    readyAt: roundTrip,
+    readyAt: Math.max(postTime, commentsTime),
     requests: [
-      { end: roundTrip, label: 'post.byId', start: 0 },
-      { end: roundTrip, label: 'post.comments', start: 0 },
+      { end: postTime, label: 'post.byId', start: 0 },
+      { end: commentsTime, label: 'post.comments', start: 0 },
     ],
     steps: [
       { at: 0, text: 'The loader starts post.byId and post.comments' },
-      { at: roundTrip, text: 'Both arrive, and the page renders them' },
+      ...arrivals,
     ],
   };
 }

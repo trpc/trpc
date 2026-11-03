@@ -1,3 +1,5 @@
+import { createRandom, jitter, type Random } from '../random.ts';
+
 export type RequestStatus = 'aborted' | 'done' | 'error' | 'pending';
 
 export interface NetworkRequest {
@@ -21,7 +23,31 @@ export interface Trace {
   readonly startedAt: number;
 }
 
-/** The latencies a demo offers, one way. */
+/**
+ * The longest run of requests that each started after the one before it
+ * had finished: the round trips the page waited for, one after another.
+ */
+export function chainLength(requests: ReadonlyArray<NetworkRequest>) {
+  const done = requests
+    .filter((request) => request.status === 'done')
+    .toSorted((a, b) => a.startedAt - b.startedAt);
+  const lengths = new Map<number, number>();
+  for (const request of done) {
+    let before = 0;
+    for (const earlier of done) {
+      if (
+        earlier.endedAt !== undefined &&
+        earlier.endedAt <= request.startedAt
+      ) {
+        before = Math.max(before, lengths.get(earlier.id) ?? 0);
+      }
+    }
+    lengths.set(request.id, before + 1);
+  }
+  return Math.max(0, ...lengths.values());
+}
+
+/** A typical round trip for each choice a demo offers. */
 export const latencies = [
   { label: 'Fast', ms: 300 },
   { label: '3G', ms: 800 },
@@ -53,10 +79,11 @@ export function formatCall(path: string, input: unknown) {
 }
 
 /**
- * A demo's pretend network: every request through it waits `latency` ms and
- * shows in the network panel, against the trace it started in.
+ * A demo's pretend network: every request through it waits about `latency`
+ * ms times its weight, give or take a random `jitter`, and shows in the
+ * network panel, against the trace it started in.
  */
-export function createNetwork() {
+export function createNetwork(random: Random = createRandom(Date.now())) {
   const listeners = new Set<() => void>();
   let nextId = 1;
   let trace: Trace = {
@@ -65,10 +92,19 @@ export function createNetwork() {
     shownAt: undefined,
     startedAt: performance.now(),
   };
+  let notifying = false;
   const update = (next: Trace) => {
     trace = next;
-    for (const listener of listeners) {
-      listener();
+    // A query can start while a component renders, and the panel can't
+    // update during another component's render.
+    if (!notifying) {
+      notifying = true;
+      queueMicrotask(() => {
+        notifying = false;
+        for (const listener of listeners) {
+          listener();
+        }
+      });
     }
   };
   const network = {
@@ -99,6 +135,12 @@ export function createNetwork() {
             : request,
         ),
       });
+    },
+    /** How long a request of `weight` round trips takes this time, in ms. */
+    delay(weight: number) {
+      return Math.round(
+        network.latency * weight * random.between(jitter.min, jitter.max),
+      );
     },
     getTrace: () => trace,
     latency: latencies[1].ms as number,

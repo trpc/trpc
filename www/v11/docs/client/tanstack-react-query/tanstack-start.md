@@ -352,7 +352,7 @@ A loader starts queries and returns their handles as loader data. For each query
 - On the first visit, the loader runs on the server, and the data is sent with the page.
 - On later navigations, the loader runs in the browser against the tab's cache. Fresh data is reused; stale data renders at once and refetches.
 
-```demo starting-queries variants=prefetch,ensure
+```demo starting-queries variants=prefetch,ensure,reader
 ```
 
 ### Without waiting: `unstable_$prefetch` {#loader-prefetch}

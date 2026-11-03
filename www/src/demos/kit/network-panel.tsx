@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { cn } from '@shared/ui/lib/utils';
 
 import { usePrefersReducedMotion } from '../use-playback.ts';
-import type { Network, NetworkRequest } from './network.ts';
+import { chainLength, type Network, type NetworkRequest } from './network.ts';
 
 /** `performance.now()`, every frame while `active`. */
 function useNow(active: boolean) {
@@ -20,6 +20,12 @@ function useNow(active: boolean) {
     return () => cancelAnimationFrame(frame);
   }, [active]);
   return now;
+}
+
+function describeChain(count: number) {
+  return count === 1
+    ? '1 round trip'
+    : `${count} round trips, one after another`;
 }
 
 const percent = (value: number) => `${Math.min(value, 1) * 100}%`;
@@ -49,7 +55,8 @@ function describe(request: NetworkRequest, origin: number) {
 
 /**
  * The requests since the last navigation, on a shared time axis, with the
- * moment the page showed. Ticks are round trips.
+ * moment the page showed. Ticks are typical round trips; each request takes
+ * its own time.
  */
 export function NetworkPanel(props: {
   readonly network: Network;
@@ -195,7 +202,7 @@ export function NetworkPanel(props: {
                 : `Page shown at ${ms(trace.shownAt - origin)}.`,
               done.length === 0
                 ? undefined
-                : `Data in at ${ms(lastDone)}: ${Math.round(lastDone / network.latency)} round ${Math.round(lastDone / network.latency) === 1 ? 'trip' : 'trips'}.`,
+                : `Data in at ${ms(lastDone)}: ${describeChain(chainLength(trace.requests))}.`,
             ]
               .filter(Boolean)
               .join(' ')}
