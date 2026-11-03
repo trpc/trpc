@@ -9,7 +9,7 @@ stability: unstable
 
 A type-safe error boundary owns some of the router's errors for the tree under it: being signed out, being offline, a crash. It renders a fallback for each of them, typed by exactly the errors that fallback gets, and the queries and mutations under it type their `error` without them, so a component only handles what's left. `unstable_createErrorBoundary` is in `@trpc12/tanstack-react-query`.
 
-Inspired by [Result RPC](https://result-rpc.com/) ([GitHub](https://github.com/jokull/result-rpc)), whose [shells](https://result-rpc.com/concepts/shells/) are error boundaries that claim failures and take them out of a component's error type. The shape was prototyped in [raf-effect-atom](https://github.com/KATT/raf-effect-atom)'s [effect-atom-boundary](https://github.com/KATT/raf-effect-atom/tree/main/packages/effect-atom-boundary), which does the same for Effect Atom.
+Inspired by [Result RPC](https://result-rpc.com/) ([GitHub](https://github.com/jokull/result-rpc)), whose [shells](https://result-rpc.com/concepts/shells/) are error boundaries that claim failures and take them out of a component's error type.
 
 ## Define the boundaries
 
