@@ -680,10 +680,12 @@ describe('runtime', () => {
       ensure: await server.viewer.unstable_$ensure(),
       fetch: await server.viewer.unstable_$fetch(),
       explicitUndefined: server.viewer.unstable_$prefetch(undefined),
+      prefetchInfinite: server.viewer.unstable_$prefetchInfinite(undefined),
+      ensureInfinite: await server.viewer.unstable_$ensureInfinite(undefined),
       withInput: await server.post.byId.unstable_$ensure({ id: '1' }),
     };
 
-    for (const handle of Object.values(handles).slice(0, 4)) {
+    for (const handle of Object.values(handles).slice(0, 6)) {
       expect(Object.keys(handle)).toEqual(['queryKey']);
     }
     expect(handles.withInput.input).toEqual({ id: '1' });
