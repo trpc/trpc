@@ -113,8 +113,10 @@ export const colors = {
   brand: '#398ccb',
   foreground: '#18181b',
   /** Text links' blue on a light page (`--brand-dark`). */
-  link: '#2e77af',
+  link: '#116eab',
   mutedForeground: '#52525b',
+  /** Button fills, with white on them. */
+  primary: '#247ab8',
 } as const;
 
 /** The logo's gradient ends in cyan, too light for text on white. */
@@ -572,7 +574,7 @@ const sponsorButton = (assets: Assets) =>
   box(
     {
       alignItems: 'center',
-      backgroundColor: colors.brand,
+      backgroundColor: colors.primary,
       borderRadius: 999,
       color: colors.background,
       fontSize: 28,

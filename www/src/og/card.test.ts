@@ -176,6 +176,7 @@ describe('colors', () => {
     foreground: '--foreground',
     link: '--brand-dark',
     mutedForeground: '--muted-foreground',
+    primary: '--primary',
   };
 
   it("are the site's light theme", () => {
