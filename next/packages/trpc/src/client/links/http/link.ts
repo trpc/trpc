@@ -27,6 +27,15 @@ export interface HttpLinkOptions<
   /** The endpoint, e.g. `http://localhost:3000/trpc`. */
   url: string | URL;
   /**
+   * What joins a procedure path's segments in URLs: with `'/'`,
+   * `post.byId` is sent to `/trpc/post/byId`. Must match the handler's
+   * `experimental_pathSeparator`. Batches are unaffected: they go to the
+   * endpoint, with dotted paths in the body. Experimental: it might change
+   * or go away in any release.
+   * @default '.'
+   */
+  experimental_pathSeparator?: string;
+  /**
    * Must match the handler's; a response from a handler with another one
    * fails with `UNSUPPORTED_PROTOCOL`. Client types follow it.
    * @default jsonTransformer

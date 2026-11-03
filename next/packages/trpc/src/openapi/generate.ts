@@ -8,9 +8,11 @@ import {
 import { defaultTag, ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
 import {
+  checkPathSeparator,
   CONTENT_TYPE,
   HEADER,
   PROTOCOL_VERSION,
+  toUrlPath,
 } from '../internal/protocol.ts';
 import type {
   AnyProcedure,
@@ -171,6 +173,14 @@ export interface GenerateOpenApiOptions {
    * @default '/api', or '/trpc' for `'rpc'`
    */
   prefix?: string;
+  /**
+   * For `'rpc'`: the handler's `experimental_pathSeparator`, so the
+   * document's paths are the URLs it serves (`/trpc/post/byId` with `'/'`).
+   * Operation ids stay dotted. Experimental: it might change or go away in
+   * any release.
+   * @default '.'
+   */
+  experimental_pathSeparator?: string;
   /** Leaves procedures out of the document. */
   filter?: (opts: { path: string; procedure: AnyProcedure }) => boolean;
 }
@@ -498,6 +508,8 @@ export function generateDocument(
     target === 'rpc'
       ? normalizePrefix(opts.prefix ?? '/trpc')
       : normalizePrefix(opts.prefix);
+  const separator = opts.experimental_pathSeparator ?? '.';
+  checkPathSeparator(separator, 'experimental_generateOpenApi');
   const components: Record<string, JsonSchema> = {
     [UNTYPED_ERROR]: {
       type: 'object',
@@ -527,7 +539,7 @@ export function generateDocument(
         ? experimental_resolveRoute(
             path,
             def.type,
-            { path: `/${path}` },
+            { path: `/${toUrlPath(path, separator)}` },
             prefix,
           )
         : experimental_resolveRoute(path, def.type, scoped, prefix);

@@ -111,8 +111,8 @@ export const makeApp = (handler: HttpHandler): HttpAppShape['app'] =>
       );
     }
     const rest = pathname.slice(handler.under.length);
-    const path = decodePath(rest);
-    if (path === undefined) {
+    const decoded = decodePath(rest);
+    if (decoded === undefined) {
       return Effect.fail(
         protocolError('NOT_FOUND', `Not found: ${pathname}`, 'RouteNotFound'),
       );
@@ -120,7 +120,13 @@ export const makeApp = (handler: HttpHandler): HttpAppShape['app'] =>
     return Effect.flatMap(parentSpan(request), (parent) =>
       rest === '' && request.headers[HEADER.batch] === '1'
         ? batched(handler, request, parent)
-        : singleCall(handler, request, parts.search, path, parent),
+        : singleCall(
+            handler,
+            request,
+            parts.search,
+            handler.paths.fromUrl(decoded),
+            parent,
+          ),
     );
   }).pipe(
     Effect.catchCause((cause) =>

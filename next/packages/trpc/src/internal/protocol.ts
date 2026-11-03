@@ -97,6 +97,32 @@ export function fromInputSearch(
 }
 
 /**
+ * Characters a custom path separator may use: RFC 3986 path characters
+ * other than letters, digits, `.` and `%`, so the URL needs no escaping and
+ * nothing decodes it differently.
+ */
+const SEPARATOR = /^[-_~!$&'()*+,;=:@/]+$/;
+
+/**
+ * Throws on a separator a URL path can't carry as is. `.` (the default)
+ * passes. @internal
+ */
+export function checkPathSeparator(separator: string, where: string): void {
+  if (separator !== '.' && !SEPARATOR.test(separator)) {
+    throw new Error(
+      `${where}: experimental_pathSeparator ${JSON.stringify(separator)} can't separate URL path segments; use "." or characters from -_~!$&'()*+,;=:@/`,
+    );
+  }
+}
+
+/**
+ * A dotted procedure path as it goes in a URL, segments joined by
+ * `separator`. @internal
+ */
+export const toUrlPath = (path: string, separator: string): string =>
+  separator === '.' ? path : path.split('.').join(separator);
+
+/**
  * Header names the protocol uses.
  * @since 0.1.0
  * @stability stable
