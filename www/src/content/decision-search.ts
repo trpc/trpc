@@ -34,15 +34,8 @@ export interface DecisionsIndexSearch {
 export interface OpenQuestionSearch {
   /** Its Details section, open. */
   readonly details?: true | undefined;
-  /** The option shown, and picked as the answer, by its letter in lower case. */
+  /** The option shown, by its letter in lower case. */
   readonly option?: string | undefined;
-  /**
-   * The proposal question the answer is for (`q26.1`), on a page that cites
-   * several; nothing is all of them.
-   */
-  readonly question?: string | undefined;
-  /** The answer is to skip it, leaving it open. */
-  readonly skip?: true | undefined;
   readonly view?: 'side-by-side' | undefined;
 }
 
@@ -52,8 +45,6 @@ export const decisionSearchKeys = [
   'open',
   'option',
   'q',
-  'question',
-  'skip',
   'status',
   'view',
   'who',
@@ -95,32 +86,13 @@ export function validateOpenQuestionSearch(search: Record<string, unknown>) {
     typeof search['option'] === 'string' && /^[a-z]$/i.test(search['option'])
       ? search['option'].toLowerCase()
       : undefined;
-  const question =
-    typeof search['question'] === 'string' &&
-    /^q\d+\.\d+$/i.test(search['question'])
-      ? search['question'].toLowerCase()
-      : undefined;
   const validated: OpenQuestionSearch = {
     ...(isTrue(search['details']) ? { details: true } : {}),
     ...(option === undefined ? {} : { option }),
-    ...(question === undefined ? {} : { question }),
-    ...(isTrue(search['skip']) ? { skip: true } : {}),
     ...(search['view'] === 'side-by-side' ? { view: 'side-by-side' } : {}),
   };
   return validated;
 }
-
-/**
- * The proposal questions an answer is for: the one `?question=` names, else
- * (none, or one the page doesn't cite) all the page cites.
- */
-export const answeredQuestions = (
-  param: string | undefined,
-  ids: ReadonlyArray<string>,
-): ReadonlyArray<string> => {
-  const one = ids.find((id) => id.toLowerCase() === param);
-  return one === undefined ? ids : [one];
-};
 
 export const whoOf = (param: WhoParam | undefined) =>
   param === undefined ? undefined : whoParams[param];

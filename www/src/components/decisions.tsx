@@ -1,8 +1,10 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import {
   ArrowLeft,
+  Check,
   ChevronRight,
   Columns2,
+  Copy,
   Eye,
   FileText,
   FlaskConical,
@@ -15,10 +17,10 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from 'lucide-react';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@shared/ui/components/badge';
-import { buttonVariants } from '@shared/ui/components/button';
+import { Button, buttonVariants } from '@shared/ui/components/button';
 import {
   Collapsible,
   CollapsibleContent,
@@ -26,9 +28,9 @@ import {
 } from '@shared/ui/components/collapsible';
 import { Input } from '@shared/ui/components/input';
 import { cn } from '@shared/ui/lib/utils';
-import { AnswerPanel } from '~/components/decision-answer.tsx';
 import { DocBody } from '~/components/doc-body.tsx';
 import { TextWithCode } from '~/components/text-with-code.tsx';
+import { decisionAnswerMessage } from '~/content/decision-answer.ts';
 import {
   type DecisionsIndexSearch,
   optionParam,
@@ -54,7 +56,7 @@ import {
   openQuestions,
 } from '~/content/decisions.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
-import { site } from '~/site.ts';
+import { decisions, site } from '~/site.ts';
 
 /**
  * Every page here says `noindex, nofollow`, whatever the host, and has no
@@ -535,7 +537,7 @@ function OptionHeading(props: {
 }) {
   return (
     <h3
-      className="flex flex-wrap items-center gap-2 text-base font-semibold tracking-tight text-pretty"
+      className="flex flex-wrap items-center gap-2 pr-28 text-base font-semibold tracking-tight text-pretty"
       id={`option-${props.option.id.toLowerCase()}`}
     >
       <span>
@@ -552,9 +554,64 @@ const pickerColumns: Record<number, string> = {
   4: 'sm:grid-cols-2 lg:grid-cols-4',
 };
 
+/**
+ * Copies the answer `message` for the decision round's chat. It sticks to
+ * its card's top-right corner, under the site's header, while the card
+ * scrolls by.
+ */
+function CopyAnswer(props: {
+  readonly message: string;
+  readonly optionId: string;
+}) {
+  const [status, setStatus] = useState<'copied' | 'failed' | 'idle'>('idle');
+  const reset = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(reset.current), []);
+  const copy = () => {
+    clearTimeout(reset.current);
+    let written: Promise<void>;
+    try {
+      written = navigator.clipboard.writeText(props.message);
+    } catch (error) {
+      // No clipboard outside a secure context.
+      written = Promise.reject(error);
+    }
+    void written.then(
+      () => setStatus('copied'),
+      () => setStatus('failed'),
+    );
+    reset.current = setTimeout(() => setStatus('idle'), 2000);
+  };
+  return (
+    <div className="pointer-events-none sticky top-16 z-10 -mb-4 flex h-0 justify-end">
+      <Button
+        aria-label={`Copy answer ${props.optionId} for the chat`}
+        className="pointer-events-auto bg-background shadow-sm"
+        onClick={copy}
+        size="xs"
+        variant="outline"
+      >
+        {status === 'copied' ? <Check /> : <Copy />}
+        {status === 'copied'
+          ? 'Copied'
+          : status === 'failed'
+            ? 'Copy failed'
+            : 'Copy answer'}
+      </Button>
+      <span aria-live="polite" className="sr-only">
+        {status === 'copied'
+          ? `Copied answer ${props.optionId}`
+          : status === 'failed'
+            ? "Couldn't copy"
+            : ''}
+      </span>
+    </div>
+  );
+}
+
 /** An option's prose, code, pros and cons, in a card. */
 function OptionCard(props: {
   readonly hidden: boolean;
+  readonly message: string;
   readonly option: QuestionOption;
   readonly recommended: boolean;
 }) {
@@ -567,6 +624,7 @@ function OptionCard(props: {
       )}
       hidden={props.hidden}
     >
+      <CopyAnswer message={props.message} optionId={props.option.id} />
       <OptionHeading option={props.option} recommended={props.recommended} />
       <DocBody html={props.option.html} />
       <ProsCons option={props.option} />
@@ -643,7 +701,6 @@ function Options(props: { readonly question: OpenQuestion }) {
                 search={(prev) => ({
                   ...prev,
                   option: optionParam(option.id, question.recommended),
-                  skip: undefined,
                 })}
                 to="."
               >
@@ -671,6 +728,11 @@ function Options(props: { readonly question: OpenQuestion }) {
           <OptionCard
             hidden={!all && option.id !== selected}
             key={option.id}
+            message={decisionAnswerMessage(
+              question,
+              option,
+              `${site.url}${decisions.basePath}/open/${question.slug}`,
+            )}
             option={option}
             recommended={option.id === question.recommended}
           />
@@ -795,9 +857,6 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
         </p>
         <DocBody html={question.recommendation} />
       </aside>
-
-      <AnswerPanel question={question} />
-
       <Section
         title={
           <span className="flex items-center gap-2">

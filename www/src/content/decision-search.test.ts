@@ -1,7 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
 import {
-  answeredQuestions,
   optionParam,
   shownOption,
   validateIndexSearch,
@@ -74,33 +73,10 @@ describe('validateOpenQuestionSearch', () => {
     ).toEqual({ details: true, option: 'c', view: 'side-by-side' });
   });
 
-  it('keeps a skipped answer and the question it is for', () => {
-    expect(
-      validateOpenQuestionSearch({ question: 'Q26.2', skip: 'true' }),
-    ).toEqual({ question: 'q26.2', skip: true });
-  });
-
   it('drops the rest', () => {
     expect(
-      validateOpenQuestionSearch({
-        details: 1,
-        option: 'cc',
-        question: 26.2,
-        skip: 'yes',
-        view: 'tabs',
-      }),
+      validateOpenQuestionSearch({ details: 1, option: 'cc', view: 'tabs' }),
     ).toEqual({});
-  });
-});
-
-describe('answeredQuestions', () => {
-  const ids = ['Q26.1', 'Q26.2'];
-
-  it('answers the question ?question= names, else all the page cites', () => {
-    expect(answeredQuestions('q26.2', ids)).toEqual(['Q26.2']);
-    expect(answeredQuestions(undefined, ids)).toEqual(ids);
-    expect(answeredQuestions('q9.9', ids)).toEqual(ids);
-    expect(answeredQuestions(undefined, [])).toEqual([]);
   });
 });
 
