@@ -37,7 +37,7 @@ Every HTTP adapter accepts these options, next to its own (like `endpoint` for F
 
 The Node.js adapters (Standalone, Express and Next.js) also accept:
 
-- `maxBodySize`: the largest request body in bytes; larger ones are rejected with `413 PAYLOAD_TOO_LARGE`.
+- `maxBodySize`: the largest request body in bytes; larger ones are rejected with `413 PAYLOAD_TOO_LARGE`. There's no limit by default; see [Request body size](#request-body-size).
 - `middleware`: a connect-style `(req, res, next)` function that runs before tRPC, e.g. [`cors()`](./adapters/standalone.md#handling-cors--options).
 
 ```ts twoslash title="server.ts"
@@ -58,6 +58,14 @@ createHTTPServer({
     console.error(`tRPC error on '${path}':`, error);
   },
   maxBatchSize: 10,
-  maxBodySize: 1_000_000, // 1 MB
+  maxBodySize: 1024 * 1024, // 1 MiB
 }).listen(3000);
 ```
+
+### Request body size
+
+The Node.js adapters read the request body into memory, and `maxBodySize` is unset by default, so they accept bodies of any size. On a server that's reachable from the internet, set `maxBodySize` so a single large request can't exhaust the process's memory. A body over the limit is rejected with `413 PAYLOAD_TOO_LARGE` as soon as it passes the limit, before it's parsed.
+
+We recommend `1024 * 1024` (1 MiB) for typical JSON inputs, as in the example above. If you accept files or other large inputs, set it a little above the largest one you expect, and keep it under about `10 * 1024 * 1024` (10 MiB).
+
+`maxBodySize` only applies to bodies tRPC reads itself. If a body parser such as `express.json()` or the Next.js API routes body parser has already set `req.body`, limit the size in that parser instead. A limit in your reverse proxy (like nginx's `client_max_body_size`) adds another layer.
