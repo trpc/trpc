@@ -50,7 +50,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-After that, calls made in the same event loop tick are batched together, so you don't need `Promise.all`, though it's a common way to do it. The code below will produce exactly **one** HTTP request, and the server will call `createContext` **once** for it. Each procedure still runs on its own, so batching saves requests, not resolver calls:
+After that, calls made in the same event loop tick are batched together, so you don't need `Promise.all`, though it's a common way to do it. The code below will produce exactly **one** HTTP request, and the server will call `createContext` **once** for it:
 
 ```ts twoslash
 // @target: esnext
@@ -76,6 +76,8 @@ const somePosts = await Promise.all([
   trpc.post.byId.query(3),
 ]);
 ```
+
+Each procedure still runs its own resolver, so whether this makes one database query depends on your data layer. Prisma [batches `findUnique()` calls made in the same tick](https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance#solving-the-n1-problem) into one query, and a [DataLoader](https://github.com/graphql/dataloader) can do the same for other queries. Otherwise, each resolver makes its own query.
 
 ## Streaming mode
 
