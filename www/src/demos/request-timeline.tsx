@@ -6,8 +6,10 @@ import { cn } from '@shared/ui/lib/utils';
 
 import type { DemoProps } from './names.ts';
 import { Segmented } from './segmented.tsx';
+import { createRandom } from './random.ts';
 import {
   type LoadingStrategy,
+  longestTimeline,
   progress,
   roundTrips,
   timeline,
@@ -127,11 +129,22 @@ export function RequestTimeline(props: DemoProps) {
       : 'fetch-on-render',
   );
   const [roundTrip, setRoundTrip] = useState<number>(200);
-  const plan = timeline(strategy, roundTrip);
+  // The first run takes the usual times, as the static timeline does; each
+  // replay draws new ones, the same for both strategies.
+  const [seed, setSeed] = useState(0);
+  const plan = timeline(
+    strategy,
+    roundTrip,
+    seed === 0 ? undefined : createRandom(seed),
+  );
   const playback = usePlayback(plan.readyAt, slowdown);
   const firstView = useFirstView(playback.play);
-  // Fetch-on-render's length, so both strategies share an axis.
-  const scale = 2 * roundTrip;
+  // The longest any run can be, so strategies and replays share an axis.
+  const scale = longestTimeline * roundTrip;
+  const ticks = Array.from(
+    { length: Math.floor(longestTimeline) + 1 },
+    (_, index) => index * roundTrip,
+  );
   const [post, comments] = plan.requests;
   const roundTripLabel = useId();
   const current = plan.steps.findLast((step) => step.at <= playback.time);
@@ -151,12 +164,17 @@ export function RequestTimeline(props: DemoProps) {
           options={strategies}
           value={strategy}
         />
-        {playback.reduced ? null : (
-          <Button onClick={playback.play} size="sm" variant="outline">
-            <RotateCcw data-icon="inline-start" />
-            Replay
-          </Button>
-        )}
+        <Button
+          onClick={() => {
+            setSeed(seed + 1);
+            playback.play();
+          }}
+          size="sm"
+          variant="outline"
+        >
+          <RotateCcw data-icon="inline-start" />
+          {playback.reduced ? 'New times' : 'Replay with new times'}
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
@@ -181,11 +199,19 @@ export function RequestTimeline(props: DemoProps) {
           >
             <span />
             <div className="relative h-4 font-mono text-[0.65rem] text-muted-foreground">
-              <span className="absolute left-0">0</span>
-              <span className="absolute left-1/2 -translate-x-1/2">
-                {roundTrip}
-              </span>
-              <span className="absolute right-0">{2 * roundTrip} ms</span>
+              {ticks.map((tick, index) => (
+                <span
+                  className={cn(
+                    'absolute whitespace-nowrap',
+                    index > 0 && '-translate-x-1/2',
+                  )}
+                  key={tick}
+                  style={{ left: percent(tick / scale) }}
+                >
+                  {tick}
+                  {index === ticks.length - 1 ? ' ms' : ''}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -219,12 +245,13 @@ export function RequestTimeline(props: DemoProps) {
         {playback.done ? (
           <>
             <strong>
-              Ready at {plan.readyAt} ms: {roundTrips(strategy)} round{' '}
-              {roundTrips(strategy) === 1 ? 'trip' : 'trips'}
-              {strategy === 'fetch-on-render' ? ', one after the other' : ''}.
+              Ready at {plan.readyAt} ms:{' '}
+              {strategy === 'fetch-on-render'
+                ? `${roundTrips(strategy)} round trips, one after the other.`
+                : 'both requests at once, as long as the slower one.'}
             </strong>{' '}
             {strategy === 'fetch-on-render'
-              ? 'Comments only exists once the post has arrived, so its request waits.'
+              ? 'Comments only exists once the post has arrived, so its request waits, and the times add up.'
               : 'The loader knew both inputs up front, so neither request waits.'}
           </>
         ) : (

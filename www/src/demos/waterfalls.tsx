@@ -5,10 +5,12 @@ import {
   createRoute,
   useParams,
 } from '@tanstack/react-router';
+import { ChevronRight } from 'lucide-react';
 import { type ReactNode, Suspense } from 'react';
 
 import { Skeleton } from '@shared/ui/components/skeleton';
 
+import { featuredPosts } from './kit/backend.ts';
 import {
   CommentList,
   Comments,
@@ -48,16 +50,24 @@ function Author(props: {
 
 function OtherPosts(props: { readonly id: number }) {
   return (
-    <p className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-      Other posts:
-      {[1, 2, 3]
-        .filter((id) => id !== props.id)
-        .map((id) => (
-          <DemoLink href={`/posts/${id}`} key={id}>
-            Post {id}
-          </DemoLink>
-        ))}
-    </p>
+    <nav aria-label="Other articles" className="grid gap-1 text-xs">
+      <span className="text-muted-foreground">Other articles</span>
+      <ul className="flex flex-wrap gap-2">
+        {featuredPosts
+          .filter((post) => post.id !== props.id)
+          .map((post) => (
+            <li key={post.id}>
+              <DemoLink
+                className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 font-medium outline-none transition-colors hover:border-link hover:text-link focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-reduce:transition-none"
+                href={`/posts/${post.id}`}
+              >
+                {post.title}
+                <ChevronRight aria-hidden className="size-3.5" />
+              </DemoLink>
+            </li>
+          ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -227,7 +237,7 @@ const blogs = {
 export function Waterfalls(props: DemoProps) {
   return (
     <DemoFrame
-      hint="Open the other posts, or reload, and watch when each request starts."
+      hint="Open another article, or reload, and watch when each request starts and ends. Each one takes its own time."
       initial={props.options['variant']}
       only={props.options['variants']}
       title="Where the queries start"

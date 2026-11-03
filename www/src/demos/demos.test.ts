@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { progress, timeline } from './timeline.ts';
+import {
+  chainLength,
+  createNetwork,
+  type NetworkRequest,
+} from './kit/network.ts';
+import { createRandom, jitter } from './random.ts';
+import { longestTimeline, progress, timeline } from './timeline.ts';
 import {
   formatInput,
   lastPage,
@@ -16,9 +22,9 @@ describe('timeline', () => {
       plan.requests.map((request) => [request.start, request.end]),
     ).toEqual([
       [0, 200],
-      [200, 400],
+      [200, 500],
     ]);
-    expect(plan.readyAt).toBe(400);
+    expect(plan.readyAt).toBe(500);
   });
 
   it('starts both at once with render-as-you-fetch', () => {
@@ -27,9 +33,27 @@ describe('timeline', () => {
       plan.requests.map((request) => [request.start, request.end]),
     ).toEqual([
       [0, 100],
-      [0, 100],
+      [0, 150],
     ]);
-    expect(plan.readyAt).toBe(100);
+    expect(plan.readyAt).toBe(150);
+  });
+
+  it('keeps random times within the jitter, and both strategies on one axis', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const waterfall = timeline('fetch-on-render', 200, createRandom(seed));
+      const parallel = timeline('render-as-you-fetch', 200, createRandom(seed));
+      const [post, comments] = parallel.requests;
+      expect(post.end).toBeGreaterThanOrEqual(200 * jitter.min - 5);
+      expect(post.end).toBeLessThanOrEqual(200 * jitter.max + 5);
+      expect(comments.end).toBeGreaterThanOrEqual(300 * jitter.min - 5);
+      expect(comments.end).toBeLessThanOrEqual(300 * jitter.max + 5);
+      expect(waterfall.readyAt).toBe(post.end + comments.end);
+      expect(parallel.readyAt).toBe(Math.max(post.end, comments.end));
+      expect(waterfall.readyAt).toBeLessThanOrEqual(longestTimeline * 200 + 5);
+      expect(parallel.steps.map((step) => step.at)).toEqual(
+        parallel.steps.map((step) => step.at).toSorted((a, b) => a - b),
+      );
+    }
   });
 
   it('measures progress from 0 to 1', () => {
@@ -37,6 +61,84 @@ describe('timeline', () => {
     expect(
       [0, 200, 300, 400, 500].map((time) => progress(request, time)),
     ).toEqual([0, 0, 0.5, 1, 1]);
+  });
+});
+
+describe('random', () => {
+  it('repeats for a seed, and differs between seeds', () => {
+    const draw = (seed: number) => {
+      const random = createRandom(seed);
+      return Array.from({ length: 5 }, () => random.next());
+    };
+    expect(draw(7)).toEqual(draw(7));
+    expect(draw(7)).not.toEqual(draw(8));
+  });
+
+  it('stays within the bounds', () => {
+    const random = createRandom(42);
+    for (let draw = 0; draw < 1000; draw++) {
+      const value = random.between(jitter.min, jitter.max);
+      expect(value).toBeGreaterThanOrEqual(jitter.min);
+      expect(value).toBeLessThan(jitter.max);
+    }
+  });
+});
+
+describe('network', () => {
+  const request = (
+    id: number,
+    startedAt: number,
+    endedAt: number,
+  ): NetworkRequest => ({
+    endedAt,
+    id,
+    label: `request ${id}`,
+    origin: undefined,
+    startedAt,
+    status: 'done',
+  });
+
+  it('counts parallel requests as one round trip', () => {
+    expect(
+      chainLength([request(1, 0, 300), request(2, 0, 450), request(3, 5, 180)]),
+    ).toBe(1);
+  });
+
+  it('counts requests that wait for another, however long each takes', () => {
+    expect(
+      chainLength([
+        request(1, 0, 300),
+        request(2, 300, 480),
+        request(3, 300, 750),
+      ]),
+    ).toBe(2);
+    expect(
+      chainLength([
+        request(1, 0, 100),
+        request(2, 100, 900),
+        request(3, 900, 950),
+      ]),
+    ).toBe(3);
+  });
+
+  it('ignores requests that are still in flight', () => {
+    expect(
+      chainLength([
+        request(1, 0, 300),
+        { ...request(2, 300, 0), endedAt: undefined, status: 'pending' },
+      ]),
+    ).toBe(1);
+    expect(chainLength([])).toBe(0);
+  });
+
+  it('delays each request by its weight, within the jitter', () => {
+    const network = createNetwork(createRandom(1));
+    network.latency = 400;
+    for (let draw = 0; draw < 100; draw++) {
+      const delay = network.delay(1.5);
+      expect(delay).toBeGreaterThanOrEqual(Math.floor(600 * jitter.min));
+      expect(delay).toBeLessThanOrEqual(Math.ceil(600 * jitter.max));
+    }
   });
 });
 

@@ -8,6 +8,7 @@ import {
   Comments,
   CommentsSection,
   CommentsSkeleton,
+  MoreByAuthor,
   NotFound,
   Post,
   PostList,
@@ -73,7 +74,7 @@ function createBlog(verb: Verb) {
     const data = useDemoLoaderData<typeof loadList>();
     return (
       <div className="grid gap-2">
-        <h3 className="text-base font-semibold">Posts</h3>
+        <h3 className="text-base font-semibold">Latest articles</h3>
         <Suspense fallback={<PostListSkeleton />}>
           <PostList posts={data.posts} />
         </Suspense>
@@ -85,7 +86,7 @@ function createBlog(verb: Verb) {
     const data = useDemoLoaderData<typeof loadPost>();
     return (
       <div className="grid gap-4">
-        <DemoLink href="/posts">← All posts</DemoLink>
+        <DemoLink href="/posts">← All articles</DemoLink>
         <Suspense fallback={<PostSkeleton />}>
           <Post post={data.post} />
         </Suspense>
@@ -94,6 +95,9 @@ function createBlog(verb: Verb) {
             <Comments comments={data.comments} />
           </Suspense>
         </CommentsSection>
+        <Suspense fallback={null}>
+          <MoreByAuthor key={data.post.input.id} post={data.post} />
+        </Suspense>
       </div>
     );
   }
@@ -129,7 +133,7 @@ const code = (text: string) => <span className="font-mono">{text}</span>;
 export function StartingQueries(props: DemoProps) {
   return (
     <DemoFrame
-      hint={`Open a post, go back, and open it again. Within ${staleTime / 1000} seconds, all three use the cache. After that, the data is stale.`}
+      hint={`Open an article, go back, and open it again. Within ${staleTime / 1000} seconds, all three use the cache. After that, the data is stale. Each request takes its own time, a little different on every run.`}
       initial={props.options['variant']}
       only={props.options['variants']}
       title="Start queries in a loader"
