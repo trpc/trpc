@@ -97,12 +97,13 @@ describe('weightFor', () => {
     expect(weightFor(2)).toBe(maxWeight);
   });
 
-  it('never goes down as a share grows, and compresses the range by the square root', () => {
+  it('never goes down as a share grows, and grows in proportion to it above the floor', () => {
     const shares = Array.from({ length: 1001 }, (_, index) => index / 1000);
     const weights = shares.map(weightFor);
     expect(weights).toEqual(weights.toSorted((a, b) => a - b));
-    expect(weightFor(0.25)).toBe(55);
-    expect(weightFor(0.01)).toBe(19);
+    expect(weightFor(0.5)).toBe(52.5);
+    expect(weightFor(0.2)).toBe(24);
+    expect(weightFor(0.01)).toBe(6);
   });
 });
 
@@ -123,7 +124,7 @@ describe('directDollars', () => {
 });
 
 describe('sponsorsList', () => {
-  it('weighs sponsors by the square root of their share of what the top sponsor paid in all', () => {
+  it('weighs sponsors by their share of what the top sponsor paid in all, above a floor', () => {
     const sponsors = sponsorsList({
       config: noConfig,
       lifetimeValues: [
@@ -145,8 +146,8 @@ describe('sponsorsList', () => {
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
       ['github/big', 100],
-      ['github/mid', 55],
-      ['github/tiny', 14.5],
+      ['github/mid', 28.8],
+      ['github/tiny', 5.2],
     ]);
   });
 
@@ -163,7 +164,7 @@ describe('sponsorsList', () => {
     expect(
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
-      ['github/new', 73.6],
+      ['github/new', 52.5],
       ['github/old', 100],
     ]);
   });
@@ -189,7 +190,7 @@ describe('sponsorsList', () => {
         login: 'both',
         weight: 100,
       }),
-      expect.objectContaining({ login: 'one', weight: 73.6 }),
+      expect.objectContaining({ login: 'one', weight: 52.5 }),
     ]);
   });
 
@@ -367,7 +368,7 @@ describe('sponsorsList', () => {
         slug: 'big',
         source: 'opencollective',
         tier: 'silver',
-        weight: 79.7,
+        weight: 62,
       }),
       {
         createdAt: Date.parse('2026-01-01'),
@@ -377,13 +378,13 @@ describe('sponsorsList', () => {
         profileUrl: 'https://opencollective.com/linked',
         slug: 'linked',
         source: 'opencollective',
-        weight: 19,
+        weight: 6,
       },
       expect.objectContaining({
         link: 'https://opencollective.com/plain',
         slug: 'plain',
         source: 'opencollective',
-        weight: 19,
+        weight: 6,
       }),
       {
         createdAt: Date.parse('2026-05-27'),
@@ -393,7 +394,7 @@ describe('sponsorsList', () => {
         profileUrl: 'https://opencollective.com/hooli',
         slug: 'hooli',
         source: 'opencollective',
-        weight: 50.2,
+        weight: 24,
       },
     ]);
   });
@@ -441,12 +442,12 @@ describe('sponsorsList', () => {
         login: 'bySite',
         source: 'github',
         tier: 'bronze',
-        weight: 79.7,
+        weight: 62,
       }),
       expect.objectContaining({
         slug: 'bySite',
         source: 'opencollective',
-        weight: 30.1,
+        weight: 9.8,
       }),
     ]);
   });
@@ -474,7 +475,7 @@ describe('sponsorsList', () => {
       expect.objectContaining({
         login: 'Acme',
         source: 'github',
-        weight: 73.6,
+        weight: 52.5,
       }),
     ]);
   });
@@ -505,7 +506,7 @@ describe('sponsorsList', () => {
     expect(
       sponsors.map((sponsor) => [sponsorKey(sponsor), sponsor.weight]),
     ).toEqual([
-      ['github/earlier', 73.6],
+      ['github/earlier', 52.5],
       ['github/later', 100],
     ]);
   });

@@ -43,8 +43,8 @@ interface SponsorFields {
   /** Their tier, by what they give a month now; absent below the lowest. */
   readonly tier?: SponsorTier;
   /**
-   * How much they've given, relative to the others, from 10 to 100: it
-   * grows with the square root of their share of the top sponsor's total.
+   * How much they've given, relative to the others, from 5 to 100: a
+   * floor plus their share of the top sponsor's total (`weightFor`).
    */
   readonly weight: number;
   /**

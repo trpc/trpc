@@ -33,10 +33,10 @@ describe('packSponsors', () => {
     );
   });
 
-  it("draws every one of sponsors.json's sponsors at least a tenth of the cloud across", () => {
+  it("draws every one of sponsors.json's sponsors at least a twelfth of the cloud across", () => {
     const bubbles = packSponsors(drawnSponsors, 0.006);
     expect(Math.min(...bubbles.map((bubble) => bubble.r * 2))).toBeGreaterThan(
-      0.1,
+      1 / 12,
     );
   });
 

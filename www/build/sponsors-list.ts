@@ -56,24 +56,19 @@ const periodMs: Record<DirectSponsor['every'], number> = {
 export const maxWeight = 100;
 
 /** The weight of whoever paid the least, so the cloud still draws them clearly. */
-export const minWeight = 10;
+export const minWeight = 5;
 
 /**
  * The weight of a sponsor who has paid `share` of what the top sponsor
- * has, from 0 to 1: the square root of their share, scaled from
- * `minWeight` to `maxWeight`. It never goes down as a sponsor pays more,
- * but the gap from the top to the bottom is compressed, so the smallest
- * circle in the cloud is still a fair fraction of the largest. It's kept
- * to a tenth: the curve is flat near the top, so whole numbers would tie
- * sponsors who paid nearly as much as the top one with them.
+ * has, from 0 to 1: `minWeight` plus their share of the rest, up to
+ * `maxWeight`. Above the floor it's in proportion to what they paid, so
+ * the top sponsors stay clearly the biggest, and the floor keeps the
+ * smallest circle in the cloud a fair fraction of the largest. It's kept
+ * to a tenth, so sponsors who paid nearly as much as each other don't tie.
  */
 export function weightFor(share: number) {
   const clamped = Math.min(1, Math.max(0, share));
-  return (
-    Math.round(
-      (minWeight + (maxWeight - minWeight) * Math.sqrt(clamped)) * 10,
-    ) / 10
-  );
+  return Math.round((minWeight + (maxWeight - minWeight) * clamped) * 10) / 10;
 }
 
 /**
