@@ -1,13 +1,13 @@
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { ChevronRight, MessageSquare, UserRound } from 'lucide-react';
-import { type ReactNode, Suspense, useId, useState } from 'react';
+import { type ReactNode, Suspense, useId } from 'react';
 
-import { Button } from '@shared/ui/components/button';
 import { Skeleton } from '@shared/ui/components/skeleton';
 
+import { pageCount } from './backend.ts';
 import { DemoLink } from './browser.tsx';
-import { staleTime, type TRPC, useNetwork, useTRPC } from './session.tsx';
+import { type TRPC, useTRPC } from './session.tsx';
 
 /** The same components read the handles in every demo, as in an app. */
 export function Post(props: {
@@ -15,12 +15,23 @@ export function Post(props: {
 }) {
   const trpc = useTRPC();
   const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
+  return <PostArticle post={postQuery.data} />;
+}
+
+export function PostArticle(props: {
+  readonly post: {
+    readonly author: string;
+    readonly body: string;
+    readonly servedAt: number;
+    readonly title: string;
+  };
+}) {
   return (
     <article className="grid gap-1">
-      <h3 className="text-base font-semibold">{postQuery.data.title}</h3>
-      <p className="text-muted-foreground">{postQuery.data.body}</p>
+      <h3 className="text-base font-semibold">{props.post.title}</h3>
+      <p className="text-muted-foreground">{props.post.body}</p>
       <p className="text-xs text-muted-foreground">
-        Served at {postQuery.data.servedAt.toFixed(1)} s
+        By {props.post.author} · served at {props.post.servedAt.toFixed(1)} s
       </p>
     </article>
   );
@@ -113,7 +124,10 @@ interface PostSummary {
 }
 
 /** An article to open: the whole card is the link. */
-function PostCard(props: { readonly post: PostSummary }) {
+function PostCard(props: {
+  readonly commentCount?: ReactNode;
+  readonly post: PostSummary;
+}) {
   const post = props.post;
   return (
     <DemoLink
@@ -127,8 +141,11 @@ function PostCard(props: { readonly post: PostSummary }) {
         <span className="line-clamp-2 text-xs text-muted-foreground">
           {post.excerpt}
         </span>
-        <span className="text-[0.7rem] text-muted-foreground">
-          {post.author} · {post.minutes} min read
+        <span className="flex flex-wrap items-center gap-x-1.5 text-[0.7rem] text-muted-foreground">
+          <span>
+            {post.author} · {post.minutes} min read
+          </span>
+          {props.commentCount}
         </span>
       </span>
       <ChevronRight
@@ -139,24 +156,64 @@ function PostCard(props: { readonly post: PostSummary }) {
   );
 }
 
-function PostCards(props: { readonly posts: ReadonlyArray<PostSummary> }) {
+export function PostCards(props: {
+  readonly commentCount?: (postId: number) => ReactNode;
+  readonly posts: ReadonlyArray<PostSummary>;
+}) {
   return (
     <ul className="grid gap-2">
       {props.posts.map((post) => (
         <li key={post.id}>
-          <PostCard post={post} />
+          <PostCard commentCount={props.commentCount?.(post.id)} post={post} />
         </li>
       ))}
     </ul>
   );
 }
 
+export function CommentCount(props: { readonly count: number }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      · <MessageSquare aria-hidden className="size-3" />
+      {props.count === 1 ? '1 comment' : `${props.count} comments`}
+    </span>
+  );
+}
+
+/** Waits inside the card, so the article shows before its count. */
+export function CommentCountSlot(props: { readonly children: ReactNode }) {
+  return (
+    <Suspense fallback={<Skeleton className="h-3 w-20" />}>
+      {props.children}
+    </Suspense>
+  );
+}
+
+function CommentCountFromHandle(props: {
+  readonly counts: unstable_inferQueryHandle<TRPC['post']['commentCounts']>;
+  readonly postId: number;
+}) {
+  const trpc = useTRPC();
+  const countsQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.counts));
+  return <CommentCount count={countsQuery.data[props.postId] ?? 0} />;
+}
+
 export function PostList(props: {
+  readonly counts: unstable_inferQueryHandle<TRPC['post']['commentCounts']>;
   readonly posts: unstable_inferQueryHandle<TRPC['post']['list']>;
 }) {
   const trpc = useTRPC();
   const postsQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.posts));
-  return <PostCards posts={postsQuery.data} />;
+  return (
+    <PostCards
+      commentCount={(postId) => (
+        <CommentCountSlot>
+          <CommentCountFromHandle counts={props.counts} postId={postId} />
+        </CommentCountSlot>
+      )}
+      posts={postsQuery.data}
+    />
+  );
 }
 
 export function PostListSkeleton(props: { readonly count?: number }) {
@@ -169,83 +226,63 @@ export function PostListSkeleton(props: { readonly count?: number }) {
   );
 }
 
-function AuthorPosts(props: {
-  readonly posts: unstable_inferQueryHandle<TRPC['post']['byAuthor']>;
-}) {
-  const trpc = useTRPC();
-  const postsQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.posts));
-  return <PostCards posts={postsQuery.data} />;
+/** Links to each page of the list, so the page is in the URL. */
+export function Pager(props: { readonly page: number }) {
+  return (
+    <nav aria-label="Pages" className="flex items-center gap-1 text-xs">
+      <span className="mr-1 text-muted-foreground">Page</span>
+      {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+        (page) => (
+          <DemoLink
+            aria-current={page === props.page ? 'page' : undefined}
+            className="grid size-7 place-items-center rounded-md border bg-background font-medium outline-none transition-colors hover:border-link hover:text-link focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-[current=page]:border-link aria-[current=page]:bg-accent aria-[current=page]:text-link motion-reduce:transition-none"
+            href={`/posts?page=${page}`}
+            key={page}
+          >
+            {page}
+          </DemoLink>
+        ),
+      )}
+    </nav>
+  );
 }
 
-/**
- * The author's other posts, on demand. Hovering or focusing the button
- * starts the query, and clicking it keeps the handle and reads it, so the
- * list is often ready by the click.
- */
-export function MoreByAuthor(props: {
-  readonly post: unstable_inferQueryHandle<TRPC['post']['byId']>;
+export function MoreByAuthorList(props: {
+  readonly more: {
+    readonly author: string;
+    readonly posts: ReadonlyArray<PostSummary>;
+  };
 }) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const network = useNetwork();
-  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
-  const [morePosts, setMorePosts] = useState<unstable_inferQueryHandle<
-    TRPC['post']['byAuthor']
-  > | null>(null);
   const heading = useId();
-  const author = postQuery.data.author;
-  const input = {
-    authorId: postQuery.data.authorId,
-    exclude: postQuery.data.id,
-  };
-  const start = () => {
-    const query = queryClient.getQueryCache().find({
-      exact: true,
-      queryKey: trpc.post.byAuthor.queryKey(input),
-    });
-    // The prefetch fetches when the data is missing or stale, unless a fetch
-    // is already running, and only a fetch should start a new trace.
-    if (
-      query === undefined ||
-      (query.state.fetchStatus === 'idle' && query.isStaleByTime(staleTime))
-    ) {
-      network.begin(`More by ${author}`);
-    }
-    return trpc.post.byAuthor.unstable_$prefetch(input);
-  };
-
   return (
     <section aria-labelledby={heading} className="grid gap-2 border-t pt-3">
       <h4
         className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
         id={heading}
       >
-        <UserRound className="size-3.5" /> More by {author}
+        <UserRound className="size-3.5" /> More by {props.more.author}
       </h4>
-      {morePosts ? (
-        <Suspense fallback={<PostListSkeleton count={2} />}>
-          <AuthorPosts posts={morePosts} />
-        </Suspense>
-      ) : (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Button
-            onClick={() => setMorePosts(start())}
-            onFocus={start}
-            onPointerEnter={start}
-            size="sm"
-            variant="outline"
-          >
-            Show more by {author}
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Hovering it calls{' '}
-            <code className="font-mono">unstable_$prefetch</code>, so the
-            request starts before you click. The click reads the handle.
-          </span>
-        </div>
-      )}
+      <PostCards posts={props.more.posts} />
     </section>
   );
+}
+
+export function MoreByAuthorSkeleton() {
+  return (
+    <div className="grid gap-2 border-t pt-3">
+      <Skeleton className="h-4 w-28" />
+      <PostListSkeleton count={2} />
+    </div>
+  );
+}
+
+/** The author's other posts, as links. Its query starts from the URL too. */
+export function MoreByAuthor(props: {
+  readonly more: unstable_inferQueryHandle<TRPC['post']['moreByAuthor']>;
+}) {
+  const trpc = useTRPC();
+  const moreQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.more));
+  return <MoreByAuthorList more={moreQuery.data} />;
 }
 
 export function NotFound() {

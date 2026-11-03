@@ -14,7 +14,7 @@ export interface Post {
 
 const authors = ['Ada', 'Grace', 'Linus', 'Margaret'] as const;
 
-/** Ada, Grace and Linus write three posts each; the list shows the first three. */
+/** Ada, Grace and Linus write three posts each, three to a page of the list. */
 const posts: ReadonlyArray<Post> = [
   {
     authorId: 1,
@@ -81,10 +81,10 @@ const posts: ReadonlyArray<Post> = [
   },
 ];
 
-/** The posts the list shows, for links that don't need a query. */
-export const featuredPosts = posts
-  .slice(0, 3)
-  .map((post) => ({ id: post.id, title: post.title }));
+const perPage = 3;
+
+/** How many pages the list has. */
+export const pageCount = Math.ceil(posts.length / perPage);
 
 const comments = [
   { body: 'Finally, no more spinners inside spinners.', postId: 1 },
@@ -107,16 +107,23 @@ const comments = [
  * request are easy to tell apart.
  */
 export const procedureWeights: Readonly<Record<string, number>> = {
-  'post.author': 0.6,
-  'post.byAuthor': 1.2,
   'post.byId': 1,
+  'post.commentCounts': 1.1,
   'post.comments': 1.5,
   'post.list': 0.8,
-  'user.byId': 0.6,
+  'post.moreByAuthor': 1.2,
 };
 
 function authorOf(id: number) {
   return authors[id - 1] ?? 'Ada';
+}
+
+function pageOf(page: number) {
+  return posts.slice((page - 1) * perPage, page * perPage);
+}
+
+function commentsOf(postId: number) {
+  return comments.filter((comment) => comment.postId === postId);
 }
 
 function postOf(id: number) {
@@ -167,19 +174,6 @@ function createAppRouter(startedAt: number) {
   const servedAt = () => Math.round((performance.now() - startedAt) / 100) / 10;
   return t.router({
     post: t.router({
-      author: t.procedure.input(numbersInput('postId')).query(({ input }) => ({
-        name: authorOf(postOf(input.postId).authorId),
-      })),
-      byAuthor: t.procedure
-        .input(numbersInput('authorId', 'exclude'))
-        .query(({ input }) =>
-          posts
-            .filter(
-              (post) =>
-                post.authorId === input.authorId && post.id !== input.exclude,
-            )
-            .map(summaryOf),
-        ),
       byId: t.procedure.input(numbersInput('id')).query(({ input }) => {
         const post = postOf(input.id);
         return {
@@ -188,19 +182,41 @@ function createAppRouter(startedAt: number) {
           servedAt: servedAt(),
         };
       }),
+      /** Each post's comment count, by post id, for one page of the list. */
+      commentCounts: t.procedure
+        .input(numbersInput('page'))
+        .query(({ input }) =>
+          Object.fromEntries(
+            pageOf(input.page).map((post) => [
+              post.id,
+              commentsOf(post.id).length,
+            ]),
+          ),
+        ),
       comments: t.procedure
         .input(numbersInput('postId'))
-        .query(({ input }) =>
-          comments.filter((comment) => comment.postId === input.postId),
-        ),
-      list: t.procedure.query(() =>
-        featuredPosts.map((post) => summaryOf(postOf(post.id))),
-      ),
-    }),
-    user: t.router({
-      byId: t.procedure
-        .input(numbersInput('id'))
-        .query(({ input }) => ({ name: authorOf(input.id) })),
+        .query(({ input }) => commentsOf(input.postId)),
+      list: t.procedure
+        .input(numbersInput('page'))
+        .query(({ input }) => pageOf(input.page).map(summaryOf)),
+      /**
+       * The other posts by a post's author. It takes the post's id, which is
+       * in the URL, so a loader can start it with the post.
+       */
+      moreByAuthor: t.procedure
+        .input(numbersInput('postId'))
+        .query(({ input }) => {
+          const post = postOf(input.postId);
+          return {
+            author: authorOf(post.authorId),
+            posts: posts
+              .filter(
+                (other) =>
+                  other.authorId === post.authorId && other.id !== post.id,
+              )
+              .map(summaryOf),
+          };
+        }),
     }),
   });
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createDemoClient } from './kit/backend.ts';
+import { createDemoClient, pageCount } from './kit/backend.ts';
 import {
   chainLength,
   createNetwork,
@@ -175,8 +175,10 @@ describe('network', () => {
     const client = createDemoClient(network);
     await client.post.byId.query({ id: 1 });
     await client.post.comments.query({ postId: 1 });
-    await client.post.byAuthor.query({ authorId: 1, exclude: 1 });
-    expect(weights).toEqual([1, 1.5, 1.2]);
+    await client.post.moreByAuthor.query({ postId: 1 });
+    await client.post.list.query({ page: 1 });
+    await client.post.commentCounts.query({ page: 1 });
+    expect(weights).toEqual([1, 1.5, 1.2, 0.8, 1.1]);
   });
 
   it('answers only once the delay has passed', async () => {
@@ -202,15 +204,42 @@ describe('network', () => {
 });
 
 describe('backend', () => {
-  it("lists the author's other posts", async () => {
+  const client = () => {
     const network = createNetwork(createRandom(1));
     network.delay = () => 0;
-    const client = createDemoClient(network);
-    const morePosts = await client.post.byAuthor.query({
-      authorId: 1,
-      exclude: 1,
+    return createDemoClient(network);
+  };
+
+  it("lists the other posts by a post's author, from the post's id", async () => {
+    const more = await client().post.moreByAuthor.query({ postId: 1 });
+    expect(more.author).toBe('Ada');
+    expect(more.posts.map((post) => post.id)).toEqual([4, 7]);
+  });
+
+  it('pages the list, three posts a page', async () => {
+    const pages = await Promise.all(
+      Array.from({ length: pageCount }, (_, index) =>
+        client().post.list.query({ page: index + 1 }),
+      ),
+    );
+    expect(pages.map((page) => page.map((post) => post.id))).toEqual([
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
+    ]);
+  });
+
+  it("counts each post's comments for one page", async () => {
+    expect(await client().post.commentCounts.query({ page: 1 })).toEqual({
+      1: 2,
+      2: 2,
+      3: 1,
     });
-    expect(morePosts.map((post) => post.id)).toEqual([4, 7]);
+    expect(await client().post.commentCounts.query({ page: 3 })).toEqual({
+      7: 0,
+      8: 0,
+      9: 0,
+    });
   });
 });
 

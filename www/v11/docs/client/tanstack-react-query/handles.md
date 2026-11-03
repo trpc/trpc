@@ -867,7 +867,7 @@ instead of one after the other, as each component renders and finds out what it 
 3.     |-> user.byId
 ```
 
-The demo runs one page all three ways. Watch the network panel:
+The demo runs one blog all three ways, on the list and on each article. Watch the network panel:
 
 ```demo waterfalls
 ```

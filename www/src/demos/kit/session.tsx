@@ -4,7 +4,7 @@ import {
   createTRPCOptionsProxy,
   type TRPCOptionsProxy,
 } from '@trpc/tanstack-react-query';
-import { createContext, type ReactNode, use } from 'react';
+import type { ReactNode } from 'react';
 
 import { type AppRouter, createDemoClient } from './backend.ts';
 import { createNetwork, type Network } from './network.ts';
@@ -44,17 +44,6 @@ export function createSession(latency: number, origin?: string) {
 
 export type Session = ReturnType<typeof createSession>;
 
-const NetworkContext = createContext<Network | null>(null);
-
-/** The session's network, for a component that starts its own trace. */
-export function useNetwork() {
-  const network = use(NetworkContext);
-  if (!network) {
-    throw new Error('useNetwork() needs a SessionProvider');
-  }
-  return network;
-}
-
 export function SessionProvider(props: {
   readonly children: ReactNode;
   readonly session: Session;
@@ -65,9 +54,7 @@ export function SessionProvider(props: {
         queryClient={props.session.queryClient}
         trpcClient={props.session.client}
       >
-        <NetworkContext value={props.session.network}>
-          {props.children}
-        </NetworkContext>
+        {props.children}
       </TRPCProvider>
     </QueryClientProvider>
   );

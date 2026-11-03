@@ -113,6 +113,7 @@ export function useDemoLoaderData<
 
 /** A link inside the demo's browser, which navigates its router. */
 export function DemoLink(props: {
+  readonly 'aria-current'?: 'page' | undefined;
   readonly children: ReactNode;
   readonly className?: string;
   readonly href: string;
@@ -120,6 +121,7 @@ export function DemoLink(props: {
   const router = useRouter();
   return (
     <a
+      aria-current={props['aria-current']}
       className={
         props.className ??
         'text-brand-dark underline-offset-2 hover:underline dark:text-brand-light'
