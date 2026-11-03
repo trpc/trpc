@@ -195,10 +195,16 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
    */
   experimental_pathSeparator?: '.' | '_' | '~' | '-';
   /**
-   * Accept batched requests (opt-in, 10).
+   * Accept batched requests, of at most `maxItems` calls each; a bigger
+   * batch fails with `BatchTooLarge`. Off by default, and there's no
+   * default size: `httpLink`'s `batch.maxItems` must be at most this one.
+   * @example
+   * ```ts
+   * createFetchHandler({ router, batch: { maxItems: 100 } });
+   * ```
    * @default false
    */
-  batch?: boolean | { maxItems?: number };
+  batch?: false | { maxItems: number };
   /**
    * Max request body size, in bytes.
    * @default 1_048_576

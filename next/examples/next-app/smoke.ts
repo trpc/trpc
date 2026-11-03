@@ -61,7 +61,13 @@ try {
 
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: `${origin}/api/trpc`, batch: true, transformer })],
+    links: [
+      httpLink({
+        url: `${origin}/api/trpc`,
+        batch: { maxItems: 100 },
+        transformer,
+      }),
+    ],
   });
 
   const [first] = await client.post.list.query();

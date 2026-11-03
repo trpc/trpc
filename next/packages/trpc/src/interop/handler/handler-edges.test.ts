@@ -65,6 +65,7 @@ const make = (extra: Options = {}) =>
     router,
     createContext: () => ({ user: 'ada' }),
     exposeUnexpectedErrors: false,
+    batch: { maxItems: 100 },
     ...extra,
   });
 
@@ -398,6 +399,7 @@ test('middleware wraps the app, and fetch passes the platform on', async () => {
   const handler = createV11Handler<typeof router, { user: string }>({
     router,
     createContext: (opts) => ({ user: opts.platform.user }),
+    batch: { maxItems: 100 },
     middleware: [
       (app) =>
         Effect.map(app, (res) => {
@@ -429,6 +431,7 @@ test('a streamed batch nobody reads waits instead of buffering its rows', async 
       }),
     }),
     createContext: () => ({ user: 'ada' }),
+    batch: { maxItems: 100 },
   });
   const res = await call(handler, '/trpc/firehose?batch=1&input={}', {
     headers: { 'trpc-accept': 'application/jsonl' },
@@ -458,6 +461,7 @@ test('cancelling a JSON Lines body without aborting the request ends a query wai
       }),
     }),
     createContext: () => ({ user: 'ada' }),
+    batch: { maxItems: 100 },
   });
   const res = await call(handler, '/trpc/waiting?batch=1&input={}', {
     headers: { 'trpc-accept': 'application/jsonl' },
@@ -480,6 +484,7 @@ test('dispose() answers an HTTP call still running after drainTimeout with a 503
     router: bare.router({ stuck: bare.procedure.query(() => Effect.never) }),
     runtime,
     drainTimeout: 0,
+    batch: { maxItems: 100 },
   });
   const stuck = call(handler, '/trpc/stuck');
   await handler.dispose();

@@ -42,7 +42,7 @@ export async function main(url: string, expected: Expected = {}) {
     links: [
       httpLink({
         url,
-        batch: true,
+        batch: { maxItems: 100 },
         transformer,
         fetch: (input, init) => {
           requests++;

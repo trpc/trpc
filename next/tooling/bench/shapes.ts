@@ -101,7 +101,7 @@ const tenantLink = link<{ context: { tenant?: string }; errors: RateLimited }>((
     splitLink({
       condition: (op) => op.type === 'subscription',
       true: wsLink({ url: 'ws://localhost:3000/trpc' }),
-      false: httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+      false: httpLink({ url: 'http://localhost:3000/trpc', batch: { maxItems: 100 } }),
     }),
   ]`,
 };

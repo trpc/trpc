@@ -6,14 +6,14 @@ import { trackerRouter } from './tracker.ts';
 
 export const tracker = createFetchHandler({
   router: trackerRouter,
-  batch: true,
+  batch: { maxItems: 100 },
   transformer,
 });
 
 export const directory = createFetchHandler({
   router: directoryRouter,
   endpoint: '/directory/trpc',
-  batch: true,
+  batch: { maxItems: 100 },
   transformer,
 });
 

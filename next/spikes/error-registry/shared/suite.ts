@@ -159,6 +159,7 @@ export function registrySuite(name: string, app: SuiteApp) {
     const v11 = createV11Handler({
       router: app.router,
       createContext: () => ({ user: null }),
+      batch: { maxItems: 100 },
     });
     const input = encodeURIComponent(JSON.stringify({ id: 'nope' }));
     const res = await v11.fetch(

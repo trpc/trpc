@@ -203,6 +203,11 @@ const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
   jsonl: 'jsonl: streaming needs no options in v12',
 };
 
+/** The size the codemod writes where v11 batched without one. */
+const MAX_BATCH = 100;
+const BATCHING = 'https://v12.trpc.io/v12/docs/client/links/http#batching';
+const BATCH_ADDED = `batch: { maxItems: ${MAX_BATCH} } added: v12 batches only with an explicit size`;
+
 const own = <T>(record: Readonly<Record<string, T>>, key: string) =>
   Object.hasOwn(record, key) ? record[key] : undefined;
 
@@ -469,14 +474,36 @@ export function upgradeSource(
     return arg?.type === 'ObjectExpression' ? arg : undefined;
   };
 
-  /** `{ a, req, b }` → `{ a, b }`. */
-  const removeProperty = (object: Node, prop: Node) => {
+  /** `{ a, req, b, c }` without `req` and `c` → `{ a, b }`. */
+  const removeProperties = (object: Node, removed: ReadonlyArray<Node>) => {
     const props = object['properties'] as Node[];
-    const i = props.indexOf(prop);
-    const end = i + 1 < props.length ? props[i + 1]!.start : prop.end;
-    const start =
-      i + 1 < props.length || i === 0 ? prop.start : props[i - 1]!.end;
-    take(start, end, '');
+    const lastKept = props.reduce(
+      (last, p, i) => (removed.includes(p) ? last : i),
+      -1,
+    );
+    for (const [i, prop] of props.entries()) {
+      if (!removed.includes(prop)) continue;
+      if (i < lastKept) {
+        take(prop.start, props[i + 1]!.start, '');
+      } else {
+        // The removed tail goes as one range, with the comma before it.
+        take(
+          lastKept === -1 ? prop.start : props[lastKept]!.end,
+          props.at(-1)!.end,
+          '',
+        );
+        return;
+      }
+    }
+  };
+
+  /** Puts `text` before an object's first property, as its own line when they are on lines. */
+  const prependProperty = (object: Node, first: Node, text: string) => {
+    const gap = source.slice(object.start + 1, first.start);
+    s.appendLeft(
+      first.start,
+      `${text},${gap.includes('\n') ? gap.slice(gap.lastIndexOf('\n')) : ' '}`,
+    );
   };
 
   const linkOptions = (call: Node, linkName: string) => {
@@ -487,18 +514,24 @@ export function upgradeSource(
       linkName === 'httpBatchStreamLink' ||
       linkName === 'unstable_httpBatchStreamLink'
     ) {
-      const first = object?.['properties'][0] as Node | undefined;
-      if (first) {
-        const gap = source.slice(object!.start + 1, first.start);
-        s.appendLeft(
-          first.start,
-          `batch: true,${gap.includes('\n') ? gap.slice(gap.lastIndexOf('\n')) : ' '}`,
-        );
+      const props = (object?.['properties'] ?? []) as Node[];
+      const sized = props.find((p) => keyName(p) === 'maxItems');
+      const batch = `batch: { maxItems: ${MAX_BATCH} }`;
+      if (sized) {
+        take(sized.start, sized.end, `batch: { ${text(sized)} }`);
+      } else if (props[0]) {
+        prependProperty(object!, props[0], batch);
       } else if (object) {
-        take(object.start, object.end, '{ batch: true }');
+        take(object.start, object.end, `{ ${batch} }`);
       } else if (arg) {
         s.appendLeft(arg.start, '{ ...');
-        s.appendRight(arg.end, ', batch: true }');
+        s.appendRight(arg.end, `, ${batch} }`);
+      }
+      if (!sized && (object || arg)) {
+        note(
+          call.start,
+          `${BATCH_ADDED}, and ${linkName.replace('unstable_', '')} had no limit; keep it at most the handler's batch.maxItems, which refuses bigger batches (${BATCHING})`,
+        );
       }
     }
     if (!object) return;
@@ -536,6 +569,41 @@ export function upgradeSource(
     }
   };
 
+  /**
+   * v11's fetch adapter batched by default, with no limit: `allowBatching`
+   * and `maxBatchSize` become `batch`, `{ maxItems: 100 }` unless they say
+   * otherwise. Removes `req` too, so the removals share one pass.
+   */
+  const handlerBatch = (call: Node, object: Node, req: Node) => {
+    const props = object['properties'] as Node[];
+    const allow = props.find((p) => keyName(p) === 'allowBatching');
+    const sized = props.find((p) => keyName(p) === 'maxBatchSize');
+    const allowed: unknown = allow?.['value'].value;
+    if (allow && typeof allowed !== 'boolean') {
+      removeProperties(object, [req]);
+      note(
+        allow.start,
+        `allowBatching: createFetchHandler's batch is false or { maxItems }, an explicit size; set it by hand (${BATCHING})`,
+      );
+      return;
+    }
+    if (allowed === false) {
+      removeProperties(object, [req, allow!, ...(sized ? [sized] : [])]);
+      return;
+    }
+    removeProperties(object, allow ? [req, allow] : [req]);
+    if (sized) {
+      const size = sized['shorthand'] ? 'maxBatchSize' : text(sized['value']);
+      take(sized.start, sized.end, `batch: { maxItems: ${size} }`);
+      return;
+    }
+    prependProperty(object, props[0]!, `batch: { maxItems: ${MAX_BATCH} }`);
+    note(
+      call.start,
+      `${BATCH_ADDED}, and fetchRequestHandler batched by default with no limit; links' batch.maxItems must be at most this, since bigger batches are refused (${BATCHING})`,
+    );
+  };
+
   /** `createTRPCClient<R>({ links })` → `createTrpcClient({ router: routerType<R>(), links })`. */
   const clientRouter = (call: Node) => {
     const typeArgs = call['typeArguments'] as Node;
@@ -547,11 +615,7 @@ export function upgradeSource(
       s.appendLeft(arg.start, `{ ${router}, ...`);
       s.appendRight(arg.end, ' }');
     } else if (first) {
-      const gap = source.slice(object!.start + 1, first.start);
-      s.appendLeft(
-        first.start,
-        `${router},${gap.includes('\n') ? gap.slice(gap.lastIndexOf('\n')) : ' '}`,
-      );
+      prependProperty(object!, first, router);
     } else if (object) {
       take(object.start, object.end, `{ ${router} }`);
     } else {
@@ -688,12 +752,12 @@ export function upgradeSource(
           );
           if (object && req) {
             const value = text(req['value']);
-            removeProperty(object, req);
             s.appendLeft(node.end, `.fetch(${value})`);
             note(
               node.start,
               `createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; ${OLD_CLIENTS}`,
             );
+            handlerBatch(node, object, req);
           }
         } else if (
           (v11 === 'createTRPCClient' || v11 === 'createTRPCProxyClient') &&

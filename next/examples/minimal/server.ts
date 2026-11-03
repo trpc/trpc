@@ -58,7 +58,7 @@ export type AppRouter = typeof appRouter;
 export async function listen(port = 0) {
   const handler = createFetchHandler({
     router: appRouter,
-    batch: true,
+    batch: { maxItems: 100 },
     createContext: (opts) => ({
       user: opts.request.headers['authorization'] ?? null,
     }),

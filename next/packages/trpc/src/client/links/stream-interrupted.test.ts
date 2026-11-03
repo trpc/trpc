@@ -136,10 +136,13 @@ const cuts: ReadonlyArray<[string, (body: string) => number]> = [
 ];
 
 test('httpLink: a cut response never fails a plain call with STREAM_INTERRUPTED, single or batched', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const seen: Record<string, string> = {};
   for (const [name, bytes] of cuts) {
-    for (const batch of [false, true]) {
+    for (const batch of [false, { maxItems: 100 }] as const) {
       const client = createTrpcClient({
         router: routerType<AppRouter>(),
         links: [httpLink({ url: server.url, batch, fetch: cutAt(bytes) })],
@@ -164,9 +167,12 @@ test('httpLink: a cut response never fails a plain call with STREAM_INTERRUPTED,
 });
 
 test('httpLink: once a streamed call resolved, what it left open is STREAM_INTERRUPTED', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const firstLine = cutAt((body) => body.indexOf('\n') + 1);
-  for (const batch of [false, true]) {
+  for (const batch of [false, { maxItems: 100 }] as const) {
     const client = createTrpcClient({
       router: routerType<AppRouter>(),
       links: [httpLink({ url: server.url, batch, fetch: firstLine })],

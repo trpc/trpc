@@ -65,7 +65,7 @@ let server: TestServerShape;
 beforeAll(async () => {
   const context = await Effect.runPromise(
     Layer.buildWithScope(
-      TestServer.layer({ router, batch: true, transformer }).pipe(
+      TestServer.layer({ router, batch: { maxItems: 100 }, transformer }).pipe(
         Layer.provide(BunHttpServer.layer({ port: 0, hostname: '127.0.0.1' })),
       ),
       scope,
@@ -88,7 +88,9 @@ test('runs on Bun', () => {
 test('batched queries keep rich types over BunHttpServer', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true, transformer })],
+    links: [
+      httpLink({ url: server.url, batch: { maxItems: 100 }, transformer }),
+    ],
   });
   const [a, b] = await Promise.all([
     client.post.query({ id: '1' }),

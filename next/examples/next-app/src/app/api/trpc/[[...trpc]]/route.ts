@@ -5,7 +5,7 @@ import { transformer } from '../../../../trpc/transformer.ts';
 const handler = createFetchHandler({
   router: appRouter,
   endpoint: '/api/trpc',
-  batch: true,
+  batch: { maxItems: 100 },
   transformer,
 });
 

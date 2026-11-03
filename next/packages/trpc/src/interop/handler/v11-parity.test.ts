@@ -252,10 +252,10 @@ const pair = (
     sse: { pingInterval: false },
     ...(config.transformer ? { transformer: config.transformer } : {}),
     ...(config.errorFormatter ? { errorFormatter: custom } : {}),
-    ...(config.allowBatching === false ? { batch: false } : {}),
-    ...(config.maxBatchSize
-      ? { batch: { maxItems: config.maxBatchSize } }
-      : {}),
+    batch:
+      config.allowBatching === false
+        ? false
+        : { maxItems: config.maxBatchSize ?? 100 },
     ...(config.allowMethodOverride ? { allowMethodOverride: true } : {}),
   });
   return {
@@ -831,9 +831,7 @@ const wsPair = (config: V11Config & { maxBatchSize?: number }) => {
     exposeUnexpectedErrors: true,
     ...(config.transformer ? { transformer: config.transformer } : {}),
     ...(config.errorFormatter ? { errorFormatter: custom } : {}),
-    ...(config.maxBatchSize
-      ? { batch: { maxItems: config.maxBatchSize } }
-      : {}),
+    batch: { maxItems: config.maxBatchSize ?? 100 },
   });
   return {
     v11: () => {

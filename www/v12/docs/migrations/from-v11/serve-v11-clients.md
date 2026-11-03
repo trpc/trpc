@@ -22,6 +22,7 @@ const legacy = createV11Handler({
   router: appRouter,
   createContext,
   transformer: superjson,
+  batch: { maxItems: 100 },
 });
 // New clients: the v12 protocol, on /rpc.
 const handler = createFetchHandler({
@@ -38,16 +39,18 @@ export default {
 };
 ```
 
+`batch` is required, since v11's handler batched by default: `{ maxItems }` accepts `httpBatchLink` and `httpBatchStreamLink` batches of up to that many calls (v11 had no limit), and `false` refuses them.
+
 Under `serve()` from `@trpc12/trpc/http`, the v11 handler runs as its own Effect HTTP app, and WebSocket upgrades on its endpoint reach `legacy.websocket()`.
 
 It speaks every v11 link:
 
 | v11 link                      | Served                                                                                                                                                                                                       |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `httpLink`, `httpBatchLink`   | `GET` queries, `POST` mutations, `?batch=1` batches (at most 100 calls by default: `batch: { maxItems }`, or `batch: false`), `207` when a batch's statuses differ                                           |
+| `httpLink`, `httpBatchLink`   | `GET` queries, `POST` mutations, `?batch=1` batches (at most `batch.maxItems` calls, or none with `batch: false`), `207` when a batch's statuses differ                                           |
 | `httpBatchStreamLink`         | JSON Lines: each call's result as it settles, and promises and async iterables at the root or a top-level key of an output                                                                                   |
 | `httpSubscriptionLink`        | SSE with `tracked()` ids, `ping`, `return` and `serialized-error` events; a reconnect's `lastEventId` (in the input, as v11 sends it) reaches the resolver's `lastEventId`                                   |
-| `wsLink`                      | queries, mutations, subscriptions with `subscription.stop`, `connectionParams`, `PING`/`PONG`; a message's array of calls is capped like a batch (`batch.maxItems`, 100 by default even with `batch: false`) |
+| `wsLink`                      | queries, mutations, subscriptions with `subscription.stop`, `connectionParams`, `PING`/`PONG`; a message's array of calls is capped like a batch (`batch.maxItems`, or 100 with `batch: false`) |
 | `FormData` and `octet-stream` | a form becomes an object (bracket notation, files as `File`s); bytes become a `Blob`                                                                                                                         |
 
 A batch over the cap runs none of its calls and fails with the error v11 sends for one over its `maxBatchSize` (`BAD_REQUEST`, "Batch call exceeds maximum size"): over HTTP for the whole request, over a WebSocket for each call in the message. v11's own WebSocket handler had no cap.
@@ -66,6 +69,7 @@ const appRouter = t.router({
 // ---cut-end---
 createV11Handler({
   router: appRouter,
+  batch: { maxItems: 100 },
   errorFormatter: (opts) => ({
     ...opts.shape,
     data: {

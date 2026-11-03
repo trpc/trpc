@@ -26,7 +26,7 @@ const client = createTrpcClient({
     loggerLink({ enabled: () => process.env.NODE_ENV === 'development' }),
     dedupeLink(),
     retryLink(),
-    httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    httpLink({ url: 'http://localhost:3000/trpc', batch: { maxItems: 100 } }),
   ],
 });
 ```
@@ -81,7 +81,7 @@ A link declares the call options it reads (`dedupe` for `dedupeLink`, a `switchL
 
 | Link        | Call options                                          | Link codes                                            | Also                                                                             |
 | ----------- | ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `httpLink`  | `headers`, `init`, `batch`, `reconnect`, `onResponse` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` | No `.subscribe()` with `subscriptions: false`; `batch: true` makes calls batched |
+| `httpLink`  | `headers`, `init`, `batch`, `reconnect`, `onResponse` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` | No `.subscribe()` with `subscriptions: false`; `batch: { maxItems }` makes calls batched |
 | `wsLink`    | `reconnect`                                           | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |                                                                                  |
 | `localLink` | none                                                  | none                                                  |                                                                                  |
 

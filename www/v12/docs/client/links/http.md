@@ -17,13 +17,13 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
+  links: [httpLink({ url: 'http://localhost:3000/trpc', batch: { maxItems: 100 } })],
 });
 ```
 
 - `url`: the handler's endpoint.
 - `experimental_pathSeparator`: what joins path segments in URLs when `.` is blocked, `'~'`, `'_'` or `'-'` (`'~'` clashes with the fewest keys); must match the handler's ([URLs without dots](../../server/routers.md#urls-without-dots)).
-- `batch`: send the queries made in the same tick as one request, and the mutations as another (below).
+- `batch`: send the queries made in the same tick as one request, and the mutations as another, at most `maxItems` calls each (below).
 - `headers`: headers for every request, or a function of the calls a request carries. A call's `headers` option is merged in.
 - `init`: `fetch` options (below).
 - `fetch`: a `fetch` of your own.
@@ -35,7 +35,7 @@ const client = createTrpcClient({
 
 ## Batching
 
-With `batch: true`, the queries made in the same tick go as one request, and so do the mutations, up to `maxItems` calls a request (`batch: { maxItems }`, 10 by default). The handler has to accept batches too, with `createFetchHandler({ batch: true })`. A call opts out with `{ batch: false }`, and calls with different `init`s are batched apart.
+With `batch: { maxItems }`, the queries made in the same tick go as one request, and so do the mutations, up to `maxItems` calls a request. There's no default size: the handler has to accept batches at least that big, with `createFetchHandler({ batch: { maxItems } })`, and refuses a bigger one with `BatchTooLarge`. `batch: true` and `batch: {}` are type errors, and throw when the link is made. A call opts out with `{ batch: false }`, and calls with different `init`s are batched apart.
 
 The response has a line per call, with its own status, so each call settles when its line arrives and one call's error doesn't fail the others.
 

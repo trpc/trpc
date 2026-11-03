@@ -22,7 +22,7 @@ links:
 
 ## Why it matters
 
-A batch can't carry a raw `Response` (or a root `Blob` without a streaming serializer), so on a chain with `httpLink({ batch: true })` the client's types make `{ batch: false }` a required second argument for procedures that may return one. Leaving it out is caught, but TypeScript reports the arity: "Expected 2 arguments, but got 0". The reason is in the docs (`server/responses.md`) and in the signature help, not in the error.
+A batch can't carry a raw `Response` (or a root `Blob` without a streaming serializer), so on a chain with `httpLink({ batch: { maxItems } })` the client's types make `{ batch: false }` a required second argument for procedures that may return one. Leaving it out is caught, but TypeScript reports the arity: "Expected 2 arguments, but got 0". The reason is in the docs (`server/responses.md`) and in the signature help, not in the error.
 
 ## Options
 
@@ -43,7 +43,7 @@ declare const url: string;
 // ---cut-end---
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url, batch: true })],
+  links: [httpLink({ url, batch: { maxItems: 100 } })],
 });
 
 await client.report.query(); // ❌ Expected 2 arguments, but got 0.
@@ -72,7 +72,7 @@ declare const url: string;
 import type { BatchHintClientB as BatchHint } from '../open/response-batch-false-message.ts';
 const trpc = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url, batch: true })],
+  links: [httpLink({ url, batch: { maxItems: 100 } })],
 });
 const client = trpc as BatchHint<typeof trpc>;
 // ---cut-end---
@@ -101,7 +101,7 @@ type AppRouter = typeof router;
 declare const url: string;
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url, batch: true })],
+  links: [httpLink({ url, batch: { maxItems: 100 } })],
 });
 // ---cut-end---
 await client.report.query(); // compiles; rejects with BAD_REQUEST when batched

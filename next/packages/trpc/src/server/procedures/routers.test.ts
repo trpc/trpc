@@ -103,10 +103,13 @@ test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
   expect(isLazy(router.reports)).toBe(true);
   expect(getProcedure(router, 'reports.daily')).toBeUndefined();
 
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: { maxItems: 100 } })],
   });
   expectTypeOf<
     Parameters<typeof client.billing.invoice.query>[0]

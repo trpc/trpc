@@ -7,6 +7,7 @@ import {
   type Duration,
   type Layer,
 } from 'effect';
+import { batchMaxItems } from '../../internal/batch.ts';
 import { timerOption } from '../../internal/duration.ts';
 import {
   interruptSignal,
@@ -136,14 +137,19 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
    */
   errorFormatter?: (opts: V11ErrorFormatterOpts) => V11ErrorShape;
   /**
-   * Accept `httpBatchLink` and `httpBatchStreamLink` batches, as v11 does
-   * by default, of at most `maxItems` calls (v11's `maxBatchSize`, which
-   * it left unlimited). `maxItems` also caps the calls in one `wsLink`
+   * Accept `httpBatchLink` and `httpBatchStreamLink` batches, of at most
+   * `maxItems` calls (v11's `maxBatchSize`, which it left unlimited), or
+   * refuse them with `false`. Required, since v11 batched by default and
+   * there's no default size. `maxItems` also caps the calls in one `wsLink`
    * message, whose array of calls is answered as v11 answers an HTTP batch
-   * over `maxBatchSize`; with `false`, sockets keep the default cap.
-   * @default { maxItems: 100 }
+   * over `maxBatchSize`; with `false`, sockets still take arrays of up to
+   * 100 calls, since `wsLink` sends them whatever the HTTP setting.
+   * @example
+   * ```ts
+   * createV11Handler({ router, batch: { maxItems: 100 } });
+   * ```
    */
-  batch?: boolean | { maxItems?: number };
+  batch: false | { maxItems: number };
   /** Accept POST for queries and subscriptions (v11's `methodOverride: 'POST'`). */
   allowMethodOverride?: boolean;
   /**
@@ -272,7 +278,8 @@ type Outcome =
 const decoder = /* @__PURE__ */ new TextDecoder();
 const identity: V11Transformer = { serialize: (v) => v, deserialize: (v) => v };
 
-const DEFAULT_MAX_BATCH = 100;
+/** How many calls a `wsLink` message's array may carry under `batch: false`. */
+const SOCKET_CAP_WITHOUT_BATCH = 100;
 
 const fail = <C extends BuiltinErrorCode>(code: C, message: string) =>
   Effect.fail(new TrpcError({ code, message }) as CodeError<C>);
@@ -394,15 +401,8 @@ export function createV11Handler<
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
-  const batch =
-    opts.batch === false
-      ? undefined
-      : {
-          maxItems:
-            (typeof opts.batch === 'object'
-              ? opts.batch.maxItems
-              : undefined) ?? DEFAULT_MAX_BATCH,
-        };
+  const maxItems = batchMaxItems('createV11Handler', opts.batch);
+  const batch = maxItems === undefined ? undefined : { maxItems };
 
   const errorShape: V11Core['errorShape'] = (err, path, type, procedure) => {
     const error = publicError(err);
@@ -417,7 +417,7 @@ export function createV11Handler<
     errorShape,
     settle,
     drains,
-    maxSocketBatch: batch?.maxItems ?? DEFAULT_MAX_BATCH,
+    maxSocketBatch: maxItems ?? SOCKET_CAP_WITHOUT_BATCH,
   };
 
   const json = (

@@ -103,7 +103,11 @@ Layer.unwrap(Effect.map(openapi, serve)).pipe(
   NodeRuntime.runMain,
 );
 
-const legacy = makeV11Handler({ router: appRouter, transformer: superjson });
+const legacy = makeV11Handler({
+  router: appRouter,
+  transformer: superjson,
+  batch: { maxItems: 100 },
+});
 ```
 
 - ✅ The three handlers have the same two forms

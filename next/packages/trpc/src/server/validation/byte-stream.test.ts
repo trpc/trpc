@@ -239,10 +239,13 @@ test('the body is read once; reading it again fails with BAD_REQUEST', async () 
 });
 
 test('a byte stream call leaves the batch and goes alone', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    batch: { maxItems: 100 },
+  });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: { maxItems: 100 } })],
   });
   const results = await Promise.all([
     client.size.query(bytes('four')),

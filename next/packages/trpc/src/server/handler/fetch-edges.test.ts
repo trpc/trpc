@@ -146,7 +146,7 @@ test('a transformer that throws a non-Error rejects the input as invalid', async
         throw 'unreadable';
       },
     },
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const get = await fetch(
     `${server.url}/greet?input=${encodeURIComponent('{"name":"x"}')}`,
@@ -297,19 +297,6 @@ test('batches: POST only, an array, within maxItems, of known non-subscription c
       body: { json: { error: { message: 'No procedure at path ""' } } },
     },
   ]);
-});
-
-test('batch: {} uses the default of 20 calls', async () => {
-  await using server = await createTestServer({
-    router,
-    createContext,
-    batch: {},
-  });
-  const calls = Array.from({ length: 21 }, () => ({ path: 'greet' }));
-  expect((await fetch(server.url, batchOf(calls))).status).toBe(413);
-  expect(
-    await lines(await fetch(server.url, batchOf(calls.slice(1)))),
-  ).toHaveLength(20);
 });
 
 type Big = () => AsyncGenerator<string>;

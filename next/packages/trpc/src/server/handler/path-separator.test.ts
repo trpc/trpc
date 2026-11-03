@@ -62,7 +62,7 @@ const clientFor = (
 const separated = (router: AnyRouter, separator: '.' | '_' | '~' | '-' = '~') =>
   createFetchHandler({
     router,
-    batch: true,
+    batch: { maxItems: 100 },
     experimental_pathSeparator: separator,
   });
 
@@ -123,7 +123,7 @@ test('batches go to the endpoint with dotted paths in the body', async () => {
   await using handler = separated(router);
   const linked = clientFor(handler, {
     experimental_pathSeparator: '~',
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const [a, b] = await Promise.all([
     linked.client.post.byId.query({ id: '1' }),

@@ -22,7 +22,7 @@
       switchLink({
         name: 'transport',
         links: {
-          http: httpLink({ url, batch: true }),
+          http: httpLink({ url, batch: { maxItems: 100 } }),
           ws: wsLink({ url: wsUrl }),
         },
         pick: (op) => (op.type === 'subscription' ? 'ws' : 'http'),

@@ -125,7 +125,7 @@ test('the Response service sets headers and status; a batch merges cookies (04 Q
   await using server = await createTestServer({
     router,
     createContext,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const res = await fetch(`${server.url}/cached`);
   expect(res.status).toBe(203);
@@ -155,7 +155,7 @@ test('a batch keeps the strictest cache-control every call allows; a streamed ca
   await using server = await createTestServer({
     router,
     createContext,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const batch = (...paths: string[]) =>
     fetch(server.url, {
@@ -182,7 +182,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   await using server = await createTestServer({
     router,
     createContext,
-    batch: true,
+    batch: { maxItems: 100 },
   });
   const client = createTrpcClient({
     router: routerType<Router>(),
@@ -204,7 +204,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
 
   const batched = createTrpcClient({
     router: routerType<Router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: { maxItems: 100 } })],
   });
   const [ok, raw] = await Promise.allSettled([
     batched.whoami.query(),
@@ -228,13 +228,13 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   expect(await alone.text()).toBe('a,b\n1,2\n');
   expect(server.requests.length - before).toBe(2);
 
-  const batching = (on: boolean) =>
+  const batching = (on: false | { maxItems: number }) =>
     createTrpcClient({
       router: routerType<Router>(),
       links: [httpLink({ url: server.url, batch: on })],
     });
   // @ts-expect-error -- a `batch` that may be on counts as on
-  await expect(batching(true).csv.query()).rejects.toMatchObject({
+  await expect(batching({ maxItems: 100 }).csv.query()).rejects.toMatchObject({
     code: 'BAD_REQUEST',
   });
 

@@ -60,7 +60,7 @@ export async function main(url: string) {
     links: [
       httpLink({
         url,
-        batch: true,
+        batch: { maxItems: 100 },
         transformer: progressiveJson,
         fetch: recordingFetch,
       }),

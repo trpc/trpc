@@ -212,7 +212,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
       experimental_durableLink({ delay: () => Duration.zero }),
       httpLink({
         url: http.url,
-        batch: true,
+        batch: { maxItems: 100 },
         fetch: async (url, init) => {
           const headers = new Headers(init?.headers);
           sent.push({

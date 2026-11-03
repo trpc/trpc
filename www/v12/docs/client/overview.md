@@ -24,7 +24,7 @@ const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [
     dedupeLink(),
-    httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    httpLink({ url: 'http://localhost:3000/trpc', batch: { maxItems: 100 } }),
   ],
 });
 
@@ -68,7 +68,7 @@ import {
 } from '@trpc12/trpc/client';
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [dedupeLink(), httpLink({ url: '/trpc', batch: true })],
+  links: [dedupeLink(), httpLink({ url: '/trpc', batch: { maxItems: 100 } })],
 });
 const signal = new AbortController().signal;
 const id = '1';

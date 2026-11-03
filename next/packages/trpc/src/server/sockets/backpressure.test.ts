@@ -90,7 +90,7 @@ test.each([
   {
     name: 'v11 interop',
     make: (router: ReturnType<typeof counter>['router']) =>
-      createV11Handler({ router }),
+      createV11Handler({ router, batch: { maxItems: 100 } }),
     subscribe: (socket: SlowSocket) => {
       socket.receive({
         id: 1,

@@ -194,6 +194,7 @@ async function start(
         null,
       transport: opts.info.transport,
     }),
+    batch: { maxItems: 100 },
     ...extra,
   });
   const server: Server = createServer();
