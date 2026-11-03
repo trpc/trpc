@@ -384,6 +384,8 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
   async (outcome) => {
     const cleanup = createDeferred<IteratorReturnResult<undefined>>();
     const cleaning = createDeferred();
+    const onError =
+      vi.fn<NonNullable<WSSHandlerOptions<AnyRouter>['onError']>>();
     const replacement = vi.fn(async function* () {
       yield 'replacement';
     });
@@ -401,7 +403,7 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
       replacement: t.procedure.subscription(replacement),
       marker: t.procedure.query(() => 'consumed'),
     });
-    await using ctx = await connectionResource({ router });
+    await using ctx = await connectionResource({ router, onError });
     try {
       await ctx.send(subscribe('old'));
       await cleaning.promise;
@@ -418,20 +420,22 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
       } else {
         cleanup.reject(new Error('iterator cleanup failed'));
       }
-      await vi.waitFor(() => {
-        if (outcome === 'resolve') {
-          expect(
-            ctx.messages.some(
-              (message) =>
-                'result' in message && message.result.type === 'stopped',
-            ),
-          ).toBe(true);
-        } else {
-          expect(
-            ctx.messages.filter((message) => 'error' in message),
-          ).toHaveLength(2);
-        }
-      });
+      // a completed subscription still ends with `stopped` when its cleanup
+      // fails, which is reported to the server only
+      await vi.waitFor(() =>
+        expect(ctx.messages.at(-1)).toEqual({
+          id: 1,
+          result: { type: 'stopped' },
+        }),
+      );
+      expect(ctx.messages.filter((message) => 'error' in message)).toHaveLength(
+        1,
+      );
+      expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual(
+        outcome === 'resolve'
+          ? ['Duplicate id 1']
+          : ['Duplicate id 1', 'iterator cleanup failed'],
+      );
       await ctx.send(subscribe('replacement'));
       await vi.waitFor(() => expect(replacement).toHaveBeenCalledOnce());
       const replacementStart = ctx.messages.findLastIndex(
@@ -546,6 +550,56 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
       });
     } finally {
       cleanup.resolve({ done: true, value: undefined });
+    }
+  },
+);
+
+test.each<'stop' | 'stop during admission'>(['stop', 'stop during admission'])(
+  'a cleanup failure after %s is reported to the server, and the client gets stopped',
+  async (cancel) => {
+    const admission = createDeferred();
+    const entered = createDeferred();
+    const onError =
+      vi.fn<NonNullable<WSSHandlerOptions<AnyRouter>['onError']>>();
+    const pending = createDeferred<IteratorResult<number>>();
+    const t = initTRPC.create();
+    const router = t.router({
+      pending: t.procedure.subscription(async () => {
+        entered.resolve();
+        if (cancel === 'stop during admission') {
+          await admission.promise;
+        }
+        return {
+          [Symbol.asyncIterator]: () => ({
+            next: () => pending.promise,
+            return: async (): Promise<IteratorReturnResult<undefined>> => {
+              throw new Error('cleanup failed');
+            },
+          }),
+        };
+      }),
+    });
+    await using ctx = await connectionResource({ router, onError });
+    try {
+      await ctx.send(subscribe('pending'));
+      await entered.promise;
+      if (cancel === 'stop') {
+        await vi.waitFor(() => expect(ctx.messages).toHaveLength(1));
+      }
+      await ctx.send({ id: 1, method: 'subscription.stop' });
+      admission.resolve();
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+      await vi.waitFor(() =>
+        expect(ctx.messages.at(-1)).toEqual({
+          id: 1,
+          result: { type: 'stopped' },
+        }),
+      );
+      expect(ctx.messages.some((message) => 'error' in message)).toBe(false);
+      expect(onError.mock.calls[0]?.[0].error.message).toBe('cleanup failed');
+    } finally {
+      admission.resolve();
+      pending.resolve(doneResult());
     }
   },
 );
