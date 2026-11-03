@@ -55,18 +55,12 @@ tester.run('jsdoc', plugin.rules['jsdoc']!, {
       code: `export const hidden = 1;`,
     },
     { filename: experimental, code: `${draft}\nexport const atom = 1;` },
-    {
-      filename: thing,
-      code: `${unstable}\nexport const unstable_draft = () => {};`,
-    },
+    // Unstable values have no prefix before 12.0.0.
+    { filename: thing, code: `${unstable}\nexport const draft = () => {};` },
     { filename: thing, code: `${unstable}\nexport interface Shape {}` },
     {
       filename: thing,
-      code: `${doc('@since 12.0.0', '@stability unstable', '@deprecated Use `unstable_draft`')}\nexport const experimental_draft = unstable_draft;`,
-    },
-    {
-      filename: thing,
-      code: `${doc('@since 12.0.0', '@stability stable', '@deprecated Use `createThing`')}\nexport const unstable_done = createThing;`,
+      code: `${doc('@since 12.0.0', '@stability unstable', '@deprecated Use `draft`')}\nexport const experimental_draft = draft;`,
     },
     // Imported on a hidden page and on a listed one, or named in a listed page's prose.
     { filename: thing, code: `${stable}\nexport const shared = () => {};` },
@@ -146,12 +140,7 @@ tester.run('jsdoc', plugin.rules['jsdoc']!, {
     {
       filename: thing,
       code: `${draft}\nexport const draft = () => {};`,
-      errors: [
-        {
-          messageId: 'prefix',
-          data: { name: 'draft', stage: 'experimental' },
-        },
-      ],
+      errors: [{ messageId: 'prefix', data: { name: 'draft' } }],
     },
     {
       filename: thing,
@@ -159,11 +148,7 @@ tester.run('jsdoc', plugin.rules['jsdoc']!, {
       errors: [
         {
           messageId: 'promoted',
-          data: {
-            name: 'experimental_done',
-            next: '`unstable_done` or `done`',
-            stage: 'experimental',
-          },
+          data: { name: 'experimental_done', next: 'done' },
         },
       ],
     },
@@ -187,46 +172,38 @@ tester.run('jsdoc', plugin.rules['jsdoc']!, {
       code: `${draft}\nexport const unstable_atom = 1;`,
       errors: [
         {
-          messageId: 'packagePrefix',
+          messageId: 'unstablePrefix',
           data: { name: 'unstable_atom', unprefixed: 'atom' },
         },
       ],
     },
     {
       filename: thing,
-      code: `${unstable}\nexport const draft = () => {};`,
-      errors: [
-        { messageId: 'prefix', data: { name: 'draft', stage: 'unstable' } },
-      ],
-    },
-    {
-      filename: thing,
       code: `${unstable}\nexport const experimental_draft = () => {};`,
-      errors: [
-        { messageId: 'prefix', data: { name: 'draft', stage: 'unstable' } },
-      ],
-    },
-    {
-      filename: thing,
-      code: `${stable}\nexport const unstable_done = () => {};`,
       errors: [
         {
           messageId: 'promoted',
-          data: {
-            name: 'unstable_done',
-            next: '`done`',
-            stage: 'unstable',
-          },
+          data: { name: 'experimental_draft', next: 'draft' },
         },
       ],
     },
-    {
+    ...[unstable, stable, draft].map((tags) => ({
       filename: thing,
-      code: `${draft}\nexport const unstable_draft = () => {};`,
+      code: `${tags}\nexport const unstable_draft = () => {};`,
       errors: [
         {
-          messageId: 'prefix',
-          data: { name: 'draft', stage: 'experimental' },
+          messageId: 'unstablePrefix',
+          data: { name: 'unstable_draft', unprefixed: 'draft' },
+        },
+      ],
+    })),
+    {
+      filename: thing,
+      code: `${doc('@since 12.0.0', '@stability stable', '@deprecated Use `createThing`')}\nexport const unstable_done = createThing;`,
+      errors: [
+        {
+          messageId: 'unstablePrefix',
+          data: { name: 'unstable_done', unprefixed: 'done' },
         },
       ],
     },

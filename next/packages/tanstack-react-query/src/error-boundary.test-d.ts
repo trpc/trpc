@@ -15,7 +15,7 @@ import type { inferQueryHandle } from '@trpc12/tanstack-query';
 import { createElement } from 'react';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import {
-  unstable_createErrorBoundary,
+  createErrorBoundary,
   type ErrorsOf,
   type Unclaimed,
 } from './error-boundary.ts';
@@ -198,7 +198,7 @@ type TagOf<E> = E extends { readonly _tag: infer T } ? T : never;
 
 describe('each fallback gets exactly the errors its claim takes', () => {
   test('a code: every error with it, defined or not', () => {
-    unstable_createErrorBoundary({
+    createErrorBoundary({
       name: 'Auth',
       errors: makeClient,
       claims: {
@@ -214,7 +214,7 @@ describe('each fallback gets exactly the errors its claim takes', () => {
   });
 
   test('a tag: that failure alone, and the code claim gets the rest', () => {
-    unstable_createErrorBoundary({
+    createErrorBoundary({
       name: 'Missing',
       errors: makeClient,
       claims: {
@@ -232,7 +232,7 @@ describe('each fallback gets exactly the errors its claim takes', () => {
   });
 
   test("a custom code's data is the procedure's", () => {
-    unstable_createErrorBoundary({
+    createErrorBoundary({
       name: 'Title',
       errors: makeClient,
       claims: {
@@ -245,7 +245,7 @@ describe('each fallback gets exactly the errors its claim takes', () => {
   });
 
   test("unexpected's is unknown: it takes any throw", () => {
-    unstable_createErrorBoundary({
+    createErrorBoundary({
       name: 'Root',
       errors: makeClient,
       claims: {
@@ -258,7 +258,7 @@ describe('each fallback gets exactly the errors its claim takes', () => {
   });
 
   test('a claim nothing fails with is a type error', () => {
-    unstable_createErrorBoundary({
+    createErrorBoundary({
       name: 'Typo',
       errors: makeClient,
       // @ts-expect-error no call fails with UNAUTHORISED

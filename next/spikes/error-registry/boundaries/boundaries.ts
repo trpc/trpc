@@ -8,8 +8,8 @@
  * claims. Below it, `query()` and `mutation()` take the owned tags out of
  * a call's union, as today's boundary takes codes out.
  *
- * The runtime is the internal boundary as it was before
- * `unstable_createErrorBoundary` (`./port.ts`): an
+ * The runtime is the internal boundary as it was before the package's
+ * `createErrorBoundary` (`./port.ts`): an
  * app error's `code` is its tag, and so is a tRPC failure's
  * (`toFailure()`), so claiming a tag is claiming a code, and
  * `unexpected: true` claims tRPC's unexpected tags by name.

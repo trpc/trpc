@@ -4,7 +4,7 @@ import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import { Schema } from 'effect';
 import { createElement } from 'react';
 import {
-  unstable_createErrorBoundary,
+  createErrorBoundary,
   type ErrorBoundaryFallbackProps,
 } from '../error-boundary.ts';
 
@@ -113,21 +113,20 @@ const notice =
     );
 
 /** Takes every throw no other boundary owns. */
-export const [RootBoundary, useRootBoundary] = unstable_createErrorBoundary({
+export const [RootBoundary, useRootBoundary] = createErrorBoundary({
   name: 'Root',
   errors: makeClient,
   claims: { unexpected: notice('crashed', 'Something went wrong') },
 });
 
-export const [OfflineBoundary, useOfflineBoundary] =
-  unstable_createErrorBoundary({
-    name: 'Offline',
-    errors: makeClient,
-    parent: RootBoundary,
-    claims: { NETWORK_ERROR: notice('offline', 'You are offline') },
-  });
+export const [OfflineBoundary, useOfflineBoundary] = createErrorBoundary({
+  name: 'Offline',
+  errors: makeClient,
+  parent: RootBoundary,
+  claims: { NETWORK_ERROR: notice('offline', 'You are offline') },
+});
 
-export const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
+export const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
   errors: makeClient,
   parent: OfflineBoundary,
@@ -135,7 +134,7 @@ export const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
 });
 
 /** A stale client's missing procedure, by its tag: the doc's own NOT_FOUND stays. */
-export const [StaleBoundary, useStaleBoundary] = unstable_createErrorBoundary({
+export const [StaleBoundary, useStaleBoundary] = createErrorBoundary({
   name: 'Stale',
   errors: makeClient,
   parent: AuthBoundary,

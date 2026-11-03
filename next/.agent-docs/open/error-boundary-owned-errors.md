@@ -163,7 +163,7 @@ function DocTitle(props: { id: string }) {
 
 ## Blocked until answered
 
-- Nothing. `unstable_createErrorBoundary` ships with B, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `unstable_` allows. The docs page says a mutation is held.
+- Nothing. `createErrorBoundary` ships with B, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `@stability unstable` allows. The docs page says a mutation is held.
 
 ## Details
 

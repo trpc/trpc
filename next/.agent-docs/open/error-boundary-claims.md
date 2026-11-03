@@ -153,7 +153,7 @@ if (doc.error?.code === 'NOT_FOUND') {
 
 ## Blocked until answered
 
-- Nothing. `unstable_createErrorBoundary` ships with C, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `unstable_` allows.
+- Nothing. `createErrorBoundary` ships with C, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `@stability unstable` allows.
 
 ## Details
 

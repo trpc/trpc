@@ -5,7 +5,7 @@
  *
  * @example
  * ```tsx
- * const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
+ * const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
  *   name: 'Auth',
  *   errors: makeClient,
  *   claims: { UNAUTHORIZED: (props) => <SignIn onSignedIn={props.reset} /> },
@@ -206,7 +206,7 @@ export interface ErrorBoundaryComponent<
 }
 
 /**
- * What {@link unstable_createErrorBoundary} takes.
+ * What {@link createErrorBoundary} takes.
  * @since 0.1.0
  * @stability unstable
  */
@@ -282,7 +282,7 @@ export interface ErrorBoundaryOptions<
 }
 
 /**
- * What {@link unstable_createErrorBoundary} returns, as a tuple to name
+ * What {@link createErrorBoundary} returns, as a tuple to name
  * freely, like `createTrpcContext`'s: the component, and the hook for its
  * options transforms, which throws outside the component.
  * @since 0.1.0
@@ -469,12 +469,12 @@ class Catcher extends Component<CatcherProps, CatcherState> implements Holder {
  * ```tsx
  * const makeClient = () => createTrpcClient({ router: routerType<AppRouter>(), links });
  *
- * const [RootBoundary] = unstable_createErrorBoundary({
+ * const [RootBoundary] = createErrorBoundary({
  *   name: 'Root',
  *   errors: makeClient,
  *   claims: { unexpected: (props) => <Crashed onRetry={props.reset} /> },
  * });
- * const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
+ * const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
  *   name: 'Auth',
  *   errors: makeClient,
  *   parent: RootBoundary,
@@ -493,7 +493,7 @@ class Catcher extends Component<CatcherProps, CatcherState> implements Holder {
  * @since 0.1.0
  * @stability unstable
  */
-export function unstable_createErrorBoundary<
+export function createErrorBoundary<
   TSource,
   const TKeys extends ClaimKey<ErrorsOf<TSource>>,
   TParentClaims extends string = never,

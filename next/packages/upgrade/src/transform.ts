@@ -206,7 +206,7 @@ const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
 const own = <T>(record: Readonly<Record<string, T>>, key: string) =>
   Object.hasOwn(record, key) ? record[key] : undefined;
 
-/** Where `name` ends up through `promoted`: `experimental_x` → `unstable_x` → `x`. */
+/** Where `name` ends up through `promoted`: `experimental_x` → `experimental_y` → `y`. */
 const promotedName = (
   promoted: Readonly<Record<string, string>>,
   name: string,

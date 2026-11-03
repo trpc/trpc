@@ -1,23 +1,23 @@
 ---
 title: Error boundaries
-description: '`unstable_createErrorBoundary` claims errors by code or tag for a subtree, with a fallback per claim typed by exactly what it gets, and types the queries and mutations under it without them.'
+description: '`createErrorBoundary` claims errors by code or tag for a subtree, with a fallback per claim typed by exactly what it gets, and types the queries and mutations under it without them.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 13
 stability: unstable
 ---
 
-A type-safe error boundary owns some of the router's errors for the tree under it: being signed out, being offline, a crash. It renders a fallback for each of them, typed by exactly the errors that fallback gets, and the queries and mutations under it type their `error` without them, so a component only handles what's left. `unstable_createErrorBoundary` is in `@trpc12/tanstack-react-query`.
+A type-safe error boundary owns some of the router's errors for the tree under it: being signed out, being offline, a crash. It renders a fallback for each of them, typed by exactly the errors that fallback gets, and the queries and mutations under it type their `error` without them, so a component only handles what's left. `createErrorBoundary` is in `@trpc12/tanstack-react-query`.
 
 Inspired by [Result RPC](https://result-rpc.com/) ([GitHub](https://github.com/jokull/result-rpc)), whose [shells](https://result-rpc.com/concepts/shells/) are error boundaries that claim failures and take them out of a component's error type.
 
 ## Define the boundaries
 
-`unstable_createErrorBoundary` returns `[Boundary, useBoundary]`, to name as you like. `errors` says what the errors come from, for the types only: the function that makes the client (as `createTrpcContext` takes it), a client, or `routerType<AppRouter>()`. `claims` has a fallback per code or tag the boundary owns, and each fallback's `error` is typed by its claim, so a misspelt claim is a type error:
+`createErrorBoundary` returns `[Boundary, useBoundary]`, to name as you like. `errors` says what the errors come from, for the types only: the function that makes the client (as `createTrpcContext` takes it), a client, or `routerType<AppRouter>()`. `claims` has a fallback per code or tag the boundary owns, and each fallback's `error` is typed by its claim, so a misspelt claim is a type error:
 
 ```tsx twoslash
 // ---cut-start---
-import { unstable_createErrorBoundary } from '@trpc12/tanstack-react-query';
+import { createErrorBoundary } from '@trpc12/tanstack-react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 declare function Crashed(props: { onRetry: () => void }): React.ReactNode;
@@ -29,13 +29,13 @@ const makeClient = () =>
     links: [httpLink({ url: '/trpc' })],
   });
 
-export const [RootBoundary] = unstable_createErrorBoundary({
+export const [RootBoundary] = createErrorBoundary({
   name: 'Root',
   errors: makeClient,
   claims: { unexpected: (props) => <Crashed onRetry={props.reset} /> },
 });
 
-export const [OfflineBoundary] = unstable_createErrorBoundary({
+export const [OfflineBoundary] = createErrorBoundary({
   name: 'Offline',
   errors: makeClient,
   parent: RootBoundary,
@@ -44,7 +44,7 @@ export const [OfflineBoundary] = unstable_createErrorBoundary({
   },
 });
 
-export const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
+export const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
   errors: makeClient,
   parent: OfflineBoundary,
@@ -80,8 +80,8 @@ The hook returns `query`, `infiniteQuery` and `mutation`, which take tRPC's opti
 // ---cut-start---
 import { useQuery } from '@tanstack/react-query';
 import {
+  createErrorBoundary,
   createTrpcContext,
-  unstable_createErrorBoundary,
 } from '@trpc12/tanstack-react-query';
 import {
   createTrpcClient,
@@ -96,12 +96,12 @@ const makeClient = () =>
     links: [httpLink({ url: '/trpc' })],
   });
 const [, useTrpc] = createTrpcContext<typeof makeClient>();
-const [RootBoundary] = unstable_createErrorBoundary({
+const [RootBoundary] = createErrorBoundary({
   name: 'Root',
   errors: makeClient,
   claims: { unexpected: () => 'Something went wrong' },
 });
-const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
+const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
   errors: makeClient,
   parent: RootBoundary,
@@ -136,7 +136,7 @@ A code claims every error with it, whatever `defined` says: a returned `UNAUTHOR
 
 ```tsx twoslash
 // ---cut-start---
-import { unstable_createErrorBoundary } from '@trpc12/tanstack-react-query';
+import { createErrorBoundary } from '@trpc12/tanstack-react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 const makeClient = () =>
@@ -145,7 +145,7 @@ const makeClient = () =>
     links: [httpLink({ url: '/trpc' })],
   });
 // ---cut-end---
-export const [StaleBoundary, useStaleBoundary] = unstable_createErrorBoundary({
+export const [StaleBoundary, useStaleBoundary] = createErrorBoundary({
   name: 'Stale',
   errors: makeClient,
   claims: {
@@ -177,7 +177,7 @@ The component takes react-error-boundary's props:
 
 ```tsx twoslash
 // ---cut-start---
-import { unstable_createErrorBoundary } from '@trpc12/tanstack-react-query';
+import { createErrorBoundary } from '@trpc12/tanstack-react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 const makeClient = () =>
@@ -185,7 +185,7 @@ const makeClient = () =>
     router: routerType<AppRouter>(),
     links: [httpLink({ url: '/trpc' })],
   });
-const [AuthBoundary] = unstable_createErrorBoundary({
+const [AuthBoundary] = createErrorBoundary({
   name: 'Auth',
   errors: makeClient,
   claims: { UNAUTHORIZED: () => 'Sign in' },
@@ -214,4 +214,4 @@ function Layout() {
 - `useSuspenseQuery` throws every error while it has no data, so its owned errors reach their boundary with or without `auth.query()`; with it, the `error` of a later refetch is narrowed.
 - React runs no error boundaries on the server. A query that fails while streaming makes React render its Suspense boundary again in the browser, where the error boundary takes it.
 - It needs React 19.2 or later, for `<Activity>`.
-- `unstable_`: the feature stays, and its shape can change in a minor release ([Stability](../../packages.md#unstable)).
+- Unstable: the feature stays, and its shape can change in a minor release ([Stability](../../packages.md#unstable)).

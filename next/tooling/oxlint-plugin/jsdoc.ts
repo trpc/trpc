@@ -5,10 +5,14 @@ import { packageName, packageRoot, publicNames } from './public-exports.ts';
 
 const REQUIRED = ['@since', '@stability'] as const;
 
-/** The stages before stable, each with its name prefix: `experimental_`, then `unstable_`. */
-const STAGES = ['experimental', 'unstable'] as const;
+/**
+ * Only experimental values carry a prefix. Unstable ones have their final
+ * names until 12.0.0 (`.agent-docs/decisions/no-unstable-prefix.md`).
+ */
+const PREFIX = 'experimental_';
+const UNSTABLE_PREFIX = 'unstable_';
 
-/** Declarations whose names carry the stage prefix (`experimental_`, `unstable_`); types follow their value's. */
+/** Declarations whose names carry the `experimental_` prefix; types follow their value's. */
 const VALUES = new Set([
   'FunctionDeclaration',
   'TSDeclareFunction',
@@ -51,11 +55,13 @@ const jsdoc = defineRule({
       packagePrefix:
         '`{{name}}` is in an `experimental-` package, which says it already: export it as `{{unprefixed}}`.',
       prefix:
-        '`{{name}}` is {{stage}}, so its name starts with `{{stage}}_`: `{{stage}}_{{name}}`.',
+        '`{{name}}` is experimental, so its name starts with `experimental_`: `experimental_{{name}}`.',
       promoted:
-        "`{{name}}` isn't {{stage}}: export it as {{next}} and keep `{{name}}` as a `@deprecated` alias.",
+        "`{{name}}` isn't experimental: export it as `{{next}}` and keep `{{name}}` as a `@deprecated` alias.",
+      unstablePrefix:
+        '`{{name}}`: no `unstable_` prefixes before 12.0.0, `@stability unstable` says it. Export it as `{{unprefixed}}`.',
       unstablePackage:
-        '`{{name}}` is in an `unstable-` package. There are none: publish the package under its final name, with its unstable exports named `unstable_*`.',
+        '`{{name}}` is in an `unstable-` package. There are none: publish the package under its final name, its unstable exports tagged `@stability unstable`.',
       hiddenPackage:
         '`{{pkg}}` is used only on hidden docs pages (experiments: {{experiments}}), so it is experimental: name it `{{next}}`, with every export `@stability experimental`.',
       hidden:
@@ -122,14 +128,21 @@ const jsdoc = defineRule({
           });
         }
         const stability = /^\s*\*?\s*@stability (\w+)/m.exec(text)?.[1];
-        const prefix = STAGES.find((stage) => name.startsWith(`${stage}_`));
-        const unprefixed =
-          prefix === undefined ? name : name.slice(prefix.length + 1);
+        const prefixed = name.startsWith(PREFIX);
+        const unprefixed = prefixed ? name.slice(PREFIX.length) : name;
         if (unstablePackage) {
           context.report({
             node: declaration,
             messageId: 'unstablePackage',
             data: { name },
+          });
+          return;
+        }
+        if (name.startsWith(UNSTABLE_PREFIX)) {
+          context.report({
+            node: declaration,
+            messageId: 'unstablePrefix',
+            data: { name, unprefixed: name.slice(UNSTABLE_PREFIX.length) },
           });
           return;
         }
@@ -152,7 +165,7 @@ const jsdoc = defineRule({
               messageId: 'packageStability',
               data: { name },
             });
-          } else if (prefix !== undefined) {
+          } else if (prefixed) {
             context.report({
               node: declaration,
               messageId: 'packagePrefix',
@@ -181,25 +194,18 @@ const jsdoc = defineRule({
           });
           return;
         }
-        const stage = STAGES.find((each) => each === stability);
-        if (stage !== undefined && prefix !== stage && !deprecated) {
+        const experimental = stability === 'experimental';
+        if (experimental && !prefixed && !deprecated) {
           context.report({
             node: declaration,
             messageId: 'prefix',
-            data: { name: unprefixed, stage },
+            data: { name: unprefixed },
           });
-        } else if (prefix !== undefined && prefix !== stage && !deprecated) {
+        } else if (prefixed && !experimental && !deprecated) {
           context.report({
             node: declaration,
             messageId: 'promoted',
-            data: {
-              name,
-              next:
-                prefix === 'experimental'
-                  ? `\`unstable_${unprefixed}\` or \`${unprefixed}\``
-                  : `\`${unprefixed}\``,
-              stage: prefix,
-            },
+            data: { name, next: unprefixed },
           });
         }
       },

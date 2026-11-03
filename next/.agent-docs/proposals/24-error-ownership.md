@@ -98,12 +98,12 @@ The spike found that A works on today's open union too: `unexpected` takes the w
 ### Q24.4: type-safe error boundaries
 
 ```ts
-const [RootBoundary] = unstable_createErrorBoundary({
+const [RootBoundary] = createErrorBoundary({
   name: 'Root',
   errors: makeClient,
   claims: { unexpected: Crashed },
 });
-const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
+const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
   errors: makeClient,
   parent: RootBoundary,
@@ -129,7 +129,7 @@ The example is the shape that shipped on 2026-11-03; the question was asked with
 - **C: primitives only.** Ship `owns()`, the `Remaining` type and the options transform, and let apps write their boundaries.
 - **D: not now.**
 
-Human, 2026-10-20: error boundaries, shipped as `unstable_createErrorBoundary`, a `[AuthBoundary, useAuthBoundary]` tuple whose hook throws outside its boundary: A behind the `unstable_` prefix, with its DX details asked as open questions ([error-boundaries](../decisions/error-boundaries.md)).
+Human, 2026-10-20: error boundaries, shipped as `createErrorBoundary`, a `[AuthBoundary, useAuthBoundary]` tuple whose hook throws outside its boundary: A, unstable, with its DX details asked as open questions ([error-boundaries](../decisions/error-boundaries.md)).
 
 Human, 2026-11-03: "Actually make it unstable rather than experimental, I'm sure i want it". Exported, with a typed fallback per claim and the open questions' recommendations ([error-boundaries](../decisions/error-boundaries.md)).
 

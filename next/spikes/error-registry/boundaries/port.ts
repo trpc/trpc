@@ -1,6 +1,7 @@
 /**
- * The internal boundary as it was before `unstable_createErrorBoundary`
- * shipped (claims as a list of codes, one `fallback`, `unexpected: true`),
+ * The internal boundary as it was before `@trpc12/tanstack-react-query`'s
+ * `createErrorBoundary` shipped (claims as a list of codes, one `fallback`,
+ * `unexpected: true`),
  * kept for this spike, whose boundaries build on its runtime. The package's
  * is in `packages/tanstack-react-query/src/error-boundary.ts`.
  * @module

@@ -42,7 +42,7 @@ import {
 
 export * from '@trpc12/tanstack-query';
 export {
-  unstable_createErrorBoundary,
+  createErrorBoundary,
   type ClaimedError,
   type ClaimKey,
   type ErrorBoundaryClaims,

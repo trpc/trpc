@@ -393,7 +393,7 @@ function Posts() {
   });
 });
 
-describe('promoted experimental_ and unstable_ names', () => {
+describe('promoted experimental_ names', () => {
   test('imports and re-exports of a promoted name are rewritten', () => {
     expect(
       upgradeSource(
@@ -417,20 +417,20 @@ const links = [experimental_durableLink(), retry(), httpLink({ url })];
   test('a name promoted twice goes to the end of the chain', () => {
     expect(
       upgradeSource(
-        `import { experimental_draft, unstable_draft as later } from '@trpc12/trpc/server';
+        `import { experimental_draft, experimental_sketch as later } from '@trpc12/trpc/server';
 draft(experimental_draft, later);
 `,
         'file.ts',
         {
           promoted: {
-            experimental_draft: 'unstable_draft',
-            unstable_draft: 'draft',
+            experimental_draft: 'experimental_sketch',
+            experimental_sketch: 'sketch',
           },
         },
       ).code,
     ).toMatchInlineSnapshot(`
-      "import { draft, draft as later } from '@trpc12/trpc/server';
-      draft(draft, later);
+      "import { sketch, sketch as later } from '@trpc12/trpc/server';
+      draft(sketch, later);
       "
     `);
   });
@@ -444,22 +444,22 @@ const a = atom(useAtom);
 `,
         'file.ts',
         {
-          promoted: { unstable_atomFamily: 'atomFamily' },
+          promoted: { experimental_atomFamily: 'atomFamily' },
           promotedPackages: {
             '@trpc12/experimental-react-atom': {
               to: '@trpc12/react-atom',
               names: {
-                atom: 'unstable_atom',
-                atomFamily: 'unstable_atomFamily',
+                atom: 'experimental_atom',
+                atomFamily: 'experimental_atomFamily',
               },
             },
           },
         },
       ).code,
     ).toMatchInlineSnapshot(`
-      "import { unstable_atom, useAtom } from '@trpc12/react-atom';
+      "import { experimental_atom, useAtom } from '@trpc12/react-atom';
       export { atomFamily } from '@trpc12/react-atom/family';
-      const a = unstable_atom(useAtom);
+      const a = experimental_atom(useAtom);
       "
     `);
   });
