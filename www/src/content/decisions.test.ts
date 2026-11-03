@@ -7,8 +7,11 @@ const srcDir = fileURLToPath(new URL('..', import.meta.url));
 
 /** The files that may know the decisions pages exist. */
 const allowed = new Set([
+  'components/decision-answer.tsx',
   'components/decisions.tsx',
   'components/doc-body.tsx',
+  'content/decision-answer.test.ts',
+  'content/decision-answer.ts',
   'content/decision-search.test.ts',
   'content/decision-search.ts',
   'content/decision-types.ts',

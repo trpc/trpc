@@ -26,6 +26,7 @@ import {
 } from '@shared/ui/components/collapsible';
 import { Input } from '@shared/ui/components/input';
 import { cn } from '@shared/ui/lib/utils';
+import { AnswerPanel } from '~/components/decision-answer.tsx';
 import { DocBody } from '~/components/doc-body.tsx';
 import { TextWithCode } from '~/components/text-with-code.tsx';
 import {
@@ -642,6 +643,7 @@ function Options(props: { readonly question: OpenQuestion }) {
                 search={(prev) => ({
                   ...prev,
                   option: optionParam(option.id, question.recommended),
+                  skip: undefined,
                 })}
                 to="."
               >
@@ -793,6 +795,8 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
         </p>
         <DocBody html={question.recommendation} />
       </aside>
+
+      <AnswerPanel question={question} />
 
       <Section
         title={

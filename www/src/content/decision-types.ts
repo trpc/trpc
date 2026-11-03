@@ -48,6 +48,8 @@ export interface OpenQuestion extends OpenQuestionMeta {
   readonly details: string | undefined;
   readonly links: ReadonlyArray<QuestionLink>;
   readonly options: ReadonlyArray<QuestionOption>;
+  /** The file's path in the repo (`next/.agent-docs/open/<slug>.md`). */
+  readonly path: string;
   readonly recommendation: string;
   /** The file on GitHub. */
   readonly source: string;

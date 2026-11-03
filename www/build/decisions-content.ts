@@ -290,6 +290,7 @@ export function decisionPages(options: DecisionsOptions) {
         label: link.label,
       })),
       options: yield* Effect.forEach(question.options, option),
+      path: `${options.dirInRepo}/${at}`,
       recommendation: yield* render(at, question.recommendation),
       source: `${options.repoUrl}/${options.dirInRepo}/${at}`,
       why: yield* render(at, question.why),
