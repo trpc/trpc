@@ -41,6 +41,21 @@ import {
 } from '@trpc12/tanstack-query';
 
 export * from '@trpc12/tanstack-query';
+export {
+  unstable_createErrorBoundary,
+  type ClaimedError,
+  type ClaimKey,
+  type ErrorBoundaryClaims,
+  type ErrorBoundaryComponent,
+  type ErrorBoundaryFallbackProps,
+  type ErrorBoundaryOptions,
+  type ErrorBoundaryProps,
+  type ErrorBoundaryResetDetails,
+  type ErrorBoundarySpec,
+  type ErrorsOf,
+  type TrpcErrorBoundary,
+  type Unclaimed,
+} from './error-boundary.ts';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.

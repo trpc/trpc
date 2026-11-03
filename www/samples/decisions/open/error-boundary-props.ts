@@ -1,8 +1,8 @@
 /**
  * The APIs `.agent-docs/open/error-boundary-props.md` proposes, as types.
- * A is what `packages/tanstack-react-query/src/error-boundary.ts` builds:
- * everything in `createErrorBoundary()`, and only `children` on the
- * component. B adds react-error-boundary's `resetKeys`, `onReset` and
+ * A is what the internal port built: everything in
+ * `createErrorBoundary()`, and only `children` on the component. B
+ * (shipped) adds react-error-boundary's `resetKeys`, `onReset` and
  * `onError` as props. C moves the fallback to a required prop.
  */
 import type { ErrorInfo, ReactNode } from 'react';

@@ -1,9 +1,8 @@
 /**
  * The APIs `.agent-docs/open/error-boundary-render-errors.md` proposes, as
  * types, with each fallback's `error` typed by what its boundary owns. A:
- * `unexpected: true` owns tRPC's `defined: false` errors, as
- * `packages/tanstack-react-query/src/error-boundary.ts` builds. B: it owns
- * every other throw too. C: a separate `everything: true` does.
+ * `unexpected: true` owns tRPC's `defined: false` errors, as the internal
+ * port did. B (shipped): it owns every other throw too. C: a separate `everything: true` does.
  */
 import type {
   BuiltinError,

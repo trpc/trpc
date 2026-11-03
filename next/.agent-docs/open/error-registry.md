@@ -94,7 +94,7 @@ if (err) {
 
 #### Error boundaries {#boundaries-a}
 
-Today's boundary (`createErrorBoundary`, internal in `packages/tanstack-react-query`) claims codes, names no router, and hands its fallback an `error: unknown`. The spike gives it the sources the other options use ([`boundaries/codes.ts`](../../spikes/error-registry/boundaries/codes.ts)): `errorsOf<T>()` is an empty object whose type carries `T`'s errors, where `T` is the router, a subrouter, a module's declared base procedure or one procedure. Claims are then checked against v12's `ClientError` codes for that source. The sources hardly differ, because every call's union has all 25 built-in codes:
+The internal boundary this spike started from (`createErrorBoundary`, kept as [`boundaries/port.ts`](../../spikes/error-registry/boundaries/port.ts)) claims codes, names no router, and hands its fallback an `error: unknown`. `unstable_createErrorBoundary` has since shipped with an `errors` source, claims by code or tag and a typed fallback per claim ([error-boundaries](../decisions/error-boundaries.md)). The spike gives it the sources the other options use ([`boundaries/codes.ts`](../../spikes/error-registry/boundaries/codes.ts)): `errorsOf<T>()` is an empty object whose type carries `T`'s errors, where `T` is the router, a subrouter, a module's declared base procedure or one procedure. Claims are then checked against v12's `ClientError` codes for that source. The sources hardly differ, because every call's union has all 25 built-in codes:
 
 ```ts twoslash
 // ---cut-start---
@@ -218,7 +218,7 @@ createCodeErrorBoundary({
 
 ```tsx twoslash
 // ---cut-start---
-import { createErrorBoundary } from '../../../../next/packages/tanstack-react-query/src/error-boundary.ts';
+import { createErrorBoundary } from '../../../../next/spikes/error-registry/boundaries/port.ts';
 // ---cut-end---
 // Today: no source, so any string is a claim, and the error is unknown
 const [, useAuthBoundary] = createErrorBoundary({
@@ -1059,7 +1059,7 @@ function PostTitle(props: { id: string }) {
 import { useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { z } from 'zod';
-import { createErrorBoundary } from '../../../../next/packages/tanstack-react-query/src/error-boundary.ts';
+import { createErrorBoundary } from '../../../../next/spikes/error-registry/boundaries/port.ts';
 import { authed } from './server.ts';
 const router = {
   post: {

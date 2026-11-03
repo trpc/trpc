@@ -1,11 +1,11 @@
 ---
 title: Should `<AuthBoundary>` take react-error-boundary's `resetKeys`, `onReset` and `onError` as props, or keep everything in `createErrorBoundary()`?
-summary: "Today `<AuthBoundary>` takes only `children`, so it can't reset itself when the session changes or report what it caught where it's mounted."
+summary: "Without props, `<AuthBoundary>` can't reset itself when the session changes or report what it caught where it's mounted. It ships with B's."
 area: tanstack
 recommended: B
 links:
   - kind: code
-    label: error-boundary.ts (internal)
+    label: error-boundary.ts
     url: ../../packages/tanstack-react-query/src/error-boundary.ts
   - kind: decision
     label: error-boundaries
@@ -19,7 +19,7 @@ links:
 
 ## Why it matters
 
-What a boundary owns has to be in `createErrorBoundary()`, since the types below it are computed from it. Everything else could be a prop. Today it's all in the factory, and the component takes only `children`. react-error-boundary's `<ErrorBoundary>` takes it all as props: `fallback` (an element), `FallbackComponent`, `fallbackRender`, `onError(error, info)`, `onReset(details)` and `resetKeys`. TanStack Router's `CatchBoundary` takes `errorComponent`, `onCatch(error, errorInfo)` and `getResetKey`. result-rpc's shells take `onError` in their definition.
+What a boundary owns has to be in `createErrorBoundary()`, since the types below it are computed from it. Everything else could be a prop. The internal port had it all in the factory, and the component took only `children`; the export ships with B. react-error-boundary's `<ErrorBoundary>` takes it all as props: `fallback` (an element), `FallbackComponent`, `fallbackRender`, `onError(error, info)`, `onReset(details)` and `resetKeys`. TanStack Router's `CatchBoundary` takes `errorComponent`, `onCatch(error, errorInfo)` and `getResetKey`. result-rpc's shells take `onError` in their definition.
 
 ## Options
 
@@ -42,7 +42,7 @@ const [AuthBoundary] = createErrorBoundary({
 </AuthBoundary>;
 ```
 
-- ✅ Built; one place says everything about a boundary, and every mount behaves the same
+- ✅ One place says everything about a boundary, and every mount behaves the same
 - ❌ No reset when something outside changes: signing in from another tab leaves `<SignIn>` showing until it's clicked
 - ❌ Reporting owned errors to an error tracker goes in each fallback, or in `QueryCache`'s `onError`, which doesn't know which boundary took them
 
@@ -85,7 +85,7 @@ function Page() {
 - ✅ The props React developers already know, under the names they know, and `resetKeys` covers "reset when the session or route changes"
 - ✅ Additive: a boundary without props behaves as in A
 - ❌ Two places to look for a boundary's behaviour
-- ❌ Not built: `resetKeys` needs the class component to compare keys after each render, as react-error-boundary's does
+- ❌ `resetKeys` needs the class component to compare keys after each render, as react-error-boundary's does
 
 ### C) Everything but what it owns as props, as react-error-boundary does
 
@@ -115,10 +115,11 @@ const [AuthBoundary] = createErrorBoundary({
 
 ## Blocked until answered
 
-- The public export and its docs page: the component's props are part of both.
+- Nothing. `unstable_createErrorBoundary` ships with B, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `unstable_` allows. The docs page documents B's props.
 
 ## Details
 
 - `onReset`'s `reason` is `'reset'` (the fallback called `reset()`) or `'keys'` (a `resetKeys` entry changed), react-error-boundary's `'imperative-api'` under the fallback's own name.
 - `onError(error, info)` gets React's `ErrorInfo`, so `info.componentStack` is there, as react-error-boundary's and React 19's root `onCaughtError` do. It runs for the errors this boundary renders, not the ones it re-throws.
+- **Built as B**, without a fallback per mount: since effect-atom-boundary's shape, a fallback is per claim (`claims: { UNAUTHORIZED: SignIn }`), so overriding one per mount would be a partial `claims`, left out until someone needs it. `onError`'s `error` is typed by the boundary's own claims.
 - TanStack Router's `getResetKey` is one function returning one key; react-error-boundary's `resetKeys` array is the more common shape in React apps.

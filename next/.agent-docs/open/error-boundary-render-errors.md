@@ -1,11 +1,11 @@
 ---
 title: "Should a boundary with `unexpected: true` also catch errors that aren't tRPC's, like a crash while rendering?"
-summary: "Today `<RootBoundary>` takes only tRPC errors, so a `TypeError` in a component goes past it to the app's own error boundary."
+summary: "Only tRPC errors, and a `TypeError` in a component goes past `<RootBoundary>` to the app's own error boundary. It ships with B, which takes both."
 area: tanstack
 recommended: B
 links:
   - kind: code
-    label: error-boundary.ts (internal)
+    label: error-boundary.ts
     url: ../../packages/tanstack-react-query/src/error-boundary.ts
   - kind: decision
     label: error-boundaries
@@ -22,7 +22,7 @@ links:
 
 ## Why it matters
 
-`unexpected: true` owns every tRPC error with `defined: false`: crashes on the server, masked errors, bad responses, link codes nothing else claims. A throw that isn't a tRPC error (a `TypeError` in a component, a failed lazy import) goes past every boundary, so an app still needs react-error-boundary or its router's boundary above the root one. This also decides each fallback's `error` type, which is `unknown` today: a boundary that only takes tRPC errors can type it with what it owns. In `matchError()`, `unexpected` is the one key for everything without its own handler ([exhaustive-match-error](../decisions/exhaustive-match-error.md)).
+`unexpected: true` owns every tRPC error with `defined: false`: crashes on the server, masked errors, bad responses, link codes nothing else claims. A throw that isn't a tRPC error (a `TypeError` in a component, a failed lazy import) goes past every boundary, so an app still needs react-error-boundary or its router's boundary above the root one. This also decides the `unexpected` fallback's `error` type: a boundary that only takes tRPC errors can type it with what it owns. In `matchError()`, `unexpected` is the one key for everything without its own handler ([exhaustive-match-error](../decisions/exhaustive-match-error.md)).
 
 ## Options
 
@@ -48,7 +48,7 @@ const [OfflineBoundary] = createErrorBoundary({
 // A TypeError while rendering goes past both, to the app's own error boundary
 ```
 
-- ✅ Built; every fallback's `error` is a tRPC error it can read without `isTrpcError()`
+- ✅ Every fallback's `error` is a tRPC error it can read without `isTrpcError()`
 - ✅ What these boundaries do stays about tRPC calls, and the app's own boundary keeps doing what it does
 - ❌ Two boundaries at the root, and a crash in a component looks different from a crash on the server
 
@@ -78,7 +78,7 @@ const [OfflineBoundary] = createErrorBoundary({
 
 - ✅ One boundary at the root for "something went wrong", whatever went wrong, and `unexpected` means what it means in `matchError()`
 - ❌ The root fallback's `error` is `unknown`, and reads a tRPC error with `isTrpcError()`
-- ❌ Not built: the control-flow check moves into the boundary
+- ❌ The control-flow check moves into the boundary
 
 ### C) A separate flag for everything else
 
@@ -107,10 +107,11 @@ const [RootBoundary] = createErrorBoundary({
 
 ## Blocked until answered
 
-- The public export's fallback props type, and its docs page.
+- Nothing. `unstable_createErrorBoundary` ships with B, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `unstable_` allows.
 
 ## Details
 
+- **Built as B**, in effect-atom-boundary's shape: `claims: { unexpected: Crashed }` rather than `unexpected: true` beside one `fallback`, so `unexpected`'s fallback reads `unknown` and every other claim's reads exactly its errors. At the hook, `unexpected` still owns only `defined: false` tRPC errors.
 - In every option, a boundary with codes gets `TrpcError<'NETWORK_ERROR', unknown>`: a claim matches by code whether the error is defined or not, so its `data` is whatever the procedure declared, or `undefined`.
 - A fallback only ever gets its own claims; what its parents own goes to them. So a fallback's type is its own codes, not the chain's.
 - A thrown promise (Suspense) never reaches an error boundary, so B needs no check for it.

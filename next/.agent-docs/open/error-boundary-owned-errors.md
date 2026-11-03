@@ -5,7 +5,7 @@ area: tanstack
 recommended: B
 links:
   - kind: code
-    label: error-boundary.ts (internal)
+    label: error-boundary.ts
     url: ../../packages/tanstack-react-query/src/error-boundary.ts
   - kind: decision
     label: error-boundaries
@@ -63,7 +63,7 @@ function RenameDoc(props: { id: string }) {
 }
 ```
 
-- ✅ Built and tested; behaves like every React error boundary, including for a mutation's `mutateAsync` caller, which gets the error
+- ✅ Behaves like every React error boundary, including for a mutation's `mutateAsync` caller, which gets the error
 - ❌ An owned mutation error unmounts the form and its state, and the user's change is lost
 
 ### B) Queries replace, mutations hold
@@ -110,7 +110,7 @@ function RenameDoc(props: { id: string }) {
 
 - ✅ The form survives, and the user's change goes through after signing in without retyping it
 - ✅ The types stay true: an owned error never reaches the mutation's `error`, since it never settles with one
-- ❌ Not built. It needs `<Activity>`, so React 19.2 or later (the peer range is `^19` today)
+- ❌ It needs `<Activity>`, so React 19.2 or later (the peer range is `^19.2.0` for it)
 - ❌ Two behaviours to learn, and a held mutation stays pending until `reset()`: the fallback needs a way to give up, settled when it's built
 
 ### C) Queries and mutations both hold
@@ -163,10 +163,11 @@ function DocTitle(props: { id: string }) {
 
 ## Blocked until answered
 
-- The public export and its docs page: the docs' mutation example says what happens to the form.
+- Nothing. `unstable_createErrorBoundary` ships with B, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `unstable_` allows. The docs page says a mutation is held.
 
 ## Details
 
+- **Built as B.** A held mutation waits on the nearest mounted boundary of the hook's own chain that claims its error; one `reset` sends every mutation that boundary holds, and a boundary that unmounts rejects them with their error, which is the "give up" for now.
 - Under B the hold wraps the options' `mutationFn`: an owned failure waits for the boundary's `reset()`, then calls the procedure again. `throwOnError` stays false for mutations, so it fits `auth.mutation()`, an options transform ([error-boundaries](../decisions/error-boundaries.md)).
 - `<Activity mode="hidden">` keeps state and unmounts effects, so the hidden form's subscriptions stop and start again when it's shown; the mutation itself lives in TanStack's `MutationCache` and keeps waiting.
 - Giving up on a held mutation (closing the sign-in prompt) could reject it with `CLIENT_CLOSED_REQUEST`, which `matchError()`'s `unexpected` handles, or leave the decision to the fallback through a second callback next to `reset`.

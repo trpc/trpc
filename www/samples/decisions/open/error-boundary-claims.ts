@@ -1,7 +1,8 @@
 /**
  * The APIs `.agent-docs/open/error-boundary-claims.md` proposes, as types.
- * A lists codes, as `packages/tanstack-react-query/src/error-boundary.ts`
- * builds. B lists tags. C takes either in one list.
+ * A lists codes, as the internal port did. B lists tags. C takes either
+ * in one list, which `unstable_createErrorBoundary` ships as its claims'
+ * keys.
  */
 import type { QueryOptionsOut } from '@trpc12/tanstack-react-query';
 import type { ReactNode } from 'react';

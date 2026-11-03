@@ -16,6 +16,6 @@
 - Lost: thrown custom codes reaching the client untyped. With boundary mode, an owned mutation error unmounts the form.
 - Shipped: Q24.1 A, Q24.2 A, Q24.3 A and part of Q24.6 A, when the human asked for a foolproof client error API ([closed-client-errors](./closed-client-errors.md)). `matchError`'s catch-all is `unexpected` since [exhaustive-match-error](./exhaustive-match-error.md) (`builtin` before). Q24.1's masking now applies only to procedures with `.errors()` ([thrown-errors-and-exhaustive-declarations](./thrown-errors-and-exhaustive-declarations.md)).
 - Shipped: Q24.6 B, as a timed-out `signal` rather than a `timeout` option ([client-timeout-error](./client-timeout-error.md)).
-- Shipped, unexported: Q24.4 and Q24.5 as `[Boundary, useBoundary]` tuples from `createErrorBoundary()`, to be exported as `unstable_createErrorBoundary` once its open DX questions are answered ([error-boundaries](./error-boundaries.md)).
+- Shipped: Q24.4 and Q24.5 as `[Boundary, useBoundary]` tuples from `unstable_createErrorBoundary()`, exported since 2026-11-03 with a typed fallback per claim, its open DX questions built as recommended until answered ([error-boundaries](./error-boundaries.md)).
 - Open: error data on the client (Q24.8) awaits the human's answer to proposal 24.
 - Lives in: `proposals/24-error-ownership.md`. The spikes, `spikes/closed-errors/` and `spikes/error-shells/`, are at [`2efaa0818`](https://github.com/trpc/trpc/tree/2efaa08186fbad70e754f3f45762ca30c858a530/next/spikes).

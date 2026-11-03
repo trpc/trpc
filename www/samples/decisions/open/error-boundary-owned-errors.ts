@@ -1,9 +1,9 @@
 /**
  * The APIs `.agent-docs/open/error-boundary-owned-errors.md` compares, as
- * types. The three options share the built API, the hook returning options transforms
+ * types. The three options share the hook returning options transforms
  * (`packages/tanstack-react-query/src/error-boundary.ts`); they differ in
- * what an owned error does at runtime: A throws it, B holds a mutation
- * and throws a query's, C holds both.
+ * what an owned error does at runtime: A throws it, B (shipped) holds a
+ * mutation and throws a query's, C holds both.
  */
 import type {
   MutationOptionsOut,

@@ -5,7 +5,7 @@ area: tanstack
 recommended: C
 links:
   - kind: code
-    label: error-boundary.ts (internal)
+    label: error-boundary.ts
     url: ../../packages/tanstack-react-query/src/error-boundary.ts
   - kind: decision
     label: error-boundaries
@@ -22,7 +22,7 @@ links:
 
 ## Why it matters
 
-A boundary owns errors by code today, whatever `defined` says, so a returned `UNAUTHORIZED`, a thrown one and a proxy's 401 all go to `<AuthBoundary>`. Since every distinct failure got its own `_tag` ([error-tags](../decisions/error-tags.md)), a code is a group: `NOT_FOUND` is the procedure's declared `NotFound` (or a class like `PostMissing`) and the built-in `ProcedureNotFound` a client gets when it's newer than the server. A "reload the page" boundary wants the second and must leave the first to the component. result-rpc's shells claim tags; `matchError()` and `switch` take codes.
+A code owns errors whatever `defined` says, so a returned `UNAUTHORIZED`, a thrown one and a proxy's 401 all go to `<AuthBoundary>`. Since every distinct failure got its own `_tag` ([error-tags](../decisions/error-tags.md)), a code is a group: `NOT_FOUND` is the procedure's declared `NotFound` (or a class like `PostMissing`) and the built-in `ProcedureNotFound` a client gets when it's newer than the server. A "reload the page" boundary wants the second and must leave the first to the component. result-rpc's shells claim tags; `matchError()` and `switch` take codes.
 
 ## Options
 
@@ -62,7 +62,7 @@ if (doc.error?.code === 'NOT_FOUND') {
 }
 ```
 
-- ✅ Built; the same strings as `matchError()`'s keys and `switch (err.code)`, and one code covers a failure from anywhere (a proxy's 401 has no tag but its code's)
+- ✅ The same strings as `matchError()`'s keys and `switch (err.code)`, and one code covers a failure from anywhere (a proxy's 401 has no tag but its code's)
 - ❌ Can't own a stale client without also owning the procedure's own `NOT_FOUND`
 
 ### B) Tags
@@ -153,10 +153,11 @@ if (doc.error?.code === 'NOT_FOUND') {
 
 ## Blocked until answered
 
-- Nothing else. The built shape is A, which C extends; the public export can ship with A and add tags later without breaking a claim.
+- Nothing. `unstable_createErrorBoundary` ships with C, the recommendation, until this is answered ([error-boundaries](../decisions/error-boundaries.md)). Another answer changes it in a minor, which `unstable_` allows.
 
 ## Details
 
-- **A misspelt claim** owns nothing, silently, in every option. `unstable_createErrorBoundary()` doesn't know the router, so it can't check claims against it; `createErrorBoundary<typeof router>()` could, or a boundary created from `createTrpcContext()`'s tuple. Not built.
+- **Built as C**, in effect-atom-boundary's shape: the claims are an object's keys with a fallback each (`claims: { UNAUTHORIZED: SignIn, ProcedureNotFound: Reload }`), not a list beside one fallback. A tag goes before a code, so `NOT_FOUND`'s fallback there reads only the errors no claimed tag takes.
+- **A misspelt claim** is a type error: the boundary's `errors` (a client factory, a client or `routerType<AppRouter>()`) gives it the router's errors, and a key must be one of their codes or tags.
 - **The server's error map** (result-rpc shares one between its middleware and the shell): `claims: authErrors`, the object passed to `.errors(authErrors)`. It can't name what nothing declares (`NETWORK_ERROR`, a proxy's 401), which are what app-wide boundaries own most, so it isn't an option here.
 - **The key's name.** `claims` is result-rpc's word, and the docs say a boundary "owns" what it claims. `catches` would read like TanStack Router's `CatchBoundary` and `onCatch`; this keeps `claims`.

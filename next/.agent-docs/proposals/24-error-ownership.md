@@ -98,17 +98,16 @@ The spike found that A works on today's open union too: `unexpected` takes the w
 ### Q24.4: type-safe error boundaries
 
 ```ts
-const [RootBoundary] = createErrorBoundary({
+const [RootBoundary] = unstable_createErrorBoundary({
   name: 'Root',
-  claims: [],
-  unexpected: true,
-  fallback: Crashed,
+  errors: makeClient,
+  claims: { unexpected: Crashed },
 });
-const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
+const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
   name: 'Auth',
+  errors: makeClient,
   parent: RootBoundary,
-  claims: ['UNAUTHORIZED'],
-  fallback: SignIn,
+  claims: { UNAUTHORIZED: SignIn }, // SignIn's `error` is the UNAUTHORIZED errors
 });
 
 const rename = useMutation(
@@ -116,6 +115,8 @@ const rename = useMutation(
 );
 rename.error; // TITLE_TAKEN | BAD_REQUEST: Auth owns UNAUTHORIZED, Root owns every undefined error
 ```
+
+The example is the shape that shipped on 2026-11-03; the question was asked with `claims: ['UNAUTHORIZED']` and one `fallback`.
 
 - **A: boundary mode.**
   - A boundary's hooks set `throwOnError` to "a boundary in my chain owns it". Each boundary renders its fallback for its own claims and re-throws the rest. Hooks throw outside their boundary.
@@ -129,6 +130,8 @@ rename.error; // TITLE_TAKEN | BAD_REQUEST: Auth owns UNAUTHORIZED, Root owns ev
 - **D: not now.**
 
 Human, 2026-10-20: error boundaries, shipped as `unstable_createErrorBoundary`, a `[AuthBoundary, useAuthBoundary]` tuple whose hook throws outside its boundary: A behind the `unstable_` prefix, with its DX details asked as open questions ([error-boundaries](../decisions/error-boundaries.md)).
+
+Human, 2026-11-03: "Actually make it unstable rather than experimental, I'm sure i want it". Exported, with effect-atom-boundary's typed fallback per claim and the open questions' recommendations ([error-boundaries](../decisions/error-boundaries.md)).
 
 ### Q24.5: where error boundaries live
 

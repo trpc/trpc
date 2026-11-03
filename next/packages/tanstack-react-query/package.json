@@ -57,6 +57,6 @@
     "@tanstack/react-query": "^5.104.0",
     "@trpc12/trpc": "workspace:*",
     "effect": "^4.1.0",
-    "react": "^19"
+    "react": "^19.2.0"
   }
 }

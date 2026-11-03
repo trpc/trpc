@@ -7,16 +7,27 @@ import {
 } from '@tanstack/react-query';
 import {
   matchError,
+  type RouterType,
   type BuiltinErrorCode,
   type UndeclaredCode,
 } from '@trpc12/trpc/client';
+import { createElement } from 'react';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
-import type { Remaining } from './error-boundary.ts';
 import {
+  unstable_createErrorBoundary,
+  type ErrorsOf,
+  type Unclaimed,
+} from './error-boundary.ts';
+import {
+  AuthBoundary,
   type createApp,
+  makeClient,
+  RootBoundary,
+  type router,
   useAuthBoundary,
   useOfflineBoundary,
   useRootBoundary,
+  useStaleBoundary,
 } from './fixtures/error-boundary.ts';
 
 declare const app: ReturnType<typeof createApp>;
@@ -167,10 +178,119 @@ describe("TanStack's other hooks take the same options", () => {
 
 describe('a claim of one link code, with no unexpected claim', () => {
   test('subtracts it from the closed client union', () => {
-    type Left = Remaining<RenameError, 'NETWORK_ERROR', false>;
+    type Left = Unclaimed<RenameError, 'NETWORK_ERROR', false>;
     expectTypeOf<CodeOf<Extract<Left, { defined: false }>>>().toEqualTypeOf<
       | Exclude<BuiltinErrorCode, 'NETWORK_ERROR' | 'STREAM_INTERRUPTED'>
       | UndeclaredCode
     >();
+  });
+});
+
+type TagOf<E> = E extends { readonly _tag: infer T } ? T : never;
+
+describe('each fallback gets exactly the errors its claim takes', () => {
+  test('a code: every error with it, defined or not', () => {
+    unstable_createErrorBoundary({
+      name: 'Auth',
+      errors: makeClient,
+      claims: {
+        UNAUTHORIZED: (props) => {
+          expectTypeOf(props.error.code).toEqualTypeOf<'UNAUTHORIZED'>();
+          expectTypeOf(props.error._tag).toEqualTypeOf<'Unauthorized'>();
+          expectTypeOf(props.error.defined).toEqualTypeOf<boolean>();
+          expectTypeOf(props.reset).toEqualTypeOf<() => void>();
+          return null;
+        },
+      },
+    });
+  });
+
+  test('a tag: that failure alone, and the code claim gets the rest', () => {
+    unstable_createErrorBoundary({
+      name: 'Missing',
+      errors: makeClient,
+      claims: {
+        ProcedureNotFound: (props) => {
+          expectTypeOf(props.error._tag).toEqualTypeOf<'ProcedureNotFound'>();
+          expectTypeOf(props.error.defined).toEqualTypeOf<false>();
+          return null;
+        },
+        NOT_FOUND: (props) => {
+          expectTypeOf<TagOf<typeof props.error>>().toEqualTypeOf<'NotFound'>();
+          return null;
+        },
+      },
+    });
+  });
+
+  test("a custom code's data is the procedure's", () => {
+    unstable_createErrorBoundary({
+      name: 'Title',
+      errors: makeClient,
+      claims: {
+        TITLE_TAKEN: (props) => {
+          expectTypeOf(props.error.code).toEqualTypeOf<'TITLE_TAKEN'>();
+          return null;
+        },
+      },
+    });
+  });
+
+  test("unexpected's is unknown: it takes any throw", () => {
+    unstable_createErrorBoundary({
+      name: 'Root',
+      errors: makeClient,
+      claims: {
+        unexpected: (props) => {
+          expectTypeOf(props.error).toBeUnknown();
+          return null;
+        },
+      },
+    });
+  });
+
+  test('a claim nothing fails with is a type error', () => {
+    unstable_createErrorBoundary({
+      name: 'Typo',
+      errors: makeClient,
+      // @ts-expect-error no call fails with UNAUTHORISED
+      claims: { UNAUTHORISED: () => null },
+    });
+  });
+
+  test('a routerType() value names the errors too', () => {
+    expectTypeOf<
+      Extract<CodeOf<ErrorsOf<RouterType<typeof router>>>, 'TITLE_TAKEN'>
+    >().toEqualTypeOf<'TITLE_TAKEN'>();
+  });
+});
+
+describe("the component's props", () => {
+  test("onError gets the boundary's own claims", () => {
+    createElement(AuthBoundary, {
+      resetKeys: ['ada'],
+      onReset: (details) => {
+        expectTypeOf(details.reason).toEqualTypeOf<'reset' | 'keys'>();
+      },
+      onError: (error, info) => {
+        expectTypeOf(error.code).toEqualTypeOf<'UNAUTHORIZED'>();
+        expectTypeOf(info.componentStack).toEqualTypeOf<
+          string | null | undefined
+        >();
+      },
+    });
+    createElement(RootBoundary, {
+      onError: (error) => expectTypeOf(error).toBeUnknown(),
+    });
+  });
+});
+
+describe('a tag claim', () => {
+  test("takes one failure: the doc's own NOT_FOUND stays", () => {
+    const doc = () => useQuery(useStaleBoundary().query(byIdOptions()));
+    type DocError = ErrorOf<ReturnType<typeof doc>>;
+    expectTypeOf<
+      TagOf<Extract<DocError, { code: 'NOT_FOUND' }>>
+    >().toEqualTypeOf<'NotFound'>();
   });
 });

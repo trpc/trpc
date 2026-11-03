@@ -4,7 +4,7 @@ import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import { Schema } from 'effect';
 import { createElement } from 'react';
 import {
-  createErrorBoundary,
+  unstable_createErrorBoundary,
   type ErrorBoundaryFallbackProps,
 } from '../error-boundary.ts';
 
@@ -23,36 +23,56 @@ interface Doc {
 
 const docs = new Map<string, Doc>();
 
+const byId = requireViewer
+  .input(Schema.Struct({ id: Schema.String }))
+  .query((opts) => docs.get(opts.input.id) ?? error({ code: 'NOT_FOUND' }));
+
+/** One title a page, from `cursor`. */
+const titles = requireViewer
+  .input(Schema.Struct({ cursor: Schema.Number }))
+  .query((opts) => {
+    const all = [...docs.values()];
+    const page: { title: string | undefined; next: number | null } = {
+      title: all[opts.input.cursor]?.title,
+      next: opts.input.cursor + 1 < all.length ? opts.input.cursor + 1 : null,
+    };
+    return page;
+  });
+
+const rename = requireViewer
+  .input(Schema.Struct({ id: Schema.String, title: Schema.String }))
+  .mutation((opts) => {
+    if (opts.input.title === 'crash') throw new Error('db is down');
+    if ([...docs.values()].some((d) => d.title === opts.input.title)) {
+      return error({ code: 'TITLE_TAKEN' });
+    }
+    const doc: Doc = { id: opts.input.id, title: opts.input.title };
+    docs.set(doc.id, doc);
+    return doc;
+  });
+
+/** The router the client was built against: newer than the server's, with `doc.history`. */
 export const router = t.router({
   doc: {
-    byId: requireViewer
+    byId,
+    titles,
+    rename,
+    history: requireViewer
       .input(Schema.Struct({ id: Schema.String }))
-      .query((opts) => docs.get(opts.input.id) ?? error({ code: 'NOT_FOUND' })),
-    /** One title a page, from `cursor`. */
-    titles: requireViewer
-      .input(Schema.Struct({ cursor: Schema.Number }))
-      .query((opts) => {
-        const all = [...docs.values()];
-        const page: { title: string | undefined; next: number | null } = {
-          title: all[opts.input.cursor]?.title,
-          next:
-            opts.input.cursor + 1 < all.length ? opts.input.cursor + 1 : null,
-        };
-        return page;
-      }),
-    rename: requireViewer
-      .input(Schema.Struct({ id: Schema.String, title: Schema.String }))
-      .mutation((opts) => {
-        if (opts.input.title === 'crash') throw new Error('db is down');
-        if ([...docs.values()].some((d) => d.title === opts.input.title)) {
-          return error({ code: 'TITLE_TAKEN' });
-        }
-        const doc: Doc = { id: opts.input.id, title: opts.input.title };
-        docs.set(doc.id, doc);
-        return doc;
-      }),
+      .query(() => [] as string[]),
+    archive: requireViewer
+      .input(Schema.Struct({ id: Schema.String }))
+      .mutation(() => true),
   },
 });
+
+const served = t.router({ doc: { byId, titles, rename } });
+
+export const makeClient = (fetch: typeof globalThis.fetch) =>
+  createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: 'http://localhost/trpc', fetch })],
+  });
 
 /** The server, a client over HTTP, and switches for the session and the network. */
 export function createApp() {
@@ -64,20 +84,12 @@ export function createApp() {
     online: true,
   };
   const handler = createFetchHandler({
-    router,
+    router: served,
     createContext: () => ({ user: state.user }),
   });
-  const client = createTrpcClient({
-    router: routerType<typeof router>(),
-    links: [
-      httpLink({
-        url: 'http://localhost/trpc',
-        fetch: async (input, init) => {
-          if (!state.online) throw new TypeError('fetch failed');
-          return handler.fetch(new Request(input, init));
-        },
-      }),
-    ],
+  const client = makeClient(async (input, init) => {
+    if (!state.online) throw new TypeError('fetch failed');
+    return handler.fetch(new Request(input, init));
   });
   return {
     state,
@@ -87,7 +99,8 @@ export function createApp() {
 }
 
 const notice =
-  (id: string, text: string) => (props: ErrorBoundaryFallbackProps) =>
+  (id: string, text: string) =>
+  (props: Pick<ErrorBoundaryFallbackProps<unknown>, 'reset'>) =>
     createElement(
       'div',
       { id },
@@ -99,24 +112,35 @@ const notice =
       }),
     );
 
-/** Owns every `defined: false` error: thrown, masked, or from the link. */
-export const [RootBoundary, useRootBoundary] = createErrorBoundary({
+/** Takes every throw no other boundary owns. */
+export const [RootBoundary, useRootBoundary] = unstable_createErrorBoundary({
   name: 'Root',
-  claims: [],
-  unexpected: true,
-  fallback: notice('crashed', 'Something went wrong'),
+  errors: makeClient,
+  claims: { unexpected: notice('crashed', 'Something went wrong') },
 });
 
-export const [OfflineBoundary, useOfflineBoundary] = createErrorBoundary({
-  name: 'Offline',
-  parent: RootBoundary,
-  claims: ['NETWORK_ERROR'],
-  fallback: notice('offline', 'You are offline'),
-});
+export const [OfflineBoundary, useOfflineBoundary] =
+  unstable_createErrorBoundary({
+    name: 'Offline',
+    errors: makeClient,
+    parent: RootBoundary,
+    claims: { NETWORK_ERROR: notice('offline', 'You are offline') },
+  });
 
-export const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
+export const [AuthBoundary, useAuthBoundary] = unstable_createErrorBoundary({
   name: 'Auth',
+  errors: makeClient,
   parent: OfflineBoundary,
-  claims: ['UNAUTHORIZED'],
-  fallback: notice('sign-in', 'Sign in'),
+  claims: { UNAUTHORIZED: notice('sign-in', 'Sign in') },
+});
+
+/** A stale client's missing procedure, by its tag: the doc's own NOT_FOUND stays. */
+export const [StaleBoundary, useStaleBoundary] = unstable_createErrorBoundary({
+  name: 'Stale',
+  errors: makeClient,
+  parent: AuthBoundary,
+  claims: {
+    ProcedureNotFound: (props) =>
+      createElement('p', { id: 'stale' }, `Reload: ${props.error._tag}`),
+  },
 });
