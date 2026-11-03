@@ -325,6 +325,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
       const abortController = new AbortController();
+      // `abort()` builds an AbortError with a stack trace even when the
+      // signal is already aborted, which is the common case on a stop.
+      const abort = () => {
+        if (!abortController.signal.aborted) {
+          abortController.abort();
+        }
+      };
       const reportError = (cause: unknown) => {
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({ error, path, type, ctx, req, input });
@@ -432,7 +439,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           // cancellation is woken when iteration ends other than by `done`.
           using _abortUnlessCompleted = makeResource({}, () => {
             if (!completed) {
-              abortController.abort();
+              abort();
             }
           });
 
@@ -504,7 +511,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         const iterated = await iteration;
         if (!iterated.ok) {
-          abortController.abort();
+          abort();
           if (isSuppressedError(iterated.error)) {
             // the client gets the iteration error, the server both
             respondWithError(iterated.error.suppressed);
