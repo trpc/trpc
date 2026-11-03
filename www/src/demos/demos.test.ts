@@ -69,6 +69,15 @@ describe('timeline', () => {
     expect(new Set(ends.map(([, comments]) => comments)).size).toBeGreaterThan(
       1,
     );
+    // Each request draws its own jitter, so the ratio between them varies.
+    const ratios = ends.map(([post = 0, comments = 0]) => comments / post);
+    expect(Math.max(...ratios) - Math.min(...ratios)).toBeGreaterThan(0.2);
+  });
+
+  it('repeats the same times for the same seed', () => {
+    const first = timeline('render-as-you-fetch', 200, createRandom(5));
+    const second = timeline('render-as-you-fetch', 200, createRandom(5));
+    expect(second.requests).toEqual(first.requests);
   });
 
   it('measures progress from 0 to 1', () => {
@@ -185,6 +194,7 @@ describe('network', () => {
       await vi.advanceTimersByTimeAsync(1);
       await query;
       expect(answered).toBe(true);
+      expect(network.getTrace().requests[0]?.status).toBe('done');
     } finally {
       vi.useRealTimers();
     }
