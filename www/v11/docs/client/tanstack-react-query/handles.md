@@ -181,7 +181,7 @@ const post = trpc.post.byId.unstable_$prefetch({ id });
 
 - It returns a handle at once. The request runs in the background.
 - The page doesn't wait. It renders, and the data arrives when the request finishes.
-- If the cache has no data for the query yet, the component that reads the handle renders before the data arrives, so it shows a loading state. If the cache has data, the component shows it while the request runs. With `useSuspenseQuery`, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`: see [Reading with `useQuery`](#use-query).
+- If the cache has no data for the query yet, the component that reads the handle renders before the data arrives, so it shows a loading state. If the cache has data, the component shows it while the request runs. With `useSuspenseQuery`, it suspends: wrap it in `<Suspense>` to show a fallback in its place. With `useQuery`, it renders with `status: 'pending'`, and with server rendering it can cause a hydration mismatch: see [Reading with `useQuery`](#use-query).
 
   ```tsx twoslash
   // @include: handles-router
@@ -633,7 +633,7 @@ export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId
 
 - `useQuery` doesn't suspend. Until the data arrives, it renders with `status: 'pending'`.
 - After `unstable_$ensure` or `unstable_$fetch`, the cache has the data, so the first render has `status: 'success'`.
-- With server rendering, `useQuery` doesn't wait for an `unstable_$prefetch` query. The HTML shows the loading state, and the data shows once it reaches the browser. To stream the data into the HTML, read the handle with `useSuspenseQuery`.
+- With server rendering, read an `unstable_$prefetch` handle with `useSuspenseQuery`: with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch ([TanStack/query#9399](https://github.com/TanStack/query/issues/9399)). For a component on `useQuery`, wait for the data instead: `unstable_$ensure`.
 
 ## Handles carry no data {#no-data}
 
