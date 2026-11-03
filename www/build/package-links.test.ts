@@ -9,7 +9,9 @@ import { fromDocusaurus } from './docusaurus-syntax.ts';
 import { anchorsOf } from './markdown.ts';
 import { samplesDir } from './paths.ts';
 
-const packagesDir = fileURLToPath(new URL('../../v11/packages', import.meta.url));
+const packagesDir = fileURLToPath(
+  new URL('../../v11/packages', import.meta.url),
+);
 const contentDir = fileURLToPath(new URL('../v11/docs', import.meta.url));
 
 /** Everything that names a trpc.io docs page, up to where a URL ends. */
