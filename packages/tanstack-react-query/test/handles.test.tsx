@@ -671,6 +671,34 @@ describe('runtime', () => {
     ).resolves.toEqual({ name: 'KATT' });
   });
 
+  test('handles of procedures without input have no input key, so Next.js can serialize them', async () => {
+    await using resource = ctx();
+    const server = resource.optionsProxyServer;
+    const client = resource.optionsProxyClient;
+    const handles = {
+      prefetch: server.viewer.unstable_$prefetch(),
+      ensure: await server.viewer.unstable_$ensure(),
+      fetch: await server.viewer.unstable_$fetch(),
+      explicitUndefined: server.viewer.unstable_$prefetch(undefined),
+      withInput: await server.post.byId.unstable_$ensure({ id: '1' }),
+    };
+
+    for (const handle of Object.values(handles).slice(0, 4)) {
+      expect(Object.keys(handle)).toEqual(['queryKey']);
+    }
+    expect(handles.withInput.input).toEqual({ id: '1' });
+    // `getServerSideProps` and `getStaticProps` reject `undefined` anywhere in props
+    expect(overTheWire(handles)).toStrictEqual(handles);
+
+    const read = overTheWire(handles);
+    expect(client.unstable_$fromHandle(read.ensure).queryKey).toEqual(
+      client.viewer.queryOptions().queryKey,
+    );
+    expect(client.unstable_$fromHandle(read.withInput).queryKey).toEqual(
+      client.post.byId.queryOptions({ id: '1' }).queryKey,
+    );
+  });
+
   test('infinite verbs can load several pages up front', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
