@@ -1,4 +1,9 @@
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  type HttpLinkOptions,
+} from '@trpc12/trpc/client';
 import { onStart } from '@trpc12/trpc/middleware';
 import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
 import {
@@ -8,7 +13,7 @@ import {
   lazy,
   type AnyRouter,
 } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
@@ -35,7 +40,7 @@ type AppRouter = typeof router;
 /** A client whose `httpLink` calls `handler.fetch`, recording each URL path. */
 const clientFor = (
   handler: { fetch: (request: Request) => Promise<Response> },
-  link: { experimental_pathSeparator?: string; batch?: boolean } = {},
+  link: Pick<HttpLinkOptions, 'experimental_pathSeparator' | 'batch'> = {},
 ) => {
   const urls: string[] = [];
   const client = createTrpcClient({
@@ -54,7 +59,7 @@ const clientFor = (
   return { client, urls };
 };
 
-const separated = (router: AnyRouter, separator = '/') =>
+const separated = (router: AnyRouter, separator: '.' | '_' | '~' | '-' = '~') =>
   createFetchHandler({
     router,
     batch: true,
@@ -66,14 +71,14 @@ test('with a separator, URLs join path segments with it and nothing else changes
   const calls: string[] = [];
   await using handler = createFetchHandler({
     router,
-    experimental_pathSeparator: '/',
+    experimental_pathSeparator: '~',
     createContext: (opts) => {
       calls.push(...opts.info.calls.map((call) => call.path));
       return {};
     },
   });
   const linked = clientFor(handler, {
-    experimental_pathSeparator: '/',
+    experimental_pathSeparator: '~',
   });
 
   expect(await linked.client.post.byId.query({ id: '1' })).toEqual({ id: '1' });
@@ -85,10 +90,10 @@ test('with a separator, URLs join path segments with it and nothing else changes
 
   expect(events).toEqual(['added']);
   expect(linked.urls).toEqual([
-    '/trpc/post/byId',
-    '/trpc/post/create',
-    '/trpc/post/onAdd',
-    '/trpc/later/inner',
+    '/trpc/post~byId',
+    '/trpc/post~create',
+    '/trpc/post~onAdd',
+    '/trpc/later~inner',
   ]);
   // Middleware and `createContext` see dotted paths, as without the option.
   expect(seen).toEqual(['post.byId', 'post.create']);
@@ -100,7 +105,7 @@ test('with a separator, URLs join path segments with it and nothing else changes
   ]);
 });
 
-test.each(['_', '~', ':', '--'])(
+test.each(['_', '~', '-'] as const)(
   'the separator %j works end to end',
   async (separator) => {
     await using handler = separated(router, separator);
@@ -117,7 +122,7 @@ test.each(['_', '~', ':', '--'])(
 test('batches go to the endpoint with dotted paths in the body', async () => {
   await using handler = separated(router);
   const linked = clientFor(handler, {
-    experimental_pathSeparator: '/',
+    experimental_pathSeparator: '~',
     batch: true,
   });
   const [a, b] = await Promise.all([
@@ -139,10 +144,10 @@ test('a handler with a separator still serves the dotted URL', async () => {
 
 test('a client and handler with different separators get NOT_FOUND', async () => {
   await using handler = createFetchHandler({ router });
-  const linked = clientFor(handler, { experimental_pathSeparator: '/' });
+  const linked = clientFor(handler, { experimental_pathSeparator: '~' });
   const err = await linked.client.post.byId.query({ id: '1' }).catch((e) => e);
   expect(isTrpcError(err) && err.code).toBe('NOT_FOUND');
-  expect(String(err.message)).toContain('post/byId');
+  expect(String(err.message)).toContain('post~byId');
 });
 
 test('a router key holding the separator is refused, since two paths would share a URL', () => {
@@ -173,29 +178,33 @@ test('a lazy subtree holding the separator fails its first URL call, not another
   expect(res.status).toBe(500);
 });
 
-test.each(['', '.x', 'a', '?', '#', '%2F', ' ', '\\'])(
-  'the separator %j is refused by the handler and the link',
-  (separator) => {
-    expect(() =>
-      createFetchHandler({ router, experimental_pathSeparator: separator }),
-    ).toThrow("can't separate URL path segments");
-    expect(() =>
-      httpLink({
-        url: 'http://localhost/trpc',
-        experimental_pathSeparator: separator,
-      }),
-    ).toThrow("can't separate URL path segments");
-  },
-);
+test("the separator is one of the URL's unreserved characters, checked by types only", async () => {
+  expectTypeOf<
+    NonNullable<HttpLinkOptions['experimental_pathSeparator']>
+  >().toEqualTypeOf<'.' | '_' | '~' | '-'>();
+  expect(() =>
+    httpLink({
+      url: 'http://localhost/trpc',
+      // @ts-expect-error `/` would need a catch-all route in every adapter
+      experimental_pathSeparator: '/',
+    }),
+  ).not.toThrow();
+  await using handler = createFetchHandler({
+    router,
+    // @ts-expect-error nor is `,` or anything else a separator
+    experimental_pathSeparator: ',',
+  });
+  expect(handler).toBeDefined();
+});
 
 test("the RPC document's paths use the separator; operation ids stay dotted", () => {
   const doc = experimental_generateOpenApi(router, {
     info: { title: 'RPC', version: '1.0.0' },
     target: 'rpc',
-    experimental_pathSeparator: '/',
+    experimental_pathSeparator: '~',
   });
-  expect(Object.keys(doc.paths)).toContain('/trpc/post/byId');
-  expect(doc.paths['/trpc/post/byId']!['get']).toMatchObject({
+  expect(Object.keys(doc.paths)).toContain('/trpc/post~byId');
+  expect(doc.paths['/trpc/post~byId']!['get']).toMatchObject({
     operationId: 'post.byId',
   });
 });

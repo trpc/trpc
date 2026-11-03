@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { checkPathSeparator } from '../../internal/protocol.ts';
+import type { PathSeparator } from '../../internal/protocol.ts';
 import {
   isLazy,
   isProcedure,
@@ -10,10 +10,10 @@ import {
 
 /**
  * How a handler reads procedure paths from URLs. Paths stay dotted
- * everywhere else; only the URL joins their segments with `separator`.
+ * everywhere else; only the URL joins their segments with the separator.
  * @internal
  */
-export interface PathSeparator {
+export interface UrlPaths {
   /** The dotted path a URL path names. */
   readonly fromUrl: (urlPath: string) => string;
   /**
@@ -31,7 +31,7 @@ export interface PathSeparator {
  */
 const checkKeys = (
   node: AnyRouter,
-  separator: string,
+  separator: PathSeparator,
   checked: WeakSet<object>,
   prefix: string,
 ): void => {
@@ -60,17 +60,16 @@ const checkKeys = (
 };
 
 /** @internal */
-export const makePathSeparator = (
+export const makeUrlPaths = (
   router: AnyRouter,
-  separator: string | undefined,
-): PathSeparator => {
-  if (separator === undefined || separator === '.') {
+  separator: PathSeparator,
+): UrlPaths => {
+  if (separator === '.') {
     return {
       fromUrl: (urlPath) => urlPath,
       resolve: (path) => resolveProcedure(router, path),
     };
   }
-  checkPathSeparator(separator, 'createFetchHandler');
   const checked = new WeakSet<object>();
   checkKeys(router, separator, checked, '');
   /** The lazy subtrees on `path` that loaded since the last check. */

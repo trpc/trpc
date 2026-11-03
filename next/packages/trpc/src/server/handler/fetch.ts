@@ -185,14 +185,15 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
   endpoint?: string;
   /**
    * What joins a procedure path's segments in URLs, for networks that block
-   * `.` in them: with `'/'`, `post.byId` is served at `/trpc/post/byId`. The
+   * `.` in them: with `'~'`, `post.byId` is served at `/trpc/post~byId`. The
    * dotted URL still works. Only the URL changes: middleware, `onError`,
    * batch bodies and socket messages keep `post.byId`. `httpLink` must use
-   * the same one, and no router key may contain it. Experimental: it might
-   * change or go away in any release.
+   * the same one, and no router key may contain it, so `'~'` is the one
+   * least likely to clash. Experimental: it might change or go away in any
+   * release.
    * @default '.'
    */
-  experimental_pathSeparator?: string;
+  experimental_pathSeparator?: '.' | '_' | '~' | '-';
   /**
    * Accept batched requests (opt-in, 10).
    * @default false

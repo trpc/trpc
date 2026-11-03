@@ -11,6 +11,7 @@ import {
   type WireError,
 } from '../../internal/error.ts';
 import { timerOption } from '../../internal/duration.ts';
+import type { PathSeparator } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import {
   jsonTransformer,
@@ -19,7 +20,7 @@ import {
 import { unexpectedError } from '../execution/index.ts';
 import type { AnyRouter } from '../procedures/index.ts';
 import type { HandlerCore } from './core.ts';
-import { makePathSeparator, type PathSeparator } from './path-separator.ts';
+import { makeUrlPaths, type UrlPaths } from './path-separator.ts';
 
 /**
  * A fetch handler's HTTP side: its options, resolved once, and the core
@@ -34,7 +35,7 @@ export interface HttpHandler {
   /** What procedure paths follow. */
   readonly under: string;
   /** How URLs spell procedure paths (`experimental_pathSeparator`). */
-  readonly paths: PathSeparator;
+  readonly paths: UrlPaths;
   readonly maxBodySize: number;
   /** How often a quiet subscription gets a ping comment; `undefined` sends none. */
   readonly ssePing: Duration.Duration | undefined;
@@ -47,7 +48,7 @@ export const makeHttpHandler = (
     readonly router: AnyRouter;
     readonly transformer?: AnyTransformer | undefined;
     readonly endpoint?: string | undefined;
-    readonly experimental_pathSeparator?: string | undefined;
+    readonly experimental_pathSeparator?: PathSeparator | undefined;
     readonly maxBodySize?: number | undefined;
     readonly sse?:
       | { readonly pingInterval?: Duration.Input | false | undefined }
@@ -63,7 +64,7 @@ export const makeHttpHandler = (
     transformer: opts.transformer ?? jsonTransformer,
     endpoint,
     under: endpoint === '/' ? '/' : `${endpoint}/`,
-    paths: makePathSeparator(opts.router, opts.experimental_pathSeparator),
+    paths: makeUrlPaths(opts.router, opts.experimental_pathSeparator ?? '.'),
     maxBodySize: opts.maxBodySize ?? 1_048_576,
     ssePing: timerOption(opts.sse?.pingInterval, '15 seconds'),
     batch:

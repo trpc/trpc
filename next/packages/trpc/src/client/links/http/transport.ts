@@ -21,7 +21,6 @@ import {
 } from '../../../internal/error.ts';
 import { decodeRecords } from '../../../internal/frames.ts';
 import {
-  checkPathSeparator,
   CONTENT_TYPE,
   HEADER,
   PROTOCOL_VERSION,
@@ -153,7 +152,6 @@ export function makeTransport(
 ): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const separator = opts.experimental_pathSeparator ?? '.';
-  checkPathSeparator(separator, 'httpLink');
   const maxUrlLength = opts.maxUrlLength ?? 2048;
   const longQueryMethod = opts.longQuery === 'query' ? 'QUERY' : 'POST';
   const rawFetch = opts.fetch ?? globalThis.fetch;
