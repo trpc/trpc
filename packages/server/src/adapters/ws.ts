@@ -538,6 +538,56 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           const msgJSON: unknown = encoder.decode(data);
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
+          if (
+            Array.isArray(msgJSON) &&
+            typeof opts.maxBatchSize === 'number' &&
+            msgs.length > opts.maxBatchSize
+          ) {
+            const error = new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Batch call exceeds maximum size`,
+            });
+            opts.onError?.({
+              error,
+              path: undefined,
+              type: 'unknown',
+              ctx,
+              req,
+              input: undefined,
+            });
+            const errorShape = getErrorShape({
+              config: router._def._config,
+              error,
+              type: 'unknown',
+              path: undefined,
+              input: undefined,
+              ctx,
+            });
+
+            // Checked before parsing so that no input is deserialized.
+            // Every request in the batch gets the error, as a batched HTTP
+            // call does, so that clients do not wait for a response forever.
+            let responded = false;
+            for (const raw of msgs) {
+              if (
+                isObject(raw) &&
+                raw['method'] !== 'subscription.stop' &&
+                (typeof raw['id'] === 'number' || typeof raw['id'] === 'string')
+              ) {
+                respond({
+                  id: raw['id'],
+                  jsonrpc: raw['jsonrpc'] === '2.0' ? '2.0' : undefined,
+                  error: errorShape,
+                });
+                responded = true;
+              }
+            }
+            if (!responded) {
+              respond({ id: null, error: errorShape });
+            }
+            return [];
+          }
+
           return msgs.map((raw) => parseTRPCMessage(raw, transformer));
         } catch (cause) {
           const error = new TRPCError({

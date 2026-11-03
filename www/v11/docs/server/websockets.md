@@ -94,6 +94,12 @@ applyWSSHandler({ wss, router: appRouter });
 server.listen(3000);
 ```
 
+### Limiting batch size
+
+`applyWSSHandler` accepts the same `maxBatchSize` option as the [HTTP adapters](./adapters.md#common-options). A WebSocket message that batches more requests than this is rejected as a whole: no procedure runs, and every request in it, except `subscription.stop` entries, gets a `BAD_REQUEST` error with the message `Batch call exceeds maximum size`.
+
+`wsLink` sends all requests made in the same tick as one message and has no `maxItems` option, so pick a limit above the number of calls your client makes at once.
+
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
