@@ -84,6 +84,8 @@ function v11Session(
   const { base, output } = core;
   const { request } = opts;
   let connectionParams: Record<string, unknown> | undefined;
+  /** The ids `subscription.stop` is interrupting, and not a closed socket. */
+  const stopping = new Set<RequestId>();
 
   const send = (message: unknown) => outbox.send(JSON.stringify(message));
   const envelope = (id: RequestId | null, jsonrpc: unknown) => ({
@@ -115,6 +117,11 @@ function v11Session(
     const path = typeof params['path'] === 'string' ? params['path'] : '';
     const head = envelope(id, jsonrpc);
     const callParams = connectionParams;
+    let stopped = false;
+    const sendStopped = Effect.suspend(() => {
+      stopped = true;
+      return send({ ...head, result: { type: 'stopped' } });
+    });
     return Effect.flatMap(interruptSignal(), (interrupt) =>
       Effect.gen(function* () {
         const procedure = yield* resolveProcedure(core.router, path);
@@ -196,7 +203,7 @@ function v11Session(
               ? Effect.failCause(cause)
               : sendError(id, jsonrpc, normalizeCause(cause), path, method),
           ),
-          Effect.ensuring(send({ ...head, result: { type: 'stopped' } })),
+          Effect.ensuring(sendStopped),
         );
       }).pipe(
         Effect.catchCause((cause) =>
@@ -205,9 +212,28 @@ function v11Session(
             : sendError(id, jsonrpc, normalizeCause(cause), path, method),
         ),
         (self) => interrupt.abortOnInterrupt(self),
+        // As v11's adapter does (trpc/trpc#7704): `wsLink` holds a
+        // subscription's id until its `stopped`, even one stopped before
+        // `started`. A closed socket's calls send nothing.
+        Effect.onInterrupt(() =>
+          method === 'subscription' && !stopped && stopping.has(id)
+            ? sendStopped
+            : Effect.void,
+        ),
       ),
     ) as Effect.Effect<void>;
   };
+
+  /** Interrupts a call, and waits for it to end. */
+  const stopCall = (id: RequestId): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (!FiberMap.hasUnsafe(calls, id)) return Effect.void;
+      stopping.add(id);
+      return Effect.ensuring(
+        FiberMap.remove(calls, id),
+        Effect.sync(() => stopping.delete(id)),
+      );
+    });
 
   const receive = (message: unknown): Effect.Effect<void> => {
     if (!isRecord(message)) {
@@ -237,7 +263,7 @@ function v11Session(
         }),
       );
     }
-    if (method === 'subscription.stop') return FiberMap.remove(calls, id);
+    if (method === 'subscription.stop') return stopCall(id);
     if (typeof method !== 'string' || !METHODS.has(method)) {
       return sendError(
         id,
