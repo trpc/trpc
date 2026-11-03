@@ -321,7 +321,9 @@ interface Mounted {
   readonly parent: Mounted | undefined;
 }
 
-const MountedBoundaries = createContext<Mounted | undefined>(undefined);
+const MountedBoundaries = /* @__PURE__ */ createContext<Mounted | undefined>(
+  undefined,
+);
 
 const internals = new WeakMap<object, Internal>();
 
