@@ -151,6 +151,7 @@ interface ServerOptions {
   fastifyPluginWrapper?: boolean;
   withContentTypeParser?: boolean;
   keepAlive?: { enabled: boolean; pingMs: number; pongWaitMs: number };
+  maxBodySize?: number;
 }
 
 type PostPayload = { Body: { text: string; life: number } };
@@ -182,6 +183,7 @@ function createServer(opts: ServerOptions) {
       router,
       createContext,
       keepAlive: opts.keepAlive,
+      maxBodySize: opts.maxBodySize,
       onError(data) {
         // report to error monitoring
         data;
@@ -634,6 +636,41 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
     for (let i = 0; i < 4; i++) {
       expect(await app.client.echo.query(data)).toBe(data);
     }
+  });
+});
+
+describe('maxBodySize', () => {
+  beforeEach(async () => {
+    app = await createApp({ serverOptions: { maxBodySize: 1024 } });
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  function postForm(id: string) {
+    const fd = new FormData();
+    fd.set('id', id);
+    return globalThis.fetch(
+      `http://localhost:${app.url.port}${config.prefix}/multipartForm`,
+      { method: 'POST', body: fd },
+    );
+  }
+
+  test('accepts a multipart body within the limit', async () => {
+    const res = await postForm('bar');
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ result: { data: { id: 'bar' } } });
+  });
+
+  test('rejects a multipart body over the limit', async () => {
+    const res = await postForm('x'.repeat(10_000));
+
+    expect(res.status).toBe(413);
+    expect(await res.json()).toMatchObject({
+      error: { data: { code: 'PAYLOAD_TOO_LARGE' } },
+    });
   });
 });
 

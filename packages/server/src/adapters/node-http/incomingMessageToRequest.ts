@@ -12,21 +12,21 @@ function createBody(
     maxBodySize: number | null;
   },
 ): RequestInit['body'] {
+  let source: NodeHTTPRequest | IncomingMessage = req;
   // Some adapters will pre-parse the body and add it to the request object
   if ('body' in req) {
-    if (req.body !== undefined) {
+    if (req.body instanceof IncomingMessage) {
+      // An unparsed stream handed over by the adapter (Fastify does this for
+      // formData), so read it with the size limit
+      source = req.body;
+    } else if (req.body !== undefined) {
       // If the body is already a string, return it directly
       if (typeof req.body === 'string') {
         return req.body;
       }
-      // formData use
-      if (req.body instanceof IncomingMessage) {
-        return req.body as any;
-      }
       // If body exists but isn't a string, stringify it as JSON
       return JSON.stringify(req.body);
-    }
-    if (req.readableEnded) {
+    } else if (req.readableEnded) {
       // The stream was consumed without producing a parsed body — there is
       // nothing left to read
       return undefined;
@@ -69,8 +69,8 @@ function createBody(
           }),
         );
         hasClosed = true;
-        req.off('data', onData);
-        req.off('end', onEnd);
+        source.off('data', onData);
+        source.off('end', onEnd);
       };
 
       const onEnd = () => {
@@ -78,16 +78,16 @@ function createBody(
           return;
         }
         hasClosed = true;
-        req.off('data', onData);
-        req.off('end', onEnd);
+        source.off('data', onData);
+        source.off('end', onEnd);
         controller.close();
       };
 
-      req.on('data', onData);
-      req.on('end', onEnd);
+      source.on('data', onData);
+      source.on('end', onEnd);
     },
     cancel() {
-      req.destroy();
+      source.destroy();
     },
   });
 }
