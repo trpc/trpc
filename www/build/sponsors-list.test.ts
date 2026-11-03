@@ -404,6 +404,29 @@ describe('sponsorsList', () => {
     ]);
   });
 
+  it('merges Open Collective backers who are one another, and tells sites apart by their query', () => {
+    const sponsors = sponsorsList({
+      config: noConfig,
+      lifetimeValues: [],
+      now,
+      openCollective: [
+        backer('alice', { githubLogin: 'alice', monthlyDollars: 200 }),
+        backer('alice-co', { githubLogin: 'Alice', monthlyDollars: 100 }),
+        backer('page-1', { websiteUrl: 'https://host.dev/?id=1&utm_source=x' }),
+        backer('page-1-again', { websiteUrl: 'https://host.dev/?ref=y&id=1' }),
+        backer('page-2', { websiteUrl: 'https://host.dev/?id=2' }),
+      ],
+      sponsorships: [],
+    });
+    expect(
+      sponsors.map((sponsor) => [sponsor.login, sponsor.tier ?? null]),
+    ).toEqual([
+      ['alice', 'bronze'],
+      ['page-1', null],
+      ['page-2', null],
+    ]);
+  });
+
   it('orders sponsors by when they started, then by login', () => {
     const sponsors = sponsorsList({
       config: noConfig,

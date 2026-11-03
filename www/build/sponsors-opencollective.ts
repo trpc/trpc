@@ -2,10 +2,19 @@
  * Reads who backs an Open Collective account through its public GraphQL API:
  * each backer, what they've given in all, and what their contributions give
  * now, in US dollars at Open Collective's current exchange rate. The API
- * answers this without a token (ten requests a minute; a sync makes three),
- * and an incognito backer comes back as no one in particular, so is left out.
+ * answers this without a token (ten requests a minute; a sync makes three
+ * for up to 100 backers and contributions), and an incognito backer comes
+ * back as no one in particular, so is left out.
  */
-import { Clock, Effect, Option, Schema } from 'effect';
+import {
+  Clock,
+  Data,
+  Effect,
+  Option,
+  Predicate,
+  Schedule,
+  Schema,
+} from 'effect';
 import { HttpClient, HttpClientRequest } from 'effect/http';
 
 import { SponsorsSyncError } from './sponsors-github.ts';
@@ -138,6 +147,10 @@ const failFor = (slug: string, message: string) =>
     message: `Open Collective, for ${slug}: ${message}`,
   });
 
+/** A 429, which passes once the minute's requests are up. */
+class RateLimited extends Data.TaggedError('RateLimited') {}
+
+/** Posts `query`, waiting out a 429 for a while (5s, 10s, 20s, then 40s). */
 const post = Effect.fn('post')(function* (
   slug: string,
   query: string,
@@ -150,9 +163,24 @@ const post = Effect.fn('post')(function* (
     HttpClientRequest.acceptJson,
     HttpClientRequest.bodyJsonUnsafe({ query, variables }),
   );
-  const response = yield* client
-    .execute(request)
-    .pipe(Effect.mapError((cause) => fail(describeCause(cause))));
+  const response = yield* client.execute(request).pipe(
+    Effect.mapError((cause) => fail(describeCause(cause))),
+    Effect.flatMap((sent) =>
+      sent.status === 429
+        ? Effect.fail(new RateLimited())
+        : Effect.succeed(sent),
+    ),
+    Effect.retry({
+      schedule: Schedule.exponential('5 seconds'),
+      times: 4,
+      while: Predicate.isTagged('RateLimited'),
+    }),
+    Effect.catchTag('RateLimited', () =>
+      Effect.fail(
+        fail('HTTP 429: still rate limited after a minute of retries'),
+      ),
+    ),
+  );
   const body = yield* response.json.pipe(
     Effect.mapError((cause) =>
       fail(`HTTP ${response.status}, not JSON: ${describeCause(cause)}`),
@@ -288,25 +316,28 @@ export const fetchBackers = Effect.fn('fetchBackers')(function* (slug: string) {
     'contribution',
     orderNodes,
   );
+  const now = yield* Clock.currentTimeMillis;
+  const shown = members.filter((member) => !member.account.isIncognito);
+  const shownSlugs = new Set(shown.map((member) => member.account.slug));
+  const currentOrders = orders.filter(
+    (order) =>
+      shownSlugs.has(order.fromAccount.slug) && isCurrentOrder(order, now),
+  );
   const rates = yield* fetchRates(
     slug,
     new Set(
       [
-        ...members.map((member) => member.totalDonations),
-        ...orders.map((order) => order.amount),
+        ...shown.map((member) => member.totalDonations),
+        ...currentOrders.map((order) => order.amount),
       ].map((amount) => amount.currency),
     ),
   );
   const toUsdCents = (amount: typeof Amount.Type) =>
     amount.valueInCents * (rates.get(amount.currency) ?? 0);
-  const now = yield* Clock.currentTimeMillis;
 
   const backers = new Map<string, OpenCollectiveBacker>();
-  for (const member of members) {
+  for (const member of shown) {
     const account = member.account;
-    if (account.isIncognito) {
-      continue;
-    }
     const listed = backers.get(account.slug);
     if (listed !== undefined) {
       backers.set(account.slug, {
@@ -319,9 +350,8 @@ export const fetchBackers = Effect.fn('fetchBackers')(function* (slug: string) {
       });
       continue;
     }
-    const current = orders.filter(
-      (order) =>
-        order.fromAccount.slug === account.slug && isCurrentOrder(order, now),
+    const current = currentOrders.filter(
+      (order) => order.fromAccount.slug === account.slug,
     );
     const link = (type: string) =>
       account.socialLinks.find((social) => social.type === type)?.url;
@@ -334,7 +364,10 @@ export const fetchBackers = Effect.fn('fetchBackers')(function* (slug: string) {
       githubLogin:
         github === null || github === undefined
           ? null
-          : (githubLoginOf(github) ?? githubLoginOf(`github.com/${github}`)),
+          : (githubLoginOf(github) ??
+            (/^[\w-]+(\/[\w.-]+)?$/.test(github)
+              ? githubLoginOf(`github.com/${github}`)
+              : null)),
       isCurrent: current.length > 0,
       monthlyDollars:
         current.reduce(

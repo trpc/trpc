@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
-import { Effect, Result } from 'effect';
+import { Effect, Fiber, Result } from 'effect';
 import { TestClock } from 'effect/testing';
 
 import {
@@ -231,16 +231,96 @@ describe('fetchBackers', () => {
 
   it.effect('fails on an HTTP error, with its body', () => {
     const fake = fakeOpenCollective(() => ({
-      body: { error: 'Rate limit exceeded' },
-      status: 429,
+      body: { error: 'Unavailable' },
+      status: 503,
     }));
     return Effect.gen(function* () {
       const result = yield* Effect.result(fetchBackers('trpc'));
       expect(failureMessage(result)).toBe(
-        'Open Collective, for trpc: HTTP 429: {"error":"Rate limit exceeded"}',
+        'Open Collective, for trpc: HTTP 503: {"error":"Unavailable"}',
       );
     }).pipe(Effect.provide(fake.layer));
   });
+
+  it.effect('waits out a 429, and fails if it lasts', () => {
+    let limited = 2;
+    const answer = openCollectiveData({ members: [memberNode('a')] });
+    const fake = fakeOpenCollective((sent) =>
+      limited-- > 0 ? { body: {}, status: 429 } : answer(sent),
+    );
+    const always = fakeOpenCollective(() => ({ body: {}, status: 429 }));
+    return Effect.gen(function* () {
+      const waited = yield* Effect.forkChild(
+        fetchBackers('trpc').pipe(Effect.provide(fake.layer)),
+      );
+      yield* TestClock.adjust('1 minute');
+      expect(yield* Fiber.join(waited)).toHaveLength(1);
+
+      const gaveUp = yield* Effect.forkChild(
+        Effect.result(fetchBackers('trpc').pipe(Effect.provide(always.layer))),
+      );
+      yield* TestClock.adjust('2 minutes');
+      expect(failureMessage(yield* Fiber.join(gaveUp))).toBe(
+        'Open Collective, for trpc: HTTP 429: still rate limited after a minute of retries',
+      );
+      expect(always.sent.length).toBeGreaterThanOrEqual(5);
+    });
+  });
+
+  it.effect(
+    "doesn't need a rate for a currency only the incognito or past contributions use",
+    () => {
+      const fake = fakeOpenCollective(
+        openCollectiveData({
+          members: [
+            memberNode('incognito-1', {
+              account: { isIncognito: true },
+              totalDonations: { currency: 'JPY', valueInCents: 100 },
+            }),
+            memberNode('shown'),
+          ],
+          orders: [
+            orderNode('shown', {
+              amount: { currency: 'EUR', valueInCents: 100 },
+              status: 'CANCELLED',
+            }),
+          ],
+        }),
+      );
+      return Effect.gen(function* () {
+        const backers = yield* fetchBackers('trpc');
+        expect(backers.map((backer) => backer.slug)).toEqual(['shown']);
+        expect(fake.sent).toHaveLength(2);
+      }).pipe(Effect.provide(fake.layer));
+    },
+  );
+
+  it.effect(
+    "ignores a GitHub link that isn't GitHub, and takes a bare handle",
+    () => {
+      const fake = fakeOpenCollective(
+        openCollectiveData({
+          members: [
+            memberNode('gitlab', {
+              account: {
+                socialLinks: [
+                  { type: 'GITHUB', url: 'https://gitlab.com/alice' },
+                ],
+              },
+            }),
+            memberNode('bare', { account: { githubHandle: 'bob' } }),
+          ],
+        }),
+      );
+      return Effect.gen(function* () {
+        const backers = yield* fetchBackers('trpc');
+        expect(backers.map((backer) => backer.githubLogin)).toEqual([
+          null,
+          'bob',
+        ]);
+      }).pipe(Effect.provide(fake.layer));
+    },
+  );
 
   it.effect('fails on a response it does not expect', () => {
     const fake = fakeOpenCollective(

@@ -80,7 +80,10 @@ export function directDollars(sponsor: DirectSponsor, now: number) {
   return periods * sponsor.dollars;
 }
 
-/** `website`'s host (without `www.`) and path, to tell whether two are one site. */
+/**
+ * `website`'s host (without `www.`), path and query but for `ref` and
+ * `utm_*`, to tell whether two are one site.
+ */
 function siteOf(website: string) {
   const withScheme = /^https?:\/\//i.test(website)
     ? website
@@ -89,14 +92,20 @@ function siteOf(website: string) {
     return undefined;
   }
   const url = new URL(withScheme);
+  for (const key of [...url.searchParams.keys()]) {
+    if (key === 'ref' || key.startsWith('utm_')) {
+      url.searchParams.delete(key);
+    }
+  }
+  url.searchParams.sort();
   const host = url.hostname.toLowerCase().replace(/^www\./, '');
-  return `${host}${url.pathname.replace(/\/+$/, '').toLowerCase()}`;
+  return `${host}${url.pathname.replace(/\/+$/, '').toLowerCase()}${url.search}`;
 }
 
 /**
- * Whether an Open Collective backer is `sponsor`, who sponsors on GitHub:
- * their profile links `sponsor`'s GitHub account, or they have the same
- * website.
+ * Whether an Open Collective backer is `sponsor`, who sponsors on GitHub
+ * or is another backer: their profile links `sponsor`'s GitHub account, or
+ * they have the same website.
  */
 export function isSameSponsor(
   backer: Pick<OpenCollectiveBacker, 'githubLogin' | 'websiteUrl'>,
@@ -134,9 +143,9 @@ interface Tally {
  * they first started. What they're worth is what GitHub says they've paid
  * the accounts in all; a new sponsor GitHub hasn't charged yet counts their
  * monthly tier. Open Collective backers count the same way, in dollars, if
- * they back trpc now; one who sponsors on GitHub too (`isSameSponsor`) is
- * one sponsor, worth both, with what they give a month on each added up
- * for their tier. One who doesn't goes by the GitHub login their profile
+ * they back trpc now; one who sponsors on GitHub too, or is another
+ * backer (`isSameSponsor`), is one sponsor, worth both, with what they give
+ * a month on each added up for their tier. One who doesn't goes by the GitHub login their profile
  * links, else their Open Collective slug. Direct sponsors count every
  * period they've started, and `extra` is added on top.
  */
@@ -182,13 +191,14 @@ export function sponsorsList(opts: {
     );
   }
 
-  const onGithub = [...tallies.values()];
   for (const backer of opts.openCollective ?? []) {
     if (!backer.isCurrent) {
       continue;
     }
     const dollars = Math.max(backer.paidCents / 100, backer.monthlyDollars);
-    const known = onGithub.find((tally) => isSameSponsor(backer, tally));
+    const known = [...tallies.values()].find((tally) =>
+      isSameSponsor(backer, tally),
+    );
     if (known !== undefined) {
       known.createdAt = Math.min(known.createdAt, backer.createdAt);
       known.dollars += dollars;

@@ -178,16 +178,21 @@ export const readmeFromSponsorsFile = Effect.fn('readmeFromSponsorsFile')(
   },
 );
 
-/** Who backs on Open Collective now, and which of them sponsor on GitHub too. */
+/**
+ * Who backs on Open Collective now, and which of them sponsor on GitHub
+ * too, in public or `shownPrivately`.
+ */
 export function openCollectiveSummary(
   backers: ReadonlyArray<OpenCollectiveBacker>,
   sponsorships: ReadonlyArray<Sponsorship>,
+  shownPrivately: ReadonlyArray<string>,
 ) {
   const current = backers.filter((backer) => backer.isCurrent);
   const names = current.map((backer) =>
     sponsorships.some(
       (sponsorship) =>
-        sponsorship.isPublic && isSameSponsor(backer, sponsorship),
+        (sponsorship.isPublic || shownPrivately.includes(sponsorship.login)) &&
+        isSameSponsor(backer, sponsorship),
     )
       ? `${backer.name} (also on GitHub)`
       : backer.name,
@@ -252,7 +257,9 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
     });
   }
   if ((opts.openCollective ?? []).length > 0) {
-    yield* Console.log(openCollectiveSummary(backers, sponsorships));
+    yield* Console.log(
+      openCollectiveSummary(backers, sponsorships, opts.config.shownPrivately),
+    );
   }
   const sponsors = yield* markImageless(
     sponsorsList({

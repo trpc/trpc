@@ -493,12 +493,24 @@ describe('openCollectiveSummary', () => {
           backer('Guest', { isCurrent: false }),
         ],
         [fan],
+        [],
       ),
     ).toBe(
       'Open Collective: 2 backing now: Venue.ink, Fan (also on GitHub); 1 who backed before left out.',
     );
-    expect(openCollectiveSummary([], [fan])).toBe(
+    expect(openCollectiveSummary([], [fan], [])).toBe(
       'Open Collective: 0 backing now.',
+    );
+  });
+
+  it('counts a private GitHub sponsor as on GitHub only if they can be shown', () => {
+    const backers = [backer('Fan', { githubLogin: 'fan' })];
+    const secret = { ...fan, isPublic: false };
+    expect(openCollectiveSummary(backers, [secret], [])).toBe(
+      'Open Collective: 1 backing now: Fan.',
+    );
+    expect(openCollectiveSummary(backers, [secret], ['fan'])).toBe(
+      'Open Collective: 1 backing now: Fan (also on GitHub).',
     );
   });
 });
