@@ -24,10 +24,12 @@ html {
   }
 }
 
-/* In-page links glide to their heading. The router scrolls `instant`ly
-   (`scrollRestorationBehavior`), so a new page starts at the top. */
+/* In-page links glide to their heading, once the reader has clicked or
+   pressed a key (`smooth-scroll.ts`). A page opened at a heading jumps
+   there: a long glide would pass the demos, which load as they near the
+   screen and push the heading down while the scroll is on its way. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html[data-smooth-scroll] {
     scroll-behavior: smooth;
   }
 }
@@ -638,6 +640,75 @@ figure.tweet .tweet-footer a:hover {
   margin-block: 2rem;
   border: 1px dashed var(--border);
   border-radius: var(--radius-xl, 0.75rem);
+}
+
+/* Each slot keeps the room its demo takes once it has run, plus the 2rem
+   under the card, so the page doesn't move as the demo loads. Measured on
+   phones, under `md` and from `md`, where the column widens; a demo whose
+   layout changes needs its numbers changed. The top margin is the card's,
+   so a fallback code block's smaller one doesn't grow when the card
+   replaces it. Without JavaScript the slot only holds its fallback. */
+@media (scripting: enabled) {
+  .demo-slot {
+    min-height: var(--demo-height);
+    margin-top: 2rem;
+  }
+}
+
+[data-demo='loader-handles'] {
+  --demo-height: 55rem;
+}
+
+[data-demo='request-timeline'] {
+  --demo-height: 33rem;
+}
+
+[data-demo='starting-queries'] {
+  --demo-height: 71rem;
+}
+
+[data-demo='url-input'] {
+  --demo-height: 40.5rem;
+}
+
+[data-demo='waterfalls'] {
+  --demo-height: 70rem;
+}
+
+@media (width >= 40rem) {
+  [data-demo='request-timeline'] {
+    --demo-height: 22rem;
+  }
+
+  [data-demo='starting-queries'] {
+    --demo-height: 63rem;
+  }
+
+  [data-demo='url-input'] {
+    --demo-height: 37.5rem;
+  }
+
+  [data-demo='waterfalls'] {
+    --demo-height: 62rem;
+  }
+}
+
+@media (width >= 48rem) {
+  [data-demo='loader-handles'] {
+    --demo-height: 34rem;
+  }
+
+  [data-demo='starting-queries'] {
+    --demo-height: 59rem;
+  }
+
+  [data-demo='url-input'] {
+    --demo-height: 24.75rem;
+  }
+
+  [data-demo='waterfalls'] {
+    --demo-height: 57.5rem;
+  }
 }
 
 /* A `chart` fence's bars (`build/charts.ts`) */

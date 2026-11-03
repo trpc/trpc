@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { createDemoClient } from './kit/backend.ts';
@@ -6,6 +8,7 @@ import {
   createNetwork,
   type NetworkRequest,
 } from './kit/network.ts';
+import { demoNames } from './names.ts';
 import { createRandom, jitter } from './random.ts';
 import { longestTimeline, progress, timeline } from './timeline.ts';
 import {
@@ -276,5 +279,19 @@ describe('url state', () => {
     );
     expect(listPosts({ page: 1, sort: 'new' })).not.toEqual(top);
     expect(listPosts({ page: lastPage, sort: 'new' })).toHaveLength(3);
+  });
+});
+
+describe('demo slots', () => {
+  it('keep room for every demo before it loads', () => {
+    const styles = readFileSync(
+      new URL('../styles.css', import.meta.url),
+      'utf8',
+    );
+    for (const name of demoNames) {
+      expect(styles, name).toContain(
+        `[data-demo='${name}'] {\n  --demo-height:`,
+      );
+    }
   });
 });
