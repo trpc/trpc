@@ -111,7 +111,7 @@ const [RootBoundary] = createErrorBoundary({
 
 ## Details
 
-- **Built as B**, in effect-atom-boundary's shape: `claims: { unexpected: Crashed }` rather than `unexpected: true` beside one `fallback`, so `unexpected`'s fallback reads `unknown` and every other claim's reads exactly its errors. At the hook, `unexpected` still owns only `defined: false` tRPC errors.
+- **Built as B**, with a fallback per claim: `claims: { unexpected: Crashed }` rather than `unexpected: true` beside one `fallback`, so `unexpected`'s fallback reads `unknown` and every other claim's reads exactly its errors. At the hook, `unexpected` still owns only `defined: false` tRPC errors.
 - In every option, a boundary with codes gets `TrpcError<'NETWORK_ERROR', unknown>`: a claim matches by code whether the error is defined or not, so its `data` is whatever the procedure declared, or `undefined`.
 - A fallback only ever gets its own claims; what its parents own goes to them. So a fallback's type is its own codes, not the chain's.
 - A thrown promise (Suspense) never reaches an error boundary, so B needs no check for it.

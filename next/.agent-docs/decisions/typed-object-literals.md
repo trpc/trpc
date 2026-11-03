@@ -9,12 +9,12 @@
   - a literal that is only spreads.
 - (agent) The rule can't see types: Oxlint gives JS plugins no type information. A generic or `unknown` parameter doesn't check excess properties, but the rule can't tell one apart from a typed parameter, so it flags those too.
 - (agent) Routers and contracts used more than once take `satisfies AnyRouter` / `satisfies AnyContractRouter`, which keeps their literal type.
-- Human, 2026-10-17: "Check how raf query doss their custom lint rules BTW and use thay format". The plugin follows raf-query's [`tooling/oxlint-plugins/`](https://github.com/KATT/raf-query/tree/a9f2aa7743c64b548c6d982f5caffaf53f9a695a/tooling/oxlint-plugins):
+- Human, 2026-10-17: "Check how [another project] doss their custom lint rules BTW and use thay format". The plugin follows that format:
   - rules are `defineRule` with `schema: []` and `messages` reported by `messageId`;
   - the plugin is `eslintCompatPlugin`;
   - each rule has a `RuleTester` test (from `oxlint/plugins-dev`) beside it.
   - The folder, the `index.ts` entry and the `trpc` name stay, per [`npm-names.md`](./npm-names.md).
 - Why: TypeScript only checks excess properties on a fresh literal. One kept in a variable also widens its literals and loses contextual typing for callbacks.
 - Lost: named intermediate objects that were only passed once.
-- Open: raf-query's rule tests also lint every Markdown fence (`markdown-fences.ts`); ours don't yet.
+- Open: rule tests that also lint every Markdown fence; ours don't yet.
 - Lives in: `tooling/oxlint-plugin/` (`typed-objects.ts` and the `*.test.ts` beside each rule), `vite.config.ts` (`trpc/typed-objects`, off under `spikes/**`).

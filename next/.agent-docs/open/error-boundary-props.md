@@ -121,5 +121,5 @@ const [AuthBoundary] = createErrorBoundary({
 
 - `onReset`'s `reason` is `'reset'` (the fallback called `reset()`) or `'keys'` (a `resetKeys` entry changed), react-error-boundary's `'imperative-api'` under the fallback's own name.
 - `onError(error, info)` gets React's `ErrorInfo`, so `info.componentStack` is there, as react-error-boundary's and React 19's root `onCaughtError` do. It runs for the errors this boundary renders, not the ones it re-throws.
-- **Built as B**, without a fallback per mount: since effect-atom-boundary's shape, a fallback is per claim (`claims: { UNAUTHORIZED: SignIn }`), so overriding one per mount would be a partial `claims`, left out until someone needs it. `onError`'s `error` is typed by the boundary's own claims.
+- **Built as B**, without a fallback per mount: a fallback is per claim (`claims: { UNAUTHORIZED: SignIn }`), so overriding one per mount would be a partial `claims`, left out until someone needs it. `onError`'s `error` is typed by the boundary's own claims.
 - TanStack Router's `getResetKey` is one function returning one key; react-error-boundary's `resetKeys` array is the more common shape in React apps.

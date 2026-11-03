@@ -131,7 +131,7 @@ The example is the shape that shipped on 2026-11-03; the question was asked with
 
 Human, 2026-10-20: error boundaries, shipped as `unstable_createErrorBoundary`, a `[AuthBoundary, useAuthBoundary]` tuple whose hook throws outside its boundary: A behind the `unstable_` prefix, with its DX details asked as open questions ([error-boundaries](../decisions/error-boundaries.md)).
 
-Human, 2026-11-03: "Actually make it unstable rather than experimental, I'm sure i want it". Exported, with effect-atom-boundary's typed fallback per claim and the open questions' recommendations ([error-boundaries](../decisions/error-boundaries.md)).
+Human, 2026-11-03: "Actually make it unstable rather than experimental, I'm sure i want it". Exported, with a typed fallback per claim and the open questions' recommendations ([error-boundaries](../decisions/error-boundaries.md)).
 
 ### Q24.5: where error boundaries live
 

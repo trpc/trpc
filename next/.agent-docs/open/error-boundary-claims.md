@@ -157,7 +157,7 @@ if (doc.error?.code === 'NOT_FOUND') {
 
 ## Details
 
-- **Built as C**, in effect-atom-boundary's shape: the claims are an object's keys with a fallback each (`claims: { UNAUTHORIZED: SignIn, ProcedureNotFound: Reload }`), not a list beside one fallback. A tag goes before a code, so `NOT_FOUND`'s fallback there reads only the errors no claimed tag takes.
+- **Built as C**, with a fallback per claim: the claims are an object's keys with a fallback each (`claims: { UNAUTHORIZED: SignIn, ProcedureNotFound: Reload }`), not a list beside one fallback. A tag goes before a code, so `NOT_FOUND`'s fallback there reads only the errors no claimed tag takes.
 - **A misspelt claim** is a type error: the boundary's `errors` (a client factory, a client or `routerType<AppRouter>()`) gives it the router's errors, and a key must be one of their codes or tags.
 - **The server's error map** (result-rpc shares one between its middleware and the shell): `claims: authErrors`, the object passed to `.errors(authErrors)`. It can't name what nothing declares (`NETWORK_ERROR`, a proxy's 401), which are what app-wide boundaries own most, so it isn't an option here.
 - **The key's name.** `claims` is result-rpc's word, and the docs say a boundary "owns" what it claims. `catches` would read like TanStack Router's `CatchBoundary` and `onCatch`; this keeps `claims`.
