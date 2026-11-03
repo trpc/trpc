@@ -405,7 +405,9 @@ function createConsumerStream<THead>(
  */
 function createStreamsManager(abortController: AbortController) {
   let terminalState:
-    { type: 'closed' } | { type: 'errored'; reason: unknown } | undefined;
+    | { type: 'closed' }
+    | { type: 'errored'; reason: unknown }
+    | undefined;
   const controllerMap = new Map<
     ChunkIndex,
     ReturnType<typeof createStreamController>
