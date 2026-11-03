@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { createDemoClient, procedureWeights } from './kit/backend.ts';
+import { createDemoClient } from './kit/backend.ts';
 import {
   chainLength,
   createNetwork,
@@ -58,15 +58,17 @@ describe('timeline', () => {
   });
 
   it('draws different times for different seeds', () => {
-    const postEnds = new Set(
-      Array.from(
-        { length: 20 },
-        (_, index) =>
-          timeline('render-as-you-fetch', 200, createRandom(index + 1))
-            .requests[0].end,
-      ),
+    const ends = Array.from({ length: 20 }, (_, index) =>
+      timeline(
+        'render-as-you-fetch',
+        200,
+        createRandom(index + 1),
+      ).requests.map((request) => request.end),
     );
-    expect(postEnds.size).toBeGreaterThan(1);
+    expect(new Set(ends.map(([post]) => post)).size).toBeGreaterThan(1);
+    expect(new Set(ends.map(([, comments]) => comments)).size).toBeGreaterThan(
+      1,
+    );
   });
 
   it('measures progress from 0 to 1', () => {
@@ -164,10 +166,28 @@ describe('network', () => {
     const client = createDemoClient(network);
     await client.post.byId.query({ id: 1 });
     await client.post.comments.query({ postId: 1 });
-    expect(weights).toEqual([
-      procedureWeights['post.byId'],
-      procedureWeights['post.comments'],
-    ]);
+    await client.post.byAuthor.query({ authorId: 1, exclude: 1 });
+    expect(weights).toEqual([1, 1.5, 1.2]);
+  });
+
+  it('answers only once the delay has passed', async () => {
+    vi.useFakeTimers();
+    try {
+      const network = createNetwork(createRandom(1));
+      network.delay = () => 500;
+      const client = createDemoClient(network);
+      let answered = false;
+      const query = client.post.byId.query({ id: 1 }).then(() => {
+        answered = true;
+      });
+      await vi.advanceTimersByTimeAsync(499);
+      expect(answered).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await query;
+      expect(answered).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
