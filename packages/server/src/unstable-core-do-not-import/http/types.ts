@@ -192,10 +192,9 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   allowBatching?: boolean;
   /**
    * The most calls a batch can have. Larger batches get a 400 error. Set
-   * the client's `maxItems` to the same or a lower number. Use `Infinity`
-   * to allow batches of any size.
+   * the client's `maxItems` to the same or a lower number.
    * @see https://trpc.io/docs/client/links/httpBatchLink#limiting-batch-size
-   * @default 100
+   * @default unlimited
    */
   maxBatchSize?: number;
 }

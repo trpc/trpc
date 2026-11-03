@@ -32,7 +32,7 @@ Every HTTP adapter accepts these options, next to its own (like `endpoint` for F
 | `onError`             | Called with `{ error, type, path, input, ctx, req }` for every error, e.g. to report it. See [Error handling](./error-handling.md#handling-errors). |
 | `responseMeta`        | Returns `{ status, headers }` for the response, e.g. for [caching](./caching.md).                                                                   |
 | `allowBatching`       | Set to `false` to reject batch requests. Defaults to `true`.                                                                                        |
-| `maxBatchSize`        | Rejects batch requests with more calls than this with a `400 Bad Request`. Defaults to `100`; `Infinity` turns it off. Set `maxItems` on your batch link to the same or a lower value. |
+| `maxBatchSize`        | Rejects batch requests with more calls than this with a `400 Bad Request`. Set `maxItems` on your batch link to the same or a lower value.          |
 | `allowMethodOverride` | Accepts queries sent as `POST`, for clients that set `methodOverride: 'POST'` on their link. Defaults to `false`.                                   |
 
 The Node.js adapters (Standalone, Express and Next.js) also accept:
