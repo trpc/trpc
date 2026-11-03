@@ -2,7 +2,7 @@
  * `/sponsor`'s cloud of sponsors as a PNG, for the READMEs
  * (`build/sponsors-readme.ts`): each sponsor a circle of their avatar,
  * packed as the page packs them (`components/sponsors/pack.ts`), on a
- * transparent square. `routes/og.$.ts` serves it at `sponsorCloudPath`,
+ * transparent background. `routes/og.$.ts` serves it at `sponsorCloudPath`,
  * with the avatars fetched on request (`live.ts`); `render.ts` draws it.
  *
  * The build scripts import this with Node, so it imports nothing through
@@ -14,11 +14,11 @@ import { avatarUrl, type Sponsor, sponsorKey } from '../sponsors.ts';
 
 export const sponsorCloudPath = '/og/sponsor-cloud.png';
 
-/** The PNG's side in pixels: twice the width the READMEs show it at. */
-export const sponsorCloudSize = 1200;
+/** The PNG's width in pixels: twice the width the READMEs show it at. */
+export const sponsorCloudWidth = 1200;
 
 /** The width the READMEs show it at, in CSS pixels. */
-export const sponsorCloudWidth = sponsorCloudSize / 2;
+export const sponsorCloudDisplayWidth = sponsorCloudWidth / 2;
 
 /** Room around the cloud for the circles' rings, in pixels. */
 const margin = 8;
@@ -36,24 +36,43 @@ export interface CloudBubble {
   readonly y: number;
 }
 
+/** The PNG's circles, and its height: as tall as they need. */
+export interface CloudLayout {
+  readonly bubbles: ReadonlyArray<CloudBubble>;
+  readonly height: number;
+}
+
 const drawn = (sponsors: ReadonlyArray<Sponsor>) =>
   sponsors.filter((sponsor) => sponsor.imageless !== true);
 
-/** `sponsors`' circles, but the imageless: as `/sponsor` draws them, in pixels. */
-export function cloudBubbles(
-  sponsors: ReadonlyArray<Sponsor>,
-): ReadonlyArray<CloudBubble> {
-  const side = sponsorCloudSize - 2 * margin;
-  return packSponsors(drawn(sponsors), cloudPadding).map((bubble) => ({
-    image: avatarUrl(
-      bubble.sponsor,
-      avatarSizes.find((size) => size >= bubble.r * 2 * side) ?? 460,
-    ),
-    name: bubble.sponsor.name,
-    r: bubble.r * side,
-    x: margin + bubble.x * side,
-    y: margin + bubble.y * side,
-  }));
+/**
+ * `sponsors`' circles, but the imageless, as `/sponsor` packs them, scaled
+ * to fill `sponsorCloudWidth` and cropped to them, so the README has no
+ * empty band where the packed circle has no sponsors.
+ */
+export function cloudLayout(sponsors: ReadonlyArray<Sponsor>): CloudLayout {
+  const packed = packSponsors(drawn(sponsors), cloudPadding);
+  if (packed.length === 0) {
+    return { bubbles: [], height: 2 * margin };
+  }
+  const left = Math.min(...packed.map((bubble) => bubble.x - bubble.r));
+  const right = Math.max(...packed.map((bubble) => bubble.x + bubble.r));
+  const top = Math.min(...packed.map((bubble) => bubble.y - bubble.r));
+  const bottom = Math.max(...packed.map((bubble) => bubble.y + bubble.r));
+  const scale = (sponsorCloudWidth - 2 * margin) / (right - left);
+  return {
+    bubbles: packed.map((bubble) => ({
+      image: avatarUrl(
+        bubble.sponsor,
+        avatarSizes.find((size) => size >= bubble.r * 2 * scale) ?? 460,
+      ),
+      name: bubble.sponsor.name,
+      r: bubble.r * scale,
+      x: margin + (bubble.x - left) * scale,
+      y: margin + (bubble.y - top) * scale,
+    })),
+    height: Math.ceil((bottom - top) * scale + 2 * margin),
+  };
 }
 
 /** 32-bit FNV-1a, as 8 hex digits. */

@@ -7,7 +7,10 @@
  * whose avatar didn't load is left out. Every URL is absolute, so the
  * packages' READMEs draw it on npm too.
  */
-import { sponsorCloudUrl, sponsorCloudWidth } from '../src/og/sponsor-cloud.ts';
+import {
+  sponsorCloudDisplayWidth,
+  sponsorCloudUrl,
+} from '../src/og/sponsor-cloud.ts';
 import { site } from '../src/site.ts';
 import {
   avatarUrl,
@@ -66,7 +69,7 @@ export function sponsorCloudMarkdown(sponsors: ReadonlyArray<Sponsor>) {
   const src = escapeHtml(sponsorCloudUrl(sponsors));
   return [
     '<p align="center">',
-    `  <a href="${href}"><img src="${src}" width="${sponsorCloudWidth}" alt="${site.name}'s sponsors, each drawn bigger the more they've given"/></a>`,
+    `  <a href="${href}"><img src="${src}" width="${sponsorCloudDisplayWidth}" alt="${site.name}'s sponsors, each drawn bigger the more they've given"/></a>`,
     '</p>',
   ].join('\n');
 }

@@ -51,15 +51,15 @@ async function sponsorCloudResponse(url: URL, cloud: typeof SponsorCloud) {
       import('~/og/live.ts'),
       import('~/sponsors.ts'),
     ]);
-  const bubbles = cloud.cloudBubbles(drawnSponsors);
+  const layout = cloud.cloudLayout(drawnSponsors);
   const avatars = await fetchCloudAvatars(
-    bubbles.map((bubble) => bubble.image),
+    layout.bubbles.map((bubble) => bubble.image),
   );
   return png(
-    await renderSponsorCloud(bubbles, avatars),
+    await renderSponsorCloud(layout, avatars),
     cloud.sponsorCloudCacheControl({
       avatars,
-      bubbles,
+      bubbles: layout.bubbles,
       current: cloud.sponsorCloudVersion(drawnSponsors),
       requested: url.searchParams.get('v'),
     }),

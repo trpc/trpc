@@ -939,18 +939,17 @@ export const cardElement = (
 };
 
 /**
- * The sponsor cloud (`sponsor-cloud.ts`) in a `size` square with nothing
- * behind it: each sponsor's avatar in a white circle with a faint ring,
+ * The sponsor cloud (`sponsor-cloud.ts`) at `size`, with nothing behind it: each sponsor's avatar in a white circle with a faint ring,
  * which reads on GitHub's light and dark themes alike, or their initials on
  * the brand blue when it didn't load.
  */
 export const sponsorCloudElement = (
   bubbles: ReadonlyArray<CloudBubble>,
   avatars: ReadonlyMap<string, string>,
-  size: number,
+  size: { readonly height: number; readonly width: number },
 ) =>
   box(
-    { fontFamily: 'Inter', height: size, position: 'relative', width: size },
+    { fontFamily: 'Inter', position: 'relative', ...size },
     ...bubbles.map((bubble) => {
       const image = avatars.get(bubble.image);
       const diameter = bubble.r * 2;

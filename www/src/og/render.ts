@@ -23,7 +23,7 @@ import {
   sponsorCloudElement,
 } from './card.ts';
 import { type Live, noLive } from './live.ts';
-import { type CloudBubble, sponsorCloudSize } from './sponsor-cloud.ts';
+import { type CloudLayout, sponsorCloudWidth } from './sponsor-cloud.ts';
 
 /** The bytes of a `data:` URI that `?inline` made. */
 const inlined = (uri: string) =>
@@ -81,14 +81,12 @@ export async function renderOgImage(
   return toPng(cardElement(await loaded(), ogCard, live, footer), ogImageSize);
 }
 
-/** The sponsor cloud's `bubbles` as a transparent square PNG, with the `avatars` that loaded. */
+/** The sponsor cloud laid out as `layout` as a transparent PNG, with the `avatars` that loaded. */
 export async function renderSponsorCloud(
-  bubbles: ReadonlyArray<CloudBubble>,
+  layout: CloudLayout,
   avatars: ReadonlyMap<string, string> = new Map(),
 ) {
   await loaded();
-  return toPng(sponsorCloudElement(bubbles, avatars, sponsorCloudSize), {
-    height: sponsorCloudSize,
-    width: sponsorCloudSize,
-  });
+  const size = { height: layout.height, width: sponsorCloudWidth };
+  return toPng(sponsorCloudElement(layout.bubbles, avatars, size), size);
 }
