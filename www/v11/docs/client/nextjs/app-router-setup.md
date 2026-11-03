@@ -424,14 +424,15 @@ To avoid repeating the procedure and input in client components, start queries w
 
 #### Prefetching in a Server Component
 
-`prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Until then the client's `data` is `undefined`; `await queryClient.prefetchQuery(...)` instead if you'd rather delay the page until the data is there.
+`prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, like the one below, wait for the data instead: `await getQueryClient().prefetchQuery(…)`.
 
 ```tsx twoslash title='app/page.tsx'
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/server' {
+  import { QueryClient } from '@tanstack/react-query';
+  export function getQueryClient(): QueryClient;
   export function HydrateClient(props: { children: React.ReactNode }): React.JSX.Element;
-  export function prefetch(queryOptions: any): void;
   export const trpc: {
     hello: {
       queryOptions: (input: { text: string }) => any;
@@ -446,11 +447,11 @@ export function ClientGreeting() {
 
 // @filename: app/page.tsx
 // ---cut---
-import { HydrateClient, prefetch, trpc } from '~/trpc/server';
+import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  prefetch(trpc.hello.queryOptions({ text: 'world' }));
+  await getQueryClient().prefetchQuery(trpc.hello.queryOptions({ text: 'world' }));
 
   return (
     <HydrateClient>
