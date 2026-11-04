@@ -73,6 +73,7 @@ describe('pullRequestNumber', () => {
     expect(
       pullRequestNumber('Merge pull request #7867 from someone/branch'),
     ).toBe(7867);
+    expect(pullRequestNumber('  Merge pull request #7 from a/b')).toBe(7);
     expect(pullRequestNumber('Merge branch main into feature')).toBeUndefined();
   });
 });
@@ -370,6 +371,7 @@ describe('changesBetween', () => {
         yield* commit('feat(server): feature', [
           'packages/server/src/feature.ts',
           'packages/server/src/café.ts',
+          'packages/server/src/a\x1eb.ts',
         ]);
         yield* git(root, 'checkout', '--quiet', 'main');
         yield* git(
@@ -399,6 +401,7 @@ describe('changesBetween', () => {
             sha: d,
             subject: 'Merge pull request #3 from someone/feature',
             files: [
+              'packages/server/src/a\x1eb.ts',
               'packages/server/src/café.ts',
               'packages/server/src/feature.ts',
             ],
@@ -441,6 +444,22 @@ describe('notesPackages', () => {
           'packages',
         );
         yield* git(root, 'init', '--quiet', '--initial-branch', 'main');
+        yield* git(
+          root,
+          '-c',
+          'user.name=Test',
+          '-c',
+          'user.email=test@example.com',
+          '-c',
+          'commit.gpgsign=false',
+          'commit',
+          '--quiet',
+          '--allow-empty',
+          '--message',
+          'initial',
+        );
+        yield* git(root, 'tag', '--no-sign', 'v0.0.0');
+        yield* write('café', { name: '@trpc/cafe' });
         yield* write('client', {
           name: '@trpc/client',
           dependencies: { '@trpc/server': 'workspace:*' },
@@ -454,11 +473,14 @@ describe('notesPackages', () => {
         yield* commit;
         yield* write('server', { name: '@trpc/renamed' });
 
+        expect(yield* notesPackages(root, 'v0.0.0')).toEqual([]);
         expect(yield* notesPackages(root, 'v1.0.0')).toEqual([
+          { name: '@trpc/cafe', dir: 'packages/café' },
           { name: '@trpc/server', dir: 'packages/server' },
           { name: '@trpc/client', dir: 'packages/client' },
         ]);
         expect(yield* notesPackages(root, 'HEAD')).toEqual([
+          { name: '@trpc/cafe', dir: 'packages/café' },
           { name: '@trpc/server', dir: 'packages/server' },
         ]);
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),

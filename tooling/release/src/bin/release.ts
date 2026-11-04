@@ -61,7 +61,8 @@ Effect.gen(function* () {
     values.from === undefined ? undefined : path.resolve(values.from);
   if (
     (pack !== undefined && from !== undefined) ||
-    (values.to !== undefined && command !== 'notes')
+    (values.to !== undefined && command !== 'notes') ||
+    (command === 'notes' && (pack !== undefined || from !== undefined))
   ) {
     return yield* new ReleaseError({ message: usage });
   }

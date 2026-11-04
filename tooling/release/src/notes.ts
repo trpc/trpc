@@ -62,9 +62,10 @@ export interface NewContributor {
  * (#123)`, or a merge commit's `Merge pull request #123 from owner/branch`.
  */
 export function pullRequestNumber(subject: string): number | undefined {
+  const trimmed = subject.trim();
   const match =
-    /\(#(\d+)\)$/.exec(subject.trim()) ??
-    /^Merge pull request #(\d+) from /.exec(subject);
+    /\(#(\d+)\)$/.exec(trimmed) ??
+    /^Merge pull request #(\d+) from /.exec(trimmed);
   return match === null ? undefined : Number(match[1]);
 }
 
@@ -260,25 +261,31 @@ export const changesBetween = Effect.fn('changesBetween')(function* (
     '--name-only',
     '--reverse',
     '-z',
-    '--format=%x1e%H%x1f%s',
+    '--format=%x00%H%x00%s',
     `${from}..${to}`,
   );
-  // With -z, paths aren't quoted and each ends with a NUL; a newline
-  // separates the subject from the first one.
-  return log
-    .split('\x1e')
-    .filter((record) => record.trim() !== '')
-    .map((record): Change => {
-      const [header = '', ...files] = record.split('\0');
-      const [sha = '', subject = ''] = header.split('\x1f');
-      return {
-        sha,
-        subject,
-        files: files
-          .map((file) => file.replace(/^\n/, ''))
-          .filter((file) => file !== ''),
-      };
-    });
+  // With -z, every field ends with a NUL and paths aren't quoted. Each commit
+  // starts with an empty field, which no path is, then its sha and subject; a
+  // newline comes before its first path.
+  const fields = log.split('\0');
+  const changes: Array<Change & { files: Array<string> }> = [];
+  for (let i = 0; i < fields.length; i++) {
+    const field = fields[i] ?? '';
+    const current = changes.at(-1);
+    if (field === '' && i + 2 < fields.length) {
+      changes.push({
+        sha: fields[i + 1] ?? '',
+        subject: fields[i + 2] ?? '',
+        files: [],
+      });
+      i += 2;
+    } else if (field !== '' && current !== undefined) {
+      current.files.push(
+        current.files.length === 0 ? field.replace(/^\n/, '') : field,
+      );
+    }
+  }
+  return changes;
 });
 
 /** The public packages at `rev`, each after the packages it depends on. */
@@ -287,21 +294,23 @@ export const notesPackages = Effect.fn('notesPackages')(function* (
   rev: string,
 ) {
   const packages: Array<WorkspacePackage> = [];
-  for (const entry of (yield* git(
+  // Lists nothing when `rev` has no packages/ directory.
+  const listed = yield* git(
     root,
     'ls-tree',
+    '-z',
     '--name-only',
-    `${rev}:packages`,
-  )).split('\n')) {
-    const raw = yield* git(
-      root,
-      'show',
-      `${rev}:packages/${entry}/package.json`,
-    ).pipe(Effect.orElseSucceed(() => undefined));
+    rev,
+    'packages/',
+  );
+  for (const dir of listed.split('\0').filter((entry) => entry !== '')) {
+    const raw = yield* git(root, 'show', `${rev}:${dir}/package.json`).pipe(
+      Effect.orElseSucceed(() => undefined),
+    );
     const pkg =
       raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
     if (pkg?.name !== undefined) {
-      packages.push({ dir: `packages/${entry}`, name: pkg.name, pkg });
+      packages.push({ dir, name: pkg.name, pkg });
     }
   }
   const dirs = new Map(packages.map(({ name, dir }) => [name, dir]));
