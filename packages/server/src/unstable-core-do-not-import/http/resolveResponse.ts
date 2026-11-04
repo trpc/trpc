@@ -416,12 +416,7 @@ async function jsonResponse(
     if (outcome.ok) {
       return { result: { data: outcome.value.data } };
     }
-    const call = info.calls[index]!;
-    // a single call's error gets the request's type, which is always
-    // `mutation` for form data and binary bodies
-    const source = info.isBatchCall
-      ? sourceOf(call)
-      : { type: info.type, call };
+    const source = sourceOf(info.calls[index]!);
     return { error: errorShape(request, outcome.error, source) };
   });
 

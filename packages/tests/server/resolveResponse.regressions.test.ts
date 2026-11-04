@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { httpLink, TRPCClientError } from '@trpc/client';
@@ -213,4 +214,38 @@ describe('responseMeta runs once', () => {
     expect(recorder.responses.map((res) => res.status)).toEqual([500]);
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
+});
+
+test("a single call's error gets its procedure's type", async () => {
+  const t = initTRPC.create({
+    errorFormatter: ({ shape, type }) => ({
+      ...shape,
+      data: { ...shape.data, type },
+    }),
+  });
+  const router = t.router({
+    upload: t.procedure.input(z.instanceof(FormData)).query(() => {
+      throw new TRPCError({ code: 'CONFLICT', message: 'Already uploaded' });
+    }),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    server: { allowMethodOverride: true },
+    client: ({ httpUrl }) => ({
+      links: [httpLink({ url: httpUrl, methodOverride: 'POST' })],
+    }),
+  });
+
+  // form data is always parsed as a `mutation` request
+  const error = await waitError(
+    ctx.client.upload.query(new FormData()),
+    TRPCClientError,
+  );
+
+  expect(error.data).toMatchObject({
+    code: 'CONFLICT',
+    path: 'upload',
+    type: 'query',
+  });
+  expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+  expect(ctx.onErrorSpy.mock.calls[0]![0]).toMatchObject({ type: 'query' });
 });
