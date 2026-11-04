@@ -9,6 +9,7 @@ import { type CSSProperties, useState } from 'react';
 import { avatarUrl, drawnSponsors, sponsorKey } from '~/sponsors.ts';
 
 import { cloudPadding, packSponsors } from './pack.ts';
+import { useTapTooltips } from './tap-tooltips.ts';
 
 const bubbles = packSponsors(drawnSponsors, cloudPadding);
 
@@ -37,6 +38,7 @@ type Entrance = 'none' | 'waiting' | 'shown';
 /** Every sponsor the site draws as a circle, sized by what they've given. */
 export function SponsorCloud(props: { readonly className?: string }) {
   const [entrance, setEntrance] = useState<Entrance>('none');
+  const tap = useTapTooltips();
   return (
     <div
       className={cn('relative aspect-square w-full', props.className)}
@@ -66,7 +68,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
     >
       {bubbles.map((bubble, index) => (
         <span
-          className="absolute -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10"
+          className="absolute -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10 has-[a[data-popup-open]]:z-10"
           key={sponsorKey(bubble.sponsor)}
           style={
             {
@@ -78,13 +80,14 @@ export function SponsorCloud(props: { readonly className?: string }) {
             } satisfies CSSProperties
           }
         >
-          <Tooltip>
+          <Tooltip {...tap(sponsorKey(bubble.sponsor)).root}>
             <TooltipTrigger
               delay={80}
               render={
                 <a
+                  {...tap(sponsorKey(bubble.sponsor)).trigger}
                   aria-label={bubble.sponsor.name}
-                  className="block size-full overflow-hidden rounded-full bg-background shadow-md ring-1 ring-foreground/10 transition-[scale,box-shadow] duration-200 outline-none hover:scale-110 hover:shadow-xl hover:ring-2 hover:ring-brand focus-visible:scale-110 focus-visible:ring-3 focus-visible:ring-ring"
+                  className="block size-full overflow-hidden rounded-full bg-background shadow-md ring-1 ring-foreground/10 transition-[scale,box-shadow] duration-200 outline-none [-webkit-touch-callout:none] hover:scale-110 hover:shadow-xl hover:ring-2 hover:ring-brand focus-visible:scale-110 focus-visible:ring-3 focus-visible:ring-ring data-popup-open:scale-110 data-popup-open:shadow-xl data-popup-open:ring-2 data-popup-open:ring-brand"
                   href={bubble.sponsor.link}
                   rel="sponsored noopener"
                   target="_blank"
