@@ -1,4 +1,5 @@
 import type { Encoder } from '@trpc/server/unstable-core-do-not-import';
+import { exhaustive } from '@trpc/server/unstable-core-do-not-import';
 import type { ConnectionId } from './requestMachine';
 
 /** What the client's encoder produces. */
@@ -204,7 +205,7 @@ function end(
     case 'released':
       return null;
     default:
-      return event satisfies never;
+      return exhaustive(event, null);
   }
 }
 
@@ -258,7 +259,7 @@ export function connectionTransition(
         case 'released':
           return illegal(connection, event);
         default:
-          return event satisfies never;
+          return exhaustive(event, illegal(connection, event));
       }
     case 'handshaking':
       switch (event.type) {
@@ -306,7 +307,7 @@ export function connectionTransition(
         case 'released':
           return illegal(connection, event);
         default:
-          return event satisfies never;
+          return exhaustive(event, illegal(connection, event));
       }
     case 'ready':
     case 'draining':
@@ -347,7 +348,7 @@ export function connectionTransition(
         case 'released':
           return illegal(connection, event);
         default:
-          return event satisfies never;
+          return exhaustive(event, illegal(connection, event));
       }
     case 'closed':
       switch (event.type) {
@@ -388,9 +389,9 @@ export function connectionTransition(
         case 'rejection':
           return illegal(connection, event);
         default:
-          return event satisfies never;
+          return exhaustive(event, illegal(connection, event));
       }
     default:
-      return state satisfies never;
+      return exhaustive(state, illegal(connection, event));
   }
 }

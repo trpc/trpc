@@ -11,7 +11,7 @@ stateDiagram-v2
   backoff --> connecting : backoff timer, request
   backoff --> idle : close, inactivity timer
   connecting --> backoff : badFrame, openFailed, pongTimeout, reconnect, socketClosed, socketError
-  connecting --> idle : close
+  connecting --> idle : close, inactivity timer
   connecting --> open : paramsResolved
   idle --> connecting : request
   open --> backoff : badFrame, pongTimeout, reconnect, socketClosed, socketError, socketUnwritable
@@ -38,8 +38,8 @@ stateDiagram-v2
   draining --> closed : socketError, socketUnwritable, close
   draining --> draining : received
   closed --> closed : socketOpened, paramsResolved, openFailed, socketError, socketUnwritable, pongTimeout, badFrame, close, received
-  closed --> closeReported : socketClosed
-  closeReported --> closeReported : socketOpened, paramsResolved, openFailed, socketClosed, socketError, socketUnwritable, pongTimeout, badFrame, close, received
+  closed --> closeReported : socketClosed, released
+  closeReported --> closeReported : socketOpened, paramsResolved, openFailed, socketClosed, socketError, socketUnwritable, pongTimeout, badFrame, close, received, released
   closeReported --> [*]
 ```
 

@@ -1,4 +1,5 @@
 import type { TRPCResponseMessage } from '@trpc/server/unstable-core-do-not-import';
+import { exhaustive } from '@trpc/server/unstable-core-do-not-import';
 
 export type ConnectionId = number;
 export type RequestId = number;
@@ -154,7 +155,7 @@ function onQueued(
     case 'sendFailed':
       return illegal(request, event);
     default:
-      return event satisfies never;
+      return exhaustive(event, illegal(request, event));
   }
 }
 
@@ -254,7 +255,7 @@ function onSent(
     case 'send':
       return illegal(request, event);
     default:
-      return event satisfies never;
+      return exhaustive(event, illegal(request, event));
   }
 }
 
@@ -275,6 +276,6 @@ export function requestTransition(
     case 'settled':
       return illegal(request, event);
     default:
-      return state satisfies never;
+      return exhaustive(state, illegal(request, event));
   }
 }

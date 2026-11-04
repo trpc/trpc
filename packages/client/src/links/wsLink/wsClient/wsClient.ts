@@ -3,13 +3,16 @@ import type { BehaviorSubject, Observable } from '@trpc/server/observable';
 import { behaviorSubject, observable } from '@trpc/server/observable';
 import type {
   CombinedDataTransformer,
+  MachineRuntime,
   TRPCClientOutgoingMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  createMachineRuntime,
+  createMachineTimers,
+  createResourceMap,
   getCauseFromUnknown,
   isObject,
   makeResource,
-  mergeAsyncIterables,
   transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../../../TRPCClientError';
@@ -21,6 +24,7 @@ import type {
   ClientEvent,
   ClientModel,
   PublicState,
+  Timer,
 } from './machine/clientMachine';
 import { clientTransition, initialClient } from './machine/clientMachine';
 import type { ConnectionEvent } from './machine/connectionMachine';
@@ -33,8 +37,6 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import { RequestManager } from './requestManager';
 import { createScope, dispose } from './scope';
-import type { TimerFired } from './timers';
-import { createTimers } from './timers';
 import type { Transport } from './transport';
 import {
   backwardCompatibility,
@@ -48,6 +50,7 @@ import {
 } from './utils';
 
 type ConnectionState = TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>;
+type ClientRuntime = MachineRuntime<ClientModel, ClientEvent>;
 
 /**
  * A WebSocket client for tRPC operations. Create one with `createWSClient`.
@@ -94,12 +97,12 @@ export interface WsClient {
  * keepAlive and request batching.
  *
  * Every decision is made by pure state machines in `./machine`: one for the
- * client, one per connection and one per request. This function is their
- * interpreter. It feeds events to `clientTransition` one at a time, and runs
- * the effects each step returns. Sockets, `connectionParams` and timers are
- * async iterables, merged and read by one `for await` loop; the user's calls
- * dispatch at once. Sockets, listeners, timers and requests are resources:
- * each is disposed by whatever owns it.
+ * client, one per connection and one per request. This function runs them
+ * with `createMachineRuntime`, and says what each effect does. Sockets,
+ * `connectionParams` and timers are async iterables the runtime reads in one
+ * `for await` loop; the user's calls send their events at once. Sockets,
+ * listeners, timers and requests are resources: each is disposed by
+ * whatever owns it.
  */
 export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   const WebSocketPonyfill = opts.WebSocket ?? globalThis.WebSocket;
@@ -113,15 +116,10 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   const retryDelayMs = opts.retryDelayMs ?? exponentialBackoff;
   const lazy = { ...lazyDefaults, ...opts.lazy };
 
-  const transports = new Map<ConnectionId, Transport>();
-  const timers = createTimers();
-  /** Everything that happens without a call from the user. */
-  const sources = mergeAsyncIterables<ClientEvent | TimerFired>();
-  sources.add(timers.events);
+  const transports = createResourceMap<ConnectionId, Transport>();
+  const timers = createMachineTimers<Timer>();
   const requestManager = new RequestManager();
   const closeWaiters: (() => void)[] = [];
-  const queue: ClientEvent[] = [];
-  let dispatching = false;
   /**
    * The last id sent on the wire. Each request gets its own instead of its
    * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
@@ -130,56 +128,28 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   let lastRequestId = 0;
 
   const initial = initialClient({ lazy: lazy.enabled });
-  let model: ClientModel = initial.state;
   const connectionState = behaviorSubject<ConnectionState>(
     toConnectionState(initial.state.publicState),
   );
 
-  /**
-   * Runs one event through the client state machine, then its effects. An
-   * event raised while effects run, e.g. by a user callback, waits its turn.
-   */
-  function dispatch(event: ClientEvent) {
-    queue.push(event);
-    if (dispatching) return;
-    dispatching = true;
-    try {
-      let next: ClientEvent | undefined;
-      while ((next = queue.shift())) {
-        const result = clientTransition(model, next);
-        model = result.state;
-        runEffects(result.effects);
-        releaseForgottenTransports();
-      }
-    } finally {
-      dispatching = false;
+  const runtime = createMachineRuntime({
+    machine: { initial, transition: clientTransition },
+    run: runEffect,
+    onError: rethrowAsync,
+  });
+  runtime.use(transports);
+  runtime.use(timers);
+  runtime.intake(timers.events, (fired) => {
+    if (!timers.take(fired)) return;
+    if (fired.timer === 'flush') observeWritability();
+    runtime.send({ type: 'timer', timer: fired.timer });
+  });
+  // A socket the model no longer tracks has nothing left to report.
+  runtime.subscribe((model) => {
+    for (const id of [...transports.keys()]) {
+      if (!model.connections.has(id)) transports.delete(id);
     }
-  }
-
-  /** Feeds `sources` to the state machine, in the order things happened. */
-  async function consume() {
-    for await (const event of sources) {
-      try {
-        if (event.type !== 'timerFired') {
-          dispatch(event);
-        } else if (timers.take(event)) {
-          if (event.timer === 'flush') observeWritability();
-          dispatch({ type: 'timer', timer: event.timer });
-        }
-      } catch (error) {
-        rethrowAsync(error);
-      }
-    }
-  }
-
-  /** A socket the model no longer tracks has nothing left to report. */
-  function releaseForgottenTransports() {
-    for (const [id, transport] of transports) {
-      if (model.connections.has(id)) continue;
-      transports.delete(id);
-      dispose(transport);
-    }
-  }
+  });
 
   /**
    * A socket that started closing, e.g. because the server sent a close
@@ -187,27 +157,17 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
    * looks before relying on it.
    */
   function observeWritability() {
-    const lifecycle = model.lifecycle;
+    const lifecycle = runtime.state.lifecycle;
     if (lifecycle.kind !== 'open') return;
     if (transports.get(lifecycle.connection)?.isWritable()) return;
-    dispatch({
+    runtime.send({
       type: 'connection',
       connection: lifecycle.connection,
       event: { type: 'socketUnwritable' },
     });
   }
 
-  function runEffects(effects: readonly ClientEffect[]) {
-    for (const effect of effects) {
-      try {
-        runEffect(effect);
-      } catch (error) {
-        rethrowAsync(error);
-      }
-    }
-  }
-
-  function runEffect(effect: ClientEffect) {
+  function runEffect(effect: ClientEffect, machine: ClientRuntime) {
     switch (effect.type) {
       case 'openSocket': {
         const transport = openTransport({
@@ -218,27 +178,26 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
           encoder,
         });
         transports.set(effect.connection, transport);
-        sources.add(transportEvents(transport));
+        machine.intake(transportEvents(transport), machine.send);
         return;
       }
       case 'resolveParams':
-        sources.add(
+        machine.intake(
           connectionEvents(
             effect.connection,
             connectionParamsEvents(opts, encoder),
           ),
+          machine.send,
         );
         return;
       case 'sendParams':
         transports.get(effect.connection)?.send(effect.data);
         return;
-      case 'closeSocket': {
-        const transport = transports.get(effect.connection);
-        if (transport) dispose(transport);
+      case 'closeSocket':
+        transports.delete(effect.connection);
         return;
-      }
       case 'sendRequests':
-        sendRequests(effect.connection, effect.requests);
+        sendRequests(machine, effect.connection, effect.requests);
         return;
       case 'sendStop':
         transports
@@ -317,6 +276,7 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   }
 
   function sendRequests(
+    machine: ClientRuntime,
     connection: ConnectionId,
     requests: readonly { id: RequestId; lastEventId: string | null }[],
   ) {
@@ -335,7 +295,7 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
         .get(connection)
         ?.send(encoder.encode(messages.length === 1 ? messages[0] : messages));
     } catch (cause) {
-      dispatch({
+      machine.send({
         type: 'sendFailed',
         requests: requests.map((request) => request.id),
         cause,
@@ -349,7 +309,7 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
     close() {
       return new Promise<void>((resolve) => {
         closeWaiters.push(resolve);
-        dispatch({ type: 'close' });
+        runtime.send({ type: 'close' });
       });
     },
 
@@ -389,10 +349,10 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
             },
           },
         );
-        scope.defer(() => dispatch({ type: 'unsubscribe', id }));
+        scope.defer(() => runtime.send({ type: 'unsubscribe', id }));
 
         observeWritability();
-        dispatch({
+        runtime.send({
           type: 'request',
           id,
           method: type,
@@ -416,7 +376,7 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
     },
 
     get connection() {
-      const { lifecycle, draining } = model;
+      const { lifecycle, draining } = runtime.state;
       if (lifecycle.kind === 'open') {
         return backwardCompatibility(
           transports.get(lifecycle.connection) ?? null,
@@ -436,8 +396,6 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
     },
   };
 
-  consume().catch(rethrowAsync);
-  runEffects(initial.effects);
   return client;
 }
 

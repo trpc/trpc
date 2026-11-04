@@ -1,3 +1,5 @@
+import type { MachineModel, ModelStep } from './___machineModel';
+import { check, coverage, simulateMachine } from './___machineModel';
 /**
  * Model-based tests for the wsClient state machines. fast-check generates
  * sequences of what sockets, timers, the server and the user can do; a
@@ -30,7 +32,14 @@ import type {
   RequestState,
 } from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
 import { requestTransition } from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
-import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  DiagramEdge,
+  TRPCClientIncomingMessage,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  sampleTransitions,
+  stateDiagram,
+} from '@trpc/server/unstable-core-do-not-import';
 import fc from 'fast-check';
 
 // --- the simulated world ----------------------------------------------------
@@ -47,8 +56,10 @@ interface SimSocket {
   opened: boolean;
   paramsRequested: boolean;
   paramsDone: boolean;
-  /** The client still listens to it: not disposed by `closeSocket`. */
+  /** The client still uses it: not disposed by `closeSocket`. */
   io: boolean;
+  /** Its events ended: nothing more comes from it. */
+  released: boolean;
   /** The server started closing it: nothing more is written. */
   closing: boolean;
   closed: boolean;
@@ -65,18 +76,10 @@ interface UserRequest {
   startedAllowed: boolean;
 }
 
-class InvariantError extends Error {}
-
-/** One transition, as the simulator plays it. */
-interface Step {
-  readonly event: ClientEvent | null;
-  readonly effects: readonly ClientEffect[];
-  readonly before: ClientModel | null;
-  readonly after: ClientModel;
-}
+type Step = ModelStep<ClientModel, ClientEvent, ClientEffect>;
 
 /** Paths the random runs must reach, or the invariants prove little. */
-const coverageGoals = [
+const covered = coverage([
   'subscription moved',
   'replacement failure shown',
   'retired socket frame dropped',
@@ -86,38 +89,36 @@ const coverageGoals = [
   'lazy connection went idle',
   'subscription resumed after a loss',
   'silent socket timed out',
-] as const;
-type CoverageGoal = (typeof coverageGoals)[number];
-const covered = new Set<CoverageGoal>();
-
-function check(condition: boolean, message: string): asserts condition {
-  if (!condition) throw new InvariantError(message);
-}
+  'connection released without a close',
+]);
 
 const fakeEvent = {} as Event;
 const fakeCloseEvent = { code: 1000 } as CloseEvent;
 
 class Sim {
-  model: ClientModel;
   readonly sockets = new Map<ConnectionId, SimSocket>();
   readonly timers = new Set<Timer>();
   readonly requests = new Map<number, UserRequest>();
-  readonly lifecycleEdges = new Set<string>();
-  readonly pending: ClientEvent[] = [];
+  readonly lifecycleEdges = new Map<string, DiagramEdge>();
+  readonly machine: MachineModel<ClientModel, ClientEvent>;
   lastRequestId = 0;
   /** The last request made before the latest `close()`. */
   closedAfter = 0;
   sendFails = false;
 
   constructor(lazy: boolean) {
-    const initial = initialClient({ lazy });
-    this.model = initial.state;
-    this.play({
-      event: null,
-      effects: initial.effects,
-      before: null,
-      after: initial.state,
+    this.machine = simulateMachine({
+      machine: {
+        initial: initialClient({ lazy }),
+        transition: clientTransition,
+      },
+      check: (step) => this.check(step),
+      play: (effect) => this.play(effect),
     });
+  }
+
+  get model() {
+    return this.machine.state;
   }
 
   // The interpreter's `observeWritability`.
@@ -143,10 +144,13 @@ class Sim {
     );
   }
 
-  /** The server can still send on it, and the client still listens. */
+  /**
+   * The server can still send on it. The client still reads it after ending
+   * the connection, until the socket closes.
+   */
   hears(connection: ConnectionId) {
     const socket = this.sockets.get(connection);
-    return !!socket && socket.opened && socket.io && !socket.closed;
+    return !!socket && socket.opened && !socket.closed && !socket.released;
   }
 
   request(method: RequestMethod) {
@@ -170,113 +174,103 @@ class Sim {
   }
 
   dispatch(event: ClientEvent) {
-    this.pending.push(event);
-    if (this.pending.length > 1) return;
-    while (this.pending.length > 0) {
-      const next = this.pending[0]!;
-      const before = this.model;
-      const result = clientTransition(before, next);
-      this.model = result.state;
-      const edge = lifecycleEdge(before, next, result.state);
-      if (edge) this.lifecycleEdges.add(edge);
-      this.play({
-        event: next,
-        effects: result.effects,
-        before,
-        after: result.state,
-      });
-      this.pending.shift();
-    }
+    this.machine.send(event);
   }
 
-  // --- effects, as the interpreter and the server would play them -------
-
-  private play(step: Step) {
-    const { effects, before } = step;
+  private check(step: Step) {
+    const { event, effects, before, after } = step;
     for (const effect of effects) {
       check(
         effect.type !== 'invariantViolation',
         `invariant violation: ${effect.type === 'invariantViolation' ? effect.message : ''}`,
       );
     }
-    if (before) checkStep(this, { ...step, before });
+    if (!before || !event) return;
+    const edge = lifecycleEdge(before, event, after);
+    if (edge) {
+      this.lifecycleEdges.set(`${edge.from}|${edge.to}|${edge.label}`, edge);
+    }
+    checkStep(this, { ...step, before });
+  }
 
-    for (const effect of effects) {
-      switch (effect.type) {
-        case 'openSocket':
-          this.sockets.set(effect.connection, {
-            opened: false,
-            paramsRequested: false,
-            paramsDone: false,
-            io: true,
-            closing: false,
-            closed: false,
-            calls: new Map(),
+  // --- effects, as the interpreter and the server would play them -------
+
+  private play(effect: ClientEffect) {
+    switch (effect.type) {
+      case 'openSocket':
+        this.sockets.set(effect.connection, {
+          opened: false,
+          paramsRequested: false,
+          paramsDone: false,
+          io: true,
+          released: false,
+          closing: false,
+          closed: false,
+          calls: new Map(),
+        });
+        break;
+      case 'resolveParams':
+        this.sockets.get(effect.connection)!.paramsRequested = true;
+        break;
+      case 'closeSocket': {
+        const socket = this.sockets.get(effect.connection);
+        if (socket) socket.io = false;
+        break;
+      }
+      case 'sendRequests': {
+        if (this.sendFails) {
+          this.sendFails = false;
+          this.dispatch({
+            type: 'sendFailed',
+            requests: effect.requests.map((request) => request.id),
+            cause: new Error('send failed'),
           });
           break;
-        case 'resolveParams':
-          this.sockets.get(effect.connection)!.paramsRequested = true;
-          break;
-        case 'closeSocket': {
-          const socket = this.sockets.get(effect.connection);
-          if (socket) socket.io = false;
-          break;
         }
-        case 'sendRequests': {
-          if (this.sendFails) {
-            this.sendFails = false;
-            this.dispatch({
-              type: 'sendFailed',
-              requests: effect.requests.map((request) => request.id),
-              cause: new Error('send failed'),
-            });
-            break;
-          }
-          const socket = this.sockets.get(effect.connection)!;
-          for (const { id, lastEventId } of effect.requests) {
-            const request = this.requests.get(id)!;
-            request.sends++;
-            if (!this.writable(effect.connection)) continue;
-            socket.calls.set(id, {
-              method: request.method,
-              next: Number(lastEventId ?? 0) + 1,
-              started: false,
-              stopping: false,
-            });
-          }
-          break;
+        const socket = this.sockets.get(effect.connection)!;
+        for (const { id, lastEventId } of effect.requests) {
+          const request = this.requests.get(id)!;
+          request.sends++;
+          if (!this.writable(effect.connection)) continue;
+          socket.calls.set(id, {
+            method: request.method,
+            next: Number(lastEventId ?? 0) + 1,
+            started: false,
+            stopping: false,
+          });
         }
-        case 'sendStop': {
-          const call = this.sockets
-            .get(effect.connection)
-            ?.calls.get(effect.request);
-          if (call && this.writable(effect.connection)) call.stopping = true;
-          break;
-        }
-        case 'startTimer':
-          this.timers.add(effect.timer);
-          break;
-        case 'startBackoff':
-          this.timers.add('backoff');
-          break;
-        case 'cancelTimer':
-          this.timers.delete(effect.timer);
-          break;
-        case 'next':
-        case 'complete':
-        case 'fail':
-        case 'sendParams':
-        case 'onOpen':
-        case 'onClose':
-        case 'onError':
-        case 'emitState':
-        case 'closed':
-        case 'rethrow':
-        case 'invariantViolation':
-          break;
-        default:
-          effect satisfies never;
+        break;
       }
+      case 'sendStop': {
+        const call = this.sockets
+          .get(effect.connection)
+          ?.calls.get(effect.request);
+        if (call && this.writable(effect.connection)) call.stopping = true;
+        break;
+      }
+      case 'startTimer':
+        this.timers.add(effect.timer);
+        break;
+      case 'startBackoff':
+        this.timers.add('backoff');
+        break;
+      case 'cancelTimer':
+        this.timers.delete(effect.timer);
+        break;
+      case 'next':
+      case 'complete':
+      case 'fail':
+      case 'sendParams':
+      case 'onOpen':
+      case 'onClose':
+      case 'onError':
+      case 'emitState':
+      case 'closed':
+      case 'rethrow':
+      case 'invariantViolation':
+        break;
+      default:
+        effect satisfies never;
     }
   }
 }
@@ -309,6 +303,13 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     }
   }
   if (event?.type === 'sendFailed') covered.add('batch send failed');
+  if (
+    event?.type === 'connection' &&
+    event.event.type === 'released' &&
+    before.connections.has(event.connection)
+  ) {
+    covered.add('connection released without a close');
+  }
   if (
     event?.type === 'connection' &&
     event.event.type === 'pongTimeout' &&
@@ -566,14 +567,18 @@ function lifecycleEdge(
   before: ClientModel,
   event: ClientEvent,
   after: ClientModel,
-) {
+): DiagramEdge | null {
   if (
     before.lifecycle.kind === after.lifecycle.kind &&
     connectionOf(before) === connectionOf(after)
   ) {
     return null;
   }
-  return `${before.lifecycle.kind} --> ${after.lifecycle.kind} : ${eventLabel(event)}`;
+  return {
+    from: before.lifecycle.kind,
+    to: after.lifecycle.kind,
+    label: eventLabel(event),
+  };
 }
 
 // --- actions --------------------------------------------------------------------
@@ -596,7 +601,8 @@ type SocketAction =
   | 'started'
   | 'data'
   | 'stopped'
-  | 'stray';
+  | 'stray'
+  | 'released';
 
 type Action =
   | { type: 'request'; method: RequestMethod }
@@ -625,6 +631,7 @@ const socketActionWeights: Record<SocketAction, number> = {
   data: 6,
   stopped: 2,
   stray: 1,
+  released: 2,
 };
 
 const socketActionArb = fc.oneof(
@@ -697,17 +704,20 @@ function runSocketAction(
 ) {
   const event = (connectionEvent: ConnectionEvent) =>
     sim.dispatch({ type: 'connection', connection, event: connectionEvent });
-  const listening = socket.io && !socket.closed;
+  // Ending a connection doesn't silence its socket: what it already
+  // reported, and what it reports until it closes, still arrives.
+  const live = !socket.closed && !socket.released;
   const calls = [...socket.calls.entries()];
   switch (action) {
     case 'open':
-      if (!listening || socket.opened) return;
+      if (!live || socket.opened) return;
       socket.opened = true;
       event({ type: 'socketOpened' });
       return;
     case 'params':
     case 'paramsFail':
-      if (!listening || !socket.paramsRequested || socket.paramsDone) return;
+      // `connectionParams` resolve on their own, even after the socket.
+      if (!socket.paramsRequested || socket.paramsDone) return;
       socket.paramsDone = true;
       event(
         action === 'params'
@@ -716,7 +726,7 @@ function runSocketAction(
       );
       return;
     case 'openFail':
-      if (!listening || socket.opened) return;
+      if (!live || socket.opened) return;
       socket.closed = true;
       event({ type: 'openFailed', cause: new Error('url') });
       return;
@@ -724,17 +734,25 @@ function runSocketAction(
       if (socket.opened) socket.closing = true;
       return;
     case 'closed':
-      if (socket.closed) return;
+      if (!live) return;
       socket.closed = true;
       event({ type: 'socketClosed', event: fakeCloseEvent });
       return;
     case 'error':
-      if (socket.closed) return;
+      if (!live) return;
       event({ type: 'socketError', event: fakeEvent });
       return;
     case 'pongTimeout':
-      if (!listening || !socket.opened) return;
+      if (!live || !socket.opened) return;
       event({ type: 'pongTimeout' });
+      return;
+    case 'released':
+      // After its `close`, or when the client ended the connection before
+      // there was a socket to close.
+      if (socket.released) return;
+      if (!socket.closed && (socket.io || socket.opened)) return;
+      socket.released = true;
+      event({ type: 'released' });
       return;
     case 'badFrame':
       if (!sim.hears(connection)) return;
@@ -871,13 +889,22 @@ function runScenario({ lazy, actions }: Scenario) {
     }
   }
   for (const [connection, socket] of sim.sockets) {
-    if (socket.closed) continue;
-    socket.closed = true;
-    sim.dispatch({
-      type: 'connection',
-      connection,
-      event: { type: 'socketClosed', event: fakeCloseEvent },
-    });
+    if (!socket.closed && !socket.released) {
+      socket.closed = true;
+      sim.dispatch({
+        type: 'connection',
+        connection,
+        event: { type: 'socketClosed', event: fakeCloseEvent },
+      });
+    }
+    if (!socket.released) {
+      socket.released = true;
+      sim.dispatch({
+        type: 'connection',
+        connection,
+        event: { type: 'released' },
+      });
+    }
   }
   for (const [id, request] of sim.requests) {
     check(request.terminals === 1, `request ${id} never ended`);
@@ -889,14 +916,14 @@ function runScenario({ lazy, actions }: Scenario) {
 const SEED = 7925;
 
 test('random event sequences keep every invariant', () => {
-  covered.clear();
+  covered.reset();
   fc.assert(
     fc.property(scenarioArb, (scenario) => {
       runScenario(scenario);
     }),
     { seed: SEED, numRuns: 2_000 },
   );
-  expect(coverageGoals.filter((goal) => !covered.has(goal))).toEqual([]);
+  expect(covered.missing()).toEqual([]);
 });
 
 test('random event sequences keep every invariant, unseeded', () => {
@@ -933,6 +960,7 @@ const connectionEvents: ConnectionEvent[] = [
   { type: 'received' },
   { type: 'result' },
   { type: 'rejection' },
+  { type: 'released' },
 ];
 
 function connectionLabel(state: ConnectionState) {
@@ -942,28 +970,28 @@ function connectionLabel(state: ConnectionState) {
 }
 
 function connectionDiagram() {
-  const edges = new Map<string, string[]>();
-  for (const state of connectionSamples) {
-    const model: ConnectionModel = { id: 1, retryIndex: null, state };
-    for (const event of connectionEvents) {
-      const result = connectionTransition(model, event);
-      if (
-        result.effects.some((effect) => effect.type === 'invariantViolation')
-      ) {
-        continue;
-      }
-      const from = connectionLabel(state);
-      const to = connectionLabel(result.connection.state);
-      const key = `${from} --> ${to}`;
-      edges.set(key, [...(edges.get(key) ?? []), event.type]);
-    }
-  }
-  return [
-    'stateDiagram-v2',
-    '  [*] --> connecting',
-    ...[...edges].map(([edge, events]) => `  ${edge} : ${events.join(', ')}`),
-    '  closeReported --> [*]',
-  ].join('\n');
+  return stateDiagram({
+    initial: [{ to: 'connecting', label: null }],
+    edges: sampleTransitions({
+      states: connectionSamples,
+      events: connectionEvents,
+      next(state, event) {
+        const result = connectionTransition(
+          { id: 1, retryIndex: null, state },
+          event,
+        );
+        return result.effects.some(
+          (effect) => effect.type === 'invariantViolation',
+        )
+          ? null
+          : result.connection.state;
+      },
+      stateName: connectionLabel,
+      eventName: (event) => event.type,
+    }),
+    final: ['closeReported'],
+    sort: false,
+  });
 }
 
 const requestSamples: RequestState[] = [
@@ -1019,47 +1047,47 @@ const requestEvents: { label: string; event: RequestEvent }[] = [
 ];
 
 function requestDiagram(method: RequestMethod) {
-  const edges = new Map<string, string[]>();
-  for (const state of requestSamples) {
-    const request: RequestModel = { id: 1, method, lastEventId: null, state };
-    for (const { label, event } of requestEvents) {
-      const result = requestTransition(request, event);
-      if (
-        result.effects.some((effect) => effect.type === 'invariantViolation')
-      ) {
-        continue;
-      }
-      const key = `${state.kind} --> ${result.request.state.kind}`;
-      edges.set(key, [...(edges.get(key) ?? []), label]);
-    }
-  }
-  return [
-    'stateDiagram-v2',
-    '  [*] --> queued',
-    ...[...edges].map(([edge, events]) => `  ${edge} : ${events.join(', ')}`),
-    '  settled --> [*]',
-  ].join('\n');
+  return stateDiagram({
+    initial: [{ to: 'queued', label: null }],
+    edges: sampleTransitions({
+      states: requestSamples,
+      events: requestEvents,
+      next(state, { event }) {
+        const result = requestTransition(
+          { id: 1, method, lastEventId: null, state },
+          event,
+        );
+        return result.effects.some(
+          (effect) => effect.type === 'invariantViolation',
+        )
+          ? null
+          : result.request.state;
+      },
+      stateName: (state) => state.kind,
+      eventName: ({ label }) => label,
+    }),
+    final: ['settled'],
+    sort: false,
+  });
 }
 
 function clientDiagram() {
-  const edges = new Map<string, Set<string>>();
+  const edges: DiagramEdge[] = [];
   fc.assert(
     fc.property(scenarioArb, (scenario) => {
-      for (const edge of runScenario(scenario).lifecycleEdges) {
-        const [transition, label] = edge.split(' : ') as [string, string];
-        edges.set(transition, (edges.get(transition) ?? new Set()).add(label));
-      }
+      edges.push(...runScenario(scenario).lifecycleEdges.values());
     }),
     { seed: SEED, numRuns: 2_000 },
   );
-  return [
-    'stateDiagram-v2',
-    '  [*] --> idle : lazy',
-    '  [*] --> connecting',
-    ...[...edges]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([edge, labels]) => `  ${edge} : ${[...labels].sort().join(', ')}`),
-  ].join('\n');
+  return stateDiagram({
+    initial: [
+      { to: 'idle', label: 'lazy' },
+      { to: 'connecting', label: null },
+    ],
+    edges,
+    final: [],
+    sort: true,
+  });
 }
 
 test('the state diagrams match the transition functions', async () => {
