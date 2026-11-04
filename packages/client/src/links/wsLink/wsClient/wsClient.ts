@@ -281,7 +281,8 @@ export class WsClient {
    * Set when the server rejects the current connection with an `id: null`
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
-   * instead of starting over at attempt 0.
+   * instead of starting over at attempt 0. Cleared again when the socket
+   * receives a result, which proves the connection was accepted.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
@@ -398,6 +399,11 @@ export class WsClient {
 
       if (incomingMessage.id === null && 'error' in incomingMessage) {
         this.connectionRejected = true;
+      } else if ('result' in incomingMessage) {
+        // The server only sends results once `createContext` has succeeded,
+        // so an earlier `id: null` error on this socket was not a rejection,
+        // e.g. the server's reply to a malformed frame.
+        this.connectionRejected = false;
       }
 
       this.handleResponseMessage(incomingMessage);
