@@ -113,7 +113,7 @@ export function generateCacheTags(opts: {
   procedurePath: string;
   input: any;
 }): string[] {
-  const { procedurePath, input } = opts;
+  const { procedurePath } = opts;
   if (!procedurePath) {
     return [];
   }
@@ -122,8 +122,8 @@ export function generateCacheTags(opts: {
   for (let i = 1; i <= parts.length; i++) {
     tags.push(parts.slice(0, i).join('.'));
   }
-  if (input !== undefined) {
-    tags.push(`${procedurePath}?input=${JSON.stringify(input)}`);
+  if (opts.input !== undefined) {
+    tags.push(`${procedurePath}?input=${JSON.stringify(opts.input)}`);
   }
   return tags;
 }
