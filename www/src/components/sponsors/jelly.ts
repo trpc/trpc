@@ -248,6 +248,22 @@ export class Jelly {
     return moving;
   }
 
+  /** Puts every bubble back in its place, at rest: once they've all but settled. */
+  rest() {
+    for (const values of [
+      this.ox,
+      this.oy,
+      this.vx,
+      this.vy,
+      this.qx,
+      this.qy,
+      this.qvx,
+      this.qvy,
+    ]) {
+      values.fill(0);
+    }
+  }
+
   /** Whether bubble `index` is in its place, unsquished and at rest. */
   still(index: number) {
     return (
@@ -369,6 +385,9 @@ export function animateCloud(
     let moving = false;
     for (let step = 0; step < steps; step++) {
       moving = jelly.step(elapsed / steps);
+    }
+    if (!moving && jelly.pointer === undefined) {
+      jelly.rest();
     }
     draw();
     if (moving) {
