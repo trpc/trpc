@@ -53,8 +53,7 @@ const universalRequester: Requester = (opts) => {
         ...opts,
         // The browser will set this automatically and include the boundary= in it
         contentTypeHeader: null,
-        trpcAcceptHeader: null,
-        trpcAcceptHeaderKey: 'trpc-accept',
+        trpcAccept: null,
         getUrl,
         getBody: () => input,
       });
@@ -68,8 +67,7 @@ const universalRequester: Requester = (opts) => {
       return httpRequest({
         ...opts,
         contentTypeHeader: 'application/octet-stream',
-        trpcAcceptHeader: null,
-        trpcAcceptHeaderKey: 'trpc-accept',
+        trpcAccept: null,
         getUrl,
         getBody: () => input,
       });
