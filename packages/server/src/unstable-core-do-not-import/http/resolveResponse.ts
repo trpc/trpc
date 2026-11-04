@@ -126,7 +126,7 @@ interface ResolveHTTPRequestOptions<
 function initResponse<TRouter extends AnyRouter>(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   info: TRPCRequestInfo | undefined;
-  responseMeta: ResponseMetaFn<TRouter> | null;
+  responseMeta: ResponseMetaFn<TRouter> | undefined;
   untransformedJSON:
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
@@ -276,7 +276,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
   const { router, req } = opts;
-  const responseMeta = opts.responseMeta ?? null;
   const headers = new Headers([['vary', 'trpc-accept, accept']]);
   const config = router._def._config;
 
@@ -391,7 +390,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       /**
        * Only set for subscriptions
        */
-      abort: ReturnType<typeof combinedAbortController> | null;
+      abort: ReturnType<typeof combinedAbortController> | undefined;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const bodyCancelled = new AbortController();
@@ -447,7 +446,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           undefined,
           {
             data,
-            abort: proc._def.type === 'subscription' ? combinedAbort : null,
+            abort:
+              proc._def.type === 'subscription' ? combinedAbort : undefined,
           },
         ];
       } catch (cause) {
@@ -502,7 +502,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const headResponse = initResponse({
             ctx: ctxManager.valueOrUndefined(),
             info,
-            responseMeta,
+            responseMeta: opts.responseMeta,
             errors: error ? [error] : [],
             headers,
             untransformedJSON: [res],
@@ -589,7 +589,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const headResponse = initResponse({
             ctx: ctxManager.valueOrUndefined(),
             info,
-            responseMeta,
+            responseMeta: opts.responseMeta,
             errors: [],
             headers,
             untransformedJSON: null,
@@ -661,7 +661,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       const headResponse = initResponse({
         ctx: ctxManager.valueOrUndefined(),
         info,
-        responseMeta,
+        responseMeta: opts.responseMeta,
         errors: [],
         headers,
         untransformedJSON: null,
@@ -811,7 +811,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const headResponse = initResponse({
       ctx: ctxManager.valueOrUndefined(),
       info,
-      responseMeta,
+      responseMeta: opts.responseMeta,
       untransformedJSON: resultAsRPCResponse,
       errors,
       headers,
@@ -843,7 +843,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const headResponse = initResponse({
       ctx,
       info,
-      responseMeta,
+      responseMeta: opts.responseMeta,
       untransformedJSON,
       errors: [error],
       headers,
