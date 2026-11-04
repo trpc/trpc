@@ -475,8 +475,8 @@ function jsonlResponse(
     }),
     serialize: (data) => config.transformer.output.serialize(data),
     onError: (cause) => {
-      const error = getTRPCErrorFromUnknown(cause.error);
-      reportError(request, error, { type: info.type });
+      const source = sourceOf(info.calls[cause.path[0] as number]!);
+      reportError(request, getTRPCErrorFromUnknown(cause.error), source);
     },
     formatError(errorOpts) {
       // no need to call `onError` here as it will be propagated through the stream itself

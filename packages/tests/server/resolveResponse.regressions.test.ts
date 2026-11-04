@@ -469,3 +469,57 @@ describe('an error response after responseMeta ran drops its headers', () => {
     });
   });
 });
+
+describe('onError gets the call of an error streamed over httpBatchStreamLink', () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    stream: t.procedure
+      .input(z.object({ id: z.number() }))
+      .query(async function* () {
+        yield 1;
+        throw new TRPCError({ code: 'CONFLICT', message: 'Taken' });
+      }),
+    deferred: t.procedure.input(z.object({ id: z.number() })).query(() => ({
+      later: Promise.reject(new TRPCError({ code: 'CONFLICT' })),
+    })),
+  });
+
+  test('when a streamed iterable throws', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const iterable = await ctx.client.stream.query({ id: 1 });
+    const error = await waitError(async () => {
+      for await (const _ of iterable) {
+        // read to the error
+      }
+    }, TRPCClientError);
+
+    expect(error.data).toMatchObject({ code: 'CONFLICT', path: 'stream' });
+    expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.onErrorSpy.mock.calls[0]![0]).toMatchObject({
+      path: 'stream',
+      input: { id: 1 },
+      type: 'query',
+      error: { code: 'CONFLICT' },
+    });
+  });
+
+  test('when a deferred promise rejects', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const result = await ctx.client.deferred.query({ id: 2 });
+    await waitError(result.later, TRPCClientError);
+
+    expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.onErrorSpy.mock.calls[0]![0]).toMatchObject({
+      path: 'deferred',
+      input: { id: 2 },
+      type: 'query',
+      error: { code: 'CONFLICT' },
+    });
+  });
+});
