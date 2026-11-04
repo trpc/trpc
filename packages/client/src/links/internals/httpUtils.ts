@@ -52,9 +52,9 @@ export type HTTPLinkBaseOptions<
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
-  fetch?: FetchEsque;
+  fetch: FetchEsque | null;
   transformer: CombinedDataTransformer;
-  methodOverride?: 'POST';
+  methodOverride: 'POST' | null;
   pathSeparator: PathSeparator;
 }
 
@@ -63,9 +63,9 @@ export function resolveHTTPLinkOptions(
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url.toString(),
-    fetch: opts.fetch,
+    fetch: opts.fetch ?? null,
     transformer: getTransformer(opts.transformer),
-    methodOverride: opts.methodOverride,
+    methodOverride: opts.methodOverride ?? null,
     pathSeparator: resolvePathSeparator(opts.pathSeparator),
   };
 }
@@ -117,9 +117,9 @@ type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  trpcAcceptHeader?: TRPCAcceptHeader;
-  trpcAcceptHeaderKey?: 'trpc-accept' | 'accept';
-  contentTypeHeader?: string;
+  trpcAcceptHeader: TRPCAcceptHeader | null;
+  trpcAcceptHeaderKey: 'trpc-accept' | 'accept';
+  contentTypeHeader: string | null;
   getUrl: GetUrl;
   getBody: GetBody;
 };
@@ -167,6 +167,8 @@ export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
     ...opts,
     contentTypeHeader: 'application/json',
+    trpcAcceptHeader: null,
+    trpcAcceptHeaderKey: 'trpc-accept',
     getUrl,
     getBody,
   });
@@ -200,12 +202,12 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
-      ? { [opts.trpcAcceptHeaderKey ?? 'trpc-accept']: opts.trpcAcceptHeader }
+      ? { [opts.trpcAcceptHeaderKey]: opts.trpcAcceptHeader }
       : undefined),
     ...resolvedHeaders,
   };
 
-  return getFetch(opts.fetch)(url, {
+  return getFetch(opts.fetch ?? undefined)(url, {
     method,
     signal: opts.signal,
     body,
