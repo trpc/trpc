@@ -340,11 +340,12 @@ function isProcedure(
  * Overlay description strings from a `DescriptionMap` onto an existing
  * JSON schema produced by the TypeScript type checker.  Mutates in place.
  */
-export function applyDescriptions(
-  schema: SchemaObject,
-  descs: DescriptionMap,
-  schemas: Record<string, SchemaObject>,
-): void {
+export function applyDescriptions(opts: {
+  schema: SchemaObject;
+  descs: DescriptionMap;
+  schemas: Record<string, SchemaObject>;
+}): void {
+  const { schema, descs, schemas } = opts;
   if (descs.self) {
     schema.description = descs.self;
   }
@@ -359,10 +360,11 @@ export function applyDescriptions(
   }
 }
 
-function resolveSchemaRef(
-  schema: SchemaObject,
-  schemas: Record<string, SchemaObject>,
-): SchemaObject | null {
+function resolveSchemaRef(opts: {
+  schema: SchemaObject;
+  schemas: Record<string, SchemaObject>;
+}): SchemaObject | null {
+  const { schema, schemas } = opts;
   const ref = schema.$ref;
   if (!ref) {
     return schema;
@@ -422,7 +424,7 @@ function setNestedDescription({
     if (rest.length === 0) {
       setLeafDescription(items, description);
     } else {
-      const target = resolveSchemaRef(items, schemas) ?? items;
+      const target = resolveSchemaRef({ schema: items, schemas }) ?? items;
       setNestedDescription({
         schema: target,
         pathParts: rest,
@@ -442,7 +444,8 @@ function setNestedDescription({
   } else {
     // For arrays, step through `items` transparently
     const target = getArrayItemsSchema(propSchema) ?? propSchema;
-    const resolvedTarget = resolveSchemaRef(target, schemas) ?? target;
+    const resolvedTarget =
+      resolveSchemaRef({ schema: target, schemas }) ?? target;
     setNestedDescription({
       schema: resolvedTarget,
       pathParts: rest,
