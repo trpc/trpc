@@ -450,3 +450,48 @@ test('observableToAsyncIterable() - an error rejects a pending next() and ends t
   await expect(second).rejects.toThrowError('boom');
   expect(await third).toEqual({ value: undefined, done: true });
 });
+
+test.each(['error', 'complete'] as const)(
+  'vanilla observable - a throwing %s observer still runs the teardown',
+  (end) => {
+    const teardown = vi.fn();
+    let emit = null as Observer<number, Error> | null;
+    const obs$ = observable<number, Error>((observer) => {
+      emit = observer;
+      return teardown;
+    });
+    const observerError = new Error('observer failed');
+    obs$.subscribe({
+      [end]: () => {
+        throw observerError;
+      },
+    });
+
+    expect(() =>
+      end === 'error' ? emit?.error(new Error('failed')) : emit?.complete(),
+    ).toThrow(observerError);
+    expect(teardown).toHaveBeenCalledTimes(1);
+  },
+);
+
+test.each(['error', 'complete'] as const)(
+  'vanilla observable - a %s observer that throws before the source returns still runs the teardown',
+  (end) => {
+    const teardown = vi.fn();
+    const obs$ = observable<number, Error>((observer) => {
+      if (end === 'error') observer.error(new Error('failed'));
+      else observer.complete();
+      return teardown;
+    });
+    const observerError = new Error('observer failed');
+
+    expect(() =>
+      obs$.subscribe({
+        [end]: () => {
+          throw observerError;
+        },
+      }),
+    ).toThrow(observerError);
+    expect(teardown).toHaveBeenCalledTimes(1);
+  },
+);
