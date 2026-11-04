@@ -49,6 +49,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
       return;
     }
     let stop: (() => void) | undefined;
+    let shown = false;
     const start = () => {
       const cloud = animateCloud(
         element,
@@ -60,9 +61,10 @@ export function SponsorCloud(props: { readonly className?: string }) {
         (entries) => {
           const entry = entries[0];
           if (entry?.isIntersecting) {
-            if (waiting) {
+            if (waiting && !shown) {
               cloud.drop(bubbles.map((_, index) => entranceDelay(index)));
             }
+            shown = true;
             setEntrance((now) => (now === 'waiting' ? 'shown' : now));
             observer.disconnect();
           } else {
@@ -104,7 +106,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
     >
       {bubbles.map((bubble, index) => (
         <span
-          className="absolute aspect-square -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10"
+          className="absolute aspect-square -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10 motion-reduce:transition-none"
           data-bubble=""
           key={sponsorKey(bubble.sponsor)}
           style={

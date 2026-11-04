@@ -341,6 +341,8 @@ export function animateCloud(
   let lastMove:
     | { readonly t: number; readonly x: number; readonly y: number }
     | undefined;
+  /** Where the pointer last was over the cloud, in the window, to find it again after a resize. */
+  let lastClient: { readonly x: number; readonly y: number } | undefined;
 
   const floats = bubbles.map((bubble, index) => {
     const link = bubble.querySelector<HTMLElement>('a');
@@ -386,7 +388,7 @@ export function animateCloud(
     for (let step = 0; step < steps; step++) {
       moving = jelly.step(elapsed / steps);
     }
-    if (!moving && jelly.pointer === undefined) {
+    if (!moving && jelly.pointer === undefined && jelly.grown.size === 0) {
       jelly.rest();
     }
     draw();
@@ -426,6 +428,8 @@ export function animateCloud(
   };
 
   let hovered: number | undefined;
+  /** The bubble the pointer last squished coming in: `hovered` can change first, on `pointerover`. */
+  let entered: number | undefined;
   let focused: number | undefined;
   const regrow = () => {
     jelly.grown.clear();
@@ -436,14 +440,11 @@ export function animateCloud(
     }
   };
 
-  /** Grows the bubble the pointer's now over, if it's another, squishing it the way the pointer came. */
+  /** Grows the bubble the pointer's now over, if it's another. */
   const hover = (target: EventTarget | null) => {
     const over = bubbleOf(target);
     if (over === hovered) {
       return;
-    }
-    if (over !== undefined) {
-      jelly.poke(over, jelly.pointer?.vx ?? 0, jelly.pointer?.vy ?? 0);
     }
     hovered = over;
     regrow();
@@ -457,8 +458,15 @@ export function animateCloud(
     const vx = lastMove && seconds > 0 ? (at.x - lastMove.x) / seconds : 0;
     const vy = lastMove && seconds > 0 ? (at.y - lastMove.y) / seconds : 0;
     lastMove = { t, ...at };
+    lastClient = { x: event.clientX, y: event.clientY };
     jelly.pointer = { ...at, vx, vy };
     hover(event.target);
+    if (hovered !== entered) {
+      entered = hovered;
+      if (hovered !== undefined) {
+        jelly.poke(hovered, vx, vy);
+      }
+    }
     schedule();
   };
 
@@ -470,7 +478,9 @@ export function animateCloud(
   const onLeave = () => {
     jelly.pointer = undefined;
     lastMove = undefined;
+    lastClient = undefined;
     hovered = undefined;
+    entered = undefined;
     rect = undefined;
     regrow();
     schedule();
@@ -524,9 +534,17 @@ export function animateCloud(
     if (size !== width) {
       width = size;
       jelly.homes = homesAt(size);
-      jelly.pointer = undefined;
       lastMove = undefined;
       rect = undefined;
+      if (jelly.pointer !== undefined && lastClient !== undefined) {
+        rect = container.getBoundingClientRect();
+        jelly.pointer = {
+          vx: 0,
+          vy: 0,
+          x: lastClient.x - rect.left,
+          y: lastClient.y - rect.top,
+        };
+      }
       schedule();
     }
   });
