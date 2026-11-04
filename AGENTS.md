@@ -22,7 +22,10 @@ Run them from the repo root.
 - Internal (non-exported) parameters, properties and options are required: pass `null`, a literal or a symbol. Optionals are only for public APIs.
 - PR bodies follow [the template](.github/PULL_REQUEST_TEMPLATE.md): under 200 words of bullets, one `- Closes #N` per issue, and the AI model if one helped. No file-by-file changelogs, test lists or review history.
 
-## Skills
+## Skills (read the matching one before starting)
 
-- [`tdd`](.agents/skills/tdd/SKILL.md): fixing a bug or writing tests.
-- [`typescript`](.agents/skills/typescript/SKILL.md): writing or reviewing TypeScript in `packages/`.
+- [`trpc-conventions`](.agents/skills/trpc-conventions/SKILL.md): fixing a bug, writing tests or writing TypeScript in `packages/`. It wins where the skills below disagree.
+- [`tdd`](.agents/skills/tdd/SKILL.md): fixing a bug.
+- [`typescript-best-practices`](.agents/skills/typescript-best-practices/SKILL.md) and [`principle-type-system-discipline`](.agents/skills/principle-type-system-discipline/SKILL.md): writing or reviewing TypeScript.
+
+Those three are Lauren Tan's [pstack](https://github.com/cursor/plugins/tree/bb68f2365eceafa0cb2d253112f675acf5f144cc/pstack/skills) skills, copied unchanged under the MIT license beside them. Don't edit them; re-copy to update.

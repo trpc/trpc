@@ -69,6 +69,9 @@
     "www/blog/**",
     "www/sponsors.json",
     "www/api-reference/out/",
-    "www/.vercel/"
+    "www/.vercel/",
+    ".agents/skills/principle-type-system-discipline/",
+    ".agents/skills/tdd/",
+    ".agents/skills/typescript-best-practices/"
   ]
 }
