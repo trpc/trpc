@@ -1,3 +1,14 @@
+# pstack notice
+
+These skill folders are copied unchanged from [pstack](https://github.com/cursor/plugins/tree/bb68f2365eceafa0cb2d253112f675acf5f144cc/pstack) (`cursor/plugins@bb68f23`, `pstack/`):
+
+- `principle-type-system-discipline/`
+- `tdd/`
+- `typescript-best-practices/`
+
+They're covered by pstack's license:
+
+```
 MIT License
 
 Copyright (c) 2026 Lauren Tan
@@ -19,3 +30,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```

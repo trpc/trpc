@@ -28,4 +28,4 @@ Run them from the repo root.
 - [`tdd`](.agents/skills/tdd/SKILL.md): fixing a bug.
 - [`typescript-best-practices`](.agents/skills/typescript-best-practices/SKILL.md) and [`principle-type-system-discipline`](.agents/skills/principle-type-system-discipline/SKILL.md): writing or reviewing TypeScript.
 
-Those three are Lauren Tan's [pstack](https://github.com/cursor/plugins/tree/bb68f2365eceafa0cb2d253112f675acf5f144cc/pstack/skills) skills, copied unchanged under the MIT license beside them. Don't edit them; re-copy to update.
+Those three are Lauren Tan's pstack skills, copied unchanged; source and MIT license are in [`NOTICE-pstack.md`](.agents/skills/NOTICE-pstack.md). Don't edit them; re-copy to update.
