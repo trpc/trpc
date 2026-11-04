@@ -318,7 +318,10 @@ export function backwardCompatibility(connection: Connection | null) {
   ) {
     return { id: connection.id, state: 'closed', ws } as const;
   }
-  if (connection.phase === 'ready' && ws.readyState === READY_STATE.OPEN) {
+  if (
+    (connection.phase === 'ready' || connection.phase === 'draining') &&
+    ws.readyState === READY_STATE.OPEN
+  ) {
     return { id: connection.id, state: 'open', ws } as const;
   }
   return { id: connection.id, state: 'connecting', ws } as const;

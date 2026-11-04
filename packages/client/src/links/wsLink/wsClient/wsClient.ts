@@ -285,13 +285,18 @@ export class WsClient {
 
   /**
    * The current WebSocket and its state, or `null` when there is no socket.
+   * A socket the server asked to replace stays current until its replacement
+   * is ready.
    */
   public get connection() {
     const lifecycle = this.lifecycle;
+    if (lifecycle.kind === 'open') {
+      return backwardCompatibility(lifecycle.connection);
+    }
+    const replaced = [...this.draining].at(-1);
+    if (replaced) return backwardCompatibility(replaced);
     return backwardCompatibility(
-      lifecycle.kind === 'connecting' || lifecycle.kind === 'open'
-        ? lifecycle.connection
-        : null,
+      lifecycle.kind === 'connecting' ? lifecycle.connection : null,
     );
   }
 
@@ -464,21 +469,22 @@ export class WsClient {
   }
 
   /**
-   * Whether a replaced connection still serves requests, so the client isn't
+   * Whether a replaced connection is still open, so the client isn't
    * disconnected even though its next connection isn't ready.
    */
-  private isServedByDrainingConnection() {
-    for (const connection of this.draining) {
-      if (this.requestManager.sentOn(connection).length > 0) return true;
-    }
-    return false;
+  private hasDrainingConnection() {
+    return this.draining.size > 0;
   }
 
   /**
-   * Closes a replaced connection once nothing is in flight on it.
+   * Closes a replaced connection once nothing is in flight on it and its
+   * replacement is ready, or the client is closing.
    */
   private closeIfDrained(connection: Connection) {
     if (connection.phase !== 'draining') return;
+    if (this.lifecycle.kind !== 'open' && this.lifecycle.kind !== 'idle') {
+      return;
+    }
     if (this.requestManager.sentOn(connection).length > 0) return;
     this.draining.delete(connection);
     connection.close();
@@ -523,7 +529,7 @@ export class WsClient {
       // it's ready, or wait for the next.
       const lifecycle = this.lifecycle.kind;
       if (lifecycle === 'backoff' || lifecycle === 'connecting') {
-        if (!this.isServedByDrainingConnection()) {
+        if (!this.hasDrainingConnection()) {
           this.setConnecting(
             new TRPCWebSocketClosedError({
               message: 'WebSocket closed',
@@ -543,7 +549,7 @@ export class WsClient {
     if (!this.isCurrent(connection)) return;
 
     if (this.lifecycle.kind === 'connecting') {
-      if (!this.isServedByDrainingConnection()) {
+      if (!this.hasDrainingConnection()) {
         this.setConnecting(
           new TRPCWebSocketClosedError({
             message: 'Initialization error',
