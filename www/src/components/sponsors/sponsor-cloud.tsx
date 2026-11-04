@@ -109,7 +109,7 @@ const placed = (bubble: Bubble<Sponsor | You>, index: number) =>
   }) satisfies CSSProperties;
 
 const bubbleClass =
-  'absolute aspect-square -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10 has-[a[data-popup-open]]:z-10';
+  'absolute aspect-square -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none in-data-[entrance=waiting]:pointer-events-none in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10 has-[a[data-popup-open]]:z-10';
 
 const confettiColors = [
   'bg-amber-300',
