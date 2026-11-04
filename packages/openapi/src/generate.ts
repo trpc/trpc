@@ -1196,18 +1196,18 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     );
 
     if (resolvedInputSchema && runtimeDescs.input) {
-      applyDescriptions(
-        resolvedInputSchema,
-        runtimeDescs.input,
-        schemaCtx.schemas,
-      );
+      applyDescriptions({
+        schema: resolvedInputSchema,
+        descs: runtimeDescs.input,
+        schemas: schemaCtx.schemas,
+      });
     }
     if (resolvedOutputSchema && runtimeDescs.output) {
-      applyDescriptions(
-        resolvedOutputSchema,
-        runtimeDescs.output,
-        schemaCtx.schemas,
-      );
+      applyDescriptions({
+        schema: resolvedOutputSchema,
+        descs: runtimeDescs.output,
+        schemas: schemaCtx.schemas,
+      });
     }
   }
 
@@ -1669,11 +1669,12 @@ function registerSchema(
   return { $ref: `#/components/schemas/${refName}` };
 }
 
-function buildOpenAPIDocument(
-  procedures: ProcedureInfo[],
-  options: GenerateOptions & { pathSeparator: TRPCPathSeparator },
-  meta: RouterMeta,
-): Document {
+function buildOpenAPIDocument(opts: {
+  procedures: ProcedureInfo[];
+  options: GenerateOptions & { pathSeparator: TRPCPathSeparator };
+  meta: RouterMeta;
+}): Document {
+  const { procedures, options, meta } = opts;
   const paths: PathsObject = {};
   const included = procedures.filter((proc) =>
     shouldIncludeProcedureInOpenAPI(proc.type),
@@ -1813,15 +1814,15 @@ export async function generateOpenAPIDocument(
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
   const pathSeparator =
     options.pathSeparator ?? router?._def._config.pathSeparator ?? '.';
-  return buildOpenAPIDocument(
-    walkCtx.procedures,
-    {
+  return buildOpenAPIDocument({
+    procedures: walkCtx.procedures,
+    options: {
       ...options,
       pathSeparator,
     },
-    {
+    meta: {
       errorSchema,
       schemas: schemaCtx.schemas,
     },
-  );
+  });
 }
