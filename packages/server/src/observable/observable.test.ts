@@ -372,7 +372,7 @@ test('observableToAsyncIterable() - a throwing teardown on break is thrown from 
   expect(thrown).toEqual(new Error('teardown'));
 });
 
-test('observableToAsyncIterable() - a throwing teardown on completion is thrown to the source and ends the pending next()', async () => {
+function withThrowingTeardown() {
   let source!: Observer<number, Error>;
   const obs = observable<number, Error>((observer) => {
     source = observer;
@@ -381,27 +381,46 @@ test('observableToAsyncIterable() - a throwing teardown on completion is thrown 
     };
   });
   const iterator = observableToAsyncIterable(obs, new AbortController().signal);
-  const pending = iterator.next();
+  return { source, iterator };
+}
 
-  expect(() => source.complete()).toThrowError('teardown');
-  expect(await pending).toEqual({ value: undefined, done: true });
-  expect(await iterator.next()).toEqual({ value: undefined, done: true });
+test('observableToAsyncIterable() - a throwing teardown on completion is thrown to the source and ends the pending next()', async () => {
+  {
+    const { source, iterator } = withThrowingTeardown();
+    const pending = iterator.next();
+
+    expect(() => source.complete()).toThrowError('teardown');
+    expect(await pending).toEqual({ value: undefined, done: true });
+    expect(await iterator.next()).toEqual({ value: undefined, done: true });
+  }
+  {
+    const { source, iterator } = withThrowingTeardown();
+    source.next(1);
+
+    expect(() => source.complete()).toThrowError('teardown');
+    expect(await iterator.next()).toEqual({ value: 1, done: false });
+    expect(await iterator.next()).toEqual({ value: undefined, done: true });
+  }
 });
 
 test('observableToAsyncIterable() - a throwing teardown on error is thrown to the source, and the pending next() rejects with the error', async () => {
-  let source!: Observer<number, Error>;
-  const obs = observable<number, Error>((observer) => {
-    source = observer;
-    return () => {
-      throw new Error('teardown');
-    };
-  });
-  const iterator = observableToAsyncIterable(obs, new AbortController().signal);
-  const pending = iterator.next();
+  {
+    const { source, iterator } = withThrowingTeardown();
+    const pending = iterator.next();
 
-  expect(() => source.error(new Error('source'))).toThrowError('teardown');
-  await expect(pending).rejects.toThrowError('source');
-  expect(await iterator.next()).toEqual({ value: undefined, done: true });
+    expect(() => source.error(new Error('source'))).toThrowError('teardown');
+    await expect(pending).rejects.toThrowError('source');
+    expect(await iterator.next()).toEqual({ value: undefined, done: true });
+  }
+  {
+    const { source, iterator } = withThrowingTeardown();
+    source.next(1);
+
+    expect(() => source.error(new Error('source'))).toThrowError('teardown');
+    expect(await iterator.next()).toEqual({ value: 1, done: false });
+    await expect(iterator.next()).rejects.toThrowError('source');
+    expect(await iterator.next()).toEqual({ value: undefined, done: true });
+  }
 });
 
 test('observableToAsyncIterable() - return() resolves after the source completed', async () => {
