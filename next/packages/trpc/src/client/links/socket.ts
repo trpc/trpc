@@ -81,7 +81,7 @@ type Outcome = 'complete' | 'heard' | 'silent' | 'moved' | 'stale';
 
 interface Connection {
   readonly socket: SocketConnection;
-  /** The calls sent on this connection, by call id. */
+  /** The calls sent on this connection, by the id they were sent under. */
   readonly calls: Map<
     number,
     {
@@ -104,7 +104,8 @@ interface Connection {
 
 interface Call {
   readonly op: Operation;
-  readonly request: () => ClientMessage;
+  /** The request, under the id of the attempt that sends it. */
+  readonly request: (id: number) => ClientMessage;
   /** `true` once the call is complete. */
   readonly onMessage: (
     message: CallMessage,
@@ -208,6 +209,12 @@ function makeSocketLink(
   let current: Connection | undefined;
   /** Bumped by `close()`, which can't reach a connection still opening. */
   let closes = 0;
+  /**
+   * The last id a call was sent under. Each attempt gets its own, so frames
+   * still arriving for one a retry replaced don't reach the retry, though
+   * `retryLink` sends it with the same operation.
+   */
+  let sentIds = 0;
   /** Set by `dispose()`: the scope is closed, and every call fails. */
   let disposed = false;
   const disposedError = () => closedError('The link was disposed');
@@ -430,8 +437,9 @@ function makeSocketLink(
     inbox: Queue.Queue<Signal>,
     moves: boolean,
   ): Effect.fn.Return<Outcome, AnyTrpcError, Scope.Scope> {
+    const id = ++sentIds;
     const request = yield* Effect.try({
-      try: call.request,
+      try: () => call.request(id),
       catch: (cause) => cause as AnyTrpcError,
     });
     // A stale connection's reference is released with this scope, so it
@@ -440,7 +448,6 @@ function makeSocketLink(
     if (conn === 'stale') return 'stale';
     if (!conn) return 'silent';
     if (conn.refused) return yield* Effect.fail(conn.refused);
-    const { id } = call.op;
     let complete = false;
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
@@ -526,8 +533,12 @@ function makeSocketLink(
     }
   }, Effect.scoped);
 
-  const request = (op: Operation, lastEventId?: string): ClientMessage => ({
-    id: op.id,
+  const request = (
+    id: number,
+    op: Operation,
+    lastEventId?: string,
+  ): ClientMessage => ({
+    id,
     type: 'request',
     method: op.type,
     path: op.path,
@@ -549,7 +560,7 @@ function makeSocketLink(
         const decoder = makeDeferredDecoder(transformer);
         const call: Call = {
           op,
-          request: () => request(op),
+          request: (id) => request(id, op),
           onMessage: (message) => {
             switch (message.type) {
               case 'result':
@@ -602,7 +613,7 @@ function makeSocketLink(
         let decoder = makeDeferredDecoder(transformer);
         const call: Call = {
           op,
-          request: () => request(op, lastEventId),
+          request: (id) => request(id, op, lastEventId),
           onMessage: (message) => {
             switch (message.type) {
               case 'event':
