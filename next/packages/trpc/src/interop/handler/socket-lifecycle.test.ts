@@ -1,3 +1,4 @@
+import { EventEmitter, on } from 'node:events';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Duplex } from 'node:stream';
@@ -393,4 +394,90 @@ test('wsLink unsubscribing during the middleware never starts the resolver', asy
   } finally {
     await wsClient.close();
   }
+});
+
+const reported = (onError: ReturnType<typeof vi.fn<OnError>>) =>
+  onError.mock.calls.map(([opts]) => [opts.path, opts.error.message]);
+
+test.each(['stop', 'close'] as const)(
+  'what a generator throws after a %s goes to onError (trpc/trpc#7888)',
+  async (cancel) => {
+    const onError = vi.fn<OnError>();
+    const router = t.router({
+      cleanup: t.procedure.subscription(async function* (opts) {
+        yield 1;
+        await onAbort(opts.signal);
+        throw new Error('generator cleanup');
+      }),
+    });
+    await using app = await start(router, { onError });
+    const ws = await connect(app.url);
+    ws.send(subscribe('cleanup'));
+    await vi.waitFor(() => expect(ws.types(1)).toEqual(['started', 'data']));
+    if (cancel === 'stop') {
+      ws.send(stop());
+      await vi.waitFor(() =>
+        expect(ws.types(1)).toEqual(['started', 'data', 'stopped']),
+      );
+    } else {
+      await ws.close();
+    }
+    await vi.waitFor(() =>
+      expect(reported(onError)).toEqual([['cleanup', 'generator cleanup']]),
+    );
+    if (cancel === 'stop') await ws.close();
+  },
+);
+
+test('a cleanup that rejects after a stop goes to onError, and the client gets stopped', async () => {
+  const onError = vi.fn<OnError>();
+  const pending = defer<IteratorResult<number>>();
+  const router = t.router({
+    active: t.procedure.subscription(() => ({
+      [Symbol.asyncIterator]: () => ({
+        next: () => pending.promise,
+        return: async (): Promise<IteratorReturnResult<undefined>> => {
+          throw new Error('cleanup failed');
+        },
+      }),
+    })),
+  });
+  await using app = await start(router, { onError });
+  const ws = await connect(app.url);
+  ws.send(subscribe('active'));
+  await vi.waitFor(() => expect(ws.types(1)).toEqual(['started']));
+  ws.send(stop());
+  await vi.waitFor(() => expect(ws.types(1)).toEqual(['started', 'stopped']));
+  await vi.waitFor(() =>
+    expect(reported(onError)).toEqual([['active', 'cleanup failed']]),
+  );
+  pending.resolve(done());
+  await ws.close();
+});
+
+test('an AbortError a stopped generator throws is not reported', async () => {
+  const onError = vi.fn<OnError>();
+  const events = new EventEmitter();
+  const router = t.router({
+    events: t.procedure.subscription(async function* (opts) {
+      yield 0;
+      for await (const [value] of on(events, 'value', {
+        signal: opts.signal,
+      })) {
+        yield value as number;
+      }
+    }),
+  });
+  await using app = await start(router, { onError });
+  const ws = await connect(app.url);
+  ws.send(subscribe('events'));
+  await vi.waitFor(() => expect(ws.types(1)).toEqual(['started', 'data']));
+  ws.send(stop());
+  await vi.waitFor(() =>
+    expect(ws.types(1)).toEqual(['started', 'data', 'stopped']),
+  );
+  ws.send(subscribe('events', 2));
+  await vi.waitFor(() => expect(ws.types(2)).toEqual(['started', 'data']));
+  expect(onError).not.toHaveBeenCalled();
+  await ws.close();
 });

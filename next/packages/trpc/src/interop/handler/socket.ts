@@ -7,6 +7,7 @@ import type { ProcedureType } from '../../internal/types.ts';
 import {
   createResponseHandle,
   normalizeCause,
+  reportSubscriptionTeardown,
 } from '../../server/execution/index.ts';
 import { resolveProcedure } from '../../server/procedures/index.ts';
 import {
@@ -167,6 +168,12 @@ function v11Session(
           signal: interrupt.signal,
           response: createResponseHandle(),
           lastEventId,
+          services:
+            method === 'subscription'
+              ? reportSubscriptionTeardown((err) =>
+                  base.report(err, request, path, method),
+                )
+              : undefined,
         });
         if (Exit.isFailure(exit)) {
           return yield* Effect.fail(normalizeCause(exit.cause));

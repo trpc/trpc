@@ -44,6 +44,8 @@ for await (const post of client.onPost.subscribe()) {
 
 `.output(Event)` validates each event (the `data` of `tracked()` events); `.output(stream(Event))` does the same, matching [streamed queries](../server/streaming.md).
 
+When the client stops a subscription or its connection closes, `opts.signal` aborts and the generator's `finally` runs. No client hears what the procedure throws after that, so the handler's `onError` gets it, unless it's an `AbortError`: that's how an aborted call ends.
+
 ## Resuming
 
 Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input). An id can't be empty or hold a line break or NUL, which would end the SSE field:
