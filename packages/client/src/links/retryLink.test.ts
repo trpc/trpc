@@ -125,10 +125,11 @@ test('unsubscribing during the retry delay cancels the next attempt', () => {
           }),
       ],
     });
-    const subscription = client.subscription('messages', undefined, {});
+    const ac = new AbortController();
+    client.subscription('messages', undefined, { signal: ac.signal });
     expect(retry).toHaveBeenCalledTimes(1);
     expect(cleanup).toHaveBeenCalledTimes(1);
-    subscription.unsubscribe();
+    ac.abort();
     vi.runAllTimers();
     expect(retry).toHaveBeenCalledTimes(1);
     expect(cleanup).toHaveBeenCalledTimes(1);
@@ -183,6 +184,7 @@ test.each(['retry', 'retryDelayMs'] as const)(
     try {
       const cleanup = vi.fn();
       let attempts = 0;
+      const ac = new AbortController();
       let fail: () => void = () => {
         throw new Error('Expected the first attempt to start');
       };
@@ -190,11 +192,11 @@ test.each(['retry', 'retryDelayMs'] as const)(
         links: [
           retryLink({
             retry: () => {
-              if (callback === 'retry') subscription.unsubscribe();
+              if (callback === 'retry') ac.abort();
               return true;
             },
             retryDelayMs: () => {
-              if (callback === 'retryDelayMs') subscription.unsubscribe();
+              if (callback === 'retryDelayMs') ac.abort();
               return 100;
             },
           }),
@@ -206,7 +208,7 @@ test.each(['retry', 'retryDelayMs'] as const)(
             }),
         ],
       });
-      const subscription = client.subscription('messages', undefined, {});
+      client.subscription('messages', undefined, { signal: ac.signal });
       fail();
       expect(vi.getTimerCount()).toBe(0);
       vi.runAllTimers();

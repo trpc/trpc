@@ -126,6 +126,59 @@ const frodo = await client.createUser.mutate({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 
+### 5. Use subscriptions
+
+Given a [subscription procedure](../../server/subscriptions.md) and a link that supports subscriptions, such as [`httpSubscriptionLink`](../links/httpSubscriptionLink.md) or [`wsLink`](../links/wsLink.md), `.subscribe()` starts the subscription. Either pass callbacks, or leave them out and iterate the result with `for await`:
+
+```ts twoslash title='client.ts'
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  onUserAdd: t.procedure.subscription(async function* () {
+    yield { name: 'Frodo' };
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpSubscriptionLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut---
+// with callbacks
+const sub = client.onUserAdd.subscribe(undefined, {
+  onData(user) {
+    console.log(user);
+  },
+});
+// stop listening
+sub.unsubscribe();
+
+// or with `for await`, without callbacks
+const ac = new AbortController();
+const users = client.onUserAdd.subscribe(undefined, { signal: ac.signal });
+for await (const user of users) {
+  //               ^?
+  console.log(user);
+}
+// `ac.abort()` stops it from outside the loop
+```
+
+When you iterate a subscription:
+
+- A subscription is either iterated or uses callbacks. Iterating one that was started with callbacks throws, and is a type error.
+- Without callbacks, `.subscribe()` returns an async iterator with no `unsubscribe()`, like Node's `events.on()`. Stop it from inside the loop with `break` or `return`, or from outside by aborting the `signal` you passed.
+- Data is queued from when `.subscribe()` is called until the loop reads it. The queue has no size limit. A subscription has one iterator, so iterate it in one loop.
+- A subscription you never loop over or abort keeps running, so pass a `signal`.
+- If you called `unsubscribe()` on a subscription started without callbacks, pass a `signal` and `abort()` it instead.
+- Leaving the loop with `break`, `return` or a thrown error unsubscribes and drops the queued data.
+- Aborting the `signal` unsubscribes, and the loop yields the data already queued before it ends.
+- An error from the subscription is thrown from the loop as a `TRPCClientError`, after the data received before it.
+
 You're all set!
 
 ## Common mistakes

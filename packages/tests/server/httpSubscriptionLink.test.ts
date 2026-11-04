@@ -204,6 +204,138 @@ test('iterable event', async () => {
   });
 });
 
+test('async iterable', async () => {
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableEvent.subscribe(undefined);
+
+  const results: number[] = [];
+  const done = (async () => {
+    for await (const value of subscription) {
+      expectTypeOf(value).toEqualTypeOf<number>();
+      results.push(value);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+  });
+
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 2);
+  ctx.ee.emit('data', returnSymbol);
+
+  // completion ends the loop
+  await done;
+  expect(results).toEqual([1, 2]);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+  });
+
+  expect(ctx.onErrorSpy).not.toHaveBeenCalled();
+});
+
+test('async iterable - abort signal ends iteration', async () => {
+  const { client } = ctx;
+
+  const ac = new AbortController();
+  const subscription = client.sub.iterableEvent.subscribe(undefined, {
+    signal: ac.signal,
+  });
+
+  const results: number[] = [];
+  const done = (async () => {
+    for await (const value of subscription) {
+      results.push(value);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+  });
+
+  ctx.ee.emit('data', 1);
+
+  await vi.waitFor(() => {
+    expect(results).toEqual([1]);
+  });
+
+  ac.abort();
+
+  // aborting ends the iteration instead of leaving it hanging
+  await done;
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+  });
+});
+
+test('async iterable - reconnects and continues', async () => {
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableInfinite.subscribe({});
+
+  const results: number[] = [];
+  const release = suppressLogs();
+  for await (const value of subscription) {
+    results.push(value.data);
+    if (results.length === 3) {
+      // sever the connection mid-iteration
+      ctx.destroyConnections();
+    }
+    if (results.length >= 10) {
+      break;
+    }
+  }
+  release();
+
+  // initial subscription + one reconnect
+  expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
+  // each id is the previous one or the next one: the reconnect replays the
+  // last id, and nothing is skipped
+  expect(
+    results.every((value, index) => {
+      if (index === 0) {
+        return true;
+      }
+      const step = value - results[index - 1]!;
+      return step === 0 || step === 1;
+    }),
+  ).toBe(true);
+  // values continue after the reconnect, replaying the last received id
+  // the first connection has no lastEventId, so the stream starts at 0
+  expect(results[0]).toBe(0);
+  expect(results.at(-1)).toBeGreaterThanOrEqual(8);
+});
+
+test('async iterable - stop iterating early unsubscribes', async () => {
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableInfinite.subscribe({
+    lastEventId: 5,
+  });
+
+  const results: number[] = [];
+  for await (const value of subscription) {
+    expectTypeOf(value).toEqualTypeOf<{
+      data: number;
+      id: string;
+    }>();
+    results.push(value.data);
+    if (results.length >= 3) {
+      break;
+    }
+  }
+  expect(results).toEqual([5, 6, 7]);
+
+  await vi.waitFor(() => {
+    expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
+  });
+
+  expect(ctx.onErrorSpy).not.toHaveBeenCalled();
+});
+
 test(
   'iterable event with error',
   {
@@ -1031,7 +1163,8 @@ describe('timeouts', async () => {
     } as const satisfies CtxOpts;
 
     await using ctx = getCtx(opts);
-    const sub = ctx.client.infinite.subscribe(undefined, {});
+    const ac = new AbortController();
+    ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
 
     ctx.deferred().resolve();
 
@@ -1065,7 +1198,7 @@ describe('timeouts', async () => {
       `[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`,
     );
 
-    sub.unsubscribe();
+    ac.abort();
   });
 
   test('does not timeout if ping is enabled', async () => {
@@ -1082,7 +1215,8 @@ describe('timeouts', async () => {
     } as const satisfies CtxOpts;
 
     await using ctx = getCtx(opts);
-    const sub = ctx.client.infinite.subscribe(undefined, {});
+    const ac = new AbortController();
+    ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
 
     ctx.deferred().resolve();
 
@@ -1108,7 +1242,7 @@ describe('timeouts', async () => {
 
     expect(connectedOpts).toHaveLength(1);
 
-    sub.unsubscribe();
+    ac.abort();
   });
 });
 
