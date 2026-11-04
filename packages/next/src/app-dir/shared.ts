@@ -109,10 +109,7 @@ export function generateCacheTag(procedurePath: string, input: any) {
 /**
  * @internal
  */
-export function generateCacheTags(
-  procedurePath: string,
-  input: any,
-): string[] {
+export function generateCacheTags(procedurePath: string, input: any): string[] {
   if (!procedurePath) {
     return [];
   }
