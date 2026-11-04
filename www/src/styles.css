@@ -31,7 +31,7 @@ html {
 @theme {
   --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
   --animate-sponsor-boing: sponsor-boing 0.8s ease-out both;
-  --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out both;
+  --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out forwards;
   --animate-sponsor-confetti: sponsor-confetti 0.9s
     cubic-bezier(0.2, 0.8, 0.4, 1) both;
   --animate-sponsor-badge: sponsor-badge 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)

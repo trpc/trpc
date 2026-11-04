@@ -19,6 +19,25 @@ const isTouch = (pointerType: string | undefined) =>
   pointerType !== undefined && pointerType !== 'mouse';
 
 /**
+ * Which pointer made a click: undefined for the keyboard. Most browsers say,
+ * the keyboard as ''. Older Safari's clicks say nothing, and some say 'mouse'
+ * after a touch (WebKit bug 282988), so those take the press that just ended.
+ */
+export function clickPointer(opts: {
+  /** The click's own `pointerType`, if it has one. */
+  readonly clickType: string | undefined;
+  /** The pointer that last pressed the bubble, if any. */
+  readonly pressType: string | undefined;
+  /** Whether a press ended just before the click. */
+  readonly recent: boolean;
+}): string | undefined {
+  if (opts.clickType === undefined || opts.clickType === 'mouse') {
+    return opts.recent ? opts.pressType : opts.clickType;
+  }
+  return opts.clickType || undefined;
+}
+
+/**
  * What a click on a bubble does. A mouse or the keyboard follows its link,
  * as hover or focus already showed its tooltip. A tap shows the tooltip
  * first, and follows the link only when an earlier tap showed it, not
@@ -51,14 +70,12 @@ export function useTapTooltips() {
   const hold = useRef<ReturnType<typeof setTimeout>>(undefined);
   const released = useRef(Number.NEGATIVE_INFINITY);
   const stopHold = () => clearTimeout(hold.current);
-  // Most browsers say which pointer pressed or clicked, the keyboard as '';
-  // Safari's clicks don't, so they fall back to the press that just ended.
   const pointerOf = (event: Event) =>
-    'pointerType' in event
-      ? String(event.pointerType) || undefined
-      : event.timeStamp - released.current < clickMs
-        ? pointer.current
-        : undefined;
+    clickPointer({
+      clickType: 'pointerType' in event ? String(event.pointerType) : undefined,
+      pressType: pointer.current,
+      recent: event.timeStamp - released.current < clickMs,
+    });
   return (key: string) => {
     const onOpenChange: OpenChange = (open, details) => {
       // A touch press on the trigger is a tap, which `trigger.onClick`

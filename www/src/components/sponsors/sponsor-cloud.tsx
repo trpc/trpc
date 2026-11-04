@@ -108,24 +108,27 @@ export function SponsorCloud(props: { readonly className?: string }) {
         bubbles,
       );
       let waiting = false;
+      const show = () => {
+        if (waiting && !shown) {
+          // The celebrated bubbles drop in as they pop, after the rest.
+          cloud.drop(
+            bubbles.map((bubble, index) =>
+              recentKeys.has(sponsorKey(bubble.sponsor))
+                ? celebrateDelayMs('shown')
+                : entranceDelay(index),
+            ),
+          );
+        }
+        shown = true;
+        setEntrance((now) => (now === 'waiting' ? 'shown' : now));
+        setCelebrating(true);
+        observer.disconnect();
+        element.removeEventListener('focusin', show);
+      };
       const observer = new IntersectionObserver(
         (entries) => {
-          const entry = entries[0];
-          if (entry?.isIntersecting) {
-            if (waiting && !shown) {
-              // The celebrated bubbles drop in as they pop, after the rest.
-              cloud.drop(
-                bubbles.map((bubble, index) =>
-                  recentKeys.has(sponsorKey(bubble.sponsor))
-                    ? celebrateDelayMs('shown')
-                    : entranceDelay(index),
-                ),
-              );
-            }
-            shown = true;
-            setEntrance((now) => (now === 'waiting' ? 'shown' : now));
-            setCelebrating(true);
-            observer.disconnect();
+          if (entries[0]?.isIntersecting) {
+            show();
           } else {
             waiting = true;
             setEntrance((now) => (now === 'none' ? 'waiting' : now));
@@ -134,8 +137,11 @@ export function SponsorCloud(props: { readonly className?: string }) {
         { rootMargin: '0px 0px -20% 0px' },
       );
       observer.observe(element);
+      // Keyboard focus mustn't land on a bubble that hasn't shown yet.
+      element.addEventListener('focusin', show);
       stop = () => {
         observer.disconnect();
+        element.removeEventListener('focusin', show);
         cloud.stop();
         setEntrance((now) => (now === 'waiting' ? 'none' : now));
         stop = undefined;
@@ -246,7 +252,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
                   className="pointer-events-none motion-reduce:hidden"
                 >
                   <span
-                    className="absolute inset-0 motion-safe:animate-sponsor-ripple rounded-full border-2 border-brand"
+                    className="absolute inset-0 rounded-full border-2 border-brand opacity-0 motion-safe:animate-sponsor-ripple"
                     style={delayed(celebrateAt + rippleAfter)}
                   />
                   {Array.from({ length: confettiCount }, (_, piece) => (
