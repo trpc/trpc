@@ -125,6 +125,12 @@ async function nextActivity(
   ]);
 }
 
+/** A subscription's claim on its id. Disposing it frees the id. */
+type SubscriptionRegistration = Disposable & {
+  signal: AbortSignal;
+  abort: () => void;
+};
+
 /**
  * The subscriptions a connection is serving, by id. Disposing it stops them
  * all.
@@ -133,21 +139,39 @@ function subscriptionsResource() {
   const active = new Map<number | string, { abort: () => void }>();
   return makeResource(
     {
-      has: (id: number | string) => active.has(id),
       stop: (id: number | string) => active.get(id)?.abort(),
       /**
        * Claims `id` for a subscription until the returned resource is
-       * disposed.
+       * disposed. An id that's already claimed is refused, so a running
+       * subscription can't be replaced and lose its way to be stopped.
        */
-      register(id: number | string) {
-        const { signal, abort } = abortControllerResource();
-        const subscription = { signal, abort };
+      register(
+        id: number | string,
+      ): Result<SubscriptionRegistration, TRPCError> {
+        if (active.has(id)) {
+          return {
+            ok: false,
+            error: new TRPCError({
+              message: `Duplicate id ${id}`,
+              code: 'BAD_REQUEST',
+            }),
+          };
+        }
+        const controller = abortControllerResource();
+        // A new object, so disposing the registration doesn't abort it.
+        const subscription = {
+          signal: controller.signal,
+          abort: controller.abort,
+        };
         active.set(id, subscription);
-        return makeResource(subscription, () => {
-          if (active.get(id) === subscription) {
-            active.delete(id);
-          }
-        });
+        return {
+          ok: true,
+          value: makeResource(subscription, () => {
+            if (active.get(id) === subscription) {
+              active.delete(id);
+            }
+          }),
+        };
       },
     },
     () => {
@@ -288,7 +312,7 @@ type ProcedureRequest = Pick<TRPCRequestMessage, 'jsonrpc'> & {
  * The responses to one request. Each `yield` evaluates to whether the
  * response could be encoded and sent.
  */
-type Responses = AsyncGenerator<TRPCResponseMessage, void, Result<void>>;
+type Replies = AsyncGenerator<TRPCResponseMessage, void, Result<void>>;
 
 /** What an error is reported with: the request, if it's tied to one. */
 type ErrorOrigin = {
@@ -374,11 +398,38 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       return attempt(() => respond(response));
     }
 
+    /**
+     * Reports `cause` to `onError`. Errors are reported from listeners and
+     * from promises nothing awaits, where a throw would crash the process,
+     * so an `onError` that throws is ignored.
+     */
     function reportError(request: ErrorOrigin, cause: unknown) {
       const error = getTRPCErrorFromUnknown(cause);
-      const { path, type, input } = request;
-      opts.onError?.({ error, path, type, ctx, req, input });
+      attempt(() =>
+        opts.onError?.({
+          error,
+          path: request.path,
+          type: request.type,
+          ctx,
+          req,
+          input: request.input,
+        }),
+      );
       return error;
+    }
+
+    /**
+     * Sends a response that nothing can retry, reporting it if it can't be
+     * built or sent.
+     */
+    function sendOrReport(
+      request: ErrorOrigin,
+      response: () => TRPCResponseMessage,
+    ) {
+      const sent = attempt(() => respond(response()));
+      if (!sent.ok) {
+        reportError(request, sent.error);
+      }
     }
 
     /** Reports `cause` to `onError`, and returns the response it gets. */
@@ -387,16 +438,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       cause: unknown,
     ): TRPCResponseMessage {
       const error = reportError(request, cause);
-      const { id, jsonrpc, path, type, input } = request;
       return {
-        id,
-        jsonrpc,
+        id: request.id,
+        jsonrpc: request.jsonrpc,
         error: getErrorShape({
           config: router._def._config,
           error,
-          type,
-          path,
-          input,
+          type: request.type,
+          path: request.path,
+          input: request.input,
           ctx,
         }),
       };
@@ -443,7 +493,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return { ok: true, value: created.value };
       }
       const error = reportError(unknownRequest, created.error);
-      respond(connectionErrorResponse(error));
+      sendOrReport(unknownRequest, () => connectionErrorResponse(error));
 
       // close in next tick
       (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
@@ -547,16 +597,26 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const context = createConnectionContext(getConnectionParams);
 
       while (true) {
-        const requests = decodeRequests(yield);
-        if (!requests.ok) {
-          for (const response of requests.error) {
-            respond(response);
-          }
-          continue;
+        const frame: Frame = yield;
+        // A throw would end this generator, and the connection would
+        // ignore every frame after it.
+        const received = attempt(() => receiveFrame(frame, context));
+        if (!received.ok) {
+          reportError(unknownRequest, received.error);
         }
-        for (const [batchIndex, msg] of requests.value.entries()) {
-          receiveRequest(msg, batchIndex, context);
+      }
+    }
+
+    function receiveFrame(frame: Frame, context: Promise<ContextResult>) {
+      const requests = decodeRequests(frame);
+      if (!requests.ok) {
+        for (const response of requests.error) {
+          sendOrReport(unknownRequest, () => response);
         }
+        return;
+      }
+      for (const [batchIndex, msg] of requests.value.entries()) {
+        receiveRequest(msg, batchIndex, context);
       }
     }
 
@@ -577,7 +637,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           code: 'PARSE_ERROR',
           message: '`id` is required',
         });
-        respond(errorResponse({ ...unknownRequest, id, jsonrpc }, error));
+        sendOrReport(unknownRequest, () =>
+          errorResponse({ ...unknownRequest, id, jsonrpc }, error),
+        );
         return;
       }
       if (msg.method === 'subscription.stop') {
@@ -608,35 +670,40 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       };
 
       if (request.type !== 'subscription') {
-        void sendAll(procedureResponses(request, context));
+        void sendAll(request, procedureResponses(request, context));
         return;
       }
-      if (subscriptions.has(id)) {
-        // duplicate request ids for client
-        const error = new TRPCError({
-          message: `Duplicate id ${id}`,
-          code: 'BAD_REQUEST',
-        });
-        respond(errorResponse(request, error));
+      const registration = subscriptions.register(id);
+      if (!registration.ok) {
+        sendOrReport(request, () => errorResponse(request, registration.error));
         return;
       }
       void sendAll(
-        subscriptionResponses(request, subscriptions.register(id), context),
+        request,
+        subscriptionResponses(request, registration.value, context),
       );
     }
 
-    /** Sends the responses to a request, telling it whether each went out. */
-    async function sendAll(responses: Responses) {
+    /**
+     * Sends the responses to a request, telling it whether each went out.
+     * Nothing awaits it, so it never rejects: if building a response throws,
+     * that's reported to `onError`.
+     */
+    async function sendAll(request: ProcedureRequest, replies: Replies) {
       // Not declared in the loop, and cleared after each response, so that a
       // response can be garbage collected while the next one is awaited.
-      let next: IteratorResult<TRPCResponseMessage, void> | null;
+      let next: Result<IteratorResult<TRPCResponseMessage, void>> | null;
       let sent = OK;
       while (true) {
-        next = await responses.next(sent);
-        if (next.done) {
+        next = await settle(replies.next(sent));
+        if (!next.ok) {
+          reportError(request, next.error);
           return;
         }
-        sent = trySend(next.value);
+        if (next.value.done) {
+          return;
+        }
+        sent = trySend(next.value.value);
         next = null;
       }
     }
@@ -648,7 +715,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     async function* lastResponse(
       request: ProcedureRequest,
       response: TRPCResponseMessage,
-    ): Responses {
+    ): Replies {
       const sent = yield response;
       if (!sent.ok) {
         reportError(request, sent.error);
@@ -660,16 +727,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       created: Context,
       signal: AbortSignal,
     ): Promise<Result<unknown>> {
-      const { path, input, type, batchIndex } = request;
       return settle(
         callTRPCProcedure({
           router,
-          path,
-          getRawInput: async () => input,
+          path: request.path,
+          getRawInput: async () => request.input,
           ctx: created,
-          type,
+          type: request.type,
           signal,
-          batchIndex,
+          batchIndex: request.batchIndex,
         }),
       );
     }
@@ -678,8 +744,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     async function* procedureResponses(
       request: ProcedureRequest,
       context: Promise<ContextResult>,
-    ): Responses {
-      const { id, jsonrpc, type } = request;
+    ): Replies {
       const created = await context;
       // A query's or a mutation's signal is never aborted.
       const result = created.ok
@@ -696,14 +761,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       if (isAsyncIterable(result.value) || isObservable(result.value)) {
         const error = new TRPCError({
           code: 'UNSUPPORTED_MEDIA_TYPE',
-          message: `Cannot return an async iterable or observable from a ${type} procedure with WebSockets`,
+          message: `Cannot return an async iterable or observable from a ${request.type} procedure with WebSockets`,
         });
         yield* lastResponse(request, errorResponse(request, error));
         return;
       }
       const sent = yield {
-        id,
-        jsonrpc,
+        id: request.id,
+        jsonrpc: request.jsonrpc,
         result: {
           type: 'data',
           data: result.value,
@@ -762,9 +827,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      */
     async function* subscriptionResponses(
       request: ProcedureRequest,
-      registration: ReturnType<typeof subscriptions.register>,
+      registration: SubscriptionRegistration,
       context: Promise<ContextResult>,
-    ): Responses {
+    ): Replies {
       using subscription = registration;
       const { id, jsonrpc } = request;
       const stopped: TRPCResponseMessage = {
@@ -878,7 +943,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       // Convert rawData to a format our encoder accepts
       // ws gives us Buffer for both text and binary frames
       if (!Buffer.isBuffer(rawData)) {
-        respond(
+        sendOrReport(unknownRequest, () =>
           connectionErrorResponse(
             new TRPCError({
               code: 'UNPROCESSABLE_CONTENT',
@@ -923,6 +988,8 @@ export function handleKeepAlive(
       if (quiet === 'message') {
         continue;
       }
+      // `send` throws only while a socket is connecting, which a server's
+      // socket never is, so this loop never rejects.
       client.send('PING');
       const answer = await nextActivity(client, pongWaitMs);
       if (answer === 'close') {

@@ -521,6 +521,176 @@ describe('frames that wsLink never sends', () => {
   });
 });
 
+describe('a throwing callback never crashes the server', () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    fail: t.procedure.query(() => {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'bad input' });
+    }),
+    greeting: t.procedure.query(() => 'hello'),
+  });
+
+  test('an onError that throws is ignored', async () => {
+    const onError = vi.fn<OnError>(() => {
+      throw new Error('onError bug');
+    });
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+      wssServer: { onError },
+    });
+
+    const error = await waitError(ctx.client.fail.query(), TRPCClientError);
+    expect(error.data?.code).toBe('BAD_REQUEST');
+    expect(onError).toHaveBeenCalledOnce();
+    expect(await ctx.client.greeting.query()).toBe('hello');
+  });
+
+  test('an onError that throws on a frame error leaves the connection serving', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: {
+        onError: () => {
+          throw new Error('onError bug');
+        },
+      },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    socket.ws.send(
+      JSON.stringify({ id: null, method: 'query', params: { path: 'x' } }),
+    );
+    socket.ws.send(
+      JSON.stringify({ id: 1, method: 'query', params: { path: 'greeting' } }),
+    );
+
+    await socket.received(2);
+    expect(socket.responses()).toMatchObject([
+      { id: null, error: { data: { code: 'PARSE_ERROR' } } },
+      { id: 1, result: { type: 'data', data: 'hello' } },
+    ]);
+  });
+
+  test('an errorFormatter that throws is reported, and other requests are answered', async () => {
+    const onError = vi.fn<OnError>();
+    const t2 = initTRPC.create({
+      errorFormatter: () => {
+        throw new Error('formatter bug');
+      },
+    });
+    const router2 = t2.router({
+      fail: t2.procedure.query(() => {
+        throw new TRPCError({ code: 'BAD_REQUEST' });
+      }),
+      greeting: t2.procedure.query(() => 'hello'),
+    });
+    await using ctx = testServerAndClientResource(router2, {
+      wssServer: { onError },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    socket.ws.send(
+      JSON.stringify([
+        { id: 1, method: 'query', params: { path: 'fail' } },
+        { id: 2, method: 'query', params: { path: 'greeting' } },
+      ]),
+    );
+
+    await socket.received(1);
+    expect(socket.responses()).toMatchObject([
+      { id: 2, result: { type: 'data', data: 'hello' } },
+    ]);
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
+    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+      'BAD_REQUEST',
+      'formatter bug',
+    ]);
+  });
+
+  test('an errorFormatter that throws on a whole frame leaves the connection serving', async () => {
+    const onError = vi.fn<OnError>();
+    const t2 = initTRPC.create({
+      errorFormatter: (opts) => {
+        if (opts.error.message === 'Batch call exceeds maximum size') {
+          throw new Error('formatter bug');
+        }
+        return opts.shape;
+      },
+    });
+    const router2 = t2.router({
+      greeting: t2.procedure.query(() => 'hello'),
+    });
+    await using ctx = testServerAndClientResource(router2, {
+      wssServer: { onError, maxBatchSize: 1 },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    const greeting = (id: number) => ({
+      id,
+      method: 'query',
+      params: { path: 'greeting' },
+    });
+    socket.ws.send(JSON.stringify([greeting(1), greeting(2)]));
+    socket.ws.send(JSON.stringify(greeting(3)));
+
+    await socket.received(1);
+    expect(socket.responses()).toMatchObject([
+      { id: 3, result: { type: 'data', data: 'hello' } },
+    ]);
+    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+      'Batch call exceeds maximum size',
+      'formatter bug',
+    ]);
+  });
+
+  test('a frame error that cannot be encoded is reported, and later frames are served', async () => {
+    const onError = vi.fn<OnError>();
+    const encoder: Encoder = {
+      encode: (data) => {
+        if (isObject(data) && data['id'] === null) {
+          throw new Error('cannot encode');
+        }
+        return jsonEncoder.encode(data);
+      },
+      decode: (data) => jsonEncoder.decode(data),
+    };
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: { onError, experimental_encoder: encoder },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    socket.ws.send('not json');
+    socket.ws.send(
+      JSON.stringify({ id: 1, method: 'query', params: { path: 'greeting' } }),
+    );
+
+    await socket.received(1);
+    expect(socket.responses()).toMatchObject([
+      { id: 1, result: { type: 'data', data: 'hello' } },
+    ]);
+    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+      'cannot encode',
+    ]);
+  });
+
+  test('a failed createContext with an onError that throws still closes the connection', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: {
+        createContext: () => {
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
+        },
+        onError: () => {
+          throw new Error('onError bug');
+        },
+      },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    await socket.closed;
+    expect(socket.responses()).toMatchObject([
+      { id: null, error: { data: { code: 'UNAUTHORIZED' } } },
+    ]);
+  });
+});
+
 test('a socket error is reported to onError', async () => {
   const onError = vi.fn<OnError>();
   const t = initTRPC.create();
