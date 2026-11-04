@@ -90,6 +90,9 @@ const celebrateDelayMs = (entrance: Entrance) =>
 /** When the reader's bubble fades in: once the celebrated have popped and settled. */
 const youDelayMs = (entrance: Entrance) => celebrateDelayMs(entrance) + 1400;
 
+/** How long after the reader's bubble starts to fade in its caption does, in ms. */
+const captionAfter = 700;
+
 /** How long after a celebrated bubble starts to pop each flourish starts, in ms. */
 const confettiAfter = 300;
 const rippleAfter = 350;
@@ -229,7 +232,6 @@ export function SponsorCloud(props: {
                 key={keyOf(sponsor)}
                 link={props.you ?? 'sponsor-page'}
                 style={placed(bubble, index)}
-                tap={tap(keyOf(sponsor))}
               />
             );
           }
@@ -361,34 +363,53 @@ export function SponsorCloud(props: {
 }
 
 /**
- * The reader's bubble: "You?", linking to where they'd sponsor. Its tooltip
- * says what it's for, as its label does for a screen reader. It fades in
- * `delayMs` after it starts `entering`, unless keyboard focus reaches it
- * first, which shows it at once.
+ * The reader's bubble: "You?", linking to where they'd sponsor, with a
+ * caption that says so, always shown rather than a tooltip, so a single tap
+ * follows it. It fades in `delayMs` after it starts `entering`, and its
+ * caption a little after, unless keyboard focus reaches it first, which
+ * shows both at once.
  */
 function YouBubble(props: {
   readonly delayMs: number;
   readonly entering: boolean;
   readonly link: 'github' | 'sponsor-page';
   readonly style: CSSProperties;
-  readonly tap: ReturnType<ReturnType<typeof useTapTooltips>>;
 }) {
   const [focused, setFocused] = useState(false);
   const github = props.link === 'github';
+  const animate = props.entering && !focused;
+  const caption = github ? 'Sponsor on GitHub' : 'Become a sponsor';
   const linkProps = {
-    ...props.tap.trigger,
     'aria-label': github
       ? 'Your bubble here? Sponsor tRPC on GitHub'
       : 'Your bubble here? Become a sponsor',
+    children: (
+      <>
+        <span aria-hidden className="text-[24cqw] leading-none">
+          You?
+        </span>
+        <span
+          aria-hidden
+          className={cn(
+            'absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 rounded-full bg-foreground px-2 py-1 text-[11px] leading-none font-medium whitespace-nowrap text-background shadow-md',
+            animate && 'motion-safe:animate-sponsor-you-caption',
+          )}
+          style={animate ? delayed(props.delayMs + captionAfter) : undefined}
+        >
+          {caption}
+        </span>
+      </>
+    ),
     className:
-      'relative flex size-full items-center justify-center rounded-full border-2 border-dashed border-foreground/25 bg-background font-semibold text-muted-foreground shadow-md transition-[scale,box-shadow,color,border-color] duration-200 outline-none @container [-webkit-touch-callout:none] hover:scale-105 hover:border-brand hover:text-brand hover:shadow-lg focus-visible:scale-105 focus-visible:ring-3 focus-visible:ring-ring data-popup-open:scale-105 data-popup-open:border-brand data-popup-open:text-brand data-popup-open:shadow-lg',
+      'relative flex size-full items-center justify-center rounded-full border-2 border-dashed border-foreground/25 bg-background font-semibold text-muted-foreground shadow-md transition-[scale,box-shadow,color,border-color] duration-200 outline-none @container hover:scale-105 hover:border-brand hover:text-brand hover:shadow-lg focus-visible:scale-105 focus-visible:ring-3 focus-visible:ring-ring',
   };
   return (
     <span
       className={cn(
         bubbleClass,
+        'z-10',
         // From none to an animation replays it, once the cloud shows.
-        props.entering && !focused && 'motion-safe:animate-sponsor-you',
+        animate && 'motion-safe:animate-sponsor-you',
       )}
       data-bubble=""
       onFocus={() => setFocused(true)}
@@ -397,33 +418,11 @@ function YouBubble(props: {
         ...(focused ? { transition: 'none' } : delayed(props.delayMs)),
       }}
     >
-      <Tooltip {...props.tap.root}>
-        <TooltipTrigger
-          delay={80}
-          render={
-            github ? (
-              <a
-                {...linkProps}
-                href={sponsorUrl}
-                rel="noopener"
-                target="_blank"
-              />
-            ) : (
-              <Link {...linkProps} to="/sponsor" />
-            )
-          }
-        >
-          <span aria-hidden className="text-[24cqw] leading-none">
-            You?
-          </span>
-        </TooltipTrigger>
-        <TooltipContent className="flex-col items-start gap-0">
-          <span className="font-semibold">Your bubble here?</span>
-          <span className="opacity-70">
-            {github ? 'Sponsor tRPC on GitHub' : 'Become a sponsor'}
-          </span>
-        </TooltipContent>
-      </Tooltip>
+      {github ? (
+        <a {...linkProps} href={sponsorUrl} rel="noopener" target="_blank" />
+      ) : (
+        <Link {...linkProps} to="/sponsor" />
+      )}
     </span>
   );
 }

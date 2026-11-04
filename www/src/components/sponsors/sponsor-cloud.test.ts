@@ -40,6 +40,15 @@ describe('SponsorCloud', () => {
     expect(html).toContain('>You?</span>');
   });
 
+  it('shows the "You?" bubble\'s caption rather than a tooltip, so one tap follows it', async () => {
+    const html = await prerender({});
+    const you = linkLabelled(html, 'Your bubble here\\? Become a sponsor');
+    expect(you).not.toContain('tooltip-trigger');
+    expect(html.slice(html.indexOf(you ?? '<none>'))).toMatch(
+      /^<a[^>]*>.*>Become a sponsor<\/span><\/a>/,
+    );
+  });
+
   it('links the "You?" bubble straight to GitHub Sponsors on /sponsor', async () => {
     const html = await prerender({ you: 'github' });
     const you = linkLabelled(
