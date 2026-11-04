@@ -238,6 +238,13 @@ test('procedures answer at their routes, with path params and declared errors (1
   expect((await s.api('/nowhere')).status).toBe(404);
 });
 
+test('a 405 lists the methods the path has routes for in allow', async () => {
+  await using s = await serve();
+  const res = await s.api('/posts/1', { method: 'PUT' });
+  expect(res.status).toBe(405);
+  expect(res.headers.get('allow')).toBe('GET, PATCH, DELETE');
+});
+
 test('query strings use bracket notation, coerced from the JSON Schema', async () => {
   await using s = await serve();
   const res = await s.api(

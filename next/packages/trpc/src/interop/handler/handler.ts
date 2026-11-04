@@ -571,24 +571,31 @@ export function createV11Handler<
       );
     });
 
-  /** Checked per call, as v11 does, so each error has its call's path. */
+  /**
+   * Checked per call, as v11 does, so each error has its call's path. Its
+   * `allow` header lists the methods the procedure accepts, as v11's does
+   * since trpc/trpc#7769, and a batch's response carries it too.
+   */
   const methodError = (
     request: HttpServerRequest.HttpServerRequest,
     call: Call,
-  ): AnyTrpcError | undefined => {
+  ): (Outcome & { readonly ok: false }) | undefined => {
     const allowed =
       call.type === 'mutation'
         ? ['POST']
         : opts.allowMethodOverride
           ? ['GET', 'POST']
           : ['GET'];
-    return allowed.includes(request.method)
-      ? undefined
-      : new TrpcError({
-          code: 'METHOD_NOT_SUPPORTED',
-          tag: 'ProcedureTypeMismatch',
-          message: `Unsupported ${request.method}-request to ${call.type} procedure at path "${call.path}"`,
-        });
+    if (allowed.includes(request.method)) return undefined;
+    return {
+      ok: false,
+      error: new TrpcError({
+        code: 'METHOD_NOT_SUPPORTED',
+        tag: 'ProcedureTypeMismatch',
+        message: `Unsupported ${request.method}-request to ${call.type} procedure at path "${call.path}"`,
+      }),
+      headers: new Headers({ allow: allowed.join(', ') }),
+    };
   };
 
   const run = (
@@ -610,7 +617,7 @@ export function createV11Handler<
         } as const;
       }
       const wrongMethod = methodError(request, call);
-      if (wrongMethod) return { ok: false, error: wrongMethod } as const;
+      if (wrongMethod) return wrongMethod;
       if (call.type === 'subscription') {
         return {
           ok: false,
@@ -668,7 +675,7 @@ export function createV11Handler<
       const response = createResponseHandle();
       const wrongMethod = methodError(request, call);
       const exit: Exit.Exit<unknown, unknown> = wrongMethod
-        ? Exit.fail(wrongMethod)
+        ? Exit.fail(wrongMethod.error)
         : Exit.isFailure(prepared)
           ? prepared
           : yield* base.run({

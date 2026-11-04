@@ -241,6 +241,30 @@ test('methods: PUT is refused, QUERY reads, lazy routers load on demand', async 
   await handler.dispose();
 });
 
+test('a 405 lists the methods the procedure or batch accepts in allow', async () => {
+  const handler = createFetchHandler({
+    router,
+    createContext,
+    batch: { maxItems: 3 },
+  });
+  const allowOf = async (path: string, method: string, batch = false) => {
+    const res = await handler.fetch(
+      new Request(`http://localhost/trpc${path}`, {
+        method,
+        ...(batch ? { headers: { 'trpc-batch': '1' } } : {}),
+      }),
+    );
+    expect(res.status).toBe(405);
+    return res.headers.get('allow');
+  };
+  expect(await allowOf('/greet', 'PUT')).toBe('GET, POST, QUERY');
+  expect(await allowOf('/ticks', 'DELETE')).toBe('GET, POST, QUERY');
+  expect(await allowOf('/write', 'GET')).toBe('POST');
+  expect(await allowOf('/write', 'PUT')).toBe('POST');
+  expect(await allowOf('', 'GET', true)).toBe('POST');
+  await handler.dispose();
+});
+
 test('a returned response gets the handle’s cookies', async () => {
   await using server = await createTestServer({ router, createContext });
   const res = await fetch(`${server.url}/raw`);

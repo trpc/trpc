@@ -1,4 +1,4 @@
-import { Effect, identity, Stream } from 'effect';
+import { Cause, Context, Effect, identity, Stream } from 'effect';
 import type { ProcedureType } from './types.ts';
 
 /**
@@ -315,6 +315,39 @@ export const isOctetContentType = (value: string | null): boolean =>
 export const sseIdField = (id: string | undefined): string => {
   const value = id?.replace(/[\r\n\0]/g, '');
   return value ? `id: ${value}\n` : '';
+};
+
+const AllowedMethods = /* @__PURE__ */ Context.Service<
+  'AllowedMethods',
+  ReadonlyArray<string>
+>('@trpc12/trpc/AllowedMethods');
+
+/**
+ * Fails with `err`, a `METHOD_NOT_SUPPORTED`, annotated with the methods the
+ * resource accepts, which {@link allowHeader} reads back for the 405.
+ * @internal
+ */
+export const failMethodNotSupported = <E>(
+  err: E,
+  methods: ReadonlyArray<string>,
+): Effect.Effect<never, E> =>
+  Effect.failCause(
+    Cause.annotate(Cause.fail(err), Context.make(AllowedMethods, methods)),
+  );
+
+/**
+ * The `allow` header a 405 must send (RFC 9110 15.5.6), when `cause` came
+ * from {@link failMethodNotSupported}.
+ * @internal
+ */
+export const allowHeader = (
+  cause: Cause.Cause<unknown>,
+): Headers | undefined => {
+  const methods = Context.getOrUndefined(
+    Cause.annotations(cause),
+    AllowedMethods,
+  );
+  return methods ? new Headers({ allow: methods.join(', ') }) : undefined;
 };
 
 /** An SSE event: `event` defaults to `message`. */

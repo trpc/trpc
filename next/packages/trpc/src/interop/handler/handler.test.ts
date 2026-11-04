@@ -294,6 +294,33 @@ test('errors reach v11 clients as TRPCClientErrors with the JSON-RPC shape', asy
   expect(wrongMethod.status).toBe(405);
 });
 
+test('a 405 lists the methods the procedure accepts, as v11 does', async () => {
+  await using app = await start();
+  const query = await fetch(`${app.url}/greet`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  expect(query.status).toBe(405);
+  expect(query.headers.get('allow')).toBe('GET');
+  const mutation = await fetch(
+    `${app.url}/post.add?input=${JSON.stringify({})}`,
+  );
+  expect(mutation.status).toBe(405);
+  expect(mutation.headers.get('allow')).toBe('POST');
+});
+
+test('a 405 lists POST for queries when allowMethodOverride is on', async () => {
+  await using app = await start({ allowMethodOverride: true });
+  const res = await fetch(`${app.url}/greet`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  expect(res.status).toBe(405);
+  expect(res.headers.get('allow')).toBe('GET, POST');
+});
+
 test('errorFormatter reproduces the v11 router errorFormatter', async () => {
   await using app = await start({
     errorFormatter: (opts) => ({
