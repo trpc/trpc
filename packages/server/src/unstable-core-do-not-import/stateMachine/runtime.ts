@@ -1,4 +1,5 @@
 import type { Unsubscribable } from '../../observable/types';
+import { iteratorResource } from '../stream/utils/asyncIterable';
 import { createDeferred } from '../stream/utils/createDeferred';
 import { makeAsyncResource, makeResource } from '../stream/utils/disposable';
 import { mergeAsyncIterables } from '../stream/utils/mergeAsyncIterables';
@@ -16,9 +17,12 @@ export interface MachineRuntime<TState, TEvent> extends AsyncDisposable {
   readonly send: (event: TEvent) => void;
   /**
    * Reads `source` until it ends or the runtime is disposed. Every source is
-   * read by the runtime's one `for await` loop, in the order values arrive,
-   * and `receive` gets each value when its turn comes; it usually calls
-   * `send`, or drops values that no longer count.
+   * read by the runtime's one loop, in the order values arrive, and
+   * `receive` gets each value when its turn comes; it usually calls `send`,
+   * or drops values that no longer count. The runtime lets go of a value
+   * once `receive` has run, so a source should too: hold the current value
+   * in a `let` outside its loop and clear it, as `for await`, `yield*` and
+   * a loop body's `const` keep the last value alive while awaiting.
    *
    * Disposal calls `return()` on `source`, which should remove its
    * listeners. An async generator only returns at its next `yield`, so one
@@ -129,9 +133,16 @@ export function createMachineRuntime<
   }
 
   const loop = (async () => {
-    for await (const receive of sources) {
-      if (receive === stop) break;
-      if (!disposed) attempt(receive);
+    // Not `for await`: while it awaits, V8 keeps the last value of a
+    // `for await` loop alive, and with it the value `receive` got. The
+    // thunk is cleared once it has run.
+    await using iterator = iteratorResource(sources);
+    let receive: IteratorResult<(() => void) | typeof stop> | null;
+    while (true) {
+      receive = await iterator.next();
+      if (receive.done || receive.value === stop) break;
+      if (!disposed) attempt(receive.value);
+      receive = null;
     }
   })().catch(opts.onError);
 
@@ -216,8 +227,17 @@ function mapSource<TValue>(
             };
           }
           if (result.done) return { done: true, value: undefined };
-          const value = result.value;
-          return { done: false, value: () => receive(value) };
+          // Whatever still holds the thunk once it ran doesn't hold the value.
+          let held: { value: TValue } | null = { value: result.value };
+          result = null;
+          return {
+            done: false,
+            value: () => {
+              const once = held;
+              held = null;
+              if (once) receive(once.value);
+            },
+          };
         },
         async return() {
           await iterator.return?.();
