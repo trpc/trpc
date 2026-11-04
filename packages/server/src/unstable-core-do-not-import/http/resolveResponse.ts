@@ -40,6 +40,13 @@ interface ResolveHTTPRequestOptions<
    * If the request had an issue before reaching the handler
    */
   error: TRPCError | null;
+  /**
+   * Headers set outside `responseMeta`, such as the fetch adapter's
+   * `resHeaders`. If the response fails after `responseMeta` ran, the error
+   * response drops the headers `responseMeta` returned but keeps these. Every
+   * other response gets them from `responseMeta`.
+   */
+  resHeaders?: Headers;
 }
 
 // ---------- the request
@@ -50,8 +57,10 @@ interface RequestScope {
   opts: ResolveHTTPRequestOptions<any>;
   config: AnyRouter['_def']['_config'];
   url: URL;
-  /** The headers of the response, whichever response it ends up being */
+  /** The headers every response gets: `vary`, and `allow` once a call sets it */
   headers: Headers;
+  /** The headers of the response being built, once a builder starts it */
+  responseHeaders?: Headers;
   /** Set once the request is parsed */
   info?: TRPCRequestInfo;
   /** Set once the request is accepted */
@@ -287,13 +296,14 @@ async function resolveCall(
  */
 function applyResponseMeta(
   scope: RequestScope,
+  headers: Headers,
   results: {
     data: TRPCResponse[];
     /** aligned with `data` by index; `undefined` for successful responses */
     errors: (TRPCError | undefined)[];
   } | null,
 ): number {
-  const { opts, info, headers } = scope;
+  const { opts, info } = scope;
   scope.responseMetaCalled = true;
   const meta =
     opts.responseMeta?.({
@@ -333,6 +343,19 @@ function applyResponseMeta(
   return results ? getHTTPStatusCode(results.data, results.errors) : 200;
 }
 
+/** Starts the headers of the response being built, on top of the request's */
+function startHeaders(
+  scope: RequestScope,
+  init: Record<string, string>,
+): Headers {
+  const headers = new Headers(scope.headers);
+  for (const [key, value] of Object.entries(init)) {
+    headers.set(key, value);
+  }
+  scope.responseHeaders = headers;
+  return headers;
+}
+
 /**
  * Check if a value is a stream-like object
  * - if it's an async iterable
@@ -368,9 +391,9 @@ async function jsonResponse(
   request: AcceptedRequest,
   calls: PendingCalls,
 ): Promise<Outcome<Response>> {
-  const { info, headers } = request;
-  headers.set('content-type', 'application/json');
+  const { info } = request;
   const results = await Promise.all(calls);
+  const headers = startHeaders(request, { 'content-type': 'application/json' });
 
   const outcomes = results.map((result, index) => {
     if (!result.ok || !isDataStream(result.value.data)) {
@@ -392,7 +415,7 @@ async function jsonResponse(
   const body = JSON.stringify(
     transformTRPCResponse(request.config, info.isBatchCall ? data : data[0]!),
   );
-  const status = applyResponseMeta(request, {
+  const status = applyResponseMeta(request, headers, {
     data,
     errors: outcomes.map((outcome) => (outcome.ok ? undefined : outcome.error)),
   });
@@ -407,10 +430,12 @@ function jsonlResponse(
   request: AcceptedRequest,
   calls: PendingCalls,
 ): Outcome<Response> {
-  const { config, headers, info, lifetime } = request;
-  headers.set('content-type', config.jsonl?.contentType ?? 'application/json');
-  headers.set('transfer-encoding', 'chunked');
-  const status = applyResponseMeta(request, null);
+  const { config, info, lifetime } = request;
+  const headers = startHeaders(request, {
+    'content-type': config.jsonl?.contentType ?? 'application/json',
+    'transfer-encoding': 'chunked',
+  });
+  const status = applyResponseMeta(request, headers, null);
 
   const stream = jsonlStreamProducer({
     ...config.jsonl,
@@ -511,7 +536,7 @@ async function sseResponse(
   request: AcceptedRequest,
   calls: PendingCalls,
 ): Promise<Outcome<Response>> {
-  const { config, opts, url, headers, info, lifetime } = request;
+  const { config, opts, url, info, lifetime } = request;
   const source = sourceOf(info.calls[0]!);
   const result = await calls[0]!;
 
@@ -532,10 +557,8 @@ async function sseResponse(
       return errorShape(request, error, source);
     },
   });
-  for (const [key, value] of Object.entries(sseHeaders)) {
-    headers.set(key, value);
-  }
-  const status = applyResponseMeta(request, null);
+  const headers = startHeaders(request, sseHeaders);
+  const status = applyResponseMeta(request, headers, null);
 
   const body = result.ok
     ? subscriptionBody(stream, {
@@ -559,11 +582,21 @@ function errorResponse(scope: RequestScope, error: TRPCError): Response {
   const data: TRPCResponse = { error: errorShape(scope, error, source) };
   const body = JSON.stringify(transformTRPCResponse(scope.config, data));
   const results = { data: [data], errors: [error] };
-  // its headers, if it returned any, are already on `scope.headers`
-  const status = scope.responseMetaCalled
-    ? getHTTPStatusCode(results.data, results.errors)
-    : applyResponseMeta(scope, results);
-  return new Response(body, { status, headers: scope.headers });
+  if (!scope.responseMetaCalled) {
+    const headers = scope.responseHeaders ?? scope.headers;
+    const status = applyResponseMeta(scope, headers, results);
+    return new Response(body, { status, headers });
+  }
+
+  // `responseMeta` ran for a response that failed: drop its headers, and the
+  // response's, as they describe that response, not this one
+  const headers = new Headers(scope.headers);
+  for (const [key, value] of scope.opts.resHeaders ?? []) {
+    headers.append(key, value);
+  }
+  headers.set('content-type', 'application/json');
+  const status = getHTTPStatusCode(results.data, results.errors);
+  return new Response(body, { status, headers });
 }
 
 /**

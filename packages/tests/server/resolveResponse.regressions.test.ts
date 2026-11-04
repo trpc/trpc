@@ -2,13 +2,38 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import {
+  createTRPCClient,
   createTRPCUntypedClient,
   httpLink,
   TRPCClientError,
 } from '@trpc/client';
+import type { AnyTRPCRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { lazy, makeResource } from '@trpc/server/unstable-core-do-not-import';
+import type { FetchHandlerRequestOptions } from '@trpc/server/adapters/fetch';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import {
+  lazy,
+  makeAsyncResource,
+  makeResource,
+} from '@trpc/server/unstable-core-do-not-import';
+import { serve } from 'srvx';
 import { z } from 'zod';
+
+/**
+ * A `fetch` for links that keeps every response it gets, to check the
+ * status and headers the server sent.
+ */
+function recordingFetch() {
+  const responses: Response[] = [];
+  return {
+    responses,
+    fetch: async (...args: Parameters<typeof fetch>) => {
+      const res = await fetch(...args);
+      responses.push(res);
+      return res;
+    },
+  };
+}
 
 test('a subscription that fails before it streams calls onError once', async () => {
   const t = initTRPC.create();
@@ -108,22 +133,6 @@ describe('a stream returned without httpBatchStreamLink is an error of its call'
 });
 
 describe('responseMeta runs once', () => {
-  /**
-   * A `fetch` for links that keeps every response it gets, to check the
-   * status and headers the server sent.
-   */
-  function recordingFetch() {
-    const responses: Response[] = [];
-    return {
-      responses,
-      fetch: async (...args: Parameters<typeof fetch>) => {
-        const res = await fetch(...args);
-        responses.push(res);
-        return res;
-      },
-    };
-  }
-
   test('when the response fails to serialize', async () => {
     const t = initTRPC.create();
     const router = t.router({
@@ -187,7 +196,7 @@ describe('responseMeta runs once', () => {
     expect(responseMeta).toHaveBeenCalledTimes(1);
     const [res] = recorder.responses;
     expect(res!.status).toBe(500);
-    expect(res!.headers.get('x-meta')).toBe('yes');
+    expect(res!.headers.get('x-meta')).toBeNull();
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -316,5 +325,147 @@ describe('a request that cannot be parsed gets an error response', () => {
       httpStatus: 500,
     });
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('an error response after responseMeta ran drops its headers', () => {
+  function responseMeta(status: number) {
+    return () => ({
+      status,
+      headers: new Headers([
+        ['x-meta', 'yes'],
+        ['cache-control', 's-maxage=60'],
+      ]),
+    });
+  }
+
+  test.each([
+    ['httpLink', 'query', 304],
+    ['httpBatchStreamLink', 'query', 999],
+    ['httpSubscriptionLink', 'subscription', 999],
+  ] as const)('over %s', async (clientLink, type, status) => {
+    const t = initTRPC.create();
+    const router = t.router({
+      hello: t.procedure.query(() => 'world'),
+      onEvent: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
+    });
+    // read on the server, as an `EventSource` doesn't expose the response
+    const sent: { status: number; headers: Record<string, unknown> }[] = [];
+    await using ctx = testServerAndClientResource(router, {
+      clientLink,
+      server: {
+        responseMeta: responseMeta(status),
+        createContext: ({ res }) => {
+          res.setHeader('set-cookie', 'session=1');
+          return {};
+        },
+        middleware: (_req, res, next) => {
+          res.once('finish', () => {
+            sent.push({ status: res.statusCode, headers: res.getHeaders() });
+          });
+          next();
+        },
+      },
+    });
+
+    if (type === 'query') {
+      await ctx.client.hello.query().catch(() => null);
+    } else {
+      const subscription = ctx.client.onEvent.subscribe(undefined, {
+        onError: () => null,
+      });
+      using _subscription = makeResource(subscription, () =>
+        subscription.unsubscribe(),
+      );
+      await vi.waitFor(() => expect(sent.length).toBeGreaterThan(0));
+    }
+
+    expect({ ...sent[0] }).toEqual({
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+        vary: 'trpc-accept, accept',
+        'set-cookie': 'session=1',
+      },
+    });
+  });
+
+  describe('keeps the headers createContext set with the fetch adapter', () => {
+    async function fetchServer(
+      responseMeta: FetchHandlerRequestOptions<AnyTRPCRouter>['responseMeta'],
+    ) {
+      const t = initTRPC.create();
+      const router = t.router({
+        hello: t.procedure.query(() => 'world'),
+      });
+      const server = serve({
+        port: 0,
+        silent: true,
+        fetch: (req) =>
+          fetchRequestHandler({
+            endpoint: '',
+            req,
+            router,
+            createContext: ({ resHeaders }) => {
+              resHeaders.append('set-cookie', 'session=1');
+              return {};
+            },
+            responseMeta,
+          }),
+      });
+      await server.ready();
+      const recorder = recordingFetch();
+      const client = createTRPCClient<typeof router>({
+        links: [
+          httpLink({
+            url: server.url!.replace(/\/$/, ''),
+            fetch: recorder.fetch,
+          }),
+        ],
+      });
+      return makeAsyncResource({ client, responses: recorder.responses }, () =>
+        server.close(),
+      );
+    }
+
+    test('when responseMeta returns a status Response rejects', async () => {
+      await using ctx = await fetchServer(responseMeta(999));
+
+      await waitError(ctx.client.hello.query(), TRPCClientError);
+
+      const [res] = ctx.responses;
+      expect(res!.status).toBe(500);
+      expect(res!.headers.getSetCookie()).toEqual(['session=1']);
+      expect(res!.headers.get('x-meta')).toBeNull();
+      expect(res!.headers.get('cache-control')).toBeNull();
+      expect(res!.headers.get('content-type')).toBe('application/json');
+    });
+
+    test('when responseMeta throws', async () => {
+      await using ctx = await fetchServer(() => {
+        throw new Error('responseMeta failed');
+      });
+
+      await waitError(ctx.client.hello.query(), TRPCClientError);
+
+      const [res] = ctx.responses;
+      expect(res!.status).toBe(500);
+      expect(res!.headers.getSetCookie()).toEqual(['session=1']);
+    });
+
+    test('and with responseMeta on a response that succeeds', async () => {
+      await using ctx = await fetchServer(() => ({
+        headers: new Headers([['x-meta', 'yes']]),
+      }));
+
+      expect(await ctx.client.hello.query()).toBe('world');
+
+      const [res] = ctx.responses;
+      expect(res!.status).toBe(200);
+      expect(res!.headers.getSetCookie()).toEqual(['session=1']);
+      expect(res!.headers.get('x-meta')).toBe('yes');
+    });
   });
 });
