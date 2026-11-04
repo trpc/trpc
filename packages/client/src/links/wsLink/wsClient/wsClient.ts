@@ -141,6 +141,13 @@ export class WsClient {
   private async open() {
     this.allowReconnect = true;
     if (this.reconnecting) return this.reconnecting;
+    // A request sent right after a rejection, e.g. one retried by `retryLink`,
+    // waits for the backoff instead of opening a new socket at once. The close
+    // handler publishes the `connecting` state, so this publishes nothing.
+    if (this.connectionRejected) {
+      this.reconnect(null);
+      return this.reconnecting;
+    }
     this.connectionAttemptIndex = 0;
     if (this.connectionState.get().state === 'idle') {
       callUserCallback(() =>
