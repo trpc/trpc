@@ -289,6 +289,89 @@ test('observableToAsyncIterable() - a throwing teardown still ends every pending
   });
 });
 
+/** Runs `fn`, then waits a macrotask, and returns the uncaught exceptions and unhandled rejections. */
+async function collectUncaught(fn: () => unknown) {
+  const errors: unknown[] = [];
+  const onError = (cause: unknown) => errors.push(cause);
+  process.on('uncaughtException', onError);
+  process.on('unhandledRejection', onError);
+  try {
+    await fn();
+    await new Promise((resolve) => setTimeout(resolve));
+  } finally {
+    process.off('uncaughtException', onError);
+    process.off('unhandledRejection', onError);
+  }
+  return errors;
+}
+
+test('observableToAsyncIterable() - a throwing teardown on abort rejects the next() after the queued values', async () => {
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    return () => {
+      throw new Error('teardown');
+    };
+  });
+  const ac = new AbortController();
+  const iterator = observableToAsyncIterable(obs, ac.signal)[
+    Symbol.asyncIterator
+  ]();
+
+  expect(await collectUncaught(() => ac.abort())).toEqual([]);
+
+  expect(await iterator.next()).toEqual({ value: 1, done: false });
+  await expect(iterator.next()).rejects.toThrowError('teardown');
+  expect(await iterator.next()).toEqual({ value: undefined, done: true });
+});
+
+test('observableToAsyncIterable() - a throwing teardown on abort rejects the first pending next()', async () => {
+  const obs = observable<number, Error>(() => () => {
+    throw new Error('teardown');
+  });
+  const ac = new AbortController();
+  const iterator = observableToAsyncIterable(obs, ac.signal)[
+    Symbol.asyncIterator
+  ]();
+  const results = Promise.allSettled([iterator.next(), iterator.next()]);
+
+  expect(await collectUncaught(() => ac.abort())).toEqual([]);
+
+  expect(await results).toEqual([
+    { status: 'rejected', reason: new Error('teardown') },
+    { status: 'fulfilled', value: { value: undefined, done: true } },
+  ]);
+  expect(await iterator.next()).toEqual({ value: undefined, done: true });
+});
+
+test('observableToAsyncIterable() - a throwing teardown on break is thrown from the loop', async () => {
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    return () => {
+      throw new Error('teardown');
+    };
+  });
+
+  const aggregate: number[] = [];
+  let thrown: unknown;
+  const uncaught = await collectUncaught(async () => {
+    try {
+      for await (const value of observableToAsyncIterable(
+        obs,
+        new AbortController().signal,
+      )) {
+        aggregate.push(value);
+        break;
+      }
+    } catch (cause) {
+      thrown = cause;
+    }
+  });
+
+  expect(uncaught).toEqual([]);
+  expect(aggregate).toEqual([1]);
+  expect(thrown).toEqual(new Error('teardown'));
+});
+
 test('observableToAsyncIterable() - return() resolves after the source completed', async () => {
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
