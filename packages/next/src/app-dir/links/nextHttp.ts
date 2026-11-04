@@ -49,7 +49,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;
-      const cacheTags = generateCacheTags(path, input);
+      const cacheTags = generateCacheTags({ procedurePath: path, input });
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
