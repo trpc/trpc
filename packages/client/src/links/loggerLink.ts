@@ -186,6 +186,12 @@ function constructPartsAndArgs(
   return { parts, args };
 }
 
+// Only `undefined` falls back to the global `console`, which is read only when
+// the built-in logger is used
+const resolveConsole = ({
+  console: c = console,
+}: Pick<LoggerLinkOptions<AnyRouter>, 'console'>): ConsoleEsque => c;
+
 // maybe this should be moved to it's own package
 const defaultLogger =
   <TRouter extends AnyRouter>({
@@ -230,12 +236,18 @@ const defaultLogger =
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink<TRouter> {
-  const { enabled = () => true, console: c = console } = opts;
+  const { enabled = () => true } = opts;
 
   const colorMode =
     opts.colorMode ?? (typeof window === 'undefined' ? 'ansi' : 'css');
   const withContext = opts.withContext ?? colorMode === 'css';
-  const { logger = defaultLogger({ c, colorMode, withContext }) } = opts;
+  const {
+    logger = defaultLogger({
+      c: resolveConsole(opts),
+      colorMode,
+      withContext,
+    }),
+  } = opts;
 
   return () => {
     return ({ op, next }) => {
