@@ -8,14 +8,14 @@ import { TRPCError } from '../../@trpc/server';
  */
 export class TRPCRedirectError extends TRPCError {
   public readonly args;
-  constructor(url: URL | string, redirectType?: RedirectType) {
+  constructor(url: URL | string, redirectType: RedirectType | null) {
     super({
       // TODO(?): This should maybe a custom error code
       code: 'UNPROCESSABLE_CONTENT',
       message: `Redirect error to "${url}" that will be handled by Next.js`,
     });
 
-    this.args = [url.toString(), redirectType] as const;
+    this.args = [url.toString(), redirectType ?? undefined] as const;
   }
 }
 
@@ -28,5 +28,8 @@ export class TRPCRedirectError extends TRPCError {
  */
 export const redirect = (url: URL | string, redirectType?: RedirectType) => {
   // We rethrow this internally so the returntype on the client is undefined.
-  return new TRPCRedirectError(url, redirectType) as unknown as undefined;
+  return new TRPCRedirectError(
+    url,
+    redirectType ?? null,
+  ) as unknown as undefined;
 };

@@ -365,7 +365,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
     const separator = config.pathSeparator;
 
-    function step(from: CreateRouterOptions, path: readonly string[] = []) {
+    function step(from: CreateRouterOptions, path: readonly string[]) {
       const aggregate: RouterRecord = emptyObject();
       for (const [key, item] of Object.entries(from ?? {})) {
         if (separator !== '.' && key.includes(separator)) {
@@ -405,7 +405,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
       return aggregate;
     }
-    const record = step(input);
+    const record = step(input, []);
 
     const _def: AnyRouter['_def'] = {
       _config: config,
