@@ -374,13 +374,15 @@ export class WsClient {
     for (const { message, callbacks } of reqs) {
       if (message.method === 'subscription') continue;
 
-      callbacks.error(
-        TRPCClientError.from(
-          cause ??
-            new TRPCWebSocketClosedError({
-              message: 'WebSocket closed',
-              cause,
-            }),
+      callUserCallback(() =>
+        callbacks.error(
+          TRPCClientError.from(
+            cause ??
+              new TRPCWebSocketClosedError({
+                message: 'WebSocket closed',
+                cause,
+              }),
+          ),
         ),
       );
       this.requestManager.delete(message);

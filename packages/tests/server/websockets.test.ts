@@ -11,7 +11,11 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
-import { observable, observableToAsyncIterable } from '@trpc/server/observable';
+import {
+  observable,
+  observableToAsyncIterable,
+  tap,
+} from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
@@ -1030,6 +1034,80 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       expect(executions).toHaveBeenCalledTimes(1);
     } finally {
       release.resolve();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('a link that throws on a failed query does not delay the reconnect', async () => {
+    const t = initTRPC.create();
+    const pendingResult = createDeferred<string>();
+    const queryStarted = vi.fn();
+    const subscriptionStarted = vi.fn();
+    const router = t.router({
+      pending: t.procedure.query(() => {
+        queryStarted();
+        return pendingResult.promise;
+      }),
+      onStart: t.procedure.subscription(() =>
+        observable<number>((emit) => {
+          subscriptionStarted();
+          emit.next(subscriptionStarted.mock.calls.length);
+        }),
+      ),
+    });
+    const linkError = new Error('link error callback failed');
+    await using ctx = testServerAndClientResource(router, {
+      wsClient: {
+        lazy: { enabled: false, closeMs: 0 },
+      },
+      client: ({ wsClient }) => ({
+        links: [
+          () =>
+            ({ op, next }) =>
+              next(op).pipe(
+                tap({
+                  error() {
+                    if (op.path === 'pending') throw linkError;
+                  },
+                }),
+              ),
+          wsLink({ client: wsClient }),
+        ],
+      }),
+    });
+    const uncaught: unknown[] = [];
+    const onUncaught = (cause: unknown) => uncaught.push(cause);
+    process.on('uncaughtException', onUncaught);
+    const onData = vi.fn();
+    const subscription = ctx.client.onStart.subscribe(undefined, { onData });
+    const abortController = new AbortController();
+    void ctx.client.pending
+      .query(undefined, { signal: abortController.signal })
+      .catch(() => null);
+    try {
+      await vi.waitFor(() => {
+        expect(onData).toHaveBeenCalledTimes(1);
+        expect(queryStarted).toHaveBeenCalledTimes(1);
+      });
+
+      ctx.wssHandler.broadcastReconnectNotification();
+
+      // The default backoff waits 2s after a failed attempt.
+      await vi.waitFor(
+        () => {
+          expect(onData).toHaveBeenCalledTimes(2);
+        },
+        { timeout: 500 },
+      );
+      // `callUserCallback` reports the link's error asynchronously
+      await vi.waitFor(() => {
+        expect(uncaught).toEqual([linkError]);
+      });
+    } finally {
+      process.off('uncaughtException', onUncaught);
+      subscription.unsubscribe();
+      abortController.abort();
+      pendingResult.resolve('cleanup');
       await ctx.wsClient.close();
     }
   });
