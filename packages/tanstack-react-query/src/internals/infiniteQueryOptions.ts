@@ -293,9 +293,13 @@ export function trpcInfiniteQueryOptions<
     };
 
     const result = await query(
-      ...getClientArgs(queryKey, actualOpts, {
-        direction: queryFnContext.direction,
-        pageParam: queryFnContext.pageParam,
+      ...getClientArgs({
+        queryKey,
+        opts: actualOpts,
+        infiniteParams: {
+          direction: queryFnContext.direction,
+          pageParam: queryFnContext.pageParam,
+        },
       }),
     );
 
