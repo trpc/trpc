@@ -2849,6 +2849,10 @@ importers:
       zod-form-data:
         specifier: ^3.0.1
         version: 3.0.1(zod@4.6.7)
+    devDependencies:
+      fast-check:
+        specifier: 3.23.2
+        version: 3.23.2
 
   packages/upgrade:
     dependencies:
@@ -33486,7 +33490,8 @@ snapshots:
 
   path-exists@3.0.0: {}
 
-  path-exists@4.0.0: {}
+  path-exists@4.0.0:
+    optional: true
 
   path-is-absolute@1.0.1: {}
 
