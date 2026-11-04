@@ -11,10 +11,11 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import type { MaybePromise, Result } from '../types';
 import { abortSignalsAnyPonyfill, isAsyncIterable, isObject } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
+import type { Outcome } from './outcome';
+import { attempt, fail, ok, settle } from './outcome';
 import { urlPathToProcedurePath } from './pathSeparator';
 import type { RequestLifetime } from './responseBody';
 import {
@@ -39,37 +40,6 @@ interface ResolveHTTPRequestOptions<
    * If the request had an issue before reaching the handler
    */
   error: TRPCError | null;
-}
-
-// ---------- errors as values
-
-/** What a step produced, or the error it failed with */
-type Outcome<TValue> = Result<TValue, TRPCError>;
-
-function ok<TValue>(value: TValue): Outcome<TValue> {
-  return { ok: true, value };
-}
-
-function fail(error: TRPCError): Outcome<never> {
-  return { ok: false, error };
-}
-
-/** Runs `fn`, turning anything it throws into a failed outcome */
-async function settle<TValue>(
-  fn: () => MaybePromise<Outcome<TValue>>,
-): Promise<Outcome<TValue>> {
-  try {
-    return await fn();
-  } catch (cause) {
-    return fail(getTRPCErrorFromUnknown(cause));
-  }
-}
-
-/** Runs `fn` straight away, wrapping what it returns or throws */
-function attempt<TValue>(
-  fn: () => MaybePromise<TValue>,
-): Promise<Outcome<TValue>> {
-  return settle(async () => ok(await fn()));
 }
 
 // ---------- the request
@@ -179,17 +149,15 @@ async function parseRequest(
   if (!path.ok) {
     return path;
   }
-  return attempt(() =>
-    getRequestInfo({
-      req: opts.req,
-      path: urlPathToProcedurePath(path.value, config.pathSeparator),
-      router: opts.router,
-      searchParams: url.searchParams,
-      headers: opts.req.headers,
-      url,
-      maxBatchSize: opts.maxBatchSize,
-    }),
-  );
+  return getRequestInfo({
+    req: opts.req,
+    path: urlPathToProcedurePath(path.value, config.pathSeparator),
+    router: opts.router,
+    searchParams: url.searchParams,
+    headers: opts.req.headers,
+    url,
+    maxBatchSize: opts.maxBatchSize,
+  });
 }
 
 /** Why the request is rejected before its context is created, if it is */

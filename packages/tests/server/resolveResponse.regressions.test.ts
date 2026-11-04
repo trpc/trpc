@@ -1,9 +1,13 @@
 // @vitest-environment node
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { httpLink, TRPCClientError } from '@trpc/client';
+import {
+  createTRPCUntypedClient,
+  httpLink,
+  TRPCClientError,
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { lazy, makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 test('a subscription that fails before it streams calls onError once', async () => {
@@ -248,4 +252,69 @@ test("a single call's error gets its procedure's type", async () => {
   });
   expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   expect(ctx.onErrorSpy.mock.calls[0]![0]).toMatchObject({ type: 'query' });
+});
+
+describe('a request that cannot be parsed gets an error response', () => {
+  test.each([
+    ['multipart/form-data', 'formData'],
+    ['application/octet-stream', 'binary'],
+  ])('a GET request with a %s body', async (contentType, path) => {
+    const t = initTRPC.create();
+    const handler = vi.fn(() => 'never');
+    const router = t.router({
+      formData: t.procedure.query(handler),
+      binary: t.procedure.query(handler),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      client: ({ httpUrl }) => ({
+        links: [
+          httpLink({ url: httpUrl, headers: { 'content-type': contentType } }),
+        ],
+      }),
+    });
+
+    const error = await waitError(
+      path === 'formData'
+        ? ctx.client.formData.query()
+        : ctx.client.binary.query(),
+      TRPCClientError,
+    );
+
+    expect(error.message).toBe(
+      `Only POST requests are supported for ${contentType} requests`,
+    );
+    expect(error.data).toMatchObject({
+      code: 'METHOD_NOT_SUPPORTED',
+      httpStatus: 405,
+    });
+    expect(error.data).not.toHaveProperty('path');
+    expect(handler).not.toHaveBeenCalled();
+    expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.onErrorSpy.mock.calls[0]![0]).toMatchObject({
+      type: 'unknown',
+      path: undefined,
+    });
+  });
+
+  test('a call to a lazy router that fails to load', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      admin: lazy(async () => {
+        throw new Error('Could not load the admin router');
+      }),
+    });
+    await using ctx = testServerAndClientResource(router);
+    const client = createTRPCUntypedClient({
+      links: [httpLink({ url: ctx.httpUrl })],
+    });
+
+    const error = await waitError(client.query('admin.stats'), TRPCClientError);
+
+    expect(error.message).toBe('Could not load the admin router');
+    expect(error.data).toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      httpStatus: 500,
+    });
+    expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+  });
 });
