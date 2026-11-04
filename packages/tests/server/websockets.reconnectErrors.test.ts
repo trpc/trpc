@@ -214,4 +214,124 @@ describe('throwing user callbacks', () => {
       void wsClient.close();
     }
   });
+
+  test('an onConnectionStateChange that throws on the reconnect error does not stop the retries, and its error is not swallowed', async () => {
+    using g = captureUncaught();
+    const paramsError = new Error('connectionParams failed');
+    const stateError = new Error('onConnectionStateChange failed');
+    let fail = false;
+    const connectionParams = vi.fn(() => {
+      if (fail) throw paramsError;
+      return {};
+    });
+    await using ctx = testServerAndClientResource(createRouter(), {
+      wsClient: {
+        retryDelayMs: () => 10,
+        connectionParams,
+      },
+      clientLink: 'wsLink',
+    });
+
+    const onStarted = vi.fn();
+    const onData = vi.fn();
+    const onError = vi.fn();
+    const onConnectionStateChange = vi.fn((state: ConnectionState) => {
+      if (causeOf(state) === paramsError) throw stateError;
+    });
+    const sub = ctx.client.onTick.subscribe(undefined, {
+      onStarted,
+      onData,
+      onError,
+      onConnectionStateChange,
+    });
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    fail = true;
+    ctx.destroyConnections();
+
+    await vi.waitFor(() => {
+      expect(g.uncaught).toContain(stateError);
+    });
+
+    fail = false;
+    await vi.waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(2);
+      expect(onData).toHaveBeenCalledTimes(2);
+    });
+    expect(ctx.wsClient.connectionState.get()).toEqual({
+      type: 'state',
+      state: 'pending',
+      error: null,
+    });
+    expect(new Set(g.uncaught)).toEqual(new Set([stateError]));
+    expect(onError).not.toHaveBeenCalled();
+    sub.unsubscribe();
+  });
+
+  test('an onConnectionStateChange that throws on every state change does not stop the reconnect', async () => {
+    using g = captureUncaught();
+    const paramsError = new Error('connectionParams failed');
+    const stateError = new Error('onConnectionStateChange failed');
+    let fail = false;
+    let throwing = false;
+    let thrown = 0;
+    await using ctx = testServerAndClientResource(createRouter(), {
+      wsClient: {
+        retryDelayMs: () => 10,
+        connectionParams: () => {
+          if (fail) throw paramsError;
+          return {};
+        },
+      },
+      clientLink: 'wsLink',
+    });
+
+    const onStarted = vi.fn();
+    const onData = vi.fn();
+    const onError = vi.fn();
+    const states: ConnectionState[] = [];
+    const sub = ctx.client.onTick.subscribe(undefined, {
+      onStarted,
+      onData,
+      onError,
+      onConnectionStateChange: (state) => {
+        states.push(state);
+        if (throwing) {
+          thrown++;
+          throw stateError;
+        }
+      },
+    });
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    throwing = true;
+    fail = true;
+    ctx.destroyConnections();
+
+    await vi.waitFor(() => {
+      expect(states.map(causeOf)).toContain(paramsError);
+    });
+
+    fail = false;
+    await vi.waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(2);
+      expect(onData).toHaveBeenCalledTimes(2);
+    });
+    expect(states.at(-1)).toEqual({
+      type: 'state',
+      state: 'pending',
+      error: null,
+    });
+    throwing = false;
+    await vi.waitFor(() => {
+      expect(g.uncaught).toHaveLength(thrown);
+    });
+    expect(new Set(g.uncaught)).toEqual(new Set([stateError]));
+    expect(onError).not.toHaveBeenCalled();
+    sub.unsubscribe();
+  });
 });
