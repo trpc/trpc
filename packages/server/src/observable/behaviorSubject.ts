@@ -4,7 +4,10 @@ import type { Observable, Observer } from './types';
 /** An observable that holds a current value. */
 export interface BehaviorSubject<TValue> extends Observable<TValue, never> {
   observable: Observable<TValue, never>;
-  /** Sets the value and sends it to subscribers, if it changed. */
+  /**
+   * Sets the value and sends it to subscribers, if it changed. A subscriber
+   * that throws doesn't stop the others; its error is rethrown asynchronously.
+   */
   next: (value: TValue) => void;
   /** The current value. */
   get: () => TValue;
@@ -15,6 +18,21 @@ export interface ReadonlyBehaviorSubject<TValue> extends Omit<
   BehaviorSubject<TValue>,
   'next'
 > {}
+
+/**
+ * Calls one of several observers. A throw would stop the caller from
+ * notifying the rest, so it is rethrown asynchronously instead: it still
+ * shows up as an uncaught exception.
+ */
+function callObserver(callback: () => void) {
+  try {
+    callback();
+  } catch (error) {
+    setTimeout(() => {
+      throw error;
+    });
+  }
+}
 
 /**
  * Creates an observable that holds a current value. New subscribers get
@@ -54,7 +72,7 @@ export function behaviorSubject<TValue>(
     // observer removed by an earlier callback must not be notified
     for (const observer of [...observerList]) {
       if (observerList.has(observer)) {
-        observer.next(nextValue);
+        callObserver(() => observer.next(nextValue));
       }
     }
   };

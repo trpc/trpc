@@ -9,6 +9,7 @@
  *   pnpm release stable <patch|minor|major> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release github-release <tag>
+ *   pnpm release notes [<tag>] [--to <ref>]
  */
 import { parseArgs } from 'node:util';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
@@ -18,6 +19,7 @@ import {
   defaultWait,
   githubReleaseForTag,
   packCanary,
+  printNotes,
   packStable,
   publishCanary,
   publishStable,
@@ -29,7 +31,8 @@ import { bumps, isBump } from '../version.ts';
 const usage = `Usage:
   pnpm release stable <${bumps.join('|')}> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
   pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
-  pnpm release github-release <tag>`;
+  pnpm release github-release <tag>
+  pnpm release notes [<tag>] [--to <ref>]`;
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
@@ -40,6 +43,7 @@ const { positionals, values } = parseArgs({
     pack: { type: 'string' },
     preid: { type: 'string', default: 'canary' },
     provenance: { type: 'boolean', default: false },
+    to: { type: 'string' },
   },
 });
 
@@ -55,7 +59,11 @@ Effect.gen(function* () {
     values.pack === undefined ? undefined : path.resolve(values.pack);
   const from =
     values.from === undefined ? undefined : path.resolve(values.from);
-  if (pack !== undefined && from !== undefined) {
+  if (
+    (pack !== undefined && from !== undefined) ||
+    (values.to !== undefined && command !== 'notes') ||
+    (command === 'notes' && (pack !== undefined || from !== undefined))
+  ) {
     return yield* new ReleaseError({ message: usage });
   }
   switch (command) {
@@ -103,6 +111,9 @@ Effect.gen(function* () {
         break;
       }
       yield* githubReleaseForTag(root, arg, defaultWait);
+      return;
+    case 'notes':
+      yield* printNotes(root, { tag: arg, to: values.to });
       return;
     case undefined:
     default:

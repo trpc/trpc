@@ -75,8 +75,11 @@ export class RequestManager {
           resolve();
         },
         error: (e) => {
-          callbacks.error(e);
-          resolve();
+          try {
+            callbacks.error(e);
+          } finally {
+            resolve();
+          }
         },
       },
     });
@@ -207,6 +210,13 @@ export class RequestManager {
     return this.getPendingRequests().some(
       (request) => request.message.method === 'subscription',
     );
+  }
+
+  /**
+   * Checks if a message is still waiting to be sent.
+   */
+  public isOutgoing(message: TRPCClientOutgoingMessage) {
+    return this.outgoingRequests.some((request) => request.message === message);
   }
 
   /**
