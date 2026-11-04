@@ -32,6 +32,9 @@ const bump = 1400;
 const reach = 40;
 const push = 360;
 
+/** How far past its edge a tap's ripple reaches a bubble. */
+const rippleReach = 168;
+
 /** How much a moving pointer drags the bubbles it passes along with it, in s⁻¹. */
 const drag = 0.5;
 
@@ -44,8 +47,9 @@ const settle = 10;
 /** How far a dropped bubble falls from, in px, least and most. */
 const dropHeights = [20, 38] as const;
 
-/** How hard a poke squishes a bubble at most, in stretch per second. */
-const hardestPoke = 0.8;
+/** How hard a tap or focus squishes a bubble at most, and a hover, in stretch per second. */
+const hardestPoke = 1.6;
+const hardestHoverPoke = 0.8;
 
 /** How much a bubble stretches per px/s it moves, the most it does, and its wobble's spring. */
 const stretch = 1 / 2400;
@@ -110,11 +114,11 @@ export class Jelly {
 
   /**
    * Squishes bubble `index` along `(dx, dy)`, as hard as `(dx, dy)` is
-   * long, in px/s, as the pointer coming in or a tap does.
+   * long, in px/s, but at most `most`, as the pointer coming in or a tap does.
    */
-  poke(index: number, dx: number, dy: number) {
+  poke(index: number, dx: number, dy: number, most = hardestPoke) {
     const hard = length(dx, dy) * stretch * 8;
-    const scale = hard > hardestPoke ? hardestPoke / hard : 1;
+    const scale = hard > most ? most / hard : 1;
     this.qvx[index] = (this.qvx[index] ?? 0) + dx * stretch * 8 * scale;
     this.qvy[index] = (this.qvy[index] ?? 0) + dy * stretch * 8 * scale;
   }
@@ -128,7 +132,7 @@ export class Jelly {
       const dx = home.x + (this.ox[index] ?? 0) - x;
       const dy = home.y + (this.oy[index] ?? 0) - y;
       const d = length(dx, dy);
-      const near = 1 - (d - home.r) / (reach * 3);
+      const near = 1 - (d - home.r) / rippleReach;
       if (near <= 0 || d === 0) {
         continue;
       }
@@ -467,7 +471,7 @@ export function animateCloud(
     if (hovered !== entered) {
       entered = hovered;
       if (hovered !== undefined) {
-        jelly.poke(hovered, vx * hoverPoke, vy * hoverPoke);
+        jelly.poke(hovered, vx * hoverPoke, vy * hoverPoke, hardestHoverPoke);
       }
     }
     schedule();
