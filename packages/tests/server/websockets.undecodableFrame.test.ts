@@ -21,15 +21,21 @@ function captureUncaught() {
 test.each([
   { frame: 'not json', thrown: SyntaxError },
   { frame: '42', thrown: TypeError },
+  { frame: '{}', thrown: TypeError },
+  { frame: '[]', thrown: TypeError },
 ])(
   'an undecodable frame ($frame) fails the requests in flight and reconnects',
   async ({ frame, thrown }) => {
     using g = captureUncaught();
     const t = initTRPC.context<{ connection: number }>().create();
     const pending = createDeferred<string>();
+    const started = createDeferred<void>();
     const router = t.router({
       connection: t.procedure.query(({ ctx }) => ctx.connection),
-      pending: t.procedure.query(() => pending.promise),
+      pending: t.procedure.query(() => {
+        started.resolve();
+        return pending.promise;
+      }),
     });
     let connections = 0;
     await using ctx = testServerAndClientResource(router, {
@@ -42,6 +48,7 @@ test.each([
 
     expect(await ctx.client.connection.query()).toBe(1);
     const inFlight = ctx.client.pending.query();
+    await started.promise;
 
     for (const client of ctx.wss.clients) {
       client.send(frame);

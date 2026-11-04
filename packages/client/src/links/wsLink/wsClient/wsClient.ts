@@ -9,6 +9,7 @@ import type {
   TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  isObject,
   run,
   sleep,
   transformResult,
@@ -29,15 +30,26 @@ import {
 } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
+/**
+ * A server request (`method`) or a response (`id` and `result` or `error`).
+ */
+function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
+  return (
+    isObject(value) &&
+    ('method' in value ||
+      ('id' in value && ('result' in value || 'error' in value)))
+  );
+}
+
 function decodeIncomingMessage(
   encoder: Encoder,
   data: string | ArrayBuffer | Uint8Array,
 ) {
   const message = encoder.decode(data);
-  if (typeof message !== 'object' || message === null) {
-    throw new TypeError(`Expected a message object, received ${message}`);
+  if (!isIncomingMessage(message)) {
+    throw new TypeError('Expected a tRPC message');
   }
-  return message as TRPCClientIncomingMessage;
+  return message;
 }
 
 /**
