@@ -108,9 +108,10 @@ describe('ws subscription memory', () => {
     for (let i = 0; i < 20; i++) {
       admission = createDeferred();
       setupSignal = undefined;
-      const subscription = ctx.client.slow.subscribe(undefined, {});
+      const ac = new AbortController();
+      ctx.client.slow.subscribe(undefined, { signal: ac.signal });
       await vi.waitFor(() => expect(setupSignal).toBeDefined());
-      subscription.unsubscribe();
+      ac.abort();
       await vi.waitFor(() => expect(setupSignal?.aborted).toBe(true));
       admission.resolve();
     }
