@@ -42,7 +42,10 @@ describe('SponsorCloud', () => {
 
   it('links the "You?" bubble straight to GitHub Sponsors on /sponsor', async () => {
     const html = await prerender({ you: 'github' });
-    const you = linkLabelled(html, 'Your bubble here\\? Sponsor tRPC on GitHub');
+    const you = linkLabelled(
+      html,
+      'Your bubble here\\? Sponsor tRPC on GitHub',
+    );
     expect(you).toContain(`href="${sponsorUrl}"`);
     expect(you).toContain('target="_blank"');
   });
