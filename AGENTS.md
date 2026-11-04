@@ -1,6 +1,6 @@
 # Agent instructions
 
-`main` is tRPC v11; v12 is a rewrite on the [`v12`](https://github.com/trpc/trpc/tree/v12) branch. Skills live in `.agents/skills/`; a new one also needs a `.claude/skills/<name>` symlink and a `!` entry in `.oxfmtrc.json`. Don't add a `.cursor/` folder.
+`main` is tRPC v11; v12 is a rewrite on the [`v12`](https://github.com/trpc/trpc/tree/v12) branch. Skills live in `.agents/skills/`. One we write also needs a `.claude/skills/<name>` symlink and a `!` entry in `.oxfmtrc.json`; installed ones get their link from `npx skills add` and stay unformatted. Don't add a `.cursor/` folder.
 
 ## Commands
 
