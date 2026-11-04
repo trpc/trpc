@@ -10,6 +10,9 @@ export interface Bubble {
   readonly y: number;
 }
 
+/** The gap between the cloud's circles, as a fraction of its side: `/sponsor`'s and the READMEs' (`og/sponsor-cloud.ts`). */
+export const cloudPadding = 0.006;
+
 interface Circle {
   readonly r: number;
   readonly x: number;

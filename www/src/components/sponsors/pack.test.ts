@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { maxWeight, minWeight } from '../../../build/sponsors-list.ts';
 import { drawnSponsors, type Sponsor } from '~/sponsors.ts';
 
-import { packSponsors } from './pack.ts';
+import { cloudPadding, packSponsors } from './pack.ts';
 
 const sponsor = (login: string, weight: number): Sponsor => ({
   createdAt: 0,
@@ -20,7 +20,7 @@ describe('packSponsors', () => {
     const weights = [minWeight, 15, 20, 30, 45, 60, 80, maxWeight];
     const bubbles = packSponsors(
       weights.map((weight) => sponsor(`w${weight}`, weight)),
-      0.006,
+      cloudPadding,
     );
     const byWeight = bubbles.toSorted(
       (a, b) => a.sponsor.weight - b.sponsor.weight,
@@ -34,7 +34,7 @@ describe('packSponsors', () => {
   });
 
   it("draws every one of sponsors.json's sponsors at least a twelfth of the cloud across", () => {
-    const bubbles = packSponsors(drawnSponsors, 0.006);
+    const bubbles = packSponsors(drawnSponsors, cloudPadding);
     expect(Math.min(...bubbles.map((bubble) => bubble.r * 2))).toBeGreaterThan(
       1 / 12,
     );
@@ -56,7 +56,7 @@ describe('packSponsors', () => {
   ])(
     'packs %s into a round cloud, not a diamond: it reaches near the edge every way out, and fills most of its circle',
     (_, list) => {
-      const bubbles = packSponsors(list, 0.006);
+      const bubbles = packSponsors(list, cloudPadding);
       for (const bubble of bubbles) {
         expect(
           Math.hypot(bubble.x - 0.5, bubble.y - 0.5) + bubble.r,
@@ -88,7 +88,7 @@ describe('packSponsors', () => {
   ])(
     "doesn't overlap any of %s, and keeps the heaviest in the middle",
     (_, list) => {
-      const bubbles = packSponsors(list, 0.006);
+      const bubbles = packSponsors(list, cloudPadding);
       for (const [index, a] of bubbles.entries()) {
         for (const b of bubbles.slice(index + 1)) {
           expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(
@@ -111,8 +111,8 @@ describe('packSponsors', () => {
   );
 
   it('lays out the same sponsors the same way every time', () => {
-    expect(packSponsors(drawnSponsors, 0.006)).toEqual(
-      packSponsors(drawnSponsors, 0.006),
+    expect(packSponsors(drawnSponsors, cloudPadding)).toEqual(
+      packSponsors(drawnSponsors, cloudPadding),
     );
   });
 });
