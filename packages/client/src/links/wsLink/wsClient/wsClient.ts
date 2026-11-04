@@ -22,24 +22,12 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
-import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
+import {
+  callUserCallback,
+  ResettableTimeout,
+  TRPCWebSocketClosedError,
+} from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
-
-/**
- * Calls a user callback, including `connectionState` subscribers. A throw
- * would skip the rest of the client's bookkeeping (e.g. end the reconnect
- * loop, or, with event-emitter based WebSockets such as `ws`, skip the other
- * listeners for that event), so it is rethrown asynchronously instead.
- */
-function callUserCallback(callback: () => void) {
-  try {
-    callback();
-  } catch (error) {
-    setTimeout(() => {
-      throw error;
-    });
-  }
-}
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
