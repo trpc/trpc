@@ -38,9 +38,10 @@ const TabContext = createContext<TabContext>({
   reload: () => {},
 });
 
+/** Read-only without `navigate`. */
 function AddressBar(props: {
   readonly href: string;
-  readonly navigate: (href: string) => void;
+  readonly navigate: ((href: string) => void) | undefined;
 }) {
   const [draft, setDraft] = useState<string | undefined>(undefined);
   const id = useId();
@@ -50,7 +51,7 @@ function AddressBar(props: {
       onSubmit={(event) => {
         event.preventDefault();
         if (draft !== undefined) {
-          props.navigate(draft.startsWith('/') ? draft : `/${draft}`);
+          props.navigate?.(draft.startsWith('/') ? draft : `/${draft}`);
         }
         setDraft(undefined);
       }}
@@ -63,6 +64,7 @@ function AddressBar(props: {
         id={id}
         onBlur={() => setDraft(undefined)}
         onChange={(event) => setDraft(event.target.value)}
+        readOnly={!props.navigate}
         spellCheck={false}
         value={draft ?? props.href}
       />
@@ -70,15 +72,18 @@ function AddressBar(props: {
   );
 }
 
-/** The tab's buttons, address bar and page. */
+/**
+ * The tab's buttons, address bar and page. Without `navigate` and
+ * `reload`, before the demo starts, its controls do nothing, and say so.
+ */
 function Tab(props: {
-  readonly back: () => void;
+  readonly back?: () => void;
   readonly canGoBack: boolean;
   readonly children: ReactNode;
   readonly href: string;
-  readonly navigate: (href: string) => void;
+  readonly navigate?: (href: string) => void;
   readonly pending: boolean;
-  readonly reload: () => void;
+  readonly reload?: () => void;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-background">
@@ -94,6 +99,7 @@ function Tab(props: {
         </Button>
         <Button
           aria-label="Reload"
+          disabled={!props.reload}
           onClick={props.reload}
           size="icon-xs"
           variant="ghost"
@@ -250,14 +256,7 @@ export function DemoBrowser(props: {
   const placeholder = props.placeholder(props.initial);
   if (!props.session) {
     return (
-      <Tab
-        back={() => {}}
-        canGoBack={false}
-        href={props.initial}
-        navigate={() => {}}
-        pending={false}
-        reload={() => {}}
-      >
+      <Tab canGoBack={false} href={props.initial} pending={false}>
         {placeholder}
       </Tab>
     );
