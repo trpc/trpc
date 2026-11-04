@@ -1,7 +1,13 @@
 import { EventEmitter, on } from 'node:events';
 import { testReactResource } from './__helpers';
+import { QueryClient } from '@tanstack/react-query';
 import { fireEvent } from '@testing-library/react';
-import { httpSubscriptionLink, localLink, wsLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  httpSubscriptionLink,
+  localLink,
+  wsLink,
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
@@ -10,7 +16,7 @@ import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
-import { useSubscription } from '../src';
+import { createTRPCOptionsProxy, useSubscription } from '../src';
 
 /* oxlint-disable no-console */
 export const suppressLogs = () => {
@@ -927,5 +933,28 @@ describe('http', () => {
     });
 
     utils.unmount();
+  });
+});
+
+describe('subscriptionOptions', () => {
+  test('explicit null opts is not replaced by the default', () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      events: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
+    });
+    const trpc = createTRPCOptionsProxy<typeof router>({
+      client: createTRPCClient<typeof router>({ links: [] }),
+      queryClient: new QueryClient(),
+    });
+
+    expect(() =>
+      trpc.events.subscriptionOptions(
+        undefined,
+        // @ts-expect-error - JS callers can pass null
+        null,
+      ),
+    ).toThrow(TypeError);
   });
 });
