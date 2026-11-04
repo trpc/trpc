@@ -563,7 +563,10 @@ async function sseResponse(
     serialize: (v) => config.transformer.output.serialize(v),
     formatError(errorOpts) {
       const error = getTRPCErrorFromUnknown(errorOpts.error);
-      reportError(request, error, source);
+      // a call that failed streams only its own error, reported when it failed
+      if (result.ok) {
+        reportError(request, error, source);
+      }
       return errorShape(request, error, source);
     },
   });
