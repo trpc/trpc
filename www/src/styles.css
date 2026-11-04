@@ -25,9 +25,11 @@ html {
 }
 
 /* In-page links glide to their heading. The router scrolls `instant`ly
-   (`scrollRestorationBehavior`), so a new page starts at the top. */
+   (`scrollRestorationBehavior`), so a new page starts at the top. Off until
+   the page has mounted (`__root.tsx`), so opening a page at a heading jumps
+   there instead of gliding past content that is still loading. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html[data-smooth-scroll] {
     scroll-behavior: smooth;
   }
 }

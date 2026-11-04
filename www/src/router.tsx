@@ -23,6 +23,8 @@ export function getRouter() {
     // Hovering a link loads the page's content chunk, so the click renders
     // without waiting.
     defaultPreload: 'intent',
+    // A link to a heading on another page jumps there, like opening it.
+    defaultHashScrollIntoView: { behavior: 'instant', block: 'start' },
     // Content only changes with a deploy, so a loaded page never goes stale.
     defaultStaleTime: Number.POSITIVE_INFINITY,
     dehydrate: (): DehydratedRelease & RenderedPath => ({
