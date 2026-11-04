@@ -101,7 +101,7 @@ export interface WebSocketConnectionOptions {
    * `close` event can come much later: an unresponsive server never answers
    * the closing handshake.
    */
-  onPongTimeout?: (ws: WebSocket) => void;
+  onPongTimeout: (ws: WebSocket) => void;
 }
 
 /**
@@ -194,9 +194,7 @@ export class WsConnection {
       });
 
       if (this.keepAliveOpts.enabled) {
-        setupPingInterval(ws, this.keepAliveOpts, () =>
-          this.onPongTimeout?.(ws),
-        );
+        setupPingInterval(ws, this.keepAliveOpts, () => this.onPongTimeout(ws));
       }
 
       ws.addEventListener('close', () => {
