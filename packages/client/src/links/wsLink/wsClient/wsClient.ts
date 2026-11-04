@@ -26,10 +26,10 @@ import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
- * Calls a user callback from inside a WebSocket event listener. A throw would
- * skip the rest of the listener and, with event-emitter based WebSockets such
- * as `ws`, the other listeners for that event, so it is rethrown
- * asynchronously instead.
+ * Calls a user callback, including `connectionState` subscribers. A throw
+ * would skip the rest of the client's bookkeeping (e.g. end the reconnect
+ * loop, or, with event-emitter based WebSockets such as `ws`, skip the other
+ * listeners for that event), so it is rethrown asynchronously instead.
  */
 function callUserCallback(callback: () => void) {
   try {
@@ -140,11 +140,13 @@ export class WsClient {
     this.allowReconnect = true;
     this.connectionAttemptIndex = 0;
     if (this.connectionState.get().state === 'idle') {
-      this.connectionState.next({
-        type: 'state',
-        state: 'connecting',
-        error: null,
-      });
+      callUserCallback(() =>
+        this.connectionState.next({
+          type: 'state',
+          state: 'connecting',
+          error: null,
+        }),
+      );
     }
 
     try {
@@ -188,11 +190,13 @@ export class WsClient {
     await Promise.all(requestsToAwait).catch(() => null);
     await this.activeConnection.close().catch(() => null);
 
-    this.connectionState.next({
-      type: 'state',
-      state: 'idle',
-      error: null,
-    });
+    callUserCallback(() =>
+      this.connectionState.next({
+        type: 'state',
+        state: 'idle',
+        error: null,
+      }),
+    );
   }
 
   /**
@@ -298,11 +302,13 @@ export class WsClient {
       return;
     }
 
-    this.connectionState.next({
-      type: 'state',
-      state: 'connecting',
-      error: TRPCClientError.from(closedError),
-    });
+    callUserCallback(() =>
+      this.connectionState.next({
+        type: 'state',
+        state: 'connecting',
+        error: TRPCClientError.from(closedError),
+      }),
+    );
     if (this.reconnecting) return;
 
     const tryReconnect = async (attemptIndex: number) => {
@@ -324,16 +330,18 @@ export class WsClient {
         this.reconnecting = null;
       } catch (error) {
         if (this.allowReconnect) {
-          this.connectionState.next({
-            type: 'state',
-            state: 'connecting',
-            error: TRPCClientError.from(
-              new TRPCWebSocketClosedError({
-                message: 'Initialization error',
-                cause: error,
-              }),
-            ),
-          });
+          callUserCallback(() =>
+            this.connectionState.next({
+              type: 'state',
+              state: 'connecting',
+              error: TRPCClientError.from(
+                new TRPCWebSocketClosedError({
+                  message: 'Initialization error',
+                  cause: error,
+                }),
+              ),
+            }),
+          );
         }
         await tryReconnect(attemptIndex + 1);
       }
@@ -373,11 +381,13 @@ export class WsClient {
 
         this.callbacks.onOpen?.();
 
-        this.connectionState.next({
-          type: 'state',
-          state: 'pending',
-          error: null,
-        });
+        callUserCallback(() =>
+          this.connectionState.next({
+            type: 'state',
+            state: 'pending',
+            error: null,
+          }),
+        );
       }).catch((error) => {
         ws.close(3000);
         handleCloseOrError(error);
