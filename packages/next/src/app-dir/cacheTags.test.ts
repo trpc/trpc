@@ -46,6 +46,16 @@ describe('cache tags generation', () => {
     expect(tags).toEqual(['page', 'page.home', 'page.home.header']);
   });
 
+  test('generateCacheTags with null input', () => {
+    const tags = generateCacheTags('page.home.header', null);
+    expect(tags).toEqual([
+      'page',
+      'page.home',
+      'page.home.header',
+      'page.home.header?input=null',
+    ]);
+  });
+
   test('generateCacheTags with single-level procedure and input', () => {
     const tags = generateCacheTags('posts', { limit: 10 });
     expect(tags).toEqual(['posts', 'posts?input={"limit":10}']);
