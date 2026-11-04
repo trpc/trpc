@@ -29,6 +29,17 @@ import {
 } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
+function decodeIncomingMessage(
+  encoder: Encoder,
+  data: string | ArrayBuffer | Uint8Array,
+) {
+  const message = encoder.decode(data);
+  if (typeof message !== 'object' || message === null) {
+    throw new TypeError(`Expected a message object, received ${message}`);
+  }
+  return message as TRPCClientIncomingMessage;
+}
+
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
@@ -398,9 +409,24 @@ export class WsClient {
       // Handle PING/PONG as text regardless of encoder
       if (['PING', 'PONG'].includes(data)) return;
 
-      const incomingMessage = this.encoder.decode(
-        data,
-      ) as TRPCClientIncomingMessage;
+      let incomingMessage: TRPCClientIncomingMessage;
+      try {
+        incomingMessage = decodeIncomingMessage(this.encoder, data);
+      } catch (cause) {
+        // The frame may have carried a response, and its request would wait
+        // forever, so the connection is treated as lost.
+        ws.close();
+        handleCloseOrError(
+          new TRPCWebSocketClosedError({
+            message: 'Received a message that could not be decoded',
+            cause,
+          }),
+        );
+        setTimeout(() => {
+          throw cause;
+        });
+        return;
+      }
       if ('method' in incomingMessage) {
         this.handleIncomingRequest(incomingMessage);
         return;
