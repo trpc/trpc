@@ -29,7 +29,6 @@ function factory() {
         );
       } finally {
         generatorFinally();
-        // oxlint-disable-next-line no-unsafe-finally
         throw new Error('generator cleanup');
       }
     }),
