@@ -132,8 +132,8 @@ describe('writeVersions', () => {
           'packages/tests/package.json',
         ]);
         expect([...result.published]).toEqual([
-          ['@trpc/openapi', '11.23.0-alpha'],
           ['@trpc/server', '11.23.0'],
+          ['@trpc/openapi', '11.23.0-alpha'],
         ]);
         expect(yield* read('packages/openapi/package.json')).toEqual({
           name: '@trpc/openapi',

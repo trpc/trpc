@@ -43,12 +43,56 @@ export function releaseVersions(
   );
 }
 
+const runtimeDependencyFields = [
+  'dependencies',
+  'optionalDependencies',
+  'peerDependencies',
+] as const;
+
+/**
+ * The public packages and their versions when the workspace is released as
+ * `version`, each after the packages it depends on, the order `pnpm publish
+ * -r` publishes them in: a package is never on npm before what it needs.
+ */
+export function publishedVersions(
+  packages: ReadonlyArray<WorkspacePackage>,
+  version: string,
+): ReadonlyMap<string, string> {
+  const byName = new Map(
+    packages
+      .filter(({ pkg }) => pkg.private !== true)
+      .map((workspacePackage) => [workspacePackage.name, workspacePackage]),
+  );
+  const ordered = new Map<string, string>();
+  const visiting = new Set<string>();
+  const visit = (name: string) => {
+    const workspacePackage = byName.get(name);
+    if (
+      workspacePackage === undefined ||
+      ordered.has(name) ||
+      visiting.has(name)
+    ) {
+      return;
+    }
+    visiting.add(name);
+    for (const field of runtimeDependencyFields) {
+      const deps = workspacePackage.pkg[field] as
+        | Record<string, string>
+        | undefined;
+      Object.keys(deps ?? {}).forEach(visit);
+    }
+    ordered.set(name, packageVersion(name, version));
+  };
+  [...byName.keys()].forEach(visit);
+  return ordered;
+}
+
 /**
  * Sets every package in `packages/*` to `version` (`@trpc/openapi` gets its
  * prerelease suffix), pinning their peer dependencies on each other. Their
  * other dependencies on each other are `workspace:*`, so `pnpm-lock.yaml`
- * doesn't change. Returns the files it changed and the versions it gives
- * each package, all of them and only those published.
+ * doesn't change. Returns the files it changed, the versions it gives each
+ * package, and the published ones in `publishedVersions` order.
  */
 export const writeVersions = Effect.fn('writeVersions')(function* (
   root: string,
@@ -67,10 +111,5 @@ export const writeVersions = Effect.fn('writeVersions')(function* (
     );
     files.push(file);
   }
-  const published = new Map(
-    packages
-      .filter(({ pkg }) => pkg.private !== true)
-      .map(({ name }) => [name, packageVersion(name, version)]),
-  );
-  return { files, versions, published };
+  return { files, versions, published: publishedVersions(packages, version) };
 });

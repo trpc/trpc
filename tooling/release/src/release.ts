@@ -2,18 +2,28 @@
  * Releases the packages in `packages/*`, the way KATT/raf-query does: the
  * latest `vX.Y.Z` tag is the version, packages are published before anything
  * is pushed, and a stable release ends with a GitHub release whose notes
- * GitHub generates. `pnpm publish -r` publishes each package once, in
- * dependency order, skipping private packages and versions already on npm.
+ * GitHub generates.
+ *
+ * Each release has two halves (`tarballs.ts`): one builds and packs the
+ * packages without credentials, the other publishes the tarballs with them.
+ * The publishing half publishes each package once, after the packages it
+ * depends on, skipping versions the registry has already.
  */
-import { Console, Data, Duration, Effect } from 'effect';
+import { Console, Data, Duration, Effect, FileSystem } from 'effect';
 import { git, output, run } from './command.ts';
+import {
+  onRegistry,
+  packTarballs,
+  readTarballs,
+  type Tarball,
+} from './tarballs.ts';
 import {
   bumpVersion,
   canaryVersion,
   type Bump,
   type PackageJson,
 } from './version.ts';
-import { writeVersions } from './workspace.ts';
+import { publishedVersions, readPackages, writeVersions } from './workspace.ts';
 
 export class ReleaseError extends Data.TaggedError('ReleaseError')<{
   readonly message: string;
@@ -72,8 +82,8 @@ export const branchMoved = Effect.fn('branchMoved')(function* (
  * resolving anything (`--frozen-lockfile`). v11.23.0's lockfile
  * sync re-resolved vitest and broke typecheck on main, so typecheck runs
  * here too, before anything is published or pushed. Then it builds, and
- * checks the tree once more: `pnpm publish` packs the working tree, which
- * must still be the release commit.
+ * checks the tree once more: `pnpm pack` packs the working tree, which must
+ * still be the release commit.
  */
 export const checkRelease = Effect.fn('checkRelease')(function* (
   root: string,
@@ -128,21 +138,31 @@ export interface PublishOptions {
   readonly provenance: boolean;
 }
 
-const publish = Effect.fn('publish')(function* (
+export interface PackOptions {
+  /** Where the tarballs go, or come from when publishing. */
+  readonly dir: string;
+}
+
+const publishTarballs = Effect.fn('publishTarballs')(function* (
   root: string,
-  opts: PublishOptions,
+  tarballs: ReadonlyArray<Tarball>,
+  opts: PublishOptions & { readonly registry: string },
 ) {
-  yield* run(root, 'pnpm', [
-    'publish',
-    '--recursive',
-    '--filter',
-    './packages/*',
-    '--tag',
-    opts.distTag,
-    '--no-git-checks',
-    ...(opts.provenance ? ['--provenance'] : []),
-    ...(opts.dryRun ? ['--dry-run'] : []),
-  ]);
+  for (const { name, version, file } of tarballs) {
+    if (yield* onRegistry(opts.registry, name, version)) {
+      yield* Console.log(`${name}@${version} is on ${opts.registry} already`);
+      continue;
+    }
+    yield* run(root, 'pnpm', [
+      'publish',
+      file,
+      '--tag',
+      opts.distTag,
+      '--no-git-checks',
+      ...(opts.provenance ? ['--provenance'] : []),
+      ...(opts.dryRun ? ['--dry-run'] : []),
+    ]);
+  }
 });
 
 export interface WaitOptions {
@@ -229,34 +249,62 @@ export interface StableOptions extends PublishOptions {
   readonly wait: WaitOptions;
 }
 
+const stableVersion = Effect.fn('stableVersion')(function* (
+  root: string,
+  bump: Bump,
+) {
+  const previousTag = yield* latestTag(root);
+  const version = bumpVersion(previousTag.slice(1), bump);
+  return { previousTag, version, tag: `v${version}` };
+});
+
 /**
- * Bumps every package from the latest tag, checks the bump (`checkRelease`)
- * and builds. Then pushes the release commit, publishes, tags and pushes the
- * tag, and creates the GitHub release.
+ * The half of a stable release that needs no credentials: bumps every
+ * package from the latest tag, checks the bump (`checkRelease`), builds, and
+ * packs the published packages into `dir`. The bump stays in the working
+ * tree; `publishStable` makes it again in its own checkout and commits it.
+ */
+export const packStable = Effect.fn('packStable')(function* (
+  root: string,
+  opts: PackOptions & { readonly bump: Bump },
+) {
+  yield* ensureClean(root);
+  const { previousTag, version, tag } = yield* stableVersion(root, opts.bump);
+  yield* Console.log(`Packing ${tag} (${opts.bump} after ${previousTag})`);
+  const { files, published } = yield* writeVersions(root, version);
+  yield* checkRelease(root, files);
+  yield* packTarballs(root, published, opts.dir);
+  return { tag, files };
+});
+
+/**
+ * The half of a stable release that publishes: bumps every package from the
+ * latest tag again and checks `dir` holds exactly their tarballs, which
+ * `packStable` made on the same commit. Then pushes the release commit,
+ * publishes the tarballs, tags and pushes the tag, and creates the GitHub
+ * release. It runs nothing from the packages.
  *
  * The commit goes out before the packages and the tag after them. If
  * `branch` moved, the push is rejected and nothing is published. If
  * publishing fails, running the release again finds the versions already on
- * `branch`, publishes what npm doesn't have yet (`pnpm publish` skips the
- * rest) and tags it.
+ * `branch`, publishes what npm doesn't have yet and tags it.
  */
-export const stable = Effect.fn('stable')(function* (
+export const publishStable = Effect.fn('publishStable')(function* (
   root: string,
-  opts: StableOptions,
+  opts: StableOptions & PackOptions,
 ) {
   yield* ensureClean(root);
-  const previousTag = yield* latestTag(root);
-  const version = bumpVersion(previousTag.slice(1), opts.bump);
-  const tag = `v${version}`;
+  const { previousTag, version, tag } = yield* stableVersion(root, opts.bump);
   yield* Console.log(`Releasing ${tag} (${opts.bump} after ${previousTag})`);
 
   const { files, published } = yield* writeVersions(root, version);
   const bumped =
     (yield* git(root, 'status', '--porcelain', '--', ...files)) !== '';
-  yield* checkRelease(root, files);
+  const tarballs = yield* readTarballs(root, opts.dir, published);
+  const registry = yield* publishRegistry(root);
 
   if (opts.dryRun) {
-    yield* publish(root, opts);
+    yield* publishTarballs(root, tarballs, { ...opts, registry });
     yield* Console.log(
       `Dry run: would push "${releaseCommitMessage(tag)}" to ${opts.remote} ${opts.branch}, publish, then tag ${tag}, push the tag and create the GitHub release. The version bump is left in the working tree.`,
     );
@@ -296,15 +344,11 @@ export const stable = Effect.fn('stable')(function* (
     );
   }
 
-  yield* publish(root, opts);
+  yield* publishTarballs(root, tarballs, { ...opts, registry });
   yield* git(root, 'tag', '--annotate', tag, '--message', tag);
   yield* git(root, 'push', '--quiet', opts.remote, `refs/tags/${tag}`);
 
-  yield* waitForVersions(
-    published,
-    yield* publishRegistry(root),
-    opts.wait,
-  ).pipe(
+  yield* waitForVersions(published, registry, opts.wait).pipe(
     Effect.mapError(
       (error) =>
         new ReleaseError({
@@ -316,36 +360,88 @@ export const stable = Effect.fn('stable')(function* (
   return tag;
 });
 
+/**
+ * Both halves of a stable release in one run, for trying one locally with
+ * `--dry-run`: packs into a temporary directory, undoes the bump and
+ * publishes from there.
+ */
+export const stable = Effect.fn('stable')(function* (
+  root: string,
+  opts: StableOptions,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const dir = yield* fs.makeTempDirectoryScoped();
+  const { files } = yield* packStable(root, { bump: opts.bump, dir });
+  yield* git(root, 'checkout', '--quiet', '--', ...files);
+  return yield* publishStable(root, { ...opts, dir });
+}, Effect.scoped);
+
 export interface CanaryOptions extends PublishOptions {
   readonly preid: string;
 }
 
 /**
- * Publishes HEAD as `11.22.2-canary.42.gd3cd94bdd`: the patch after the latest
- * tag, the number of commits since it, and HEAD's short sha. Nothing is
- * committed or pushed.
+ * HEAD's canary, `11.22.2-canary.42.gd3cd94bdd`: the patch after the latest
+ * tag, the number of commits since it, and HEAD's short sha.
  */
-export const canary = Effect.fn('canary')(function* (
+const canaryVersionOfHead = Effect.fn('canaryVersionOfHead')(function* (
   root: string,
-  opts: CanaryOptions,
+  preid: string,
 ) {
   const tag = yield* latestTag(root);
   const commits = Number(
     yield* git(root, 'rev-list', '--count', `${tag}..HEAD`),
   );
   const sha = yield* git(root, 'rev-parse', '--short=9', 'HEAD');
-  const version = canaryVersion({
-    version: tag.slice(1),
-    commits,
-    sha,
-    preid: opts.preid,
-  });
-  yield* Console.log(`Publishing ${version} as ${opts.distTag}`);
-  yield* writeVersions(root, version);
+  return canaryVersion({ version: tag.slice(1), commits, sha, preid });
+});
+
+/** Versions every package as HEAD's canary, builds, and packs into `dir`. */
+export const packCanary = Effect.fn('packCanary')(function* (
+  root: string,
+  opts: PackOptions & { readonly preid: string },
+) {
+  const version = yield* canaryVersionOfHead(root, opts.preid);
+  yield* Console.log(`Packing ${version}`);
+  const { files, published } = yield* writeVersions(root, version);
   yield* run(root, 'pnpm', ['build']);
-  yield* publish(root, opts);
+  yield* packTarballs(root, published, opts.dir);
+  return { version, files };
+});
+
+/**
+ * Publishes the tarballs `packCanary` made on the same commit, after checking
+ * `dir` holds exactly them. Nothing is committed or pushed.
+ */
+export const publishCanary = Effect.fn('publishCanary')(function* (
+  root: string,
+  opts: CanaryOptions & PackOptions,
+) {
+  const version = yield* canaryVersionOfHead(root, opts.preid);
+  yield* Console.log(`Publishing ${version} as ${opts.distTag}`);
+  const tarballs = yield* readTarballs(
+    root,
+    opts.dir,
+    publishedVersions(yield* readPackages(root), version),
+  );
+  yield* publishTarballs(root, tarballs, {
+    ...opts,
+    registry: yield* publishRegistry(root),
+  });
   return version;
 });
+
+/** Both halves of a canary in one run, like `stable`. */
+export const canary = Effect.fn('canary')(function* (
+  root: string,
+  opts: CanaryOptions,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const dir = yield* fs.makeTempDirectoryScoped();
+  const { files } = yield* packCanary(root, { preid: opts.preid, dir });
+  yield* git(root, 'checkout', '--quiet', '--', ...files);
+  return yield* publishCanary(root, { ...opts, dir });
+}, Effect.scoped);
 
 /**
  * `pnpm release github-release v11.23.0`, for a stable release whose GitHub
