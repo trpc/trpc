@@ -76,6 +76,11 @@ test.each([
     thrown: TypeError,
   },
   {
+    name: 'id: {}',
+    frame: () => JSON.stringify({ id: {}, result: { type: 'data', data: 1 } }),
+    thrown: TypeError,
+  },
+  {
     name: 'error: null',
     frame: (id: unknown) => JSON.stringify({ id, error: null }),
     thrown: TypeError,

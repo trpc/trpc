@@ -30,15 +30,21 @@ import {
 } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
+function isRequestId(value: unknown) {
+  return (
+    value === null || typeof value === 'string' || typeof value === 'number'
+  );
+}
+
 /**
- * A server request (`method`) or a response (`id` and a `result` or `error`
- * object).
+ * A server request (`method`) or a response (a string, number or `null` `id`
+ * and a `result` or `error` object).
  */
 function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
   return (
     isObject(value) &&
     ('method' in value ||
-      ('id' in value &&
+      (isRequestId(value['id']) &&
         (isObject(value['result']) || isObject(value['error']))))
   );
 }
