@@ -278,8 +278,10 @@ export function backwardCompatibility(connection: Connection | null) {
   const ws = connection?.ws;
   if (!connection || !ws) return null;
 
-  if (ws.readyState === READY_STATE.CLOSING ||
-    ws.readyState === READY_STATE.CLOSED) {
+  if (
+    ws.readyState === READY_STATE.CLOSING ||
+    ws.readyState === READY_STATE.CLOSED
+  ) {
     return { id: connection.id, state: 'closed', ws } as const;
   }
   if (connection.phase === 'ready' && ws.readyState === READY_STATE.OPEN) {

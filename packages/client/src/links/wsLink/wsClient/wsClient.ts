@@ -265,7 +265,10 @@ export class WsClient {
 
         if (sentOn && type === 'subscription') {
           sentOn.send(
-            this.encoder.encode({ id: message.id, method: 'subscription.stop' }),
+            this.encoder.encode({
+              id: message.id,
+              method: 'subscription.stop',
+            }),
           );
         }
         if (sentOn) this.closeIfDrained(sentOn);
