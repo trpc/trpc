@@ -20,7 +20,7 @@ Run them from the repo root.
 - Every bug fix has a regression test that fails without the fix, and a `Regression check:` line in the PR naming it.
 - No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Port v11 fixes to `next/` on the `v12` branch, following its `next/AGENTS.md`.
 - Internal (non-exported) parameters, properties and options are required: pass `null`, a literal or a symbol. Optionals are only for public APIs.
-- PR bodies follow [the template](.github/PULL_REQUEST_TEMPLATE.md): under 200 words of bullets, one `- Closes #N` per issue, and the AI model if one helped. No file-by-file changelogs, test lists or review history.
+- PR bodies follow [the template](.github/PULL_REQUEST_TEMPLATE.md): under 200 words of bullets, one `- Closes #N` per issue, and the AI model if one helped. Keep credits: `Co-authored-by:` lines, contributor credit and AI disclosures. Drop file-by-file changelogs, test lists, thank-you notes and review history.
 
 ## Skills (read the matching one before starting)
 
