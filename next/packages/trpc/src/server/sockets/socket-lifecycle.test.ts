@@ -18,6 +18,14 @@ const onAbort = (signal: AbortSignal) =>
     else signal.addEventListener('abort', () => resolve(), { once: true });
   });
 
+function defer<T>() {
+  const settle: { resolve?: (value: T) => void } = {};
+  const promise = new Promise<T>((resolve) => {
+    settle.resolve = resolve;
+  });
+  return { promise, resolve: (value: T) => settle.resolve?.(value) };
+}
+
 async function setup<TRouter extends AnyRouter>(router: TRouter) {
   const onError = vi.fn<(opts: OnErrorOpts) => void>();
   const server = await createTestServer<AnyRouter>({ router, onError });
@@ -99,4 +107,70 @@ test('a cleanup that rejects after an abort goes to onError', async () => {
   await vi.waitFor(() =>
     expect(ctx.reported()).toEqual([['active', 'cleanup failed']]),
   );
+});
+
+test('an aborted subscription disposes the iterable its procedure returns late', async () => {
+  const admission = defer<void>();
+  const entered = defer<AbortSignal>();
+  const next = vi.fn<() => Promise<IteratorResult<number>>>(async () => ({
+    done: true,
+    value: undefined,
+  }));
+  const returned = vi.fn<() => Promise<IteratorReturnResult<undefined>>>(
+    async () => ({ done: true, value: undefined }),
+  );
+  const router = t.router({
+    pending: t.procedure.subscription(
+      async (opts): Promise<AsyncIterable<number>> => {
+        entered.resolve(opts.signal);
+        await admission.promise;
+        return { [Symbol.asyncIterator]: () => ({ next, return: returned }) };
+      },
+    ),
+  });
+  await using ctx = await setup(router);
+  const controller = new AbortController();
+  const events: number[] = [];
+  const iterating = (async () => {
+    for await (const event of ctx.client.pending.subscribe(undefined, {
+      signal: controller.signal,
+    })) {
+      events.push(event);
+    }
+  })();
+  const signal = await entered.promise;
+  controller.abort();
+  await iterating;
+  expect(events).toEqual([]);
+  await vi.waitFor(() => expect(signal.aborted).toBe(true));
+  admission.resolve();
+  await vi.waitFor(() => expect(returned).toHaveBeenCalledOnce());
+  expect(next).not.toHaveBeenCalled();
+});
+
+test('a query aborted before its resolver rejects reports nothing', async () => {
+  const admission = defer<void>();
+  const entered = defer<AbortSignal>();
+  const settled = defer<void>();
+  const router = t.router({
+    slow: t.procedure.query(async (opts) => {
+      entered.resolve(opts.signal);
+      await admission.promise;
+      settled.resolve();
+      throw new Error('late query failure');
+    }),
+  });
+  await using ctx = await setup(router);
+  const controller = new AbortController();
+  const query = ctx.client.slow
+    .query(undefined, { signal: controller.signal })
+    .catch((error: unknown) => error);
+  const signal = await entered.promise;
+  controller.abort();
+  expect(await query).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await vi.waitFor(() => expect(signal.aborted).toBe(true));
+  admission.resolve();
+  await settled.promise;
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(ctx.onError).not.toHaveBeenCalled();
 });

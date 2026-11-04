@@ -164,6 +164,30 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
   typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
 
+/**
+ * A resolver's promise, as an Effect. Interrupting the call leaves the
+ * promise running, and nothing reads what it settles with after that: an
+ * iterable is disposed without being read, and a rejection goes to `late`.
+ */
+const settled = (
+  ret: PromiseLike<unknown>,
+  late: (cause: unknown) => void,
+): Effect.Effect<unknown> =>
+  Effect.callback<unknown>((resume, signal) => {
+    ret.then(
+      (value) => {
+        if (!signal.aborted) return resume(Effect.succeed(value));
+        if (!isAsyncIterable(value) || Stream.isStream(value)) return;
+        try {
+          value[Symbol.asyncIterator]().return?.().catch(late);
+        } catch (cause) {
+          late(cause);
+        }
+      },
+      (cause) => (signal.aborted ? late(cause) : resume(Effect.die(cause))),
+    );
+  });
+
 /** Typed `TrpcError` failures stay failures; anything else is a defect (02 d.i). */
 const typedCause = (cause: Cause.Cause<unknown>): Cause.Cause<AnyTrpcError> =>
   Cause.fromReasons(
@@ -762,7 +786,9 @@ export function callProcedure(
     }
     return isThenable(ret)
       ? Effect.flatMap(
-          Effect.promise(() => ret),
+          settled(ret, (cause) =>
+            Context.get(services, SubscriptionTeardown)?.(Cause.die(cause)),
+          ),
           (value) => lift(afterResolve(value, services)),
         )
       : afterResolve(ret, services);

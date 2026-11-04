@@ -105,6 +105,9 @@ const done = (): IteratorReturnResult<undefined> => ({
   done: true,
   value: undefined,
 });
+const reported = (onError: ReturnType<typeof vi.fn<OnError>>) =>
+  onError.mock.calls.map(([opts]) => [opts.path, opts.error.message]);
+
 const onAbort = (signal: AbortSignal) =>
   new Promise<void>((resolve) => {
     if (signal.aborted) resolve();
@@ -140,8 +143,13 @@ test.each([
   {
     rejection: 'an AbortError',
     reject: () => new DOMException('request aborted', 'AbortError'),
+    reported: [],
   },
-  { rejection: 'an unrelated error', reject: () => new Error('setup failed') },
+  {
+    rejection: 'an unrelated error',
+    reject: () => new Error('setup failed'),
+    reported: [['pending', 'setup failed']],
+  },
 ])(
   'stop during the procedure replies stopped, which then rejects with $rejection',
   async (rejection) => {
@@ -173,7 +181,9 @@ test.each([
     await vi.waitFor(() =>
       expect(ws.replies).toEqual([{ id: 1, result: { type: 'stopped' } }]),
     );
-    expect(onError).not.toHaveBeenCalled();
+    await vi.waitFor(() =>
+      expect(reported(onError)).toEqual(rejection.reported),
+    );
     ws.send(subscribe('pending'));
     await vi.waitFor(() =>
       expect(ws.types(1)).toEqual(['stopped', 'started', 'data', 'stopped']),
@@ -396,9 +406,6 @@ test('wsLink unsubscribing during the middleware never starts the resolver', asy
   }
 });
 
-const reported = (onError: ReturnType<typeof vi.fn<OnError>>) =>
-  onError.mock.calls.map(([opts]) => [opts.path, opts.error.message]);
-
 test.each(['stop', 'close'] as const)(
   'what a generator throws after a %s goes to onError (trpc/trpc#7888)',
   async (cancel) => {
@@ -481,3 +488,42 @@ test('an AbortError a stopped generator throws is not reported', async () => {
   expect(onError).not.toHaveBeenCalled();
   await ws.close();
 });
+
+test.each(['stop', 'close'] as const)(
+  '%s during the procedure disposes the iterable it returns late, without reading it',
+  async (cancel) => {
+    const admission = defer<void>();
+    const entered = defer<void>();
+    let signal: AbortSignal | undefined;
+    const next = vi.fn<() => Promise<IteratorResult<number>>>(async () =>
+      done(),
+    );
+    const returned = vi.fn<() => Promise<IteratorReturnResult<undefined>>>(
+      async () => done(),
+    );
+    const router = t.router({
+      pending: t.procedure.subscription(
+        async (opts): Promise<AsyncIterable<number>> => {
+          signal = opts.signal;
+          entered.resolve();
+          await admission.promise;
+          return { [Symbol.asyncIterator]: () => ({ next, return: returned }) };
+        },
+      ),
+    });
+    await using app = await start(router);
+    const ws = await connect(app.url);
+    ws.send(subscribe('pending'));
+    await entered.promise;
+    if (cancel === 'stop') ws.send(stop());
+    else await ws.close();
+    await vi.waitFor(() => expect(signal?.aborted).toBe(true));
+    admission.resolve();
+    await vi.waitFor(() => expect(returned).toHaveBeenCalledOnce());
+    expect(next).not.toHaveBeenCalled();
+    expect(ws.replies).toEqual(
+      cancel === 'stop' ? [{ id: 1, result: { type: 'stopped' } }] : [],
+    );
+    if (cancel === 'stop') await ws.close();
+  },
+);
