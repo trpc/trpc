@@ -172,7 +172,7 @@ When you iterate a subscription:
 
 - A subscription is either iterated or uses callbacks. Iterating one that was started with callbacks throws, and is a type error.
 - Without callbacks, `.subscribe()` returns an async iterator with no `unsubscribe()`, like Node's `events.on()`. Stop it from inside the loop with `break` or `return`, or from outside by aborting the `signal` you passed.
-- Data is queued from when `.subscribe()` is called until the loop reads it. The queue has no size limit. A subscription has one iterator, so iterate it in one loop.
+- Data is queued from when `.subscribe()` is called until the loop reads it. The queue has no size limit. A subscription can be iterated once: a second `for await` over it throws. To consume it twice, call `.subscribe()` twice.
 - A subscription you never loop over or abort keeps running, so pass a `signal`.
 - If you called `unsubscribe()` on a subscription started without callbacks, pass a `signal` and `abort()` it instead.
 - Leaving the loop with `break`, `return` or a thrown error unsubscribes and drops the queued data.

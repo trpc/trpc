@@ -97,6 +97,41 @@ test('a subscription with callbacks throws when iterated', async () => {
   expect(ctx.teardown).toHaveBeenCalledTimes(1);
 });
 
+test('each observer callback on its own makes a subscription with callbacks', () => {
+  const callbacks = [
+    { onStarted: vi.fn() },
+    { onData: vi.fn() },
+    { onError: vi.fn() },
+    { onStopped: vi.fn() },
+    { onComplete: vi.fn() },
+    { onConnectionStateChange: vi.fn() },
+  ];
+  for (const callback of callbacks) {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, callback);
+    expectTypeOf(sub).toEqualTypeOf<Unsubscribable>();
+
+    expect(() => iteratorOf(sub as any)).toThrowError(
+      "A subscription with callbacks can't be iterated",
+    );
+    sub.unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
+});
+
+test('callbacks work as before', () => {
+  const ctx = createControlledClient();
+  const onData = vi.fn<(data: number) => void>();
+  const onComplete = vi.fn<() => void>();
+  ctx.client.onEvent.subscribe(undefined, { onData, onComplete });
+
+  ctx.emit(1);
+  ctx.complete();
+
+  expect(onData).toHaveBeenCalledWith(1);
+  expect(onComplete).toHaveBeenCalledTimes(1);
+});
+
 test('data that arrives before iteration starts is queued', async () => {
   const ctx = createControlledClient();
   const sub = ctx.client.onEvent.subscribe(undefined);
@@ -297,8 +332,8 @@ test('aborting the signal ends iteration after the buffered data', async () => {
   ac2.abort();
   expect(await pending).toEqual({ value: undefined, done: true });
 
-  // an iterator created after the abort is done straight away
-  expect(await iteratorOf(sub).next()).toEqual({
+  // reading after the abort is done straight away
+  expect(await sub.next()).toEqual({
     value: undefined,
     done: true,
   });
@@ -347,6 +382,95 @@ test('emissions while the link tears down are ignored', async () => {
   }
 
   expect(results).toEqual([1]);
+  expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  expect(await sub.next()).toEqual({ value: undefined, done: true });
+});
+
+test('aborting during a running loop drops what the link emits while it tears down', async () => {
+  const ctx = createControlledClient({
+    onTeardown(observer) {
+      observer.next({ result: { type: 'data', data: 99 } });
+      observer.complete();
+    },
+  });
+  const ac = new AbortController();
+  const sub = ctx.client.onEvent.subscribe(undefined, { signal: ac.signal });
+
+  setTimeout(() => ctx.emit(1));
+
+  const results: number[] = [];
+  for await (const value of sub) {
+    results.push(value);
+    if (value === 1) {
+      ctx.emit(2);
+      ac.abort();
+    }
+  }
+
+  expect(results).toEqual([1, 2]);
+  expect(ctx.teardown).toHaveBeenCalledTimes(1);
+});
+
+test('return() from outside ends a pending iteration and drops what the link emits while it tears down', async () => {
+  const ctx = createControlledClient({
+    onTeardown(observer) {
+      observer.next({ result: { type: 'data', data: 99 } });
+    },
+  });
+  const sub = ctx.client.onEvent.subscribe(undefined);
+
+  setTimeout(() => {
+    ctx.emit(1);
+    setTimeout(() => void sub.return?.());
+  });
+
+  const results: number[] = [];
+  for await (const value of sub) {
+    results.push(value);
+  }
+
+  expect(results).toEqual([1]);
+  expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  expect(await sub.next()).toEqual({ value: undefined, done: true });
+});
+
+test('an already aborted signal tears down the subscription straight away', async () => {
+  const ctx = createControlledClient();
+  const ac = new AbortController();
+  ac.abort();
+  const sub = ctx.client.onEvent.subscribe(undefined, { signal: ac.signal });
+
+  // even though the link ignores the signal
+  expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  expect(await sub.next()).toEqual({ value: undefined, done: true });
+});
+
+test('a subscription can only be iterated once', async () => {
+  const message =
+    'A subscription can only be iterated once. Call subscribe() again for another loop.';
+  const ctx = createControlledClient();
+  const sub = ctx.client.onEvent.subscribe(undefined);
+
+  ctx.emit(1);
+  ctx.emit(2);
+  ctx.complete();
+
+  // while the first loop still has queued data to read
+  const first: number[] = [];
+  for await (const value of sub) {
+    first.push(value);
+    if (value === 1) {
+      await expect(async () => {
+        for await (const _ of sub) {
+          // noop
+        }
+      }).rejects.toThrowError(message);
+    }
+  }
+  expect(first).toEqual([1, 2]);
+
+  // and after it ended
+  expect(() => iteratorOf(sub)).toThrowError(message);
   expect(ctx.teardown).toHaveBeenCalledTimes(1);
 });
 

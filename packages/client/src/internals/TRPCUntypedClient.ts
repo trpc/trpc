@@ -187,7 +187,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
   /**
    * Starts a subscription. With callbacks, returns what stops it. Without,
    * returns an async iterator to read it with `for await`, which `signal`,
-   * `break` or `return()` stops.
+   * `break` or `return()` stops. It can be iterated once.
    * @see https://trpc.io/docs/client/vanilla/setup#5-use-subscriptions
    */
   public subscription(
@@ -244,10 +244,23 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
             complete: () => observer.complete(),
           }),
       );
-      return observableToAsyncIterable(
+      const iterator = observableToAsyncIterable(
         data$,
         opts.signal ?? new AbortController().signal,
       );
+      // a second loop over the same iterator would split the data with the
+      // first, or end straight away once the first has left
+      let iterated = false;
+      iterator[Symbol.asyncIterator] = () => {
+        if (iterated) {
+          throw new Error(
+            'A subscription can only be iterated once. Call subscribe() again for another loop.',
+          );
+        }
+        iterated = true;
+        return iterator;
+      };
+      return iterator;
     }
     const subscription = observable$.subscribe({
       next(envelope) {
