@@ -33,8 +33,10 @@ import { timerOption } from '../internal/duration.ts';
 import { toAsyncIterable } from '../internal/effects.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import {
+  allowHeader,
   CONTENT_TYPE,
   contentDisposition,
+  failMethodNotSupported,
   hasMediaType,
   isJsonContentType,
   isOctetContentType,
@@ -767,7 +769,7 @@ export function experimental_createOpenApiHandler<
       if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
       const err = toError(Cause.squash(cause));
       base.report(err, http, path, type);
-      return Effect.succeed(fail(err));
+      return Effect.succeed(fail(err, allowHeader(cause)));
     });
 
   const route = (incoming: Incoming): Effect.Effect<Response, AnyTrpcError> =>
@@ -779,12 +781,12 @@ export function experimental_createOpenApiHandler<
         startup = undefined;
       }
       yield* loadFor(url.pathname);
-      let allowed = false;
+      const allowed: string[] = [];
       for (const entry of entries) {
         const params = entry.match(url.pathname);
         if (!params) continue;
         if (entry.route.method !== method) {
-          allowed = true;
+          allowed.push(entry.route.method);
           continue;
         }
         return yield* recover(
@@ -794,15 +796,19 @@ export function experimental_createOpenApiHandler<
           entry.type,
         );
       }
+      if (allowed.length > 0) {
+        return yield* failMethodNotSupported(
+          new TrpcError.MethodNotSupported({
+            message: `${method} is not supported for ${url.pathname}`,
+          }),
+          [...new Set(allowed)],
+        );
+      }
       return yield* Effect.fail(
-        allowed
-          ? new TrpcError.MethodNotSupported({
-              message: `${method} is not supported for ${url.pathname}`,
-            })
-          : new TrpcError.NotFound({
-              tag: 'RouteNotFound',
-              message: `Not found: ${url.pathname}`,
-            }),
+        new TrpcError.NotFound({
+          tag: 'RouteNotFound',
+          message: `Not found: ${url.pathname}`,
+        }),
       );
     });
 

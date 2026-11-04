@@ -5,7 +5,11 @@ import {
   type HttpMiddleware,
   type HttpServerResponse,
 } from 'effect/http';
-import { HEADER, PROTOCOL_VERSION } from '../../internal/protocol.ts';
+import {
+  allowHeader,
+  HEADER,
+  PROTOCOL_VERSION,
+} from '../../internal/protocol.ts';
 import { normalizeCause } from '../execution/index.ts';
 import { batched } from './batch.ts';
 import { singleCall } from './call.ts';
@@ -134,7 +138,9 @@ export const makeApp = (handler: HttpHandler): HttpAppShape['app'] =>
         if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
         const err = normalizeCause(cause);
         handler.core.report(err, request);
-        return Effect.succeed(errorResponse(handler, err));
+        return Effect.succeed(
+          errorResponse(handler, err, undefined, allowHeader(cause)),
+        );
       }),
     ),
   ) as never;

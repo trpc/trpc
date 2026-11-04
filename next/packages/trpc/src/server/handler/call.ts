@@ -1,7 +1,10 @@
 import { Context, Effect, Exit, Stream, type Tracer } from 'effect';
 import { HttpServerResponse, type HttpServerRequest } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
-import { blobHeaders } from '../../internal/protocol.ts';
+import {
+  blobHeaders,
+  failMethodNotSupported,
+} from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import type { Chunk, Frame } from '../../transformer/progressive-json/index.ts';
 import {
@@ -195,12 +198,13 @@ export const singleCall = (
       }
       const type = procedure['~trpc'].type;
       if (type === 'mutation' && request.method !== 'POST') {
-        return Effect.fail(
+        return failMethodNotSupported(
           protocolError(
             'METHOD_NOT_SUPPORTED',
             'Mutations must use POST',
             'ProcedureTypeMismatch',
           ),
+          ['POST'],
         );
       }
       if (
@@ -208,11 +212,12 @@ export const singleCall = (
         request.method !== 'POST' &&
         !((request.method as string) === 'QUERY' && type !== 'mutation')
       ) {
-        return Effect.fail(
+        return failMethodNotSupported(
           protocolError(
             'METHOD_NOT_SUPPORTED',
             `${request.method} is not supported`,
           ),
+          type === 'mutation' ? ['POST'] : ['GET', 'POST', 'QUERY'],
         );
       }
       const call = Effect.flatMapEager(

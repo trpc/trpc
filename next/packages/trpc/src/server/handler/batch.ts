@@ -1,7 +1,11 @@
 import { Effect, type Tracer } from 'effect';
 import type { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
-import type { BatchCall, BatchLine } from '../../internal/protocol.ts';
+import {
+  failMethodNotSupported,
+  type BatchCall,
+  type BatchLine,
+} from '../../internal/protocol.ts';
 import { resolveProcedure, type AnyProcedure } from '../procedures/index.ts';
 import { strictestCacheControl } from './cache-control.ts';
 import { execute, makeContext, type CallResult } from './call.ts';
@@ -100,8 +104,9 @@ export const batched: (
       );
     }
     if (request.method !== 'POST') {
-      return yield* Effect.fail(
+      return yield* failMethodNotSupported(
         protocolError('METHOD_NOT_SUPPORTED', 'Batches must use POST'),
+        ['POST'],
       );
     }
     const body = yield* readBody(request, handler.maxBodySize);
