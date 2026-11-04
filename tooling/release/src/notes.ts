@@ -11,7 +11,8 @@
  */
 import { Effect } from 'effect';
 import { git, output } from './command.ts';
-import { publishedVersions, readPackages } from './workspace.ts';
+import type { PackageJson } from './version.ts';
+import { publishedVersions, type WorkspacePackage } from './workspace.ts';
 
 /** A commit on the released branch's first-parent history. */
 export interface Change {
@@ -38,7 +39,7 @@ export interface PullRequest {
 /** What GitHub knows about the commits of a release. */
 export interface GitHubInfo {
   readonly pullRequests: ReadonlyMap<number, PullRequest>;
-  /** Logins of the authors of commits that aren't a pull request. */
+  /** Logins of the commits' authors, for entries GitHub has no pull request for. */
   readonly commitAuthors: ReadonlyMap<string, string>;
 }
 
@@ -56,9 +57,14 @@ export interface NewContributor {
   readonly url: string;
 }
 
-/** The pull request a squash-merged commit's subject ends with: `fix: a (#123)`. */
+/**
+ * The pull request a commit's subject names: a squash merge's `fix: a
+ * (#123)`, or a merge commit's `Merge pull request #123 from owner/branch`.
+ */
 export function pullRequestNumber(subject: string): number | undefined {
-  const match = /\(#(\d+)\)$/.exec(subject.trim());
+  const match =
+    /\(#(\d+)\)$/.exec(subject.trim()) ??
+    /^Merge pull request #(\d+) from /.exec(subject);
   return match === null ? undefined : Number(match[1]);
 }
 
@@ -77,7 +83,10 @@ export function changedPackages(
 ): ReadonlyArray<string> {
   return packages
     .filter(({ dir }) =>
-      files.some((file) => file.startsWith(`${dir}/`) && !file.endsWith('.md')),
+      files.some(
+        (file) =>
+          file.startsWith(`${dir}/`) && !file.toLowerCase().endsWith('.md'),
+      ),
     )
     .map(({ name }) => name);
 }
@@ -250,24 +259,51 @@ export const changesBetween = Effect.fn('changesBetween')(function* (
     '--no-renames',
     '--name-only',
     '--reverse',
+    '-z',
     '--format=%x1e%H%x1f%s',
     `${from}..${to}`,
   );
+  // With -z, paths aren't quoted and each ends with a NUL; a newline
+  // separates the subject from the first one.
   return log
     .split('\x1e')
     .filter((record) => record.trim() !== '')
     .map((record): Change => {
-      const [header = '', ...files] = record.split('\n');
+      const [header = '', ...files] = record.split('\0');
       const [sha = '', subject = ''] = header.split('\x1f');
-      return { sha, subject, files: files.filter((file) => file !== '') };
+      return {
+        sha,
+        subject,
+        files: files
+          .map((file) => file.replace(/^\n/, ''))
+          .filter((file) => file !== ''),
+      };
     });
 });
 
-/** The public packages, each after the packages it depends on. */
+/** The public packages at `rev`, each after the packages it depends on. */
 export const notesPackages = Effect.fn('notesPackages')(function* (
   root: string,
+  rev: string,
 ) {
-  const packages = yield* readPackages(root);
+  const packages: Array<WorkspacePackage> = [];
+  for (const entry of (yield* git(
+    root,
+    'ls-tree',
+    '--name-only',
+    `${rev}:packages`,
+  )).split('\n')) {
+    const raw = yield* git(
+      root,
+      'show',
+      `${rev}:packages/${entry}/package.json`,
+    ).pipe(Effect.orElseSucceed(() => undefined));
+    const pkg =
+      raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
+    if (pkg?.name !== undefined) {
+      packages.push({ dir: `packages/${entry}`, name: pkg.name, pkg });
+    }
+  }
   const dirs = new Map(packages.map(({ name, dir }) => [name, dir]));
   return [...publishedVersions(packages, '0.0.0').keys()].map(
     (name): NotesPackage => ({ name, dir: dirs.get(name) ?? '' }),
@@ -296,11 +332,10 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
   const shas: Array<string> = [];
   for (const change of changes) {
     const number = pullRequestNumber(change.subject);
-    if (number === undefined) {
-      shas.push(change.sha);
-    } else {
+    if (number !== undefined) {
       numbers.add(number);
     }
+    shas.push(change.sha);
   }
   if (numbers.size === 0 && shas.length === 0) {
     return { pullRequests: new Map(), commitAuthors: new Map() };
@@ -421,7 +456,7 @@ export const releaseNotes = Effect.fn('releaseNotes')(function* (
       '--jq',
       '.nameWithOwner',
     ]));
-  const packages = yield* notesPackages(root);
+  const packages = yield* notesPackages(root, to);
   const changes = (yield* changesBetween(root, opts.previousTag, to)).filter(
     ({ subject, files }) =>
       !isReleaseCommit(subject) && changedPackages(files, packages).length > 0,

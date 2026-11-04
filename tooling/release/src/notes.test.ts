@@ -6,6 +6,7 @@ import {
   changedPackages,
   changesBetween,
   noteSection,
+  notesPackages,
   notesEntries,
   parseNewContributors,
   pullRequestNumber,
@@ -67,6 +68,13 @@ describe('pullRequestNumber', () => {
     expect(pullRequestNumber('fix: refs #12 in the middle')).toBeUndefined();
     expect(pullRequestNumber('chore: release v11.24.0')).toBeUndefined();
   });
+
+  it("reads a merge commit's", () => {
+    expect(
+      pullRequestNumber('Merge pull request #7867 from someone/branch'),
+    ).toBe(7867);
+    expect(pullRequestNumber('Merge branch main into feature')).toBeUndefined();
+  });
 });
 
 describe('changedPackages', () => {
@@ -76,6 +84,7 @@ describe('changedPackages', () => {
         [
           'packages/client/src/links/wsLink.ts',
           'packages/server/README.md',
+          'packages/server/NOTES.MD',
           'packages/react-query/docs/skills/a.md',
           'packages/tests/server/a.test.ts',
           'www/docs/a.md',
@@ -357,6 +366,26 @@ describe('changesBetween', () => {
         ]);
         const b = yield* commit('feat(www): b (#2)', ['www/b.tsx']);
         const c = yield* commit('chore: empty', []);
+        yield* git(root, 'checkout', '--quiet', '-b', 'feature');
+        yield* commit('feat(server): feature', [
+          'packages/server/src/feature.ts',
+          'packages/server/src/café.ts',
+        ]);
+        yield* git(root, 'checkout', '--quiet', 'main');
+        yield* git(
+          root,
+          '-c',
+          'user.name=Test',
+          '-c',
+          'user.email=test@example.com',
+          'merge',
+          '--quiet',
+          '--no-ff',
+          '--message',
+          'Merge pull request #3 from someone/feature',
+          'feature',
+        );
+        const d = yield* git(root, 'rev-parse', 'HEAD');
 
         expect(yield* changesBetween(root, 'v1.0.0', 'HEAD')).toEqual([
           {
@@ -366,8 +395,72 @@ describe('changesBetween', () => {
           },
           { sha: b, subject: 'feat(www): b (#2)', files: ['www/b.tsx'] },
           { sha: c, subject: 'chore: empty', files: [] },
+          {
+            sha: d,
+            subject: 'Merge pull request #3 from someone/feature',
+            files: [
+              'packages/server/src/café.ts',
+              'packages/server/src/feature.ts',
+            ],
+          },
         ]);
         expect(yield* changesBetween(root, 'HEAD', 'HEAD')).toEqual([]);
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+    ));
+});
+
+describe('notesPackages', () => {
+  it('reads the public packages at a revision, not the working tree', () =>
+    Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* fs.makeTempDirectoryScoped();
+        const write = (dir: string, pkg: object) =>
+          Effect.gen(function* () {
+            yield* fs.makeDirectory(path.join(root, 'packages', dir), {
+              recursive: true,
+            });
+            yield* fs.writeFileString(
+              path.join(root, 'packages', dir, 'package.json'),
+              JSON.stringify(pkg),
+            );
+          });
+        const commit = git(
+          root,
+          '-c',
+          'user.name=Test',
+          '-c',
+          'user.email=test@example.com',
+          '-c',
+          'commit.gpgsign=false',
+          'commit',
+          '--quiet',
+          '--all',
+          '--message',
+          'packages',
+        );
+        yield* git(root, 'init', '--quiet', '--initial-branch', 'main');
+        yield* write('client', {
+          name: '@trpc/client',
+          dependencies: { '@trpc/server': 'workspace:*' },
+        });
+        yield* write('server', { name: '@trpc/server' });
+        yield* write('tests', { name: '@trpc/tests', private: true });
+        yield* git(root, 'add', '--all');
+        yield* commit;
+        yield* git(root, 'tag', '--no-sign', 'v1.0.0');
+        yield* write('client', { name: '@trpc/client', private: true });
+        yield* commit;
+        yield* write('server', { name: '@trpc/renamed' });
+
+        expect(yield* notesPackages(root, 'v1.0.0')).toEqual([
+          { name: '@trpc/server', dir: 'packages/server' },
+          { name: '@trpc/client', dir: 'packages/client' },
+        ]);
+        expect(yield* notesPackages(root, 'HEAD')).toEqual([
+          { name: '@trpc/server', dir: 'packages/server' },
+        ]);
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
     ));
 });

@@ -262,7 +262,12 @@ export const githubRelease = Effect.fn('githubRelease')(function* (
   root: string,
   opts: { readonly tag: string; readonly previousTag: string },
 ) {
-  const notes = yield* releaseNotes(root, { ...opts, to: opts.tag });
+  const fs = yield* FileSystem.FileSystem;
+  const notesFile = yield* fs.makeTempFileScoped({ suffix: '.md' });
+  yield* fs.writeFileString(
+    notesFile,
+    yield* releaseNotes(root, { ...opts, to: opts.tag }),
+  );
   yield* run(root, 'gh', [
     'release',
     'create',
@@ -270,10 +275,10 @@ export const githubRelease = Effect.fn('githubRelease')(function* (
     '--verify-tag',
     '--title',
     opts.tag,
-    '--notes',
-    notes,
+    '--notes-file',
+    notesFile,
   ]);
-});
+}, Effect.scoped);
 
 export interface StableOptions extends PublishOptions {
   readonly bump: Bump;
