@@ -31,6 +31,12 @@ import type { WebSocketConnectionOptions } from './wsConnection';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
+ * How many attempts to replace a socket that's still open may fail before
+ * the `connecting` state reports the error.
+ */
+const silentReplacementFailures = 3;
+
+/**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
  */
@@ -338,14 +344,18 @@ export class WsClient {
     }
     if (this.reconnecting) return;
 
-    const tryReconnect = async (attemptIndex: number, isFirst: boolean) => {
+    /**
+     * @param failures - The attempts that have failed since the reconnect
+     * began.
+     */
+    const tryReconnect = async (attemptIndex: number, failures: number) => {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
           // Only a socket that had nothing on it when the reconnect began is
           // closed before its replacement opens.
           const previous = this.activeConnection;
-          if (isFirst && !this.hasRequestsOn(previous.ws)) {
+          if (failures === 0 && !this.hasRequestsOn(previous.ws)) {
             await previous.close();
           }
 
@@ -372,9 +382,14 @@ export class WsClient {
       } catch (error) {
         // While the old socket is open, its subscriptions keep delivering and
         // its queries and mutations keep running, so a failed attempt to
-        // replace it isn't surfaced. Requests sent since wait for a
-        // replacement, as they do while a lost socket is reopened.
-        if (this.allowReconnect && !this.activeConnection.isOpen()) {
+        // replace it is surfaced only once several have failed in a row.
+        // Requests sent since wait for a replacement either way, as they do
+        // while a lost socket is reopened.
+        if (
+          this.allowReconnect &&
+          (!this.activeConnection.isOpen() ||
+            failures + 1 >= silentReplacementFailures)
+        ) {
           callUserCallback(() =>
             this.connectionState.next({
               type: 'state',
@@ -388,13 +403,13 @@ export class WsClient {
             }),
           );
         }
-        await tryReconnect(attemptIndex + 1, false);
+        await tryReconnect(attemptIndex + 1, failures + 1);
       }
     };
 
     this.reconnecting = tryReconnect(
       this.connectionRejected ? this.connectionAttemptIndex + 1 : 0,
-      true,
+      0,
     );
   }
 
@@ -527,8 +542,13 @@ export class WsClient {
         this.callbacks.onOpen?.();
 
         // A socket opened to replace one that's still open changes nothing
-        // the subscribers can see.
-        if (this.connectionState.get().state === 'pending') return;
+        // the subscribers can see until `handOff()` puts it in use.
+        if (
+          this.connectionState.get().state === 'pending' ||
+          (ws !== this.activeConnection.ws && this.activeConnection.isOpen())
+        ) {
+          return;
+        }
         callUserCallback(() =>
           this.connectionState.next({
             type: 'state',
@@ -558,9 +578,17 @@ export class WsClient {
         return;
       }
 
-      if (incomingMessage.id === null && 'error' in incomingMessage) {
+      // A replaced socket still answers its own queries and mutations, but
+      // says nothing about the connection the client now uses.
+      const isRetired =
+        ws !== this.activeConnection.ws && ws !== this.nextConnection?.ws;
+      if (
+        !isRetired &&
+        incomingMessage.id === null &&
+        'error' in incomingMessage
+      ) {
         this.connectionRejected = true;
-      } else if ('result' in incomingMessage) {
+      } else if (!isRetired && 'result' in incomingMessage) {
         // The server only sends results once `createContext` has succeeded,
         // so an earlier `id: null` error on this socket was not a rejection,
         // e.g. the server's reply to a malformed frame.
