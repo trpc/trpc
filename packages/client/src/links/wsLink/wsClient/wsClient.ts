@@ -249,15 +249,8 @@ export class WsClient {
         const pending = this.requestManager.getPendingRequest(id);
         abort();
 
-        if (
-          type === 'subscription' &&
-          pending &&
-          this.activeConnection.isOpen()
-        ) {
-          this.send({
-            id,
-            method: 'subscription.stop',
-          });
+        if (type === 'subscription' && pending) {
+          this.stopSubscription(id, pending.ws);
         }
         this.closeIfDrained(pending?.ws);
 
@@ -333,7 +326,10 @@ export class WsClient {
             );
           if (subscriptions.length) {
             this.send(subscriptions.map(({ message }) => message));
-            for (const request of subscriptions) request.ws = ws;
+            for (const request of subscriptions) {
+              this.stopSubscription(request.message.id, request.ws);
+              request.ws = ws;
+            }
           }
         }
         this.reconnecting = null;
@@ -378,6 +374,17 @@ export class WsClient {
     if (!ws || ws === this.activeConnection.ws) return;
     if (this.hasRequestsInFlight(ws)) return;
     ws.close();
+  }
+
+  /**
+   * Stops a subscription on the socket it was sent on, if that's still open.
+   */
+  private stopSubscription(
+    id: TRPCClientOutgoingMessage['id'],
+    ws: WebSocket | null,
+  ) {
+    if (!ws || ws.readyState !== ws.OPEN) return;
+    ws.send(this.encoder.encode({ id, method: 'subscription.stop' }));
   }
 
   /**

@@ -1368,6 +1368,7 @@ describe('a server-requested reconnect drains the old socket', () => {
     const pendingStarted = vi.fn();
     const charged = vi.fn();
     const subscriptionStarted = vi.fn();
+    const subscriptionEnded = vi.fn();
     const onOpen = vi.fn();
     const onClose = vi.fn();
     const onError = vi.fn();
@@ -1394,7 +1395,10 @@ describe('a server-requested reconnect drains the old socket', () => {
           emit.next(subscriptionStarted.mock.calls.length);
           const onData = (value: number) => emit.next(value);
           ee.on('data', onData);
-          return () => ee.off('data', onData);
+          return () => {
+            subscriptionEnded();
+            ee.off('data', onData);
+          };
         }),
       ),
     });
@@ -1494,6 +1498,7 @@ describe('a server-requested reconnect drains the old socket', () => {
       pendingStarted,
       charged,
       subscriptionStarted,
+      subscriptionEnded,
       onOpen,
       onClose,
       onError,
@@ -1575,6 +1580,7 @@ describe('a server-requested reconnect drains the old socket', () => {
         pendingResult,
         pendingStarted,
         subscriptionStarted,
+        subscriptionEnded,
         onOpen,
         onClose,
         onError,
@@ -1595,15 +1601,16 @@ describe('a server-requested reconnect drains the old socket', () => {
         const { oldClientSocket, oldResponses, replacementSocket } =
           reconnected;
         oldServerSocket = reconnected.oldServerSocket;
-        // The subscription moves to the replacement.
+        // The subscription moves to the replacement and is stopped on the
+        // old socket, whose `stopped` reply is ignored.
         await vi.waitFor(() => {
           expect(onData).toHaveBeenCalledTimes(2);
+          expect(subscriptionEnded).toHaveBeenCalledTimes(1);
+          expect(oldResponses).toHaveLength(1);
         });
-        // Until the old socket closes, the server runs the subscription on
-        // both sockets, and the old one's data is ignored.
+        expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
         ee.emit('data', 100);
         await vi.waitFor(() => {
-          expect(oldResponses).toHaveLength(1);
           expect(onData).toHaveBeenCalledTimes(3);
         });
 
