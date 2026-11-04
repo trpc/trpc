@@ -52,7 +52,7 @@ const universalRequester: Requester = (opts) => {
       return httpRequest({
         ...opts,
         // The browser will set this automatically and include the boundary= in it
-        contentTypeHeader: null,
+        contentTypeHeader: undefined,
         trpcAccept: null,
         getUrl,
         getBody: () => input,
