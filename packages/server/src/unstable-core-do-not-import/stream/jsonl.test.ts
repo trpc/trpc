@@ -203,6 +203,36 @@ test('encode/decode - error', async () => {
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
+// https://github.com/trpc/trpc/issues/6996
+test('regression: whitespace-only ping lines are skipped by consumer', async () => {
+  const abortController = new AbortController();
+  const textEncoder = new TextEncoderStream();
+  const writer = textEncoder.writable.getWriter();
+
+  const head = { json: { 0: [[0], [null, 0, 0]] } };
+  const chunk = { json: [0, 0, [['hello']]] };
+
+  (async () => {
+    // ping before head
+    await writer.write(' \n');
+    await writer.write(JSON.stringify(head) + '\n');
+    // ping between records
+    await writer.write(' \n');
+    await writer.write(JSON.stringify(chunk) + '\n');
+    await writer.close();
+  })().catch(() => {
+    // noop
+  });
+
+  const [result] = await jsonlStreamConsumer<{ 0: Promise<string> }>({
+    from: textEncoder.readable,
+    deserialize: (v) => v,
+    abortController,
+  });
+
+  await expect(result[0]).resolves.toBe('hello');
+});
+
 test('decode - bad data', async () => {
   const abortController = new AbortController();
   const textEncoder = new TextEncoderStream();
