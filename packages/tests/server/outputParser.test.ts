@@ -1,4 +1,6 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { waitError } from '@trpc/server/__tests__/waitError';
+import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import myzod from 'myzod';
 import * as t from 'superstruct';
@@ -70,6 +72,126 @@ test('multiple output parsers can be composed', async () => {
     additional: 'context',
     regular: 'output',
   });
+});
+
+test('output parsers keep middleware order and later outputs win conflicts', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .output(
+        z.object({
+          first: z.string(),
+          shared: z.string().transform(() => 'middleware' as const),
+        }),
+      )
+      .use(async ({ next }) => {
+        const result = await next();
+        if (!result.ok) {
+          return result;
+        }
+        return {
+          ...result,
+          data: {
+            ...(result.data as Record<string, unknown>),
+            shared: 'changed by middleware',
+          },
+        };
+      })
+      .output(
+        z.object({
+          first: z.string(),
+          second: z.string(),
+          shared: z.literal('original').transform(() => 'original' as const),
+        }),
+      )
+      .query(() => ({
+        first: 'first',
+        second: 'second',
+        shared: 'original',
+      })),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+  expectTypeOf(output).toEqualTypeOf<{
+    first: string;
+    second: string;
+    shared: 'original';
+  }>();
+  expect(output).toEqual({
+    first: 'first',
+    second: 'second',
+    shared: 'original',
+  });
+});
+
+test('output parser errors retain their formatter scope', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .output(z.object({ first: z.string() }))
+      .errors((opts) => ({
+        ...opts.shape,
+        data: { ...opts.shape.data, formatted: true },
+      }))
+      .output(z.object({ second: z.string() }))
+      .query(
+        () =>
+          ({ first: 'first' }) as unknown as {
+            first: string;
+            second: string;
+          },
+      ),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+  const error = await waitError(ctx.client.q.query(), TRPCClientError);
+
+  expect(error.data).toMatchObject({ formatted: true });
+});
+
+test('output parser composition enforces object outputs', () => {
+  const trpc = initTRPC.create();
+  const objectProcedure = trpc.procedure.output(
+    z.object({ value: z.string() }),
+  );
+
+  // @ts-expect-error output parser composition requires object-like outputs
+  trpc.procedure.output(z.string()).concat(trpc.procedure.output(z.number()));
+  // @ts-expect-error output parser composition requires object-like outputs
+  trpc.procedure.output(z.string()).concat(objectProcedure);
+
+  const optionalProcedure = trpc.procedure.output(
+    z.object({ optional: z.string() }).optional(),
+  );
+  optionalProcedure.output(z.object({ required: z.string() }));
+  // @ts-expect-error cannot chain an optional parser to a required parser
+  objectProcedure.output(z.object({ optional: z.string() }).optional());
+});
+
+test('later optional output parsers can return undefined', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .output(z.object({ first: z.string() }).optional())
+      .output((_value: unknown): { second: string } | undefined => undefined)
+      .query(
+        () =>
+          ({ first: 'first' }) as unknown as {
+            first: string;
+            second: string;
+          },
+      ),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+  const output = await ctx.client.q.query();
+
+  expectTypeOf(output).toEqualTypeOf<
+    { first: string; second: string } | undefined
+  >();
+  expect(output).toBeUndefined();
 });
 
 test('zod async', async () => {

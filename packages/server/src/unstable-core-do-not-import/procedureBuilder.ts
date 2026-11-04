@@ -45,6 +45,38 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
     ? TType
     : Simplify<TType & TWith>;
 
+type IsOutputObject<TType> = [TType] extends [
+  Record<string, unknown> | undefined,
+]
+  ? true
+  : false;
+
+type CanMergeOutputs<TType, TWith> = [TType] extends [UnsetMarker]
+  ? true
+  : [TWith] extends [UnsetMarker]
+    ? true
+    : IsOutputObject<TType> extends true
+      ? IsOutputObject<TWith>
+      : false;
+
+type MergeOutput<TType, TWith> = [TType] extends [UnsetMarker]
+  ? TWith
+  : [TWith] extends [UnsetMarker]
+    ? TType
+    : IsOutputObject<TType> extends true
+      ? IsOutputObject<TWith> extends true
+        ?
+            | Simplify<
+                Overwrite<Exclude<TType, undefined>, Exclude<TWith, undefined>>
+              >
+            | (undefined extends TType
+                ? undefined extends TWith
+                  ? undefined
+                  : never
+                : never)
+        : TypeError<'All output parsers did not resolve to an object'>
+      : TypeError<'All output parsers did not resolve to an object'>;
+
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
@@ -276,7 +308,7 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    MergeOutput<TOutputOut, inferParser<$Parser>['out']>,
     TCaller,
     TErrorShape
   >;
@@ -366,17 +398,19 @@ export interface ProcedureBuilder<
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
       ? TMeta extends $Meta
-        ? ProcedureBuilder<
-            $Context,
-            $Meta,
-            $ContextOverrides,
-            $InputIn,
-            $InputOut,
-            $OutputIn,
-            $OutputOut,
-            TCaller,
-            $ErrorShape
-          >
+        ? CanMergeOutputs<TOutputOut, $OutputOut> extends true
+          ? ProcedureBuilder<
+              $Context,
+              $Meta,
+              $ContextOverrides,
+              $InputIn,
+              $InputOut,
+              $OutputIn,
+              $OutputOut,
+              TCaller,
+              $ErrorShape
+            >
+          : TypeError<'All output parsers did not resolve to an object'>
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
   ): ProcedureBuilder<
@@ -386,7 +420,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputIn>,
     IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
-    IntersectIfDefined<TOutputOut, $OutputOut>,
+    MergeOutput<TOutputOut, $OutputOut>,
     TCaller,
     FoldErrorShape<TErrorShape, $ErrorShape>
   >;
@@ -408,17 +442,19 @@ export interface ProcedureBuilder<
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
       ? TMeta extends $Meta
-        ? ProcedureBuilder<
-            $Context,
-            $Meta,
-            $ContextOverrides,
-            $InputIn,
-            $InputOut,
-            $OutputIn,
-            $OutputOut,
-            TCaller,
-            $ErrorShape
-          >
+        ? CanMergeOutputs<TOutputOut, $OutputOut> extends true
+          ? ProcedureBuilder<
+              $Context,
+              $Meta,
+              $ContextOverrides,
+              $InputIn,
+              $InputOut,
+              $OutputIn,
+              $OutputOut,
+              TCaller,
+              $ErrorShape
+            >
+          : TypeError<'All output parsers did not resolve to an object'>
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
   ): ProcedureBuilder<
@@ -428,7 +464,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputIn>,
     IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
-    IntersectIfDefined<TOutputOut, $OutputOut>,
+    MergeOutput<TOutputOut, $OutputOut>,
     TCaller,
     FoldErrorShape<TErrorShape, $ErrorShape>
   >;
@@ -560,19 +596,24 @@ function createNewBuilder(
   const { middlewares = [], inputs, outputs, meta, config, ...rest } = def2;
   const mergedMiddlewares = [...def1.middlewares, ...middlewares];
   const mergedOutputs = [...def1.outputs, ...(outputs ?? [])];
-  const firstOutputMiddleware = mergedMiddlewares.findIndex(
-    (middleware) => middleware._type === 'output',
-  );
+  let outputIndex = 0;
   const combinedMiddlewares =
-    firstOutputMiddleware === -1
-      ? mergedMiddlewares
-      : [
-          ...mergedMiddlewares.slice(0, firstOutputMiddleware),
-          createOutputMiddleware(mergedOutputs.map(getParseFn)),
-          ...mergedMiddlewares
-            .slice(firstOutputMiddleware + 1)
-            .filter((middleware) => middleware._type !== 'output'),
-        ];
+    mergedOutputs.length > 1
+      ? mergedMiddlewares.map((middleware) => {
+          if (middleware._type !== 'output') {
+            return middleware;
+          }
+          const output = mergedOutputs[outputIndex++];
+          if (!output) {
+            throw new Error('Output middleware/parser count mismatch');
+          }
+          return createOutputMiddleware(
+            getParseFn(output),
+            true,
+            outputIndex === mergedOutputs.length,
+          );
+        })
+      : mergedMiddlewares;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
@@ -615,7 +656,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
         middlewares: [createInputMiddleware(parser)],
       });
     },
-    output(output) {
+    output(output: Parser | TypeError<string>) {
       const parser = getParseFn(output as Parser);
       return createNewBuilder(_def, {
         outputs: [output as Parser],

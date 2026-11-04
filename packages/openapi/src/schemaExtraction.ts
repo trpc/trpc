@@ -308,11 +308,22 @@ export function collectRuntimeDescriptions(
       }
 
       let outputDescs: DescriptionMap | null = null;
-      // `output` exists at runtime on the procedure def (from the builder)
-      // but is not part of the public Procedure type.
-      const outputParser = (def as Record<string, unknown>)['output'];
-      if (outputParser) {
-        outputDescs = extractZodDescriptions(outputParser);
+      const runtimeDef = def as Record<string, unknown>;
+      const outputParsers =
+        Array.isArray(runtimeDef['outputs']) && runtimeDef['outputs'].length > 0
+          ? runtimeDef['outputs']
+          : runtimeDef['output']
+            ? [runtimeDef['output']]
+            : [];
+      for (const outputParser of outputParsers) {
+        const descs = extractZodDescriptions(outputParser);
+        if (descs) {
+          outputDescs ??= { properties: new Map() };
+          outputDescs.self = descs.self ?? outputDescs.self;
+          for (const [path, description] of descs.properties) {
+            outputDescs.properties.set(path, description);
+          }
+        }
       }
 
       if (inputDescs || outputDescs) {

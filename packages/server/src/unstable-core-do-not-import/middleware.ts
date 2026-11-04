@@ -18,12 +18,20 @@ export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
 };
 type MiddlewareMarker = typeof middlewareMarker;
 
+const outputParserState = Symbol('outputParserState');
+type OutputParserState = {
+  input: unknown;
+  output: unknown;
+  visibleData: unknown;
+};
+
 interface MiddlewareResultBase {
   /**
    * All middlewares should pass through their `next()`'s output.
    * Requiring this marker makes sure that can't be forgotten at compile-time.
    */
   readonly marker: MiddlewareMarker;
+  readonly [outputParserState]?: OutputParserState;
 }
 
 interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
@@ -330,6 +338,8 @@ export function createErrorFormatterMiddleware(
  */
 export function createOutputMiddleware<TOutput>(
   parse: ParseFn<TOutput> | ParseFn<TOutput>[],
+  mergeOutput = false,
+  preferParsed = true,
 ) {
   const parsers: ParseFn<TOutput>[] = Array.isArray(parse) ? parse : [parse];
   const outputMiddleware: AnyMiddlewareFunction =
@@ -340,9 +350,14 @@ export function createOutputMiddleware<TOutput>(
         return result;
       }
       try {
+        const state = result[outputParserState];
+        const input =
+          state && result.data === state.visibleData
+            ? state.input
+            : result.data;
         const parsedOutputs: TOutput[] = [];
         for (const parser of parsers) {
-          parsedOutputs.push(await parser(result.data));
+          parsedOutputs.push(await parser(input));
         }
 
         let data: unknown = parsedOutputs[0];
@@ -353,9 +368,29 @@ export function createOutputMiddleware<TOutput>(
               : parsedOutput;
         }
 
+        if (mergeOutput) {
+          const previous = state?.output;
+          if (isObject(data) && isObject(previous)) {
+            data = preferParsed
+              ? { ...previous, ...data }
+              : { ...data, ...previous };
+          } else if (state && !preferParsed) {
+            data = previous;
+          }
+        }
+
         return {
           ...result,
           data,
+          ...(mergeOutput
+            ? {
+                [outputParserState]: {
+                  input,
+                  output: data,
+                  visibleData: data,
+                },
+              }
+            : {}),
         };
       } catch (cause) {
         throw new TRPCError({
