@@ -26,7 +26,7 @@ html {
 
 /* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
    comes into view: `pop` from hidden, or `boing` when they were already
-   showing. Each element sets its own `animation-delay`: a theme variable is
+   showing, and `shimmer` after. Each element sets its own `animation-delay`: a theme variable is
    resolved on `:root`, so one there can't read a delay set per bubble. */
 @theme {
   --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
@@ -34,9 +34,7 @@ html {
   --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out forwards;
   --animate-sponsor-confetti: sponsor-confetti 0.9s
     cubic-bezier(0.2, 0.8, 0.4, 1) both;
-  --animate-sponsor-badge: sponsor-badge 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)
-    both;
-  --animate-sponsor-glow: sponsor-glow 3s ease-in-out infinite;
+  --animate-sponsor-shimmer: sponsor-shimmer 7s ease-in-out infinite;
 
   @keyframes sponsor-pop {
     0% {
@@ -101,24 +99,14 @@ html {
     }
   }
 
-  @keyframes sponsor-badge {
+  /* A sheen that crosses the avatar once, then rests. */
+  @keyframes sponsor-shimmer {
     0% {
-      opacity: 0;
-      scale: 0;
+      background-position: 150% 0;
     }
+    25%,
     100% {
-      opacity: 1;
-      scale: 1;
-    }
-  }
-
-  @keyframes sponsor-glow {
-    0%,
-    100% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 1;
+      background-position: -50% 0;
     }
   }
 }
