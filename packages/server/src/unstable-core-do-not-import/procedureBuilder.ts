@@ -599,7 +599,7 @@ function createNewBuilder(
   let outputIndex = 0;
   const combinedMiddlewares =
     mergedOutputs.length > 1
-      ? mergedMiddlewares.map((middleware) => {
+      ? mergedMiddlewares.map((middleware, middlewareIndex) => {
           if (middleware._type !== 'output') {
             return middleware;
           }
@@ -607,11 +607,12 @@ function createNewBuilder(
           if (!output) {
             throw new Error('Output middleware/parser count mismatch');
           }
-          return createOutputMiddleware(
-            getParseFn(output),
-            true,
-            outputIndex === mergedOutputs.length,
-          );
+          return createOutputMiddleware(getParseFn(output), {
+            mergeOutput: true,
+            preferParsed: outputIndex === mergedOutputs.length,
+            reusePreviousInput:
+              mergedMiddlewares[middlewareIndex + 1]?._type === 'output',
+          });
         })
       : mergedMiddlewares;
 

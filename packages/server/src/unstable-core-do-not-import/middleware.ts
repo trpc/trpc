@@ -22,7 +22,6 @@ const outputParserState = Symbol('outputParserState');
 type OutputParserState = {
   input: unknown;
   output: unknown;
-  visibleData: unknown;
 };
 
 interface MiddlewareResultBase {
@@ -338,8 +337,15 @@ export function createErrorFormatterMiddleware(
  */
 export function createOutputMiddleware<TOutput>(
   parse: ParseFn<TOutput> | ParseFn<TOutput>[],
-  mergeOutput = false,
-  preferParsed = true,
+  {
+    mergeOutput = false,
+    preferParsed = true,
+    reusePreviousInput = false,
+  }: {
+    mergeOutput?: boolean;
+    preferParsed?: boolean;
+    reusePreviousInput?: boolean;
+  } = {},
 ) {
   const parsers: ParseFn<TOutput>[] = Array.isArray(parse) ? parse : [parse];
   const outputMiddleware: AnyMiddlewareFunction =
@@ -351,10 +357,7 @@ export function createOutputMiddleware<TOutput>(
       }
       try {
         const state = result[outputParserState];
-        const input =
-          state && result.data === state.visibleData
-            ? state.input
-            : result.data;
+        const input = state && reusePreviousInput ? state.input : result.data;
         const parsedOutputs: TOutput[] = [];
         for (const parser of parsers) {
           parsedOutputs.push(await parser(input));
@@ -386,8 +389,7 @@ export function createOutputMiddleware<TOutput>(
             ? {
                 [outputParserState]: {
                   input,
-                  output: data,
-                  visibleData: data,
+                  output: isObject(data) ? { ...data } : data,
                 },
               }
             : {}),

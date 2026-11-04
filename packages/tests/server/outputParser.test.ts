@@ -81,7 +81,10 @@ test('output parsers keep middleware order and later outputs win conflicts', asy
       .output(
         z.object({
           first: z.string(),
-          shared: z.string().transform(() => 'middleware' as const),
+          shared: z
+            .string()
+            .refine((value) => value === 'changed by middleware')
+            .transform(() => 'middleware' as const),
         }),
       )
       .use(async ({ next }) => {
@@ -89,13 +92,9 @@ test('output parsers keep middleware order and later outputs win conflicts', asy
         if (!result.ok) {
           return result;
         }
-        return {
-          ...result,
-          data: {
-            ...(result.data as Record<string, unknown>),
-            shared: 'changed by middleware',
-          },
-        };
+        (result.data as Record<string, unknown>)['shared'] =
+          'changed by middleware';
+        return result;
       })
       .output(
         z.object({
