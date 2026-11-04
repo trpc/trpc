@@ -22,7 +22,7 @@ import type { Request } from './requestManager';
 import { RequestManager } from './requestManager';
 import {
   callUserCallback,
-  reportUserError,
+  rethrowAsync,
   ResettableTimeout,
   TRPCWebSocketClosedError,
 } from './utils';
@@ -127,10 +127,10 @@ export class WsClient {
         this.afterConnectionLost(connection, cause);
       },
       onMessage: (connection, message) => this.onMessage(connection, message),
-      onSocketClose: (connection, event) => {
-        this.onConnectionLost(connection, event);
+      onSocketClose: (connection, event, cause) => {
+        this.onConnectionLost(connection, cause);
         callUserCallback(() => this.callbacks.onClose?.(event));
-        this.afterConnectionLost(connection, event);
+        this.afterConnectionLost(connection, cause);
       },
       onSocketError: (connection, event) => {
         this.onConnectionLost(connection, event);
@@ -331,7 +331,7 @@ export class WsClient {
     try {
       delayMs = this.retryDelayMs(retryIndex);
     } catch (error) {
-      reportUserError(error);
+      rethrowAsync(error);
       delayMs = exponentialBackoff(retryIndex);
     }
     const timer = setTimeout(() => {
@@ -380,6 +380,7 @@ export class WsClient {
       this.closeIfDrained(previous);
     }
 
+    this.requestManager.batchFor(connection);
     this.flush();
   }
 
@@ -457,6 +458,7 @@ export class WsClient {
     } else {
       connection.close();
     }
+    this.requestManager.unbatch(connection);
     this.scheduleReconnect(this.nextRetryIndex(connection));
     this.closeIfDrained(connection);
   }
@@ -483,16 +485,20 @@ export class WsClient {
   }
 
   /**
-   * Settles the requests sent on a connection that is gone: queries and
-   * mutations fail, since they may have run, and subscriptions are queued to
-   * resume on the next connection.
+   * Settles the requests of a connection that is gone. Queries and mutations
+   * sent on it fail, since they may have run, and so do those waiting for its
+   * next batch, as they always have. Subscriptions are queued to resume on
+   * the next connection.
    */
   private onConnectionLost(connection: Connection, cause: unknown) {
     if (connection.phase === 'closed') return;
     connection.close();
     this.draining.delete(connection);
 
-    for (const request of this.requestManager.sentOn(connection)) {
+    for (const request of [
+      ...this.requestManager.sentOn(connection),
+      ...this.requestManager.queuedFor(connection),
+    ]) {
       if (request.message.method === 'subscription') {
         this.requestManager.requeue(request, { hideStarted: false });
         continue;
@@ -586,7 +592,12 @@ export class WsClient {
       this.connect(null);
       return;
     }
-    if (this.lifecycle.kind !== 'open' || this.flushTimer) return;
+    if (this.lifecycle.kind !== 'open') return;
+    // A request made while the socket is closing waits for the next one.
+    if (this.lifecycle.connection.isWritable()) {
+      this.requestManager.batchFor(this.lifecycle.connection);
+    }
+    if (this.flushTimer) return;
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
       this.flush();

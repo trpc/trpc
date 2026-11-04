@@ -29,15 +29,15 @@ export function callUserCallback(callback: () => void) {
   try {
     callback();
   } catch (error) {
-    reportUserError(error);
+    rethrowAsync(error);
   }
 }
 
 /**
- * Rethrows an error from user code asynchronously, so it's reported like any
- * other uncaught error without unwinding the client's bookkeeping.
+ * Rethrows an error asynchronously, so it's reported like any other uncaught
+ * error without unwinding the client's bookkeeping.
  */
-export function reportUserError(error: unknown) {
+export function rethrowAsync(error: unknown) {
   setTimeout(() => {
     throw error;
   });

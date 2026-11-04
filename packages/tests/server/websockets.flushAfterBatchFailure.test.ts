@@ -26,15 +26,13 @@ describe('queries sent right after a batch fails because its socket closed', () 
       },
     });
 
-    // The socket closes before the queries are sent, so they wait for the
-    // next one instead of failing.
     const results = await Promise.allSettled([
       ctx.client.greeting.query(),
       ctx.client.greeting.query(),
     ]);
-    expect(results).toEqual([
-      { status: 'fulfilled', value: 'hello' },
-      { status: 'fulfilled', value: 'hello' },
+    expect(results).toMatchObject([
+      { status: 'rejected', reason: { name: 'TRPCClientError' } },
+      { status: 'rejected', reason: { name: 'TRPCClientError' } },
     ]);
 
     expect(await ctx.client.greeting.query()).toBe('hello');

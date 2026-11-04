@@ -2,7 +2,12 @@ import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-no
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
 import type { KeepAliveOptions } from './options';
-import { buildConnectionMessage, prepareUrl } from './utils';
+import {
+  buildConnectionMessage,
+  prepareUrl,
+  rethrowAsync,
+  TRPCWebSocketClosedError,
+} from './utils';
 
 /**
  * A connection's phase. It only moves forward:
@@ -39,12 +44,15 @@ export interface ConnectionEvents {
     message: TRPCClientIncomingMessage,
   ) => void;
   /**
-   * Once per socket: its `close` event, or a keepAlive pong timeout, which
-   * doesn't wait for the closing handshake (`event` is then `undefined`).
+   * Once per socket: its `close` event, or the client giving up on the socket
+   * without waiting for the closing handshake (`event` is then `undefined`):
+   * a keepAlive pong timeout or a frame it couldn't decode. `cause` is the
+   * `close` event, or why the client gave up.
    */
   onSocketClose: (
     connection: Connection,
     event: CloseEvent | undefined,
+    cause: unknown,
   ) => void;
   /** An `error` event before the socket closed. */
   onSocketError: (connection: Connection, event: Event) => void;
@@ -169,11 +177,20 @@ export class Connection {
     this.opts.events.onOpenFailed(this, cause);
   }
 
-  private reportClose(event: CloseEvent | undefined) {
+  private reportClose(event: CloseEvent | undefined, cause: unknown) {
     if (this.closeReported) return;
     this.closeReported = true;
     this.stopKeepAlive();
-    this.opts.events.onSocketClose(this, event);
+    this.opts.events.onSocketClose(this, event, cause);
+  }
+
+  /**
+   * Closes the socket and reports it closed at once: the server may never
+   * answer the closing handshake.
+   */
+  private abandon(ws: WebSocket, cause: unknown) {
+    ws.close();
+    this.reportClose(undefined, cause);
   }
 
   private listen(ws: WebSocket) {
@@ -204,15 +221,24 @@ export class Connection {
 
       let message: TRPCClientIncomingMessage;
       try {
-        message = encoder.decode(data) as TRPCClientIncomingMessage;
-      } catch {
-        // A frame no request can be matched to; the connection carries on.
+        message = decodeMessage(encoder, data);
+      } catch (cause) {
+        // The frame may have carried a response, and its request would wait
+        // forever, so the connection is treated as lost.
+        this.abandon(
+          ws,
+          new TRPCWebSocketClosedError({
+            message: 'Received a message that could not be decoded',
+            cause,
+          }),
+        );
+        rethrowAsync(cause);
         return;
       }
       events.onMessage(this, message);
     });
 
-    ws.addEventListener('close', (event) => this.reportClose(event));
+    ws.addEventListener('close', (event) => this.reportClose(event, event));
 
     ws.addEventListener('error', (event) => {
       if (this.closeReported) return;
@@ -255,10 +281,7 @@ export class Connection {
         this.pongTimeout = null;
         // A socket that is already closing was closed on purpose.
         if (ws.readyState !== READY_STATE.OPEN) return;
-        ws.close();
-        // An unresponsive server never answers the closing handshake, so the
-        // `close` event can come much later. Don't wait for it.
-        this.reportClose(undefined);
+        this.abandon(ws, undefined);
       }, pongTimeoutMs);
     }, intervalMs);
   }
@@ -269,6 +292,17 @@ export class Connection {
     this.pingTimeout = null;
     this.pongTimeout = null;
   }
+}
+
+function decodeMessage(
+  encoder: Encoder,
+  data: string | ArrayBuffer | Uint8Array,
+): TRPCClientIncomingMessage {
+  const message: unknown = encoder.decode(data);
+  if (typeof message !== 'object' || message === null) {
+    throw new TypeError(`Expected a message object, received ${message}`);
+  }
+  return message as TRPCClientIncomingMessage;
 }
 
 /**

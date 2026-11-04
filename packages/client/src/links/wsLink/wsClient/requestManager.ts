@@ -20,8 +20,12 @@ type RequestId = TRPCClientOutgoingMessage['id'];
  * sent on, so frames a replaced connection still delivers never reach it.
  */
 export type RequestState =
-  /** Waiting for a ready connection. */
-  | { kind: 'queued' }
+  /**
+   * Waiting to be sent: in the next batch on `connection`, which was open
+   * when the request was made or opened while it waited, or on the next
+   * ready connection when `connection` is `null`.
+   */
+  | { kind: 'queued'; connection: Connection | null }
   /** Sent on `connection`. */
   | { kind: 'sent'; connection: Connection };
 
@@ -61,7 +65,7 @@ export class RequestManager {
     this.requests.set(message.id, {
       message,
       end,
-      state: { kind: 'queued' },
+      state: { kind: 'queued', connection: null },
       hideStarted: false,
       callbacks: {
         next: callbacks.next,
@@ -107,6 +111,28 @@ export class RequestManager {
   }
 
   /**
+   * Puts every queued request that isn't waiting for a batch in the next
+   * batch on `connection`.
+   */
+  public batchFor(connection: Connection) {
+    for (const request of this.queued()) {
+      if (request.state.connection === null) {
+        request.state = { kind: 'queued', connection };
+      }
+    }
+  }
+
+  /**
+   * Moves the requests waiting for a batch on `connection` to the next ready
+   * connection.
+   */
+  public unbatch(connection: Connection) {
+    for (const request of this.queuedFor(connection)) {
+      request.state = { kind: 'queued', connection: null };
+    }
+  }
+
+  /**
    * Marks every queued request as sent on `connection`.
    *
    * @returns Those requests, in the order they were registered. The caller
@@ -125,7 +151,7 @@ export class RequestManager {
    * connection.
    */
   public requeue(request: Request, opts: { hideStarted: boolean }) {
-    request.state = { kind: 'queued' };
+    request.state = { kind: 'queued', connection: null };
     request.hideStarted = opts.hideStarted;
   }
 
@@ -135,6 +161,14 @@ export class RequestManager {
 
   public queued() {
     return this.all().filter((request) => request.state.kind === 'queued');
+  }
+
+  public queuedFor(connection: Connection) {
+    return this.queued().filter(
+      (request) =>
+        request.state.kind === 'queued' &&
+        request.state.connection === connection,
+    );
   }
 
   public sentOn(connection: Connection) {
