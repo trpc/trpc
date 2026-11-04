@@ -24,7 +24,7 @@ interface ProcedureInfo {
   inputSchema: SchemaObject | null;
   outputSchema: SchemaObject | null;
   errorSchema: SchemaObject | null;
-  description: string | null;
+  description: string | undefined;
 }
 
 /** State extracted from the router's root config. */
@@ -990,7 +990,7 @@ interface ProcedureDef {
   defType: ts.Type;
   typeName: string;
   path: string;
-  description: string | null;
+  description: string | undefined;
   symbol: ts.Symbol;
 }
 
@@ -1278,7 +1278,7 @@ function addsNothingToRouterErrorType(
 function getJsDocComment(
   sym: ts.Symbol,
   checker: ts.TypeChecker,
-): string | null {
+): string | undefined {
   const normalize = (filePath: string): string => filePath.replace(/\\/g, '/');
 
   const declarations = sym.declarations ?? [];
@@ -1310,23 +1310,23 @@ function getJsDocComment(
       return true;
     });
   if (isExternalNodeModulesDeclaration) {
-    return null;
+    return undefined;
   }
 
   const parts = sym.getDocumentationComment(checker);
   if (parts.length === 0) {
-    return null;
+    return undefined;
   }
   const text = parts.map((p) => p.text).join('');
-  return text || null;
+  return text || undefined;
 }
 
 interface WalkTypeOpts {
   type: ts.Type;
   ctx: WalkCtx;
   currentPath: string;
-  description: string | null;
-  symbol: ts.Symbol | null;
+  description: string | undefined;
+  symbol: ts.Symbol | undefined;
 }
 
 function walkType(opts: WalkTypeOpts): void {
@@ -1674,16 +1674,16 @@ function buildOpenAPIDocument(opts: {
   options: GenerateOptions & { pathSeparator: TRPCPathSeparator };
   meta: RouterMeta;
 }): Document {
-  const { procedures, options, meta } = opts;
+  const { options } = opts;
   const paths: PathsObject = {};
-  const included = procedures.filter((proc) =>
+  const included = opts.procedures.filter((proc) =>
     shouldIncludeProcedureInOpenAPI(proc.type),
   );
 
-  const schemas = meta.schemas;
+  const schemas = opts.meta.schemas;
   const { responses: errorResponses, refByProcedurePath } = buildErrorResponses(
     included,
-    meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+    opts.meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
     schemas,
   );
 
@@ -1807,8 +1807,8 @@ export async function generateOpenAPIDocument(
     type: routerType,
     ctx: walkCtx,
     currentPath: '',
-    description: null,
-    symbol: null,
+    description: undefined,
+    symbol: undefined,
   });
 
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
