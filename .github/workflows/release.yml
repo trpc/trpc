@@ -10,6 +10,20 @@ name: Release Packages
 # tooling/release, without running install scripts, runs it with node rather
 # than through pnpm, and publishes the build job's tarballs once their names
 # and versions are the ones it works out from the same commit.
+#
+# A push to main publishes a canary only if it changes what the packages
+# publish (tooling/release/src/changes.ts), and never for a release commit.
+# Once main settles, a stable release publishes what changed since the latest
+# tag, if any of it changes what the packages publish. The workflow runs on
+# every push, with no `paths:` filter, so a push after a run that skipped
+# still releases what that run didn't. Set the repo variable AUTO_RELEASE to
+# `false` to stop automatic stable releases; the manual run below still works.
+#
+# No release publishes a major other than `releaseMajor` in
+# tooling/release/src/config.ts, and the automatic release never publishes a
+# major. A new major takes a pull request that sets it to the next major.
+# Once that's merged, the automatic release skips, and the next manual run
+# (latest, either bump) releases the new major's .0.0.
 
 permissions:
   contents: read
@@ -26,7 +40,7 @@ on:
           - 'latest'
           - 'canary'
       version_bump:
-        description: 'Version bump type'
+        description: 'Version bump type (either releases vN.0.0 once releaseMajor in tooling/release/src/config.ts is the next major N)'
         required: true
         type: choice
         options:
@@ -35,14 +49,133 @@ on:
   push:
     branches:
       - 'main'
-    paths:
-      - '.github/setup/*'
-      - '.github/workflows/release.yml'
-      - 'packages/**'
-      - '!packages/**/package.json'
-      - '!packages/test/**'
 
 jobs:
+  # Holds the automatic release until main settles: 10 minutes after the last
+  # push (about one merge queue run, so a PR enqueued just after a merge gets
+  # in), then until the merge queue is empty. A newer push cancels the wait, so
+  # a burst of merges releases once, from the last of them.
+  #
+  # A release commit starts it too. If its release stopped after pushing the
+  # commit, this run publishes what npm is missing and tags it; otherwise the
+  # tag is there and there's nothing to release.
+  wait-for-merge-queue:
+    if: github.event_name == 'push' && vars.AUTO_RELEASE != 'false'
+    concurrency:
+      group: release-auto-wait
+      cancel-in-progress: true
+    timeout-minutes: 75
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      ready: ${{ steps.queue.outputs.ready }}
+
+    steps:
+      - name: Wait for the merge queue to empty
+        id: queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEBOUNCE_SECONDS: 600
+        run: |
+          sleep "$DEBOUNCE_SECONDS"
+          for attempt in $(seq 60); do
+            queued=$(gh api graphql \
+              -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { mergeQueue(branch: "main") { entries { totalCount } } } }' \
+              -f owner="${GITHUB_REPOSITORY_OWNER}" -f repo="${GITHUB_REPOSITORY#*/}" \
+              --jq '.data.repository.mergeQueue.entries.totalCount // 0') || queued=''
+            if [ "$queued" = 0 ]; then
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "${queued:-An unknown number of} pull requests in the merge queue; waiting"
+            sleep 60
+          done
+          echo "::warning::The merge queue didn't empty for an hour, so there's no release; the next push to main releases what this one would have"
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+
+  build-auto:
+    needs: wait-for-merge-queue
+    if: needs.wait-for-merge-queue.outputs.ready == 'true'
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    outputs:
+      packed: ${{ steps.pack.outputs.packed }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/setup
+
+      - name: Pack what changed
+        id: pack
+        run: |
+          pnpm release auto --pack "$RUNNER_TEMP/release"
+          if [ -f "$RUNNER_TEMP/release/commit" ]; then
+            echo "packed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.pack.outputs.packed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+          overwrite: true # Re-running the job uploads again
+          retention-days: 7
+
+  publish-auto:
+    needs: build-auto
+    if: needs.build-auto.outputs.packed == 'true'
+    # Never cancelled by a newer push: if main moves before the release commit
+    # is pushed, the push is rejected and nothing is published.
+    concurrency:
+      group: release-stable # Shared with the manual run, so releases never overlap
+    timeout-minutes: 45 # npm can take a while to serve what it accepted
+    runs-on: ubuntu-latest
+    environment: npm-publish # npm trusted publishing is bound to this environment
+    permissions:
+      contents: write # For the GitHub release
+      id-token: write # For OIDC publishing and provenance
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Configure git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @tooling/release
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+
+      - name: Release what changed
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git remote set-url --push origin "https://x-access-token:${ACCESS_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          node tooling/release/src/bin/release.ts auto --provenance --from "$RUNNER_TEMP/release"
+
   build:
     if: github.event_name == 'workflow_dispatch' && inputs.dist_tag == 'latest'
     timeout-minutes: 30
@@ -125,12 +258,14 @@ jobs:
           node tooling/release/src/bin/release.ts stable ${{ inputs.version_bump }} --dist-tag ${{ inputs.dist_tag }} --provenance --from "$RUNNER_TEMP/release"
 
   build-canary:
-    if: github.event_name == 'push' || inputs.dist_tag == 'canary'
+    if: "(github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'chore: release v')) || inputs.dist_tag == 'canary'"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    outputs:
+      packed: ${{ steps.pack.outputs.packed }}
 
     steps:
       - name: Checkout repo
@@ -141,9 +276,19 @@ jobs:
 
       - uses: ./.github/setup
 
-      - run: pnpm release canary --pack "$RUNNER_TEMP/release"
+      # On push, only if the push changed what the packages publish.
+      - name: Pack a canary
+        id: pack
+        env:
+          SINCE: ${{ github.event_name == 'push' && github.event.before || '' }}
+        run: |
+          pnpm release canary --pack "$RUNNER_TEMP/release" ${SINCE:+--since "$SINCE"}
+          if [ -f "$RUNNER_TEMP/release/commit" ]; then
+            echo "packed=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - uses: actions/upload-artifact@v7
+      - if: steps.pack.outputs.packed == 'true'
+        uses: actions/upload-artifact@v7
         with:
           name: canary
           path: ${{ runner.temp }}/release
@@ -153,6 +298,7 @@ jobs:
 
   publish-canary:
     needs: build-canary
+    if: needs.build-canary.outputs.packed == 'true'
     # Two runs for one commit publish the same canary.
     concurrency:
       group: release-canary-${{ github.sha }}

@@ -6,21 +6,28 @@
  * one run does both; locally, try a release without publishing anything with
  * `--dry-run`:
  *
+ *   pnpm release auto [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release stable <patch|minor|major> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
- *   pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+ *   pnpm release canary [--since <sha>] [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release github-release <tag>
  *   pnpm release notes [<tag>] [--to <ref>]
+ *
+ * `--since` applies when packing.
  */
 import { parseArgs } from 'node:util';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Effect, Path } from 'effect';
+import { releaseMajor } from '../config.ts';
 import {
+  auto,
   canary,
   defaultWait,
   githubReleaseForTag,
+  packAuto,
   packCanary,
   printNotes,
   packStable,
+  publishAuto,
   publishCanary,
   publishStable,
   ReleaseError,
@@ -29,8 +36,9 @@ import {
 import { bumps, isBump } from '../version.ts';
 
 const usage = `Usage:
+  pnpm release auto [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
   pnpm release stable <${bumps.join('|')}> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
-  pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+  pnpm release canary [--since <sha>] [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
   pnpm release github-release <tag>
   pnpm release notes [<tag>] [--to <ref>]`;
 
@@ -43,6 +51,7 @@ const { positionals, values } = parseArgs({
     pack: { type: 'string' },
     preid: { type: 'string', default: 'canary' },
     provenance: { type: 'boolean', default: false },
+    since: { type: 'string' },
     to: { type: 'string' },
   },
 });
@@ -66,21 +75,36 @@ Effect.gen(function* () {
   ) {
     return yield* new ReleaseError({ message: usage });
   }
+  const repo = {
+    remote: 'origin',
+    branch: 'main',
+    wait: defaultWait,
+    major: releaseMajor,
+  };
   switch (command) {
+    case 'auto': {
+      const opts = { ...publish, ...repo };
+      if (pack !== undefined) {
+        yield* packAuto(root, { ...opts, dir: pack });
+      } else if (from !== undefined) {
+        yield* publishAuto(root, { ...opts, dir: from });
+      } else {
+        yield* auto(root, opts);
+      }
+      return;
+    }
     case 'stable': {
       if (arg === undefined || !isBump(arg)) {
         break;
       }
       const opts = {
         ...publish,
+        ...repo,
         bump: arg,
         distTag: values['dist-tag'] ?? 'latest',
-        remote: 'origin',
-        branch: 'main',
-        wait: defaultWait,
       };
       if (pack !== undefined) {
-        yield* packStable(root, { bump: arg, dir: pack });
+        yield* packStable(root, { ...opts, dir: pack });
       } else if (from !== undefined) {
         yield* publishStable(root, { ...opts, dir: from });
       } else {
@@ -98,11 +122,11 @@ Effect.gen(function* () {
         distTag: values['dist-tag'] ?? 'canary',
       };
       if (pack !== undefined) {
-        yield* packCanary(root, { preid: values.preid, dir: pack });
+        yield* packCanary(root, { ...opts, since: values.since, dir: pack });
       } else if (from !== undefined) {
         yield* publishCanary(root, { ...opts, dir: from });
       } else {
-        yield* canary(root, opts);
+        yield* canary(root, { ...opts, since: values.since });
       }
       return;
     }

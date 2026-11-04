@@ -5,14 +5,17 @@ import type { ChildProcessSpawner } from 'effect/process';
 import { describe, expect, it } from 'vitest';
 import { git } from './command.ts';
 import {
+  auto,
   branchMoved,
   defaultWait,
   latestTag,
   packCanary,
   publishStable,
+  stableVersion,
   tarballUrl,
   waitForVersions,
 } from './release.ts';
+import { bumps, type Bump } from './version.ts';
 import { writeVersions } from './workspace.ts';
 
 const run = <TValue, TError>(
@@ -116,6 +119,7 @@ describe('the release guards', () => {
           remote: 'origin',
           branch: 'main',
           wait: defaultWait,
+          major: 11,
           dir: yield* fs.makeTempDirectoryScoped(),
         });
         expect(yield* failure(release)).toContain(
@@ -138,6 +142,102 @@ describe('the release guards', () => {
         });
         expect(yield* failure(canary)).toContain(
           'The working tree has changes',
+        );
+      }),
+    ));
+});
+
+describe('the major guard', () => {
+  const opts = {
+    distTag: 'latest',
+    dryRun: true,
+    provenance: false,
+    remote: 'origin',
+    branch: 'main',
+    wait: defaultWait,
+  };
+  it('publishes only the major the config sets', () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* repo;
+        yield* tag(root, 'v11.24.0');
+        const tagFor = (bump: Bump, major: number) =>
+          stableVersion(root, { bump, major }).pipe(Effect.map((v) => v.tag));
+        expect(yield* tagFor('patch', 11)).toBe('v11.24.1');
+        expect(yield* tagFor('minor', 11)).toBe('v11.25.0');
+        expect(yield* failure(tagFor('major', 11))).toContain(
+          'major after v11.24.0 is v12.0.0, but releaseMajor in tooling/release/src/config.ts is 11',
+        );
+        expect(yield* failure(tagFor('patch', 13))).toContain(
+          'patch after v11.24.0 is v11.24.1, but releaseMajor in tooling/release/src/config.ts is 13',
+        );
+      }),
+    ));
+
+  it('releases the next major once the config sets it, whatever the bump', () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* repo;
+        yield* tag(root, 'v11.24.0');
+        for (const bump of bumps) {
+          expect(yield* stableVersion(root, { bump, major: 12 })).toEqual({
+            previousTag: 'v11.24.0',
+            version: '12.0.0',
+            tag: 'v12.0.0',
+            reason:
+              'releaseMajor in tooling/release/src/config.ts is 12, after v11.24.0',
+          });
+        }
+      }),
+    ));
+
+  /** A repo tagged `v11.24.0`, then a commit `subject` to `@trpc/server`'s source. */
+  const serverChange = Effect.fn('serverChange')(function* (subject: string) {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const root = yield* repo;
+    yield* fs.makeDirectory(path.join(root, 'packages/server/src'), {
+      recursive: true,
+    });
+    yield* fs.writeFileString(
+      path.join(root, 'packages/server/package.json'),
+      JSON.stringify({ name: '@trpc/server', files: ['src'] }),
+    );
+    yield* fs.writeFileString(path.join(root, 'pnpm-workspace.yaml'), '');
+    yield* git(root, 'add', '--all');
+    yield* commit(root, 'initial packages');
+    yield* tag(root, 'v11.24.0');
+    yield* fs.writeFileString(
+      path.join(root, 'packages/server/src/index.ts'),
+      'export {};\n',
+    );
+    yield* git(root, 'add', '--all');
+    yield* commit(root, subject);
+    return root;
+  });
+
+  it('never releases a major automatically', () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* serverChange('feat(server)!: a');
+        expect(yield* failure(auto(root, { ...opts, major: 11 }))).toContain(
+          'These commits are marked breaking, so they need v12, which the automatic release never publishes: feat(server)!: a',
+        );
+        expect(yield* auto(root, { ...opts, major: 12 })).toBeUndefined();
+      }),
+    ));
+
+  // `major: 10` stops `stable` before it installs or builds, with the version it would release.
+  it('releases a fix as a patch and a feat as a minor', () =>
+    run(
+      Effect.gen(function* () {
+        const fix = yield* serverChange('fix(server): a');
+        expect(yield* failure(auto(fix, { ...opts, major: 10 }))).toContain(
+          'patch after v11.24.0 is v11.24.1',
+        );
+        const feat = yield* serverChange('feat(server): a');
+        expect(yield* failure(auto(feat, { ...opts, major: 10 }))).toContain(
+          'minor after v11.24.0 is v11.25.0',
         );
       }),
     ));
