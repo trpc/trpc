@@ -39,6 +39,12 @@ export class WsClient {
 
   private allowReconnect = false;
   private requestManager = new RequestManager();
+  /**
+   * The last id sent on the wire. Each request gets its own instead of its
+   * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
+   * late frames for that attempt must not reach the retry.
+   */
+  private lastRequestId = 0;
   private readonly activeConnection: WsConnection;
   private readonly reconnectRetryDelay: (attemptIndex: number) => number;
   private inactivityTimeout: ResettableTimeout;
@@ -177,14 +183,14 @@ export class WsClient {
    * Method to request the server.
    * Handles data transformation, batching of requests, and subscription lifecycle.
    *
-   * @param op - The operation details including id, type, path, input and signal
+   * @param op - The operation details including type, path, input and signal. Each subscription to the returned observable is sent with a new id, not `op.id`.
    * @param transformer - Data transformer for serializing requests and deserializing responses
    * @param lastEventId - Optional ID of the last received event for subscriptions
    *
    * @returns An observable that emits operation results and handles cleanup
    */
   public request({
-    op: { id, type, path, input, signal },
+    op: { type, path, input, signal },
     transformer,
     lastEventId,
   }: {
@@ -196,6 +202,7 @@ export class WsClient {
       OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
       TRPCClientError<AnyTRPCRouter>
     >((observer) => {
+      const id = ++this.lastRequestId;
       const abort = this.batchSend(
         {
           id,
