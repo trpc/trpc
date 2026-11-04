@@ -934,11 +934,14 @@ describe('a socket the server closes while a new request opens its replacement',
   test('a query pending on it fails', async () => {
     const { ctx, pendingResult, queryStarted, closeDuringNewQuery } = setup();
     await using _ctx = ctx;
+    const abortController = new AbortController();
     try {
       const settled = vi.fn();
-      const result = ctx.client.pending.query().then(settled, (error) => {
-        settled(error);
-      });
+      const result = ctx.client.pending
+        .query(undefined, { signal: abortController.signal })
+        .then(settled, (error) => {
+          settled(error);
+        });
       await vi.waitFor(() => {
         expect(queryStarted).toHaveBeenCalledTimes(1);
       });
@@ -954,7 +957,9 @@ describe('a socket the server closes while a new request opens its replacement',
       });
       expect(await ctx.client.greeting.query()).toBe('hello');
     } finally {
+      abortController.abort();
       pendingResult.resolve('cleanup');
+      await ctx.wsClient.close();
     }
   });
 
@@ -977,6 +982,7 @@ describe('a socket the server closes while a new request opens its replacement',
       expect(onData).toHaveBeenLastCalledWith(2);
     } finally {
       subscription.unsubscribe();
+      await ctx.wsClient.close();
     }
   });
 });
@@ -1024,6 +1030,7 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       expect(executions).toHaveBeenCalledTimes(1);
     } finally {
       release.resolve();
+      await ctx.wsClient.close();
     }
   });
 
@@ -1097,6 +1104,7 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       } finally {
         abortController.abort();
         pendingResult.resolve('cleanup');
+        await ctx.wsClient.close();
       }
     });
 
@@ -1114,6 +1122,7 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       } finally {
         abortController.abort();
         pendingResult.resolve('cleanup');
+        await ctx.wsClient.close();
       }
     });
   });
