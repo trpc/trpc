@@ -16,6 +16,7 @@ import type {
 } from '@trpc/server/adapters/ws';
 import { applyWSSHandler, jsonEncoder } from '@trpc/server/adapters/ws';
 import type { TRPCResponseMessage } from '@trpc/server/rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import {
   createDeferred,
   isObject,
@@ -158,41 +159,6 @@ describe('responses that cannot be encoded', () => {
     expect(cleanedUp).toHaveBeenCalledOnce();
     expect(signal?.aborted).toBe(true);
     expect(onError).toHaveBeenCalledOnce();
-  });
-
-  test('an error reply that cannot be encoded is reported to onError, and the request gets no reply', async () => {
-    const onError = vi.fn<OnError>();
-    const t = initTRPC.create({
-      errorFormatter: ({ shape, path }) =>
-        path === 'unencodable'
-          ? { ...shape, data: { ...shape.data, big: 1n } }
-          : shape,
-    });
-    const router = t.router({
-      unencodable: t.procedure.query((): string => {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'refused' });
-      }),
-      greeting: t.procedure.query(() => 'hello'),
-    });
-    await using ctx = testServerAndClientResource(router, {
-      clientLink: 'wsLink',
-      wssServer: { onError },
-    });
-
-    const abortController = new AbortController();
-    const pending = ctx.client.unencodable.query(undefined, {
-      signal: abortController.signal,
-    });
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
-    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
-      'refused',
-      expect.stringMatching(/BigInt/),
-    ]);
-
-    // the connection still works
-    expect(await ctx.client.greeting.query()).toBe('hello');
-    abortController.abort();
-    await expect(pending).rejects.toThrow();
   });
 
   test('a subscription whose started message cannot be encoded disposes its iterator', async () => {
@@ -596,7 +562,7 @@ describe('a throwing callback never crashes the server', () => {
     greeting: t.procedure.query(() => 'hello'),
   });
 
-  test('an errorFormatter that throws for an oversized batch leaves it without a reply, and later frames are served', async () => {
+  test('an errorFormatter that throws for an oversized batch gives each request the fallback error, and later frames are served', async () => {
     const onError = vi.fn<OnError>();
     const failingFormatter = initTRPC.create({
       errorFormatter: (opts) => {
@@ -622,8 +588,15 @@ describe('a throwing callback never crashes the server', () => {
     socket.ws.send(JSON.stringify([greeting(1), greeting(2)]));
     socket.ws.send(JSON.stringify(greeting(3)));
 
-    await socket.received(1);
-    expect(socket.responses()).toMatchObject([
+    const fallback = {
+      code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+      message: 'Internal server error',
+      data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+    };
+    await socket.received(3);
+    expect(socket.responses()).toEqual([
+      { id: 1, error: fallback },
+      { id: 2, error: fallback },
       { id: 3, result: { type: 'data', data: 'hello' } },
     ]);
     expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
