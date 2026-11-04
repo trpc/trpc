@@ -961,6 +961,38 @@ test('regression: rejected chunk that is never read does not cause an unhandled 
   expect(unhandled).toEqual([]);
 });
 
+test('regression: whitespace-only lines are skipped', async () => {
+  const data = {
+    0: Promise.resolve('a'),
+    1: run(async function* () {
+      yield 1;
+      yield 2;
+    }),
+  };
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+  const lines = await collectLines(stream);
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: streamFromLines([
+      '',
+      ' ',
+      ...lines.flatMap((line) => [line, '', '  ', '\t', '\r']),
+    ]),
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  expect(await head[0]).toBe('a');
+  const received: number[] = [];
+  for await (const value of head[1]) {
+    received.push(value);
+  }
+  expect(received).toEqual([1, 2]);
+});
+
 // https://github.com/trpc/trpc/issues/7209
 test('regression: stream closing before head rejects headDeferred with descriptive error', async () => {
   const abortController = new AbortController();
