@@ -158,7 +158,7 @@ export function observableToPromise<TValue>(
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
   signal: AbortSignal,
-): AsyncIterable<TValue> {
+): AsyncIterableIterator<TValue> {
   const values: TValue[] = [];
   const pending: {
     resolve: (result: IteratorResult<TValue>) => void;
@@ -238,7 +238,10 @@ export function observableToAsyncIterable<TValue>(
     signal.addEventListener('abort', abort, { once: true });
   }
 
-  const iterator: AsyncIterator<TValue> = {
+  const iterator: AsyncIterableIterator<TValue> = {
+    [Symbol.asyncIterator]() {
+      return iterator;
+    },
     async next() {
       if (values.length > 0) {
         return { value: values.shift() as TValue, done: false };
@@ -262,9 +265,5 @@ export function observableToAsyncIterable<TValue>(
       return { value: undefined, done: true };
     },
   };
-  return {
-    [Symbol.asyncIterator]() {
-      return iterator;
-    },
-  };
+  return iterator;
 }
