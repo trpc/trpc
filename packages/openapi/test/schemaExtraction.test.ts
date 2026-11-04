@@ -120,6 +120,7 @@ describe('extractDescriptions', () => {
         "properties": Map {
           "name" => "Category name",
         },
+        "self": null,
       }
     `);
   });
@@ -156,6 +157,7 @@ describe('extractDescriptions', () => {
           "name" => "Category name",
           "children.foo.label" => "Foo label",
         },
+        "self": null,
       }
     `);
   });
