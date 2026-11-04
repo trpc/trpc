@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
+import { Context, Effect, Exit, Layer, Schema, Scope, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -759,6 +759,53 @@ test('a cancelled subscription sends no keep-alives while it winds down', async 
   }
   await reader.cancel();
   await vi.waitFor(() => expect(closed).toBe(true));
+  await handler.dispose();
+});
+
+test('a subscription teardown that fails after the client leaves reaches onError', async () => {
+  const teardown = new Error('teardown');
+  const errors: unknown[] = [];
+  const handler = experimental_createOpenApiHandler({
+    router: t.router({
+      ensuring: t.procedure.subscription(() =>
+        Stream.concat(
+          Stream.make('a'),
+          Stream.never as Stream.Stream<string>,
+        ).pipe(Stream.ensuring(Effect.die(teardown))),
+      ),
+      generator: t.procedure.subscription(async function* (opts) {
+        try {
+          yield 'a';
+          await new Promise((resolve) =>
+            opts.signal.addEventListener('abort', resolve),
+          );
+        } finally {
+          // oxlint-disable-next-line no-unsafe-finally
+          throw teardown;
+        }
+      }),
+    }),
+    createContext: () => ({ user: null }),
+    onError: (opts) => errors.push(opts),
+  });
+  for (const path of ['ensuring', 'generator']) {
+    errors.length = 0;
+    const res = await handler.fetch(
+      new Request(`http://localhost/api/${path}`),
+    );
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    while (!text.includes('data: "a"')) {
+      text += decoder.decode((await reader.read()).value);
+    }
+    await reader.cancel();
+    await vi.waitFor(() => expect(errors).toHaveLength(1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(errors).toMatchObject([
+      { error: { cause: teardown }, path, type: 'subscription' },
+    ]);
+  }
   await handler.dispose();
 });
 

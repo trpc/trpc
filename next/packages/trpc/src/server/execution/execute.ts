@@ -4,6 +4,7 @@ import {
   Context,
   Effect,
   Exit,
+  Predicate,
   References,
   Stream,
   Tracer,
@@ -26,7 +27,7 @@ import {
   type AnyTrpcError,
   type CodeError,
 } from '../../internal/error.ts';
-import { returnUnawaited } from '../../internal/effects.ts';
+import { reportTeardown, returnUnawaited } from '../../internal/effects.ts';
 import { errorConstructors } from './declared.ts';
 import { CurrentFrameSink } from './frame-sink.ts';
 import type {
@@ -917,20 +918,58 @@ export const procedureEvents = (
     eventSchema(validated(procedure['~trpc'])),
   );
 
+/**
+ * Where a subscription's teardown failure goes when its reader has left,
+ * which no other path reports: a finalizer failing as the stream is
+ * interrupted, or an `AsyncIterable` throwing after the stream stopped
+ * waiting for it (a generator's `finally`). A handler provides it in a
+ * call's `services`; without one, the failure is dropped.
+ * @internal
+ */
+export const SubscriptionTeardown: Context.Reference<
+  ((cause: Cause.Cause<unknown>) => void) | undefined
+> = /* @__PURE__ */ Context.Reference<
+  ((cause: Cause.Cause<unknown>) => void) | undefined
+>('@trpc12/trpc/SubscriptionTeardown', { defaultValue: () => undefined });
+
+const isAbortError = (error: unknown): boolean =>
+  Predicate.isError(error) && error.name === 'AbortError';
+
+/**
+ * Services for a call whose subscription's teardown failures go to
+ * `report`. An `AbortError` isn't one: it's how a source aborted by the
+ * call's `signal` ends.
+ * @internal
+ */
+export const reportSubscriptionTeardown = (
+  report: (err: AnyTrpcError) => void,
+): Context.Context<never> =>
+  Context.make(SubscriptionTeardown, (cause) => {
+    if (!isAbortError(Cause.squash(cause))) report(normalizeCause(cause));
+  });
+
 function toEventStream(
   value: unknown,
   services: Context.Context<never>,
   output: AnySchema | undefined,
 ): Stream.Stream<unknown, AnyTrpcError> {
+  const onTeardown = Context.get(services, SubscriptionTeardown);
   let stream: Stream.Stream<unknown, AnyTrpcError, any>;
   if (Stream.isStream(value)) {
     stream = Stream.catchCause(
       value as Stream.Stream<unknown, unknown, any>,
       (cause) => Stream.fromEffect(refail(Effect.failCause(cause))),
     );
+    if (onTeardown) stream = reportTeardown(stream, onTeardown);
   } else if (isAsyncIterable(value)) {
     stream = Stream.orDie(
-      Stream.fromAsyncIterable(returnUnawaited(value), (cause) => cause),
+      Stream.fromAsyncIterable(
+        returnUnawaited(
+          value,
+          onTeardown && ((error) => onTeardown(Cause.die(error))),
+        ),
+        (cause) => cause,
+      ),
     );
   } else {
     return Stream.die(

@@ -11,6 +11,7 @@ import {
   createResponseHandle,
   emitEvents,
   normalizeCause,
+  reportSubscriptionTeardown,
   type EventFrame,
 } from '../execution/index.ts';
 import type { AnyProcedure } from '../procedures/index.ts';
@@ -61,6 +62,9 @@ export const subscription: (
         response,
         lastEventId: request.headers[HEADER.lastEventId],
         parent,
+        services: reportSubscriptionTeardown((err) =>
+          handler.core.report(err, request, path, 'subscription'),
+        ),
       });
       if (Exit.isFailure(exit)) {
         const err = normalizeCause(exit.cause);

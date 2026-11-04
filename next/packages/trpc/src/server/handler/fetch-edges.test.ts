@@ -426,3 +426,52 @@ test.each(['rows', 'report'])(
     await vi.waitFor(() => expect(state.cleanups).toBe(1));
   },
 );
+
+test('a subscription teardown that fails after the client leaves reaches onError', async () => {
+  const teardown = new Error('teardown');
+  const errors: unknown[] = [];
+  const handler = createFetchHandler({
+    router: t.router({
+      ensuring: t.procedure.subscription(() =>
+        Stream.concat(
+          Stream.make('a'),
+          Stream.never as Stream.Stream<string>,
+        ).pipe(Stream.ensuring(Effect.die(teardown))),
+      ),
+      generator: t.procedure.subscription(async function* (opts) {
+        try {
+          yield 'a';
+          await new Promise((resolve) =>
+            opts.signal.addEventListener('abort', resolve),
+          );
+        } finally {
+          // oxlint-disable-next-line no-unsafe-finally
+          throw teardown;
+        }
+      }),
+    }),
+    createContext,
+    onError: (opts) => errors.push(opts),
+  });
+  for (const path of ['ensuring', 'generator']) {
+    errors.length = 0;
+    const res = await handler.fetch(
+      new Request(`http://localhost/trpc/${path}`, {
+        headers: { accept: 'text/event-stream' },
+      }),
+    );
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    while (!text.includes('data: ')) {
+      text += decoder.decode((await reader.read()).value);
+    }
+    await reader.cancel();
+    await vi.waitFor(() => expect(errors).toHaveLength(1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(errors).toMatchObject([
+      { error: { cause: teardown }, path, type: 'subscription' },
+    ]);
+  }
+  await handler.dispose();
+});
