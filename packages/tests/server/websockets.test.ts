@@ -981,6 +981,144 @@ describe('a socket the server closes while a new request opens its replacement',
   });
 });
 
+describe('requests pending on a socket that a server reconnect retires', () => {
+  test('a mutation in flight runs once and fails', async () => {
+    const t = initTRPC.create();
+    const release = createDeferred<void>();
+    const executions = vi.fn();
+    const onOpen = vi.fn();
+    const router = t.router({
+      greeting: t.procedure.query(() => 'hello'),
+      charge: t.procedure.mutation(async () => {
+        executions();
+        await release.promise;
+        return 'charged';
+      }),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+      wsClient: {
+        lazy: { enabled: false, closeMs: 0 },
+        retryDelayMs: () => 0,
+        onOpen,
+      },
+    });
+    try {
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(1);
+      });
+      const result = ctx.client.charge.mutate().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(executions).toHaveBeenCalledTimes(1);
+      });
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+      });
+      // Anything resent on the replacement reaches the server before this.
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      release.resolve();
+
+      expect(await result).toMatchObject({ name: 'TRPCClientError' });
+      expect(executions).toHaveBeenCalledTimes(1);
+    } finally {
+      release.resolve();
+    }
+  });
+
+  describe('while connectionParams throw', () => {
+    function setup() {
+      const t = initTRPC.create();
+      const pendingResult = createDeferred<string>();
+      const queryStarted = vi.fn();
+      const onOpen = vi.fn();
+      let failConnectionParams = false;
+      const router = t.router({
+        pending: t.procedure.query(() => {
+          queryStarted();
+          return pendingResult.promise;
+        }),
+      });
+      const ctx = testServerAndClientResource(router, {
+        clientLink: 'wsLink',
+        wsClient: {
+          lazy: { enabled: false, closeMs: 0 },
+          retryDelayMs: () => 20,
+          onOpen,
+          connectionParams: () => {
+            if (failConnectionParams) throw new Error('token unavailable');
+            return { token: 'ok' };
+          },
+        },
+      });
+
+      /**
+       * Starts a query, then has the server request a reconnect while every
+       * replacement opens and then fails sending its connectionParams.
+       */
+      async function reconnectWithFailingConnectionParams() {
+        const settled = vi.fn();
+        const abortController = new AbortController();
+        const result = ctx.client.pending
+          .query(undefined, { signal: abortController.signal })
+          .then(settled, (error) => {
+            settled(error);
+          });
+        await vi.waitFor(() => {
+          expect(queryStarted).toHaveBeenCalledTimes(1);
+        });
+
+        failConnectionParams = true;
+        ctx.wssHandler.broadcastReconnectNotification();
+        await vi.waitFor(() => {
+          expect(onOpen.mock.calls.length).toBeGreaterThanOrEqual(3);
+        });
+        return { settled, result, abortController };
+      }
+
+      return { ctx, pendingResult, reconnectWithFailingConnectionParams };
+    }
+
+    test('a query pending on the retired socket fails', async () => {
+      const { ctx, pendingResult, reconnectWithFailingConnectionParams } =
+        setup();
+      await using _ctx = ctx;
+      const { settled, result, abortController } =
+        await reconnectWithFailingConnectionParams();
+      try {
+        await vi.waitFor(() => {
+          expect(settled).toHaveBeenCalledTimes(1);
+        });
+        await result;
+        expect(settled.mock.calls[0]![0]).toMatchObject({
+          name: 'TRPCClientError',
+        });
+      } finally {
+        abortController.abort();
+        pendingResult.resolve('cleanup');
+      }
+    });
+
+    test('wsClient.close() resolves', async () => {
+      const { ctx, pendingResult, reconnectWithFailingConnectionParams } =
+        setup();
+      await using _ctx = ctx;
+      const { abortController } = await reconnectWithFailingConnectionParams();
+      try {
+        const closed = vi.fn();
+        void ctx.wsClient.close().then(closed);
+        await vi.waitFor(() => {
+          expect(closed).toHaveBeenCalledTimes(1);
+        });
+      } finally {
+        abortController.abort();
+        pendingResult.resolve('cleanup');
+      }
+    });
+  });
+});
+
 test('subscriptions are automatically resumed if connection is lost', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {

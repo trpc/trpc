@@ -299,10 +299,11 @@ export class WsClient {
   private connectionRejected = false;
 
   /**
-   * Sockets whose pending requests a reconnect resends on their replacement,
-   * so their late close or error events must not touch those requests.
+   * Sockets a reconnect retired. Their queries and mutations were failed and
+   * their subscriptions are resent on the replacement, so their late close or
+   * error events must not touch the requests pending by then.
    */
-  private readonly movedSockets = new WeakSet<WebSocket>();
+  private readonly retiredSockets = new WeakSet<WebSocket>();
 
   private reconnect(closedError: TRPCWebSocketClosedError) {
     if (!this.allowReconnect) {
@@ -322,10 +323,12 @@ export class WsClient {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
-          if (this.activeConnection.ws) {
-            this.movedSockets.add(this.activeConnection.ws);
-          }
+          const retired = this.activeConnection.ws;
+          if (retired) this.retiredSockets.add(retired);
           await this.activeConnection.close();
+          // Failed only once the socket is closing, so a request retried
+          // from these errors can't be sent on it.
+          if (retired) this.failPendingRequests(closedError);
           await this.activeConnection.open();
           this.connectionAttemptIndex = attemptIndex;
 
@@ -362,32 +365,39 @@ export class WsClient {
     );
   }
 
+  /**
+   * Fails every pending query and mutation. Pending subscriptions are kept,
+   * so a reconnect resends them.
+   */
+  private failPendingRequests(cause: unknown) {
+    const reqs = this.requestManager.getPendingRequests();
+    for (const { message, callbacks } of reqs) {
+      if (message.method === 'subscription') continue;
+
+      callbacks.error(
+        TRPCClientError.from(
+          cause ??
+            new TRPCWebSocketClosedError({
+              message: 'WebSocket closed',
+              cause,
+            }),
+        ),
+      );
+      this.requestManager.delete(message);
+    }
+  }
+
   private setupWebSocketListeners(ws: WebSocket) {
     this.connectionRejected = false;
 
     // A socket retired by a reconnect can finish closing after its
     // replacement has opened.
     const isRetired = () =>
-      this.movedSockets.has(ws) && this.activeConnection.ws !== ws;
+      this.retiredSockets.has(ws) && this.activeConnection.ws !== ws;
 
     const handleCloseOrError = (cause: unknown) => {
       if (isRetired()) return;
-
-      const reqs = this.requestManager.getPendingRequests();
-      for (const { message, callbacks } of reqs) {
-        if (message.method === 'subscription') continue;
-
-        callbacks.error(
-          TRPCClientError.from(
-            cause ??
-              new TRPCWebSocketClosedError({
-                message: 'WebSocket closed',
-                cause,
-              }),
-          ),
-        );
-        this.requestManager.delete(message);
-      }
+      this.failPendingRequests(cause);
     };
 
     ws.addEventListener('open', () => {
