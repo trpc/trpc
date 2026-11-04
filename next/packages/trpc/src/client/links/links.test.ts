@@ -393,6 +393,33 @@ test('the untyped client takes paths as strings', async () => {
   expect(events).toEqual([1, 2]);
 });
 
+test("aborting a subscription whose link's teardown fails hands the failure to the loop, after the values already received", async () => {
+  const teardown = new Error('teardown');
+  const client = createUntypedClient({
+    links: [
+      link(() =>
+        Stream.concat(
+          Stream.make(1, 2),
+          Stream.never as Stream.Stream<number>,
+        ).pipe(Stream.ensuring(Effect.die(teardown))),
+      ),
+    ],
+  });
+  const controller = new AbortController();
+  const events: unknown[] = [];
+  const loop = async () => {
+    for await (const n of client.subscribe({
+      path: 'ticks',
+      signal: controller.signal,
+    })) {
+      events.push(n);
+      if (n === 1) controller.abort();
+    }
+  };
+  await expect(loop()).rejects.toBe(teardown);
+  expect(events).toEqual([1, 2]);
+});
+
 test('one client for routers on two servers with different contexts (www/v12/docs/client/links.md)', async () => {
   const blogT = initTrpc<{ ctx: { locale: string } }>();
   const shopT = initTrpc<{ ctx: { cart: string[] } }>();
