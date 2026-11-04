@@ -258,7 +258,9 @@ jobs:
           node tooling/release/src/bin/release.ts stable ${{ inputs.version_bump }} --dist-tag ${{ inputs.dist_tag }} --provenance --from "$RUNNER_TEMP/release"
 
   build-canary:
-    if: "(github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'chore: release v')) || inputs.dist_tag == 'canary'"
+    # Not on the release commits the stable releases push, which carry the
+    # stable versions.
+    if: "(github.event_name == 'push' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')) || inputs.dist_tag == 'canary'"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:

@@ -241,6 +241,23 @@ describe('the major guard', () => {
         );
       }),
     ));
+
+  it('releases nothing, and no canary, for a change and its revert', () =>
+    run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* serverChange('feat(server): a');
+        yield* fs.remove(path.join(root, 'packages/server/src/index.ts'));
+        yield* git(root, 'add', '--all');
+        yield* commit(root, 'revert: feat(server): a');
+        expect(yield* auto(root, { ...opts, major: 10 })).toBeUndefined();
+        const dir = yield* fs.makeTempDirectoryScoped();
+        expect(
+          yield* packCanary(root, { preid: 'canary', dir, since: 'v11.24.0' }),
+        ).toBeUndefined();
+      }),
+    ));
 });
 
 describe('writeVersions', () => {

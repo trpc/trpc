@@ -10,7 +10,12 @@
  * depends on, skipping versions the registry has already.
  */
 import { Console, Data, Duration, Effect, FileSystem } from 'effect';
-import { commitBump, releasableCommits, releaseBump } from './changes.ts';
+import {
+  commitBump,
+  publishedChanged,
+  releasableCommits,
+  releaseBump,
+} from './changes.ts';
 import { git, output, run } from './command.ts';
 import { releaseNotes } from './notes.ts';
 import {
@@ -507,9 +512,14 @@ const autoBump = Effect.fn('autoBump')(function* (
     return undefined;
   }
   const commits = yield* releasableCommits(root, previousTag);
-  if (commits.length === 0) {
+  if (
+    commits.length === 0 ||
+    !(yield* publishedChanged(root, previousTag, 'HEAD'))
+  ) {
     yield* Console.log(
-      `Nothing the packages publish changed since ${previousTag}; not releasing.`,
+      commits.length === 0
+        ? `Nothing the packages publish changed since ${previousTag}; not releasing.`
+        : `The commits since ${previousTag} that change what the packages publish cancel out, like a change and its revert; not releasing.`,
     );
     return undefined;
   }
@@ -625,7 +635,7 @@ export const packCanary = Effect.fn('packCanary')(function* (
       Effect.as(true),
       Effect.orElseSucceed(() => false),
     );
-    if (known && (yield* releasableCommits(root, since)).length === 0) {
+    if (known && !(yield* publishedChanged(root, since, 'HEAD'))) {
       yield* Console.log(
         `Nothing the packages publish changed since ${since}; no canary.`,
       );

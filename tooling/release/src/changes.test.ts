@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   commitBump,
   parseCatalogs,
+  publishedChanged,
   publishedManifest,
   publishedPathspecs,
   releasableCommits,
@@ -229,6 +230,7 @@ describe('releasableCommits', () => {
         );
         yield* commit('chore: catalog zod');
         expect(yield* changes()).toEqual([]);
+        expect(yield* publishedChanged(root, 'v11.23.0', 'HEAD')).toBe(false);
 
         yield* write('packages/server/src/index.ts', 'export const a = 1;\n');
         yield* commit('fix(server): a');
@@ -250,6 +252,19 @@ describe('releasableCommits', () => {
           'chore: typescript peer',
           'fix(server): a',
         ]);
+        expect(yield* publishedChanged(root, 'v11.23.0', 'HEAD')).toBe(true);
+
+        const beforeRevert = yield* git(root, 'rev-parse', 'HEAD');
+        yield* write('packages/server/src/index.ts', 'export const b = 2;\n');
+        yield* commit('feat(server): b');
+        yield* write('packages/server/src/index.ts', 'export const a = 1;\n');
+        yield* commit('revert: feat(server): b');
+        expect(
+          (yield* releasableCommits(root, beforeRevert)).map((c) => c.subject),
+        ).toEqual(['revert: feat(server): b', 'feat(server): b']);
+        expect(yield* publishedChanged(root, beforeRevert, 'HEAD')).toBe(false);
+        // A rewind: no commits from HEAD to the tag, but what they publish differs.
+        expect(yield* publishedChanged(root, 'HEAD', 'v11.23.0')).toBe(true);
       }),
     ));
 });

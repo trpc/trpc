@@ -217,6 +217,38 @@ export const releasableCommits = Effect.fn('releasableCommits')(function* (
 });
 
 /**
+ * Whether what the public packages publish differs between `from` and `to`,
+ * whatever the commits between them: a change and its revert cancel out, and
+ * `to` needn't descend from `from`.
+ */
+export const publishedChanged = Effect.fn('publishedChanged')(function* (
+  root: string,
+  from: string,
+  to: string,
+) {
+  const packages = (yield* readPackages(root)).filter(
+    ({ pkg }) => pkg.private !== true,
+  );
+  const files = yield* git(
+    root,
+    'diff',
+    '--name-only',
+    from,
+    to,
+    '--',
+    ...publishedPathspecs(packages),
+  );
+  if (files !== '') {
+    return true;
+  }
+  const [before, after] = [
+    yield* publishedManifestsAt(root, from, packages),
+    yield* publishedManifestsAt(root, to, packages),
+  ];
+  return [...after].some(([dir, manifest]) => before.get(dir) !== manifest);
+});
+
+/**
  * The bump a commit asks for, from its conventional-commit subject: `feat` is
  * a minor, `!` before the colon is a major, anything else a patch. Bodies are
  * pull request descriptions, which mention breaking changes of dependencies,
