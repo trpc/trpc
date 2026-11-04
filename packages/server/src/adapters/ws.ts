@@ -31,6 +31,7 @@ import {
   isAsyncIterable,
   isObject,
   isTrackedEnvelope,
+  makeResource,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -48,6 +49,40 @@ import { jsonEncoder } from './wsEncoder';
  * @see https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
+
+function settle<TValue>(promise: Promise<TValue>): Promise<Result<TValue>> {
+  return promise.then(
+    (value): Result<TValue> => ({ ok: true, value }),
+    (error: unknown): Result<TValue> => ({ ok: false, error }),
+  );
+}
+
+/**
+ * What `await using` rejects with when disposal fails after the scope threw:
+ * `error` is the disposal failure and `suppressed` the original error.
+ */
+function isSuppressedError(
+  cause: unknown,
+): cause is { error: unknown; suppressed: unknown } {
+  return (
+    isObject(cause) &&
+    cause['name'] === 'SuppressedError' &&
+    'error' in cause &&
+    'suppressed' in cause
+  );
+}
+
+/**
+ * A procedure that gives up because its subscription was cancelled rejects
+ * with an `AbortError`, which is wrapped as an INTERNAL_SERVER_ERROR.
+ */
+function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
+  return (
+    signal.aborted &&
+    error.code === 'INTERNAL_SERVER_ERROR' &&
+    isAbortError(error.cause)
+  );
+}
 
 /**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
@@ -166,6 +201,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
 
+    function registerSubscription(
+      id: number | string,
+      subscription: AbortController,
+    ) {
+      clientSubscriptions.set(id, subscription);
+      return makeResource({}, () => {
+        clientSubscriptions.delete(id);
+      });
+    }
+
     if (opts.keepAlive?.enabled) {
       const { pingMs, pongWaitMs } = opts.keepAlive;
       handleKeepAlive(client, pingMs, pongWaitMs);
@@ -249,7 +294,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? null
         : createCtxPromise(() => null);
 
-    function handleRequest(msg: TRPCClientOutgoingMessage, batchIndex: number) {
+    async function handleRequest(
+      msg: TRPCClientOutgoingMessage,
+      batchIndex: number,
+      ctxResult: Promise<ContextResult>,
+    ) {
       const { id, jsonrpc } = msg;
 
       if (id === null) {
@@ -301,14 +350,65 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           };
         }
       }
-      run(async () => {
-        // oxlint-disable-next-line typescript/no-non-null-assertion
-        const res = await ctxPromise!; // asserts context has been set
+      const abortController = new AbortController();
+      // `abort()` builds an AbortError with a stack trace even when the
+      // signal is already aborted, which is the common case on a stop.
+      const abort = () => {
+        if (!abortController.signal.aborted) {
+          abortController.abort();
+        }
+      };
+      const reportError = (cause: unknown) => {
+        const error = getTRPCErrorFromUnknown(cause);
+        opts.onError?.({ error, path, type, ctx, req, input });
+        return error;
+      };
+      const respondWithError = (cause: unknown) => {
+        const error = reportError(cause);
+        respond({
+          id,
+          jsonrpc,
+          error: getErrorShape({
+            config: router._def._config,
+            error,
+            type,
+            path,
+            input,
+            ctx,
+          }),
+        });
+      };
+
+      if (type === 'subscription' && clientSubscriptions.has(id)) {
+        // duplicate request ids for client
+        respondWithError(
+          new TRPCError({
+            message: `Duplicate id ${id}`,
+            code: 'BAD_REQUEST',
+          }),
+        );
+        return;
+      }
+
+      const execute = async () => {
+        // Registered before any await so that a stop or a disconnect during
+        // context creation or the procedure call cancels the subscription.
+        // The id is freed once this has settled, after the iterator's
+        // disposal and right before the client is told it may reuse it.
+        using _subscription =
+          type === 'subscription'
+            ? registerSubscription(id, abortController)
+            : null;
+
+        const res = await ctxResult;
         if (!res.ok) {
           throw res.error;
         }
 
-        const abortController = new AbortController();
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         const result = await callTRPCProcedure({
           router,
           path,
@@ -348,30 +448,42 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
-        /* istanbul ignore next -- @preserve */
-        if (client.readyState !== WEBSOCKET_OPEN) {
-          // if the client got disconnected whilst initializing the subscription
-          // no need to send stopped message if the client is disconnected
-
-          return;
-        }
-
-        /* istanbul ignore next -- @preserve */
-        if (clientSubscriptions.has(id)) {
-          // duplicate request ids for client
-
-          throw new TRPCError({
-            message: `Duplicate id ${id}`,
-            code: 'BAD_REQUEST',
-          });
-        }
-
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
 
-        run(async () => {
+        // A failed iterator cleanup is reported to the server only: the
+        // client still gets `stopped`, so a subscription that completed or
+        // was stopped doesn't turn into a failed one.
+        if (abortController.signal.aborted) {
+          try {
+            // dispose the iterator without consuming it
+            await using _iterator = iteratorResource(iterable);
+          } catch (cause) {
+            reportError(cause);
+          }
+          return;
+        }
+
+        respond({
+          id,
+          jsonrpc,
+          result: {
+            type: 'started',
+          },
+        });
+
+        let ended = false;
+        try {
           await using iterator = iteratorResource(iterable);
+          let completed = false;
+          // Disposed before the iterator, so cleanup that waits for
+          // cancellation is woken when iteration ends other than by `done`.
+          using _abortUnlessCompleted = makeResource({}, () => {
+            if (!completed) {
+              abort();
+            }
+          });
 
           const abortPromise = new Promise<'abort'>((resolve) => {
             abortController.signal.onabort = () => resolve('abort');
@@ -395,27 +507,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             ]);
 
             if (next === 'abort') {
-              await iterator.return?.();
               break;
             }
             if (next instanceof Error) {
-              const error = getTRPCErrorFromUnknown(next);
-              opts.onError?.({ error, path, type, ctx, req, input });
-              respond({
-                id,
-                jsonrpc,
-                error: getErrorShape({
-                  config: router._def._config,
-                  error,
-                  type,
-                  path,
-                  input,
-                  ctx,
-                }),
-              });
-              break;
+              // Report the error only after the iterator's disposal settles.
+              throw next;
             }
             if (next.done) {
+              completed = true;
               break;
             }
 
@@ -443,59 +542,32 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             next = null;
             result = null;
           }
+          ended = true;
+        } catch (cause) {
+          abort();
+          if (ended) {
+            reportError(cause);
+          } else if (isSuppressedError(cause)) {
+            // the client gets the iteration error, the server both
+            respondWithError(cause.suppressed);
+            reportError(cause.error);
+          } else {
+            respondWithError(cause);
+          }
+        }
+      };
 
-          respond({
-            id,
-            jsonrpc,
-            result: {
-              type: 'stopped',
-            },
-          });
-          clientSubscriptions.delete(id);
-        }).catch((cause) => {
-          clientSubscriptions.delete(id);
-          const error = getTRPCErrorFromUnknown(cause);
-          opts.onError?.({ error, path, type, ctx, req, input });
-          respond({
-            id,
-            jsonrpc,
-            error: getErrorShape({
-              config: router._def._config,
-              error,
-              type,
-              path,
-              input,
-              ctx,
-            }),
-          });
-          abortController.abort();
-        });
-        clientSubscriptions.set(id, abortController);
-
-        respond({
-          id,
-          jsonrpc,
-          result: {
-            type: 'started',
-          },
-        });
-      }).catch((cause) => {
-        // procedure threw an error
-        const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({ error, path, type, ctx, req, input });
-        respond({
-          id,
-          jsonrpc,
-          error: getErrorShape({
-            config: router._def._config,
-            error,
-            type,
-            path,
-            input,
-            ctx,
-          }),
-        });
-      });
+      const outcome = await settle(execute());
+      if (!outcome.ok) {
+        const error = getTRPCErrorFromUnknown(outcome.error);
+        if (!isCancelledSetup(error, abortController.signal)) {
+          respondWithError(error);
+          return;
+        }
+      }
+      if (type === 'subscription') {
+        respond({ id, jsonrpc, result: { type: 'stopped' } });
+      }
     }
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
@@ -640,7 +712,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       });
 
-      parsedMsgs.map((msg, index) => handleRequest(msg, index));
+      for (const [index, msg] of parsedMsgs.entries()) {
+        void handleRequest(msg, index, ctxPromise);
+      }
     });
 
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
