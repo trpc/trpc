@@ -295,13 +295,15 @@ function transition(
         ? to({ status: 'pulling' }, { type: 'next' })
         : close({ kind: 'failed', error: state.startedError });
     case 'openFailed':
-      return state.status === 'opening'
-        ? sendError(
-            event.error,
-            { then: 'stopped', cleanupError: null },
-            { type: 'abort' },
-          )
-        : illegal(state, event);
+      if (state.status !== 'opening') {
+        return illegal(state, event);
+      }
+      return sendError(
+        event.error,
+        { then: 'stopped', cleanupError: null },
+        { type: 'abort' },
+        ...(state.startedError === null ? [] : [report(state.startedError)]),
+      );
     case 'value':
     case 'completed':
     case 'stopped':
