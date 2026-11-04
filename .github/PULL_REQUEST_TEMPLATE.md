@@ -26,6 +26,7 @@ If the public API changes, show it in a short code block: before and after, or a
 <!--
 One bullet per docs page or example route this changes, linking this PR's Vercel preview: `[Page › Section](<preview URL>#<anchor>): what changed`.
 Run `pnpm preview-urls` for each project's preview URL; write the links when you open the PR, not "pending". `www/v11/docs/<path>.md` is at `/docs/<path>`.
+If a project builds no preview, say so and link the page's file in this PR's diff instead.
 Write "None" if no page or route changes.
 -->
 
