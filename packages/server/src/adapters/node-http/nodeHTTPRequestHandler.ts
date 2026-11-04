@@ -18,7 +18,11 @@ import {
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
 // oxlint-disable-next-line no-restricted-imports
-import { getErrorShape, run } from '../../unstable-core-do-not-import';
+import {
+  getDefaultErrorShape,
+  getErrorShape,
+  run,
+} from '../../unstable-core-do-not-import';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 import type {
   NodeHTTPRequest,
@@ -40,13 +44,25 @@ export function internal_exceptionHandler<
     const { res, req } = opts;
     const error = getTRPCErrorFromUnknown(cause);
 
-    const shape = getErrorShape({
-      config: opts.router._def._config,
-      error,
-      type: 'unknown',
-      path: undefined,
-      input: undefined,
-      ctx: undefined,
+    const config = opts.router._def._config;
+    const shape = run(() => {
+      try {
+        return getErrorShape({
+          config,
+          error,
+          type: 'unknown',
+          path: undefined,
+          input: undefined,
+          ctx: undefined,
+        });
+      } catch {
+        // a throwing `errorFormatter` must not stop the response
+        return getDefaultErrorShape({
+          error,
+          path: undefined,
+          isDev: config.isDev,
+        });
+      }
     });
 
     opts.onError?.({
@@ -57,6 +73,12 @@ export function internal_exceptionHandler<
       input: undefined,
       ctx: undefined,
     });
+
+    if (res.headersSent) {
+      // a body that failed while streaming; writing again would throw
+      res.end();
+      return;
+    }
 
     const transformed = transformTRPCResponse(opts.router._def._config, {
       error: shape,
