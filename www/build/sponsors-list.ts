@@ -64,7 +64,8 @@ export const minWeight = 5;
  * `maxWeight`. Above the floor it's in proportion to what they paid, so
  * the top sponsors stay clearly the biggest, and the floor keeps the
  * smallest circle in the cloud a fair fraction of the largest. It's kept
- * to a tenth, so sponsors who paid nearly as much as each other don't tie.
+ * to a tenth, so sponsors who paid nearly as much as each other rarely
+ * tie; only shares about a thousandth apart or closer can.
  */
 export function weightFor(share: number) {
   const clamped = Math.min(1, Math.max(0, share));
