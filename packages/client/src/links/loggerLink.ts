@@ -230,18 +230,12 @@ const defaultLogger =
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink<TRouter> {
-  const { enabled = () => true } = opts;
+  const { enabled = () => true, console: c = console } = opts;
 
   const colorMode =
     opts.colorMode ?? (typeof window === 'undefined' ? 'ansi' : 'css');
   const withContext = opts.withContext ?? colorMode === 'css';
-  const {
-    logger = defaultLogger({
-      c: opts.console === undefined ? console : opts.console,
-      colorMode,
-      withContext,
-    }),
-  } = opts;
+  const { logger = defaultLogger({ c, colorMode, withContext }) } = opts;
 
   return () => {
     return ({ op, next }) => {
