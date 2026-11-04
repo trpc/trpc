@@ -4,7 +4,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import {
   createDeferred,
-  makeResource,
+  makeAsyncResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import type WebSocket from 'ws';
 
@@ -52,9 +52,10 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
       }
     });
   });
-  using _cleanup = makeResource({}, () => {
+  await using _cleanup = makeAsyncResource({}, async () => {
     gate.resolve();
     for (const ws of serverSockets) ws.terminate();
+    await ctx.wsClient.close();
   });
 
   const onData = vi.fn();
