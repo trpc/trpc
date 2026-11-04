@@ -2199,6 +2199,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       receivedFor,
       observe,
       waitForOpen,
+      holdConnectionParams,
       failConnectionParams,
     } = setup();
     await using _ctx = ctx;
@@ -2208,6 +2209,8 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       ...observe(seen),
       onData: (value) => seen.push(value),
     });
+    // Throwing comes first, so this holds back only the attempt after.
+    const release = holdConnectionParams();
     try {
       await vi.waitFor(() => {
         expect(valuesStarted).toHaveBeenCalledTimes(1);
@@ -2233,6 +2236,11 @@ describe('a server-requested reconnect hands subscriptions off', () => {
         expect(seen).toContain('connecting');
       });
       failConnectionParams(false);
+      await vi.waitFor(() => {
+        expect(ctx.wsClient.connection?.state).toBe('connecting');
+        expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
+      });
+      release.resolve();
       expect(await greeting).toBe('hello');
       await vi.waitFor(() => {
         expect(valuesStarted).toHaveBeenCalledTimes(2);
@@ -2244,6 +2252,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       expect(seen.filter((entry) => entry === 'stopped')).toEqual([]);
     } finally {
       failConnectionParams(false);
+      release.resolve();
       subscription.unsubscribe();
       await ctx.wsClient.close();
     }

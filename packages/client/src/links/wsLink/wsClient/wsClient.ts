@@ -276,7 +276,11 @@ export class WsClient {
    * The current WebSocket and its state, or `null` when there is no socket.
    */
   public get connection() {
-    return backwardCompatibility(this.activeConnection);
+    return backwardCompatibility(
+      this.activeConnection.ws
+        ? this.activeConnection
+        : (this.nextConnection ?? this.activeConnection),
+    );
   }
 
   /**
@@ -285,6 +289,10 @@ export class WsClient {
    * reconnection state in the `reconnecting` promise.
    */
   private reconnecting: Promise<void> | null = null;
+  /**
+   * The connection a reconnect is opening to replace the active one.
+   */
+  private nextConnection: WsConnection | null = null;
   /**
    * The retry attempt that opened the current connection.
    */
@@ -341,11 +349,14 @@ export class WsClient {
           }
 
           const next = this.createConnection();
+          this.nextConnection = next;
           try {
             await next.open();
           } catch (error) {
             await next.close().catch(() => null);
             throw error;
+          } finally {
+            this.nextConnection = null;
           }
 
           if (this.allowReconnect) {
