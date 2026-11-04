@@ -5,7 +5,7 @@ import { createWSClient } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { sleep } from '@trpc/server/unstable-core-do-not-import';
+import { makeResource, sleep } from '@trpc/server/unstable-core-do-not-import';
 
 function createRouter() {
   const t = initTRPC.create();
@@ -24,13 +24,10 @@ function captureUncaught() {
   const onUncaught = (cause: unknown) => uncaught.push(cause);
   process.on('uncaughtException', onUncaught);
   process.on('unhandledRejection', onUncaught);
-  return {
-    uncaught,
-    [Symbol.dispose]() {
-      process.off('uncaughtException', onUncaught);
-      process.off('unhandledRejection', onUncaught);
-    },
-  };
+  return makeResource({ uncaught }, () => {
+    process.off('uncaughtException', onUncaught);
+    process.off('unhandledRejection', onUncaught);
+  });
 }
 
 async function getUnusedPort() {
@@ -44,7 +41,7 @@ async function getUnusedPort() {
 type ConnectionState = TRPCConnectionState<TRPCClientError<any>>;
 
 function causeOf(state: ConnectionState) {
-  return (state.error?.cause as Error | undefined)?.cause;
+  return state.error?.cause?.cause;
 }
 
 describe('connectionParams errors', () => {
