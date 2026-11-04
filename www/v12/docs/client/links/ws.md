@@ -45,6 +45,8 @@ When the connection drops, subscriptions subscribe again from their last [`track
 
 A connection that doesn't open, because the WebSocket fails or `connectionParams` throws, counts as a dropped one: subscriptions try again after `delay`, and queries and mutations fail. The call that gives up fails with `NETWORK_ERROR`, and its `cause` is the error that kept the connection from opening, such as the one `connectionParams` threw.
 
+`attempts` counts the connections in a row that dropped before the server sent anything; one that it answered on starts the count again. An error the server sends for the whole connection, such as an unsupported protocol version, fails every call on it, subscriptions included, with that error instead of reconnecting, so a server that keeps refusing can't keep a subscription reconnecting.
+
 ### Rolling deploys
 
 A server that is shutting down drains its connections ([Rolling deploys](../../adapters/overview.md#rolling-deploys)) and sends each client a `reconnect` message. The link then:
