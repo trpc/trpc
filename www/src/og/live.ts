@@ -2,7 +2,8 @@
  * What a social card shows that changes after a deploy, fetched when the
  * card is drawn: the home card's GitHub stars and npm downloads, and the
  * avatars of a post's authors, and the sponsors on `/sponsor`'s card or
- * along any other card's foot (`avatar.ts`). A fetch
+ * along any other card's foot, and in the READMEs' sponsor cloud
+ * (`avatar.ts`). A fetch
  * that fails leaves its part out, and the card is cached briefly
  * (`cacheControl`), so the next request tries again.
  */
@@ -127,6 +128,15 @@ const onRequest = Avatars.layer({ retries: 1, timeout: '3 seconds' }).pipe(
 /** What `card` shows live, for `routes/og.$.ts`. */
 export const fetchLive = (card: OgCard) =>
   Effect.runPromise(live(card).pipe(Effect.provide(onRequest)));
+
+/**
+ * The avatars of `images` that load, by URL, for the sponsor cloud
+ * (`sponsor-cloud.ts`): all at once, as a card's.
+ */
+export const fetchCloudAvatars = (images: ReadonlyArray<string>) =>
+  Effect.runPromise(
+    fetchAvatars(images, 'unbounded').pipe(Effect.provide(onRequest)),
+  );
 
 /**
  * How long the CDN keeps `card`'s image: the home card's numbers for a

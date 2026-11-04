@@ -155,6 +155,8 @@ export const sponsorTierUrl = (tierId: number) =>
 
 /** `/sponsor`, the tiers and what partners get; trpc.io's `/pricing` redirects there. */
 export const sponsorPage = {
+  /** The id of the sponsor cloud's heading, which the READMEs' cloud links to. */
+  cloudId: 'sponsors',
   description:
     'tRPC is MIT licensed and kept going by its sponsors. Silver and Gold sponsors are partners, featured across the site and the README.',
   /** The hero's heading, and its social card's. */

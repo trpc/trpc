@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Layer, Path, Redacted, Result } from 'effect';
@@ -25,9 +26,14 @@ import {
   type OpenCollectiveBacker,
   openCollectiveUrl,
 } from './sponsors-opencollective.ts';
-import { endMarker, startMarker } from './sponsors-readme.ts';
+import {
+  endMarker,
+  startMarker,
+  withSponsorsBlock,
+} from './sponsors-readme.ts';
 import {
   openCollectiveSummary,
+  publishedReadmes,
   readmeFromSponsorsFile,
   sponsoredAccounts,
   type SponsorsFiles,
@@ -63,18 +69,36 @@ const config: SponsorsConfig = {
   shownPrivately: [],
 };
 
-/** A temp dir with a README and an old `sponsors.json`, by path. */
+const packageReadme = [
+  '# `@trpc/server`',
+  '',
+  '## Sponsors',
+  '',
+  startMarker,
+  endMarker,
+  '',
+].join('\n');
+
+/** A temp dir with the repo's README, a package's, and an old `sponsors.json`, by path. */
 const fixture = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const root = yield* fs.makeTempDirectoryScoped({ prefix: 'sponsors-sync-' });
-  const files: SponsorsFiles = {
+  const paths = {
+    packageReadme: path.join(root, 'packages/server/README.md'),
     readme: path.join(root, 'README.md'),
     sponsorsFile: path.join(root, 'sponsors.json'),
   };
-  yield* fs.writeFileString(files.readme, readme);
-  yield* fs.writeFileString(files.sponsorsFile, '[]\n');
-  return files;
+  yield* fs.makeDirectory(path.join(root, 'packages/server'), {
+    recursive: true,
+  });
+  yield* fs.writeFileString(paths.readme, readme);
+  yield* fs.writeFileString(paths.packageReadme, packageReadme);
+  yield* fs.writeFileString(paths.sponsorsFile, '[]\n');
+  return {
+    ...paths,
+    readmes: [paths.readme, paths.packageReadme],
+  } satisfies SponsorsFiles;
 });
 
 function github(respond: (sent: SentQuery) => ReadonlyArray<unknown>) {
@@ -133,7 +157,7 @@ describe('syncSponsors', () => {
         const files = yield* fixture;
         const message = yield* sync(files);
         expect(message).toBe(
-          `Wrote 3 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+          `Wrote 3 sponsors to ${files.sponsorsFile}, ${files.readme}, ${files.packageReadme}.`,
         );
         const fs = yield* FileSystem.FileSystem;
         const json = yield* fs.readFileString(files.sponsorsFile);
@@ -168,6 +192,14 @@ describe('syncSponsors', () => {
           true,
         );
         expect(written).not.toContain('the old list');
+        expect(written).toContain(
+          '<a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=',
+        );
+        const block = (text: string) =>
+          text.slice(text.indexOf(startMarker), text.indexOf(endMarker));
+        expect(block(yield* fs.readFileString(files.packageReadme))).toBe(
+          block(written),
+        );
         const at = (text: string) => written.indexOf(text);
         expect(at('### Gold partners')).toBeGreaterThan(-1);
         expect(at('alt="INITECH"')).toBeGreaterThan(at('### Gold partners'));
@@ -227,7 +259,7 @@ describe('syncSponsors', () => {
 
         fanMonthly = 250;
         expect(yield* syncWhenSponsorsChange).toBe(
-          `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+          `Wrote 2 sponsors to ${files.sponsorsFile}, ${files.readme}, ${files.packageReadme}.`,
         );
         expect(yield* fs.readFileString(files.sponsorsFile)).toContain(
           '"tier": "bronze"',
@@ -235,7 +267,7 @@ describe('syncSponsors', () => {
 
         logins = ['initech', 'newcomer'];
         expect(yield* syncWhenSponsorsChange).toBe(
-          `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+          `Wrote 2 sponsors to ${files.sponsorsFile}, ${files.readme}, ${files.packageReadme}.`,
         );
         const after: ReadonlyArray<{ login: string }> = JSON.parse(
           yield* fs.readFileString(files.sponsorsFile),
@@ -301,7 +333,7 @@ describe('syncSponsors', () => {
 
         broken = ['initech'];
         expect(yield* syncWhenSponsorsChange).toBe(
-          `Wrote 3 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+          `Wrote 3 sponsors to ${files.sponsorsFile}, ${files.readme}, ${files.packageReadme}.`,
         );
         expect(yield* imageless).toEqual([]);
         expect(yield* fs.readFileString(files.readme)).toContain('alt="FAN"');
@@ -399,6 +431,27 @@ describe('syncSponsors', () => {
     },
   );
 
+  it.effect('writes nothing when a README lacks the markers', () => {
+    const fake = github((sent) =>
+      isPaymentsQuery(sent)
+        ? [paymentNode('fan', 2_000)]
+        : [sponsorshipNode('fan')],
+    );
+    return Effect.gen(function* () {
+      const files = yield* fixture;
+      const fs = yield* FileSystem.FileSystem;
+      yield* fs.writeFileString(files.packageReadme, '# No sponsors here\n');
+      const synced = yield* Effect.result(sync(files));
+      expect(Result.isFailure(synced) && synced.failure.message).toBe(
+        `${files.packageReadme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
+      );
+      expect(yield* fs.readFileString(files.sponsorsFile)).toBe('[]\n');
+      expect(yield* fs.readFileString(files.readme)).toBe(readme);
+    }).pipe(
+      Effect.provide(Layer.mergeAll(NodeServices.layer, fake.layer, avatars())),
+    );
+  });
+
   it.effect("writes nothing when no small sponsor's avatar loads", () => {
     const fake = github((sent) =>
       isPaymentsQuery(sent)
@@ -421,6 +474,7 @@ describe('syncSponsors', () => {
       );
       expect(yield* fs.readFileString(files.sponsorsFile)).toBe('[]\n');
       expect(yield* fs.readFileString(files.readme)).toBe(readme);
+      expect(yield* fs.readFileString(files.packageReadme)).toBe(packageReadme);
     }).pipe(
       Effect.provide(
         Layer.mergeAll(
@@ -456,6 +510,9 @@ describe('syncSponsors', () => {
         );
         expect(yield* fs.readFileString(files.sponsorsFile)).toBe('[]\n');
         expect(yield* fs.readFileString(files.readme)).toBe(readme);
+        expect(yield* fs.readFileString(files.packageReadme)).toBe(
+          packageReadme,
+        );
       }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, avatars())));
     },
   );
@@ -548,7 +605,7 @@ describe('readmeFromSponsorsFile', () => {
         ]),
       );
       expect(yield* readmeFromSponsorsFile(files)).toBe(
-        `Wrote 2 sponsors to ${files.readme}.`,
+        `Wrote 2 sponsors to ${files.readme}, ${files.packageReadme}.`,
       );
       const written = yield* fs.readFileString(files.readme);
       expect(written).toContain(
@@ -558,21 +615,36 @@ describe('readmeFromSponsorsFile', () => {
         '<a href="https://opencollective.com/hooli"><img src="https://images.opencollective.com/hooli/logo.png?height=200"',
       );
       expect(yield* readmeFromSponsorsFile(files)).toBe(
-        `${files.readme} already lists the 2 sponsors.`,
+        `${files.readme}, ${files.packageReadme} already list the 2 sponsors.`,
       );
       expect(yield* fs.readFileString(files.readme)).toBe(written);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
-  it.effect('fails on a README without the markers', () =>
+  it.effect('fails on a README without the markers, and writes none', () =>
     Effect.gen(function* () {
       const files = yield* fixture;
       const fs = yield* FileSystem.FileSystem;
-      yield* fs.writeFileString(files.readme, '# No sponsors here\n');
+      yield* fs.writeFileString(
+        files.sponsorsFile,
+        JSON.stringify([
+          {
+            createdAt: 1,
+            imgSrc: 'https://avatars.githubusercontent.com/u/1?v=4',
+            link: 'https://github.com/fan',
+            login: 'fan',
+            name: 'Fan',
+            source: 'github',
+            weight: 40,
+          },
+        ]),
+      );
+      yield* fs.writeFileString(files.packageReadme, '# No sponsors here\n');
       const result = yield* Effect.result(readmeFromSponsorsFile(files));
       expect(Result.isFailure(result) && result.failure.message).toBe(
-        `${files.readme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
+        `${files.packageReadme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
       );
+      expect(yield* fs.readFileString(files.readme)).toBe(readme);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
@@ -603,6 +675,57 @@ describe('readmeFromSponsorsFile', () => {
         );
       }
       expect(yield* fs.readFileString(files.readme)).toBe(readme);
+      expect(yield* fs.readFileString(files.packageReadme)).toBe(packageReadme);
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+});
+
+describe('publishedReadmes', () => {
+  it.effect("lists each published package's README, not a private one's", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const root = yield* fs.makeTempDirectoryScoped({
+        prefix: 'sponsors-packages-',
+      });
+      const write = (file: string, text: string) =>
+        Effect.andThen(
+          fs.makeDirectory(path.dirname(path.join(root, file)), {
+            recursive: true,
+          }),
+          fs.writeFileString(path.join(root, file), text),
+        );
+      yield* write('server/package.json', '{"name":"@trpc/server"}');
+      yield* write('server/README.md', packageReadme);
+      yield* write('client/package.json', '{"private":false}');
+      yield* write('client/README.md', packageReadme);
+      yield* write('tests/package.json', '{"private":true}');
+      yield* write('tests/README.md', '# Tests');
+      yield* write('no-readme/package.json', '{}');
+      yield* write('not-a-package/README.md', '# Notes');
+      expect(yield* publishedReadmes(root)).toEqual([
+        path.join(root, 'client/README.md'),
+        path.join(root, 'server/README.md'),
+      ]);
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect("gives every published package's README the sponsors markers", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const readmes = yield* publishedReadmes(
+        fileURLToPath(new URL('../../packages', import.meta.url)),
+      );
+      expect(readmes.map((readme) => readme.split('/').at(-2))).toEqual(
+        expect.arrayContaining(['client', 'react-query', 'server']),
+      );
+      expect(readmes.some((readme) => readme.includes('/tests/'))).toBe(false);
+      for (const readme of readmes) {
+        expect(
+          withSponsorsBlock(yield* fs.readFileString(readme), ''),
+          readme,
+        ).toBeDefined();
+      }
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

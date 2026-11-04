@@ -1,8 +1,10 @@
 import { describe, expect, it } from '@effect/vitest';
 
+import { sponsorCloudVersion } from '../src/og/sponsor-cloud.ts';
 import type { Sponsor } from '../src/sponsors.ts';
 import {
   endMarker,
+  sponsorCloudMarkdown,
   sponsorsMarkdown,
   startMarker,
   withSponsorsBlock,
@@ -38,17 +40,21 @@ describe('sponsorsMarkdown', () => {
     expect(markdown).not.toContain('broken');
   });
 
-  it('puts each tier first, by rank, then everyone else by who gave the most', () => {
-    expect(
-      sponsorsMarkdown([
-        sponsor('b1', 3),
-        sponsor('s2', 100, 0, { rank: 3, tier: 'silver' }),
-        sponsor('g', 50, 0, { rank: 1, tier: 'gold' }),
-        sponsor('b2', 9),
-        sponsor('s1', 20, 0, { rank: 2, tier: 'silver' }),
-      ]),
-    ).toBe(
+  it('puts the cloud first, then each tier, by rank, then everyone else by who gave the most', () => {
+    const sponsors = [
+      sponsor('b1', 3),
+      sponsor('s2', 100, 0, { rank: 3, tier: 'silver' }),
+      sponsor('g', 50, 0, { rank: 1, tier: 'gold' }),
+      sponsor('b2', 9),
+      sponsor('s1', 20, 0, { rank: 2, tier: 'silver' }),
+    ];
+    const version = sponsorCloudVersion(sponsors);
+    expect(sponsorsMarkdown(sponsors)).toBe(
       [
+        '<p align="center">',
+        `  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=${version}" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>`,
+        '</p>',
+        '',
         '### Gold partners',
         '',
         '<table>',
@@ -107,6 +113,34 @@ describe('sponsorsMarkdown', () => {
     expect(markdown).toContain('href="https://x.dev/?a=&quot;b&quot;"');
     expect(markdown).toContain(
       'alt="Dr. &lt;B&gt; &amp; &quot;Co&quot;"/><br />Dr. &lt;B&gt; &amp; &quot;Co&quot;</a>',
+    );
+  });
+});
+
+describe('sponsorCloudMarkdown', () => {
+  it('links the cloud to its place on /sponsor, at a version that changes with who it draws', () => {
+    const sponsors = [sponsor('a', 40), sponsor('b', 20)];
+    const src = (list: ReadonlyArray<Sponsor>) =>
+      /src="([^"]+)"/.exec(sponsorCloudMarkdown(list))?.[1];
+    expect(src(sponsors)).toMatch(
+      /^https:\/\/trpc\.io\/og\/sponsor-cloud\.png\?v=[0-9a-f]{8}$/,
+    );
+    expect(sponsorCloudMarkdown(sponsors)).toContain(
+      '<a href="https://trpc.io/sponsor#sponsors">',
+    );
+    expect(src([...sponsors, { ...sponsor('c', 10), imageless: true }])).toBe(
+      src(sponsors),
+    );
+    expect(src([sponsor('a', 41), sponsor('b', 20)])).not.toBe(src(sponsors));
+    expect(src([sponsor('a', 40)])).not.toBe(src(sponsors));
+    expect(
+      src([sponsor('a', 40), { ...sponsor('b', 20), name: 'B Co' }]),
+    ).not.toBe(src(sponsors));
+  });
+
+  it('leaves the cloud out when it would draw no one', () => {
+    expect(sponsorsMarkdown([{ ...sponsor('a', 40), imageless: true }])).toBe(
+      '',
     );
   });
 });

@@ -44,6 +44,16 @@ describe('avatarUrl', () => {
       'https://evilgithubusercontent.com/a.png',
     );
   });
+
+  it('keeps an Open Collective height the URL asks for', () => {
+    expect(
+      avatarUrl(
+        'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=240',
+      ),
+    ).toBe(
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=240',
+    );
+  });
 });
 
 describe('sizableSvg', () => {

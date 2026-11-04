@@ -1,14 +1,23 @@
 /**
  * The sponsors section of a README, between its `SPONSORS:LIST` markers:
- * a table per tier (`sponsorTiers` in `src/sponsors.ts`), by rank, avatars
- * smaller down the tiers, then everyone else as backers, by who has given
- * the most. A small sponsor whose avatar didn't load is left out.
+ * the sponsor cloud as a picture linking to the cloud on `/sponsor`
+ * (`src/og/sponsor-cloud.ts`), then a table per tier (`sponsorTiers` in
+ * `src/sponsors.ts`), by rank, avatars smaller down the tiers, then
+ * everyone else as backers, by who has given the most. A small sponsor
+ * whose avatar didn't load is left out. Every URL is absolute, so the
+ * packages' READMEs draw it on npm too.
  */
+import {
+  sponsorCloudDisplayWidth,
+  sponsorCloudUrl,
+} from '../src/og/sponsor-cloud.ts';
+import { site } from '../src/site.ts';
 import {
   avatarUrl,
   partnerTiers,
   type Sponsor,
   type SponsorTier,
+  sponsorPage,
   sponsorTiers,
 } from '../src/sponsors.ts';
 
@@ -54,7 +63,18 @@ function table(sponsors: ReadonlyArray<Sponsor>, tier: Tier) {
   return [`### ${tier.title}`, '', '<table>', ...rows, '</table>'].join('\n');
 }
 
-/** The tiers' Markdown (HTML tables, which GitHub renders with avatars). */
+/** The sponsor cloud's picture, centered, linking to the cloud on `/sponsor`. */
+export function sponsorCloudMarkdown(sponsors: ReadonlyArray<Sponsor>) {
+  const href = `${site.url}${sponsorPage.path}#${sponsorPage.cloudId}`;
+  const src = escapeHtml(sponsorCloudUrl(sponsors));
+  return [
+    '<p align="center">',
+    `  <a href="${href}"><img src="${src}" width="${sponsorCloudDisplayWidth}" alt="${site.name}'s sponsors, each drawn bigger the more they've given"/></a>`,
+    '</p>',
+  ].join('\n');
+}
+
+/** The cloud and the tiers' Markdown (HTML tables, which GitHub renders with avatars). */
 export function sponsorsMarkdown(sponsors: ReadonlyArray<Sponsor>) {
   const byWeight = sponsors
     .filter((sponsor) => sponsor.imageless !== true)
@@ -77,10 +97,12 @@ export function sponsorsMarkdown(sponsors: ReadonlyArray<Sponsor>) {
       tier: backersTier,
     },
   ];
-  return tiers
-    .filter((entry) => entry.sponsors.length > 0)
-    .map((entry) => table(entry.sponsors, entry.tier))
-    .join('\n\n');
+  return [
+    ...(byWeight.length === 0 ? [] : [sponsorCloudMarkdown(sponsors)]),
+    ...tiers
+      .filter((entry) => entry.sponsors.length > 0)
+      .map((entry) => table(entry.sponsors, entry.tier)),
+  ].join('\n\n');
 }
 
 /**

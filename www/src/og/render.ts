@@ -1,5 +1,5 @@
 /**
- * Draws a social card as a PNG: satori lays it out as SVG and resvg
+ * Draws a social card, or the READMEs' sponsor cloud, as a PNG: satori lays it out as SVG and resvg
  * rasterizes it. Both run as WebAssembly, and the fonts, logo and wasm are
  * inlined, so the server build renders cards without `node_modules` or
  * files of its own.
@@ -8,6 +8,7 @@ import interRegular from '@fontsource/inter/files/inter-latin-400-normal.woff?in
 import interExtraBold from '@fontsource/inter/files/inter-latin-800-normal.woff?inline';
 import { initWasm, Resvg } from '@resvg/resvg-wasm';
 import resvgWasm from '@resvg/resvg-wasm/index_bg.wasm?inline';
+import type { ReactNode } from 'react';
 import satori, { type Font } from 'satori';
 
 import wordmarkSvg from '../../public/img/logo-text-black.svg?raw';
@@ -19,8 +20,10 @@ import {
   dataUri,
   drawnAssets,
   type OgCard,
+  sponsorCloudElement,
 } from './card.ts';
 import { type Live, noLive } from './live.ts';
+import { type CloudLayout, sponsorCloudWidth } from './sponsor-cloud.ts';
 
 /** The bytes of a `data:` URI that `?inline` made. */
 const inlined = (uri: string) =>
@@ -51,23 +54,39 @@ const load = async (): Promise<Assets> => {
 
 let assets: Promise<Assets> | undefined;
 
+const loaded = () =>
+  (assets ??= load().catch((error: unknown) => {
+    assets = undefined;
+    throw error;
+  }));
+
+const toPng = async (
+  element: ReactNode,
+  size: { readonly height: number; readonly width: number },
+) => {
+  const svg = await satori(element, { ...size, fonts });
+  const png = new Resvg(svg, { font: { loadSystemFonts: false } })
+    .render()
+    .asPng();
+  // A copy, which `Response` takes: its `BodyInit` wants an `ArrayBuffer`.
+  return new Uint8Array(png);
+};
+
 /** `ogCard` as a 1200×630 PNG, with what it shows `live`, and the sponsors in `footer` along its foot. */
 export async function renderOgImage(
   ogCard: OgCard,
   live: Live = noLive,
   footer?: CardFooter,
 ) {
-  assets ??= load().catch((error: unknown) => {
-    assets = undefined;
-    throw error;
-  });
-  const svg = await satori(cardElement(await assets, ogCard, live, footer), {
-    ...ogImageSize,
-    fonts,
-  });
-  const png = new Resvg(svg, { font: { loadSystemFonts: false } })
-    .render()
-    .asPng();
-  // A copy, which `Response` takes: its `BodyInit` wants an `ArrayBuffer`.
-  return new Uint8Array(png);
+  return toPng(cardElement(await loaded(), ogCard, live, footer), ogImageSize);
+}
+
+/** The sponsor cloud laid out as `layout` as a transparent PNG, with the `avatars` that loaded. */
+export async function renderSponsorCloud(
+  layout: CloudLayout,
+  avatars: ReadonlyMap<string, string> = new Map(),
+) {
+  await loaded();
+  const size = { height: layout.height, width: sponsorCloudWidth };
+  return toPng(sponsorCloudElement(layout.bubbles, avatars, size), size);
 }

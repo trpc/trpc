@@ -86,7 +86,9 @@ const mayPass = (error: AvatarError) =>
 
 /**
  * `https://github.com/KATT.png`, or an Open Collective avatar, at 128
- * pixels, the size the cards need.
+ * pixels, the size the cards need, unless `image` asks for a size of its
+ * own (`avatarUrl` in `sponsors.ts`): GitHub's `s` wins over `size`, and
+ * Open Collective's `height` is kept.
  */
 export const avatarUrl = (image: string) => {
   const url = new URL(image);
@@ -96,7 +98,10 @@ export const avatarUrl = (image: string) => {
   ) {
     url.searchParams.set('size', '128');
   }
-  if (url.hostname === 'images.opencollective.com') {
+  if (
+    url.hostname === 'images.opencollective.com' &&
+    !url.searchParams.has('height')
+  ) {
     url.searchParams.set('height', '128');
   }
   return url.href;
