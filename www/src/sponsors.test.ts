@@ -4,6 +4,7 @@ import list from '../sponsors.json';
 
 import {
   avatarUrl,
+  byMostGiven,
   cardFooter,
   cardFooterOf,
   drawnSponsors,
@@ -143,6 +144,25 @@ describe('drawnSponsors', () => {
     for (const sponsor of sponsors.filter((s) => s.imageless === true)) {
       expect(isSmallSponsor(sponsor)).toBe(true);
     }
+  });
+});
+
+describe('byMostGiven', () => {
+  it('orders by weight, then ties by rank, then by who started first', () => {
+    const list: ReadonlyArray<Sponsor> = [
+      { ...sponsor('later', 100), createdAt: 2 },
+      { ...sponsor('ranked-2', 100), rank: 2, tier: 'gold' },
+      sponsor('lighter', 50),
+      { ...sponsor('earlier', 100), createdAt: 1 },
+      { ...sponsor('ranked-1', 100), rank: 1, tier: 'gold' },
+    ];
+    expect(list.toSorted(byMostGiven).map(sponsorKey)).toEqual([
+      'github/ranked-1',
+      'github/ranked-2',
+      'github/earlier',
+      'github/later',
+      'github/lighter',
+    ]);
   });
 });
 
