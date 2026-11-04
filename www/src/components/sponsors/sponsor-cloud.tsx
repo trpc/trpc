@@ -56,6 +56,9 @@ const height = cloudHeight(bubbles);
 const recent = recentSponsorsOf(drawnSponsors, import.meta.env.BUILT_AT);
 const recentKeys = new Set(recent.sponsors.map(sponsorKey));
 
+/** How much of the viewport's height, under the header, the heart leaves free, so it fits whole. */
+const viewportPadding = '3rem';
+
 /** The cloud's widest, in px: `max-w-4xl`. */
 const maxWidth = 896;
 
@@ -217,10 +220,15 @@ export function SponsorCloud(props: {
   return (
     <div className={props.className}>
       <div
-        className="relative w-full"
+        className="relative mx-auto w-full"
         data-entrance={entrance}
         ref={alive}
-        style={{ aspectRatio: `1 / ${height}` } satisfies CSSProperties}
+        style={
+          {
+            aspectRatio: `1 / ${height}`,
+            maxWidth: `calc((100svh - var(--site-header) - ${viewportPadding}) / ${height})`,
+          } satisfies CSSProperties
+        }
       >
         {bubbles.map((bubble, index) => {
           const sponsor = bubble.sponsor;

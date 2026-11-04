@@ -2,14 +2,16 @@
 @import '@shikijs/twoslash/style-rich.css';
 @plugin '@tailwindcss/typography';
 
+/* How tall the sticky header (`SiteHeader`) is. */
 html {
-  scroll-padding-top: 4.5rem;
+  --site-header: 3.5rem;
+  scroll-padding-top: calc(var(--site-header) + 1rem);
 }
 
 /* Below `md`, on the pages that show it, the header has the partners' line (`PartnersBar`) too. */
 @media (width < 48rem) {
   html:has([data-partners-bar='shown']) {
-    scroll-padding-top: 6.75rem;
+    --site-header: 5.75rem;
   }
 }
 
