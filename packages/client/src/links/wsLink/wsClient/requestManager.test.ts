@@ -14,7 +14,7 @@ test('settles the request lifecycle when its error observer throws', async () =>
       },
     },
   );
-  const [request] = manager.flush();
+  const [request] = manager.all();
   assert(request);
   const onEnd = vi.fn();
   const ended = request.end.then(onEnd);

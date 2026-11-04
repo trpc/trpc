@@ -1,276 +1,289 @@
-import { behaviorSubject } from '@trpc/server/observable';
+import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-not-import';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
-import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
+import type { KeepAliveOptions } from './options';
+import { buildConnectionMessage, prepareUrl, reportUserError } from './utils';
 
 /**
- * Opens a WebSocket connection asynchronously and returns a promise
- * that resolves when the connection is successfully established.
- * The promise rejects if an error occurs during the connection attempt.
+ * A connection's phase. It only moves forward:
+ * `opening` → `ready` → `draining` → `closed`, and any phase can go straight
+ * to `closed`.
  */
-function asyncWsOpen(ws: WebSocket) {
-  const { promise, resolve, reject } = withResolvers<void>();
+export type ConnectionPhase =
+  /** Resolving the URL, waiting for the socket to open, sending `connectionParams`. */
+  | 'opening'
+  /** New requests are sent here. */
+  | 'ready'
+  /**
+   * Replaced: nothing new is sent here, the requests already sent finish
+   * here, and the client closes it once they have.
+   */
+  | 'draining'
+  /** Closed or lost. Only the user's `onClose` and `onError` still hear from it. */
+  | 'closed';
 
-  ws.addEventListener('open', () => {
-    ws.removeEventListener('error', reject);
-    resolve();
-  });
-  ws.addEventListener('error', reject);
-
-  return promise;
+/**
+ * What a connection tells its owner. Calls stop once the connection is
+ * `closed`, except `onSocketClose` and `onSocketError`, which report every
+ * socket's events to the user's callbacks.
+ */
+export interface ConnectionEvents {
+  /** The socket opened; `connectionParams` may still be pending. */
+  onSocketOpen: (connection: Connection) => void;
+  /** The socket is open and `connectionParams` were sent. */
+  onReady: (connection: Connection) => void;
+  /** Resolving the URL or `connectionParams` failed, or the socket couldn't be created. */
+  onOpenFailed: (connection: Connection, cause: unknown) => void;
+  onMessage: (
+    connection: Connection,
+    message: TRPCClientIncomingMessage,
+  ) => void;
+  /**
+   * Once per socket: its `close` event, or a keepAlive pong timeout, which
+   * doesn't wait for the closing handshake (`event` is then `undefined`).
+   */
+  onSocketClose: (
+    connection: Connection,
+    event: CloseEvent | undefined,
+  ) => void;
+  /** An `error` event before the socket closed. */
+  onSocketError: (connection: Connection, event: Event) => void;
 }
 
-const pongCallbacks = new WeakMap<WebSocket, ((() => void) | null)[]>();
+export interface ConnectionOptions {
+  WebSocketPonyfill: typeof WebSocket;
+  urlOptions: UrlOptionsWithConnectionParams;
+  keepAlive: KeepAliveOptions;
+  encoder: Encoder;
+  events: ConnectionEvents;
+  /**
+   * The `retryDelayMs` attempt index this connection was opened after, or
+   * `null` for an open that isn't a retry.
+   */
+  retryIndex: number | null;
+}
 
 /**
- * Sends "PING" on `ws` and calls `onPong`, if given, once its "PONG"
- * arrives. The server answers in order, so by then everything it sent before
- * it read this "PING" has arrived too.
+ * `WebSocket.readyState` values, fixed by the spec. Not every ponyfill puts
+ * them on its instances.
  */
-export function sendPing(ws: WebSocket, onPong: (() => void) | null) {
-  let callbacks = pongCallbacks.get(ws);
-  if (!callbacks) {
-    const queue: ((() => void) | null)[] = [];
-    callbacks = queue;
-    pongCallbacks.set(ws, queue);
+const READY_STATE = {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+} as const;
+
+let connectCount = 0;
+
+/**
+ * One WebSocket and everything tied to its lifetime: its listeners, its
+ * keepAlive timers and its phase. `close()` ends that scope: timers stop and
+ * the socket's later frames are dropped.
+ */
+export class Connection {
+  public readonly id = ++connectCount;
+  public readonly retryIndex: number | null;
+  public phase: ConnectionPhase = 'opening';
+  public ws: WebSocket | null = null;
+  /**
+   * Set when the server rejected this connection with an `id: null` error,
+   * e.g. because `createContext` threw, and cleared by any result, which
+   * proves it was accepted. A rejected connection's reconnect carries on with
+   * the backoff instead of starting over.
+   * @see https://github.com/trpc/trpc/issues/4774
+   */
+  public rejected = false;
+
+  private readonly opts: ConnectionOptions;
+  private closeReported = false;
+  private pingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private pongTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(opts: ConnectionOptions) {
+    this.opts = opts;
+    this.retryIndex = opts.retryIndex;
+  }
+
+  public start() {
+    prepareUrl(this.opts.urlOptions)
+      .then((url) => {
+        if (this.phase === 'closed') return;
+        const ws = new this.opts.WebSocketPonyfill(url);
+        // Handle text and binary messages consistently.
+        ws.binaryType = 'arraybuffer';
+        this.ws = ws;
+        this.listen(ws);
+      })
+      .catch((cause) => this.failOpen(cause));
+  }
+
+  /**
+   * Whether a message sent now goes out on this connection's socket.
+   */
+  public isWritable(): this is { ws: WebSocket } {
+    return (
+      (this.phase === 'ready' || this.phase === 'draining') &&
+      this.ws?.readyState === READY_STATE.OPEN
+    );
+  }
+
+  public send(data: Parameters<WebSocket['send']>[0]) {
+    if (!this.isWritable()) return false;
+    this.ws.send(data);
+    return true;
+  }
+
+  /**
+   * Stops taking new requests. The owner closes the connection once the
+   * requests already sent on it have settled.
+   */
+  public drain() {
+    if (this.phase === 'opening' || this.phase === 'ready') {
+      this.phase = 'draining';
+    }
+  }
+
+  /**
+   * Ends the connection's scope: stops its timers, closes its socket, and
+   * drops everything the socket still delivers except the user's `onClose`
+   * and `onError`.
+   */
+  public close() {
+    if (this.phase === 'closed') return;
+    this.phase = 'closed';
+    this.stopKeepAlive();
+
+    const ws = this.ws;
+    if (!ws) return;
+    if (ws.readyState === READY_STATE.CONNECTING) {
+      // Closing a socket that isn't open yet reports an error; wait for it.
+      ws.addEventListener('open', () => ws.close());
+    } else if (ws.readyState === READY_STATE.OPEN) {
+      ws.close();
+    }
+  }
+
+  private failOpen(cause: unknown) {
+    if (this.phase !== 'opening') return;
+    this.opts.events.onOpenFailed(this, cause);
+  }
+
+  private reportClose(event: CloseEvent | undefined) {
+    if (this.closeReported) return;
+    this.closeReported = true;
+    this.stopKeepAlive();
+    this.opts.events.onSocketClose(this, event);
+  }
+
+  private listen(ws: WebSocket) {
+    const { events, encoder } = this.opts;
+
+    ws.addEventListener('open', () => {
+      if (this.phase !== 'opening') return;
+      events.onSocketOpen(this);
+      if (this.opts.keepAlive.enabled) this.schedulePing();
+      this.sendConnectionParams().then(
+        () => {
+          if (this.phase !== 'opening') return;
+          this.phase = 'ready';
+          events.onReady(this);
+        },
+        (cause) => this.failOpen(cause),
+      );
+    });
+
     ws.addEventListener('message', ({ data }) => {
-      if (data === 'PONG') queue.shift()?.();
+      if (this.closeReported) return;
+      if (this.opts.keepAlive.enabled) this.onActivity(data);
+      if (data === 'PING') {
+        ws.send('PONG');
+        return;
+      }
+      if (data === 'PONG' || this.phase === 'closed') return;
+
+      let message: TRPCClientIncomingMessage;
+      try {
+        message = encoder.decode(data) as TRPCClientIncomingMessage;
+      } catch (error) {
+        reportUserError(error);
+        return;
+      }
+      events.onMessage(this, message);
+    });
+
+    ws.addEventListener('close', (event) => this.reportClose(event));
+
+    ws.addEventListener('error', (event) => {
+      if (this.closeReported) return;
+      events.onSocketError(this, event);
     });
   }
-  callbacks.push(onPong);
-  ws.send('PING');
-}
 
-interface PingPongOptions {
+  private async sendConnectionParams() {
+    const { connectionParams } = this.opts.urlOptions;
+    if (!connectionParams) return;
+    const message = await buildConnectionMessage(
+      connectionParams,
+      this.opts.encoder,
+    );
+    if (this.phase !== 'opening') return;
+    this.ws?.send(message);
+  }
+
   /**
-   * The interval (in milliseconds) between "PING" messages.
+   * Any frame restarts the ping interval; only a `PONG` clears a pending pong
+   * timeout.
    */
-  intervalMs: number;
+  private onActivity(data: unknown) {
+    if (data === 'PONG' && this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
+    this.schedulePing();
+  }
 
-  /**
-   * The timeout (in milliseconds) to wait for a "PONG" response before closing the connection.
-   */
-  pongTimeoutMs: number;
-}
-
-/**
- * Sets up a periodic ping-pong mechanism to keep the WebSocket connection alive.
- *
- * - Sends "PING" messages at regular intervals defined by `intervalMs`.
- * - If a "PONG" response is not received within the `pongTimeoutMs`, the WebSocket is closed.
- * - The ping timer resets upon receiving any message to maintain activity.
- * - Automatically starts the ping process when the WebSocket connection is opened.
- * - Cleans up timers when the WebSocket is closed.
- *
- * @param ws - The WebSocket instance to manage.
- * @param options - Configuration options for ping-pong intervals and timeouts.
- */
-function setupPingInterval(
-  ws: WebSocket,
-  { intervalMs, pongTimeoutMs }: PingPongOptions,
-) {
-  let pingTimeout: ReturnType<typeof setTimeout> | undefined;
-  let pongTimeout: ReturnType<typeof setTimeout> | undefined;
-
-  function start() {
-    pingTimeout = setTimeout(() => {
-      sendPing(ws, null);
-      pongTimeout = setTimeout(() => {
+  private schedulePing() {
+    if (this.pingTimeout) clearTimeout(this.pingTimeout);
+    const { intervalMs, pongTimeoutMs } = this.opts.keepAlive;
+    this.pingTimeout = setTimeout(() => {
+      const ws = this.ws;
+      if (!ws || ws.readyState !== READY_STATE.OPEN) return;
+      ws.send('PING');
+      if (this.pongTimeout) return;
+      this.pongTimeout = setTimeout(() => {
+        this.pongTimeout = null;
+        // A socket that is already closing was closed on purpose.
+        if (ws.readyState !== READY_STATE.OPEN) return;
         ws.close();
+        // An unresponsive server never answers the closing handshake, so the
+        // `close` event can come much later. Don't wait for it.
+        this.reportClose(undefined);
       }, pongTimeoutMs);
     }, intervalMs);
   }
 
-  function reset() {
-    clearTimeout(pingTimeout);
-    start();
-  }
-
-  function pong() {
-    clearTimeout(pongTimeout);
-    reset();
-  }
-
-  ws.addEventListener('open', start);
-  ws.addEventListener('message', ({ data }) => {
-    clearTimeout(pingTimeout);
-    start();
-
-    if (data === 'PONG') {
-      pong();
-    }
-  });
-  ws.addEventListener('close', () => {
-    clearTimeout(pingTimeout);
-    clearTimeout(pongTimeout);
-  });
-}
-
-export interface WebSocketConnectionOptions {
-  WebSocketPonyfill?: typeof WebSocket;
-  urlOptions: UrlOptionsWithConnectionParams;
-  keepAlive: PingPongOptions & {
-    enabled: boolean;
-  };
-  encoder: Encoder;
-}
-
-/**
- * Manages a WebSocket connection with support for reconnection, keep-alive mechanisms,
- * and observable state tracking.
- */
-export class WsConnection {
-  static connectCount = 0;
-  public id = ++WsConnection.connectCount;
-
-  private readonly WebSocketPonyfill: typeof WebSocket;
-  private readonly urlOptions: UrlOptionsWithConnectionParams;
-  private readonly keepAliveOpts: WebSocketConnectionOptions['keepAlive'];
-  private readonly encoder: Encoder;
-  public readonly wsObservable = behaviorSubject<WebSocket | null>(null);
-
-  constructor(opts: WebSocketConnectionOptions) {
-    this.WebSocketPonyfill = opts.WebSocketPonyfill ?? WebSocket;
-    if (!this.WebSocketPonyfill) {
-      throw new Error(
-        "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
-      );
-    }
-
-    this.urlOptions = opts.urlOptions;
-    this.keepAliveOpts = opts.keepAlive;
-    this.encoder = opts.encoder;
-  }
-
-  public get ws() {
-    return this.wsObservable.get();
-  }
-
-  private set ws(ws) {
-    this.wsObservable.next(ws);
-  }
-
-  /**
-   * Checks if the WebSocket connection is open and ready to communicate.
-   */
-  public isOpen(): this is { ws: WebSocket } {
-    return (
-      !!this.ws &&
-      this.ws.readyState === this.WebSocketPonyfill.OPEN &&
-      !this.openPromise
-    );
-  }
-
-  /**
-   * Checks if the WebSocket connection is closed or in the process of closing.
-   */
-  public isClosed(): this is { ws: WebSocket } {
-    return (
-      !!this.ws &&
-      (this.ws.readyState === this.WebSocketPonyfill.CLOSING ||
-        this.ws.readyState === this.WebSocketPonyfill.CLOSED)
-    );
-  }
-
-  /**
-   * Manages the WebSocket opening process, ensuring that only one open operation
-   * occurs at a time. Tracks the ongoing operation with `openPromise` to avoid
-   * redundant calls and ensure proper synchronization.
-   *
-   * Sets up the keep-alive mechanism and necessary event listeners for the connection.
-   *
-   * @returns A promise that resolves once the WebSocket connection is successfully opened.
-   */
-  private openPromise: Promise<void> | null = null;
-  public async open() {
-    if (this.openPromise) return this.openPromise;
-
-    this.id = ++WsConnection.connectCount;
-    const wsPromise = prepareUrl(this.urlOptions).then(
-      (url) => new this.WebSocketPonyfill(url),
-    );
-    this.openPromise = wsPromise.then(async (ws) => {
-      this.ws = ws;
-
-      // Set binaryType to handle both text and binary messages consistently
-      ws.binaryType = 'arraybuffer';
-
-      // Setup ping listener
-      ws.addEventListener('message', function ({ data }) {
-        if (data === 'PING') {
-          this.send('PONG');
-        }
-      });
-
-      if (this.keepAliveOpts.enabled) {
-        setupPingInterval(ws, this.keepAliveOpts);
-      }
-
-      ws.addEventListener('close', () => {
-        if (this.ws === ws) {
-          this.ws = null;
-        }
-      });
-
-      await asyncWsOpen(ws);
-
-      if (this.urlOptions.connectionParams) {
-        ws.send(
-          await buildConnectionMessage(
-            this.urlOptions.connectionParams,
-            this.encoder,
-          ),
-        );
-      }
-    });
-
-    try {
-      await this.openPromise;
-    } finally {
-      this.openPromise = null;
-    }
-  }
-
-  /**
-   * Closes the WebSocket connection gracefully.
-   * Waits for any ongoing open operation to complete before closing.
-   */
-  public async close() {
-    try {
-      await this.openPromise;
-    } finally {
-      this.ws?.close();
-    }
+  private stopKeepAlive() {
+    if (this.pingTimeout) clearTimeout(this.pingTimeout);
+    if (this.pongTimeout) clearTimeout(this.pongTimeout);
+    this.pingTimeout = null;
+    this.pongTimeout = null;
   }
 }
 
 /**
- * Provides a backward-compatible representation of the connection state.
+ * The shape `wsClient.connection` has always had.
  */
-export function backwardCompatibility(connection: WsConnection) {
-  if (connection.isOpen()) {
-    return {
-      id: connection.id,
-      state: 'open',
-      ws: connection.ws,
-    } as const;
-  }
+export function backwardCompatibility(connection: Connection | null) {
+  const ws = connection?.ws;
+  if (!connection || !ws) return null;
 
-  if (connection.isClosed()) {
-    return {
-      id: connection.id,
-      state: 'closed',
-      ws: connection.ws,
-    } as const;
+  if (ws.readyState === READY_STATE.CLOSING ||
+    ws.readyState === READY_STATE.CLOSED) {
+    return { id: connection.id, state: 'closed', ws } as const;
   }
-
-  if (!connection.ws) {
-    return null;
+  if (connection.phase === 'ready' && ws.readyState === READY_STATE.OPEN) {
+    return { id: connection.id, state: 'open', ws } as const;
   }
-
-  return {
-    id: connection.id,
-    state: 'connecting',
-    ws: connection.ws,
-  } as const;
+  return { id: connection.id, state: 'connecting', ws } as const;
 }

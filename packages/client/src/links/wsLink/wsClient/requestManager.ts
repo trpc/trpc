@@ -6,98 +6,65 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../../../TRPCClientError';
 import { withResolvers } from './utils';
+import type { Connection } from './wsConnection';
 
 export type TCallbacks = Observer<
   TRPCResponseMessage<unknown, inferRouterError<AnyTRPCRouter>>,
   TRPCClientError<AnyTRPCRouter>
 >;
 
-type MessageId = string;
-type MessageIdLike = string | number | null;
+type RequestId = TRPCClientOutgoingMessage['id'];
 
 /**
- * Represents a WebSocket request managed by the RequestManager.
- * Combines the network message, a utility promise (`end`) that mirrors the lifecycle
- * handled by `callbacks`, and a set of state monitoring callbacks.
+ * Where a request is. A request only hears frames from the connection it was
+ * sent on, so frames a replaced connection still delivers never reach it.
  */
-interface Request {
-  message: TRPCClientOutgoingMessage;
-  end: Promise<void>;
-  callbacks: TCallbacks;
-  /**
-   * The socket the request was sent on, or `null` while it's outgoing.
-   */
-  ws: WebSocket | null;
-  /**
-   * The socket a subscription is moving to. `ws` keeps delivering until this
-   * one confirms the subscription with `started`.
-   */
-  successor: WebSocket | null;
-  /**
-   * The event ids `ws` delivered while the subscription was moving, which
-   * its successor replays and are dropped from it.
-   */
-  overlapEventIds: Set<string> | null;
-  /**
-   * The sockets a subscription moved from, each until everything it sent
-   * before the stop has arrived. Their events without ids are still
-   * delivered, since the new socket may have started listening after they
-   * were sent.
-   */
-  movedFrom: Set<WebSocket>;
+export type RequestState =
+  /** Waiting for a ready connection. */
+  | { kind: 'queued' }
+  /** Sent on `connection`. */
+  | { kind: 'sent'; connection: Connection };
+
+/**
+ * One call over the WebSocket: the message on the wire, the observer it
+ * reports to, and `end`, which settles once the observer has completed or
+ * errored, even if the observer throws.
+ */
+export interface Request {
+  readonly message: TRPCClientOutgoingMessage;
+  readonly callbacks: TCallbacks;
+  readonly end: Promise<void>;
+  state: RequestState;
 }
 
 /**
- * Manages WebSocket requests, tracking their lifecycle and providing utility methods
- * for handling outgoing and pending requests.
- *
- * - **Outgoing requests**: Requests that are queued and waiting to be sent.
- * - **Pending requests**: Requests that have been sent and are in flight awaiting a response.
- *   For subscriptions, multiple responses may be received until the subscription is closed.
+ * Every live request, queued or sent, by the id it is sent under. Ids are
+ * unique per client, so a request is found by id alone, and its `state` says
+ * which connection may answer it.
  */
 export class RequestManager {
-  /**
-   * Stores requests that are outgoing, meaning they are registered but not yet sent over the WebSocket.
-   */
-  private outgoingRequests = new Array<Request & { id: MessageId }>();
+  private readonly requests = new Map<RequestId, Request>();
 
   /**
-   * Stores requests that are pending (in flight), meaning they have been sent over the WebSocket
-   * and are awaiting responses. For subscriptions, this includes requests
-   * that may receive multiple responses.
-   */
-  private pendingRequests: Record<MessageId, Request> = {};
-
-  /**
-   * Subscriptions sent again under a new id, by their earlier id, while
-   * sockets they moved from may still send events under that one.
-   */
-  private drainingRequests: Record<MessageId, Request> = {};
-
-  /**
-   * Registers a new request by adding it to the outgoing queue and setting up
-   * callbacks for lifecycle events such as completion or error.
+   * Queues a request.
    *
-   * @param message - The outgoing message to be sent.
-   * @param callbacks - Callback functions to observe the request's state.
-   * @returns A cleanup function to manually remove the request.
+   * @returns A function that removes it and completes its observer.
    */
   public register(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
     const { promise: end, resolve } = withResolvers<void>();
 
-    this.outgoingRequests.push({
-      id: String(message.id),
+    this.requests.set(message.id, {
       message,
       end,
-      ws: null,
-      successor: null,
-      overlapEventIds: null,
-      movedFrom: new Set(),
+      state: { kind: 'queued' },
       callbacks: {
         next: callbacks.next,
         complete: () => {
-          callbacks.complete();
-          resolve();
+          try {
+            callbacks.complete();
+          } finally {
+            resolve();
+          }
         },
         error: (e) => {
           try {
@@ -111,180 +78,73 @@ export class RequestManager {
 
     return () => {
       this.delete(message);
-      callbacks.complete();
-      resolve();
+      try {
+        callbacks.complete();
+      } finally {
+        resolve();
+      }
     };
   }
 
   /**
-   * Deletes a request from both the outgoing and pending collections, if it exists.
-   *
-   * Matches the message itself rather than its id: a retry reuses the id, and
-   * registers its request before the failed request with that id is deleted.
+   * Removes a request. A no-op for a request that is already gone.
    */
   public delete(message: TRPCClientOutgoingMessage) {
-    this.outgoingRequests = this.outgoingRequests.filter(
-      (request) => request.message !== message,
-    );
-    const id = String(message.id);
-    if (this.pendingRequests[id]?.message === message) {
-      delete this.pendingRequests[id];
-    }
-    for (const [drainingId, request] of Object.entries(this.drainingRequests)) {
-      if (request.message === message) {
-        delete this.drainingRequests[drainingId];
-      }
+    if (this.requests.get(message.id)?.message === message) {
+      this.requests.delete(message.id);
     }
   }
 
-  /**
-   * Moves all outgoing requests to the pending state and clears the outgoing queue.
-   *
-   * The caller is expected to handle the actual sending of the requests
-   * (e.g., sending them over the network) after this method is called.
-   *
-   * @param ws - The socket the requests are sent on.
-   * @returns The list of requests that were transitioned to the pending state.
-   */
-  public flush(ws: WebSocket | null = null) {
-    const requests = this.outgoingRequests;
-    this.outgoingRequests = [];
+  public get(id: RequestId | null) {
+    if (id === null) return null;
+    return this.requests.get(id) ?? null;
+  }
 
+  /**
+   * Marks every queued request as sent on `connection`.
+   *
+   * @returns Those requests, in the order they were registered. The caller
+   * sends them.
+   */
+  public flush(connection: Connection) {
+    const requests = this.queued();
     for (const request of requests) {
-      request.ws = ws;
-      request.successor = null;
-      request.movedFrom = new Set();
-      this.pendingRequests[request.id] = request;
+      request.state = { kind: 'sent', connection };
     }
     return requests;
   }
 
   /**
-   * Moves a pending request back to the outgoing queue, to be sent again
-   * with `id`. Its earlier id then matches only the sockets it's still
-   * draining; see `getDrainingRequest()`.
+   * Puts a sent request back in the queue, to be sent on the next ready
+   * connection.
    */
-  public requeue(
-    message: TRPCClientOutgoingMessage,
-    id: TRPCClientOutgoingMessage['id'],
-  ) {
-    const earlierId = String(message.id);
-    const request = this.pendingRequests[earlierId];
-    if (request?.message !== message) return;
-
-    delete this.pendingRequests[earlierId];
-    if (request.movedFrom.size) this.drainingRequests[earlierId] = request;
-    message.id = id;
-    this.outgoingRequests.push({
-      ...request,
-      id: String(id),
-      ws: null,
-      successor: null,
-      overlapEventIds: null,
-      movedFrom: new Set(),
-    });
+  public requeue(request: Request) {
+    request.state = { kind: 'queued' };
   }
 
-  /**
-   * Retrieves all currently pending requests, which are in flight awaiting responses
-   * or handling ongoing subscriptions.
-   */
-  public getPendingRequests() {
-    return Object.values(this.pendingRequests);
+  public all() {
+    return [...this.requests.values()];
   }
 
-  /**
-   * Retrieves a specific pending request by its message ID.
-   */
-  public getPendingRequest(messageId: MessageIdLike) {
-    if (messageId === null) return null;
-
-    return this.pendingRequests[String(messageId)];
+  public queued() {
+    return this.all().filter((request) => request.state.kind === 'queued');
   }
 
-  /**
-   * Retrieves a subscription sent again under a new id by its earlier id,
-   * while a socket it moved from may still send events under that one.
-   */
-  public getDrainingRequest(messageId: MessageIdLike) {
-    if (messageId === null) return null;
-
-    return this.drainingRequests[String(messageId)];
-  }
-
-  /**
-   * Retrieves the subscriptions sent again under a new id whose earlier id
-   * is still in use on a socket they moved from.
-   */
-  public getDrainingRequests() {
-    return Object.values(this.drainingRequests);
-  }
-
-  /**
-   * Forgets the earlier ids of subscriptions no longer draining any socket.
-   */
-  public deleteDrained() {
-    for (const [id, request] of Object.entries(this.drainingRequests)) {
-      if (!request.movedFrom.size) delete this.drainingRequests[id];
-    }
-  }
-
-  /**
-   * Retrieves all outgoing requests, which are waiting to be sent.
-   */
-  public getOutgoingRequests() {
-    return this.outgoingRequests;
-  }
-
-  /**
-   * Retrieves all requests, both outgoing and pending, with their respective states.
-   *
-   * @returns An array of all requests with their state ("outgoing" or "pending").
-   */
-  public getRequests() {
-    return [
-      ...this.getOutgoingRequests().map((request) => ({
-        state: 'outgoing' as const,
-        message: request.message,
-        end: request.end,
-        callbacks: request.callbacks,
-      })),
-      ...this.getPendingRequests().map((request) => ({
-        state: 'pending' as const,
-        message: request.message,
-        end: request.end,
-        callbacks: request.callbacks,
-      })),
-    ];
-  }
-
-  /**
-   * Checks if there are any pending requests, including ongoing subscriptions.
-   */
-  public hasPendingRequests() {
-    return this.getPendingRequests().length > 0;
-  }
-
-  /**
-   * Checks if there are any pending subscriptions
-   */
-  public hasPendingSubscriptions() {
-    return this.getPendingRequests().some(
-      (request) => request.message.method === 'subscription',
+  public sentOn(connection: Connection) {
+    return this.all().filter(
+      (request) =>
+        request.state.kind === 'sent' &&
+        request.state.connection === connection,
     );
   }
 
-  /**
-   * Checks if a message is still waiting to be sent.
-   */
-  public isOutgoing(message: TRPCClientOutgoingMessage) {
-    return this.outgoingRequests.some((request) => request.message === message);
+  public isEmpty() {
+    return this.requests.size === 0;
   }
 
-  /**
-   * Checks if there are any outgoing requests waiting to be sent.
-   */
-  public hasOutgoingRequests() {
-    return this.outgoingRequests.length > 0;
+  public hasSubscriptions() {
+    return this.all().some(
+      (request) => request.message.method === 'subscription',
+    );
   }
 }
