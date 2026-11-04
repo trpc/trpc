@@ -58,6 +58,7 @@ export class WsClient {
   >;
   private readonly lazyMode: boolean;
   private readonly encoder: Encoder;
+  private readonly closeOnPongTimeout = new WeakMap<WebSocket, () => void>();
 
   constructor(opts: WebSocketClientOptions) {
     this.encoder = opts.experimental_encoder ?? jsonEncoder;
@@ -95,6 +96,7 @@ export class WsClient {
         ...opts.keepAlive,
       },
       encoder: this.encoder,
+      onPongTimeout: (ws) => this.closeOnPongTimeout.get(ws)?.(),
     });
     this.activeConnection.wsObservable.subscribe({
       next: (ws) => {
@@ -414,7 +416,12 @@ export class WsClient {
       this.handleResponseMessage(incomingMessage);
     });
 
-    ws.addEventListener('close', (event) => {
+    // Runs once per socket: on its `close` event, or earlier on a keepAlive
+    // pong timeout, which doesn't wait for the closing handshake.
+    let closed = false;
+    const onClose = (event?: CloseEvent) => {
+      if (closed) return;
+      closed = true;
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onClose?.(event));
 
@@ -426,9 +433,12 @@ export class WsClient {
           }),
         );
       }
-    });
+    };
+    ws.addEventListener('close', onClose);
+    this.closeOnPongTimeout.set(ws, () => onClose());
 
     ws.addEventListener('error', (event) => {
+      if (closed) return;
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
 

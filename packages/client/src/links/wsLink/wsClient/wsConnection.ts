@@ -47,6 +47,7 @@ interface PingPongOptions {
 function setupPingInterval(
   ws: WebSocket,
   { intervalMs, pongTimeoutMs }: PingPongOptions,
+  onPongTimeout: () => void,
 ) {
   let pingTimeout: ReturnType<typeof setTimeout> | undefined;
   let pongTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -55,7 +56,10 @@ function setupPingInterval(
     pingTimeout = setTimeout(() => {
       ws.send('PING');
       pongTimeout = setTimeout(() => {
+        // A socket that is already closing was closed on purpose.
+        if (ws.readyState !== ws.OPEN) return;
         ws.close();
+        onPongTimeout();
       }, pongTimeoutMs);
     }, intervalMs);
   }
@@ -92,6 +96,12 @@ export interface WebSocketConnectionOptions {
     enabled: boolean;
   };
   encoder: Encoder;
+  /**
+   * Called when a keepAlive pong times out, once the socket is closing. Its
+   * `close` event can come much later: an unresponsive server never answers
+   * the closing handshake.
+   */
+  onPongTimeout?: (ws: WebSocket) => void;
 }
 
 /**
@@ -106,6 +116,7 @@ export class WsConnection {
   private readonly urlOptions: UrlOptionsWithConnectionParams;
   private readonly keepAliveOpts: WebSocketConnectionOptions['keepAlive'];
   private readonly encoder: Encoder;
+  private readonly onPongTimeout: WebSocketConnectionOptions['onPongTimeout'];
   public readonly wsObservable = behaviorSubject<WebSocket | null>(null);
 
   constructor(opts: WebSocketConnectionOptions) {
@@ -119,6 +130,7 @@ export class WsConnection {
     this.urlOptions = opts.urlOptions;
     this.keepAliveOpts = opts.keepAlive;
     this.encoder = opts.encoder;
+    this.onPongTimeout = opts.onPongTimeout;
   }
 
   public get ws() {
@@ -182,7 +194,9 @@ export class WsConnection {
       });
 
       if (this.keepAliveOpts.enabled) {
-        setupPingInterval(ws, this.keepAliveOpts);
+        setupPingInterval(ws, this.keepAliveOpts, () =>
+          this.onPongTimeout?.(ws),
+        );
       }
 
       ws.addEventListener('close', () => {
