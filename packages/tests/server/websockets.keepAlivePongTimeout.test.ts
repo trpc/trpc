@@ -21,17 +21,19 @@ const router = t.router({
 
 const wsClient = {
   lazy: { enabled: false, closeMs: 0 },
-  retryDelayMs: () => 0,
   keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 50 },
 };
 
-// The first server never answers: no pong, and no reply to the closing
-// handshake, which `ws` would wait 30s for.
-function pauseFirstServerSocket(ctx: { wss: WebSocket.Server }) {
+// A paused server socket is unresponsive: no pong, and no reply to the
+// closing handshake, which `ws` would wait 30s for.
+function trackServerSockets(
+  ctx: { wss: WebSocket.Server },
+  pause: (index: number) => boolean,
+) {
   const serverSockets: WebSocket[] = [];
   ctx.wss.on('connection', (ws) => {
+    if (pause(serverSockets.length)) ws.pause();
     serverSockets.push(ws);
-    if (serverSockets.length === 1) ws.pause();
   });
   return serverSockets;
 }
@@ -42,10 +44,13 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
     clientLink: 'wsLink',
     wsClient,
   });
-  const serverSockets = pauseFirstServerSocket(ctx);
+  const serverSockets = trackServerSockets(ctx, () => false);
   await using _cleanup = makeAsyncResource({}, async () => {
     for (const ws of serverSockets) ws.terminate();
   });
+
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  serverSockets[0]!.pause();
 
   await vi.waitFor(() => expect(serverSockets).toHaveLength(2), {
     timeout: 1_000,
@@ -58,13 +63,14 @@ test('a keepAlive pong timeout reconnects while connectionParams are still pendi
     clientLink: 'wsLink',
     wsClient: {
       ...wsClient,
+      retryDelayMs: () => 0,
       connectionParams: vi
         .fn<() => Promise<Record<string, string>>>()
         .mockReturnValueOnce(stalledParams.promise)
         .mockResolvedValue({}),
     },
   });
-  const serverSockets = pauseFirstServerSocket(ctx);
+  const serverSockets = trackServerSockets(ctx, (index) => index === 0);
   await using _cleanup = makeAsyncResource({}, async () => {
     stalledParams.resolve({});
     for (const ws of serverSockets) ws.terminate();
@@ -128,6 +134,24 @@ test('after a keepAlive pong timeout, the old socket is closed once and then ign
 
   expect(onData).toHaveBeenCalledTimes(2);
   expect(onError).not.toHaveBeenCalled();
-  expect(onClose).toHaveBeenCalledTimes(1);
+  expect(onClose.mock.calls).toEqual([[{ code: 1006 }]]);
   sub.unsubscribe();
+});
+
+test('a server that never answers keeps the backoff growing across pong timeouts', async () => {
+  const retryDelayMs = vi.fn((_attemptIndex: number) => 0);
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: { ...wsClient, retryDelayMs },
+  });
+  const serverSockets = trackServerSockets(ctx, () => true);
+  await using _cleanup = makeAsyncResource({}, async () => {
+    for (const ws of serverSockets) ws.terminate();
+  });
+
+  await vi.waitFor(
+    () => expect(retryDelayMs.mock.calls.length).toBeGreaterThanOrEqual(3),
+    { timeout: 1_000 },
+  );
+  expect(retryDelayMs.mock.calls.slice(0, 3)).toEqual([[1], [2], [3]]);
 });
