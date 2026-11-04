@@ -180,13 +180,15 @@ export class WsClient {
     const requestsToAwait: Promise<void>[] = [];
     for (const request of this.requestManager.getRequests()) {
       if (request.message.method === 'subscription') {
-        request.callbacks.complete();
+        callUserCallback(() => request.callbacks.complete());
       } else if (request.state === 'outgoing') {
-        request.callbacks.error(
-          TRPCClientError.from(
-            new TRPCWebSocketClosedError({
-              message: 'Closed before connection was established',
-            }),
+        callUserCallback(() =>
+          request.callbacks.error(
+            TRPCClientError.from(
+              new TRPCWebSocketClosedError({
+                message: 'Closed before connection was established',
+              }),
+            ),
           ),
         );
       } else {
@@ -562,7 +564,7 @@ export class WsClient {
       });
     });
 
-    ws.addEventListener('message', ({ data }) => {
+    const onMessage = ({ data }: MessageEvent) => {
       this.inactivityTimeout.reset();
 
       // Handle PING/PONG as text regardless of encoder
@@ -596,6 +598,11 @@ export class WsClient {
       }
 
       this.handleResponseMessage(incomingMessage, ws);
+    };
+    // With `ws`, a throw from a `message` listener stops the socket from
+    // reading any further frames while it stays open.
+    ws.addEventListener('message', (event) => {
+      callUserCallback(() => onMessage(event));
     });
 
     ws.addEventListener('close', (event) => {
@@ -642,7 +649,7 @@ export class WsClient {
       return;
     }
 
-    request.callbacks.next(message);
+    callUserCallback(() => request.callbacks.next(message));
 
     let completed = true;
     if ('result' in message && request.message.method === 'subscription') {
@@ -656,7 +663,7 @@ export class WsClient {
     }
 
     if (completed) {
-      request.callbacks.complete();
+      callUserCallback(() => request.callbacks.complete());
       this.requestManager.delete(request.message);
     }
   }
@@ -740,7 +747,7 @@ export class WsClient {
       }
     }).catch((err) => {
       this.requestManager.delete(message);
-      callbacks.error(TRPCClientError.from(err));
+      callUserCallback(() => callbacks.error(TRPCClientError.from(err)));
     });
   }
 }
