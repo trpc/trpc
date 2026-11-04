@@ -2,14 +2,16 @@
 @import '@shikijs/twoslash/style-rich.css';
 @plugin '@tailwindcss/typography';
 
+/* How tall the sticky header (`SiteHeader`) is. */
 html {
-  scroll-padding-top: 4.5rem;
+  --site-header: 3.5rem;
+  scroll-padding-top: calc(var(--site-header) + 1rem);
 }
 
 /* Below `md`, on the pages that show it, the header has the partners' line (`PartnersBar`) too. */
 @media (width < 48rem) {
   html:has([data-partners-bar='shown']) {
-    scroll-padding-top: 6.75rem;
+    --site-header: 5.75rem;
   }
 }
 
@@ -26,7 +28,7 @@ html {
 
 /* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
    comes into view: `pop` from hidden, or `boing` when they were already
-   showing, and `shimmer` after. Each element sets its own `animation-delay`: a theme variable is
+   showing, and `shimmer` after; then the reader's (`you`). Each element sets its own `animation-delay`: a theme variable is
    resolved on `:root`, so one there can't read a delay set per bubble. */
 @theme {
   --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
@@ -35,6 +37,8 @@ html {
   --animate-sponsor-confetti: sponsor-confetti 0.9s
     cubic-bezier(0.2, 0.8, 0.4, 1) both;
   --animate-sponsor-shimmer: sponsor-shimmer 7s ease-in-out infinite;
+  --animate-sponsor-you: sponsor-you 0.8s ease-out both;
+  --animate-sponsor-you-caption: sponsor-you-caption 0.6s ease-out both;
 
   @keyframes sponsor-pop {
     0% {
@@ -96,6 +100,35 @@ html {
       opacity: 0;
       top: -75%;
       scale: 0.4;
+    }
+  }
+
+  /* The reader's own bubble (`YouBubble`), last and calmly. It takes no
+     pointer until it's half in, as `both` holds the first frame while it waits. */
+  @keyframes sponsor-you {
+    0% {
+      opacity: 0;
+      pointer-events: none;
+      scale: 0.85;
+    }
+    100% {
+      opacity: 1;
+      pointer-events: auto;
+      scale: 1;
+    }
+  }
+
+  /* Its caption, a little after it. */
+  @keyframes sponsor-you-caption {
+    0% {
+      opacity: 0;
+      pointer-events: none;
+      translate: -50% 4px;
+    }
+    100% {
+      opacity: 1;
+      pointer-events: auto;
+      translate: -50% 0;
     }
   }
 
