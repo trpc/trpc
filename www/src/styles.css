@@ -100,14 +100,17 @@ html {
     }
   }
 
-  /* The reader's own bubble (`YouBubble`), last and calmly. */
+  /* The reader's own bubble (`YouBubble`), last and calmly. It takes no
+     pointer until it's half in, as `both` holds the first frame while it waits. */
   @keyframes sponsor-you {
     0% {
       opacity: 0;
+      pointer-events: none;
       scale: 0.85;
     }
     100% {
       opacity: 1;
+      pointer-events: auto;
       scale: 1;
     }
   }
