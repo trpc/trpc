@@ -230,37 +230,85 @@ describe('readTarballs', () => {
 });
 
 describe('onRegistry', () => {
-  it("tells whether the registry lists a package's version", () =>
-    run(
-      Effect.gen(function* () {
-        const url = yield* Effect.acquireRelease(
-          Effect.callback<{ url: string; close: () => void }>((resume) => {
-            const server = createServer((req, res) => {
-              if (req.url === '/@trpc%2fserver') {
-                res.setHeader('content-type', 'application/json');
-                res.end(JSON.stringify({ versions: { '11.23.0': {} } }));
-              } else {
-                res.statusCode = 404;
-                res.end();
-              }
-            });
-            server.listen(0, '127.0.0.1', () => {
-              const address = server.address();
-              const port =
-                typeof address === 'object' ? address?.port : undefined;
-              resume(
-                Effect.succeed({
-                  url: `http://127.0.0.1:${port}/`,
-                  close: () => server.close(),
-                }),
-              );
-            });
-          }),
-          ({ close }) => Effect.sync(close),
-        ).pipe(Effect.map(({ url }) => url));
-        expect(yield* onRegistry(url, '@trpc/server', '11.23.0')).toBe(true);
-        expect(yield* onRegistry(url, '@trpc/server', '11.23.1')).toBe(false);
-        expect(yield* onRegistry(url, '@trpc/client', '11.23.0')).toBe(false);
-      }),
-    ));
+  it(
+    'compares what the registry has with the tarball',
+    () =>
+      run(
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          const path = yield* Path.Path;
+          const dir = yield* fs.makeTempDirectoryScoped();
+          const server = { name: '@trpc/server', version: '11.23.0' };
+          const changed = { ...server, description: 'changed' };
+          yield* fakeTarball(dir, 'published.tgz', server);
+          yield* fakeTarball(dir, 'other.tgz', changed);
+          const published = yield* fs.readFile(path.join(dir, 'published.tgz'));
+          const url = yield* Effect.acquireRelease(
+            Effect.callback<{ url: string; close: () => void }>((resume) => {
+              const registry = createServer((req, res) => {
+                const base = `http://${req.headers.host}`;
+                if (req.url === '/@trpc%2fserver') {
+                  res.setHeader('content-type', 'application/json');
+                  res.end(
+                    JSON.stringify({
+                      versions: {
+                        '11.23.0': { dist: { tarball: `${base}/server.tgz` } },
+                      },
+                    }),
+                  );
+                } else if (req.url === '/server.tgz') {
+                  res.end(published);
+                } else {
+                  res.statusCode = req.url === '/@trpc%2fclient' ? 500 : 404;
+                  res.end();
+                }
+              });
+              registry.listen(0, '127.0.0.1', () => {
+                const address = registry.address();
+                const port =
+                  typeof address === 'object' ? address?.port : undefined;
+                resume(
+                  Effect.succeed({
+                    url: `http://127.0.0.1:${port}/`,
+                    close: () => registry.close(),
+                  }),
+                );
+              });
+            }),
+            ({ close }) => Effect.sync(close),
+          ).pipe(Effect.map(({ url }) => url));
+          const tarball = (file: string, pkg: typeof server) => ({
+            ...pkg,
+            file: path.join(dir, file),
+          });
+
+          expect(yield* onRegistry(url, tarball('published.tgz', server))).toBe(
+            'same',
+          );
+          expect(yield* onRegistry(url, tarball('other.tgz', server))).toBe(
+            'different',
+          );
+          expect(
+            yield* onRegistry(
+              url,
+              tarball('published.tgz', { ...server, version: '11.23.1' }),
+            ),
+          ).toBe('absent');
+          expect(
+            yield* onRegistry(
+              url,
+              tarball('published.tgz', { ...server, name: '@trpc/next' }),
+            ),
+          ).toBe('absent');
+          const failed = yield* onRegistry(
+            url,
+            tarball('published.tgz', { ...server, name: '@trpc/client' }),
+          ).pipe(Effect.exit);
+          expect(String(Exit.isFailure(failed) && failed.cause)).toContain(
+            '500 Internal Server Error',
+          );
+        }),
+      ),
+    30_000,
+  );
 });

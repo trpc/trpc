@@ -75,6 +75,31 @@ export const branchMoved = Effect.fn('branchMoved')(function* (
   return Number(missing) > 0;
 });
 
+/** Whether `branch` on `remote` has HEAD, so HEAD holds nothing unmerged. */
+const onBranch = Effect.fn('onBranch')(function* (
+  root: string,
+  remote: string,
+  branch: string,
+) {
+  yield* git(root, 'fetch', '--quiet', '--no-tags', remote, branch);
+  return yield* git(
+    root,
+    'merge-base',
+    '--is-ancestor',
+    'HEAD',
+    'FETCH_HEAD',
+  ).pipe(
+    Effect.as(true),
+    Effect.orElseSucceed(() => false),
+  );
+});
+
+/** Undoes the version bump in `files` if the effect it pipes fails. */
+const undoBumpOnFailure = (root: string, files: ReadonlyArray<string>) =>
+  Effect.onError(() =>
+    git(root, 'checkout', '--quiet', '--', ...files).pipe(Effect.ignore),
+  );
+
 /**
  * Checks the release changes nothing but `files`, the version bump. The
  * packages depend on each other with `workspace:*`, so `pnpm-lock.yaml` stays
@@ -148,10 +173,17 @@ const publishTarballs = Effect.fn('publishTarballs')(function* (
   tarballs: ReadonlyArray<Tarball>,
   opts: PublishOptions & { readonly registry: string },
 ) {
-  for (const { name, version, file } of tarballs) {
-    if (yield* onRegistry(opts.registry, name, version)) {
+  for (const tarball of tarballs) {
+    const { name, version, file } = tarball;
+    const state = yield* onRegistry(opts.registry, tarball);
+    if (state === 'same') {
       yield* Console.log(`${name}@${version} is on ${opts.registry} already`);
       continue;
+    }
+    if (state === 'different') {
+      return yield* new ReleaseError({
+        message: `${name}@${version} on ${opts.registry} isn't what this run packed: a run from another commit published it. Nothing more was published.`,
+      });
     }
     yield* run(root, 'pnpm', [
       'publish',
@@ -272,8 +304,10 @@ export const packStable = Effect.fn('packStable')(function* (
   const { previousTag, version, tag } = yield* stableVersion(root, opts.bump);
   yield* Console.log(`Packing ${tag} (${opts.bump} after ${previousTag})`);
   const { files, published } = yield* writeVersions(root, version);
-  yield* checkRelease(root, files);
-  yield* packTarballs(root, published, opts.dir);
+  yield* Effect.gen(function* () {
+    yield* checkRelease(root, files);
+    yield* packTarballs(root, published, opts.dir);
+  }).pipe(undoBumpOnFailure(root, files));
   return { tag, files };
 });
 
@@ -284,10 +318,11 @@ export const packStable = Effect.fn('packStable')(function* (
  * publishes the tarballs, tags and pushes the tag, and creates the GitHub
  * release. It runs nothing from the packages.
  *
- * The commit goes out before the packages and the tag after them. If
- * `branch` moved, the push is rejected and nothing is published. If
- * publishing fails, running the release again finds the versions already on
- * `branch`, publishes what npm doesn't have yet and tags it.
+ * HEAD must be on `branch`. The commit goes out before the packages and the
+ * tag after them. If `branch` moved, the push is rejected and nothing is
+ * published. If publishing fails, running the release again finds the
+ * versions already on `branch`, publishes what npm doesn't have yet and tags
+ * it; it fails instead if npm has a version with other files than it packed.
  */
 export const publishStable = Effect.fn('publishStable')(function* (
   root: string,
@@ -296,6 +331,11 @@ export const publishStable = Effect.fn('publishStable')(function* (
   yield* ensureClean(root);
   const { previousTag, version, tag } = yield* stableVersion(root, opts.bump);
   yield* Console.log(`Releasing ${tag} (${opts.bump} after ${previousTag})`);
+  if (!opts.dryRun && !(yield* onBranch(root, opts.remote, opts.branch))) {
+    return yield* new ReleaseError({
+      message: `HEAD isn't on ${opts.remote} ${opts.branch}; release from ${opts.branch}. Nothing was published.`,
+    });
+  }
 
   const { files, published } = yield* writeVersions(root, version);
   const bumped =
@@ -408,11 +448,14 @@ export const packCanary = Effect.fn('packCanary')(function* (
   root: string,
   opts: PackOptions & { readonly preid: string },
 ) {
+  yield* ensureClean(root);
   const version = yield* canaryVersionOfHead(root, opts.preid);
   yield* Console.log(`Packing ${version}`);
   const { files, published } = yield* writeVersions(root, version);
-  yield* run(root, 'pnpm', ['build']);
-  yield* packTarballs(root, published, opts.dir);
+  yield* Effect.gen(function* () {
+    yield* run(root, 'pnpm', ['build']);
+    yield* packTarballs(root, published, opts.dir);
+  }).pipe(undoBumpOnFailure(root, files));
   return { version, files };
 });
 

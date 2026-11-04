@@ -4,7 +4,7 @@
  * That job publishes only the packages, versions and commit it works out
  * itself.
  */
-import { Data, Effect, FileSystem, Path } from 'effect';
+import { Data, Effect, FileSystem, Path, Schedule } from 'effect';
 import { git, output, run } from './command.ts';
 import type { PackageJson } from './version.ts';
 import { readPackages } from './workspace.ts';
@@ -114,20 +114,94 @@ export const readTarballs = Effect.fn('readTarballs')(function* (
   return tarballs;
 });
 
-/** Whether `registry` lists `version` of `name`. */
+/**
+ * `url`, read with `read`, or `undefined` on a 404. Retries other failures,
+ * then fails: a lookup that fails isn't an answer.
+ */
+const fetchFrom = <TValue>(
+  url: string,
+  init: RequestInit,
+  read: (response: Response) => Promise<TValue>,
+) =>
+  Effect.tryPromise({
+    try: async () => {
+      const response = await fetch(url, init);
+      if (response.status === 404) {
+        return undefined;
+      }
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      return await read(response);
+    },
+    catch: (cause) =>
+      new TarballError({ message: `Fetching ${url} failed: ${String(cause)}` }),
+  }).pipe(
+    Effect.retry({ times: 3, schedule: Schedule.exponential('500 millis') }),
+  );
+
+/**
+ * Whether `registry` has `tarball`'s version: `'absent'`, `'same'` if what
+ * it serves has the same files as `tarball`, as when an earlier run of the
+ * same release published it, or `'different'`, as when one from another
+ * commit did. The files are compared rather than the tarballs' bytes.
+ */
 export const onRegistry = Effect.fn('onRegistry')(function* (
   registry: string,
-  name: string,
-  version: string,
+  tarball: Tarball,
 ) {
-  const url = `${registry.replace(/\/$/, '')}/${name.replaceAll('/', '%2f')}`;
-  const packument = yield* Effect.tryPromise(async () => {
-    const response = await fetch(url, {
-      headers: { accept: 'application/vnd.npm.install-v1+json' },
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const { name, version } = tarball;
+  const packument = yield* fetchFrom(
+    `${registry.replace(/\/$/, '')}/${name.replaceAll('/', '%2f')}`,
+    { headers: { accept: 'application/vnd.npm.install-v1+json' } },
+    async (response) =>
+      (await response.json()) as {
+        versions?: Record<string, { dist?: { tarball?: string } }>;
+      },
+  );
+  const published = packument?.versions?.[version];
+  if (published === undefined) {
+    return 'absent';
+  }
+  const url = published.dist?.tarball;
+  const bytes =
+    url === undefined
+      ? undefined
+      : yield* fetchFrom(
+          url,
+          {},
+          async (response) => new Uint8Array(await response.arrayBuffer()),
+        );
+  if (bytes === undefined) {
+    return yield* new TarballError({
+      message: `${registry} lists ${name}@${version}, but its tarball isn't there`,
     });
-    return response.ok
-      ? ((await response.json()) as { versions?: Record<string, unknown> })
-      : undefined;
-  }).pipe(Effect.orElseSucceed(() => undefined));
-  return packument?.versions?.[version] !== undefined;
-});
+  }
+
+  const dir = yield* fs.makeTempDirectoryScoped();
+  yield* fs.writeFile(path.join(dir, 'published.tgz'), bytes);
+  for (const [into, file] of [
+    ['published', path.join(dir, 'published.tgz')],
+    ['packed', path.resolve(tarball.file)],
+  ] as const) {
+    yield* fs.makeDirectory(path.join(dir, into));
+    yield* output(dir, 'tar', ['-xzf', file, '-C', into]);
+  }
+  return yield* git(
+    dir,
+    'diff',
+    '--no-index',
+    '--quiet',
+    'published',
+    'packed',
+  ).pipe(
+    Effect.as('same' as const),
+    Effect.catchTag('CommandError', (error) =>
+      error.exitCode === 1
+        ? Effect.succeed('different' as const)
+        : Effect.fail(error),
+    ),
+  );
+}, Effect.scoped);

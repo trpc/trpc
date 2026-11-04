@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { git } from './command.ts';
 import {
   branchMoved,
+  defaultWait,
   latestTag,
+  packCanary,
+  publishStable,
   tarballUrl,
   waitForVersions,
 } from './release.ts';
@@ -83,6 +86,59 @@ describe('branchMoved', () => {
         expect(yield* branchMoved(clone, 'origin', 'main')).toBe(false);
         yield* commit(remote, 'fix: merged meanwhile');
         expect(yield* branchMoved(clone, 'origin', 'main')).toBe(true);
+      }),
+    ));
+});
+
+const failure = <TValue, TError, TRequirements>(
+  effect: Effect.Effect<TValue, TError, TRequirements>,
+) =>
+  effect.pipe(
+    Effect.exit,
+    Effect.map((exit) => (Exit.isFailure(exit) ? String(exit.cause) : 'ok')),
+  );
+
+describe('the release guards', () => {
+  it('publishes a stable release only from the branch', () =>
+    run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const remote = yield* repo;
+        yield* tag(remote, 'v11.23.0');
+        const clone = yield* fs.makeTempDirectoryScoped();
+        yield* git(clone, 'clone', '--quiet', remote, '.');
+        yield* commit(clone, 'fix: not merged');
+        const release = publishStable(clone, {
+          bump: 'patch',
+          distTag: 'latest',
+          dryRun: false,
+          provenance: false,
+          remote: 'origin',
+          branch: 'main',
+          wait: defaultWait,
+          dir: yield* fs.makeTempDirectoryScoped(),
+        });
+        expect(yield* failure(release)).toContain(
+          "HEAD isn't on origin main; release from main. Nothing was published.",
+        );
+      }),
+    ));
+
+  it('packs a canary only from a clean working tree', () =>
+    run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* repo;
+        yield* tag(root, 'v11.23.0');
+        yield* fs.writeFileString(path.join(root, 'edit.ts'), '');
+        const canary = packCanary(root, {
+          preid: 'canary',
+          dir: yield* fs.makeTempDirectoryScoped(),
+        });
+        expect(yield* failure(canary)).toContain(
+          'The working tree has changes',
+        );
       }),
     ));
 });
