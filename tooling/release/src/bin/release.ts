@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+/**
+ * Releases the packages in `packages/*`. `.github/workflows/release.yml` runs
+ * each release in two jobs: `--pack <dir>` builds and packs without
+ * credentials, and `--from <dir>` publishes those tarballs. Without either,
+ * one run does both; locally, try a release without publishing anything with
+ * `--dry-run`:
+ *
+ *   pnpm release stable <patch|minor|major> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+ *   pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+ *   pnpm release github-release <tag>
+ */
+import { parseArgs } from 'node:util';
+import { NodeRuntime, NodeServices } from '@effect/platform-node';
+import { Effect, Path } from 'effect';
+import {
+  canary,
+  defaultWait,
+  githubReleaseForTag,
+  packCanary,
+  packStable,
+  publishCanary,
+  publishStable,
+  ReleaseError,
+  stable,
+} from '../release.ts';
+import { bumps, isBump } from '../version.ts';
+
+const usage = `Usage:
+  pnpm release stable <${bumps.join('|')}> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+  pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+  pnpm release github-release <tag>`;
+
+const { positionals, values } = parseArgs({
+  allowPositionals: true,
+  options: {
+    'dist-tag': { type: 'string' },
+    'dry-run': { type: 'boolean', default: false },
+    from: { type: 'string' },
+    pack: { type: 'string' },
+    preid: { type: 'string', default: 'canary' },
+    provenance: { type: 'boolean', default: false },
+  },
+});
+
+Effect.gen(function* () {
+  const path = yield* Path.Path;
+  const root = path.join(import.meta.dirname, '../../../..');
+  const [command, arg] = positionals;
+  const publish = {
+    dryRun: values['dry-run'],
+    provenance: values.provenance,
+  };
+  const pack =
+    values.pack === undefined ? undefined : path.resolve(values.pack);
+  const from =
+    values.from === undefined ? undefined : path.resolve(values.from);
+  if (pack !== undefined && from !== undefined) {
+    return yield* new ReleaseError({ message: usage });
+  }
+  switch (command) {
+    case 'stable': {
+      if (arg === undefined || !isBump(arg)) {
+        break;
+      }
+      const opts = {
+        ...publish,
+        bump: arg,
+        distTag: values['dist-tag'] ?? 'latest',
+        remote: 'origin',
+        branch: 'main',
+        wait: defaultWait,
+      };
+      if (pack !== undefined) {
+        yield* packStable(root, { bump: arg, dir: pack });
+      } else if (from !== undefined) {
+        yield* publishStable(root, { ...opts, dir: from });
+      } else {
+        yield* stable(root, opts);
+      }
+      return;
+    }
+    case 'canary': {
+      if (arg !== undefined) {
+        break;
+      }
+      const opts = {
+        ...publish,
+        preid: values.preid,
+        distTag: values['dist-tag'] ?? 'canary',
+      };
+      if (pack !== undefined) {
+        yield* packCanary(root, { preid: values.preid, dir: pack });
+      } else if (from !== undefined) {
+        yield* publishCanary(root, { ...opts, dir: from });
+      } else {
+        yield* canary(root, opts);
+      }
+      return;
+    }
+    case 'github-release':
+      if (arg === undefined) {
+        break;
+      }
+      yield* githubReleaseForTag(root, arg, defaultWait);
+      return;
+    case undefined:
+    default:
+      break;
+  }
+  return yield* new ReleaseError({ message: usage });
+}).pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);
