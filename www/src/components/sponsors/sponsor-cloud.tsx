@@ -56,6 +56,13 @@ const celebrateDelayMs = (entrance: Entrance) =>
     ? Math.min((bubbles.length - 1) * stagger, lastDelay) + popMs
     : 300;
 
+/** How long after a celebrated bubble starts to pop each flourish starts, in ms. */
+const confettiAfter = 300;
+const rippleAfter = 350;
+const badgeAfter = 500;
+
+const delayed = (ms: number) => ({ animationDelay: `${ms}ms` });
+
 const confettiColors = [
   'bg-brand',
   'bg-amber-400',
@@ -81,6 +88,7 @@ type Entrance = 'none' | 'waiting' | 'shown';
 export function SponsorCloud(props: { readonly className?: string }) {
   const [entrance, setEntrance] = useState<Entrance>('none');
   const [celebrating, setCelebrating] = useState(false);
+  const celebrateAt = celebrateDelayMs(entrance);
   return (
     <div className={props.className}>
       <div
@@ -126,15 +134,13 @@ export function SponsorCloud(props: { readonly className?: string }) {
               key={sponsorKey(bubble.sponsor)}
               style={
                 {
-                  ...(celebrated
-                    ? { '--celebrate-delay': `${celebrateDelayMs(entrance)}ms` }
-                    : {}),
+                  ...(celebrated && celebrating ? delayed(celebrateAt) : {}),
                   height: `${bubble.r * 200}%`,
                   left: `${bubble.x * 100}%`,
                   top: `${bubble.y * 100}%`,
                   transitionDelay: `${Math.min(index * stagger, lastDelay)}ms`,
                   width: `${bubble.r * 200}%`,
-                } satisfies CSSProperties & Record<`--${string}`, string>
+                } satisfies CSSProperties
               }
             >
               {celebrated ? (
@@ -189,7 +195,10 @@ export function SponsorCloud(props: { readonly className?: string }) {
               </Tooltip>
               {celebrated && celebrating ? (
                 <span aria-hidden className="pointer-events-none">
-                  <span className="absolute inset-0 animate-sponsor-ripple rounded-full border-2 border-brand" />
+                  <span
+                    className="absolute inset-0 animate-sponsor-ripple rounded-full border-2 border-brand"
+                    style={delayed(celebrateAt + rippleAfter)}
+                  />
                   {Array.from({ length: confettiCount }, (_, piece) => (
                     <span
                       className="absolute inset-0"
@@ -202,6 +211,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
                           piece % 2 === 0 ? 'rounded-full' : 'rounded-[1px]',
                           confettiColors[piece % confettiColors.length],
                         )}
+                        style={delayed(celebrateAt + confettiAfter)}
                       />
                     </span>
                   ))}
@@ -212,8 +222,15 @@ export function SponsorCloud(props: { readonly className?: string }) {
                   aria-hidden
                   className={cn(
                     'pointer-events-none absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 -rotate-12 rounded-full bg-brand px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wide text-white uppercase shadow-md',
-                    celebrating && 'animate-sponsor-badge',
+                    celebrating &&
+                      entrance === 'shown' &&
+                      'animate-sponsor-badge',
                   )}
+                  style={
+                    celebrating && entrance === 'shown'
+                      ? delayed(celebrateAt + badgeAfter)
+                      : undefined
+                  }
                 >
                   {recent.kind === 'new' ? 'New' : 'Latest'}
                 </span>
