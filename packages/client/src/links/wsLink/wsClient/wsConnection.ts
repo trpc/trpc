@@ -2,7 +2,7 @@ import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-no
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
 import type { KeepAliveOptions } from './options';
-import { buildConnectionMessage, prepareUrl, reportUserError } from './utils';
+import { buildConnectionMessage, prepareUrl } from './utils';
 
 /**
  * A connection's phase. It only moves forward:
@@ -205,8 +205,8 @@ export class Connection {
       let message: TRPCClientIncomingMessage;
       try {
         message = encoder.decode(data) as TRPCClientIncomingMessage;
-      } catch (error) {
-        reportUserError(error);
+      } catch {
+        // A frame no request can be matched to; the connection carries on.
         return;
       }
       events.onMessage(this, message);

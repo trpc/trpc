@@ -246,6 +246,11 @@ export class WsClient {
         },
       });
       this.inactivityTimeout.reset();
+      if (this.lifecycle.kind === 'backoff') {
+        // A new request doesn't wait out the backoff.
+        clearTimeout(this.lifecycle.timer);
+        this.connect(this.lifecycle.retryIndex);
+      }
       this.scheduleFlush();
 
       const onAbort = () => observer.complete();
@@ -354,7 +359,10 @@ export class WsClient {
     if (this.lazyMode) {
       this.inactivityTimeout.start();
     }
-    this.setState({ type: 'state', state: 'pending', error: null });
+    const current = this.connectionState.get();
+    if (current.state !== 'pending' || current.error !== null) {
+      this.setState({ type: 'state', state: 'pending', error: null });
+    }
 
     // Subscriptions move off the connections this one replaced only now, so
     // they're never without a connection that can deliver their events.
@@ -367,7 +375,7 @@ export class WsClient {
             method: 'subscription.stop',
           }),
         );
-        this.requestManager.requeue(request);
+        this.requestManager.requeue(request, { hideStarted: true });
       }
       this.closeIfDrained(previous);
     }
@@ -407,6 +415,15 @@ export class WsClient {
       return;
     }
 
+    if (
+      'result' in message &&
+      message.result.type === 'started' &&
+      request.hideStarted
+    ) {
+      request.hideStarted = false;
+      return;
+    }
+
     let done = true;
     if (
       'result' in message &&
@@ -432,18 +449,27 @@ export class WsClient {
    * new one opens: nothing in flight on it fails or is sent again.
    */
   private retire(connection: Connection) {
-    const wasReady = connection.phase === 'ready';
-    if (wasReady) {
+    if (connection.phase === 'ready') {
+      // Invisible to subscribers: the state stays `pending` while the old
+      // connection serves its requests.
       connection.drain();
       this.draining.add(connection);
     } else {
       connection.close();
     }
-    this.setConnecting(
-      new TRPCWebSocketClosedError({ message: 'Server requested reconnect' }),
-    );
     this.scheduleReconnect(this.nextRetryIndex(connection));
     this.closeIfDrained(connection);
+  }
+
+  /**
+   * Whether a replaced connection still serves requests, so the client isn't
+   * disconnected even though its next connection isn't ready.
+   */
+  private isServedByDrainingConnection() {
+    for (const connection of this.draining) {
+      if (this.requestManager.sentOn(connection).length > 0) return true;
+    }
+    return false;
   }
 
   /**
@@ -468,7 +494,7 @@ export class WsClient {
 
     for (const request of this.requestManager.sentOn(connection)) {
       if (request.message.method === 'subscription') {
-        this.requestManager.requeue(request);
+        this.requestManager.requeue(request, { hideStarted: false });
         continue;
       }
       this.requestManager.delete(request.message);
@@ -489,6 +515,17 @@ export class WsClient {
     if (!this.isCurrent(connection)) {
       // A draining connection: its subscriptions go on the current one, if
       // it's ready, or wait for the next.
+      const lifecycle = this.lifecycle.kind;
+      if (lifecycle === 'backoff' || lifecycle === 'connecting') {
+        if (!this.isServedByDrainingConnection()) {
+          this.setConnecting(
+            new TRPCWebSocketClosedError({
+              message: 'WebSocket closed',
+              cause,
+            }),
+          );
+        }
+      }
       this.scheduleFlush();
     }
   }
@@ -500,12 +537,14 @@ export class WsClient {
     if (!this.isCurrent(connection)) return;
 
     if (this.lifecycle.kind === 'connecting') {
-      this.setConnecting(
-        new TRPCWebSocketClosedError({
-          message: 'Initialization error',
-          cause,
-        }),
-      );
+      if (!this.isServedByDrainingConnection()) {
+        this.setConnecting(
+          new TRPCWebSocketClosedError({
+            message: 'Initialization error',
+            cause,
+          }),
+        );
+      }
       this.scheduleReconnect(
         connection.retryIndex === null ? 0 : connection.retryIndex + 1,
       );
@@ -563,7 +602,14 @@ export class WsClient {
     this.stopFlushTimer();
     if (this.lifecycle.kind !== 'open') return;
     const connection = this.lifecycle.connection;
-    if (!connection.isWritable()) return;
+    if (this.requestManager.queued().length === 0) return;
+    if (!connection.isWritable()) {
+      // The socket is closing, e.g. the server sent a close frame, but its
+      // `close` event can be held up by the closing handshake. Don't wait.
+      this.onConnectionLost(connection, undefined);
+      this.afterConnectionLost(connection, undefined);
+      return;
+    }
 
     const requests = this.requestManager.flush(connection);
     if (requests.length === 0) return;

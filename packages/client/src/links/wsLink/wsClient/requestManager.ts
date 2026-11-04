@@ -35,6 +35,11 @@ export interface Request {
   readonly callbacks: TCallbacks;
   readonly end: Promise<void>;
   state: RequestState;
+  /**
+   * Set when a subscription moves to a new connection without being lost, so
+   * the move is invisible: the server's second `started` is dropped.
+   */
+  hideStarted: boolean;
 }
 
 /**
@@ -57,6 +62,7 @@ export class RequestManager {
       message,
       end,
       state: { kind: 'queued' },
+      hideStarted: false,
       callbacks: {
         next: callbacks.next,
         complete: () => {
@@ -118,8 +124,9 @@ export class RequestManager {
    * Puts a sent request back in the queue, to be sent on the next ready
    * connection.
    */
-  public requeue(request: Request) {
+  public requeue(request: Request, opts: { hideStarted: boolean }) {
     request.state = { kind: 'queued' };
+    request.hideStarted = opts.hideStarted;
   }
 
   public all() {
