@@ -26,6 +26,22 @@ import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
+ * Calls a user callback from inside a WebSocket event listener. A throw would
+ * skip the rest of the listener and, with event-emitter based WebSockets such
+ * as `ws`, the other listeners for that event, so it is rethrown
+ * asynchronously instead.
+ */
+function callUserCallback(callback: () => void) {
+  try {
+    callback();
+  } catch (error) {
+    setTimeout(() => {
+      throw error;
+    });
+  }
+}
+
+/**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
  */
@@ -306,7 +322,19 @@ export class WsClient {
           }
         }
         this.reconnecting = null;
-      } catch {
+      } catch (error) {
+        if (this.allowReconnect) {
+          this.connectionState.next({
+            type: 'state',
+            state: 'connecting',
+            error: TRPCClientError.from(
+              new TRPCWebSocketClosedError({
+                message: 'Initialization error',
+                cause: error,
+              }),
+            ),
+          });
+        }
         await tryReconnect(attemptIndex + 1);
       }
     };
@@ -379,7 +407,7 @@ export class WsClient {
 
     ws.addEventListener('close', (event) => {
       handleCloseOrError(event);
-      this.callbacks.onClose?.(event);
+      callUserCallback(() => this.callbacks.onClose?.(event));
 
       if (!this.lazyMode || this.requestManager.hasPendingSubscriptions()) {
         this.reconnect(
@@ -393,7 +421,7 @@ export class WsClient {
 
     ws.addEventListener('error', (event) => {
       handleCloseOrError(event);
-      this.callbacks.onError?.(event);
+      callUserCallback(() => this.callbacks.onError?.(event));
 
       this.reconnect(
         new TRPCWebSocketClosedError({
