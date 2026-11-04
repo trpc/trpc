@@ -35,7 +35,7 @@ html {
   --animate-sponsor-boing: sponsor-boing 0.8s ease-out both;
   --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out forwards;
   --animate-sponsor-confetti: sponsor-confetti 0.9s
-    cubic-bezier(0.2, 0.8, 0.4, 1) both;
+    cubic-bezier(0.2, 0.8, 0.4, 1) backwards;
   --animate-sponsor-shimmer: sponsor-shimmer 7s ease-in-out infinite;
   --animate-sponsor-you: sponsor-you 0.8s ease-out both;
   --animate-sponsor-you-caption: sponsor-you-caption 0.6s ease-out both;
