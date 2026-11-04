@@ -63,12 +63,11 @@ const celebrateDelayMs = (entrance: Entrance) =>
 /** How long after a celebrated bubble starts to pop each flourish starts, in ms. */
 const confettiAfter = 300;
 const rippleAfter = 350;
-const badgeAfter = 500;
 
 const delayed = (ms: number) => ({ animationDelay: `${ms}ms` });
 
 const confettiColors = [
-  'bg-brand',
+  'bg-amber-300',
   'bg-amber-400',
   'bg-pink-500',
   'bg-emerald-400',
@@ -85,9 +84,9 @@ type Entrance = 'none' | 'waiting' | 'shown';
 
 /**
  * Every sponsor the site draws as a circle, sized by what they've given, in
- * a heart. The newest (`recentSponsorsOf`) glow and wear a badge; once the cloud is
- * in view, and motion is welcome, they pop in last with a burst of
- * confetti.
+ * a heart. The newest (`recentSponsorsOf`) wear a yellow ring with a
+ * slow sheen, and say so in their tooltip; once the cloud is in view, and
+ * motion is welcome, they pop in last with a burst of confetti.
  */
 export function SponsorCloud(props: { readonly className?: string }) {
   const [entrance, setEntrance] = useState<Entrance>('none');
@@ -195,12 +194,6 @@ export function SponsorCloud(props: { readonly className?: string }) {
                 } satisfies CSSProperties
               }
             >
-              {celebrated ? (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-[8%] rounded-full bg-brand/40 blur-md motion-safe:animate-sponsor-glow"
-                />
-              ) : null}
               <Tooltip {...tap(sponsorKey(bubble.sponsor)).root}>
                 <TooltipTrigger
                   delay={80}
@@ -213,10 +206,10 @@ export function SponsorCloud(props: { readonly className?: string }) {
                           : bubble.sponsor.name
                       }
                       className={cn(
-                        'relative block size-full overflow-hidden rounded-full bg-background shadow-md transition-[scale,box-shadow] duration-200 outline-none [-webkit-touch-callout:none] hover:scale-110 hover:shadow-xl hover:ring-2 hover:ring-brand focus-visible:scale-110 focus-visible:ring-3 focus-visible:ring-ring data-popup-open:scale-110 data-popup-open:shadow-xl data-popup-open:ring-2 data-popup-open:ring-brand',
+                        'relative block size-full overflow-hidden rounded-full bg-background shadow-md transition-[scale,box-shadow] duration-200 outline-none [-webkit-touch-callout:none] hover:scale-105 hover:shadow-lg focus-visible:scale-105 focus-visible:ring-3 focus-visible:ring-ring data-popup-open:scale-105 data-popup-open:shadow-lg',
                         celebrated
-                          ? 'ring-2 ring-brand'
-                          : 'ring-1 ring-foreground/10',
+                          ? 'ring-2 ring-amber-400'
+                          : 'ring-1 ring-foreground/10 hover:ring-2 hover:ring-brand data-popup-open:ring-2 data-popup-open:ring-brand',
                       )}
                       href={bubble.sponsor.link}
                       rel="sponsored noopener"
@@ -233,16 +226,24 @@ export function SponsorCloud(props: { readonly className?: string }) {
                     src={avatarUrl(bubble.sponsor, avatarSizeFor(bubble.r))}
                     width={avatarSizeFor(bubble.r)}
                   />
+                  {celebrated ? (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent_40%,rgb(253_230_138/0.5)_50%,transparent_60%)] bg-size-[250%_100%] bg-position-[150%_0] bg-no-repeat motion-safe:animate-sponsor-shimmer"
+                    />
+                  ) : null}
                 </TooltipTrigger>
                 <TooltipContent className="flex-col items-start gap-0">
-                  <span className="font-semibold">{bubble.sponsor.name}</span>
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    {bubble.sponsor.name}
+                    {celebrated ? (
+                      <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wide text-amber-950 uppercase">
+                        {recent.kind === 'new' ? 'New' : 'Latest'}
+                      </span>
+                    ) : null}
+                  </span>
                   <span className="opacity-70">
                     Since {since.format(bubble.sponsor.createdAt)}
-                    {celebrated
-                      ? recent.kind === 'new'
-                        ? ' · New!'
-                        : ' · Latest'
-                      : null}
                   </span>
                 </TooltipContent>
               </Tooltip>
@@ -252,7 +253,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
                   className="pointer-events-none motion-reduce:hidden"
                 >
                   <span
-                    className="absolute inset-0 rounded-full border-2 border-brand opacity-0 motion-safe:animate-sponsor-ripple"
+                    className="absolute inset-0 rounded-full border-2 border-amber-400 opacity-0 motion-safe:animate-sponsor-ripple"
                     style={delayed(celebrateAt + rippleAfter)}
                   />
                   {Array.from({ length: confettiCount }, (_, piece) => (
@@ -271,24 +272,6 @@ export function SponsorCloud(props: { readonly className?: string }) {
                       />
                     </span>
                   ))}
-                </span>
-              ) : null}
-              {celebrated ? (
-                <span
-                  aria-hidden
-                  className={cn(
-                    'pointer-events-none absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 -rotate-12 rounded-full bg-brand px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wide text-white uppercase shadow-md',
-                    celebrating &&
-                      entrance === 'shown' &&
-                      'motion-safe:animate-sponsor-badge',
-                  )}
-                  style={
-                    celebrating && entrance === 'shown'
-                      ? delayed(celebrateAt + badgeAfter)
-                      : undefined
-                  }
-                >
-                  {recent.kind === 'new' ? 'New' : 'Latest'}
                 </span>
               ) : null}
             </span>

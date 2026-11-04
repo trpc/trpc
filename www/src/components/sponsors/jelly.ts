@@ -23,17 +23,17 @@ export interface Pointer {
 
 /** How hard a bubble springs back to its place, in s⁻², and how much that's damped. */
 const stiffness = 90;
-const damping = 2 * 0.32 * Math.sqrt(stiffness);
+const damping = 2 * 0.45 * Math.sqrt(stiffness);
 
 /** How hard two bubbles that touch push apart, per px they overlap. */
 const bump = 1400;
 
 /** How far past its edge a pointer reaches a bubble, and how hard it pushes it there. */
-const reach = 56;
-const push = 900;
+const reach = 40;
+const push = 360;
 
 /** How much a moving pointer drags the bubbles it passes along with it, in s⁻¹. */
-const drag = 1.5;
+const drag = 0.5;
 
 /** The fastest a pointer counts as moving, so a flick doesn't fling bubbles. */
 const fastest = 1200;
@@ -45,16 +45,16 @@ const settle = 10;
 const dropHeights = [20, 38] as const;
 
 /** How hard a poke squishes a bubble at most, in stretch per second. */
-const hardestPoke = 1.6;
+const hardestPoke = 0.8;
 
 /** How much a bubble stretches per px/s it moves, the most it does, and its wobble's spring. */
 const stretch = 1 / 2400;
-const mostStretch = 0.16;
+const mostStretch = 0.1;
 const wobbleStiffness = 320;
 const wobbleDamping = 2 * 0.2 * Math.sqrt(wobbleStiffness);
 
-/** How much bigger a hovered or focused bubble is drawn: the link's `scale-110`. */
-const grownScale = 1.1;
+/** How much bigger a hovered or focused bubble is drawn: the link's `scale-105`. */
+const grownScale = 1.05;
 
 /** Below these, a bubble is still. */
 const stillOffset = 0.05;
@@ -304,6 +304,9 @@ const longestStep = 1 / 120;
 /** The longest frame it catches up on: after a stall, it moves on rather than lurch. */
 const longestFrame = 1 / 20;
 
+/** How much of the pointer's speed squishes the bubble it moves onto: a hover, so not much. */
+const hoverPoke = 0.3;
+
 /** How long a bubble's idle float takes, in ms, before it varies by bubble. */
 const floatPeriod = 5200;
 
@@ -464,7 +467,7 @@ export function animateCloud(
     if (hovered !== entered) {
       entered = hovered;
       if (hovered !== undefined) {
-        jelly.poke(hovered, vx, vy);
+        jelly.poke(hovered, vx * hoverPoke, vy * hoverPoke);
       }
     }
     schedule();

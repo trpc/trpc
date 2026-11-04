@@ -47,17 +47,17 @@ describe('Jelly', () => {
     jelly.vx[1] = 600;
     run(jelly, 0.05);
     const { a, b, c, d } = squish(jelly.transform(1));
-    expect(a).toBeGreaterThan(1.05);
+    expect(a).toBeGreaterThan(1.03);
     expect(d).toBeLessThan(1);
     expect(a * d - b * c).toBeCloseTo(1, 3);
   });
 
-  it('pushes the bubbles near a pointer away from it, but not the one under it', () => {
+  it('pushes the bubbles near a pointer gently away from it, but not the one under it', () => {
     const jelly = new Jelly(pair);
     jelly.pointer = { vx: 0, vy: 0, x: 225, y: 100 };
     run(jelly, 1);
-    expect(jelly.ox[1]).toBeLessThan(-2);
-    expect(jelly.ox[1]).toBeGreaterThan(-15);
+    expect(jelly.ox[1]).toBeLessThan(-1);
+    expect(jelly.ox[1]).toBeGreaterThan(-4);
     expect(Math.abs(jelly.ox[0] ?? 0)).toBeLessThan(0.5);
 
     const hovered = new Jelly(pair);
@@ -77,7 +77,7 @@ describe('Jelly', () => {
     const jelly = new Jelly(pair);
     jelly.pointer = { vx: 0, vy: 900, x: 184, y: 50 };
     run(jelly, 0.1);
-    expect(jelly.vy[1]).toBeGreaterThan(20);
+    expect(jelly.vy[1]).toBeGreaterThan(5);
     expect(run(jelly, 4)).toBe(false);
     const still = new Jelly(pair);
     still.pointer = { vx: 0, vy: 0, x: 184, y: 50 };
@@ -86,7 +86,10 @@ describe('Jelly', () => {
   });
 
   it('nudges the neighbours of a grown (hovered or focused) bubble out of its way', () => {
-    const jelly = new Jelly(pair);
+    const jelly = new Jelly([
+      { r: 50, x: 100, y: 100 },
+      { r: 30, x: 181, y: 100 },
+    ]);
     jelly.grown.add(0);
     run(jelly, 1);
     expect(jelly.ox[1]).toBeGreaterThan(0.2);
