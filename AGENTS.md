@@ -6,8 +6,7 @@
 
 Run them from the repo root.
 
-- Test one file: `pnpm vitest run <file>`. Not `pnpm test -- <file>`: pnpm passes the `--` on, and Vitest then ignores the filter and runs the whole suite.
-- Tests import `@trpc/*` from source, so they don't need `pnpm build`.
+- Test one file: `pnpm vitest run <file>`. Not `pnpm test -- <file>`: pnpm passes the `--` on, and Vitest then ignores the filter and runs the whole suite. Tests import `@trpc/*` from source, so they don't need `pnpm build`.
 - Typecheck: `pnpm typecheck-packages`. Lint and format: `pnpm lint-fix`.
 - Docs code blocks: `pnpm --filter www check-twoslash`.
 
@@ -18,11 +17,17 @@ Run them from the repo root.
 - `www/v11/docs/<path>.md`: the docs, served at `/docs/<path>`. `www/v10/` and `www/v9/` are older versions.
 - `packages/*/skills/` are generated from docs frontmatter when packing; edit the docs page instead.
 
+## Tests
+
+Adapted from [pstack's TDD skill](https://github.com/cursor/plugins/blob/main/pstack/skills/tdd/SKILL.md).
+
+- Fix bugs test-first. Write the smallest test that would have caught the bug, in `packages/tests/server/regression/issue-<number>-<slug>.test.ts` or next to the code's existing tests. Run it, see it fail for the right reason, then fix and rerun. Every bug fix needs one.
+- Test through a real client and server, not mocks: `await using ctx = testServerAndClientResource(router)` from `@trpc/client/__tests__/testClientResource`. The React packages each have their own helpers; copy the setup from the nearest test.
+- Assert the intended behaviour, not the current implementation. Add tests; don't rewrite or weaken existing ones to fit a change.
+- In new tests, wait on a condition with `vi.waitFor` rather than a fixed sleep.
+
 ## Changes
 
-- Every bug fix comes with a regression test that fails without the fix. Check that it does before you push.
-- Test through a real client and server, not mocks: `await using ctx = testServerAndClientResource(router)` from `@trpc/client/__tests__/testClientResource`. The React packages each have their own helpers; copy the setup from the nearest test.
-- Add tests; don't rewrite existing ones to fit your change.
 - No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Port v11 fixes to the `v12` branch.
 - Update the docs page a change affects in the same PR.
 
