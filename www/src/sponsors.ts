@@ -42,7 +42,10 @@ interface SponsorFields {
   readonly rank?: number;
   /** Their tier, by what they give a month now; absent below the lowest. */
   readonly tier?: SponsorTier;
-  /** How much they've given, relative to the others: 1 to about 100. */
+  /**
+   * How much they've given, relative to the others, from 5 to 100: a
+   * floor plus their share of the top sponsor's total (`weightFor`).
+   */
   readonly weight: number;
   /**
    * A small sponsor whose avatar didn't load at the last sync
@@ -142,10 +145,18 @@ export const drawnSponsors = sponsors.filter(
   (sponsor) => sponsor.imageless !== true,
 );
 
+/**
+ * Who has given more first: by weight, then, as `sponsors.json` keeps no
+ * totals, sponsors whose weights tie by tier rank, then by who started first.
+ */
+export const byMostGiven = (a: Sponsor, b: Sponsor) =>
+  b.weight - a.weight ||
+  (a.rank ?? Number.POSITIVE_INFINITY) - (b.rank ?? Number.POSITIVE_INFINITY) ||
+  a.createdAt - b.createdAt ||
+  sponsorKey(a).localeCompare(sponsorKey(b));
+
 /** The sponsors who have given the most, most first. */
-export const topSponsors = drawnSponsors
-  .toSorted((a, b) => b.weight - a.weight)
-  .slice(0, 5);
+export const topSponsors = drawnSponsors.toSorted(byMostGiven).slice(0, 5);
 
 export const sponsorUrl = 'https://github.com/sponsors/trpc';
 
@@ -286,7 +297,7 @@ export function cardFooterOf(
           sponsor.imageless !== true &&
           !ranked.some((p) => sponsorKey(p) === sponsorKey(sponsor)),
       )
-      .toSorted((a, b) => b.weight - a.weight)
+      .toSorted(byMostGiven)
       .slice(0, footerFaces * 2)
       // The faces are small; GitHub sends a big avatar for every face otherwise.
       .map((sponsor) => ({
@@ -329,7 +340,7 @@ export function sponsorCardOf(
           sponsor.imageless !== true &&
           !ranked.some((p) => sponsorKey(p) === sponsorKey(sponsor)),
       )
-      .toSorted((a, b) => b.weight - a.weight)
+      .toSorted(byMostGiven)
       .map((sponsor) => ({ image: sponsor.imgSrc, name: sponsor.name })),
   ].slice(0, cardBackers * 2);
   return {
