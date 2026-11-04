@@ -224,6 +224,43 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
+    /**
+     * `onError` runs in listeners and in promises nothing awaits, where a
+     * throw would crash the process, so an `onError` that throws is ignored.
+     */
+    function callOnError(
+      info: Parameters<NonNullable<typeof opts.onError>>[0],
+    ) {
+      try {
+        opts.onError?.(info);
+      } catch {
+        // ignored, see above
+      }
+    }
+
+    function reportConnectionError(cause: unknown) {
+      callOnError({
+        error: getTRPCErrorFromUnknown(cause),
+        path: undefined,
+        type: 'unknown',
+        ctx,
+        req,
+        input: undefined,
+      });
+    }
+
+    /**
+     * Sends a response that isn't tied to a request, reporting it to
+     * `onError` if it can't be built or sent.
+     */
+    function respondOrReport(response: () => TRPCResponseMessage) {
+      try {
+        respond(response());
+      } catch (cause) {
+        reportConnectionError(cause);
+      }
+    }
+
     async function createCtxPromise(
       getConnectionParams: () => TRPCRequestInfo['connectionParams'],
     ): Promise<ContextResult> {
@@ -250,7 +287,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({
+        callOnError({
           error,
           path: undefined,
           type: 'unknown',
@@ -258,7 +295,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           req,
           input: undefined,
         });
-        respond({
+        respondOrReport(() => ({
           id: null,
           error: getErrorShape({
             config: router._def._config,
@@ -268,7 +305,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             input: undefined,
             ctx,
           }),
-        });
+        }));
 
         // close in next tick
         (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
@@ -308,7 +345,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             message: '`id` is required',
           }),
         );
-        opts.onError?.({
+        callOnError({
           error,
           path: undefined,
           type: 'unknown',
@@ -360,7 +397,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       };
       const reportError = (cause: unknown) => {
         const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({ error, path, type, ctx, req, input });
+        callOnError({ error, path, type, ctx, req, input });
         return error;
       };
       const respondWithError = (cause: unknown) => {
@@ -501,7 +538,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           while (true) {
             next = await Unpromise.race([
               nextUnlessStopped(iterator, abortController.signal, (error) =>
-                opts.onError?.({ error, path, type, ctx, req, input }),
+                callOnError({ error, path, type, ctx, req, input }),
               ),
               abortPromise,
             ]);
@@ -592,7 +629,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           code: 'UNPROCESSABLE_CONTENT',
           message: 'Unexpected WebSocket message format',
         });
-        respond({
+        respondOrReport(() => ({
           id: null,
           error: getErrorShape({
             config: router._def._config,
@@ -602,7 +639,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             input: undefined,
             ctx,
           }),
-        });
+        }));
         return;
       }
       const data: string | Uint8Array = isBinary
@@ -648,7 +685,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               code: 'BAD_REQUEST',
               message: `Batch call exceeds maximum size`,
             });
-            opts.onError?.({
+            callOnError({
               error,
               path: undefined,
               type: 'unknown',
@@ -696,7 +733,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             cause,
           });
 
-          respond({
+          respondOrReport(() => ({
             id: null,
             error: getErrorShape({
               config: router._def._config,
@@ -706,14 +743,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               input: undefined,
               ctx,
             }),
-          });
+          }));
 
           return [];
         }
       });
 
       for (const [index, msg] of parsedMsgs.entries()) {
-        void handleRequest(msg, index, ctxPromise);
+        handleRequest(msg, index, ctxPromise).catch(reportConnectionError);
       }
     });
 
@@ -722,7 +759,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
     client.on('error', (cause) => {
-      opts.onError?.({
+      callOnError({
         ctx,
         error: getTRPCErrorFromUnknown(cause),
         input: undefined,
