@@ -42,7 +42,7 @@ jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' && inputs.dist_tag == 'latest'
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     environment: npm-publish # npm trusted publishing is bound to this environment
 
     steps:
@@ -77,7 +77,7 @@ jobs:
   publish-canary:
     if: github.event_name == 'push' || inputs.dist_tag == 'canary'
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     environment: npm-publish # npm trusted publishing is bound to this environment
 
     steps:
