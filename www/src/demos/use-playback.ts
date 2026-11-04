@@ -31,6 +31,12 @@ function mostlyOnScreen(entry: IntersectionObserverEntry) {
 }
 
 /**
+ * Every 5% of the element: the observer only reports at these, and half the
+ * screen is a different share of each tall element.
+ */
+const thresholds = Array.from({ length: 21 }, (_, index) => index / 20);
+
+/**
  * Whether the element is on the screen: from when most of it is, until none
  * of it is. False on the server and on the first render. The returned
  * callback is the element's `ref`.
@@ -51,7 +57,7 @@ export function useOnScreen() {
           }
         }
       },
-      { threshold: [0, 0.25, 0.5] },
+      { threshold: thresholds },
     );
     observer.observe(element);
     return () => observer.disconnect();

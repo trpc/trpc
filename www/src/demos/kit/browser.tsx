@@ -237,16 +237,17 @@ function LiveBrowser(props: {
  * A browser tab running `routeTree` on its own router and memory history,
  * with the session's tRPC proxy in the loaders' context. Every load starts a
  * new trace in the network panel. Until the demo starts its session, the tab
- * shows `initial` as `placeholder`, which is what the server renders, so the
- * placeholder should be as tall as that page will be.
+ * shows `placeholder(initial)`, which is what the server renders, so it
+ * should be as tall as that page will be.
  */
 export function DemoBrowser(props: {
   readonly initial: string;
-  readonly placeholder: ReactNode;
+  readonly placeholder: (href: string) => ReactNode;
   readonly reload: (location: string) => void;
   readonly routeTree: AnyRoute;
   readonly session: Session | undefined;
 }) {
+  const placeholder = props.placeholder(props.initial);
   if (!props.session) {
     return (
       <Tab
@@ -257,14 +258,14 @@ export function DemoBrowser(props: {
         pending={false}
         reload={() => {}}
       >
-        {props.placeholder}
+        {placeholder}
       </Tab>
     );
   }
   return (
     <LiveBrowser
       initial={props.initial}
-      placeholder={props.placeholder}
+      placeholder={placeholder}
       reload={props.reload}
       routeTree={props.routeTree}
       session={props.session}

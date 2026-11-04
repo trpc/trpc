@@ -3,6 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createDemoClient } from './kit/backend.ts';
+import { PageSkeleton } from './kit/blog-routes.tsx';
 import {
   chainLength,
   createNetwork,
@@ -313,6 +314,17 @@ describe('url state', () => {
 });
 
 describe('first frame', () => {
+  it('shapes the skeleton like the page the tab opens at', () => {
+    const skeleton = (href: string) =>
+      renderToString(createElement(PageSkeleton, { href }));
+    expect(skeleton('/posts/2')).toContain('Handles, explained');
+    expect(skeleton('/posts?page=2')).toContain(
+      'Loaders start, components wait',
+    );
+    expect(skeleton('/posts?page=2')).not.toContain('Render as you fetch');
+    expect(skeleton('/nowhere')).toBe('');
+  });
+
   it.each(demoNames)(
     'renders %s on the server without the clock or random numbers',
     async (name) => {

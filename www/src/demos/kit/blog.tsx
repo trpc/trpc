@@ -54,11 +54,18 @@ function Shaped(props: {
   );
 }
 
+/** A served-at time as wide as any a reader is likely to see. */
+const widestServedAt = 88.8;
+
 export function PostSkeleton(props: { readonly id: number }) {
   const post = blogData.post(props.id);
   return (
     <Shaped
-      shape={post ? <PostArticle post={{ ...post, servedAt: 0 }} /> : null}
+      shape={
+        post ? (
+          <PostArticle post={{ ...post, servedAt: widestServedAt }} />
+        ) : null
+      }
     >
       <div className="grid gap-2">
         <Skeleton className="h-5 w-2/3" />

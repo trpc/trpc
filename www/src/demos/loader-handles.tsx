@@ -6,7 +6,13 @@ import {
   ChevronRight,
   Play,
 } from 'lucide-react';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
@@ -167,18 +173,27 @@ export function LoaderHandles(_props: DemoProps) {
   const [seen, setSeen] = useState(false);
   const [onScreen, onScreenRef] = useOnScreen();
 
-  // Off the screen, the current step waits.
+  // What's left of the current step's time. Off the screen, the step waits,
+  // and it gets the rest of its time when it's back.
+  const remaining = useRef(stepDuration);
+  useEffect(() => {
+    remaining.current = stepDuration;
+  }, [playing, step]);
   useEffect(() => {
     if (!playing || !onScreen) {
       return undefined;
     }
+    const startedAt = performance.now();
     const timer = setTimeout(() => {
       setStep((current) => Math.min(lastStep, current + 1));
       if (step + 1 >= lastStep) {
         setPlaying(false);
       }
-    }, stepDuration);
-    return () => clearTimeout(timer);
+    }, remaining.current);
+    return () => {
+      clearTimeout(timer);
+      remaining.current -= performance.now() - startedAt;
+    };
   }, [onScreen, playing, step]);
 
   const play = useCallback(() => {

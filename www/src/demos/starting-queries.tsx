@@ -1,4 +1,4 @@
-import { createBlogRoutes, PostPageSkeleton } from './kit/blog-routes.tsx';
+import { createBlogRoutes, PageSkeleton } from './kit/blog-routes.tsx';
 import { DemoBrowser } from './kit/browser.tsx';
 import { DemoFrame } from './kit/frame.tsx';
 import { staleTime } from './kit/session.tsx';
@@ -55,7 +55,7 @@ export function StartingQueries(props: DemoProps) {
       {(run) => (
         <DemoBrowser
           initial={run.location ?? '/posts/1'}
-          placeholder={<PostPageSkeleton id={1} />}
+          placeholder={(href) => <PageSkeleton href={href} />}
           reload={run.reload}
           routeTree={blogs[run.variant]}
           session={run.session}

@@ -96,9 +96,9 @@ export function DemoFrame<TValue extends string>(props: {
 
   useEffect(() => {
     if (onScreen && !started) {
-      setRun(newRun(initialLatency, origin));
+      setRun(newRun(latency, origin));
     }
-  }, [onScreen, origin, started]);
+  }, [latency, onScreen, origin, started]);
 
   useEffect(() => {
     const network = run.session?.network;
