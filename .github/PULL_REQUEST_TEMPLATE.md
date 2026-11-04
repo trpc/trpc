@@ -4,6 +4,7 @@ Write plainly, as Orwell would:
 - Prefer active voice. Avoid jargon and stock phrases.
 - Use bullet points, not paragraphs.
 Keep it under 200 words, not counting code blocks and links. Put detail in code comments, commit messages or docs. See AGENTS.md.
+Keep credits: `Co-authored-by:` lines, contributor credit and AI disclosures. Drop thank-you notes and review history.
 -->
 
 ## Why
