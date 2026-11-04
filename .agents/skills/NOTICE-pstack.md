@@ -2,6 +2,8 @@
 
 These skill folders are installed unchanged from [pstack](https://github.com/cursor/plugins/tree/bb68f2365eceafa0cb2d253112f675acf5f144cc/pstack) (`cursor/plugins@bb68f23`, `pstack/`) and pinned in `skills-lock.json`:
 
+- `principle-boundary-discipline/`
+- `principle-encode-lessons-in-structure/`
 - `principle-type-system-discipline/`
 - `tdd/`
 - `typescript-best-practices/`

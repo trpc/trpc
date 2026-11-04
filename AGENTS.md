@@ -27,7 +27,9 @@ Run them from the repo root.
 - [`trpc-conventions`](.agents/skills/trpc-conventions/SKILL.md): fixing a bug, writing tests or writing TypeScript in `packages/`. It wins where the skills below disagree.
 - [`tdd`](.agents/skills/tdd/SKILL.md): fixing a bug.
 - [`typescript-best-practices`](.agents/skills/typescript-best-practices/SKILL.md) and [`principle-type-system-discipline`](.agents/skills/principle-type-system-discipline/SKILL.md): writing or reviewing TypeScript.
+- [`principle-boundary-discipline`](.agents/skills/principle-boundary-discipline/SKILL.md): validation, error handling or adapters.
+- [`principle-encode-lessons-in-structure`](.agents/skills/principle-encode-lessons-in-structure/SKILL.md): turning a repeated review comment into a lint, type or check.
 
-Those three are Lauren Tan's pstack skills, installed unchanged by the [`skills`](https://skills.sh) CLI and pinned in `skills-lock.json`; their MIT license is in [`NOTICE-pstack.md`](.agents/skills/NOTICE-pstack.md). Don't edit them. To update, rerun with a new commit and update the notice:
+All but `trpc-conventions` are Lauren Tan's pstack skills, installed unchanged by the [`skills`](https://skills.sh) CLI and pinned in `skills-lock.json`; their MIT license is in [`NOTICE-pstack.md`](.agents/skills/NOTICE-pstack.md). Don't edit them. To update, rerun with a new commit and update the notice:
 
-`npx skills add https://github.com/cursor/plugins/tree/<sha>/pstack/skills --skill tdd typescript-best-practices principle-type-system-discipline -a claude-code codex cursor -y`
+`npx skills add https://github.com/cursor/plugins/tree/<sha>/pstack/skills --skill tdd typescript-best-practices principle-type-system-discipline principle-boundary-discipline principle-encode-lessons-in-structure -a claude-code codex cursor -y`

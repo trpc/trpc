@@ -1,6 +1,20 @@
 {
   "version": 1,
   "skills": {
+    "principle-boundary-discipline": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/principle-boundary-discipline/SKILL.md",
+      "computedHash": "51f995752ff3bad613526eb7779872e01d01ac141a88c9ca050075a074ee5b70"
+    },
+    "principle-encode-lessons-in-structure": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
+      "computedHash": "200f578bf772cff030e7b18c582c935686375ddb6ebfe96b97bfee663434da21"
+    },
     "principle-type-system-discipline": {
       "source": "cursor/plugins",
       "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
