@@ -261,7 +261,7 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
     };
     const queryKey = queryFnContext.queryKey;
 
-    const result = await query(...getClientArgs(queryKey, actualOpts));
+    const result = await query(...getClientArgs(queryKey, actualOpts, null));
 
     if (isAsyncIterable(result)) {
       return buildQueryFromAsyncIterable(result, queryClient, queryKey);

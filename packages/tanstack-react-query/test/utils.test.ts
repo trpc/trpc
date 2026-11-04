@@ -51,7 +51,12 @@ describe(getQueryKeyInternal, () => {
 
   it('creates a router key', () => {
     expect(
-      getQueryKeyInternal({ prefix: undefined, path: ['a', 'b'], type: 'any' }),
+      getQueryKeyInternal({
+        prefix: undefined,
+        path: ['a', 'b'],
+        input: undefined,
+        type: 'any',
+      }),
     ).toMatchInlineSnapshot(`
       Array [
         Array [
@@ -66,6 +71,7 @@ describe(getQueryKeyInternal, () => {
     expect(
       getQueryKeyInternal({
         path: ['a', 'b'],
+        input: undefined,
         type: 'any',
         prefix: 'prefix',
       }),

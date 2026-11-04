@@ -194,9 +194,9 @@ export const trpcSubscriptionOptions = <
    * `skipToken` because `getQueryKeyInternal` strips it from the queryKey args.
    */
   input: unknown;
-  opts?: AnyTRPCSubscriptionOptionsIn;
+  opts: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
-  const { subscribe, path, queryKey, input, opts = {} } = args;
+  const { subscribe, path, queryKey, input, opts } = args;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<

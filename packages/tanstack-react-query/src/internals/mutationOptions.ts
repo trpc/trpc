@@ -128,7 +128,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   const mutationFn: MutationFunction = async (input) => {
     const result = await mutate(
-      ...getClientArgs([...mutationKey, { input }] as any, opts),
+      ...getClientArgs([...mutationKey, { input }] as any, opts, null),
     );
 
     return result;
