@@ -706,6 +706,17 @@ describe('loggerLink', () => {
     consoleLog.mockRestore();
   });
 
+  test('custom logger does not read the global console', () => {
+    const originalConsole = globalThis.console;
+    // @ts-expect-error - simulate a runtime without a global console
+    delete globalThis.console;
+    try {
+      expect(() => loggerLink({ logger: vi.fn() })).not.toThrow();
+    } finally {
+      globalThis.console = originalConsole;
+    }
+  });
+
   test('custom logger', () => {
     const logFn = vi.fn();
     createChain({
