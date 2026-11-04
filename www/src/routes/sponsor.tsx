@@ -373,7 +373,7 @@ function Cloud() {
         Everyone who sponsors gets a bubble, sized by what they&apos;ve given.
         Thank you, all of you.
       </p>
-      <SponsorCloud className="mx-auto max-w-4xl" />
+      <SponsorCloud className="mx-auto max-w-4xl" you="github" />
     </section>
   );
 }

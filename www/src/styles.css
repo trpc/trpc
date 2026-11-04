@@ -26,7 +26,7 @@ html {
 
 /* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
    comes into view: `pop` from hidden, or `boing` when they were already
-   showing, and `shimmer` after. Each element sets its own `animation-delay`: a theme variable is
+   showing, and `shimmer` after; then the reader's (`you`). Each element sets its own `animation-delay`: a theme variable is
    resolved on `:root`, so one there can't read a delay set per bubble. */
 @theme {
   --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
@@ -35,6 +35,7 @@ html {
   --animate-sponsor-confetti: sponsor-confetti 0.9s
     cubic-bezier(0.2, 0.8, 0.4, 1) both;
   --animate-sponsor-shimmer: sponsor-shimmer 7s ease-in-out infinite;
+  --animate-sponsor-you: sponsor-you 0.8s ease-out both;
 
   @keyframes sponsor-pop {
     0% {
@@ -96,6 +97,18 @@ html {
       opacity: 0;
       top: -75%;
       scale: 0.4;
+    }
+  }
+
+  /* The reader's own bubble (`YouBubble`), last and calmly. */
+  @keyframes sponsor-you {
+    0% {
+      opacity: 0;
+      scale: 0.85;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
     }
   }
 

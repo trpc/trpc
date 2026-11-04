@@ -4,12 +4,15 @@ import type { Sponsor } from '~/sponsors.ts';
  * A sponsor's circle in the cloud: its center and radius are fractions of
  * the cloud's width, which is as tall as `cloudHeight`.
  */
-export interface Bubble {
+export interface Bubble<T extends Weighed = Sponsor> {
   readonly r: number;
-  readonly sponsor: Sponsor;
+  readonly sponsor: T;
   readonly x: number;
   readonly y: number;
 }
+
+/** What `packSponsors` sizes a circle by. */
+export type Weighed = Pick<Sponsor, 'weight'>;
 
 /** The gap between the cloud's circles, as a fraction of its width: `/sponsor`'s and the READMEs' (`og/sponsor-cloud.ts`). */
 export const cloudPadding = 0.006;
@@ -209,10 +212,10 @@ function heartOut(radii: ReadonlyArray<number>) {
  * is the same on the server and in the browser, so it's prerendered and
  * drawn in percentages.
  */
-export function packSponsors(
-  list: ReadonlyArray<Sponsor>,
+export function packSponsors<T extends Weighed>(
+  list: ReadonlyArray<T>,
   padding: number,
-): ReadonlyArray<Bubble> {
+): ReadonlyArray<Bubble<T>> {
   const sorted = list
     .map((sponsor, index) => ({ index, sponsor }))
     .toSorted(
@@ -248,5 +251,5 @@ export function packSponsors(
 }
 
 /** How tall `bubbles`, from `packSponsors`, reach: a fraction of their width. */
-export const cloudHeight = (bubbles: ReadonlyArray<Bubble>) =>
+export const cloudHeight = (bubbles: ReadonlyArray<Bubble<Weighed>>) =>
   Math.max(0, ...bubbles.map((bubble) => bubble.y + bubble.r));
