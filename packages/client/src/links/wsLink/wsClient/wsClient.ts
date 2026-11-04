@@ -508,6 +508,14 @@ export class WsClient {
       await sleep(0);
 
       if (!this.requestManager.hasOutgoingRequests()) return;
+      // Another run already sent this request. Each queued request's own run
+      // sends it once the new socket opens.
+      if (
+        !this.activeConnection.isOpen() &&
+        !this.requestManager.isOutgoing(message)
+      ) {
+        return;
+      }
 
       const requests = this.requestManager.flush();
       try {
