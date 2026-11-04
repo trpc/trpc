@@ -368,15 +368,13 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
     const separator = config.pathSeparator;
 
-    function step({
-      from,
-      path,
-    }: {
+    function step(opts: {
       from: CreateRouterOptions;
       path: readonly string[];
     }) {
+      const { path } = opts;
       const aggregate: RouterRecord = emptyObject();
-      for (const [key, item] of Object.entries(from ?? {})) {
+      for (const [key, item] of Object.entries(opts.from ?? {})) {
         if (separator !== '.' && key.includes(separator)) {
           // The URL `a_b_c` couldn't say which `_` splits a segment
           throw new Error(

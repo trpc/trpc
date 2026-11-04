@@ -13,14 +13,13 @@ export class TRPCRedirectError extends TRPCError {
     /** Passed to Next.js `redirect()` unchanged; `undefined` lets Next.js pick the default. */
     redirectType: RedirectType | undefined;
   }) {
-    const { url, redirectType } = opts;
     super({
       // TODO(?): This should maybe a custom error code
       code: 'UNPROCESSABLE_CONTENT',
-      message: `Redirect error to "${url}" that will be handled by Next.js`,
+      message: `Redirect error to "${opts.url}" that will be handled by Next.js`,
     });
 
-    this.args = [url.toString(), redirectType] as const;
+    this.args = [opts.url.toString(), opts.redirectType] as const;
   }
 }
 
