@@ -58,6 +58,7 @@ export class WsClient {
   >;
   private readonly lazyMode: boolean;
   private readonly encoder: Encoder;
+  private readonly closeOnPongTimeout = new WeakMap<WebSocket, () => void>();
 
   constructor(opts: WebSocketClientOptions) {
     this.encoder = opts.experimental_encoder ?? jsonEncoder;
@@ -95,6 +96,7 @@ export class WsClient {
         ...opts.keepAlive,
       },
       encoder: this.encoder,
+      onPongTimeout: (ws) => this.closeOnPongTimeout.get(ws)?.(),
     });
     this.activeConnection.wsObservable.subscribe({
       next: (ws) => {
@@ -287,7 +289,8 @@ export class WsClient {
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
    * instead of starting over at attempt 0. Cleared again when the socket
-   * receives a result, which proves the connection was accepted.
+   * receives a result, which proves the connection was accepted. Also set
+   * on a keepAlive pong timeout when the socket never received anything.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
@@ -388,7 +391,15 @@ export class WsClient {
       });
     });
 
+    // Set on the socket's `close` event, or earlier on a keepAlive pong
+    // timeout, which doesn't wait for the closing handshake. The socket's
+    // later frames and events must not reach the requests resent by then.
+    let closed = false;
+    let answered = false;
+
     ws.addEventListener('message', ({ data }) => {
+      if (closed) return;
+      answered = true;
       this.inactivityTimeout.reset();
 
       // Handle PING/PONG as text regardless of encoder
@@ -414,7 +425,9 @@ export class WsClient {
       this.handleResponseMessage(incomingMessage);
     });
 
-    ws.addEventListener('close', (event) => {
+    const onClose = (event: CloseEvent | { code: number }) => {
+      if (closed) return;
+      closed = true;
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onClose?.(event));
 
@@ -426,9 +439,18 @@ export class WsClient {
           }),
         );
       }
+    };
+    ws.addEventListener('close', onClose);
+    this.closeOnPongTimeout.set(ws, () => {
+      // A server that never answered, not even a ping, gets the same backoff
+      // as one that rejected the connection.
+      if (!answered) this.connectionRejected = true;
+      // What `close` reports once the closing handshake times out.
+      onClose({ code: 1006 });
     });
 
     ws.addEventListener('error', (event) => {
+      if (closed) return;
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
 
