@@ -278,6 +278,10 @@ test.each([
 test.each([false, true])(
   'rejects a failed batch without sending a stop for an unsent subscription (throwing error observer: %s)',
   async (throwsInObserver) => {
+    const uncaught: unknown[] = [];
+    const onUncaught = (cause: unknown) => uncaught.push(cause);
+    process.on('uncaughtException', onUncaught);
+    process.on('unhandledRejection', onUncaught);
     await using ctx = factory();
     await ctx.client.greeting.query();
     const connection = ctx.wsClient.connection;
@@ -286,13 +290,14 @@ test.each([false, true])(
     const send = vi.spyOn(connection.ws, 'send').mockImplementation(() => {
       throw error;
     });
+    const observerError = new Error('Error observer failed');
     const onError = vi.fn();
     const ac = new AbortController();
     const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
       onError(error) {
         onError(error);
         if (throwsInObserver) {
-          throw new Error('Error observer failed');
+          throw observerError;
         }
       },
     });
@@ -308,11 +313,17 @@ test.each([false, true])(
         expect.objectContaining({ cause: error }),
       ]);
       await ctx.wsClient.close();
+      // `callUserCallback` reports the observer's error asynchronously
+      await vi.waitFor(() =>
+        expect(uncaught).toEqual(throwsInObserver ? [observerError] : []),
+      );
     } finally {
       send.mockRestore();
       subscription.unsubscribe();
       ac.abort();
       await query;
+      process.off('uncaughtException', onUncaught);
+      process.off('unhandledRejection', onUncaught);
     }
   },
 );

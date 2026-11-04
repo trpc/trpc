@@ -520,12 +520,10 @@ export class WsClient {
         this.send(requests.map((request) => request.message));
       } catch (err) {
         for (const request of requests) {
-          this.requestManager.delete(request.message.id);
-          try {
-            request.callbacks.error(TRPCClientError.from(err as Error));
-          } catch {
-            // An observer failure must not leave the remaining requests pending.
-          }
+          this.requestManager.delete(request.message);
+          callUserCallback(() =>
+            request.callbacks.error(TRPCClientError.from(err as Error)),
+          );
         }
       }
     }).catch((err) => {
