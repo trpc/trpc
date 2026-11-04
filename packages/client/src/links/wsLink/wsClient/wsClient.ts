@@ -372,7 +372,13 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
           {
             ...observer,
             next(event) {
-              const transformed = transformResult(event, transformer.output);
+              let transformed: ReturnType<typeof transformResult>;
+              try {
+                transformed = transformResult(event, transformer.output);
+              } catch (cause) {
+                observer.error(TRPCClientError.from(cause as Error));
+                return;
+              }
               if (!transformed.ok) {
                 observer.error(TRPCClientError.from(transformed.error));
                 return;

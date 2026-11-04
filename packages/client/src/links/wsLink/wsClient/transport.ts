@@ -1,5 +1,8 @@
 import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-not-import';
-import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isObject,
+  makeResource,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
 import type { ConnectionEvent } from './machine/connectionMachine';
@@ -234,15 +237,28 @@ function createKeepAlive(
   );
 }
 
+/**
+ * A server request (`method`) or a response (`id` and a `result` or `error`
+ * object).
+ */
+function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
+  return (
+    isObject(value) &&
+    ('method' in value ||
+      ('id' in value &&
+        (isObject(value['result']) || isObject(value['error']))))
+  );
+}
+
 function decodeMessage(
   encoder: Encoder,
   data: string | ArrayBuffer | Uint8Array,
-): TRPCClientIncomingMessage {
-  const message: unknown = encoder.decode(data);
-  if (typeof message !== 'object' || message === null) {
-    throw new TypeError(`Expected a message object, received ${message}`);
+) {
+  const message = encoder.decode(data);
+  if (!isIncomingMessage(message)) {
+    throw new TypeError('Expected a tRPC message');
   }
-  return message as TRPCClientIncomingMessage;
+  return message;
 }
 
 /**
