@@ -47,14 +47,21 @@ export function useTapTooltips() {
   const held = useRef(false);
   const hold = useRef<ReturnType<typeof setTimeout>>(undefined);
   const stopHold = () => clearTimeout(hold.current);
+  // Most browsers say which pointer pressed or clicked, the keyboard as '';
+  // Safari's clicks don't, so they fall back to the press that started them.
+  const pointerOf = (event: Event) =>
+    'pointerType' in event
+      ? String(event.pointerType) || undefined
+      : pointer.current;
   return (key: string) => {
     const onOpenChange: OpenChange = (open, details) => {
-      // A touch press on the trigger is a tap, which `trigger.onClick` handles.
+      // A touch press on the trigger is a tap, which `trigger.onClick`
+      // handles, and hover leaving doesn't hide what a tap showed.
       if (
         !open &&
-        details.reason === 'trigger-press' &&
-        'pointerType' in details.event &&
-        isTouch(String(details.event.pointerType))
+        ((details.reason === 'trigger-press' &&
+          isTouch(pointerOf(details.event))) ||
+          (details.reason === 'trigger-hover' && tapped.current === key))
       ) {
         return;
       }
@@ -72,18 +79,11 @@ export function useTapTooltips() {
       root: { onOpenChange, open: shown === key },
       trigger: {
         onClick(event: MouseEvent) {
-          // Most browsers say which pointer clicked, the keyboard as ''; Safari
-          // doesn't, so it falls back to the press that started the click.
-          const native = event.nativeEvent;
           const action = tapAction({
             held: held.current,
-            pointerType:
-              'pointerType' in native
-                ? String(native.pointerType) || undefined
-                : pointer.current,
+            pointerType: pointerOf(event.nativeEvent),
             tapped: tapped.current === key,
           });
-          pointer.current = undefined;
           held.current = false;
           if (action === 'show') {
             event.preventDefault();
