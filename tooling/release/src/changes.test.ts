@@ -39,7 +39,7 @@ describe('commitBump', () => {
 
   it('takes the largest bump', () => {
     const commits = (...subjects: Array<string>) =>
-      subjects.map((subject) => ({ sha: '0', subject }));
+      subjects.map((subject) => ({ sha: '0', subject, packages: [] }));
     expect(releaseBump(commits('fix: a', 'chore: b'))).toBe('patch');
     expect(releaseBump(commits('fix: a', 'feat: b'))).toBe('minor');
     expect(releaseBump(commits('feat: a', 'feat!: b'))).toBe('major');
@@ -84,10 +84,10 @@ describe('publishedPathspecs', () => {
       ':(glob)tsconfig.build.json',
       ':(glob,exclude)packages/server/**/*.test.*',
       ':(glob,exclude)packages/server/**/*.test.*/**',
-      ':(glob,exclude)packages/server/**/*.md',
       ':(glob,exclude)packages/openapi/**/test',
       ':(glob,exclude)packages/openapi/**/test/**',
-      ':(glob,exclude)packages/openapi/**/*.md',
+      ':(glob,icase,exclude)packages/server/**/*.md',
+      ':(glob,icase,exclude)packages/openapi/**/*.md',
     ]);
   });
 });
@@ -215,6 +215,7 @@ describe('releasableCommits', () => {
         yield* write('examples/minimal/index.ts', 'export {};\n');
         yield* commit('docs: a page');
         yield* write('packages/server/README.md', '# tRPC\n');
+        yield* write('packages/server/src/NOTES.MD', '# Notes\n');
         yield* commit('docs: readme');
         yield* write('packages/server/src/index.test.ts', 'test();\n');
         yield* write('packages/tests/server/a.test.ts', 'test();\n');
@@ -265,6 +266,60 @@ describe('releasableCommits', () => {
         expect(yield* publishedChanged(root, beforeRevert, 'HEAD')).toBe(false);
         // A rewind: no commits from HEAD to the tag, but what they publish differs.
         expect(yield* publishedChanged(root, 'HEAD', 'v11.23.0')).toBe(true);
+
+        const beforeClient = yield* git(root, 'rev-parse', 'HEAD');
+        yield* write('packages/client/package.json', {
+          name: '@trpc/client',
+          version: '11.23.0',
+          files: ['dist', 'src'],
+          dependencies: { '@trpc/server': 'workspace:*', zod: 'catalog:' },
+        });
+        yield* write('packages/client/src/index.ts', 'export {};\n');
+        yield* commit('feat(client): new');
+        yield* write('packages/client/src/index.ts', 'export const c = 1;\n');
+        yield* write('packages/server/README.md', '# tRPC server\n');
+        yield* commit('fix(client): c');
+        yield* write('packages/client/src/index.ts', 'export const c = 2;\n');
+        yield* write('packages/server/src/index.ts', 'export const a = 2;\n');
+        yield* commit('fix: both');
+        yield* write(
+          'pnpm-workspace.yaml',
+          'catalog:\n  typescript: ^5.8.0\n  zod: ^4.1.0\n',
+        );
+        yield* commit('chore: zod for the client');
+        yield* write('packages/server/src/café.ts', 'export {};\n');
+        yield* commit('fix(server): café');
+        yield* git(root, 'checkout', '--quiet', '-b', 'feature');
+        yield* write('packages/server/src/feature.ts', 'export {};\n');
+        yield* commit('feat(server): feature');
+        yield* git(root, 'checkout', '--quiet', 'main');
+        yield* git(
+          root,
+          '-c',
+          'user.name=Test',
+          '-c',
+          'user.email=test@example.com',
+          '-c',
+          'commit.gpgsign=false',
+          'merge',
+          '--quiet',
+          '--no-ff',
+          '--message',
+          'Merge pull request #3 from someone/feature',
+          'feature',
+        );
+        expect(
+          (yield* releasableCommits(root, beforeClient)).map(
+            ({ subject, packages }) => [subject, packages],
+          ),
+        ).toEqual([
+          ['Merge pull request #3 from someone/feature', ['@trpc/server']],
+          ['fix(server): café', ['@trpc/server']],
+          ['chore: zod for the client', ['@trpc/client']],
+          ['fix: both', ['@trpc/client', '@trpc/server']],
+          ['fix(client): c', ['@trpc/client']],
+          ['feat(client): new', ['@trpc/client']],
+        ]);
       }),
     ));
 });

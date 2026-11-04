@@ -31,6 +31,7 @@ export function publishedPathspecs(
 ): ReadonlyArray<string> {
   const include: Array<string> = [];
   const exclude: Array<string> = [];
+  const markdown: Array<string> = [];
   for (const { dir, pkg } of packages) {
     if (pkg.private === true) {
       continue;
@@ -45,13 +46,14 @@ export function publishedPathspecs(
       }
     }
     include.push(`${dir}/tsdown.config.ts`, `${dir}/tsconfig.build.json`);
-    exclude.push(`${dir}/**/*.md`);
+    markdown.push(`${dir}/**/*.md`);
   }
   // Every package's tsconfig.build.json extends it.
   include.push('tsconfig.build.json');
   return [
     ...include.map((path) => `:(glob)${path}`),
     ...exclude.map((path) => `:(glob,exclude)${path}`),
+    ...markdown.map((path) => `:(glob,icase,exclude)${path}`),
   ];
 }
 
@@ -119,6 +121,32 @@ const showOrUndefined = (root: string, rev: string, file: string) =>
     Effect.orElseSucceed(() => undefined),
   );
 
+/** The packages in `packages/*` at `rev`. */
+export const packagesAt = Effect.fn('packagesAt')(function* (
+  root: string,
+  rev: string,
+) {
+  const packages: Array<WorkspacePackage> = [];
+  // Lists nothing when `rev` has no packages/ directory.
+  const listed = yield* git(
+    root,
+    'ls-tree',
+    '-z',
+    '--name-only',
+    rev,
+    'packages/',
+  );
+  for (const dir of listed.split('\0').filter((entry) => entry !== '')) {
+    const raw = yield* showOrUndefined(root, rev, `${dir}/package.json`);
+    const pkg =
+      raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
+    if (pkg?.name !== undefined) {
+      packages.push({ dir, name: pkg.name, pkg });
+    }
+  }
+  return packages;
+});
+
 /** The published manifests of `packages` at `rev`, by directory. */
 const publishedManifestsAt = Effect.fn('publishedManifestsAt')(function* (
   root: string,
@@ -163,42 +191,52 @@ const firstParentLog = (
 export interface ReleasableCommit {
   readonly sha: string;
   readonly subject: string;
+  /** The public packages whose published contents it changes. */
+  readonly packages: ReadonlyArray<string>;
 }
 
 /**
  * The commits on `to`'s first-parent history since `from` that change what
- * the public packages in `packages/*` publish, newest first.
+ * the public packages in `packages/*` publish, newest first. Release notes
+ * list the same commits under the same packages.
  */
 export const releasableCommits = Effect.fn('releasableCommits')(function* (
   root: string,
   from: string,
-  to = 'HEAD',
+  to?: string,
 ) {
-  const range = `${from}..${to}`;
-  const packages = (yield* readPackages(root)).filter(
+  const range = `${from}..${to ?? 'HEAD'}`;
+  const packages = (yield* packagesAt(root, to ?? 'HEAD')).filter(
     ({ pkg }) => pkg.private !== true,
   );
-  const releasable = new Set(
-    yield* firstParentLog(root, range, {
+  const changed = new Map<string, Set<string>>();
+  const add = (sha: string, name: string) => {
+    const names = changed.get(sha) ?? new Set();
+    changed.set(sha, names.add(name));
+  };
+
+  for (const pkg of packages) {
+    for (const sha of yield* firstParentLog(root, range, {
       format: '%H',
-      paths: publishedPathspecs(packages),
-    }),
-  );
+      paths: publishedPathspecs([pkg]),
+    })) {
+      add(sha, pkg.name);
+    }
+  }
 
   const manifestCommits = yield* firstParentLog(root, range, {
     format: '%H',
     paths: [':(glob)packages/*/package.json', 'pnpm-workspace.yaml'],
   });
   for (const sha of manifestCommits) {
-    if (releasable.has(sha)) {
-      continue;
-    }
     const [before, after] = [
       yield* publishedManifestsAt(root, `${sha}^`, packages),
       yield* publishedManifestsAt(root, sha, packages),
     ];
-    if ([...after].some(([dir, manifest]) => before.get(dir) !== manifest)) {
-      releasable.add(sha);
+    for (const { dir, name } of packages) {
+      if (before.get(dir) !== after.get(dir)) {
+        add(sha, name);
+      }
     }
   }
 
@@ -209,8 +247,15 @@ export const releasableCommits = Effect.fn('releasableCommits')(function* (
   })) {
     const space = line.indexOf(' ');
     const sha = line.slice(0, space);
-    if (releasable.has(sha)) {
-      commits.push({ sha, subject: line.slice(space + 1) });
+    const names = changed.get(sha);
+    if (names !== undefined) {
+      commits.push({
+        sha,
+        subject: line.slice(space + 1),
+        packages: packages
+          .map(({ name }) => name)
+          .filter((name) => names.has(name)),
+      });
     }
   }
   return commits;
