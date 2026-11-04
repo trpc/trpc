@@ -5,7 +5,9 @@ import { type ReactNode, useId } from 'react';
 
 import { Skeleton } from '@shared/ui/components/skeleton';
 
-import { DemoLink } from './browser.tsx';
+import { Reserve } from '../reserve.tsx';
+import { blogData } from './backend.ts';
+import { DemoLink, WithoutLinks } from './browser.tsx';
 import { type TRPC, useTRPC } from './session.tsx';
 
 /** The same components read the handles in every demo, as in an app. */
@@ -36,13 +38,34 @@ export function PostArticle(props: {
   );
 }
 
-export function PostSkeleton() {
+/**
+ * A skeleton as tall as `shape`, what it stands in for, so nothing moves
+ * when the data comes in. The demo's data never changes, so a skeleton can
+ * know it.
+ */
+function Shaped(props: {
+  readonly children: ReactNode;
+  readonly shape: ReactNode;
+}) {
   return (
-    <div className="grid gap-2">
-      <Skeleton className="h-5 w-2/3" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-3 w-24" />
-    </div>
+    <Reserve shapes={[<WithoutLinks key="shape">{props.shape}</WithoutLinks>]}>
+      {props.children}
+    </Reserve>
+  );
+}
+
+export function PostSkeleton(props: { readonly id: number }) {
+  const post = blogData.post(props.id);
+  return (
+    <Shaped
+      shape={post ? <PostArticle post={{ ...post, servedAt: 0 }} /> : null}
+    >
+      <div className="grid gap-2">
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+    </Shaped>
   );
 }
 
@@ -101,16 +124,18 @@ export function Comments(props: {
   return <CommentList comments={commentsQuery.data} />;
 }
 
-export function CommentsSkeleton() {
+export function CommentsSkeleton(props: { readonly postId: number }) {
   return (
-    <div className="grid gap-2">
-      {[0, 1].map((row) => (
-        <div className="flex gap-2" key={row}>
-          <Skeleton className="size-6 shrink-0 rounded-full" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      ))}
-    </div>
+    <Shaped shape={<CommentList comments={blogData.comments(props.postId)} />}>
+      <div className="grid gap-2">
+        {[0, 1].map((row) => (
+          <div className="flex gap-2" key={row}>
+            <Skeleton className="size-6 shrink-0 rounded-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ))}
+      </div>
+    </Shaped>
   );
 }
 
@@ -205,13 +230,25 @@ export function PostList(props: {
   return <PostListPage list={listQuery.data} page={props.page} />;
 }
 
-export function PostListSkeleton(props: { readonly count?: number }) {
+function PostCardSkeletons(props: { readonly count: number }) {
   return (
     <div className="grid gap-2">
-      {Array.from({ length: props.count ?? 3 }, (_, row) => (
+      {Array.from({ length: props.count }, (_, row) => (
         <Skeleton className="h-[4.75rem] w-full rounded-lg" key={row} />
       ))}
     </div>
+  );
+}
+
+export function PostListSkeleton(props: { readonly page: number }) {
+  return (
+    <Shaped
+      shape={
+        <PostListPage list={blogData.list(props.page)} page={props.page} />
+      }
+    >
+      <PostCardSkeletons count={3} />
+    </Shaped>
   );
 }
 
@@ -256,12 +293,15 @@ export function MoreByAuthorList(props: {
   );
 }
 
-export function MoreByAuthorSkeleton() {
+export function MoreByAuthorSkeleton(props: { readonly postId: number }) {
+  const more = blogData.moreByAuthor(props.postId);
   return (
-    <div className="grid gap-2 border-t pt-3">
-      <Skeleton className="h-4 w-28" />
-      <PostListSkeleton count={2} />
-    </div>
+    <Shaped shape={more ? <MoreByAuthorList more={more} /> : null}>
+      <div className="grid gap-2 border-t pt-3">
+        <Skeleton className="h-4 w-28" />
+        <PostCardSkeletons count={2} />
+      </div>
+    </Shaped>
   );
 }
 

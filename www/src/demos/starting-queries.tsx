@@ -55,7 +55,7 @@ export function StartingQueries(props: DemoProps) {
       {(run) => (
         <DemoBrowser
           initial={run.location ?? '/posts/1'}
-          placeholder={<PostPageSkeleton />}
+          placeholder={<PostPageSkeleton id={1} />}
           reload={run.reload}
           routeTree={blogs[run.variant]}
           session={run.session}

@@ -20,6 +20,7 @@ import {
 
 import { Button } from '@shared/ui/components/button';
 
+import { Reserve } from '../reserve.tsx';
 import type { Session, TRPC } from './session.tsx';
 
 /** What a demo's route loaders get as `context`. */
@@ -27,7 +28,15 @@ export interface DemoContext {
   readonly trpc: TRPC;
 }
 
-const ReloadContext = createContext<(location: string) => void>(() => {});
+interface TabContext {
+  readonly placeholder: ReactNode;
+  readonly reload: (location: string) => void;
+}
+
+const TabContext = createContext<TabContext>({
+  placeholder: null,
+  reload: () => {},
+});
 
 function AddressBar(props: {
   readonly href: string;
@@ -106,9 +115,12 @@ function Tab(props: {
 function Chrome(props: { readonly children: ReactNode }) {
   const router = useRouter();
   const canGoBack = useCanGoBack();
-  const reload = use(ReloadContext);
+  const tab = use(TabContext);
   const status = useRouterState({ select: (state) => state.status });
   const href = useRouterState({ select: (state) => state.location.href });
+  const loaded = useRouterState({
+    select: (state) => state.resolvedLocation !== undefined,
+  });
   return (
     <Tab
       back={() => router.history.back()}
@@ -116,9 +128,13 @@ function Chrome(props: { readonly children: ReactNode }) {
       href={href}
       navigate={(next) => void router.navigate({ href: next })}
       pending={status === 'pending'}
-      reload={() => reload(href)}
+      reload={() => tab.reload(href)}
     >
-      {props.children}
+      {/* Until the first page is in, the tab keeps the placeholder's height,
+          so a loader that waits blanks it without making it shorter. */}
+      <Reserve shapes={loaded ? [] : [tab.placeholder]}>
+        {props.children}
+      </Reserve>
     </Tab>
   );
 }
@@ -134,21 +150,29 @@ export function useDemoLoaderData<
   return useLoaderData({ strict: false }) as Awaited<ReturnType<TLoader>>;
 }
 
-/** A link inside the demo's browser, which navigates its router. */
-export function DemoLink(props: {
+const LinksOff = createContext(false);
+
+/**
+ * `children` with each `DemoLink` as plain text, for a hidden copy of a
+ * page: a crawler would follow its links out of the demo.
+ */
+export function WithoutLinks(props: { readonly children: ReactNode }) {
+  return <LinksOff value>{props.children}</LinksOff>;
+}
+
+interface DemoLinkProps {
   readonly 'aria-current'?: 'page' | undefined;
   readonly children: ReactNode;
   readonly className?: string;
   readonly href: string;
-}) {
+}
+
+function RouterLink(props: DemoLinkProps & { readonly className: string }) {
   const router = useRouter();
   return (
     <a
       aria-current={props['aria-current']}
-      className={
-        props.className ??
-        'text-brand-dark underline-offset-2 hover:underline dark:text-brand-light'
-      }
+      className={props.className}
       href={props.href}
       onClick={(event: MouseEvent) => {
         event.preventDefault();
@@ -160,8 +184,21 @@ export function DemoLink(props: {
   );
 }
 
+/** A link inside the demo's browser, which navigates its router. */
+export function DemoLink(props: DemoLinkProps) {
+  const className =
+    props.className ??
+    'text-brand-dark underline-offset-2 hover:underline dark:text-brand-light';
+  return use(LinksOff) ? (
+    <span className={className}>{props.children}</span>
+  ) : (
+    <RouterLink {...props} className={className} />
+  );
+}
+
 function LiveBrowser(props: {
   readonly initial: string;
+  readonly placeholder: ReactNode;
   readonly reload: (location: string) => void;
   readonly routeTree: AnyRoute;
   readonly session: Session;
@@ -188,9 +225,11 @@ function LiveBrowser(props: {
     return created;
   });
   return (
-    <ReloadContext value={props.reload}>
+    <TabContext
+      value={{ placeholder: props.placeholder, reload: props.reload }}
+    >
       <RouterProvider router={router} />
-    </ReloadContext>
+    </TabContext>
   );
 }
 
@@ -198,7 +237,8 @@ function LiveBrowser(props: {
  * A browser tab running `routeTree` on its own router and memory history,
  * with the session's tRPC proxy in the loaders' context. Every load starts a
  * new trace in the network panel. Until the demo starts its session, the tab
- * shows `initial` as `placeholder`, which is what the server renders.
+ * shows `initial` as `placeholder`, which is what the server renders, so the
+ * placeholder should be as tall as that page will be.
  */
 export function DemoBrowser(props: {
   readonly initial: string;
@@ -224,6 +264,7 @@ export function DemoBrowser(props: {
   return (
     <LiveBrowser
       initial={props.initial}
+      placeholder={props.placeholder}
       reload={props.reload}
       routeTree={props.routeTree}
       session={props.session}

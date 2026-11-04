@@ -21,71 +21,84 @@ export function usePrefersReducedMotion() {
   );
 }
 
-/**
- * Calls `onFirstView` once, when most of the element is on the screen. The
- * returned callback is the element's `ref`.
- */
-export function useFirstView(onFirstView: () => void) {
-  return useCallback(
-    (element: HTMLElement | null) => {
-      if (!element) {
-        return undefined;
-      }
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((entry) => entry.isIntersecting)) {
-            observer.disconnect();
-            onFirstView();
-          }
-        },
-        { threshold: 0.6 },
-      );
-      observer.observe(element);
-      return () => observer.disconnect();
-    },
-    [onFirstView],
+/** Half the element, or, for one taller than the screen, half the screen. */
+function mostlyOnScreen(entry: IntersectionObserverEntry) {
+  return (
+    entry.intersectionRatio >= 0.5 ||
+    (entry.rootBounds !== null &&
+      entry.intersectionRect.height >= entry.rootBounds.height / 2)
   );
 }
 
 /**
- * A clock for a simulated timeline `duration` ms long, played `slowdown`
- * times slower than real time so it can be followed. It stays at 0 until
- * `play()`. With reduced motion, it's always at the end.
+ * Whether the element is on the screen: from when most of it is, until none
+ * of it is. False on the server and on the first render. The returned
+ * callback is the element's `ref`.
  */
-export function usePlayback(duration: number, slowdown: number) {
-  const reduced = usePrefersReducedMotion();
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [now, setNow] = useState(0);
-  const time = reduced
-    ? duration
-    : startedAt === null
-      ? 0
-      : Math.min(duration, (now - startedAt) / slowdown);
-
-  useEffect(() => {
-    if (reduced || startedAt === null) {
+export function useOnScreen() {
+  const [onScreen, setOnScreen] = useState(false);
+  const ref = useCallback((element: HTMLElement | null) => {
+    if (!element) {
       return undefined;
     }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (mostlyOnScreen(entry)) {
+            setOnScreen(true);
+          } else if (!entry.isIntersecting) {
+            setOnScreen(false);
+          }
+        }
+      },
+      { threshold: [0, 0.25, 0.5] },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [onScreen, ref] as const;
+}
+
+/**
+ * A clock for a simulated timeline `duration` ms long, played `slowdown`
+ * times slower than real time so it can be followed. It starts the first
+ * time `onScreen` is true, stops while it's false, and starts over on
+ * `play()`. With reduced motion, it's always at the end.
+ */
+export function usePlayback(
+  duration: number,
+  slowdown: number,
+  onScreen: boolean,
+) {
+  const reduced = usePrefersReducedMotion();
+  const [started, setStarted] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const time = reduced ? duration : Math.min(duration, elapsed / slowdown);
+  const running = !reduced && started && onScreen && time < duration;
+
+  useEffect(() => {
+    if (onScreen) {
+      setStarted(true);
+    }
+  }, [onScreen]);
+
+  useEffect(() => {
+    if (!running) {
+      return undefined;
+    }
+    let last = performance.now();
     let frame = requestAnimationFrame(function tick(timestamp) {
-      setNow(timestamp);
-      if ((timestamp - startedAt) / slowdown < duration) {
-        frame = requestAnimationFrame(tick);
-      }
+      setElapsed((current) => current + Math.max(0, timestamp - last));
+      last = timestamp;
+      frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [duration, reduced, slowdown, startedAt]);
+  }, [running]);
 
   const play = useCallback(() => {
-    const start = performance.now();
-    setStartedAt(start);
-    setNow(start);
+    setStarted(true);
+    setElapsed(0);
   }, []);
 
-  return {
-    done: time >= duration,
-    play,
-    playing: !reduced && startedAt !== null && time < duration,
-    reduced,
-    time,
-  };
+  return { done: time >= duration, play, reduced, time };
 }

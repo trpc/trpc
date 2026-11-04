@@ -7,6 +7,7 @@ import { cn } from '@shared/ui/lib/utils';
 import type { DemoProps } from './names.ts';
 import { Segmented } from './segmented.tsx';
 import { createRandom } from './random.ts';
+import { Reserve } from './reserve.tsx';
 import {
   type LoadingStrategy,
   longestTimeline,
@@ -15,7 +16,7 @@ import {
   timeline,
   type TimelineRequest,
 } from './timeline.ts';
-import { useFirstView, usePlayback } from './use-playback.ts';
+import { useOnScreen, usePlayback } from './use-playback.ts';
 
 const strategies: ReadonlyArray<{
   readonly label: string;
@@ -82,6 +83,16 @@ function RequestRow(props: {
   );
 }
 
+function PreviewComments() {
+  return (
+    <div className="grid gap-1.5">
+      <p>💬 Nice post!</p>
+      <p>💬 Ship it</p>
+      <p>💬 +1</p>
+    </div>
+  );
+}
+
 function PagePreview(props: {
   readonly commentsRendered: boolean;
   readonly commentsReady: boolean;
@@ -102,17 +113,16 @@ function PagePreview(props: {
       ) : (
         <div className="h-4 w-3/4 rounded bg-muted motion-safe:animate-pulse" />
       )}
-      <div className="grid min-h-12 content-start gap-1.5 border-t pt-2">
+      <Reserve
+        className="border-t pt-2"
+        shapes={[<PreviewComments key="comments" />]}
+      >
         {props.commentsReady ? (
-          <>
-            <p>💬 Nice post!</p>
-            <p>💬 Ship it</p>
-            <p>💬 +1</p>
-          </>
+          <PreviewComments />
         ) : props.commentsRendered ? (
           <p className="text-muted-foreground italic">Loading comments…</p>
         ) : null}
-      </div>
+      </Reserve>
     </div>
   );
 }
@@ -137,8 +147,8 @@ export function RequestTimeline(props: DemoProps) {
     roundTrip,
     seed === 0 ? undefined : createRandom(seed),
   );
-  const playback = usePlayback(plan.readyAt, slowdown);
-  const firstView = useFirstView(playback.play);
+  const [onScreen, onScreenRef] = useOnScreen();
+  const playback = usePlayback(plan.readyAt, slowdown, onScreen);
   // The longest any run can be, so strategies and replays share an axis.
   const scale = longestTimeline * roundTrip;
   const ticks = Array.from(
@@ -148,11 +158,24 @@ export function RequestTimeline(props: DemoProps) {
   const [post, comments] = plan.requests;
   const roundTripLabel = useId();
   const current = plan.steps.findLast((step) => step.at <= playback.time);
+  const summary = (
+    <>
+      <strong>
+        Ready at {plan.readyAt} ms:{' '}
+        {strategy === 'fetch-on-render'
+          ? `${roundTrips(strategy)} round trips, one after the other.`
+          : 'both requests at once, as long as the slower one.'}
+      </strong>{' '}
+      {strategy === 'fetch-on-render'
+        ? 'Comments only exists once the post has arrived, so its request waits, and the times add up.'
+        : 'The loader knew both inputs up front, so neither request waits.'}
+    </>
+  );
 
   return (
     <figure
       className="not-prose my-8 grid gap-4 rounded-xl border bg-card p-4 text-card-foreground sm:p-5"
-      ref={firstView}
+      ref={onScreenRef}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented
@@ -241,22 +264,14 @@ export function RequestTimeline(props: DemoProps) {
         />
       </div>
 
-      <figcaption aria-live="polite" className="min-h-10 text-sm">
-        {playback.done ? (
-          <>
-            <strong>
-              Ready at {plan.readyAt} ms:{' '}
-              {strategy === 'fetch-on-render'
-                ? `${roundTrips(strategy)} round trips, one after the other.`
-                : 'both requests at once, as long as the slower one.'}
-            </strong>{' '}
-            {strategy === 'fetch-on-render'
-              ? 'Comments only exists once the post has arrived, so its request waits, and the times add up.'
-              : 'The loader knew both inputs up front, so neither request waits.'}
-          </>
-        ) : (
-          <span className="text-muted-foreground">{current?.text}</span>
-        )}
+      <figcaption aria-live="polite" className="text-sm">
+        <Reserve shapes={[summary, ...plan.steps.map((step) => step.text)]}>
+          {playback.done ? (
+            summary
+          ) : (
+            <span className="text-muted-foreground">{current?.text}</span>
+          )}
+        </Reserve>
       </figcaption>
     </figure>
   );

@@ -204,6 +204,35 @@ describe('network', () => {
       vi.useRealTimers();
     }
   });
+
+  it('holds requests in flight while paused, and its clock with them', async () => {
+    vi.useFakeTimers();
+    try {
+      const network = createNetwork(createRandom(1));
+      network.delay = () => 500;
+      const client = createDemoClient(network);
+      let answered = false;
+      const query = client.post.byId.query({ id: 1 }).then(() => {
+        answered = true;
+      });
+      await vi.advanceTimersByTimeAsync(200);
+      network.pause();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(answered).toBe(false);
+      expect(network.now()).toBe(200);
+      network.resume();
+      await vi.advanceTimersByTimeAsync(299);
+      expect(answered).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await query;
+      expect(answered).toBe(true);
+      const [request] = network.getTrace().requests;
+      expect(request?.status).toBe('done');
+      expect((request?.endedAt ?? 0) - (request?.startedAt ?? 0)).toBe(500);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('backend', () => {
@@ -300,6 +329,8 @@ describe('first frame', () => {
         clock.mockClear();
         const first = render();
         expect(first).toContain('<figure');
+        // The prerender crawls each link, and the demo's pages aren't the site's.
+        expect(first).not.toMatch(/href="\/posts/);
         expect(clock).toHaveBeenCalledTimes(reactReads);
         expect(render()).toBe(first);
         expect(date).not.toHaveBeenCalled();
