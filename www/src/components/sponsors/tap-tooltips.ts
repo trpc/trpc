@@ -58,7 +58,8 @@ export function useTapTooltips() {
       ) {
         return;
       }
-      if (!open && tapped.current === key) {
+      // Whichever way a tooltip opens or this one closes, an earlier tap is done.
+      if (open ? tapped.current !== key : tapped.current === key) {
         tapped.current = null;
       }
       setShown((now) => (open ? key : now === key ? null : now));
@@ -71,9 +72,15 @@ export function useTapTooltips() {
       root: { onOpenChange, open: shown === key },
       trigger: {
         onClick(event: MouseEvent) {
+          // Most browsers say which pointer clicked, the keyboard as ''; Safari
+          // doesn't, so it falls back to the press that started the click.
+          const native = event.nativeEvent;
           const action = tapAction({
             held: held.current,
-            pointerType: pointer.current,
+            pointerType:
+              'pointerType' in native
+                ? String(native.pointerType) || undefined
+                : pointer.current,
             tapped: tapped.current === key,
           });
           pointer.current = undefined;
@@ -90,6 +97,7 @@ export function useTapTooltips() {
         },
         // A touch that ended without a click mustn't make a key press a tap.
         onKeyDown() {
+          stopHold();
           pointer.current = undefined;
           held.current = false;
         },
