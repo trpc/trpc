@@ -1,203 +1,61 @@
 import type { AnyTRPCRouter } from '@trpc/server';
-import type { BehaviorSubject } from '@trpc/server/observable';
+import type { BehaviorSubject, Observable } from '@trpc/server/observable';
 import { behaviorSubject, observable } from '@trpc/server/observable';
 import type {
   CombinedDataTransformer,
-  TRPCClientIncomingMessage,
   TRPCClientOutgoingMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   getCauseFromUnknown,
   isObject,
+  makeResource,
   transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../../../TRPCClientError';
 import type { TRPCConnectionState } from '../../internals/subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
-import type { Encoder } from './encoder';
 import { jsonEncoder } from './encoder';
-import type { KeepAliveOptions, WebSocketClientOptions } from './options';
+import type {
+  ClientEffect,
+  ClientEvent,
+  ClientModel,
+  PublicState,
+  Timer,
+} from './machine/clientMachine';
+import { clientTransition, initialClient } from './machine/clientMachine';
+import type {
+  ConnectionId,
+  RequestFailure,
+  RequestId,
+} from './machine/requestMachine';
+import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
-import type { Request } from './requestManager';
 import { RequestManager } from './requestManager';
+import { createScope, dispose, timeoutResource } from './scope';
+import type { Transport } from './transport';
+import { backwardCompatibility, openTransport } from './transport';
 import {
   callUserCallback,
   rethrowAsync,
-  ResettableTimeout,
   TRPCWebSocketClosedError,
 } from './utils';
-import type { ConnectionEvents } from './wsConnection';
-import { backwardCompatibility, Connection } from './wsConnection';
 
 type ConnectionState = TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>;
 
 /**
- * The client's lifecycle. Exactly one connection is current at a time; the
- * connections it replaced drain on their own (see `draining`).
+ * A WebSocket client for tRPC operations. Create one with `createWSClient`.
  */
-type Lifecycle =
-  /** No connection, and none is wanted: lazy and unused, or after `close()`. */
-  | { kind: 'idle' }
-  /** Waiting `retryDelayMs(retryIndex)` before opening the next connection. */
-  | {
-      kind: 'backoff';
-      retryIndex: number;
-      timer: ReturnType<typeof setTimeout>;
-    }
-  /** `connection` is opening. Requests queue until it's ready. */
-  | { kind: 'connecting'; connection: Connection }
-  /** `connection` is ready, and requests are sent on it. */
-  | { kind: 'open'; connection: Connection };
-
-/**
- * A WebSocket client for managing TRPC operations, supporting lazy initialization,
- * reconnection, keep-alive, and request management.
- *
- * It supervises one current connection and any it replaced. A request is sent
- * on the current connection once it's ready, and only that connection's frames
- * reach it. When a connection is lost, its queries and mutations fail and its
- * subscriptions are queued again. When the server asks to reconnect, the old
- * connection drains: its queries and mutations finish there, and its
- * subscriptions move once the new connection is ready.
- */
-export class WsClient {
+export interface WsClient {
   /**
    * Observable tracking the current connection state, including errors.
    */
-  public readonly connectionState: BehaviorSubject<ConnectionState>;
-
-  private lifecycle: Lifecycle = { kind: 'idle' };
-  /** Connections replaced while requests were still in flight on them. */
-  private readonly draining = new Set<Connection>();
-  private readonly requestManager = new RequestManager();
-  /**
-   * The last id sent on the wire. Each request gets its own instead of its
-   * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
-   * late frames for that attempt must not reach the retry.
-   */
-  private lastRequestId = 0;
-  private flushTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly inactivityTimeout: ResettableTimeout;
-
-  private readonly WebSocketPonyfill: typeof WebSocket;
-  private readonly urlOptions: WebSocketClientOptions;
-  private readonly keepAlive: KeepAliveOptions;
-  private readonly retryDelayMs: (attemptIndex: number) => number;
-  private readonly callbacks: Pick<
-    WebSocketClientOptions,
-    'onOpen' | 'onClose' | 'onError'
-  >;
-  private readonly lazyMode: boolean;
-  private readonly encoder: Encoder;
-  private readonly connectionEvents: ConnectionEvents;
-
-  constructor(opts: WebSocketClientOptions) {
-    const WebSocketPonyfill = opts.WebSocket ?? globalThis.WebSocket;
-    if (!WebSocketPonyfill) {
-      throw new Error(
-        "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
-      );
-    }
-    this.WebSocketPonyfill = WebSocketPonyfill;
-    this.urlOptions = opts;
-    this.encoder = opts.experimental_encoder ?? jsonEncoder;
-    this.keepAlive = { ...keepAliveDefaults, ...opts.keepAlive };
-    this.retryDelayMs = opts.retryDelayMs ?? exponentialBackoff;
-    this.callbacks = {
-      onOpen: opts.onOpen,
-      onClose: opts.onClose,
-      onError: opts.onError,
-    };
-
-    const lazyOptions = { ...lazyDefaults, ...opts.lazy };
-    this.lazyMode = lazyOptions.enabled;
-    this.inactivityTimeout = new ResettableTimeout(() => {
-      if (!this.requestManager.isEmpty()) {
-        this.inactivityTimeout.reset();
-        return;
-      }
-      this.close().catch(() => null);
-    }, lazyOptions.closeMs);
-
-    this.connectionEvents = {
-      onSocketOpen: () => callUserCallback(() => this.callbacks.onOpen?.()),
-      onReady: (connection) => this.onReady(connection),
-      onOpenFailed: (connection, cause) => {
-        this.onConnectionLost(connection, cause);
-        this.afterConnectionLost(connection, cause);
-      },
-      onMessage: (connection, message) => this.onMessage(connection, message),
-      onSocketClose: (connection, event, cause) => {
-        this.onConnectionLost(connection, cause);
-        callUserCallback(() => this.callbacks.onClose?.(event));
-        this.afterConnectionLost(connection, cause);
-      },
-      onSocketError: (connection, event) => {
-        this.onConnectionLost(connection, event);
-        callUserCallback(() => this.callbacks.onError?.(event));
-        this.afterConnectionLost(connection, event);
-      },
-    };
-
-    this.connectionState = behaviorSubject<ConnectionState>({
-      type: 'state',
-      state: this.lazyMode ? 'idle' : 'connecting',
-      error: null,
-    });
-
-    if (!this.lazyMode) {
-      this.connect(null);
-    }
-  }
-
+  readonly connectionState: BehaviorSubject<ConnectionState>;
   /**
    * Closes the WebSocket connection and stops managing requests.
-   * Subscriptions complete, requests not sent yet fail, and the ones in flight
-   * finish before the connection closes.
+   * Subscriptions complete, requests not sent yet fail, and the ones in
+   * flight finish before the connection closes.
    */
-  public async close() {
-    this.inactivityTimeout.stop();
-    this.stopFlushTimer();
-    const lifecycle = this.lifecycle;
-    this.lifecycle = { kind: 'idle' };
-    if (lifecycle.kind === 'backoff') {
-      clearTimeout(lifecycle.timer);
-    } else if (lifecycle.kind === 'connecting') {
-      lifecycle.connection.close();
-    } else if (lifecycle.kind === 'open') {
-      lifecycle.connection.drain();
-      this.draining.add(lifecycle.connection);
-    }
-
-    const requestsToAwait: Promise<void>[] = [];
-    for (const request of this.requestManager.all()) {
-      if (request.message.method === 'subscription') {
-        callUserCallback(() => request.callbacks.complete());
-        this.requestManager.delete(request.message);
-      } else if (request.state.kind === 'queued') {
-        this.requestManager.delete(request.message);
-        callUserCallback(() =>
-          request.callbacks.error(
-            TRPCClientError.from(
-              new TRPCWebSocketClosedError({
-                message: 'Closed before connection was established',
-              }),
-            ),
-          ),
-        );
-      } else {
-        requestsToAwait.push(request.end);
-      }
-    }
-
-    await Promise.all(requestsToAwait).catch(() => null);
-    for (const connection of this.draining) {
-      this.closeIfDrained(connection);
-    }
-
-    this.setState({ type: 'state', state: 'idle', error: null });
-  }
-
+  close(): Promise<void>;
   /**
    * Method to request the server.
    * Handles data transformation, batching of requests, and subscription lifecycle.
@@ -208,451 +66,425 @@ export class WsClient {
    *
    * @returns An observable that emits operation results and handles cleanup
    */
-  public request({
-    op: { type, path, input, signal },
-    transformer,
-    lastEventId,
-  }: {
+  request(opts: {
     op: Pick<Operation, 'id' | 'type' | 'path' | 'input' | 'signal'>;
     transformer: CombinedDataTransformer;
     lastEventId?: string;
-  }) {
-    return observable<
-      OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
-      TRPCClientError<AnyTRPCRouter>
-    >((observer) => {
-      const message: TRPCClientOutgoingMessage = {
-        id: ++this.lastRequestId,
-        method: type,
-        params: {
-          input: transformer.input.serialize(input),
-          path,
-          lastEventId,
-        },
-      };
-      const unregister = this.requestManager.register(message, {
-        ...observer,
-        next(event) {
-          const transformed = transformResult(event, transformer.output);
-
-          if (!transformed.ok) {
-            observer.error(TRPCClientError.from(transformed.error));
-            return;
-          }
-
-          observer.next({
-            result: transformed.result,
-          });
-        },
-      });
-      this.inactivityTimeout.reset();
-      if (this.lifecycle.kind === 'backoff') {
-        // A new request doesn't wait out the backoff.
-        clearTimeout(this.lifecycle.timer);
-        this.connect(this.lifecycle.retryIndex);
-      }
-      this.scheduleFlush();
-
-      const onAbort = () => observer.complete();
-      if (signal?.aborted) {
-        onAbort();
-      } else {
-        signal?.addEventListener('abort', onAbort, { once: true });
-      }
-
-      return () => {
-        const request = this.requestManager.get(message.id);
-        const sentOn =
-          request?.message === message && request.state.kind === 'sent'
-            ? request.state.connection
-            : null;
-        unregister();
-
-        if (sentOn && type === 'subscription') {
-          sentOn.send(
-            this.encoder.encode({
-              id: message.id,
-              method: 'subscription.stop',
-            }),
-          );
-        }
-        if (sentOn) this.closeIfDrained(sentOn);
-
-        signal?.removeEventListener('abort', onAbort);
-      };
-    });
-  }
-
+  }): Observable<
+    OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
+    TRPCClientError<AnyTRPCRouter>
+  >;
   /**
-   * The current WebSocket and its state, or `null` when there is no socket.
-   * A socket the server asked to replace stays current until its replacement
-   * is ready.
+   * The current WebSocket and its state, or `null` when there is no
+   * socket. A socket the server asked to replace stays current until its
+   * replacement is ready.
    */
-  public get connection() {
-    const lifecycle = this.lifecycle;
-    if (lifecycle.kind === 'open') {
-      return backwardCompatibility(lifecycle.connection);
-    }
-    const replaced = [...this.draining].at(-1);
-    if (replaced) return backwardCompatibility(replaced);
-    return backwardCompatibility(
-      lifecycle.kind === 'connecting' ? lifecycle.connection : null,
+  readonly connection: ReturnType<typeof backwardCompatibility>;
+}
+
+/**
+ * A WebSocket client for tRPC operations, with lazy connections, reconnects,
+ * keepAlive and request batching.
+ *
+ * Every decision is made by pure state machines in `./machine`: one for the
+ * client, one per connection and one per request. This function is their
+ * interpreter. It turns sockets, timers and calls into events, feeds them to
+ * `clientTransition` one at a time, and runs the effects each step returns.
+ * Sockets, listeners, timers and requests are resources: each is disposed by
+ * whatever owns it.
+ */
+export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
+  const WebSocketPonyfill = opts.WebSocket ?? globalThis.WebSocket;
+  if (!WebSocketPonyfill) {
+    throw new Error(
+      "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
+  const encoder = opts.experimental_encoder ?? jsonEncoder;
+  const keepAlive = { ...keepAliveDefaults, ...opts.keepAlive };
+  const retryDelayMs = opts.retryDelayMs ?? exponentialBackoff;
+  const lazy = { ...lazyDefaults, ...opts.lazy };
 
-  private setState(state: ConnectionState) {
-    callUserCallback(() => this.connectionState.next(state));
-  }
+  const transports = new Map<ConnectionId, Transport>();
+  const timers = new Map<Timer, Disposable>();
+  const requestManager = new RequestManager();
+  const closeWaiters: (() => void)[] = [];
+  const queue: ClientEvent[] = [];
+  let dispatching = false;
+  /**
+   * The last id sent on the wire. Each request gets its own instead of its
+   * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
+   * late frames for that attempt must not reach the retry.
+   */
+  let lastRequestId = 0;
 
-  private setConnecting(error: TRPCWebSocketClosedError | null) {
-    this.setState({
-      type: 'state',
-      state: 'connecting',
-      error: error && TRPCClientError.from(error),
-    });
-  }
+  const initial = initialClient({ lazy: lazy.enabled });
+  let model: ClientModel = initial.state;
+  const connectionState = behaviorSubject<ConnectionState>(
+    toConnectionState(initial.state.publicState),
+  );
 
   /**
-   * Opens a new current connection.
-   *
-   * @param retryIndex - The `retryDelayMs` attempt index it follows, or
-   * `null` when it isn't a retry.
+   * Runs one event through the client state machine, then its effects. An
+   * event raised while effects run, e.g. by a user callback, waits its turn.
    */
-  private connect(retryIndex: number | null) {
-    const connection = new Connection({
-      WebSocketPonyfill: this.WebSocketPonyfill,
-      urlOptions: this.urlOptions,
-      keepAlive: this.keepAlive,
-      encoder: this.encoder,
-      events: this.connectionEvents,
-      retryIndex,
-    });
-    this.lifecycle = { kind: 'connecting', connection };
-    connection.start();
-  }
-
-  private scheduleReconnect(retryIndex: number) {
-    let delayMs: number;
+  function dispatch(event: ClientEvent) {
+    queue.push(event);
+    if (dispatching) return;
+    dispatching = true;
     try {
-      delayMs = this.retryDelayMs(retryIndex);
-    } catch (error) {
-      rethrowAsync(error);
-      delayMs = exponentialBackoff(retryIndex);
-    }
-    const timer = setTimeout(() => {
-      if (this.lifecycle.kind === 'backoff' && this.lifecycle.timer === timer) {
-        this.connect(retryIndex);
+      let next: ClientEvent | undefined;
+      while ((next = queue.shift())) {
+        const result = clientTransition(model, next);
+        model = result.state;
+        runEffects(result.effects);
+        releaseForgottenTransports();
       }
-    }, delayMs);
-    this.lifecycle = { kind: 'backoff', retryIndex, timer };
+    } finally {
+      dispatching = false;
+    }
   }
 
-  private isCurrent(connection: Connection) {
-    const lifecycle = this.lifecycle;
-    return (
-      (lifecycle.kind === 'connecting' || lifecycle.kind === 'open') &&
-      lifecycle.connection === connection
-    );
+  /** A socket the model no longer tracks has nothing left to report. */
+  function releaseForgottenTransports() {
+    for (const [id, transport] of transports) {
+      if (model.connections.has(id)) continue;
+      transports.delete(id);
+      dispose(transport);
+    }
   }
 
-  private onReady(connection: Connection) {
-    if (!this.isCurrent(connection)) {
-      connection.close();
-      return;
-    }
-    this.lifecycle = { kind: 'open', connection };
-    if (this.lazyMode) {
-      this.inactivityTimeout.start();
-    }
-    const current = this.connectionState.get();
-    if (current.state !== 'pending' || current.error !== null) {
-      this.setState({ type: 'state', state: 'pending', error: null });
-    }
+  /**
+   * A socket that started closing, e.g. because the server sent a close
+   * frame, says nothing until the closing handshake ends, so the client
+   * looks before relying on it.
+   */
+  function observeWritability() {
+    const lifecycle = model.lifecycle;
+    if (lifecycle.kind !== 'open') return;
+    if (transports.get(lifecycle.connection)?.isWritable()) return;
+    dispatch({
+      type: 'connection',
+      connection: lifecycle.connection,
+      event: { type: 'socketUnwritable' },
+    });
+  }
 
-    // Subscriptions move off the connections this one replaced only now, so
-    // they're never without a connection that can deliver their events.
-    for (const previous of this.draining) {
-      for (const request of this.requestManager.sentOn(previous)) {
-        if (request.message.method !== 'subscription') continue;
-        previous.send(
-          this.encoder.encode({
-            id: request.message.id,
-            method: 'subscription.stop',
+  function runEffects(effects: readonly ClientEffect[]) {
+    for (const effect of effects) {
+      try {
+        runEffect(effect);
+      } catch (error) {
+        rethrowAsync(error);
+      }
+    }
+  }
+
+  function runEffect(effect: ClientEffect) {
+    switch (effect.type) {
+      case 'openSocket': {
+        const connection = effect.connection;
+        transports.set(
+          connection,
+          openTransport({
+            id: connection,
+            WebSocketPonyfill,
+            urlOptions: opts,
+            keepAlive,
+            encoder,
+            onEvent: (event) => {
+              switch (event.type) {
+                case 'frame':
+                  dispatch({
+                    type: 'frame',
+                    connection,
+                    message: event.message,
+                  });
+                  return;
+                case 'heartbeat':
+                  dispatch({ type: 'heartbeat', connection });
+                  return;
+                default:
+                  dispatch({ type: 'connection', connection, event });
+              }
+            },
           }),
         );
-        this.requestManager.requeue(request, { hideStarted: true });
+        return;
       }
-      this.closeIfDrained(previous);
+      case 'resolveParams':
+        transports.get(effect.connection)?.resolveParams();
+        return;
+      case 'sendParams':
+        transports.get(effect.connection)?.send(effect.data);
+        return;
+      case 'closeSocket': {
+        const transport = transports.get(effect.connection);
+        if (transport) dispose(transport);
+        return;
+      }
+      case 'sendRequests':
+        sendRequests(effect.connection, effect.requests);
+        return;
+      case 'sendStop':
+        transports
+          .get(effect.connection)
+          ?.send(
+            encoder.encode({ id: effect.request, method: 'subscription.stop' }),
+          );
+        return;
+      case 'next': {
+        const request = requestManager.get(effect.request);
+        if (request) {
+          callUserCallback(() => request.callbacks.next(effect.message));
+        }
+        return;
+      }
+      case 'complete': {
+        const request = requestManager.get(effect.request);
+        requestManager.delete(effect.request);
+        if (request) callUserCallback(() => request.callbacks.complete());
+        return;
+      }
+      case 'fail': {
+        const request = requestManager.get(effect.request);
+        requestManager.delete(effect.request);
+        if (request) {
+          const error = toRequestError(effect.failure);
+          callUserCallback(() => request.callbacks.error(error));
+        }
+        return;
+      }
+      case 'onOpen':
+        callUserCallback(() => opts.onOpen?.());
+        return;
+      case 'onClose':
+        callUserCallback(() => opts.onClose?.(effect.event));
+        return;
+      case 'onError':
+        callUserCallback(() => opts.onError?.(effect.event));
+        return;
+      case 'startTimer':
+        startTimer(effect.timer, effect.timer === 'flush' ? 0 : lazy.closeMs);
+        return;
+      case 'startBackoff': {
+        let delayMs: number;
+        try {
+          delayMs = retryDelayMs(effect.retryIndex);
+        } catch (error) {
+          rethrowAsync(error);
+          delayMs = exponentialBackoff(effect.retryIndex);
+        }
+        startTimer('backoff', delayMs);
+        return;
+      }
+      case 'cancelTimer':
+        stopTimer(effect.timer);
+        return;
+      case 'emitState': {
+        const state = toConnectionState(effect.state);
+        callUserCallback(() => connectionState.next(state));
+        return;
+      }
+      case 'closed':
+        for (const resolve of closeWaiters.splice(0)) resolve();
+        return;
+      case 'rethrow':
+        rethrowAsync(effect.error);
+        return;
+      case 'invariantViolation':
+        rethrowAsync(
+          new Error(`wsClient invariant violated: ${effect.message}`),
+        );
+        return;
+      default:
+        effect satisfies never;
     }
-
-    this.requestManager.batchFor(connection);
-    this.flush();
   }
 
-  private onMessage(
-    connection: Connection,
-    message: TRPCClientIncomingMessage,
+  function sendRequests(
+    connection: ConnectionId,
+    requests: readonly { id: RequestId; lastEventId: string | null }[],
   ) {
-    this.inactivityTimeout.reset();
-
-    if ('method' in message) {
-      if (message.method === 'reconnect' && this.isCurrent(connection)) {
-        this.retire(connection);
-      }
-      return;
-    }
-
-    if (message.id === null) {
-      if ('error' in message) connection.rejected = true;
-      return;
-    }
-    if ('result' in message) {
-      // The server only sends results once `createContext` has succeeded, so
-      // an earlier `id: null` error on this socket was not a rejection, e.g.
-      // the server's reply to a malformed frame.
-      connection.rejected = false;
-    }
-
-    const request = this.requestManager.get(message.id);
-    if (
-      request?.state.kind !== 'sent' ||
-      request.state.connection !== connection
-    ) {
-      return;
-    }
-
-    if (
-      'result' in message &&
-      message.result.type === 'started' &&
-      request.hideStarted
-    ) {
-      request.hideStarted = false;
-      return;
-    }
-
-    let done = true;
-    if (
-      'result' in message &&
-      request.message.method === 'subscription' &&
-      message.result.type !== 'stopped'
-    ) {
-      done = false;
-      if (message.result.type === 'data' && message.result.id !== undefined) {
-        request.message.params.lastEventId = message.result.id;
-      }
-    }
-
-    callUserCallback(() => request.callbacks.next(message));
-    if (done) {
-      this.requestManager.delete(request.message);
-      callUserCallback(() => request.callbacks.complete());
-      this.closeIfDrained(connection);
-    }
-  }
-
-  /**
-   * The server asked the current connection to reconnect. It drains while a
-   * new one opens: nothing in flight on it fails or is sent again.
-   */
-  private retire(connection: Connection) {
-    if (connection.phase === 'ready') {
-      // Invisible to subscribers: the state stays `pending` while the old
-      // connection serves its requests.
-      connection.drain();
-      this.draining.add(connection);
-    } else {
-      connection.close();
-    }
-    this.requestManager.unbatch(connection);
-    this.scheduleReconnect(this.nextRetryIndex(connection));
-    this.closeIfDrained(connection);
-  }
-
-  /**
-   * Whether a replaced connection is still open, so the client isn't
-   * disconnected even though its next connection isn't ready.
-   */
-  private hasDrainingConnection() {
-    return this.draining.size > 0;
-  }
-
-  /**
-   * Closes a replaced connection once nothing is in flight on it and its
-   * replacement is ready, or the client is closing.
-   */
-  private closeIfDrained(connection: Connection) {
-    if (connection.phase !== 'draining') return;
-    if (this.lifecycle.kind !== 'open' && this.lifecycle.kind !== 'idle') {
-      return;
-    }
-    if (this.requestManager.sentOn(connection).length > 0) return;
-    this.draining.delete(connection);
-    connection.close();
-  }
-
-  /**
-   * Settles the requests of a connection that is gone. Queries and mutations
-   * sent on it fail, since they may have run, and so do those waiting for its
-   * next batch, as they always have. Subscriptions are queued to resume on
-   * the next connection.
-   */
-  private onConnectionLost(connection: Connection, cause: unknown) {
-    if (connection.phase === 'closed') return;
-    connection.close();
-    this.draining.delete(connection);
-
-    for (const request of [
-      ...this.requestManager.sentOn(connection),
-      ...this.requestManager.queuedFor(connection),
-    ]) {
-      if (request.message.method === 'subscription') {
-        this.requestManager.requeue(request, { hideStarted: false });
-        continue;
-      }
-      this.requestManager.delete(request.message);
-      callUserCallback(() =>
-        request.callbacks.error(
-          TRPCClientError.from(
-            isObject(cause)
-              ? cause
-              : new TRPCWebSocketClosedError({
-                  message: 'WebSocket closed',
-                  cause,
-                }),
-          ),
-        ),
-      );
-    }
-
-    if (!this.isCurrent(connection)) {
-      // A draining connection: its subscriptions go on the current one, if
-      // it's ready, or wait for the next.
-      const lifecycle = this.lifecycle.kind;
-      if (lifecycle === 'backoff' || lifecycle === 'connecting') {
-        if (!this.hasDrainingConnection()) {
-          this.setConnecting(
-            new TRPCWebSocketClosedError({
-              message: 'WebSocket closed',
-              cause,
-            }),
-          );
-        }
-      }
-      this.scheduleFlush();
-    }
-  }
-
-  /**
-   * Reconnects after the current connection was lost or failed to open.
-   */
-  private afterConnectionLost(connection: Connection, cause: unknown) {
-    if (!this.isCurrent(connection)) return;
-
-    if (this.lifecycle.kind === 'connecting') {
-      if (!this.hasDrainingConnection()) {
-        this.setConnecting(
-          new TRPCWebSocketClosedError({
-            message: 'Initialization error',
-            cause,
-          }),
+    try {
+      const messages: TRPCClientOutgoingMessage[] = [];
+      for (const { id, lastEventId } of requests) {
+        const message = requestManager.get(id)?.message;
+        if (!message) continue;
+        messages.push(
+          lastEventId !== null && 'params' in message
+            ? { ...message, params: { ...message.params, lastEventId } }
+            : message,
         );
       }
-      this.scheduleReconnect(
-        connection.retryIndex === null ? 0 : connection.retryIndex + 1,
-      );
-      return;
-    }
-
-    if (this.lazyMode && this.requestManager.isEmpty()) {
-      this.lifecycle = { kind: 'idle' };
-      this.inactivityTimeout.stop();
-      this.setState({ type: 'state', state: 'idle', error: null });
-      return;
-    }
-
-    this.setConnecting(
-      new TRPCWebSocketClosedError({ message: 'WebSocket closed', cause }),
-    );
-    this.scheduleReconnect(this.nextRetryIndex(connection));
-  }
-
-  /**
-   * A connection the server rejected carries on with the backoff; any other
-   * starts over.
-   */
-  private nextRetryIndex(connection: Connection) {
-    return connection.rejected ? (connection.retryIndex ?? 0) + 1 : 0;
-  }
-
-  /**
-   * Sends the queued requests as one batch: on the next tick when a
-   * connection is ready, so requests made together go together, or as soon
-   * as the next connection is ready.
-   */
-  private scheduleFlush() {
-    if (this.lifecycle.kind === 'idle') {
-      if (this.requestManager.queued().length === 0) return;
-      if (this.connectionState.get().state === 'idle') {
-        this.setConnecting(null);
-      }
-      this.connect(null);
-      return;
-    }
-    if (this.lifecycle.kind !== 'open') return;
-    // A request made while the socket is closing waits for the next one.
-    if (this.lifecycle.connection.isWritable()) {
-      this.requestManager.batchFor(this.lifecycle.connection);
-    }
-    if (this.flushTimer) return;
-    this.flushTimer = setTimeout(() => {
-      this.flushTimer = null;
-      this.flush();
-    });
-  }
-
-  private stopFlushTimer() {
-    if (this.flushTimer) clearTimeout(this.flushTimer);
-    this.flushTimer = null;
-  }
-
-  private flush() {
-    this.stopFlushTimer();
-    if (this.lifecycle.kind !== 'open') return;
-    const connection = this.lifecycle.connection;
-    if (this.requestManager.queued().length === 0) return;
-    if (!connection.isWritable()) {
-      // The socket is closing, e.g. the server sent a close frame, but its
-      // `close` event can be held up by the closing handshake. Don't wait.
-      this.onConnectionLost(connection, undefined);
-      this.afterConnectionLost(connection, undefined);
-      return;
-    }
-
-    const requests = this.requestManager.flush(connection);
-    if (requests.length === 0) return;
-
-    const messages = requests.map((request) => request.message);
-    try {
-      connection.send(
-        this.encoder.encode(messages.length === 1 ? messages[0] : messages),
-      );
+      transports
+        .get(connection)
+        ?.send(encoder.encode(messages.length === 1 ? messages[0] : messages));
     } catch (cause) {
-      this.failBatch(requests, cause);
+      dispatch({
+        type: 'sendFailed',
+        requests: requests.map((request) => request.id),
+        cause,
+      });
     }
   }
 
-  private failBatch(requests: Request[], cause: unknown) {
-    for (const request of requests) {
-      this.requestManager.delete(request.message);
-    }
-    for (const request of requests) {
-      callUserCallback(() =>
-        request.callbacks.error(
-          TRPCClientError.from(
-            getCauseFromUnknown(cause) ?? new Error('Unknown error'),
-          ),
-        ),
+  function startTimer(timer: Timer, ms: number) {
+    stopTimer(timer);
+    timers.set(
+      timer,
+      timeoutResource(() => {
+        timers.delete(timer);
+        if (timer === 'flush') observeWritability();
+        dispatch({ type: 'timer', timer });
+      }, ms),
+    );
+  }
+
+  function stopTimer(timer: Timer) {
+    const resource = timers.get(timer);
+    if (!resource) return;
+    timers.delete(timer);
+    dispose(resource);
+  }
+
+  const client: WsClient = {
+    connectionState,
+
+    close() {
+      return new Promise<void>((resolve) => {
+        closeWaiters.push(resolve);
+        dispatch({ type: 'close' });
+      });
+    },
+
+    request({ op: { type, path, input, signal }, transformer, lastEventId }) {
+      return observable<
+        OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
+        TRPCClientError<AnyTRPCRouter>
+      >((observer) => {
+        const id = ++lastRequestId;
+        // The request's resources, released when the observer unsubscribes.
+        const scope = createScope();
+        requestManager.register(
+          {
+            id,
+            method: type,
+            params: {
+              input: transformer.input.serialize(input),
+              path,
+              lastEventId,
+            },
+          },
+          {
+            ...observer,
+            next(event) {
+              const transformed = transformResult(event, transformer.output);
+              if (!transformed.ok) {
+                observer.error(TRPCClientError.from(transformed.error));
+                return;
+              }
+              observer.next({ result: transformed.result });
+            },
+          },
+        );
+        scope.defer(() => dispatch({ type: 'unsubscribe', id }));
+
+        observeWritability();
+        dispatch({
+          type: 'request',
+          id,
+          method: type,
+          lastEventId: lastEventId ?? null,
+        });
+
+        if (signal?.aborted) {
+          observer.complete();
+        } else if (signal) {
+          const onAbort = () => observer.complete();
+          signal.addEventListener('abort', onAbort, { once: true });
+          scope.use(
+            makeResource({}, () =>
+              signal.removeEventListener('abort', onAbort),
+            ),
+          );
+        }
+
+        return () => dispose(scope);
+      });
+    },
+
+    get connection() {
+      const { lifecycle, draining } = model;
+      if (lifecycle.kind === 'open') {
+        return backwardCompatibility(
+          transports.get(lifecycle.connection) ?? null,
+          true,
+        );
+      }
+      const replaced = draining.at(-1);
+      if (replaced !== undefined) {
+        return backwardCompatibility(transports.get(replaced) ?? null, true);
+      }
+      return backwardCompatibility(
+        lifecycle.kind === 'connecting'
+          ? (transports.get(lifecycle.connection) ?? null)
+          : null,
+        false,
       );
-    }
+    },
+  };
+
+  runEffects(initial.effects);
+  return client;
+}
+
+function toConnectionState(state: PublicState): ConnectionState {
+  switch (state.state) {
+    case 'idle':
+      return { type: 'state', state: 'idle', error: null };
+    case 'pending':
+      return { type: 'state', state: 'pending', error: null };
+    case 'connecting':
+      return {
+        type: 'state',
+        state: 'connecting',
+        error:
+          state.error &&
+          TRPCClientError.from(
+            new TRPCWebSocketClosedError({
+              message: state.error.message,
+              cause: state.error.cause,
+            }),
+          ),
+      };
+    default:
+      return state satisfies never;
+  }
+}
+
+function toRequestError(failure: RequestFailure) {
+  switch (failure.kind) {
+    case 'connectionLost':
+      return TRPCClientError.from(
+        isObject(failure.cause)
+          ? failure.cause
+          : new TRPCWebSocketClosedError({
+              message: 'WebSocket closed',
+              cause: failure.cause,
+            }),
+      );
+    case 'closedBeforeSent':
+      return TRPCClientError.from(
+        new TRPCWebSocketClosedError({
+          message: 'Closed before connection was established',
+        }),
+      );
+    case 'sendFailed':
+      return TRPCClientError.from(
+        getCauseFromUnknown(failure.cause) ?? new Error('Unknown error'),
+      );
+    default:
+      return failure satisfies never;
   }
 }

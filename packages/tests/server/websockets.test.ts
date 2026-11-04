@@ -2229,7 +2229,14 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await sleep(50);
       expect(receivedFor('greeting')).toEqual([]);
       expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
-      expect(seen).toEqual(['pending', 'started', 1]);
+      // The 3rd failed replacement in a row shows as `connecting`; the old
+      // socket still serves the subscription.
+      expect(seen.filter((entry) => entry !== 'connecting')).toEqual([
+        'pending',
+        'started',
+        1,
+      ]);
+      expect(seen).toContain('connecting');
 
       oldServerSocket.terminate();
       await vi.waitFor(() => {

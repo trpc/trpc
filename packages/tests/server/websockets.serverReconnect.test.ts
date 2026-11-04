@@ -23,6 +23,7 @@ function setup(opts: {
   const events: number[] = [];
   const subscribedFrom = vi.fn<(lastEventId: string | null) => void>();
   const router = t.router({
+    greeting: t.procedure.query(() => 'hello'),
     events: t.procedure
       .input(z.object({ lastEventId: z.string().nullish() }).optional())
       .subscription(async function* (subOpts) {
@@ -105,13 +106,15 @@ test('a subscription keeps receiving on the old socket while the new one waits o
   sub.unsubscribe();
 });
 
-test('a subscription keeps receiving on the old socket while the new one fails to open', async () => {
+test('a subscription keeps receiving on the old socket while the new one fails to open, and the 3rd failure in a row shows', async () => {
   let failParams = true;
-  const attempts = vi.fn();
+  let failures = 0;
   await using ctx = setup({
     connectionParams: async (attempt) => {
-      attempts();
-      if (attempt > 1 && failParams) throw new Error('token unavailable');
+      if (attempt > 1 && failParams) {
+        failures++;
+        throw new Error(`token unavailable ${failures}`);
+      }
       return {};
     },
   });
@@ -121,17 +124,32 @@ test('a subscription keeps receiving on the old socket while the new one fails t
   });
   ctx.push();
   await vi.waitFor(() => expect(data).toEqual([1]));
+  const shown: { failures: number; error: unknown }[] = [];
+  ctx.wsClient.connectionState.subscribe({
+    next: (state) => {
+      if (failures > 0) shown.push({ failures, error: state.error });
+    },
+  });
 
   ctx.wssHandler.broadcastReconnectNotification();
-  await vi.waitFor(() => {
-    expect(attempts.mock.calls.length).toBeGreaterThan(2);
+  await vi.waitFor(() => expect(shown.length).toBeGreaterThan(0));
+  expect(shown[0]).toEqual({
+    failures: 3,
+    error: expect.objectContaining({
+      message: 'Initialization error',
+      cause: expect.objectContaining({
+        cause: expect.objectContaining({ message: 'token unavailable 3' }),
+      }),
+    }),
   });
   expect(ctx.subscribedFrom).toHaveBeenCalledTimes(1);
   ctx.push();
   await vi.waitFor(() => expect(data).toEqual([1, 2]));
-  expect(ctx.wsClient.connectionState.get().state).toBe('pending');
+  // New requests wait for the replacement rather than fail.
+  const greeting = ctx.client.greeting.query();
 
   failParams = false;
+  expect(await greeting).toBe('hello');
   await vi.waitFor(() => {
     expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['2']]);
   });
