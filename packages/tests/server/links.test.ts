@@ -678,6 +678,32 @@ describe('loggerLink', () => {
     );
   });
 
+  test('explicit null console is not replaced by the global console', () => {
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const link = loggerLink({
+      // @ts-expect-error - JS callers can pass null
+      console: null,
+    })(mockRuntime);
+
+    expect(() =>
+      createChain({
+        links: [link, okLink],
+        op: {
+          id: 1,
+          type: 'query',
+          input: null,
+          path: 'n/a',
+          context: {},
+          signal: null,
+        },
+      })
+        .subscribe({})
+        .unsubscribe(),
+    ).toThrow(TypeError);
+    expect(consoleLog).not.toHaveBeenCalled();
+    consoleLog.mockRestore();
+  });
+
   test('custom logger', () => {
     const logFn = vi.fn();
     createChain({
