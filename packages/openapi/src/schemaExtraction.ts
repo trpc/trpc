@@ -18,7 +18,7 @@ import type { SchemaObject } from './types';
 /** Description strings extracted from Zod `.describe()` calls, keyed by dot-delimited property path. */
 export interface DescriptionMap {
   /** Top-level description on the schema itself (empty-string key). */
-  self?: string;
+  self: string | null;
   /** Property-path → description, e.g. `"name"` or `"address.street"`. */
   properties: Map<string, string>;
 }
@@ -117,7 +117,7 @@ export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
   const registry = getZodGlobalRegistry();
   if (!registry) return null;
 
-  const map: DescriptionMap = { properties: new Map() };
+  const map: DescriptionMap = { self: null, properties: new Map() };
   let hasAny = false;
 
   // Check top-level description
@@ -299,7 +299,7 @@ export function collectRuntimeDescriptions(
         const descs = extractZodDescriptions(input);
         if (descs) {
           // Merge multiple .input() descriptions (last wins for conflicts)
-          inputDescs ??= { properties: new Map() };
+          inputDescs ??= { self: null, properties: new Map() };
           inputDescs.self = descs.self ?? inputDescs.self;
           for (const [p, d] of descs.properties) {
             inputDescs.properties.set(p, d);
@@ -343,7 +343,7 @@ function isProcedure(
 export function applyDescriptions(
   schema: SchemaObject,
   descs: DescriptionMap,
-  schemas?: Record<string, SchemaObject>,
+  schemas: Record<string, SchemaObject>,
 ): void {
   if (descs.self) {
     schema.description = descs.self;
@@ -361,13 +361,13 @@ export function applyDescriptions(
 
 function resolveSchemaRef(
   schema: SchemaObject,
-  schemas?: Record<string, SchemaObject>,
+  schemas: Record<string, SchemaObject>,
 ): SchemaObject | null {
   const ref = schema.$ref;
   if (!ref) {
     return schema;
   }
-  if (!schemas || !ref.startsWith('#/components/schemas/')) {
+  if (!ref.startsWith('#/components/schemas/')) {
     return null;
   }
 
@@ -408,7 +408,7 @@ function setNestedDescription({
   schema: SchemaObject;
   pathParts: string[];
   description: string;
-  schemas?: Record<string, SchemaObject>;
+  schemas: Record<string, SchemaObject>;
 }): void {
   if (pathParts.length === 0) return;
 
