@@ -8,7 +8,11 @@ Keep it under 200 words, not counting code blocks and links. Put detail in code 
 
 ## Why
 
-<!-- The problem, in a line or two. Then closing keywords: "Closes #123." -->
+<!--
+The problem, in a line or two.
+Then each closing keyword on its own bullet, never several issues on one line:
+- Closes #123
+-->
 
 ## What
 
