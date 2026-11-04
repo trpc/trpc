@@ -28,11 +28,13 @@ import { isObservable, observableToAsyncIterable } from '../observable';
 // oxlint-disable-next-line no-restricted-imports
 import {
   createDeferred,
+  exhaustive,
   isAbortError,
   isAsyncIterable,
   isObject,
   isPromise,
   isTrackedEnvelope,
+  makeAsyncResource,
   makeResource,
   run,
 } from '../unstable-core-do-not-import';
@@ -48,6 +50,11 @@ import { Unpromise } from '../vendor/unpromise';
 import { createURL } from './node-http';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 import { keepAliveResource } from './ws-machines/keepAlive';
+import type {
+  SubscriptionEvent,
+  SubscriptionReply,
+} from './ws-machines/subscription';
+import { subscriptionMachine } from './ws-machines/subscription';
 import type { Encoder } from './wsEncoder';
 import { jsonEncoder } from './wsEncoder';
 
@@ -545,6 +552,14 @@ async function nextUnlessStopped(
     }
     return STOPPED;
   }
+}
+
+/** `value`, which a machine's effect needs, or a throw for the bug. */
+function present<TValue>(value: TValue | null, what: string): TValue {
+  if (value === null) {
+    throw new Error(`The ${what} is missing`);
+  }
+  return value;
 }
 
 function dataResult(value: unknown) {
@@ -1118,13 +1133,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     /**
-     * A subscription's replies: `started`, its data, and how it ended.
+     * A subscription's replies: `started`, its data, and how it ended, as
+     * `subscriptionMachine` says. This plays the machine's effects, and
+     * turns the outcome of each one it waits for into the next event.
      *
      * It owns the id until its last reply, which is sent only after its
      * iterator's disposal has settled, so the client can reuse the id right
-     * away. A failed iterator cleanup goes to `onError` only: the client
-     * still gets `stopped`, so a subscription that completed or was stopped
-     * doesn't turn into a failed one.
+     * away.
      */
     async function* subscriptionReplies(
       request: ProcedureRequest,
@@ -1132,96 +1147,159 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       context: Promise<ContextResult>,
     ): Replies {
       using subscription = registration;
-      const stopped: TRPCResponseMessage = {
-        id: request.id,
-        jsonrpc: request.jsonrpc,
-        result: { type: 'stopped' },
-      };
+      using aborted = abortPromiseResource(subscription.signal);
+      const stop = aborted.promise.then(() => STOPPED);
 
-      const start = await startSubscription(
-        request,
-        context,
-        subscription.signal,
-      );
-      if (start.kind === 'stopped') {
-        yield* finalReply(request, stopped);
-        return;
-      }
-      if (start.kind === 'failed') {
-        yield* finalErrorReply(request, start.error);
-        return;
-      }
+      let iterable: AsyncIterable<unknown> | null = null;
+      let iterator: AsyncIterator<unknown> | null = null;
+      let disposeIterator: AsyncDisposable | null = null;
+      // see "Keeping values collectable"
+      let value: unknown = null;
+      let step: SubscriptionStep | null = null;
 
-      let sent = yield {
-        id: request.id,
-        jsonrpc: request.jsonrpc,
-        result: { type: 'started' },
-      };
-      const opened = attempt(() => iteratorResource(start.iterable));
-      if (!opened.ok) {
-        subscription.abort();
-        if (!sent.ok) {
-          reportError(request, sent.error);
+      // `Unpromise.race` rather than `Promise.race`: `stop` lives as long
+      // as the subscription, and `Promise.race` would add a reaction to it
+      // for every value.
+      const nextStep = (it: AsyncIterator<unknown>) =>
+        Unpromise.race([
+          nextUnlessStopped(it, subscription.signal, (error) =>
+            reportError(request, error),
+          ),
+          stop,
+        ]);
+
+      const reply = (sent: SubscriptionReply): TRPCResponseMessage => {
+        const { id, jsonrpc } = request;
+        switch (sent.kind) {
+          case 'started':
+            return { id, jsonrpc, result: { type: 'started' } };
+          case 'value':
+            return { id, jsonrpc, result: dataResult(value) };
+          case 'error':
+            return { id, jsonrpc, error: errorShape(request, sent.error) };
+          case 'fallback':
+            return { id, jsonrpc, error: fallbackErrorShape };
+          case 'stopped':
+            return { id, jsonrpc, result: { type: 'stopped' } };
         }
-        yield* finalErrorReply(request, opened.error);
-        yield* finalReply(request, stopped);
-        return;
-      }
-      // Set by the loop. Only the iterator's disposal, which runs after it,
-      // can throw.
-      let end: SubscriptionEnd = STOPPED;
-      let cleanup = OK;
-      try {
-        await using iterator = opened.value;
-        // The subscription may have been stopped while `started` was sent.
-        using aborted = abortPromiseResource(subscription.signal);
-        const stop = aborted.promise.then(() => STOPPED);
-        // `Unpromise.race` rather than `Promise.race`: `stop` lives as long
-        // as the subscription, and `Promise.race` would add a reaction to it
-        // for every value.
-        const nextStep = () =>
-          Unpromise.race([
-            nextUnlessStopped(iterator, subscription.signal, (error) =>
-              reportError(request, error),
-            ),
-            stop,
-          ]);
+      };
 
-        let step: SubscriptionStep | null; // see "Keeping values collectable"
-        while (true) {
-          step = sent.ok ? await nextStep() : failed(sent.error);
-          if (step.kind !== 'data') {
-            break;
+      // the machine closes every iterator it opens; this is for a bug
+      await using _unclosed = makeAsyncResource({}, async () => {
+        if (disposeIterator !== null) {
+          await using _iterator = disposeIterator;
+        }
+      });
+
+      let next = subscriptionMachine.initial;
+      while (true) {
+        let event: SubscriptionEvent | null = null;
+        for (const effect of next.effects) {
+          switch (effect.type) {
+            case 'setUp': {
+              const start = await startSubscription(
+                request,
+                context,
+                subscription.signal,
+              );
+              if (start.kind === 'started') {
+                iterable = start.iterable;
+                event = { type: 'setUp' };
+              } else {
+                event =
+                  start.kind === 'stopped'
+                    ? { type: 'setUpCancelled' }
+                    : { type: 'setUpFailed', error: start.error };
+              }
+              break;
+            }
+            case 'send': {
+              const sent = yield reply(effect.reply);
+              value = null;
+              event = sent.ok
+                ? { type: 'sent' }
+                : {
+                    type: 'sendFailed',
+                    error: getTRPCErrorFromUnknown(sent.error),
+                  };
+              break;
+            }
+            case 'open': {
+              const source = iterable;
+              iterable = null;
+              const opened = attempt(() =>
+                iteratorResource(present(source, 'iterable')),
+              );
+              if (opened.ok) {
+                iterator = opened.value;
+                disposeIterator = opened.value;
+                event = { type: 'opened' };
+              } else {
+                event = {
+                  type: 'openFailed',
+                  error: getTRPCErrorFromUnknown(opened.error),
+                };
+              }
+              break;
+            }
+            case 'next':
+              step = await nextStep(present(iterator, 'iterator'));
+              if (step.kind === 'data') {
+                value = step.value;
+                event = { type: 'value' };
+              } else {
+                event =
+                  step.kind === 'failed'
+                    ? { type: 'nextFailed', error: step.error }
+                    : { type: step.kind };
+              }
+              step = null;
+              break;
+            case 'close': {
+              const resource = present(disposeIterator, 'iterator');
+              iterator = null;
+              disposeIterator = null;
+              const cleanup = await settle(
+                run(async () => {
+                  await using _iterator = resource;
+                }),
+              );
+              event = cleanup.ok
+                ? { type: 'closed' }
+                : {
+                    type: 'closeFailed',
+                    error: getTRPCErrorFromUnknown(cleanup.error),
+                  };
+              break;
+            }
+            case 'abort':
+              subscription.abort();
+              break;
+            case 'report':
+              if (effect.internal) {
+                reportInternalError(request, effect.error);
+              } else {
+                reportError(request, effect.error);
+              }
+              break;
+            case 'invariantViolation':
+              reportInternalError(
+                request,
+                new TRPCError({
+                  code: 'INTERNAL_SERVER_ERROR',
+                  message: effect.message,
+                }),
+              );
+              break;
+            default:
+              exhaustive(effect, undefined);
           }
-          sent = yield {
-            id: request.id,
-            jsonrpc: request.jsonrpc,
-            result: dataResult(step.value),
-          };
-          step = null;
         }
-        end = step;
-        if (end.kind !== 'completed') {
-          // before the iterator's disposal, so that a cleanup that waits for
-          // cancellation is woken
-          subscription.abort();
+        if (event === null) {
+          return;
         }
-      } catch (cause) {
-        // only the iterator's disposal throws
-        cleanup = { ok: false, error: cause };
+        next = subscriptionMachine.transition(next.state, event);
       }
-      if (!cleanup.ok) {
-        // a failed cleanup aborts even a completed subscription
-        subscription.abort();
-      }
-
-      if (end.kind === 'failed') {
-        yield* finalErrorReply(request, end.error);
-      }
-      if (!cleanup.ok) {
-        reportError(request, cleanup.error);
-      }
-      yield* finalReply(request, stopped);
     }
   }
 }
