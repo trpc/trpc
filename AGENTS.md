@@ -28,16 +28,17 @@ Run them from the repo root.
 
 ## TypeScript
 
-Lint enforces most of the style (`.oxlintrc.json`, `tooling/oxlint-plugin/`). Beyond it, adapted from [pstack's TypeScript best practices](https://github.com/cursor/plugins/blob/main/pstack/skills/typescript-best-practices/SKILL.md):
+Lint enforces most of the style (`.oxlintrc.json`, `tooling/oxlint-plugin/`). Beyond it, adapted from pstack's [type system discipline](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-type-system-discipline/SKILL.md) and [TypeScript best practices](https://github.com/cursor/plugins/blob/main/pstack/skills/typescript-best-practices/SKILL.md), make impossible states fail to compile:
 
 - Prefer required over optional. Internal (non-exported) parameters, properties and options aren't optional: pass an explicit `null`, a literal string or a symbol. Optionals are only for the convenience of public APIs.
   ```ts
   function connect(url: string, retry?: RetryOptions); // before
   function connect(url: string, retry: RetryOptions | null); // after
   ```
-- Model variants as a discriminated union on a literal field, not a bag of optional fields.
-- Let TypeScript infer, and derive types (`typeof`, `ReturnType`, `inferRouterInputs`) before declaring new ones. Declare return types only on public APIs.
-- Data from outside (request bodies, headers, messages) is `unknown` until parsed. `any` is fine in generic constraints such as `AnyRouter`.
+- Model variants as a discriminated union on a literal field, not booleans plus optional fields.
+- Brand a primitive when two values of its type mean different things: `string & { __brand: 'TrackedId' }`, as in `stream/tracked.ts`.
+- Data from outside (request bodies, headers, messages) is `unknown` until parsed at the boundary; trust the type after that. `any` is fine in generic constraints such as `AnyRouter`.
+- Let TypeScript infer, and derive types from whatever owns the shape (`typeof`, `ReturnType`, `inferRouterInputs`) before declaring a parallel one. Declare return types only on public APIs.
 - Check a value with `satisfies`, not `as`; cast only after validating. A type guard (`isX`) must check what its name claims.
 - Take one options object, `opts`, and read its members. Destructure only keys read three or more times.
 - Clean up with `await using` and `makeResource()` or `makeAsyncResource()`, not `try`/`finally`.
