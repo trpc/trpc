@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { maxWeight, minWeight } from '../../../build/sponsors-list.ts';
 import { drawnSponsors, type Sponsor } from '~/sponsors.ts';
 
-import { cloudPadding, packSponsors } from './pack.ts';
+import { cloudHeight, cloudPadding, packSponsors } from './pack.ts';
 
 const sponsor = (login: string, weight: number): Sponsor => ({
   createdAt: 0,
@@ -33,10 +33,10 @@ describe('packSponsors', () => {
     );
   });
 
-  it("draws every one of sponsors.json's sponsors at least a twelfth of the cloud across", () => {
+  it("draws every one of sponsors.json's sponsors at least a thirteenth of the cloud across", () => {
     const bubbles = packSponsors(drawnSponsors, cloudPadding);
     expect(Math.min(...bubbles.map((bubble) => bubble.r * 2))).toBeGreaterThan(
-      1 / 12,
+      1 / 13,
     );
   });
 
@@ -54,37 +54,67 @@ describe('packSponsors', () => {
     ['sponsors.json', drawnSponsors],
     ['many sponsors', many],
   ])(
-    'packs %s into a round cloud, not a diamond: it reaches near the edge every way out, and fills most of its circle',
+    'packs %s into a heart: two lobes with a dip between them, a point at the foot, and most of it filled',
     (_, list) => {
       const bubbles = packSponsors(list, cloudPadding);
+      const height = cloudHeight(bubbles);
       for (const bubble of bubbles) {
-        expect(
-          Math.hypot(bubble.x - 0.5, bubble.y - 0.5) + bubble.r,
-        ).toBeLessThanOrEqual(0.5 + 1e-9);
+        expect(bubble.x - bubble.r).toBeGreaterThanOrEqual(-1e-9);
+        expect(bubble.x + bubble.r).toBeLessThanOrEqual(1 + 1e-9);
+        expect(bubble.y - bubble.r).toBeGreaterThanOrEqual(-1e-9);
       }
-      for (let step = 0; step < 64; step++) {
-        const angle = (step / 64) * 2 * Math.PI;
-        const reach = Math.max(
-          ...bubbles.map(
-            (bubble) =>
-              (bubble.x - 0.5) * Math.cos(angle) +
-              (bubble.y - 0.5) * Math.sin(angle) +
-              bubble.r,
-          ),
+      expect(height).toBeGreaterThan(0.75);
+      expect(height).toBeLessThan(1);
+      /** How far down the cloud's top edge is, `x` across. */
+      const topAt = (x: number) =>
+        Math.min(
+          ...bubbles
+            .filter((bubble) => Math.abs(bubble.x - x) < bubble.r)
+            .map(
+              (bubble) =>
+                bubble.y - Math.sqrt(bubble.r ** 2 - (bubble.x - x) ** 2),
+            ),
         );
-        expect(reach).toBeGreaterThan(0.4);
-      }
+      expect(Number.isFinite(topAt(0.5))).toBe(true);
+      expect(topAt(0.5)).toBeGreaterThan(topAt(0.25) + 0.02);
+      expect(topAt(0.5)).toBeGreaterThan(topAt(0.75) + 0.02);
+      /** How wide the cloud is, `y` down. */
+      const across = (y: number) => {
+        const crossing = bubbles.filter(
+          (bubble) => Math.abs(bubble.y - y) < bubble.r,
+        );
+        const half = (bubble: (typeof bubbles)[number]) =>
+          Math.sqrt(bubble.r ** 2 - (bubble.y - y) ** 2);
+        return (
+          Math.max(...crossing.map((bubble) => bubble.x + half(bubble))) -
+          Math.min(...crossing.map((bubble) => bubble.x - half(bubble)))
+        );
+      };
+      expect(across(height * 0.3)).toBeGreaterThan(0.85);
+      expect(across(height * 0.6)).toBeLessThan(across(height * 0.3));
+      expect(across(height * 0.9)).toBeLessThan(0.3);
+      const lowest = bubbles.reduce((low, bubble) =>
+        bubble.y + bubble.r > low.y + low.r ? bubble : low,
+      );
+      expect(Math.abs(lowest.x - 0.5)).toBeLessThan(0.08);
       const filled = bubbles.reduce(
-        (sum, bubble) => sum + (bubble.r / 0.5) ** 2,
+        (sum, bubble) => sum + Math.PI * bubble.r ** 2,
         0,
       );
-      expect(filled).toBeGreaterThan(0.63);
+      expect(filled / height).toBeGreaterThan(0.45);
     },
   );
 
   it.each([
     ['sponsors.json', drawnSponsors],
     ['many sponsors', many],
+    [
+      'one sponsor who outweighs the rest',
+      [
+        sponsor('big', maxWeight),
+        ...many.slice(0, 2).map((small) => ({ ...small, weight: minWeight })),
+      ],
+    ],
   ])(
     "doesn't overlap any of %s, and keeps the heaviest in the middle",
     (_, list) => {
@@ -96,8 +126,9 @@ describe('packSponsors', () => {
           );
         }
       }
+      const middle = cloudHeight(bubbles) / 2;
       const fromMiddle = (bubble: (typeof bubbles)[number]) =>
-        Math.hypot(bubble.x - 0.5, bubble.y - 0.5);
+        Math.hypot(bubble.x - 0.5, bubble.y - middle);
       const byWeight = bubbles.toSorted(
         (a, b) => b.sponsor.weight - a.sponsor.weight,
       );

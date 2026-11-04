@@ -9,10 +9,13 @@ import {
   cardFooterOf,
   drawnSponsors,
   isSmallSponsor,
+  latestSponsorCount,
+  newSponsorMs,
   type Partner,
   partners,
   partnersByTier,
   profileUrl,
+  recentSponsorsOf,
   type Sponsor,
   sponsorCard,
   sponsorCardAlt,
@@ -163,6 +166,67 @@ describe('byMostGiven', () => {
       'github/later',
       'github/lighter',
     ]);
+  });
+});
+
+describe('recentSponsorsOf', () => {
+  const day = 24 * 60 * 60 * 1000;
+  const now = Date.UTC(2026, 10, 4);
+  const startedDaysAgo = (login: string, days: number): Sponsor => ({
+    ...sponsor(login, 1),
+    createdAt: now - days * day,
+  });
+
+  it('is everyone who started within a month, newest first', () => {
+    const list = [
+      startedDaysAgo('old', 400),
+      startedDaysAgo('week', 7),
+      startedDaysAgo('edge', newSponsorMs / day),
+      startedDaysAgo('today', 0),
+      startedDaysAgo('almost', newSponsorMs / day - 1),
+    ];
+    const recent = recentSponsorsOf(list, now);
+    expect(recent.kind).toBe('new');
+    expect(recent.sponsors.map(sponsorKey)).toEqual([
+      'github/today',
+      'github/week',
+      'github/almost',
+    ]);
+  });
+
+  it('is the latest few, newest first, when nobody started within a month', () => {
+    const list = [
+      startedDaysAgo('a', 300),
+      startedDaysAgo('b', 40),
+      startedDaysAgo('c', 200),
+      startedDaysAgo('d', 90),
+      startedDaysAgo('e', 90),
+    ];
+    const recent = recentSponsorsOf(list, now);
+    expect(recent.kind).toBe('latest');
+    expect(recent.sponsors.map(sponsorKey)).toEqual([
+      'github/b',
+      'github/d',
+      'github/e',
+    ]);
+    expect(recent.sponsors).toHaveLength(latestSponsorCount);
+  });
+
+  it('leaves out sponsors dated after now, new or latest', () => {
+    const future = startedDaysAgo('future', -3);
+    expect(
+      recentSponsorsOf([future, startedDaysAgo('week', 7)], now).sponsors.map(
+        sponsorKey,
+      ),
+    ).toEqual(['github/week']);
+    expect(recentSponsorsOf([future, startedDaysAgo('old', 90)], now)).toEqual({
+      kind: 'latest',
+      sponsors: [startedDaysAgo('old', 90)],
+    });
+  });
+
+  it('is nobody when there are no sponsors', () => {
+    expect(recentSponsorsOf([], now)).toEqual({ kind: 'latest', sponsors: [] });
   });
 });
 

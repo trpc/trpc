@@ -46,9 +46,8 @@ const drawn = (sponsors: ReadonlyArray<Sponsor>) =>
   sponsors.filter((sponsor) => sponsor.imageless !== true);
 
 /**
- * `sponsors`' circles, but the imageless, as `/sponsor` packs them, scaled
- * to fill `sponsorCloudWidth` and cropped to them, so the README has no
- * empty band where the packed circle has no sponsors.
+ * `sponsors`' circles, but the imageless, in the heart `/sponsor` packs
+ * them in, scaled to fill `sponsorCloudWidth` and cropped to them.
  */
 export function cloudLayout(sponsors: ReadonlyArray<Sponsor>): CloudLayout {
   const packed = packSponsors(drawn(sponsors), cloudPadding);
