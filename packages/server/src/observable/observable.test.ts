@@ -473,3 +473,25 @@ test.each(['error', 'complete'] as const)(
     expect(teardown).toHaveBeenCalledTimes(1);
   },
 );
+
+test.each(['error', 'complete'] as const)(
+  'vanilla observable - a %s observer that throws before the source returns still runs the teardown',
+  (end) => {
+    const teardown = vi.fn();
+    const obs$ = observable<number, Error>((observer) => {
+      if (end === 'error') observer.error(new Error('failed'));
+      else observer.complete();
+      return teardown;
+    });
+    const observerError = new Error('observer failed');
+
+    expect(() =>
+      obs$.subscribe({
+        [end]: () => {
+          throw observerError;
+        },
+      }),
+    ).toThrow(observerError);
+    expect(teardown).toHaveBeenCalledTimes(1);
+  },
+);

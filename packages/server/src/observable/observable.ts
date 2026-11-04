@@ -44,6 +44,20 @@ export function observable<TValue, TError = unknown>(
       let isDone = false;
       let unsubscribed = false;
       let teardownImmediately = false;
+      let subscribing = true;
+      let thrownWhileSubscribing = null as { cause: unknown } | null;
+      function end(notify: () => void) {
+        try {
+          notify();
+        } catch (cause) {
+          // The source hasn't returned its teardown yet; rethrow once it has
+          // run.
+          if (!subscribing) throw cause;
+          thrownWhileSubscribing ??= { cause };
+        } finally {
+          unsubscribe();
+        }
+      }
       function unsubscribe() {
         if (teardownRef === null) {
           teardownImmediately = true;
@@ -72,26 +86,22 @@ export function observable<TValue, TError = unknown>(
             return;
           }
           isDone = true;
-          try {
-            observer.error?.(err);
-          } finally {
-            unsubscribe();
-          }
+          end(() => observer.error?.(err));
         },
         complete() {
           if (isDone) {
             return;
           }
           isDone = true;
-          try {
-            observer.complete?.();
-          } finally {
-            unsubscribe();
-          }
+          end(() => observer.complete?.());
         },
       });
+      subscribing = false;
       if (teardownImmediately) {
         unsubscribe();
+      }
+      if (thrownWhileSubscribing) {
+        throw thrownWhileSubscribing.cause;
       }
       return {
         unsubscribe,
