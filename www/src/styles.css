@@ -24,20 +24,18 @@ html {
   }
 }
 
-/* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in
-   `--celebrate-delay` after it comes into view: `pop` from hidden, or
-   `boing` when they were already showing. */
+/* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
+   comes into view: `pop` from hidden, or `boing` when they were already
+   showing. Each element sets its own `animation-delay`: a theme variable is
+   resolved on `:root`, so one there can't read a delay set per bubble. */
 @theme {
-  --animate-sponsor-pop: sponsor-pop 0.9s ease-out var(--celebrate-delay, 0s)
-    both;
-  --animate-sponsor-boing: sponsor-boing 0.8s ease-out
-    var(--celebrate-delay, 0s) both;
-  --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out
-    calc(var(--celebrate-delay, 0s) + 0.35s) both;
+  --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
+  --animate-sponsor-boing: sponsor-boing 0.8s ease-out both;
+  --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out both;
   --animate-sponsor-confetti: sponsor-confetti 0.9s
-    cubic-bezier(0.2, 0.8, 0.4, 1) calc(var(--celebrate-delay, 0s) + 0.3s) both;
+    cubic-bezier(0.2, 0.8, 0.4, 1) both;
   --animate-sponsor-badge: sponsor-badge 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)
-    calc(var(--celebrate-delay, 0s) + 0.5s) both;
+    both;
   --animate-sponsor-glow: sponsor-glow 3s ease-in-out infinite;
 
   @keyframes sponsor-pop {
