@@ -39,6 +39,9 @@ function heartDepth(x: number, y: number) {
   return Math.max(square, lobe(-half / 2), lobe(half / 2));
 }
 
+/** The widest circle that fits in the heart: one filling its square, or a lobe. */
+const deepest = 0.5;
+
 /** The heart's area: its square and two half discs of diameter 1. */
 const heartArea = 1 + Math.PI / 4;
 
@@ -150,7 +153,11 @@ function sweep(
  */
 function heartOut(radii: ReadonlyArray<number>) {
   const area = radii.reduce((sum, r) => sum + Math.PI * r * r, 0);
-  const scale = Math.sqrt((heartFill * heartArea) / area);
+  // No deeper than a lobe, else the largest could never fit.
+  const scale = Math.min(
+    Math.sqrt((heartFill * heartArea) / area),
+    deepest / Math.max(...radii),
+  );
   const rs = radii.map((r) => r * scale);
   const xs: Array<number> = [];
   const ys: Array<number> = [];

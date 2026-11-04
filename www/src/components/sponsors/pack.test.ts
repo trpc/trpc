@@ -75,6 +75,7 @@ describe('packSponsors', () => {
                 bubble.y - Math.sqrt(bubble.r ** 2 - (bubble.x - x) ** 2),
             ),
         );
+      expect(Number.isFinite(topAt(0.5))).toBe(true);
       expect(topAt(0.5)).toBeGreaterThan(topAt(0.25) + 0.02);
       expect(topAt(0.5)).toBeGreaterThan(topAt(0.75) + 0.02);
       /** How wide the cloud is, `y` down. */
@@ -107,6 +108,13 @@ describe('packSponsors', () => {
   it.each([
     ['sponsors.json', drawnSponsors],
     ['many sponsors', many],
+    [
+      'one sponsor who outweighs the rest',
+      [
+        sponsor('big', maxWeight),
+        ...many.slice(0, 2).map((small) => ({ ...small, weight: minWeight })),
+      ],
+    ],
   ])(
     "doesn't overlap any of %s, and keeps the heaviest in the middle",
     (_, list) => {

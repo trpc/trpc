@@ -436,6 +436,20 @@ export function animateCloud(
     }
   };
 
+  /** Grows the bubble the pointer's now over, if it's another, squishing it the way the pointer came. */
+  const hover = (target: EventTarget | null) => {
+    const over = bubbleOf(target);
+    if (over === hovered) {
+      return;
+    }
+    if (over !== undefined) {
+      jelly.poke(over, jelly.pointer?.vx ?? 0, jelly.pointer?.vy ?? 0);
+    }
+    hovered = over;
+    regrow();
+    schedule();
+  };
+
   const onMove = (event: PointerEvent) => {
     const at = toCloud(event);
     const t = event.timeStamp;
@@ -444,15 +458,13 @@ export function animateCloud(
     const vy = lastMove && seconds > 0 ? (at.y - lastMove.y) / seconds : 0;
     lastMove = { t, ...at };
     jelly.pointer = { ...at, vx, vy };
-    const over = bubbleOf(event.target);
-    if (over !== hovered) {
-      if (over !== undefined) {
-        jelly.poke(over, vx, vy);
-      }
-      hovered = over;
-      regrow();
-    }
+    hover(event.target);
     schedule();
+  };
+
+  // A bubble can move under a pointer that holds still, which fires this but no move.
+  const onOver = (event: PointerEvent) => {
+    hover(event.target);
   };
 
   const onLeave = () => {
@@ -512,7 +524,10 @@ export function animateCloud(
     if (size !== width) {
       width = size;
       jelly.homes = homesAt(size);
+      jelly.pointer = undefined;
+      lastMove = undefined;
       rect = undefined;
+      schedule();
     }
   });
   resize.observe(container);
@@ -535,6 +550,7 @@ export function animateCloud(
   view.observe(container);
 
   container.addEventListener('pointermove', onMove, { passive: true });
+  container.addEventListener('pointerover', onOver, { passive: true });
   container.addEventListener('pointerleave', onLeave, { passive: true });
   container.addEventListener('pointercancel', onLeave, { passive: true });
   container.addEventListener('pointerdown', onDown, { passive: true });
@@ -554,6 +570,7 @@ export function animateCloud(
       resize.disconnect();
       view.disconnect();
       container.removeEventListener('pointermove', onMove);
+      container.removeEventListener('pointerover', onOver);
       container.removeEventListener('pointerleave', onLeave);
       container.removeEventListener('pointercancel', onLeave);
       container.removeEventListener('pointerdown', onDown);

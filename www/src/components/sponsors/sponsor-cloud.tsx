@@ -45,43 +45,54 @@ export function SponsorCloud(props: { readonly className?: string }) {
   const [entrance, setEntrance] = useState<Entrance>('none');
   // Stable, so React sets the cloud up once rather than on every render.
   const alive = useCallback((element: HTMLDivElement | null) => {
-    const motion = matchMedia('(prefers-reduced-motion: reduce)');
-    if (!element || motion.matches) {
+    if (!element) {
       return;
     }
-    const cloud = animateCloud(
-      element,
-      [...element.querySelectorAll<HTMLElement>('[data-bubble]')],
-      bubbles,
-    );
-    let waiting = false;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry?.isIntersecting) {
-          if (waiting) {
-            cloud.drop(bubbles.map((_, index) => entranceDelay(index)));
+    let stop: (() => void) | undefined;
+    const start = () => {
+      const cloud = animateCloud(
+        element,
+        [...element.querySelectorAll<HTMLElement>('[data-bubble]')],
+        bubbles,
+      );
+      let waiting = false;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry?.isIntersecting) {
+            if (waiting) {
+              cloud.drop(bubbles.map((_, index) => entranceDelay(index)));
+            }
+            setEntrance((now) => (now === 'waiting' ? 'shown' : now));
+            observer.disconnect();
+          } else {
+            waiting = true;
+            setEntrance((now) => (now === 'none' ? 'waiting' : now));
           }
-          setEntrance((now) => (now === 'waiting' ? 'shown' : now));
-          observer.disconnect();
-        } else {
-          waiting = true;
-          setEntrance((now) => (now === 'none' ? 'waiting' : now));
-        }
-      },
-      { rootMargin: '0px 0px -20% 0px' },
-    );
-    observer.observe(element);
-    const still = () => {
-      if (motion.matches) {
+        },
+        { rootMargin: '0px 0px -20% 0px' },
+      );
+      observer.observe(element);
+      stop = () => {
+        observer.disconnect();
         cloud.stop();
+        setEntrance((now) => (now === 'waiting' ? 'none' : now));
+        stop = undefined;
+      };
+    };
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const follow = () => {
+      if (motion.matches) {
+        stop?.();
+      } else if (stop === undefined) {
+        start();
       }
     };
-    motion.addEventListener('change', still);
+    follow();
+    motion.addEventListener('change', follow);
     return () => {
-      observer.disconnect();
-      motion.removeEventListener('change', still);
-      cloud.stop();
+      motion.removeEventListener('change', follow);
+      stop?.();
     };
   }, []);
   return (
