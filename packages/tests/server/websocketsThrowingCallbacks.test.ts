@@ -125,10 +125,12 @@ test('an errorFormatter that throws is reported, the request gets no reply, and 
     ]),
   );
 
-  await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
-  expect(socket.responses()).toMatchObject([
-    { id: 2, result: { type: 'data', data: 'hello' } },
-  ]);
+  await vi.waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(2);
+    expect(socket.responses()).toMatchObject([
+      { id: 2, result: { type: 'data', data: 'hello' } },
+    ]);
+  });
   expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
     'BAD_REQUEST',
     'formatter bug',
