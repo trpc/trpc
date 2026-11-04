@@ -390,7 +390,13 @@ export class WsClient {
       });
     });
 
+    // Set on the socket's `close` event, or earlier on a keepAlive pong
+    // timeout, which doesn't wait for the closing handshake. The socket's
+    // later frames and events must not reach the requests resent by then.
+    let closed = false;
+
     ws.addEventListener('message', ({ data }) => {
+      if (closed) return;
       this.inactivityTimeout.reset();
 
       // Handle PING/PONG as text regardless of encoder
@@ -416,9 +422,6 @@ export class WsClient {
       this.handleResponseMessage(incomingMessage);
     });
 
-    // Runs once per socket: on its `close` event, or earlier on a keepAlive
-    // pong timeout, which doesn't wait for the closing handshake.
-    let closed = false;
     const onClose = (event?: CloseEvent) => {
       if (closed) return;
       closed = true;

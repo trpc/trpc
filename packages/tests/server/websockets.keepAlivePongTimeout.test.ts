@@ -28,6 +28,7 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
   });
 
   const onClose = vi.fn();
+  const onError = vi.fn();
   await using ctx = testServerAndClientResource(router, {
     clientLink: 'wsLink',
     wsClient: {
@@ -35,10 +36,22 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
       retryDelayMs: () => 0,
       keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 50 },
       onClose,
+      onError,
     },
   });
   const serverSockets: WebSocket[] = [];
-  ctx.wss.on('connection', (ws) => serverSockets.push(ws));
+  let subscriptionId: unknown;
+  ctx.wss.on('connection', (ws) => {
+    serverSockets.push(ws);
+    ws.on('message', (raw) => {
+      // oxlint-disable-next-line typescript/no-base-to-string
+      const text = raw.toString();
+      if (text === 'PING' || text === 'PONG') return;
+      for (const msg of [JSON.parse(text)].flat()) {
+        if (msg.method === 'subscription') subscriptionId = msg.id;
+      }
+    });
+  });
   using _cleanup = makeResource({}, () => {
     gate.resolve();
     for (const ws of serverSockets) ws.terminate();
@@ -50,6 +63,7 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
   const query = ctx.client.pending.query();
   query.catch(() => null);
   await new Promise((resolve) => setTimeout(resolve, 10));
+  const oldClientSocket = ctx.wsClient.connection!.ws as unknown as WebSocket;
 
   // An unresponsive server: no pong, and no reply to the closing handshake,
   // which `ws` would wait 30s for.
@@ -62,8 +76,17 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
   expect(serverSockets).toHaveLength(2);
   expect(onClose).toHaveBeenCalledTimes(1);
 
-  // The old socket's own `close` event arrives once the server answers.
+  // Late frames and errors on the old socket don't reach the replacement.
   const oldSocket = serverSockets[0]!;
+  oldSocket.send(
+    JSON.stringify({ id: subscriptionId, result: { type: 'data', data: 99 } }),
+  );
+  oldClientSocket.emit('error', new Error('late error'));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(onData.mock.calls.map(([data]) => data)).toEqual([1, 2]);
+  expect(onError).not.toHaveBeenCalled();
+
+  // The old socket's own `close` event arrives once the server answers.
   const oldSocketClosed = new Promise((resolve) =>
     oldSocket.once('close', resolve),
   );
