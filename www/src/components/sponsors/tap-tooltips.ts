@@ -18,18 +18,18 @@ const isTouch = (pointerType: string | undefined) =>
 /**
  * What a click on a bubble does. A mouse or the keyboard follows its link,
  * as hover or focus already showed its tooltip. A tap shows the tooltip
- * first, and follows the link only when that tooltip was already showing
- * from an earlier tap; a long press only shows it.
+ * first, and follows the link only when an earlier tap showed it, not
+ * hover on a device with both; a long press only shows it.
  */
 export function tapAction(opts: {
   /** The pointer that pressed the bubble, if any: undefined for the keyboard. */
   readonly pointerType: string | undefined;
-  /** Whether its tooltip showed before this press. */
-  readonly shown: boolean;
+  /** Whether an earlier tap or long press showed its tooltip, still showing. */
+  readonly tapped: boolean;
   /** Whether this press was held long enough to show it. */
   readonly held: boolean;
 }): 'follow' | 'show' {
-  return isTouch(opts.pointerType) && (!opts.shown || opts.held)
+  return isTouch(opts.pointerType) && (!opts.tapped || opts.held)
     ? 'show'
     : 'follow';
 }
@@ -42,6 +42,7 @@ export function tapAction(opts: {
  */
 export function useTapTooltips() {
   const [shown, setShown] = useState<string | null>(null);
+  const tapped = useRef<string | null>(null);
   const pointer = useRef<string | undefined>(undefined);
   const held = useRef(false);
   const hold = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -57,7 +58,14 @@ export function useTapTooltips() {
       ) {
         return;
       }
+      if (!open && tapped.current === key) {
+        tapped.current = null;
+      }
       setShown((now) => (open ? key : now === key ? null : now));
+    };
+    const show = () => {
+      tapped.current = key;
+      setShown(key);
     };
     return {
       root: { onOpenChange, open: shown === key },
@@ -66,19 +74,24 @@ export function useTapTooltips() {
           const action = tapAction({
             held: held.current,
             pointerType: pointer.current,
-            shown: shown === key,
+            tapped: tapped.current === key,
           });
           pointer.current = undefined;
           held.current = false;
           if (action === 'show') {
             event.preventDefault();
-            setShown(key);
+            show();
           }
         },
         onContextMenu(event: MouseEvent) {
           if (isTouch(pointer.current)) {
             event.preventDefault();
           }
+        },
+        // A touch that ended without a click mustn't make a key press a tap.
+        onKeyDown() {
+          pointer.current = undefined;
+          held.current = false;
         },
         onPointerCancel() {
           stopHold();
@@ -91,7 +104,7 @@ export function useTapTooltips() {
           if (isTouch(event.pointerType)) {
             hold.current = setTimeout(() => {
               held.current = true;
-              setShown(key);
+              show();
             }, holdMs);
           }
         },
