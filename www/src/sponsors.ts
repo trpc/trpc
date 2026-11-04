@@ -158,6 +158,36 @@ export const byMostGiven = (a: Sponsor, b: Sponsor) =>
 /** The sponsors who have given the most, most first. */
 export const topSponsors = drawnSponsors.toSorted(byMostGiven).slice(0, 5);
 
+/** How long a sponsor counts as new after they start: a month. */
+export const newSponsorMs = 31 * 24 * 60 * 60 * 1000;
+
+/** How many of the latest sponsors the cloud celebrates when nobody is new. */
+export const latestSponsorCount = 3;
+
+/**
+ * The sponsors to celebrate at `now`: who started within `newSponsorMs`
+ * (`new`), else the `latestSponsorCount` who started last (`latest`);
+ * newest first either way.
+ */
+export function recentSponsorsOf(
+  all: ReadonlyArray<Sponsor>,
+  now: number,
+): {
+  readonly kind: 'latest' | 'new';
+  readonly sponsors: ReadonlyArray<Sponsor>;
+} {
+  const newestFirst = all.toSorted(
+    (a, b) =>
+      b.createdAt - a.createdAt || sponsorKey(a).localeCompare(sponsorKey(b)),
+  );
+  const started = newestFirst.filter(
+    (sponsor) => sponsor.createdAt > now - newSponsorMs,
+  );
+  return started.length > 0
+    ? { kind: 'new', sponsors: started }
+    : { kind: 'latest', sponsors: newestFirst.slice(0, latestSponsorCount) };
+}
+
 export const sponsorUrl = 'https://github.com/sponsors/trpc';
 
 /** Sponsoring the trpc organization at the tier GitHub numbers `tierId`. */
