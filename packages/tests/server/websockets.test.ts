@@ -2942,10 +2942,13 @@ describe('auth / connectionParams', async () => {
       expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
     });
     // The subscription stays on the old socket until the new one has sent
-    // its connectionParams, then the old one closes.
-    await vi.waitFor(() => {
-      expect(ctx.wss.clients.size).toBe(1);
-    });
+    // its connectionParams, 500ms after it opens, then the old one closes.
+    await vi.waitFor(
+      () => {
+        expect(ctx.wss.clients.size).toBe(1);
+      },
+      { timeout: 2_000 },
+    );
   });
 
   test('regression: bad connection params', async () => {
