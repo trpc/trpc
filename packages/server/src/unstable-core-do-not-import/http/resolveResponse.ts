@@ -86,6 +86,8 @@ interface RequestScope {
   info?: TRPCRequestInfo;
   /** Set once the request is accepted */
   ctx?: Outcome<unknown>;
+  /** Set once `responseMeta` is called, so it's never called twice */
+  responseMetaCalled?: true;
 }
 
 /** A request that was parsed and accepted, with its context created */
@@ -324,6 +326,7 @@ function applyResponseMeta(
   } | null,
 ): number {
   const { opts, info, headers } = scope;
+  scope.responseMetaCalled = true;
   const meta =
     opts.responseMeta?.({
       ctx: ctxOf(scope),
@@ -422,15 +425,15 @@ async function jsonResponse(
     return { error: errorShape(request, outcome.error, source) };
   });
 
+  // serialized first, so `responseMeta` only sees a response that can be sent
+  const body = JSON.stringify(
+    transformTRPCResponse(request.config, info.isBatchCall ? data : data[0]!),
+  );
   const status = applyResponseMeta(request, {
     data,
     errors: outcomes.map((outcome) => (outcome.ok ? undefined : outcome.error)),
   });
-  const body = transformTRPCResponse(
-    request.config,
-    info.isBatchCall ? data : data[0]!,
-  );
-  return ok(new Response(JSON.stringify(body), { status, headers }));
+  return ok(new Response(body, { status, headers }));
 }
 
 /**
@@ -592,7 +595,11 @@ function errorResponse(scope: RequestScope, error: TRPCError): Response {
 
   const data: TRPCResponse = { error: errorShape(scope, error, source) };
   const body = JSON.stringify(transformTRPCResponse(scope.config, data));
-  const status = applyResponseMeta(scope, { data: [data], errors: [error] });
+  const results = { data: [data], errors: [error] };
+  // its headers, if it returned any, are already on `scope.headers`
+  const status = scope.responseMetaCalled
+    ? getHTTPStatusCode(results.data, results.errors)
+    : applyResponseMeta(scope, results);
   return new Response(body, { status, headers: scope.headers });
 }
 
@@ -615,12 +622,12 @@ async function respond(scope: RequestScope): Promise<Outcome<Response>> {
   const ctx = (scope.ctx = await attempt(() =>
     scope.opts.createContext({ info }),
   ));
-  const request: AcceptedRequest = {
-    ...scope,
+  // the same object, so the fallback sees what the response did
+  const request: AcceptedRequest = Object.assign(scope, {
     info,
     ctx,
     lifetime: requestLifetime(scope.opts.req),
-  };
+  });
   const calls = info.calls.map((call) => resolveCall(request, call));
 
   if (!info.isBatchCall && info.type === 'subscription') {
