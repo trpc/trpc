@@ -9,12 +9,15 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { HTTPErrorHandler } from '@trpc/server/http';
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
+import type { ServerOptions } from 'ws';
 import { WebSocketServer } from 'ws';
 import { makeAsyncResource } from '../unstable-core-do-not-import/stream/utils/disposable';
 
 export interface TRPCServerResourceOpts<TRouter extends AnyTRPCRouter> {
   server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
   wssServer?: Partial<WSSHandlerOptions<TRouter>>;
+  /** Options for the `ws` server itself, such as `maxPayload` */
+  wssOptions?: Omit<ServerOptions, 'port' | 'server' | 'noServer'>;
 }
 
 /**
@@ -74,7 +77,7 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
   });
 
   // wss
-  let wss = new WebSocketServer({ port: 0 });
+  let wss = new WebSocketServer({ ...opts?.wssOptions, port: 0 });
   const wssPort = (wss.address() as any).port as number;
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     get wss() {
@@ -112,7 +115,7 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
         throw new Error('Server is already running');
       }
       server.listen(httpPort);
-      wss = new WebSocketServer({ port: wssPort });
+      wss = new WebSocketServer({ ...opts?.wssOptions, port: wssPort });
       wssHandler = applyWSSHandler(applyWSSHandlerOpts);
     },
     router,

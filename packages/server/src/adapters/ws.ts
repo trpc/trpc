@@ -14,11 +14,12 @@ import {
 } from '../@trpc/server';
 import type { TRPCRequestInfo } from '../@trpc/server/http';
 import { type BaseHandlerOptions } from '../@trpc/server/http';
-import { parseTRPCMessage } from '../@trpc/server/rpc';
+import { parseTRPCMessage, TRPC_ERROR_CODES_BY_KEY } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
   TRPCConnectionParamsMessage,
+  TRPCErrorShape,
   TRPCReconnectNotification,
   TRPCResponseMessage,
   TRPCResultMessage,
@@ -30,6 +31,7 @@ import {
   isAbortError,
   isAsyncIterable,
   isObject,
+  isPromise,
   isTrackedEnvelope,
   makeResource,
   run,
@@ -71,6 +73,16 @@ function isSuppressedError(
     'suppressed' in cause
   );
 }
+
+/**
+ * What the client gets when its error can't be formatted or encoded. It says
+ * nothing about the error, which is what `errorFormatter` would have hidden.
+ */
+const fallbackErrorShape: TRPCErrorShape = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
 
 /**
  * A procedure that gives up because its subscription was cancelled rejects
@@ -224,6 +236,107 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
+    type ErrorInfo = Parameters<NonNullable<typeof opts.onError>>[0];
+
+    /**
+     * `onError` runs in listeners and in promises nothing awaits, where a
+     * throw or a rejection would crash the process, so either goes to
+     * `onFailure` instead.
+     */
+    function guardOnError(
+      info: ErrorInfo,
+      onFailure: (cause: unknown) => void,
+    ) {
+      try {
+        const result: unknown = opts.onError?.(info);
+        if (isPromise(result)) {
+          result.catch(onFailure);
+        }
+      } catch (cause) {
+        onFailure(cause);
+      }
+    }
+
+    /** Reports an error to `onError`, ignoring an `onError` that fails. */
+    function callOnError(info: ErrorInfo) {
+      guardOnError(info, () => {
+        // ignored, see guardOnError
+      });
+    }
+
+    /**
+     * Reports a failure of the adapter's own error handling, such as an
+     * `errorFormatter` that throws or a reply that can't be sent. It's logged
+     * when `onError` is missing or fails, so it's never dropped silently.
+     */
+    function reportInternalError(info: ErrorInfo) {
+      const log = () => {
+        // oxlint-disable-next-line no-console
+        console.error('[@trpc/server/adapters/ws]', info.error);
+      };
+      if (!opts.onError) {
+        log();
+        return;
+      }
+      guardOnError(info, log);
+    }
+
+    /**
+     * The error shape the client gets, or a minimal one when `errorFormatter`
+     * throws, so that the request is still answered.
+     */
+    function errorShape(call: Omit<ErrorInfo, 'ctx' | 'req'>): TRPCErrorShape {
+      try {
+        return getErrorShape({ config: router._def._config, ctx, ...call });
+      } catch (cause) {
+        reportInternalError({
+          ...call,
+          error: getTRPCErrorFromUnknown(cause),
+          ctx,
+          req,
+        });
+        return fallbackErrorShape;
+      }
+    }
+
+    function reportConnectionError(cause: unknown) {
+      reportInternalError({
+        error: getTRPCErrorFromUnknown(cause),
+        path: undefined,
+        type: 'unknown',
+        ctx,
+        req,
+        input: undefined,
+      });
+    }
+
+    /**
+     * Sends a response that isn't tied to a request, reporting it if it
+     * can't be built or sent. One that can't be sent is replaced by the
+     * fallback error, so that a client still learns it was rejected.
+     */
+    function respondOrReport(response: () => TRPCResponseMessage) {
+      let message: TRPCResponseMessage | null = null;
+      try {
+        message = response();
+        respond(message);
+      } catch (cause) {
+        reportConnectionError(cause);
+        if (message === null) {
+          return;
+        }
+        try {
+          respond({
+            id: message.id,
+            jsonrpc: message.jsonrpc,
+            error: fallbackErrorShape,
+          });
+        } catch {
+          // the same failure, and it was reported above
+        }
+      }
+    }
+
     async function createCtxPromise(
       getConnectionParams: () => TRPCRequestInfo['connectionParams'],
     ): Promise<ContextResult> {
@@ -250,7 +363,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({
+        callOnError({
           error,
           path: undefined,
           type: 'unknown',
@@ -258,17 +371,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           req,
           input: undefined,
         });
-        respond({
+        respondOrReport(() => ({
           id: null,
-          error: getErrorShape({
-            config: router._def._config,
+          error: errorShape({
             error,
             type: 'unknown',
             path: undefined,
             input: undefined,
-            ctx,
           }),
-        });
+        }));
 
         // close in next tick
         (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
@@ -308,7 +419,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             message: '`id` is required',
           }),
         );
-        opts.onError?.({
+        callOnError({
           error,
           path: undefined,
           type: 'unknown',
@@ -319,13 +430,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         respond({
           id,
           jsonrpc,
-          error: getErrorShape({
-            config: router._def._config,
+          error: errorShape({
             error,
             type: 'unknown',
             path: undefined,
             input: undefined,
-            ctx,
           }),
         });
         return;
@@ -360,7 +469,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       };
       const reportError = (cause: unknown) => {
         const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({ error, path, type, ctx, req, input });
+        callOnError({ error, path, type, ctx, req, input });
         return error;
       };
       const respondWithError = (cause: unknown) => {
@@ -368,14 +477,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         respond({
           id,
           jsonrpc,
-          error: getErrorShape({
-            config: router._def._config,
-            error,
-            type,
-            path,
-            input,
-            ctx,
-          }),
+          error: errorShape({ error, type, path, input }),
         });
       };
 
@@ -501,7 +603,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           while (true) {
             next = await Unpromise.race([
               nextUnlessStopped(iterator, abortController.signal, (error) =>
-                opts.onError?.({ error, path, type, ctx, req, input }),
+                callOnError({ error, path, type, ctx, req, input }),
               ),
               abortPromise,
             ]);
@@ -561,7 +663,20 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       if (!outcome.ok) {
         const error = getTRPCErrorFromUnknown(outcome.error);
         if (!isCancelledSetup(error, abortController.signal)) {
-          respondWithError(error);
+          try {
+            respondWithError(error);
+          } catch (cause) {
+            // the error reply couldn't be encoded or sent
+            reportInternalError({
+              error: getTRPCErrorFromUnknown(cause),
+              path,
+              type,
+              ctx,
+              req,
+              input,
+            });
+            respondOrReport(() => ({ id, jsonrpc, error: fallbackErrorShape }));
+          }
           return;
         }
       }
@@ -592,17 +707,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           code: 'UNPROCESSABLE_CONTENT',
           message: 'Unexpected WebSocket message format',
         });
-        respond({
+        respondOrReport(() => ({
           id: null,
-          error: getErrorShape({
-            config: router._def._config,
+          error: errorShape({
             error,
             type: 'unknown',
             path: undefined,
             input: undefined,
-            ctx,
           }),
-        });
+        }));
         return;
       }
       const data: string | Uint8Array = isBinary
@@ -648,7 +761,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               code: 'BAD_REQUEST',
               message: `Batch call exceeds maximum size`,
             });
-            opts.onError?.({
+            callOnError({
               error,
               path: undefined,
               type: 'unknown',
@@ -656,13 +769,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               req,
               input: undefined,
             });
-            const errorShape = getErrorShape({
-              config: router._def._config,
+            const shape = errorShape({
               error,
               type: 'unknown',
               path: undefined,
               input: undefined,
-              ctx,
             });
 
             // Checked before parsing so that no input is deserialized.
@@ -675,16 +786,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                 raw['method'] !== 'subscription.stop' &&
                 (typeof raw['id'] === 'number' || typeof raw['id'] === 'string')
               ) {
-                respond({
-                  id: raw['id'],
-                  jsonrpc: raw['jsonrpc'] === '2.0' ? '2.0' : undefined,
-                  error: errorShape,
-                });
+                const id = raw['id'];
+                const jsonrpc = raw['jsonrpc'] === '2.0' ? '2.0' : undefined;
+                respondOrReport(() => ({ id, jsonrpc, error: shape }));
                 responded = true;
               }
             }
             if (!responded) {
-              respond({ id: null, error: errorShape });
+              respondOrReport(() => ({ id: null, error: shape }));
             }
             return [];
           }
@@ -696,24 +805,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             cause,
           });
 
-          respond({
+          respondOrReport(() => ({
             id: null,
-            error: getErrorShape({
-              config: router._def._config,
+            error: errorShape({
               error,
               type: 'unknown',
               path: undefined,
               input: undefined,
-              ctx,
             }),
-          });
+          }));
 
           return [];
         }
       });
 
       for (const [index, msg] of parsedMsgs.entries()) {
-        void handleRequest(msg, index, ctxPromise);
+        handleRequest(msg, index, ctxPromise).catch(reportConnectionError);
       }
     });
 
@@ -722,7 +829,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
     client.on('error', (cause) => {
-      opts.onError?.({
+      callOnError({
         ctx,
         error: getTRPCErrorFromUnknown(cause),
         input: undefined,
