@@ -18,7 +18,7 @@ export interface TRPCSubscription<TValue>
 type End = (observer: Observer<unknown, unknown>) => void;
 
 /**
- * Starts a subscription for one `for await` loop at a time to consume.
+ * Starts a subscription for one `for await` loop to consume.
  * @internal
  */
 export function iterableSubscription(
@@ -49,36 +49,38 @@ export function iterableSubscription(
     complete: () => end((observer) => observer.complete()),
   });
   const unsubscribe = () => {
-    subscription.unsubscribe();
+    // ended first so whatever the link emits while it tears down is dropped
     end((observer) => observer.complete());
+    subscription.unsubscribe();
   };
 
   const data$ = observable<unknown, unknown>((observer) => {
+    if (signal?.aborted) {
+      unsubscribe();
+    }
     if (ended) {
       ended(observer);
-      return;
-    }
-    if (signal?.aborted) {
-      observer.complete();
       return;
     }
     consumer = observer;
     const onAbort = () => observer.complete();
     signal?.addEventListener('abort', onAbort, { once: true });
     return () => {
-      // cleared first so whatever the link emits while it tears down is dropped
+      // cleared first: the loop has stopped reading, and ending it again throws
       consumer = null;
       signal?.removeEventListener('abort', onAbort);
       unsubscribe();
     };
   });
 
+  let iterated = false;
   return {
     unsubscribe,
     [Symbol.asyncIterator]() {
-      if (consumer) {
-        throw new Error('A subscription can only be iterated by one loop');
+      if (iterated) {
+        throw new Error('A subscription can only be iterated once');
       }
+      iterated = true;
       // `observableToAsyncIterable`'s signal doesn't end a pending `next()`,
       // so `signal` is handled above instead
       return observableToAsyncIterable(data$, new AbortController().signal)[

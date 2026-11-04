@@ -278,26 +278,31 @@ test('async iterable - reconnects and continues', async () => {
 
   const results: number[] = [];
   const release = suppressLogs();
-  for await (const value of subscription) {
-    results.push(value.data);
-    if (results.length === 3) {
-      // sever the connection mid-iteration
-      ctx.destroyConnections();
+  try {
+    for await (const value of subscription) {
+      results.push(value.data);
+      if (results.length === 3) {
+        // sever the connection mid-iteration
+        ctx.destroyConnections();
+      }
+      if (results.length >= 10) {
+        break;
+      }
     }
-    if (results.length >= 10) {
-      break;
-    }
+  } finally {
+    release();
   }
-  release();
 
   // initial subscription + one reconnect
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
+  // values continue after the reconnect without gaps; the last received id
+  // may be replayed once
   expect(
     results.every(
-      (value, index) => index === 0 || value >= results[index - 1]!,
+      (value, index) =>
+        index === 0 || [0, 1].includes(value - results[index - 1]!),
     ),
   ).toBe(true);
-  // values continue after the reconnect, replaying the last received id
   expect(results.at(-1)).toBeGreaterThanOrEqual(8);
 });
 
