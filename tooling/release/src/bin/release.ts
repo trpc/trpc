@@ -81,6 +81,9 @@ Effect.gen(function* () {
       return;
     }
     case 'canary': {
+      if (arg !== undefined) {
+        break;
+      }
       const opts = {
         ...publish,
         preid: values.preid,

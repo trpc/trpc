@@ -153,6 +153,9 @@ jobs:
 
   publish-canary:
     needs: build-canary
+    # Two runs for one commit publish the same canary.
+    concurrency:
+      group: release-canary-${{ github.sha }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     environment: npm-publish # npm trusted publishing is bound to this environment

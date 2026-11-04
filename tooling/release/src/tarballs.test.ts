@@ -107,6 +107,24 @@ describe('publishedVersions', () => {
       ['@trpc/openapi', '11.23.0-alpha'],
     ]);
   });
+
+  it('refuses a dependency cycle', () => {
+    const pkg = (name: string, needs: string) => ({
+      dir: `packages/${name}`,
+      name: `@trpc/${name}`,
+      pkg: {
+        name: `@trpc/${name}`,
+        version: '11.23.0',
+        peerDependencies: { [`@trpc/${needs}`]: 'workspace:*' },
+      },
+    });
+    expect(() =>
+      publishedVersions(
+        [pkg('server', 'client'), pkg('client', 'server')],
+        '11.23.0',
+      ),
+    ).toThrow('@trpc/server is in a dependency cycle');
+  });
 });
 
 describe('tarballName', () => {

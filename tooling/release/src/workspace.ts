@@ -67,12 +67,13 @@ export function publishedVersions(
   const visiting = new Set<string>();
   const visit = (name: string) => {
     const workspacePackage = byName.get(name);
-    if (
-      workspacePackage === undefined ||
-      ordered.has(name) ||
-      visiting.has(name)
-    ) {
+    if (workspacePackage === undefined || ordered.has(name)) {
       return;
+    }
+    if (visiting.has(name)) {
+      throw new Error(
+        `${name} is in a dependency cycle between public packages, so no order publishes each after what it needs`,
+      );
     }
     visiting.add(name);
     for (const field of runtimeDependencyFields) {
