@@ -527,3 +527,43 @@ test.each(['stop', 'close'] as const)(
     if (cancel === 'stop') await ws.close();
   },
 );
+
+test.each([
+  {
+    failure: 'throws',
+    next: (): Promise<IteratorResult<number>> => {
+      throw new Error('next failed');
+    },
+  },
+  {
+    failure: 'rejects',
+    next: async (): Promise<IteratorResult<number>> => {
+      throw new Error('next failed');
+    },
+  },
+])(
+  'an iteration that $failure aborts the signal, so a cleanup waiting for it ends',
+  async (iteration) => {
+    const cleaned = vi.fn<() => void>();
+    const router = t.router({
+      failing: t.procedure.subscription((opts) => ({
+        [Symbol.asyncIterator]: () => ({
+          next: iteration.next,
+          return: async (): Promise<IteratorReturnResult<undefined>> => {
+            await onAbort(opts.signal);
+            cleaned();
+            return done();
+          },
+        }),
+      })),
+    });
+    await using app = await start(router);
+    const ws = await connect(app.url);
+    ws.send(subscribe('failing'));
+    await vi.waitFor(() =>
+      expect(ws.types(1)).toEqual(['started', 'error', 'stopped']),
+    );
+    await vi.waitFor(() => expect(cleaned).toHaveBeenCalledOnce());
+    await ws.close();
+  },
+);

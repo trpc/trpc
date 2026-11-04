@@ -190,7 +190,7 @@ function v11Session(
         yield* Stream.runForEach(
           // Aborts before the stream's finalizers run: a resolver awaiting its
           // signal returns only after it aborts.
-          interrupt.abortOnInterrupt(
+          interrupt.abortUnlessDone(
             exit.value as Stream.Stream<unknown, AnyTrpcError>,
           ),
           (event) =>

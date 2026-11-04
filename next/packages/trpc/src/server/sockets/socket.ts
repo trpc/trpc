@@ -455,7 +455,9 @@ export const connectionReceiver: (
           }
           if (kind === 'subscription') {
             yield* emitEvents(
-              exit.value as Stream.Stream<unknown, AnyTrpcError>,
+              interrupt.abortUnlessDone(
+                exit.value as Stream.Stream<unknown, AnyTrpcError>,
+              ),
               core.transformer,
               coerceError(path, kind),
               (frame) => conn.send(frameMessage(id, frame)),

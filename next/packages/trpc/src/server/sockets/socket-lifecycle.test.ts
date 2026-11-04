@@ -174,3 +174,26 @@ test('a query aborted before its resolver rejects reports nothing', async () => 
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(ctx.onError).not.toHaveBeenCalled();
 });
+
+test('a failed iteration aborts the signal, so a cleanup waiting for it ends', async () => {
+  const cleaned = vi.fn<() => void>();
+  const router = t.router({
+    failing: t.procedure.subscription((opts) => ({
+      [Symbol.asyncIterator]: () => ({
+        next: async (): Promise<IteratorResult<number>> => {
+          throw new Error('next failed');
+        },
+        return: async (): Promise<IteratorReturnResult<undefined>> => {
+          await onAbort(opts.signal);
+          cleaned();
+          return { done: true, value: undefined };
+        },
+      }),
+    })),
+  });
+  await using ctx = await setup(router);
+  await expect(async () => {
+    for await (const _ of ctx.client.failing.subscribe());
+  }).rejects.toMatchObject({ message: 'next failed' });
+  await vi.waitFor(() => expect(cleaned).toHaveBeenCalledOnce());
+});
