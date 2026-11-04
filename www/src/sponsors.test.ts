@@ -212,6 +212,19 @@ describe('recentSponsorsOf', () => {
     expect(recent.sponsors).toHaveLength(latestSponsorCount);
   });
 
+  it('leaves out sponsors dated after now, new or latest', () => {
+    const future = startedDaysAgo('future', -3);
+    expect(
+      recentSponsorsOf([future, startedDaysAgo('week', 7)], now).sponsors.map(
+        sponsorKey,
+      ),
+    ).toEqual(['github/week']);
+    expect(recentSponsorsOf([future, startedDaysAgo('old', 90)], now)).toEqual({
+      kind: 'latest',
+      sponsors: [startedDaysAgo('old', 90)],
+    });
+  });
+
   it('is nobody when there are no sponsors', () => {
     expect(recentSponsorsOf([], now)).toEqual({ kind: 'latest', sponsors: [] });
   });
