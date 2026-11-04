@@ -34,4 +34,9 @@ packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
 .claude/*
-!.claude/skills
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/principle-type-system-discipline
+!.claude/skills/tdd
+!.claude/skills/trpc-conventions
+!.claude/skills/typescript-best-practices

@@ -1,6 +1,6 @@
 # Agent instructions
 
-`main` is tRPC v11; v12 is a rewrite on the [`v12`](https://github.com/trpc/trpc/tree/v12) branch. Skills live in `.agents/skills/` (`.claude/skills` links there); don't add a `.cursor/` folder.
+`main` is tRPC v11; v12 is a rewrite on the [`v12`](https://github.com/trpc/trpc/tree/v12) branch. Skills live in `.agents/skills/`; a new one also needs a `.claude/skills/<name>` symlink and a `.gitignore` entry. Don't add a `.cursor/` folder.
 
 ## Commands
 
