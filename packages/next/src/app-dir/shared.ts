@@ -111,7 +111,7 @@ export function generateCacheTag(procedurePath: string, input: any) {
  */
 export function generateCacheTags(
   procedurePath: string,
-  input?: any,
+  input: any,
 ): string[] {
   if (!procedurePath) {
     return [];

@@ -42,7 +42,7 @@ describe('cache tags generation', () => {
   });
 
   test('generateCacheTags with nested procedure and no input', () => {
-    const tags = generateCacheTags('page.home.header');
+    const tags = generateCacheTags('page.home.header', undefined);
     expect(tags).toEqual(['page', 'page.home', 'page.home.header']);
   });
 
@@ -57,7 +57,7 @@ describe('cache tags generation', () => {
   });
 
   test('generateCacheTags with empty path returns empty array', () => {
-    expect(generateCacheTags('')).toEqual([]);
+    expect(generateCacheTags('', undefined)).toEqual([]);
   });
 });
 
