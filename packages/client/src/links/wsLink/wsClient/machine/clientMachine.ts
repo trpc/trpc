@@ -526,6 +526,7 @@ function causeOf(event: ConnectionEvent): unknown {
     case 'received':
     case 'result':
     case 'rejection':
+    case 'released':
       return undefined;
     default:
       return event satisfies never;

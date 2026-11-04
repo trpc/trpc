@@ -1,3 +1,4 @@
+import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-not-import';
 import {
   isObject,
@@ -33,15 +34,14 @@ export interface TransportOptions {
   urlOptions: UrlOptionsWithConnectionParams;
   keepAlive: KeepAliveOptions;
   encoder: Encoder;
-  onEvent: (event: TransportEvent) => void;
 }
 
 /**
- * One WebSocket's I/O. It opens the socket, reports what happens to it,
- * decodes frames and runs keepAlive; the connection state machine decides
- * what any of it means. Disposing it ends the I/O and closes the socket. The
- * socket's own `close` and `error` events are still reported afterwards, for
- * the user's `onClose` and `onError`.
+ * One WebSocket's I/O. It opens the socket, decodes frames and runs
+ * keepAlive, and `events` says what happens; the connection state machine
+ * decides what any of it means. Disposing it ends the connection: keepAlive
+ * stops and the socket closes. `events` goes on until the socket's `close`,
+ * for the user's `onClose` and `onError`.
  */
 export type Transport = TransportApi & Disposable;
 
@@ -49,7 +49,12 @@ interface TransportApi {
   readonly id: ConnectionId;
   /** The socket, once the URL is resolved. */
   readonly ws: () => WebSocket | null;
-  readonly resolveParams: () => void;
+  /**
+   * What the socket reports, in order, for one consumer. It ends after the
+   * socket's `close`, or without a socket when opening failed or the
+   * connection ended first. `return()` removes the socket's listeners.
+   */
+  readonly events: AsyncIterable<TransportEvent>;
   /** Whether a message sent now goes out on this socket. */
   readonly isWritable: () => boolean;
   /** Sends `data` if the socket is writable, and says whether it did. */
@@ -67,50 +72,44 @@ const READY_STATE = {
   CLOSED: 3,
 } as const;
 
+/** For iterables that end by themselves or by `return()`, never by abort. */
+const neverAborted = new AbortController().signal;
+
 export function openTransport(opts: TransportOptions): Transport {
   /** Everything that stops when the client ends the connection. */
   const io = createScope();
   let ws: WebSocket | null = null;
 
-  const report = (event: TransportEvent) => {
-    if (!io.disposed) opts.onEvent(event);
-  };
-
-  prepareUrl(opts.urlOptions)
-    .then((url) => {
+  async function* events(): AsyncGenerator<TransportEvent, void> {
+    let socket: WebSocket;
+    try {
+      const url = await prepareUrl(opts.urlOptions);
       if (io.disposed) return;
-      const socket = new opts.WebSocketPonyfill(url);
+      socket = new opts.WebSocketPonyfill(url);
       // Handle text and binary messages consistently.
       socket.binaryType = 'arraybuffer';
-      ws = socket;
-      listen(socket, io, opts);
-    })
-    .catch((cause: unknown) => report({ type: 'openFailed', cause }));
+    } catch (cause) {
+      yield { type: 'openFailed', cause };
+      return;
+    }
+    ws = socket;
+    yield* observableToAsyncIterable(
+      socketEvents(socket, io, opts),
+      neverAborted,
+    );
+  }
 
   const isWritable = () => !io.disposed && ws?.readyState === READY_STATE.OPEN;
 
   const api: TransportApi = {
     id: opts.id,
     ws: () => ws,
+    events: events(),
     isWritable,
     send(data) {
       if (!isWritable()) return false;
       ws?.send(data);
       return true;
-    },
-    resolveParams() {
-      const { connectionParams } = opts.urlOptions;
-      if (!connectionParams) {
-        // Still asynchronous, as resolving them would be.
-        void Promise.resolve().then(() =>
-          report({ type: 'paramsResolved', data: null }),
-        );
-        return;
-      }
-      buildConnectionMessage(connectionParams, opts.encoder).then(
-        (data) => report({ type: 'paramsResolved', data }),
-        (cause: unknown) => report({ type: 'openFailed', cause }),
-      );
     },
   };
   return makeResource(api, () => {
@@ -125,63 +124,71 @@ export function openTransport(opts: TransportOptions): Transport {
   });
 }
 
-function listen(ws: WebSocket, io: Scope, opts: TransportOptions) {
-  const report = (event: TransportEvent) => {
-    if (!io.disposed) opts.onEvent(event);
-  };
-  const keepAlive = io.use(createKeepAlive(ws, opts.keepAlive, report));
+/**
+ * A socket's events until its `close`. Unsubscribing removes its listeners
+ * and stops keepAlive, as does `io` ending.
+ */
+function socketEvents(ws: WebSocket, io: Scope, opts: TransportOptions) {
+  return observable<TransportEvent, never>((emit) => {
+    const listeners = createScope();
+    const keepAlive = listeners.use(
+      io.use(
+        createKeepAlive(ws, opts.keepAlive, () =>
+          emit.next({ type: 'pongTimeout' }),
+        ),
+      ),
+    );
 
-  io.use(
-    listenerResource(ws, 'open', () => {
-      keepAlive.start();
-      report({ type: 'socketOpened' });
-    }),
-  );
+    listeners.use(
+      listenerResource(ws, 'open', () => {
+        keepAlive.start();
+        emit.next({ type: 'socketOpened' });
+      }),
+    );
+    listeners.use(
+      listenerResource(ws, 'message', ({ data }) => {
+        keepAlive.onFrame(data);
+        if (data === 'PING' || data === 'PONG') {
+          if (data === 'PING' && !io.disposed) ws.send('PONG');
+          emit.next({ type: 'heartbeat' });
+          return;
+        }
+        emit.next(decodeFrame(opts.encoder, data));
+      }),
+    );
+    listeners.use(
+      listenerResource(ws, 'error', (event) =>
+        emit.next({ type: 'socketError', event }),
+      ),
+    );
+    listeners.use(
+      listenerResource(ws, 'close', (event) => {
+        emit.next({ type: 'socketClosed', event });
+        emit.complete();
+      }),
+    );
+    return () => dispose(listeners);
+  });
+}
 
-  io.use(
-    listenerResource(ws, 'message', ({ data }) => {
-      keepAlive.onFrame(data);
-      if (data === 'PING' || data === 'PONG') {
-        if (data === 'PING') ws.send('PONG');
-        report({ type: 'heartbeat' });
-        return;
-      }
-
-      let message: TRPCClientIncomingMessage;
-      try {
-        message = decodeMessage(opts.encoder, data);
-      } catch (cause) {
-        report({
-          type: 'badFrame',
-          // The frame may have carried a response, and its request would
-          // wait forever, so the connection is treated as lost.
-          error: new TRPCWebSocketClosedError({
-            message: 'Received a message that could not be decoded',
-            cause,
-          }),
-          cause,
-        });
-        return;
-      }
-      report({ type: 'frame', message });
-    }),
-  );
-
-  // The socket's own lifetime: its `close` and `error` reach the user even
-  // after the client has ended the connection.
-  const socket = createScope();
-  socket.use(
-    listenerResource(ws, 'error', (event) =>
-      opts.onEvent({ type: 'socketError', event }),
-    ),
-  );
-  socket.use(
-    listenerResource(ws, 'close', (event) => {
-      dispose(keepAlive);
-      dispose(socket);
-      opts.onEvent({ type: 'socketClosed', event });
-    }),
-  );
+/** The connection's `connectionParams` message, or why it couldn't be made. */
+export async function* connectionParamsEvents(
+  urlOptions: UrlOptionsWithConnectionParams,
+  encoder: Encoder,
+): AsyncGenerator<ConnectionEvent, void> {
+  const { connectionParams } = urlOptions;
+  let event: ConnectionEvent;
+  try {
+    event = {
+      type: 'paramsResolved',
+      data: connectionParams
+        ? await buildConnectionMessage(connectionParams, encoder)
+        : null,
+    };
+  } catch (cause) {
+    event = { type: 'openFailed', cause };
+  }
+  yield event;
 }
 
 /**
@@ -191,7 +198,7 @@ function listen(ws: WebSocket, io: Scope, opts: TransportOptions) {
 function createKeepAlive(
   ws: WebSocket,
   options: KeepAliveOptions,
-  report: (event: TransportEvent) => void,
+  onPongTimeout: () => void,
 ) {
   let stopped = false;
   let ping: Disposable | null = null;
@@ -212,7 +219,7 @@ function createKeepAlive(
         pong = null;
         // A socket that is already closing was closed on purpose.
         if (ws.readyState !== READY_STATE.OPEN) return;
-        report({ type: 'pongTimeout' });
+        onPongTimeout();
       }, options.pongTimeoutMs);
     }, options.intervalMs);
   };
@@ -250,15 +257,28 @@ function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
   );
 }
 
-function decodeMessage(
+function decodeFrame(
   encoder: Encoder,
   data: string | ArrayBuffer | Uint8Array,
-) {
-  const message = encoder.decode(data);
-  if (!isIncomingMessage(message)) {
-    throw new TypeError('Expected a tRPC message');
+): TransportEvent {
+  try {
+    const message = encoder.decode(data);
+    if (!isIncomingMessage(message)) {
+      throw new TypeError('Expected a tRPC message');
+    }
+    return { type: 'frame', message };
+  } catch (cause) {
+    return {
+      type: 'badFrame',
+      // The frame may have carried a response, and its request would wait
+      // forever, so the connection is treated as lost.
+      error: new TRPCWebSocketClosedError({
+        message: 'Received a message that could not be decoded',
+        cause,
+      }),
+      cause,
+    };
   }
-  return message;
 }
 
 /**

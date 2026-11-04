@@ -9,6 +9,7 @@ import {
   getCauseFromUnknown,
   isObject,
   makeResource,
+  mergeAsyncIterables,
   transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../../../TRPCClientError';
@@ -20,9 +21,9 @@ import type {
   ClientEvent,
   ClientModel,
   PublicState,
-  Timer,
 } from './machine/clientMachine';
 import { clientTransition, initialClient } from './machine/clientMachine';
+import type { ConnectionEvent } from './machine/connectionMachine';
 import type {
   ConnectionId,
   RequestFailure,
@@ -31,9 +32,15 @@ import type {
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import { RequestManager } from './requestManager';
-import { createScope, dispose, timeoutResource } from './scope';
+import { createScope, dispose } from './scope';
+import type { TimerFired } from './timers';
+import { createTimers } from './timers';
 import type { Transport } from './transport';
-import { backwardCompatibility, openTransport } from './transport';
+import {
+  backwardCompatibility,
+  connectionParamsEvents,
+  openTransport,
+} from './transport';
 import {
   callUserCallback,
   rethrowAsync,
@@ -88,10 +95,11 @@ export interface WsClient {
  *
  * Every decision is made by pure state machines in `./machine`: one for the
  * client, one per connection and one per request. This function is their
- * interpreter. It turns sockets, timers and calls into events, feeds them to
- * `clientTransition` one at a time, and runs the effects each step returns.
- * Sockets, listeners, timers and requests are resources: each is disposed by
- * whatever owns it.
+ * interpreter. It feeds events to `clientTransition` one at a time, and runs
+ * the effects each step returns. Sockets, `connectionParams` and timers are
+ * async iterables, merged and read by one `for await` loop; the user's calls
+ * dispatch at once. Sockets, listeners, timers and requests are resources:
+ * each is disposed by whatever owns it.
  */
 export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   const WebSocketPonyfill = opts.WebSocket ?? globalThis.WebSocket;
@@ -106,7 +114,10 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   const lazy = { ...lazyDefaults, ...opts.lazy };
 
   const transports = new Map<ConnectionId, Transport>();
-  const timers = new Map<Timer, Disposable>();
+  const timers = createTimers();
+  /** Everything that happens without a call from the user. */
+  const sources = mergeAsyncIterables<ClientEvent | TimerFired>();
+  sources.add(timers.events);
   const requestManager = new RequestManager();
   const closeWaiters: (() => void)[] = [];
   const queue: ClientEvent[] = [];
@@ -142,6 +153,22 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
       }
     } finally {
       dispatching = false;
+    }
+  }
+
+  /** Feeds `sources` to the state machine, in the order things happened. */
+  async function consume() {
+    for await (const event of sources) {
+      try {
+        if (event.type !== 'timerFired') {
+          dispatch(event);
+        } else if (timers.take(event)) {
+          if (event.timer === 'flush') observeWritability();
+          dispatch({ type: 'timer', timer: event.timer });
+        }
+      } catch (error) {
+        rethrowAsync(error);
+      }
     }
   }
 
@@ -183,30 +210,24 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   function runEffect(effect: ClientEffect) {
     switch (effect.type) {
       case 'openSocket': {
-        const connection = effect.connection;
-        transports.set(
-          connection,
-          openTransport({
-            id: connection,
-            WebSocketPonyfill,
-            urlOptions: opts,
-            keepAlive,
-            encoder,
-            onEvent: (event) => {
-              if (event.type === 'frame') {
-                dispatch({ type: 'frame', connection, message: event.message });
-              } else if (event.type === 'heartbeat') {
-                dispatch({ type: 'heartbeat', connection });
-              } else {
-                dispatch({ type: 'connection', connection, event });
-              }
-            },
-          }),
-        );
+        const transport = openTransport({
+          id: effect.connection,
+          WebSocketPonyfill,
+          urlOptions: opts,
+          keepAlive,
+          encoder,
+        });
+        transports.set(effect.connection, transport);
+        sources.add(transportEvents(transport));
         return;
       }
       case 'resolveParams':
-        transports.get(effect.connection)?.resolveParams();
+        sources.add(
+          connectionEvents(
+            effect.connection,
+            connectionParamsEvents(opts, encoder),
+          ),
+        );
         return;
       case 'sendParams':
         transports.get(effect.connection)?.send(effect.data);
@@ -258,7 +279,7 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
         callUserCallback(() => opts.onError?.(effect.event));
         return;
       case 'startTimer':
-        startTimer(effect.timer, effect.timer === 'flush' ? 0 : lazy.closeMs);
+        timers.start(effect.timer, effect.timer === 'flush' ? 0 : lazy.closeMs);
         return;
       case 'startBackoff': {
         let delayMs: number;
@@ -268,11 +289,11 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
           rethrowAsync(error);
           delayMs = exponentialBackoff(effect.retryIndex);
         }
-        startTimer('backoff', delayMs);
+        timers.start('backoff', delayMs);
         return;
       }
       case 'cancelTimer':
-        stopTimer(effect.timer);
+        timers.cancel(effect.timer);
         return;
       case 'emitState': {
         const state = toConnectionState(effect.state);
@@ -320,25 +341,6 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
         cause,
       });
     }
-  }
-
-  function startTimer(timer: Timer, ms: number) {
-    stopTimer(timer);
-    timers.set(
-      timer,
-      timeoutResource(() => {
-        timers.delete(timer);
-        if (timer === 'flush') observeWritability();
-        dispatch({ type: 'timer', timer });
-      }, ms),
-    );
-  }
-
-  function stopTimer(timer: Timer) {
-    const resource = timers.get(timer);
-    if (!resource) return;
-    timers.delete(timer);
-    dispose(resource);
   }
 
   const client: WsClient = {
@@ -434,8 +436,35 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
     },
   };
 
+  consume().catch(rethrowAsync);
   runEffects(initial.effects);
   return client;
+}
+
+/** A socket's events as the client's, then `released` once it has none left. */
+async function* transportEvents(
+  transport: Transport,
+): AsyncGenerator<ClientEvent, void> {
+  const connection = transport.id;
+  for await (const event of transport.events) {
+    if (event.type === 'frame') {
+      yield { type: 'frame', connection, message: event.message };
+    } else if (event.type === 'heartbeat') {
+      yield { type: 'heartbeat', connection };
+    } else {
+      yield { type: 'connection', connection, event };
+    }
+  }
+  yield { type: 'connection', connection, event: { type: 'released' } };
+}
+
+async function* connectionEvents(
+  connection: ConnectionId,
+  events: AsyncIterable<ConnectionEvent>,
+): AsyncGenerator<ClientEvent, void> {
+  for await (const event of events) {
+    yield { type: 'connection', connection, event };
+  }
 }
 
 function toConnectionState(state: PublicState): ConnectionState {

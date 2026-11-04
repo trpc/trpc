@@ -28,7 +28,8 @@ export type ConnectionState =
   | { phase: 'draining' }
   /**
    * Ended. Only the user's `onClose` and `onError` still hear from its socket;
-   * `closeReported` is set once `onClose` has been called.
+   * `closeReported` is set once `onClose` has been called, or once there is
+   * no socket to report anything.
    */
   | { phase: 'closed'; closeReported: boolean };
 
@@ -74,7 +75,12 @@ export type ConnectionEvent =
   /** Any frame arrived. */
   | { type: 'received' }
   | { type: 'result' }
-  | { type: 'rejection' };
+  | { type: 'rejection' }
+  /**
+   * Its socket has nothing more to report: it closed, or the client ended
+   * the connection before there was a socket.
+   */
+  | { type: 'released' };
 
 export type ConnectionEffect =
   | { type: 'openSocket'; connection: ConnectionId }
@@ -195,6 +201,7 @@ function end(
     case 'received':
     case 'result':
     case 'rejection':
+    case 'released':
       return null;
     default:
       return event satisfies never;
@@ -248,6 +255,7 @@ export function connectionTransition(
         case 'received':
         case 'result':
         case 'rejection':
+        case 'released':
           return illegal(connection, event);
         default:
           return event satisfies never;
@@ -295,6 +303,7 @@ export function connectionTransition(
         case 'socketUnwritable':
         case 'drain':
         case 'result':
+        case 'released':
           return illegal(connection, event);
         default:
           return event satisfies never;
@@ -335,6 +344,7 @@ export function connectionTransition(
         case 'socketOpened':
         case 'paramsResolved':
         case 'openFailed':
+        case 'released':
           return illegal(connection, event);
         default:
           return event satisfies never;
@@ -356,6 +366,12 @@ export function connectionTransition(
             effects: [],
             notices: [{ type: 'onError', event: event.event }],
           });
+        case 'released':
+          return next(
+            connection,
+            { phase: 'closed', closeReported: true },
+            { effects: [], notices: [] },
+          );
         // A socket the client ended may still open, resolve its
         // `connectionParams` or time out; none of it matters any more.
         case 'socketOpened':
