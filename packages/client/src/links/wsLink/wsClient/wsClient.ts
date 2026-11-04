@@ -291,6 +291,13 @@ export class WsClient {
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
+
+  /**
+   * Sockets whose pending requests a reconnect resends on their replacement,
+   * so their late close or error events must not touch those requests.
+   */
+  private readonly movedSockets = new WeakSet<WebSocket>();
+
   private reconnect(closedError: TRPCWebSocketClosedError) {
     if (!this.allowReconnect) {
       return;
@@ -309,6 +316,9 @@ export class WsClient {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
+          if (this.activeConnection.ws) {
+            this.movedSockets.add(this.activeConnection.ws);
+          }
           await this.activeConnection.close();
           await this.activeConnection.open();
           this.connectionAttemptIndex = attemptIndex;
@@ -349,7 +359,14 @@ export class WsClient {
   private setupWebSocketListeners(ws: WebSocket) {
     this.connectionRejected = false;
 
+    // A socket retired by a reconnect can finish closing after its
+    // replacement has opened.
+    const isRetired = () =>
+      this.movedSockets.has(ws) && this.activeConnection.ws !== ws;
+
     const handleCloseOrError = (cause: unknown) => {
+      if (isRetired()) return;
+
       const reqs = this.requestManager.getPendingRequests();
       for (const { message, callbacks } of reqs) {
         if (message.method === 'subscription') continue;
@@ -418,7 +435,10 @@ export class WsClient {
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onClose?.(event));
 
-      if (!this.lazyMode || this.requestManager.hasPendingSubscriptions()) {
+      if (
+        !isRetired() &&
+        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
+      ) {
         this.reconnect(
           new TRPCWebSocketClosedError({
             message: 'WebSocket closed',
@@ -431,6 +451,8 @@ export class WsClient {
     ws.addEventListener('error', (event) => {
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
+
+      if (isRetired()) return;
 
       this.reconnect(
         new TRPCWebSocketClosedError({
