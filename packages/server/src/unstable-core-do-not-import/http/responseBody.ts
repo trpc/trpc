@@ -1,5 +1,7 @@
+import type { TRPCError } from '../error/TRPCError';
 import { makeResource } from '../stream/utils/disposable';
 import { abortSignalsAnyPonyfill } from '../utils';
+import { attempt } from './outcome';
 
 /**
  * The lifetime of a request's procedure calls. A client that leaves may only
@@ -69,43 +71,54 @@ async function* readUntilAborted(
   }
 }
 
+/** Told how a response body ended */
+export interface BodyListener {
+  /** It ended, or the client cancelled it */
+  ended: () => void;
+  /** It failed after its headers were sent, and was ended */
+  failed: (error: TRPCError) => void;
+}
+
 /**
- * A response body that streams `chunks`. Cancelling it calls `onCancel`
- * before stopping the generator, which may be waiting on a read that only
- * the cancellation settles.
+ * A response body that streams `chunks`. It never errors: its headers are
+ * already sent, so a failure is handed to `listener` and the body ends.
+ * Cancelling it cancels `lifetime`'s body before stopping the generator,
+ * which may be waiting on a read that only the cancellation settles.
  */
 function bodyFrom(
   chunks: AsyncGenerator<Uint8Array, void>,
-  onCancel: () => void,
+  opts: { lifetime: RequestLifetime; listener: BodyListener },
 ): ReadableStream<Uint8Array> {
   return new ReadableStream({
     async pull(controller) {
-      const chunk = await chunks.next();
-      if (chunk.done) {
+      const chunk = await attempt(() => chunks.next());
+      if (!chunk.ok) {
         controller.close();
+        opts.listener.failed(chunk.error);
+      } else if (chunk.value.done) {
+        controller.close();
+        opts.listener.ended();
       } else {
-        controller.enqueue(chunk.value);
+        controller.enqueue(chunk.value.value);
       }
     },
     async cancel() {
-      onCancel();
+      opts.lifetime.cancelBody();
       await chunks.return();
+      opts.listener.ended();
     },
   });
 }
 
 /**
- * The body of a streamed batch: it ends with the stream, or as soon as the
+ * A body that ends with the stream, or as soon as the
  * client cancels it.
  */
-export function batchStreamBody(
+export function streamBody(
   stream: ReadableStream<Uint8Array>,
-  lifetime: RequestLifetime,
+  opts: { lifetime: RequestLifetime; listener: BodyListener },
 ): ReadableStream<Uint8Array> {
-  return bodyFrom(
-    readUntilAborted(stream, lifetime.bodyCancelled),
-    lifetime.cancelBody,
-  );
+  return bodyFrom(readUntilAborted(stream, opts.lifetime.bodyCancelled), opts);
 }
 
 /**
@@ -117,6 +130,7 @@ export function subscriptionBody(
   stream: ReadableStream<Uint8Array>,
   opts: {
     lifetime: RequestLifetime;
+    listener: BodyListener;
     call: { signal: AbortSignal; abort: () => void };
     maxDurationMs: number | undefined;
   },
@@ -125,5 +139,5 @@ export function subscriptionBody(
     using _maxDuration = timeout(opts.maxDurationMs, opts.call.abort);
     yield* readUntilAborted(stream, opts.call.signal);
   }
-  return bodyFrom(chunks(), opts.lifetime.cancelBody);
+  return bodyFrom(chunks(), opts);
 }

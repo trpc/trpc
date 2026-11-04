@@ -7,22 +7,27 @@ import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
-import type { TRPCResponse } from '../rpc';
+import type { TRPC_ERROR_CODE_KEY, TRPCErrorShape, TRPCResponse } from '../rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import { splitEffects, step } from '../stateMachine/stateMachine';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
 import { abortSignalsAnyPonyfill, isAsyncIterable, isObject } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
-import { getHTTPStatusCode } from './getHTTPStatusCode';
+import { getHTTPStatusCode, getStatusCodeFromKey } from './getHTTPStatusCode';
 import type { Outcome } from './outcome';
 import { attempt, fail, ok, settle } from './outcome';
 import { urlPathToProcedurePath } from './pathSeparator';
-import type { RequestLifetime } from './responseBody';
-import {
-  batchStreamBody,
-  requestLifetime,
-  subscriptionBody,
-} from './responseBody';
+import type {
+  ErrorSource,
+  RequestEvent,
+  RequestFacts,
+  RequestState,
+} from './requestMachine';
+import { requestMachine } from './requestMachine';
+import type { BodyListener, RequestLifetime } from './responseBody';
+import { requestLifetime, streamBody, subscriptionBody } from './responseBody';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -51,22 +56,13 @@ interface ResolveHTTPRequestOptions<
 
 // ---------- the request
 
-/** What's known about the request so far, shared by every step */
+/** The request, and where it is on its way to a response */
 interface RequestScope {
   // `any`, so every router's options fit: `TRouter` only matters to callers
   opts: ResolveHTTPRequestOptions<any>;
   config: AnyRouter['_def']['_config'];
   url: URL;
-  /** The headers every response gets: `vary`, and `allow` once a call sets it */
-  headers: Headers;
-  /** The headers of the response being built, once a builder starts it */
-  responseHeaders?: Headers;
-  /** Set once the request is parsed */
-  info?: TRPCRequestInfo;
-  /** Set once the request is accepted */
-  ctx?: Outcome<unknown>;
-  /** Set once `responseMeta` is called, so it's never called twice */
-  responseMetaCalled?: true;
+  state: RequestState;
 }
 
 /** A request that was parsed and accepted, with its context created */
@@ -87,18 +83,17 @@ interface CallOk {
 
 type PendingCalls = Promise<Outcome<CallOk>>[];
 
-/** Where an error happened, for `onError` and the error formatter */
-interface ErrorSource {
-  type: ProcedureType | 'unknown';
-  call?: TRPCRequestInfoProcedureCall;
-}
-
 function sourceOf(call: TRPCRequestInfoProcedureCall): ErrorSource {
   return { type: call.procedure?._def.type ?? 'unknown', call };
 }
 
+function factsOf(scope: RequestScope): RequestFacts {
+  return scope.state.facts;
+}
+
 function ctxOf(scope: RequestScope) {
-  return scope.ctx?.ok ? scope.ctx.value : undefined;
+  const { ctx } = factsOf(scope);
+  return ctx?.ok ? ctx.value : undefined;
 }
 
 function reportError(
@@ -116,19 +111,62 @@ function reportError(
   });
 }
 
+/**
+ * Moves the request along, runs the effects that only report, and returns
+ * the ones that answer, for the caller to run.
+ */
+function send(scope: RequestScope, event: RequestEvent) {
+  const { state, effects } = step(requestMachine, scope.state, event);
+  scope.state = state;
+  const { matching: reports, rest } = splitEffects(effects, ['reportError']);
+  for (const report of reports) {
+    reportError(scope, report.error, report.source);
+  }
+  return rest;
+}
+
+/**
+ * The error's shape for the client. A throwing `errorFormatter` is reported
+ * and leaves the error a shape that says nothing beyond its code, which the
+ * HTTP status reveals anyway, so an error can always be sent.
+ */
 function errorShape(
   scope: RequestScope,
   error: TRPCError,
   source: ErrorSource,
 ) {
-  return getErrorShape({
-    config: scope.config,
-    ctx: ctxOf(scope),
-    error,
-    input: source.call?.result(),
-    path: source.call?.path,
-    type: source.type,
-  });
+  try {
+    return getErrorShape({
+      config: scope.config,
+      ctx: ctxOf(scope),
+      error,
+      input: source.call?.result(),
+      path: source.call?.path,
+      type: source.type,
+    });
+  } catch (cause) {
+    reportError(scope, getTRPCErrorFromUnknown(cause), source);
+    return getFallbackErrorShape(error);
+  }
+}
+
+// TODO: import it from `../error/getErrorShape` once #7936 lands
+/**
+ * The shape an error gets when its own can't be built or sent, such as when
+ * `errorFormatter` throws. It says nothing beyond the error's code, which the
+ * HTTP status reveals anyway, and keeps that code so that a client still
+ * knows whether to retry.
+ * @internal
+ */
+function getFallbackErrorShape(
+  cause: unknown,
+): TRPCErrorShape<{ code: TRPC_ERROR_CODE_KEY; httpStatus: number }> {
+  const { code } = getTRPCErrorFromUnknown(cause);
+  return {
+    code: TRPC_ERROR_CODES_BY_KEY[code],
+    message: code,
+    data: { code, httpStatus: getStatusCodeFromKey(code) },
+  };
 }
 
 /**
@@ -214,7 +252,7 @@ function procedureFor(
   request: AcceptedRequest,
   call: TRPCRequestInfoProcedureCall,
 ): Outcome<AnyProcedure> {
-  const { opts, headers, info } = request;
+  const { opts, info } = request;
   if (opts.error) {
     return fail(opts.error);
   }
@@ -231,7 +269,7 @@ function procedureFor(
   const accepted = acceptedMethods(type, opts.allowMethodOverride);
   if (!accepted.includes(opts.req.method)) {
     // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
-    headers.set('allow', accepted.join(', '));
+    send(request, { type: 'methodRejected', allow: accepted.join(', ') });
     return fail(
       new TRPCError({
         code: 'METHOD_NOT_SUPPORTED',
@@ -290,25 +328,37 @@ async function resolveCall(
 
 // ---------- the response
 
+/** The headers every response gets: `vary`, and `allow` once a call sets it */
+function requestHeaders(facts: RequestFacts): Headers {
+  const headers = new Headers([['vary', 'trpc-accept, accept']]);
+  if (facts.allow !== null) {
+    headers.set('allow', facts.allow);
+  }
+  return headers;
+}
+
+/** The results a response is built from; `null` for streamed responses */
+type ResponseResults = {
+  data: TRPCResponse[];
+  /** aligned with `data` by index; `undefined` for successful responses */
+  errors: (TRPCError | undefined)[];
+} | null;
+
 /**
- * Runs `responseMeta` and adds its headers, returning the status. `results`
- * is `null` for streamed responses, which start before the results are known.
+ * Runs `responseMeta` and adds its headers, returning the status. Only the
+ * request decides when it runs, so it runs at most once.
  */
-function applyResponseMeta(
+function callResponseMeta(
   scope: RequestScope,
   headers: Headers,
-  results: {
-    data: TRPCResponse[];
-    /** aligned with `data` by index; `undefined` for successful responses */
-    errors: (TRPCError | undefined)[];
-  } | null,
+  results: ResponseResults,
 ): number {
-  const { opts, info } = scope;
-  scope.responseMetaCalled = true;
+  const { opts } = scope;
+  const { info } = factsOf(scope);
   const meta =
     opts.responseMeta?.({
       ctx: ctxOf(scope),
-      info,
+      info: info ?? undefined,
       paths: info?.calls.map((call) => call.path),
       data: results?.data ?? [],
       errors: results?.errors.filter((error) => error !== undefined) ?? [],
@@ -343,17 +393,53 @@ function applyResponseMeta(
   return results ? getHTTPStatusCode(results.data, results.errors) : 200;
 }
 
+/**
+ * Asks the request to describe the response being built, and runs
+ * `responseMeta` for it, returning the status. Streamed responses start
+ * before their results are known, so their `results` is `null`.
+ */
+function applyResponseMeta(
+  scope: RequestScope,
+  headers: Headers,
+  results: ResponseResults,
+): number {
+  let status = results ? getHTTPStatusCode(results.data, results.errors) : 200;
+  const effects = send(scope, { type: 'describe' });
+  for (const _ of splitEffects(effects, ['callResponseMeta']).matching) {
+    status = callResponseMeta(scope, headers, results);
+  }
+  return status;
+}
+
 /** Starts the headers of the response being built, on top of the request's */
 function startHeaders(
   scope: RequestScope,
   init: Record<string, string>,
 ): Headers {
-  const headers = new Headers(scope.headers);
+  const headers = requestHeaders(factsOf(scope));
   for (const [key, value] of Object.entries(init)) {
     headers.set(key, value);
   }
-  scope.responseHeaders = headers;
+  send(scope, { type: 'headersStarted', headers });
   return headers;
+}
+
+/** Returns `response`, telling the request whether its body still runs */
+function responded(
+  scope: RequestScope,
+  response: Response,
+  streamed: boolean,
+): Outcome<Response> {
+  send(scope, { type: 'responded', streamed });
+  return ok(response);
+}
+
+/** Tells the request how a streamed body ended; a failure is the call's */
+function bodyListener(scope: RequestScope, source: ErrorSource): BodyListener {
+  return {
+    ended: () => send(scope, { type: 'bodyEnded' }),
+    failed: (error) => send(scope, { type: 'failed', error, source }),
+  };
 }
 
 /**
@@ -419,7 +505,7 @@ async function jsonResponse(
     data,
     errors: outcomes.map((outcome) => (outcome.ok ? undefined : outcome.error)),
   });
-  return ok(new Response(body, { status, headers }));
+  return responded(request, new Response(body, { status, headers }), false);
 }
 
 /**
@@ -486,9 +572,11 @@ function jsonlResponse(
     },
   });
 
-  return ok(
-    new Response(batchStreamBody(stream, lifetime), { headers, status }),
-  );
+  const body = streamBody(stream, {
+    lifetime,
+    listener: bodyListener(request, { type: info.type, call: null }),
+  });
+  return responded(request, new Response(body, { headers, status }), true);
 }
 
 async function* throwing(error: TRPCError): AsyncGenerator<never> {
@@ -560,37 +648,45 @@ async function sseResponse(
   const headers = startHeaders(request, sseHeaders);
   const status = applyResponseMeta(request, headers, null);
 
+  const listener = bodyListener(request, source);
   const body = result.ok
     ? subscriptionBody(stream, {
         lifetime,
+        listener,
         call: result.value,
         maxDurationMs: config.sse?.maxDurationMs,
       })
-    : stream;
-  return ok(new Response(body, { headers, status }));
+    : streamBody(stream, { lifetime, listener });
+  return responded(request, new Response(body, { headers, status }), true);
 }
 
 /**
  * The response for an error that fails the whole request, such as a
  * malformed request or a `responseMeta`, `errorFormatter` or transformer that
- * throws.
+ * throws. It replaces the response being built, and is never sent once one
+ * was: the request decides which headers and whether `responseMeta` runs.
  */
 function errorResponse(scope: RequestScope, error: TRPCError): Response {
-  const source: ErrorSource = { type: scope.info?.type ?? 'unknown' };
-  reportError(scope, error, source);
+  const source: ErrorSource = {
+    type: factsOf(scope).info?.type ?? 'unknown',
+    call: null,
+  };
+  // a response can only fail before it's returned, so the error replaces it
+  const effects = send(scope, { type: 'failed', error, source });
+  const answer = splitEffects(effects, ['respondWithError']).matching[0]!;
 
   const data: TRPCResponse = { error: errorShape(scope, error, source) };
   const body = JSON.stringify(transformTRPCResponse(scope.config, data));
   const results = { data: [data], errors: [error] };
-  if (!scope.responseMetaCalled) {
-    const headers = scope.responseHeaders ?? scope.headers;
-    const status = applyResponseMeta(scope, headers, results);
+  if (answer.callResponseMeta) {
+    const headers = answer.headers ?? requestHeaders(factsOf(scope));
+    const status = callResponseMeta(scope, headers, results);
     return new Response(body, { status, headers });
   }
 
   // `responseMeta` ran for a response that failed: drop its headers, and the
   // response's, as they describe that response, not this one
-  const headers = new Headers(scope.headers);
+  const headers = requestHeaders(factsOf(scope));
   for (const [key, value] of scope.opts.resHeaders ?? []) {
     headers.append(key, value);
   }
@@ -608,17 +704,17 @@ async function respond(scope: RequestScope): Promise<Outcome<Response>> {
   if (!parsed.ok) {
     return parsed;
   }
-  const info = (scope.info = parsed.value);
+  const info = parsed.value;
+  send(scope, { type: 'parsed', info });
 
   const rejection = rejectRequest(scope, info);
   if (rejection) {
     return fail(rejection);
   }
 
-  const ctx = (scope.ctx = await attempt(() =>
-    scope.opts.createContext({ info }),
-  ));
-  // the same object, so the fallback sees what the response did
+  const ctx = await attempt(() => scope.opts.createContext({ info }));
+  send(scope, { type: 'contextCreated', ctx });
+  // the same object, so the fallback sees where the response got to
   const request: AcceptedRequest = Object.assign(scope, {
     info,
     ctx,
@@ -655,7 +751,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     opts,
     config: opts.router._def._config,
     url,
-    headers: new Headers([['vary', 'trpc-accept, accept']]),
+    state: requestMachine.initial.state,
   };
   const response = await settle(() => respond(scope));
   return response.ok ? response.value : errorResponse(scope, response.error);
