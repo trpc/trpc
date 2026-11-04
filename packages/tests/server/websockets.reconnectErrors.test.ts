@@ -335,3 +335,67 @@ describe('throwing user callbacks', () => {
     sub.unsubscribe();
   });
 });
+
+describe('onConnectionStateChange throwing on the first state', () => {
+  test.each([
+    { mode: 'lazy', lazy: true, firstState: 'idle' },
+    { mode: 'eager', lazy: false, firstState: 'connecting' },
+  ] as const)(
+    '$mode: the subscription still starts and the error is not swallowed',
+    async ({ lazy, firstState }) => {
+      using g = captureUncaught();
+      const stateError = new Error('onConnectionStateChange failed');
+      await using ctx = testServerAndClientResource(createRouter(), {
+        wsClient: {
+          lazy: { enabled: lazy, closeMs: 0 },
+        },
+        clientLink: 'wsLink',
+      });
+
+      const states: ConnectionState['state'][] = [];
+      const onConnectionStateChange = vi.fn((state: ConnectionState) => {
+        states.push(state.state);
+        if (states.length === 1) throw stateError;
+      });
+      const onStarted = vi.fn();
+      const onData = vi.fn();
+      const onError = vi.fn();
+      const syncThrows: unknown[] = [];
+      let sub: { unsubscribe: () => void } | undefined;
+      try {
+        sub = ctx.client.onTick.subscribe(undefined, {
+          onStarted,
+          onData,
+          onError,
+          onConnectionStateChange,
+        });
+      } catch (cause) {
+        syncThrows.push(cause);
+      }
+
+      await vi.waitFor(() => {
+        expect(ctx.wsClient.connectionState.get()).toEqual({
+          type: 'state',
+          state: 'pending',
+          error: null,
+        });
+        expect(onStarted).toHaveBeenCalledTimes(1);
+        expect(onData).toHaveBeenCalledWith(1);
+      });
+      expect(syncThrows).toEqual([]);
+      expect(states[0]).toBe(firstState);
+      expect(states.at(-1)).toBe('pending');
+      await vi.waitFor(() => {
+        expect(g.uncaught).toEqual([stateError]);
+      });
+      await sleep(10);
+      expect(g.uncaught).toEqual([stateError]);
+      expect(onConnectionStateChange.mock.results[0]).toEqual({
+        type: 'throw',
+        value: stateError,
+      });
+      expect(onError).not.toHaveBeenCalled();
+      sub?.unsubscribe();
+    },
+  );
+});
