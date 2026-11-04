@@ -1,5 +1,6 @@
 import type { IncomingMessage } from 'http';
-import type { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import { on } from 'node:events';
+import type { RawData, WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -96,6 +97,50 @@ function abortedResource(signal: AbortSignal) {
   return makeResource({ promise }, () => {
     signal.removeEventListener('abort', onAbort);
   });
+}
+
+/** What `ws` emits a `message` event with. */
+type Message = [data: RawData, isBinary: boolean];
+
+/**
+ * The messages `client` receives, in order, until it closes. Disposing it
+ * stops listening.
+ */
+function messagesResource(client: WsWebSocket) {
+  const closing = abortControllerResource();
+  let onClose!: () => void;
+  const closed = new Promise<void>((resolve) => {
+    onClose = () => {
+      closing.abort();
+      resolve();
+    };
+  });
+  client.once('close', onClose);
+  // Ended with a signal rather than `on()`'s `close` option, which Node 18
+  // ignores. It never completes: it rejects once the signal aborts. `on()`
+  // types the values as `any[]`, as it can't know the event's arguments.
+  const messages = on(client, 'message', {
+    signal: closing.signal,
+  }) as unknown as AsyncIterator<Message, never>;
+  return makeResource(
+    {
+      /** Resolves once the connection has closed. */
+      closed,
+      /**
+       * The next message, or `null` once the connection has closed. A
+       * socket error ends the messages too, and is reported by the
+       * connection's `error` listener.
+       */
+      async next(): Promise<Message | null> {
+        const next = await settle(messages.next());
+        return next.ok ? next.value.value : null;
+      },
+    },
+    () => {
+      client.off('close', onClose);
+      closing.abort();
+    },
+  );
 }
 
 /**
@@ -377,6 +422,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     using connection = abortControllerResource();
     using subscriptions = subscriptionsResource();
+    // Listens before anything is awaited, so that no message is missed.
+    using messages = messagesResource(client);
 
     /** The connection's context, once `createContext` has resolved. */
     let ctx: Context | undefined = undefined;
@@ -584,39 +631,78 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     /**
-     * The frames the client sends, fed in one at a time by the `message`
-     * listener. When the client sends connection params, the context is
-     * created from the first frame; otherwise it's created right away. Every
-     * other frame is a request or a batch of them.
+     * The frame in a message, or `null` if the message needs nothing more:
+     * a ping or a pong, which are text whatever the encoder, or a frame
+     * that isn't a `Buffer`.
      */
-    function* receiveFrames(): Generator<void, never, Frame> {
-      const getConnectionParams =
-        createURL(req).searchParams.get('connectionParams') === '1'
-          ? connectionParamsIn(yield)
-          : () => null;
-      const context = createConnectionContext(getConnectionParams);
+    function frameIn(message: Message): Frame | null {
+      const [data, isBinary] = message;
+      if (!isBinary) {
+        // oxlint-disable-next-line typescript/no-base-to-string
+        const text = data.toString();
+        if (text === 'PONG') {
+          return null;
+        }
+        if (text === 'PING') {
+          if (!opts.dangerouslyDisablePong) {
+            client.send('PONG');
+          }
+          return null;
+        }
+      }
+      // ws gives a Buffer for text and binary frames, unless the socket's
+      // `binaryType` was changed
+      if (!Buffer.isBuffer(data)) {
+        sendOrReport(unknownRequest, () =>
+          connectionErrorResponse(
+            new TRPCError({
+              code: 'UNPROCESSABLE_CONTENT',
+              message: 'Unexpected WebSocket message format',
+            }),
+          ),
+        );
+        return null;
+      }
+      return isBinary ? data : data.toString('utf8');
+    }
 
+    /** The next frame, or `null` once the connection has closed. */
+    async function nextFrame(): Promise<Frame | null> {
+      // Not declared in the loop, and cleared after each message, so that a
+      // message can be garbage collected while the next one is awaited.
+      let message: Message | null;
       while (true) {
-        const frame: Frame = yield;
-        // A throw would end this generator, and the connection would
-        // ignore every frame after it.
-        const received = attempt(() => receiveFrame(frame, context));
-        if (!received.ok) {
-          reportError(unknownRequest, received.error);
+        message = await messages.next();
+        if (message === null) {
+          return null;
+        }
+        const frame = frameIn(message);
+        message = null;
+        if (frame !== null) {
+          return frame;
         }
       }
     }
 
+    /**
+     * Handles a frame: a request or a batch of them. What it throws is
+     * reported, so that it doesn't end the loop that reads frames.
+     */
     function receiveFrame(frame: Frame, context: Promise<ContextResult>) {
-      const requests = decodeRequests(frame);
-      if (!requests.ok) {
-        for (const response of requests.error) {
-          sendOrReport(unknownRequest, () => response);
+      const received = attempt(() => {
+        const requests = decodeRequests(frame);
+        if (!requests.ok) {
+          for (const response of requests.error) {
+            sendOrReport(unknownRequest, () => response);
+          }
+          return;
         }
-        return;
-      }
-      for (const [batchIndex, msg] of requests.value.entries()) {
-        receiveRequest(msg, batchIndex, context);
+        for (const [batchIndex, msg] of requests.value.entries()) {
+          receiveRequest(msg, batchIndex, context);
+        }
+      });
+      if (!received.ok) {
+        reportError(unknownRequest, received.error);
       }
     }
 
@@ -919,43 +1005,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       yield* lastResponse(request, stopped);
     }
 
-    const frames = receiveFrames();
-    // runs until the first frame is needed, creating the context unless it
-    // waits for connection params
-    frames.next();
-
-    client.on('message', (rawData, isBinary) => {
-      // Handle PING/PONG as text regardless of encoder
-      if (!isBinary) {
-        // oxlint-disable-next-line typescript/no-base-to-string
-        const msgStr = rawData.toString();
-        if (msgStr === 'PONG') {
-          return;
-        }
-        if (msgStr === 'PING') {
-          if (!opts.dangerouslyDisablePong) {
-            client.send('PONG');
-          }
-          return;
-        }
-      }
-
-      // Convert rawData to a format our encoder accepts
-      // ws gives us Buffer for both text and binary frames
-      if (!Buffer.isBuffer(rawData)) {
-        sendOrReport(unknownRequest, () =>
-          connectionErrorResponse(
-            new TRPCError({
-              code: 'UNPROCESSABLE_CONTENT',
-              message: 'Unexpected WebSocket message format',
-            }),
-          ),
-        );
-        return;
-      }
-      frames.next(isBinary ? rawData : rawData.toString('utf8'));
-    });
-
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
     // This line was introduced after the following error brought down production systems:
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
@@ -964,9 +1013,29 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       reportError(unknownRequest, cause);
     });
 
-    await new Promise<void>((resolve) => {
-      client.once('close', () => resolve());
-    });
+    // `null` while the context waits for the connection params, which the
+    // client sends as its first frame.
+    let context: Promise<ContextResult> | null =
+      createURL(req).searchParams.get('connectionParams') === '1'
+        ? null
+        : createConnectionContext(() => null);
+    // Not declared in the loop, and cleared after each frame, so that a
+    // frame can be garbage collected while the next one is awaited.
+    let frame: Frame | null;
+    while (true) {
+      frame = await nextFrame();
+      if (frame === null) {
+        break;
+      }
+      if (context === null) {
+        context = createConnectionContext(connectionParamsIn(frame));
+      } else {
+        receiveFrame(frame, context);
+      }
+      frame = null;
+    }
+    // a socket error ends the messages before the connection closes
+    await messages.closed;
   }
 }
 
