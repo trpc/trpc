@@ -361,7 +361,7 @@ function Cloud() {
   return (
     <section
       aria-labelledby={sponsorPage.cloudId}
-      className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
+      className="mx-auto max-w-7xl overflow-x-clip px-4 py-16 sm:px-6"
     >
       <h2
         className={cn(sectionTitle, 'mb-2 text-center')}

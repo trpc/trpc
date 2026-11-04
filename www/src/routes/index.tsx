@@ -393,7 +393,7 @@ function HomePage() {
 
       <section
         aria-labelledby="sponsors"
-        className="mx-auto max-w-7xl border-t px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl overflow-x-clip border-t px-4 py-16 sm:px-6"
       >
         <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
           <div>

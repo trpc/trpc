@@ -332,7 +332,7 @@ export function SponsorCloud(props: {
                     >
                       <span
                         className={cn(
-                          'absolute top-1/2 left-1/2 size-[15%] min-h-1.5 min-w-1.5 -translate-1/2 motion-safe:animate-sponsor-confetti',
+                          'absolute top-1/2 left-1/2 size-[15%] min-h-1.5 min-w-1.5 -translate-1/2 opacity-0 motion-safe:animate-sponsor-confetti',
                           piece % 2 === 0 ? 'rounded-full' : 'rounded-[1px]',
                           confettiColors[piece % confettiColors.length],
                         )}
