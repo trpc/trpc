@@ -24,6 +24,11 @@ interface Request {
   message: TRPCClientOutgoingMessage;
   end: Promise<void>;
   callbacks: TCallbacks;
+  /**
+   * The socket the request was sent on, or `null` if it's not on one: it's
+   * outgoing, or a reconnect is moving it to the next socket.
+   */
+  ws: WebSocket | null;
 }
 
 /**
@@ -62,6 +67,7 @@ export class RequestManager {
       id: String(message.id),
       message,
       end,
+      ws: null,
       callbacks: {
         next: callbacks.next,
         complete: () => {
@@ -107,16 +113,50 @@ export class RequestManager {
    * The caller is expected to handle the actual sending of the requests
    * (e.g., sending them over the network) after this method is called.
    *
+   * @param ws - The socket the requests are sent on.
    * @returns The list of requests that were transitioned to the pending state.
    */
-  public flush() {
+  public flush(ws: WebSocket | null = null) {
     const requests = this.outgoingRequests;
     this.outgoingRequests = [];
 
     for (const request of requests) {
+      request.ws = ws;
       this.pendingRequests[request.id] = request;
     }
     return requests;
+  }
+
+  /**
+   * Moves pending requests back to the outgoing queue, to be sent again.
+   */
+  public requeue(messages: TRPCClientOutgoingMessage[]) {
+    for (const message of messages) {
+      const id = String(message.id);
+      const request = this.pendingRequests[id];
+      if (request?.message !== message) continue;
+      delete this.pendingRequests[id];
+      this.outgoingRequests.push({ ...request, id, ws: null });
+    }
+  }
+
+  /**
+   * Marks the pending requests sent on `ws` as not on any socket, until
+   * `assignAll()` gives them the socket they're sent on next.
+   */
+  public unassign(ws: WebSocket) {
+    for (const request of this.getPendingRequests()) {
+      if (request.ws === ws) request.ws = null;
+    }
+  }
+
+  /**
+   * Marks every pending request as sent on `ws`.
+   */
+  public assignAll(ws: WebSocket | null) {
+    for (const request of this.getPendingRequests()) {
+      request.ws = ws;
+    }
   }
 
   /**

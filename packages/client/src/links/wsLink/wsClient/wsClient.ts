@@ -291,13 +291,6 @@ export class WsClient {
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
-
-  /**
-   * Sockets whose pending requests a reconnect resends on their replacement,
-   * so their late close or error events must not touch those requests.
-   */
-  private readonly movedSockets = new WeakSet<WebSocket>();
-
   private reconnect(closedError: TRPCWebSocketClosedError) {
     if (!this.allowReconnect) {
       return;
@@ -316,8 +309,10 @@ export class WsClient {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
+          // The requests move to the next socket, so the closing one's late
+          // events must not touch them.
           if (this.activeConnection.ws) {
-            this.movedSockets.add(this.activeConnection.ws);
+            this.requestManager.unassign(this.activeConnection.ws);
           }
           await this.activeConnection.close();
           await this.activeConnection.open();
@@ -329,6 +324,7 @@ export class WsClient {
                 .getPendingRequests()
                 .map(({ message }) => message),
             );
+            this.requestManager.assignAll(this.activeConnection.ws);
           }
         }
         this.reconnecting = null;
@@ -359,17 +355,26 @@ export class WsClient {
   private setupWebSocketListeners(ws: WebSocket) {
     this.connectionRejected = false;
 
-    // A socket retired by a reconnect can finish closing after its
-    // replacement has opened.
-    const isRetired = () =>
-      this.movedSockets.has(ws) && this.activeConnection.ws !== ws;
-
+    /**
+     * Fails the queries and mutations sent on `ws`. Its subscriptions are
+     * sent again: by `reconnect()`, or, if `ws` was replaced without one, on
+     * the active socket.
+     */
     const handleCloseOrError = (cause: unknown) => {
-      if (isRetired()) return;
+      const isActive = this.activeConnection.ws === ws;
+      const lost: {
+        message: TRPCClientOutgoingMessage;
+        callbacks: TCallbacks;
+      }[] = [];
 
-      const reqs = this.requestManager.getPendingRequests();
-      for (const { message, callbacks } of reqs) {
-        if (message.method === 'subscription') continue;
+      for (const request of this.requestManager.getPendingRequests()) {
+        const { message, callbacks } = request;
+        // Requests a reconnect is moving belong to the active socket.
+        if (request.ws !== ws && !(request.ws === null && isActive)) continue;
+        if (message.method === 'subscription') {
+          lost.push(request);
+          continue;
+        }
 
         callbacks.error(
           TRPCClientError.from(
@@ -382,6 +387,16 @@ export class WsClient {
         );
         this.requestManager.delete(message);
       }
+
+      // `reconnect()` resends every pending request.
+      if (isActive || this.reconnecting || !lost.length) return;
+      this.requestManager.requeue(lost.map(({ message }) => message));
+      this.flushOutgoing().catch((err) => {
+        for (const { message, callbacks } of lost) {
+          this.requestManager.delete(message);
+          callbacks.error(TRPCClientError.from(err));
+        }
+      });
     };
 
     ws.addEventListener('open', () => {
@@ -436,7 +451,7 @@ export class WsClient {
       callUserCallback(() => this.callbacks.onClose?.(event));
 
       if (
-        !isRetired() &&
+        this.activeConnection.ws === ws &&
         (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
       ) {
         this.reconnect(
@@ -452,7 +467,7 @@ export class WsClient {
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
 
-      if (isRetired()) return;
+      if (this.activeConnection.ws !== ws) return;
 
       this.reconnect(
         new TRPCWebSocketClosedError({
@@ -523,30 +538,36 @@ export class WsClient {
   private batchSend(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
     this.inactivityTimeout.reset();
 
-    run(async () => {
-      if (!this.activeConnection.isOpen()) {
-        await this.open();
-      }
-      await sleep(0);
-
-      if (!this.requestManager.hasOutgoingRequests()) return;
-
-      const requests = this.requestManager.flush();
-      try {
-        this.send(requests.map((request) => request.message));
-      } catch (err) {
-        for (const request of requests) {
-          this.requestManager.delete(request.message);
-          callUserCallback(() =>
-            request.callbacks.error(TRPCClientError.from(err as Error)),
-          );
-        }
-      }
-    }).catch((err) => {
+    this.flushOutgoing().catch((err) => {
       this.requestManager.delete(message);
       callbacks.error(TRPCClientError.from(err));
     });
 
     return this.requestManager.register(message, callbacks);
+  }
+
+  /**
+   * Sends the outgoing requests once the connection is open, batching those
+   * queued in the same tick.
+   */
+  private async flushOutgoing() {
+    if (!this.activeConnection.isOpen()) {
+      await this.open();
+    }
+    await sleep(0);
+
+    if (!this.requestManager.hasOutgoingRequests()) return;
+
+    const requests = this.requestManager.flush(this.activeConnection.ws);
+    try {
+      this.send(requests.map((request) => request.message));
+    } catch (err) {
+      for (const request of requests) {
+        this.requestManager.delete(request.message);
+        callUserCallback(() =>
+          request.callbacks.error(TRPCClientError.from(err as Error)),
+        );
+      }
+    }
   }
 }
