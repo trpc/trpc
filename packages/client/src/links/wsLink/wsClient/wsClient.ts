@@ -326,7 +326,7 @@ export class WsClient {
               }),
           ),
         );
-        this.requestManager.delete(message.id);
+        this.requestManager.delete(message);
       }
     };
 
@@ -416,7 +416,7 @@ export class WsClient {
 
     if (completed) {
       request.callbacks.complete();
-      this.requestManager.delete(message.id);
+      this.requestManager.delete(request.message);
     }
   }
 
@@ -467,7 +467,7 @@ export class WsClient {
 
       this.send(this.requestManager.flush().map(({ message }) => message));
     }).catch((err) => {
-      this.requestManager.delete(message.id);
+      this.requestManager.delete(message);
       callbacks.error(TRPCClientError.from(err));
     });
 
