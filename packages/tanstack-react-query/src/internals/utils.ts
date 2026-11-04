@@ -65,10 +65,10 @@ export function readQueryKey(queryKey: AnyTRPCQueryKey) {
 export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>,
   opts: TOptions,
-  infiniteParams?: {
+  infiniteParams: {
     pageParam: any;
     direction: 'forward' | 'backward';
-  },
+  } | null,
 ) {
   const queryKeyData = readQueryKey(queryKey);
 
@@ -129,7 +129,7 @@ export async function streamIntoQuery(opts: {
  */
 export function getQueryKeyInternal(opts: {
   path: string[];
-  input?: unknown;
+  input: unknown;
   type: QueryType;
   prefix: string | undefined;
 }): AnyTRPCQueryKey {
