@@ -146,9 +146,10 @@ test('wsLink unsubscribing during middleware never starts the resolver', async (
     });
   });
   try {
-    const subscription = ctx.client.sub.subscribe(undefined, {});
+    const ac = new AbortController();
+    ctx.client.sub.subscribe(undefined, { signal: ac.signal });
     await entered.promise;
-    subscription.unsubscribe();
+    ac.abort();
     await stopReceived.promise;
     admission.resolve();
     await vi.waitFor(() => expect(sent.length).toBeGreaterThan(0));
