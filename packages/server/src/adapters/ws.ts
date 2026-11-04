@@ -656,15 +656,27 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     /**
      * Sends a reply that nothing can retry, reporting it if it can't be
-     * built or sent.
+     * built or sent. One that can't be sent is replaced by the fallback
+     * error, so that a client still learns it was rejected.
      */
     function sendOrReport(
       request: OnErrorRequest,
       reply: () => TRPCResponseMessage,
     ) {
-      const sent = attempt(() => send(reply()));
+      const built = attempt(reply);
+      if (!built.ok) {
+        reportInternalError(request, built.error);
+        return;
+      }
+      const sent = trySend(built.value);
       if (!sent.ok) {
         reportInternalError(request, sent.error);
+        // a failure here is the one just reported
+        trySend({
+          id: built.value.id,
+          jsonrpc: built.value.jsonrpc,
+          error: fallbackErrorShape,
+        });
       }
     }
 
