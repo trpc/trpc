@@ -12,9 +12,11 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import type { Encoder, WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler, jsonEncoder } from '@trpc/server/adapters/ws';
 import type { TRPCResponseMessage } from '@trpc/server/rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import {
   isObject,
   makeAsyncResource,
+  makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import WebSocket, { WebSocketServer } from 'ws';
 import { z } from 'zod';
@@ -80,6 +82,34 @@ test('an onError that throws is ignored', async () => {
   expect(await ctx.client.greeting.query()).toBe('hello');
 });
 
+test('an async onError that rejects is ignored', async () => {
+  const unhandledRejections: unknown[] = [];
+  const onUnhandledRejection = (reason: unknown) => {
+    unhandledRejections.push(reason);
+  };
+  process.on('unhandledRejection', onUnhandledRejection);
+  using _listener = makeResource({}, () => {
+    process.off('unhandledRejection', onUnhandledRejection);
+  });
+  // not a `vi.fn()`, which handles the rejections of the promises it returns
+  let onErrorCalls = 0;
+  const onError: OnError = async () => {
+    onErrorCalls++;
+    throw new Error('async onError bug');
+  };
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wssServer: { onError },
+  });
+
+  const error = await waitError(ctx.client.fail.query(), TRPCClientError);
+  expect(error.data?.code).toBe('BAD_REQUEST');
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(onErrorCalls).toBe(1);
+  expect(unhandledRejections).toEqual([]);
+});
+
 test('an onError that throws on a request without an id leaves the connection serving', async () => {
   await using ctx = testServerAndClientResource(router, {
     wssServer: { onError: throwingOnError },
@@ -100,40 +130,103 @@ test('an onError that throws on a request without an id leaves the connection se
   ]);
 });
 
-test('an errorFormatter that throws is reported, the request gets no reply, and other requests are answered', async () => {
-  const onError = vi.fn<OnError>();
-  const failingFormatter = initTRPC.create({
-    errorFormatter: () => {
-      throw new Error('formatter bug');
-    },
-  });
-  const failingRouter = failingFormatter.router({
-    fail: failingFormatter.procedure.query(() => {
+function routerWithErrorFormatter(
+  errorFormatter: NonNullable<
+    Parameters<typeof initTRPC.create>[0]
+  >['errorFormatter'],
+) {
+  const t = initTRPC.create({ errorFormatter });
+  return t.router({
+    fail: t.procedure.query(() => {
       throw new TRPCError({ code: 'BAD_REQUEST' });
     }),
-    greeting: failingFormatter.procedure.query(() => 'hello'),
+    greeting: t.procedure.query(() => 'hello'),
   });
-  await using ctx = testServerAndClientResource(failingRouter, {
+}
+
+const failAndGreet = JSON.stringify([
+  { id: 1, method: 'query', params: { path: 'fail' } },
+  { id: 2, method: 'query', params: { path: 'greeting' } },
+]);
+
+const fallbackError = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
+
+function byId(responses: TRPCResponseMessage[]) {
+  return [...responses].sort((a, b) => Number(a.id) - Number(b.id));
+}
+
+test('an errorFormatter that throws is reported, and the request gets a fallback error', async () => {
+  const onError = vi.fn<OnError>();
+  const router = routerWithErrorFormatter(() => {
+    throw new Error('formatter bug');
+  });
+  await using ctx = testServerAndClientResource(router, {
     wssServer: { onError },
   });
   await using socket = await rawSocketResource(ctx.wssUrl);
 
-  socket.ws.send(
-    JSON.stringify([
-      { id: 1, method: 'query', params: { path: 'fail' } },
-      { id: 2, method: 'query', params: { path: 'greeting' } },
-    ]),
-  );
+  socket.ws.send(failAndGreet);
 
-  await vi.waitFor(() => {
-    expect(onError).toHaveBeenCalledTimes(2);
-    expect(socket.responses()).toMatchObject([
-      { id: 2, result: { type: 'data', data: 'hello' } },
-    ]);
+  await vi.waitFor(() => expect(socket.responses()).toHaveLength(2));
+  expect(byId(socket.responses())).toEqual([
+    { id: 1, error: fallbackError },
+    { id: 2, result: { type: 'data', data: 'hello' } },
+  ]);
+  expect(
+    onError.mock.calls.map(([opts]) => [opts.error.message, opts.path]),
+  ).toEqual([
+    ['BAD_REQUEST', 'fail'],
+    ['formatter bug', 'fail'],
+  ]);
+});
+
+test('an errorFormatter that throws without an onError is logged', async () => {
+  using consoleError = makeResource(
+    vi.spyOn(console, 'error').mockReturnValue(undefined),
+    () => consoleError.mockRestore(),
+  );
+  const router = routerWithErrorFormatter(() => {
+    throw new Error('formatter bug');
   });
-  expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
-    'BAD_REQUEST',
-    'formatter bug',
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+  });
+
+  const error = await waitError(ctx.client.fail.query(), TRPCClientError);
+  expect(error.data?.code).toBe('INTERNAL_SERVER_ERROR');
+  expect(consoleError).toHaveBeenCalledOnce();
+  expect(consoleError.mock.calls[0]?.at(-1)).toMatchObject({
+    message: 'formatter bug',
+  });
+});
+
+test('an error reply that cannot be encoded is reported with its path, and the request gets a fallback error', async () => {
+  const onError = vi.fn<OnError>();
+  const router = routerWithErrorFormatter(({ shape }) => ({
+    ...shape,
+    data: { ...shape.data, unencodable: 1n },
+  }));
+  await using ctx = testServerAndClientResource(router, {
+    wssServer: { onError },
+  });
+  await using socket = await rawSocketResource(ctx.wssUrl);
+
+  socket.ws.send(failAndGreet);
+
+  await vi.waitFor(() => expect(socket.responses()).toHaveLength(2));
+  expect(byId(socket.responses())).toEqual([
+    { id: 1, error: fallbackError },
+    { id: 2, result: { type: 'data', data: 'hello' } },
+  ]);
+  expect(
+    onError.mock.calls.map(([opts]) => [opts.error.cause?.name, opts.path]),
+  ).toEqual([
+    [undefined, 'fail'],
+    ['TypeError', 'fail'],
   ]);
 });
 
