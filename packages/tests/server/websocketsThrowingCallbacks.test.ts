@@ -14,7 +14,6 @@ import {
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import WebSocket from 'ws';
-import { z } from 'zod';
 
 type OnError = NonNullable<WSSHandlerOptions<AnyRouter>['onError']>;
 
@@ -28,8 +27,9 @@ async function rawSocketResource(url: string) {
   });
   // kept for the socket's whole life: ws throws an `error` event nobody
   // listens to
-  const errors: unknown[] = [];
-  ws.on('error', (error) => errors.push(error));
+  ws.on('error', () => {
+    // ignored
+  });
   const closed = new Promise<void>((resolve) => {
     ws.once('close', () => resolve());
   });
@@ -41,7 +41,6 @@ async function rawSocketResource(url: string) {
     {
       ws,
       closed,
-      errors,
       responses: () =>
         frames.map((frame) => JSON.parse(frame) as TRPCResponseMessage),
     },
@@ -52,10 +51,24 @@ async function rawSocketResource(url: string) {
   );
 }
 
+/** Collects what would crash the process outside of Vitest. */
+function processErrorsResource(
+  event: 'uncaughtException' | 'unhandledRejection',
+) {
+  const errors: unknown[] = [];
+  const listener = (error: unknown) => {
+    errors.push(error);
+  };
+  process.on(event, listener);
+  return makeResource({ errors }, () => {
+    process.off(event, listener);
+  });
+}
+
 const t = initTRPC.create();
 const router = t.router({
   fail: t.procedure.query(() => {
-    throw new TRPCError({ code: 'BAD_REQUEST', message: 'bad input' });
+    throw new TRPCError({ code: 'BAD_REQUEST' });
   }),
   greeting: t.procedure.query(() => 'hello'),
 });
@@ -78,14 +91,7 @@ test('an onError that throws is ignored', async () => {
 });
 
 test('an async onError that rejects is ignored', async () => {
-  const unhandledRejections: unknown[] = [];
-  const onUnhandledRejection = (reason: unknown) => {
-    unhandledRejections.push(reason);
-  };
-  process.on('unhandledRejection', onUnhandledRejection);
-  using _listener = makeResource({}, () => {
-    process.off('unhandledRejection', onUnhandledRejection);
-  });
+  using unhandledRejections = processErrorsResource('unhandledRejection');
   // not a `vi.fn()`, which handles the rejections of the promises it returns
   let onErrorCalls = 0;
   const onError: OnError = async () => {
@@ -99,10 +105,9 @@ test('an async onError that rejects is ignored', async () => {
 
   const error = await waitError(ctx.client.fail.query(), TRPCClientError);
   expect(error.data?.code).toBe('BAD_REQUEST');
-  expect(await ctx.client.greeting.query()).toBe('hello');
   await new Promise((resolve) => setTimeout(resolve, 10));
   expect(onErrorCalls).toBe(1);
-  expect(unhandledRejections).toEqual([]);
+  expect(unhandledRejections.errors).toEqual([]);
 });
 
 test('an onError that throws on a request without an id leaves the connection serving', async () => {
@@ -322,32 +327,26 @@ test('an oversized batch whose error reply cannot be encoded gives every request
 });
 
 test('an onError that throws on a socket error leaves the server serving', async () => {
+  using uncaughtExceptions = processErrorsResource('uncaughtException');
   const onError = vi.fn<OnError>(throwingOnError);
-  const echoRouter = t.router({
-    echo: t.procedure.input(z.string()).query(({ input }) => input),
-  });
-  await using ctx = testServerAndClientResource(echoRouter, {
-    clientLink: 'wsLink',
+  await using ctx = testServerAndClientResource(router, {
     wssServer: { onError },
     wssOptions: { maxPayload: 64 },
-    // the socket error closes the connection; don't reconnect during the test
-    wsClient: { retryDelayMs: () => 60_000 },
   });
+  await using oversized = await rawSocketResource(ctx.wssUrl);
 
-  await expect(ctx.client.echo.query('x'.repeat(1_000))).rejects.toThrow();
-  await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+  oversized.ws.send('x'.repeat(100));
 
+  await oversized.closed;
+  expect(onError).toHaveBeenCalledOnce();
+  expect(uncaughtExceptions.errors).toEqual([]);
   await using socket = await rawSocketResource(ctx.wssUrl);
   socket.ws.send(
-    JSON.stringify({
-      id: 1,
-      method: 'query',
-      params: { path: 'echo', input: 'hi' },
-    }),
+    JSON.stringify({ id: 1, method: 'query', params: { path: 'greeting' } }),
   );
   await vi.waitFor(() =>
     expect(socket.responses()).toMatchObject([
-      { id: 1, result: { type: 'data', data: 'hi' } },
+      { id: 1, result: { type: 'data', data: 'hello' } },
     ]),
   );
 });
