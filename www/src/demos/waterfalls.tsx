@@ -1,4 +1,4 @@
-import { createBlogRoutes } from './kit/blog-routes.tsx';
+import { createBlogRoutes, PageSkeleton } from './kit/blog-routes.tsx';
 import { DemoBrowser } from './kit/browser.tsx';
 import { DemoFrame } from './kit/frame.tsx';
 import type { DemoProps } from './names.ts';
@@ -42,6 +42,7 @@ export function Waterfalls(props: DemoProps) {
       {(run) => (
         <DemoBrowser
           initial={run.location ?? '/posts/1'}
+          placeholder={(href) => <PageSkeleton href={href} />}
           reload={run.reload}
           routeTree={blogs[run.variant]}
           session={run.session}

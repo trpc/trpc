@@ -1,7 +1,8 @@
-import { type ReactNode, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 
 import { Segmented } from '../segmented.tsx';
-import { latencies } from './network.ts';
+import { useOnScreen } from '../use-playback.ts';
+import { idleNetwork, latencies } from './network.ts';
 import { NetworkPanel } from './network-panel.tsx';
 import { createSession, type Session, SessionProvider } from './session.tsx';
 
@@ -16,8 +17,11 @@ interface Run {
   readonly id: number;
   /** Where a reloaded tab reopens. */
   readonly location: string | undefined;
-  readonly session: Session;
+  /** None until the demo has first been on the screen. */
+  readonly session: Session | undefined;
 }
+
+const initialLatency: number = latencies[1].ms;
 
 let runs = 0;
 
@@ -35,14 +39,18 @@ export interface DemoRun<TValue extends string> {
   readonly location: string | undefined;
   /** Start over, as a reloaded tab: a new cache and network, at `location`. */
   readonly reload: (location?: string) => void;
-  readonly session: Session;
+  /** None until the demo has started. */
+  readonly session: Session | undefined;
   readonly variant: TValue;
 }
 
 /**
  * A live demo's card: a title, what to try, a switch between its variants,
  * a latency switch and the network panel. Each variant, and each reload,
- * runs in a fresh session.
+ * runs in a fresh session. The server renders the card before its first
+ * session, with nothing random or timed in it. The first session starts when
+ * the demo first comes on the screen, and its network pauses while the demo
+ * is off it: requests in flight wait, and carry on when it's back.
  */
 export function DemoFrame<TValue extends string>(props: {
   readonly children: (run: DemoRun<TValue>) => ReactNode;
@@ -72,15 +80,49 @@ export function DemoFrame<TValue extends string>(props: {
     throw new Error('A demo needs a variant');
   }
   const [variant, setVariant] = useState(first.value);
-  const [latency, setLatency] = useState<number>(latencies[1].ms);
-  const [run, setRun] = useState(() => newRun(latency, props.origin));
+  const [latency, setLatency] = useState(initialLatency);
+  const [run, setRun] = useState<Run>({
+    id: 0,
+    location: undefined,
+    session: undefined,
+  });
   const variantsLabel = useId();
   const latencyLabel = useId();
   const current =
     variants.find((candidate) => candidate.value === variant) ?? first;
+  const origin = props.origin;
+  const [onScreen, onScreenRef] = useOnScreen();
+  const started = run.session !== undefined;
 
+  useEffect(() => {
+    if (onScreen && !started) {
+      setRun(newRun(latency, origin));
+    }
+  }, [latency, onScreen, origin, started]);
+
+  useEffect(() => {
+    const network = run.session?.network;
+    if (!network) {
+      return;
+    }
+    if (onScreen) {
+      network.resume();
+    } else {
+      network.pause();
+    }
+  }, [onScreen, run.session]);
+
+  const demoRun: DemoRun<TValue> = {
+    location: run.location,
+    reload: (location) => setRun(newRun(latency, props.origin, location)),
+    session: run.session,
+    variant,
+  };
   return (
-    <figure className="not-prose my-8 grid gap-4 rounded-xl border bg-card p-4 text-card-foreground sm:p-5">
+    <figure
+      className="not-prose my-8 grid gap-4 rounded-xl border bg-card p-4 text-card-foreground sm:p-5"
+      ref={onScreenRef}
+    >
       <figcaption className="grid gap-1">
         <span className="text-sm font-semibold">{props.title}</span>
         <span className="text-sm text-muted-foreground">{props.hint}</span>
@@ -106,7 +148,9 @@ export function DemoFrame<TValue extends string>(props: {
             aria-labelledby={latencyLabel}
             onChange={(next) => {
               setLatency(Number(next));
-              run.session.network.latency = Number(next);
+              if (run.session) {
+                run.session.network.latency = Number(next);
+              }
             }}
             options={latencies.map((choice) => ({
               label: choice.label,
@@ -117,16 +161,16 @@ export function DemoFrame<TValue extends string>(props: {
         </div>
       </div>
       <p className="text-sm">{current.description}</p>
-      <SessionProvider key={run.id} session={run.session}>
-        {props.children({
-          location: run.location,
-          reload: (location) => setRun(newRun(latency, props.origin, location)),
-          session: run.session,
-          variant,
-        })}
-      </SessionProvider>
+      {run.session ? (
+        <SessionProvider key={run.id} session={run.session}>
+          {props.children(demoRun)}
+        </SessionProvider>
+      ) : (
+        props.children(demoRun)
+      )}
       <NetworkPanel
-        network={run.session.network}
+        network={run.session?.network ?? idleNetwork}
+        playing={onScreen}
         summary={props.summary ?? true}
       />
     </figure>

@@ -101,12 +101,22 @@ async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
 type ListHandles = ReturnType<typeof startList>;
 type PostHandles = ReturnType<typeof startPost>;
 
-function ListLayout(props: { readonly children: ReactNode }) {
+function ListPage(props: { readonly children: ReactNode }) {
   return (
     <div className="grid gap-3">
       <h3 className="text-base font-semibold">Latest articles</h3>
-      <Suspense fallback={<PostListSkeleton />}>{props.children}</Suspense>
+      {props.children}
     </div>
+  );
+}
+
+function ListLayout(props: { readonly children: ReactNode }) {
+  return (
+    <ListPage>
+      <Suspense fallback={<PostListSkeleton page={usePage()} />}>
+        {props.children}
+      </Suspense>
+    </ListPage>
   );
 }
 
@@ -133,21 +143,55 @@ function PostLayout(props: {
   );
 }
 
+/** The blog's page at `href` with nothing loaded yet, as tall as it will be. */
+export function PageSkeleton(props: { readonly href: string }) {
+  const url = new URL(props.href, 'https://blog.example');
+  const post = /^\/posts\/(\d+)$/.exec(url.pathname);
+  if (post) {
+    return <PostPageSkeleton id={Number(post[1])} />;
+  }
+  if (url.pathname === '/posts') {
+    return (
+      <ListPage>
+        <PostListSkeleton
+          page={pageFrom(Object.fromEntries(url.searchParams))}
+        />
+      </ListPage>
+    );
+  }
+  return null;
+}
+
+/** An article with nothing loaded yet, as tall as it will be. */
+function PostPageSkeleton(props: { readonly id: number }) {
+  return (
+    <div className="grid gap-4">
+      <span className="text-brand-dark dark:text-brand-light">← All posts</span>
+      <PostSkeleton id={props.id} />
+      <CommentsSection>
+        <CommentsSkeleton postId={props.id} />
+      </CommentsSection>
+      <MoreByAuthorSkeleton postId={props.id} />
+    </div>
+  );
+}
+
 function PostFromHandles(props: PostHandles) {
+  const id = usePostId();
   return (
     <PostLayout
       comments={
-        <Suspense fallback={<CommentsSkeleton />}>
+        <Suspense fallback={<CommentsSkeleton postId={id} />}>
           <Comments comments={props.comments} />
         </Suspense>
       }
       more={
-        <Suspense fallback={<MoreByAuthorSkeleton />}>
+        <Suspense fallback={<MoreByAuthorSkeleton postId={id} />}>
           <MoreByAuthor more={props.more} />
         </Suspense>
       }
       post={
-        <Suspense fallback={<PostSkeleton />}>
+        <Suspense fallback={<PostSkeleton id={id} />}>
           <Post post={props.post} />
         </Suspense>
       }
@@ -207,12 +251,12 @@ function PostThenTheRest(props: { readonly id: number }) {
   return (
     <PostLayout
       comments={
-        <Suspense fallback={<CommentsSkeleton />}>
+        <Suspense fallback={<CommentsSkeleton postId={props.id} />}>
           <CommentsByPost postId={props.id} />
         </Suspense>
       }
       more={
-        <Suspense fallback={<MoreByAuthorSkeleton />}>
+        <Suspense fallback={<MoreByAuthorSkeleton postId={props.id} />}>
           <MoreByPost postId={props.id} />
         </Suspense>
       }
@@ -224,7 +268,7 @@ function PostThenTheRest(props: { readonly id: number }) {
 function ReaderPost(): ReactNode {
   const id = usePostId();
   return (
-    <Suspense fallback={<PostSkeleton />}>
+    <Suspense fallback={<PostPageSkeleton id={id} />}>
       <PostThenTheRest id={id} />
     </Suspense>
   );

@@ -6,13 +6,20 @@ import {
   ChevronRight,
   Play,
 } from 'lucide-react';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 
 import type { DemoProps } from './names.ts';
-import { useFirstView, usePrefersReducedMotion } from './use-playback.ts';
+import { Reserve } from './reserve.tsx';
+import { useOnScreen, usePrefersReducedMotion } from './use-playback.ts';
 
 const steps = [
   {
@@ -34,6 +41,18 @@ const steps = [
 ] as const;
 
 const lastStep = steps.length - 1;
+
+function describeStep(index: number) {
+  const step = steps[index] ?? steps[0];
+  return (
+    <>
+      <strong>
+        {index + 1}. {step.title}.
+      </strong>{' '}
+      {step.text}
+    </>
+  );
+}
 
 /** Real milliseconds per step while playing. */
 const stepDuration = 2200;
@@ -90,6 +109,20 @@ function Handle(props: { readonly name: string; readonly shown: boolean }) {
   );
 }
 
+function ReaderStatus(props: { readonly data: string; readonly step: number }) {
+  return props.step < 1 ? (
+    <p className="text-xs text-muted-foreground">Not rendered yet</p>
+  ) : props.step < 2 ? (
+    <p className="text-xs text-muted-foreground">Gets its handle</p>
+  ) : props.step < 3 ? (
+    <p className="text-xs text-muted-foreground italic">
+      <span className="motion-safe:animate-pulse">Loading…</span> (suspended)
+    </p>
+  ) : (
+    <p className="text-xs font-medium">{props.data}</p>
+  );
+}
+
 function Reader(props: {
   readonly data: string;
   readonly jsx: string;
@@ -98,18 +131,13 @@ function Reader(props: {
   return (
     <div className="grid gap-1.5 rounded-md border p-2">
       <span className="font-mono text-[0.7rem]">{props.jsx}</span>
-      {props.step < 1 ? (
-        <p className="text-xs text-muted-foreground">Not rendered yet</p>
-      ) : props.step < 2 ? (
-        <p className="text-xs text-muted-foreground">Gets its handle</p>
-      ) : props.step < 3 ? (
-        <p className="text-xs text-muted-foreground italic">
-          <span className="motion-safe:animate-pulse">Loading…</span>{' '}
-          (suspended)
-        </p>
-      ) : (
-        <p className="text-xs font-medium">{props.data}</p>
-      )}
+      <Reserve
+        shapes={steps.map((_, index) => (
+          <ReaderStatus data={props.data} key={index} step={index} />
+        ))}
+      >
+        <ReaderStatus data={props.data} step={props.step} />
+      </Reserve>
     </div>
   );
 }
@@ -142,37 +170,49 @@ export function LoaderHandles(_props: DemoProps) {
   const reduced = usePrefersReducedMotion();
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [seen, setSeen] = useState(false);
+  const [onScreen, onScreenRef] = useOnScreen();
 
+  // What's left of the current step's time. Off the screen, the step waits,
+  // and it gets the rest of its time when it's back.
+  const remaining = useRef(stepDuration);
   useEffect(() => {
-    if (!playing) {
+    remaining.current = stepDuration;
+  }, [playing, step]);
+  useEffect(() => {
+    if (!playing || !onScreen) {
       return undefined;
     }
+    const startedAt = performance.now();
     const timer = setTimeout(() => {
       setStep((current) => Math.min(lastStep, current + 1));
       if (step + 1 >= lastStep) {
         setPlaying(false);
       }
-    }, stepDuration);
-    return () => clearTimeout(timer);
-  }, [playing, step]);
+    }, remaining.current);
+    return () => {
+      clearTimeout(timer);
+      remaining.current -= performance.now() - startedAt;
+    };
+  }, [onScreen, playing, step]);
 
   const play = useCallback(() => {
     setStep(0);
     setPlaying(true);
   }, []);
-  const firstView = useFirstView(
-    useCallback(() => {
+  useEffect(() => {
+    if (onScreen && !seen) {
+      setSeen(true);
       if (!reduced) {
         play();
       }
-    }, [play, reduced]),
-  );
+    }
+  }, [onScreen, play, reduced, seen]);
 
-  const current = steps[step] ?? steps[0];
   return (
     <figure
       className="not-prose my-8 grid gap-4 rounded-xl border bg-card p-4 text-card-foreground sm:p-5"
-      ref={firstView}
+      ref={onScreenRef}
     >
       <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
         <Panel active={step === 0 || step === 1} title="Route loader">
@@ -189,11 +229,15 @@ export function LoaderHandles(_props: DemoProps) {
         </Panel>
         <Connector active={step === 1} label="returns" />
         <Panel active={step === 1} title="Handles">
-          <Handle name="post" shown={step >= 1} />
-          <Handle name="comments" shown={step >= 1} />
-          {step < 1 ? (
-            <p className="text-xs text-muted-foreground">None yet</p>
-          ) : null}
+          <div className="grid *:col-start-1 *:row-start-1">
+            <div className="grid gap-2">
+              <Handle name="post" shown={step >= 1} />
+              <Handle name="comments" shown={step >= 1} />
+            </div>
+            {step < 1 ? (
+              <p className="text-xs text-muted-foreground">None yet</p>
+            ) : null}
+          </div>
         </Panel>
         <Connector active={step === 2} label="props" />
         <Panel active={step >= 2} title="Components">
@@ -269,11 +313,10 @@ export function LoaderHandles(_props: DemoProps) {
         </div>
       </div>
 
-      <figcaption aria-live="polite" className="min-h-16 text-sm">
-        <strong>
-          {step + 1}. {current.title}.
-        </strong>{' '}
-        {current.text}
+      <figcaption aria-live="polite" className="text-sm">
+        <Reserve shapes={steps.map((_, index) => describeStep(index))}>
+          {describeStep(step)}
+        </Reserve>
       </figcaption>
     </figure>
   );

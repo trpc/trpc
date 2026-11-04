@@ -1,11 +1,16 @@
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createDemoClient } from './kit/backend.ts';
+import { PageSkeleton } from './kit/blog-routes.tsx';
 import {
   chainLength,
   createNetwork,
   type NetworkRequest,
 } from './kit/network.ts';
+import { demoMarker, demoNames } from './names.ts';
+import { loadPageDemos, PageDemo } from './page-demos.tsx';
 import { createRandom, jitter } from './random.ts';
 import { longestTimeline, progress, timeline } from './timeline.ts';
 import {
@@ -200,6 +205,35 @@ describe('network', () => {
       vi.useRealTimers();
     }
   });
+
+  it('holds requests in flight while paused, and its clock with them', async () => {
+    vi.useFakeTimers();
+    try {
+      const network = createNetwork(createRandom(1));
+      network.delay = () => 500;
+      const client = createDemoClient(network);
+      let answered = false;
+      const query = client.post.byId.query({ id: 1 }).then(() => {
+        answered = true;
+      });
+      await vi.advanceTimersByTimeAsync(200);
+      network.pause();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(answered).toBe(false);
+      expect(network.now()).toBe(200);
+      network.resume();
+      await vi.advanceTimersByTimeAsync(299);
+      expect(answered).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await query;
+      expect(answered).toBe(true);
+      const [request] = network.getTrace().requests;
+      expect(request?.status).toBe('done');
+      expect((request?.endedAt ?? 0) - (request?.startedAt ?? 0)).toBe(500);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('backend', () => {
@@ -277,4 +311,47 @@ describe('url state', () => {
     expect(listPosts({ page: 1, sort: 'new' })).not.toEqual(top);
     expect(listPosts({ page: lastPage, sort: 'new' })).toHaveLength(3);
   });
+});
+
+describe('first frame', () => {
+  it('shapes the skeleton like the page the tab opens at', () => {
+    const skeleton = (href: string) =>
+      renderToString(createElement(PageSkeleton, { href }));
+    expect(skeleton('/posts/2')).toContain('Handles, explained');
+    expect(skeleton('/posts?page=2')).toContain(
+      'Loaders start, components wait',
+    );
+    expect(skeleton('/posts?page=2')).not.toContain('Render as you fetch');
+    expect(skeleton('/nowhere')).toBe('');
+  });
+
+  it.each(demoNames)(
+    'renders %s on the server without the clock or random numbers',
+    async (name) => {
+      await loadPageDemos(demoMarker({ name, options: {} }));
+      const render = () =>
+        renderToString(createElement(PageDemo, { name, options: {} }));
+      const date = vi.spyOn(Date, 'now');
+      const random = vi.spyOn(Math, 'random');
+      const clock = vi.spyOn(performance, 'now');
+      try {
+        // React reads the clock for each render of its own.
+        renderToString(createElement('div'));
+        const reactReads = clock.mock.calls.length;
+        clock.mockClear();
+        const first = render();
+        expect(first).toContain('<figure');
+        // The prerender crawls each link, and the demo's pages aren't the site's.
+        expect(first).not.toMatch(/href="\/posts/);
+        expect(clock).toHaveBeenCalledTimes(reactReads);
+        expect(render()).toBe(first);
+        expect(date).not.toHaveBeenCalled();
+        expect(random).not.toHaveBeenCalled();
+      } finally {
+        date.mockRestore();
+        random.mockRestore();
+        clock.mockRestore();
+      }
+    },
+  );
 });
