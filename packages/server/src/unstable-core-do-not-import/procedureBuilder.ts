@@ -78,7 +78,7 @@ export type CallerOverride<TContext> = (opts: {
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
-  output?: Parser;
+  outputs: Parser[];
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
@@ -258,7 +258,17 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/validators#output-validators
    */
   output<$Parser extends Parser>(
-    schema: $Parser,
+    schema: TOutputOut extends UnsetMarker
+      ? $Parser
+      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
+        ? TOutputOut extends Record<string, unknown> | undefined
+          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+            ? undefined extends TOutputOut
+              ? $Parser
+              : TypeError<'Cannot chain an optional parser to a required parser'>
+            : $Parser
+          : TypeError<'All output parsers did not resolve to an object'>
+        : TypeError<'All output parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -547,14 +557,30 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, config, ...rest } = def2;
+  const { middlewares = [], inputs, outputs, meta, config, ...rest } = def2;
+  const mergedMiddlewares = [...def1.middlewares, ...middlewares];
+  const mergedOutputs = [...def1.outputs, ...(outputs ?? [])];
+  const firstOutputMiddleware = mergedMiddlewares.findIndex(
+    (middleware) => middleware._type === 'output',
+  );
+  const combinedMiddlewares =
+    firstOutputMiddleware === -1
+      ? mergedMiddlewares
+      : [
+          ...mergedMiddlewares.slice(0, firstOutputMiddleware),
+          createOutputMiddleware(mergedOutputs.map(getParseFn)),
+          ...mergedMiddlewares
+            .slice(firstOutputMiddleware + 1)
+            .filter((middleware) => middleware._type !== 'output'),
+        ];
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
     config: def1.config ?? config,
     inputs: [...def1.inputs, ...(inputs ?? [])],
-    middlewares: [...def1.middlewares, ...middlewares],
+    outputs: mergedOutputs,
+    middlewares: combinedMiddlewares,
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
@@ -575,6 +601,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
     inputs: [],
+    outputs: [],
     middlewares: [],
     ...initDef,
   };
@@ -588,10 +615,10 @@ export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
         middlewares: [createInputMiddleware(parser)],
       });
     },
-    output(output: Parser) {
-      const parser = getParseFn(output);
+    output(output) {
+      const parser = getParseFn(output as Parser);
       return createNewBuilder(_def, {
-        output,
+        outputs: [output as Parser],
         middlewares: [createOutputMiddleware(parser)],
       });
     },

@@ -328,7 +328,10 @@ export function createErrorFormatterMiddleware(
 /**
  * @internal
  */
-export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
+export function createOutputMiddleware<TOutput>(
+  parse: ParseFn<TOutput> | ParseFn<TOutput>[],
+) {
+  const parsers: ParseFn<TOutput>[] = Array.isArray(parse) ? parse : [parse];
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware({ next }) {
       const result = await next();
@@ -337,7 +340,19 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
         return result;
       }
       try {
-        const data = await parse(result.data);
+        const parsedOutputs: TOutput[] = [];
+        for (const parser of parsers) {
+          parsedOutputs.push(await parser(result.data));
+        }
+
+        let data: unknown = parsedOutputs[0];
+        for (const parsedOutput of parsedOutputs.slice(1)) {
+          data =
+            isObject(data) && isObject(parsedOutput)
+              ? { ...data, ...parsedOutput }
+              : parsedOutput;
+        }
+
         return {
           ...result,
           data,

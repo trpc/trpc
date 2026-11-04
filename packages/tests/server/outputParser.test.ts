@@ -37,6 +37,41 @@ test('zod', async () => {
   );
 });
 
+test('multiple output parsers can be composed', async () => {
+  const trpc = initTRPC.create();
+  const pluginProc = trpc.procedure.output(
+    z.object({
+      additional: z.string(),
+    }),
+  );
+
+  const router = trpc.router({
+    q: trpc.procedure
+      .unstable_concat(pluginProc)
+      .output(
+        z.object({
+          regular: z.literal('output'),
+        }),
+      )
+      .query(() => ({
+        additional: 'context',
+        regular: 'output',
+      })),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+  expectTypeOf(output).toEqualTypeOf<{
+    additional: string;
+    regular: 'output';
+  }>();
+  expect(output).toEqual({
+    additional: 'context',
+    regular: 'output',
+  });
+});
+
 test('zod async', async () => {
   const trpc = initTRPC.create();
   const router = trpc.router({
