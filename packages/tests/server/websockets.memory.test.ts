@@ -2,6 +2,7 @@ import { EventEmitter, on } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+import { jsonEncoder, type Encoder } from '@trpc/server/adapters/ws';
 import {
   createDeferred,
   sleep,
@@ -126,5 +127,57 @@ describe('ws subscription memory', () => {
       expect(signals.filter((ref) => ref.deref() !== undefined)).toEqual([]);
     });
     expect(signals).toHaveLength(70);
+  });
+
+  it('lets go of the last frame while waiting for the next', async () => {
+    const ee = new EventEmitter();
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      onData: t.procedure.subscription(({ signal }) =>
+        on(ee, 'data', { signal }),
+      ),
+    });
+    const frames: WeakRef<object>[] = [];
+    const encoder: Encoder = {
+      encode: (data) => jsonEncoder.encode(data),
+      decode(data) {
+        const message: unknown = jsonEncoder.decode(data);
+        if (typeof message === 'object' && message !== null) {
+          frames.push(new WeakRef(message));
+        }
+        return message;
+      },
+    };
+    await using ctx = testServerAndClientResource(appRouter, {
+      wsClient: { experimental_encoder: encoder },
+      client({ wsClient }) {
+        return { links: [wsLink({ client: wsClient })] };
+      },
+      server: {},
+      wssServer: { router: appRouter },
+    });
+
+    const lengths: number[] = [];
+    const started = createDeferred();
+    const subscription = ctx.client.onData.subscribe(undefined, {
+      onStarted: () => started.resolve(),
+      onData([data]) {
+        assert(typeof data === 'string');
+        lengths.push(data.length);
+      },
+    });
+    await started.promise;
+    ee.emit('data', 'x'.repeat(10 * 1024 * 1024));
+    await vi.waitFor(() => expect(lengths).toEqual([10 * 1024 * 1024]));
+
+    const gc = globalThis.gc;
+    assert(gc, 'run with --expose-gc');
+    await vi.waitFor(async () => {
+      await sleep(0);
+      gc();
+      // Not the frames themselves: printing 10 MB would crash the worker.
+      expect(frames.filter((ref) => ref.deref() !== undefined).length).toBe(0);
+    });
+    subscription.unsubscribe();
   });
 });

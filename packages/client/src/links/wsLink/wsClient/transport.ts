@@ -2,6 +2,7 @@ import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-not-import';
 import {
   isObject,
+  iteratorResource,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
@@ -93,10 +94,18 @@ export function openTransport(opts: TransportOptions): Transport {
       return;
     }
     ws = socket;
-    yield* observableToAsyncIterable(
-      socketEvents(socket, io, opts),
-      neverAborted,
+    // Not `yield*`, which keeps the last frame alive while it waits for the
+    // next; see `createMachineRuntime`'s `intake`.
+    await using iterator = iteratorResource(
+      observableToAsyncIterable(socketEvents(socket, io, opts), neverAborted),
     );
+    let result: IteratorResult<TransportEvent> | null;
+    while (true) {
+      result = await iterator.next();
+      if (result.done) break;
+      yield result.value;
+      result = null;
+    }
   }
 
   const isWritable = () => !io.disposed && ws?.readyState === READY_STATE.OPEN;

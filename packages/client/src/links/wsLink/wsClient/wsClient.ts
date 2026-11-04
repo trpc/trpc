@@ -12,6 +12,7 @@ import {
   createResourceMap,
   getCauseFromUnknown,
   isObject,
+  iteratorResource,
   makeResource,
   transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -37,7 +38,7 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import { RequestManager } from './requestManager';
 import { createScope, dispose } from './scope';
-import type { Transport } from './transport';
+import type { Transport, TransportEvent } from './transport';
 import {
   backwardCompatibility,
   connectionParamsEvents,
@@ -100,7 +101,7 @@ export interface WsClient {
  * client, one per connection and one per request. This function runs them
  * with `createMachineRuntime`, and says what each effect does. Sockets,
  * `connectionParams` and timers are async iterables the runtime reads in one
- * `for await` loop; the user's calls send their events at once. Sockets,
+ * loop; the user's calls send their events at once. Sockets,
  * listeners, timers and requests are resources: each is disposed by
  * whatever owns it.
  */
@@ -404,24 +405,41 @@ async function* transportEvents(
   transport: Transport,
 ): AsyncGenerator<ClientEvent, void> {
   const connection = transport.id;
-  for await (const event of transport.events) {
-    if (event.type === 'frame') {
-      yield { type: 'frame', connection, message: event.message };
-    } else if (event.type === 'heartbeat') {
-      yield { type: 'heartbeat', connection };
-    } else {
-      yield { type: 'connection', connection, event };
-    }
+  // Not `for await`, which keeps the last frame alive while it waits for the
+  // next; see `createMachineRuntime`'s `intake`.
+  await using iterator = iteratorResource(transport.events);
+  let result: IteratorResult<TransportEvent> | null;
+  while (true) {
+    result = await iterator.next();
+    if (result.done) break;
+    yield toClientEvent(connection, result.value);
+    result = null;
   }
   yield { type: 'connection', connection, event: { type: 'released' } };
+}
+
+function toClientEvent(
+  connection: ConnectionId,
+  event: TransportEvent,
+): ClientEvent {
+  if (event.type === 'frame') {
+    return { type: 'frame', connection, message: event.message };
+  }
+  if (event.type === 'heartbeat') return { type: 'heartbeat', connection };
+  return { type: 'connection', connection, event };
 }
 
 async function* connectionEvents(
   connection: ConnectionId,
   events: AsyncIterable<ConnectionEvent>,
 ): AsyncGenerator<ClientEvent, void> {
-  for await (const event of events) {
-    yield { type: 'connection', connection, event };
+  await using iterator = iteratorResource(events);
+  let result: IteratorResult<ConnectionEvent> | null;
+  while (true) {
+    result = await iterator.next();
+    if (result.done) break;
+    yield { type: 'connection', connection, event: result.value };
+    result = null;
   }
 }
 
