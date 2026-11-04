@@ -2383,7 +2383,6 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(data).toContain(4);
       });
-      await sleep(50);
       expect(data).toEqual([1, 2, 3, 4]);
       expect(eventsSubscribed).toHaveBeenCalledTimes(2);
     } finally {
