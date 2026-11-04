@@ -224,17 +224,11 @@ export function SponsorCloud(props: {
           if (isYou(sponsor)) {
             return (
               <YouBubble
-                className={cn(
-                  bubbleClass,
-                  // From none to an animation replays it, once the cloud shows.
-                  entrance !== 'waiting' && 'motion-safe:animate-sponsor-you',
-                )}
+                delayMs={youDelayMs(entrance)}
+                entering={entrance !== 'waiting'}
                 key={keyOf(sponsor)}
                 link={props.you ?? 'sponsor-page'}
-                style={{
-                  ...placed(bubble, index),
-                  ...delayed(youDelayMs(entrance)),
-                }}
+                style={placed(bubble, index)}
                 tap={tap(keyOf(sponsor))}
               />
             );
@@ -368,14 +362,18 @@ export function SponsorCloud(props: {
 
 /**
  * The reader's bubble: "You?", linking to where they'd sponsor. Its tooltip
- * says what it's for, as its label does for a screen reader.
+ * says what it's for, as its label does for a screen reader. It fades in
+ * `delayMs` after it starts `entering`, unless keyboard focus reaches it
+ * first, which shows it at once.
  */
 function YouBubble(props: {
-  readonly className: string;
+  readonly delayMs: number;
+  readonly entering: boolean;
   readonly link: 'github' | 'sponsor-page';
   readonly style: CSSProperties;
   readonly tap: ReturnType<ReturnType<typeof useTapTooltips>>;
 }) {
+  const [focused, setFocused] = useState(false);
   const github = props.link === 'github';
   const linkProps = {
     ...props.tap.trigger,
@@ -386,7 +384,19 @@ function YouBubble(props: {
       'relative flex size-full items-center justify-center rounded-full border-2 border-dashed border-foreground/25 bg-background font-semibold text-muted-foreground shadow-md transition-[scale,box-shadow,color,border-color] duration-200 outline-none @container [-webkit-touch-callout:none] hover:scale-105 hover:border-brand hover:text-brand hover:shadow-lg focus-visible:scale-105 focus-visible:ring-3 focus-visible:ring-ring data-popup-open:scale-105 data-popup-open:border-brand data-popup-open:text-brand data-popup-open:shadow-lg',
   };
   return (
-    <span className={props.className} data-bubble="" style={props.style}>
+    <span
+      className={cn(
+        bubbleClass,
+        // From none to an animation replays it, once the cloud shows.
+        props.entering && !focused && 'motion-safe:animate-sponsor-you',
+      )}
+      data-bubble=""
+      onFocus={() => setFocused(true)}
+      style={{
+        ...props.style,
+        ...(focused ? { transition: 'none' } : delayed(props.delayMs)),
+      }}
+    >
       <Tooltip {...props.tap.root}>
         <TooltipTrigger
           delay={80}
