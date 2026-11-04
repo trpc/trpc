@@ -423,4 +423,32 @@ describe('applyDescriptions', () => {
     expect(profile.allOf).toEqual([{ $ref: '#/components/schemas/Profile' }]);
     expect(profile.description).toBe('Profile details');
   });
+
+  it('follows component refs to apply nested descriptions', () => {
+    const schema: SchemaObject = {
+      type: 'object',
+      properties: {
+        profile: { $ref: '#/components/schemas/Profile' },
+      },
+    };
+    const profileSchema: SchemaObject = {
+      type: 'object',
+      properties: {
+        bio: { type: 'string' },
+      },
+    };
+    const props = new Map([['profile.bio', 'Short bio']]);
+    applyDescriptions(
+      schema,
+      { self: null, properties: props },
+      { Profile: profileSchema },
+    );
+
+    expect(requirePropertySchema(schema, 'profile')).toEqual({
+      $ref: '#/components/schemas/Profile',
+    });
+    expect(requirePropertySchema(profileSchema, 'bio').description).toBe(
+      'Short bio',
+    );
+  });
 });
