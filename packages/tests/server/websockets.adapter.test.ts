@@ -63,6 +63,10 @@ async function rawSocketResource(url: string) {
       waiting.add(check);
       check();
     });
+  // kept for the socket's whole life: ws throws an `error` event nobody
+  // listens to
+  const errors: unknown[] = [];
+  ws.on('error', (error) => errors.push(error));
   const closed = new Promise<void>((resolve) => {
     ws.once('close', () => resolve());
   });
@@ -74,6 +78,7 @@ async function rawSocketResource(url: string) {
     {
       ws,
       frames,
+      errors,
       closed,
       received,
       responses: () =>
@@ -155,7 +160,7 @@ describe('responses that cannot be encoded', () => {
     expect(onError).toHaveBeenCalledOnce();
   });
 
-  test('an error response that cannot be encoded is reported to onError', async () => {
+  test('an error reply that cannot be encoded is reported to onError, and the request gets no reply', async () => {
     const onError = vi.fn<OnError>();
     const t = initTRPC.create({
       errorFormatter: ({ shape, path }) =>
@@ -400,8 +405,58 @@ test('lastEventId is added to an object input when a subscription resumes', asyn
   subscription.unsubscribe();
 });
 
+describe('a stop that arrives while the subscription starts', () => {
+  // Frames that arrive together are handled a few microtasks apart, and how
+  // many depends on what's between them, so a run of pongs moves the stop
+  // across the subscription's setup.
+  test.each(Array.from({ length: 13 }, (_, pongs) => pongs))(
+    'with %i pongs before it, the subscription stops',
+    async (pongs) => {
+      let signal: AbortSignal | undefined;
+      const t = initTRPC.create();
+      const router = t.router({
+        values: t.procedure.subscription(async function* (opts) {
+          signal = opts.signal;
+          while (true) {
+            yield 1;
+            await new Promise((resolve) => setTimeout(resolve, 5));
+          }
+        }),
+      });
+      await using ctx = testServerAndClientResource(router);
+      await using socket = await rawSocketResource(ctx.wssUrl);
+      const tcp = (
+        socket.ws as unknown as { _socket: { cork(): void; uncork(): void } }
+      )._socket;
+
+      tcp.cork();
+      socket.ws.send(
+        JSON.stringify({
+          id: 1,
+          method: 'subscription',
+          params: { path: 'values' },
+        }),
+      );
+      for (let i = 0; i < pongs; i++) {
+        socket.ws.send('PONG');
+      }
+      socket.ws.send(JSON.stringify({ id: 1, method: 'subscription.stop' }));
+      tcp.uncork();
+
+      await vi.waitFor(() =>
+        expect(socket.responses().at(-1)).toMatchObject({
+          id: 1,
+          result: { type: 'stopped' },
+        }),
+      );
+      // a stop that comes early enough keeps the procedure from running
+      expect(signal === undefined || signal.aborted).toBe(true);
+    },
+  );
+});
+
 describe('frames that wsLink never sends', () => {
-  function factory(
+  function greetingServer(
     opts?: Pick<WSSHandlerOptions<AnyRouter>, 'maxBatchSize'> & {
       createContext?: (opts: CreateWSSContextFnOptions) => object;
     },
@@ -412,6 +467,7 @@ describe('frames that wsLink never sends', () => {
     const ctx = testServerAndClientResource(router, {
       wssServer: { onError, ...opts },
     });
+    // added to the resource, rather than spread, to keep its disposal
     return Object.assign(ctx, { onError });
   }
 
@@ -419,7 +475,7 @@ describe('frames that wsLink never sends', () => {
     { frame: 'not json', cause: /JSON/ },
     { frame: '"not an object"', cause: /Message was not an object/ },
   ])('malformed connection params: $frame', async ({ frame, cause }) => {
-    await using ctx = factory();
+    await using ctx = greetingServer();
     await using socket = await rawSocketResource(
       `${ctx.wssUrl}?connectionParams=1`,
     );
@@ -442,8 +498,21 @@ describe('frames that wsLink never sends', () => {
     });
   });
 
+  test('a frame that is not a request gets a parse error, which onError is not told about', async () => {
+    await using ctx = greetingServer();
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    socket.ws.send(JSON.stringify({ id: 1, method: 'not a method' }));
+
+    await socket.received(1);
+    expect(socket.responses()).toMatchObject([
+      { id: null, error: { data: { code: 'PARSE_ERROR' } } },
+    ]);
+    expect(ctx.onError).not.toHaveBeenCalled();
+  });
+
   test('an oversized batch gets an error for every request, with its jsonrpc', async () => {
-    await using ctx = factory({ maxBatchSize: 1 });
+    await using ctx = greetingServer({ maxBatchSize: 1 });
     await using socket = await rawSocketResource(ctx.wssUrl);
 
     socket.ws.send(
@@ -459,7 +528,7 @@ describe('frames that wsLink never sends', () => {
       ]),
     );
 
-    await vi.waitFor(() => expect(socket.frames).toHaveLength(2));
+    await socket.received(2);
     expect(socket.responses()).toMatchObject([
       { id: 'a', jsonrpc: '2.0', error: { data: { code: 'BAD_REQUEST' } } },
       { id: 2, error: { data: { code: 'BAD_REQUEST' } } },
@@ -469,14 +538,14 @@ describe('frames that wsLink never sends', () => {
   });
 
   test('an oversized batch without request ids gets one error', async () => {
-    await using ctx = factory({ maxBatchSize: 1 });
+    await using ctx = greetingServer({ maxBatchSize: 1 });
     await using socket = await rawSocketResource(ctx.wssUrl);
 
     socket.ws.send(
       JSON.stringify([{ id: 1, method: 'subscription.stop' }, 'not a request']),
     );
 
-    await vi.waitFor(() => expect(socket.frames).toHaveLength(1));
+    await socket.received(1);
     expect(socket.responses()).toMatchObject([
       {
         id: null,
@@ -489,7 +558,7 @@ describe('frames that wsLink never sends', () => {
   });
 
   test('a frame ws does not deliver as a Buffer is rejected', async () => {
-    await using ctx = factory({
+    await using ctx = greetingServer({
       createContext: (opts) => {
         opts.res.binaryType = 'arraybuffer';
         return {};
@@ -508,7 +577,7 @@ describe('frames that wsLink never sends', () => {
       ),
     );
 
-    await vi.waitFor(() => expect(socket.frames).toHaveLength(1));
+    await socket.received(1);
     expect(socket.responses()).toMatchObject([
       {
         id: null,
@@ -569,20 +638,20 @@ describe('a throwing callback never crashes the server', () => {
     ]);
   });
 
-  test('an errorFormatter that throws is reported, and other requests are answered', async () => {
+  test('an errorFormatter that throws is reported, the request gets no reply, and other requests are answered', async () => {
     const onError = vi.fn<OnError>();
-    const t2 = initTRPC.create({
+    const failingFormatter = initTRPC.create({
       errorFormatter: () => {
         throw new Error('formatter bug');
       },
     });
-    const router2 = t2.router({
-      fail: t2.procedure.query(() => {
+    const failingRouter = failingFormatter.router({
+      fail: failingFormatter.procedure.query(() => {
         throw new TRPCError({ code: 'BAD_REQUEST' });
       }),
-      greeting: t2.procedure.query(() => 'hello'),
+      greeting: failingFormatter.procedure.query(() => 'hello'),
     });
-    await using ctx = testServerAndClientResource(router2, {
+    await using ctx = testServerAndClientResource(failingRouter, {
       wssServer: { onError },
     });
     await using socket = await rawSocketResource(ctx.wssUrl);
@@ -605,9 +674,9 @@ describe('a throwing callback never crashes the server', () => {
     ]);
   });
 
-  test('an errorFormatter that throws on a whole frame leaves the connection serving', async () => {
+  test('an errorFormatter that throws for an oversized batch leaves it without a reply, and later frames are served', async () => {
     const onError = vi.fn<OnError>();
-    const t2 = initTRPC.create({
+    const failingFormatter = initTRPC.create({
       errorFormatter: (opts) => {
         if (opts.error.message === 'Batch call exceeds maximum size') {
           throw new Error('formatter bug');
@@ -615,10 +684,10 @@ describe('a throwing callback never crashes the server', () => {
         return opts.shape;
       },
     });
-    const router2 = t2.router({
-      greeting: t2.procedure.query(() => 'hello'),
+    const failingRouter = failingFormatter.router({
+      greeting: failingFormatter.procedure.query(() => 'hello'),
     });
-    await using ctx = testServerAndClientResource(router2, {
+    await using ctx = testServerAndClientResource(failingRouter, {
       wssServer: { onError, maxBatchSize: 1 },
     });
     await using socket = await rawSocketResource(ctx.wssUrl);
@@ -668,6 +737,50 @@ describe('a throwing callback never crashes the server', () => {
     ]);
     expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
       'cannot encode',
+    ]);
+  });
+
+  test('a frame that throws while it is handled is reported, and later frames are served', async () => {
+    const onError = vi.fn<OnError>();
+    const decodeBug = new Error('decoded value bug');
+    const encoder: Encoder = {
+      encode: (data) => jsonEncoder.encode(data),
+      decode: (data) => {
+        const decoded = jsonEncoder.decode(data);
+        if (!Array.isArray(decoded)) {
+          return decoded;
+        }
+        return decoded.map((request) =>
+          Object.defineProperty({ ...request }, 'method', {
+            get: () => {
+              throw decodeBug;
+            },
+          }),
+        );
+      },
+    };
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: { onError, maxBatchSize: 1, experimental_encoder: encoder },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    const greeting = (id: number) => ({
+      id,
+      method: 'query',
+      params: { path: 'greeting' },
+    });
+    // an oversized batch, so that the throwing `method` is read outside of
+    // parsing
+    socket.ws.send(JSON.stringify([greeting(1), greeting(2)]));
+    socket.ws.send(JSON.stringify(greeting(3)));
+
+    await socket.received(1);
+    expect(socket.responses()).toMatchObject([
+      { id: 3, result: { type: 'data', data: 'hello' } },
+    ]);
+    expect(onError.mock.calls.map(([opts]) => opts.error.cause)).toEqual([
+      undefined,
+      decodeBug,
     ]);
   });
 
@@ -731,7 +844,9 @@ describe('keepAlive', () => {
     vi.useRealTimers();
   });
 
-  function factory(keepAlive: WSSHandlerOptions<AnyRouter>['keepAlive']) {
+  function keepAliveServer(
+    keepAlive: WSSHandlerOptions<AnyRouter>['keepAlive'],
+  ) {
     const t = initTRPC.create();
     const router = t.router({ greeting: t.procedure.query(() => 'hello') });
     const ctx = testServerAndClientResource(router, {
@@ -742,7 +857,7 @@ describe('keepAlive', () => {
   }
 
   test('pings a quiet client after 30s, and closes it if it stays quiet for 5s', async () => {
-    await using ctx = factory({ enabled: true });
+    await using ctx = keepAliveServer({ enabled: true });
     await using socket = await rawSocketResource(ctx.wssUrl);
 
     await vi.advanceTimersByTimeAsync(29_999);
@@ -758,7 +873,7 @@ describe('keepAlive', () => {
   });
 
   test('a message before the ping is due postpones it', async () => {
-    await using ctx = factory({ enabled: true, pingMs: 1_000 });
+    await using ctx = keepAliveServer({ enabled: true, pingMs: 1_000 });
     await using socket = await rawSocketResource(ctx.wssUrl);
     const received = createDeferred();
     expect(ctx.sockets).toHaveLength(1);
