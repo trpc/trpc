@@ -1,6 +1,11 @@
-import { Effect, Fiber, Stream } from 'effect';
+import { Cause, Effect, Exit, Fiber, Stream } from 'effect';
 import { expect, test } from 'vite-plus/test';
-import { interruptSignal, toAsyncIterable } from './effects.ts';
+import {
+  interruptSignal,
+  reportTeardown,
+  returnUnawaited,
+  toAsyncIterable,
+} from './effects.ts';
 
 const tracked = () => {
   const state = { started: 0, closed: 0 };
@@ -215,4 +220,70 @@ test('interruptSignal aborts once a wrapped stream is interrupted', async () => 
     }),
   );
   expect(aborted).toBe(true);
+});
+
+test('reportTeardown reports a finalizer that fails while the reader is interrupted handling a value', async () => {
+  const source = failingTeardown(1);
+  const reported: unknown[] = [];
+  await Effect.gen(function* () {
+    const reader = yield* Effect.forkChild(
+      Stream.runForEach(
+        reportTeardown(source.stream, (failure) =>
+          reported.push(Cause.squash(failure)),
+        ),
+        () => Effect.never,
+      ),
+    );
+    yield* Effect.sleep(10);
+    yield* Fiber.interrupt(reader);
+  }).pipe(Effect.runPromise);
+  expect(source.state.closed).toBe(1);
+  expect(reported).toEqual([source.teardown]);
+});
+
+test('reportTeardown reports a finalizer that fails when the reader ends the stream early', async () => {
+  const source = failingTeardown(1, 2);
+  const reported: unknown[] = [];
+  const values = await reportTeardown(source.stream, (failure) =>
+    reported.push(Cause.squash(failure)),
+  ).pipe(Stream.take(1), Stream.runCollect, Effect.runPromise);
+  expect(values).toEqual([1]);
+  expect(reported).toEqual([source.teardown]);
+});
+
+test('reportTeardown leaves a failure the reader gets to the reader', async () => {
+  const boom = new Error('boom');
+  const reported: unknown[] = [];
+  const exit = await reportTeardown(
+    Stream.concat(Stream.make(1), Stream.die(boom)),
+    (failure) => reported.push(failure),
+  ).pipe(Stream.runCollect, Effect.runPromiseExit);
+  expect(Exit.isFailure(exit) && Cause.squash(exit.cause)).toBe(boom);
+  expect(reported).toEqual([]);
+});
+
+test('returnUnawaited hands a generator that throws after return() to onLateFailure', async () => {
+  const teardown = new Error('teardown');
+  const late: unknown[] = [];
+  let release = () => {};
+  async function* source() {
+    try {
+      yield 1;
+      await new Promise<void>((resolve) => (release = resolve));
+    } finally {
+      // oxlint-disable-next-line no-unsafe-finally
+      throw teardown;
+    }
+  }
+  const iterator = returnUnawaited(source(), (error) => late.push(error))[
+    Symbol.asyncIterator
+  ]();
+  expect(await iterator.next()).toEqual({ done: false, value: 1 });
+  const pending = iterator.next();
+  pending.catch(() => {});
+  expect(await iterator.return!()).toEqual({ done: true, value: undefined });
+  release();
+  await expect(pending).rejects.toBe(teardown);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(late).toEqual([teardown]);
 });

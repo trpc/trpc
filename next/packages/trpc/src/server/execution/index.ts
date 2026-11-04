@@ -13,6 +13,7 @@ export {
   isUnexpectedError,
   normalizeCause,
   procedureEvents,
+  reportSubscriptionTeardown,
   runtimeServices,
   unexpectedError,
 } from './execute.ts';

@@ -16,18 +16,31 @@ export const backpressure = { bufferSize: 16, strategy: 'suspend' } as const;
  * For `Stream.fromAsyncIterable`: closing doesn't wait for the iterator's
  * `return()`. A generator paused at an `await` returns only once that
  * settles, and a procedure usually awaits its `signal`, which aborts once
- * the stream has closed.
+ * the stream has closed. What the iterator throws after that, from the
+ * `next()` the stream stopped waiting for or from `return()`, goes to
+ * `onLateFailure`: a generator's `finally` runs then.
  * @internal
  */
 export const returnUnawaited = <A>(
   iterable: AsyncIterable<A>,
+  onLateFailure: (error: unknown) => void = () => {},
 ): AsyncIterable<A> => ({
   [Symbol.asyncIterator]() {
     const iterator = iterable[Symbol.asyncIterator]();
+    let pending: Promise<IteratorResult<A>> | undefined;
     return {
-      next: () => iterator.next(),
+      next: () => {
+        const next = iterator.next();
+        pending = next;
+        const settled = () => {
+          if (pending === next) pending = undefined;
+        };
+        next.then(settled, settled);
+        return next;
+      },
       return: (value?: unknown) => {
-        iterator.return?.(value).catch(() => {});
+        pending?.catch(onLateFailure);
+        iterator.return?.(value).catch(onLateFailure);
         return Promise.resolve({ done: true, value });
       },
     };
@@ -95,6 +108,48 @@ const teardownFailure = (
 };
 
 /**
+ * `stream`, read by a fiber of its own into a bounded queue that `values`
+ * reads back, ending or failing as `outcome` says for the fiber's exit.
+ * When the reader's scope closes, that fiber is interrupted and `stopped`
+ * gets what its teardown failed with, along with how the scope closed.
+ * Only the fiber's exit has it reliably: the stream's own exit misses a
+ * finalizer that fails while its reader is interrupted handling a value.
+ */
+const produce = <A, E, R>(
+  stream: Stream.Stream<A, E, R>,
+  outcome: (exit: Exit.Exit<void, E>) => Cause.Cause<E> | undefined,
+  stopped: (
+    failure: Cause.Cause<unknown>,
+    closed: Exit.Exit<unknown, unknown>,
+  ) => Effect.Effect<void>,
+) =>
+  Effect.gen(function* () {
+    const queue = yield* Queue.bounded<A, E | Cause.Done>(
+      backpressure.bufferSize,
+    );
+    const producer = yield* Stream.runForEachArray(stream, (values) =>
+      Queue.offerAll(queue, values),
+    ).pipe(
+      Effect.onExit((exit) => {
+        const cause = outcome(exit);
+        return cause ? Queue.failCause(queue, cause) : Queue.end(queue);
+      }),
+      Effect.forkScoped,
+    );
+    yield* Effect.addFinalizer((closed) =>
+      Effect.gen(function* () {
+        yield* Fiber.interrupt(producer);
+        const failure = teardownFailure(yield* Fiber.await(producer));
+        if (failure) yield* stopped(failure, closed);
+      }),
+    );
+    return {
+      values: Stream.fromQueue(queue) as Stream.Stream<A, E>,
+      producer,
+    };
+  });
+
+/**
  * `stream`, ending when `signal` aborts. A fiber reads it into a bounded
  * queue; aborting interrupts that fiber, so the source's finalizers run
  * straight away, and the stream ends once the values already queued are
@@ -109,35 +164,50 @@ const endOnAbort = <A, E>(
   Stream.unwrap(
     Effect.gen(function* () {
       if (signal.aborted) return Stream.empty;
-      const queue = yield* Queue.bounded<A, E | Cause.Done>(
-        backpressure.bufferSize,
-      );
-      const producer = yield* Stream.runForEachArray(stream, (values) =>
-        Queue.offerAll(queue, values),
-      ).pipe(
-        Effect.onExit((exit) => {
-          const failure = teardownFailure(exit);
-          return failure
-            ? Queue.failCause(queue, failure as Cause.Cause<E>)
-            : Queue.end(queue);
-        }),
-        Effect.forkScoped,
-      );
-      yield* Effect.addFinalizer((closed) =>
-        Effect.gen(function* () {
-          yield* Fiber.interrupt(producer);
-          const failure = teardownFailure(yield* Fiber.await(producer));
+      const run = yield* produce(
+        stream,
+        (exit) => teardownFailure(exit) as Cause.Cause<E> | undefined,
+        (failure, closed) =>
           // A failed close means the reader got a failure already.
-          if (failure && Exit.isSuccess(closed)) {
-            yield* Effect.failCause(failure as Cause.Cause<never>);
-          }
-        }),
+          Exit.isSuccess(closed)
+            ? Effect.failCause(failure as Cause.Cause<never>)
+            : Effect.void,
       );
       yield* Effect.forkScoped(
-        Effect.andThen(aborted(signal), Fiber.interrupt(producer)),
+        Effect.andThen(aborted(signal), Fiber.interrupt(run.producer)),
       );
-      return Stream.fromQueue(queue);
+      return run.values;
     }),
+  );
+
+/**
+ * `stream`, handing what its teardown fails with to `report` once its
+ * reader has stopped (left, or ended it early) instead of dropping it.
+ * The reader no longer gets it then, and a failure it did get isn't
+ * reported again.
+ * @internal
+ */
+export const reportTeardown = <A, E, R>(
+  stream: Stream.Stream<A, E, R>,
+  report: (failure: Cause.Cause<unknown>) => void,
+): Stream.Stream<A, E, R> =>
+  Stream.unwrap(
+    Effect.map(
+      produce(
+        stream,
+        (exit) => (Exit.isFailure(exit) ? exit.cause : undefined),
+        (failure, closed) =>
+          Effect.sync(() => {
+            if (
+              Exit.isSuccess(closed) ||
+              Cause.hasInterruptsOnly(closed.cause)
+            ) {
+              report(failure);
+            }
+          }),
+      ),
+      (run) => run.values,
+    ),
   );
 
 /**

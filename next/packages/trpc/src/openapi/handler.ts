@@ -61,6 +61,7 @@ import {
 import {
   createResponseHandle,
   normalizeCause,
+  reportSubscriptionTeardown,
   unexpectedError,
 } from '../server/execution/index.ts';
 import {
@@ -727,6 +728,12 @@ export function experimental_createOpenApiHandler<
         response,
         lastEventId: request.headers.get('last-event-id') ?? undefined,
         allowResponse: type !== 'subscription',
+        services:
+          type === 'subscription'
+            ? reportSubscriptionTeardown((err) =>
+                base.report(err, http, entry.path, type),
+              )
+            : undefined,
       });
       if (Exit.isFailure(exit)) {
         const err = normalizeCause(exit.cause);
