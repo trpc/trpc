@@ -113,6 +113,8 @@ export function httpSubscriptionLink<
               pathSeparator,
               type,
               signal: null,
+              fetch: null,
+              methodOverride: null,
             }),
           init: () => resultOf(opts.eventSourceOptions, { op }),
           signal,
