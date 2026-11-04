@@ -40,7 +40,11 @@ export const returnUnawaited = <A>(
       },
       return: (value?: unknown) => {
         pending?.catch(onLateFailure);
-        iterator.return?.(value).catch(onLateFailure);
+        try {
+          iterator.return?.(value).catch(onLateFailure);
+        } catch (error) {
+          onLateFailure(error);
+        }
         return Promise.resolve({ done: true, value });
       },
     };

@@ -1,5 +1,6 @@
 import { createTrpcClient, routerType, wsLink } from '@trpc12/trpc/client';
 import {
+  error,
   initTrpc,
   type AnyRouter,
   type OnErrorOpts,
@@ -78,6 +79,55 @@ test('what a generator throws after its socket closes goes to onError', async ()
   expect(await done).toBe('closed');
   await vi.waitFor(() =>
     expect(ctx.reported()).toEqual([['cleanup', 'generator cleanup']]),
+  );
+});
+
+test('a TrpcError a generator throws after an abort reaches onError as it was thrown', async () => {
+  const router = t.router({
+    conflict: t.procedure.subscription(async function* (opts) {
+      yield 1;
+      await onAbort(opts.signal);
+      throw error({ code: 'CONFLICT', message: 'late conflict' });
+    }),
+  });
+  await using ctx = await setup(router);
+  for await (const value of ctx.client.conflict.subscribe()) {
+    expect(value).toBe(1);
+    break;
+  }
+  await vi.waitFor(() => expect(ctx.onError).toHaveBeenCalledOnce());
+  expect(ctx.onError.mock.calls[0]![0]).toMatchObject({
+    path: 'conflict',
+    type: 'subscription',
+    error: { code: 'CONFLICT', message: 'late conflict' },
+  });
+});
+
+test('a cleanup that throws instead of rejecting after an abort goes to onError', async () => {
+  const router = t.router({
+    active: t.procedure.subscription(() => ({
+      [Symbol.asyncIterator]: () => {
+        let sent = false;
+        return {
+          next: async (): Promise<IteratorResult<number>> => {
+            if (sent) return new Promise(() => {});
+            sent = true;
+            return { done: false, value: 1 };
+          },
+          return: (): Promise<IteratorReturnResult<undefined>> => {
+            throw new Error('cleanup threw');
+          },
+        };
+      },
+    })),
+  });
+  await using ctx = await setup(router);
+  for await (const value of ctx.client.active.subscribe()) {
+    expect(value).toBe(1);
+    break;
+  }
+  await vi.waitFor(() =>
+    expect(ctx.reported()).toEqual([['active', 'cleanup threw']]),
   );
 });
 
@@ -173,6 +223,42 @@ test('a query aborted before its resolver rejects reports nothing', async () => 
   await settled.promise;
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(ctx.onError).not.toHaveBeenCalled();
+});
+
+test('an iterable returned late whose cleanup throws goes to onError', async () => {
+  const admission = defer<void>();
+  const entered = defer<AbortSignal>();
+  const router = t.router({
+    pending: t.procedure.subscription(
+      async (opts): Promise<AsyncIterable<number>> => {
+        entered.resolve(opts.signal);
+        await admission.promise;
+        return {
+          [Symbol.asyncIterator]: () => ({
+            next: async () => ({ done: true, value: undefined }),
+            return: () => {
+              throw new Error('late cleanup threw');
+            },
+          }),
+        };
+      },
+    ),
+  });
+  await using ctx = await setup(router);
+  const controller = new AbortController();
+  const iterating = (async () => {
+    for await (const _ of ctx.client.pending.subscribe(undefined, {
+      signal: controller.signal,
+    }));
+  })();
+  const signal = await entered.promise;
+  controller.abort();
+  await iterating;
+  await vi.waitFor(() => expect(signal.aborted).toBe(true));
+  admission.resolve();
+  await vi.waitFor(() =>
+    expect(ctx.reported()).toEqual([['pending', 'late cleanup threw']]),
+  );
 });
 
 test('a failed iteration aborts the signal, so a cleanup waiting for it ends', async () => {
