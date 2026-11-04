@@ -237,7 +237,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   const withContext = opts.withContext ?? colorMode === 'css';
   const {
     logger = defaultLogger({
-      c: opts.console ?? console,
+      c: opts.console === undefined ? console : opts.console,
       colorMode,
       withContext,
     }),
