@@ -5,6 +5,7 @@ import { createWSClient } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { sleep } from '@trpc/server/unstable-core-do-not-import';
 
 function createRouter() {
   const t = initTRPC.create();
@@ -146,7 +147,7 @@ describe('throwing user callbacks', () => {
   test('a throwing onClose does not prevent the reconnect, and its error is not swallowed', async () => {
     using g = captureUncaught();
     const onCloseError = new Error('onClose failed');
-    const onClose = vi.fn(() => {
+    const onClose = vi.fn().mockImplementationOnce(() => {
       throw onCloseError;
     });
     await using ctx = testServerAndClientResource(createRouter(), {
@@ -187,9 +188,10 @@ describe('throwing user callbacks', () => {
   test('a throwing onError does not prevent the reconnect, and its error is not swallowed', async () => {
     using g = captureUncaught();
     const onErrorError = new Error('onError failed');
+    let throwing = true;
     const onError = vi.fn<NonNullable<WebSocketClientOptions['onError']>>(
       () => {
-        throw onErrorError;
+        if (throwing) throw onErrorError;
       },
     );
     const retryDelayMs = vi.fn(() => 10);
@@ -202,12 +204,15 @@ describe('throwing user callbacks', () => {
     try {
       await vi.waitFor(() => {
         expect(onError.mock.calls.length).toBeGreaterThanOrEqual(3);
+        expect(g.uncaught.length).toBeGreaterThanOrEqual(3);
       });
       expect(retryDelayMs.mock.calls.length).toBeGreaterThanOrEqual(2);
-      expect(g.uncaught.length).toBeGreaterThanOrEqual(3);
       expect(new Set(g.uncaught)).toEqual(new Set([onErrorError]));
+      throwing = false;
       await wsClient.close();
+      await sleep(10);
     } finally {
+      throwing = false;
       // on failure, `close()` may never settle; don't let it time out the test
       void wsClient.close();
     }
