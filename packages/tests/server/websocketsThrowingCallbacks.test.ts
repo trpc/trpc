@@ -296,6 +296,31 @@ test('a connection error reply that cannot be encoded gets the fallback error, s
   ]);
 });
 
+test('an oversized batch whose error reply cannot be encoded gives every request the fallback error', async () => {
+  const onError = vi.fn<OnError>();
+  const router = routerWithErrorFormatter(({ shape }) => ({
+    ...shape,
+    data: { ...shape.data, unencodable: 1n },
+  }));
+  await using ctx = testServerAndClientResource(router, {
+    wssServer: { onError, maxBatchSize: 1 },
+  });
+  await using socket = await rawSocketResource(ctx.wssUrl);
+
+  socket.ws.send(failAndGreet);
+
+  await vi.waitFor(() => expect(socket.responses()).toHaveLength(2));
+  expect(byId(socket.responses())).toEqual([
+    { id: 1, error: fallbackError },
+    { id: 2, error: fallbackError },
+  ]);
+  expect(onError.mock.calls.map(([opts]) => opts.error.cause?.name)).toEqual([
+    undefined,
+    'TypeError',
+    'TypeError',
+  ]);
+});
+
 test('an onError that throws on a socket error leaves the server serving', async () => {
   const onError = vi.fn<OnError>(throwingOnError);
   const echoRouter = t.router({

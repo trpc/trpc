@@ -786,16 +786,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                 raw['method'] !== 'subscription.stop' &&
                 (typeof raw['id'] === 'number' || typeof raw['id'] === 'string')
               ) {
-                respond({
-                  id: raw['id'],
-                  jsonrpc: raw['jsonrpc'] === '2.0' ? '2.0' : undefined,
-                  error: shape,
-                });
+                const id = raw['id'];
+                const jsonrpc = raw['jsonrpc'] === '2.0' ? '2.0' : undefined;
+                respondOrReport(() => ({ id, jsonrpc, error: shape }));
                 responded = true;
               }
             }
             if (!responded) {
-              respond({ id: null, error: shape });
+              respondOrReport(() => ({ id: null, error: shape }));
             }
             return [];
           }
