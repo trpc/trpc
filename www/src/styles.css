@@ -96,7 +96,7 @@ html {
     }
     100% {
       opacity: 0;
-      top: -45%;
+      top: -75%;
       scale: 0.4;
     }
   }
