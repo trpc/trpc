@@ -1,5 +1,5 @@
+import type { IncomingMessage } from 'http';
 import { on } from 'node:events';
-import type { IncomingMessage } from 'node:http';
 import type { RawData, WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type {
   AnyRouter,
