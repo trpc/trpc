@@ -1077,6 +1077,42 @@ describe('a socket the server closes while a new request opens its replacement',
     }
   });
 
+  test('a query pending on its replacement completes', async () => {
+    const { ctx, pendingResult, queryStarted } = setup();
+    await using _ctx = ctx;
+    expect(await ctx.client.greeting.query()).toBe('hello');
+    const oldClientSocket = ctx.wsClient.connection!.ws;
+    const oldServerSocket = [...ctx.wss.clients][0]!;
+    try {
+      oldServerSocket.close();
+      oldServerSocket.pause();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSING);
+      });
+
+      const result = ctx.client.pending.query().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(queryStarted).toHaveBeenCalledTimes(1);
+      });
+      const replacementSocket = ctx.wsClient.connection!.ws;
+      expect(replacementSocket).not.toBe(oldClientSocket);
+
+      oldServerSocket.resume();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      pendingResult.resolve('replacement query completed');
+
+      expect(await result).toBe('replacement query completed');
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(ctx.wsClient.connection!.ws).toBe(replacementSocket);
+    } finally {
+      oldServerSocket.resume();
+      pendingResult.resolve('cleanup');
+      await ctx.wsClient.close();
+    }
+  });
+
   test('a subscription on it resumes', async () => {
     const { ctx, subscriptionStarted, closeDuringNewQuery } = setup();
     await using _ctx = ctx;
@@ -1102,7 +1138,7 @@ describe('a socket the server closes while a new request opens its replacement',
 });
 
 describe('requests pending on a socket that a server reconnect retires', () => {
-  test('a mutation in flight runs once and fails', async () => {
+  test('a mutation in flight runs once and resolves', async () => {
     const t = initTRPC.create();
     const release = createDeferred<void>();
     const executions = vi.fn();
@@ -1140,7 +1176,7 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       expect(await ctx.client.greeting.query()).toBe('hello');
       release.resolve();
 
-      expect(await result).toMatchObject({ name: 'TRPCClientError' });
+      expect(await result).toBe('charged');
       expect(executions).toHaveBeenCalledTimes(1);
     } finally {
       release.resolve();
@@ -1200,7 +1236,7 @@ describe('requests pending on a socket that a server reconnect retires', () => {
         expect(queryStarted).toHaveBeenCalledTimes(1);
       });
 
-      ctx.wssHandler.broadcastReconnectNotification();
+      [...ctx.wss.clients][0]!.close();
 
       // The default backoff waits 2s after a failed attempt.
       await vi.waitFor(
@@ -1263,31 +1299,32 @@ describe('requests pending on a socket that a server reconnect retires', () => {
         await vi.waitFor(() => {
           expect(queryStarted).toHaveBeenCalledTimes(1);
         });
+        const oldClientSocket = ctx.wsClient.connection!.ws;
 
         failConnectionParams = true;
         ctx.wssHandler.broadcastReconnectNotification();
         await vi.waitFor(() => {
           expect(onOpen.mock.calls.length).toBeGreaterThanOrEqual(3);
         });
-        return { settled, result, abortController };
+        return { oldClientSocket, settled, result, abortController };
       }
 
       return { ctx, pendingResult, reconnectWithFailingConnectionParams };
     }
 
-    test('a query pending on the retired socket fails', async () => {
+    test('a query pending on the retired socket resolves from it', async () => {
       const { ctx, pendingResult, reconnectWithFailingConnectionParams } =
         setup();
       await using _ctx = ctx;
-      const { settled, result, abortController } =
+      const { oldClientSocket, settled, result, abortController } =
         await reconnectWithFailingConnectionParams();
       try {
-        await vi.waitFor(() => {
-          expect(settled).toHaveBeenCalledTimes(1);
-        });
+        expect(settled).not.toHaveBeenCalled();
+        pendingResult.resolve('resolved');
         await result;
-        expect(settled.mock.calls[0]![0]).toMatchObject({
-          name: 'TRPCClientError',
+        expect(settled).toHaveBeenCalledExactlyOnceWith('resolved');
+        await vi.waitFor(() => {
+          expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
         });
       } finally {
         abortController.abort();
@@ -1300,19 +1337,384 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       const { ctx, pendingResult, reconnectWithFailingConnectionParams } =
         setup();
       await using _ctx = ctx;
-      const { abortController } = await reconnectWithFailingConnectionParams();
+      const { settled, result, abortController } =
+        await reconnectWithFailingConnectionParams();
       try {
         const closed = vi.fn();
         void ctx.wsClient.close().then(closed);
+        // `close()` waits for the query.
+        pendingResult.resolve('resolved');
         await vi.waitFor(() => {
           expect(closed).toHaveBeenCalledTimes(1);
         });
+        await result;
+        expect(settled).toHaveBeenCalledExactlyOnceWith('resolved');
       } finally {
         abortController.abort();
         pendingResult.resolve('cleanup');
         await ctx.wsClient.close();
       }
     });
+  });
+});
+
+describe('a server-requested reconnect drains the old socket', () => {
+  function setup() {
+    const t = initTRPC.create();
+    const slowResult = createDeferred<string>();
+    const pendingResult = createDeferred<string>();
+    const release = createDeferred<void>();
+    const slowStarted = vi.fn();
+    const pendingStarted = vi.fn();
+    const charged = vi.fn();
+    const subscriptionStarted = vi.fn();
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const onError = vi.fn();
+    const ee = new EventEmitter();
+    let failConnectionParams = false;
+    const router = t.router({
+      greeting: t.procedure.query(() => 'hello'),
+      slow: t.procedure.query(() => {
+        slowStarted();
+        return slowResult.promise;
+      }),
+      pending: t.procedure.query(() => {
+        pendingStarted();
+        return pendingResult.promise;
+      }),
+      charge: t.procedure.mutation(async () => {
+        charged();
+        await release.promise;
+        return 'charged';
+      }),
+      onStart: t.procedure.subscription(() =>
+        observable<number>((emit) => {
+          subscriptionStarted();
+          emit.next(subscriptionStarted.mock.calls.length);
+          const onData = (value: number) => emit.next(value);
+          ee.on('data', onData);
+          return () => ee.off('data', onData);
+        }),
+      ),
+    });
+    const ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+      wsClient: {
+        lazy: { enabled: false, closeMs: 0 },
+        retryDelayMs: () => 20,
+        onOpen,
+        onClose,
+        onError,
+        connectionParams: () => {
+          if (failConnectionParams) throw new Error('token unavailable');
+          return { token: 'ok' };
+        },
+      },
+    });
+
+    /** The requests the server received, with the socket each came on. */
+    const received: { socket: WebSocket; id: unknown; path: unknown }[] = [];
+    ctx.wss.on('connection', (socket) => {
+      socket.on('message', (data) => {
+        // oxlint-disable-next-line typescript/no-base-to-string
+        const text = data.toString();
+        if (text === 'PING' || text === 'PONG') return;
+        for (const message of [JSON.parse(text)].flat()) {
+          if (message.method === 'connectionParams') continue;
+          received.push({ socket, id: message.id, path: message.params?.path });
+        }
+      });
+    });
+    const receivedFor = (path: string) =>
+      received.filter((request) => request.path === path);
+
+    /** Records the ids of the responses `ws` receives. */
+    function responseIds(ws: globalThis.WebSocket) {
+      const ids: unknown[] = [];
+      ws.addEventListener('message', ({ data }) => {
+        const text =
+          typeof data === 'string' ? data : String(Buffer.from(data));
+        if (text === 'PING' || text === 'PONG') return;
+        const message = JSON.parse(text);
+        if ('result' in message || 'error' in message) ids.push(message.id);
+      });
+      return ids;
+    }
+
+    /**
+     * Starts `slow`, then has the server request a reconnect once it's in
+     * flight, and waits for the replacement to open.
+     */
+    async function reconnectDuringSlowQuery() {
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(1);
+      });
+      const oldClientSocket = ctx.wsClient.connection!.ws;
+      const oldResponses = responseIds(oldClientSocket);
+      const slow = ctx.client.slow.query().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(slowStarted).toHaveBeenCalledTimes(1);
+      });
+      const oldServerSocket = receivedFor('slow')[0]!.socket;
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+        expect(ctx.wsClient.connection?.state).toBe('open');
+      });
+      const replacementSocket = ctx.wsClient.connection!.ws;
+      expect(replacementSocket).not.toBe(oldClientSocket);
+      expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
+
+      return {
+        slow,
+        oldClientSocket,
+        oldServerSocket,
+        oldResponses,
+        replacementSocket,
+        replacementResponses: responseIds(replacementSocket),
+      };
+    }
+
+    function cleanup() {
+      slowResult.resolve('cleanup');
+      pendingResult.resolve('cleanup');
+      release.resolve();
+      return ctx.wsClient.close();
+    }
+
+    return {
+      ctx,
+      ee,
+      slowResult,
+      pendingResult,
+      release,
+      slowStarted,
+      pendingStarted,
+      charged,
+      subscriptionStarted,
+      onOpen,
+      onClose,
+      onError,
+      failConnectionParams: () => {
+        failConnectionParams = true;
+      },
+      receivedFor,
+      reconnectDuringSlowQuery,
+      cleanup,
+    };
+  }
+
+  test('a query in flight resolves once from the old socket', async () => {
+    const {
+      ctx,
+      slowResult,
+      slowStarted,
+      receivedFor,
+      reconnectDuringSlowQuery,
+      cleanup,
+    } = setup();
+    await using _ctx = ctx;
+    try {
+      const { slow, oldServerSocket, oldResponses, replacementResponses } =
+        await reconnectDuringSlowQuery();
+
+      // New requests go to the replacement.
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(receivedFor('greeting')[0]!.socket).not.toBe(oldServerSocket);
+
+      slowResult.resolve('slow');
+      expect(await slow).toBe('slow');
+      expect(slowStarted).toHaveBeenCalledTimes(1);
+      const [request, ...resent] = receivedFor('slow');
+      expect(resent).toEqual([]);
+      expect(oldResponses).toEqual([request!.id]);
+      expect(replacementResponses).not.toContain(request!.id);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('a mutation in flight resolves once and runs once', async () => {
+    const { ctx, release, charged, onOpen, receivedFor, cleanup } = setup();
+    await using _ctx = ctx;
+    try {
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(1);
+      });
+      const result = ctx.client.charge.mutate().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(charged).toHaveBeenCalledTimes(1);
+      });
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+        expect(ctx.wsClient.connection?.state).toBe('open');
+      });
+      // Anything resent on the replacement reaches the server before this.
+      expect(await ctx.client.greeting.query()).toBe('hello');
+
+      release.resolve();
+      expect(await result).toBe('charged');
+      expect(charged).toHaveBeenCalledTimes(1);
+      expect(receivedFor('charge')).toHaveLength(1);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test.each(['close', 'error'] as const)(
+    'the old socket closes once drained, and its late %s event leaves the replacement alone',
+    async (event) => {
+      const {
+        ctx,
+        ee,
+        slowResult,
+        pendingResult,
+        pendingStarted,
+        subscriptionStarted,
+        onOpen,
+        onClose,
+        onError,
+        reconnectDuringSlowQuery,
+        cleanup,
+      } = setup();
+      await using _ctx = ctx;
+      const onData = vi.fn();
+      const subscription = ctx.client.onStart.subscribe(undefined, {
+        onData,
+      });
+      let oldServerSocket: WebSocket | undefined;
+      try {
+        await vi.waitFor(() => {
+          expect(onData).toHaveBeenCalledTimes(1);
+        });
+        const reconnected = await reconnectDuringSlowQuery();
+        const { oldClientSocket, oldResponses, replacementSocket } =
+          reconnected;
+        oldServerSocket = reconnected.oldServerSocket;
+        // The subscription moves to the replacement.
+        await vi.waitFor(() => {
+          expect(onData).toHaveBeenCalledTimes(2);
+        });
+        // Until the old socket closes, the server runs the subscription on
+        // both sockets, and the old one's data is ignored.
+        ee.emit('data', 100);
+        await vi.waitFor(() => {
+          expect(oldResponses).toHaveLength(1);
+          expect(onData).toHaveBeenCalledTimes(3);
+        });
+
+        // Delay the old socket's closing handshake.
+        oldServerSocket.pause();
+        slowResult.resolve('slow');
+        expect(await reconnected.slow).toBe('slow');
+        await vi.waitFor(() => {
+          expect(oldClientSocket.readyState).toBe(WebSocket.CLOSING);
+        });
+
+        const pending = ctx.client.pending.query().catch((error) => error);
+        await vi.waitFor(() => {
+          expect(pendingStarted).toHaveBeenCalledTimes(1);
+        });
+        if (event === 'error') {
+          // A masked server frame triggers a protocol error on the old socket.
+          oldServerSocket.send('invalid frame', { mask: true });
+        }
+        oldServerSocket.resume();
+        await vi.waitFor(() => {
+          expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+        });
+
+        pendingResult.resolve('pending');
+        expect(await pending).toBe('pending');
+        expect(await ctx.client.greeting.query()).toBe('hello');
+        expect(ctx.wsClient.connection!.ws).toBe(replacementSocket);
+        expect(onOpen).toHaveBeenCalledTimes(2);
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(onError).toHaveBeenCalledTimes(event === 'error' ? 1 : 0);
+        expect(subscriptionStarted).toHaveBeenCalledTimes(2);
+        expect(onData.mock.calls).toEqual([[1], [2], [100]]);
+      } finally {
+        oldServerSocket?.resume();
+        subscription.unsubscribe();
+        await cleanup();
+      }
+    },
+  );
+
+  test('the old socket closing before it drains fails only its own requests', async () => {
+    const {
+      ctx,
+      slowStarted,
+      pendingResult,
+      pendingStarted,
+      onOpen,
+      receivedFor,
+      reconnectDuringSlowQuery,
+      cleanup,
+    } = setup();
+    await using _ctx = ctx;
+    try {
+      const { slow, oldServerSocket, replacementSocket } =
+        await reconnectDuringSlowQuery();
+      const pending = ctx.client.pending.query().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(pendingStarted).toHaveBeenCalledTimes(1);
+      });
+
+      oldServerSocket.terminate();
+      expect(await slow).toMatchObject({ name: 'TRPCClientError' });
+
+      pendingResult.resolve('pending');
+      expect(await pending).toBe('pending');
+      expect(slowStarted).toHaveBeenCalledTimes(1);
+      expect(receivedFor('slow')).toHaveLength(1);
+      expect(ctx.wsClient.connection!.ws).toBe(replacementSocket);
+      expect(onOpen).toHaveBeenCalledTimes(2);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test('connectionParams that throw on the replacement leave nothing hanging', async () => {
+    const {
+      ctx,
+      slowStarted,
+      onOpen,
+      failConnectionParams,
+      receivedFor,
+      cleanup,
+    } = setup();
+    await using _ctx = ctx;
+    try {
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(1);
+      });
+      const slow = ctx.client.slow.query().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(slowStarted).toHaveBeenCalledTimes(1);
+      });
+      failConnectionParams();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen.mock.calls.length).toBeGreaterThanOrEqual(3);
+      });
+
+      receivedFor('slow')[0]!.socket.terminate();
+      expect(await slow).toMatchObject({ name: 'TRPCClientError' });
+
+      const closed = vi.fn();
+      void ctx.wsClient.close().then(closed);
+      await vi.waitFor(() => {
+        expect(closed).toHaveBeenCalledTimes(1);
+      });
+      expect(receivedFor('slow')).toHaveLength(1);
+    } finally {
+      await cleanup();
+    }
   });
 });
 
