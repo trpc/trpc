@@ -51,9 +51,9 @@ export type HTTPLinkBaseOptions<
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
-  fetch: FetchEsque | null;
+  fetch: FetchEsque | undefined;
   transformer: CombinedDataTransformer;
-  methodOverride: 'POST' | null;
+  methodOverride: 'POST' | undefined;
   pathSeparator: PathSeparator;
 }
 
@@ -62,9 +62,9 @@ export function resolveHTTPLinkOptions(
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url.toString(),
-    fetch: opts.fetch ?? null,
+    fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
-    methodOverride: opts.methodOverride ?? null,
+    methodOverride: opts.methodOverride,
     pathSeparator: resolvePathSeparator(opts.pathSeparator),
   };
 }
@@ -120,7 +120,7 @@ export type ContentOptions = {
     header: TRPCAcceptHeader;
     key: 'trpc-accept' | 'accept';
   } | null;
-  contentTypeHeader: string | null;
+  contentTypeHeader: string | undefined;
   getUrl: GetUrl;
   getBody: GetBody;
 };
@@ -240,7 +240,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     ...resolvedHeaders,
   };
 
-  return getFetch(opts.fetch ?? undefined)(url, {
+  return getFetch(opts.fetch)(url, {
     method,
     signal: opts.signal,
     body,
