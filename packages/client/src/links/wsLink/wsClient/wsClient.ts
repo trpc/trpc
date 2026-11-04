@@ -31,13 +31,15 @@ import {
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
- * A server request (`method`) or a response (`id` and `result` or `error`).
+ * A server request (`method`) or a response (`id` and a `result` or `error`
+ * object).
  */
 function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
   return (
     isObject(value) &&
     ('method' in value ||
-      ('id' in value && ('result' in value || 'error' in value)))
+      ('id' in value &&
+        (isObject(value['result']) || isObject(value['error']))))
   );
 }
 
@@ -249,7 +251,13 @@ export class WsClient {
         {
           ...observer,
           next(event) {
-            const transformed = transformResult(event, transformer.output);
+            let transformed: ReturnType<typeof transformResult>;
+            try {
+              transformed = transformResult(event, transformer.output);
+            } catch (cause) {
+              observer.error(TRPCClientError.from(cause as Error));
+              return;
+            }
 
             if (!transformed.ok) {
               observer.error(TRPCClientError.from(transformed.error));
