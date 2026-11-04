@@ -43,6 +43,8 @@ await ws.dispose();
 
 When the connection drops, subscriptions subscribe again from their last [`tracked()`](../../subscriptions/overview.md#resuming) event id, and queries and mutations in flight fail with `NETWORK_ERROR`. A subscription made with `{ reconnect: false }` ends with `NETWORK_ERROR` instead.
 
+A connection that doesn't open, because the WebSocket fails or `connectionParams` throws, counts as a dropped one: subscriptions try again after `delay`, and queries and mutations fail. The call that gives up fails with `NETWORK_ERROR`, and its `cause` is the error that kept the connection from opening, such as the one `connectionParams` threw.
+
 ### Rolling deploys
 
 A server that is shutting down drains its connections ([Rolling deploys](../../adapters/overview.md#rolling-deploys)) and sends each client a `reconnect` message. The link then:

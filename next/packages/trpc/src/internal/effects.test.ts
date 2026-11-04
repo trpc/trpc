@@ -287,3 +287,24 @@ test('returnUnawaited hands a generator that throws after return() to onLateFail
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(late).toEqual([teardown]);
 });
+
+test('abortUnlessDone aborts when a wrapped stream fails or is interrupted, not when it ends', async () => {
+  const signals = await Effect.runPromise(
+    Effect.gen(function* () {
+      const done = yield* interruptSignal();
+      yield* Stream.runDrain(done.abortUnlessDone(Stream.make(1)));
+      const failed = yield* interruptSignal();
+      yield* Effect.exit(
+        Stream.runDrain(failed.abortUnlessDone(Stream.fail('boom'))),
+      );
+      const interrupted = yield* interruptSignal();
+      const fiber = yield* Effect.forkChild(
+        Stream.runDrain(interrupted.abortUnlessDone(tracked().stream)),
+      );
+      yield* Effect.yieldNow;
+      yield* Fiber.interrupt(fiber);
+      return [done, failed, interrupted].map((s) => s.signal.aborted);
+    }),
+  );
+  expect(signals).toEqual([false, true, true]);
+});

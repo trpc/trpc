@@ -40,7 +40,11 @@ export const returnUnawaited = <A>(
       },
       return: (value?: unknown) => {
         pending?.catch(onLateFailure);
-        iterator.return?.(value).catch(onLateFailure);
+        try {
+          iterator.return?.(value).catch(onLateFailure);
+        } catch (error) {
+          onLateFailure(error);
+        }
         return Promise.resolve({ done: true, value });
       },
     };
@@ -64,6 +68,14 @@ export interface InterruptSignal {
     <A, E, R>(self: Stream.Stream<A, E, R>): Stream.Stream<A, E, R>;
     <A, E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
   };
+  /**
+   * Aborts `signal` unless `stream` ends: when it fails, too. For a
+   * subscription's events, whose iterator may wait for the signal in its
+   * `return()` after `next()` failed.
+   */
+  readonly abortUnlessDone: <A, E, R>(
+    stream: Stream.Stream<A, E, R>,
+  ) => Stream.Stream<A, E, R>;
 }
 
 /** @internal */
@@ -82,6 +94,12 @@ export const interruptSignal = (): Effect.Effect<InterruptSignal> =>
         Stream.isStream(self)
           ? Stream.onExit(self, onExit)
           : Effect.onExit(self, onExit)) as InterruptSignal['abortOnInterrupt'],
+      abortUnlessDone: (stream) =>
+        Stream.onExit(stream, (exit) =>
+          Exit.isSuccess(exit)
+            ? Effect.void
+            : Effect.sync(() => controller.abort()),
+        ),
     };
   });
 

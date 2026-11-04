@@ -37,6 +37,7 @@ import {
   type EventFrame,
   createResponseHandle,
   normalizeCause,
+  reportSubscriptionTeardown,
   unexpectedError,
 } from '../execution/index.ts';
 import type { HandlerCore } from '../handler/index.ts';
@@ -425,13 +426,18 @@ export const connectionReceiver: (
             transport: opts.transport,
             connectionParams: callParams,
           });
-          const hibernate =
-            kind === 'subscription' ? opts.hibernate : undefined;
-          const services = hibernate
-            ? Context.make(HibernationSlot, {
+          let services: Context.Context<never> | undefined;
+          if (kind === 'subscription') {
+            services = reportSubscriptionTeardown((err) =>
+              core.report(err, request, path, kind),
+            );
+            const hibernate = opts.hibernate;
+            if (hibernate) {
+              services = Context.add(services, HibernationSlot, {
                 park: (sub) => (parked = hibernate({ ...sub, id, path })),
-              })
-            : undefined;
+              });
+            }
+          }
           const exit = yield* core.run({
             request,
             procedure,
@@ -449,7 +455,9 @@ export const connectionReceiver: (
           }
           if (kind === 'subscription') {
             yield* emitEvents(
-              exit.value as Stream.Stream<unknown, AnyTrpcError>,
+              interrupt.abortUnlessDone(
+                exit.value as Stream.Stream<unknown, AnyTrpcError>,
+              ),
               core.transformer,
               coerceError(path, kind),
               (frame) => conn.send(frameMessage(id, frame)),
