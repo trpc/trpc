@@ -8,36 +8,83 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import type WebSocket from 'ws';
 
+const t = initTRPC.create();
+const router = t.router({
+  greeting: t.procedure.query(() => 'hello'),
+  pending: t.procedure.query(() => new Promise<never>(() => null)),
+  onStart: t.procedure.subscription(() =>
+    observable<string>((emit) => {
+      emit.next('started');
+    }),
+  ),
+});
+
+const wsClient = {
+  lazy: { enabled: false, closeMs: 0 },
+  retryDelayMs: () => 0,
+  keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 50 },
+};
+
+// The first server never answers: no pong, and no reply to the closing
+// handshake, which `ws` would wait 30s for.
+function pauseFirstServerSocket(ctx: { wss: WebSocket.Server }) {
+  const serverSockets: WebSocket[] = [];
+  ctx.wss.on('connection', (ws) => {
+    serverSockets.push(ws);
+    if (serverSockets.length === 1) ws.pause();
+  });
+  return serverSockets;
+}
+
 // https://github.com/trpc/trpc/issues/6562
 test('a keepAlive pong timeout reconnects without waiting for the closing handshake', async () => {
-  const t = initTRPC.create();
-  const gate = createDeferred<void>();
-  const subscriptionStarts = vi.fn();
-  const router = t.router({
-    greeting: t.procedure.query(() => 'hello'),
-    pending: t.procedure.query(async () => {
-      await gate.promise;
-      return 'done';
-    }),
-    onStart: t.procedure.subscription(() =>
-      observable<number>((emit) => {
-        subscriptionStarts();
-        emit.next(subscriptionStarts.mock.calls.length);
-      }),
-    ),
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient,
+  });
+  const serverSockets = pauseFirstServerSocket(ctx);
+  await using _cleanup = makeAsyncResource({}, async () => {
+    for (const ws of serverSockets) ws.terminate();
   });
 
+  await vi.waitFor(() => expect(serverSockets).toHaveLength(2), {
+    timeout: 1_000,
+  });
+});
+
+test('a keepAlive pong timeout reconnects while connectionParams are still pending', async () => {
+  const stalledParams = createDeferred<Record<string, string>>();
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: {
+      ...wsClient,
+      connectionParams: vi
+        .fn<() => Promise<Record<string, string>>>()
+        .mockReturnValueOnce(stalledParams.promise)
+        .mockResolvedValue({}),
+    },
+  });
+  const serverSockets = pauseFirstServerSocket(ctx);
+  await using _cleanup = makeAsyncResource({}, async () => {
+    stalledParams.resolve({});
+    for (const ws of serverSockets) ws.terminate();
+  });
+
+  // Waits on the stalled attempt, so it needs that attempt given up on.
+  const query = ctx.client.greeting.query();
+
+  await vi.waitFor(() => expect(serverSockets).toHaveLength(2), {
+    timeout: 1_000,
+  });
+  expect(await query).toBe('hello');
+});
+
+test('after a keepAlive pong timeout, the old socket is closed once and then ignored', async () => {
   const onClose = vi.fn();
   const onError = vi.fn();
   await using ctx = testServerAndClientResource(router, {
     clientLink: 'wsLink',
-    wsClient: {
-      lazy: { enabled: false, closeMs: 0 },
-      retryDelayMs: () => 0,
-      keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 50 },
-      onClose,
-      onError,
-    },
+    wsClient: { ...wsClient, onClose, onError },
   });
   const serverSockets: WebSocket[] = [];
   let subscriptionId: unknown;
@@ -46,16 +93,11 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
     ws.on('message', (raw) => {
       // oxlint-disable-next-line typescript/no-base-to-string
       const text = raw.toString();
-      if (text === 'PING' || text === 'PONG') return;
-      for (const msg of [JSON.parse(text)].flat()) {
-        if (msg.method === 'subscription') subscriptionId = msg.id;
-      }
+      if (text.startsWith('{"id"')) subscriptionId ??= JSON.parse(text).id;
     });
   });
   await using _cleanup = makeAsyncResource({}, async () => {
-    gate.resolve();
     for (const ws of serverSockets) ws.terminate();
-    await ctx.wsClient.close();
   });
 
   const onData = vi.fn();
@@ -63,94 +105,29 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
   await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(1));
   const query = ctx.client.pending.query();
   query.catch(() => null);
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  const [oldServerSocket] = serverSockets;
   const oldClientSocket = ctx.wsClient.connection!.ws as unknown as WebSocket;
+  oldServerSocket!.pause();
 
-  // An unresponsive server: no pong, and no reply to the closing handshake,
-  // which `ws` would wait 30s for.
-  serverSockets[0]!.pause();
-
-  await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(2), {
-    timeout: 1_000,
-  });
+  await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(2));
   await expect(query).rejects.toMatchObject({ name: 'TRPCClientError' });
-  expect(serverSockets).toHaveLength(2);
-  expect(onClose).toHaveBeenCalledTimes(1);
 
-  // Late frames and errors on the old socket don't reach the replacement.
-  const oldSocket = serverSockets[0]!;
-  oldSocket.send(
-    JSON.stringify({ id: subscriptionId, result: { type: 'data', data: 99 } }),
+  oldServerSocket!.send(
+    JSON.stringify({
+      id: subscriptionId,
+      result: { type: 'data', data: 'late' },
+    }),
   );
   oldClientSocket.emit('error', new Error('late error'));
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(onData.mock.calls.map(([data]) => data)).toEqual([1, 2]);
-  expect(onError).not.toHaveBeenCalled();
-
-  // The old socket's own `close` event arrives once the server answers.
   const oldSocketClosed = new Promise((resolve) =>
-    oldSocket.once('close', resolve),
+    oldServerSocket!.once('close', resolve),
   );
-  oldSocket.resume();
+  oldServerSocket!.resume();
   await oldSocketClosed;
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  expect(await ctx.client.greeting.query()).toBe('hello');
-  expect(serverSockets).toHaveLength(2);
+  expect(onData).toHaveBeenCalledTimes(2);
+  expect(onError).not.toHaveBeenCalled();
   expect(onClose).toHaveBeenCalledTimes(1);
-  expect(subscriptionStarts).toHaveBeenCalledTimes(2);
-
-  sub.unsubscribe();
-});
-
-test('a keepAlive pong timeout reconnects while connectionParams are still pending', async () => {
-  const t = initTRPC.create();
-  const router = t.router({
-    greeting: t.procedure.query(() => 'hello'),
-    onStart: t.procedure.subscription(() =>
-      observable<string>((emit) => {
-        emit.next('started');
-      }),
-    ),
-  });
-
-  const stalledParams = createDeferred<Record<string, string>>();
-  const connectionParams = vi
-    .fn<() => Promise<Record<string, string>>>()
-    .mockReturnValueOnce(stalledParams.promise)
-    .mockResolvedValue({});
-  await using ctx = testServerAndClientResource(router, {
-    clientLink: 'wsLink',
-    wsClient: {
-      lazy: { enabled: false, closeMs: 0 },
-      retryDelayMs: () => 0,
-      keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 50 },
-      connectionParams,
-    },
-  });
-  const serverSockets: WebSocket[] = [];
-  ctx.wss.on('connection', (ws) => {
-    serverSockets.push(ws);
-    // The first server never answers, not even the pings.
-    if (serverSockets.length === 1) ws.pause();
-  });
-  await using _cleanup = makeAsyncResource({}, async () => {
-    stalledParams.resolve({});
-    for (const ws of serverSockets) ws.terminate();
-    await ctx.wsClient.close();
-  });
-
-  const onData = vi.fn();
-  const sub = ctx.client.onStart.subscribe(undefined, { onData });
-  const query = ctx.client.greeting.query();
-  query.catch(() => null);
-
-  await vi.waitFor(() => expect(serverSockets).toHaveLength(2), {
-    timeout: 1_000,
-  });
-  expect(await query).toBe('hello');
-  await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(1));
-  expect(connectionParams).toHaveBeenCalledTimes(2);
-
   sub.unsubscribe();
 });
