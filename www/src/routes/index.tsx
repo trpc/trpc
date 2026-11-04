@@ -412,7 +412,7 @@ function HomePage() {
         </div>
         {showPartners ? <PartnerCards /> : null}
         <SponsorCloud
-          className={cn('mx-auto max-w-3xl', showPartners && 'mt-12')}
+          className={cn('mx-auto max-w-4xl', showPartners && 'mt-12')}
         />
       </section>
     </main>

@@ -1,8 +1,9 @@
-import { packEnclose } from 'd3-hierarchy';
-
 import type { Sponsor } from '~/sponsors.ts';
 
-/** A sponsor's circle, in a unit square: its center and radius are fractions of the side. */
+/**
+ * A sponsor's circle in the cloud: its center and radius are fractions of
+ * the cloud's width, which is as tall as `cloudHeight`.
+ */
 export interface Bubble {
   readonly r: number;
   readonly sponsor: Sponsor;
@@ -10,108 +11,196 @@ export interface Bubble {
   readonly y: number;
 }
 
-/** The gap between the cloud's circles, as a fraction of its side: `/sponsor`'s and the READMEs' (`og/sponsor-cloud.ts`). */
+/** The gap between the cloud's circles, as a fraction of its width: `/sponsor`'s and the READMEs' (`og/sponsor-cloud.ts`). */
 export const cloudPadding = 0.006;
 
-interface Circle {
-  readonly r: number;
+const half = Math.SQRT1_2;
+
+/**
+ * How deep `(x, y)` is in the heart, y up, negative outside: a square of
+ * side 1 standing on its corner at the origin, with a half disc on each of
+ * its upper sides. Inside, it's the depth in the piece `(x, y)` is deepest
+ * in, which is never deeper than it is in the heart.
+ */
+function heartDepth(x: number, y: number) {
+  const u = (x + y) * half;
+  const w = (y - x) * half;
+  const outU = Math.max(-u, 0, u - 1);
+  const outW = Math.max(-w, 0, w - 1);
+  const square =
+    outU === 0 && outW === 0
+      ? Math.min(u, 1 - u, w, 1 - w)
+      : -Math.sqrt(outU * outU + outW * outW);
+  const lobe = (cx: number) => {
+    const dx = x - cx;
+    const dy = y - 1.5 * half;
+    return 0.5 - Math.sqrt(dx * dx + dy * dy);
+  };
+  return Math.max(square, lobe(-half / 2), lobe(half / 2));
+}
+
+/** The heart's area: its square and two half discs of diameter 1. */
+const heartArea = 1 + Math.PI / 4;
+
+/** The heart's width: its square's diagonal and a half disc's overhang each side. */
+const heartWidth = 2 * (half / 2 + 0.5);
+
+/**
+ * How much of the heart the circles cover: about as much as they fit in
+ * with the outline still sharp. Above it they jam, and shrink to fit.
+ */
+const heartFill = 0.76;
+
+interface Spot {
+  readonly depth: number;
   readonly x: number;
   readonly y: number;
 }
 
-/** How far circles may overlap, relative to their radii, and still count as touching. */
-const epsilon = 1e-9;
+/** How many columns of spots `heartSpots` tries across the heart. */
+const spotsAcross = 48;
 
-const overlaps = (a: Circle, b: Circle) => {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  const reach = a.r + b.r;
-  return dx * dx + dy * dy < reach * reach * (1 - epsilon);
-};
+let spots: ReadonlyArray<Spot> | undefined;
 
-/** Where a circle of radius `r` touches both `a` and `b`: none, one or two places. */
-function touching(a: Circle, b: Circle, r: number): ReadonlyArray<Circle> {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const d = Math.sqrt(dx * dx + dy * dy);
-  const da = a.r + r;
-  const db = b.r + r;
-  if (d === 0 || d > da + db || d < Math.abs(da - db)) {
-    return [];
-  }
-  const along = (da * da - db * db + d * d) / (2 * d);
-  const across = Math.sqrt(Math.max(0, da * da - along * along));
-  const x = a.x + (along * dx) / d;
-  const y = a.y + (along * dy) / d;
-  return [
-    { r, x: x - (across * dy) / d, y: y + (across * dx) / d },
-    { r, x: x + (across * dy) / d, y: y - (across * dx) / d },
-  ];
-}
-
-/**
- * Lays out circles of `radii`, in order, from the middle outward: the
- * first at the center, the second beside it, and each after where it
- * touches two placed circles nearest their center of mass without
- * overlapping any.
- * With the largest first, the largest sit in the middle and the cloud grows
- * round. It uses only arithmetic and square roots, so the server and the
- * browser place every circle at the same point.
- */
-function centerOut(radii: ReadonlyArray<number>): ReadonlyArray<Circle> {
-  const placed: Array<Circle> = [];
-  for (const r of radii) {
-    const [first] = placed;
-    if (first === undefined) {
-      placed.push({ r, x: 0, y: 0 });
-      continue;
-    }
-    if (placed.length === 1) {
-      placed.push({ r, x: first.r + r, y: 0 });
-      continue;
-    }
-    const mass = placed.reduce((sum, circle) => sum + circle.r * circle.r, 0);
-    const cx =
-      placed.reduce((sum, circle) => sum + circle.x * circle.r * circle.r, 0) /
-      mass;
-    const cy =
-      placed.reduce((sum, circle) => sum + circle.y * circle.r * circle.r, 0) /
-      mass;
-    let best: Circle | undefined;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    for (const [index, a] of placed.entries()) {
-      for (const b of placed.slice(index + 1)) {
-        for (const spot of touching(a, b, r)) {
-          const dx = spot.x - cx;
-          const dy = spot.y - cy;
-          const distance = dx * dx + dy * dy;
-          if (
-            distance < bestDistance &&
-            !placed.some((other) => overlaps(spot, other))
-          ) {
-            best = spot;
-            bestDistance = distance;
-          }
+/** A grid of points inside the heart, left to right, with how deep each is. */
+function heartSpots() {
+  if (spots === undefined) {
+    const found: Array<Spot> = [];
+    const pitch = heartWidth / spotsAcross;
+    for (let column = 0; column <= spotsAcross; column++) {
+      for (let row = 0; row <= spotsAcross; row++) {
+        const x = column * pitch - heartWidth / 2;
+        const y = row * pitch;
+        const depth = heartDepth(x, y);
+        if (depth > 0) {
+          found.push({ depth, x, y });
         }
       }
     }
-    // Beyond every placed circle, should no spot touching two be free.
-    const reach = Math.max(
-      ...placed.map(
-        (other) => Math.sqrt(other.x * other.x + other.y * other.y) + other.r,
-      ),
-    );
-    placed.push(best ?? { r, x: reach + r, y: 0 });
+    spots = found;
   }
-  return placed;
+  return spots;
+}
+
+/** How far either side `heartDepth` is sampled to find which way is in. */
+const step = 1e-6;
+
+/**
+ * One sweep over the circles at `xs`, `ys` of radii `rs`, moved in place:
+ * it pushes apart each two that overlap, the lighter further, then back in
+ * each that pokes out of the heart. It returns how far the worst
+ * overlapped, relative to its radius.
+ */
+function sweep(
+  xs: Array<number>,
+  ys: Array<number>,
+  rs: ReadonlyArray<number>,
+) {
+  let worst = 0;
+  for (let i = 0; i < rs.length; i++) {
+    const ri = rs[i] ?? 0;
+    for (let j = i + 1; j < rs.length; j++) {
+      const rj = rs[j] ?? 0;
+      const dx = (xs[j] ?? 0) - (xs[i] ?? 0);
+      const dy = (ys[j] ?? 0) - (ys[i] ?? 0);
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const overlap = ri + rj - d;
+      if (overlap <= 0) {
+        continue;
+      }
+      worst = Math.max(worst, overlap / Math.min(ri, rj));
+      const share = (ri * ri) / (ri * ri + rj * rj);
+      const nx = d === 0 ? 1 : dx / d;
+      const ny = d === 0 ? 0 : dy / d;
+      xs[i] = (xs[i] ?? 0) - nx * overlap * (1 - share);
+      ys[i] = (ys[i] ?? 0) - ny * overlap * (1 - share);
+      xs[j] = (xs[j] ?? 0) + nx * overlap * share;
+      ys[j] = (ys[j] ?? 0) + ny * overlap * share;
+    }
+  }
+  for (let i = 0; i < rs.length; i++) {
+    const r = rs[i] ?? 0;
+    const x = xs[i] ?? 0;
+    const y = ys[i] ?? 0;
+    const depth = heartDepth(x, y);
+    if (depth >= r) {
+      continue;
+    }
+    worst = Math.max(worst, (r - depth) / r);
+    const gx = heartDepth(x + step, y) - heartDepth(x - step, y);
+    const gy = heartDepth(x, y + step) - heartDepth(x, y - step);
+    const g = Math.sqrt(gx * gx + gy * gy);
+    if (g > 0) {
+      xs[i] = x + (gx / g) * (r - depth);
+      ys[i] = y + (gy / g) * (r - depth);
+    }
+  }
+  return worst;
 }
 
 /**
- * Packs `list` into a circle in the unit square, each sponsor's area in
- * proportion to their weight, the heaviest in the middle and the rest
- * around them, about `padding` (a fraction of the side) apart. The layout is the
- * same on the server and in the browser, so it's prerendered and drawn in
- * percentages.
+ * Lays out circles of `radii`, in order, in a heart of side 1 (`heartDepth`)
+ * that they cover `heartFill` of: each where it has the most room, from the
+ * heart's edge and the circles before it, so with the largest first the
+ * largest take its middle and lobes and the rest fill in around them. Then
+ * it sweeps them (`sweep`) until none overlap or poke out, so the outer ones
+ * trace the heart, and shrinks them should any still overlap.
+ * It uses only arithmetic and square roots, so the server and the browser
+ * place every circle at the same point. Circles are y down.
+ */
+function heartOut(radii: ReadonlyArray<number>) {
+  const area = radii.reduce((sum, r) => sum + Math.PI * r * r, 0);
+  const scale = Math.sqrt((heartFill * heartArea) / area);
+  const rs = radii.map((r) => r * scale);
+  const xs: Array<number> = [];
+  const ys: Array<number> = [];
+  for (const r of rs) {
+    let best: Spot | undefined;
+    let bestRoom = Number.NEGATIVE_INFINITY;
+    for (const spot of heartSpots()) {
+      let room = spot.depth - r;
+      for (let j = 0; j < xs.length && room > bestRoom; j++) {
+        const dx = spot.x - (xs[j] ?? 0);
+        const dy = spot.y - (ys[j] ?? 0);
+        room = Math.min(room, Math.sqrt(dx * dx + dy * dy) - r - (rs[j] ?? 0));
+      }
+      if (room > bestRoom) {
+        best = spot;
+        bestRoom = room;
+      }
+    }
+    xs.push(best?.x ?? 0);
+    ys.push(best?.y ?? 0);
+  }
+  let rounds = 0;
+  while (rounds < 2000 && sweep(xs, ys, rs) > 1e-3) {
+    rounds++;
+  }
+  let fit = 1;
+  for (let i = 0; i < rs.length; i++) {
+    for (let j = i + 1; j < rs.length; j++) {
+      const dx = (xs[j] ?? 0) - (xs[i] ?? 0);
+      const dy = (ys[j] ?? 0) - (ys[i] ?? 0);
+      fit = Math.min(
+        fit,
+        Math.sqrt(dx * dx + dy * dy) / ((rs[i] ?? 0) + (rs[j] ?? 0)),
+      );
+    }
+  }
+  return rs.map((r, index) => ({
+    r: r * fit,
+    x: xs[index] ?? 0,
+    y: -(ys[index] ?? 0),
+  }));
+}
+
+/**
+ * Packs `list` into a heart, each sponsor's area in proportion to their
+ * weight, the heaviest in the middle and the lobes and the rest around
+ * them, about `padding` (a fraction of the width) apart. Their centers and
+ * radii are fractions of the cloud's width, from its top left. The layout
+ * is the same on the server and in the browser, so it's prerendered and
+ * drawn in percentages.
  */
 export function packSponsors(
   list: ReadonlyArray<Sponsor>,
@@ -124,26 +213,33 @@ export function packSponsors(
     )
     .map((entry) => entry.sponsor);
   const radii = sorted.map((sponsor) => Math.sqrt(Math.max(0, sponsor.weight)));
-  if (radii.length === 0) {
+  const area = radii.reduce((sum, r) => sum + Math.PI * r * r, 0);
+  if (area === 0) {
     return [];
   }
-  // Lay out once to learn the scale, then again with the gap at that scale.
-  const plain = packEnclose([...centerOut(radii)]);
-  const gap = padding * 2 * plain.r;
-  const circles = centerOut(radii.map((r) => r + gap / 2));
-  const enclosing = packEnclose([...circles]);
-  const scale = 0.5 / enclosing.r;
+  // The gap at the scale the circles alone would fill the heart at.
+  const gap = padding * heartWidth * Math.sqrt(area / (heartFill * heartArea));
+  const circles = heartOut(radii.map((r) => r + gap / 2));
+  const left = Math.min(...circles.map((circle) => circle.x - circle.r));
+  const right = Math.max(...circles.map((circle) => circle.x + circle.r));
+  const top = Math.min(...circles.map((circle) => circle.y - circle.r));
+  const scale = 1 / (right - left);
   return sorted.flatMap((sponsor, index) => {
     const circle = circles[index];
+    const r = radii[index] ?? 0;
     return circle === undefined
       ? []
       : [
           {
-            r: (circle.r - gap / 2) * scale,
+            r: ((circle.r * r) / (r + gap / 2)) * scale,
             sponsor,
-            x: 0.5 + (circle.x - enclosing.x) * scale,
-            y: 0.5 + (circle.y - enclosing.y) * scale,
+            x: (circle.x - left) * scale,
+            y: (circle.y - top) * scale,
           },
         ];
   });
 }
+
+/** How tall `bubbles`, from `packSponsors`, reach: a fraction of their width. */
+export const cloudHeight = (bubbles: ReadonlyArray<Bubble>) =>
+  Math.max(0, ...bubbles.map((bubble) => bubble.y + bubble.r));
