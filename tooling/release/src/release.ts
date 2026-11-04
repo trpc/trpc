@@ -2,7 +2,7 @@
  * Releases the packages in `packages/*`, the way KATT/raf-query does: the
  * latest `vX.Y.Z` tag is the version, packages are published before anything
  * is pushed, and a stable release ends with a GitHub release whose notes
- * GitHub generates.
+ * group the pull requests since the last one by package (`notes.ts`).
  *
  * Each release has two halves (`tarballs.ts`): one builds and packs the
  * packages without credentials, the other publishes the tarballs with them.
@@ -11,6 +11,7 @@
  */
 import { Console, Data, Duration, Effect, FileSystem } from 'effect';
 import { git, output, run } from './command.ts';
+import { releaseNotes } from './notes.ts';
 import {
   onRegistry,
   packTarballs,
@@ -254,13 +255,14 @@ export const waitForVersions = Effect.fn('waitForVersions')(function* (
 });
 
 /**
- * Creates the GitHub release for `tag` once npm serves `versions`, with notes
- * GitHub generates from the pull requests since `previousTag`.
+ * Creates the GitHub release for `tag`, with the notes `releaseNotes` makes
+ * from the pull requests since `previousTag`.
  */
 export const githubRelease = Effect.fn('githubRelease')(function* (
   root: string,
   opts: { readonly tag: string; readonly previousTag: string },
 ) {
+  const notes = yield* releaseNotes(root, { ...opts, to: opts.tag });
   yield* run(root, 'gh', [
     'release',
     'create',
@@ -268,9 +270,8 @@ export const githubRelease = Effect.fn('githubRelease')(function* (
     '--verify-tag',
     '--title',
     opts.tag,
-    '--generate-notes',
-    '--notes-start-tag',
-    opts.previousTag,
+    '--notes',
+    notes,
   ]);
 });
 
@@ -345,8 +346,9 @@ export const publishStable = Effect.fn('publishStable')(function* (
 
   if (opts.dryRun) {
     yield* publishTarballs(root, tarballs, { ...opts, registry });
+    const notes = yield* releaseNotes(root, { previousTag, tag });
     yield* Console.log(
-      `Dry run: would push "${releaseCommitMessage(tag)}" to ${opts.remote} ${opts.branch}, publish, then tag ${tag}, push the tag and create the GitHub release. The version bump is left in the working tree.`,
+      `Dry run: would push "${releaseCommitMessage(tag)}" to ${opts.remote} ${opts.branch}, publish, then tag ${tag}, push the tag and create the GitHub release with these notes. The version bump is left in the working tree.\n\n${notes}`,
     );
     return tag;
   }
@@ -492,6 +494,36 @@ export const canary = Effect.fn('canary')(function* (
   yield* git(root, 'checkout', '--quiet', '--', ...files);
   return yield* publishCanary(root, { ...opts, dir });
 }, Effect.scoped);
+
+/**
+ * `pnpm release notes [tag] [--to <ref>]`: prints the GitHub release notes
+ * of `tag` without releasing anything. An existing tag gets its own notes;
+ * otherwise `tag`, by default the patch after the latest tag, is a release
+ * of `to`, by default HEAD.
+ */
+export const printNotes = Effect.fn('printNotes')(function* (
+  root: string,
+  opts: { readonly tag?: string; readonly to?: string },
+) {
+  const tagged =
+    opts.tag !== undefined &&
+    (yield* git(
+      root,
+      'rev-parse',
+      '--verify',
+      '--quiet',
+      `refs/tags/${opts.tag}`,
+    ).pipe(
+      Effect.as(true),
+      Effect.orElseSucceed(() => false),
+    ));
+  const to = tagged ? opts.tag : (opts.to ?? 'HEAD');
+  const previousTag = yield* latestTag(root, tagged ? `${opts.tag}^` : to);
+  const tag = opts.tag ?? `v${bumpVersion(previousTag.slice(1), 'patch')}`;
+  const notes = yield* releaseNotes(root, { previousTag, tag, to });
+  yield* Console.log(notes);
+  return notes;
+});
 
 /**
  * `pnpm release github-release v11.23.0`, for a stable release whose GitHub
