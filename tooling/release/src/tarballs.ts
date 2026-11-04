@@ -120,7 +120,7 @@ export const onRegistry = Effect.fn('onRegistry')(function* (
   name: string,
   version: string,
 ) {
-  const url = `${registry.replace(/\/$/, '')}/${name.replace('/', '%2f')}`;
+  const url = `${registry.replace(/\/$/, '')}/${name.replaceAll('/', '%2f')}`;
   const packument = yield* Effect.tryPromise(async () => {
     const response = await fetch(url, {
       headers: { accept: 'application/vnd.npm.install-v1+json' },
