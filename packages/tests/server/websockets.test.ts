@@ -315,6 +315,89 @@ test('subscription is aborted when its signal aborts', async () => {
   });
 });
 
+test('stopping a subscription whose teardown throws does not crash the server', async () => {
+  const uncaught: unknown[] = [];
+  const onUncaught = (cause: unknown) => uncaught.push(cause);
+  process.on('uncaughtException', onUncaught);
+  process.on('unhandledRejection', onUncaught);
+  try {
+    const t = initTRPC.create();
+    const teardown = vi.fn(() => {
+      throw new Error('teardown');
+    });
+    const router = t.router({
+      greeting: t.procedure.query(() => 'hello'),
+      onTick: t.procedure.subscription(() =>
+        observable<number>((emit) => {
+          emit.next(1);
+          return teardown;
+        }),
+      ),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      client: ({ wsClient }) => ({
+        links: [wsLink({ client: wsClient })],
+      }),
+    });
+
+    const ac = new AbortController();
+    const onData = vi.fn();
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+    ctx.client.onTick.subscribe(undefined, {
+      signal: ac.signal,
+      onData,
+      onError,
+      onComplete,
+    });
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledWith(1);
+    });
+
+    ac.abort();
+
+    await vi.waitFor(() => {
+      expect(teardown).toHaveBeenCalledTimes(1);
+    });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+    // the connection still works
+    expect(await ctx.client.greeting.query()).toBe('hello');
+
+    const raw = new WebSocket(ctx.wssUrl);
+    const messages: unknown[] = [];
+    raw.addEventListener('message', (msg) => {
+      messages.push(JSON.parse(msg.data as string));
+    });
+    await new Promise((resolve) => raw.once('open', resolve));
+    raw.send(
+      JSON.stringify({
+        id: 1,
+        method: 'subscription',
+        params: { path: 'onTick', input: undefined },
+      }),
+    );
+    await vi.waitFor(() => {
+      expect(messages).toHaveLength(2);
+    });
+    raw.send(JSON.stringify({ id: 1, method: 'subscription.stop' }));
+    await vi.waitFor(() => {
+      expect(messages).toHaveLength(3);
+    });
+    expect(teardown).toHaveBeenCalledTimes(2);
+    expect(messages).toEqual([
+      { id: 1, result: { type: 'started' } },
+      { id: 1, result: { type: 'data', data: 1 } },
+      { id: 1, result: { type: 'stopped' } },
+    ]);
+    raw.close();
+  } finally {
+    process.off('uncaughtException', onUncaught);
+    process.off('unhandledRejection', onUncaught);
+  }
+  expect(uncaught).toEqual([]);
+});
+
 test('subscription observable with error', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {

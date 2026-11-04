@@ -149,6 +149,10 @@ export function observableToPromise<TValue>(
  * `next()` after the queued values, once. Completion, `return()` and aborting
  * `signal` unsubscribe and end every pending `next()` with `{ done: true }`;
  * anything the observable sends after that is ignored.
+ *
+ * If unsubscribing throws, `return()` rejects with the error, and completion
+ * or an error from the observable rethrows it. On abort, it rejects the
+ * `next()` after the queued values instead, as an error would.
  * @internal
  */
 export function observableToAsyncIterable<TValue>(
@@ -164,19 +168,45 @@ export function observableToAsyncIterable<TValue>(
   let finished = false;
   let subscription: Unsubscribable | null = null;
 
-  function finish() {
+  /** Unsubscribes once, and returns what the teardown threw. */
+  function unsubscribe(): { cause: unknown } | null {
     if (finished) {
-      return;
+      return null;
     }
     finished = true;
-    signal.removeEventListener('abort', finish);
+    signal.removeEventListener('abort', abort);
     try {
       subscription?.unsubscribe();
-    } finally {
-      for (const promise of pending.splice(0)) {
-        promise.resolve({ value: undefined, done: true });
-      }
+      return null;
+    } catch (cause) {
+      return { cause };
     }
+  }
+  /** Settles every pending `next()`: the first with `error` if there is one. */
+  function settle() {
+    const first = error ? pending.shift() : undefined;
+    if (error && first) {
+      const { cause } = error;
+      error = null;
+      first.reject(cause);
+    }
+    for (const promise of pending.splice(0)) {
+      promise.resolve({ value: undefined, done: true });
+    }
+  }
+  function finish() {
+    const failure = unsubscribe();
+    settle();
+    if (failure) {
+      throw failure.cause;
+    }
+  }
+  function abort() {
+    const failure = unsubscribe();
+    if (failure) {
+      error = failure;
+    }
+    settle();
   }
 
   subscription = observable.subscribe({
@@ -195,12 +225,7 @@ export function observableToAsyncIterable<TValue>(
       if (finished) {
         return;
       }
-      const promise = pending.shift();
-      if (promise) {
-        promise.reject(cause);
-      } else {
-        error = { cause };
-      }
+      error = { cause };
       finish();
     },
     complete: finish,
@@ -208,9 +233,9 @@ export function observableToAsyncIterable<TValue>(
   if (finished) {
     subscription.unsubscribe();
   } else if (signal.aborted) {
-    finish();
+    abort();
   } else {
-    signal.addEventListener('abort', finish, { once: true });
+    signal.addEventListener('abort', abort, { once: true });
   }
 
   const iterator: AsyncIterator<TValue> = {
