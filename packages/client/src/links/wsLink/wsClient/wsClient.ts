@@ -370,8 +370,10 @@ export class WsClient {
         }
         this.reconnecting = null;
       } catch (error) {
-        // While the old socket is open, it keeps serving requests, so a
-        // failed attempt to replace it isn't surfaced.
+        // While the old socket is open, its subscriptions keep delivering and
+        // its queries and mutations keep running, so a failed attempt to
+        // replace it isn't surfaced. Requests sent since wait for a
+        // replacement, as they do while a lost socket is reopened.
         if (this.allowReconnect && !this.activeConnection.isOpen()) {
           callUserCallback(() =>
             this.connectionState.next({
