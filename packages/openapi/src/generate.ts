@@ -24,13 +24,13 @@ interface ProcedureInfo {
   inputSchema: SchemaObject | null;
   outputSchema: SchemaObject | null;
   errorSchema: SchemaObject | null;
-  description?: string;
+  description: string | null;
 }
 
 /** State extracted from the router's root config. */
 interface RouterMeta {
   errorSchema: SchemaObject | null;
-  schemas?: Record<string, SchemaObject>;
+  schemas: Record<string, SchemaObject>;
 }
 
 /**
@@ -270,7 +270,7 @@ function isNonEmptySchema(s: SchemaObject): boolean {
 function typeToJsonSchema(
   type: ts.Type,
   ctx: SchemaCtx,
-  depth = 0,
+  depth: number,
 ): SchemaObject {
   // If this type is already registered as a named schema, return a $ref.
   const existingRef = ctx.typeToRef.get(type);
@@ -990,7 +990,7 @@ interface ProcedureDef {
   defType: ts.Type;
   typeName: string;
   path: string;
-  description?: string;
+  description: string | null;
   symbol: ts.Symbol;
 }
 
@@ -1167,20 +1167,20 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
       ensureRecoveredInputRegistration(resolvedInputType);
     }
 
-    const initialSchema = typeToJsonSchema(resolvedInputType, schemaCtx);
+    const initialSchema = typeToJsonSchema(resolvedInputType, schemaCtx, 0);
     if (
       !isNonEmptySchema(initialSchema) &&
       !schemaCtx.typeToRef.has(resolvedInputType)
     ) {
       ensureRecoveredInputRegistration(resolvedInputType);
-      inputSchema = typeToJsonSchema(resolvedInputType, schemaCtx);
+      inputSchema = typeToJsonSchema(resolvedInputType, schemaCtx, 0);
     } else {
       inputSchema = initialSchema;
     }
   }
 
   const outputSchema: SchemaObject | null = outputType
-    ? typeToJsonSchema(outputType, schemaCtx)
+    ? typeToJsonSchema(outputType, schemaCtx, 0)
     : null;
 
   // Overlay extracted schema descriptions onto the type-checker-generated schemas.
@@ -1241,7 +1241,7 @@ function extractProcedureErrorSchema(
     return null;
   }
 
-  const schema = typeToJsonSchema(errorType, schemaCtx);
+  const schema = typeToJsonSchema(errorType, schemaCtx, 0);
   return isNonEmptySchema(schema) ? schema : null;
 }
 
@@ -1278,7 +1278,7 @@ function addsNothingToRouterErrorType(
 function getJsDocComment(
   sym: ts.Symbol,
   checker: ts.TypeChecker,
-): string | undefined {
+): string | null {
   const normalize = (filePath: string): string => filePath.replace(/\\/g, '/');
 
   const declarations = sym.declarations ?? [];
@@ -1310,23 +1310,23 @@ function getJsDocComment(
       return true;
     });
   if (isExternalNodeModulesDeclaration) {
-    return undefined;
+    return null;
   }
 
   const parts = sym.getDocumentationComment(checker);
   if (parts.length === 0) {
-    return undefined;
+    return null;
   }
   const text = parts.map((p) => p.text).join('');
-  return text || undefined;
+  return text || null;
 }
 
 interface WalkTypeOpts {
   type: ts.Type;
   ctx: WalkCtx;
   currentPath: string;
-  description?: string;
-  symbol?: ts.Symbol;
+  description: string | null;
+  symbol: ts.Symbol | null;
 }
 
 function walkType(opts: WalkTypeOpts): void {
@@ -1504,7 +1504,7 @@ function extractErrorSchema(
     return null;
   }
 
-  return typeToJsonSchema(errorShapeType, schemaCtx);
+  return typeToJsonSchema(errorShapeType, schemaCtx, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -1672,14 +1672,14 @@ function registerSchema(
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions & { pathSeparator: TRPCPathSeparator },
-  meta: RouterMeta = { errorSchema: null },
+  meta: RouterMeta,
 ): Document {
   const paths: PathsObject = {};
   const included = procedures.filter((proc) =>
     shouldIncludeProcedureInOpenAPI(proc.type),
   );
 
-  const schemas = meta.schemas ?? {};
+  const schemas = meta.schemas;
   const { responses: errorResponses, refByProcedurePath } = buildErrorResponses(
     included,
     meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
@@ -1802,7 +1802,13 @@ export async function generateOpenAPIDocument(
     runtimeDescriptions,
     routerErrorType: getRouterErrorType(routerType, checker),
   };
-  walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
+  walkType({
+    type: routerType,
+    ctx: walkCtx,
+    currentPath: '',
+    description: null,
+    symbol: null,
+  });
 
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
   const pathSeparator =
