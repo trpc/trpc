@@ -682,28 +682,31 @@ describe('loggerLink', () => {
     const consoleLog = vi
       .spyOn(console, 'log')
       .mockImplementation(() => undefined);
-    const link = loggerLink({
-      // @ts-expect-error - JS callers can pass null
-      console: null,
-    })(mockRuntime);
+    try {
+      const link = loggerLink({
+        // @ts-expect-error - JS callers can pass null
+        console: null,
+      })(mockRuntime);
 
-    expect(() =>
-      createChain({
-        links: [link, okLink],
-        op: {
-          id: 1,
-          type: 'query',
-          input: null,
-          path: 'n/a',
-          context: {},
-          signal: null,
-        },
-      })
-        .subscribe({})
-        .unsubscribe(),
-    ).toThrow(TypeError);
-    expect(consoleLog).not.toHaveBeenCalled();
-    consoleLog.mockRestore();
+      expect(() =>
+        createChain({
+          links: [link, okLink],
+          op: {
+            id: 1,
+            type: 'query',
+            input: null,
+            path: 'n/a',
+            context: {},
+            signal: null,
+          },
+        })
+          .subscribe({})
+          .unsubscribe(),
+      ).toThrow(TypeError);
+      expect(consoleLog).not.toHaveBeenCalled();
+    } finally {
+      consoleLog.mockRestore();
+    }
   });
 
   test('custom logger does not read the global console', () => {
