@@ -38,14 +38,15 @@ function isRequestId(value: unknown) {
 
 /**
  * A server request (`method`) or a response (a string, number or `null` `id`
- * and a `result` or `error` object).
+ * and a `result` object or an `error`). The output transformer may serialize
+ * an error to any value, so `transformResult` validates it.
  */
 function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
   return (
     isObject(value) &&
     ('method' in value ||
       (isRequestId(value['id']) &&
-        (isObject(value['result']) || isObject(value['error']))))
+        (isObject(value['result']) || 'error' in value)))
   );
 }
 

@@ -1,5 +1,5 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import {
   createDeferred,
   makeAsyncResource,
@@ -80,11 +80,6 @@ test.each([
     frame: () => JSON.stringify({ id: {}, result: { type: 'data', data: 1 } }),
     thrown: TypeError,
   },
-  {
-    name: 'error: null',
-    frame: (id: unknown) => JSON.stringify({ id, error: null }),
-    thrown: TypeError,
-  },
 ])(
   'an undecodable frame ($name) fails the requests in flight and reconnects',
   async ({ frame, thrown }) => {
@@ -103,15 +98,49 @@ test.each([
   },
 );
 
-test('a response that can not be transformed fails only its request', async () => {
-  using g = captureUncaught();
-  await using ctx = setup();
+test.each([
+  { name: 'error: {}', error: {} },
+  { name: 'error: null', error: null },
+])(
+  'a response that can not be transformed ($name) fails only its request',
+  async ({ error }) => {
+    using g = captureUncaught();
+    await using ctx = setup();
 
-  expect(await ctx.client.connection.query()).toBe(1);
-  const { inFlight, id } = await ctx.startPendingQuery();
-  ctx.sendFrame(JSON.stringify({ id, error: {} }));
+    expect(await ctx.client.connection.query()).toBe(1);
+    const { inFlight, id } = await ctx.startPendingQuery();
+    ctx.sendFrame(JSON.stringify({ id, error }));
 
-  await expect(inFlight).rejects.toMatchObject({ name: 'TRPCClientError' });
+    await expect(inFlight).rejects.toMatchObject({ name: 'TRPCClientError' });
+    expect(await ctx.client.connection.query()).toBe(1);
+    expect(g.uncaught).toEqual([]);
+  },
+);
+
+test('an error the output transformer serializes to a string reaches its request', async () => {
+  const t = initTRPC.context<{ connection: number }>().create({
+    transformer: {
+      input: { serialize: (v) => v, deserialize: (v) => v },
+      output: { serialize: JSON.stringify, deserialize: JSON.parse },
+    },
+  });
+  const router = t.router({
+    fails: t.procedure.query(() => {
+      throw new TRPCError({ code: 'BAD_REQUEST' });
+    }),
+    connection: t.procedure.query(({ ctx }) => ctx.connection),
+  });
+  let connections = 0;
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wssServer: {
+      createContext: () => ({ connection: ++connections }),
+    },
+  });
+
+  await expect(ctx.client.fails.query()).rejects.toMatchObject({
+    name: 'TRPCClientError',
+    data: { code: 'BAD_REQUEST' },
+  });
   expect(await ctx.client.connection.query()).toBe(1);
-  expect(g.uncaught).toEqual([]);
 });
