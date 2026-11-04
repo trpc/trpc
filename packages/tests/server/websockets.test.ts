@@ -872,6 +872,115 @@ test.each(['close', 'error'] as const)(
   },
 );
 
+describe('a socket the server closes while a new request opens its replacement', () => {
+  function setup() {
+    const t = initTRPC.create();
+    const pendingResult = createDeferred<string>();
+    const queryStarted = vi.fn();
+    const subscriptionStarted = vi.fn();
+    const router = t.router({
+      greeting: t.procedure.query(() => 'hello'),
+      pending: t.procedure.query(() => {
+        queryStarted();
+        return pendingResult.promise;
+      }),
+      onStart: t.procedure.subscription(() =>
+        observable<number>((emit) => {
+          subscriptionStarted();
+          emit.next(subscriptionStarted.mock.calls.length);
+        }),
+      ),
+    });
+    const ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+      wsClient: {
+        lazy: { enabled: false, closeMs: 0 },
+        retryDelayMs: () => 0,
+      },
+    });
+
+    /**
+     * Closes the connection from the server and holds it in CLOSING while a
+     * new query opens its replacement, then lets it finish closing.
+     */
+    async function closeDuringNewQuery() {
+      const oldClientSocket = ctx.wsClient.connection!.ws;
+      const oldServerSocket = [...ctx.wss.clients][0]!;
+      oldServerSocket.close();
+      oldServerSocket.pause();
+      try {
+        await vi.waitFor(() => {
+          expect(oldClientSocket.readyState).toBe(WebSocket.CLOSING);
+        });
+        expect(await ctx.client.greeting.query()).toBe('hello');
+        expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
+      } finally {
+        oldServerSocket.resume();
+      }
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+    }
+
+    return {
+      ctx,
+      pendingResult,
+      queryStarted,
+      subscriptionStarted,
+      closeDuringNewQuery,
+    };
+  }
+
+  test('a query pending on it fails', async () => {
+    const { ctx, pendingResult, queryStarted, closeDuringNewQuery } = setup();
+    await using _ctx = ctx;
+    try {
+      const settled = vi.fn();
+      const result = ctx.client.pending.query().then(settled, (error) => {
+        settled(error);
+      });
+      await vi.waitFor(() => {
+        expect(queryStarted).toHaveBeenCalledTimes(1);
+      });
+
+      await closeDuringNewQuery();
+
+      await vi.waitFor(() => {
+        expect(settled).toHaveBeenCalledTimes(1);
+      });
+      await result;
+      expect(settled.mock.calls[0]![0]).toMatchObject({
+        name: 'TRPCClientError',
+      });
+      expect(await ctx.client.greeting.query()).toBe('hello');
+    } finally {
+      pendingResult.resolve('cleanup');
+    }
+  });
+
+  test('a subscription on it resumes', async () => {
+    const { ctx, subscriptionStarted, closeDuringNewQuery } = setup();
+    await using _ctx = ctx;
+    const onData = vi.fn();
+    const subscription = ctx.client.onStart.subscribe(undefined, { onData });
+    try {
+      await vi.waitFor(() => {
+        expect(onData).toHaveBeenCalledTimes(1);
+      });
+
+      await closeDuringNewQuery();
+
+      await vi.waitFor(() => {
+        expect(subscriptionStarted).toHaveBeenCalledTimes(2);
+        expect(onData).toHaveBeenCalledTimes(2);
+      });
+      expect(onData).toHaveBeenLastCalledWith(2);
+    } finally {
+      subscription.unsubscribe();
+    }
+  });
+});
+
 test('subscriptions are automatically resumed if connection is lost', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
