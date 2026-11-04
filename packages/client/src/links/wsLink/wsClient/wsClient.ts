@@ -126,7 +126,6 @@ export class WsClient {
    */
   private async open() {
     this.allowReconnect = true;
-    this.connectionAttemptIndex = 0;
     if (this.connectionState.get().state === 'idle') {
       callUserCallback(() =>
         this.connectionState.next({
@@ -136,6 +135,14 @@ export class WsClient {
         }),
       );
     }
+    // A request sent right after a rejection, e.g. one retried by `retryLink`,
+    // waits for the backoff instead of opening a new socket at once. The close
+    // handler publishes the `connecting` state, so this publishes nothing.
+    if (this.connectionRejected) {
+      this.reconnect(null);
+      return this.reconnecting;
+    }
+    this.connectionAttemptIndex = 0;
 
     try {
       await this.activeConnection.open();
@@ -291,18 +298,24 @@ export class WsClient {
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
-  private reconnect(closedError: TRPCWebSocketClosedError) {
+  /**
+   * @param closedError - published with the `connecting` state, or `null` to
+   * publish nothing and only start the retry loop
+   */
+  private reconnect(closedError: TRPCWebSocketClosedError | null) {
     if (!this.allowReconnect) {
       return;
     }
 
-    callUserCallback(() =>
-      this.connectionState.next({
-        type: 'state',
-        state: 'connecting',
-        error: TRPCClientError.from(closedError),
-      }),
-    );
+    if (closedError) {
+      callUserCallback(() =>
+        this.connectionState.next({
+          type: 'state',
+          state: 'connecting',
+          error: TRPCClientError.from(closedError),
+        }),
+      );
+    }
     if (this.reconnecting) return;
 
     const tryReconnect = async (attemptIndex: number) => {

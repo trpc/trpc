@@ -1,6 +1,6 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { WebSocketClientOptions } from '@trpc/client';
-import { wsLink } from '@trpc/client';
+import { retryLink, wsLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 
@@ -16,7 +16,7 @@ const router = t.router({
   greeting: t.procedure.query(() => 'hello'),
 });
 
-function setup(opts: { createContext: () => object }) {
+function setup(opts: { createContext: () => object; retry: boolean }) {
   const retryDelayMs = vi.fn<
     NonNullable<WebSocketClientOptions['retryDelayMs']>
   >(() => 10);
@@ -34,7 +34,12 @@ function setup(opts: { createContext: () => object }) {
     },
     client(clientOpts) {
       return {
-        links: [wsLink({ client: clientOpts.wsClient })],
+        links: [
+          ...(opts.retry
+            ? [retryLink({ retry: ({ attempts }) => attempts < 1_000 })]
+            : []),
+          wsLink({ client: clientOpts.wsClient }),
+        ],
       };
     },
   });
@@ -53,7 +58,7 @@ test('backs off while createContext keeps failing', async () => {
   const createContext = vi.fn((): object => {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   });
-  await using ctx = setup({ createContext });
+  await using ctx = setup({ createContext, retry: false });
 
   await vi.waitFor(() => {
     expect(createContext.mock.calls.length).toBeGreaterThanOrEqual(4);
@@ -71,7 +76,7 @@ test('reconnects straight away once a connection has been accepted', async () =>
     }
     return {};
   });
-  await using ctx = setup({ createContext });
+  await using ctx = setup({ createContext, retry: false });
 
   await vi.waitFor(() => {
     expect(createContext).toHaveBeenCalledTimes(3);
@@ -92,7 +97,7 @@ test('reconnects straight away once a connection has been accepted', async () =>
 
 test('a malformed frame on a working connection is not a rejection', async () => {
   const createContext = vi.fn((): object => ({}));
-  await using ctx = setup({ createContext });
+  await using ctx = setup({ createContext, retry: false });
 
   const ws = await vi.waitFor(() => {
     const connection = ctx.wsClient.connection;
@@ -129,4 +134,86 @@ test('a malformed frame on a working connection is not a rejection', async () =>
     expect(createContext).toHaveBeenCalledTimes(2);
   });
   expect(ctx.attemptIndexes()).toEqual([0]);
+});
+
+test('a query retried by retryLink waits for the backoff', async () => {
+  const createContext = vi.fn((): object => {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  });
+  await using ctx = setup({ createContext, retry: true });
+  // cancel the query before the client closes, so `retryLink` doesn't send
+  // it again during teardown
+  const abortController = new AbortController();
+  await using _abort = makeAsyncResource({}, async () => {
+    abortController.abort();
+  });
+
+  const connectingErrors: unknown[] = [];
+  const subscription = ctx.wsClient.connectionState.subscribe({
+    next(state) {
+      // the first state is the initial `connecting`, which has no error
+      if (state.state === 'connecting' && state.error) {
+        connectingErrors.push(state.error.message);
+      }
+    },
+  });
+  await using _unsubscribe = makeAsyncResource({}, async () => {
+    subscription.unsubscribe();
+  });
+
+  // each rejection fails the query and `retryLink` sends it again at once,
+  // which used to open a new socket at attempt 0 and skip the backoff
+  ctx.client.greeting
+    .query(undefined, { signal: abortController.signal })
+    .catch(() => null);
+
+  await vi.waitFor(() => {
+    expect(createContext.mock.calls.length).toBeGreaterThanOrEqual(4);
+  });
+  // every connection after the first one waited for the backoff
+  expect(createContext.mock.calls.length).toBeLessThanOrEqual(
+    ctx.retryDelayMs.mock.calls.length + 1,
+  );
+  expect(ctx.attemptIndexes().slice(0, 3)).toEqual([1, 2, 3]);
+  // the retry doesn't add `connecting` states of its own
+  expect(new Set(connectingErrors)).toEqual(new Set(['WebSocket closed']));
+});
+
+test('a request sent while the client is reconnecting waits for the backoff', async () => {
+  const createContext = vi.fn((): object => {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  });
+  await using ctx = setup({ createContext, retry: false });
+  const abortController = new AbortController();
+
+  // a subscriber that sends a request whenever the client starts reconnecting
+  let depth = 0;
+  let maxDepth = 0;
+  let sent = 0;
+  const subscription = ctx.wsClient.connectionState.subscribe({
+    next(state) {
+      if (state.state !== 'connecting' || sent >= 50) return;
+      sent++;
+      depth++;
+      maxDepth = Math.max(maxDepth, depth);
+      ctx.client.greeting
+        .query(undefined, { signal: abortController.signal })
+        .catch(() => null);
+      depth--;
+    },
+  });
+  await using _cleanup = makeAsyncResource({}, async () => {
+    subscription.unsubscribe();
+    abortController.abort();
+  });
+
+  await vi.waitFor(() => {
+    expect(createContext.mock.calls.length).toBeGreaterThanOrEqual(4);
+  });
+  // the request doesn't re-enter the reconnect
+  expect(maxDepth).toBe(1);
+  // every connection after the first one waited for the backoff
+  expect(createContext.mock.calls.length).toBeLessThanOrEqual(
+    ctx.retryDelayMs.mock.calls.length + 1,
+  );
 });
