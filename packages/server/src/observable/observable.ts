@@ -72,16 +72,22 @@ export function observable<TValue, TError = unknown>(
             return;
           }
           isDone = true;
-          observer.error?.(err);
-          unsubscribe();
+          try {
+            observer.error?.(err);
+          } finally {
+            unsubscribe();
+          }
         },
         complete() {
           if (isDone) {
             return;
           }
           isDone = true;
-          observer.complete?.();
-          unsubscribe();
+          try {
+            observer.complete?.();
+          } finally {
+            unsubscribe();
+          }
         },
       });
       if (teardownImmediately) {
