@@ -124,7 +124,7 @@ const palettes = {
 function constructPartsAndArgs(
   opts: LoggerLinkFnOptions<any> & {
     colorMode: ColorMode;
-    withContext?: boolean;
+    withContext: boolean;
   },
 ) {
   const { direction, type, withContext, path, id, input } = opts;
@@ -189,13 +189,13 @@ function constructPartsAndArgs(
 // maybe this should be moved to it's own package
 const defaultLogger =
   <TRouter extends AnyRouter>({
-    c = console,
-    colorMode = 'css',
+    c,
+    colorMode,
     withContext,
   }: {
-    c?: ConsoleEsque;
-    colorMode?: ColorMode;
-    withContext?: boolean;
+    c: ConsoleEsque;
+    colorMode: ColorMode;
+    withContext: boolean;
   }): LoggerLinkFn<TRouter> =>
   (props) => {
     const rawInput = props.input;
@@ -236,7 +236,11 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
     opts.colorMode ?? (typeof window === 'undefined' ? 'ansi' : 'css');
   const withContext = opts.withContext ?? colorMode === 'css';
   const {
-    logger = defaultLogger({ c: opts.console, colorMode, withContext }),
+    logger = defaultLogger({
+      c: opts.console ?? console,
+      colorMode,
+      withContext,
+    }),
   } = opts;
 
   return () => {
