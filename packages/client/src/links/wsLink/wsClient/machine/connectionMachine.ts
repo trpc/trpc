@@ -119,10 +119,9 @@ function illegal(
 function next(
   connection: ConnectionModel,
   state: ConnectionState,
-  effects: ConnectionEffect[],
-  notices: ConnectionNotice[],
+  output: { effects: ConnectionEffect[]; notices: ConnectionNotice[] },
 ): ConnectionTransition {
-  return { connection: { ...connection, state }, effects, notices };
+  return { connection: { ...connection, state }, ...output };
 }
 
 /**
@@ -142,42 +141,63 @@ function end(
       return next(
         connection,
         { phase: 'closed', closeReported: true },
-        [],
-        [{ type: 'onClose', event: event.event }],
+        { effects: [], notices: [{ type: 'onClose', event: event.event }] },
       );
     case 'socketError':
       return next(
         connection,
         { phase: 'closed', closeReported: false },
-        [close],
-        [{ type: 'onError', event: event.event }],
+        {
+          effects: [close],
+          notices: [{ type: 'onError', event: event.event }],
+        },
       );
     case 'pongTimeout':
       return next(
         connection,
         { phase: 'closed', closeReported: true },
-        [close],
-        // What `close` reports once the closing handshake times out.
-        [{ type: 'onClose', event: { code: 1006 } }],
+        {
+          effects: [close],
+          notices: // What `close` reports once the closing handshake times out.
+            [{ type: 'onClose', event: { code: 1006 } }],
+        },
       );
     case 'badFrame':
       return next(
         connection,
         { phase: 'closed', closeReported: true },
-        [close, { type: 'rethrow', error: event.cause }],
-        [{ type: 'onClose', event: undefined }],
+        {
+          effects: [close, { type: 'rethrow', error: event.cause }],
+          notices: [{ type: 'onClose', event: undefined }],
+        },
       );
     case 'openFailed':
+      // Before `open`, it failed to resolve the URL or create the socket:
+      // there is no socket to report anything.
+      return next(
+        connection,
+        {
+          phase: 'closed',
+          closeReported: connection.state.phase === 'connecting',
+        },
+        { effects: [close], notices: [] },
+      );
     case 'socketUnwritable':
     case 'close':
       return next(
         connection,
         { phase: 'closed', closeReported: false },
-        [close],
-        [],
+        { effects: [close], notices: [] },
       );
-    default:
+    case 'socketOpened':
+    case 'paramsResolved':
+    case 'drain':
+    case 'received':
+    case 'result':
+    case 'rejection':
       return null;
+    default:
+      return event satisfies never;
   }
 }
 
@@ -210,8 +230,10 @@ export function connectionTransition(
           return next(
             connection,
             { phase: 'handshaking', rejected: false, answered: false },
-            [{ type: 'resolveParams', connection: connection.id }],
-            [{ type: 'onOpen' }],
+            {
+              effects: [{ type: 'resolveParams', connection: connection.id }],
+              notices: [{ type: 'onOpen' }],
+            },
           );
         case 'openFailed':
         case 'socketClosed':
@@ -236,16 +258,19 @@ export function connectionTransition(
           return next(
             connection,
             { ...state, phase: 'ready' },
-            event.data === null
-              ? []
-              : [
-                  {
-                    type: 'sendParams',
-                    connection: connection.id,
-                    data: event.data,
-                  },
-                ],
-            [],
+            {
+              effects:
+                event.data === null
+                  ? []
+                  : [
+                      {
+                        type: 'sendParams',
+                        connection: connection.id,
+                        data: event.data,
+                      },
+                    ],
+              notices: [],
+            },
           );
         case 'openFailed':
         case 'socketClosed':
@@ -255,9 +280,17 @@ export function connectionTransition(
         case 'close':
           return end(connection, event) ?? illegal(connection, event);
         case 'received':
-          return next(connection, { ...state, answered: true }, [], []);
+          return next(
+            connection,
+            { ...state, answered: true },
+            { effects: [], notices: [] },
+          );
         case 'rejection':
-          return next(connection, { ...state, rejected: true }, [], []);
+          return next(
+            connection,
+            { ...state, rejected: true },
+            { effects: [], notices: [] },
+          );
         case 'socketOpened':
         case 'socketUnwritable':
         case 'drain':
@@ -271,19 +304,26 @@ export function connectionTransition(
       switch (event.type) {
         case 'drain':
           if (state.phase === 'draining') return illegal(connection, event);
-          return next(connection, { phase: 'draining' }, [], []);
+          return next(
+            connection,
+            { phase: 'draining' },
+            { effects: [], notices: [] },
+          );
         case 'received':
           if (state.phase === 'draining')
-            return next(connection, state, [], []);
-          return next(connection, { ...state, answered: true }, [], []);
+            return next(connection, state, { effects: [], notices: [] });
+          return next(
+            connection,
+            { ...state, answered: true },
+            { effects: [], notices: [] },
+          );
         case 'result':
         case 'rejection':
           if (state.phase === 'draining') return illegal(connection, event);
           return next(
             connection,
             { ...state, rejected: event.type === 'rejection' },
-            [],
-            [],
+            { effects: [], notices: [] },
           );
         case 'socketClosed':
         case 'socketError':
@@ -302,21 +342,20 @@ export function connectionTransition(
     case 'closed':
       switch (event.type) {
         case 'socketClosed':
-          if (state.closeReported) return next(connection, state, [], []);
+          if (state.closeReported)
+            return next(connection, state, { effects: [], notices: [] });
           return next(
             connection,
             { phase: 'closed', closeReported: true },
-            [],
-            [{ type: 'onClose', event: event.event }],
+            { effects: [], notices: [{ type: 'onClose', event: event.event }] },
           );
         case 'socketError':
-          if (state.closeReported) return next(connection, state, [], []);
-          return next(
-            connection,
-            state,
-            [],
-            [{ type: 'onError', event: event.event }],
-          );
+          if (state.closeReported)
+            return next(connection, state, { effects: [], notices: [] });
+          return next(connection, state, {
+            effects: [],
+            notices: [{ type: 'onError', event: event.event }],
+          });
         // A socket the client ended may still open, resolve its
         // `connectionParams` or time out; none of it matters any more.
         case 'socketOpened':
@@ -327,7 +366,7 @@ export function connectionTransition(
         case 'badFrame':
         case 'received':
         case 'close':
-          return next(connection, state, [], []);
+          return next(connection, state, { effects: [], notices: [] });
         case 'drain':
         case 'result':
         case 'rejection':

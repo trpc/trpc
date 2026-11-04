@@ -414,14 +414,9 @@ class Step {
   }
 
   /** Decides what follows a loss, once the user's callbacks have run. */
-  afterLost(
-    connection: ConnectionId,
-    before: ConnectionModel,
-    event: ConnectionEvent,
-    cause: unknown,
-  ) {
+  afterLost(lost: ConnectionModel, event: ConnectionEvent, cause: unknown) {
     const lifecycle = this.lifecycle;
-    if (!this.isCurrent(connection)) {
+    if (!this.isCurrent(lost.id)) {
       // A draining connection: its subscriptions go on the current one, if
       // it's ready, or wait for the next.
       if (
@@ -441,7 +436,7 @@ class Step {
         this.setConnecting({ message: 'Initialization error', cause });
       }
       this.scheduleReconnect(
-        before.retryIndex === null ? 0 : before.retryIndex + 1,
+        lost.retryIndex === null ? 0 : lost.retryIndex + 1,
       );
       return;
     }
@@ -454,7 +449,7 @@ class Step {
     }
 
     this.setConnecting({ message: 'WebSocket closed', cause });
-    this.scheduleReconnect(nextRetryIndex(before, event));
+    this.scheduleReconnect(nextRetryIndex(lost, event));
   }
 
   close() {
@@ -489,7 +484,17 @@ class Step {
       this.draining = this.draining.filter((id) => id !== connection);
       this.closeConnection(connection);
     }
-    if (this.lifecycle.kind === 'idle') this.setState({ state: 'idle' });
+    if (this.lifecycle.kind === 'idle') {
+      this.setState({ state: 'idle' });
+    } else if (
+      this.lifecycle.kind !== 'open' &&
+      this.draining.length === 0 &&
+      this.publicState.state === 'pending'
+    ) {
+      // A request made while closing opens a new connection, and the old
+      // one no longer serves anything.
+      this.setConnecting(null);
+    }
     this.effects.push({ type: 'closed' });
   }
 }
@@ -552,7 +557,7 @@ function onConnectionEvent(
   const cause = causeOf(event);
   step.onLost(connection, cause);
   step.effects.push(...notices);
-  step.afterLost(connection, before, event, cause);
+  step.afterLost(before, event, cause);
 }
 
 /** Any frame proves the server is there, and keeps a lazy connection in use. */

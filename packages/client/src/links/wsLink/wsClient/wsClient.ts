@@ -193,19 +193,12 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
             keepAlive,
             encoder,
             onEvent: (event) => {
-              switch (event.type) {
-                case 'frame':
-                  dispatch({
-                    type: 'frame',
-                    connection,
-                    message: event.message,
-                  });
-                  return;
-                case 'heartbeat':
-                  dispatch({ type: 'heartbeat', connection });
-                  return;
-                default:
-                  dispatch({ type: 'connection', connection, event });
+              if (event.type === 'frame') {
+                dispatch({ type: 'frame', connection, message: event.message });
+              } else if (event.type === 'heartbeat') {
+                dispatch({ type: 'heartbeat', connection });
+              } else {
+                dispatch({ type: 'connection', connection, event });
               }
             },
           }),
