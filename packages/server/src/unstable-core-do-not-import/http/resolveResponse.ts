@@ -401,18 +401,14 @@ async function jsonResponse(
   headers.set('content-type', 'application/json');
   const results = await Promise.all(calls);
 
-  if (!info.isBatchCall) {
-    const [result] = results;
-    if (result!.ok && isDataStream(result!.value.data)) {
-      return fail(streamInJSONResponseError());
+  const outcomes = results.map((result, index) => {
+    if (!result.ok || !isDataStream(result.value.data)) {
+      return result;
     }
-  }
-
-  const outcomes = results.map((result) =>
-    result.ok && isDataStream(result.value.data)
-      ? fail(streamInJSONResponseError())
-      : result,
-  );
+    const error = streamInJSONResponseError();
+    reportError(request, error, sourceOf(info.calls[index]!));
+    return fail(error);
+  });
   const data = outcomes.map((outcome, index): TRPCResponse => {
     if (outcome.ok) {
       return { result: { data: outcome.value.data } };
