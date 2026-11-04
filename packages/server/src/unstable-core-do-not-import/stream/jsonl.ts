@@ -387,6 +387,7 @@ function createConsumerStream<THead>(
   return stream.pipeThrough(
     new TransformStream<string, ChunkData | THead>({
       transform(line, controller) {
+        if (!line.trim()) return;
         if (!sentHead) {
           const head = JSON.parse(line);
           controller.enqueue(head as THead);
