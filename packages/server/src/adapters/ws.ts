@@ -27,6 +27,7 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
 // oxlint-disable-next-line no-restricted-imports
 import {
+  isAbortError,
   isAsyncIterable,
   isObject,
   isTrackedEnvelope,
@@ -120,6 +121,32 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
      */
     experimental_encoder?: Encoder;
   };
+
+/**
+ * `iterator.next()` for a subscription loop that races it against the
+ * subscription's `signal`, with a rejection turned into a `TRPCError`.
+ *
+ * Once the subscription is stopped, the loop doesn't wait for this call, so a
+ * rejection after the stop, such as a teardown that throws, goes to
+ * `onErrorAfterStop` and resolves `'abort'`. An `AbortError` is how a stopped
+ * subscription is expected to end, and isn't reported.
+ */
+function nextUnlessStopped<TValue, TReturn>(
+  iterator: AsyncIterator<TValue, TReturn>,
+  signal: AbortSignal,
+  onErrorAfterStop: (error: TRPCError) => void,
+): Promise<IteratorResult<TValue, TReturn> | TRPCError | 'abort'> {
+  return iterator.next().catch((cause: unknown) => {
+    const error = getTRPCErrorFromUnknown(cause);
+    if (!signal.aborted) {
+      return error;
+    }
+    if (!isAbortError(error.cause)) {
+      onErrorAfterStop(error);
+    }
+    return 'abort';
+  });
+}
 
 /**
  * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
@@ -361,7 +388,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
           while (true) {
             next = await Unpromise.race([
-              iterator.next().catch(getTRPCErrorFromUnknown),
+              nextUnlessStopped(iterator, abortController.signal, (error) =>
+                opts.onError?.({ error, path, type, ctx, req, input }),
+              ),
               abortPromise,
             ]);
 
