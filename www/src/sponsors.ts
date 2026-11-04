@@ -166,7 +166,8 @@ export const latestSponsorCount = 3;
 
 /**
  * The sponsors to celebrate at `now`: who started within `newSponsorMs`
- * (`new`), else the `latestSponsorCount` who started last (`latest`);
+ * (`new`), else the `latestSponsorCount` who started last (`latest`),
+ * leaving out any dated after `now`;
  * newest first either way.
  */
 export function recentSponsorsOf(
@@ -176,10 +177,12 @@ export function recentSponsorsOf(
   readonly kind: 'latest' | 'new';
   readonly sponsors: ReadonlyArray<Sponsor>;
 } {
-  const newestFirst = all.toSorted(
-    (a, b) =>
-      b.createdAt - a.createdAt || sponsorKey(a).localeCompare(sponsorKey(b)),
-  );
+  const newestFirst = all
+    .filter((sponsor) => sponsor.createdAt <= now)
+    .toSorted(
+      (a, b) =>
+        b.createdAt - a.createdAt || sponsorKey(a).localeCompare(sponsorKey(b)),
+    );
   const started = newestFirst.filter(
     (sponsor) => sponsor.createdAt > now - newSponsorMs,
   );

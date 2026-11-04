@@ -123,13 +123,13 @@ export function SponsorCloud(props: { readonly className?: string }) {
           return (
             <span
               className={cn(
-                'absolute -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10',
+                'absolute -translate-1/2 transition-[scale,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none in-data-[entrance=waiting]:scale-50 in-data-[entrance=waiting]:opacity-0 has-[a:hover]:z-10',
                 celebrated && 'z-[5]',
                 celebrated &&
                   celebrating &&
                   (entrance === 'shown'
-                    ? 'animate-sponsor-pop'
-                    : 'animate-sponsor-boing'),
+                    ? 'motion-safe:animate-sponsor-pop'
+                    : 'motion-safe:animate-sponsor-boing'),
               )}
               key={sponsorKey(bubble.sponsor)}
               style={
@@ -194,9 +194,12 @@ export function SponsorCloud(props: { readonly className?: string }) {
                 </TooltipContent>
               </Tooltip>
               {celebrated && celebrating ? (
-                <span aria-hidden className="pointer-events-none">
+                <span
+                  aria-hidden
+                  className="pointer-events-none motion-reduce:hidden"
+                >
                   <span
-                    className="absolute inset-0 animate-sponsor-ripple rounded-full border-2 border-brand"
+                    className="absolute inset-0 motion-safe:animate-sponsor-ripple rounded-full border-2 border-brand"
                     style={delayed(celebrateAt + rippleAfter)}
                   />
                   {Array.from({ length: confettiCount }, (_, piece) => (
@@ -207,7 +210,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
                     >
                       <span
                         className={cn(
-                          'absolute top-1/2 left-1/2 size-[15%] min-h-1.5 min-w-1.5 -translate-1/2 animate-sponsor-confetti',
+                          'absolute top-1/2 left-1/2 size-[15%] min-h-1.5 min-w-1.5 -translate-1/2 motion-safe:animate-sponsor-confetti',
                           piece % 2 === 0 ? 'rounded-full' : 'rounded-[1px]',
                           confettiColors[piece % confettiColors.length],
                         )}
@@ -224,7 +227,7 @@ export function SponsorCloud(props: { readonly className?: string }) {
                     'pointer-events-none absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 -rotate-12 rounded-full bg-brand px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wide text-white uppercase shadow-md',
                     celebrating &&
                       entrance === 'shown' &&
-                      'animate-sponsor-badge',
+                      'motion-safe:animate-sponsor-badge',
                   )}
                   style={
                     celebrating && entrance === 'shown'
