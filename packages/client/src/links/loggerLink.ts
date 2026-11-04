@@ -190,7 +190,7 @@ function constructPartsAndArgs(
 // the built-in logger is used
 const resolveConsole = ({
   console: c = console,
-}: Pick<LoggerLinkOptions<AnyRouter>, 'console'>): ConsoleEsque => c;
+}: Pick<LoggerLinkOptions<AnyRouter>, 'console'>) => c;
 
 // maybe this should be moved to it's own package
 const defaultLogger =
