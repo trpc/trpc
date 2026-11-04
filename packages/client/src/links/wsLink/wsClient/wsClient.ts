@@ -189,6 +189,7 @@ export class WsClient {
     }
 
     await Promise.all(requestsToAwait).catch(() => null);
+    this.nextConnection?.ws?.close();
     await this.activeConnection.close().catch(() => null);
 
     callUserCallback(() =>

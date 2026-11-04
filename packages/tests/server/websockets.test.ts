@@ -2258,6 +2258,46 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('wsClient.close() during the handoff closes both sockets', async () => {
+    const {
+      ctx,
+      valuesStarted,
+      onOpen,
+      observe,
+      waitForOpen,
+      holdConnectionParams,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.values.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    const release = holdConnectionParams();
+    try {
+      await vi.waitFor(() => {
+        expect(valuesStarted).toHaveBeenCalledTimes(1);
+      });
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+      });
+
+      await ctx.wsClient.close();
+      expect(seen.at(-1)).toBe('complete');
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+        expect(ctx.wss.clients.size).toBe(0);
+      });
+      expect(valuesStarted).toHaveBeenCalledTimes(1);
+    } finally {
+      release.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test('a subscription sent while slow connectionParams are pending survives a server reconnect request', async () => {
     const {
       ctx,
