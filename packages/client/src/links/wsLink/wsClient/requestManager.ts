@@ -182,6 +182,13 @@ export class RequestManager {
   }
 
   /**
+   * Checks if a message is still waiting to be sent.
+   */
+  public isOutgoing(message: TRPCClientOutgoingMessage) {
+    return this.outgoingRequests.some((request) => request.message === message);
+  }
+
+  /**
    * Checks if there are any outgoing requests waiting to be sent.
    */
   public hasOutgoingRequests() {
