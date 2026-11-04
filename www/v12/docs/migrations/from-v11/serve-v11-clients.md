@@ -43,6 +43,8 @@ export default {
 
 Under `serve()` from `@trpc12/trpc/http`, the v11 handler runs as its own Effect HTTP app, and WebSocket upgrades on its endpoint reach `legacy.websocket()`.
 
+Browsers send cookies with a WebSocket upgrade from any site, and CORS doesn't cover upgrades. If `createContext` authenticates with cookies, put `cors({ allowedOrigins })` from `@trpc12/trpc/http` in the v11 handler's `middleware`: it refuses an upgrade from another origin with `403`, as it does for the v12 handler ([Middleware and CORS](../../adapters/overview.md#middleware-and-cors)).
+
 It speaks every v11 link:
 
 | v11 link                      | Served                                                                                                                                                                                          |

@@ -1,9 +1,9 @@
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Layer, Scope, Stream } from 'effect';
-import { serve } from '@trpc12/trpc/http';
+import { cors, serve } from '@trpc12/trpc/http';
 import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import superjson from 'superjson';
@@ -105,6 +105,36 @@ test('malformed messages get PARSE_ERROR replies with no id', async () => {
     { id: 1, jsonrpc: '2.0', error: { message: 'Unknown method "delete"' } },
   ]);
   ws.close();
+});
+
+test('cors() in middleware refuses a WebSocket upgrade from another origin', async () => {
+  await using app = await start({
+    middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
+  });
+  const url = new URL(app.url);
+  const upgrade = (origin: string) =>
+    new Promise<number>((resolve) => {
+      const req = httpRequest({
+        port: url.port,
+        host: url.hostname,
+        path: url.pathname,
+        headers: {
+          connection: 'Upgrade',
+          upgrade: 'websocket',
+          origin,
+          'sec-websocket-version': '13',
+          'sec-websocket-key': Buffer.alloc(16, 1).toString('base64'),
+        },
+      });
+      req.on('upgrade', (res, socket) => {
+        socket.destroy();
+        resolve(res.statusCode ?? 0);
+      });
+      req.on('response', (res) => resolve(res.statusCode ?? 0));
+      req.end();
+    });
+  expect(await upgrade('https://app.example.com')).toBe(101);
+  expect(await upgrade('https://evil.example.com')).toBe(403);
 });
 
 test("a message with more calls than batch.maxItems runs none and fails each by id, as v11's maxBatchSize does over HTTP", async () => {
