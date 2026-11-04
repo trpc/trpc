@@ -12,6 +12,9 @@ type OpenChange = NonNullable<ComponentProps<typeof Tooltip>['onOpenChange']>;
 /** How long a finger rests on a bubble before its tooltip shows. */
 const holdMs = 400;
 
+/** How soon after a press ends its click arrives, at most. */
+const clickMs = 1000;
+
 const isTouch = (pointerType: string | undefined) =>
   pointerType !== undefined && pointerType !== 'mouse';
 
@@ -46,13 +49,16 @@ export function useTapTooltips() {
   const pointer = useRef<string | undefined>(undefined);
   const held = useRef(false);
   const hold = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const released = useRef(Number.NEGATIVE_INFINITY);
   const stopHold = () => clearTimeout(hold.current);
   // Most browsers say which pointer pressed or clicked, the keyboard as '';
-  // Safari's clicks don't, so they fall back to the press that started them.
+  // Safari's clicks don't, so they fall back to the press that just ended.
   const pointerOf = (event: Event) =>
     'pointerType' in event
       ? String(event.pointerType) || undefined
-      : pointer.current;
+      : event.timeStamp - released.current < clickMs
+        ? pointer.current
+        : undefined;
   return (key: string) => {
     const onOpenChange: OpenChange = (open, details) => {
       // A touch press on the trigger is a tap, which `trigger.onClick`
@@ -117,7 +123,10 @@ export function useTapTooltips() {
           }
         },
         onPointerLeave: stopHold,
-        onPointerUp: stopHold,
+        onPointerUp(event: PointerEvent) {
+          stopHold();
+          released.current = event.timeStamp;
+        },
       },
     };
   };
