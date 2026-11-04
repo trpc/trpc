@@ -989,6 +989,43 @@ describe('a socket the server closes while a new request opens its replacement',
       await ctx.wsClient.close();
     }
   });
+
+  test('a query pending on its replacement completes', async () => {
+    const { ctx, pendingResult, queryStarted } = setup();
+    await using _ctx = ctx;
+    expect(await ctx.client.greeting.query()).toBe('hello');
+    const oldClientSocket = ctx.wsClient.connection!.ws;
+    const oldServerSocket = [...ctx.wss.clients][0]!;
+    try {
+      oldServerSocket.close();
+      // Hold the old socket in CLOSING until a query is pending on its replacement.
+      oldServerSocket.pause();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSING);
+      });
+
+      const result = ctx.client.pending.query().catch((error) => error);
+      await vi.waitFor(() => {
+        expect(queryStarted).toHaveBeenCalledTimes(1);
+      });
+      const replacementSocket = ctx.wsClient.connection!.ws;
+      expect(replacementSocket).not.toBe(oldClientSocket);
+
+      oldServerSocket.resume();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      pendingResult.resolve('replacement query completed');
+
+      expect(await result).toBe('replacement query completed');
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(ctx.wsClient.connection!.ws).toBe(replacementSocket);
+    } finally {
+      oldServerSocket.resume();
+      pendingResult.resolve('cleanup');
+      await ctx.wsClient.close();
+    }
+  });
 });
 
 describe('requests pending on a socket that a server reconnect retires', () => {
