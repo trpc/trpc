@@ -4,6 +4,7 @@ import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createWSClient } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
+import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import { makeResource, sleep } from '@trpc/server/unstable-core-do-not-import';
 
@@ -42,6 +43,12 @@ type ConnectionState = TRPCConnectionState<TRPCClientError<any>>;
 
 function causeOf(state: ConnectionState) {
   return state.error?.cause?.cause;
+}
+
+function disposable<TSubscription extends Unsubscribable>(
+  subscription: TSubscription,
+) {
+  return makeResource(subscription, () => subscription.unsubscribe());
 }
 
 describe('connectionParams errors', () => {
@@ -333,5 +340,210 @@ describe('throwing user callbacks', () => {
     expect(new Set(g.uncaught)).toEqual(new Set([stateError]));
     expect(onError).not.toHaveBeenCalled();
     sub.unsubscribe();
+  });
+});
+
+describe('onConnectionStateChange throwing on the first state', () => {
+  test.each([
+    { mode: 'lazy', lazy: true, firstState: 'idle' },
+    { mode: 'eager', lazy: false, firstState: 'connecting' },
+  ] as const)(
+    '$mode: the subscription still starts and the error is not swallowed',
+    async ({ lazy, firstState }) => {
+      using g = captureUncaught();
+      const stateError = new Error('onConnectionStateChange failed');
+      await using ctx = testServerAndClientResource(createRouter(), {
+        wsClient: {
+          lazy: { enabled: lazy, closeMs: 0 },
+        },
+        clientLink: 'wsLink',
+      });
+
+      const states: ConnectionState['state'][] = [];
+      const onConnectionStateChange = vi.fn((state: ConnectionState) => {
+        states.push(state.state);
+        if (states.length === 1) throw stateError;
+      });
+      const onStarted = vi.fn();
+      const onData = vi.fn();
+      const onError = vi.fn();
+      const syncThrows: unknown[] = [];
+      let sub: { unsubscribe: () => void } | undefined;
+      try {
+        sub = ctx.client.onTick.subscribe(undefined, {
+          onStarted,
+          onData,
+          onError,
+          onConnectionStateChange,
+        });
+      } catch (cause) {
+        syncThrows.push(cause);
+      }
+
+      await vi.waitFor(() => {
+        expect(ctx.wsClient.connectionState.get()).toEqual({
+          type: 'state',
+          state: 'pending',
+          error: null,
+        });
+        expect(onStarted).toHaveBeenCalledTimes(1);
+        expect(onData).toHaveBeenCalledWith(1);
+      });
+      expect(syncThrows).toEqual([]);
+      expect(states[0]).toBe(firstState);
+      expect(states.at(-1)).toBe('pending');
+      await vi.waitFor(() => {
+        expect(g.uncaught).toEqual([stateError]);
+      });
+      await sleep(10);
+      expect(g.uncaught).toEqual([stateError]);
+      expect(onConnectionStateChange.mock.results[0]).toEqual({
+        type: 'throw',
+        value: stateError,
+      });
+      expect(onError).not.toHaveBeenCalled();
+      sub?.unsubscribe();
+    },
+  );
+});
+
+describe('a throwing connection state subscriber does not stop the others', () => {
+  test('two wsLink subscriptions: the second still gets every state', async () => {
+    using g = captureUncaught();
+    const stateError = new Error('onConnectionStateChange failed');
+    await using ctx = testServerAndClientResource(createRouter(), {
+      wsClient: {
+        retryDelayMs: () => 10,
+      },
+      clientLink: 'wsLink',
+    });
+
+    let thrown = 0;
+    const firstStates: ConnectionState[] = [];
+    const first = { onStarted: vi.fn(), onData: vi.fn(), onError: vi.fn() };
+    using _firstSub = disposable(
+      ctx.client.onTick.subscribe(undefined, {
+        ...first,
+        onConnectionStateChange: (state) => {
+          firstStates.push(state);
+          if (firstStates.length > 1) {
+            thrown++;
+            throw stateError;
+          }
+        },
+      }),
+    );
+    const secondStates: ConnectionState[] = [];
+    const second = { onStarted: vi.fn(), onData: vi.fn(), onError: vi.fn() };
+    using _secondSub = disposable(
+      ctx.client.onTick.subscribe(undefined, {
+        ...second,
+        onConnectionStateChange: (state) => secondStates.push(state),
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(first.onData).toHaveBeenCalledTimes(1);
+      expect(second.onData).toHaveBeenCalledTimes(1);
+    });
+    expect(secondStates.map((state) => state.state)).toEqual([
+      'connecting',
+      'pending',
+    ]);
+
+    ctx.destroyConnections();
+
+    await vi.waitFor(() => {
+      expect(first.onStarted).toHaveBeenCalledTimes(2);
+      expect(second.onStarted).toHaveBeenCalledTimes(2);
+      expect(second.onData).toHaveBeenCalledTimes(2);
+    });
+    expect(secondStates.map((state) => state.state)).toEqual([
+      'connecting',
+      'pending',
+      'connecting',
+      'pending',
+    ]);
+    expect(secondStates).toEqual(firstStates.slice(1));
+    expect(thrown).toBe(4);
+    await vi.waitFor(() => {
+      expect(g.uncaught).toHaveLength(thrown);
+    });
+    expect(new Set(g.uncaught)).toEqual(new Set([stateError]));
+    expect(first.onError).not.toHaveBeenCalled();
+    expect(second.onError).not.toHaveBeenCalled();
+  });
+
+  test('two wsClient.connectionState subscribers: the second still gets every state', async () => {
+    using g = captureUncaught();
+    const stateError = new Error('connectionState subscriber failed');
+    await using ctx = testServerAndClientResource(createRouter(), {
+      wsClient: {
+        retryDelayMs: () => 10,
+      },
+      clientLink: 'wsLink',
+    });
+
+    let thrown = 0;
+    const firstStates: ConnectionState[] = [];
+    using _firstStateSub = disposable(
+      ctx.wsClient.connectionState.subscribe({
+        next(state) {
+          firstStates.push(state);
+          if (firstStates.length > 1) {
+            thrown++;
+            throw stateError;
+          }
+        },
+      }),
+    );
+    const secondStates: ConnectionState[] = [];
+    using _secondStateSub = disposable(
+      ctx.wsClient.connectionState.subscribe({
+        next(state) {
+          secondStates.push(state);
+        },
+      }),
+    );
+
+    const onStarted = vi.fn();
+    const onData = vi.fn();
+    const onError = vi.fn();
+    using _sub = disposable(
+      ctx.client.onTick.subscribe(undefined, {
+        onStarted,
+        onData,
+        onError,
+      }),
+    );
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+    expect(secondStates.map((state) => state.state)).toEqual([
+      'idle',
+      'connecting',
+      'pending',
+    ]);
+
+    ctx.destroyConnections();
+
+    await vi.waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(2);
+      expect(onData).toHaveBeenCalledTimes(2);
+    });
+    expect(secondStates.map((state) => state.state)).toEqual([
+      'idle',
+      'connecting',
+      'pending',
+      'connecting',
+      'pending',
+    ]);
+    expect(secondStates).toEqual(firstStates);
+    expect(thrown).toBe(4);
+    await vi.waitFor(() => {
+      expect(g.uncaught).toHaveLength(thrown);
+    });
+    expect(new Set(g.uncaught)).toEqual(new Set([stateError]));
+    expect(onError).not.toHaveBeenCalled();
   });
 });

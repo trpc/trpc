@@ -8,8 +8,8 @@ on:
     branches: [main]
 
 concurrency:
-  # a release commit gets a group of its own, so the next push can't cancel its checks
-  group: "${{ github.workflow }}-${{ github.ref }}${{ startsWith(github.event.head_commit.message, 'chore: release v') && format('-{0}', github.sha) || '' }}"
+  # a push to `main` gets a group of its own, so another push can't cancel its checks (see main.yml)
+  group: "${{ github.workflow }}-${{ github.ref }}${{ github.ref == 'refs/heads/main' && format('-{0}', github.sha) || '' }}"
   cancel-in-progress: true
 
 env:

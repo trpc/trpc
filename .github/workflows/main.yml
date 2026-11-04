@@ -7,8 +7,10 @@ on:
     branches: [main, next, canary]
 
 concurrency:
-  # a release commit gets a group of its own, so the next push can't cancel its checks
-  group: "${{ github.workflow }}-${{ github.ref }}${{ startsWith(github.event.head_commit.message, 'chore: release v') && format('-{0}', github.sha) || '' }}"
+  # a push to `main` or a release commit gets a group of its own, so another push can't cancel its checks.
+  # `cancel-in-progress: false` isn't enough: a newly queued run still replaces the pending one, and
+  # runs for one merge queue batch can be queued out of order, so the tip's run could be the one dropped.
+  group: "${{ github.workflow }}-${{ github.ref }}${{ (github.ref == 'refs/heads/main' || startsWith(github.event.head_commit.message, 'chore: release v')) && format('-{0}', github.sha) || '' }}"
   cancel-in-progress: true
 
 jobs:

@@ -2,6 +2,7 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import type { WebSocketClientOptions } from '@trpc/client';
 import { wsLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 
 /**
  * When `createContext` throws, the ws adapter accepts the socket, sends an
@@ -38,10 +39,14 @@ function setup(opts: { createContext: () => object }) {
     },
   });
 
-  return Object.assign(ctx, {
-    retryDelayMs,
-    attemptIndexes: () => retryDelayMs.mock.calls.map((call) => call[0]),
-  });
+  // close the client before the server is disposed, also when a test fails
+  return makeAsyncResource(
+    Object.assign(ctx, {
+      retryDelayMs,
+      attemptIndexes: () => retryDelayMs.mock.calls.map((call) => call[0]),
+    }),
+    () => ctx.wsClient.close(),
+  );
 }
 
 test('backs off while createContext keeps failing', async () => {
@@ -53,7 +58,6 @@ test('backs off while createContext keeps failing', async () => {
   await vi.waitFor(() => {
     expect(createContext.mock.calls.length).toBeGreaterThanOrEqual(4);
   });
-  await ctx.wsClient.close();
 
   expect(ctx.attemptIndexes().slice(0, 3)).toEqual([1, 2, 3]);
 });
@@ -84,6 +88,45 @@ test('reconnects straight away once a connection has been accepted', async () =>
     expect(createContext).toHaveBeenCalledTimes(4);
   });
   expect(ctx.attemptIndexes()).toEqual([1, 2, 0]);
+});
 
-  await ctx.wsClient.close();
+test('a malformed frame on a working connection is not a rejection', async () => {
+  const createContext = vi.fn((): object => ({}));
+  await using ctx = setup({ createContext });
+
+  const ws = await vi.waitFor(() => {
+    const connection = ctx.wsClient.connection;
+    if (connection?.state !== 'open') throw new Error('not open yet');
+    return connection.ws;
+  });
+
+  const received: unknown[] = [];
+  ws.addEventListener('message', ({ data }) => {
+    received.push(JSON.parse(String(data)));
+  });
+
+  // the server answers a malformed frame with an `id: null` PARSE_ERROR and
+  // keeps the socket open
+  ws.send('not json');
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  expect(received).toEqual([
+    expect.objectContaining({
+      id: null,
+      error: expect.objectContaining({
+        data: expect.objectContaining({ code: 'PARSE_ERROR' }),
+      }),
+    }),
+    expect.objectContaining({ result: { type: 'data', data: 'hello' } }),
+  ]);
+  expect(createContext).toHaveBeenCalledTimes(1);
+
+  // drop the connection from the server side
+  for (const client of ctx.wss.clients) {
+    client.close();
+  }
+
+  await vi.waitFor(() => {
+    expect(createContext).toHaveBeenCalledTimes(2);
+  });
+  expect(ctx.attemptIndexes()).toEqual([0]);
 });

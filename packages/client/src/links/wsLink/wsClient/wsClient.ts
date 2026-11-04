@@ -22,24 +22,12 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
-import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
+import {
+  callUserCallback,
+  ResettableTimeout,
+  TRPCWebSocketClosedError,
+} from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
-
-/**
- * Calls a user callback, including `connectionState` subscribers. A throw
- * would skip the rest of the client's bookkeeping (e.g. end the reconnect
- * loop, or, with event-emitter based WebSockets such as `ws`, skip the other
- * listeners for that event), so it is rethrown asynchronously instead.
- */
-function callUserCallback(callback: () => void) {
-  try {
-    callback();
-  } catch (error) {
-    setTimeout(() => {
-      throw error;
-    });
-  }
-}
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
@@ -258,9 +246,14 @@ export class WsClient {
       }
 
       return () => {
+        const isPending = !!this.requestManager.getPendingRequest(id);
         abort();
 
-        if (type === 'subscription' && this.activeConnection.isOpen()) {
+        if (
+          type === 'subscription' &&
+          isPending &&
+          this.activeConnection.isOpen()
+        ) {
           this.send({
             id,
             method: 'subscription.stop',
@@ -293,7 +286,8 @@ export class WsClient {
    * Set when the server rejects the current connection with an `id: null`
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
-   * instead of starting over at attempt 0.
+   * instead of starting over at attempt 0. Cleared again when the socket
+   * receives a result, which proves the connection was accepted.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
@@ -439,6 +433,11 @@ export class WsClient {
 
       if (incomingMessage.id === null && 'error' in incomingMessage) {
         this.connectionRejected = true;
+      } else if ('result' in incomingMessage) {
+        // The server only sends results once `createContext` has succeeded,
+        // so an earlier `id: null` error on this socket was not a rejection,
+        // e.g. the server's reply to a malformed frame.
+        this.connectionRejected = false;
       }
 
       this.handleResponseMessage(incomingMessage);
@@ -543,8 +542,26 @@ export class WsClient {
       await sleep(0);
 
       if (!this.requestManager.hasOutgoingRequests()) return;
+      // Another run already sent this request. Each queued request's own run
+      // sends it once the new socket opens.
+      if (
+        !this.activeConnection.isOpen() &&
+        !this.requestManager.isOutgoing(message)
+      ) {
+        return;
+      }
 
-      this.send(this.requestManager.flush().map(({ message }) => message));
+      const requests = this.requestManager.flush();
+      try {
+        this.send(requests.map((request) => request.message));
+      } catch (err) {
+        for (const request of requests) {
+          this.requestManager.delete(request.message);
+          callUserCallback(() =>
+            request.callbacks.error(TRPCClientError.from(err as Error)),
+          );
+        }
+      }
     }).catch((err) => {
       this.requestManager.delete(message);
       callbacks.error(TRPCClientError.from(err));
