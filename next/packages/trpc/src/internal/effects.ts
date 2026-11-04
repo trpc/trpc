@@ -3,7 +3,7 @@
  *
  * @internal
  */
-import { Effect, Exit, Stream } from 'effect';
+import { Cause, Effect, Exit, Fiber, Queue, Stream } from 'effect';
 
 /**
  * `Stream.callback` options for a producer that must keep pace with its
@@ -72,10 +72,80 @@ export const interruptSignal = (): Effect.Effect<InterruptSignal> =>
     };
   });
 
+const aborted = (signal: AbortSignal): Effect.Effect<void> =>
+  Effect.callback<void>((resume) => {
+    const release = () => signal.removeEventListener('abort', onAbort);
+    const onAbort = () => {
+      release();
+      resume(Effect.void);
+    };
+    signal.addEventListener('abort', onAbort);
+    return Effect.sync(release);
+  });
+
+/** What a stopped fiber's teardown failed with, without its interruption. */
+const teardownFailure = (
+  exit: Exit.Exit<unknown, unknown>,
+): Cause.Cause<unknown> | undefined => {
+  if (Exit.isSuccess(exit)) return undefined;
+  const reasons = exit.cause.reasons.filter(
+    (reason) => !Cause.isInterruptReason(reason),
+  );
+  return reasons.length > 0 ? Cause.fromReasons(reasons) : undefined;
+};
+
 /**
- * `Stream.toAsyncIterable`, also ending quietly when `signal` aborts: the
- * iterator returns, which interrupts a pending `next()` and closes the
- * stream without starting it.
+ * `stream`, ending when `signal` aborts. A fiber reads it into a bounded
+ * queue; aborting interrupts that fiber, so the source's finalizers run
+ * straight away, and the stream ends once the values already queued are
+ * read. If a finalizer fails, the stream fails with it after them. A
+ * failure the reader hasn't seen fails the scope's close instead, so
+ * `return()` (`break`) rejects with it.
+ */
+const endOnAbort = <A, E>(
+  stream: Stream.Stream<A, E>,
+  signal: AbortSignal,
+): Stream.Stream<A, E> =>
+  Stream.unwrap(
+    Effect.gen(function* () {
+      if (signal.aborted) return Stream.empty;
+      const queue = yield* Queue.bounded<A, E | Cause.Done>(
+        backpressure.bufferSize,
+      );
+      const producer = yield* Stream.runForEachArray(stream, (values) =>
+        Queue.offerAll(queue, values),
+      ).pipe(
+        Effect.onExit((exit) => {
+          const failure = teardownFailure(exit);
+          return failure
+            ? Queue.failCause(queue, failure as Cause.Cause<E>)
+            : Queue.end(queue);
+        }),
+        Effect.forkScoped,
+      );
+      yield* Effect.addFinalizer((closed) =>
+        Effect.gen(function* () {
+          yield* Fiber.interrupt(producer);
+          const failure = teardownFailure(yield* Fiber.await(producer));
+          // A failed close means the reader got a failure already.
+          if (failure && Exit.isSuccess(closed)) {
+            yield* Effect.failCause(failure as Cause.Cause<never>);
+          }
+        }),
+      );
+      yield* Effect.forkScoped(
+        Effect.andThen(aborted(signal), Fiber.interrupt(producer)),
+      );
+      return Stream.fromQueue(queue);
+    }),
+  );
+
+/**
+ * `Stream.toAsyncIterable`, also ending when `signal` aborts: a pending
+ * `next()` resolves `{ done: true }` once the values already received are
+ * read, and an already aborted signal never starts the stream. A finalizer
+ * that fails on abort rejects the next `next()` after those values, once;
+ * on `return()` (`break`), `return()` rejects with it.
  * @internal
  */
 export function toAsyncIterable<A, E>(
@@ -83,23 +153,5 @@ export function toAsyncIterable<A, E>(
   signal?: AbortSignal,
 ): AsyncIterable<A> {
   if (!signal) return Stream.toAsyncIterable(stream);
-  return {
-    [Symbol.asyncIterator]() {
-      const release = () => signal.removeEventListener('abort', onAbort);
-      const iterator = Stream.toAsyncIterable(
-        Stream.ensuring(stream, Effect.sync(release)),
-      )[Symbol.asyncIterator]() as Required<AsyncIterator<A>>;
-      const onAbort = () => void iterator.return();
-      if (signal.aborted) onAbort();
-      else signal.addEventListener('abort', onAbort, { once: true });
-      return {
-        next: () => iterator.next(),
-        return: () => {
-          release();
-          return iterator.return();
-        },
-        throw: (error: unknown) => iterator.throw(error),
-      };
-    },
-  };
+  return Stream.toAsyncIterable(endOnAbort(stream, signal));
 }
