@@ -67,8 +67,8 @@ export function getClientArgs<
     direction: 'forward' | 'backward';
   } | null;
 }) {
-  const { queryKey, opts, infiniteParams } = args;
-  const queryKeyData = readQueryKey(queryKey);
+  const { infiniteParams } = args;
+  const queryKeyData = readQueryKey(args.queryKey);
 
   let input = queryKeyData.args?.input;
   if (infiniteParams) {
@@ -80,7 +80,11 @@ export function getClientArgs<
       direction: infiniteParams.direction,
     };
   }
-  return [queryKeyData.path.join('.'), input, (opts as any)?.trpc] as const;
+  return [
+    queryKeyData.path.join('.'),
+    input,
+    (args.opts as any)?.trpc,
+  ] as const;
 }
 
 /**
