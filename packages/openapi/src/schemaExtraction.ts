@@ -345,17 +345,16 @@ export function applyDescriptions(opts: {
   descs: DescriptionMap;
   schemas: Record<string, SchemaObject>;
 }): void {
-  const { schema, descs, schemas } = opts;
-  if (descs.self) {
-    schema.description = descs.self;
+  if (opts.descs.self) {
+    opts.schema.description = opts.descs.self;
   }
 
-  for (const [propPath, description] of descs.properties) {
+  for (const [propPath, description] of opts.descs.properties) {
     setNestedDescription({
-      schema,
+      schema: opts.schema,
       pathParts: propPath.split('.'),
       description,
-      schemas,
+      schemas: opts.schemas,
     });
   }
 }
@@ -364,17 +363,16 @@ function resolveSchemaRef(opts: {
   schema: SchemaObject;
   schemas: Record<string, SchemaObject>;
 }): SchemaObject | null {
-  const { schema, schemas } = opts;
-  const ref = schema.$ref;
+  const ref = opts.schema.$ref;
   if (!ref) {
-    return schema;
+    return opts.schema;
   }
   if (!ref.startsWith('#/components/schemas/')) {
     return null;
   }
 
   const refName = ref.slice('#/components/schemas/'.length);
-  return refName ? (schemas[refName] ?? null) : null;
+  return refName ? (opts.schemas[refName] ?? null) : null;
 }
 
 function getArrayItemsSchema(schema: SchemaObject): SchemaObject | null {
