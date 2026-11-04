@@ -90,14 +90,13 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    context: OperationContext;
     signal: Maybe<AbortSignal>;
   }) {
     const chain$ = createChain<AnyRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
         ...opts,
-        context: opts.context ?? {},
         id: ++this.requestId,
       },
     });
@@ -108,7 +107,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    context: OperationContext;
     signal: Maybe<AbortSignal>;
   }): Promise<TOutput> {
     try {
@@ -128,7 +127,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       type: 'query',
       path,
       input,
-      context: opts?.context,
+      context: opts?.context ?? {},
       signal: opts?.signal,
     });
   }
@@ -138,7 +137,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       type: 'mutation',
       path,
       input,
-      context: opts?.context,
+      context: opts?.context ?? {},
       signal: opts?.signal,
     });
   }
@@ -155,7 +154,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       type: 'subscription',
       path,
       input,
-      context: opts.context,
+      context: opts.context ?? {},
       signal: opts.signal,
     });
     return observable$.subscribe({

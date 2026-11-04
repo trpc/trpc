@@ -16,7 +16,7 @@ export function createChain<
   op: Operation<TInput>;
 }): OperationResultObservable<TRouter, TOutput> {
   return observable((observer) => {
-    function execute(index = 0, op = opts.op) {
+    function execute(index: number, op: Operation<TInput>) {
       const next = opts.links[index];
       if (!next) {
         throw new Error(
@@ -34,7 +34,7 @@ export function createChain<
       return subscription;
     }
 
-    const obs$ = execute();
+    const obs$ = execute(0, opts.op);
     return obs$.subscribe(observer);
   });
 }
