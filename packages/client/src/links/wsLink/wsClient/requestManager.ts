@@ -76,7 +76,7 @@ export class RequestManager {
     });
 
     return () => {
-      this.delete(message.id);
+      this.delete(message);
       callbacks.complete();
       resolve();
     };
@@ -84,14 +84,18 @@ export class RequestManager {
 
   /**
    * Deletes a request from both the outgoing and pending collections, if it exists.
+   *
+   * Matches the message itself rather than its id: a retry reuses the id, and
+   * registers its request before the failed request with that id is deleted.
    */
-  public delete(messageId: MessageIdLike) {
-    if (messageId === null) return;
-
+  public delete(message: TRPCClientOutgoingMessage) {
     this.outgoingRequests = this.outgoingRequests.filter(
-      ({ id }) => id !== String(messageId),
+      (request) => request.message !== message,
     );
-    delete this.pendingRequests[String(messageId)];
+    const id = String(message.id);
+    if (this.pendingRequests[id]?.message === message) {
+      delete this.pendingRequests[id];
+    }
   }
 
   /**
