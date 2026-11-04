@@ -356,7 +356,14 @@ export const publishStable = Effect.fn('publishStable')(function* (
         }),
     ),
   );
-  yield* githubRelease(root, { tag, previousTag });
+  yield* githubRelease(root, { tag, previousTag }).pipe(
+    Effect.mapError(
+      (error) =>
+        new ReleaseError({
+          message: `${error.message}. ${tag} is published and pushed; create the GitHub release: pnpm release github-release ${tag}`,
+        }),
+    ),
+  );
   return tag;
 });
 
