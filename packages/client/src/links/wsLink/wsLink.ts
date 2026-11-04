@@ -1,3 +1,4 @@
+import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
@@ -12,6 +13,7 @@ import type {
   WebSocketClientOptions,
 } from './createWsClient';
 import { createWSClient, jsonEncoder } from './createWsClient';
+import { callUserCallback } from './wsClient/utils';
 
 /**
  * Options for {@link wsLink}.
@@ -38,17 +40,28 @@ export function wsLink<TRouter extends AnyRouter>(
   return () => {
     return ({ op }) => {
       return observable((observer) => {
-        const connStateSubscription =
-          op.type === 'subscription'
-            ? client.connectionState.subscribe({
-                next(result) {
-                  observer.next({
-                    result,
-                    context: op.context,
-                  });
-                },
-              })
-            : null;
+        let connStateSubscription: Unsubscribable | null = null;
+        if (op.type === 'subscription') {
+          // The current state is sent during `subscribe`, and a throwing
+          // `onConnectionStateChange` must not stop the request below from
+          // being sent. The client guards the states it sends later.
+          let isSubscribing = true;
+          connStateSubscription = client.connectionState.subscribe({
+            next(result) {
+              const emit = () =>
+                observer.next({
+                  result,
+                  context: op.context,
+                });
+              if (isSubscribing) {
+                callUserCallback(emit);
+              } else {
+                emit();
+              }
+            },
+          });
+          isSubscribing = false;
+        }
 
         const requestSubscription = client
           .request({
