@@ -179,10 +179,13 @@ export function recentSponsorsOf(
 } {
   const newestFirst = all
     .filter((sponsor) => sponsor.createdAt <= now)
-    .toSorted(
-      (a, b) =>
-        b.createdAt - a.createdAt || sponsorKey(a).localeCompare(sponsorKey(b)),
-    );
+    .toSorted((a, b) => {
+      const [keyA, keyB] = [sponsorKey(a), sponsorKey(b)];
+      // Not `localeCompare`, whose order can differ between the server and a browser.
+      return (
+        b.createdAt - a.createdAt || (keyA < keyB ? -1 : keyA > keyB ? 1 : 0)
+      );
+    });
   const started = newestFirst.filter(
     (sponsor) => sponsor.createdAt > now - newSponsorMs,
   );
