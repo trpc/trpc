@@ -44,11 +44,10 @@ import type {
 } from '../unstable-core-do-not-import';
 // oxlint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
-// oxlint-disable-next-line no-restricted-imports
-import { timerResource } from '../unstable-core-do-not-import/stream/utils/timerResource';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL } from './node-http';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
+import { keepAliveResource } from './ws-machines/keepAlive';
 import type { Encoder } from './wsEncoder';
 import { jsonEncoder } from './wsEncoder';
 
@@ -68,6 +67,14 @@ import { jsonEncoder } from './wsEncoder';
  * @see https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
+
+const DEFAULT_PING_MS = 30_000;
+const DEFAULT_PONG_WAIT_MS = 5_000;
+
+function logInternalError(cause: unknown) {
+  // oxlint-disable-next-line no-console
+  console.error('[@trpc/server/adapters/ws]', getTRPCErrorFromUnknown(cause));
+}
 
 /**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
@@ -309,31 +316,6 @@ function messagesResource(client: WsWebSocket) {
       closing.abort();
     },
   );
-}
-
-/**
- * Resolves with what happens first on `client`: a message, the connection
- * closing, or `ms` passing. Its listeners and timer are removed once it
- * settles.
- */
-async function nextActivity(
-  client: WsWebSocket,
-  ms: number,
-): Promise<'message' | 'close' | 'timeout'> {
-  using timer = timerResource(ms);
-  const activity = createDeferred<'message' | 'close'>();
-  const onMessage = () => activity.resolve('message');
-  const onClose = () => activity.resolve('close');
-  client.once('message', onMessage);
-  client.once('close', onClose);
-  using _listeners = makeResource({}, () => {
-    client.off('message', onMessage);
-    client.off('close', onClose);
-  });
-  return await Promise.race([
-    activity.promise,
-    timer.start().then(() => 'timeout' as const),
-  ]);
 }
 
 /** What's in a message. */
@@ -615,9 +597,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     /** The connection's context, once `createContext` has resolved. */
     let ctx: Context | undefined = undefined;
 
-    if (opts.keepAlive?.enabled) {
-      handleKeepAlive(client, opts.keepAlive.pingMs, opts.keepAlive.pongWaitMs);
-    }
+    await using _keepAlive = opts.keepAlive?.enabled
+      ? keepAliveResource(client, {
+          pingMs: opts.keepAlive.pingMs ?? DEFAULT_PING_MS,
+          pongWaitMs: opts.keepAlive.pongWaitMs ?? DEFAULT_PONG_WAIT_MS,
+          onError: (cause) => reportInternalError(noRequest, cause),
+        })
+      : null;
 
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
     // This line was introduced after the following error brought down production systems:
@@ -728,10 +714,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      */
     function reportInternalError(request: OnErrorRequest, cause: unknown) {
       const error = getTRPCErrorFromUnknown(cause);
-      const log = () => {
-        // oxlint-disable-next-line no-console
-        console.error('[@trpc/server/adapters/ws]', error);
-      };
+      const log = () => logInternalError(error);
       if (opts.onError) {
         callOnError(request, error, log);
       } else {
@@ -1245,34 +1228,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
 /**
  * Pings a client after `pingMs` of quiet, and closes the connection if no
- * message comes within `pongWaitMs`.
+ * message comes within `pongWaitMs`. It stops once the connection closes.
  */
 export function handleKeepAlive(
   client: WsWebSocket,
-  pingMs = 30_000,
-  pongWaitMs = 5_000,
+  pingMs = DEFAULT_PING_MS,
+  pongWaitMs = DEFAULT_PONG_WAIT_MS,
 ) {
-  void run(async () => {
-    while (true) {
-      const quiet = await nextActivity(client, pingMs);
-      if (quiet === 'close') {
-        return;
-      }
-      if (quiet === 'message') {
-        continue;
-      }
-      // `send` throws only while a socket is connecting, which a server's
-      // socket never is, so this loop never rejects.
-      client.send('PING');
-      const answer = await nextActivity(client, pongWaitMs);
-      if (answer === 'close') {
-        return;
-      }
-      if (answer === 'timeout') {
-        client.terminate();
-        return;
-      }
-    }
+  const keepAlive = keepAliveResource(client, {
+    pingMs,
+    pongWaitMs,
+    onError: logInternalError,
+  });
+  client.once('close', () => {
+    void run(async () => {
+      await using _keepAlive = keepAlive;
+    });
   });
 }
 
