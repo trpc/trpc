@@ -301,7 +301,20 @@ export function SponsorCloud(props: {
                     />
                   ) : null}
                 </TooltipTrigger>
-                <TooltipContent className="flex-col items-start gap-0">
+                <TooltipContent
+                  className="flex-col items-start gap-0"
+                  render={
+                    // The bubble is the link a keyboard or screen reader
+                    // reaches; its tooltip is one more place to click it.
+                    <a
+                      aria-hidden
+                      href={sponsor.link}
+                      rel="sponsored noopener"
+                      tabIndex={-1}
+                      target="_blank"
+                    />
+                  }
+                >
                   <span className="flex items-center gap-1.5 font-semibold">
                     {sponsor.name}
                     {celebrated ? (
