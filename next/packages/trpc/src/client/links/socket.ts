@@ -1,5 +1,6 @@
 import { decodeMessage } from '../../internal/frames.ts';
 import {
+  Cause,
   Channel,
   Data,
   Deferred,
@@ -73,11 +74,16 @@ type CallMessage = Exclude<
 const LOST = /* @__PURE__ */ Signal.Lost();
 const MOVED = /* @__PURE__ */ Signal.Moved();
 
+/** No connection opened, and `unopened` says why. */
+interface Unopened {
+  readonly unopened: AnyTrpcError;
+}
+
 /**
  * How a call's time on one connection ended. `stale`: the connection was
  * lost or retired before the call was sent on it.
  */
-type Outcome = 'complete' | 'heard' | 'silent' | 'moved' | 'stale';
+type Outcome = 'complete' | 'heard' | 'silent' | 'moved' | 'stale' | Unopened;
 
 interface Connection {
   readonly socket: SocketConnection;
@@ -189,6 +195,13 @@ type ReconnectOption = Pick<BuiltinCallOptions, 'reconnect'>;
 
 const lostError = () =>
   new TrpcError({ code: 'NETWORK_ERROR', message: 'The connection was lost' });
+
+const unopenedError = (cause: unknown) =>
+  new TrpcError({
+    code: 'NETWORK_ERROR',
+    message: 'The connection could not be opened',
+    cause,
+  });
 
 const closedError = (message: string) =>
   new TrpcError({ code: 'CLIENT_CLOSED_REQUEST', message });
@@ -340,7 +353,7 @@ function makeSocketLink(
 
   const acquire = Effect.gen(function* () {
     const epoch = closes;
-    const socket = yield* Effect.mapError(transport.connect, lostError);
+    const socket = yield* Effect.mapError(transport.connect, unopenedError);
     const conn: Connection = {
       socket,
       calls: new Map(),
@@ -359,7 +372,7 @@ function makeSocketLink(
         typeof opts.connectionParams === 'function'
           ? await opts.connectionParams()
           : opts.connectionParams,
-      catch: lostError,
+      catch: unopenedError,
     });
     if (closes !== epoch) {
       conn.lost = true;
@@ -402,14 +415,14 @@ function makeSocketLink(
   );
 
   /**
-   * The shared connection, `undefined` if none opens, or `stale` if it was
+   * The shared connection, `Unopened` if none opens, or `stale` if it was
    * lost or retired (it's dropped, so the next try opens another). Fails
    * with the error `close()` gave the call while it waited.
    */
   const connected = Effect.fnUntraced(function* (
     inbox: Queue.Queue<Signal>,
   ): Effect.fn.Return<
-    Connection | 'stale' | undefined,
+    Connection | 'stale' | Unopened,
     AnyTrpcError,
     Scope.Scope
   > {
@@ -420,7 +433,14 @@ function makeSocketLink(
     // Disposing interrupts a connection still opening.
     const conn = yield* Effect.exit(RcRef.get(connection));
     if (disposed) return yield* Effect.fail(disposedError());
-    if (Exit.isFailure(conn)) return undefined;
+    if (Exit.isFailure(conn)) {
+      return {
+        unopened: Option.getOrElse(
+          Cause.findErrorOption(conn.cause),
+          lostError,
+        ),
+      };
+    }
     if (!conn.value.lost && !conn.value.retired) return conn.value;
     yield* drop(conn.value);
     return 'stale';
@@ -430,7 +450,7 @@ function makeSocketLink(
    * Sends the call on one connection. `complete`; `moved` by the server's
    * `reconnect`; or the connection dropped and `heard` says whether it had
    * answered anything, so the next reconnect counts from the first attempt
-   * again.
+   * again; or `Unopened`, with the error that kept it from opening.
    */
   const attach = Effect.fnUntraced(function* (
     call: Call,
@@ -445,8 +465,7 @@ function makeSocketLink(
     // A stale connection's reference is released with this scope, so it
     // can close.
     const conn = yield* connected(inbox);
-    if (conn === 'stale') return 'stale';
-    if (!conn) return 'silent';
+    if (conn === 'stale' || 'unopened' in conn) return conn;
     if (conn.refused) return yield* Effect.fail(conn.refused);
     let complete = false;
     yield* Effect.addFinalizer(() =>
@@ -520,7 +539,9 @@ function makeSocketLink(
         !moves ||
         ++attempt > reconnect.attempts
       ) {
-        return yield* Effect.fail(lostError());
+        return yield* Effect.fail(
+          typeof outcome === 'object' ? outcome.unopened : lostError(),
+        );
       }
       yield* call.onReconnect;
       // `close()` can fail the call while it waits.
