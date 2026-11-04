@@ -1,16 +1,11 @@
 // @vitest-environment node
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import {
-  createTRPCClient,
-  createWSClient,
-  TRPCClientError,
-  wsLink,
-} from '@trpc/client';
+import { TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Encoder, WSSHandlerOptions } from '@trpc/server/adapters/ws';
-import { applyWSSHandler, jsonEncoder } from '@trpc/server/adapters/ws';
+import { jsonEncoder } from '@trpc/server/adapters/ws';
 import type { TRPCResponseMessage } from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import {
@@ -18,7 +13,7 @@ import {
   makeAsyncResource,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
-import WebSocket, { WebSocketServer } from 'ws';
+import WebSocket from 'ws';
 import { z } from 'zod';
 
 type OnError = NonNullable<WSSHandlerOptions<AnyRouter>['onError']>;
@@ -277,33 +272,47 @@ test('a failed createContext with an onError that throws still closes the connec
   ]);
 });
 
+test('a connection error reply that cannot be encoded gets the fallback error, so the connection is still rejected', async () => {
+  const onError = vi.fn<OnError>();
+  const router = routerWithErrorFormatter(({ shape }) => ({
+    ...shape,
+    data: { ...shape.data, unencodable: 1n },
+  }));
+  await using ctx = testServerAndClientResource(router, {
+    wssServer: {
+      onError,
+      createContext: () => {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      },
+    },
+  });
+  await using socket = await rawSocketResource(ctx.wssUrl);
+
+  await socket.closed;
+  expect(socket.responses()).toEqual([{ id: null, error: fallbackError }]);
+  expect(onError.mock.calls.map(([opts]) => opts.error.cause?.name)).toEqual([
+    undefined,
+    'TypeError',
+  ]);
+});
+
 test('an onError that throws on a socket error leaves the server serving', async () => {
   const onError = vi.fn<OnError>(throwingOnError);
   const echoRouter = t.router({
     echo: t.procedure.input(z.string()).query(({ input }) => input),
   });
-  const wss = new WebSocketServer({ port: 0, maxPayload: 64 });
-  applyWSSHandler({ wss, router: echoRouter, onError });
-  await using _server = makeAsyncResource({}, async () => {
-    await new Promise<void>((resolve) => wss.close(() => resolve()));
-  });
-  const address = wss.address();
-  assert(typeof address === 'object');
-  const wsClient = createWSClient({
-    url: `ws://localhost:${address.port}`,
-    retryDelayMs: () => 60_000,
-  });
-  await using _client = makeAsyncResource({}, () => wsClient.close());
-  const client = createTRPCClient<typeof echoRouter>({
-    links: [wsLink({ client: wsClient })],
+  await using ctx = testServerAndClientResource(echoRouter, {
+    clientLink: 'wsLink',
+    wssServer: { onError },
+    wssOptions: { maxPayload: 64 },
+    // the socket error closes the connection; don't reconnect during the test
+    wsClient: { retryDelayMs: () => 60_000 },
   });
 
-  await expect(client.echo.query('x'.repeat(1_000))).rejects.toThrow();
+  await expect(ctx.client.echo.query('x'.repeat(1_000))).rejects.toThrow();
   await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
 
-  await using socket = await rawSocketResource(
-    `ws://localhost:${address.port}`,
-  );
+  await using socket = await rawSocketResource(ctx.wssUrl);
   socket.ws.send(
     JSON.stringify({
       id: 1,

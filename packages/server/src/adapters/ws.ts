@@ -311,14 +311,29 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     /**
-     * Sends a response that isn't tied to a request, reporting it to
-     * `onError` if it can't be built or sent.
+     * Sends a response that isn't tied to a request, reporting it if it
+     * can't be built or sent. One that can't be sent is replaced by the
+     * fallback error, so that a client still learns it was rejected.
      */
     function respondOrReport(response: () => TRPCResponseMessage) {
+      let message: TRPCResponseMessage | null = null;
       try {
-        respond(response());
+        message = response();
+        respond(message);
       } catch (cause) {
         reportConnectionError(cause);
+        if (message === null) {
+          return;
+        }
+        try {
+          respond({
+            id: message.id,
+            jsonrpc: message.jsonrpc,
+            error: fallbackErrorShape,
+          });
+        } catch {
+          // the same failure, and it was reported above
+        }
       }
     }
 
