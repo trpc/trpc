@@ -1,6 +1,6 @@
 # Agent instructions
 
-`main` is tRPC v11; v12 is a rewrite on the [`v12`](https://github.com/trpc/trpc/tree/v12) branch. Skills live in `.agents/skills/`; a new one also needs a `.claude/skills/<name>` symlink and a `.gitignore` entry. Don't add a `.cursor/` folder.
+`main` is tRPC v11; v12 is a rewrite on the [`v12`](https://github.com/trpc/trpc/tree/v12) branch. Skills live in `.agents/skills/`; a new one also needs a `.claude/skills/<name>` symlink and a `!` entry in `.oxfmtrc.json`. Don't add a `.cursor/` folder.
 
 ## Commands
 
@@ -28,4 +28,6 @@ Run them from the repo root.
 - [`tdd`](.agents/skills/tdd/SKILL.md): fixing a bug.
 - [`typescript-best-practices`](.agents/skills/typescript-best-practices/SKILL.md) and [`principle-type-system-discipline`](.agents/skills/principle-type-system-discipline/SKILL.md): writing or reviewing TypeScript.
 
-Those three are Lauren Tan's pstack skills, copied unchanged; source and MIT license are in [`NOTICE-pstack.md`](.agents/skills/NOTICE-pstack.md). Don't edit them; re-copy to update.
+Those three are Lauren Tan's pstack skills, installed unchanged by the [`skills`](https://skills.sh) CLI and pinned in `skills-lock.json`; their MIT license is in [`NOTICE-pstack.md`](.agents/skills/NOTICE-pstack.md). Don't edit them. To update, rerun with a new commit and update the notice:
+
+`npx skills add https://github.com/cursor/plugins/tree/<sha>/pstack/skills --skill tdd typescript-best-practices principle-type-system-discipline -a claude-code codex cursor -y`
