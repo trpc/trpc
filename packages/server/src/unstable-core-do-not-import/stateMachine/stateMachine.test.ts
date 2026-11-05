@@ -235,6 +235,26 @@ test('a resource map disposes what it replaces, deletes or holds', () => {
   expect(map.size).toBe(0);
 });
 
+test('a resource map releases an entry without disposing it, only if it is still the same one', () => {
+  const disposed: string[] = [];
+  const resource = (name: string) =>
+    makeResource({ name }, () => disposed.push(name));
+  const map = createResourceMap<number, ReturnType<typeof resource>>();
+  const a = resource('a');
+  const b = resource('b');
+
+  map.set(1, a);
+  map.set(1, b);
+  expect(map.release(1, a)).toBe(false);
+  expect(map.get(1)).toBe(b);
+  expect(map.release(1, b)).toBe(true);
+  expect(map.has(1)).toBe(false);
+  expect(map.release(1, b)).toBe(false);
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  map[Symbol.dispose]();
+  expect(disposed).toEqual(['a']);
+});
+
 test('a timer that went off counts unless it was cancelled or restarted before its turn', async () => {
   using timers = createMachineTimers<'a' | 'b'>();
   const events = timers.events[Symbol.asyncIterator]();
