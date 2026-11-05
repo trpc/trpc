@@ -2085,7 +2085,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     };
   }
 
-  test('tracked events reach the subscriber once each and in order', async () => {
+  test('a moved subscription gets every event exactly once', async () => {
     const {
       ctx,
       push,
@@ -2192,7 +2192,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('a subscription moved before it started on the old socket reports started once', async () => {
+  test('a subscription moved before its started arrived still reports onStarted once', async () => {
     const { ctx, ee, valuesStarted, observe, waitForOpen } = setup();
     await using _ctx = ctx;
     const { oldClientSocket, oldServerSocket } = await waitForOpen();
@@ -2291,7 +2291,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('the old socket stays open and serves its subscriptions until the new one opens', async () => {
+  test('the old socket stays open and serves its subscriptions and new requests until the new one opens', async () => {
     const {
       ctx,
       ee,
@@ -2631,7 +2631,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('the old socket is asked to stop a subscription only once the new one has started it', async () => {
+  test('a subscription is stopped on the old socket only once the new one has started it', async () => {
     const {
       ctx,
       valuesStarted,
