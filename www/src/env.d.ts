@@ -3,6 +3,8 @@ interface ImportMetaEnv {
   readonly VERCEL_ENV: string;
   /** Where this build is served, at build time (`deploymentOrigin` in `seo.ts`). */
   readonly DEPLOYMENT_ORIGIN: string;
+  /** When this build ran, in ms since the epoch. */
+  readonly BUILT_AT: number;
 }
 
 /** Sentry's settings, from the build's environment (`build/sentry.ts`). */

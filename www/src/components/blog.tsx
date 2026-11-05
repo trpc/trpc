@@ -20,7 +20,6 @@ import {
 } from '~/components/toc.tsx';
 import { findPost, postNeighbours, posts } from '~/content/blog.ts';
 import type { Post, PostAuthor, PostMeta } from '~/content/types.ts';
-import { PageDemos } from '~/demos/page-demos.tsx';
 import {
   absoluteUrl,
   ogImageUrl,
@@ -263,7 +262,6 @@ export function BlogPost(props: { readonly post: Post }) {
           key={post.slug}
         />
         <DocBody html={post.html} />
-        <PageDemos html={post.html} />
         <footer className="mt-12 grid gap-6 border-t pt-6">
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {atTrpcIo ? null : (

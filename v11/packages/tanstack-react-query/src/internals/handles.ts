@@ -61,7 +61,7 @@ export interface unstable_TRPCQueryHandle<
    */
   readonly [handleDef]: TDef & { kind: 'query' };
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
-  /** The input the query was started with */
+  /** The input the query was started with. The key is absent when the input is `undefined`. */
   readonly input: TDef['input'];
 }
 
@@ -335,7 +335,11 @@ export function startHandle(opts: {
 }) {
   const { queryClient, options, kind, verb, inRender } = opts;
   const input = readQueryKey(options.queryKey).args?.input;
-  const handle: Record<string, unknown> = { queryKey: options.queryKey, input };
+  // Next.js rejects `undefined` in `getServerSideProps` / `getStaticProps` props
+  const handle: Record<string, unknown> = {
+    queryKey: options.queryKey,
+    ...(input !== undefined && { input }),
+  };
   if (kind === 'infinite' && options.initialPageParam != null) {
     handle['initialCursor'] = options.initialPageParam;
   }

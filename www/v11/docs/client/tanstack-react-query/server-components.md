@@ -362,13 +362,13 @@ To avoid repeating the procedure and input in client components, start queries w
 Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
 we can take advantage of the RSC capabilities by prefetching queries in a server component high up the tree. You may be familiar with this
 concept as "render as you fetch" commonly implemented as loaders. This means the request fires as soon as possible but without suspending until
-the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
+the data is needed by using the `useSuspenseQuery` hook.
 
 This approach leverages Next.js App Router's streaming capabilities, initiating the query on the server and streaming data to the client as it becomes available.
 It optimizes both the time to first byte in the browser and the data fetch time, resulting in faster page loads.
-However, `greeting.data` may initially be `undefined` before the data streams in.
 
-If you prefer to avoid this initial undefined state, you can `await` the `prefetchQuery` call.
+Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch.
+For a component on `useQuery`, like the one below, `await` the `prefetchQuery` call instead.
 This ensures the query on the client always has data on first render, but it comes with a tradeoff -
 the page will load more slowly since the server must complete the query before sending HTML to the client.
 
@@ -420,7 +420,7 @@ import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
+  await queryClient.prefetchQuery(
     trpc.hello.queryOptions({
       /** input */
     }),
@@ -464,9 +464,16 @@ import { useTRPC } from '../trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
-  const greeting = useQuery(trpc.hello.queryOptions({ text: 'world' }));
-  if (!greeting.data) return <div>Loading...</div>;
-  return <div>{greeting.data.greeting}</div>;
+  const greetingQuery = useQuery(trpc.hello.queryOptions({ text: 'world' }));
+
+  switch (greetingQuery.status) {
+    case 'pending':
+      return <div>Loading...</div>;
+    case 'error':
+      return <div>Error: {greetingQuery.error.message}</div>;
+    case 'success':
+      return <div>{greetingQuery.data.greeting}</div>;
+  }
 }
 ```
 
@@ -507,7 +514,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 }
 ```
 
-Then you can use it like this:
+`prefetch` doesn't await the query, so read it with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)). Then you can use it like this:
 
 ```tsx twoslash
 // @jsx: react-jsx
@@ -680,8 +687,8 @@ import { useTRPC } from '../trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.hello.queryOptions());
-  return <div>{data.greeting}</div>;
+  const greetingQuery = useSuspenseQuery(trpc.hello.queryOptions());
+  return <div>{greetingQuery.data.greeting}</div>;
 }
 ```
 

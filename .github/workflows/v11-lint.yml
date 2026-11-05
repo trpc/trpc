@@ -26,7 +26,8 @@ on:
       - '.github/workflows/v11-lint.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # a push to `main` gets a group of its own, so another push can't cancel its checks (see main.yml)
+  group: "${{ github.workflow }}-${{ github.ref }}${{ github.ref == 'refs/heads/main' && format('-{0}', github.sha) || '' }}"
   cancel-in-progress: true
 
 env:
@@ -40,6 +41,8 @@ defaults:
 jobs:
   autofix:
     name: 'Lint and auto-fix'
+    # on `main`, only release commits, which skip the merge queue; on v12, which has no PRs, every push
+    if: "github.event_name != 'push' || github.ref == 'refs/heads/v12' || startsWith(github.event.head_commit.message, 'chore: release v')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

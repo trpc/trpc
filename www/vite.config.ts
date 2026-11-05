@@ -126,6 +126,9 @@ export default defineConfig({
     'import.meta.env.DEPLOYMENT_ORIGIN': JSON.stringify(
       deploymentOrigin(process.env),
     ),
+    // One time for the prerender, on-demand renders and the browser, so the
+    // sponsor cloud picks the same new sponsors in all of them.
+    'import.meta.env.BUILT_AT': JSON.stringify(Date.now()),
     ...sentryDefines(sentry),
   },
   // The prerender fetches each page from this server in the build's own

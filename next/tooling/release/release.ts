@@ -18,7 +18,7 @@ import { Data, Effect } from 'effect';
 
 /**
  * The repository's root: Changesets reads the pnpm workspace there, v11's
- * packages too, which it leaves alone (lerna versions them).
+ * packages too, which it leaves alone (`v11/tooling/release` versions them).
  */
 export const root: string = fileURLToPath(new URL('../../..', import.meta.url));
 

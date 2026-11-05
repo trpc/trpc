@@ -1,4 +1,3 @@
-import type { Result } from '../unstable-core-do-not-import';
 import type {
   Observable,
   Observer,
@@ -45,6 +44,20 @@ export function observable<TValue, TError = unknown>(
       let isDone = false;
       let unsubscribed = false;
       let teardownImmediately = false;
+      let subscribing = true;
+      let thrownWhileSubscribing = null as { cause: unknown } | null;
+      function end(notify: () => void) {
+        try {
+          notify();
+        } catch (cause) {
+          // The source hasn't returned its teardown yet; rethrow once it has
+          // run.
+          if (!subscribing) throw cause;
+          thrownWhileSubscribing ??= { cause };
+        } finally {
+          unsubscribe();
+        }
+      }
       function unsubscribe() {
         if (teardownRef === null) {
           teardownImmediately = true;
@@ -73,20 +86,22 @@ export function observable<TValue, TError = unknown>(
             return;
           }
           isDone = true;
-          observer.error?.(err);
-          unsubscribe();
+          end(() => observer.error?.(err));
         },
         complete() {
           if (isDone) {
             return;
           }
           isDone = true;
-          observer.complete?.();
-          unsubscribe();
+          end(() => observer.complete?.());
         },
       });
+      subscribing = false;
       if (teardownImmediately) {
         unsubscribe();
+      }
+      if (thrownWhileSubscribing) {
+        throw thrownWhileSubscribing.cause;
       }
       return {
         unsubscribe,
@@ -145,88 +160,126 @@ export function observableToPromise<TValue>(
 }
 
 /**
- * @internal
- */
-function observableToReadableStream<TValue>(
-  observable: Observable<TValue, unknown>,
-  signal: AbortSignal,
-): ReadableStream<Result<TValue>> {
-  let unsub: Unsubscribable | null = null;
-
-  const onAbort = () => {
-    unsub?.unsubscribe();
-    unsub = null;
-    signal.removeEventListener('abort', onAbort);
-  };
-
-  return new ReadableStream<Result<TValue>>({
-    start(controller) {
-      unsub = observable.subscribe({
-        next(data) {
-          controller.enqueue({ ok: true, value: data });
-        },
-        error(error) {
-          controller.enqueue({ ok: false, error });
-          controller.close();
-        },
-        complete() {
-          controller.close();
-        },
-      });
-
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener('abort', onAbort, { once: true });
-      }
-    },
-    cancel() {
-      onAbort();
-    },
-  });
-}
-
-/**
- * Turns an observable into an async iterable. Aborting `signal`
- * unsubscribes from the observable but doesn't end a pending `next()`.
+ * Turns an observable into an async iterable, like Node's `events.on()`.
+ * Values wait in a queue until `next()` reads them. An error rejects the
+ * `next()` after the queued values, once. Completion, `return()` and aborting
+ * `signal` unsubscribe and end every pending `next()` with `{ done: true }`;
+ * anything the observable sends after that is ignored.
+ *
+ * If unsubscribing throws, `return()` rejects with the error, and completion
+ * or an error from the observable rethrows it. On abort, it rejects the
+ * `next()` after the queued values instead, as an error would.
  * @internal
  */
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
   signal: AbortSignal,
-): AsyncIterable<TValue> {
-  const stream = observableToReadableStream(observable, signal);
+): AsyncIterableIterator<TValue> {
+  const values: TValue[] = [];
+  const pending: {
+    resolve: (result: IteratorResult<TValue>) => void;
+    reject: (cause: unknown) => void;
+  }[] = [];
+  let error: { cause: unknown } | null = null;
+  let finished = false;
+  let subscription: Unsubscribable | null = null;
 
-  const reader = stream.getReader();
-  const iterator: AsyncIterator<TValue> = {
-    async next() {
-      const value = await reader.read();
-      if (value.done) {
-        return {
-          value: undefined,
-          done: true,
-        };
+  /** Unsubscribes once, and returns what the teardown threw. */
+  function unsubscribe(): { cause: unknown } | null {
+    if (finished) {
+      return null;
+    }
+    finished = true;
+    signal.removeEventListener('abort', abort);
+    try {
+      subscription?.unsubscribe();
+      return null;
+    } catch (cause) {
+      return { cause };
+    }
+  }
+  /** Settles every pending `next()`: the first with `error` if there is one. */
+  function settle() {
+    const first = error ? pending.shift() : undefined;
+    if (error && first) {
+      const { cause } = error;
+      error = null;
+      first.reject(cause);
+    }
+    for (const promise of pending.splice(0)) {
+      promise.resolve({ value: undefined, done: true });
+    }
+  }
+  function finish() {
+    const failure = unsubscribe();
+    settle();
+    if (failure) {
+      throw failure.cause;
+    }
+  }
+  function abort() {
+    const failure = unsubscribe();
+    if (failure) {
+      error = failure;
+    }
+    settle();
+  }
+
+  subscription = observable.subscribe({
+    next(value) {
+      if (finished) {
+        return;
       }
-      const { value: result } = value;
-      if (!result.ok) {
-        throw result.error;
+      const promise = pending.shift();
+      if (promise) {
+        promise.resolve({ value, done: false });
+      } else {
+        values.push(value);
       }
-      return {
-        value: result.value,
-        done: false,
-      };
     },
-    async return() {
-      await reader.cancel();
-      return {
-        value: undefined,
-        done: true,
-      };
+    error(cause) {
+      if (finished) {
+        return;
+      }
+      error = { cause };
+      finish();
     },
-  };
-  return {
+    complete: finish,
+  });
+  if (finished) {
+    subscription.unsubscribe();
+  } else if (signal.aborted) {
+    abort();
+  } else {
+    signal.addEventListener('abort', abort, { once: true });
+  }
+
+  const iterator: AsyncIterableIterator<TValue> = {
     [Symbol.asyncIterator]() {
       return iterator;
     },
+    async next() {
+      if (values.length > 0) {
+        return { value: values.shift() as TValue, done: false };
+      }
+      if (error) {
+        const { cause } = error;
+        error = null;
+        throw cause;
+      }
+      if (finished) {
+        return { value: undefined, done: true };
+      }
+      return new Promise((resolve, reject) => {
+        pending.push({ resolve, reject });
+      });
+    },
+    async return() {
+      values.length = 0;
+      error = null;
+      finish();
+      return { value: undefined, done: true };
+    },
   };
+  return iterator;
 }

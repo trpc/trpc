@@ -7,7 +7,7 @@ import {
   Scripts,
   useSearch,
 } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 import { SiteFooter } from '~/components/site-footer.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
@@ -102,6 +102,9 @@ function RootComponent() {
 }
 
 function RootDocument(props: { readonly children: ReactNode }) {
+  useEffect(() => {
+    document.documentElement.setAttribute('data-smooth-scroll', '');
+  }, []);
   // `homeVersionScript` sets it again before the first paint, for the hosts
   // and remembered versions that open `/` on v12 without `?version=`.
   const homeVersion = useSearch({

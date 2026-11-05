@@ -1,5 +1,11 @@
-import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
 import { Heart } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { buttonVariants } from '@shared/ui/components/button';
 import {
@@ -14,13 +20,16 @@ import {
   type HomeVersion,
   useV12Shown,
 } from '~/home-version.ts';
+import { showsPartnersBar } from '~/partners-bar.ts';
 import { site, v12 } from '~/site.ts';
+import { partners } from '~/sponsors.ts';
 
 import { ExperimentsMenu } from './experiments-menu.tsx';
 import { DiscordIcon, GitHubIcon, XIcon } from './icons.tsx';
 import { Logo } from './logo.tsx';
 import { MobileNav } from './mobile-nav.tsx';
 import { SearchButton } from './search.tsx';
+import { PartnersBar } from './sponsors/partners.tsx';
 import { ThemeToggle } from './theme-toggle.tsx';
 import { VersionSwitcher } from './version-switcher.tsx';
 
@@ -85,6 +94,20 @@ function GitHubLink(props: { readonly version: HomeVersion }) {
   );
 }
 
+/**
+ * `value`, changing a frame after the page that changed it is painted. The
+ * frame that draws a new page can be slow enough that a transition started
+ * in it is mostly over before it shows.
+ */
+function useAfterPaint(value: boolean) {
+  const [painted, setPainted] = useState(value);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setPainted(value));
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+  return painted;
+}
+
 export function SiteHeader() {
   const navigate = useNavigate();
   const version = useDocsVersion();
@@ -95,6 +118,13 @@ export function SiteHeader() {
   const linked: HomeVersion = version.id === 'v12' ? 'v12' : 'v11';
   const homeSearch = useHomeSearch();
   const v12Shown = useV12Shown();
+  const showPartners = useAfterPaint(
+    useRouterState({
+      select: (state) =>
+        state.matches.every((match) => match.status !== 'notFound') &&
+        showsPartnersBar(state.matches.at(-1)?.pathname ?? '/'),
+    }),
+  );
   return (
     <header
       className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
@@ -200,6 +230,20 @@ export function SiteHeader() {
           <SearchButton />
         </div>
       </div>
+      {partners.length > 0 ? (
+        // Kept mounted and folded where it doesn't show, so it grows and
+        // shrinks between pages and the content under it slides.
+        <div
+          className={cn(
+            'overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none md:hidden',
+            showPartners ? 'h-9' : 'h-0',
+          )}
+          data-partners-bar={showPartners ? 'shown' : 'hidden'}
+          inert={!showPartners}
+        >
+          <PartnersBar className="px-4 sm:px-6" />
+        </div>
+      ) : null}
     </header>
   );
 }

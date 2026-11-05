@@ -1,8 +1,10 @@
 name: next-sponsors
 
-# Syncs www/sponsors.json and the README's sponsors section from GitHub
-# Sponsors, and pushes a commit only when a sponsor joined, left or
-# changed tier (new weights or ranks alone wait for the next such commit).
+# Syncs www/sponsors.json and the READMEs' sponsors sections (the repo's and
+# each published package's) from GitHub
+# Sponsors and Open Collective (whose public API needs no token), and pushes
+# a commit only when a sponsor joined, left or changed tier (new weights or
+# ranks alone wait for the next such commit).
 
 on:
   schedule:
@@ -74,13 +76,13 @@ jobs:
         run: node build/sponsors-sync.ts --only-when-sponsors-change
 
       # Someone may push in between: then the commit is made again on the
-      # branch's new tip (the synced sponsors.json, and the README's sponsors
-      # section redone from it), rather than rebased, so it can't conflict
+      # branch's new tip (the synced sponsors.json, and the READMEs' sponsors
+      # sections redone from it), rather than rebased, so it can't conflict
       # and the history stays linear.
       - if: steps.go.outputs.run == 'true'
         name: Commit and push if a sponsor joined, left or changed tier
         run: |
-          if git diff --quiet -- www/sponsors.json README.md; then
+          if git diff --quiet -- www/sponsors.json README.md "v11/packages/*/README.md"; then
             echo "No sponsor joined, left or changed tier."
             exit 0
           fi
@@ -96,13 +98,13 @@ jobs:
               git reset --hard FETCH_HEAD
               cp "$synced" www/sponsors.json
               (cd www && node build/sponsors-sync.ts --readme-only)
-              if git diff --quiet -- www/sponsors.json README.md; then
+              if git diff --quiet -- www/sponsors.json README.md "v11/packages/*/README.md"; then
                 echo "$branch has these sponsors already."
                 exit 0
               fi
             fi
-            git add -- www/sponsors.json README.md
-            git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
+            git add -- www/sponsors.json README.md "v11/packages/*/README.md"
+            git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors and Open Collective"
             if git push origin "HEAD:$branch"; then
               exit 0
             fi

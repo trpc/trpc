@@ -27,7 +27,10 @@ on:
       - '.github/workflows/v11-ci.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # a push to `main` or a release commit gets a group of its own, so another push can't cancel its checks.
+  # `cancel-in-progress: false` isn't enough: a newly queued run still replaces the pending one, and
+  # runs for one merge queue batch can be queued out of order, so the tip's run could be the one dropped.
+  group: "${{ github.workflow }}-${{ github.ref }}${{ (github.ref == 'refs/heads/main' || startsWith(github.event.head_commit.message, 'chore: release v')) && format('-{0}', github.sha) || '' }}"
   cancel-in-progress: true
 
 defaults:
@@ -311,7 +314,7 @@ jobs:
   # https://pkg.pr.new
   release-tmp:
     name: Release using pkg.pr.new
-    if: github.event_name != 'merge_group'
+    if: github.event_name == 'pull_request'
     needs: [build]
     runs-on: ubuntu-latest
     env:

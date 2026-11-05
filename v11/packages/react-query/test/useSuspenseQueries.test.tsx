@@ -153,6 +153,76 @@ test('disallowed options', async () => {
   });
 });
 
+// regression https://github.com/trpc/trpc/issues/6188
+test('regression #6188: conditionally returning an empty array', async () => {
+  const { client, App } = ctx;
+  const text = 'Bob';
+
+  function MyComponent() {
+    const [ternary] = client.useSuspenseQueries((t) => (text ? [t.foo()] : []));
+    expectTypeOf(ternary[0]).toEqualTypeOf<'foo' | undefined>();
+
+    const [asConst] = client.useSuspenseQueries((t) => {
+      if (text) {
+        return [t.foo()] as const;
+      }
+      return [] as const;
+    });
+    expectTypeOf(asConst[0]).toEqualTypeOf<'foo' | undefined>();
+
+    return <pre>{JSON.stringify({ ternary, asConst })}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent(
+      '{"ternary":["foo"],"asConst":["foo"]}',
+    );
+  });
+});
+
+// regression https://github.com/trpc/trpc/issues/6188
+test('regression #6188: empty array first, and varying tuple lengths', async () => {
+  const { client, App } = ctx;
+  const text = 'Bob';
+
+  function MyComponent() {
+    const [emptyFirst] = client.useSuspenseQueries((t) => {
+      if (!text) {
+        return [];
+      }
+      return [t.foo()];
+    });
+    expectTypeOf(emptyFirst[0]).toEqualTypeOf<'foo' | undefined>();
+
+    const [varying] = client.useSuspenseQueries((t) => {
+      if (text) {
+        return [t.foo(), t.bar()];
+      }
+      return [t.foo()];
+    });
+    expectTypeOf(varying[0]).toEqualTypeOf<'foo'>();
+    expectTypeOf(varying[1]).toEqualTypeOf<'bar' | undefined>();
+
+    return <pre>{JSON.stringify({ emptyFirst, varying })}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent(
+      '{"emptyFirst":["foo"],"varying":["foo","bar"]}',
+    );
+  });
+});
+
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
   const { client, App } = ctx;

@@ -5,6 +5,7 @@
 import type { Plugin } from 'vite';
 
 import type { OgCard } from '../src/og/card.ts';
+import { sponsorCloudPath } from '../src/og/sponsor-cloud.ts';
 import { ogImagePath } from '../src/seo.ts';
 
 const moduleId = 'virtual:og-cards';
@@ -15,6 +16,9 @@ export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
   const byPath = new Map<string, OgCard>();
   for (const card of cards) {
     const path = ogImagePath(card.path);
+    if (path === sponsorCloudPath) {
+      throw new Error(`${card.path}'s social card would be the sponsor cloud`);
+    }
     if (byPath.has(path)) {
       throw new Error(`Two social cards for ${card.path}`);
     }

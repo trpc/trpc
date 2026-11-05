@@ -31,6 +31,7 @@ export {
   type RouterBuilder as TRPCRouterBuilder,
   type RouterCallerFactory as TRPCRouterCallerFactory,
   type RootConfig as TRPCRootConfig,
+  type PathSeparator as TRPCPathSeparator,
   type AnyRootTypes as AnyTRPCRootTypes,
   type MiddlewareFunction as TRPCMiddlewareFunction,
   type MiddlewareBuilder as TRPCMiddlewareBuilder,

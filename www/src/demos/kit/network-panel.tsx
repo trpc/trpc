@@ -3,23 +3,29 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { cn } from '@shared/ui/lib/utils';
 
 import { usePrefersReducedMotion } from '../use-playback.ts';
-import type { Network, NetworkRequest } from './network.ts';
+import { chainLength, type Network, type NetworkRequest } from './network.ts';
 
-/** `performance.now()`, every frame while `active`. */
-function useNow(active: boolean) {
-  const [now, setNow] = useState(() => performance.now());
+/** `clock()`, every frame while `active`; 0 on the first render. */
+function useNow(active: boolean, clock: () => number) {
+  const [now, setNow] = useState(0);
   useEffect(() => {
     if (!active) {
-      setNow(performance.now());
+      setNow(clock());
       return undefined;
     }
     let frame = requestAnimationFrame(function tick() {
-      setNow(performance.now());
+      setNow(clock());
       frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [active]);
+  }, [active, clock]);
   return now;
+}
+
+function describeChain(count: number) {
+  return count === 1
+    ? '1 round trip'
+    : `${count} round trips, one after another`;
 }
 
 const percent = (value: number) => `${Math.min(value, 1) * 100}%`;
@@ -49,10 +55,13 @@ function describe(request: NetworkRequest, origin: number) {
 
 /**
  * The requests since the last navigation, on a shared time axis, with the
- * moment the page showed. Ticks are round trips.
+ * moment the page showed. Ticks are typical round trips; each request takes
+ * its own time.
  */
 export function NetworkPanel(props: {
-  readonly network: Network;
+  readonly network: Pick<Network, 'getTrace' | 'latency' | 'now' | 'subscribe'>;
+  /** Whether the demo is running: the bars only grow while it is. */
+  readonly playing: boolean;
   readonly summary: boolean;
 }) {
   const network = props.network;
@@ -65,7 +74,7 @@ export function NetworkPanel(props: {
   const pending = trace.requests.some(
     (request) => request.status === 'pending',
   );
-  const now = useNow(pending && !reduced);
+  const now = useNow(pending && !reduced && props.playing, network.now);
   const origin = trace.startedAt;
   const latest = Math.max(
     0,
@@ -92,14 +101,16 @@ export function NetworkPanel(props: {
           </span>
         ) : null}
       </div>
+      {/* At least as tall as three requests, the most a page here starts
+          with, so the panel keeps its height as they come in. */}
       {trace.requests.length === 0 ? (
-        <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+        <p className="min-h-18 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
           {trace.label
             ? 'No requests: the cache had fresh data.'
             : 'No requests yet.'}
         </p>
       ) : (
-        <ol className="grid gap-1.5">
+        <ol className="grid min-h-18 content-start gap-1.5">
           {trace.requests.map((request) => {
             const start = Math.max(request.startedAt - origin, 0) / scale;
             const end =
@@ -153,7 +164,7 @@ export function NetworkPanel(props: {
         aria-hidden
         className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]"
       >
-        <span className="flex items-center gap-1.5 text-[0.65rem] text-muted-foreground">
+        <span className="flex h-4 items-center gap-1.5 text-[0.65rem] text-muted-foreground">
           {shownAt === undefined ? null : (
             <>
               <span className="inline-block h-3 w-px bg-chart-3" /> page shown
@@ -195,7 +206,7 @@ export function NetworkPanel(props: {
                 : `Page shown at ${ms(trace.shownAt - origin)}.`,
               done.length === 0
                 ? undefined
-                : `Data in at ${ms(lastDone)}: ${Math.round(lastDone / network.latency)} round ${Math.round(lastDone / network.latency) === 1 ? 'trip' : 'trips'}.`,
+                : `Data in at ${ms(lastDone)}: ${describeChain(chainLength(trace.requests))}.`,
             ]
               .filter(Boolean)
               .join(' ')}

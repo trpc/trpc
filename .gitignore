@@ -11,4 +11,5 @@ dist/
 *.tsbuildinfo
 node_modules/
 coverage/
-.claude/
+.claude/*
+!.claude/skills/

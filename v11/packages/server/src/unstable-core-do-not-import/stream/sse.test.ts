@@ -6,6 +6,7 @@ import type { inferAsyncIterableYield, Maybe } from '../types';
 import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
+import { makeResource } from './utils/disposable';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
@@ -21,6 +22,36 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
+test.each(['connected', 'message', 'serialized-error'])(
+  'rejects malformed JSON in %s events and closes the EventSource',
+  async (event) => {
+    await using server = fetchServerResource(() => {
+      return new Response(`event: ${event}\ndata: invalid JSON\n\n`, {
+        headers: sseHeaders,
+      });
+    });
+    const ac = new AbortController();
+    using _abort = makeResource(ac, () => ac.abort());
+    const stream = sseStreamConsumer<{
+      data: unknown;
+      error: unknown;
+      EventSource: typeof EventSourcePolyfill;
+    }>({
+      url: () => server.url,
+      init: () => ({}),
+      signal: ac.signal,
+      EventSource: EventSourcePolyfill,
+    });
+    const iterator = stream[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    expect(first.value.type).toBe('connecting');
+    const eventSource = first.value.eventSource;
+
+    await expect(iterator.next()).rejects.toBeInstanceOf(SyntaxError);
+    expect(eventSource.readyState).toBe(eventSource.CLOSED);
+  },
+);
 
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
@@ -388,6 +419,38 @@ describe('untracked events after a tracked event', () => {
       'event: connected\ndata: {}',
       'data: "a"',
       'event: return\ndata: ',
+      '',
+    ]);
+  });
+});
+
+describe('tracked ids', () => {
+  test.each(['1\n2', '1\r2', '1\r\n2', '1\0x'])(
+    'tracked() rejects %j',
+    (id) => {
+      expect(() => tracked(id, 'a')).toThrow(
+        new Error(
+          '`id` must not contain line breaks or null characters as they are not allowed in a Server-Sent Events id',
+        ),
+      );
+    },
+  );
+
+  test.each(['1', 'a b', '2026-10-25T10:00:00.000Z'])(
+    'tracked() accepts %j',
+    (id) => {
+      expect(isTrackedEnvelope(tracked(id, 'a'))).toBe(true);
+    },
+  );
+
+  test('an id with a line break ends the stream with an error instead of adding fields', async () => {
+    async function* data() {
+      yield tracked('1\ndata: "injected"', 'a');
+    }
+    const text = await new Response(sseStreamProducer({ data: data() })).text();
+    expect(text.split('\n\n\n')).toEqual([
+      'event: connected\ndata: {}',
+      'event: serialized-error\ndata: null',
       '',
     ]);
   });

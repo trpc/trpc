@@ -722,6 +722,124 @@ async function collectLines(stream: ReadableStream<Uint8Array>) {
   return text.split('\n').filter((line) => line.length > 0);
 }
 
+test.each([false, true])(
+  'reads an iterable after stream completion (truncated: %s)',
+  async (truncated) => {
+    const abortController = new AbortController();
+    const data = {
+      0: run(async function* () {
+        yield 1;
+        yield 2;
+        return 'done';
+      }),
+    };
+    const lines = await collectLines(jsonlStreamProducer({ data }));
+    const [head] = await jsonlStreamConsumer<typeof data>({
+      from: streamFromLines(truncated ? lines.slice(0, -1) : lines),
+      abortController,
+    });
+    await vi.waitFor(() => expect(abortController.signal.aborted).toBe(true));
+
+    const iterator = head[0][Symbol.asyncIterator]();
+    await expect(iterator.next()).resolves.toEqual({ value: 1, done: false });
+    await expect(iterator.next()).resolves.toEqual({ value: 2, done: false });
+    if (truncated) {
+      await expect(iterator.next()).rejects.toThrow(
+        'Stream closed unexpectedly',
+      );
+    } else {
+      await expect(iterator.next()).resolves.toEqual({
+        value: 'done',
+        done: true,
+      });
+    }
+  },
+);
+
+test.each([
+  { kind: 'promise', missing: false },
+  { kind: 'promise', missing: true },
+  { kind: 'iterable', missing: false },
+  { kind: 'iterable', missing: true },
+])(
+  'reads a nested $kind after stream completion (missing: $missing)',
+  async (opts) => {
+    const abortController = new AbortController();
+    const child =
+      opts.kind === 'promise'
+        ? Promise.resolve(42)
+        : run(async function* () {
+            yield 42;
+            return 'done';
+          });
+    const data = {
+      0: run(async function* () {
+        yield { child };
+      }),
+    };
+    const lines = await collectLines(jsonlStreamProducer({ data }));
+    // A clean EOF after the parent yield leaves its nested child unresolved.
+    expect(lines[1]).toMatch(/^\[0,1,/);
+    const [head] = await jsonlStreamConsumer<typeof data>({
+      from: streamFromLines(opts.missing ? lines.slice(0, 2) : lines),
+      abortController,
+    });
+    await vi.waitFor(() => expect(abortController.signal.aborted).toBe(true));
+
+    const iterator = head[0][Symbol.asyncIterator]();
+    const result = await iterator.next();
+    if (result.done) {
+      throw new Error('Expected a parent value');
+    }
+    const nested = result.value.child;
+    const read = 'then' in nested ? nested : nested.next();
+
+    if (opts.missing) {
+      const settled = vi.fn();
+      void read.then(settled, settled);
+      await vi.waitFor(() => expect(settled).toHaveBeenCalledOnce());
+      await expect(read).rejects.toThrow('Stream closed unexpectedly');
+      await expect(iterator.next()).rejects.toThrow(
+        'Stream closed unexpectedly',
+      );
+    } else {
+      await expect(read).resolves.toEqual(
+        opts.kind === 'promise' ? 42 : { value: 42, done: false },
+      );
+      if (!('then' in nested)) {
+        await expect(nested.next()).resolves.toEqual({
+          value: 'done',
+          done: true,
+        });
+      }
+      await expect(iterator.next()).resolves.toEqual({
+        value: undefined,
+        done: true,
+      });
+    }
+  },
+);
+
+test.each([new Error('Response interrupted'), undefined])(
+  'preserves the source error when iteration starts after a stream failure: %s',
+  async (error) => {
+    const onError = vi.fn();
+    const body = new TransformStream<Uint8Array, Uint8Array>();
+    const writer = body.writable.getWriter();
+    const pendingHead = jsonlStreamConsumer<{ 0: AsyncIterable<number> }>({
+      from: body.readable,
+      abortController: new AbortController(),
+      onError,
+    });
+    await writer.write(new TextEncoder().encode('{"0":[[0],[null,1,0]]}\n'));
+    const [head] = await pendingHead;
+    await writer.abort(error);
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith({ error }));
+
+    await expect(head[0][Symbol.asyncIterator]().next()).rejects.toBe(error);
+  },
+);
+
 function streamFromLines(lines: string[]): ReadableStream<Uint8Array> {
   return readableStreamFrom(
     run(async function* () {
@@ -811,6 +929,36 @@ test('regression: promise rejects when stream ends cleanly before resolution', a
   expect(error).not.toBeInstanceOf(TypeError);
   expect(error).toBeInstanceOf(Error);
   expect(error).toHaveProperty('message', 'Stream closed unexpectedly');
+});
+
+test('regression: rejected chunk that is never read does not cause an unhandled rejection', async () => {
+  const unhandled: unknown[] = [];
+  const onUnhandledRejection = (reason: unknown) => {
+    unhandled.push(reason);
+  };
+  process.on('unhandledRejection', onUnhandledRejection);
+
+  try {
+    const [head] = await jsonlStreamConsumer<Record<string, Promise<unknown>>>({
+      from: streamFromLines([
+        JSON.stringify({
+          0: [[0], [null, 0, 0]],
+          1: [[0], [null, 0, 1]],
+        }),
+        JSON.stringify([0, 0, [[{ result: { data: 'ok' } }]]]),
+        JSON.stringify([1, 1, { msg: 'nobody reads this' }]),
+      ]),
+      abortController: new AbortController(),
+    });
+
+    expect(await head[0]).toEqual({ result: { data: 'ok' } });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  } finally {
+    process.off('unhandledRejection', onUnhandledRejection);
+  }
+
+  expect(unhandled).toEqual([]);
 });
 
 // https://github.com/trpc/trpc/issues/7209

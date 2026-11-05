@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "skills": {
+    "principle-boundary-discipline": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/principle-boundary-discipline/SKILL.md",
+      "computedHash": "51f995752ff3bad613526eb7779872e01d01ac141a88c9ca050075a074ee5b70"
+    },
+    "principle-encode-lessons-in-structure": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
+      "computedHash": "200f578bf772cff030e7b18c582c935686375ddb6ebfe96b97bfee663434da21"
+    },
+    "principle-type-system-discipline": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/principle-type-system-discipline/SKILL.md",
+      "computedHash": "3d9cd69afc4b41f99dd94b3dc169942995e721a73318f55412a858f9a66658fb"
+    },
+    "tdd": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/tdd/SKILL.md",
+      "computedHash": "d3316fbb89ac596c91bb8d529180393c3b69fb6408f7d5cdccb74ead97cbf188"
+    },
+    "typescript-best-practices": {
+      "source": "cursor/plugins",
+      "ref": "bb68f2365eceafa0cb2d253112f675acf5f144cc",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/typescript-best-practices/SKILL.md",
+      "computedHash": "2ef9e9307b23e38676b122330079a68315f87182e7fc308e263e3d2381090cb3"
+    }
+  }
+}

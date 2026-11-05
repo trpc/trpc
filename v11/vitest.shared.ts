@@ -52,6 +52,7 @@ export default defineConfig({
         '**/coverage/**',
         '**/www/**',
         '**/tooling/ui/**',
+        '**/tooling/release/**',
         '**/examples/**',
         // skip codecov for experimental features
         // FIXME: delete me once they're stable
@@ -76,8 +77,8 @@ export default defineConfig({
   },
   server: {
     fs: {
-      // Vite takes `lerna.json`'s directory as the workspace root, but the
-      // dependencies are installed in the repository root's `node_modules`.
+      // The dependencies are installed in the repository root's
+      // `node_modules`, outside `v11/`.
       allow: [path.resolve(__dirname, '..')],
     },
   },

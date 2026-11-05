@@ -36,7 +36,7 @@ import {
 } from '~/content/docs.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
 import type { Doc } from '~/content/types.ts';
-import { PageDemos } from '~/demos/page-demos.tsx';
+import { loadPageDemos } from '~/demos/page-demos.tsx';
 import { experiments } from '~/experiments.ts';
 import { CodemodPlaygroundSlot } from '~/codemod-playground/slot.tsx';
 import { PageDemo } from '~/kitchen-sink/embed.tsx';
@@ -48,7 +48,9 @@ import { partners } from '~/sponsors.ts';
 export function DocsLayout() {
   return (
     <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)] has-data-demo-page:max-w-[112rem]">
-      <aside className="hidden md:block">
+      {/* Not a scroll anchor: the column doesn't move with the page, so
+          content growing above the heading being read would push it down. */}
+      <aside className="hidden [overflow-anchor:none] md:block">
         <div className="sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto py-8 pr-2">
           <DocsNav />
         </div>
@@ -63,7 +65,9 @@ export async function loadDocPage(version: DocsVersion, slug: string) {
   if (!findDoc(version, slug)) {
     throw notFound();
   }
-  return { doc: await version.load(slug) };
+  const doc = await version.load(slug);
+  await loadPageDemos(doc.html);
+  return { doc };
 }
 
 /** A page's breadcrumbs, for search results, by the URL of each page in them. */
@@ -262,7 +266,6 @@ export function DocPage(props: {
         <DocBody html={doc.html} />
         {demo ? <PageDemo demo={demo} html={doc.html} mode="inline" /> : null}
         <CodemodPlaygroundSlot html={doc.html} />
-        <PageDemos html={doc.html} />
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2

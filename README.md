@@ -139,8 +139,12 @@ npx @tanstack/intent@latest install
 If you enjoy working with tRPC and want to support us, consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
 
 <!-- SPONSORS:LIST:START -->
-<!-- prettier-ignore-start -->
+<!-- oxfmt-ignore-start -->
 <!-- markdownlint-disable -->
+
+<p align="center">
+  <a href="https://v12.trpc.io/sponsor#sponsors"><img src="https://v12.trpc.io/og/sponsor-cloud.png?v=b6cfa2a2" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>
+</p>
 
 ### Silver partners
 
@@ -176,12 +180,13 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
    <td align="center"><a href="https://drizzle.team/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/108468352?v=4&amp;s=200" width="100" alt="Drizzle Team"/><br />Drizzle Team</a></td>
    <td align="center"><a href="https://www.spencermckenney.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/15722950?u=e9b60ab93918fb2352b6357571cd67b9004d91e6&amp;v=4&amp;s=200" width="100" alt="Spencer McKenney"/><br />Spencer McKenney</a></td>
    <td align="center"><a href="https://github.com/infodusha"><img src="https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&amp;v=4&amp;s=200" width="100" alt="Andrei Karushev"/><br />Andrei Karushev</a></td>
+   <td align="center"><a href="https://www.venue.ink/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://images.opencollective.com/venue-ink/49dbae6/logo.png?height=200" width="100" alt="Venue.ink"/><br />Venue.ink</a></td>
    <td align="center"><a href="https://usevault.app/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/203708130?v=4&amp;s=200" width="100" alt="Vault"/><br />Vault</a></td>
   </tr>
 </table>
 
 <!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
+<!-- oxfmt-ignore-end -->
 
 <!-- SPONSORS:LIST:END -->
 
@@ -197,6 +202,6 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 
 <a href="https://vercel.com/?utm_source=trpc&utm_campaign=oss">
   <p align="center">
-    <img src="./www/static/img/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
+    <img src="./www/public/img/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
   </p>
 </a>

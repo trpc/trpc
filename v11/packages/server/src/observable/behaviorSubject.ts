@@ -4,7 +4,10 @@ import type { Observable, Observer } from './types';
 /** An observable that holds a current value. */
 export interface BehaviorSubject<TValue> extends Observable<TValue, never> {
   observable: Observable<TValue, never>;
-  /** Sets the value and sends it to subscribers, if it changed. */
+  /**
+   * Sets the value and sends it to subscribers, if it changed. A subscriber
+   * that throws doesn't stop the others; its error is rethrown asynchronously.
+   */
   next: (value: TValue) => void;
   /** The current value. */
   get: () => TValue;
@@ -17,6 +20,21 @@ export interface ReadonlyBehaviorSubject<TValue> extends Omit<
 > {}
 
 /**
+ * Calls one of several observers. A throw would stop the caller from
+ * notifying the rest, so it is rethrown asynchronously instead: it still
+ * shows up as an uncaught exception.
+ */
+function callObserver(callback: () => void) {
+  try {
+    callback();
+  } catch (error) {
+    setTimeout(() => {
+      throw error;
+    });
+  }
+}
+
+/**
  * Creates an observable that holds a current value. New subscribers get
  * it right away, unless it's `undefined`.
  * @internal
@@ -26,16 +44,16 @@ export function behaviorSubject<TValue>(
 ): BehaviorSubject<TValue> {
   let value: TValue = initialValue;
 
-  const observerList: Observer<TValue, never>[] = [];
+  const observerList = new Set<Observer<TValue, never>>();
 
   const addObserver = (observer: Observer<TValue, never>) => {
     if (value !== undefined) {
       observer.next(value);
     }
-    observerList.push(observer);
+    observerList.add(observer);
   };
   const removeObserver = (observer: Observer<TValue, never>) => {
-    observerList.splice(observerList.indexOf(observer), 1);
+    observerList.delete(observer);
   };
 
   const obs = observable<TValue, never>((observer) => {
@@ -50,8 +68,12 @@ export function behaviorSubject<TValue>(
       return;
     }
     value = nextValue;
-    for (const observer of observerList) {
-      observer.next(nextValue);
+    // an observer can be removed while this loop is notifying it, and an
+    // observer removed by an earlier callback must not be notified
+    for (const observer of [...observerList]) {
+      if (observerList.has(observer)) {
+        callObserver(() => observer.next(nextValue));
+      }
     }
   };
 

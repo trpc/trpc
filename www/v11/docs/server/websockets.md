@@ -94,6 +94,44 @@ applyWSSHandler({ wss, router: appRouter });
 server.listen(3000);
 ```
 
+### Limiting batch size
+
+`applyWSSHandler` accepts the same `maxBatchSize` option as the [HTTP adapters](./adapters.md#common-options). A WebSocket message that batches more requests than this is rejected as a whole: no procedure runs, and every request in it, except `subscription.stop` entries, gets a `BAD_REQUEST` error with the message `Batch call exceeds maximum size`.
+
+`wsLink` sends all requests made in the same tick as one message and has no `maxItems` option, so pick a limit above the number of calls your client makes at once.
+
+### Rejecting cross-origin connections
+
+Browsers don't apply CORS to WebSockets: a page on any origin can open a connection to your server, and the browser sends its cookies with it. If you authenticate with cookies, check the `Origin` header against the origins you trust. With `ws`, do this in `verifyClient`, and pass `403` to its callback so a rejected upgrade gets `403 Forbidden`:
+
+```ts twoslash title='server/wsServer.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// @types: node
+// ---cut---
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { WebSocketServer } from 'ws';
+import { appRouter } from './router';
+
+const allowedOrigins = new Set(['https://app.example.com']);
+
+const wss = new WebSocketServer({
+  port: 3001,
+  verifyClient: ({ origin }, callback) => {
+    // Browsers always send `Origin`, but other clients may not.
+    // Decide whether your app accepts connections without one.
+    callback(!origin || allowedOrigins.has(origin), 403);
+  },
+});
+applyWSSHandler({ wss, router: appRouter });
+```
+
+If you handle upgrades yourself with `noServer: true`, check `req.headers.origin` in your server's `upgrade` listener instead. For an origin you don't trust, end the socket with a `403` response, such as `socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n')`, rather than calling `wss.handleUpgrade()`.
+
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip

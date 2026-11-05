@@ -6,6 +6,7 @@ import next from 'next';
 import { WebSocketServer } from 'ws';
 import { msgpackEncoder } from '../utils/encoder';
 import { appRouter } from './routers/_app';
+import { isAllowedOrigin } from './wsOrigin';
 
 const port = parseInt(process.env.PORT ?? '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';
@@ -19,7 +20,11 @@ void app.prepare().then(() => {
     await handle(req, res, parsedUrl);
   });
 
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({
+    server,
+    verifyClient: ({ origin }, callback) =>
+      callback(isAllowedOrigin(origin), 403),
+  });
   const handler = applyWSSHandler({
     wss,
     router: appRouter,

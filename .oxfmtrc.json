@@ -35,6 +35,10 @@
     "www/sponsors.json",
     "www/api-reference/out/",
     "www/.vercel/",
-    "www/.output/"
+    "www/.output/",
+    ".agents/skills/*/",
+    "!.agents/skills/trpc-conventions/",
+    "!.agents/skills/pr-agent-callout/",
+    "!.agents/skills/decision-round/"
   ]
 }

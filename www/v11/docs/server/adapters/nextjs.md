@@ -24,7 +24,16 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
   </thead>
   <tbody>
     <tr>
-      <td>Next.js Minimal Starter</td>
+      <td>Next.js Prisma Starter: an API route with <code>createNextApiHandler</code></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/examples-next-prisma-starter">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-starter">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Next.js Minimal Starter: an App Router route handler with <code>fetchRequestHandler</code></td>
       <td>
         <ul>
           <li><a href="https://githubbox.com/trpc/examples-next-minimal-starter">CodeSandbox</a></li>

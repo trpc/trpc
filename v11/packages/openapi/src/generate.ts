@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import type { TRPCPathSeparator } from '@trpc/server';
 import * as ts from 'typescript';
 import {
   applyDescriptions,
@@ -53,6 +54,13 @@ export interface GenerateOptions {
    * `https://api.example.com/trpc`. When omitted, no `servers` entry is added.
    */
   servers?: ServerObject[];
+  /**
+   * The router's `pathSeparator`, for the generated paths: with `'~'`,
+   * `user.create` becomes `/user~create`. Read from the router when it can
+   * be imported at runtime.
+   * @default '.'
+   */
+  pathSeparator?: TRPCPathSeparator;
 }
 
 // ---------------------------------------------------------------------------
@@ -1663,7 +1671,7 @@ function registerSchema(
 
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
-  options: GenerateOptions,
+  options: GenerateOptions & { pathSeparator: TRPCPathSeparator },
   meta: RouterMeta = { errorSchema: null },
 ): Document {
   const paths: PathsObject = {};
@@ -1679,7 +1687,7 @@ function buildOpenAPIDocument(
   );
 
   for (const proc of included) {
-    const opPath = `/${proc.path}`;
+    const opPath = `/${proc.path.split('.').join(options.pathSeparator)}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
     const pathItem: PathItemObject = paths[opPath] ?? {};
@@ -1797,8 +1805,17 @@ export async function generateOpenAPIDocument(
   walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
 
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
-  return buildOpenAPIDocument(walkCtx.procedures, options, {
-    errorSchema,
-    schemas: schemaCtx.schemas,
-  });
+  const pathSeparator =
+    options.pathSeparator ?? router?._def._config.pathSeparator ?? '.';
+  return buildOpenAPIDocument(
+    walkCtx.procedures,
+    {
+      ...options,
+      pathSeparator,
+    },
+    {
+      errorSchema,
+      schemas: schemaCtx.schemas,
+    },
+  );
 }

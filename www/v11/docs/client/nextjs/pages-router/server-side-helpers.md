@@ -120,6 +120,10 @@ const props = {
 
 These are TanStack React Query's own functions. See [their docs](https://tanstack.com/query/v5/docs/framework/react/guides/prefetching) for more.
 
+:::tip
+The proxy can also start a query and return a **handle** to it: `await trpc.post.byId.unstable_$ensure(input)`. Pass the handle to the page in `props`, and the page reads it with `useQuery(trpc.unstable_$fromHandle(props.post))`, so it can't ask for a different input than the server used. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+:::
+
 Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` is now `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))`, `fetch` is `fetchQuery`, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.
 
 ## Next.js example

@@ -2,6 +2,7 @@ import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
+import { splitAtDemos } from '../src/demos/names.ts';
 import { brokenLinks } from './content.ts';
 import {
   anchorsOf,
@@ -228,27 +229,56 @@ describe('renderMarkdown', () => {
   );
 
   it.effect(
-    'turns a `demo` fence into its slot, with its body as fallback',
+    "turns a `demo` fence into a marker, without the fence's body",
     () =>
       Effect.gen(function* () {
         const rendered = yield* render(
           [
+            'Before.',
+            '',
             '```demo request-timeline strategy=fetch-on-render',
             '1. |-> post.byId',
             '```',
             '',
             '```demo starting-queries',
             '```',
+            '',
+            'After.',
           ].join('\n'),
         );
         expect(rendered.html).toContain(
-          '<div class="demo-slot" data-demo="request-timeline" data-strategy="fetch-on-render">',
+          '<!--demo request-timeline strategy=fetch-on-render-->',
         );
-        expect(textOf(rendered.html)).toContain('1. |-> post.byId');
-        expect(rendered.html).toContain(
-          '<div class="demo-slot" data-demo="starting-queries"><div class="demo-placeholder" aria-hidden="true"></div></div>',
-        );
+        expect(rendered.html).toContain('<!--demo starting-queries-->');
+        expect(rendered.html).not.toContain('post.byId');
+        expect(splitAtDemos(rendered.html)).toEqual([
+          '<p>Before.</p>\n',
+          {
+            name: 'request-timeline',
+            options: { strategy: 'fetch-on-render' },
+          },
+          { name: 'starting-queries', options: {} },
+          '\n<p>After.</p>',
+        ]);
       }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('fails on an HTML comment that reads as a demo marker', () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        render('Before.\n\n<!--demo url-input-->'),
+      );
+      expect(error.message).toContain('demo marker');
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('fails on a `demo` fence inside another block', () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        render('- A list\n\n  ```demo url-input\n  ```'),
+      );
+      expect(error.message).toContain('top-level');
+    }).pipe(Effect.provide(NodeServices.layer)),
   );
 
   it.effect('fails on a `demo` fence naming no demo', () =>

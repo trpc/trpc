@@ -182,8 +182,8 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
      * @example
      * ```tsx
      * // MyRSC.tsx
-     * const MyRSC = ({ params }) => {
-     *   void trpc.post.get.prefetch(params.postId);
+     * const MyRSC = async ({ params }) => {
+     *   await trpc.post.get.prefetch(params.postId);
      *
      *   return (
      *     <HydrateClient>

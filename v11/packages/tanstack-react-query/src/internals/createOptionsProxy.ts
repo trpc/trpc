@@ -509,7 +509,8 @@ export function createTRPCOptionsProxy<
           ? opts.client
           : getUntypedClient(opts.client);
 
-      return untypedClient[type](path, input, trpcOpts);
+      // for a subscription, `trpcOpts` also has the callbacks from `trpcSubscriptionOptions`
+      return untypedClient[type](path, input, trpcOpts as any);
     };
   };
 

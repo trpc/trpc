@@ -122,11 +122,11 @@ export function SerpApiLogo(props: LogoProps) {
   );
 }
 
-/** The drawn logos, by the partner's GitHub login. */
+/** The drawn logos, by the partner's `sponsorKey`. */
 export const partnerLogos: Partial<
   Record<string, (props: LogoProps) => JSX.Element>
 > = {
-  coderabbitai: CodeRabbitLogo,
-  greptileai: GreptileLogo,
-  SerpApi: SerpApiLogo,
+  'github/coderabbitai': CodeRabbitLogo,
+  'github/greptileai': GreptileLogo,
+  'github/SerpApi': SerpApiLogo,
 };

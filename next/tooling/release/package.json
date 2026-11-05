@@ -1,5 +1,5 @@
 {
-  "name": "@tooling/release",
+  "name": "@tooling/release-v12",
   "private": true,
   "type": "module",
   "scripts": {
