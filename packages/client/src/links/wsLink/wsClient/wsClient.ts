@@ -201,6 +201,9 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
       case 'sendRequests':
         sendRequests(machine, effect.connection, effect.requests);
         return;
+      case 'sendFence':
+        transports.get(effect.connection)?.fence(effect.fence);
+        return;
       case 'sendStop':
         transports
           .get(effect.connection)
@@ -427,6 +430,9 @@ function toClientEvent(
     return { type: 'frame', connection, message: event.message };
   }
   if (event.type === 'heartbeat') return { type: 'heartbeat', connection };
+  if (event.type === 'fenced') {
+    return { type: 'fenced', connection, fence: event.fence };
+  }
   return { type: 'connection', connection, event };
 }
 

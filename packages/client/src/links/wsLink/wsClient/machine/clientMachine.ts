@@ -2,7 +2,7 @@ import type { TRPCClientIncomingMessage } from '@trpc/server/unstable-core-do-no
 import type { ClientEvent, ClientModel, ClientTransition } from './clientModel';
 import { Step } from './clientStep';
 import type { ConnectionEvent } from './connectionMachine';
-import type { ConnectionId } from './requestMachine';
+import type { ConnectionId, Fence } from './requestMachine';
 import { servingConnections } from './requestMachine';
 
 /** Why a socket event ended a connection, for the requests that fail. */
@@ -119,6 +119,21 @@ function onFrame(
 }
 
 /**
+ * A fence for a subscription that has since stopped leaving `connection`,
+ * because it ended there, or was lost or unsubscribed, is dropped.
+ */
+function onFenced(step: Step, connection: ConnectionId, fence: Fence) {
+  if (!onReceived(step, connection)) return;
+  const request = step.requests.get(fence.request);
+  if (request?.state.kind !== 'leaving') return;
+  if (request.state.from !== connection) return;
+  const serving = servingConnections(request);
+  step.applyRequest(request, { type: 'fenced', connection, to: fence.to });
+  step.moveStragglers();
+  for (const previous of serving) step.closeIfDrained(previous);
+}
+
+/**
  * The client state machine: one pure step. It drives the connection and
  * request machines and returns every side effect as data, in the order the
  * client runs them.
@@ -195,6 +210,9 @@ export function clientTransition(
       break;
     case 'heartbeat':
       onReceived(step, event.connection);
+      break;
+    case 'fenced':
+      onFenced(step, event.connection, event.fence);
       break;
     case 'sendFailed':
       for (const id of event.requests) {

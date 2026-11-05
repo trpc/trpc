@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import type { MachineModel, ModelStep } from './___machineModel';
 import { check, coverage, simulateMachine } from './___machineModel';
 import { fc, test } from '@fast-check/vitest';
@@ -30,6 +31,7 @@ import type {
 import { connectionTransition } from '@trpc/client/links/wsLink/wsClient/machine/connectionMachine';
 import type {
   ConnectionId,
+  Fence,
   QueryState,
   RequestEvent,
   RequestMethod,
@@ -61,6 +63,8 @@ interface ServerCall {
   next: number;
   started: boolean;
   stopping: boolean;
+  /** The server has handled the stop, so it sends no more events. */
+  stopHandled: boolean;
 }
 
 interface SimSocket {
@@ -78,6 +82,8 @@ interface SimSocket {
   closed: boolean;
   /** What the server got on this socket and still answers. */
   readonly calls: Map<number, ServerCall>;
+  /** The fences sent on it and not yet answered, oldest first. */
+  readonly fences: Fence[];
 }
 
 interface UserRequest {
@@ -124,6 +130,8 @@ const covered = coverage([
   'event after the run delivered after a move',
   "old socket's untracked event delivered after the move completed",
   'old socket ended an untracked subscription that left it',
+  'old socket fenced an untracked subscription that left it',
+  'fence answered after the subscription stopped leaving',
   'old socket lost while an untracked subscription left it',
   'new socket lost while an untracked subscription left the old one',
   'replacement failure shown once the old socket ends',
@@ -275,6 +283,7 @@ class Sim {
           closed: false,
           slowSetup: this.slowFirstSocket && this.sockets.size === 0,
           calls: new Map(),
+          fences: [],
         });
         break;
       case 'resolveParams':
@@ -305,6 +314,7 @@ class Sim {
             next: Number(lastEventId ?? 0) + 1,
             started: false,
             stopping: false,
+            stopHandled: false,
           });
         }
         break;
@@ -316,6 +326,11 @@ class Sim {
         if (call && this.writable(effect.connection)) call.stopping = true;
         break;
       }
+      case 'sendFence':
+        if (this.writable(effect.connection)) {
+          this.sockets.get(effect.connection)!.fences.push(effect.fence);
+        }
+        break;
       case 'startTimer':
         this.timers.add(effect.timer);
         break;
@@ -420,6 +435,28 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       ) {
         covered.add('retired socket frame dropped');
       }
+    }
+  }
+  if (event?.type === 'fenced') {
+    // The fence ends only the leaving it was sent for.
+    const id = event.fence.request;
+    const previous = before.requests.get(id);
+    const awaited =
+      previous?.state.kind === 'leaving' &&
+      previous.state.from === event.connection &&
+      previous.state.to === event.fence.to;
+    if (awaited) {
+      check(
+        after.requests.get(id)?.state.kind !== 'leaving',
+        `subscription ${id} still leaving connection ${event.connection} after its fence`,
+      );
+    } else {
+      check(
+        isDeepStrictEqual(after.requests.get(id), previous),
+        `a stale fence changed subscription ${id}`,
+      );
+      if (previous)
+        covered.add('fence answered after the subscription stopped leaving');
     }
   }
   if (event?.type === 'sendFailed') covered.add('batch send failed');
@@ -569,6 +606,29 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         }
         break;
       }
+      case 'sendFence': {
+        // The fence follows the stop it fences, on the connection being left.
+        const id = effect.fence.request;
+        check(
+          effects
+            .slice(0, effects.indexOf(effect))
+            .some(
+              (earlier) =>
+                earlier.type === 'sendStop' &&
+                earlier.request === id &&
+                earlier.connection === effect.connection,
+            ),
+          `fence for ${id} on connection ${effect.connection} before its stop`,
+        );
+        const state = after.requests.get(id)?.state;
+        check(
+          state?.kind === 'leaving' &&
+            state.from === effect.connection &&
+            state.to === effect.fence.to,
+          `fence for ${id} on connection ${effect.connection} without leaving it`,
+        );
+        break;
+      }
       case 'closeSocket': {
         // I12: make before break.
         const previous = before.connections.get(effect.connection);
@@ -716,9 +776,29 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     ) {
       covered.add('old socket lost after the move completed');
     }
+    if (
+      state.kind === 'leaving' &&
+      (previous?.kind !== 'leaving' ||
+        previous.from !== state.from ||
+        previous.to !== state.to)
+    ) {
+      // Leaving is bounded: the fence goes with the stop.
+      check(
+        effects.some(
+          (effect) =>
+            effect.type === 'sendFence' &&
+            effect.connection === state.from &&
+            effect.fence.request === id &&
+            effect.fence.to === state.to,
+        ),
+        `subscription ${id} leaving connection ${state.from} without a fence`,
+      );
+    }
     if (previous?.kind === 'leaving' && state.kind !== 'leaving') {
       if (state.kind === 'sent' && lost === previous.from) {
         covered.add('old socket lost while an untracked subscription left it');
+      } else if (state.kind === 'sent' && event?.type === 'fenced') {
+        covered.add('old socket fenced an untracked subscription that left it');
       } else if (state.kind === 'sent') {
         covered.add('old socket ended an untracked subscription that left it');
       } else if (lost === previous.to) {
@@ -907,6 +987,7 @@ type SocketAction =
   | 'pongTimeout'
   | 'badFrame'
   | 'heartbeat'
+  | 'pong'
   | 'reconnect'
   | 'rejection'
   | 'answer'
@@ -936,6 +1017,7 @@ const socketActionWeights: Record<SocketAction, number> = {
   pongTimeout: 1,
   badFrame: 1,
   heartbeat: 1,
+  pong: 2,
   reconnect: 2,
   rejection: 1,
   answer: 4,
@@ -1075,6 +1157,9 @@ function runSocketAction(
       if (!sim.hears(connection)) return;
       sim.dispatch({ type: 'heartbeat', connection });
       return;
+    case 'pong':
+      answerFence(sim, connection, socket);
+      return;
     case 'reconnect':
       if (!sim.hears(connection)) return;
       frame(sim, connection, { id: null, method: 'reconnect' });
@@ -1138,13 +1223,31 @@ function runSocketAction(
         frame(sim, connection, { id, result: { type: 'started' } });
         return;
       }
-      if (action !== 'data') return;
+      if (action !== 'data' || call.stopHandled) return;
       sendEvent(sim, { connection, id, call });
       return;
     }
     default:
       action satisfies never;
   }
+}
+
+/**
+ * The server answers the oldest `PING`, after handling everything that came
+ * before it: the fence's stop included.
+ */
+function answerFence(
+  sim: Sim,
+  connection: ConnectionId,
+  socket: SimSocket,
+): boolean {
+  if (!sim.hears(connection)) return false;
+  const fence = socket.fences.shift();
+  if (!fence) return false;
+  const call = socket.calls.get(fence.request);
+  if (call) call.stopHandled = true;
+  sim.dispatch({ type: 'fenced', connection, fence });
+  return true;
 }
 
 function run(sim: Sim, action: Action) {
@@ -1253,6 +1356,7 @@ function runScenario({
     run(sim, action);
   }
   probeEveryLiveSubscription(sim);
+  answerEveryFence(sim);
   // Let everything settle: the server answers and ends every socket, and
   // the client closes.
   sim.closedAfter = sim.lastRequestId;
@@ -1334,6 +1438,24 @@ function probeEveryLiveSubscription(sim: Sim) {
     if (user.movedTo !== null) {
       covered.add('event after the run delivered after a move');
     }
+  }
+}
+
+/**
+ * No subscription is left leaving a socket that answered its fence. One whose
+ * fence couldn't be sent waits for the socket to end it or go.
+ */
+function answerEveryFence(sim: Sim) {
+  for (const [connection, socket] of sim.sockets) {
+    while (answerFence(sim, connection, socket));
+  }
+  for (const [id, request] of sim.model.requests) {
+    const state = request.state;
+    if (state.kind !== 'leaving') continue;
+    check(
+      !sim.writable(state.from),
+      `subscription ${id} still leaving connection ${state.from} after its fence`,
+    );
   }
 }
 
@@ -1567,6 +1689,11 @@ const requestEvents: {
       event: { type: 'response', connection: 2, message },
     } as const,
   ]),
+  { label: 'fenced', event: { type: 'fenced', connection: 1, to: 2 } },
+  {
+    label: "an earlier move's fence",
+    event: { type: 'fenced', connection: 1, to: 3 },
+  },
   { label: 'unsubscribe', event: { type: 'unsubscribe' } },
   { label: 'clientClose', event: { type: 'clientClose' } },
   { label: 'sendFailed', event: { type: 'sendFailed', cause: null } },

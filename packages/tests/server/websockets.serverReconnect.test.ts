@@ -58,6 +58,21 @@ function setup(opts: {
           yield value as number;
         }
       }),
+    /** Untracked, and never ends once stopped: the server never sends `stopped`. */
+    stubborn: t.procedure
+      .use(async (mwOpts) => {
+        await heldSetup();
+        return mwOpts.next();
+      })
+      .subscription(async function* () {
+        try {
+          for await (const [value] of on(ee, 'stubborn')) {
+            yield value as number;
+          }
+        } finally {
+          await createDeferred<void>().promise;
+        }
+      }),
     events: t.procedure
       .input(z.object({ lastEventId: z.string().nullish() }).optional())
       .use(async (mwOpts) => {
@@ -793,5 +808,35 @@ test("an untracked subscription gets an event only the old socket had, even when
   ctx.ee.emit('generated', 3);
   await vi.waitFor(() => expect(data.at(-1)).toBe(3));
   expect(data).toEqual([1, 2, 3]);
+  sub.unsubscribe();
+});
+
+test('an untracked subscription leaves the old socket at the PONG to the PING after its stop, even if the procedure never stops', async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const data: number[] = [];
+  const sub = ctx.client.stubborn.subscribe(undefined, {
+    onData: (value) => data.push(value),
+  });
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('stubborn')).toBe(1));
+  ctx.ee.emit('stubborn', 1);
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const frames: string[] = [];
+  oldServerSocket.on('message', (raw) => {
+    // oxlint-disable-next-line typescript/no-base-to-string
+    const text = String(raw);
+    frames.push(text === 'PING' ? text : JSON.parse(text).method);
+  });
+
+  ctx.wssHandler.broadcastReconnectNotification();
+  // The old socket can't end the subscription, so only the fence lets it go.
+  await vi.waitFor(
+    () => expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+    { timeout: 5_000 },
+  );
+  expect(frames).toEqual(['subscription.stop', 'PING']);
+  ctx.ee.emit('stubborn', 2);
+  await vi.waitFor(() => expect(data).toEqual([1, 2]));
   sub.unsubscribe();
 });

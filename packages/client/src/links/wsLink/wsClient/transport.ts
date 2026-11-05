@@ -8,7 +8,7 @@ import {
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
 import type { ConnectionEvent } from './machine/connectionMachine';
-import type { ConnectionId } from './machine/requestMachine';
+import type { ConnectionId, Fence } from './machine/requestMachine';
 import type { KeepAliveOptions } from './options';
 import type { Scope } from './scope';
 import {
@@ -23,11 +23,15 @@ import {
   TRPCWebSocketClosedError,
 } from './utils';
 
-/** What a socket reports: a connection event, a decoded frame, or a keepAlive `PING`/`PONG`. */
+/**
+ * What a socket reports: a connection event, a decoded frame, a `PING` or
+ * keepAlive `PONG`, or the `PONG` to a fence.
+ */
 export type TransportEvent =
   | ConnectionEvent
   | { type: 'frame'; message: TRPCClientIncomingMessage }
-  | { type: 'heartbeat' };
+  | { type: 'heartbeat' }
+  | { type: 'fenced'; fence: Fence };
 
 export interface TransportOptions {
   id: ConnectionId;
@@ -60,6 +64,11 @@ interface TransportApi {
   readonly isWritable: () => boolean;
   /** Sends `data` if the socket is writable, and says whether it did. */
   readonly send: (data: Parameters<WebSocket['send']>[0]) => boolean;
+  /**
+   * Sends a `PING` if the socket is writable, and reports `fenced` when its
+   * `PONG` comes.
+   */
+  readonly fence: (fence: Fence) => void;
 }
 
 /**
@@ -80,6 +89,21 @@ export function openTransport(opts: TransportOptions): Transport {
   /** Everything that stops when the client ends the connection. */
   const io = createScope();
   let ws: WebSocket | null = null;
+  /**
+   * What each `PING` sent and not yet answered was for, oldest first: a
+   * fence, or `null` for keepAlive. A server answers them in order, and a
+   * `PONG` carries nothing else to match it with.
+   */
+  const pings: (Fence | null)[] = [];
+  const ping = (fence: Fence | null) => {
+    if (!isWritable()) return;
+    ws?.send('PING');
+    pings.push(fence);
+  };
+  const pong = (): TransportEvent => {
+    const fence = pings.shift() ?? null;
+    return fence ? { type: 'fenced', fence } : { type: 'heartbeat' };
+  };
 
   async function* events(): AsyncGenerator<TransportEvent, void> {
     let socket: WebSocket;
@@ -97,7 +121,14 @@ export function openTransport(opts: TransportOptions): Transport {
     // Not `yield*`, which keeps the last frame alive while it waits for the
     // next; see `createMachineRuntime`'s `intake`.
     await using iterator = iteratorResource(
-      observableToAsyncIterable(socketEvents(socket, io, opts), neverAborted),
+      observableToAsyncIterable(
+        socketEvents(socket, opts, {
+          io,
+          keepAlivePing: () => ping(null),
+          pong,
+        }),
+        neverAborted,
+      ),
     );
     let result: IteratorResult<TransportEvent> | null;
     while (true) {
@@ -120,6 +151,7 @@ export function openTransport(opts: TransportOptions): Transport {
       ws?.send(data);
       return true;
     },
+    fence: ping,
   };
   return makeResource(api, () => {
     dispose(io);
@@ -137,14 +169,25 @@ export function openTransport(opts: TransportOptions): Transport {
  * A socket's events until its `close`. Unsubscribing removes its listeners
  * and stops keepAlive, as does `io` ending.
  */
-function socketEvents(ws: WebSocket, io: Scope, opts: TransportOptions) {
+function socketEvents(
+  ws: WebSocket,
+  opts: TransportOptions,
+  transport: {
+    io: Scope;
+    keepAlivePing: () => void;
+    /** What the `PONG` that arrived answers. */
+    pong: () => TransportEvent;
+  },
+) {
+  const { io } = transport;
   return observable<TransportEvent, never>((emit) => {
     const listeners = createScope();
     const keepAlive = listeners.use(
       io.use(
-        createKeepAlive(ws, opts.keepAlive, () =>
-          emit.next({ type: 'pongTimeout' }),
-        ),
+        createKeepAlive(ws, opts.keepAlive, {
+          sendPing: transport.keepAlivePing,
+          onPongTimeout: () => emit.next({ type: 'pongTimeout' }),
+        }),
       ),
     );
 
@@ -157,8 +200,12 @@ function socketEvents(ws: WebSocket, io: Scope, opts: TransportOptions) {
     listeners.use(
       listenerResource(ws, 'message', ({ data }) => {
         keepAlive.onFrame(data);
-        if (data === 'PING' || data === 'PONG') {
-          if (data === 'PING' && !io.disposed) ws.send('PONG');
+        if (data === 'PONG') {
+          emit.next(transport.pong());
+          return;
+        }
+        if (data === 'PING') {
+          if (!io.disposed) ws.send('PONG');
           emit.next({ type: 'heartbeat' });
           return;
         }
@@ -207,7 +254,10 @@ export async function* connectionParamsEvents(
 function createKeepAlive(
   ws: WebSocket,
   options: KeepAliveOptions,
-  onPongTimeout: () => void,
+  {
+    sendPing,
+    onPongTimeout,
+  }: { sendPing: () => void; onPongTimeout: () => void },
 ) {
   let stopped = false;
   let ping: Disposable | null = null;
@@ -222,7 +272,7 @@ function createKeepAlive(
     ping = timeoutResource(() => {
       ping = null;
       if (ws.readyState !== READY_STATE.OPEN) return;
-      ws.send('PING');
+      sendPing();
       if (pong) return;
       pong = timeoutResource(() => {
         pong = null;

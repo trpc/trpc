@@ -7,6 +7,7 @@ import type {
 } from './connectionMachine';
 import type {
   ConnectionId,
+  Fence,
   RequestEffect,
   RequestId,
   RequestMethod,
@@ -83,8 +84,10 @@ export type ClientEvent =
       lastEventId: string | null;
     }
   | { type: 'unsubscribe'; id: RequestId }
-  /** A keepAlive `PING` or `PONG` arrived. */
+  /** A `PING`, or a `PONG` to a keepAlive `PING`, arrived. */
   | { type: 'heartbeat'; connection: ConnectionId }
+  /** The `PONG` to `fence`'s `PING` arrived on `connection`. */
+  | { type: 'fenced'; connection: ConnectionId; fence: Fence }
   | { type: 'close' }
   | { type: 'timer'; timer: Timer }
   | { type: 'connection'; connection: ConnectionId; event: ConnectionEvent }

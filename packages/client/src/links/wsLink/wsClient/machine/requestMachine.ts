@@ -59,8 +59,10 @@ export type SubscriptionState =
   /**
    * An untracked subscription that `to` has confirmed, being stopped on
    * `from`. `to` can't resend what `from` sent before `to` listened, so
-   * `from`'s untracked events are still delivered until it ends the
-   * subscription or is lost.
+   * `from`'s untracked events are still delivered until `from` has handled
+   * the stop: it answers the `PING` sent after it (the fence), ends the
+   * subscription, or is lost. A server that never answers `PING` still ends
+   * it or is lost.
    */
   | {
       kind: 'leaving';
@@ -79,6 +81,17 @@ export type SubscriptionState =
  * has none, and a queued one starts afresh.
  */
 type Replayed = readonly string[];
+
+/**
+ * The `PING` sent after a moved subscription's stop on its old connection.
+ * Its `PONG` comes after everything that connection sent before handling
+ * the stop. `to` tells it from the fence of an earlier move off the same
+ * connection.
+ */
+export interface Fence {
+  readonly request: RequestId;
+  readonly to: ConnectionId;
+}
 
 export type RequestState = QueryState | SubscriptionState;
 
@@ -112,7 +125,9 @@ export type RequestEvent =
     }
   | { type: 'unsubscribe' }
   | { type: 'clientClose' }
-  | { type: 'sendFailed'; cause: unknown };
+  | { type: 'sendFailed'; cause: unknown }
+  /** `connection` answered the fence of a move to `to`; see `Fence`. */
+  | { type: 'fenced'; connection: ConnectionId; to: ConnectionId };
 
 export type RequestFailure =
   | { kind: 'connectionLost'; cause: unknown }
@@ -124,6 +139,7 @@ export type RequestEffect =
   | { type: 'complete'; request: RequestId }
   | { type: 'fail'; request: RequestId; failure: RequestFailure }
   | { type: 'sendStop'; connection: ConnectionId; request: RequestId }
+  | { type: 'sendFence'; connection: ConnectionId; fence: Fence }
   | { type: 'invariantViolation'; message: string };
 
 export interface RequestTransition<
@@ -222,6 +238,7 @@ function queryTransition(
           ]);
         case 'response':
         case 'sendFailed':
+        case 'fenced':
           return illegal(request, event);
         default:
           return exhaustive(event, illegal(request, event));
@@ -255,6 +272,7 @@ function queryTransition(
         case 'batch':
         case 'unbatch':
         case 'send':
+        case 'fenced':
           return illegal(request, event);
         default:
           return exhaustive(event, illegal(request, event));
@@ -363,6 +381,7 @@ function onSubscriptionQueued(
       return settled(request, [complete(request)]);
     case 'response':
     case 'sendFailed':
+    case 'fenced':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
@@ -418,6 +437,7 @@ function onSubscriptionSent(
     case 'batch':
     case 'unbatch':
     case 'send':
+    case 'fenced':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
@@ -435,7 +455,8 @@ function onMoving(
         // The new connection's first frame for it, `started` from a tRPC
         // server, is the ack: stop it on the old one. The new one resends a
         // tracked subscription's events, so the old one's are dropped from
-        // now on; an untracked one is `leaving` until the old one stops.
+        // now on; an untracked one is `leaving` until the old one has handled
+        // the stop.
         const switched = onSubscriptionSent(
           request,
           {
@@ -446,12 +467,17 @@ function onMoving(
           },
           event,
         );
-        const effects = [stop(request, state.from), ...switched.effects];
+        const stopOld = stop(request, state.from);
         const switchedState = switched.request.state;
         if (
           switchedState.kind === 'sent' &&
           switched.request.lastEventId === null
         ) {
+          const fence: RequestEffect = {
+            type: 'sendFence',
+            connection: state.from,
+            fence: { request: request.id, to: state.to },
+          };
           return {
             request: {
               ...switched.request,
@@ -462,10 +488,13 @@ function onMoving(
                 started: switchedState.started,
               },
             },
-            effects,
+            effects: [stopOld, fence, ...switched.effects],
           };
         }
-        return { request: switched.request, effects };
+        return {
+          request: switched.request,
+          effects: [stopOld, ...switched.effects],
+        };
       }
       if (event.connection !== state.from) return illegal(request, event);
       // Until then, the old connection serves it.
@@ -542,6 +571,7 @@ function onMoving(
     case 'batch':
     case 'unbatch':
     case 'send':
+    case 'fenced':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
@@ -595,6 +625,11 @@ function onLeaving(
       }
       if (event.connection === state.to) return resume(request);
       return illegal(request, event);
+    case 'fenced':
+      if (event.connection !== state.from) return illegal(request, event);
+      // An earlier move's fence: this one's is still to come.
+      if (event.to !== state.to) return { request, effects: [] };
+      return { request: remaining, effects: [] };
     case 'unsubscribe':
       return settled(request, [stop(request, state.to), complete(request)]);
     case 'clientClose':
