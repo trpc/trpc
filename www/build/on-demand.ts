@@ -5,9 +5,10 @@
  * `src/og/serve.ts`). The build prerenders each page once, without a
  * query; every combination of flags is a different page, so the host sends
  * those requests to a function running the site's server build, and its CDN
- * caches each URL's response until the next deploy. The home page is
- * prerendered, then regenerated through the day (`writeHomeRevalidation`).
- * Everything else is the prerendered file.
+ * caches each URL's response until the next deploy. Each page is
+ * prerendered, then regenerated daily (`writePageRevalidation`), for the
+ * day it names its social card for. Everything else is the prerendered
+ * file.
  */
 import { Effect, FileSystem, Path } from 'effect';
 import type { Plugin } from 'vite';
@@ -23,11 +24,30 @@ export const onDemandFunction = '_ssr';
 export const homeFunction = 'index';
 
 /**
- * How often the home page is regenerated, in seconds: it names its social
- * card for the UTC day (`dailyVersion` in `src/og/version.ts`), so a new
- * day's card is in it within this long.
+ * How old a page gets before it's regenerated, in seconds: it names its
+ * social card for the UTC day (`cardDay` in `src/card-day.ts`), and a card
+ * a day or so old is fine, as an old day's URL redirects to today's.
  */
-export const homeRevalidateSeconds = 600;
+export const pageRevalidateSeconds = 86_400;
+
+/**
+ * The function serving the page prerendered as `file`: `docs/a` for
+ * `docs/a/index.html`, `homeFunction` for `index.html`, and none for any
+ * other file.
+ */
+export const pageFunction = (file: string) =>
+  file === 'index.html'
+    ? homeFunction
+    : file.endsWith('/index.html')
+      ? file.slice(0, -'/index.html'.length)
+      : undefined;
+
+/** A page's prerendered file, beside its function's config. */
+export const fallbackSuffix = '.prerender-fallback.html';
+
+/** The page `pageFunction` serves as `name`, as its prerendered file. */
+export const functionPage = (name: string) =>
+  name === homeFunction ? 'index.html' : `${name}/index.html`;
 
 /**
  * The query parameter a rewrite carries the requested path in: the function
@@ -83,8 +103,7 @@ export const onDemandRoutes = (
 /**
  * The function's entry: a Node.js handler that renders the requested path
  * with the server build's `fetch`, and lets the CDN cache it like a
- * prerendered page, or as long as the response says (the home page's social
- * card, with live numbers).
+ * prerendered page, or as long as the response says (a social card).
  */
 export const handlerSource = `import { Readable } from 'node:stream';
 import server from './server/server.js';
@@ -170,33 +189,49 @@ export const writeOnDemandFunction = Effect.fn('writeOnDemandFunction')(
 );
 
 /**
- * Serves the home page from `onDemandFunction`'s code as Vercel's
- * prerender function (ISR) in `output`: the prerendered page first, then
- * regenerated in the background once it's `homeRevalidateSeconds` old.
+ * Serves each page prerendered in `<output>/static`, as `files` lists
+ * them, from `onDemandFunction`'s code as Vercel's prerender function
+ * (ISR): the prerendered page first, then regenerated in the background
+ * once it's `pageRevalidateSeconds` old, while the old one is served.
  * Queries don't make copies of it (`allowQuery`), so no URL makes it
  * render more often.
  */
-export const writeHomeRevalidation = Effect.fn('writeHomeRevalidation')(
-  function* (output: string) {
+export const writePageRevalidation = Effect.fn('writePageRevalidation')(
+  function* (output: string, files: ReadonlyArray<string>) {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const functions = path.join(output, 'functions');
-    const fallback = `${homeFunction}.prerender-fallback.html`;
-    yield* fs.symlink(
-      `${onDemandFunction}.func`,
-      path.join(functions, `${homeFunction}.func`),
-    );
-    yield* fs.rename(
-      path.join(output, 'static/index.html'),
-      path.join(functions, fallback),
-    );
-    yield* fs.writeFileString(
-      path.join(functions, `${homeFunction}.prerender-config.json`),
-      `${JSON.stringify(
-        { allowQuery: [], expiration: homeRevalidateSeconds, fallback },
-        null,
-        2,
-      )}\n`,
+    yield* Effect.forEach(
+      files.flatMap((file) => {
+        const name = pageFunction(file);
+        return name === undefined ? [] : [{ file, name }];
+      }),
+      ({ file, name }) =>
+        Effect.gen(function* () {
+          const at = path.join(functions, name);
+          const fallback = `${path.basename(name)}${fallbackSuffix}`;
+          yield* fs.makeDirectory(path.dirname(at), { recursive: true });
+          yield* fs.symlink(
+            path.relative(
+              path.dirname(at),
+              path.join(functions, `${onDemandFunction}.func`),
+            ),
+            `${at}.func`,
+          );
+          yield* fs.rename(
+            path.join(output, 'static', file),
+            path.join(path.dirname(at), fallback),
+          );
+          yield* fs.writeFileString(
+            `${at}.prerender-config.json`,
+            `${JSON.stringify(
+              { allowQuery: [], expiration: pageRevalidateSeconds, fallback },
+              null,
+              2,
+            )}\n`,
+          );
+        }),
+      { concurrency: 32 },
     );
   },
 );

@@ -142,8 +142,8 @@ export const fetchCloudAvatars = (images: ReadonlyArray<string>) =>
 /**
  * How long `card`'s image, at the current version, is kept: ten minutes
  * on the CDN when it's missing something it fetches, and for good
- * otherwise (`og/version.ts`); the home card's version changes daily, for
- * its numbers.
+ * otherwise: its version changes daily (`og/version.ts`), for what it
+ * fetches.
  */
 export function cacheControl(
   card: OgCard,

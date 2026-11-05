@@ -1,3 +1,4 @@
+import { cardDay } from './card-day.ts';
 import { dailyVersion, ogImagePath } from './og/version.ts';
 import { blog, type CopiedVersion, docPath, site } from './site.ts';
 
@@ -33,11 +34,6 @@ export interface PageSeo {
    */
   readonly hidden?: boolean;
   readonly description: string;
-  /**
-   * The UTC day the page is rendered on (`utcDay`), for a social card whose
-   * version changes daily (`dailyVersion`): the home page's.
-   */
-  readonly cardDay?: string;
   /** What the page's social card shows, when it's more than its title. */
   readonly imageAlt?: string;
   /** The page as markdown, for agents: `/docs/<slug>.md`. */
@@ -109,13 +105,16 @@ export const ogImageSize = { height: 630, width: 1200 } as const;
 
 /**
  * A page's social card, as an absolute URL on the deployment that serves it,
- * with the cards' version in its path (`og/version.ts`), so social sites
- * fetch it again when the cards change; on `day` too for a daily one.
+ * with the cards' version and the day (`cardDay`) in its path
+ * (`og/version.ts`), so social sites fetch it again when the cards change,
+ * and daily for the avatars and numbers they fetch.
  */
-export function ogImageUrl(path: string, day: string | null) {
-  const version = import.meta.env.OG_CARDS_VERSION;
+export function ogImageUrl(path: string) {
   return new URL(
-    ogImagePath(path, day === null ? version : dailyVersion(version, day)),
+    ogImagePath(
+      path,
+      dailyVersion(import.meta.env.OG_CARDS_VERSION, cardDay()),
+    ),
     import.meta.env.DEPLOYMENT_ORIGIN || site.url,
   ).href;
 }
@@ -144,7 +143,7 @@ export function pageHead(page: PageSeo) {
     ? `${page.title} | ${site.name}`
     : `${site.name} - ${site.tagline.join(' ')}`;
   const url = page.canonical ?? absoluteUrl(page.path);
-  const image = ogImageUrl(page.path, page.cardDay ?? null);
+  const image = ogImageUrl(page.path);
   const imageAlt = page.imageAlt ?? page.title ?? site.tagline.join(' ');
   return {
     links: [

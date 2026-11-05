@@ -1,18 +1,18 @@
 /**
  * A page's social card is at `/og` and the page's path, then its version,
- * a hash of what it draws (`build/og-cards.ts`):
- * `/og/docs/quickstart/<version>.png`, and the home page's
- * `/og/index/<version>.png`. So a changed card gets a new URL, and one at
- * the current version can be cached for good. Images that aren't a page's,
- * as the READMEs' sponsor cloud, are in `_` (`notAPage`), which no page's
- * path starts with. The home card's version also has the UTC day
- * (`dailyVersion`), for its live numbers, and the home page is regenerated
- * through the day to name it (`build/on-demand.ts`).
+ * a hash of what it draws (`build/og-cards.ts`) and the UTC day
+ * (`dailyVersion`): `/og/docs/quickstart/<hash>-<day>.png`, and the home
+ * page's `/og/index/<hash>-<day>.png`. So a changed card gets a new URL,
+ * and its sponsors' avatars and the home card's numbers a new one daily,
+ * and one at the current version can be cached for good. Images that
+ * aren't a page's, as the sponsor cloud, are in `_` (`notAPage`), which no
+ * page's path starts with. The pages are regenerated daily to name the day
+ * (`build/on-demand.ts`).
  *
  * `og/serve.ts` redirects any other URL for one to it before it draws
- * anything: `/og` and the page's path, with `.png` or without, at another
- * version, or with a query. So no URL but the current one draws an image,
- * and `/og/docs/quickstart` shows that page's card.
+ * anything: the page's path, with `.png` or without, at another version
+ * (another day's, too), or with a query. So no URL but the current one
+ * draws an image, and `/og/docs/quickstart` shows that page's card.
  *
  * The build scripts import this with Node, so it imports nothing.
  */
@@ -23,7 +23,7 @@ export const immutableCacheControl =
 
 /**
  * The redirect's caching: the CDN keeps it `seconds`, until the version
- * changes (`untilVersionChanges`), and browsers and crawlers ask again.
+ * changes (`untilTomorrow`), and browsers and crawlers ask again.
  */
 export const versionRedirectCacheControl = (seconds: number) =>
   `public, max-age=0, s-maxage=${seconds}`;
@@ -33,26 +33,24 @@ export const utcDay = (now: Date) =>
   now.toISOString().slice(0, 10).replaceAll('-', '');
 
 /**
- * The home card's version on `day` (`utcDay`): the cards' `version` and
- * the day, so the card's live numbers get a new URL every day.
+ * An image's version on `day` (`utcDay`): the hash of what it draws,
+ * `version`, and the day, so the avatars and numbers it fetches when it's
+ * drawn get a new URL every day.
  */
 export const dailyVersion = (version: string, day: string) =>
   version ? `${version}-${day}` : '';
 
-/**
- * How long, from `now`, a version stays current, in seconds: a daily one
- * (`dailyVersion`) until the next UTC day, any other until the next deploy,
- * which the CDN's cache doesn't outlive.
- */
-export const untilVersionChanges = (daily: boolean, now: Date) => {
+/** How long, from `now`, until the next UTC day, in seconds: when the version changes. */
+export const untilTomorrow = (now: Date) => {
   const day = 86_400;
-  return daily ? day - Math.floor((now.getTime() / 1000) % day) : day;
+  return day - Math.floor((now.getTime() / 1000) % day);
 };
 
 /**
- * What a version looks like: the cards' and the cloud's hash, and the
- * home card's day (`dailyVersion`). No page's last segment may look like
- * one (`ogCardsSource`), or its card's URL would be its parent's.
+ * What a version looks like: the cards' or the cloud's hash, and the day
+ * (`dailyVersion`), or a hash alone, as a version had before the day. No
+ * page's last segment may look like one (`ogCardsSource`), or its card's
+ * URL would be its parent's.
  */
 export const versionLike = /^[0-9a-f]{10}(?:-\d{8})?$/;
 

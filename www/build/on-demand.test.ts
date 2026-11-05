@@ -64,8 +64,8 @@ describe('onDemandRoutes', () => {
   it('sends the social cards to the function, with their path', () => {
     const og = all.find((route) => route.src?.startsWith('^(/og/'));
     const src = new RegExp(og?.src ?? '');
-    expect(src.exec('/og/docs/client/links/abcdef0123.png')?.[1]).toBe(
-      '/og/docs/client/links/abcdef0123.png',
+    expect(src.exec('/og/docs/client/links/abcdef0123-20261105.png')?.[1]).toBe(
+      '/og/docs/client/links/abcdef0123-20261105.png',
     );
     expect(src.test('/og/docs/client/links')).toBe(true);
     expect(src.test('/og/')).toBe(false);

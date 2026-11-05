@@ -36,11 +36,12 @@ describe('deploymentOrigin', () => {
 describe('ogImageUrl', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.useRealTimers();
   });
 
   it("is the card's path on the build's host, and the page's URL stays site.url", () => {
     vi.stubEnv('DEPLOYMENT_ORIGIN', 'https://www-git-a-trpc.vercel.app');
-    expect(ogImageUrl('/docs/v10/client/react', null)).toBe(
+    expect(ogImageUrl('/docs/v10/client/react')).toBe(
       'https://www-git-a-trpc.vercel.app/og/docs/v10/client/react.png',
     );
     const head = pageHead({
@@ -63,19 +64,19 @@ describe('ogImageUrl', () => {
   });
 
   it('is on site.url without a build host', () => {
-    expect(ogImageUrl('/', null)).toBe(`${site.url}/og/index.png`);
+    expect(ogImageUrl('/')).toBe(`${site.url}/og/index.png`);
   });
 
-  it("carries the cards' version, so social sites fetch a changed card again", () => {
+  it("carries the cards' version and the UTC day the page is rendered on, so social sites fetch a changed card again, and its sponsors daily", () => {
     vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
-    expect(ogImageUrl('/docs/server/procedures', null)).toBe(
-      `${site.url}/og/docs/server/procedures/0123abcdef.png`,
+    vi.useFakeTimers({
+      now: new Date('2026-11-05T23:59:59Z'),
+      toFake: ['Date'],
+    });
+    expect(ogImageUrl('/docs/server/procedures')).toBe(
+      `${site.url}/og/docs/server/procedures/0123abcdef-20261105.png`,
     );
-  });
-
-  it('names the home card for the day the page is rendered on', () => {
-    vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
-    const head = pageHead({ cardDay: '20261105', description: '', path: '/' });
+    const head = pageHead({ description: '', path: '/' });
     expect(head.meta).toContainEqual({
       content: `${site.url}/og/index/0123abcdef-20261105.png`,
       property: 'og:image',
@@ -84,5 +85,24 @@ describe('ogImageUrl', () => {
       content: `${site.url}/og/index/0123abcdef-20261105.png`,
       name: 'twitter:image',
     });
+    vi.setSystemTime(new Date('2026-11-06T00:00:00Z'));
+    expect(ogImageUrl('/')).toBe(
+      `${site.url}/og/index/0123abcdef-20261106.png`,
+    );
+  });
+
+  it("names the server's day in the browser, so the head hydrates unchanged", async () => {
+    vi.resetModules();
+    const { hydrateCardDay } = await import('./card-day.ts');
+    const { ogImageUrl } = await import('./seo.ts');
+    vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
+    vi.useFakeTimers({
+      now: new Date('2026-11-07T00:00:00Z'),
+      toFake: ['Date'],
+    });
+    hydrateCardDay({ cardDay: '20261105' });
+    expect(ogImageUrl('/')).toBe(
+      `${site.url}/og/index/0123abcdef-20261105.png`,
+    );
   });
 });
