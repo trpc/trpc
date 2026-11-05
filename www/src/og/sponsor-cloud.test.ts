@@ -8,11 +8,11 @@ import { renderSponsorCloud } from './render.ts';
 import {
   cloudLayout,
   sponsorCloudCacheControl,
-  sponsorCloudPath,
-  sponsorCloudWidth,
+  sponsorCloudSource,
   sponsorCloudUrl,
-  sponsorCloudVersion,
+  sponsorCloudWidth,
 } from './sponsor-cloud.ts';
+import { immutableCacheControl } from './version.ts';
 
 const sponsor = (login: string, weight: number): Sponsor => ({
   createdAt: 0,
@@ -80,20 +80,24 @@ describe('cloudLayout', () => {
 });
 
 describe('sponsorCloudUrl', () => {
-  it('is absolute, at the version of who it draws', () => {
+  it('is absolute, with the version in its path', () => {
+    expect(sponsorCloudUrl('0123abcdef')).toBe(
+      'https://trpc.io/og/0123abcdef/sponsor-cloud.png',
+    );
+  });
+});
+
+describe('sponsorCloudSource', () => {
+  it('changes with who it draws, their weight and their avatar, but not the imageless', () => {
     const list = [sponsor('a', 40), sponsor('b', 20)];
-    expect(sponsorCloudUrl(list)).toBe(
-      `https://trpc.io${sponsorCloudPath}?v=${sponsorCloudVersion(list)}`,
+    expect(sponsorCloudSource(list)).toBe(
+      sponsorCloudSource([...list, { ...sponsor('c', 10), imageless: true }]),
     );
-    expect(sponsorCloudVersion(list)).toMatch(/^[0-9a-f]{8}$/);
-    expect(sponsorCloudVersion(list)).toBe(
-      sponsorCloudVersion([...list, { ...sponsor('c', 10), imageless: true }]),
+    expect(sponsorCloudSource(list)).not.toBe(
+      sponsorCloudSource([sponsor('a', 40), sponsor('b', 21)]),
     );
-    expect(sponsorCloudVersion(list)).not.toBe(
-      sponsorCloudVersion([sponsor('a', 40), sponsor('b', 21)]),
-    );
-    expect(sponsorCloudVersion(list)).not.toBe(
-      sponsorCloudVersion([
+    expect(sponsorCloudSource(list)).not.toBe(
+      sponsorCloudSource([
         sponsor('a', 40),
         { ...sponsor('b', 20), imgSrc: 'https://example.com/b.png' },
       ]),
@@ -105,8 +109,10 @@ describe('sponsorCloudCacheControl', () => {
   const { bubbles } = cloudLayout([sponsor('a', 40), sponsor('b', 20)]);
   const all = new Map(bubbles.map((bubble) => [bubble.image, 'data:']));
 
-  it('caches it as a page when every avatar loaded', () => {
-    expect(sponsorCloudCacheControl({ avatars: all, bubbles })).toBeUndefined();
+  it('caches it for good when every avatar loaded', () => {
+    expect(sponsorCloudCacheControl({ avatars: all, bubbles })).toBe(
+      immutableCacheControl,
+    );
   });
 
   it('caches it briefly when an avatar is missing', () => {

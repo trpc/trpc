@@ -1,15 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import type * as SponsorCloud from '~/og/sponsor-cloud.ts';
-import type { Sponsor } from '~/sponsors.ts';
 
 /**
- * A page's social card, `ogImagePath(page)`: `/og/docs/quickstart.png`,
- * and the READMEs' sponsor cloud at `sponsorCloudPath`
- * (`og/sponsor-cloud.ts`). Rendered on request, with what it shows live
- * (`og/live.ts`), and cached by the CDN as long as that says, or as a page
- * (`build/on-demand.ts`). A request for another version than the current
- * one redirects to it first (`og/version.ts`).
+ * A page's social card, `/og/<version>/docs/quickstart.png` for
+ * `ogImagePath(page)` at the cards' version (`ogImageUrl`), and the
+ * READMEs' sponsor cloud at its own (`sponsorCloudUrl`). Any other URL for
+ * one redirects to that first (`og/version.ts`). Rendered on request, with
+ * what it shows live (`og/live.ts`), and cached for good, or as briefly as
+ * that says.
  * The imports wait for a request, so pages don't load the renderer.
  */
 export const Route = createFileRoute('/og/$')({
@@ -17,28 +16,35 @@ export const Route = createFileRoute('/og/$')({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const [cloud, { versionRedirect }] = await Promise.all([
+        const [cloud, version, { cards }] = await Promise.all([
           import('~/og/sponsor-cloud.ts'),
           import('~/og/version.ts'),
+          import('virtual:og-cards'),
         ]);
-        if (url.pathname === cloud.sponsorCloudPath) {
-          const { drawnSponsors } = await import('~/sponsors.ts');
-          return (
-            versionRedirect(url, cloud.sponsorCloudVersion(drawnSponsors)) ??
-            sponsorCloudResponse(cloud, drawnSponsors)
-          );
-        }
-        const { cards } = await import('virtual:og-cards');
-        const card = cards.get(url.pathname);
-        if (card === undefined) {
+        const requested = version.requestedImage(
+          url.pathname,
+          (path) => path === cloud.sponsorCloudPath || cards.has(path),
+        );
+        if (requested === undefined) {
           return new Response('No social card here', {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' },
             status: 404,
           });
         }
-        const redirect = versionRedirect(url, import.meta.env.OG_CARDS_VERSION);
+        const isCloud = requested.path === cloud.sponsorCloudPath;
+        const redirect = version.versionRedirect(
+          url,
+          requested,
+          isCloud
+            ? import.meta.env.SPONSOR_CLOUD_VERSION
+            : import.meta.env.OG_CARDS_VERSION,
+        );
         if (redirect !== undefined) {
           return redirect;
+        }
+        const card = cards.get(requested.path);
+        if (card === undefined) {
+          return sponsorCloudResponse(cloud);
         }
         const [{ renderOgImage }, { cacheControl, fetchLive }] =
           await Promise.all([import('~/og/render.ts'), import('~/og/live.ts')]);
@@ -49,22 +55,18 @@ export const Route = createFileRoute('/og/$')({
   },
 });
 
-const png = (body: Uint8Array<ArrayBuffer>, cache: string | undefined) =>
+const png = (body: Uint8Array<ArrayBuffer>, cache: string) =>
   new Response(body, {
-    headers: {
-      'Content-Type': 'image/png',
-      ...(cache === undefined ? {} : { 'Cache-Control': cache }),
-    },
+    headers: { 'Cache-Control': cache, 'Content-Type': 'image/png' },
   });
 
-async function sponsorCloudResponse(
-  cloud: typeof SponsorCloud,
-  drawnSponsors: ReadonlyArray<Sponsor>,
-) {
-  const [{ renderSponsorCloud }, { fetchCloudAvatars }] = await Promise.all([
-    import('~/og/render.ts'),
-    import('~/og/live.ts'),
-  ]);
+async function sponsorCloudResponse(cloud: typeof SponsorCloud) {
+  const [{ renderSponsorCloud }, { fetchCloudAvatars }, { drawnSponsors }] =
+    await Promise.all([
+      import('~/og/render.ts'),
+      import('~/og/live.ts'),
+      import('~/sponsors.ts'),
+    ]);
   const layout = cloud.cloudLayout(drawnSponsors);
   const avatars = await fetchCloudAvatars(
     layout.bubbles.map((bubble) => bubble.image),

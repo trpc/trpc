@@ -68,6 +68,9 @@ describe('ogImageUrl', () => {
 
   it("carries the cards' version, so social sites fetch a changed card again", () => {
     vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
-    expect(ogImageUrl('/')).toBe(`${site.url}/og/index.png?v=0123abcdef`);
+    expect(ogImageUrl('/')).toBe(`${site.url}/og/0123abcdef/index.png`);
+    expect(ogImageUrl('/docs/server/procedures')).toBe(
+      `${site.url}/og/0123abcdef/docs/server/procedures.png`,
+    );
   });
 });

@@ -14,6 +14,7 @@ import { cardFooter } from '~/sponsors.ts';
 
 import { Avatars, fetchAvatars } from './avatar.ts';
 import type { CardFooter, OgCard } from './card.ts';
+import { immutableCacheControl } from './version.ts';
 
 export interface Stats {
   /** `@trpc/server`'s npm downloads last week. */
@@ -139,15 +140,16 @@ export const fetchCloudAvatars = (images: ReadonlyArray<string>) =>
   );
 
 /**
- * How long the CDN keeps `card`'s image: the home card's numbers for a
- * day, a card that's missing something it fetches for ten minutes, and
- * the rest as a page (`undefined`).
+ * How long `card`'s image, at the current version, is kept: a card that's
+ * missing something it fetches for ten minutes on the CDN, the home card,
+ * whose numbers its version doesn't cover, for a day, and the rest for
+ * good (`og/version.ts`).
  */
 export function cacheControl(
   card: OgCard,
   live: Live,
   footer: CardFooter = cardFooter,
-) {
+): string {
   const missing =
     (card.kind === 'home' &&
       (live.stats.stars === undefined || live.stats.downloads === undefined)) ||
@@ -157,5 +159,5 @@ export function cacheControl(
   }
   return card.kind === 'home'
     ? 'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600'
-    : undefined;
+    : immutableCacheControl;
 }

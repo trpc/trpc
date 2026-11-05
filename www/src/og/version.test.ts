@@ -1,12 +1,20 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { drawnSponsors } from '~/sponsors.ts';
-
-import { sponsorCloudPath, sponsorCloudVersion } from './sponsor-cloud.ts';
-import { versionRedirect, versionRedirectCacheControl } from './version.ts';
+import {
+  requestedImage,
+  versionedPath,
+  versionRedirect,
+  versionRedirectCacheControl,
+} from './version.ts';
 
 vi.mock('virtual:og-cards', () => ({
-  cards: new Map([['/og/index.png', { kind: 'home', path: '/' }]]),
+  cards: new Map([
+    ['/og/index.png', { kind: 'home', path: '/' }],
+    [
+      '/og/docs/server/procedures.png',
+      { kind: 'doc', path: '/docs/server/procedures' },
+    ],
+  ]),
 }));
 
 vi.mock('./render.ts', () => ({
@@ -30,66 +38,115 @@ const get = (path: string) => {
   } as Parameters<typeof handlers.GET>[0]) as Promise<Response>;
 };
 
-describe('versionRedirect', () => {
-  const url = (search: string) => new URL(`https://trpc.io/og/a.png${search}`);
+describe('versionedPath', () => {
+  it('puts the version after /og/', () => {
+    expect(versionedPath('/og/docs/a.png', 'abc')).toBe('/og/abc/docs/a.png');
+    expect(versionedPath('/og/docs/a.png', '')).toBe('/og/docs/a.png');
+  });
+});
 
-  it('leaves a URL at the version alone', () => {
-    expect(versionRedirect(url('?v=abc'), 'abc')).toBeUndefined();
-    expect(versionRedirect(url(''), '')).toBeUndefined();
+describe('requestedImage', () => {
+  const exists = (path: string) => path === '/og/docs/a.png';
+
+  it('reads an image and its version from the path', () => {
+    expect(requestedImage('/og/docs/a.png', exists)).toEqual({
+      path: '/og/docs/a.png',
+      version: '',
+    });
+    expect(requestedImage('/og/abc/docs/a.png', exists)).toEqual({
+      path: '/og/docs/a.png',
+      version: 'abc',
+    });
   });
 
-  it('redirects another version, none, or another parameter to the version alone', () => {
-    for (const search of [
-      '?v=old',
-      '',
-      '?v=abc&x=1',
-      '?x=1&v=abc',
-      '?v=abc&v=old',
-    ]) {
-      const redirect = versionRedirect(url(search), 'abc');
-      expect(redirect?.status, search).toBe(307);
-      expect(redirect?.headers.get('location'), search).toBe('/og/a.png?v=abc');
-      expect(redirect?.headers.get('cache-control'), search).toBe(
+  it('names nothing where no image is', () => {
+    for (const path of ['/og/abc/docs/b.png', '/og/a/b/docs/a.png', '/og/']) {
+      expect(requestedImage(path, exists), path).toBeUndefined();
+    }
+  });
+});
+
+describe('versionRedirect', () => {
+  const image = { path: '/og/a.png', version: 'abc' };
+
+  it('leaves the URL at the current version alone', () => {
+    expect(
+      versionRedirect(new URL('https://trpc.io/og/abc/a.png'), image, 'abc'),
+    ).toBeUndefined();
+  });
+
+  it('redirects another version, or any query, to the current version alone', () => {
+    for (const [url, requested] of [
+      ['/og/a.png', { ...image, version: '' }],
+      ['/og/old/a.png', { ...image, version: 'old' }],
+      ['/og/abc/a.png?x=1', image],
+    ] as const) {
+      const redirect = versionRedirect(
+        new URL(`https://trpc.io${url}`),
+        requested,
+        'abc',
+      );
+      expect(redirect?.status, url).toBe(307);
+      expect(redirect?.headers.get('location'), url).toBe('/og/abc/a.png');
+      expect(redirect?.headers.get('cache-control'), url).toBe(
         versionRedirectCacheControl,
       );
     }
-    expect(versionRedirect(url('?x=1'), '')?.headers.get('location')).toBe(
-      '/og/a.png',
-    );
   });
 });
 
 describe('/og/*', () => {
+  beforeEach(() => {
+    vi.stubEnv('OG_CARDS_VERSION', 'abc');
+    vi.stubEnv('SPONSOR_CLOUD_VERSION', 'cloud1');
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it("redirects a card's request at another version before drawing it", async () => {
-    vi.stubEnv('OG_CARDS_VERSION', 'abc');
-    for (const search of ['', '?v=made-up', '?v=abc&cache=bust']) {
-      const response = await get(`/og/index.png${search}`);
-      expect(response.status, search).toBe(307);
-      expect(response.headers.get('location'), search).toBe(
-        '/og/index.png?v=abc',
+  it('redirects a card at no version, another version, or with a query, before drawing it', async () => {
+    for (const path of [
+      '/og/docs/server/procedures.png',
+      '/og/made-up/docs/server/procedures.png',
+      '/og/docs/server/procedures.png?v=abc',
+      '/og/abc/docs/server/procedures.png?cache=bust',
+    ]) {
+      const response = await get(path);
+      expect(response.status, path).toBe(307);
+      expect(response.headers.get('location'), path).toBe(
+        '/og/abc/docs/server/procedures.png',
       );
     }
-    await expect(get('/og/index.png?v=abc')).rejects.toThrow('drew a card');
+    await expect(get('/og/abc/docs/server/procedures.png')).rejects.toThrow(
+      'drew a card',
+    );
+    await expect(get('/og/abc/index.png')).rejects.toThrow('drew a card');
   });
 
-  it("redirects the sponsor cloud's request at another version before drawing it", async () => {
-    const version = sponsorCloudVersion(drawnSponsors);
-    const response = await get(`${sponsorCloudPath}?v=made-up`);
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      `${sponsorCloudPath}?v=${version}`,
-    );
-    await expect(get(`${sponsorCloudPath}?v=${version}`)).rejects.toThrow(
+  it("redirects the sponsor cloud at another version, as the READMEs' old ?v= URL, before drawing it", async () => {
+    for (const path of [
+      '/og/sponsor-cloud.png?v=b6cfa2a2',
+      '/og/abc/sponsor-cloud.png',
+    ]) {
+      const response = await get(path);
+      expect(response.status, path).toBe(307);
+      expect(response.headers.get('location'), path).toBe(
+        '/og/cloud1/sponsor-cloud.png',
+      );
+    }
+    await expect(get('/og/cloud1/sponsor-cloud.png')).rejects.toThrow(
       'drew the sponsor cloud',
     );
   });
 
-  it('answers a path without a card with a 404, whatever its query', async () => {
-    vi.stubEnv('OG_CARDS_VERSION', 'abc');
-    expect((await get('/og/nothing.png?v=made-up')).status).toBe(404);
+  it('answers a path without an image with a 404, whatever its version or query', async () => {
+    for (const path of [
+      '/og/nothing.png?v=abc',
+      '/og/abc/nothing.png',
+      '/og/abc/abc/index.png',
+    ]) {
+      expect((await get(path)).status, path).toBe(404);
+    }
   });
 });

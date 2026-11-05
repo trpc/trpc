@@ -2,7 +2,7 @@
  * `/sponsor`'s cloud of sponsors as a PNG, for the READMEs
  * (`build/sponsors-readme.ts`): each sponsor a circle of their avatar,
  * packed as the page packs them (`components/sponsors/pack.ts`), on a
- * transparent background. `routes/og.$.ts` serves it at `sponsorCloudPath`,
+ * transparent background. `routes/og.$.ts` serves it at `sponsorCloudUrl`,
  * with the avatars fetched on request (`live.ts`); `render.ts` draws it.
  *
  * The build scripts import this with Node, so it imports nothing through
@@ -11,6 +11,8 @@
 import { cloudPadding, packSponsors } from '../components/sponsors/pack.ts';
 import { site } from '../site.ts';
 import { avatarUrl, type Sponsor, sponsorKey } from '../sponsors.ts';
+
+import { immutableCacheControl, versionedPath } from './version.ts';
 
 export const sponsorCloudPath = '/og/sponsor-cloud.png';
 
@@ -74,45 +76,34 @@ export function cloudLayout(sponsors: ReadonlyArray<Sponsor>): CloudLayout {
   };
 }
 
-/** 32-bit FNV-1a, as 8 hex digits. */
-const fnv1a = (text: string) => {
-  let hash = 0x81_1c_9d_c5;
-  for (const byte of new TextEncoder().encode(text)) {
-    hash = Math.imul(hash ^ byte, 0x01_00_01_93) >>> 0;
-  }
-  return hash.toString(16).padStart(8, '0');
-};
-
 /**
- * What the PNG draws of `sponsors`, as a short hash: it changes when one
- * joins or leaves, or their weight, avatar URL or name does. GitHub keeps
- * an avatar's URL when its picture changes, so a new picture shows once
- * the CDN's copy expires, within a day, as on the social cards.
+ * What the PNG draws of `sponsors`, as text, which its version hashes
+ * with the renderer (`sponsorCloudVersion` in `build/og-cards.ts`): it
+ * changes when one joins or leaves, or their weight, avatar URL or name
+ * does. GitHub keeps an avatar's URL when its picture changes, so a new
+ * picture shows from the next deploy, as on the social cards.
  */
-export const sponsorCloudVersion = (sponsors: ReadonlyArray<Sponsor>) =>
-  fnv1a(
-    drawn(sponsors)
-      .map(
-        (sponsor) =>
-          `${sponsorKey(sponsor)} ${sponsor.weight} ${sponsor.imgSrc} ${sponsor.name}`,
-      )
-      .join('\n'),
-  );
+export const sponsorCloudSource = (sponsors: ReadonlyArray<Sponsor>) =>
+  drawn(sponsors)
+    .map(
+      (sponsor) =>
+        `${sponsorKey(sponsor)} ${sponsor.weight} ${sponsor.imgSrc} ${sponsor.name}`,
+    )
+    .join('\n');
 
 /**
- * Where the READMEs show the PNG of `sponsors`: absolute, so it draws on
- * npm, and with `?v=` their version, so GitHub's image proxy fetches it
- * again when the sponsors change rather than keep the last one.
+ * Where the READMEs show the PNG at `version`: absolute, so it draws on
+ * npm, and versioned, so GitHub's image proxy fetches it again when it
+ * changes rather than keep the last one (`og/version.ts`).
  */
-export const sponsorCloudUrl = (sponsors: ReadonlyArray<Sponsor>) =>
-  `${site.url}${sponsorCloudPath}?v=${sponsorCloudVersion(sponsors)}`;
+export const sponsorCloudUrl = (version: string) =>
+  `${site.url}${versionedPath(sponsorCloudPath, version)}`;
 
 /**
- * How long the CDN keeps the PNG: ten minutes when an avatar it draws
- * didn't load, and as a page otherwise (`undefined`). A README asking for
- * another version (one from just before a deploy, or a package's on npm
- * from an older one) is redirected to the current one first
- * (`og/version.ts`).
+ * How long the PNG is kept: ten minutes on the CDN when an avatar it draws
+ * didn't load, and for good otherwise. A README asking for another version
+ * (one from before a deploy, or a package's on npm from an older one) is
+ * redirected to the current one first (`og/version.ts`).
  */
 export function sponsorCloudCacheControl(opts: {
   readonly avatars: ReadonlyMap<string, string>;
@@ -121,5 +112,5 @@ export function sponsorCloudCacheControl(opts: {
   const missing = opts.bubbles.some(
     (bubble) => !opts.avatars.has(bubble.image),
   );
-  return missing ? 'public, max-age=0, s-maxage=600' : undefined;
+  return missing ? 'public, max-age=0, s-maxage=600' : immutableCacheControl;
 }

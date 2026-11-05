@@ -43,7 +43,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <!-- markdownlint-disable -->
 
 <p align="center">
-  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=b6cfa2a2" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>
+  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/0a33c160e0/sponsor-cloud.png" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>
 </p>
 
 ### Silver partners
