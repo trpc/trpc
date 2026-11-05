@@ -58,7 +58,7 @@ A server that is shutting down drains its connections ([Rolling deploys](../../a
 
 Subscribers see none of this: no error and no second `started`. Nothing already sent is sent again, so a mutation never runs twice. A query or mutation the server doesn't finish before its drain timeout fails with `NETWORK_ERROR`, as on a dropped connection.
 
-A subscription without `tracked()` ids has no event to resume from, so it **starts over** on the new connection: the resolver runs again from the start, without `lastEventId`. Its events can't be matched, so while both connections deliver it, an event can arrive twice, but none is missed. Give events ids if the client must see each one once. A subscription made with `{ reconnect: false }` stays on the old connection and ends with `NETWORK_ERROR` when the server closes it.
+A subscription without `tracked()` ids has no event to resume from, so it **starts over** on the new connection: the resolver runs again from the start, without `lastEventId`. Its events can't be matched, so the old connection keeps delivering them until the server confirms it stopped the subscription there, or the connection closes. An event can arrive twice, but none is missed. Give events ids if the client must see each one once. A subscription made with `{ reconnect: false }` stays on the old connection and ends with `NETWORK_ERROR` when the server closes it.
 
 ## Keep-alive
 

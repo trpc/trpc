@@ -81,7 +81,7 @@ A subscription is an SSE request. When the connection drops, the link reconnects
 A server that is draining, or whose stream reaches [`sse.maxDuration`](../../subscriptions/overview.md#stream-lifetime), sends a `reconnect` event first. The link then moves the subscription without a gap:
 
 - It opens a new stream from the last event id, and the old one keeps delivering.
-- Once the new stream answers (its first event is `connected`), the link closes the old one. The new stream resends the events the old one delivered meanwhile, and the link drops each of those once by its `tracked()` id. Events without ids can arrive twice, but none is missed.
+- Once the new stream answers (its first event is `connected`), the link closes the old one. The new stream resends the events the old one delivered meanwhile, and the link drops each of those once by its `tracked()` id. A subscription without ids keeps the old stream until the server ends it, so its events can arrive twice, but none is missed.
 - If the new stream fails to open, the old one keeps delivering and the link tries again with its `reconnect.delay`, for as long as the old one lasts; the failures don't count toward `reconnect.attempts`. If the old stream ends first, the link reconnects as after a dropped connection.
 
 A call made with `{ reconnect: false }` ignores `reconnect` and stays on its stream.

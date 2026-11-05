@@ -12,7 +12,7 @@
   - Subscriptions are SSE ([`fetch-sse.md`](./fetch-sse.md)).
 - WebSocket and MessagePort: JSON messages, many calls over one connection.
   - The client first sends `{ type: 'init', version, connectionParams? }`.
-  - Calls are `{ id, type: 'request', method, path, input?, lastEventId? }` and `{ id, type: 'abort' }`.
+  - Calls are `{ id, type: 'request', method, path, input?, lastEventId? }` and `{ id, type: 'abort' }`, which the server answers with `done` once a running call has stopped (see [`ws-graceful-switchover.md`](./ws-graceful-switchover.md)).
   - The server answers with `result` (`deferred: true` when chunks follow), `started` (a subscription's resolver ran; see [`ws-graceful-switchover.md`](./ws-graceful-switchover.md)), `event` (`eventId?`, `deferred?`), `chunk`, `chunkEnd`, `done`, and `error { id | null, body }` (no `status` since [`errors.md`](./errors.md)'s error-status decision).
   - A version mismatch is an `id: null` error and close code 1002. Bodies use the endpoint's serializer.
 - (agent) A socket `request` may also carry `trace: { traceparent?, b3? }`, the client span's trace context ([`socket-trace-field.md`](./socket-trace-field.md)).

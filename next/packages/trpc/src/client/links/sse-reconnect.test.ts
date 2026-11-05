@@ -201,6 +201,47 @@ test('a subscription without tracked ids gets every event at least once while bo
   expect(feed.events).toEqual([0, 1, 0]);
 });
 
+test('after an untracked subscription moves, the old stream keeps delivering until it ends', async () => {
+  const server = scripted();
+  const feed = subscribe(server.fetch);
+  const old = await server.nth(0);
+  old.push(connected + message(0) + reconnect);
+  const next = await server.nth(1);
+  next.push(connected);
+  await sleep(5);
+  expect(old.aborted).toBe(false);
+  // Published before the new stream's procedure listened.
+  old.push(message(1));
+  await until(() => feed.events.length === 2);
+  old.end();
+  await sleep(5);
+  expect(server.streams).toHaveLength(2);
+  next.push(message(2) + done);
+  await feed.finished;
+  expect(feed.events).toEqual([0, 1, 2]);
+});
+
+test.each([
+  ['done', done],
+  ['error', 'event: error\ndata: {}\n\n'],
+])(
+  'a stream an untracked move left stops delivering once it sends %s',
+  async (_, ending) => {
+    const server = scripted();
+    const feed = subscribe(server.fetch);
+    const old = await server.nth(0);
+    old.push(connected + reconnect);
+    const next = await server.nth(1);
+    next.push(connected);
+    await sleep(5);
+    old.push(message(1) + ending + message(9));
+    await until(() => old.aborted);
+    next.push(message(2) + done);
+    await feed.finished;
+    expect(feed.events).toEqual([1, 2]);
+  },
+);
+
 test('a subscription made with { reconnect: false } ignores reconnect and stays on its stream', async () => {
   const server = scripted();
   const feed = subscribe(server.fetch, { call: { reconnect: false } });

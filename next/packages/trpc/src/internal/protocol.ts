@@ -215,13 +215,15 @@ export type ClientMessage =
       /** The client span's trace context (`traceparent`, `b3`), when it propagates one. */
       trace?: Record<string, string> | undefined;
     }
+  /** Stops a call; the server answers a running one with `done` once it has stopped. */
   | { id: number; type: 'abort' }
   | { type: 'ping' };
 
 /**
  * What a WebSocket or MessagePort server sends (10). A `result` or `event`
  * with `deferred` is followed by its `chunk`s. A subscription starts with
- * `started`, and it and a query with deferred values end with `done`.
+ * `started`, and it and a query with deferred values end with `done`, as
+ * does a call the client aborted, once it has stopped.
  * `id: null` is a connection error.
  */
 export type ServerMessage =

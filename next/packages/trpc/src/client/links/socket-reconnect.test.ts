@@ -533,7 +533,7 @@ test('a subscription without tracked event ids starts over on the new connection
   const next = await c.socket(1);
   const moved = await next.request('feed');
   expect(moved).not.toHaveProperty('lastEventId');
-  // Untracked: the old connection delivers until the new one answers, so
+  // Untracked: the old connection delivers until it confirms the stop, so
   // events can arrive twice, but none is missed.
   old.receive(event(first.id, 2));
   await until(() => feed.events.length === 3);
@@ -542,7 +542,62 @@ test('a subscription without tracked event ids starts over on the new connection
   next.receive(event(moved.id, 0));
   next.receive({ id: moved.id, type: 'done' });
   await feed.done;
-  expect(feed.events).toEqual([0, 1, 2, 0]);
+  expect(feed.events).toEqual([0, 1, 2, 3, 0]);
+  await c.link.close();
+});
+
+test("after an untracked subscription moves, the old connection's events are delivered until it confirms the stop with done", async () => {
+  const c = connect();
+  const feed = subscribe(c.client);
+  const old = await c.socket(0);
+  const first = await old.request('feed');
+  old.receive({ id: first.id, type: 'started' });
+  old.receive(event(first.id, 0));
+  old.receive({ type: 'reconnect' });
+  const next = await c.socket(1);
+  const moved = await next.request('feed');
+  next.receive({ id: moved.id, type: 'started' });
+  await until(() => old.sent.some((m) => m.type === 'abort'));
+  expect(old.sent).toContainEqual(abort(first.id));
+
+  // Published before the new connection's procedure listened.
+  old.receive(event(first.id, 1));
+  await until(() => feed.events.length === 2);
+  // Its deferred parts would share the call's decoder with the new connection's.
+  old.receive({ ...event(first.id, 7), deferred: 0 });
+  old.receive({ id: first.id, type: 'chunkEnd', event: 0 });
+  expect(old.readyState).toBe(1);
+
+  old.receive({ id: first.id, type: 'done' });
+  await until(() => old.readyState === 3);
+  old.receive(event(first.id, 8));
+  next.receive(event(moved.id, 2));
+  next.receive({ id: moved.id, type: 'done' });
+  await feed.done;
+  expect(feed.events).toEqual([0, 1, 2]);
+  expect(old.sent.filter((m) => m.type === 'abort')).toHaveLength(1);
+  await c.link.close();
+});
+
+test("after an untracked subscription moves, the old connection's events are delivered until it's lost", async () => {
+  const c = connect();
+  const feed = subscribe(c.client);
+  const old = await c.socket(0);
+  const first = await old.request('feed');
+  old.receive({ id: first.id, type: 'started' });
+  old.receive({ type: 'reconnect' });
+  const next = await c.socket(1);
+  const moved = await next.request('feed');
+  next.receive({ id: moved.id, type: 'started' });
+  await until(() => old.sent.some((m) => m.type === 'abort'));
+  old.receive(event(first.id, 1));
+  await until(() => feed.events.length === 1);
+  old.close();
+  next.receive(event(moved.id, 2));
+  next.receive({ id: moved.id, type: 'done' });
+  await feed.done;
+  expect(feed.events).toEqual([1, 2]);
+  expect(ScriptedWebSocket.opened).toHaveLength(2);
   await c.link.close();
 });
 
