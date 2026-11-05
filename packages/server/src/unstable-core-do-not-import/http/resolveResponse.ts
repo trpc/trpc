@@ -3,7 +3,7 @@ import {
   isObservable,
   observableToAsyncIterable,
 } from '../../observable/observable';
-import { getErrorShape } from '../error/getErrorShape';
+import { getErrorShape, getFallbackErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import {
@@ -11,8 +11,7 @@ import {
   type inferRouterContext,
   type inferRouterError,
 } from '../router';
-import type { TRPCErrorShape, TRPCResponse } from '../rpc';
-import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
@@ -23,10 +22,7 @@ import {
   run,
 } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
-import {
-  getHTTPStatusCode,
-  getHTTPStatusCodeFromError,
-} from './getHTTPStatusCode';
+import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import type {
   HTTPBaseHandlerOptions,
@@ -230,13 +226,7 @@ function errorShapeOrFallback<TRouter extends AnyRouter>(
       error: getTRPCErrorFromUnknown(cause),
       req: opts.req,
     });
-    const { error } = call;
-    const shape: TRPCErrorShape = {
-      code: TRPC_ERROR_CODES_BY_KEY[error.code],
-      message: error.code,
-      data: { code: error.code, httpStatus: getHTTPStatusCodeFromError(error) },
-    };
-    return shape;
+    return getFallbackErrorShape(call.error);
   }
 }
 
