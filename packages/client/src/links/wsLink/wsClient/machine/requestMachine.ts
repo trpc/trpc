@@ -6,23 +6,43 @@ export type RequestId = number;
 export type RequestMethod = 'query' | 'mutation' | 'subscription';
 
 /**
- * Where a request is. Only the connections a request was sent on can answer
- * it, so frames from a connection it has left never reach it. `started`: the
- * subscriber has seen `started` since the subscription last (re)started. A
- * move keeps it, so the new connection's `started` is dropped only if the old
- * one's was shown; a lost connection clears it, so `started` shows again.
+ * Waiting to be sent: in the next batch on `batch`, which serves new
+ * requests, or on the next connection that does when `batch` is `null`.
  */
-export type RequestState =
-  /**
-   * Waiting to be sent: in the next batch on `batch`, which serves new
-   * requests, or on the next connection that does when `batch` is `null`.
-   */
-  | { kind: 'queued'; batch: ConnectionId | null; started: boolean }
+interface Queued {
+  kind: 'queued';
+  batch: ConnectionId | null;
+}
+
+interface Settled {
+  kind: 'settled';
+}
+
+/**
+ * Where a query or mutation is. It's sent once, and only the connection it
+ * was sent on can answer it.
+ */
+export type QueryState =
+  | Queued
+  /** Sent on `connection`. */
+  | { kind: 'sent'; connection: ConnectionId }
+  | Settled;
+
+/**
+ * Where a subscription is. Only the connections it was sent on can answer
+ * it, so frames from a connection it has left never reach it. `started`: the
+ * subscriber has seen `started` since the subscription last (re)started,
+ * which a queued one hasn't. A move keeps it, so the new connection's
+ * `started` is dropped only if the old one's was shown; a lost connection
+ * clears it, so `started` shows again.
+ */
+export type SubscriptionState =
+  | Queued
   /** Sent on `connection`. */
   | { kind: 'sent'; connection: ConnectionId; started: boolean }
   /**
-   * A subscription moving make-before-break: sent on `to`, and still served
-   * by `from` until `to` confirms it. Only then is it stopped on `from`.
+   * Moving make-before-break: sent on `to`, and still served by `from` until
+   * `to` confirms it. Only then is it stopped on `from`.
    */
   | {
       kind: 'moving';
@@ -42,12 +62,20 @@ export type RequestState =
       to: ConnectionId;
       started: boolean;
     }
-  | { kind: 'settled' };
+  | Settled;
 
-export interface RequestModel {
+export type RequestState = QueryState | SubscriptionState;
+
+export interface QueryRequest {
   readonly id: RequestId;
-  readonly method: RequestMethod;
-  /** The id of the last event delivered, sent when a subscription resumes. */
+  readonly method: 'query' | 'mutation';
+  readonly state: QueryState;
+}
+
+export interface SubscriptionRequest {
+  readonly id: RequestId;
+  readonly method: 'subscription';
+  /** The id of the last event delivered, sent when it resumes. */
   readonly lastEventId: string | null;
   /**
    * Event ids an old connection delivered while the subscription moved.
@@ -57,16 +85,17 @@ export interface RequestModel {
    * its replay.
    */
   readonly replayed: readonly string[];
-  readonly state: RequestState;
+  readonly state: SubscriptionState;
 }
 
+export type RequestModel = QueryRequest | SubscriptionRequest;
+
+/** What happens to any request. Only a subscription moves; see `moveSubscription`. */
 export type RequestEvent =
   | { type: 'batch'; connection: ConnectionId }
   /** The connection it was batched for no longer serves new requests. */
   | { type: 'unbatch' }
   | { type: 'send'; connection: ConnectionId }
-  /** A subscription on a replaced connection is sent on `to` as well. */
-  | { type: 'move'; to: ConnectionId }
   | { type: 'connectionLost'; connection: ConnectionId; cause: unknown }
   | {
       type: 'response';
@@ -89,15 +118,17 @@ export type RequestEffect =
   | { type: 'sendStop'; connection: ConnectionId; request: RequestId }
   | { type: 'invariantViolation'; message: string };
 
-export interface RequestTransition {
-  readonly request: RequestModel;
+export interface RequestTransition<
+  TRequest extends RequestModel = RequestModel,
+> {
+  readonly request: TRequest;
   readonly effects: readonly RequestEffect[];
 }
 
-function illegal(
-  request: RequestModel,
-  event: RequestEvent,
-): RequestTransition {
+function illegal<TRequest extends RequestModel>(
+  request: TRequest,
+  event: { type: string },
+): RequestTransition<TRequest> {
   return {
     request,
     effects: [
@@ -109,10 +140,10 @@ function illegal(
   };
 }
 
-function settle(
-  request: RequestModel,
+function settled<TRequest extends RequestModel>(
+  request: TRequest,
   effects: RequestEffect[],
-): RequestTransition {
+): RequestTransition<TRequest> {
   return { request: { ...request, state: { kind: 'settled' } }, effects };
 }
 
@@ -120,91 +151,132 @@ function stop(request: RequestModel, connection: ConnectionId): RequestEffect {
   return { type: 'sendStop', connection, request: request.id };
 }
 
+function complete(request: RequestModel): RequestEffect {
+  return { type: 'complete', request: request.id };
+}
+
+function fail(request: RequestModel, failure: RequestFailure): RequestEffect {
+  return { type: 'fail', request: request.id, failure };
+}
+
+/**
+ * Where `batch`, `unbatch` or `send` takes a queued request, or `null` when
+ * it's batched for another connection.
+ */
+function rebatch(
+  state: Queued,
+  event: Extract<RequestEvent, { type: 'batch' | 'unbatch' | 'send' }>,
+): Queued | { kind: 'sent'; connection: ConnectionId } | null {
+  switch (event.type) {
+    case 'batch':
+      if (state.batch !== null && state.batch !== event.connection) {
+        return null;
+      }
+      return { ...state, batch: event.connection };
+    case 'unbatch':
+      return { ...state, batch: null };
+    case 'send':
+      if (state.batch !== null && state.batch !== event.connection) {
+        return null;
+      }
+      return { kind: 'sent', connection: event.connection };
+    default:
+      return exhaustive(event, null);
+  }
+}
+
+// --- queries and mutations ---------------------------------------------------
+
+function queryTransition(
+  request: QueryRequest,
+  event: RequestEvent,
+): RequestTransition<QueryRequest> {
+  const state = request.state;
+  switch (state.kind) {
+    case 'queued':
+      switch (event.type) {
+        case 'batch':
+        case 'unbatch':
+        case 'send': {
+          const next = rebatch(state, event);
+          if (!next) return illegal(request, event);
+          return { request: { ...request, state: next }, effects: [] };
+        }
+        case 'connectionLost':
+          return settled(request, [
+            fail(request, { kind: 'connectionLost', cause: event.cause }),
+          ]);
+        case 'unsubscribe':
+          return settled(request, [complete(request)]);
+        case 'clientClose':
+          return settled(request, [
+            fail(request, { kind: 'closedBeforeSent' }),
+          ]);
+        case 'response':
+        case 'sendFailed':
+          return illegal(request, event);
+        default:
+          return exhaustive(event, illegal(request, event));
+      }
+    case 'sent':
+      switch (event.type) {
+        case 'connectionLost':
+          if (event.connection !== state.connection) {
+            return illegal(request, event);
+          }
+          return settled(request, [
+            fail(request, { kind: 'connectionLost', cause: event.cause }),
+          ]);
+        case 'response':
+          if (event.connection !== state.connection) {
+            return illegal(request, event);
+          }
+          return settled(request, [
+            { type: 'next', request: request.id, message: event.message },
+            complete(request),
+          ]);
+        case 'unsubscribe':
+          return settled(request, [complete(request)]);
+        case 'clientClose':
+          // It finishes before the client closes.
+          return { request, effects: [] };
+        case 'sendFailed':
+          return settled(request, [
+            fail(request, { kind: 'sendFailed', cause: event.cause }),
+          ]);
+        case 'batch':
+        case 'unbatch':
+        case 'send':
+          return illegal(request, event);
+        default:
+          return exhaustive(event, illegal(request, event));
+      }
+    case 'settled':
+      return illegal(request, event);
+    default:
+      return exhaustive(state, illegal(request, event));
+  }
+}
+
+// --- subscriptions -----------------------------------------------------------
+
+type Subscription<TKind extends SubscriptionState['kind']> = Extract<
+  SubscriptionState,
+  { kind: TKind }
+>;
+
+type SubscriptionTransition = RequestTransition<SubscriptionRequest>;
+
 /** A subscription whose connection is gone resumes on the next one. */
-function resume(request: RequestModel): RequestTransition {
+function resume(request: SubscriptionRequest): SubscriptionTransition {
   return {
     request: {
       ...request,
       replayed: [],
-      state: { kind: 'queued', batch: null, started: false },
+      state: { kind: 'queued', batch: null },
     },
     effects: [],
   };
-}
-
-function lose(
-  request: RequestModel,
-  event: Extract<RequestEvent, { type: 'connectionLost' }>,
-): RequestTransition {
-  if (request.method === 'subscription') return resume(request);
-  return settle(request, [
-    {
-      type: 'fail',
-      request: request.id,
-      failure: { kind: 'connectionLost', cause: event.cause },
-    },
-  ]);
-}
-
-function onQueued(
-  request: RequestModel,
-  state: Extract<RequestState, { kind: 'queued' }>,
-  event: RequestEvent,
-): RequestTransition {
-  const isSubscription = request.method === 'subscription';
-  switch (event.type) {
-    case 'batch':
-      if (state.batch !== null && state.batch !== event.connection) {
-        return illegal(request, event);
-      }
-      return {
-        request: { ...request, state: { ...state, batch: event.connection } },
-        effects: [],
-      };
-    case 'unbatch':
-      return {
-        request: { ...request, state: { ...state, batch: null } },
-        effects: [],
-      };
-    case 'send':
-      if (state.batch !== null && state.batch !== event.connection) {
-        return illegal(request, event);
-      }
-      return {
-        request: {
-          ...request,
-          state: {
-            kind: 'sent',
-            connection: event.connection,
-            started: state.started,
-          },
-        },
-        effects: [],
-      };
-    case 'connectionLost':
-      return lose(request, event);
-    case 'unsubscribe':
-      return settle(request, [{ type: 'complete', request: request.id }]);
-    case 'clientClose':
-      return settle(
-        request,
-        isSubscription
-          ? [{ type: 'complete', request: request.id }]
-          : [
-              {
-                type: 'fail',
-                request: request.id,
-                failure: { kind: 'closedBeforeSent' },
-              },
-            ],
-      );
-    case 'move':
-    case 'response':
-    case 'sendFailed':
-      return illegal(request, event);
-    default:
-      return exhaustive(event, illegal(request, event));
-  }
 }
 
 interface Received {
@@ -221,11 +293,11 @@ interface Received {
  * serving it, or `null` when the message ends it.
  */
 function receive(
-  request: RequestModel,
+  request: SubscriptionRequest,
   started: boolean,
   message: TRPCResponseMessage,
 ): Received | null {
-  if (!('result' in message) || request.method !== 'subscription') return null;
+  if (!('result' in message)) return null;
   const result = message.result;
   const unchanged: Received = {
     started,
@@ -258,34 +330,49 @@ function receive(
   };
 }
 
-function onSent(
-  request: RequestModel,
-  state: Extract<RequestState, { kind: 'sent' }>,
+function onSubscriptionQueued(
+  request: SubscriptionRequest,
+  state: Subscription<'queued'>,
   event: RequestEvent,
-): RequestTransition {
-  const isSubscription = request.method === 'subscription';
+): SubscriptionTransition {
   switch (event.type) {
-    case 'move':
-      if (!isSubscription || event.to === state.connection) {
-        return illegal(request, event);
-      }
+    case 'batch':
+    case 'unbatch':
+    case 'send': {
+      const next = rebatch(state, event);
+      if (!next) return illegal(request, event);
       return {
         request: {
           ...request,
-          state: {
-            kind: 'moving',
-            from: state.connection,
-            to: event.to,
-            started: state.started,
-          },
+          state: next.kind === 'sent' ? { ...next, started: false } : next,
         },
         effects: [],
       };
+    }
+    case 'connectionLost':
+      return resume(request);
+    case 'unsubscribe':
+    case 'clientClose':
+      return settled(request, [complete(request)]);
+    case 'response':
+    case 'sendFailed':
+      return illegal(request, event);
+    default:
+      return exhaustive(event, illegal(request, event));
+  }
+}
+
+function onSubscriptionSent(
+  request: SubscriptionRequest,
+  state: Subscription<'sent'>,
+  event: RequestEvent,
+): SubscriptionTransition {
+  switch (event.type) {
     case 'connectionLost':
       if (event.connection !== state.connection) {
         return illegal(request, event);
       }
-      return lose(request, event);
+      return resume(request);
     case 'response': {
       if (event.connection !== state.connection) {
         return illegal(request, event);
@@ -302,32 +389,21 @@ function onSent(
           effects: received.effects,
         };
       }
-      return settle(request, [
+      return settled(request, [
         { type: 'next', request: request.id, message: event.message },
-        { type: 'complete', request: request.id },
+        complete(request),
       ]);
     }
     case 'unsubscribe':
-      return settle(
-        request,
-        isSubscription
-          ? [
-              stop(request, state.connection),
-              { type: 'complete', request: request.id },
-            ]
-          : [{ type: 'complete', request: request.id }],
-      );
+      return settled(request, [
+        stop(request, state.connection),
+        complete(request),
+      ]);
     case 'clientClose':
-      // A query or mutation in flight finishes before the client closes.
-      if (!isSubscription) return { request, effects: [] };
-      return settle(request, [{ type: 'complete', request: request.id }]);
+      return settled(request, [complete(request)]);
     case 'sendFailed':
-      return settle(request, [
-        {
-          type: 'fail',
-          request: request.id,
-          failure: { kind: 'sendFailed', cause: event.cause },
-        },
+      return settled(request, [
+        fail(request, { kind: 'sendFailed', cause: event.cause }),
       ]);
     case 'batch':
     case 'unbatch':
@@ -339,10 +415,10 @@ function onSent(
 }
 
 function onMoving(
-  request: RequestModel,
-  state: Extract<RequestState, { kind: 'moving' }>,
+  request: SubscriptionRequest,
+  state: Subscription<'moving'>,
   event: RequestEvent,
-): RequestTransition {
+): SubscriptionTransition {
   switch (event.type) {
     case 'response': {
       if (event.connection === state.to) {
@@ -350,15 +426,8 @@ function onMoving(
         // server, is the ack: stop it on the old one. The new one resends a
         // tracked subscription's events, so the old one's are dropped from
         // now on; an untracked one is `leaving` until the old one stops.
-        const switched = onSent(
-          {
-            ...request,
-            state: {
-              kind: 'sent',
-              connection: state.to,
-              started: state.started,
-            },
-          },
+        const switched = onSubscriptionSent(
+          request,
           { kind: 'sent', connection: state.to, started: state.started },
           event,
         );
@@ -400,10 +469,10 @@ function onMoving(
           effects: received.effects,
         };
       }
-      return settle(request, [
+      return settled(request, [
         stop(request, state.to),
         { type: 'next', request: request.id, message: event.message },
-        { type: 'complete', request: request.id },
+        complete(request),
       ]);
     }
     case 'connectionLost':
@@ -438,26 +507,21 @@ function onMoving(
       }
       return illegal(request, event);
     case 'unsubscribe':
-      return settle(request, [
+      return settled(request, [
         stop(request, state.from),
         stop(request, state.to),
-        { type: 'complete', request: request.id },
+        complete(request),
       ]);
     case 'clientClose':
-      return settle(request, [{ type: 'complete', request: request.id }]);
+      return settled(request, [complete(request)]);
     case 'sendFailed':
-      return settle(request, [
+      return settled(request, [
         stop(request, state.from),
-        {
-          type: 'fail',
-          request: request.id,
-          failure: { kind: 'sendFailed', cause: event.cause },
-        },
+        fail(request, { kind: 'sendFailed', cause: event.cause }),
       ]);
     case 'batch':
     case 'unbatch':
     case 'send':
-    case 'move':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
@@ -465,18 +529,18 @@ function onMoving(
 }
 
 function onLeaving(
-  request: RequestModel,
-  state: Extract<RequestState, { kind: 'leaving' }>,
+  request: SubscriptionRequest,
+  state: Subscription<'leaving'>,
   event: RequestEvent,
-): RequestTransition {
-  const remaining: RequestModel = {
+): SubscriptionTransition {
+  const remaining: SubscriptionRequest = {
     ...request,
     state: { kind: 'sent', connection: state.to, started: state.started },
   };
   switch (event.type) {
     case 'response': {
       if (event.connection === state.to) {
-        const served = onSent(
+        const served = onSubscriptionSent(
           request,
           { kind: 'sent', connection: state.to, started: state.started },
           event,
@@ -513,28 +577,68 @@ function onLeaving(
       if (event.connection === state.to) return resume(request);
       return illegal(request, event);
     case 'unsubscribe':
-      return settle(request, [
-        stop(request, state.to),
-        { type: 'complete', request: request.id },
-      ]);
+      return settled(request, [stop(request, state.to), complete(request)]);
     case 'clientClose':
-      return settle(request, [{ type: 'complete', request: request.id }]);
+      return settled(request, [complete(request)]);
     case 'sendFailed':
-      return settle(request, [
-        {
-          type: 'fail',
-          request: request.id,
-          failure: { kind: 'sendFailed', cause: event.cause },
-        },
+      return settled(request, [
+        fail(request, { kind: 'sendFailed', cause: event.cause }),
       ]);
     case 'batch':
     case 'unbatch':
     case 'send':
-    case 'move':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
   }
+}
+
+function subscriptionTransition(
+  request: SubscriptionRequest,
+  event: RequestEvent,
+): SubscriptionTransition {
+  const state = request.state;
+  switch (state.kind) {
+    case 'queued':
+      return onSubscriptionQueued(request, state, event);
+    case 'sent':
+      return onSubscriptionSent(request, state, event);
+    case 'moving':
+      return onMoving(request, state, event);
+    case 'leaving':
+      return onLeaving(request, state, event);
+    case 'settled':
+      return illegal(request, event);
+    default:
+      return exhaustive(state, illegal(request, event));
+  }
+}
+
+/**
+ * A subscription on a replaced connection is sent on `to` as well. Only one
+ * that is `sent` on another connection moves.
+ */
+export function moveSubscription(
+  request: SubscriptionRequest,
+  to: ConnectionId,
+): SubscriptionTransition {
+  const state = request.state;
+  const event = { type: 'move' };
+  if (state.kind !== 'sent' || state.connection === to) {
+    return illegal(request, event);
+  }
+  return {
+    request: {
+      ...request,
+      state: {
+        kind: 'moving',
+        from: state.connection,
+        to,
+        started: state.started,
+      },
+    },
+    effects: [],
+  };
 }
 
 /**
@@ -545,19 +649,7 @@ export function requestTransition(
   request: RequestModel,
   event: RequestEvent,
 ): RequestTransition {
-  const state = request.state;
-  switch (state.kind) {
-    case 'queued':
-      return onQueued(request, state, event);
-    case 'sent':
-      return onSent(request, state, event);
-    case 'moving':
-      return onMoving(request, state, event);
-    case 'leaving':
-      return onLeaving(request, state, event);
-    case 'settled':
-      return illegal(request, event);
-    default:
-      return exhaustive(state, illegal(request, event));
-  }
+  return request.method === 'subscription'
+    ? subscriptionTransition(request, event)
+    : queryTransition(request, event);
 }

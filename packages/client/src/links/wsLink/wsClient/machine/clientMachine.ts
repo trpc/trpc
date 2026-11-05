@@ -13,8 +13,9 @@ import type {
   RequestId,
   RequestMethod,
   RequestModel,
+  RequestTransition,
 } from './requestMachine';
-import { requestTransition } from './requestMachine';
+import { moveSubscription, requestTransition } from './requestMachine';
 
 /**
  * The client's lifecycle. Exactly one connection is current at a time; the
@@ -184,7 +185,10 @@ class Step {
   // --- requests -----------------------------------------------------------
 
   applyRequest(request: RequestModel, event: RequestEvent) {
-    const result = requestTransition(request, event);
+    this.applyRequestTransition(request, requestTransition(request, event));
+  }
+
+  applyRequestTransition(request: RequestModel, result: RequestTransition) {
     if (result.request.state.kind === 'settled') {
       this.requests.delete(request.id);
       if (this.closing?.delete(request.id)) this.finishCloseIfDone();
@@ -386,7 +390,8 @@ class Step {
       connection,
       requests: requests.map((request) => ({
         id: request.id,
-        lastEventId: request.lastEventId,
+        lastEventId:
+          request.method === 'subscription' ? request.lastEventId : null,
       })),
     });
   }
@@ -403,7 +408,10 @@ class Step {
     for (const previous of this.draining) {
       for (const request of this.sentOn(previous)) {
         if (request.method !== 'subscription') continue;
-        this.applyRequest(request, { type: 'move', to: lifecycle.connection });
+        this.applyRequestTransition(
+          request,
+          moveSubscription(request, lifecycle.connection),
+        );
         moved.push(request.id);
       }
     }
@@ -747,13 +755,19 @@ export function clientTransition(
   const step = new Step(model);
   switch (event.type) {
     case 'request': {
-      step.requests.set(event.id, {
-        id: event.id,
-        method: event.method,
-        lastEventId: event.lastEventId,
-        replayed: [],
-        state: { kind: 'queued', batch: null, started: false },
-      });
+      const queued = { kind: 'queued', batch: null } as const;
+      step.requests.set(
+        event.id,
+        event.method === 'subscription'
+          ? {
+              id: event.id,
+              method: event.method,
+              lastEventId: event.lastEventId,
+              replayed: [],
+              state: queued,
+            }
+          : { id: event.id, method: event.method, state: queued },
+      );
       step.resetInactivity();
       if (step.lifecycle.kind === 'backoff' && step.handover === null) {
         // A new request doesn't wait out the backoff, unless a replaced

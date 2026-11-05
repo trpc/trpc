@@ -26,12 +26,19 @@ import type {
 import { connectionTransition } from '@trpc/client/links/wsLink/wsClient/machine/connectionMachine';
 import type {
   ConnectionId,
+  QueryState,
   RequestEvent,
   RequestMethod,
   RequestModel,
   RequestState,
+  RequestTransition,
+  SubscriptionRequest,
+  SubscriptionState,
 } from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
-import { requestTransition } from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
+import {
+  moveSubscription,
+  requestTransition,
+} from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
 import type {
   DiagramEdge,
   TRPCClientIncomingMessage,
@@ -656,6 +663,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       previous &&
       servingOf(previous.state).includes(event.connection) &&
       eventId !== undefined &&
+      previous.method === 'subscription' &&
       previous.replayed.includes(eventId) &&
       !effects.some((effect) => effect.type === 'next')
     ) {
@@ -680,9 +688,11 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         user.startedAllowed = true;
         if (user.lastData > 0) covered.add('subscription resumed after a loss');
       }
+      // A queued one hasn't been started.
+      const started = 'started' in state && state.started;
       check(
-        state.kind === 'settled' || state.started === !user.startedAllowed,
-        `subscription ${id} has started ${'started' in state && state.started}, but the user ${user.startedAllowed ? "hasn't" : 'has'} seen it`,
+        state.kind === 'settled' || started === !user.startedAllowed,
+        `subscription ${id} has started ${started}, but the user ${user.startedAllowed ? "hasn't" : 'has'} seen it`,
       );
     }
     if (lost !== null && previous?.kind === 'sent' && state.kind === 'queued') {
@@ -1402,7 +1412,7 @@ test('close() finishing leaves a replaced connection opened since serving', () =
 });
 
 test('a subscription moved on before its new connection replayed drops the replay', () => {
-  let request: RequestModel = {
+  let request: SubscriptionRequest = {
     id: 1,
     method: 'subscription',
     lastEventId: '1',
@@ -1410,8 +1420,12 @@ test('a subscription moved on before its new connection replayed drops the repla
     state: { kind: 'sent', connection: 1, started: true },
   };
   const next: unknown[] = [];
-  function apply(event: RequestEvent) {
-    const result = requestTransition(request, event);
+  function apply(event: RequestEvent | { type: 'move'; to: ConnectionId }) {
+    const result =
+      event.type === 'move'
+        ? moveSubscription(request, event.to)
+        : requestTransition(request, event);
+    assert(result.request.method === 'subscription');
     request = result.request;
     for (const effect of result.effects) {
       if (effect.type === 'next' && 'result' in effect.message) {
@@ -1504,7 +1518,7 @@ function connectionDiagram() {
 
 /** Sent on connection 1; a move goes to connection 2. */
 const requestSamples: RequestState[] = [
-  { kind: 'queued', batch: null, started: false },
+  { kind: 'queued', batch: null },
   { kind: 'sent', connection: 1, started: false },
   { kind: 'moving', from: 1, to: 2, started: false },
   { kind: 'leaving', from: 1, to: 2, started: false },
@@ -1528,7 +1542,10 @@ const responses: { label: string; message: TRPCResponseMessage }[] = [
   },
 ];
 
-const requestEvents: { label: string; event: RequestEvent }[] = [
+const requestEvents: {
+  label: string;
+  event: RequestEvent | { type: 'move'; to: ConnectionId };
+}[] = [
   { label: 'batch', event: { type: 'batch', connection: 1 } },
   { label: 'unbatch', event: { type: 'unbatch' } },
   { label: 'send', event: { type: 'send', connection: 1 } },
@@ -1588,10 +1605,23 @@ function requestDiagram(method: RequestMethod) {
         ) {
           return null;
         }
-        const result = requestTransition(
-          { id: 1, method, lastEventId, replayed: [], state },
-          event,
-        );
+        const request: RequestModel =
+          method === 'subscription'
+            ? {
+                id: 1,
+                method,
+                lastEventId,
+                replayed: [],
+                state: state as SubscriptionState,
+              }
+            : { id: 1, method, state: state as QueryState };
+        let result: RequestTransition;
+        if (event.type === 'move') {
+          if (request.method !== 'subscription') return null;
+          result = moveSubscription(request, event.to);
+        } else {
+          result = requestTransition(request, event);
+        }
         return result.effects.some(
           (effect) => effect.type === 'invariantViolation',
         )
