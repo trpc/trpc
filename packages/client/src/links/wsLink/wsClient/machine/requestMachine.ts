@@ -339,7 +339,11 @@ function onMoving(
         const switched = onSent(
           {
             ...request,
-            state: { kind: 'sent', connection: state.to, started: state.started },
+            state: {
+              kind: 'sent',
+              connection: state.to,
+              started: state.started,
+            },
           },
           { kind: 'sent', connection: state.to, started: state.started },
           event,
@@ -393,7 +397,11 @@ function onMoving(
         return {
           request: {
             ...request,
-            state: { kind: 'sent', connection: state.to, started: state.started },
+            state: {
+              kind: 'sent',
+              connection: state.to,
+              started: state.started,
+            },
           },
           effects: [],
         };

@@ -485,7 +485,9 @@ class Step {
     for (const request of this.queuedFor(connection)) {
       this.applyRequest(
         request,
-        wasHandover ? { type: 'unbatch' } : { type: 'connectionLost', connection, cause },
+        wasHandover
+          ? { type: 'unbatch' }
+          : { type: 'connectionLost', connection, cause },
       );
     }
     for (const request of this.servedBy(connection)) {
@@ -807,7 +809,10 @@ export function clientTransition(
     case 'sendFailed':
       for (const id of event.requests) {
         const request = step.requests.get(id);
-        if (request?.state.kind === 'sent' || request?.state.kind === 'moving') {
+        if (
+          request?.state.kind === 'sent' ||
+          request?.state.kind === 'moving'
+        ) {
           step.applyRequest(request, {
             type: 'sendFailed',
             cause: event.cause,
