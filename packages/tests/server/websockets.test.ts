@@ -3637,7 +3637,9 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       });
 
       const secondServerSocket = serverSockets[1]!;
-      secondServerSocket.send(JSON.stringify({ id: null, method: 'reconnect' }));
+      secondServerSocket.send(
+        JSON.stringify({ id: null, method: 'reconnect' }),
+      );
       await vi.waitFor(() => {
         expect(stopsOn(secondServerSocket)).toHaveLength(1);
         expect(valuesStarted).toHaveBeenCalledTimes(3);
