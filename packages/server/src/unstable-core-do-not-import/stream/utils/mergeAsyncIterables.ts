@@ -173,21 +173,20 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
         initIterable(iterables.shift()!);
       }
 
+      // Declared outside the loops and cleared after use: while this awaits,
+      // V8 keeps a `const` from the loop body's last iteration alive, and
+      // with it the last value yielded.
+      let entry: (typeof buffer)[number] | null = null;
       while (iterators.size > 0) {
         await flushSignal.promise;
 
         while (buffer.length > 0) {
           // oxlint-disable-next-line typescript/no-non-null-assertion
-          const [iterator, result] = buffer.shift()!;
-
-          switch (result.status) {
-            case 'yield':
-              yield result.value;
-              iterator.pull();
-              break;
-            case 'error':
-              throw result.error;
-          }
+          entry = buffer.shift()!;
+          if (entry[1].status === 'error') throw entry[1].error;
+          yield entry[1].value;
+          entry[0].pull();
+          entry = null;
         }
         flushSignal = createDeferred();
       }
