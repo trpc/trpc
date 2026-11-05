@@ -239,6 +239,19 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
      * @default '15 seconds'
      */
     pingInterval?: Duration.Input | false;
+    /**
+     * End each subscription's stream after this long; `httpLink` moves it
+     * to a new one from its last `tracked()` id. `reconnectNotice` before
+     * the end, the server sends a `reconnect` event, so the client opens
+     * the new stream while this one still delivers.
+     * @default undefined, streams last until the subscription ends
+     */
+    maxDuration?: Duration.Input;
+    /**
+     * How long before `maxDuration` the server sends `reconnect`.
+     * @default '5 seconds'
+     */
+    reconnectNotice?: Duration.Input;
   };
   websocket?: {
     /**
@@ -383,8 +396,10 @@ export interface FetchHandler<TPlatform = undefined> {
    * message: `wsLink` sends new calls on a new connection, moves its
    * subscriptions there from their last `tracked()` id, and closes the old
    * connection once the calls it sent settle. A MessagePort is closed once
-   * its calls settle. At `timeout` the handler closes what's left (1012,
-   * "service restart"), interrupting its calls. During the drain, upgrades
+   * its calls settle. Each SSE subscription gets a `reconnect` event:
+   * `httpLink` opens a new stream from its last `tracked()` id and leaves
+   * this one once that's connected. At `timeout` the handler closes what's
+   * left (1012, "service restart"; SSE streams end), interrupting its calls. During the drain, upgrades
    * get a 503 and sockets handed to `websocket()` are closed (1012), so
    * clients reconnect elsewhere; after it, the handler takes connections
    * again. `serve()` drains when its layer is released, and refuses
@@ -403,9 +418,8 @@ export interface FetchHandler<TPlatform = undefined> {
     timeout?: Duration.Input;
   }): Promise<void>;
   /**
-   * Ends what the handler started. Event streams (SSE subscriptions) end
-   * at once, and their clients reconnect. Then, within
-   * `websocket.drainTimeout`, it drains the connections (`drain()`) and
+   * Ends what the handler started. Within `websocket.drainTimeout`, it
+   * drains the connections (`drain()`), SSE subscriptions included, and
    * waits for the requests `fetch` is serving, streamed bodies included.
    * What's left is interrupted: a request still running gets a 503. Last,
    * it releases the `layer`'s resources; a `runtime` you passed is yours
@@ -504,7 +518,7 @@ function buildFetchHandler(
   const drainTimeout = opts.websocket?.drainTimeout ?? '10 seconds';
   const drains = makeSocketDrains(drainTimeout);
   const base = createHandlerCore({ ...opts, services, drains, drainTimeout });
-  const handler = makeHttpHandler(opts, base);
+  const handler = makeHttpHandler(opts, base, drains);
   const sessions = makeSessions(handler, drains, opts.websocket);
   const app = makeApp(handler);
   const middleware = opts.middleware ?? [];

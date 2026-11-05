@@ -463,7 +463,7 @@ test('a subscription teardown that fails after the client leaves reaches onError
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let text = '';
-    while (!text.includes('data: ')) {
+    while (!text.includes('"a"')) {
       text += decoder.decode((await reader.read()).value);
     }
     await reader.cancel();

@@ -86,7 +86,7 @@ test('layer and runtime are exclusive', () => {
   expect([both, neither]).toHaveLength(2);
 });
 
-test('dispose() ends event streams at once, waits for requests and streamed bodies up to the drain timeout, then interrupts what is left (503)', async () => {
+test('dispose() asks event streams to reconnect and ends them, and waits for requests and streamed bodies, up to the drain timeout, then interrupts what is left (503)', async () => {
   const events: string[] = [];
   const handler = createFetchHandler({
     router,
@@ -103,11 +103,15 @@ test('dispose() ends event streams at once, waits for requests and streamed bodi
 
   const started = Date.now();
   const disposed = handler.dispose();
-  await expect(
-    (async () => {
-      while (!(await reader.read()).done);
-    })(),
-  ).rejects.toBeDefined();
+  const decoder = new TextDecoder();
+  let text = '';
+  for (;;) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    text += decoder.decode(chunk.value);
+  }
+  expect(text).toContain('event: reconnect');
+  expect(text).not.toContain('event: done');
   expect(await (await quick).text()).toContain('done');
   expect(await rowsText).toContain('b');
   expect((await stuck).status).toBe(503);

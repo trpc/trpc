@@ -83,6 +83,10 @@ client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a know
 
 While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingInterval } })` (`'30 seconds'`, say), or `false` to turn it off.
 
+### Stream lifetime
+
+Each stream starts with a `connected` event. `createFetchHandler({ sse: { maxDuration: '10 minutes' } })` ends each one after that long, for platforms that cap response time; streams last until the subscription ends by default. `reconnectNotice` (`'5 seconds'` by default) before the end, and when the handler drains, the server sends a `reconnect` event, and `httpLink` moves the subscription to a new stream before the old one ends ([Subscriptions](../client/links/http.md#subscriptions)). The stream then ends without `done`, so an `EventSource` reconnects with `Last-Event-ID` by itself.
+
 ## Reading with `EventSource`
 
 The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value, as a query's response body is (`{"json":…}` with the default transformer): for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:

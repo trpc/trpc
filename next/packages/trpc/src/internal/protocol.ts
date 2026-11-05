@@ -180,6 +180,13 @@ export type BatchLine =
  * `{ e }` once that event's deferred values have all settled.
  */
 export const SSE_EVENT = {
+  /** The stream's first event: the server has the subscription. */
+  connected: 'connected',
+  /**
+   * The server is ending this stream (a drain, `sse.maxDuration`): open a
+   * new one and leave this one once that's `connected`.
+   */
+  reconnect: 'reconnect',
   message: 'message',
   deferred: 'deferred',
   chunk: 'chunk',

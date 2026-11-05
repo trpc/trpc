@@ -114,17 +114,17 @@ export interface HandlerCore {
   /**
    * `app` as one of the handler's requests, its streamed body included:
    * `close` waits for it, up to the drain timeout, then interrupts it. An
-   * event stream (SSE) never ends on its own, so `close` interrupts it
-   * first, and its client reconnects. Once the handler has closed,
-   * requests run untracked.
+   * event stream (SSE) never ends on its own: `close` waits only for the
+   * drain to move its client, then interrupts it. Once the handler has
+   * closed, requests run untracked.
    */
   readonly request: <E, R>(
     app: Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>,
   ) => Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>;
   /**
-   * Ends what the handler started: interrupts its event streams, drains
-   * the connections (`drains`) while it waits for the requests in flight,
-   * then interrupts the sessions and requests still running and releases
+   * Ends what the handler started: drains the connections (`drains`),
+   * event streams included, while it waits for the requests in flight,
+   * then interrupts the sessions, event streams and requests still running and releases
    * the layer (not a caller's `runtime`). Later calls wait for the first.
    */
   readonly close: Effect.Effect<void>;
@@ -189,16 +189,15 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
     state = 'closing';
     // A drained session writes its close frame on its next turn, so the
     // sessions get one before they're interrupted.
-    return FiberSet.clear(eventStreams).pipe(
-      Effect.andThen(
-        Effect.all(
-          [
-            opts.drains?.drain({ final: true }) ?? Effect.void,
-            Effect.timeoutOption(FiberSet.awaitEmpty(requests), drainTimeout),
-          ],
-          { concurrency: 'unbounded', discard: true },
-        ),
-      ),
+    // Event streams join the drain, which asks their clients to move.
+    return Effect.all(
+      [
+        opts.drains?.drain({ final: true }) ?? Effect.void,
+        Effect.timeoutOption(FiberSet.awaitEmpty(requests), drainTimeout),
+      ],
+      { concurrency: 'unbounded', discard: true },
+    ).pipe(
+      Effect.andThen(FiberSet.clear(eventStreams)),
       Effect.andThen(Effect.yieldNow),
       Effect.andThen(
         Effect.suspend(() => {
