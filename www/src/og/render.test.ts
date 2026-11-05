@@ -5,7 +5,6 @@ import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import {
-  captionBand,
   type CardFooter,
   cardElement,
   drawnAssets,
@@ -189,11 +188,11 @@ describe('renderOgImage under a caption', () => {
     'draws nothing in the bottom fifth of the $kind card for $path but the background and the rule',
     async (card) => {
       const rows = pngRows(await renderOgImage(card, withSponsors));
-      // Above the brand rule along the bottom edge.
-      const band = rows.slice(630 - captionBand, 630 - 10);
-      expect(band).toHaveLength(captionBand - 10);
+      // From 80% of 630px down to the brand rule along the bottom edge.
+      const band = rows.slice(504, 620);
+      expect(band).toHaveLength(116);
       expect(inked(band)).toBe(0);
-      expect(inked(rows.slice(0, 630 - captionBand))).toBeGreaterThan(0);
+      expect(inked(rows.slice(0, 504))).toBeGreaterThan(0);
     },
   );
 });

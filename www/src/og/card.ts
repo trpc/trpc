@@ -257,7 +257,7 @@ const innerWidth = ogImageSize.width - 2 * 72;
  * lay the page's title over it: the cards draw nothing there but the
  * background.
  */
-export const captionBand = Math.round(ogImageSize.height * 0.2);
+const captionBand = Math.round(ogImageSize.height * 0.2);
 
 const gradient = `linear-gradient(90deg, ${colors.link}, ${colors.brandLight})`;
 
