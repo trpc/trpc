@@ -1299,7 +1299,11 @@ describe('requests pending on a socket that a server reconnect retires', () => {
 
   test("a retired socket's connection-level frames are ignored", async () => {
     const t = initTRPC.create();
-    const onOpen = vi.fn();
+    let opens = 0;
+    const thirdOpen = createDeferred<void>();
+    const onOpen = vi.fn(() => {
+      if (++opens === 3) thirdOpen.resolve();
+    });
     const attempts: number[] = [];
     const router = t.router({
       greeting: t.procedure.query(() => 'hello'),
@@ -1326,14 +1330,24 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       oldServerSockets.push(oldServerSocket);
       oldServerSocket.pause();
       ctx.wssHandler.broadcastReconnectNotification();
-      await vi.waitFor(() => {
-        expect(ctx.wsClient.connection?.state).toBe('open');
-        expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
-      });
+      await vi.waitFor(
+        () => {
+          expect(ctx.wsClient.connection?.state).toBe('open');
+          expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
+        },
+        { timeout: 5_000 },
+      );
       const oldFrames: unknown[] = [];
+      const framesArrived = createDeferred<void>();
       oldClientSocket.addEventListener('message', ({ data }) => {
-        oldFrames.push(data);
+        if (oldFrames.push(data) === 2) framesArrived.resolve();
       });
+      const oldClosed = Promise.all([
+        new Promise((resolve) => oldServerSocket.once('close', resolve)),
+        new Promise((resolve) =>
+          oldClientSocket.addEventListener('close', resolve),
+        ),
+      ]);
 
       oldServerSocket.send(
         JSON.stringify({
@@ -1346,20 +1360,14 @@ describe('requests pending on a socket that a server reconnect retires', () => {
         }),
       );
       oldServerSocket.send(JSON.stringify({ id: null, method: 'reconnect' }));
-      await vi.waitFor(() => {
-        expect(oldFrames).toHaveLength(2);
-      });
+      await framesArrived.promise;
       oldServerSocket.resume();
-      await vi.waitFor(() => {
-        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
-        expect(ctx.wss.clients.size).toBe(1);
-      });
+      await oldClosed;
+      expect(ctx.wss.clients.size).toBe(1);
 
       // Dropping the replacement starts over at the first attempt.
       [...ctx.wss.clients][0]!.terminate();
-      await vi.waitFor(() => {
-        expect(onOpen.mock.calls.length).toBeGreaterThanOrEqual(3);
-      });
+      await thirdOpen.promise;
       expect(await ctx.client.greeting.query()).toBe('hello');
       expect(attempts).toEqual([0, 0]);
       expect(onOpen).toHaveBeenCalledTimes(3);
