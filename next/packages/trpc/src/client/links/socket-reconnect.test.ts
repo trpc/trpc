@@ -563,9 +563,6 @@ test("after an untracked subscription moves, the old connection's events are del
   // Published before the new connection's procedure listened.
   old.receive(event(first.id, 1));
   await until(() => feed.events.length === 2);
-  // Its deferred parts would share the call's decoder with the new connection's.
-  old.receive({ ...event(first.id, 7), deferred: 0 });
-  old.receive({ id: first.id, type: 'chunkEnd', event: 0 });
   expect(old.readyState).toBe(1);
 
   old.receive({ id: first.id, type: 'done' });
@@ -576,6 +573,45 @@ test("after an untracked subscription moves, the old connection's events are del
   await feed.done;
   expect(feed.events).toEqual([0, 1, 2]);
   expect(old.sent.filter((m) => m.type === 'abort')).toHaveLength(1);
+  await c.link.close();
+});
+
+test("after an untracked subscription moves, the old connection's deferred values decode beside the new connection's", async () => {
+  /** An event whose `later` is a deferred value; both connections number theirs from 0. */
+  const later = (id: number) => ({
+    id,
+    type: 'event',
+    body: { json: { later: null }, d: [[['later'], 0, 'Promise']] },
+    deferred: 0,
+  });
+  const chunk = (id: number, value: string) => ({
+    id,
+    type: 'chunk',
+    event: 0,
+    chunk: [0, 0, { json: value }],
+  });
+  const c = connect();
+  const feed = subscribe(c.client);
+  const old = await c.socket(0);
+  const first = await old.request('feed');
+  old.receive({ id: first.id, type: 'started' });
+  old.receive({ type: 'reconnect' });
+  const next = await c.socket(1);
+  const moved = await next.request('feed');
+  next.receive({ id: moved.id, type: 'started' });
+  await until(() => old.sent.some((m) => m.type === 'abort'));
+  old.receive(later(first.id));
+  next.receive(later(moved.id));
+  next.receive(chunk(moved.id, 'new'));
+  old.receive(chunk(first.id, 'old'));
+  old.receive({ id: first.id, type: 'done' });
+  next.receive({ id: moved.id, type: 'done' });
+  await feed.done;
+  const values = feed.events as { later: Promise<unknown> }[];
+  expect(await Promise.all(values.map((value) => value.later))).toEqual([
+    'old',
+    'new',
+  ]);
   await c.link.close();
 });
 

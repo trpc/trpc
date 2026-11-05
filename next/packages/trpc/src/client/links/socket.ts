@@ -42,7 +42,12 @@ import {
   type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
-import { makeDeferredDecoder, badResponse, serializeInput } from './events.ts';
+import {
+  type DeferredDecoder,
+  makeDeferredDecoder,
+  badResponse,
+  serializeInput,
+} from './events.ts';
 
 /** One open connection. @internal */
 interface SocketConnection {
@@ -140,6 +145,8 @@ interface Leg {
    * moving the call here can stop it on the old connection at once.
    */
   readonly resumes: boolean;
+  /** Decodes this leg's deferred values; closed with `scope`. */
+  readonly decoder: DeferredDecoder;
 }
 
 const isLeg = (value: Leg | 'stale' | Unopened): value is Leg =>
@@ -170,15 +177,14 @@ interface Call {
   readonly op: Operation;
   /** The request, under the id of the attempt that sends it. */
   readonly request: (id: number) => ClientMessage;
-  /** `true` once the call is complete. */
+  /**
+   * `true` once the call is complete. `decoder` is the leg's, so each
+   * connection's deferred values decode apart.
+   */
   readonly onMessage: (
     message: CallMessage,
+    decoder: DeferredDecoder,
   ) => Effect.Effect<boolean, AnyTrpcError>;
-  /**
-   * Subscriptions only: they are sent again after a reconnect or a server's
-   * `reconnect`, and this runs first.
-   */
-  readonly onReconnect?: Effect.Effect<void>;
 }
 
 /**
@@ -614,8 +620,6 @@ function makeSocketLink(
     call: Call,
     inbox: Queue.Queue<Signal>,
     moves: boolean,
-    /** Runs when a subscription moves, before the successor's messages. */
-    reset: Effect.Effect<void>,
   ): Effect.fn.Return<Outcome, AnyTrpcError, Scope.Scope> {
     /** One per connection the call holds; closing one ends the call there. */
     const scopes = new Set<Scope.Closeable>();
@@ -666,7 +670,9 @@ function makeSocketLink(
         complete: false,
         resumes:
           request.type === 'request' && request.lastEventId !== undefined,
+        decoder: makeDeferredDecoder(transformer),
       };
+      yield* Scope.addFinalizer(legScope, leg.decoder.close);
       yield* Scope.addFinalizer(
         legScope,
         Effect.sync(() => {
@@ -705,18 +711,11 @@ function makeSocketLink(
         leaving.delete(leg.id);
         return end(leg);
       });
-    /**
-     * A move left `leg`. Its events with deferred values are dropped: the
-     * call's decoder now belongs to the successor's.
-     */
-    const fromLeaving = (leg: Leg, message: CallMessage) => {
-      if (message.type === 'done' || message.type === 'error') {
-        return Effect.as(stopped(leg), undefined);
-      }
-      return message.type === 'event' && message.deferred === undefined
-        ? Effect.as(call.onMessage(message), undefined)
-        : Effect.succeed(undefined);
-    };
+    /** A message from a leg a move left. */
+    const fromLeaving = (leg: Leg, message: CallMessage) =>
+      message.type === 'done' || message.type === 'error'
+        ? Effect.as(stopped(leg), undefined)
+        : Effect.as(call.onMessage(message, leg.decoder), undefined);
 
     const handle = (leg: Leg, message: CallMessage) => {
       const { type } = message;
@@ -727,14 +726,15 @@ function makeSocketLink(
       if (type === 'event' && message.eventId !== undefined && pending) {
         overlap.add(message.eventId);
       }
-      return Effect.map(call.onMessage(message), (done): Outcome | undefined =>
-        done ? 'complete' : undefined,
+      return Effect.map(
+        call.onMessage(message, leg.decoder),
+        (done): Outcome | undefined => (done ? 'complete' : undefined),
       );
     };
     /**
      * Whether `message` repeats what the old connection delivered. A
-     * dropped event's chunks are ignored: `reset` gave the call a fresh
-     * decoder, which doesn't know its deferred values.
+     * dropped event's chunks are ignored: the leg's decoder doesn't know
+     * its deferred values.
      */
     const resent = (message: CallMessage) => {
       if (message.type !== 'event' || overlap.size === 0) return false;
@@ -766,7 +766,6 @@ function makeSocketLink(
           notifyMoved(old.conn);
           leaving.set(old.id, old);
         }
-        yield* reset;
       });
 
     for (;;) {
@@ -842,11 +841,12 @@ function makeSocketLink(
     yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
     const { reconnect } = transport;
     const moves =
-      !!call.onReconnect && !!reconnect && call.op.context.reconnect !== false;
-    const reset = call.onReconnect ?? Effect.void;
+      call.op.type === 'subscription' &&
+      !!reconnect &&
+      call.op.context.reconnect !== false;
     let attempt = 0;
     for (;;) {
-      const outcome = yield* attach(call, inbox, moves, reset);
+      const outcome = yield* attach(call, inbox, moves);
       if (outcome === 'complete') return;
       if (outcome === 'stale') continue;
       if (outcome === 'heard') attempt = 0;
@@ -855,7 +855,6 @@ function makeSocketLink(
           typeof outcome === 'object' ? outcome.unopened : lostError(),
         );
       }
-      yield* reset;
       // `close()` can fail the call while it waits.
       const signal = yield* Queue.take(inbox).pipe(
         Effect.timeoutOption(reconnect.delay(attempt)),
@@ -890,11 +889,10 @@ function makeSocketLink(
     Stream.fromEffect(
       Effect.gen(function* () {
         const result = yield* Deferred.make<unknown, AnyTrpcError>();
-        const decoder = makeDeferredDecoder(transformer);
         const call: Call = {
           op,
           request: (id) => request(id, op),
-          onMessage: (message) => {
+          onMessage: (message, decoder) => {
             switch (message.type) {
               case 'result':
                 return decoder
@@ -930,7 +928,6 @@ function makeSocketLink(
               ? Deferred.fail(result, disposedError())
               : Deferred.failCause(result, cause),
           ),
-          Effect.ensuring(decoder.close),
           Effect.forkIn(scope),
         );
         return yield* Deferred.await(result).pipe(
@@ -943,11 +940,10 @@ function makeSocketLink(
     Stream.callback<Effect.Effect<unknown, AnyTrpcError>, AnyTrpcError>(
       (queue) => {
         let lastEventId = op.lastEventId;
-        let decoder = makeDeferredDecoder(transformer);
         const call: Call = {
           op,
           request: (id) => request(id, op, lastEventId),
-          onMessage: (message) => {
+          onMessage: (message, decoder) => {
             switch (message.type) {
               case 'event':
                 if (message.eventId !== undefined)
@@ -976,18 +972,12 @@ function makeSocketLink(
                 return Effect.succeed(false);
             }
           },
-          onReconnect: Effect.suspend(() => {
-            const stale = decoder;
-            decoder = makeDeferredDecoder(transformer);
-            return stale.close;
-          }),
         };
         return run(call).pipe(
           Effect.matchCause({
             onSuccess: () => Queue.endUnsafe(queue),
             onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
           }),
-          Effect.ensuring(Effect.suspend(() => decoder.close)),
           Effect.forkScoped,
         );
       },
