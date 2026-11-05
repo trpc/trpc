@@ -91,11 +91,11 @@ Each stream starts with a `connected` event. `createFetchHandler({ sse: { maxDur
 
 The server sends `reconnect` in three cases. Its data is `{ "drainIn": ms }`, the milliseconds until the server closes the stream:
 
-| Trigger | When | `drainIn` |
-| --- | --- | --- |
-| `sse.maxDuration` | `maxDuration - reconnectNotice` after the stream starts | `reconnectNotice` |
-| `handler.drain({ timeout })`, `dispose()`, `serve()` stopping | at once, to every open stream | the drain's `timeout` (`websocket.drainTimeout`, `'10 seconds'` by default) |
-| `handler.broadcastReconnect({ drainIn })` | at once, to every open stream | `drainIn` |
+| Trigger                                                       | When                                                    | `drainIn`                                                                   |
+| ------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `sse.maxDuration`                                             | `maxDuration - reconnectNotice` after the stream starts | `reconnectNotice`                                                           |
+| `handler.drain({ timeout })`, `dispose()`, `serve()` stopping | at once, to every open stream                           | the drain's `timeout` (`websocket.drainTimeout`, `'10 seconds'` by default) |
+| `handler.broadcastReconnect({ drainIn })`                     | at once, to every open stream                           | `drainIn`                                                                   |
 
 `sse.reconnectNotice` is `'5 seconds'` by default, or `maxDuration` when that's shorter. `createFetchHandler` throws for a negative one or one longer than `maxDuration`. `httpLink` opens the new stream when the notice arrives, and leaves the old one once the new one is connected, or at `drainIn` at the latest. A drain ends the stream once its client leaves, or at its timeout. A broadcast doesn't end anything itself. It tells clients the server will be gone in `drainIn` ([Rolling deploys](../adapters/overview.md#rolling-deploys)). WebSocket clients get the same notice from a drain or a broadcast, as a `{ type: 'reconnect', drainIn }` message.
 
