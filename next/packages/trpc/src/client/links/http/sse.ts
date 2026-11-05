@@ -1,12 +1,4 @@
-import {
-  Cause,
-  type Duration,
-  Effect,
-  Exit,
-  Queue,
-  Scope,
-  Stream,
-} from 'effect';
+import { Cause, Duration, Effect, Exit, Queue, Scope, Stream } from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -44,7 +36,8 @@ import { ok, type Transport } from './transport.ts';
  * delivering until it ends, and events may arrive twice. A new stream
  * that fails leaves the old
  * one delivering and is tried again with `reconnect.delay`, for as long
- * as the old one lasts.
+ * as the old one lasts. At the notice's `drainIn`, when the server
+ * closes the old stream, the link leaves it if it's still open.
  */
 export function makeSubscriptions(
   transport: Transport,
@@ -242,6 +235,18 @@ export function makeSubscriptions(
                 if (moves && !leaving) {
                   leaving = active;
                   overlap = new Set();
+                  const drainIn = drainInOf(event.data);
+                  // Lost at the server's deadline, unless it's gone first.
+                  if (drainIn !== undefined) {
+                    yield* Queue.offer(inbox, {
+                      leg: active,
+                      error: undefined,
+                      fatal: undefined,
+                    }).pipe(
+                      Effect.delay(Duration.millis(drainIn)),
+                      Effect.forkIn(active.scope),
+                    );
+                  }
                   pending = yield* open(undefined);
                 }
                 continue;
@@ -293,6 +298,17 @@ export function makeSubscriptions(
 }
 
 /** One SSE stream of a subscription. */
+/** A `reconnect` event's `drainIn`, in milliseconds, if it gives one. */
+const drainInOf = (data: string): number | undefined => {
+  let drainIn: unknown;
+  try {
+    drainIn = (JSON.parse(data) as { drainIn?: unknown }).drainIn;
+  } catch {
+    return undefined;
+  }
+  return typeof drainIn === 'number' ? drainIn : undefined;
+};
+
 interface Leg {
   readonly scope: Scope.Closeable;
   readonly decoder: DeferredDecoder;

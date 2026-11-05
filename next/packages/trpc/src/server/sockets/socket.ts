@@ -42,7 +42,7 @@ import {
 } from '../execution/index.ts';
 import type { HandlerCore } from '../handler/index.ts';
 import { resolveProcedure, type AnyRouter } from '../procedures/index.ts';
-import type { DrainConnection, SocketDrains } from './drain.ts';
+import { type SocketDrains, drainInMillis } from './drain.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 import { interruptSignal } from '../../internal/effects.ts';
 
@@ -593,7 +593,9 @@ export const connectionReceiver: (
     });
 
     let draining = false;
-    const drain: DrainConnection = (timeout) =>
+    const notice = (drainIn: Duration.Duration) =>
+      conn.send({ type: 'reconnect', drainIn: drainInMillis(drainIn) });
+    const drain = (timeout: Duration.Duration) =>
       Effect.suspend(() => {
         if (draining) return Deferred.await(drained);
         if (closed) return Effect.void;
@@ -601,10 +603,7 @@ export const connectionReceiver: (
         // A slow client's send waits, within the timeout.
         const settled =
           opts.drain === 'peer'
-            ? Effect.andThen(
-                conn.send({ type: 'reconnect' }),
-                Deferred.await(ended),
-              )
+            ? Effect.andThen(notice(timeout), Deferred.await(ended))
             : FiberMap.awaitEmpty(calls);
         return settled.pipe(
           Effect.timeoutOption(timeout),
@@ -620,7 +619,11 @@ export const connectionReceiver: (
 
     const drains = opts.drain ? core.drains : undefined;
     if (drains) {
-      leave = drains.add(drain);
+      leave = drains.add({
+        drain,
+        notify: (drainIn) =>
+          closed || opts.drain !== 'peer' ? Effect.void : notice(drainIn),
+      });
       if (!leave) {
         closed = true;
         conn.close(1012, 'Service restart');

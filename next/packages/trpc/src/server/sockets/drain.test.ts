@@ -135,7 +135,10 @@ test('drain() sends reconnect, lets the call in flight finish, and ends when the
 
   const drain = server.handler.drain({ timeout: '10 seconds' });
   const drained = settledFlag(drain);
-  await client.received({ type: 'reconnect' });
+  expect(await client.received({ type: 'reconnect' })).toEqual({
+    type: 'reconnect',
+    drainIn: 10_000,
+  });
   gate.open();
   expect(await client.received({ id: 1, type: 'result' })).toMatchObject({
     body: { json: 'a' },
@@ -145,6 +148,52 @@ test('drain() sends reconnect, lets the call in flight finish, and ends when the
   client.socket.close(1000);
   await drain;
   expect(state.aborts).toBe(0);
+});
+
+test('broadcastReconnect() sends reconnect with its drainIn and keeps serving: the socket stays open and new ones are accepted', async () => {
+  reset();
+  await using server = await start('a');
+  const client = await raw(server.wsUrl);
+  await client.received({ type: 'init' });
+  await server.handler.broadcastReconnect({ drainIn: '3 seconds' });
+  expect(await client.received({ type: 'reconnect' })).toEqual({
+    type: 'reconnect',
+    drainIn: 3000,
+  });
+  client.send({ id: 1, type: 'request', method: 'query', path: 'whoami' });
+  expect(await client.received({ id: 1, type: 'result' })).toMatchObject({
+    body: { json: 'a' },
+  });
+  const late = await raw(server.wsUrl);
+  await late.received({ type: 'init' });
+  expect(client.socket.readyState).toBe(WebSocket.OPEN);
+  client.socket.close();
+  late.socket.close();
+});
+
+test('an infinite drainIn is sent as null, and a MessagePort, which has nowhere to move, gets no notice', async () => {
+  reset();
+  await using handler = createFetchHandler({
+    router,
+    createContext: () => ({ server: 'a' }),
+  });
+  const channel = new MessageChannel();
+  const portMessages: unknown[] = [];
+  channel.port1.on('message', (m) => portMessages.push(m));
+  handler.messagePort(channel.port2);
+  await using server = await start('a');
+  const client = await raw(server.wsUrl);
+  await client.received({ type: 'init' });
+  await server.handler.broadcastReconnect({ drainIn: Infinity });
+  expect(await client.received({ type: 'reconnect' })).toEqual({
+    type: 'reconnect',
+    drainIn: null,
+  });
+  await handler.broadcastReconnect({ drainIn: '1 second' });
+  await sleep(20);
+  expect(portMessages).toEqual([]);
+  client.socket.close();
+  channel.port1.close();
 });
 
 test('at the drain timeout the server closes with 1012 and interrupts the calls left', async () => {
@@ -160,7 +209,7 @@ test('at the drain timeout the server closes with 1012 and interrupts the calls 
   expect(elapsed).toBeGreaterThanOrEqual(90);
   expect(elapsed).toBeLessThan(1000);
   expect((await client.closed).code).toBe(1012);
-  expect(client.messages).toContainEqual({ type: 'reconnect' });
+  expect(client.messages).toContainEqual({ type: 'reconnect', drainIn: 100 });
   await until(() => state.aborts === 1);
 });
 
@@ -447,7 +496,10 @@ test("releasing serve()'s layer drains first, so the server doesn't wait on open
   const started = Date.now();
   await Effect.runPromise(Scope.close(scope, Exit.void));
   expect(Date.now() - started).toBeLessThan(2000);
-  expect(client.messages).toContainEqual({ type: 'reconnect' });
+  expect(client.messages).toContainEqual({
+    type: 'reconnect',
+    drainIn: 10_000,
+  });
   expect((await client.closed).code).toBe(1000);
   await handler.dispose();
 });

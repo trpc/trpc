@@ -183,8 +183,11 @@ export const SSE_EVENT = {
   /** The stream's first event: the server has the subscription. */
   connected: 'connected',
   /**
-   * The server is ending this stream (a drain, `sse.maxDuration`): open a
-   * new one and leave this one once that's `connected`.
+   * The server is ending this stream (a drain, `sse.maxDuration`, a
+   * broadcast): open a new one and leave this one once that's
+   * `connected`. Its data is `{ drainIn }`, the milliseconds until the
+   * server closes this stream (`null`: no deadline); the client leaves it
+   * then at the latest.
    */
   reconnect: 'reconnect',
   message: 'message',
@@ -251,9 +254,11 @@ export type ServerMessage =
    * The server is going away (a drain), but still serves this connection:
    * open a new one, keep sending calls here until it's ready, then move
    * subscriptions there and close this one once the calls sent on it
-   * settle. Nothing already sent is sent again.
+   * settle. Nothing already sent is sent again. `drainIn` is the
+   * milliseconds until the server closes this connection (`null`: no
+   * deadline); the client lets it go then.
    */
-  | { type: 'reconnect' };
+  | { type: 'reconnect'; drainIn: number | null };
 
 interface BlobMeta {
   type: string;

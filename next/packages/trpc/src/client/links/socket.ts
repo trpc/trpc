@@ -85,7 +85,9 @@ const HANDOVER = /* @__PURE__ */ Signal.Handover();
 
 type CallMessage = Exclude<
   ServerMessage,
-  { type: 'pong' } | { type: 'init' } | { type: 'reconnect' }
+  | { type: 'pong' }
+  | { type: 'init' }
+  | { type: 'reconnect'; drainIn: number | null }
 >;
 
 /** No connection opened, and `unopened` says why. */
@@ -335,7 +337,7 @@ function makeSocketLink(
       }
       if (message.type === 'reconnect') {
         return transport.reconnect
-          ? retire(conn, transport.reconnect)
+          ? retire(conn, transport.reconnect, message.drainIn)
           : Effect.void;
       }
       if (message.id === null) {
@@ -385,16 +387,33 @@ function makeSocketLink(
 
   /**
    * The server's `reconnect`: the server still serves `conn`, so new calls
-   * keep going there while a successor opens.
+   * keep going there while a successor opens. At `drainIn` milliseconds,
+   * when the server closes it, `conn` is lost if it's still open.
    */
   const retire = (
     conn: Connection,
     policy: NonNullable<SocketTransport['reconnect']>,
+    drainIn: number | null,
   ): Effect.Effect<void> =>
     Effect.suspend(() => {
       if (conn.retired) return Effect.void;
       conn.retired = true;
-      return Effect.asVoid(FiberSet.run(supervisors, supervise(conn, policy)));
+      const deadline =
+        typeof drainIn === 'number'
+          ? FiberSet.run(
+              supervisors,
+              lose(conn).pipe(
+                Effect.delay(Duration.millis(drainIn)),
+                Effect.raceFirst(Deferred.await(conn.closed)),
+              ),
+            )
+          : Effect.void;
+      return Effect.asVoid(
+        Effect.andThen(
+          deadline,
+          FiberSet.run(supervisors, supervise(conn, policy)),
+        ),
+      );
     });
 
   /**

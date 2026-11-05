@@ -24,6 +24,7 @@ import {
 } from '../execution/index.ts';
 import type { AnyProcedure } from '../procedures/index.ts';
 import { coerceError, wire, type HttpHandler } from './http-handler.ts';
+import { drainInMillis } from '../sockets/index.ts';
 import { errorResponse, linesResponse } from './responses.ts';
 
 /** An event frame as an SSE message. */
@@ -96,7 +97,10 @@ export const subscription: (
           // Servers that buffer headers until the first body chunk (Node) would
           // otherwise hold them back until the first event.
           yield* write(`event: ${SSE_EVENT.connected}\ndata: \n\n`);
-          const notice = write(`event: ${SSE_EVENT.reconnect}\ndata: \n\n`);
+          const notice = (drainIn: Duration.Duration) =>
+            write(
+              `event: ${SSE_EVENT.reconnect}\ndata: ${JSON.stringify({ drainIn: drainInMillis(drainIn) })}\n\n`,
+            );
           /** Completed to end the stream without `done`. */
           const end = Deferred.makeUnsafe<void>();
           /** Completed once the stream ends, its client gone or not. */
@@ -107,20 +111,21 @@ export const subscription: (
           // when the handler closes.
           // A client that stops reading can stall the notice, so the
           // timeout bounds it too.
-          const leave = handler.drains.add((timeout) =>
-            Effect.timeoutOption(
-              Effect.andThen(notice, Deferred.await(left)),
-              timeout,
-            ).pipe(Effect.andThen(Deferred.done(end, Exit.void))),
-          );
+          const leave = handler.drains.add({
+            drain: (timeout) =>
+              Effect.timeoutOption(
+                Effect.andThen(notice(timeout), Deferred.await(left)),
+                timeout,
+              ).pipe(Effect.andThen(Deferred.done(end, Exit.void))),
+            notify: notice,
+          });
           if (leave) yield* Effect.addFinalizer(() => Effect.sync(leave));
           const lifetime = handler.sseLifetime;
           if (lifetime) {
-            const lead = Duration.max(
-              Duration.zero,
-              Duration.subtract(lifetime.end, lifetime.notice),
+            yield* notice(lifetime.notice).pipe(
+              Effect.delay(Duration.subtract(lifetime.end, lifetime.notice)),
+              Effect.forkScoped,
             );
-            yield* Effect.forkScoped(Effect.delay(notice, lead));
             yield* Deferred.done(end, Exit.void).pipe(
               Effect.delay(lifetime.end),
               Effect.forkScoped,

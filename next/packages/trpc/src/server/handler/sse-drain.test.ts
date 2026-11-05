@@ -99,32 +99,53 @@ test('with sse.maxDuration, the server sends reconnect reconnectNotice before it
   const noticed = Date.now() - started;
   expect(noticed).toBeGreaterThanOrEqual(20);
   expect(noticed).toBeLessThan(70);
+  expect(stream.text).toContain('event: reconnect\ndata: {"drainIn":50}\n\n');
   expect(stream.ended).toBe(false);
   await until(() => stream.ended);
   expect(Date.now() - started).toBeGreaterThanOrEqual(70);
   expect(stream.text).not.toContain('event: done');
 });
 
-test('a maxDuration shorter than the default notice sends reconnect at once', async () => {
+test('the default reconnectNotice is maxDuration when that is under 5 seconds: the notice comes at once', async () => {
   reset();
   await using handler = make('a', { maxDuration: '30 millis' });
   const stream = await open(handler);
   await until(() => stream.text.includes('event: reconnect'));
+  expect(stream.text).toContain('data: {"drainIn":30}');
   await until(() => stream.ended);
   expect(stream.text).not.toContain('event: done');
 });
 
-test('a negative reconnectNotice counts as none: the stream still ends at maxDuration', async () => {
+test('createFetchHandler rejects a negative reconnectNotice, or one longer than maxDuration', () => {
+  expect(() =>
+    make('a', { maxDuration: '1 second', reconnectNotice: '-1 millis' }),
+  ).toThrow(/^sse\.reconnectNotice must be zero or more/);
+  expect(() =>
+    make('a', { maxDuration: '1 second', reconnectNotice: '2 seconds' }),
+  ).toThrow(/^sse\.reconnectNotice must be at most sse\.maxDuration/);
+  expect(() => make('a', { maxDuration: '-1 second' })).toThrow(
+    /^sse\.maxDuration must be zero or more/,
+  );
+});
+
+test('broadcastReconnect() sends reconnect with its drainIn to open SSE streams, and neither ends them nor refuses new ones', async () => {
   reset();
-  await using handler = make('a', {
-    maxDuration: '40 millis',
-    reconnectNotice: '-1 second',
-  });
-  const started = Date.now();
+  await using handler = make('a');
   const stream = await open(handler);
-  await until(() => stream.ended);
-  expect(Date.now() - started).toBeLessThan(500);
-  expect(stream.text).toContain('event: reconnect');
+  await until(() => stream.text.includes('connected'));
+  await handler.broadcastReconnect({ drainIn: '2 seconds' });
+  await until(() => stream.text.includes('event: reconnect'));
+  expect(stream.text).toContain('event: reconnect\ndata: {"drainIn":2000}\n\n');
+  publish(0);
+  await until(() => stream.text.includes('id: 0'));
+  expect(stream.ended).toBe(false);
+  const late = await open(handler);
+  await until(() => late.text.includes('id: 0'));
+  await expect(handler.broadcastReconnect({ drainIn: -1 })).rejects.toThrow(
+    /^broadcastReconnect: drainIn must be zero or more/,
+  );
+  stream.abort();
+  late.abort();
 });
 
 test('a stream that starts during a drain is not asked to move, so its client stays; the handler ends it when it closes', async () => {
@@ -153,6 +174,7 @@ test('drain() sends reconnect to open SSE streams and waits for their clients to
     .drain({ timeout: '5 seconds' })
     .then(() => (drained = true));
   await until(() => stream.text.includes('event: reconnect'));
+  expect(stream.text).toContain('data: {"drainIn":5000}');
   publish(0);
   await until(() => stream.text.includes('id: 0'));
   await sleep(10);

@@ -78,11 +78,12 @@ Inputs holding a `File` or `Blob` go alone as `multipart/form-data` ([Files](../
 
 A subscription is an SSE request. When the connection drops, the link reconnects up to `reconnect.attempts` times and sends the last [`tracked()`](../../subscriptions/overview.md#resuming) event id, so the stream resumes where it stopped. A call made with `{ reconnect: false }` ends with `NETWORK_ERROR` instead.
 
-A server that is draining, or whose stream reaches [`sse.maxDuration`](../../subscriptions/overview.md#stream-lifetime), sends a `reconnect` event first. The link then moves the subscription without a gap:
+A server that is draining, broadcasting a reconnect, or whose stream reaches [`sse.maxDuration`](../../subscriptions/overview.md#stream-lifetime), sends a `reconnect` event first, with the time until it closes the stream ([When the notice is sent](../../subscriptions/overview.md#when-the-notice-is-sent)). The link then moves the subscription without a gap:
 
 - It opens a new stream from the last event id, and the old one keeps delivering.
 - Once the new stream answers (its first event is `connected`), the link closes the old one. The new stream resends the events the old one delivered meanwhile, and the link drops each of those once by its `tracked()` id. A subscription without ids keeps the old stream until the server ends it, so its events can arrive twice, but none is missed.
 - If the new stream fails to open, the old one keeps delivering and the link tries again with its `reconnect.delay`, for as long as the old one lasts; the failures don't count toward `reconnect.attempts`. If the old stream ends first, the link reconnects as after a dropped connection.
+- At the notice's deadline, the link leaves the old stream if it's still open, as if it had ended.
 
 A call made with `{ reconnect: false }` ignores `reconnect` and stays on its stream.
 
