@@ -1,4 +1,12 @@
-import { Cause, Effect, Exit, type Stream, type Tracer } from 'effect';
+import {
+  Cause,
+  Deferred,
+  Duration,
+  Effect,
+  Exit,
+  type Stream,
+  type Tracer,
+} from 'effect';
 import type { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
 import {
@@ -34,10 +42,15 @@ const sseMessage = (frame: EventFrame): string => {
 };
 
 /**
- * A subscription as server-sent events: `: open` at once, a ping comment
- * while it's quiet, then its events and `done`, or an `error` event. A
- * subscription that fails before its first event is a JSON error
- * response. @internal
+ * A subscription as server-sent events: `connected` at once, a ping
+ * comment while it's quiet, then its events and `done`, or an `error`
+ * event. A subscription that fails before its first event is a JSON
+ * error response.
+ *
+ * A drain, or `sse.maxDuration` coming up, sends `reconnect`: the client
+ * opens a new stream and leaves this one once that's `connected`. The
+ * stream ends without `done` when the client hasn't left by the drain's
+ * timeout, or at `maxDuration`. @internal
  */
 export const subscription: (
   handler: HttpHandler,
@@ -82,7 +95,37 @@ export const subscription: (
         Effect.fnUntraced(function* (write) {
           // Servers that buffer headers until the first body chunk (Node) would
           // otherwise hold them back until the first event.
-          yield* write(': open\n\n');
+          yield* write(`event: ${SSE_EVENT.connected}\ndata: \n\n`);
+          const notice = write(`event: ${SSE_EVENT.reconnect}\ndata: \n\n`);
+          /** Completed to end the stream without `done`. */
+          const end = Deferred.makeUnsafe<void>();
+          /** Completed once the stream ends, its client gone or not. */
+          const left = Deferred.makeUnsafe<void>();
+          yield* Effect.addFinalizer(() => Deferred.done(left, Exit.void));
+          // A stream that starts during a drain isn't asked to move, so a
+          // client doesn't move back and forth to this server; it ends
+          // when the handler closes.
+          // A client that stops reading can stall the notice, so the
+          // timeout bounds it too.
+          const leave = handler.drains.add((timeout) =>
+            Effect.timeoutOption(
+              Effect.andThen(notice, Deferred.await(left)),
+              timeout,
+            ).pipe(Effect.andThen(Deferred.done(end, Exit.void))),
+          );
+          if (leave) yield* Effect.addFinalizer(() => Effect.sync(leave));
+          const lifetime = handler.sseLifetime;
+          if (lifetime) {
+            const lead = Duration.max(
+              Duration.zero,
+              Duration.subtract(lifetime.end, lifetime.notice),
+            );
+            yield* Effect.forkScoped(Effect.delay(notice, lead));
+            yield* Deferred.done(end, Exit.void).pipe(
+              Effect.delay(lifetime.end),
+              Effect.forkScoped,
+            );
+          }
           if (handler.ssePing) {
             yield* write(': ping\n\n').pipe(
               Effect.delay(handler.ssePing),
@@ -96,8 +139,12 @@ export const subscription: (
               handler.transformer,
               coerceError(handler, request, path, 'subscription'),
               (frame) => write(sseMessage(frame)),
+            ).pipe(
+              Effect.as(true),
+              Effect.raceFirst(Effect.as(Deferred.await(end), false)),
             ),
           );
+          if (Exit.isSuccess(done) && !done.value) return;
           if (Exit.isFailure(done)) {
             if (Cause.hasInterruptsOnly(done.cause)) return;
             const err = normalizeCause(done.cause);

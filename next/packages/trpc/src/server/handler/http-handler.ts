@@ -1,4 +1,4 @@
-import type { Duration } from 'effect';
+import { Duration } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import {
   isTrpcError,
@@ -20,6 +20,7 @@ import {
 } from '../../transformer/index.ts';
 import { unexpectedError } from '../execution/index.ts';
 import type { AnyRouter } from '../procedures/index.ts';
+import type { SocketDrains } from '../sockets/index.ts';
 import type { HandlerCore } from './core.ts';
 import { makeUrlPaths, type UrlPaths } from './path-separator.ts';
 
@@ -40,6 +41,15 @@ export interface HttpHandler {
   readonly maxBodySize: number;
   /** How often a quiet subscription gets a ping comment; `undefined` sends none. */
   readonly ssePing: Duration.Duration | undefined;
+  /**
+   * When an event stream ends (`sse.maxDuration`), and how long before
+   * that it asks its client to reconnect; `undefined` never ends one.
+   */
+  readonly sseLifetime:
+    | { readonly end: Duration.Duration; readonly notice: Duration.Duration }
+    | undefined;
+  /** What drains the handler's connections, event streams included. */
+  readonly drains: SocketDrains;
   readonly batch: { readonly maxItems: number } | undefined;
 }
 
@@ -52,11 +62,16 @@ export const makeHttpHandler = (
     readonly experimental_pathSeparator?: PathSeparator | undefined;
     readonly maxBodySize?: number | undefined;
     readonly sse?:
-      | { readonly pingInterval?: Duration.Input | false | undefined }
+      | {
+          readonly pingInterval?: Duration.Input | false | undefined;
+          readonly maxDuration?: Duration.Input | undefined;
+          readonly reconnectNotice?: Duration.Input | undefined;
+        }
       | undefined;
     readonly batch?: false | { readonly maxItems: number } | undefined;
   },
   core: HandlerCore,
+  drains: SocketDrains,
 ): HttpHandler => {
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxItems =
@@ -72,6 +87,17 @@ export const makeHttpHandler = (
     paths: makeUrlPaths(opts.router, opts.experimental_pathSeparator ?? '.'),
     maxBodySize: opts.maxBodySize ?? Infinity,
     ssePing: timerOption(opts.sse?.pingInterval, '15 seconds'),
+    sseLifetime:
+      opts.sse?.maxDuration === undefined
+        ? undefined
+        : {
+            end: Duration.fromInputUnsafe(opts.sse.maxDuration),
+            notice: Duration.max(
+              Duration.zero,
+              Duration.fromInputUnsafe(opts.sse.reconnectNotice ?? '5 seconds'),
+            ),
+          },
+    drains,
     batch: maxItems === undefined ? undefined : { maxItems },
   };
 };

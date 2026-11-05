@@ -1,4 +1,12 @@
-import { Effect, Option, Queue, Stream } from 'effect';
+import {
+  Cause,
+  type Duration,
+  Effect,
+  Exit,
+  Queue,
+  Scope,
+  Stream,
+} from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -22,9 +30,18 @@ import type { HttpLinkOptions } from './link.ts';
 import { ok, type Transport } from './transport.ts';
 
 /**
- * Subscriptions over SSE: one connection at a time, reconnecting with
+ * Subscriptions over SSE: one stream at a time, reconnecting with
  * `Last-Event-ID` after a dropped one until `reconnect.attempts` in a row
  * fail.
+ *
+ * A server's `reconnect` event moves the subscription make-before-break:
+ * a new stream opens from the last event id while the old one keeps
+ * delivering, and the old one is left once the new one sends anything
+ * (`connected` first). The new one resends what the old one delivered
+ * meanwhile, and each such event is dropped once by its id; events
+ * without ids may arrive twice. A new stream that fails leaves the old
+ * one delivering and is tried again with `reconnect.delay`, for as long
+ * as the old one lasts.
  */
 export function makeSubscriptions(
   transport: Transport,
@@ -40,8 +57,8 @@ export function makeSubscriptions(
       (queue) => {
         let lastEventId = op.lastEventId;
         let attempt = 0;
-        const giveUp = () =>
-          op.context.reconnect === false || ++attempt > reconnectAttempts;
+        const moves = op.context.reconnect !== false;
+        const giveUp = () => !moves || ++attempt > reconnectAttempts;
 
         const read = (
           event: SseEvent,
@@ -101,53 +118,149 @@ export function makeSubscriptions(
           }
         };
 
-        /**
-         * One connection, after the delay a reconnect waits; `true` once the
-         * server ended the subscription. Its scope aborts the request.
-         */
-        const connect = Effect.gen(function* () {
-          if (attempt > 0) yield* Effect.sleep(reconnectDelay(attempt));
-          const reply = yield* transport
-            .call(
-              op,
-              CONTENT_TYPE.sse,
-              lastEventId ? { [HEADER.lastEventId]: lastEventId } : {},
-            )
-            .pipe(
-              Effect.catch((error) =>
-                giveUp() ? Effect.fail(error) : Effect.succeed(null),
-              ),
-            );
-          if (!reply) return false;
-          yield* transport.reported(op, reply);
-          if (!ok(reply) || reply.web.body === null) {
-            return yield* transport.readError(reply);
-          }
-          const decoder = makeDeferredDecoder(transport.transformer);
-          const ended = yield* sseEvents(reply.response.stream).pipe(
-            Stream.mapEffect((event) => read(event, decoder)),
-            Stream.takeUntil((done) => done),
-            Stream.runLast,
-            Effect.map((last) => Option.getOrElse(last, () => false)),
-            // Anything but a server error reconnects.
-            Effect.catch((cause) =>
-              isTrpcError(cause) ? Effect.fail(cause) : Effect.succeed(false),
-            ),
-            Effect.ensuring(decoder.close),
-          );
-          if (ended) return true;
-          if (giveUp()) {
-            return yield* Effect.fail(
-              new TrpcError({
-                code: 'NETWORK_ERROR',
-                message: 'The subscription connection was lost',
-              }),
-            );
-          }
-          return false;
-        }).pipe(Effect.scoped);
+        return Effect.gen(function* () {
+          const parent = yield* Effect.scope;
+          const inbox = yield* Queue.unbounded<Signal>();
 
-        return Effect.repeat(connect, { until: (ended) => ended }).pipe(
+          /**
+           * Opens a stream after `delay`, into `inbox`. Closing its scope
+           * aborts the request.
+           */
+          const open = (delay: Duration.Input | undefined) =>
+            Effect.gen(function* () {
+              const scope = yield* Scope.fork(parent);
+              const decoder = makeDeferredDecoder(transport.transformer);
+              yield* Scope.addFinalizer(scope, decoder.close);
+              const leg: Leg = { scope, decoder };
+              const lost = (signal: Omit<Lost, 'leg'>) =>
+                Queue.offer(inbox, { leg, ...signal });
+              yield* Effect.gen(function* () {
+                if (delay !== undefined) yield* Effect.sleep(delay);
+                const reply = yield* transport
+                  .call(
+                    op,
+                    CONTENT_TYPE.sse,
+                    lastEventId ? { [HEADER.lastEventId]: lastEventId } : {},
+                  )
+                  .pipe(
+                    Effect.catch((error) =>
+                      Effect.as(lost({ error, fatal: undefined }), null),
+                    ),
+                  );
+                if (!reply) return;
+                yield* transport.reported(op, reply);
+                if (!ok(reply) || reply.web.body === null) {
+                  return yield* transport.readError(reply);
+                }
+                yield* sseEvents(reply.response.stream).pipe(
+                  Stream.runForEach((event) =>
+                    Queue.offer(inbox, { leg, event }),
+                  ),
+                  Effect.ignore,
+                );
+                yield* lost({ error: undefined, fatal: undefined });
+              }).pipe(
+                Effect.catch((fatal) => lost({ error: fatal, fatal })),
+                Scope.provide(scope),
+                Effect.forkIn(scope),
+              );
+              return leg;
+            });
+
+          let active = yield* open(undefined);
+          /** The new stream, until its first event. */
+          let pending: Leg | undefined;
+          /** The stream a server asked to leave, while it still delivers. */
+          let leaving: Leg | undefined;
+          let failures = 0;
+          /**
+           * The ids `active` delivered since `pending` opened, which the
+           * new stream resends.
+           */
+          let overlap = new Set<string>();
+          const end = (leg: Leg) => Scope.close(leg.scope, Exit.void);
+          /** Whether the stream `active` became resends `event`. */
+          const resent = (event: SseEvent) => {
+            if (event.id === undefined || overlap.size === 0) return false;
+            if (!overlap.delete(event.id)) {
+              overlap.clear();
+              return false;
+            }
+            return true;
+          };
+
+          for (;;) {
+            const signal = yield* Queue.take(inbox);
+            if ('retry' in signal) {
+              // Stale once `active` is gone.
+              if (signal.retry === active) pending = yield* open(undefined);
+              continue;
+            }
+            const { leg } = signal;
+            if (leg === pending) {
+              pending = undefined;
+              if (!('event' in signal)) {
+                yield* end(leg);
+                const from = active;
+                yield* Queue.offer(inbox, { retry: from }).pipe(
+                  Effect.delay(reconnectDelay(++failures)),
+                  Effect.forkIn(parent),
+                );
+                continue;
+              }
+              yield* end(active);
+              active = leg;
+              leaving = undefined;
+              failures = 0;
+            } else if (leg !== active) {
+              continue;
+            }
+            if ('event' in signal) {
+              const { event } = signal;
+              if (event.event === SSE_EVENT.reconnect) {
+                if (moves && !leaving) {
+                  leaving = active;
+                  overlap = new Set();
+                  pending = yield* open(undefined);
+                }
+                continue;
+              }
+              if (!pending && resent(event)) continue;
+              if (pending && event.id !== undefined) overlap.add(event.id);
+              const handled = yield* Effect.exit(read(event, active.decoder));
+              if (Exit.isSuccess(handled)) {
+                if (handled.value) return;
+                continue;
+              }
+              const cause = Cause.squash(handled.cause);
+              if (isTrpcError(cause)) return yield* Effect.fail(cause);
+            } else if (signal.fatal) {
+              return yield* Effect.fail(signal.fatal);
+            }
+            // `active` is gone.
+            yield* end(active);
+            if (pending) {
+              // The new stream resends from before what the old one delivered.
+              active = pending;
+              pending = undefined;
+              leaving = undefined;
+              continue;
+            }
+            leaving = undefined;
+            if (giveUp()) {
+              return yield* Effect.fail(
+                'event' in signal || signal.error === undefined
+                  ? new TrpcError({
+                      code: 'NETWORK_ERROR',
+                      message: 'The subscription connection was lost',
+                    })
+                  : (signal.error as AnyTrpcError),
+              );
+            }
+            active = yield* open(reconnectDelay(attempt));
+          }
+        }).pipe(
+          Effect.scoped,
           Effect.matchCause({
             onSuccess: () => Queue.endUnsafe(queue),
             onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
@@ -157,3 +270,25 @@ export function makeSubscriptions(
       },
     ).pipe(Stream.mapEffect((value) => value));
 }
+
+/** One SSE stream of a subscription. */
+interface Leg {
+  readonly scope: Scope.Closeable;
+  readonly decoder: DeferredDecoder;
+}
+
+/**
+ * A stream ended: `error` is what its request failed with, if it did, and
+ * `fatal` a server's error response, which ends the subscription.
+ */
+interface Lost {
+  readonly leg: Leg;
+  readonly error: AnyTrpcError | undefined;
+  readonly fatal: AnyTrpcError | undefined;
+}
+
+type Signal =
+  | { readonly leg: Leg; readonly event: SseEvent }
+  | Lost
+  /** Try again to open a stream for `retry`, which a server asked to leave. */
+  | { readonly retry: Leg };
