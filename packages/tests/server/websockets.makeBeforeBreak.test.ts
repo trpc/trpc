@@ -376,11 +376,14 @@ describe('make before break', () => {
       h.ctx.wssHandler.broadcastReconnectNotification();
       await vi.waitFor(() => expect(h.receivedFor('events')).toHaveLength(3));
       expect(h.receivedFor('events')[2]!.socket).toBe(h.serverSockets[2]);
+      const stops = () =>
+        clientFrames.filter((f) => f.includes('subscription.stop'));
+      await vi.waitFor(() =>
+        expect(stops()).toEqual(['1> {"id":1,"method":"subscription.stop"}']),
+      );
       gate.resolve();
       await vi.waitFor(() =>
-        expect(
-          clientFrames.filter((f) => f.includes('subscription.stop')),
-        ).toEqual([
+        expect(stops()).toEqual([
           '1> {"id":1,"method":"subscription.stop"}',
           '0> {"id":1,"method":"subscription.stop"}',
         ]),
