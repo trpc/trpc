@@ -1299,7 +1299,11 @@ describe('requests pending on a socket that a server reconnect retires', () => {
 
   test("a retired socket's connection-level frames are ignored", async () => {
     const t = initTRPC.create();
-    const onOpen = vi.fn();
+    let opens = 0;
+    const thirdOpen = createDeferred<void>();
+    const onOpen = vi.fn(() => {
+      if (++opens === 3) thirdOpen.resolve();
+    });
     const attempts: number[] = [];
     const router = t.router({
       greeting: t.procedure.query(() => 'hello'),
@@ -1326,14 +1330,24 @@ describe('requests pending on a socket that a server reconnect retires', () => {
       oldServerSockets.push(oldServerSocket);
       oldServerSocket.pause();
       ctx.wssHandler.broadcastReconnectNotification();
-      await vi.waitFor(() => {
-        expect(ctx.wsClient.connection?.state).toBe('open');
-        expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
-      });
+      await vi.waitFor(
+        () => {
+          expect(ctx.wsClient.connection?.state).toBe('open');
+          expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
+        },
+        { timeout: 5_000 },
+      );
       const oldFrames: unknown[] = [];
+      const framesArrived = createDeferred<void>();
       oldClientSocket.addEventListener('message', ({ data }) => {
-        oldFrames.push(data);
+        if (oldFrames.push(data) === 2) framesArrived.resolve();
       });
+      const oldClosed = Promise.all([
+        new Promise((resolve) => oldServerSocket.once('close', resolve)),
+        new Promise((resolve) =>
+          oldClientSocket.addEventListener('close', resolve),
+        ),
+      ]);
 
       oldServerSocket.send(
         JSON.stringify({
@@ -1346,20 +1360,14 @@ describe('requests pending on a socket that a server reconnect retires', () => {
         }),
       );
       oldServerSocket.send(JSON.stringify({ id: null, method: 'reconnect' }));
-      await vi.waitFor(() => {
-        expect(oldFrames).toHaveLength(2);
-      });
+      await framesArrived.promise;
       oldServerSocket.resume();
-      await vi.waitFor(() => {
-        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
-        expect(ctx.wss.clients.size).toBe(1);
-      });
+      await oldClosed;
+      expect(ctx.wss.clients.size).toBe(1);
 
       // Dropping the replacement starts over at the first attempt.
       [...ctx.wss.clients][0]!.terminate();
-      await vi.waitFor(() => {
-        expect(onOpen.mock.calls.length).toBeGreaterThanOrEqual(3);
-      });
+      await thirdOpen.promise;
       expect(await ctx.client.greeting.query()).toBe('hello');
       expect(attempts).toEqual([0, 0]);
       expect(onOpen).toHaveBeenCalledTimes(3);
@@ -1910,8 +1918,62 @@ describe('a server-requested reconnect drains the old socket', () => {
   });
 });
 
+/**
+ * Holds back the frames `socket` gets or sends that match, until released.
+ * `later`: whether the frames after a held one pass it, or wait behind it as
+ * they would on a backed-up socket, `PING` and `PONG` included.
+ */
+function holdFrames(
+  socket: WebSocket,
+  direction: 'received' | 'sent',
+  {
+    matches,
+    later,
+  }: { matches: (message: any) => boolean; later: 'pass' | 'wait' },
+) {
+  const held: (() => void)[] = [];
+  let holding = true;
+  const holds = (message: unknown) =>
+    holding &&
+    ((later === 'wait' && held.length > 0) ||
+      (message !== null && matches(message)));
+  const parse = (raw: unknown) => {
+    const text = String(raw);
+    return text === 'PING' || text === 'PONG' ? null : JSON.parse(text);
+  };
+  if (direction === 'received') {
+    const emit = socket.emit.bind(socket);
+    socket.emit = ((name: string, ...args: unknown[]) => {
+      if (name !== 'message') return emit(name, ...args);
+      const message = parse(args[0]);
+      if (holds(message)) {
+        held.push(() => emit(name, ...args));
+        return true;
+      }
+      return emit(name, ...args);
+    }) as typeof socket.emit;
+  } else {
+    const send = socket.send.bind(socket);
+    socket.send = ((data: unknown, ...args: unknown[]) => {
+      const message = parse(data);
+      if (holds(message)) {
+        held.push(() => (send as any)(data, ...args));
+        return;
+      }
+      (send as any)(data, ...args);
+    }) as typeof socket.send;
+  }
+  return {
+    count: () => held.length,
+    release() {
+      holding = false;
+      for (const frame of held.splice(0)) frame();
+    },
+  };
+}
+
 describe('a server-requested reconnect hands subscriptions off', () => {
-  function setup() {
+  function setup(wsClient: Partial<WebSocketClientOptions> = {}) {
     const t = initTRPC.create();
     const ee = new EventEmitter();
     const log: number[] = [];
@@ -1956,10 +2018,30 @@ describe('a server-requested reconnect hands subscriptions off', () => {
           };
         }),
       ),
+      texts: subscriptionProcedure.subscription(() =>
+        observable<string>((emit) => {
+          const onText = (text: string) => emit.next(text);
+          ee.on('text', onText);
+          return () => {
+            ee.off('text', onText);
+          };
+        }),
+      ),
+      /** Never ends once stopped, so the server never sends `stopped`. */
+      stubborn: t.procedure.subscription(async function* () {
+        try {
+          for await (const [value] of on(ee, 'stubborn')) {
+            yield value as number;
+          }
+        } finally {
+          await createDeferred<void>().promise;
+        }
+      }),
     });
     const ctx = testServerAndClientResource(router, {
       clientLink: 'wsLink',
       wsClient: {
+        ...wsClient,
         lazy: { enabled: false, closeMs: 0 },
         retryDelayMs: () => 20,
         onOpen,
@@ -2587,7 +2669,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('a tracked subscription is served by the old socket until the new one has started it', async () => {
+  test("the old socket serves a moving subscription while the new one's setup is held, and the new one's replay is dropped", async () => {
     const {
       ctx,
       push,
@@ -2690,6 +2772,104 @@ describe('a server-requested reconnect hands subscriptions off', () => {
         ]);
       });
     } finally {
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test("the old socket's event sent after the new one's started is dropped, and the new one delivers it once", async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      slowResult,
+      receivedFor,
+      resultsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const oldResults = resultsOn(oldClientSocket);
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    // Keeps the old socket open after the subscription moves.
+    const slow = ctx.client.slow.query();
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let stops: ReturnType<typeof holdFrames> | undefined;
+    let newEvents: ReturnType<typeof holdFrames> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+        expect(receivedFor('slow')).toHaveLength(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+      const { id } = receivedFor('events')[0]!;
+      // The old server reads the stop only when released.
+      stops = holdFrames(oldServerSocket, 'received', {
+        matches: (message) => message.method === 'subscription.stop',
+        later: 'pass',
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(2);
+      });
+      // The old socket delivers 2 during the move; the new one will replay it.
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      // The new server's `started` goes out; its events wait.
+      newEvents = holdFrames(receivedFor('events')[1]!.socket, 'sent', {
+        matches: (message) => message.result?.type === 'data',
+        later: 'pass',
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stops!.count()).toBe(1);
+        expect(newEvents!.count()).toBe(1);
+      });
+
+      // The old socket hasn't read its stop, so it sends 3 after the new
+      // socket's started: dropped.
+      push(3);
+      await vi.waitFor(() => {
+        expect(oldResults).toContainEqual({ id, type: 'data', eventId: '3' });
+        expect(newEvents!.count()).toBe(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2]);
+
+      // The new socket's 2 is dropped as replayed, and its 3 delivered.
+      newEvents.release();
+      await vi.waitFor(() => {
+        expect(seen).toContain(3);
+      });
+      stops.release();
+      slowResult.resolve('slow');
+      expect(await slow).toBe('slow');
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      push(4);
+      await vi.waitFor(() => {
+        expect(seen).toContain(4);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2, 3, 4]);
+      expect(eventsSubscribed.mock.calls).toEqual([[null], ['1']]);
+    } finally {
+      slowResult.resolve('cleanup');
+      stops?.release();
+      newEvents?.release();
       held?.resolve();
       subscription.unsubscribe();
       await ctx.wsClient.close();
@@ -2950,18 +3130,95 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('an untracked subscription gets the events the old socket sent before it was stopped there', async () => {
+  test("an untracked subscription gets an event only the old socket had, even when it arrives after the new socket's started", async () => {
     const {
       ctx,
       ee,
       valuesStarted,
       receivedFor,
+      stopsOn,
       observe,
       waitForOpen,
       holdSubscriptions,
     } = setup();
     await using _ctx = ctx;
     const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.values.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let oldFrames: ReturnType<typeof holdFrames> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(valuesStarted).toHaveBeenCalledTimes(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('values')).toHaveLength(2);
+      });
+      // The old socket is backed up: its frames arrive late, in order.
+      oldFrames = holdFrames(oldServerSocket, 'sent', {
+        matches: (message) => 'result' in message,
+        later: 'wait',
+      });
+      // Only the old socket listens, so only it has 1.
+      ee.emit('value', 1);
+      await vi.waitFor(() => {
+        expect(oldFrames!.count()).toBe(1);
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(valuesStarted).toHaveBeenCalledTimes(2);
+        expect(ee.listenerCount('value')).toBe(1);
+      });
+
+      oldFrames.release();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      ee.emit('value', 2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2]);
+    } finally {
+      oldFrames?.release();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test("an untracked subscription isn't let go at a keepAlive PONG that its old socket's events are queued around", async () => {
+    const {
+      ctx,
+      ee,
+      valuesStarted,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup({
+      keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 10_000 },
+    });
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    let oldFrames: ReturnType<typeof holdFrames> | undefined;
+    const keepAlivePongsHeld = vi.fn();
+    const pingsAfterStop = vi.fn();
+    // The server has answered by the time this listener runs.
+    oldServerSocket.on('message', (raw) => {
+      // oxlint-disable-next-line typescript/no-base-to-string
+      if (String(raw) !== 'PING') return;
+      if (stopsOn(oldServerSocket).length > 0) pingsAfterStop();
+      else if (oldFrames && oldFrames.count() > 0) keepAlivePongsHeld();
+    });
     const seen: unknown[] = [];
     const subscription = ctx.client.values.subscribe(undefined, {
       ...observe(seen),
@@ -2978,26 +3235,144 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(receivedFor('values')).toHaveLength(2);
       });
-      // The old socket's frames now arrive after the new socket's.
-      const send = oldServerSocket.send.bind(oldServerSocket) as (
-        ...args: unknown[]
-      ) => void;
-      Object.assign(oldServerSocket, {
-        send: (...args: unknown[]) => setTimeout(() => send(...args), 50),
+      oldFrames = holdFrames(oldServerSocket, 'sent', {
+        matches: (message) => 'result' in message,
+        later: 'wait',
       });
-      // Only the old socket listens yet.
       ee.emit('value', 1);
+      // A keepAlive PONG waits behind 1, and 2 behind it.
+      await vi.waitFor(() => {
+        expect(keepAlivePongsHeld).toHaveBeenCalledTimes(1);
+      });
+      ee.emit('value', 2);
+      await vi.waitFor(() => {
+        expect(oldFrames!.count()).toBe(3);
+      });
       held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(ee.listenerCount('value')).toBe(1);
+        expect(pingsAfterStop).toHaveBeenCalledTimes(1);
+      });
+
+      oldFrames.release();
       await vi.waitFor(() => {
         expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
       });
-      ee.emit('value', 2);
+      ee.emit('value', 3);
+      await vi.waitFor(() => {
+        expect(seen).toContain(3);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2, 3]);
+    } finally {
+      oldFrames?.release();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test("an untracked subscription gets a large event the old socket's PONG is queued behind", async () => {
+    const {
+      ctx,
+      ee,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const pingsAfterStop = vi.fn();
+    oldServerSocket.on('message', (raw) => {
+      // oxlint-disable-next-line typescript/no-base-to-string
+      if (String(raw) === 'PING' && stopsOn(oldServerSocket).length > 0) {
+        pingsAfterStop();
+      }
+    });
+    const seen: unknown[] = [];
+    const subscription = ctx.client.texts.subscribe(undefined, {
+      ...observe(seen),
+      onData: (text) => seen.push(text.length),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    const reading = oldClientSocket as unknown as WebSocket;
+    try {
+      await vi.waitFor(() => {
+        expect(ee.listenerCount('text')).toBe(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('texts')).toHaveLength(2);
+      });
+      // The client stops reading the old socket, so the event backs up there.
+      reading.pause();
+      const large = 4 * 1024 * 1024;
+      ee.emit('text', 'x'.repeat(large));
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(ee.listenerCount('text')).toBe(1);
+        expect(pingsAfterStop).toHaveBeenCalledTimes(1);
+      });
+
+      reading.resume();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      ee.emit('text', 'after');
+      await vi.waitFor(() => {
+        expect(seen).toContain(5);
+      });
+      expect(seen).toEqual(['pending', 'started', large, 5]);
+    } finally {
+      reading.resume();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('an untracked subscription leaves the old socket at the PONG to the PING after its stop, even if the procedure never stops', async () => {
+    const { ctx, ee, observe, waitForOpen } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.stubborn.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    try {
+      await vi.waitFor(() => {
+        expect(ee.listenerCount('stubborn')).toBe(1);
+      });
+      ee.emit('stubborn', 1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+      const frames: string[] = [];
+      oldServerSocket.on('message', (raw) => {
+        // oxlint-disable-next-line typescript/no-base-to-string
+        const text = String(raw);
+        frames.push(text === 'PING' ? text : JSON.parse(text).method);
+      });
+      const oldClosed = new Promise((resolve) =>
+        oldClientSocket.addEventListener('close', resolve),
+      );
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      // The old socket can't end the subscription, so only the PONG lets it go.
+      await oldClosed;
+      expect(frames).toEqual(['subscription.stop', 'PING']);
+      ee.emit('stubborn', 2);
       await vi.waitFor(() => {
         expect(seen).toContain(2);
       });
       expect(seen).toEqual(['pending', 'started', 1, 2]);
     } finally {
-      held?.resolve();
       subscription.unsubscribe();
       await ctx.wsClient.close();
     }
@@ -4261,9 +4636,12 @@ describe('auth / connectionParams', async () => {
     });
     // The old socket serves the subscription until connectionParams are sent
     // on the new one.
-    await vi.waitFor(() => {
-      expect(ctx.wss.clients.size).toBe(1);
-    });
+    await vi.waitFor(
+      () => {
+        expect(ctx.wss.clients.size).toBe(1);
+      },
+      { timeout: 5_000 },
+    );
     expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
   });
 
