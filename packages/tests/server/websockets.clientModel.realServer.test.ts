@@ -5,10 +5,10 @@
  */
 import { EventEmitter, on } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { fc, test } from '@fast-check/vitest';
 import { initTRPC, tracked } from '@trpc/server';
 import type { Deferred } from '@trpc/server/unstable-core-do-not-import';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import fc from 'fast-check';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
 
@@ -231,16 +231,11 @@ async function runScenario(actions: Action[]) {
   expect(unhandled).toEqual([]);
 }
 
-test(
+test.prop(
+  [fc.array(actionArb, { minLength: 10, maxLength: 25, size: 'max' })],
+  { seed: 7925, numRuns: 25, endOnFailure: true },
+)(
   'random scenarios against a real server keep the invariants',
-  { timeout: 120_000 },
-  async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.array(actionArb, { minLength: 10, maxLength: 25, size: 'max' }),
-        runScenario,
-      ),
-      { seed: 7925, numRuns: 25, endOnFailure: true },
-    );
-  },
+  runScenario,
+  120_000,
 );

@@ -1,5 +1,6 @@
 import type { MachineModel, ModelStep } from './___machineModel';
 import { check, coverage, simulateMachine } from './___machineModel';
+import { fc, test } from '@fast-check/vitest';
 /**
  * Model-based tests for the wsClient state machines. fast-check generates
  * sequences of what sockets, timers, the server and the user can do; a
@@ -51,7 +52,6 @@ import {
   sampleTransitions,
   stateDiagram,
 } from '@trpc/server/unstable-core-do-not-import';
-import fc from 'fast-check';
 
 // --- the simulated world ----------------------------------------------------
 
@@ -1369,25 +1369,23 @@ function isLive(connection: ConnectionModel | undefined) {
 
 const SEED = 7925;
 
-test('random event sequences keep every invariant', () => {
-  covered.reset();
-  fc.assert(
-    fc.property(scenarioArb, (scenario) => {
-      runScenario(scenario);
-    }),
-    { seed: SEED, numRuns: 4_000 },
-  );
-  expect(covered.missing()).toEqual([]);
+describe('reaching every coverage goal', () => {
+  beforeAll(() => covered.reset());
+  test.prop([scenarioArb], {
+    seed: SEED,
+    numRuns: 4_000,
+    reporter: covered.report,
+  })('random event sequences keep every invariant', (scenario) => {
+    runScenario(scenario);
+  });
 });
 
-test('random event sequences keep every invariant, unseeded', () => {
-  fc.assert(
-    fc.property(scenarioArb, (scenario) => {
-      runScenario(scenario);
-    }),
-    { numRuns: 2_000 },
-  );
-});
+test.prop([scenarioArb], { numRuns: 2_000 })(
+  'random event sequences keep every invariant, unseeded',
+  (scenario) => {
+    runScenario(scenario);
+  },
+);
 
 test('close() finishing leaves a replaced connection opened since serving', () => {
   // The second socket has nothing in flight when close() finishes, but it
