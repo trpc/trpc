@@ -11,7 +11,6 @@ import { cards } from 'virtual:og-cards';
 
 import {
   cloudLayout,
-  legacySponsorCloudPath,
   sponsorCloudCacheControl,
   sponsorCloudPage,
   sponsorCloudReadmePath,
@@ -28,11 +27,8 @@ import {
 export async function serveOgImage(request: Request) {
   const url = new URL(request.url);
   const now = new Date();
-  const readme =
-    url.pathname === legacySponsorCloudPath ||
-    url.pathname === sponsorCloudReadmePath;
-  if (readme) {
-    return url.pathname === sponsorCloudReadmePath && url.search === ''
+  if (url.pathname === sponsorCloudReadmePath) {
+    return url.search === ''
       ? sponsorCloudResponse(true)
       : redirectTo(sponsorCloudReadmePath, untilVersionChanges(false, now));
   }

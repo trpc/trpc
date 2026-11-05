@@ -55,8 +55,8 @@ export const flagsValue = (ids: ReadonlyArray<string> = experimentIds) => {
 /** A page's path: not an asset, nor a file with an extension. */
 const pagePath = '^(/(?!assets/)[^.]*)$';
 
-/** The social cards' paths: `/og`, and anything under it (`src/og/version.ts`). */
-const ogImagePaths = '^(/og(?:/.*)?)$';
+/** The social cards' paths: anything under `/og/` (`src/og/version.ts`). */
+const ogImagePaths = '^(/og/.+)$';
 
 /** Routes sending the flagged requests to the function, before the files. */
 export const onDemandRoutes = (

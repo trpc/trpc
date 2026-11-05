@@ -81,15 +81,14 @@ export function requestedPage(
   pathname: string,
   exists: (page: string) => boolean,
 ): string | undefined {
-  if (!/^\/og(?:$|\/)/.test(pathname)) {
+  if (!pathname.startsWith('/og/')) {
     return undefined;
   }
   const png = pathname.endsWith('.png');
   const named = (png ? pathname.slice(0, -'.png'.length) : pathname).slice(
     '/og'.length,
   );
-  const page = (path: string) =>
-    path === '' || path === homeSegment ? '/' : path;
+  const page = (path: string) => (path === homeSegment ? '/' : path);
   if (exists(page(named))) {
     return page(named);
   }

@@ -79,11 +79,9 @@ describe('requestedPage', () => {
       ['/og/docs/a.png', '/docs/a'],
       ['/og/docs/a/abcdef0123.png', '/docs/a'],
       ['/og/docs/abcdef0123-20261105.png', '/docs'],
-      ['/og', '/'],
       ['/og/index', '/'],
       ['/og/index.png', '/'],
       ['/og/index/abcdef0123.png', '/'],
-      ['/og/abcdef0123.png', '/'],
       ['/og/_/cloud.png', '/_/cloud'],
       ['/og/_/cloud/abcdef0123.png', '/_/cloud'],
     ] as const) {
@@ -170,7 +168,6 @@ describe('serveOgImage', () => {
       toFake: ['Date'],
     });
     for (const path of [
-      '/og',
       '/og/index',
       '/og/index.png',
       '/og/index/abcdef0123.png',
@@ -195,17 +192,10 @@ describe('serveOgImage', () => {
     ).toBe('/og/index/abcdef0123-20261106.png');
   });
 
-  it("draws the READMEs' sponsor cloud at its URL, and redirects the old one and any query to it", async () => {
-    for (const path of [
-      '/og/sponsor-cloud.png?v=b6cfa2a2',
-      '/og/_/sponsor-cloud.png?x=1',
-    ]) {
-      const response = await get(path);
-      expect(response.status, path).toBe(307);
-      expect(response.headers.get('location'), path).toBe(
-        '/og/_/sponsor-cloud.png',
-      );
-    }
+  it("draws the READMEs' sponsor cloud at its URL, and redirects a query to it", async () => {
+    const response = await get('/og/_/sponsor-cloud.png?x=1');
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('/og/_/sponsor-cloud.png');
     await expect(get('/og/_/sponsor-cloud.png')).rejects.toThrow(
       'drew the sponsor cloud',
     );

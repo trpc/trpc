@@ -28,9 +28,6 @@ export const sponsorCloudPage = notAPage('sponsor-cloud');
  */
 export const sponsorCloudReadmePath = ogImagePath(sponsorCloudPage, '');
 
-/** The READMEs' URL before `sponsorCloudReadmePath`, which packages on npm keep. */
-export const legacySponsorCloudPath = '/og/sponsor-cloud.png';
-
 /** The PNG's width in pixels: twice the width the READMEs show it at. */
 export const sponsorCloudWidth = 1200;
 
