@@ -47,6 +47,14 @@ function onConnectionEvent(
     step.onReady(connection);
     return;
   }
+  if (
+    before.state.phase === 'connecting' &&
+    after === 'handshaking' &&
+    step.isCurrent(connection)
+  ) {
+    // `connectionParams` may never resolve.
+    step.startInactivity();
+  }
   if (before.state.phase === 'closed' || after !== 'closed') {
     step.effects.push(...notices);
     return;
@@ -58,6 +66,9 @@ function onConnectionEvent(
   const handover = step.onLost(connection, cause);
   step.effects.push(...notices);
   step.afterLost({ connection: before, event, cause, handover });
+  // A subscription that was leaving another connection for this one has
+  // left it.
+  step.closeDrained();
 }
 
 /** Any frame proves the server is there, and keeps a lazy connection in use. */
@@ -175,7 +186,10 @@ export function clientTransition(
           step.flush([]);
           break;
         case 'backoff':
-          if (step.lifecycle.kind === 'backoff') {
+          if (step.lifecycle.kind !== 'backoff') break;
+          if (step.unused() && step.handover === null) {
+            step.goIdle();
+          } else {
             step.connect(step.lifecycle.retryIndex);
           }
           break;
@@ -215,6 +229,9 @@ export function clientTransition(
             type: 'sendFailed',
             cause: event.cause,
           });
+          for (const previous of servingConnections(request)) {
+            step.closeIfDrained(previous);
+          }
         }
       }
       break;

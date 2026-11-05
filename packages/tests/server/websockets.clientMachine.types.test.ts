@@ -15,10 +15,22 @@ import { moveSubscription } from '@trpc/client/links/wsLink/wsClient/machine/req
  * `@ts-expect-error` fails the typecheck if its state becomes buildable.
  */
 test("a query or mutation can't move, show started or resume", () => {
-  // @ts-expect-error a query is never moving
-  const moving: QueryState = { kind: 'moving', from: 1, to: 2 };
-  // @ts-expect-error nor leaving
-  const leaving: QueryState = { kind: 'leaving', from: 1, to: 2 };
+  const moving: QueryState = {
+    // @ts-expect-error a query is never moving
+    kind: 'moving',
+    from: 1,
+    to: 2,
+    started: false,
+    replayed: [],
+  };
+  const leaving: QueryState = {
+    // @ts-expect-error nor leaving
+    kind: 'leaving',
+    from: 1,
+    to: 2,
+    started: false,
+    replayed: [],
+  };
   // @ts-expect-error a query has no `started` to show
   const started: QueryState = { kind: 'sent', connection: 1, started: true };
   const resumable: RequestModel = {
@@ -61,6 +73,9 @@ test('a queued subscription has no events to replay', () => {
 });
 
 test("a replacement error can't outlive its handover", () => {
+  expectTypeOf<
+    'replacementError' extends keyof ClientModel ? true : false
+  >().toEqualTypeOf<false>();
   const replaced: Pick<ClientModel, 'replaced' | 'handover'> = {
     replaced: [1],
     handover: null,

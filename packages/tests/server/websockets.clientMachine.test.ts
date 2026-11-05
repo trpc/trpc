@@ -890,6 +890,20 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       }
     }
   }
+  if (event?.type === 'request') {
+    // A request made while a connection takes new requests waits for its
+    // batch, which a flush sends.
+    const connection = sendingConnection(after);
+    if (connection !== null) {
+      const state = after.requests.get(event.id)?.state;
+      check(
+        state?.kind === 'queued' &&
+          state.batch === connection &&
+          after.flushScheduled,
+        `request ${event.id} not batched for connection ${connection}`,
+      );
+    }
+  }
   if (event?.type === 'timer' && event.timer === 'flush') {
     // I15: a flush sends every queued request when a connection takes them.
     check(
@@ -928,6 +942,14 @@ function checkModel(model: ClientModel) {
       (phase === 'draining') === drainingConnections(model).includes(id),
       `connection ${id} draining mismatch`,
     );
+    // I16: a replaced connection closes once its replacement is ready and
+    // nothing is left on it.
+    if (phase === 'draining' && lifecycle.kind === 'open') {
+      check(
+        servedBy(model, id).length > 0,
+        `drained connection ${id} left open`,
+      );
+    }
   }
   if (current !== null) {
     check(model.connections.has(current), 'current connection missing');
@@ -1628,6 +1650,56 @@ test('a subscription moved on before its new connection replayed drops the repla
     { type: 'data', id: '2', data: 2 },
     { type: 'data', id: '3', data: 3 },
   ]);
+});
+
+test('a move drops replayed events by id, whatever the ids look like', () => {
+  // Event ids are opaque: these neither increase nor parse as numbers.
+  let request: SubscriptionRequest = {
+    id: 1,
+    method: 'subscription',
+    lastEventId: 'kx',
+    wire: 1,
+    wiredUpTo: 1,
+    state: { kind: 'sent', connection: 1, started: true, replayed: [] },
+  };
+  const next: unknown[] = [];
+  function apply(event: RequestEvent | { type: 'move'; to: ConnectionId }) {
+    const result =
+      event.type === 'move'
+        ? moveSubscription(request, event.to)
+        : requestTransition(request, event);
+    assert(result.request.method === 'subscription');
+    request = result.request;
+    for (const effect of result.effects) {
+      if (effect.type === 'next' && 'result' in effect.message) {
+        next.push(effect.message.result);
+      }
+      expect(effect.type).not.toBe('invariantViolation');
+    }
+  }
+  const data = (connection: ConnectionId, id: string): RequestEvent => ({
+    type: 'response',
+    connection,
+    message: { id: 1, result: { type: 'data', id, data: id } },
+  });
+
+  apply({ type: 'move', to: 2 });
+  apply(data(1, 'zz-9'));
+  apply(data(1, 'a10'));
+  apply({
+    type: 'response',
+    connection: 2,
+    message: { id: 1, result: { type: 'started' } },
+  });
+  apply(data(2, 'zz-9'));
+  apply(data(2, 'a10'));
+  apply(data(2, '07'));
+  expect(next).toEqual([
+    { type: 'data', id: 'zz-9', data: 'zz-9' },
+    { type: 'data', id: 'a10', data: 'a10' },
+    { type: 'data', id: '07', data: '07' },
+  ]);
+  expect(request.lastEventId).toBe('07');
 });
 
 // --- the diagrams in the PR are generated from the transition functions ----

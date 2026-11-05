@@ -1,5 +1,7 @@
 import { jsonEncoder } from '@trpc/client/links/wsLink/wsClient/encoder';
+import { dispose } from '@trpc/client/links/wsLink/wsClient/scope';
 import { openTransport } from '@trpc/client/links/wsLink/wsClient/transport';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 
 class FakeSocket extends EventTarget {
   static latest: FakeSocket | null = null;
@@ -25,6 +27,23 @@ class FakeSocket extends EventTarget {
     this.dispatchEvent(new MessageEvent('message', { data }));
   }
 }
+
+test('a closed transport stops waiting for connectionParams that never resolve', async () => {
+  const transport = openTransport({
+    id: 1,
+    WebSocketPonyfill: FakeSocket as unknown as typeof WebSocket,
+    urlOptions: {
+      url: 'ws://localhost',
+      connectionParams: () => createDeferred<Record<string, string>>().promise,
+    },
+    keepAlive: { enabled: false, intervalMs: 1_000, pongTimeoutMs: 5_000 },
+    encoder: jsonEncoder,
+  });
+  const params = transport.connectionParams()[Symbol.asyncIterator]();
+  const next = params.next();
+  dispose(transport);
+  expect(await next).toEqual({ done: true, value: undefined });
+});
 
 test('each PONG answers its own PING, so a keepAlive PONG never ends a fence', async () => {
   vi.useFakeTimers();

@@ -553,22 +553,23 @@ describe('make before break', () => {
         next: ({ state }) => states.push(state),
       });
       // wait until the swap
-      let mutation: Promise<unknown> | null = null;
       await vi.waitFor(async () => {
-        const attempt = h.ctx.client.mut.mutate();
-        attempt.catch(() => null);
-        await vi.waitFor(() => expect(h.mutationRuns).toHaveBeenCalled());
-        expect(h.receivedFor('mut').at(-1)!.socket).toBe(h.serverSockets[1]);
-        mutation = attempt;
+        await h.ctx.client.greeting.query();
+        expect(h.receivedFor('greeting').at(-1)!.socket).toBe(
+          h.serverSockets[1],
+        );
       });
-      const runsBefore = h.mutationRuns.mock.calls.length;
+      const mutation = h.ctx.client.mut.mutate();
+      mutation.catch(() => null);
+      await vi.waitFor(() => expect(h.mutationRuns).toHaveBeenCalledOnce());
+      expect(h.receivedFor('mut').at(-1)!.socket).toBe(h.serverSockets[1]);
       h.retry.delayMs = 5_000;
       h.serverSockets[1]!.terminate();
       await expect(mutation).rejects.toThrow();
       expect(await h.ctx.client.greeting.query()).toBe('hello');
       expect(h.receivedFor('greeting').at(-1)!.socket).toBe(oldServerSocket);
       await new Promise((r) => setTimeout(r, 100));
-      expect(h.mutationRuns.mock.calls.length).toBe(runsBefore);
+      expect(h.mutationRuns).toHaveBeenCalledOnce();
       expect(states.filter((s) => s === 'connecting')).toEqual([]);
     } finally {
       h.resolveSlow();
@@ -792,8 +793,9 @@ describe('make before break', () => {
         greetingSocket: h.serverSockets.indexOf(
           h.receivedFor('greeting')[0]!.socket,
         ),
-        tookMs: Math.round(tookMs / 100) * 100,
-      }).toEqual({ states: [], greetingSocket: 0, tookMs: 0 });
+      }).toEqual({ states: [], greetingSocket: 0 });
+      // It didn't wait out the backoff.
+      expect(tookMs).toBeLessThan(h.retry.delayMs / 2);
       expect(oldServerSocket).toBeDefined();
     } finally {
       params?.resolve();

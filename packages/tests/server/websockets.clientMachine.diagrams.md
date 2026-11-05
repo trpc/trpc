@@ -9,7 +9,7 @@ stateDiagram-v2
   [*] --> idle : lazy
   [*] --> connecting
   backoff --> connecting : backoff timer, request
-  backoff --> idle : close, inactivity timer
+  backoff --> idle : backoff timer, close, inactivity timer
   connecting --> backoff : badFrame, openFailed, pongTimeout, reconnect, socketClosed, socketError
   connecting --> idle : close, inactivity timer
   connecting --> open : paramsResolved

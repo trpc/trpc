@@ -123,6 +123,8 @@ async function runScenario(actions: Action[]) {
     readonly data: number[];
     readonly unsubscribe: () => void;
     active: boolean;
+    /** What it had when it unsubscribed. */
+    received: number[] | null;
   }
   const subscribers: Subscriber[] = [];
   const mutations: { input: number; result: Promise<unknown> }[] = [];
@@ -141,6 +143,7 @@ async function runScenario(actions: Action[]) {
             data,
             unsubscribe: () => subscription.unsubscribe(),
             active: true,
+            received: null,
           });
           break;
         }
@@ -150,6 +153,7 @@ async function runScenario(actions: Action[]) {
           if (sub) {
             sub.active = false;
             sub.unsubscribe();
+            sub.received = [...sub.data];
           }
           break;
         }
@@ -203,13 +207,9 @@ async function runScenario(actions: Action[]) {
     events.push(events.length + 1);
     ee.emit('push');
 
-    for (const { input, result } of mutations) {
-      const outcome = (await result) as { ok: boolean };
-      const runs = executions.get(input) ?? 0;
-      // Never resent: at most once, and exactly once when it succeeded.
-      expect(runs).toBeLessThanOrEqual(1);
-      if (outcome.ok) expect(runs).toBe(1);
-    }
+    const outcomes = await Promise.all(
+      mutations.map(({ result }) => result as Promise<{ ok: boolean }>),
+    );
     await vi.waitFor(
       () => {
         for (const sub of subscribers.filter((s) => s.active)) {
@@ -221,6 +221,15 @@ async function runScenario(actions: Action[]) {
     for (const sub of subscribers) {
       // Every event once and in order, also after unsubscribing.
       expect(sub.data).toEqual(events.slice(0, sub.data.length));
+      // Nothing after unsubscribing.
+      if (sub.received) expect(sub.data).toEqual(sub.received);
+    }
+    // Read after the waits, so a late resend is caught too.
+    for (const [index, { input }] of mutations.entries()) {
+      const runs = executions.get(input) ?? 0;
+      // Never resent: at most once, and exactly once when it succeeded.
+      expect(runs).toBeLessThanOrEqual(1);
+      if (outcomes[index]!.ok) expect(runs).toBe(1);
     }
   } finally {
     for (const sub of subscribers) sub.unsubscribe();

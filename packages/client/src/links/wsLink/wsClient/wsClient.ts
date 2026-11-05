@@ -41,11 +41,7 @@ import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import { RequestManager } from './requestManager';
 import { createScope, dispose } from './scope';
 import type { Transport, TransportEvent } from './transport';
-import {
-  backwardCompatibility,
-  connectionParamsEvents,
-  openTransport,
-} from './transport';
+import { backwardCompatibility, openTransport } from './transport';
 import {
   callUserCallback,
   rethrowAsync,
@@ -184,15 +180,15 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
         machine.intake(transportEvents(transport), machine.send);
         return;
       }
-      case 'resolveParams':
+      case 'resolveParams': {
+        const transport = transports.get(effect.connection);
+        if (!transport) return;
         machine.intake(
-          connectionEvents(
-            effect.connection,
-            connectionParamsEvents(opts, encoder),
-          ),
+          connectionEvents(effect.connection, transport.connectionParams()),
           machine.send,
         );
         return;
+      }
       case 'sendParams':
         transports.get(effect.connection)?.send(effect.data);
         return;

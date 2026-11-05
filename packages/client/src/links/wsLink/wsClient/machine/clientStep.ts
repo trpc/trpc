@@ -267,6 +267,24 @@ export class Step {
     this.setState({ state: 'connecting', error });
   }
 
+  /** A lazy client with nothing to send needs no connection. */
+  unused() {
+    return this.lazy && this.requests.size === 0;
+  }
+
+  goIdle() {
+    this.lifecycle = { kind: 'idle' };
+    this.stopInactivity();
+    this.setState({ state: 'idle' });
+  }
+
+  /** A lazy client closes once its socket has had nothing to do for a while. */
+  startInactivity() {
+    if (!this.lazy) return;
+    this.inactivity = true;
+    this.effects.push({ type: 'startTimer', timer: 'inactivity' });
+  }
+
   resetInactivity() {
     if (this.inactivity) {
       this.effects.push({ type: 'startTimer', timer: 'inactivity' });
@@ -399,10 +417,7 @@ export class Step {
     }
     this.lifecycle = { kind: 'open', connection };
     this.clearReplacementError();
-    if (this.lazy) {
-      this.inactivity = true;
-      this.effects.push({ type: 'startTimer', timer: 'inactivity' });
-    }
+    this.startInactivity();
     if (this.publicState.state !== 'pending') {
       this.setState({ state: 'pending' });
     }
@@ -412,6 +427,10 @@ export class Step {
     const moved = this.startMoves();
     this.batchFor(connection);
     this.flush(moved);
+    this.closeDrained();
+  }
+
+  closeDrained() {
     for (const previous of drainingConnections(this)) {
       this.closeIfDrained(previous);
     }
@@ -509,10 +528,8 @@ export class Step {
       return;
     }
 
-    if (this.lazy && this.requests.size === 0) {
-      this.lifecycle = { kind: 'idle' };
-      this.stopInactivity();
-      this.setState({ state: 'idle' });
+    if (this.unused()) {
+      this.goIdle();
       return;
     }
 

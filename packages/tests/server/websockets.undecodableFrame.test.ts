@@ -23,11 +23,17 @@ function setup() {
   const t = initTRPC.context<{ connection: number }>().create();
   const pending = createDeferred<string>();
   const started = createDeferred<void>();
+  const other = createDeferred<string>();
+  const otherStarted = createDeferred<void>();
   const router = t.router({
     connection: t.procedure.query(({ ctx }) => ctx.connection),
     pending: t.procedure.query(() => {
       started.resolve();
       return pending.promise;
+    }),
+    other: t.procedure.query(() => {
+      otherStarted.resolve();
+      return other.promise;
     }),
   });
   let connections = 0;
@@ -53,6 +59,13 @@ function setup() {
     return { inFlight, id: ids[0] };
   }
 
+  /** Starts a second query the server answers once `answer` is called. */
+  async function startOtherQuery() {
+    const inFlight = ctx.client.other.query();
+    await otherStarted.promise;
+    return { inFlight, answer: (value: string) => other.resolve(value) };
+  }
+
   function sendFrame(frame: string) {
     for (const client of ctx.wss.clients) {
       client.send(frame);
@@ -60,8 +73,11 @@ function setup() {
   }
 
   return makeAsyncResource(
-    Object.assign(ctx, { startPendingQuery, sendFrame }),
-    async () => pending.resolve('done'),
+    Object.assign(ctx, { startPendingQuery, startOtherQuery, sendFrame }),
+    async () => {
+      pending.resolve('done');
+      other.resolve('done');
+    },
   );
 }
 
@@ -104,9 +120,12 @@ test('a response that can not be transformed fails only its request', async () =
 
   expect(await ctx.client.connection.query()).toBe(1);
   const { inFlight, id } = await ctx.startPendingQuery();
+  const other = await ctx.startOtherQuery();
   ctx.sendFrame(JSON.stringify({ id, error: {} }));
 
   await expect(inFlight).rejects.toMatchObject({ name: 'TRPCClientError' });
+  other.answer('answered');
+  expect(await other.inFlight).toBe('answered');
   expect(await ctx.client.connection.query()).toBe(1);
   expect(g.uncaught).toEqual([]);
 });

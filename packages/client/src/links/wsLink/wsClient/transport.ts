@@ -69,6 +69,12 @@ interface TransportApi {
    * `PONG` comes.
    */
   readonly fence: (fence: Fence) => void;
+  /**
+   * The connection's `connectionParams` message, or why it couldn't be made.
+   * It ends without either once the transport is disposed, since the user's
+   * promise may never settle.
+   */
+  readonly connectionParams: () => AsyncIterable<ConnectionEvent>;
 }
 
 /**
@@ -139,6 +145,18 @@ export function openTransport(opts: TransportOptions): Transport {
     }
   }
 
+  const disposed = new Promise<null>((resolve) =>
+    io.defer(() => resolve(null)),
+  );
+
+  async function* connectionParams(): AsyncGenerator<ConnectionEvent, void> {
+    const event = await Promise.race([
+      resolveConnectionParams(opts.urlOptions, opts.encoder),
+      disposed,
+    ]);
+    if (event) yield event;
+  }
+
   const isWritable = () => !io.disposed && ws?.readyState === READY_STATE.OPEN;
 
   const api: TransportApi = {
@@ -152,6 +170,7 @@ export function openTransport(opts: TransportOptions): Transport {
       return true;
     },
     fence: ping,
+    connectionParams,
   };
   return makeResource(api, () => {
     dispose(io);
@@ -227,24 +246,21 @@ function socketEvents(
   });
 }
 
-/** The connection's `connectionParams` message, or why it couldn't be made. */
-export async function* connectionParamsEvents(
+async function resolveConnectionParams(
   urlOptions: UrlOptionsWithConnectionParams,
   encoder: Encoder,
-): AsyncGenerator<ConnectionEvent, void> {
+): Promise<ConnectionEvent> {
   const { connectionParams } = urlOptions;
-  let event: ConnectionEvent;
   try {
-    event = {
+    return {
       type: 'paramsResolved',
       data: connectionParams
         ? await buildConnectionMessage(connectionParams, encoder)
         : null,
     };
   } catch (cause) {
-    event = { type: 'openFailed', cause };
+    return { type: 'openFailed', cause };
   }
-  yield event;
 }
 
 /**

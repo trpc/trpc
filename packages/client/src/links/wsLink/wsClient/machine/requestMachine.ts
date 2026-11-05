@@ -447,12 +447,12 @@ function onSubscriptionSent(
       ]);
     }
     case 'unsubscribe':
+    case 'clientClose':
+      // The socket may stay open for a query in flight.
       return settled(request, [
         stop(request, state.connection),
         complete(request),
       ]);
-    case 'clientClose':
-      return settled(request, [complete(request)]);
     case 'sendFailed':
       return settled(request, [
         fail(request, { kind: 'sendFailed', cause: event.cause }),
@@ -577,13 +577,12 @@ function onMoving(
       }
       return illegal(request, event);
     case 'unsubscribe':
+    case 'clientClose':
       return settled(request, [
         stop(request, state.from),
         stop(request, state.to),
         complete(request),
       ]);
-    case 'clientClose':
-      return settled(request, [complete(request)]);
     case 'sendFailed':
       return settled(request, [
         stop(request, state.from),
@@ -656,9 +655,8 @@ function onLeaving(
       if (event.to !== state.to) return { request, effects: [] };
       return { request: remaining, effects: [] };
     case 'unsubscribe':
-      return settled(request, [stop(request, state.to), complete(request)]);
     case 'clientClose':
-      return settled(request, [complete(request)]);
+      return settled(request, [stop(request, state.to), complete(request)]);
     case 'sendFailed':
       return settled(request, [
         fail(request, { kind: 'sendFailed', cause: event.cause }),
