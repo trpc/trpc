@@ -114,6 +114,19 @@ test('a maxDuration shorter than the default notice sends reconnect at once', as
   expect(stream.text).not.toContain('event: done');
 });
 
+test('a negative reconnectNotice counts as none: the stream still ends at maxDuration', async () => {
+  reset();
+  await using handler = make('a', {
+    maxDuration: '40 millis',
+    reconnectNotice: '-1 second',
+  });
+  const started = Date.now();
+  const stream = await open(handler);
+  await until(() => stream.ended);
+  expect(Date.now() - started).toBeLessThan(500);
+  expect(stream.text).toContain('event: reconnect');
+});
+
 test('a stream that starts during a drain is not asked to move, so its client stays; the handler ends it when it closes', async () => {
   reset();
   const handler = make('a');

@@ -92,8 +92,9 @@ export const makeHttpHandler = (
         ? undefined
         : {
             end: Duration.fromInputUnsafe(opts.sse.maxDuration),
-            notice: Duration.fromInputUnsafe(
-              opts.sse.reconnectNotice ?? '5 seconds',
+            notice: Duration.max(
+              Duration.zero,
+              Duration.fromInputUnsafe(opts.sse.reconnectNotice ?? '5 seconds'),
             ),
           },
     drains,

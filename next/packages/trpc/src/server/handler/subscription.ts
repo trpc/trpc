@@ -105,13 +105,13 @@ export const subscription: (
           // A stream that starts during a drain isn't asked to move, so a
           // client doesn't move back and forth to this server; it ends
           // when the handler closes.
+          // A client that stops reading can stall the notice, so the
+          // timeout bounds it too.
           const leave = handler.drains.add((timeout) =>
-            notice.pipe(
-              Effect.andThen(
-                Effect.timeoutOption(Deferred.await(left), timeout),
-              ),
-              Effect.andThen(Deferred.done(end, Exit.void)),
-            ),
+            Effect.timeoutOption(
+              Effect.andThen(notice, Deferred.await(left)),
+              timeout,
+            ).pipe(Effect.andThen(Deferred.done(end, Exit.void))),
           );
           if (leave) yield* Effect.addFinalizer(() => Effect.sync(leave));
           const lifetime = handler.sseLifetime;
@@ -120,12 +120,9 @@ export const subscription: (
               Duration.zero,
               Duration.subtract(lifetime.end, lifetime.notice),
             );
-            yield* notice.pipe(
-              Effect.delay(lead),
-              Effect.andThen(
-                Effect.sleep(Duration.min(lifetime.notice, lifetime.end)),
-              ),
-              Effect.andThen(Deferred.done(end, Exit.void)),
+            yield* Effect.forkScoped(Effect.delay(notice, lead));
+            yield* Deferred.done(end, Exit.void).pipe(
+              Effect.delay(lifetime.end),
               Effect.forkScoped,
             );
           }
