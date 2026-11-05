@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { hydrateCardDay } from './card-day.ts';
-
 import { deploymentOrigin, ogImageUrl, pageHead } from './seo.ts';
 import { site } from './site.ts';
 
@@ -93,7 +91,10 @@ describe('ogImageUrl', () => {
     );
   });
 
-  it("names the server's day in the browser, so the head hydrates unchanged", () => {
+  it("names the server's day in the browser, so the head hydrates unchanged", async () => {
+    vi.resetModules();
+    const { hydrateCardDay } = await import('./card-day.ts');
+    const { ogImageUrl } = await import('./seo.ts');
     vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
     vi.useFakeTimers({
       now: new Date('2026-11-07T00:00:00Z'),

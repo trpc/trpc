@@ -109,20 +109,20 @@ describe('sponsorCloudCacheControl', () => {
 
   it('caches it for good at its version when every avatar loaded, and has the READMEs check it each time', () => {
     expect(
-      sponsorCloudCacheControl({ avatars: all, bubbles, readme: false }),
+      sponsorCloudCacheControl({ avatars: all, bubbles, readmeSeconds: null }),
     ).toBe(immutableCacheControl);
     expect(
-      sponsorCloudCacheControl({ avatars: all, bubbles, readme: true }),
-    ).toBe('public, max-age=0, must-revalidate, s-maxage=86400');
+      sponsorCloudCacheControl({ avatars: all, bubbles, readmeSeconds: 60 }),
+    ).toBe('public, max-age=0, must-revalidate, s-maxage=60');
   });
 
   it('caches it briefly when an avatar is missing', () => {
-    for (const readme of [false, true]) {
+    for (const readmeSeconds of [null, 60]) {
       expect(
         sponsorCloudCacheControl({
           avatars: new Map([...all].slice(0, 1)),
           bubbles,
-          readme,
+          readmeSeconds,
         }),
       ).toBe('public, max-age=0, s-maxage=600');
     }

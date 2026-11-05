@@ -217,7 +217,7 @@ describe('serveOgImage', () => {
     );
   });
 
-  it("tags the READMEs' sponsor cloud with its version that day, so a cache checking it gets that day's avatars", async () => {
+  it("tags the READMEs' sponsor cloud with its version that day, until that day ends, so a cache checking it gets that day's avatars", async () => {
     vi.useFakeTimers({
       now: new Date('2026-11-05T12:00:00Z'),
       toFake: ['Date'],
@@ -227,7 +227,7 @@ describe('serveOgImage', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('etag')).toBe('"c10dc10dc1-20261105"');
     expect(response.headers.get('cache-control')).toBe(
-      'public, max-age=0, must-revalidate, s-maxage=86400',
+      'public, max-age=0, must-revalidate, s-maxage=43200',
     );
     vi.setSystemTime(new Date('2026-11-06T00:00:00Z'));
     expect((await get('/og/_/sponsor-cloud.png')).headers.get('etag')).toBe(

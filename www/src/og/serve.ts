@@ -30,7 +30,7 @@ export async function serveOgImage(request: Request) {
   const day = utcDay(now);
   if (url.pathname === sponsorCloudReadmePath) {
     return url.search === ''
-      ? sponsorCloudResponse(day)
+      ? sponsorCloudResponse({ day, seconds: untilTomorrow(now) })
       : redirectTo(sponsorCloudReadmePath, untilTomorrow(now));
   }
   const page = requestedPage(
@@ -83,12 +83,15 @@ const png = (
   });
 
 /**
- * The cloud, at the READMEs' URL on `readmeDay` or at its version
- * (`null`). At the READMEs', when it drew every avatar, its `ETag` is its
- * version on that day, so a cache checking it gets the avatars as they
- * are that day, not when the sponsors last changed.
+ * The cloud, at the READMEs' URL on `readme.day`, which the CDN keeps
+ * `readme.seconds`, until that day ends, or at its version (`null`). At
+ * the READMEs', when it drew every avatar, its `ETag` is its version on
+ * that day, so a cache checking it gets the avatars as they are that day,
+ * not when the sponsors last changed.
  */
-async function sponsorCloudResponse(readmeDay: string | null) {
+async function sponsorCloudResponse(
+  readme: { readonly day: string; readonly seconds: number } | null,
+) {
   const [{ renderSponsorCloud }, { fetchCloudAvatars }, { drawnSponsors }] =
     await Promise.all([
       import('./render.ts'),
@@ -105,10 +108,10 @@ async function sponsorCloudResponse(readmeDay: string | null) {
     sponsorCloudCacheControl({
       avatars,
       bubbles: layout.bubbles,
-      readme: readmeDay !== null,
+      readmeSeconds: readme?.seconds ?? null,
     }),
-    readmeDay !== null && complete
-      ? `"${dailyVersion(import.meta.env.SPONSOR_CLOUD_VERSION, readmeDay)}"`
+    readme !== null && complete
+      ? `"${dailyVersion(import.meta.env.SPONSOR_CLOUD_VERSION, readme.day)}"`
       : null,
   );
 }

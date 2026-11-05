@@ -109,14 +109,14 @@ export const sponsorCloudUrl = `${site.url}${sponsorCloudReadmePath}`;
 /**
  * How long the PNG is kept: ten minutes on the CDN when an avatar it draws
  * didn't load; otherwise for good at its version, and at the READMEs' URL
- * (`readme`) a day on the CDN, whose copy a deploy replaces, while camo
- * and browsers check it each time, which its `ETag`, its version that day,
- * makes cheap.
+ * on the CDN `readmeSeconds`, until the day its `ETag` names ends, while
+ * camo and browsers check it each time, which that `ETag` makes cheap.
  */
 export function sponsorCloudCacheControl(opts: {
   readonly avatars: ReadonlyMap<string, string>;
   readonly bubbles: ReadonlyArray<CloudBubble>;
-  readonly readme: boolean;
+  /** At the READMEs' URL, how long the CDN keeps it; `null` at its version. */
+  readonly readmeSeconds: number | null;
 }) {
   const missing = opts.bubbles.some(
     (bubble) => !opts.avatars.has(bubble.image),
@@ -124,7 +124,7 @@ export function sponsorCloudCacheControl(opts: {
   if (missing) {
     return 'public, max-age=0, s-maxage=600';
   }
-  return opts.readme
-    ? 'public, max-age=0, must-revalidate, s-maxage=86400'
-    : immutableCacheControl;
+  return opts.readmeSeconds === null
+    ? immutableCacheControl
+    : `public, max-age=0, must-revalidate, s-maxage=${opts.readmeSeconds}`;
 }
