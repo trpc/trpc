@@ -3,7 +3,6 @@ import { createRequire } from 'node:module';
 
 import { describe, expect, it } from 'vitest';
 
-import { ogImagePath } from '../seo.ts';
 import { partners } from '../sponsors.ts';
 import {
   colors,
@@ -59,16 +58,6 @@ describe('drawnBackers', () => {
     expect(
       drawnBackers({ ...card, backers: card.backers.slice(1) }, loaded('b')),
     ).toEqual([{ image: 'b', name: 'B' }]);
-  });
-});
-
-describe('ogImagePath', () => {
-  it('mirrors the page path under /og', () => {
-    expect(ogImagePath('/')).toBe('/og/index.png');
-    expect(ogImagePath('/docs/v10/client/links')).toBe(
-      '/og/docs/v10/client/links.png',
-    );
-    expect(ogImagePath('/docs/quickstart')).toBe('/og/docs/quickstart.png');
   });
 });
 

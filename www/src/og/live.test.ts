@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CardFooter, OgCard } from './card.ts';
 import { footerWith, png, serveAvatars, testAvatars } from './fake-avatars.ts';
 import { cacheControl, fetchStats, live, noLive } from './live.ts';
+import { immutableCacheControl } from './version.ts';
 
 const home: OgCard = { kind: 'home', path: '/' };
 
@@ -88,14 +89,14 @@ describe('live', () => {
 });
 
 describe('cacheControl', () => {
-  it('keeps the home card a day, and one missing a number ten minutes', () => {
+  it('keeps the home card for good, and one missing a number ten minutes', () => {
     expect(
       cacheControl(
         home,
         { avatars: new Map(), stats: { downloads: 1, stars: 1 } },
         footerWith(),
       ),
-    ).toContain('s-maxage=86400');
+    ).toBe(immutableCacheControl);
     expect(
       cacheControl(
         home,
@@ -105,13 +106,15 @@ describe('cacheControl', () => {
     ).toContain('s-maxage=600');
   });
 
-  it("keeps a post as a page, unless an author's avatar didn't load", async () => {
+  it("keeps a post for good, unless an author's avatar didn't load", async () => {
     await using server = await serveAvatars({ '/katt.png': png() });
     const post = postBy(server.url('/katt.png'));
     const fetched = await liveOf(post);
     expect(fetched.stats).toEqual({});
     expect([...fetched.avatars.keys()]).toEqual([server.url('/katt.png')]);
-    expect(cacheControl(post, fetched, footerWith())).toBeUndefined();
+    expect(cacheControl(post, fetched, footerWith())).toBe(
+      immutableCacheControl,
+    );
     expect(cacheControl(post, noLive, footerWith())).toContain('s-maxage=600');
   });
 
@@ -151,7 +154,7 @@ describe('cacheControl', () => {
         fetched,
         footerWith(partners.slice(0, 1), faces.slice(0, 1)),
       ),
-    ).toBeUndefined();
+    ).toBe(immutableCacheControl);
   });
 
   it("fetches each sponsor's avatar, and keeps the card briefly if one didn't load", async () => {
@@ -175,6 +178,6 @@ describe('cacheControl', () => {
         ...fetched,
         avatars: new Map([...fetched.avatars, [server.url('/b.png'), 'data:']]),
       }),
-    ).toBeUndefined();
+    ).toBe(immutableCacheControl);
   });
 });

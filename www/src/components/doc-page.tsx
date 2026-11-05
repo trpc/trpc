@@ -127,7 +127,7 @@ export function docHead(version: DocsVersion, slug: string) {
         '@type': 'TechArticle',
         description,
         headline: title,
-        image: ogImageUrl(path),
+        image: ogImageUrl(path, null),
         inLanguage: 'en',
         isPartOf: { '@type': 'WebSite', name: site.name, url: site.url },
         mainEntityOfPage: absoluteUrl(path),

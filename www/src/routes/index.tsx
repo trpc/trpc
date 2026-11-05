@@ -25,6 +25,7 @@ import { partners } from '~/sponsors.ts';
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
+import { utcDay } from '~/og/version.ts';
 import { pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
 import v11Define from '../../v11/home/step-1.md';
@@ -32,8 +33,12 @@ import v11Serve from '../../v11/home/step-2.md';
 import v11Call from '../../v11/home/step-3.md';
 
 export const Route = createFileRoute('/')({
-  head: () =>
+  // The day it's rendered on, which the page names its card for: in the
+  // HTML, and the same when the page hydrates.
+  loader: () => ({ cardDay: utcDay(new Date()) }),
+  head: ({ loaderData }) =>
     pageHead({
+      ...loaderData,
       description: site.description,
       markdownPath: '/index.md',
       path: '/',

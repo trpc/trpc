@@ -30,6 +30,7 @@ import {
 import {
   onDemandRoutes,
   pageCacheControl,
+  writeHomeRevalidation,
   writeOnDemandFunction,
 } from './on-demand.ts';
 import {
@@ -385,6 +386,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     `${JSON.stringify(config, null, 2)}\n`,
   );
   yield* writeOnDemandFunction(root, output);
+  yield* writeHomeRevalidation(output);
 });
 
 if (import.meta.main) {

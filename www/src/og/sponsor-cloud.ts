@@ -2,8 +2,10 @@
  * `/sponsor`'s cloud of sponsors as a PNG, for the READMEs
  * (`build/sponsors-readme.ts`): each sponsor a circle of their avatar,
  * packed as the page packs them (`components/sponsors/pack.ts`), on a
- * transparent background. `routes/og.$.ts` serves it at `sponsorCloudPath`,
- * with the avatars fetched on request (`live.ts`); `render.ts` draws it.
+ * transparent background. `og/serve.ts` serves it at `sponsorCloudUrl`
+ * for the READMEs, and at its version as an image that isn't a page's
+ * (`og/version.ts`), with the avatars fetched on request (`live.ts`);
+ * `render.ts` draws it.
  *
  * The build scripts import this with Node, so it imports nothing through
  * `~/`.
@@ -12,7 +14,19 @@ import { cloudPadding, packSponsors } from '../components/sponsors/pack.ts';
 import { site } from '../site.ts';
 import { avatarUrl, type Sponsor, sponsorKey } from '../sponsors.ts';
 
-export const sponsorCloudPath = '/og/sponsor-cloud.png';
+import { immutableCacheControl, notAPage, ogImagePath } from './version.ts';
+
+/** The cloud as an image that isn't a page's: `/og/_/sponsor-cloud/<version>.png`. */
+export const sponsorCloudPage = notAPage('sponsor-cloud');
+
+/**
+ * Where the READMEs show it, which never changes: its path without a
+ * version, which `og/serve.ts` answers with the current cloud rather than
+ * redirect, as GitHub's image proxy (camo, which npm's READMEs use too)
+ * keeps a redirect's target by the README's URL, with the target's
+ * caching.
+ */
+export const sponsorCloudReadmePath = ogImagePath(sponsorCloudPage, '');
 
 /** The PNG's width in pixels: twice the width the READMEs show it at. */
 export const sponsorCloudWidth = 1200;
@@ -74,54 +88,42 @@ export function cloudLayout(sponsors: ReadonlyArray<Sponsor>): CloudLayout {
   };
 }
 
-/** 32-bit FNV-1a, as 8 hex digits. */
-const fnv1a = (text: string) => {
-  let hash = 0x81_1c_9d_c5;
-  for (const byte of new TextEncoder().encode(text)) {
-    hash = Math.imul(hash ^ byte, 0x01_00_01_93) >>> 0;
-  }
-  return hash.toString(16).padStart(8, '0');
-};
-
 /**
- * What the PNG draws of `sponsors`, as a short hash: it changes when one
- * joins or leaves, or their weight, avatar URL or name does. GitHub keeps
- * an avatar's URL when its picture changes, so a new picture shows once
- * the CDN's copy expires, within a day, as on the social cards.
+ * What the PNG draws of `sponsors`, as text, which its version hashes
+ * with the renderer (`sponsorCloudVersion` in `build/og-cards.ts`): it
+ * changes when one joins or leaves, or their weight, avatar URL or name
+ * does. GitHub keeps an avatar's URL when its picture changes, so a new
+ * picture shows from the next deploy, as on the social cards.
  */
-export const sponsorCloudVersion = (sponsors: ReadonlyArray<Sponsor>) =>
-  fnv1a(
-    drawn(sponsors)
-      .map(
-        (sponsor) =>
-          `${sponsorKey(sponsor)} ${sponsor.weight} ${sponsor.imgSrc} ${sponsor.name}`,
-      )
-      .join('\n'),
-  );
+export const sponsorCloudSource = (sponsors: ReadonlyArray<Sponsor>) =>
+  drawn(sponsors)
+    .map(
+      (sponsor) =>
+        `${sponsorKey(sponsor)} ${sponsor.weight} ${sponsor.imgSrc} ${sponsor.name}`,
+    )
+    .join('\n');
+
+/** Where the READMEs show the PNG: absolute, so it draws on npm. */
+export const sponsorCloudUrl = `${site.url}${sponsorCloudReadmePath}`;
 
 /**
- * Where the READMEs show the PNG of `sponsors`: absolute, so it draws on
- * npm, and with `?v=` their version, so GitHub's image proxy fetches it
- * again when the sponsors change rather than keep the last one.
- */
-export const sponsorCloudUrl = (sponsors: ReadonlyArray<Sponsor>) =>
-  `${site.url}${sponsorCloudPath}?v=${sponsorCloudVersion(sponsors)}`;
-
-/**
- * How long the CDN keeps the PNG: ten minutes when an avatar it draws
- * didn't load, or when `requested` asks for another version than
- * `current`'s (a README from just before a deploy, or a package's on npm
- * from an older one), and as a page otherwise (`undefined`).
+ * How long the PNG is kept: ten minutes on the CDN when an avatar it draws
+ * didn't load; otherwise for good at its version, and at the READMEs' URL
+ * (`readme`) a day on the CDN, whose copy a deploy replaces, while camo
+ * and browsers check it each time, which its `ETag` makes cheap.
  */
 export function sponsorCloudCacheControl(opts: {
   readonly avatars: ReadonlyMap<string, string>;
   readonly bubbles: ReadonlyArray<CloudBubble>;
-  readonly current: string;
-  readonly requested: string | null;
+  readonly readme: boolean;
 }) {
-  const stale = opts.requested !== null && opts.requested !== opts.current;
   const missing = opts.bubbles.some(
     (bubble) => !opts.avatars.has(bubble.image),
   );
-  return stale || missing ? 'public, max-age=0, s-maxage=600' : undefined;
+  if (missing) {
+    return 'public, max-age=0, s-maxage=600';
+  }
+  return opts.readme
+    ? 'public, max-age=0, must-revalidate, s-maxage=86400'
+    : immutableCacheControl;
 }
