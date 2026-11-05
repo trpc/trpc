@@ -1918,6 +1918,60 @@ describe('a server-requested reconnect drains the old socket', () => {
   });
 });
 
+/**
+ * Holds back the frames `socket` gets or sends that match, until released.
+ * `later`: whether the frames after a held one pass it, or wait behind it as
+ * they would on a backed-up socket, `PING` and `PONG` included.
+ */
+function holdFrames(
+  socket: WebSocket,
+  direction: 'received' | 'sent',
+  {
+    matches,
+    later,
+  }: { matches: (message: any) => boolean; later: 'pass' | 'wait' },
+) {
+  const held: (() => void)[] = [];
+  let holding = true;
+  const holds = (message: unknown) =>
+    holding &&
+    ((later === 'wait' && held.length > 0) ||
+      (message !== null && matches(message)));
+  const parse = (raw: unknown) => {
+    const text = String(raw);
+    return text === 'PING' || text === 'PONG' ? null : JSON.parse(text);
+  };
+  if (direction === 'received') {
+    const emit = socket.emit.bind(socket);
+    socket.emit = ((name: string, ...args: unknown[]) => {
+      if (name !== 'message') return emit(name, ...args);
+      const message = parse(args[0]);
+      if (holds(message)) {
+        held.push(() => emit(name, ...args));
+        return true;
+      }
+      return emit(name, ...args);
+    }) as typeof socket.emit;
+  } else {
+    const send = socket.send.bind(socket);
+    socket.send = ((data: unknown, ...args: unknown[]) => {
+      const message = parse(data);
+      if (holds(message)) {
+        held.push(() => (send as any)(data, ...args));
+        return;
+      }
+      (send as any)(data, ...args);
+    }) as typeof socket.send;
+  }
+  return {
+    count: () => held.length,
+    release() {
+      holding = false;
+      for (const frame of held.splice(0)) frame();
+    },
+  };
+}
+
 describe('a server-requested reconnect hands subscriptions off', () => {
   function setup() {
     const t = initTRPC.create();
@@ -2958,12 +3012,13 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('an untracked subscription gets the events the old socket sent before it was stopped there', async () => {
+  test("an untracked subscription gets an event only the old socket had, even when it arrives after the new socket's started", async () => {
     const {
       ctx,
       ee,
       valuesStarted,
       receivedFor,
+      stopsOn,
       observe,
       waitForOpen,
       holdSubscriptions,
@@ -2976,6 +3031,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       onData: (value) => seen.push(value),
     });
     let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let oldFrames: ReturnType<typeof holdFrames> | undefined;
     try {
       await vi.waitFor(() => {
         expect(valuesStarted).toHaveBeenCalledTimes(1);
@@ -2986,16 +3042,24 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(receivedFor('values')).toHaveLength(2);
       });
-      // The old socket's frames now arrive after the new socket's.
-      const send = oldServerSocket.send.bind(oldServerSocket) as (
-        ...args: unknown[]
-      ) => void;
-      Object.assign(oldServerSocket, {
-        send: (...args: unknown[]) => setTimeout(() => send(...args), 50),
+      // The old socket is backed up: its frames arrive late, in order.
+      oldFrames = holdFrames(oldServerSocket, 'sent', {
+        matches: (message) => 'result' in message,
+        later: 'wait',
       });
-      // Only the old socket listens yet.
+      // Only the old socket listens, so only it has 1.
       ee.emit('value', 1);
+      await vi.waitFor(() => {
+        expect(oldFrames!.count()).toBe(1);
+      });
       held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(valuesStarted).toHaveBeenCalledTimes(2);
+        expect(ee.listenerCount('value')).toBe(1);
+      });
+
+      oldFrames.release();
       await vi.waitFor(() => {
         expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
       });
@@ -3005,6 +3069,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       });
       expect(seen).toEqual(['pending', 'started', 1, 2]);
     } finally {
+      oldFrames?.release();
       held?.resolve();
       subscription.unsubscribe();
       await ctx.wsClient.close();
