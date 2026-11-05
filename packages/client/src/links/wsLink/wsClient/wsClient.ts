@@ -268,6 +268,10 @@ export class WsClient {
         // A subscription sent again after its socket was lost has a new id.
         const { id } = message;
         const pending = this.requestManager.getPendingRequest(id);
+        // Under its earlier ids, it may still be draining other sockets.
+        const draining = this.requestManager
+          .getDrainingRequests()
+          .filter((request) => request.message === message);
         abort();
 
         if (type === 'subscription' && pending) {
@@ -275,8 +279,10 @@ export class WsClient {
           this.stopSubscription(id, pending.successor);
         }
         this.closeIfDrained(pending?.ws);
-        for (const earlier of pending?.movedFrom ?? []) {
-          this.closeIfDrained(earlier);
+        for (const request of [pending, ...draining]) {
+          for (const earlier of request?.movedFrom ?? []) {
+            this.closeIfDrained(earlier);
+          }
         }
 
         signal?.removeEventListener('abort', onAbort);
