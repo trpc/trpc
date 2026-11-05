@@ -3278,6 +3278,80 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('a subscription moving to a socket that a newer one replaces is stopped there, and can be sent there again', async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      slowResult,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+      setRetryDelayMs,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let slow: Promise<string> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(2);
+      });
+      const { socket: replaced, id } = receivedFor('events')[1]!;
+      // Keeps the replaced socket open.
+      slow = ctx.client.slow.query();
+      await vi.waitFor(() => {
+        expect(receivedFor('slow')).toHaveLength(1);
+      });
+      expect(receivedFor('slow')[0]!.socket).toBe(replaced);
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(3);
+        expect(stopsOn(replaced)).toEqual([id]);
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+      });
+
+      setRetryDelayMs(10_000);
+      receivedFor('events')[2]!.socket.terminate();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(4);
+      });
+      expect(receivedFor('events')[3]!.socket).toBe(replaced);
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 'started', 2]);
+    } finally {
+      held?.resolve();
+      slowResult.resolve('cleanup');
+      await slow?.catch(() => null);
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test("an untracked subscription gets an event only the old socket had, even when it arrives after the new socket's started", async () => {
     const {
       ctx,

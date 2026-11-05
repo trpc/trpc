@@ -441,6 +441,8 @@ export class WsClient {
     if (subscriptions.length) {
       this.send(subscriptions.map(({ message }) => message));
       for (const request of subscriptions) {
+        // The socket it was moving to hasn't started it, and won't be used.
+        this.stopSubscription(request.message.id, request.successor);
         if (request.ws && request.ws.readyState === request.ws.OPEN) {
           request.successor = ws;
           request.overlapEventIds = new Set();
