@@ -2769,6 +2769,63 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('the old socket closing while a subscription moves leaves it on the new one with no gap or duplicate', async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      receivedFor,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(2);
+      });
+      push(2);
+      push(3);
+      await vi.waitFor(() => {
+        expect(seen).toContain(3);
+      });
+
+      oldServerSocket.terminate();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      push(4);
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(seen).toContain(4);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2, 3, 4]);
+      expect(eventsSubscribed.mock.calls).toEqual([[null], ['1']]);
+      expect(receivedFor('events')).toHaveLength(2);
+    } finally {
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test('wsClient.close() during the handoff closes both sockets', async () => {
     const {
       ctx,

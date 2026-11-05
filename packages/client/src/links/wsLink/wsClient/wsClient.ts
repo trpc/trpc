@@ -438,6 +438,8 @@ export class WsClient {
           request.successor = ws;
           request.overlapEventIds = new Set();
         } else {
+          // Its socket was lost, so it starts again.
+          this.started.delete(request.message);
           request.ws = ws;
           request.successor = null;
         }
@@ -541,6 +543,7 @@ export class WsClient {
       if (ws === this.activeConnection.ws || this.reconnecting) return;
 
       for (const { message, callbacks } of lost) {
+        this.started.delete(message);
         this.requestManager.requeue(message);
         this.flushOutgoing(message, callbacks);
       }
@@ -654,12 +657,13 @@ export class WsClient {
     const result = 'result' in message ? message.result : null;
     if (request.successor === ws) {
       this.confirmMove(request);
-      // The subscriber doesn't see the move.
-      if (result?.type === 'started' && this.started.has(request.message)) {
-        return;
-      }
     } else if (request.ws !== ws) {
       // A subscription moved to a new socket ignores the old one's frames.
+      return;
+    }
+    // The subscriber doesn't see a move, even one its old socket didn't
+    // live to finish.
+    if (result?.type === 'started' && this.started.has(request.message)) {
       return;
     }
 
