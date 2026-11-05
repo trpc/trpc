@@ -2295,16 +2295,13 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(seen).toContain(1);
       });
-      // A request sent now waits for the new socket.
-      const greeting = ctx.client.greeting.query();
-      await sleep(50);
-      expect(receivedFor('greeting')).toEqual([]);
+      // A request sent now goes to the old socket.
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(receivedFor('greeting')[0]!.socket).toBe(oldServerSocket);
       expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
       expect(ctx.wsClient.connection!.ws).toBe(oldClientSocket);
 
       release.resolve();
-      expect(await greeting).toBe('hello');
-      expect(receivedFor('greeting')[0]!.socket).not.toBe(oldServerSocket);
       await vi.waitFor(() => {
         expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
       });
@@ -2356,16 +2353,10 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(seen).toContain(1);
       });
-      const greeting = ctx.client.greeting.query();
-      await sleep(50);
-      expect(receivedFor('greeting')).toEqual([]);
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(receivedFor('greeting')[0]!.socket).toBe(oldServerSocket);
       expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
-      // `connecting` reports repeated failures, but nothing has stopped.
-      expect(seen.filter((entry) => entry !== 'connecting')).toEqual([
-        'pending',
-        'started',
-        1,
-      ]);
+      expect(seen).toEqual(['pending', 'started', 1]);
 
       oldServerSocket.terminate();
       failConnectionParams(false);
@@ -2374,7 +2365,6 @@ describe('a server-requested reconnect hands subscriptions off', () => {
         expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
       });
       release.resolve();
-      expect(await greeting).toBe('hello');
       await vi.waitFor(() => {
         expect(valuesStarted).toHaveBeenCalledTimes(2);
       });
@@ -2391,17 +2381,18 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test('the third failed attempt to replace an open socket reports its error', async () => {
+  test('failed attempts to replace an open socket leave it serving every request', async () => {
     const {
       ctx,
       ee,
       valuesStarted,
+      onOpen,
       receivedFor,
       waitForOpen,
       failConnectionParams,
     } = setup();
     await using _ctx = ctx;
-    await waitForOpen();
+    const { oldServerSocket } = await waitForOpen();
     const states: { state: string; error: unknown }[] = [];
     const data: number[] = [];
     const onStarted = vi.fn();
@@ -2418,41 +2409,26 @@ describe('a server-requested reconnect hands subscriptions off', () => {
 
       failConnectionParams(true);
       ctx.wssHandler.broadcastReconnectNotification();
+      // Three replacements open and fail sending connectionParams.
       await vi.waitFor(() => {
-        expect(states.map(({ state }) => state)).toContain('connecting');
+        expect(onOpen.mock.calls.length).toBeGreaterThanOrEqual(4);
       });
-      expect(states.slice(0, 2)).toEqual([
-        { state: 'pending', error: null },
-        {
-          state: 'connecting',
-          error: expect.objectContaining({
-            cause: expect.objectContaining({
-              cause: expect.objectContaining({
-                message: 'token unavailable (3)',
-              }),
-            }),
-          }),
-        },
-      ]);
-
-      // The old socket still serves, and new requests wait for its successor.
       ee.emit('value', 1);
       await vi.waitFor(() => {
         expect(data).toEqual([1]);
       });
-      const greeting = ctx.client.greeting.query();
-      await sleep(50);
-      expect(receivedFor('greeting')).toEqual([]);
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(receivedFor('greeting')[0]!.socket).toBe(oldServerSocket);
 
       failConnectionParams(false);
-      expect(await greeting).toBe('hello');
       await vi.waitFor(() => {
         expect(valuesStarted).toHaveBeenCalledTimes(2);
-        expect(states.at(-1)).toEqual({ state: 'pending', error: null });
       });
-      expect(new Set(states.slice(1, -1).map(({ state }) => state))).toEqual(
-        new Set(['connecting']),
-      );
+      ee.emit('value', 2);
+      await vi.waitFor(() => {
+        expect(data).toEqual([1, 2]);
+      });
+      expect(states).toEqual([{ state: 'pending', error: null }]);
       expect(onStarted).toHaveBeenCalledTimes(1);
     } finally {
       failConnectionParams(false);

@@ -31,12 +31,6 @@ import type { WebSocketConnectionOptions } from './wsConnection';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
- * How many attempts to replace a socket that's still open may fail before
- * the `connecting` state reports the error.
- */
-const silentReplacementFailures = 3;
-
-/**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
  */
@@ -59,7 +53,8 @@ export class WsClient {
   private readonly connectionOptions: WebSocketConnectionOptions;
   /**
    * The connection new requests are sent on. A reconnect replaces it only
-   * once the new connection is fully open, `connectionParams` included.
+   * once the new connection is fully open, `connectionParams` included, so
+   * until then requests keep going to the old one.
    */
   private activeConnection: WsConnection;
   private readonly reconnectRetryDelay: (attemptIndex: number) => number;
@@ -165,6 +160,8 @@ export class WsClient {
           cause: error,
         }),
       );
+      // A socket whose `connectionParams` failed is open, but not usable.
+      await this.activeConnection.close().catch(() => null);
       return this.reconnecting;
     }
   }
@@ -273,6 +270,7 @@ export class WsClient {
 
         if (type === 'subscription' && pending) {
           this.stopSubscription(id, pending.ws);
+          this.stopSubscription(id, pending.successor);
         }
         this.closeIfDrained(pending?.ws);
 
@@ -317,17 +315,11 @@ export class WsClient {
   private connectionRejected = false;
   /** Subscriptions whose subscriber has seen `started`. */
   private readonly started = new WeakSet<TRPCClientOutgoingMessage>();
-  /**
-   * Subscriptions resubscribed while their old socket was still open. The
-   * subscriber already saw them start, so the new socket's `started` is
-   * dropped.
-   */
-  private readonly handedOff = new WeakSet<TRPCClientOutgoingMessage>();
 
   /**
-   * Opens a new connection, retrying until one opens. Requests in flight on
-   * the current socket keep it open, and keep being served by it, until the
-   * new one is fully open, `connectionParams` included.
+   * Opens a new connection, retrying until one opens. While the current
+   * socket is open, it keeps serving every request, new ones included, until
+   * the new one is fully open, `connectionParams` included.
    *
    * @param closedError - Why the current socket was lost, or `null` when it's
    * still open and serving requests, e.g. on a server-requested reconnect.
@@ -348,21 +340,11 @@ export class WsClient {
     }
     if (this.reconnecting) return;
 
-    /**
-     * @param failures - The attempts that have failed since the reconnect
-     * began.
-     */
-    const tryReconnect = async (attemptIndex: number, failures: number) => {
+    const tryReconnect = async (attemptIndex: number) => {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
-          // Only a socket that had nothing on it when the reconnect began is
-          // closed before its replacement opens.
           const previous = this.activeConnection;
-          if (failures === 0 && !this.hasRequestsOn(previous.ws)) {
-            await previous.close();
-          }
-
           const next = this.createConnection();
           this.nextConnection = next;
           try {
@@ -384,16 +366,9 @@ export class WsClient {
         }
         this.reconnecting = null;
       } catch (error) {
-        // While the old socket is open, its subscriptions keep delivering and
-        // its queries and mutations keep running, so a failed attempt to
-        // replace it is surfaced only once several have failed in a row.
-        // Requests sent since wait for a replacement either way, as they do
-        // while a lost socket is reopened.
-        if (
-          this.allowReconnect &&
-          (!this.activeConnection.isOpen() ||
-            failures + 1 >= silentReplacementFailures)
-        ) {
+        // While the old socket is open, it keeps serving every request, so a
+        // failed attempt to replace it isn't surfaced.
+        if (this.allowReconnect && !this.activeConnection.isOpen()) {
           callUserCallback(() =>
             this.connectionState.next({
               type: 'state',
@@ -407,20 +382,20 @@ export class WsClient {
             }),
           );
         }
-        await tryReconnect(attemptIndex + 1, failures + 1);
+        await tryReconnect(attemptIndex + 1);
       }
     };
 
     this.reconnecting = tryReconnect(
       this.connectionRejected ? this.connectionAttemptIndex + 1 : 0,
-      0,
     );
   }
 
   /**
    * Moves the pending subscriptions to the active socket, which has just
-   * opened: each is resubscribed with the id of the last event it delivered,
-   * then stopped on its old socket, whose later messages for it are dropped.
+   * opened: each is resubscribed with the id of the last event it delivered.
+   * A subscription whose old socket is still open keeps delivering from it
+   * until the new socket confirms it with `started`; see `confirmMove()`.
    * Closes the previous socket once nothing is left on it.
    */
   private handOff(previous: WebSocket | null) {
@@ -444,23 +419,36 @@ export class WsClient {
         (request) =>
           request.message.method === 'subscription' && request.ws !== ws,
       );
-    const retired = new Set([previous]);
     if (subscriptions.length) {
       this.send(subscriptions.map(({ message }) => message));
       for (const request of subscriptions) {
-        if (
-          this.stopSubscription(request.message.id, request.ws) &&
-          this.started.has(request.message)
-        ) {
-          this.handedOff.add(request.message);
+        if (request.ws && request.ws.readyState === request.ws.OPEN) {
+          request.successor = ws;
+          request.overlapEventIds = new Set();
+        } else {
+          request.ws = ws;
+          request.successor = null;
         }
-        retired.add(request.ws);
-        request.ws = ws;
       }
     }
-    for (const socket of retired) {
-      this.closeIfDrained(socket);
-    }
+    this.closeIfDrained(previous);
+  }
+
+  /**
+   * Completes a subscription's move once its new socket has confirmed it:
+   * stops it on the old socket, whose later messages for it are dropped, and
+   * closes that socket once nothing is left on it.
+   */
+  private confirmMove(request: {
+    message: TRPCClientOutgoingMessage;
+    ws: WebSocket | null;
+    successor: WebSocket | null;
+  }) {
+    const previous = request.ws;
+    request.ws = request.successor;
+    request.successor = null;
+    this.stopSubscription(request.message.id, previous);
+    this.closeIfDrained(previous);
   }
 
   private hasRequestsOn(ws: WebSocket | null) {
@@ -531,7 +519,13 @@ export class WsClient {
      * the active socket.
      */
     const handleCloseOrError = (cause: unknown) => {
-      const lost = this.failPendingRequests(ws, cause);
+      const lost = this.failPendingRequests(ws, cause).filter((request) => {
+        if (!request.successor) return true;
+        // Its new socket has it already.
+        request.ws = request.successor;
+        request.successor = null;
+        return false;
+      });
       if (ws === this.activeConnection.ws || this.reconnecting) return;
 
       for (const { message, callbacks } of lost) {
@@ -644,14 +638,27 @@ export class WsClient {
 
   private handleResponseMessage(message: TRPCResponseMessage, ws: WebSocket) {
     const request = this.requestManager.getPendingRequest(message.id);
-    // A subscription moved to a new socket ignores the old one's late frames.
-    if (request?.ws !== ws) return;
-    if (
-      'result' in message &&
-      message.result.type === 'started' &&
-      this.handedOff.delete(request.message)
-    ) {
+    if (!request) return;
+    const result = 'result' in message ? message.result : null;
+    if (request.successor === ws) {
+      this.confirmMove(request);
+      // The subscriber doesn't see the move.
+      if (result?.type === 'started' && this.started.has(request.message)) {
+        return;
+      }
+    } else if (request.ws !== ws) {
+      // A subscription moved to a new socket ignores the old one's frames.
       return;
+    }
+
+    if (result?.type === 'data' && result.id !== undefined) {
+      const eventId = String(result.id);
+      if (request.successor) {
+        request.overlapEventIds?.add(eventId);
+      } else if (request.overlapEventIds?.delete(eventId)) {
+        // Already delivered by the old socket.
+        return;
+      }
     }
 
     callUserCallback(() => request.callbacks.next(message));
@@ -720,16 +727,13 @@ export class WsClient {
     callbacks: TCallbacks,
   ) {
     run(async () => {
-      // During a reconnect, requests wait for the new socket rather than
-      // going to the old one.
+      // During a reconnect, requests go to the old socket while it's open.
       do {
-        if (this.reconnecting) {
-          await this.reconnecting;
-        } else if (!this.activeConnection.isOpen()) {
+        if (!this.activeConnection.isOpen()) {
           await this.open();
         }
         await sleep(0);
-      } while (this.reconnecting);
+      } while (!this.activeConnection.isOpen() && this.reconnecting);
 
       if (!this.requestManager.hasOutgoingRequests()) return;
       // Another run already sent this request. Each queued request's own run

@@ -28,6 +28,16 @@ interface Request {
    * The socket the request was sent on, or `null` while it's outgoing.
    */
   ws: WebSocket | null;
+  /**
+   * The socket a subscription is moving to. `ws` keeps delivering until this
+   * one confirms the subscription with `started`.
+   */
+  successor: WebSocket | null;
+  /**
+   * The event ids `ws` delivered while the subscription was moving, which
+   * its successor replays and are dropped from it.
+   */
+  overlapEventIds: Set<string> | null;
 }
 
 /**
@@ -67,6 +77,8 @@ export class RequestManager {
       message,
       end,
       ws: null,
+      successor: null,
+      overlapEventIds: null,
       callbacks: {
         next: callbacks.next,
         complete: () => {
@@ -121,6 +133,7 @@ export class RequestManager {
 
     for (const request of requests) {
       request.ws = ws;
+      request.successor = null;
       this.pendingRequests[request.id] = request;
     }
     return requests;
@@ -135,7 +148,7 @@ export class RequestManager {
     if (request?.message !== message) return;
 
     delete this.pendingRequests[id];
-    this.outgoingRequests.push({ ...request, id, ws: null });
+    this.outgoingRequests.push({ ...request, id, ws: null, successor: null });
   }
 
   /**
