@@ -547,7 +547,12 @@ export const connectionReceiver: (
             return conn.send({ type: 'pong' });
           case 'abort':
             opts.unpark?.(message.id);
-            return FiberMap.remove(calls, message.id);
+            if (!FiberMap.hasUnsafe(calls, message.id)) return Effect.void;
+            // Once the call has stopped: a client moving an untracked
+            // subscription delivers the old connection's events until then.
+            return FiberMap.remove(calls, message.id).pipe(
+              Effect.andThen(conn.send({ id: message.id, type: 'done' })),
+            );
           case 'request': {
             if (refused) return Effect.void;
             if (

@@ -349,6 +349,24 @@ test('the server confirms a subscription with started once its resolver has run,
   client.socket.close();
 });
 
+test('the server confirms an aborted subscription with done, once its resolver has stopped', async () => {
+  reset();
+  await using a = await start('a');
+  const client = await raw(a.wsUrl);
+  client.send({
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'feed',
+  });
+  const forCall = () => client.messages.filter((m) => m['id'] === 1);
+  await until(() => forCall().length === 1);
+  client.send({ id: 1, type: 'abort' });
+  await until(() => forCall().length === 2);
+  expect(forCall().map((m) => m['type'])).toEqual(['started', 'done']);
+  client.socket.close();
+});
+
 test('wsLink keeps sending calls to a draining server until the next one is ready, and the server answers them', async () => {
   reset();
   await using a = await start('a');

@@ -38,8 +38,11 @@ import { ok, type Transport } from './transport.ts';
  * a new stream opens from the last event id while the old one keeps
  * delivering, and the old one is left once the new one sends anything
  * (`connected` first). The new one resends what the old one delivered
- * meanwhile, and each such event is dropped once by its id; events
- * without ids may arrive twice. A new stream that fails leaves the old
+ * meanwhile, and each such event is dropped once by its id. A
+ * subscription with no event id to resume from can't be resent what the
+ * old stream delivered before the new one listened, so the old one keeps
+ * delivering until it ends, and events may arrive twice. A new stream
+ * that fails leaves the old
  * one delivering and is tried again with `reconnect.delay`, for as long
  * as the old one lasts.
  */
@@ -131,7 +134,11 @@ export function makeSubscriptions(
               const scope = yield* Scope.fork(parent);
               const decoder = makeDeferredDecoder(transport.transformer);
               yield* Scope.addFinalizer(scope, decoder.close);
-              const leg: Leg = { scope, decoder };
+              const leg: Leg = {
+                scope,
+                decoder,
+                resumes: Boolean(lastEventId),
+              };
               const lost = (signal: Omit<Lost, 'leg'>) =>
                 Queue.offer(inbox, { leg, ...signal });
               yield* Effect.gen(function* () {
@@ -172,6 +179,8 @@ export function makeSubscriptions(
           let pending: Leg | undefined;
           /** The stream a server asked to leave, while it still delivers. */
           let leaving: Leg | undefined;
+          /** Streams an untracked move left, which deliver until they end. */
+          const kept = new Set<Leg>();
           let failures = 0;
           /**
            * The ids `active` delivered since `pending` opened, which the
@@ -197,6 +206,17 @@ export function makeSubscriptions(
               continue;
             }
             const { leg } = signal;
+            if (kept.has(leg)) {
+              const handled =
+                'event' in signal
+                  ? yield* Effect.exit(read(signal.event, leg.decoder))
+                  : Exit.succeed(true);
+              if (Exit.isFailure(handled) || handled.value) {
+                kept.delete(leg);
+                yield* end(leg);
+              }
+              continue;
+            }
             if (leg === pending) {
               pending = undefined;
               if (!('event' in signal)) {
@@ -208,7 +228,8 @@ export function makeSubscriptions(
                 );
                 continue;
               }
-              yield* end(active);
+              if (leg.resumes) yield* end(active);
+              else kept.add(active);
               active = leg;
               leaving = undefined;
               failures = 0;
@@ -275,6 +296,8 @@ export function makeSubscriptions(
 interface Leg {
   readonly scope: Scope.Closeable;
   readonly decoder: DeferredDecoder;
+  /** Opened with `Last-Event-ID`: the server resends what came after it. */
+  readonly resumes: boolean;
 }
 
 /**

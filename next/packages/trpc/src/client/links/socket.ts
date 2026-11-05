@@ -133,8 +133,13 @@ interface Leg {
   readonly id: number;
   /** Holds `conn` open; closing it sends `abort` unless the call is `complete`. */
   readonly scope: Scope.Closeable;
-  /** The server ended the call on this leg. */
+  /** The server ended the call on this leg, or it was sent `abort`. */
   complete: boolean;
+  /**
+   * Sent with a `lastEventId`: the server resends what came after it, so
+   * moving the call here can stop it on the old connection at once.
+   */
+  readonly resumes: boolean;
 }
 
 const isLeg = (value: Leg | 'stale' | Unopened): value is Leg =>
@@ -150,11 +155,15 @@ const movesLeft = (conn: Connection) => {
   return false;
 };
 
+const notifyMoved = (conn: Connection) => {
+  if (conn.moved && !movesLeft(conn))
+    Deferred.doneUnsafe(conn.moved, Effect.void);
+};
+
 /** Removes call `id` from `conn`, telling a waiting supervisor when no subscription is left to move. */
 const leave = (conn: Connection, id: number) => {
   conn.calls.delete(id);
-  if (conn.moved && !movesLeft(conn))
-    Deferred.doneUnsafe(conn.moved, Effect.void);
+  notifyMoved(conn);
 };
 
 interface Call {
@@ -593,11 +602,13 @@ function makeSocketLink(
    * On `Handover`, a subscription subscribes on the successor from the
    * last event it handled, and stays on the old connection, which keeps
    * delivering, until the successor's first message for it (`started`, or
-   * any other). Then it's stopped on the old one, whose later messages for
-   * it are dropped. The successor resends the events the old one delivered
-   * meanwhile, and each is dropped once by its id; events without ids
-   * can't be matched, so they may arrive twice. If the successor drops or
-   * fails first, the call stays where it was.
+   * any other). Then it's stopped on the old one. The successor resends the
+   * events the old one delivered meanwhile, and each is dropped once by its
+   * id. A subscription that had no event id to resume from can't be resent
+   * what the old one delivered before the successor listened, so the old
+   * one's events, which can arrive twice, are delivered until it confirms
+   * the stop with `done` or is lost. If the successor drops or fails first,
+   * the call stays where it was.
    */
   const attach = Effect.fnUntraced(function* (
     call: Call,
@@ -648,7 +659,14 @@ function makeSocketLink(
         yield* release;
         return yield* Effect.fail(conn.refused);
       }
-      const leg: Leg = { conn, id, scope: legScope, complete: false };
+      const leg: Leg = {
+        conn,
+        id,
+        scope: legScope,
+        complete: false,
+        resumes:
+          request.type === 'request' && request.lastEventId !== undefined,
+      };
       yield* Scope.addFinalizer(
         legScope,
         Effect.sync(() => {
@@ -680,6 +698,25 @@ function makeSocketLink(
      * the successor sends again: it resumes from before them.
      */
     let overlap = new Set<string>();
+    /** Legs a move stopped that deliver until the server confirms it, by id. */
+    const leaving = new Map<CallMessage['id'], Leg>();
+    const stopped = (leg: Leg) =>
+      Effect.suspend(() => {
+        leaving.delete(leg.id);
+        return end(leg);
+      });
+    /**
+     * A move left `leg`. Its events with deferred values are dropped: the
+     * call's decoder now belongs to the successor's.
+     */
+    const fromLeaving = (leg: Leg, message: CallMessage) => {
+      if (message.type === 'done' || message.type === 'error') {
+        return Effect.as(stopped(leg), undefined);
+      }
+      return message.type === 'event' && message.deferred === undefined
+        ? Effect.as(call.onMessage(message), undefined)
+        : Effect.succeed(undefined);
+    };
 
     const handle = (leg: Leg, message: CallMessage) => {
       const { type } = message;
@@ -720,7 +757,15 @@ function makeSocketLink(
         const old = active;
         active = leg;
         pending = undefined;
-        yield* end(old);
+        if (leg.resumes || old.conn.lost) {
+          yield* end(old);
+        } else {
+          old.complete = true;
+          old.conn.socket.send({ id: old.id, type: 'abort' });
+          old.conn.calls.set(old.id, { inbox, moves: false });
+          notifyMoved(old.conn);
+          leaving.set(old.id, old);
+        }
         yield* reset;
       });
 
@@ -734,6 +779,8 @@ function makeSocketLink(
               ? Effect.succeed(undefined)
               : handle(active, message);
           }
+          const left = leaving.get(message.id);
+          if (left) return fromLeaving(left, message);
           const leg = pending;
           if (!leg || message.id !== leg.id) return Effect.succeed(undefined);
           return Effect.andThen(
@@ -744,6 +791,13 @@ function makeSocketLink(
           );
         },
         Lost: ({ conn }) => {
+          const gone = [...leaving.values()].filter((leg) => leg.conn === conn);
+          if (gone.length > 0) {
+            return Effect.as(
+              Effect.forEach(gone, stopped, { discard: true }),
+              undefined,
+            );
+          }
           if (pending && conn === pending.conn) return fallBack(pending);
           if (conn !== active.conn) return Effect.succeed(undefined);
           // The successor already has the subscription, resent from before
