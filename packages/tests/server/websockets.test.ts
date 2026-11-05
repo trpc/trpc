@@ -2003,7 +2003,10 @@ function holdFrames(
 }
 
 describe('a server-requested reconnect hands subscriptions off', () => {
-  function setup(wsClient: Partial<WebSocketClientOptions> = {}) {
+  function setup(
+    wsClient: Partial<WebSocketClientOptions> = {},
+    wssServer: { dangerouslyDisablePong?: boolean } = {},
+  ) {
     const t = initTRPC.create();
     const ee = new EventEmitter();
     const log: number[] = [];
@@ -2017,7 +2020,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     let connectionParamsFailures = 0;
     let subscriptionGate: Promise<void> | null = null;
     let cleanupGate: Promise<void> | null = null;
-    const cleanupEntered = vi.fn();
+    const cleanupEntered = awaitableFn();
     let retryDelayMs = 20;
     const retryAttempts = awaitableFn<[number]>();
     // The server sends `started` once the procedure call has resolved.
@@ -2083,6 +2086,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     });
     const ctx = testServerAndClientResource(router, {
       clientLink: 'wsLink',
+      wssServer,
       wsClient: {
         ...wsClient,
         lazy: { enabled: false, closeMs: 0 },
@@ -3496,6 +3500,56 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       held?.resolve();
       slowResult.resolve('cleanup');
       await slow?.catch(() => null);
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('a subscription sent again on a restored socket closes the first socket it was still draining once it ends', async () => {
+    const {
+      ctx,
+      eventsSubscribed,
+      cleanupEntered,
+      holdCleanup,
+      serverSockets,
+      receivedFor,
+      observe,
+      waitForOpen,
+      setRetryDelayMs,
+    } = setup({}, { dangerouslyDisablePong: true });
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, observe(seen));
+    // With no `stopped` and no "PONG", A and B are never let go of.
+    const cleanup = holdCleanup();
+    try {
+      await eventsSubscribed.calledTimes(1);
+      ctx.wssHandler.broadcastReconnectNotification();
+      await cleanupEntered.calledTimes(1);
+      serverSockets[1]!.send(JSON.stringify({ id: null, method: 'reconnect' }));
+      await cleanupEntered.calledTimes(2);
+
+      // C is lost, so B is restored and the subscription is sent there again.
+      setRetryDelayMs(10_000);
+      serverSockets[2]!.terminate();
+      await eventsSubscribed.calledTimes(4);
+      expect(receivedFor('events')[3]!.socket).toBe(serverSockets[1]);
+
+      subscription.unsubscribe();
+      await vi.waitFor(
+        () => {
+          expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED);
+        },
+        { timeout: 3_000 },
+      );
+      expect(serverSockets.map((socket) => socket.readyState)).toEqual([
+        WebSocket.CLOSED,
+        WebSocket.OPEN,
+        WebSocket.CLOSED,
+      ]);
+    } finally {
+      cleanup.resolve();
       subscription.unsubscribe();
       await ctx.wsClient.close();
     }
