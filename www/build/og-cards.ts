@@ -34,18 +34,28 @@ export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
 
 const ogDir = new URL('../src/og/', import.meta.url);
 
-/** What the cards are drawn with: `src/og`'s modules and the wordmark. */
+/** The packages that lay out, rasterize and letter the cards. */
+const rendererPackages = ['satori', '@resvg/resvg-wasm', '@fontsource/inter'];
+
+/**
+ * What the cards are drawn with: `src/og`'s modules, the wordmark, and
+ * `rendererPackages`' `package.json`s, whose versions change with an upgrade.
+ */
 const rendererFiles = () => [
   ...readdirSync(ogDir)
     .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
     .toSorted()
     .map((name) => new URL(name, ogDir)),
   new URL('../public/img/logo-text-black.svg', import.meta.url),
+  ...rendererPackages.map(
+    (name) => new URL(`../node_modules/${name}/package.json`, import.meta.url),
+  ),
 ];
 
 /**
  * A short hash of what the cards draw but the live numbers and avatar
- * pictures: every card, the sponsors along their foot, and the renderer.
+ * pictures: every card, the sponsors along their foot, and the renderer
+ * (`rendererFiles`).
  * Social sites keep a card by its URL for days, so `ogImageUrl` puts this
  * in it, and a card that changes gets a new URL; a deploy that changes no
  * card keeps the old one.
