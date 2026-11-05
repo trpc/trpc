@@ -19,7 +19,7 @@ import { moveSubscription, requestTransition } from './requestMachine';
 
 /**
  * The client's lifecycle. Exactly one connection is current at a time; the
- * connections it replaced are in `draining`.
+ * connections it replaced are draining: see `drainingConnections`.
  */
 export type Lifecycle =
   /** No connection, and none is wanted: lazy and unused, or after `close()`. */
@@ -42,18 +42,30 @@ export type PublicState =
   | { state: 'connecting'; error: ConnectingError | null }
   | { state: 'pending' };
 
+/**
+ * The newest connection the server asked to replace. It takes new requests
+ * whenever no connection is ready, until it's closed or lost.
+ */
+export interface Handover {
+  readonly connection: ConnectionId;
+  /**
+   * Why the latest attempt to replace it failed. Shown only once it ends,
+   * since until then it serves every request.
+   */
+  readonly replacementError: ConnectingError | null;
+}
+
 export interface ClientModel {
   readonly lazy: boolean;
   readonly lifecycle: Lifecycle;
   /** Every connection whose socket may still report something. */
   readonly connections: ReadonlyMap<ConnectionId, ConnectionModel>;
-  /** Connections replaced at the server's request, oldest first. */
-  readonly draining: readonly ConnectionId[];
   /**
-   * The newest connection the server asked to replace. It takes new requests
-   * whenever no connection is ready, until it's closed or lost.
+   * Draining connections older than the handover, oldest first: replaced
+   * at the server's request, or by `close()`.
    */
-  readonly handover: ConnectionId | null;
+  readonly replaced: readonly ConnectionId[];
+  readonly handover: Handover | null;
   /** Every live request. Settled requests are removed. */
   readonly requests: ReadonlyMap<RequestId, RequestModel>;
   readonly flushScheduled: boolean;
@@ -62,11 +74,6 @@ export interface ClientModel {
   readonly publicState: PublicState;
   /** Set by `close()`: the queries and mutations it waits for. */
   readonly closing: ReadonlySet<RequestId> | null;
-  /**
-   * Why the latest attempt to replace the handover failed. Shown only once
-   * the handover ends, since until then it serves every request.
-   */
-  readonly replacementError: ConnectingError | null;
   readonly lastConnectionId: ConnectionId;
 }
 
@@ -125,7 +132,26 @@ export function sendingConnection(
   const { lifecycle } = model;
   if (lifecycle.kind === 'open') return lifecycle.connection;
   if (lifecycle.kind === 'idle') return null;
-  return model.handover;
+  return model.handover?.connection ?? null;
+}
+
+/** The connections the client replaced that still serve, oldest first. */
+export function drainingConnections(
+  model: Pick<ClientModel, 'replaced' | 'handover'>,
+): ConnectionId[] {
+  return model.handover
+    ? [...model.replaced, model.handover.connection]
+    : [...model.replaced];
+}
+
+/** A connection that ended without the client closing it. */
+interface Loss {
+  /** The connection before it ended. */
+  readonly connection: ConnectionModel;
+  readonly event: ConnectionEvent;
+  readonly cause: unknown;
+  /** The handover, if it ended with it. */
+  readonly handover: Handover | null;
 }
 
 /**
@@ -135,14 +161,13 @@ export function sendingConnection(
 class Step {
   lifecycle: Lifecycle;
   readonly connections: Map<ConnectionId, ConnectionModel>;
-  draining: ConnectionId[];
-  handover: ConnectionId | null;
+  replaced: ConnectionId[];
+  handover: Handover | null;
   readonly requests: Map<RequestId, RequestModel>;
   flushScheduled: boolean;
   inactivity: boolean;
   publicState: PublicState;
   closing: Set<RequestId> | null;
-  replacementError: ConnectingError | null;
   lastConnectionId: ConnectionId;
   readonly lazy: boolean;
   readonly effects: ClientEffect[] = [];
@@ -151,14 +176,13 @@ class Step {
     this.lazy = model.lazy;
     this.lifecycle = model.lifecycle;
     this.connections = new Map(model.connections);
-    this.draining = [...model.draining];
+    this.replaced = [...model.replaced];
     this.handover = model.handover;
     this.requests = new Map(model.requests);
     this.flushScheduled = model.flushScheduled;
     this.inactivity = model.inactivity;
     this.publicState = model.publicState;
     this.closing = model.closing && new Set(model.closing);
-    this.replacementError = model.replacementError;
     this.lastConnectionId = model.lastConnectionId;
   }
 
@@ -168,14 +192,13 @@ class Step {
         lazy: this.lazy,
         lifecycle: this.lifecycle,
         connections: this.connections,
-        draining: this.draining,
+        replaced: this.replaced,
         handover: this.handover,
         requests: this.requests,
         flushScheduled: this.flushScheduled,
         inactivity: this.inactivity,
         publicState: this.publicState,
         closing: this.closing,
-        replacementError: this.replacementError,
         lastConnectionId: this.lastConnectionId,
       },
       effects: this.effects,
@@ -295,10 +318,23 @@ class Step {
     this.closeConnection(connection);
   }
 
-  /** A replaced connection no longer serves anything. */
-  forget(connection: ConnectionId) {
-    this.draining = this.draining.filter((id) => id !== connection);
-    if (this.handover === connection) this.handover = null;
+  /**
+   * A replaced connection no longer serves anything. Returns the handover
+   * if it was that connection.
+   */
+  forget(connection: ConnectionId): Handover | null {
+    this.replaced = this.replaced.filter((id) => id !== connection);
+    const handover = this.handover;
+    if (handover?.connection !== connection) return null;
+    this.handover = null;
+    return handover;
+  }
+
+  /** The handover serves on, but its replacement's last failure is past. */
+  clearReplacementError() {
+    if (this.handover) {
+      this.handover = { ...this.handover, replacementError: null };
+    }
   }
 
   // --- state and timers ---------------------------------------------------
@@ -405,7 +441,7 @@ class Step {
     const lifecycle = this.lifecycle;
     if (lifecycle.kind !== 'open') return [];
     const moved: RequestId[] = [];
-    for (const previous of this.draining) {
+    for (const previous of drainingConnections(this)) {
       for (const request of this.sentOn(previous)) {
         if (request.method !== 'subscription') continue;
         this.applyRequestTransition(
@@ -436,7 +472,7 @@ class Step {
       return;
     }
     this.lifecycle = { kind: 'open', connection };
-    this.replacementError = null;
+    this.clearReplacementError();
     if (this.lazy) {
       this.inactivity = true;
       this.effects.push({ type: 'startTimer', timer: 'inactivity' });
@@ -450,7 +486,7 @@ class Step {
     const moved = this.startMoves();
     this.batchFor(connection);
     this.flush(moved);
-    for (const previous of [...this.draining]) {
+    for (const previous of drainingConnections(this)) {
       this.closeIfDrained(previous);
     }
   }
@@ -465,15 +501,15 @@ class Step {
       // Invisible to subscribers: the state stays `pending` while the old
       // connection serves.
       this.applyConnection(connection, { type: 'drain' });
-      this.draining.push(connection);
-      this.handover = connection;
+      if (this.handover) this.replaced.push(this.handover.connection);
+      this.handover = { connection, replacementError: null };
     } else {
       this.closeConnection(connection);
       for (const request of this.queuedFor(connection)) {
         this.applyRequest(request, { type: 'unbatch' });
       }
+      this.clearReplacementError();
     }
-    this.replacementError = null;
     this.scheduleReconnect(nextRetryIndex(before, { type: 'drain' }));
   }
 
@@ -482,15 +518,15 @@ class Step {
    * sent on it fail, since they may have run, and so do those waiting for its
    * next batch, unless it was standing in for its replacement: those wait
    * for the replacement. Subscriptions are queued to resume on the next
-   * connection; one moving away carries on on the other connection.
+   * connection; one moving away carries on on the other connection. Returns
+   * the handover if it was that connection.
    */
-  onLost(connection: ConnectionId, cause: unknown) {
-    const wasHandover = this.handover === connection;
-    this.forget(connection);
+  onLost(connection: ConnectionId, cause: unknown): Handover | null {
+    const handover = this.forget(connection);
     for (const request of this.queuedFor(connection)) {
       this.applyRequest(
         request,
-        wasHandover
+        handover
           ? { type: 'unbatch' }
           : { type: 'connectionLost', connection, cause },
       );
@@ -498,10 +534,11 @@ class Step {
     for (const request of this.servedBy(connection)) {
       this.applyRequest(request, { type: 'connectionLost', connection, cause });
     }
+    return handover;
   }
 
   /** Decides what follows a loss, once the user's callbacks have run. */
-  afterLost(lost: ConnectionModel, event: ConnectionEvent, cause: unknown) {
+  afterLost({ connection: lost, event, cause, handover }: Loss) {
     const lifecycle = this.lifecycle;
     if (!this.isCurrent(lost.id)) {
       // A replaced connection: its subscriptions go on the current one, if
@@ -511,9 +548,8 @@ class Step {
         this.handover === null
       ) {
         this.setConnecting(
-          this.replacementError ?? { message: 'WebSocket closed', cause },
+          handover?.replacementError ?? { message: 'WebSocket closed', cause },
         );
-        this.replacementError = null;
       }
       this.moveStragglers();
       this.scheduleFlush();
@@ -529,9 +565,12 @@ class Step {
     if (this.handover !== null) {
       // The connection it replaced still serves every request, so this stays
       // `pending` until that one ends too.
-      this.replacementError = {
-        message: opening ? 'Initialization error' : 'WebSocket closed',
-        cause,
+      this.handover = {
+        ...this.handover,
+        replacementError: {
+          message: opening ? 'Initialization error' : 'WebSocket closed',
+          cause,
+        },
       };
       this.scheduleReconnect(retryIndex);
       this.scheduleFlush();
@@ -560,15 +599,15 @@ class Step {
     this.stopFlush();
     const lifecycle = this.lifecycle;
     this.lifecycle = { kind: 'idle' };
+    if (this.handover) this.replaced.push(this.handover.connection);
     this.handover = null;
-    this.replacementError = null;
     if (lifecycle.kind === 'backoff') {
       this.effects.push({ type: 'cancelTimer', timer: 'backoff' });
     } else if (lifecycle.kind === 'connecting') {
       this.closeConnection(lifecycle.connection);
     } else if (lifecycle.kind === 'open') {
       this.applyConnection(lifecycle.connection, { type: 'drain' });
-      this.draining.push(lifecycle.connection);
+      this.replaced.push(lifecycle.connection);
     }
 
     const closing = this.closing ?? new Set<RequestId>();
@@ -583,11 +622,10 @@ class Step {
   finishCloseIfDone() {
     if (!this.closing || this.closing.size > 0) return;
     this.closing = null;
-    for (const connection of [...this.draining]) {
+    // `close()` cleared the handover, so any now was opened since, for
+    // requests made after it.
+    for (const connection of [...this.replaced]) {
       if (this.servedBy(connection).length > 0) continue;
-      // `close()` cleared the handover, so this one was opened since, for
-      // requests made after it.
-      if (connection === this.handover) continue;
       this.forget(connection);
       this.closeConnection(connection);
     }
@@ -595,7 +633,7 @@ class Step {
       this.setState({ state: 'idle' });
     } else if (
       this.lifecycle.kind !== 'open' &&
-      this.draining.length === 0 &&
+      drainingConnections(this).length === 0 &&
       this.publicState.state === 'pending'
     ) {
       // A request made while closing opens a new connection, and the old
@@ -680,9 +718,9 @@ function onConnectionEvent(
   // The connection was lost: settle its requests, tell the user, then decide
   // what follows.
   const cause = causeOf(event);
-  step.onLost(connection, cause);
+  const handover = step.onLost(connection, cause);
   step.effects.push(...notices);
-  step.afterLost(before, event, cause);
+  step.afterLost({ connection: before, event, cause, handover });
 }
 
 /** Any frame proves the server is there, and keeps a lazy connection in use. */
@@ -848,7 +886,7 @@ export function initialClient(opts: { lazy: boolean }): ClientTransition {
     lazy: opts.lazy,
     lifecycle: { kind: 'idle' },
     connections: new Map(),
-    draining: [],
+    replaced: [],
     handover: null,
     requests: new Map(),
     flushScheduled: false,
@@ -857,7 +895,6 @@ export function initialClient(opts: { lazy: boolean }): ClientTransition {
       ? { state: 'idle' }
       : { state: 'connecting', error: null },
     closing: null,
-    replacementError: null,
     lastConnectionId: 0,
   });
   if (!opts.lazy) step.connect(null);

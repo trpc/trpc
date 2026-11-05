@@ -15,6 +15,7 @@ import type {
 } from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
 import {
   clientTransition,
+  drainingConnections,
   initialClient,
   sendingConnection,
 } from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
@@ -390,8 +391,8 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     event?.type === 'frame' &&
     'method' in event.message &&
     event.message.method === 'reconnect' &&
-    after.draining.includes(event.connection) &&
-    !before.draining.includes(event.connection)
+    drainingConnections(after).includes(event.connection) &&
+    !drainingConnections(before).includes(event.connection)
   ) {
     for (const [id, request] of before.requests) {
       if (
@@ -589,11 +590,11 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           // replacement shows once the handover ends.
           check(
             after.handover === null,
-            `connecting shown while connection ${after.handover} serves`,
+            `connecting shown while connection ${after.handover?.connection} serves`,
           );
-          if (before.handover !== null && before.replacementError !== null) {
+          if (before.handover?.replacementError) {
             check(
-              effect.state.error === before.replacementError,
+              effect.state.error === before.handover.replacementError,
               'the last replacement error is not the one shown',
             );
             covered.add('replacement failure shown once the old socket ends');
@@ -608,7 +609,9 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           'closed with live requests',
         );
         check(
-          after.draining.every((id) => id > sim.closedConnectionsUpTo),
+          drainingConnections(after).every(
+            (id) => id > sim.closedConnectionsUpTo,
+          ),
           'closed with draining connections from before close()',
         );
         if (sim.lastRequestId === sim.closedAfter) {
@@ -696,7 +699,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       );
     }
     if (lost !== null && previous?.kind === 'sent' && state.kind === 'queued') {
-      if (before.draining.includes(lost)) {
+      if (drainingConnections(before).includes(lost)) {
         covered.add('old socket lost before the move began');
       }
       if (user.movedTo === lost) {
@@ -805,7 +808,7 @@ function checkModel(model: ClientModel) {
       );
     }
     check(
-      (phase === 'draining') === model.draining.includes(id),
+      (phase === 'draining') === drainingConnections(model).includes(id),
       `connection ${id} draining mismatch`,
     );
   }
@@ -814,8 +817,8 @@ function checkModel(model: ClientModel) {
   }
   if (model.handover !== null) {
     check(
-      model.draining.at(-1) === model.handover,
-      `handover ${model.handover} isn't the newest draining connection`,
+      drainingConnections(model).at(-1) === model.handover.connection,
+      `handover ${model.handover.connection} isn't the newest draining connection`,
     );
   }
   for (const id of liveRequestIds(model)) {
@@ -844,7 +847,7 @@ function checkModel(model: ClientModel) {
   }
   if (model.publicState.state === 'pending') {
     check(
-      lifecycle.kind === 'open' || model.draining.length > 0,
+      lifecycle.kind === 'open' || drainingConnections(model).length > 0,
       'pending without a connection serving requests',
     );
   }

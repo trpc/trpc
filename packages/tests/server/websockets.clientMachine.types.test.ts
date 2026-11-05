@@ -1,4 +1,8 @@
 import type {
+  ClientModel,
+  Handover,
+} from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
+import type {
   QueryRequest,
   QueryState,
   RequestModel,
@@ -60,4 +64,18 @@ test('only a subscription that is sent or moving has events to replay', () => {
     replayed: ['1'],
   };
   expect([queued, leaving]).toHaveLength(2);
+});
+
+test("a replacement error can't outlive its handover", () => {
+  const replaced: Pick<ClientModel, 'replaced' | 'handover'> = {
+    replaced: [1],
+    handover: null,
+    // @ts-expect-error a replacement error belongs to the handover it would replace
+    replacementError: { message: 'WebSocket closed', cause: null },
+  };
+  const handover: Handover = {
+    connection: 2,
+    replacementError: { message: 'Initialization error', cause: null },
+  };
+  expect([replaced, handover]).toHaveLength(2);
 });

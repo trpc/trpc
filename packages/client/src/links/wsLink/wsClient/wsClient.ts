@@ -29,6 +29,7 @@ import type {
 } from './machine/clientMachine';
 import {
   clientTransition,
+  drainingConnections,
   initialClient,
   sendingConnection,
 } from './machine/clientMachine';
@@ -381,14 +382,14 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
     },
 
     get connection() {
-      const { lifecycle, draining } = runtime.state;
+      const { lifecycle } = runtime.state;
       if (lifecycle.kind === 'open') {
         return backwardCompatibility(
           transports.get(lifecycle.connection) ?? null,
           true,
         );
       }
-      const replaced = draining.at(-1);
+      const replaced = drainingConnections(runtime.state).at(-1);
       if (replaced !== undefined) {
         return backwardCompatibility(transports.get(replaced) ?? null, true);
       }
