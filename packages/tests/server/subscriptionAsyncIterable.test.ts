@@ -622,6 +622,11 @@ test('types: a subscription has callbacks or is iterated, never both', () => {
       | Record<never, never> => ({});
     // @ts-expect-error either pass callbacks or don't
     ctx.client.onEvent.subscribe(undefined, maybeCallbacks());
+    const maybeUndefinedCallbacks = ():
+      | { onData: undefined }
+      | Record<never, never> => ({});
+    // @ts-expect-error either pass callbacks or don't
+    ctx.client.onEvent.subscribe(undefined, maybeUndefinedCallbacks());
 
     // TypeScript has no exact types, so a type without the callback keys
     // can still hold them
