@@ -109,19 +109,17 @@ export const sponsorCloudUrl = (sponsors: ReadonlyArray<Sponsor>) =>
 
 /**
  * How long the CDN keeps the PNG: ten minutes when an avatar it draws
- * didn't load, or when `requested` asks for another version than
- * `current`'s (a README from just before a deploy, or a package's on npm
- * from an older one), and as a page otherwise (`undefined`).
+ * didn't load, and as a page otherwise (`undefined`). A README asking for
+ * another version (one from just before a deploy, or a package's on npm
+ * from an older one) is redirected to the current one first
+ * (`og/version.ts`).
  */
 export function sponsorCloudCacheControl(opts: {
   readonly avatars: ReadonlyMap<string, string>;
   readonly bubbles: ReadonlyArray<CloudBubble>;
-  readonly current: string;
-  readonly requested: string | null;
 }) {
-  const stale = opts.requested !== null && opts.requested !== opts.current;
   const missing = opts.bubbles.some(
     (bubble) => !opts.avatars.has(bubble.image),
   );
-  return stale || missing ? 'public, max-age=0, s-maxage=600' : undefined;
+  return missing ? 'public, max-age=0, s-maxage=600' : undefined;
 }

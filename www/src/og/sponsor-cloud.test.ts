@@ -104,35 +104,18 @@ describe('sponsorCloudUrl', () => {
 describe('sponsorCloudCacheControl', () => {
   const { bubbles } = cloudLayout([sponsor('a', 40), sponsor('b', 20)]);
   const all = new Map(bubbles.map((bubble) => [bubble.image, 'data:']));
-  const current = 'abcd1234';
 
-  it('caches it as a page when every avatar loaded, at the current version or none', () => {
-    for (const requested of [current, null]) {
-      expect(
-        sponsorCloudCacheControl({ avatars: all, bubbles, current, requested }),
-      ).toBeUndefined();
-    }
+  it('caches it as a page when every avatar loaded', () => {
+    expect(sponsorCloudCacheControl({ avatars: all, bubbles })).toBeUndefined();
   });
 
-  it('caches it briefly when an avatar is missing, or another version was asked for', () => {
-    const brief = 'public, max-age=0, s-maxage=600';
-    const one = new Map([...all].slice(0, 1));
+  it('caches it briefly when an avatar is missing', () => {
     expect(
       sponsorCloudCacheControl({
-        avatars: one,
+        avatars: new Map([...all].slice(0, 1)),
         bubbles,
-        current,
-        requested: null,
       }),
-    ).toBe(brief);
-    expect(
-      sponsorCloudCacheControl({
-        avatars: all,
-        bubbles,
-        current,
-        requested: 'ffff0000',
-      }),
-    ).toBe(brief);
+    ).toBe('public, max-age=0, s-maxage=600');
   });
 });
 
