@@ -34,15 +34,21 @@ count() {
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
+# Sets $pr_url, $host, $repo and $pr from the current branch's PR. Later calls
+# use them, so they reach the same PR even on a GitHub Enterprise host.
 find_pr() {
   command -v gh >/dev/null || die 'gh (the GitHub CLI) is not installed'
-  pr=$(gh pr view --json number --jq .number 2>"$tmp/err") ||
+  pr_url=$(gh pr view --json url --jq .url 2>"$tmp/err") ||
     die "could not find a PR for the current branch: $(cat "$tmp/err")"
-  [[ $pr =~ ^[0-9]+$ ]] || die "gh pr view printed an unexpected PR number: $pr"
+  local pattern='^https?://([^/]+)/([^/]+/[^/]+)/pull/([0-9]+)$'
+  [[ $pr_url =~ $pattern ]] || die "gh pr view printed an unexpected PR URL: $pr_url"
+  host=${BASH_REMATCH[1]}
+  repo=${BASH_REMATCH[2]}
+  pr=${BASH_REMATCH[3]}
 }
 
 read_body() {
-  gh pr view "$pr" --json body --template '{{.body}}' >"$tmp/body" 2>"$tmp/err" ||
+  gh pr view "$pr_url" --json body --template '{{.body}}' >"$tmp/body" 2>"$tmp/err" ||
     die "could not read the body of PR #$pr: $(cat "$tmp/err")"
   # $(...) drops trailing newlines; the sentinel keeps them.
   body=$(
@@ -79,9 +85,9 @@ write_body() {
   printf '%s' "$new" >"$tmp/new"
   # Not `gh pr edit`: it also reads the PR's reviewers, which some tokens
   # that may edit the body can't.
-  gh api --method PATCH "repos/{owner}/{repo}/pulls/$pr" -F "body=@$tmp/new" \
-    >/dev/null 2>"$tmp/err" ||
-    die "could not update the body of PR #$pr; gh's token needs to be able to edit pull requests (set GH_TOKEN to use another): $(cat "$tmp/err")"
+  gh api --hostname "$host" --method PATCH "repos/$repo/pulls/$pr" \
+    -F "body=@$tmp/new" >/dev/null 2>"$tmp/err" ||
+    die "could not update the body of PR #$pr; gh's token needs to be able to edit pull requests (set GH_TOKEN, or GH_ENTERPRISE_TOKEN on GitHub Enterprise Server, to use another): $(cat "$tmp/err")"
 }
 
 [[ $# -ge 1 ]] || usage
@@ -90,15 +96,15 @@ case $1 in
   set)
     [[ $# -ge 2 && $# -le 3 ]] || usage
     activity=$2
-    url=${3:-}
+    run_url=${3:-}
     [[ -n ${activity//[[:space:]]/} ]] || die 'the activity is empty'
     [[ $activity != *$'\n'* && $activity != *$'\r'* ]] ||
       die 'the activity must be one line'
     [[ $activity != *agent-callout:* ]] ||
       die 'the activity must not contain a callout marker'
     url_pattern='^https?://[^[:space:]<>()]+$'
-    [[ -z $url || $url =~ $url_pattern ]] ||
-      die "the run URL must be an http(s) URL without spaces, <, >, ( or ): $url"
+    [[ -z $run_url || $run_url =~ $url_pattern ]] ||
+      die "the run URL must be an http(s) URL without spaces, <, >, ( or ): $run_url"
 
     find_pr
     read_body
@@ -110,7 +116,7 @@ case $1 in
       nl=$'\r\n'
     fi
     now="> **Now:** $activity"
-    [[ -z $url ]] || now+=" · [agent run]($url)"
+    [[ -z $run_url ]] || now+=" · [agent run]($run_url)"
     title='> 🤖 🚧 **An agent is working on this PR** 🚧'
     block="$START$nl> [!NOTE]$nl$title$nl>$nl$now$nl$END"
     if [[ $has == 1 ]]; then

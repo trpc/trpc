@@ -14,5 +14,5 @@ While you work on a PR you push to, its body starts with a callout saying what y
 
 - **Start of each round of work** (first push, review fixes, a CI fix): `set` once with a one-line summary of the round. Don't update it step by step.
 - **When you stop planning to push** (done, handed off, or waiting on a human): `clear`, before your final message.
-- If `gh`'s token can't edit pull requests, set `GH_TOKEN` to one that can. If none can, say so in your final message.
+- If `gh`'s token can't edit pull requests, set `GH_TOKEN` (`GH_ENTERPRISE_TOKEN` on GitHub Enterprise Server) to one that can. If none can, say so in your final message.
 - When a tool writes the whole body, such as when opening the PR, run `set` right after it.

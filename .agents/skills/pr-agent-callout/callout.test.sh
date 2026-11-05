@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Tests callout.sh against a stub gh that keeps the PR body in a file.
+# Tests callout.sh against a stub gh that keeps the PR body in a file. The PR
+# is on a GitHub Enterprise host, so writes must go to that host.
 #
 #   bash callout.test.sh
 set -euo pipefail
@@ -14,19 +15,20 @@ cat >"$STUB/bin/gh" <<'EOF'
 set -euo pipefail
 printf '%s\n' "$*" >>"$STUB/calls"
 number=$(cat "$STUB/number" 2>/dev/null || true)
+url="https://ghe.example.com/acme/app/pull/$number"
 case "$*" in
-  'pr view --json number --jq .number')
+  'pr view --json url --jq .url')
     if [[ -z $number ]]; then
       echo 'no pull requests found for branch "feature"' >&2
       exit 1
     fi
-    echo "$number"
+    echo "$url"
     ;;
-  "pr view $number --json body --template {{.body}}")
+  "pr view $url --json body --template {{.body}}")
     cat "$STUB/body"
     ;;
-  "api --method PATCH repos/{owner}/{repo}/pulls/$number -F body=@"*)
-    cp "${6#body=@}" "$STUB/body"
+  "api --hostname ghe.example.com --method PATCH repos/acme/app/pulls/$number -F body=@"*)
+    cp "${8#body=@}" "$STUB/body"
     printf '%s\n' "${GH_TOKEN-unset}" >>"$STUB/tokens"
     ;;
   *)
@@ -74,7 +76,7 @@ expect_body() {
 
 expect_edits() {
   local n
-  n=$(grep -c '^api --method PATCH' "$STUB/calls" 2>/dev/null || true)
+  n=$(grep -c '^api --hostname ghe.example.com --method PATCH' "$STUB/calls" 2>/dev/null || true)
   [[ ${n:-0} == "$1" ]] || fail "expected $1 edits, got ${n:-0}"
 }
 
