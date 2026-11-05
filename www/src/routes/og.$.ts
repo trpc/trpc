@@ -5,7 +5,8 @@ import type * as SponsorCloud from '~/og/sponsor-cloud.ts';
 /**
  * A page's social card, `/og/<version>/docs/quickstart.png` for
  * `ogImagePath(page)` at the cards' version (`ogImageUrl`), and the
- * READMEs' sponsor cloud at its own (`sponsorCloudUrl`). Any other URL for
+ * READMEs' sponsor cloud at its own (`sponsorCloudUrl`); the home card's
+ * has the UTC day too (`dailyVersion`). Any other URL for
  * one redirects to that first (`og/version.ts`). Rendered on request, with
  * what it shows live (`og/live.ts`), and cached for good, or as briefly as
  * that says.
@@ -31,18 +32,25 @@ export const Route = createFileRoute('/og/$')({
             status: 404,
           });
         }
-        const isCloud = requested.path === cloud.sponsorCloudPath;
+        const card = cards.get(requested.path);
+        const now = new Date();
+        const daily = card?.kind === 'home';
         const redirect = version.versionRedirect(
           url,
           requested,
-          isCloud
+          card === undefined
             ? import.meta.env.SPONSOR_CLOUD_VERSION
-            : import.meta.env.OG_CARDS_VERSION,
+            : daily
+              ? version.dailyVersion(
+                  import.meta.env.OG_CARDS_VERSION,
+                  version.utcDay(now),
+                )
+              : import.meta.env.OG_CARDS_VERSION,
+          version.untilVersionChanges(daily, now),
         );
         if (redirect !== undefined) {
           return redirect;
         }
-        const card = cards.get(requested.path);
         if (card === undefined) {
           return sponsorCloudResponse(cloud);
         }

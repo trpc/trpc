@@ -40,7 +40,7 @@ describe('ogImageUrl', () => {
 
   it("is the card's path on the build's host, and the page's URL stays site.url", () => {
     vi.stubEnv('DEPLOYMENT_ORIGIN', 'https://www-git-a-trpc.vercel.app');
-    expect(ogImageUrl('/docs/v10/client/react')).toBe(
+    expect(ogImageUrl('/docs/v10/client/react', null)).toBe(
       'https://www-git-a-trpc.vercel.app/og/docs/v10/client/react.png',
     );
     const head = pageHead({
@@ -63,14 +63,26 @@ describe('ogImageUrl', () => {
   });
 
   it('is on site.url without a build host', () => {
-    expect(ogImageUrl('/')).toBe(`${site.url}/og/index.png`);
+    expect(ogImageUrl('/', null)).toBe(`${site.url}/og/index.png`);
   });
 
   it("carries the cards' version, so social sites fetch a changed card again", () => {
     vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
-    expect(ogImageUrl('/')).toBe(`${site.url}/og/0123abcdef/index.png`);
-    expect(ogImageUrl('/docs/server/procedures')).toBe(
+    expect(ogImageUrl('/docs/server/procedures', null)).toBe(
       `${site.url}/og/0123abcdef/docs/server/procedures.png`,
     );
+  });
+
+  it('names the home card for the day the page is rendered on', () => {
+    vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
+    const head = pageHead({ cardDay: '20261105', description: '', path: '/' });
+    expect(head.meta).toContainEqual({
+      content: `${site.url}/og/0123abcdef-20261105/index.png`,
+      property: 'og:image',
+    });
+    expect(head.meta).toContainEqual({
+      content: `${site.url}/og/0123abcdef-20261105/index.png`,
+      name: 'twitter:image',
+    });
   });
 });

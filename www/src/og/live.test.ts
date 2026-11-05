@@ -89,14 +89,14 @@ describe('live', () => {
 });
 
 describe('cacheControl', () => {
-  it('keeps the home card a day, and one missing a number ten minutes', () => {
+  it('keeps the home card for good, and one missing a number ten minutes', () => {
     expect(
       cacheControl(
         home,
         { avatars: new Map(), stats: { downloads: 1, stars: 1 } },
         footerWith(),
       ),
-    ).toContain('s-maxage=86400');
+    ).toBe(immutableCacheControl);
     expect(
       cacheControl(
         home,

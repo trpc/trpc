@@ -11,6 +11,7 @@
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Effect, FileSystem, Path, Schema } from 'effect';
 
+import { homeFunction } from './on-demand.ts';
 import { land, type Response, servedPaths } from './old-routes.ts';
 
 const here = (relative: string) => new URL(relative, import.meta.url).pathname;
@@ -54,9 +55,15 @@ const builtLandings = Effect.fn('builtLandings')(function* (
       (info) => info.type === 'File',
     ),
   );
-  const served = servedPaths(
-    files.map((file) => file.split(path.sep).join('/')),
-  );
+  const served = servedPaths([
+    ...files.map((file) => file.split(path.sep).join('/')),
+    // The home page, which its function serves (`writeHomeRevalidation`).
+    ...((yield* fs.exists(
+      path.join(output, `functions/${homeFunction}.prerender-config.json`),
+    ))
+      ? ['index.html']
+      : []),
+  ]);
   return paths.map((pathname): Landing =>
     land(config.routes, served, pathname),
   );

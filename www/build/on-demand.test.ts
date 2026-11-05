@@ -7,6 +7,7 @@ import { Effect, FileSystem, Path } from 'effect';
 
 import {
   flagsValue,
+  homeFunction,
   onDemandFunction,
   onDemandRoutes,
   pageCacheControl,
@@ -143,6 +144,10 @@ describe('writeOnDemandFunction', () => {
       expect(original.body).toContain(
         `localhost:${port}/v12/docs/b?flags=publisher`,
       );
+
+      // The home page's function renders the home page.
+      const home = yield* fetchText(`/${homeFunction}`);
+      expect(home.body).toContain(`localhost:${port}/ `);
 
       // A response's own caching wins.
       const fresh = yield* fetchText(

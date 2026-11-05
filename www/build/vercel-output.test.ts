@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { hiddenPaths, site } from '../src/site.ts';
-import { onDemandFunction } from './on-demand.ts';
+import {
+  homeFunction,
+  homeRevalidateSeconds,
+  onDemandFunction,
+} from './on-demand.ts';
 import { siteTextFiles } from './site-files.ts';
 import { land, type Redirect, servedPaths } from './old-routes.ts';
 import {
@@ -306,6 +310,37 @@ describe('writeVercelOutput', () => {
           ),
         ),
       ).toBe(true);
+
+      // The home page is the function's, regenerated through the day,
+      // from the prerendered page, whatever its query.
+      const functions = path.join(output, 'functions');
+      expect(
+        yield* fs.readLink(path.join(functions, `${homeFunction}.func`)),
+      ).toBe(`${onDemandFunction}.func`);
+      expect(
+        yield* fs.exists(
+          path.join(functions, `${homeFunction}.func/server/server.js`),
+        ),
+      ).toBe(true);
+      expect(
+        JSON.parse(
+          yield* fs.readFileString(
+            path.join(functions, `${homeFunction}.prerender-config.json`),
+          ),
+        ),
+      ).toEqual({
+        allowQuery: [],
+        expiration: homeRevalidateSeconds,
+        fallback: `${homeFunction}.prerender-fallback.html`,
+      });
+      expect(
+        yield* fs.exists(
+          path.join(functions, `${homeFunction}.prerender-fallback.html`),
+        ),
+      ).toBe(true);
+      expect(yield* fs.exists(path.join(output, 'static/index.html'))).toBe(
+        false,
+      );
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 

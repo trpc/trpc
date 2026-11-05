@@ -140,10 +140,10 @@ export const fetchCloudAvatars = (images: ReadonlyArray<string>) =>
   );
 
 /**
- * How long `card`'s image, at the current version, is kept: a card that's
- * missing something it fetches for ten minutes on the CDN, the home card,
- * whose numbers its version doesn't cover, for a day, and the rest for
- * good (`og/version.ts`).
+ * How long `card`'s image, at the current version, is kept: ten minutes
+ * on the CDN when it's missing something it fetches, and for good
+ * otherwise (`og/version.ts`); the home card's version changes daily, for
+ * its numbers.
  */
 export function cacheControl(
   card: OgCard,
@@ -154,10 +154,5 @@ export function cacheControl(
     (card.kind === 'home' &&
       (live.stats.stars === undefined || live.stats.downloads === undefined)) ||
     imagesOf(card, footer).some((image) => !live.avatars.has(image));
-  if (missing) {
-    return 'public, max-age=0, s-maxage=600';
-  }
-  return card.kind === 'home'
-    ? 'public, max-age=0, s-maxage=86400, stale-while-revalidate=3600'
-    : immutableCacheControl;
+  return missing ? 'public, max-age=0, s-maxage=600' : immutableCacheControl;
 }
