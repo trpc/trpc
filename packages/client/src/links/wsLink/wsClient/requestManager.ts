@@ -69,6 +69,12 @@ export class RequestManager {
   private pendingRequests: Record<MessageId, Request> = {};
 
   /**
+   * Subscriptions sent again under a new id, by their earlier id, while
+   * sockets they moved from may still send events under that one.
+   */
+  private drainingRequests: Record<MessageId, Request> = {};
+
+  /**
    * Registers a new request by adding it to the outgoing queue and setting up
    * callbacks for lifecycle events such as completion or error.
    *
@@ -124,6 +130,11 @@ export class RequestManager {
     if (this.pendingRequests[id]?.message === message) {
       delete this.pendingRequests[id];
     }
+    for (const [drainingId, request] of Object.entries(this.drainingRequests)) {
+      if (request.message === message) {
+        delete this.drainingRequests[drainingId];
+      }
+    }
   }
 
   /**
@@ -150,16 +161,19 @@ export class RequestManager {
 
   /**
    * Moves a pending request back to the outgoing queue, to be sent again
-   * with `id`. Its earlier id's late frames then match nothing.
+   * with `id`. Its earlier id then matches only the sockets it's still
+   * draining; see `getDrainingRequest()`.
    */
   public requeue(
     message: TRPCClientOutgoingMessage,
     id: TRPCClientOutgoingMessage['id'],
   ) {
-    const request = this.pendingRequests[String(message.id)];
+    const earlierId = String(message.id);
+    const request = this.pendingRequests[earlierId];
     if (request?.message !== message) return;
 
-    delete this.pendingRequests[String(message.id)];
+    delete this.pendingRequests[earlierId];
+    if (request.movedFrom.size) this.drainingRequests[earlierId] = request;
     message.id = id;
     this.outgoingRequests.push({
       ...request,
@@ -186,6 +200,33 @@ export class RequestManager {
     if (messageId === null) return null;
 
     return this.pendingRequests[String(messageId)];
+  }
+
+  /**
+   * Retrieves a subscription sent again under a new id by its earlier id,
+   * while a socket it moved from may still send events under that one.
+   */
+  public getDrainingRequest(messageId: MessageIdLike) {
+    if (messageId === null) return null;
+
+    return this.drainingRequests[String(messageId)];
+  }
+
+  /**
+   * Retrieves the subscriptions sent again under a new id whose earlier id
+   * is still in use on a socket they moved from.
+   */
+  public getDrainingRequests() {
+    return Object.values(this.drainingRequests);
+  }
+
+  /**
+   * Forgets the earlier ids of subscriptions no longer draining any socket.
+   */
+  public deleteDrained() {
+    for (const [id, request] of Object.entries(this.drainingRequests)) {
+      if (!request.movedFrom.size) delete this.drainingRequests[id];
+    }
   }
 
   /**

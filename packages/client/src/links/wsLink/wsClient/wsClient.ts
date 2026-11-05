@@ -492,16 +492,18 @@ export class WsClient {
     ws: WebSocket,
   ) {
     if (!request.movedFrom.delete(ws)) return;
+    this.requestManager.deleteDrained();
     this.closeIfDrained(ws);
   }
 
   private hasRequestsOn(ws: WebSocket | null) {
-    return this.requestManager
-      .getPendingRequests()
-      .some(
-        (request) =>
-          request.ws === ws || (ws !== null && request.movedFrom.has(ws)),
-      );
+    return [
+      ...this.requestManager.getPendingRequests(),
+      ...this.requestManager.getDrainingRequests(),
+    ].some(
+      (request) =>
+        request.ws === ws || (ws !== null && request.movedFrom.has(ws)),
+    );
   }
 
   /**
@@ -588,6 +590,10 @@ export class WsClient {
         }
         request.movedFrom.delete(ws);
       }
+      for (const request of this.requestManager.getDrainingRequests()) {
+        request.movedFrom.delete(ws);
+      }
+      this.requestManager.deleteDrained();
       const lost = this.failPendingRequests(ws, cause).filter((request) => {
         if (!request.successor) return true;
         // Its new socket has it already.
@@ -714,7 +720,9 @@ export class WsClient {
   }
 
   private handleResponseMessage(message: TRPCResponseMessage, ws: WebSocket) {
-    const request = this.requestManager.getPendingRequest(message.id);
+    const request =
+      this.requestManager.getPendingRequest(message.id) ??
+      this.requestManager.getDrainingRequest(message.id);
     if (!request) return;
     const result = 'result' in message ? message.result : null;
     if (request.successor === ws) {

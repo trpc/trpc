@@ -3664,6 +3664,80 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test("an untracked subscription lost with the new socket still gets the old socket's late events from before it was sent again", async () => {
+    const {
+      ctx,
+      ee,
+      valuesStarted,
+      receivedFor,
+      stopsOn,
+      serverSockets,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+      setRetryDelayMs,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.values.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let oldFrames: ReturnType<typeof holdFrames> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(valuesStarted).toHaveBeenCalledTimes(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('values')).toHaveLength(2);
+      });
+      // The old socket is backed up: its frames arrive late, in order.
+      oldFrames = holdFrames(oldServerSocket, 'sent', {
+        matches: (message) => 'result' in message,
+        later: 'wait',
+      });
+      // Only the old socket listens, so only it has 1.
+      ee.emit('value', 1);
+      await vi.waitFor(() => {
+        expect(oldFrames!.count()).toBe(1);
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(valuesStarted).toHaveBeenCalledTimes(2);
+      });
+
+      setRetryDelayMs(10_000);
+      serverSockets[1]!.terminate();
+      await vi.waitFor(() => {
+        expect(receivedFor('values')).toHaveLength(3);
+        expect(valuesStarted).toHaveBeenCalledTimes(3);
+        expect(ee.listenerCount('value')).toBe(1);
+      });
+      expect(receivedFor('values')[2]!.socket).toBe(oldServerSocket);
+
+      oldFrames.release();
+      await vi.waitFor(() => {
+        expect(seen.filter((item) => item === 'started')).toHaveLength(2);
+      });
+      ee.emit('value', 2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 'started', 2]);
+    } finally {
+      oldFrames?.release();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test("an untracked subscription isn't let go at a keepAlive PONG that its old socket's events are queued around", async () => {
     const {
       ctx,
