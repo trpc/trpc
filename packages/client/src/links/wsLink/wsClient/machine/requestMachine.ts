@@ -39,7 +39,12 @@ export type QueryState =
 export type SubscriptionState =
   | Queued
   /** Sent on `connection`. */
-  | { kind: 'sent'; connection: ConnectionId; started: boolean }
+  | {
+      kind: 'sent';
+      connection: ConnectionId;
+      started: boolean;
+      replayed: Replayed;
+    }
   /**
    * Moving make-before-break: sent on `to`, and still served by `from` until
    * `to` confirms it. Only then is it stopped on `from`.
@@ -49,6 +54,7 @@ export type SubscriptionState =
       from: ConnectionId;
       to: ConnectionId;
       started: boolean;
+      replayed: Replayed;
     }
   /**
    * An untracked subscription that `to` has confirmed, being stopped on
@@ -64,6 +70,16 @@ export type SubscriptionState =
     }
   | Settled;
 
+/**
+ * Event ids an old connection delivered while a subscription moved. The new
+ * connection resumes from the `lastEventId` sent with it, so it sends them
+ * again; each is dropped once. Kept until a connection serving the
+ * subscription alone sends an event that isn't one of them, which ends its
+ * replay. Only a tracked subscription has ids to replay, so a `leaving` one
+ * has none, and a queued one starts afresh.
+ */
+type Replayed = readonly string[];
+
 export type RequestState = QueryState | SubscriptionState;
 
 export interface QueryRequest {
@@ -77,14 +93,6 @@ export interface SubscriptionRequest {
   readonly method: 'subscription';
   /** The id of the last event delivered, sent when it resumes. */
   readonly lastEventId: string | null;
-  /**
-   * Event ids an old connection delivered while the subscription moved.
-   * The new connection resumes from the `lastEventId` sent with it, so it
-   * sends them again; each is dropped once. Kept until a connection serving
-   * the subscription alone sends an event that isn't one of them, which ends
-   * its replay.
-   */
-  readonly replayed: readonly string[];
   readonly state: SubscriptionState;
 }
 
@@ -270,11 +278,7 @@ type SubscriptionTransition = RequestTransition<SubscriptionRequest>;
 /** A subscription whose connection is gone resumes on the next one. */
 function resume(request: SubscriptionRequest): SubscriptionTransition {
   return {
-    request: {
-      ...request,
-      replayed: [],
-      state: { kind: 'queued', batch: null },
-    },
+    request: { ...request, state: { kind: 'queued', batch: null } },
     effects: [],
   };
 }
@@ -282,7 +286,7 @@ function resume(request: SubscriptionRequest): SubscriptionTransition {
 interface Received {
   readonly started: boolean;
   readonly lastEventId: string | null;
-  readonly replayed: readonly string[];
+  readonly replayed: Replayed;
   /** The id of the event delivered, if it has one. */
   readonly delivered: string | null;
   readonly effects: RequestEffect[];
@@ -294,7 +298,7 @@ interface Received {
  */
 function receive(
   request: SubscriptionRequest,
-  started: boolean,
+  { started, replayed }: { started: boolean; replayed: Replayed },
   message: TRPCResponseMessage,
 ): Received | null {
   if (!('result' in message)) return null;
@@ -302,7 +306,7 @@ function receive(
   const unchanged: Received = {
     started,
     lastEventId: request.lastEventId,
-    replayed: request.replayed,
+    replayed,
     delivered: null,
     effects: [],
   };
@@ -316,10 +320,10 @@ function receive(
   }
   if (result.type === 'stopped') return null;
   const id = result.type === 'data' ? (result.id ?? null) : null;
-  if (id !== null && request.replayed.includes(id)) {
+  if (id !== null && replayed.includes(id)) {
     return {
       ...unchanged,
-      replayed: request.replayed.filter((replayed) => replayed !== id),
+      replayed: replayed.filter((replayedId) => replayedId !== id),
     };
   }
   return {
@@ -344,7 +348,10 @@ function onSubscriptionQueued(
       return {
         request: {
           ...request,
-          state: next.kind === 'sent' ? { ...next, started: false } : next,
+          state:
+            next.kind === 'sent'
+              ? { ...next, started: false, replayed: [] }
+              : next,
         },
         effects: [],
       };
@@ -377,14 +384,17 @@ function onSubscriptionSent(
       if (event.connection !== state.connection) {
         return illegal(request, event);
       }
-      const received = receive(request, state.started, event.message);
+      const received = receive(request, state, event.message);
       if (received) {
         return {
           request: {
             ...request,
             lastEventId: received.lastEventId,
-            replayed: received.delivered === null ? received.replayed : [],
-            state: { ...state, started: received.started },
+            state: {
+              ...state,
+              started: received.started,
+              replayed: received.delivered === null ? received.replayed : [],
+            },
           },
           effects: received.effects,
         };
@@ -428,7 +438,12 @@ function onMoving(
         // now on; an untracked one is `leaving` until the old one stops.
         const switched = onSubscriptionSent(
           request,
-          { kind: 'sent', connection: state.to, started: state.started },
+          {
+            kind: 'sent',
+            connection: state.to,
+            started: state.started,
+            replayed: state.replayed,
+          },
           event,
         );
         const effects = [stop(request, state.from), ...switched.effects];
@@ -454,17 +469,20 @@ function onMoving(
       }
       if (event.connection !== state.from) return illegal(request, event);
       // Until then, the old connection serves it.
-      const received = receive(request, state.started, event.message);
+      const received = receive(request, state, event.message);
       if (received) {
         return {
           request: {
             ...request,
             lastEventId: received.lastEventId,
-            replayed:
-              received.delivered === null
-                ? received.replayed
-                : [...received.replayed, received.delivered],
-            state: { ...state, started: received.started },
+            state: {
+              ...state,
+              started: received.started,
+              replayed:
+                received.delivered === null
+                  ? received.replayed
+                  : [...received.replayed, received.delivered],
+            },
           },
           effects: received.effects,
         };
@@ -485,6 +503,7 @@ function onMoving(
               kind: 'sent',
               connection: state.from,
               started: state.started,
+              replayed: state.replayed,
             },
           },
           effects: [],
@@ -500,6 +519,7 @@ function onMoving(
               kind: 'sent',
               connection: state.to,
               started: state.started,
+              replayed: state.replayed,
             },
           },
           effects: [],
@@ -533,18 +553,17 @@ function onLeaving(
   state: Subscription<'leaving'>,
   event: RequestEvent,
 ): SubscriptionTransition {
-  const remaining: SubscriptionRequest = {
-    ...request,
-    state: { kind: 'sent', connection: state.to, started: state.started },
+  const onTo: Subscription<'sent'> = {
+    kind: 'sent',
+    connection: state.to,
+    started: state.started,
+    replayed: [],
   };
+  const remaining: SubscriptionRequest = { ...request, state: onTo };
   switch (event.type) {
     case 'response': {
       if (event.connection === state.to) {
-        const served = onSubscriptionSent(
-          request,
-          { kind: 'sent', connection: state.to, started: state.started },
-          event,
-        );
+        const served = onSubscriptionSent(request, onTo, event);
         const servedState = served.request.state;
         if (servedState.kind !== 'sent') return served;
         return {
@@ -635,6 +654,7 @@ export function moveSubscription(
         from: state.connection,
         to,
         started: state.started,
+        replayed: state.replayed,
       },
     },
     effects: [],

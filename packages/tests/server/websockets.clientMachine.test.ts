@@ -663,8 +663,8 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       previous &&
       servingOf(previous.state).includes(event.connection) &&
       eventId !== undefined &&
-      previous.method === 'subscription' &&
-      previous.replayed.includes(eventId) &&
+      'replayed' in previous.state &&
+      previous.state.replayed.includes(eventId) &&
       !effects.some((effect) => effect.type === 'next')
     ) {
       covered.add('replayed event dropped');
@@ -1416,8 +1416,7 @@ test('a subscription moved on before its new connection replayed drops the repla
     id: 1,
     method: 'subscription',
     lastEventId: '1',
-    replayed: [],
-    state: { kind: 'sent', connection: 1, started: true },
+    state: { kind: 'sent', connection: 1, started: true, replayed: [] },
   };
   const next: unknown[] = [];
   function apply(event: RequestEvent | { type: 'move'; to: ConnectionId }) {
@@ -1519,8 +1518,8 @@ function connectionDiagram() {
 /** Sent on connection 1; a move goes to connection 2. */
 const requestSamples: RequestState[] = [
   { kind: 'queued', batch: null },
-  { kind: 'sent', connection: 1, started: false },
-  { kind: 'moving', from: 1, to: 2, started: false },
+  { kind: 'sent', connection: 1, started: false, replayed: [] },
+  { kind: 'moving', from: 1, to: 2, started: false, replayed: [] },
   { kind: 'leaving', from: 1, to: 2, started: false },
   { kind: 'settled' },
 ];
@@ -1611,7 +1610,6 @@ function requestDiagram(method: RequestMethod) {
                 id: 1,
                 method,
                 lastEventId,
-                replayed: [],
                 state: state as SubscriptionState,
               }
             : { id: 1, method, state: state as QueryState };

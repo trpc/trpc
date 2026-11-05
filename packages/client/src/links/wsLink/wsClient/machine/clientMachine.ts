@@ -763,7 +763,6 @@ export function clientTransition(
               id: event.id,
               method: event.method,
               lastEventId: event.lastEventId,
-              replayed: [],
               state: queued,
             }
           : { id: event.id, method: event.method, state: queued },
