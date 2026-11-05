@@ -37,9 +37,13 @@ export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
 /** The packages that lay out, rasterize and letter the cards. */
 const rendererPackages = ['satori', '@resvg/resvg-wasm', '@fontsource/inter'];
 
+/** The modules outside `src/og` that the cards are laid out with. */
+const rendererModules = ['src/content/inline-code.ts', 'src/seo.ts'];
+
 /**
- * What the cards are drawn with: `src/og`'s modules, the wordmark, and
- * `rendererPackages`' `package.json`s, whose versions change with an upgrade.
+ * What the cards are drawn with: `src/og`'s modules and `rendererModules`,
+ * the wordmark, and `rendererPackages`' `package.json`s, whose versions
+ * change with an upgrade.
  */
 const rendererFiles = Effect.fn('rendererFiles')(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -52,6 +56,7 @@ const rendererFiles = Effect.fn('rendererFiles')(function* () {
     .map((name) => path.join(ogDir, name));
   return [
     ...modules,
+    ...rendererModules.map((file) => path.join(www, file)),
     path.join(www, 'public/img/logo-text-black.svg'),
     ...rendererPackages.map((name) =>
       path.join(www, 'node_modules', name, 'package.json'),
