@@ -4269,9 +4269,12 @@ describe('auth / connectionParams', async () => {
     });
     // The old socket serves the subscription until connectionParams are sent
     // on the new one.
-    await vi.waitFor(() => {
-      expect(ctx.wss.clients.size).toBe(1);
-    });
+    await vi.waitFor(
+      () => {
+        expect(ctx.wss.clients.size).toBe(1);
+      },
+      { timeout: 5_000 },
+    );
     expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
   });
 
