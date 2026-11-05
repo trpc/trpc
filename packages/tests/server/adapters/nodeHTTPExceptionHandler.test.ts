@@ -58,7 +58,8 @@ test('a throwing errorFormatter gets an error response', async () => {
     TRPCClientError,
   );
 
-  expect(error.data).toMatchObject({
+  expect(error.message).toBe('Internal server error');
+  expect(error.data).toEqual({
     code: 'INTERNAL_SERVER_ERROR',
     httpStatus: 500,
   });

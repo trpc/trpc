@@ -19,9 +19,10 @@ import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http
 import { resolveResponse } from '../../@trpc/server/http';
 // oxlint-disable-next-line no-restricted-imports
 import {
-  getDefaultErrorShape,
   getErrorShape,
   run,
+  TRPC_ERROR_CODES_BY_KEY,
+  type TRPCErrorShape,
 } from '../../unstable-core-do-not-import';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 import type {
@@ -30,6 +31,16 @@ import type {
   NodeHTTPResponse,
 } from './types';
 import { writeResponse } from './writeResponse';
+
+/**
+ * What the client gets when its error can't be formatted. It says nothing
+ * about the error, which is what `errorFormatter` would have hidden.
+ */
+const fallbackErrorShape: TRPCErrorShape = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
 
 /**
  * Answers with an error response when handling a request throws.
@@ -57,11 +68,7 @@ export function internal_exceptionHandler<
         });
       } catch {
         // a throwing `errorFormatter` must not stop the response
-        return getDefaultErrorShape({
-          error,
-          path: undefined,
-          isDev: config.isDev,
-        });
+        return fallbackErrorShape;
       }
     });
 
