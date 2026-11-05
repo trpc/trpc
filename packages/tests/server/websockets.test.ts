@@ -2894,7 +2894,7 @@ test('subscriptions are automatically resumed if connection is lost', async () =
     const onStoppedMock = vi.fn();
     const onCompleteMock = vi.fn();
     const unsub = ctx.client.onMessageObservable.subscribe(undefined, {
-      onStarted: onStartedMock(),
+      onStarted: onStartedMock,
       onData: onDataMock,
       onError: onErrorMock,
       onStopped: onStoppedMock,
@@ -2925,8 +2925,9 @@ test('subscriptions are automatically resumed if connection is lost', async () =
     expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
   });
 
+  // A lost connection resubscribes, and the new socket's started is delivered.
   await vi.waitFor(() => {
-    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(2);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
   });
   ctx.ee.emit('server:msg', {
