@@ -24,6 +24,7 @@ import type {
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
+  makeAsyncResource,
   run,
   sleep,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -5157,6 +5158,7 @@ describe('auth / connectionParams', async () => {
     const wsClient = createWSClient({
       url: ctx.wssUrl,
     });
+    await using _wsClient = makeAsyncResource(wsClient, () => wsClient.close());
     const client = createTRPCClient<AppRouter>({
       links: [
         wsLink({
@@ -5183,6 +5185,7 @@ describe('auth / connectionParams', async () => {
         closeMs: 0,
       },
     });
+    await using _wsClient = makeAsyncResource(wsClient, () => wsClient.close());
     const client = createTRPCClient<AppRouter>({
       links: [
         wsLink({
@@ -5206,6 +5209,7 @@ describe('auth / connectionParams', async () => {
         };
       },
     });
+    await using _wsClient = makeAsyncResource(wsClient, () => wsClient.close());
     const client = createTRPCClient<AppRouter>({
       links: [
         wsLink({
@@ -5233,6 +5237,7 @@ describe('auth / connectionParams', async () => {
       },
       onOpen: onConnectionOpen,
     });
+    await using _wsClient = makeAsyncResource(wsClient, () => wsClient.close());
     const client = createTRPCClient<AppRouter>({
       links: [
         wsLink({
@@ -5452,6 +5457,7 @@ test('url callback and connection params is invoked for every reconnect', async 
       return {};
     },
   });
+  await using _client = makeAsyncResource(client, () => client.close());
 
   async function waitForClientState<
     T extends TRPCConnectionState<unknown>['state'],
