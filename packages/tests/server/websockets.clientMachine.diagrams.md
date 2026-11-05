@@ -71,12 +71,12 @@ stateDiagram-v2
   sent --> settled : stopped, error, unsubscribe, clientClose, sendFailed
   moving --> moving : move to a newer one, started, data
   moving --> sent : connectionLost, connectionLost on new
-  moving --> leaving : started on new, data on new, started on new, tracked, data on new, tracked
+  moving --> leaving : started on new, data on new, started on new (tracked), data on new (tracked)
   moving --> settled : stopped, stopped on new, error, error on new, unsubscribe, clientClose, sendFailed
   leaving --> moving : move to a newer one
   leaving --> sent : connectionLost, stopped, error, fenced
   leaving --> queued : connectionLost on new
-  leaving --> leaving : started, started on new, data, data on new, an earlier move's fence, started on new, tracked, data on new, tracked
+  leaving --> leaving : started, started on new, data, data on new, an earlier move's fence, started on new (tracked), data on new (tracked)
   leaving --> settled : stopped on new, error on new, unsubscribe, clientClose, sendFailed
   settled --> [*]
 ```

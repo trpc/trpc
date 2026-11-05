@@ -2003,7 +2003,7 @@ function requestDiagram(method: RequestMethod) {
           )
           .map((sample) => ({
             ...sample,
-            label: `${sample.label}, tracked`,
+            label: `${sample.label} (tracked)`,
             lastEventId: '1',
           })),
       ],
