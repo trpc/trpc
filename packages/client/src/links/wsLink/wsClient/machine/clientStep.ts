@@ -140,13 +140,22 @@ export class Step {
     return id === undefined ? undefined : this.requests.get(id);
   }
 
-  /** Requests sent on `connection`, or moving to it. */
-  sentOrMovingTo(connection: ConnectionId) {
+  /** Requests sent on `connection`, moving to it, or leaving others for it. */
+  boundFor(connection: ConnectionId) {
     return [...this.requests.values()].filter((request) => {
       const state = request.state;
-      return state.kind === 'moving'
-        ? state.to === connection
-        : state.kind === 'sent' && state.connection === connection;
+      switch (state.kind) {
+        case 'sent':
+          return state.connection === connection;
+        case 'moving':
+        case 'leaving':
+          return state.to === connection;
+        case 'queued':
+        case 'settled':
+          return false;
+        default:
+          return state satisfies never;
+      }
     });
   }
 
@@ -382,14 +391,15 @@ export class Step {
    * Starts moving the subscriptions on connections the ready one replaced:
    * each is sent on the ready one too, and stays on its old connection until
    * the ready one confirms it. One still moving to a replaced connection
-   * moves to the ready one instead. Returns the ones to send.
+   * moves to the ready one instead, and one still leaving others goes on
+   * leaving them. Returns the ones to send.
    */
   startMoves(): RequestId[] {
     const lifecycle = this.lifecycle;
     if (lifecycle.kind !== 'open') return [];
     const moved: RequestId[] = [];
     for (const previous of drainingConnections(this)) {
-      for (const request of this.sentOrMovingTo(previous)) {
+      for (const request of this.boundFor(previous)) {
         if (request.method !== 'subscription') continue;
         this.applyRequestTransition(
           request,
@@ -471,6 +481,21 @@ export class Step {
    */
   onLost(connection: ConnectionId, cause: unknown): Handover | null {
     const handover = this.forget(connection);
+    const previous = this.replaced.at(-1);
+    if (
+      handover &&
+      previous !== undefined &&
+      this.lifecycle.kind !== 'idle' &&
+      this.closing === null
+    ) {
+      // The newest connection it replaced still serves, so it stands in
+      // for the next one instead.
+      this.replaced = this.replaced.slice(0, -1);
+      this.handover = {
+        connection: previous,
+        replacementError: handover.replacementError,
+      };
+    }
     for (const request of this.queuedFor(connection)) {
       this.applyRequest(
         request,

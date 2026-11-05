@@ -136,8 +136,10 @@ function onFrame(
 function onFenced(step: Step, connection: ConnectionId, fence: Fence) {
   if (!onReceived(step, connection)) return;
   const request = step.requests.get(fence.request);
-  if (request?.state.kind !== 'leaving') return;
-  if (request.state.from !== connection) return;
+  if (!request) return;
+  const state = request.state;
+  if (state.kind !== 'leaving' && state.kind !== 'moving') return;
+  if (!state.left.some((entry) => entry.connection === connection)) return;
   const serving = servingConnections(request);
   step.applyRequest(request, { type: 'fenced', connection, to: fence.to });
   step.moveStragglers();

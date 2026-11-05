@@ -125,6 +125,8 @@ const covered = coverage([
   'move completed by data before started',
   'old socket event dropped after the move completed',
   'second reconnect notice mid-move',
+  'moved on while still leaving a socket',
+  'lost handover handed to the socket it replaced',
   'moved on from a new socket replaced mid-move',
   'move undone by a lost successor',
   'old socket lost before the move began',
@@ -397,11 +399,33 @@ function servingOf(state: RequestState | undefined): ConnectionId[] {
     case 'sent':
       return [state.connection];
     case 'moving':
+      return [...leftOf(state), state.from, state.to];
     case 'leaving':
-      return [state.from, state.to];
+      return [...leftOf(state), state.to];
     default:
       return [];
   }
+}
+
+/** The connections a subscription has left and still hears from. */
+function leftOf(state: RequestState | undefined): ConnectionId[] {
+  return state?.kind === 'moving' || state?.kind === 'leaving'
+    ? state.left.map((entry) => entry.connection)
+    : [];
+}
+
+/** Whether `state` is leaving `connection` for `to`. */
+function isLeaving(
+  state: RequestState | undefined,
+  connection: ConnectionId,
+  to: ConnectionId,
+) {
+  return (
+    (state?.kind === 'moving' || state?.kind === 'leaving') &&
+    state.left.some(
+      (entry) => entry.connection === connection && entry.to === to,
+    )
+  );
 }
 
 function servedBy(model: ClientModel, connection: ConnectionId) {
@@ -454,6 +478,14 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     !isLive(after.connections.get(event.connection))
       ? event.connection
       : null;
+  if (
+    lost !== null &&
+    before.handover?.connection === lost &&
+    after.handover !== null &&
+    before.replaced.includes(after.handover.connection)
+  ) {
+    covered.add('lost handover handed to the socket it replaced');
+  }
   if (event?.type === 'frame' && typeof event.message.id === 'number') {
     const state = answeredBy(before, event.message.id)?.state;
     if (!servingOf(state).includes(event.connection)) {
@@ -468,13 +500,14 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     // The fence ends only the leaving it was sent for.
     const id = event.fence.request;
     const previous = before.requests.get(id);
-    const awaited =
-      previous?.state.kind === 'leaving' &&
-      previous.state.from === event.connection &&
-      previous.state.to === event.fence.to;
+    const awaited = isLeaving(
+      previous?.state,
+      event.connection,
+      event.fence.to,
+    );
     if (awaited) {
       check(
-        after.requests.get(id)?.state.kind !== 'leaving',
+        !leftOf(after.requests.get(id)?.state).includes(event.connection),
         `subscription ${id} still leaving connection ${event.connection} after its fence`,
       );
     } else {
@@ -662,11 +695,12 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
             ),
           `fence for ${id} on connection ${effect.connection} before its stop`,
         );
-        const state = after.requests.get(id)?.state;
         check(
-          state?.kind === 'leaving' &&
-            state.from === effect.connection &&
-            state.to === effect.fence.to,
+          isLeaving(
+            after.requests.get(id)?.state,
+            effect.connection,
+            effect.fence.to,
+          ),
           `fence for ${id} on connection ${effect.connection} without leaving it`,
         );
         break;
@@ -753,7 +787,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         effects.some((effect) => effect.type === 'next'),
         `untracked event for ${request?.id} from connection ${event.connection} dropped`,
       );
-      if (state?.kind === 'leaving' && event.connection === state.from) {
+      if (leftOf(state).includes(event.connection)) {
         covered.add(
           "old socket's untracked event delivered after the move completed",
         );
@@ -828,26 +862,31 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     ) {
       covered.add('old socket lost after the move completed');
     }
-    if (
-      state.kind === 'leaving' &&
-      (previous?.kind !== 'leaving' ||
-        previous.from !== state.from ||
-        previous.to !== state.to)
-    ) {
-      // Leaving is bounded: the fence goes with the stop.
-      check(
-        effects.some(
-          (effect) =>
-            effect.type === 'sendFence' &&
-            effect.connection === state.from &&
-            effect.fence.request === id &&
-            effect.fence.to === state.to,
-        ),
-        `subscription ${id} leaving connection ${state.from} without a fence`,
-      );
+    if (state.kind === 'moving' || state.kind === 'leaving') {
+      for (const entry of state.left) {
+        if (isLeaving(previous, entry.connection, entry.to)) continue;
+        // Leaving is bounded: the fence goes with the stop.
+        check(
+          effects.some(
+            (effect) =>
+              effect.type === 'sendFence' &&
+              effect.connection === entry.connection &&
+              effect.fence.request === id &&
+              effect.fence.to === entry.to,
+          ),
+          `subscription ${id} leaving connection ${entry.connection} without a fence`,
+        );
+      }
+    }
+    if (previous?.kind === 'leaving' && state.kind === 'moving') {
+      covered.add('moved on while still leaving a socket');
     }
     if (previous?.kind === 'leaving' && state.kind !== 'leaving') {
-      if (state.kind === 'sent' && lost === previous.from) {
+      if (
+        state.kind === 'sent' &&
+        lost !== null &&
+        leftOf(previous).includes(lost)
+      ) {
         covered.add('old socket lost while a subscription left it');
       } else if (state.kind === 'sent' && event?.type === 'fenced') {
         covered.add('old socket fenced a subscription that left it');
@@ -992,11 +1031,15 @@ function checkModel(model: ClientModel) {
         `request ${id} sent on connection ${state.connection} in phase ${phase}`,
       );
     } else if (state.kind === 'moving' || state.kind === 'leaving') {
-      const from = model.connections.get(state.from)?.state.phase;
+      const from = [
+        ...leftOf(state),
+        ...(state.kind === 'moving' ? [state.from] : []),
+      ].map((connection) => model.connections.get(connection)?.state.phase);
       const to = model.connections.get(state.to)?.state.phase;
       check(
-        from === 'draining' && (to === 'ready' || to === 'draining'),
-        `request ${id} moving from a ${from} connection to a ${to} one`,
+        from.every((phase) => phase === 'draining') &&
+          (to === 'ready' || to === 'draining'),
+        `request ${id} moving from ${from.join(', ')} connections to a ${to} one`,
       );
     } else if (state.kind === 'queued' && state.batch !== null) {
       check(
@@ -1539,12 +1582,12 @@ function answerEveryFence(sim: Sim) {
     while (answerFence(sim, connection, socket));
   }
   for (const [id, request] of sim.model.requests) {
-    const state = request.state;
-    if (state.kind !== 'leaving') continue;
-    check(
-      !sim.writable(state.from),
-      `subscription ${id} still leaving connection ${state.from} after its fence`,
-    );
+    for (const connection of leftOf(request.state)) {
+      check(
+        !sim.writable(connection),
+        `subscription ${id} still leaving connection ${connection} after its fence`,
+      );
+    }
   }
 }
 
@@ -1843,8 +1886,14 @@ function connectionDiagram() {
 const requestSamples: RequestState[] = [
   { kind: 'queued', batch: null },
   { kind: 'sent', connection: 1, started: false, replayed: [] },
-  { kind: 'moving', from: 1, to: 2, started: false, replayed: [] },
-  { kind: 'leaving', from: 1, to: 2, started: false, replayed: [] },
+  { kind: 'moving', from: 1, to: 2, left: [], started: false, replayed: [] },
+  {
+    kind: 'leaving',
+    to: 2,
+    left: [{ connection: 1, to: 2 }],
+    started: false,
+    replayed: [],
+  },
   { kind: 'settled' },
 ];
 

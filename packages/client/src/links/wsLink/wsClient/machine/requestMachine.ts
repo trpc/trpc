@@ -49,31 +49,39 @@ export type SubscriptionState =
     }
   /**
    * Moving make-before-break: sent on `to`, and still served by `from` until
-   * `to` confirms it. Only then is it stopped on `from`.
+   * `to` confirms it. Only then is it stopped on `from`. It may still be
+   * leaving the connections an earlier move left.
    */
   | {
       kind: 'moving';
       from: ConnectionId;
       to: ConnectionId;
+      left: readonly Left[];
       started: boolean;
       replayed: Replayed;
     }
-  /**
-   * Served by `to`, which has confirmed it, and being stopped on `from`.
-   * `to` can't resend events without ids that `from` sent before `to`
-   * listened, so `from`'s are still delivered until `from` has handled the
-   * stop: it answers the `PING` sent after it (the fence), ends the
-   * subscription, or is lost. A server that never answers `PING` still ends
-   * it or is lost.
-   */
+  /** Served by `to`, which has confirmed it, and leaving each of `left`. */
   | {
       kind: 'leaving';
-      from: ConnectionId;
       to: ConnectionId;
+      left: readonly [Left, ...Left[]];
       started: boolean;
       replayed: Replayed;
     }
   | Settled;
+
+/**
+ * A connection a subscription was stopped on when it moved to `to`. `to`
+ * can't resend events without ids that `connection` sent before `to`
+ * listened, so `connection`'s are still delivered until it has handled the
+ * stop: it answers the `PING` sent after it (the fence), ends the
+ * subscription, or is lost. A server that never answers `PING` still ends
+ * it or is lost.
+ */
+export interface Left {
+  readonly connection: ConnectionId;
+  readonly to: ConnectionId;
+}
 
 /**
  * Event ids an old connection delivered while a subscription moved. The new
@@ -467,6 +475,66 @@ function onSubscriptionSent(
   }
 }
 
+/** Served by `connection`, and still leaving each of `left`. */
+function servedOn(
+  connection: ConnectionId,
+  left: readonly Left[],
+  { started, replayed }: { started: boolean; replayed: Replayed },
+): Subscription<'sent' | 'leaving'> {
+  const [first, ...rest] = left;
+  return first === undefined
+    ? { kind: 'sent', connection, started, replayed }
+    : {
+        kind: 'leaving',
+        to: connection,
+        left: [first, ...rest],
+        started,
+        replayed,
+      };
+}
+
+function without(left: readonly Left[], connection: ConnectionId) {
+  return left.filter((entry) => entry.connection !== connection);
+}
+
+/**
+ * A frame from a connection the subscription has left. Its `stopped` or an
+ * error means it has handled the stop. Its events without ids are
+ * delivered; the serving connection resends tracked ones, and `started` has
+ * been handled.
+ */
+function fromLeft(
+  request: SubscriptionRequest,
+  left: readonly Left[],
+  { connection, message }: Extract<RequestEvent, { type: 'response' }>,
+): { left: readonly Left[]; effects: RequestEffect[] } {
+  if (!('result' in message) || message.result.type === 'stopped') {
+    return { left: without(left, connection), effects: [] };
+  }
+  if (message.result.type !== 'data' || message.result.id !== undefined) {
+    return { left, effects: [] };
+  }
+  return { left, effects: [{ type: 'next', request: request.id, message }] };
+}
+
+/**
+ * `connection` answered the fence of a move to `to`. An earlier move's
+ * fence leaves `left` as it is: this one's is still to come.
+ */
+function fenced(
+  left: readonly Left[],
+  connection: ConnectionId,
+  to: ConnectionId,
+) {
+  return left.filter(
+    (entry) => entry.connection !== connection || entry.to !== to,
+  );
+}
+
+function isLeft(left: readonly Left[], connection: ConnectionId) {
+  return left.some((entry) => entry.connection === connection);
+}
+
 function onMoving(
   request: SubscriptionRequest,
   state: Subscription<'moving'>,
@@ -503,8 +571,8 @@ function onMoving(
               ...switched.request,
               state: {
                 kind: 'leaving',
-                from: state.from,
                 to: state.to,
+                left: [{ connection: state.from, to: state.to }, ...state.left],
                 started: switchedState.started,
                 replayed: switchedState.replayed,
               },
@@ -516,6 +584,10 @@ function onMoving(
           request: switched.request,
           effects: [stopOld, ...switched.effects],
         };
+      }
+      if (isLeft(state.left, event.connection)) {
+        const { left, effects } = fromLeft(request, state.left, event);
+        return { request: { ...request, state: { ...state, left } }, effects };
       }
       if (event.connection !== state.from) return illegal(request, event);
       // Until then, the old connection serves it.
@@ -549,12 +621,7 @@ function onMoving(
         return {
           request: {
             ...request,
-            state: {
-              kind: 'sent',
-              connection: state.from,
-              started: state.started,
-              replayed: state.replayed,
-            },
+            state: servedOn(state.from, state.left, state),
           },
           effects: [],
         };
@@ -563,19 +630,34 @@ function onMoving(
         // Already sent on the new connection, which resends what the old
         // one delivered since.
         return {
+          request: { ...request, state: servedOn(state.to, state.left, state) },
+          effects: [],
+        };
+      }
+      if (isLeft(state.left, event.connection)) {
+        return {
           request: {
             ...request,
-            state: {
-              kind: 'sent',
-              connection: state.to,
-              started: state.started,
-              replayed: state.replayed,
-            },
+            state: { ...state, left: without(state.left, event.connection) },
           },
           effects: [],
         };
       }
       return illegal(request, event);
+    case 'fenced':
+      if (!isLeft(state.left, event.connection)) {
+        return illegal(request, event);
+      }
+      return {
+        request: {
+          ...request,
+          state: {
+            ...state,
+            left: fenced(state.left, event.connection, event.to),
+          },
+        },
+        effects: [],
+      };
     case 'unsubscribe':
     case 'clientClose':
       return settled(request, [
@@ -591,7 +673,6 @@ function onMoving(
     case 'batch':
     case 'unbatch':
     case 'send':
-    case 'fenced':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
@@ -609,7 +690,10 @@ function onLeaving(
     started: state.started,
     replayed: state.replayed,
   };
-  const remaining: SubscriptionRequest = { ...request, state: onTo };
+  const leaving = (left: readonly Left[]): SubscriptionRequest => ({
+    ...request,
+    state: servedOn(state.to, left, state),
+  });
   switch (event.type) {
     case 'response': {
       if (event.connection === state.to) {
@@ -628,32 +712,29 @@ function onLeaving(
           effects: served.effects,
         };
       }
-      if (event.connection !== state.from) return illegal(request, event);
-      const message = event.message;
-      if (!('result' in message) || message.result.type === 'stopped') {
-        // It has stopped it.
-        return { request: remaining, effects: [] };
+      if (!isLeft(state.left, event.connection)) {
+        return illegal(request, event);
       }
-      // A tracked event is `to`'s to send, and `started` has been handled.
-      if (message.result.type !== 'data' || message.result.id !== undefined) {
-        return { request, effects: [] };
-      }
-      return {
-        request,
-        effects: [{ type: 'next', request: request.id, message }],
-      };
+      const { left, effects } = fromLeft(request, state.left, event);
+      return { request: leaving(left), effects };
     }
     case 'connectionLost':
-      if (event.connection === state.from) {
-        return { request: remaining, effects: [] };
+      if (isLeft(state.left, event.connection)) {
+        return {
+          request: leaving(without(state.left, event.connection)),
+          effects: [],
+        };
       }
       if (event.connection === state.to) return resume(request);
       return illegal(request, event);
     case 'fenced':
-      if (event.connection !== state.from) return illegal(request, event);
-      // An earlier move's fence: this one's is still to come.
-      if (event.to !== state.to) return { request, effects: [] };
-      return { request: remaining, effects: [] };
+      if (!isLeft(state.left, event.connection)) {
+        return illegal(request, event);
+      }
+      return {
+        request: leaving(fenced(state.left, event.connection, event.to)),
+        effects: [],
+      };
     case 'unsubscribe':
     case 'clientClose':
       return settled(request, [stop(request, state.to), complete(request)]);
@@ -693,9 +774,11 @@ function subscriptionTransition(
 
 /**
  * A subscription on a replaced connection is sent on `to` as well. One that
- * is `sent` on another connection moves. One still moving to a connection
- * that was replaced before confirming it is stopped there and moves to `to`
- * instead. Either way its old connection serves it until `to` confirms it.
+ * is `sent` on another connection moves, and so does one `leaving` others
+ * for it, which goes on leaving them. One still moving to a connection that
+ * was replaced before confirming it is stopped there and moves to `to`
+ * instead. Either way the connection serving it serves it until `to`
+ * confirms it.
  */
 export function moveSubscription(
   request: SubscriptionRequest,
@@ -704,11 +787,25 @@ export function moveSubscription(
   const state = request.state;
   const event = { type: 'move' };
   let from: ConnectionId;
+  let left: readonly Left[] = [];
   const effects: RequestEffect[] = [];
   if (state.kind === 'sent' && state.connection !== to) {
     from = state.connection;
-  } else if (state.kind === 'moving' && state.from !== to && state.to !== to) {
+  } else if (
+    state.kind === 'leaving' &&
+    state.to !== to &&
+    !isLeft(state.left, to)
+  ) {
+    from = state.to;
+    left = state.left;
+  } else if (
+    state.kind === 'moving' &&
+    state.from !== to &&
+    state.to !== to &&
+    !isLeft(state.left, to)
+  ) {
     from = state.from;
+    left = state.left;
     effects.push(stop(request, state.to));
   } else {
     return illegal(request, event);
@@ -721,6 +818,7 @@ export function moveSubscription(
         kind: 'moving',
         from,
         to,
+        left,
         started: state.started,
         replayed: state.replayed,
       },
@@ -753,8 +851,13 @@ export function servingConnections(request: RequestModel): ConnectionId[] {
     case 'sent':
       return [state.connection];
     case 'moving':
+      return [
+        state.from,
+        state.to,
+        ...state.left.map((entry) => entry.connection),
+      ];
     case 'leaving':
-      return [state.from, state.to];
+      return [state.to, ...state.left.map((entry) => entry.connection)];
     case 'queued':
     case 'settled':
       return [];

@@ -20,14 +20,15 @@ test("a query or mutation can't move, show started or resume", () => {
     kind: 'moving',
     from: 1,
     to: 2,
+    left: [],
     started: false,
     replayed: [],
   };
   const leaving: QueryState = {
     // @ts-expect-error nor leaving
     kind: 'leaving',
-    from: 1,
     to: 2,
+    left: [{ connection: 1, to: 2 }],
     started: false,
     replayed: [],
   };
@@ -70,6 +71,18 @@ test('a queued subscription has no events to replay', () => {
     replayed: ['1'],
   };
   expect(queued.kind).toBe('queued');
+});
+
+test('a leaving subscription is leaving at least one connection', () => {
+  const leaving: SubscriptionState = {
+    kind: 'leaving',
+    to: 2,
+    // @ts-expect-error with nothing left, it's `sent`
+    left: [],
+    started: false,
+    replayed: [],
+  };
+  expect(leaving.kind).toBe('leaving');
 });
 
 test("a replacement error can't outlive its handover", () => {
