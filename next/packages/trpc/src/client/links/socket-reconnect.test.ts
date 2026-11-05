@@ -241,6 +241,35 @@ test('a new connection that fails to open leaves the old one serving, and the li
   await c.link.close();
 });
 
+test('a new connection that keeps failing to open never fails the subscription while the old one serves; once the old one ends, the last error surfaces', async () => {
+  let calls = 0;
+  let failure: Error | undefined;
+  const c = connect({
+    connectionParams: () => {
+      if (calls++ === 0) return {};
+      failure = new Error(`replacement ${calls - 1} failed`);
+      throw failure;
+    },
+    reconnect: { attempts: 2, delay: () => 1 },
+  });
+  const feed = subscribe(c.client);
+  const old = await c.socket(0);
+  const first = await old.request('feed');
+  old.receive({ id: first.id, type: 'started' });
+  old.receive({ type: 'reconnect' });
+  // More failures than `reconnect.attempts`, or than any threshold.
+  await until(() => calls > 6);
+  old.receive(event(first.id, 1, '1'));
+  await until(() => feed.events.length === 1);
+  expect(old.sent).not.toContainEqual(abort(first.id));
+
+  old.close();
+  const result = await feed.done;
+  expect(result.error).toMatchObject({ code: 'NETWORK_ERROR', cause: failure });
+  expect(feed.events).toEqual([1]);
+  await c.link.close();
+});
+
 test('a new connection lost before it answers: the subscription stays on the old one, which keeps delivering, until another answers', async () => {
   const third = latch();
   let calls = 0;
