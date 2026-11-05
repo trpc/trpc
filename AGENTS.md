@@ -19,7 +19,7 @@ Run them from the repo root.
 
 - Every bug fix has a regression test that fails without the fix, and a `Regression check:` line in the PR naming it.
 - No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Port v11 fixes to `next/` on the `v12` branch, following its `next/AGENTS.md`.
-- Internal (non-exported) parameters, properties and options are required: pass `null`, a literal or a symbol. Optionals are only for public APIs.
+- Internal (non-exported) parameters, properties and options are required: pass `null`, `undefined`, a literal or a symbol, whichever fits. Optionals are only for public APIs, normalised once at the boundary.
 - While you work on a PR, follow [`pr-agent-callout`](.agents/skills/pr-agent-callout/SKILL.md): its body starts with a callout saying what you're doing, until you stop planning to push.
 - CodeRabbit usually reviews a PR within about 15 minutes of each push. Before you finish, wait for its review of your last push, then fix or answer its comments.
 - PR bodies follow [the template](.github/PULL_REQUEST_TEMPLATE.md): under 200 words of bullets, one `- Closes #N` per issue, and the AI model if one helped. Keep credits: `Co-authored-by:` lines, contributor credit and AI disclosures. Drop file-by-file changelogs, test lists, thank-you notes and review history.
