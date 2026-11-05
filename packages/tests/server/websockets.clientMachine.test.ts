@@ -1081,6 +1081,46 @@ test('random event sequences keep every invariant, unseeded', () => {
   );
 });
 
+test('a subscription moved on before its new connection replayed drops the replay', () => {
+  let request: RequestModel = {
+    id: 1,
+    method: 'subscription',
+    lastEventId: '1',
+    replayed: [],
+    state: { kind: 'sent', connection: 1, started: true },
+  };
+  const next: unknown[] = [];
+  function apply(event: RequestEvent) {
+    const result = requestTransition(request, event);
+    request = result.request;
+    for (const effect of result.effects) {
+      if (effect.type === 'next') next.push(effect.message.result);
+      expect(effect.type).not.toBe('invariantViolation');
+    }
+  }
+  const data = (connection: ConnectionId, id: string): RequestEvent => ({
+    type: 'response',
+    connection,
+    message: { id: 1, result: { type: 'data', id, data: Number(id) } },
+  });
+
+  apply({ type: 'move', to: 2 });
+  apply(data(1, '2'));
+  apply({
+    type: 'response',
+    connection: 2,
+    message: { id: 1, result: { type: 'started' } },
+  });
+  // Connection 2 resumes from event 1, and is replaced before it resends 2.
+  apply({ type: 'move', to: 3 });
+  apply(data(2, '2'));
+  apply(data(2, '3'));
+  expect(next).toEqual([
+    { type: 'data', id: '2', data: 2 },
+    { type: 'data', id: '3', data: 3 },
+  ]);
+});
+
 // --- the diagrams in the PR are generated from the transition functions ----
 
 const connectionSamples: ConnectionState[] = [
