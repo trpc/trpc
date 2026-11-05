@@ -242,16 +242,14 @@ export class Step {
   }
 
   /**
-   * Closes a replaced connection once its replacement is ready, or the
-   * client is closing, and nothing is left on it: every request sent on it
-   * has finished, and every subscription that moved has been confirmed on
-   * the new connection.
+   * Closes a replaced connection once it takes no new requests, and nothing
+   * is left on it: every request sent on it has finished, and every
+   * subscription that moved has been confirmed on the new connection. Only
+   * the handover takes new requests, until its replacement is ready.
    */
   closeIfDrained(connection: ConnectionId) {
     if (this.connections.get(connection)?.state.phase !== 'draining') return;
-    if (this.lifecycle.kind !== 'open' && this.lifecycle.kind !== 'idle') {
-      return;
-    }
+    if (connection === sendingConnection(this)) return;
     if (this.servedBy(connection).length > 0) return;
     this.forget(connection);
     this.closeConnection(connection);
@@ -596,6 +594,7 @@ export class Step {
       this.applyRequest(request, { type: 'clientClose' });
       if (this.requests.has(request.id)) closing.add(request.id);
     }
+    this.closeDrained();
     this.finishCloseIfDone();
   }
 

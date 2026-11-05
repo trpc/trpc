@@ -1035,9 +1035,9 @@ function checkModel(model: ClientModel) {
       (phase === 'draining') === drainingConnections(model).includes(id),
       `connection ${id} draining mismatch`,
     );
-    // I16: a replaced connection closes once its replacement is ready and
+    // I16: a replaced connection closes once it takes no new requests and
     // nothing is left on it.
-    if (phase === 'draining' && lifecycle.kind === 'open') {
+    if (phase === 'draining' && id !== sendingConnection(model)) {
       check(
         servedBy(model, id).length > 0,
         `drained connection ${id} left open`,

@@ -830,6 +830,46 @@ describe('make before break', () => {
     }
   });
 
+  test("an older replaced socket closes once drained while a newer one stands in for a replacement that hasn't opened", async () => {
+    const h = setup();
+    await using _ctx = h.ctx;
+    const { oldServerSocket } = await h.waitForOpen();
+    // Keeps the old socket open after the new one replaces it.
+    const slow = h.ctx.client.slow.query();
+    try {
+      await vi.waitFor(() => expect(h.receivedFor('slow')).toHaveLength(1));
+      h.ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(async () => {
+        expect(await h.ctx.client.greeting.query()).toBe('hello');
+        expect(h.receivedFor('greeting').at(-1)!.socket).toBe(
+          h.serverSockets[1],
+        );
+      });
+      // The new socket stands in while its own replacement waits out the
+      // backoff.
+      h.retry.delayMs = 10_000;
+      h.serverSockets[1]!.send(
+        JSON.stringify({ id: null, method: 'reconnect' }),
+      );
+      await vi.waitFor(() =>
+        expect(clientFrames).toContain('1< {"id":null,"method":"reconnect"}'),
+      );
+
+      h.resolveSlow('done');
+      expect(await slow).toBe('done');
+      await vi.waitFor(() =>
+        expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+      );
+      expect(h.serverSockets).toHaveLength(2);
+      expect(await h.ctx.client.greeting.query()).toBe('hello');
+      expect(h.receivedFor('greeting').at(-1)!.socket).toBe(h.serverSockets[1]);
+    } finally {
+      h.resolveSlow();
+      await slow.catch(() => null);
+      await h.ctx.wsClient.close();
+    }
+  });
+
   test('binary encoder: a tracked move gets every event once and the old socket closes', async () => {
     const binary: Encoder = {
       encode: (data) =>
