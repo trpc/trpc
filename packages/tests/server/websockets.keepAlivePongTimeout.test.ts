@@ -47,6 +47,7 @@ test('a keepAlive pong timeout reconnects without waiting for the closing handsh
   const serverSockets = trackServerSockets(ctx, () => false);
   await using _cleanup = makeAsyncResource({}, async () => {
     for (const ws of serverSockets) ws.terminate();
+    await ctx.wsClient.close();
   });
 
   expect(await ctx.client.greeting.query()).toBe('hello');
@@ -74,6 +75,7 @@ test('a keepAlive pong timeout reconnects while connectionParams are still pendi
   await using _cleanup = makeAsyncResource({}, async () => {
     stalledParams.resolve({});
     for (const ws of serverSockets) ws.terminate();
+    await ctx.wsClient.close();
   });
 
   // Waits on the stalled attempt, so it needs that attempt given up on.
@@ -104,6 +106,7 @@ test('after a keepAlive pong timeout, the old socket is closed once and then ign
   });
   await using _cleanup = makeAsyncResource({}, async () => {
     for (const ws of serverSockets) ws.terminate();
+    await ctx.wsClient.close();
   });
 
   const onData = vi.fn();
@@ -147,6 +150,7 @@ test('a server that never answers keeps the backoff growing across pong timeouts
   const serverSockets = trackServerSockets(ctx, () => true);
   await using _cleanup = makeAsyncResource({}, async () => {
     for (const ws of serverSockets) ws.terminate();
+    await ctx.wsClient.close();
   });
 
   await vi.waitFor(
