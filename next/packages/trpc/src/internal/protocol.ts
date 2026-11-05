@@ -213,11 +213,17 @@ export type ClientMessage =
 
 /**
  * What a WebSocket or MessagePort server sends (10). A `result` or `event`
- * with `deferred` is followed by its `chunk`s. A query with deferred values,
- * and every subscription, ends with `done`. `id: null` is a connection error.
+ * with `deferred` is followed by its `chunk`s. A subscription starts with
+ * `started`, and it and a query with deferred values end with `done`.
+ * `id: null` is a connection error.
  */
 export type ServerMessage =
   | { id: number; type: 'result'; body: unknown; deferred?: true }
+  /**
+   * The subscription's resolver ran: it's subscribed. A client moving it
+   * here after `reconnect` stops it on the old connection then.
+   */
+  | { id: number; type: 'started' }
   | {
       id: number;
       type: 'event';
@@ -233,8 +239,9 @@ export type ServerMessage =
   | { type: 'init'; transformer: string }
   | { type: 'pong' }
   /**
-   * The server is going away (a drain): send new calls on a new connection,
-   * move subscriptions there, and close this one once the calls sent on it
+   * The server is going away (a drain), but still serves this connection:
+   * open a new one, keep sending calls here until it's ready, then move
+   * subscriptions there and close this one once the calls sent on it
    * settle. Nothing already sent is sent again.
    */
   | { type: 'reconnect' };

@@ -301,8 +301,9 @@ test('wsLink moves to the next server during a rolling deploy: calls in flight f
   const drain = a.handler.drain();
   const drained = settledFlag(drain);
   publish(3);
-  // The subscriptions moving dials b, so the client heard `reconnect`.
+  // The client heard `reconnect` and dials b; new calls switch once the subscriptions moved.
   await until(() => upgrades.b === 1);
+  await until(() => state.resumes.length === 2);
   expect(await client.whoami.query()).toBe('b');
   await until(() => feed.length === 4);
   publish(4);
@@ -325,6 +326,79 @@ test('wsLink moves to the next server during a rolling deploy: calls in flight f
   expect(state.bumps).toBe(1);
   expect(state.running).toBe(2);
   expect(upgrades).toEqual({ a: 1, b: 1 });
+  await link.close();
+});
+
+test('the server confirms a subscription with started once its resolver has run, before its first event', async () => {
+  reset();
+  await using a = await start('a');
+  const client = await raw(a.wsUrl);
+  client.send({
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'count',
+  });
+  const forCall = () => client.messages.filter((m) => m['id'] === 1);
+  await until(() => forCall().length >= 2);
+  expect(
+    forCall()
+      .map((m) => m['type'])
+      .slice(0, 2),
+  ).toEqual(['started', 'event']);
+  client.socket.close();
+});
+
+test('wsLink keeps sending calls to a draining server until the next one is ready, and the server answers them', async () => {
+  reset();
+  await using a = await start('a');
+  await using b = await start('b');
+  let target = a.wsUrl;
+  const params = latch();
+  let dials = 0;
+  class Balanced extends WebSocket {
+    constructor() {
+      super(target);
+    }
+  }
+  const link = wsLink({
+    url: 'ws://balancer/trpc',
+    WebSocket: Balanced,
+    keepAlive: false,
+    connectionParams: async () => {
+      if (dials++ > 0) await params.opened;
+      return {};
+    },
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
+  publish(0);
+  const feed: number[] = [];
+  const feedDone = (async () => {
+    for await (const event of client.feed.subscribe()) {
+      feed.push(event.data);
+      if (feed.length === 3) return;
+    }
+  })();
+  await until(() => feed.length === 1);
+
+  target = b.wsUrl;
+  const drain = a.handler.drain();
+  await until(() => dials === 2);
+  expect(await client.whoami.query()).toBe('a');
+  publish(1);
+  await until(() => feed.length === 2);
+
+  params.open();
+  await until(() => state.resumes.length === 2);
+  expect(await client.whoami.query()).toBe('b');
+  await drain;
+  publish(2);
+  await feedDone;
+  expect(feed).toEqual([0, 1, 2]);
+  expect(state.resumes).toEqual(['a:-', 'b:1']);
   await link.close();
 });
 

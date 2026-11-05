@@ -13,7 +13,7 @@
 - WebSocket and MessagePort: JSON messages, many calls over one connection.
   - The client first sends `{ type: 'init', version, connectionParams? }`.
   - Calls are `{ id, type: 'request', method, path, input?, lastEventId? }` and `{ id, type: 'abort' }`.
-  - The server answers with `result` (`deferred: true` when chunks follow), `event` (`eventId?`, `deferred?`), `chunk`, `chunkEnd`, `done`, and `error { id | null, body }` (no `status` since [`errors.md`](./errors.md)'s error-status decision).
+  - The server answers with `result` (`deferred: true` when chunks follow), `started` (a subscription's resolver ran; see [`ws-graceful-switchover.md`](./ws-graceful-switchover.md)), `event` (`eventId?`, `deferred?`), `chunk`, `chunkEnd`, `done`, and `error { id | null, body }` (no `status` since [`errors.md`](./errors.md)'s error-status decision).
   - A version mismatch is an `id: null` error and close code 1002. Bodies use the endpoint's serializer.
 - (agent) A socket `request` may also carry `trace: { traceparent?, b3? }`, the client span's trace context ([`socket-trace-field.md`](./socket-trace-field.md)).
 - (agent) `init` may also carry `transformer` (the client's transformer's `name`; `serializer` until 2026-10-21, [`replaceable-transformers.md`](./replaceable-transformers.md)), and the server answers every `init` with `{ type: 'init', transformer }` in plain JSON. On a mismatch the server runs none of the connection's calls and the link fails them with `UNSUPPORTED_PROTOCOL` ([`replaceable-transformers.md`](./replaceable-transformers.md)).

@@ -405,7 +405,8 @@ const events = (socket: FakeSocket, id: number) =>
   socket.sent.filter(
     (m) =>
       (m as { id?: number }).id === id &&
-      (m as { type: string }).type !== 'result',
+      (m as { type: string }).type !== 'result' &&
+      (m as { type: string }).type !== 'started',
   );
 const create = (
   sockets: ReturnType<typeof room>,
@@ -442,7 +443,7 @@ test('publisher subscriptions hibernate: kept on the socket, sent to after a wak
     }),
   );
   await new Promise((resolve) => setTimeout(resolve, 10));
-  expect(sub.sent).toEqual([]);
+  expect(sub.sent).toEqual([{ id: 1, type: 'started' }]);
 
   // Evicted: a new instance with the same sockets.
   const woken = room(state);

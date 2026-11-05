@@ -8,6 +8,7 @@ import {
   Effect,
   Exit,
   Fiber,
+  FiberSet,
   Option,
   PubSub,
   Queue,
@@ -52,27 +53,35 @@ interface SocketConnection {
   readonly messages: Stream.Stream<unknown, unknown>;
 }
 
-/** What a call's inbox receives. */
+/**
+ * What a call's inbox receives. A subscription that moves is on two
+ * connections at once, so the signals say which one they're about.
+ */
 type Signal = Data.TaggedEnum<{
+  /** For the call sent under `message.id`. */
   Message: { readonly message: CallMessage };
-  /** The connection dropped; the call may be sent again on a new one. */
-  Lost: {};
+  /** `conn` dropped; the call may be sent again on a new one. */
+  Lost: { readonly conn: Connection };
   /**
-   * The server asked to reconnect: the subscription was aborted on this
-   * connection and is sent again on the next one.
+   * The server asked to reconnect, and the shared connection is the
+   * successor: a subscription on a superseded connection subscribes there,
+   * and leaves the old one once the successor confirms.
    */
-  Moved: {};
-  Fail: { readonly error: AnyTrpcError };
+  Handover: {};
+  /** From `conn`, or from `close()` and `dispose()` when it's `undefined`. */
+  Fail: {
+    readonly error: AnyTrpcError;
+    readonly conn: Connection | undefined;
+  };
 }>;
 const Signal = /* @__PURE__ */ Data.taggedEnum<Signal>();
+
+const HANDOVER = /* @__PURE__ */ Signal.Handover();
 
 type CallMessage = Exclude<
   ServerMessage,
   { type: 'pong' } | { type: 'init' } | { type: 'reconnect' }
 >;
-
-const LOST = /* @__PURE__ */ Signal.Lost();
-const MOVED = /* @__PURE__ */ Signal.Moved();
 
 /** No connection opened, and `unopened` says why. */
 interface Unopened {
@@ -80,10 +89,10 @@ interface Unopened {
 }
 
 /**
- * How a call's time on one connection ended. `stale`: the connection was
- * lost or retired before the call was sent on it.
+ * How a call's time on its connections ended. `stale`: the connection was
+ * lost or superseded before the call was sent on it.
  */
-type Outcome = 'complete' | 'heard' | 'silent' | 'moved' | 'stale' | Unopened;
+type Outcome = 'complete' | 'heard' | 'silent' | 'stale' | Unopened;
 
 interface Connection {
   readonly socket: SocketConnection;
@@ -99,14 +108,54 @@ interface Connection {
   /** Messages received, so a keep-alive check can tell if it heard back. */
   received: number;
   lost: boolean;
+  /** Done once `lost` is. */
+  readonly closed: Deferred.Deferred<void>;
   /**
-   * The server sent `reconnect`: new calls go to a new connection, and this
-   * one closes once the calls sent on it settle.
+   * The server sent `reconnect`: a successor opens, and new calls still
+   * come here until it's ready.
    */
   retired: boolean;
+  /**
+   * Its successor is ready: new calls go there, and this one closes once
+   * the calls sent on it settle and its subscriptions have moved.
+   */
+  superseded: boolean;
+  /** Done when the last subscription that moves leaves; `undefined` unless someone waits. */
+  moved: Deferred.Deferred<void> | undefined;
   /** The server named another transformer: calls on this connection fail with it. */
   refused?: AnyTrpcError;
 }
+
+/** A call sent on one connection. */
+interface Leg {
+  readonly conn: Connection;
+  /** The id it was sent under. */
+  readonly id: number;
+  /** Holds `conn` open; closing it sends `abort` unless the call is `complete`. */
+  readonly scope: Scope.Closeable;
+  /** The server ended the call on this leg. */
+  complete: boolean;
+}
+
+const isLeg = (value: Leg | 'stale' | Unopened): value is Leg =>
+  typeof value === 'object' && 'conn' in value;
+
+const markLost = (conn: Connection) => {
+  conn.lost = true;
+  Deferred.doneUnsafe(conn.closed, Effect.void);
+};
+
+const movesLeft = (conn: Connection) => {
+  for (const entry of conn.calls.values()) if (entry.moves) return true;
+  return false;
+};
+
+/** Removes call `id` from `conn`, telling a waiting supervisor when no subscription is left to move. */
+const leave = (conn: Connection, id: number) => {
+  conn.calls.delete(id);
+  if (conn.moved && !movesLeft(conn))
+    Deferred.doneUnsafe(conn.moved, Effect.void);
+};
 
 interface Call {
   readonly op: Operation;
@@ -220,6 +269,10 @@ function makeSocketLink(
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
+  /** A successor that opened, for `acquire` to take as the shared connection. */
+  let prepared:
+    | { readonly conn: Connection; readonly scope: Scope.Closeable }
+    | undefined;
   /** Bumped by `close()`, which can't reach a connection still opening. */
   let closes = 0;
   /**
@@ -240,6 +293,14 @@ function makeSocketLink(
     }
   };
 
+  /** Fails every call on `conn` with `error`. */
+  const refuse = (conn: Connection, error: AnyTrpcError) => {
+    const signal = Signal.Fail({ error, conn });
+    for (const { inbox } of conn.calls.values())
+      Queue.offerUnsafe(inbox, signal);
+    conn.calls.clear();
+  };
+
   const dispatch = (conn: Connection, raw: unknown): Effect.Effect<void> =>
     Effect.suspend(() => {
       if (typeof raw !== 'object' || raw === null) return Effect.void;
@@ -254,20 +315,17 @@ function makeSocketLink(
           message: `The server uses the '${message.transformer}' transformer, but this ${transport.name} uses '${transformer.name}'. Pass the same transformer to the handler and ${transport.name}.`,
         });
         conn.refused = error;
-        for (const { inbox } of conn.calls.values())
-          Queue.offerUnsafe(inbox, Signal.Fail({ error }));
-        conn.calls.clear();
+        refuse(conn, error);
         return Effect.void;
       }
       if (message.type === 'reconnect') {
-        return transport.reconnect ? retire(conn) : Effect.void;
+        return transport.reconnect
+          ? retire(conn, transport.reconnect)
+          : Effect.void;
       }
       if (message.id === null) {
         if (message.type !== 'error') return Effect.void;
-        const signal = Signal.Fail({ error: revive(message) });
-        for (const { inbox } of conn.calls.values())
-          Queue.offerUnsafe(inbox, signal);
-        conn.calls.clear();
+        refuse(conn, revive(message));
         return Effect.void;
       }
       const entry = conn.calls.get(message.id);
@@ -297,31 +355,104 @@ function makeSocketLink(
   const lose = (conn: Connection): Effect.Effect<void> =>
     Effect.suspend(() => {
       if (conn.lost) return Effect.void;
-      conn.lost = true;
+      markLost(conn);
+      const signal = Signal.Lost({ conn });
       for (const { inbox } of conn.calls.values())
-        Queue.offerUnsafe(inbox, LOST);
+        Queue.offerUnsafe(inbox, signal);
       conn.calls.clear();
       return forkDrop(conn);
     });
 
+  /** The fibers moving calls off retired connections; `close()` stops them. */
+  const supervisors = Effect.runSync(
+    Scope.provide(FiberSet.make<void, never>(), scope),
+  );
+
   /**
-   * The server's `reconnect`: subscriptions are aborted here and sent again
-   * on a new connection, and their messages still arriving here are
-   * dropped, so they resume from the last event they handled. Queries and
-   * mutations finish here; nothing sent is sent again.
+   * The server's `reconnect`: the server still serves `conn`, so new calls
+   * keep going there while a successor opens.
    */
-  const retire = (conn: Connection): Effect.Effect<void> =>
+  const retire = (
+    conn: Connection,
+    policy: NonNullable<SocketTransport['reconnect']>,
+  ): Effect.Effect<void> =>
     Effect.suspend(() => {
-      if (conn.retired || conn.lost) return Effect.void;
+      if (conn.retired) return Effect.void;
       conn.retired = true;
-      for (const [id, { inbox, moves }] of conn.calls) {
-        if (!moves) continue;
-        conn.calls.delete(id);
-        conn.socket.send({ id, type: 'abort' });
-        Queue.offerUnsafe(inbox, MOVED);
-      }
-      return forkDrop(conn);
+      return Effect.asVoid(FiberSet.run(supervisors, supervise(conn, policy)));
     });
+
+  /**
+   * Moves off `old`, which keeps serving until then:
+   * 1. Opens a successor, waiting `delay` after each one that fails.
+   * 2. Makes it the shared connection, so new calls go there.
+   * 3. Hands each subscription on `old` over to it, and waits until all of
+   *    them have moved. If the successor drops first, it starts again.
+   *
+   * It stops when `old` drops: its calls reconnect as after any drop.
+   * `old` closes once the calls sent on it release it.
+   */
+  const supervise = (
+    old: Connection,
+    policy: NonNullable<SocketTransport['reconnect']>,
+  ): Effect.Effect<void> => {
+    let failures = 0;
+    /** A successor's scope while it opens, until it's installed or closed. */
+    let opening: Scope.Closeable | undefined;
+    const backoff = Effect.suspend(() =>
+      Effect.sleep(policy.delay(++failures)),
+    );
+    const closeOpening = Effect.suspend(() => {
+      const pending = opening;
+      opening = undefined;
+      return pending ? Scope.close(pending, Exit.void) : Effect.void;
+    });
+    /** `next` becomes the shared connection, and `old` is superseded. */
+    const install = (next: Connection) =>
+      Effect.suspend(() => {
+        old.superseded = true;
+        current = undefined;
+        prepared = { conn: next, scope: opening! };
+        opening = undefined;
+        return RcRef.invalidate(connection).pipe(
+          Effect.andThen(Effect.scoped(RcRef.get(connection))),
+          Effect.ignore,
+        );
+      }).pipe(Effect.uninterruptible);
+    const successor = Effect.gen(function* () {
+      for (;;) {
+        opening = yield* Scope.make();
+        const opened = yield* Effect.exit(Scope.provide(open, opening));
+        if (Exit.isSuccess(opened)) {
+          yield* install(opened.value);
+          return opened.value;
+        }
+        yield* closeOpening;
+        yield* backoff;
+      }
+    });
+    return Effect.gen(function* () {
+      for (;;) {
+        const target = yield* successor;
+        if (!movesLeft(old)) return;
+        const moved = Deferred.makeUnsafe<void>();
+        old.moved = moved;
+        for (const { inbox, moves } of old.calls.values()) {
+          if (moves) Queue.offerUnsafe(inbox, HANDOVER);
+        }
+        const settled = yield* Effect.raceFirst(
+          Effect.as(Deferred.await(moved), true),
+          Effect.as(Deferred.await(target.closed), false),
+        );
+        old.moved = undefined;
+        if (settled) return;
+        yield* backoff;
+      }
+    }).pipe(
+      Effect.raceFirst(Deferred.await(old.closed)),
+      Effect.ensuring(closeOpening),
+    );
+  };
 
   /**
    * Pings every `interval`. A connection that answers nothing within
@@ -351,7 +482,8 @@ function makeSocketLink(
     });
   };
 
-  const acquire = Effect.gen(function* () {
+  /** Opens a connection, which closes with the scope, and sends `init`. */
+  const open = Effect.gen(function* () {
     const epoch = closes;
     const socket = yield* Effect.mapError(transport.connect, unopenedError);
     const conn: Connection = {
@@ -359,11 +491,14 @@ function makeSocketLink(
       calls: new Map(),
       received: 0,
       lost: false,
+      closed: Deferred.makeUnsafe(),
       retired: false,
+      superseded: false,
+      moved: undefined,
     };
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
-        conn.lost = true;
+        markLost(conn);
         if (current === conn) current = undefined;
       }),
     );
@@ -375,9 +510,8 @@ function makeSocketLink(
       catch: unopenedError,
     });
     if (closes !== epoch) {
-      conn.lost = true;
+      markLost(conn);
       socket.close();
-      current = conn;
       return conn;
     }
     yield* socket.messages.pipe(
@@ -398,6 +532,17 @@ function makeSocketLink(
     if (transport.keepAlive) {
       yield* Effect.forkScoped(keepAlive(conn, transport.keepAlive));
     }
+    return conn;
+  });
+
+  /** A successor `supervise` opened, or a new connection. */
+  const acquire = Effect.gen(function* () {
+    const next = prepared;
+    prepared = undefined;
+    if (next) {
+      yield* Effect.addFinalizer(() => Scope.close(next.scope, Exit.void));
+    }
+    const conn = next ? next.conn : yield* open;
     current = conn;
     return conn;
   });
@@ -415,17 +560,12 @@ function makeSocketLink(
   );
 
   /**
-   * The shared connection, `Unopened` if none opens, or `stale` if it was
-   * lost or retired (it's dropped, so the next try opens another). Fails
-   * with the error `close()` gave the call while it waited.
+   * The shared connection, or `Unopened` if none opens. Fails with the
+   * error `close()` gave the call while it waited.
    */
   const connected = Effect.fnUntraced(function* (
     inbox: Queue.Queue<Signal>,
-  ): Effect.fn.Return<
-    Connection | 'stale' | Unopened,
-    AnyTrpcError,
-    Scope.Scope
-  > {
+  ): Effect.fn.Return<Connection | Unopened, AnyTrpcError, Scope.Scope> {
     const signal = yield* Queue.poll(inbox);
     if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
       return yield* Effect.fail(signal.value.error);
@@ -441,68 +581,195 @@ function makeSocketLink(
         ),
       };
     }
-    if (!conn.value.lost && !conn.value.retired) return conn.value;
-    yield* drop(conn.value);
-    return 'stale';
+    return conn.value;
   });
 
   /**
-   * Sends the call on one connection. `complete`; `moved` by the server's
-   * `reconnect`; or the connection dropped and `heard` says whether it had
-   * answered anything, so the next reconnect counts from the first attempt
-   * again; or `Unopened`, with the error that kept it from opening.
+   * Runs the call until it's `complete`, or the connection it's on drops
+   * and `heard` says whether that one had answered anything, so the next
+   * reconnect counts from the first attempt again; or `Unopened`, with the
+   * error that kept it from opening.
+   *
+   * On `Handover`, a subscription subscribes on the successor from the
+   * last event it handled, and stays on the old connection, which keeps
+   * delivering, until the successor's first message for it (`started`, or
+   * any other). Then it's stopped on the old one, whose later messages for
+   * it are dropped. The successor resends the events the old one delivered
+   * meanwhile, and each is dropped once by its id; events without ids
+   * can't be matched, so they may arrive twice. If the successor drops or
+   * fails first, the call stays where it was.
    */
   const attach = Effect.fnUntraced(function* (
     call: Call,
     inbox: Queue.Queue<Signal>,
     moves: boolean,
+    /** Runs when a subscription moves, before the successor's messages. */
+    reset: Effect.Effect<void>,
   ): Effect.fn.Return<Outcome, AnyTrpcError, Scope.Scope> {
-    const id = ++sentIds;
-    const request = yield* Effect.try({
-      try: () => call.request(id),
-      catch: (cause) => cause as AnyTrpcError,
-    });
-    // A stale connection's reference is released with this scope, so it
-    // can close.
-    const conn = yield* connected(inbox);
-    if (conn === 'stale' || 'unopened' in conn) return conn;
-    if (conn.refused) return yield* Effect.fail(conn.refused);
-    let complete = false;
+    /** One per connection the call holds; closing one ends the call there. */
+    const scopes = new Set<Scope.Closeable>();
     yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        if (conn.calls.get(id)?.inbox !== inbox) return;
-        conn.calls.delete(id);
-        if (!complete) conn.socket.send({ id, type: 'abort' });
+      Effect.forEach([...scopes], (s) => Scope.close(s, Exit.void), {
+        discard: true,
       }),
     );
-    // Checked as it's sent: nothing is sent on a retired connection.
-    const sent = yield* Effect.sync(() => {
-      if (conn.lost || conn.retired) return false;
-      conn.calls.set(id, { inbox, moves });
-      conn.socket.send(request);
-      return true;
+    const end = (leg: Leg) => {
+      scopes.delete(leg.scope);
+      return Scope.close(leg.scope, Exit.void);
+    };
+
+    /**
+     * Sends the call under a fresh id on the connection `take` gets, which
+     * it holds; `stale` if that one is lost or superseded (it's dropped,
+     * so the next try opens another).
+     */
+    const send = Effect.fnUntraced(function* (
+      take: Effect.Effect<Connection | Unopened, AnyTrpcError, Scope.Scope>,
+    ): Effect.fn.Return<Leg | 'stale' | Unopened, AnyTrpcError> {
+      const id = ++sentIds;
+      const request = yield* Effect.try({
+        try: () => call.request(id),
+        catch: (cause) => cause as AnyTrpcError,
+      });
+      const legScope = yield* Scope.make();
+      scopes.add(legScope);
+      const release = Effect.suspend(() => {
+        scopes.delete(legScope);
+        return Scope.close(legScope, Exit.void);
+      });
+      const conn = yield* Scope.provide(take, legScope).pipe(
+        Effect.onError(() => release),
+      );
+      if ('unopened' in conn) {
+        yield* release;
+        return conn;
+      }
+      if (conn.refused) {
+        yield* release;
+        return yield* Effect.fail(conn.refused);
+      }
+      const leg: Leg = { conn, id, scope: legScope, complete: false };
+      yield* Scope.addFinalizer(
+        legScope,
+        Effect.sync(() => {
+          if (conn.calls.get(id)?.inbox !== inbox) return;
+          leave(conn, id);
+          if (!leg.complete) conn.socket.send({ id, type: 'abort' });
+        }),
+      );
+      // Checked as it's sent: nothing is sent on a superseded connection.
+      const sent = yield* Effect.sync(() => {
+        if (conn.lost || conn.superseded) return false;
+        conn.calls.set(id, { inbox, moves });
+        conn.socket.send(request);
+        return true;
+      });
+      if (sent) return leg;
+      yield* release;
+      yield* drop(conn);
+      return 'stale';
     });
-    if (!sent) return 'stale';
+
+    const first = yield* send(connected(inbox));
+    if (!isLeg(first)) return first;
+    let active = first;
+    /** The successor's leg, until its first message. */
+    let pending: Leg | undefined;
+    /**
+     * The event ids `active` delivered since `pending` subscribed, which
+     * the successor sends again: it resumes from before them.
+     */
+    let overlap = new Set<string>();
+
+    const handle = (leg: Leg, message: CallMessage) => {
+      const { type } = message;
+      leg.complete =
+        type === 'done' ||
+        type === 'error' ||
+        (type === 'result' && !message.deferred);
+      if (type === 'event' && message.eventId !== undefined && pending) {
+        overlap.add(message.eventId);
+      }
+      return Effect.map(call.onMessage(message), (done): Outcome | undefined =>
+        done ? 'complete' : undefined,
+      );
+    };
+    /**
+     * Whether `message` repeats what the old connection delivered. A
+     * dropped event's chunks are ignored: `reset` gave the call a fresh
+     * decoder, which doesn't know its deferred values.
+     */
+    const resent = (message: CallMessage) => {
+      if (message.type !== 'event' || overlap.size === 0) return false;
+      if (message.eventId === undefined || !overlap.delete(message.eventId)) {
+        overlap.clear();
+        return false;
+      }
+      return true;
+    };
+    /** The move to `leg` fell through: the call stays on `active`. */
+    const fallBack = (leg: Leg) =>
+      Effect.suspend(() => {
+        pending = undefined;
+        overlap.clear();
+        return Effect.as(end(leg), undefined);
+      });
+    /** `leg` answered: the call ends on `active` and continues on `leg`. */
+    const promote = (leg: Leg) =>
+      Effect.gen(function* () {
+        const old = active;
+        active = leg;
+        pending = undefined;
+        yield* end(old);
+        yield* reset;
+      });
+
     for (;;) {
       const signal = yield* Queue.take(inbox);
-      const outcome = yield* Signal.$match(signal, {
-        Lost: () =>
-          Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
-        Moved: () => Effect.succeed<Outcome>('moved'),
-        Fail: (fail) => {
-          complete = true;
-          return Effect.fail(fail.error);
-        },
+      const outcome: Outcome | undefined = yield* Signal.$match(signal, {
         Message: ({ message }) => {
-          const { type } = message;
-          complete =
-            type === 'done' ||
-            type === 'error' ||
-            (type === 'result' && !message.deferred);
-          return Effect.map(
-            call.onMessage(message),
-            (done): Outcome | undefined => (done ? 'complete' : undefined),
+          if (message.id === active.id) {
+            // While a move is pending, `active` is the old connection.
+            return !pending && resent(message)
+              ? Effect.succeed(undefined)
+              : handle(active, message);
+          }
+          const leg = pending;
+          if (!leg || message.id !== leg.id) return Effect.succeed(undefined);
+          return Effect.andThen(
+            promote(leg),
+            message.type === 'started' || resent(message)
+              ? Effect.succeed(undefined)
+              : handle(leg, message),
           );
+        },
+        Lost: ({ conn }) => {
+          if (pending && conn === pending.conn) return fallBack(pending);
+          if (conn !== active.conn) return Effect.succeed(undefined);
+          // The successor already has the subscription, resent from before
+          // what the old connection delivered since.
+          if (pending) return Effect.as(promote(pending), undefined);
+          return Effect.succeed<Outcome>(
+            conn.received > 0 ? 'heard' : 'silent',
+          );
+        },
+        Handover: () =>
+          Effect.gen(function* () {
+            if (!active.conn.superseded) return undefined;
+            if (pending) yield* end(pending);
+            pending = undefined;
+            // Sent from the last event handled, so nothing before is resent.
+            overlap = new Set();
+            const leg = yield* send(RcRef.get(connection));
+            if (isLeg(leg)) pending = leg;
+            return undefined;
+          }),
+        Fail: (failure) => {
+          const { conn } = failure;
+          if (pending && conn === pending.conn) return fallBack(pending);
+          if (conn && conn !== active.conn) return Effect.succeed(undefined);
+          active.complete = true;
+          return Effect.fail(failure.error);
         },
       });
       if (outcome) return outcome;
@@ -522,28 +789,19 @@ function makeSocketLink(
     const { reconnect } = transport;
     const moves =
       !!call.onReconnect && !!reconnect && call.op.context.reconnect !== false;
+    const reset = call.onReconnect ?? Effect.void;
     let attempt = 0;
     for (;;) {
-      const outcome = yield* attach(call, inbox, moves);
+      const outcome = yield* attach(call, inbox, moves, reset);
       if (outcome === 'complete') return;
       if (outcome === 'stale') continue;
-      if (outcome === 'moved') {
-        attempt = 0;
-        if (call.onReconnect) yield* call.onReconnect;
-        continue;
-      }
       if (outcome === 'heard') attempt = 0;
-      if (
-        !call.onReconnect ||
-        !reconnect ||
-        !moves ||
-        ++attempt > reconnect.attempts
-      ) {
+      if (!reconnect || !moves || ++attempt > reconnect.attempts) {
         return yield* Effect.fail(
           typeof outcome === 'object' ? outcome.unopened : lostError(),
         );
       }
-      yield* call.onReconnect;
+      yield* reset;
       // `close()` can fail the call while it waits.
       const signal = yield* Queue.take(inbox).pipe(
         Effect.timeoutOption(reconnect.delay(attempt)),
@@ -682,7 +940,7 @@ function makeSocketLink(
     ).pipe(Stream.mapEffect((value) => value));
 
   const failLive = (error: AnyTrpcError) => {
-    const signal = Signal.Fail({ error });
+    const signal = Signal.Fail({ error, conn: undefined });
     for (const inbox of live) Queue.offerUnsafe(inbox, signal);
   };
 
@@ -690,11 +948,12 @@ function makeSocketLink(
     Effect.runPromise(
       Effect.gen(function* () {
         closes++;
+        yield* FiberSet.clear(supervisors);
         failLive(closedError('The link was closed'));
         const conn = current;
         yield* RcRef.invalidate(connection);
         if (conn) {
-          conn.lost = true;
+          markLost(conn);
           conn.socket.close();
         }
       }),
@@ -735,11 +994,15 @@ export interface ConnectionLinkOptions {
    * `NETWORK_ERROR`.
    *
    * A server that drains (`handler.drain()`, `dispose()`, a stopping
-   * `serve()`) sends `reconnect`: new calls go to a new connection,
-   * subscriptions move there at once from their last `tracked()` event id,
-   * and the old connection closes once the queries and mutations sent on it
-   * settle. Nothing already sent is sent again. A subscription without
-   * tracked ids starts over on the new connection. One made with
+   * `serve()`) sends `reconnect`: new calls stay on the old connection
+   * until a new one is open and its `connectionParams` resolved, then go
+   * there. Each subscription subscribes there from its last `tracked()`
+   * event id and is stopped on the old connection once the new one answers
+   * it; the events the new one resends are dropped by id. The old
+   * connection closes once the queries and mutations sent on it settle and
+   * every subscription has moved. Nothing already sent is sent again. A
+   * subscription without tracked ids starts over on the new connection,
+   * and may get an event twice while both deliver. One made with
    * `{ reconnect: false }` stays, and fails with `NETWORK_ERROR` when the
    * server closes the old connection.
    */
@@ -811,15 +1074,26 @@ const socketConnection = (
   Effect.gen(function* () {
     const writer = yield* socket.writer;
     const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
+    const write = (chunk: string | Socket.CloseEvent) =>
+      typeof chunk === 'string' && opts.writable?.() === false
+        ? Effect.void
+        : writer.write(chunk);
     yield* Queue.take(outbox).pipe(
-      Effect.flatMap((chunk) =>
-        typeof chunk === 'string' && opts.writable?.() === false
-          ? Effect.void
-          : writer.write(chunk),
-      ),
+      Effect.flatMap(write),
       Effect.forever,
       Effect.ignore,
       Effect.forkScoped,
+    );
+    // Runs before the writer is interrupted: a moved subscription's
+    // `abort`, sent just before its last call releases the connection,
+    // still goes out.
+    yield* Effect.addFinalizer(() =>
+      Queue.clear(outbox).pipe(
+        Effect.flatMap((rest) =>
+          Effect.forEach(rest, write, { discard: true }),
+        ),
+        Effect.ignore,
+      ),
     );
     return {
       send: (message) => {
