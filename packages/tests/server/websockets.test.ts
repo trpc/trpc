@@ -2386,28 +2386,10 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
       expect(seen).toEqual(['pending', 'started', 1]);
 
-      // Later attempts wait on connectionParams, so no newer error replaces
-      // the last one.
       failConnectionParams(false);
-      const shown: { state: string; error: unknown }[] = [];
-      ctx.wsClient.connectionState.subscribe({
-        next: ({ state, error }) => shown.push({ state, error }),
-      });
       oldServerSocket.terminate();
       await vi.waitFor(() => {
-        expect(shown.filter(({ state }) => state === 'connecting')).toEqual([
-          {
-            state: 'connecting',
-            error: expect.objectContaining({
-              message: 'Initialization error',
-              cause: expect.objectContaining({
-                cause: expect.objectContaining({
-                  message: expect.stringMatching(/^token unavailable/),
-                }),
-              }),
-            }),
-          },
-        ]);
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
       });
 
       // Nothing serves requests until the new socket is ready.
@@ -2473,7 +2455,24 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       });
       expect(await ctx.client.greeting.query()).toBe('hello');
       expect(receivedFor('greeting')[0]!.socket).toBe(oldServerSocket);
+      expect(states).toEqual([{ state: 'pending', error: null }]);
+      expect(onStarted).toHaveBeenCalledTimes(1);
 
+      // The last failure shows once the old socket ends.
+      oldServerSocket.terminate();
+      await vi.waitFor(() => {
+        expect(states[1]).toEqual({
+          state: 'connecting',
+          error: expect.objectContaining({
+            message: 'Initialization error',
+            cause: expect.objectContaining({
+              cause: expect.objectContaining({
+                message: expect.stringMatching(/^token unavailable/),
+              }),
+            }),
+          }),
+        });
+      });
       failConnectionParams(false);
       await vi.waitFor(() => {
         expect(valuesStarted).toHaveBeenCalledTimes(2);
@@ -2482,8 +2481,6 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(data).toEqual([1, 2]);
       });
-      expect(states).toEqual([{ state: 'pending', error: null }]);
-      expect(onStarted).toHaveBeenCalledTimes(1);
     } finally {
       failConnectionParams(false);
       subscription.unsubscribe();
