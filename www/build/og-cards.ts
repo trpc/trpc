@@ -4,8 +4,9 @@
  * `import.meta.env.OG_CARDS_VERSION` (`ogImageUrl`).
  */
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
 
+import { NodeServices } from '@effect/platform-node';
+import { Effect, FileSystem, Path } from 'effect';
 import type { Plugin } from 'vite';
 
 import type { OgCard } from '../src/og/card.ts';
@@ -33,8 +34,6 @@ export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
   return `export const cards = new Map(${JSON.stringify([...byPath])});\n`;
 };
 
-const ogDir = new URL('../src/og/', import.meta.url);
-
 /** The packages that lay out, rasterize and letter the cards. */
 const rendererPackages = ['satori', '@resvg/resvg-wasm', '@fontsource/inter'];
 
@@ -42,16 +41,23 @@ const rendererPackages = ['satori', '@resvg/resvg-wasm', '@fontsource/inter'];
  * What the cards are drawn with: `src/og`'s modules, the wordmark, and
  * `rendererPackages`' `package.json`s, whose versions change with an upgrade.
  */
-const rendererFiles = () => [
-  ...readdirSync(ogDir)
+const rendererFiles = Effect.fn('rendererFiles')(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const www = yield* path.fromFileUrl(new URL('..', import.meta.url));
+  const ogDir = path.join(www, 'src/og');
+  const modules = (yield* fs.readDirectory(ogDir))
     .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
     .toSorted()
-    .map((name) => new URL(name, ogDir)),
-  new URL('../public/img/logo-text-black.svg', import.meta.url),
-  ...rendererPackages.map(
-    (name) => new URL(`../node_modules/${name}/package.json`, import.meta.url),
-  ),
-];
+    .map((name) => path.join(ogDir, name));
+  return [
+    ...modules,
+    path.join(www, 'public/img/logo-text-black.svg'),
+    ...rendererPackages.map((name) =>
+      path.join(www, 'node_modules', name, 'package.json'),
+    ),
+  ];
+});
 
 /**
  * A short hash of what the cards draw but the live numbers and avatar
@@ -61,27 +67,39 @@ const rendererFiles = () => [
  * in it, and a card that changes gets a new URL; a deploy that changes no
  * card keeps the old one.
  */
-export const ogCardsVersion = (cards: ReadonlyArray<OgCard>) => {
+export const ogCardsVersion = Effect.fn('ogCardsVersion')(function* (
+  cards: ReadonlyArray<OgCard>,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const contents = yield* Effect.forEach(
+    yield* rendererFiles(),
+    (file) => fs.readFile(file),
+    { concurrency: 'unbounded' },
+  );
   const hash = createHash('sha256')
     .update(ogCardsSource(cards))
     .update(JSON.stringify(cardFooter))
     .update(JSON.stringify(site));
-  for (const file of rendererFiles()) {
-    hash.update(readFileSync(file));
+  for (const content of contents) {
+    hash.update(content);
   }
   return hash.digest('hex').slice(0, 10);
-};
+});
 
 export function ogCards(cards: ReadonlyArray<OgCard>): Plugin {
   const source = ogCardsSource(cards);
   return {
-    config: () => ({
-      define: {
-        'import.meta.env.OG_CARDS_VERSION': JSON.stringify(
-          ogCardsVersion(cards),
+    config: () =>
+      Effect.runPromise(
+        ogCardsVersion(cards).pipe(
+          Effect.map((version) => ({
+            define: {
+              'import.meta.env.OG_CARDS_VERSION': JSON.stringify(version),
+            },
+          })),
+          Effect.provide(NodeServices.layer),
         ),
-      },
-    }),
+      ),
     load: (id) => (id === resolvedId ? source : undefined),
     name: 'trpc-www:og-cards',
     resolveId: (id) => (id === moduleId ? resolvedId : undefined),
