@@ -2826,6 +2826,80 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('a new socket lost before it starts a subscription leaves the subscription on the old one', async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      onOpen,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdConnectionParams,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let release: ReturnType<typeof holdConnectionParams> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(2);
+      });
+      release = holdConnectionParams();
+      const lostServerSocket = receivedFor('events')[1]!.socket;
+      lostServerSocket.terminate();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(3);
+      });
+
+      // The old socket serves everything again until the next new socket.
+      expect(ctx.wsClient.connection!.ws).toBe(oldClientSocket);
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(receivedFor('greeting')[0]!.socket).toBe(oldServerSocket);
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(stopsOn(oldServerSocket)).toEqual([]);
+
+      release.resolve();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(3);
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      push(3);
+      await vi.waitFor(() => {
+        expect(seen).toContain(3);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2, 3]);
+    } finally {
+      release?.resolve();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test('wsClient.close() during the handoff closes both sockets', async () => {
     const {
       ctx,

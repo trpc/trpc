@@ -173,6 +173,7 @@ export class WsClient {
   public async close() {
     this.allowReconnect = false;
     this.replacementError = null;
+    this.retiredConnection = null;
     this.inactivityTimeout.stop();
 
     const requestsToAwait: Promise<void>[] = [];
@@ -302,6 +303,11 @@ export class WsClient {
    */
   private nextConnection: WsConnection | null = null;
   /**
+   * The connection the active one replaced, while it's open. If the active
+   * one is lost first, this one serves every request again until the next.
+   */
+  private retiredConnection: WsConnection | null = null;
+  /**
    * Why the latest attempt to replace a socket that's still open failed.
    * It's shown once that socket closes, since until then it serves every
    * request.
@@ -368,6 +374,7 @@ export class WsClient {
 
           if (this.allowReconnect) {
             this.activeConnection = next;
+            this.retiredConnection = previous.isOpen() ? previous : null;
             this.connectionAttemptIndex = attemptIndex;
             this.replacementError = null;
             this.handOff(previous.ws);
@@ -533,6 +540,27 @@ export class WsClient {
      * the active socket.
      */
     const handleCloseOrError = (cause: unknown) => {
+      if (ws === this.retiredConnection?.ws) this.retiredConnection = null;
+      const retired = this.retiredConnection;
+      let restored = false;
+      if (ws === this.activeConnection.ws && retired?.isOpen()) {
+        restored = true;
+        // The socket it replaced serves every request again, until the next
+        // one opens.
+        this.activeConnection = retired;
+        this.retiredConnection = null;
+        this.replacementError = new TRPCWebSocketClosedError({
+          message: 'WebSocket closed',
+          cause,
+        });
+      }
+      for (const request of this.requestManager.getPendingRequests()) {
+        if (request.successor === ws) {
+          // Its old socket still has it.
+          request.successor = null;
+          request.overlapEventIds = null;
+        }
+      }
       const lost = this.failPendingRequests(ws, cause).filter((request) => {
         if (!request.successor) return true;
         // Its new socket has it already.
@@ -547,6 +575,7 @@ export class WsClient {
         this.requestManager.requeue(message);
         this.flushOutgoing(message, callbacks);
       }
+      if (restored) this.reconnect(null);
     };
 
     ws.addEventListener('open', () => {
