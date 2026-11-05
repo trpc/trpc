@@ -20,6 +20,7 @@ import type { TRPCConnectionState } from '../links/internals/subscriptions';
 import type {
   OperationContext,
   OperationLink,
+  OperationResultEnvelope,
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
@@ -62,6 +63,19 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 type ObserverKey = keyof TRPCSubscriptionObserver<unknown, unknown>;
 
 /**
+ * What `subscribe(input, { events: true })` yields: data, `started`, and
+ * the connection's `state` while the subscription runs. The loop ends when
+ * the subscription ends: on completion, abort or `break`, or right after an
+ * `error` event.
+ * @see https://trpc.io/docs/client/vanilla/setup#iterating-every-event
+ */
+export type SubscriptionEvent<TData, TError = TRPCClientError<AnyRouter>> =
+  | { type: 'started'; context: OperationContext | undefined }
+  | { type: 'data'; data: TData }
+  | Exclude<TRPCConnectionState<TError>, { state: 'idle' }>
+  | { type: 'error'; error: TError };
+
+/**
  * Subscription options without callbacks: `TOpts` must not have any of the
  * callback keys, not even set to `undefined`.
  * @internal
@@ -81,6 +95,18 @@ export type TRPCSubscriptionCallbacks<TValue, TError> = Partial<
     [TKey in ObserverKey]: Pick<TRPCSubscriptionObserver<TValue, TError>, TKey>;
   }[ObserverKey];
 
+/**
+ * Options for a subscription iterated with `for await`.
+ * @internal
+ */
+export interface TRPCSubscriptionIterableOptions<TEvents extends boolean> {
+  /**
+   * Yield every event as a `SubscriptionEvent`, such as connection-state
+   * changes and errors, instead of only data.
+   */
+  events?: TEvents;
+}
+
 const observerKeys: ObserverKey[] = [
   'onStarted',
   'onData',
@@ -94,6 +120,27 @@ function throwOnIterate(): never {
   throw new Error(
     "A subscription with callbacks can't be iterated. Call subscribe() without callbacks to use for await.",
   );
+}
+
+/**
+ * The event for a link message, or `null` for `stopped` and `idle`, which
+ * only say that the subscription ended; the loop ending already says that.
+ */
+function toEvent(
+  envelope: OperationResultEnvelope<unknown, TRPCClientError<AnyRouter>>,
+): SubscriptionEvent<unknown> | null {
+  const { result } = envelope;
+  switch (result.type) {
+    case 'started':
+      return { type: 'started', context: envelope.context };
+    case 'stopped':
+      return null;
+    case 'state':
+      return result.state === 'idle' ? null : result;
+    case 'data':
+    case undefined:
+      return { type: 'data', data: result.data };
+  }
 }
 
 /**
@@ -187,19 +234,30 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
   /**
    * Starts a subscription. With callbacks, returns what stops it. Without,
    * returns an async iterator to read it with `for await`, which `signal`,
-   * `break` or `return()` stops. It can be iterated once.
+   * `break` or `return()` stops. It can be iterated once. It yields only
+   * data, or every `SubscriptionEvent` with `events: true`.
    * @see https://trpc.io/docs/client/vanilla/setup#5-use-subscriptions
    */
   public subscription(
     path: string,
     input: unknown,
     opts: TRPCSubscriptionCallbacks<unknown, TRPCClientError<AnyRouter>> &
-      TRPCRequestOptions,
+      TRPCRequestOptions &
+      TRPCSubscriptionIterableOptions<never>,
   ): Unsubscribable;
   public subscription<
     TOpts extends TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>> =
-      TRPCRequestOptions,
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>> &
+      Required<TRPCSubscriptionIterableOptions<true>>,
+  >(
+    path: string,
+    input: unknown,
+    opts: TRPCSubscriptionWithoutCallbacks<TOpts>,
+  ): AsyncIterableIterator<SubscriptionEvent<unknown>>;
+  public subscription<
+    TOpts extends TRPCRequestOptions &
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>> &
+      TRPCSubscriptionIterableOptions<false> = TRPCRequestOptions,
   >(
     path: string,
     input: unknown,
@@ -211,7 +269,8 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
     opts: Partial<
       TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
     > &
-      TRPCRequestOptions = {},
+      TRPCRequestOptions &
+      TRPCSubscriptionIterableOptions<boolean> = {},
   ): Unsubscribable | AsyncIterableIterator<unknown> {
     const hasCallbacks = observerKeys.some(
       (key) => typeof opts[key] === 'function',
@@ -219,6 +278,11 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
     if (!hasCallbacks && observerKeys.some((key) => key in opts)) {
       throw new Error(
         'subscribe() was called with callbacks, but none of them is defined. Pass at least one callback, or omit them all to iterate with for await.',
+      );
+    }
+    if (hasCallbacks && opts.events) {
+      throw new Error(
+        "A subscription with callbacks can't use `events: true`, which only applies to for await. Use callbacks or iterate, not both.",
       );
     }
     const observable$ = this.$request({
@@ -229,23 +293,36 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts.signal,
     });
     if (!hasCallbacks) {
-      const data$ = observable<unknown, TRPCClientError<AnyRouter>>(
+      const events = opts.events === true;
+      const values$ = observable<unknown, TRPCClientError<AnyRouter>>(
         (observer) =>
           observable$.subscribe({
             next(envelope) {
-              if (
+              if (events) {
+                const event = toEvent(envelope);
+                if (event) {
+                  observer.next(event);
+                }
+              } else if (
                 envelope.result.type === 'data' ||
                 envelope.result.type === undefined
               ) {
                 observer.next(envelope.result.data);
               }
             },
-            error: (err) => observer.error(err),
+            error(err) {
+              if (events) {
+                observer.next({ type: 'error', error: err });
+                observer.complete();
+              } else {
+                observer.error(err);
+              }
+            },
             complete: () => observer.complete(),
           }),
       );
       const iterator = observableToAsyncIterable(
-        data$,
+        values$,
         opts.signal ?? new AbortController().signal,
       );
       // a second loop over the same iterator would split the data with the

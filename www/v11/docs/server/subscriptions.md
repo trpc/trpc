@@ -212,7 +212,7 @@ const subscription = client.onPostAdd.subscribe(
 subscription.unsubscribe();
 ```
 
-Without callbacks, `.subscribe()` returns an async iterator, so you can consume the subscription with `for await` instead. It has no `unsubscribe()`: leaving the loop or aborting the `signal` you passed unsubscribes, and errors are thrown from the loop. See [the vanilla client](../client/vanilla/setup.md#5-use-subscriptions) for the details.
+Without callbacks, `.subscribe()` returns an async iterator, so you can consume the subscription with `for await` instead. It has no `unsubscribe()`: leaving the loop or aborting the `signal` you passed unsubscribes, and errors are thrown from the loop. See [the vanilla client](../client/vanilla/setup.md#5-use-subscriptions) for the details, and [`events: true`](../client/vanilla/setup.md#iterating-every-event) to also iterate connection-state changes and errors as events.
 
 ```ts twoslash title="client.ts"
 // @target: esnext

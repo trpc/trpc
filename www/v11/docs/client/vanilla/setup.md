@@ -179,6 +179,59 @@ When you iterate a subscription:
 - Aborting the `signal` unsubscribes, and the loop yields the data already queued before it ends.
 - An error from the subscription is thrown from the loop as a `TRPCClientError`, after the data received before it.
 
+#### Iterating every event
+
+Pass `events: true` to iterate everything the callbacks would get, not only data. Each item is a `SubscriptionEvent`, narrowed by its `type`:
+
+| `type`      | Fields                                    | Callback it replaces      |
+| ----------- | ----------------------------------------- | ------------------------- |
+| `'started'` | `context`                                 | `onStarted`               |
+| `'data'`    | `data`                                    | `onData`                  |
+| `'state'`   | `state` (`'connecting'`, `'pending'`), `error` | `onConnectionStateChange` |
+| `'error'`   | `error`, a `TRPCClientError`              | `onError`                 |
+
+```ts twoslash title='client.ts'
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  onUserAdd: t.procedure.subscription(async function* () {
+    yield { name: 'Frodo' };
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpSubscriptionLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut---
+for await (const event of client.onUserAdd.subscribe(undefined, {
+  events: true,
+})) {
+  switch (event.type) {
+    case 'data':
+      console.log(event.data.name);
+      break;
+    case 'state':
+      // e.g. show a "reconnecting" banner
+      console.log(event.state, event.error?.message);
+      break;
+    case 'error':
+      console.error(event.error.message);
+      break;
+  }
+}
+```
+
+- The loop ends on completion, abort or `break`, or right after an `error`. An error is yielded as the last event instead of being thrown.
+- There are no `stopped` or `state: 'idle'` events, since the loop ending already tells you the subscription stopped.
+- A `state` event with `state: 'connecting'` and an `error` means the link is reconnecting after that error; the loop keeps going.
+- `events` is an iteration option, so it can't be combined with callbacks. Doing so is a type error and throws.
+
 You're all set!
 
 ## Common mistakes

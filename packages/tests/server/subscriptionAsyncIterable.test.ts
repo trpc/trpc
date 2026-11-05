@@ -1,9 +1,15 @@
-import type { OperationResultEnvelope, TRPCLink } from '@trpc/client';
+import type {
+  OperationContext,
+  OperationResultEnvelope,
+  SubscriptionEvent,
+  TRPCLink,
+} from '@trpc/client';
 import {
   createTRPCClient,
   createTRPCUntypedClient,
   TRPCClientError,
 } from '@trpc/client';
+import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
 import type { Observer, Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
@@ -46,6 +52,7 @@ function createControlledClient(
   return {
     client,
     teardown,
+    send: (envelope: Envelope) => observer().next(envelope),
     emit: (data: number) => observer().next({ result: { type: 'data', data } }),
     error: (message: string) =>
       observer().error(new TRPCClientError<AppRouter>(message)),
@@ -627,4 +634,293 @@ test('callbacks that are all undefined throw', () => {
   );
   // the subscription never started
   expect(() => ctx.emit(1)).toThrowError('Not subscribed');
+});
+
+describe('events: true', () => {
+  type TEvent = SubscriptionEvent<number, TRPCClientError<AppRouter>>;
+
+  async function drain(iterator: AsyncIterator<TEvent>) {
+    const events: TEvent[] = [];
+    for (;;) {
+      const result = await iterator.next();
+      if (result.done) {
+        return events;
+      }
+      events.push(result.value);
+    }
+  }
+
+  test('yields data, `started` and connection states; drops `stopped` and `idle`', async () => {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, { events: true });
+
+    const context = { foo: 'bar' };
+    ctx.send({ result: { type: 'state', state: 'idle', error: null } });
+    ctx.send({
+      result: { type: 'state', state: 'connecting', error: null },
+    });
+    ctx.send({ result: { type: 'started' }, context });
+    ctx.send({ result: { type: 'state', state: 'pending', error: null } });
+    ctx.emit(1);
+    ctx.send({ result: { data: 2 } });
+    ctx.send({ result: { type: 'stopped' } });
+    ctx.send({ result: { type: 'state', state: 'idle', error: null } });
+    ctx.complete();
+
+    expect(await drain(sub)).toEqual([
+      { type: 'state', state: 'connecting', error: null },
+      { type: 'started', context },
+      { type: 'state', state: 'pending', error: null },
+      { type: 'data', data: 1 },
+      { type: 'data', data: 2 },
+    ]);
+  });
+
+  test('an error is the last event, then the loop ends without throwing', async () => {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, { events: true });
+
+    setTimeout(() => {
+      ctx.emit(1);
+      ctx.send({ result: { type: 'state', state: 'idle', error: null } });
+      ctx.error('boom');
+    });
+
+    const events: TEvent[] = [];
+    for await (const event of sub) {
+      events.push(event);
+    }
+
+    expect(events).toHaveLength(2);
+    expect(events[0]).toEqual({ type: 'data', data: 1 });
+    const last = events[1];
+    assert(last?.type === 'error');
+    expect(last.error).toBeInstanceOf(TRPCClientError);
+    expect(last.error.message).toBe('boom');
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  });
+
+  test('an error before the loop starts is queued after the buffered events', async () => {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, { events: true });
+
+    ctx.emit(1);
+    ctx.error('boom');
+
+    expect(await sub.next()).toEqual({
+      value: { type: 'data', data: 1 },
+      done: false,
+    });
+    const { value } = await sub.next();
+    expect(value).toMatchObject({ type: 'error', error: { message: 'boom' } });
+    expect(await sub.next()).toEqual({ value: undefined, done: true });
+  });
+
+  test('aborting yields the queued events, then ends', async () => {
+    const ctx = createControlledClient();
+    const ac = new AbortController();
+    const sub = ctx.client.onEvent.subscribe(undefined, {
+      events: true,
+      signal: ac.signal,
+    });
+
+    ctx.send({ result: { type: 'started' } });
+    ctx.emit(1);
+    ac.abort();
+    ctx.emit(2);
+
+    expect(await drain(sub)).toEqual([
+      { type: 'started', context: undefined },
+      { type: 'data', data: 1 },
+    ]);
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  });
+
+  test('`break` unsubscribes and drops the queued events', async () => {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, { events: true });
+
+    ctx.emit(1);
+    ctx.emit(2);
+
+    const events: TEvent[] = [];
+    for await (const event of sub) {
+      events.push(event);
+      break;
+    }
+
+    expect(events).toEqual([{ type: 'data', data: 1 }]);
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+    expect(await sub.next()).toEqual({ value: undefined, done: true });
+  });
+
+  test('a teardown error is thrown from the loop, not yielded as an event', async () => {
+    await expectNoUncaughtErrors(async () => {
+      const ctx = createControlledClient({ onTeardown: throwingTeardown });
+      const ac = new AbortController();
+      const sub = ctx.client.onEvent.subscribe(undefined, {
+        events: true,
+        signal: ac.signal,
+      });
+      ctx.emit(1);
+      ac.abort();
+
+      const events: TEvent[] = [];
+      await expect(async () => {
+        for await (const event of sub) {
+          events.push(event);
+        }
+      }).rejects.toThrowError('teardown failed');
+      expect(events).toEqual([{ type: 'data', data: 1 }]);
+    });
+
+    await expectNoUncaughtErrors(async () => {
+      const ctx = createControlledClient({ onTeardown: throwingTeardown });
+      const sub = ctx.client.onEvent.subscribe(undefined, { events: true });
+      ctx.emit(1);
+
+      await expect(async () => {
+        for await (const _ of sub) {
+          break;
+        }
+      }).rejects.toThrowError('teardown failed');
+    });
+  });
+
+  test('`events: false` yields only data', async () => {
+    const ctx = createControlledClient();
+    const sub = ctx.client.onEvent.subscribe(undefined, { events: false });
+
+    ctx.send({ result: { type: 'started' } });
+    ctx.emit(1);
+
+    expect(await sub.next()).toEqual({ value: 1, done: false });
+    await sub.return?.();
+  });
+
+  test('throws when combined with callbacks', () => {
+    const ctx = createControlledClient();
+
+    const opts = {
+      events: true as const,
+      onData: () => {
+        // noop
+      },
+    };
+    expect(() =>
+      // @ts-expect-error `events` is an iteration option, not for callbacks
+      ctx.client.onEvent.subscribe(undefined, opts),
+    ).toThrowError("A subscription with callbacks can't use `events: true`");
+    expect(ctx.teardown).not.toHaveBeenCalled();
+
+    const untyped = createTRPCUntypedClient<AppRouter>({ links: [] });
+    expect(() =>
+      // @ts-expect-error `events` is an iteration option, not for callbacks
+      untyped.subscription('onEvent', undefined, opts),
+    ).toThrowError("A subscription with callbacks can't use `events: true`");
+  });
+
+  test('callbacks that are all undefined still throw', () => {
+    const ctx = createControlledClient();
+    const opts = { events: true as const, onData: undefined };
+
+    expect(() =>
+      // @ts-expect-error a callback key isn't allowed, not even `undefined`
+      ctx.client.onEvent.subscribe(undefined, opts),
+    ).toThrowError(
+      'subscribe() was called with callbacks, but none of them is defined.',
+    );
+    expect(() => ctx.emit(1)).toThrowError('Not subscribed');
+  });
+
+  test('only the observer keys count as callbacks', async () => {
+    const ctx = createControlledClient();
+    const opts = {
+      events: true as const,
+      onReconnect: () => {
+        // noop
+      },
+    };
+    const sub = ctx.client.onEvent.subscribe(undefined, opts);
+    expectTypeOf(sub).toEqualTypeOf<AsyncIterableIterator<TEvent>>();
+
+    setTimeout(() => ctx.emit(1));
+    const events: TEvent[] = [];
+    for await (const event of sub) {
+      events.push(event);
+      break;
+    }
+
+    expect(events).toEqual([{ type: 'data', data: 1 }]);
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  });
+
+  test('types', async () => {
+    const ctx = createControlledClient();
+
+    const sub = ctx.client.onEvent.subscribe(undefined, { events: true });
+    expectTypeOf(sub).toEqualTypeOf<AsyncIterableIterator<TEvent>>();
+    expectTypeOf(sub).not.toMatchTypeOf<Unsubscribable>();
+    // @ts-expect-error there's no unsubscribe(): use `signal`, `break` or `return()`
+    expect(sub.unsubscribe).toBeUndefined();
+    await sub.return?.();
+
+    const iterate = async () => {
+      for await (const event of sub) {
+        if (event.type === 'data') {
+          expectTypeOf(event.data).toEqualTypeOf<number>();
+        } else if (event.type === 'error') {
+          expectTypeOf(event.error).toEqualTypeOf<TRPCClientError<AppRouter>>();
+        } else if (event.type === 'state') {
+          expectTypeOf(event.state).toEqualTypeOf<'connecting' | 'pending'>();
+          expectTypeOf(
+            event.error,
+          ).toEqualTypeOf<TRPCClientError<AppRouter> | null>();
+          expectTypeOf(event).toMatchTypeOf<
+            TRPCConnectionState<TRPCClientError<AppRouter>>
+          >();
+        } else {
+          expectTypeOf(event).toEqualTypeOf<{
+            type: 'started';
+            context: OperationContext | undefined;
+          }>();
+        }
+      }
+    };
+    void iterate;
+    expectTypeOf<TEvent['type']>().toEqualTypeOf<
+      'data' | 'error' | 'started' | 'state'
+    >();
+
+    // `events: false` and no `events` yield only data
+    const dataOnly = ctx.client.onEvent.subscribe(undefined, {
+      events: false,
+    });
+    expectTypeOf(dataOnly).toEqualTypeOf<AsyncIterableIterator<number>>();
+    await dataOnly.return?.();
+
+    const noop = () => {
+      // noop
+    };
+    const onlyTypes = () => {
+      // @ts-expect-error `events` can't be combined with callbacks
+      ctx.client.onEvent.subscribe(undefined, { events: true, onData: noop });
+      // @ts-expect-error not even `events: false`
+      ctx.client.onEvent.subscribe(undefined, { events: false, onData: noop });
+      ctx.client.onEvent.subscribe(undefined, {
+        events: true,
+        signal: new AbortController().signal,
+        context: {},
+      });
+
+      const untyped = createTRPCUntypedClient<AppRouter>({ links: [] });
+      expectTypeOf(
+        untyped.subscription('onEvent', undefined, { events: true }),
+      ).toEqualTypeOf<AsyncIterableIterator<SubscriptionEvent<unknown>>>();
+      const withCallback = { events: true as const, onData: noop };
+      // @ts-expect-error `events` can't be combined with callbacks
+      untyped.subscription('onEvent', undefined, withCallback);
+    };
+    void onlyTypes;
+  });
 });

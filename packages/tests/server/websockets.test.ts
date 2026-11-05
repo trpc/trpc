@@ -4,8 +4,13 @@ import '@testing-library/react';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { TRPCServerResourceOpts } from '@trpc/server/__tests__/trpcServerResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { SubscriptionEvent, WebSocketClientOptions } from '@trpc/client';
+import {
+  createTRPCClient,
+  createWSClient,
+  TRPCClientError,
+  wsLink,
+} from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
@@ -739,6 +744,152 @@ test('subscribe() - abort signal ends async iteration', async () => {
 
   // aborting ends the iteration instead of leaving it hanging
   await done;
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
+test('subscribe() with events - yields data, started and connection-state changes', async () => {
+  await using ctx = factory();
+
+  const ac = new AbortController();
+  const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
+    events: true,
+    signal: ac.signal,
+  });
+  expectTypeOf(subscription).toEqualTypeOf<
+    AsyncIterableIterator<
+      SubscriptionEvent<Message, TRPCClientError<typeof ctx.router>>
+    >
+  >();
+
+  const events: SubscriptionEvent<
+    Message,
+    TRPCClientError<typeof ctx.router>
+  >[] = [];
+  const done = (async () => {
+    for await (const event of subscription) {
+      events.push(event);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(1);
+  });
+  ctx.ee.emit('server:msg', { id: '1' });
+  await vi.waitFor(() => {
+    expect(events).toContainEqual({ type: 'data', data: { id: '1' } });
+  });
+
+  // drop the connection; the client reconnects and resubscribes
+  ctx.destroyConnections();
+  await vi.waitFor(() => {
+    expect(ctx.onNewMessageSubscription).toHaveBeenCalledTimes(2);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(1);
+  });
+  ctx.ee.emit('server:msg', { id: '2' });
+  await vi.waitFor(() => {
+    expect(events).toContainEqual({ type: 'data', data: { id: '2' } });
+  });
+
+  ac.abort();
+  await done;
+
+  const afterFirstData = events.slice(
+    events.findIndex((event) => event.type === 'data'),
+  );
+  expect(
+    afterFirstData.map((event) =>
+      event.type === 'state' ? `state:${event.state}` : event.type,
+    ),
+  ).toEqual(['data', 'state:connecting', 'state:pending', 'started', 'data']);
+  const dropped = afterFirstData[1];
+  assert(dropped?.type === 'state');
+  expect(dropped.error).toBeInstanceOf(Error);
+  expect(dropped.error?.message).toBe('WebSocket closed');
+  expect(events.filter((event) => event.type === 'started')).toHaveLength(2);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
+test('subscribe() with events - an error is the last event and ends the loop', async () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ctx.ee.emit('server:msg', { id: '1' });
+      ctx.ee.emit('observable:error', new Error('MyError'));
+    });
+  });
+
+  const events: SubscriptionEvent<
+    Message,
+    TRPCClientError<typeof ctx.router>
+  >[] = [];
+  // doesn't throw
+  for await (const event of ctx.client.onMessageObservable.subscribe(
+    undefined,
+    { events: true },
+  )) {
+    events.push(event);
+  }
+
+  const last = events.at(-1);
+  assert(last?.type === 'error');
+  expectTypeOf(last.error).toEqualTypeOf<TRPCClientError<typeof ctx.router>>();
+  expect(last.error).toBeInstanceOf(TRPCClientError);
+  expect(last.error.message).toBe('MyError');
+  expect(events.filter((event) => event.type === 'data')).toEqual([
+    { type: 'data', data: { id: '1' } },
+  ]);
+  expect(events.filter((event) => event.type === 'error')).toHaveLength(1);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
+test('subscribe() with events - events that arrive before the loop starts are queued', async () => {
+  await using ctx = factory();
+
+  const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
+    events: true,
+  });
+  // a second subscription on the same socket, subscribed after the first, so
+  // it gets each message only after the first one has
+  const onData = vi.fn<(data: Message) => void>();
+  const witness = ctx.client.onMessageObservable.subscribe(undefined, {
+    onData,
+  });
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(2);
+  });
+  ctx.ee.emit('server:msg', { id: '1' });
+  ctx.ee.emit('server:msg', { id: '2' });
+  await vi.waitFor(() => {
+    expect(onData).toHaveBeenCalledTimes(2);
+  });
+  witness.unsubscribe();
+
+  const events: SubscriptionEvent<
+    Message,
+    TRPCClientError<typeof ctx.router>
+  >[] = [];
+  for await (const event of subscription) {
+    events.push(event);
+    if (event.type === 'data' && event.data.id === '2') {
+      break;
+    }
+  }
+
+  expect(events.map((event) => event.type)).toContain('started');
+  expect(events.filter((event) => event.type === 'data')).toEqual([
+    { type: 'data', data: { id: '1' } },
+    { type: 'data', data: { id: '2' } },
+  ]);
 
   await vi.waitFor(() => {
     expect(ctx.ee.listenerCount('server:msg')).toBe(0);
