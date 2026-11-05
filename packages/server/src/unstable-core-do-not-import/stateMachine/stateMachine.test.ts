@@ -6,7 +6,7 @@ import { makeResource } from '../stream/utils/disposable';
 import { sampleTransitions, stateDiagram } from './diagram';
 import { createMachineRuntime, createResourceMap } from './runtime';
 import type { MachineTransition, StateMachine } from './stateMachine';
-import { exhaustive } from './stateMachine';
+import { exhaustive, splitEffects, step } from './stateMachine';
 import { createMachineTimers } from './timers';
 
 type DoorState = { status: 'closed' } | { status: 'open'; opens: number };
@@ -48,6 +48,34 @@ function door(
     transition: doorTransition,
   };
 }
+
+test('step runs one transition without a runtime, and effects split by type', () => {
+  const machine = door([]);
+  let state = machine.initial.state;
+  const effects: DoorEffect[] = [];
+  for (const event of [
+    { type: 'knock' },
+    { type: 'open' },
+    { type: 'open' },
+    { type: 'close' },
+  ] satisfies DoorEvent[]) {
+    const next = step(machine, state, event);
+    state = next.state;
+    effects.push(...next.effects);
+  }
+  expect(state).toEqual({ status: 'closed' });
+
+  const { matching, rest } = splitEffects(effects, ['log']);
+  expectTypeOf(matching).toEqualTypeOf<{ type: 'log'; message: string }[]>();
+  expectTypeOf(rest).toEqualTypeOf<({ type: 'ring' } | { type: 'throw' })[]>();
+  expect(matching.map((effect) => effect.message)).toEqual([
+    'opened',
+    'closed',
+  ]);
+  expect(rest).toEqual([{ type: 'ring' }]);
+  // @ts-expect-error - 'bell' is not an effect type
+  splitEffects(effects, ['bell']);
+});
 
 test('an event sent while effects run waits its turn', async () => {
   const seen: string[] = [];
