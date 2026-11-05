@@ -401,7 +401,7 @@ test('queries, mutations and subscriptions made while the new socket opens go on
   sub.unsubscribe();
 });
 
-test('a subscription is stopped on the old socket only once the new one has started it', async () => {
+test("the old socket serves a moving subscription while the new one's setup is held, and the new one's replay is dropped", async () => {
   await using ctx = setup({ connectionParams: async () => ({}) });
   const onStarted = vi.fn();
   const data: number[] = [];
@@ -436,6 +436,174 @@ test('a subscription is stopped on the old socket only once the new one has star
   await vi.waitFor(() =>
     expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
   );
+  sub.unsubscribe();
+});
+
+test("a subscription's move completes on the new socket's started, with no event after it", async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+  const newClientSocket = ctx.wsClient.connection!.ws;
+  const newFrames: unknown[] = [];
+  newClientSocket.addEventListener('message', (event) => {
+    // oxlint-disable-next-line typescript/no-base-to-string
+    const text = String(event.data);
+    if (text !== 'PING' && text !== 'PONG') newFrames.push(JSON.parse(text));
+  });
+  expect(ctx.signals[0]?.aborted).toBe(false);
+
+  // Nothing is pushed, so the new socket's only frame is `started`.
+  newSetup.resolve();
+  await vi.waitFor(() => expect(ctx.signals[0]?.aborted).toBe(true));
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
+  expect(newFrames).toEqual([
+    expect.objectContaining({ result: { type: 'started' } }),
+  ]);
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  expect(data).toEqual([1]);
+  expect(onStarted).toHaveBeenCalledTimes(1);
+  sub.unsubscribe();
+});
+
+/**
+ * Holds back the frames `socket` gets or sends that match, until released.
+ * Later frames pass.
+ */
+function holdFrames(
+  socket: WebSocket,
+  direction: 'received' | 'sent',
+  matches: (message: any) => boolean,
+) {
+  const held: (() => void)[] = [];
+  let holding = true;
+  const parse = (raw: unknown) => {
+    // oxlint-disable-next-line typescript/no-base-to-string
+    const text = String(raw);
+    return text === 'PING' || text === 'PONG' ? null : JSON.parse(text);
+  };
+  if (direction === 'received') {
+    const emit = socket.emit.bind(socket);
+    socket.emit = ((name: string, ...args: unknown[]) => {
+      const message = name === 'message' ? parse(args[0]) : null;
+      if (holding && message !== null && matches(message)) {
+        held.push(() => emit(name, ...args));
+        return true;
+      }
+      return emit(name, ...args);
+    }) as typeof socket.emit;
+  } else {
+    const send = socket.send.bind(socket);
+    socket.send = ((data: unknown, ...args: unknown[]) => {
+      const message = parse(data);
+      if (holding && message !== null && matches(message)) {
+        held.push(() => (send as any)(data, ...args));
+        return;
+      }
+      (send as any)(data, ...args);
+    }) as typeof socket.send;
+  }
+  return {
+    count: () => held.length,
+    release() {
+      holding = false;
+      for (const frame of held.splice(0)) frame();
+    },
+  };
+}
+
+test("the old socket's event sent after the new one's started is dropped, and the new one delivers it once", async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const oldClientSocket = ctx.wsClient.connection!.ws;
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const oldEvents: string[] = [];
+  oldClientSocket.addEventListener('message', (event) => {
+    // oxlint-disable-next-line typescript/no-base-to-string
+    const text = String(event.data);
+    if (text === 'PING' || text === 'PONG') return;
+    const message = JSON.parse(text);
+    if (message.result?.type === 'data') oldEvents.push(message.result.id);
+  });
+  // A query in flight keeps the old socket open after the move.
+  const answers = holdFrames(
+    oldServerSocket,
+    'sent',
+    (message) => message.result?.data === 'hello',
+  );
+  const query = ctx.client.greeting.query();
+  await vi.waitFor(() => expect(answers.count()).toBe(1));
+  // The old server reads the stop only when released.
+  const stops = holdFrames(
+    oldServerSocket,
+    'received',
+    (message) => message.method === 'subscription.stop',
+  );
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+  // The old socket delivers 2 during the move; the new one will replay it.
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1, 2]));
+  const newServerSocket = [...ctx.wss.clients].find(
+    (socket) => socket !== oldServerSocket,
+  );
+  assert(newServerSocket);
+  // The new server's `started` goes out; its events wait.
+  const newEvents = holdFrames(
+    newServerSocket,
+    'sent',
+    (message) => message.result?.type === 'data',
+  );
+  newSetup.resolve();
+  await vi.waitFor(() => expect(stops.count()).toBe(1));
+  await vi.waitFor(() => expect(newEvents.count()).toBe(1));
+
+  // The old socket hasn't read its stop, so it sends 3, after the new
+  // socket's started: dropped.
+  ctx.push();
+  await vi.waitFor(() => expect(oldEvents).toEqual(['2', '3']));
+  await vi.waitFor(() => expect(newEvents.count()).toBe(2));
+  expect(data).toEqual([1, 2]);
+
+  // The new socket's 2 is dropped as replayed, and its 3 delivered.
+  newEvents.release();
+  await vi.waitFor(() => expect(data).toEqual([1, 2, 3]));
+  stops.release();
+  await vi.waitFor(() => expect(ctx.signals[0]?.aborted).toBe(true));
+  answers.release();
+  expect(await query).toBe('hello');
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
+  ctx.push();
+  await vi.waitFor(() => expect(data.at(-1)).toBe(4));
+  expect(data).toEqual([1, 2, 3, 4]);
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  expect(onStarted).toHaveBeenCalledTimes(1);
   sub.unsubscribe();
 });
 

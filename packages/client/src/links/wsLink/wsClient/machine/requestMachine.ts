@@ -334,8 +334,9 @@ function onMoving(
   switch (event.type) {
     case 'response': {
       if (event.connection === state.to) {
-        // The new connection has it: stop it on the old one, whose frames
-        // for it are dropped from now on.
+        // The new connection's first frame for it, `started` from a tRPC
+        // server, is the ack: stop it on the old one, whose frames for it are
+        // dropped from now on.
         const switched = onSent(
           {
             ...request,

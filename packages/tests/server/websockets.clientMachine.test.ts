@@ -79,6 +79,10 @@ interface UserRequest {
   startedAllowed: boolean;
   /** Moved to another socket before any `started` reached the user. */
   movedBeforeStarted: boolean;
+  /** The connection its last completed move landed on. */
+  movedTo: ConnectionId | null;
+  /** The connection it was moving to got a reconnect notice mid-move. */
+  successorReplaced: ConnectionId | null;
 }
 
 type Step = ModelStep<ClientModel, ClientEvent, ClientEffect>;
@@ -92,8 +96,17 @@ const covered = coverage([
   'old socket event delivered during a move',
   'replayed event dropped',
   'subscription confirmed on its new socket',
+  "move completed by the new socket's started alone",
+  'move completed by data before started',
+  'old socket event dropped after the move completed',
+  'second reconnect notice mid-move',
+  'moved on from a new socket replaced mid-move',
   'move undone by a lost successor',
+  'old socket lost before the move began',
   'old socket lost during a move',
+  'old socket lost after the move completed',
+  'new socket lost after the move completed',
+  'event after the run delivered after a move',
   'replacement failure shown once the old socket ends',
   'retired socket frame dropped',
   'batch send failed',
@@ -121,9 +134,19 @@ class Sim {
   closedConnectionsUpTo = 0;
   sendFails = false;
   private readonly slowFirstSocket: boolean;
+  /**
+   * A resent subscription's events may come before its `started`. A tRPC
+   * server always sends `started` first, but the client doesn't rely on it.
+   */
+  readonly eagerData: boolean;
 
-  constructor(opts: { lazy: boolean; slowFirstSocket: boolean }) {
+  constructor(opts: {
+    lazy: boolean;
+    slowFirstSocket: boolean;
+    eagerData: boolean;
+  }) {
     this.slowFirstSocket = opts.slowFirstSocket;
+    this.eagerData = opts.eagerData;
     this.machine = simulateMachine({
       machine: {
         initial: initialClient({ lazy: opts.lazy }),
@@ -179,6 +202,8 @@ class Sim {
       lastData: 0,
       startedAllowed: true,
       movedBeforeStarted: false,
+      movedTo: null,
+      successorReplaced: null,
     });
     this.observeWritability();
     this.dispatch({ type: 'request', id, method, lastEventId: null });
@@ -322,6 +347,46 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
   const { event, effects, before, after } = step;
   const frameFrom =
     event?.type === 'frame' ? event.connection : (null as ConnectionId | null);
+  if (
+    event?.type === 'frame' &&
+    typeof event.message.id === 'number' &&
+    'result' in event.message &&
+    event.message.result.type === 'data'
+  ) {
+    // Sent before the old socket read its stop: the new one has it.
+    const state = before.requests.get(event.message.id)?.state;
+    const call = sim.sockets.get(event.connection)?.calls.get(event.message.id);
+    if (
+      state?.kind === 'sent' &&
+      state.connection !== event.connection &&
+      call?.stopping
+    ) {
+      covered.add('old socket event dropped after the move completed');
+    }
+  }
+  if (
+    event?.type === 'frame' &&
+    'method' in event.message &&
+    event.message.method === 'reconnect' &&
+    after.draining.includes(event.connection) &&
+    !before.draining.includes(event.connection)
+  ) {
+    for (const [id, request] of before.requests) {
+      if (
+        request.state.kind === 'moving' &&
+        request.state.to === event.connection
+      ) {
+        sim.requests.get(id)!.successorReplaced = event.connection;
+        covered.add('second reconnect notice mid-move');
+      }
+    }
+  }
+  const lost =
+    event?.type === 'connection' &&
+    isLive(before.connections.get(event.connection)) &&
+    !isLive(after.connections.get(event.connection))
+      ? event.connection
+      : null;
   if (event?.type === 'frame' && typeof event.message.id === 'number') {
     const state = before.requests.get(event.message.id)?.state;
     if (!servingOf(state).includes(event.connection)) {
@@ -567,7 +632,26 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         `subscription ${id} has started ${'started' in state && state.started}, but the user ${user.startedAllowed ? "hasn't" : 'has'} seen it`,
       );
     }
+    if (lost !== null && previous?.kind === 'sent' && state.kind === 'queued') {
+      if (before.draining.includes(lost)) {
+        covered.add('old socket lost before the move began');
+      }
+      if (user.movedTo === lost) {
+        covered.add('new socket lost after the move completed');
+      }
+    }
+    if (
+      lost !== null &&
+      state.kind === 'sent' &&
+      state.connection !== lost &&
+      sim.sockets.get(lost)?.calls.get(id)?.stopping
+    ) {
+      covered.add('old socket lost after the move completed');
+    }
     if (previous?.kind === 'sent' && state.kind === 'moving') {
+      if (user.successorReplaced === previous.connection) {
+        covered.add('moved on from a new socket replaced mid-move');
+      }
       covered.add('subscription moved');
       if (user.startedAllowed) {
         covered.add('subscription moved before started');
@@ -579,6 +663,30 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         covered.add('move undone by a lost successor');
       } else if (frameFrom === previous.to) {
         covered.add('subscription confirmed on its new socket');
+        user.movedTo = previous.to;
+        if (
+          event?.type === 'frame' &&
+          'result' in event.message &&
+          event.message.result.type === 'data'
+        ) {
+          covered.add('move completed by data before started');
+        }
+        if (
+          event?.type === 'frame' &&
+          'result' in event.message &&
+          event.message.result.type === 'started'
+        ) {
+          // D6: the ack is enough, with no event from the new socket.
+          check(
+            effects.some(
+              (effect) =>
+                effect.type === 'sendStop' &&
+                effect.connection === previous.from,
+            ),
+            `request ${id} switched on started without stopping the old socket`,
+          );
+          covered.add("move completed by the new socket's started alone");
+        }
       } else if (state.kind === 'sent' && state.connection === previous.to) {
         covered.add('old socket lost during a move');
       }
@@ -937,7 +1045,11 @@ function runSocketAction(
         frame(sim, connection, { id, result: { type: 'stopped' } });
         return;
       }
-      if (!call.started) {
+      const eager =
+        action === 'data' &&
+        sim.eagerData &&
+        !sim.requests.get(id)!.startedAllowed;
+      if (!call.started && !eager) {
         if (socket.slowSetup) return;
         call.started = true;
         frame(sim, connection, { id, result: { type: 'started' } });
@@ -994,38 +1106,71 @@ interface Scenario {
   actions: Action[];
   /** The first socket never starts a subscription, so moves beat `started`. */
   slowFirstSocket: boolean;
-  /** Start with a subscription moving to a new socket. */
-  moving: boolean;
+  /** A scripted start, so random runs reach each point of a move. */
+  start: keyof typeof starts;
+  eagerData: boolean;
 }
 
 const scenarioArb: fc.Arbitrary<Scenario> = fc.record({
   lazy: fc.boolean(),
   actions: fc.array(actionArb, { maxLength: 150, size: 'max' }),
   slowFirstSocket: fc.boolean(),
-  moving: fc.boolean(),
+  start: fc.constantFrom('none', 'moving', 'busyOldSocket', 'secondNotice'),
+  eagerData: fc.boolean(),
 });
 
 /** Random runs seldom get a new socket ready before the old one goes. */
 function newest(action: SocketAction): Action {
   return { type: 'socket', pick: 0, action, call: 0 };
 }
-const startMove: Action[] = [
+function previous(action: SocketAction): Action {
+  return { type: 'socket', pick: 1, action, call: 0 };
+}
+const subscribed: Action[] = [
   { type: 'request', method: 'subscription' },
   newest('open'),
   newest('params'),
   newest('started'),
   newest('data'),
+];
+const replaced: Action[] = [
   newest('reconnect'),
   { type: 'timer', timer: 'backoff' },
   newest('open'),
   newest('params'),
 ];
+const starts = {
+  none: [],
+  /** A subscription moving from A to B. */
+  moving: [...subscribed, ...replaced],
+  /**
+   * A query in flight keeps A open after the move, and A delivers two events
+   * during it, which B replays.
+   */
+  busyOldSocket: [
+    ...subscribed,
+    { type: 'request', method: 'query' },
+    { type: 'timer', timer: 'flush' },
+    ...replaced,
+    previous('data'),
+    previous('data'),
+  ],
+  /** B gets a reconnect notice mid-move, and C is ready. */
+  secondNotice: [...subscribed, ...replaced, ...replaced],
+} satisfies Record<string, Action[]>;
 
-function runScenario({ lazy, slowFirstSocket, moving, actions }: Scenario) {
-  const sim = new Sim({ lazy, slowFirstSocket });
-  for (const action of moving ? [...startMove, ...actions] : actions) {
+function runScenario({
+  lazy,
+  slowFirstSocket,
+  start,
+  eagerData,
+  actions,
+}: Scenario) {
+  const sim = new Sim({ lazy, slowFirstSocket, eagerData });
+  for (const action of [...starts[start], ...actions]) {
     run(sim, action);
   }
+  probeEveryLiveSubscription(sim);
   // Let everything settle: the server answers and ends every socket, and
   // the client closes.
   sim.closedAfter = sim.lastRequestId;
@@ -1064,6 +1209,67 @@ function runScenario({ lazy, slowFirstSocket, moving, actions }: Scenario) {
   return sim;
 }
 
+/**
+ * None lost: the socket serving each live subscription sends on until the
+ * subscriber gets an event, which the per-step check requires to be the one
+ * after the last it got. Replays of what it already got are dropped first.
+ */
+function probeEveryLiveSubscription(sim: Sim) {
+  for (const id of [...sim.model.requests.keys()]) {
+    const user = sim.requests.get(id)!;
+    if (user.method !== 'subscription') continue;
+    const before = user.lastData;
+    let probed = false;
+    // Each frame can move it on, so the serving socket is looked up again.
+    for (let i = 0; i < 400 && user.lastData === before; i++) {
+      const state = sim.model.requests.get(id)?.state;
+      if (state?.kind !== 'sent' && state?.kind !== 'moving') break;
+      // A moving one is served by its old socket until the new one answers.
+      const connection = servingOf(state)
+        .reverse()
+        .find((serving) => canSend(sim, serving, id));
+      if (connection === undefined) break;
+      const call = sim.sockets.get(connection)!.calls.get(id)!;
+      probed = true;
+      if (!call.started) {
+        call.started = true;
+        frame(sim, connection, { id, result: { type: 'started' } });
+        continue;
+      }
+      const eventId = call.next++;
+      frame(sim, connection, {
+        id,
+        result: { type: 'data', id: String(eventId), data: eventId },
+      });
+    }
+    if (!probed || user.terminals > 0) continue;
+    check(
+      user.lastData === before + 1,
+      `subscription ${id} never got event ${before + 1}`,
+    );
+    if (user.movedTo !== null) {
+      covered.add('event after the run delivered after a move');
+    }
+  }
+}
+
+function canSend(sim: Sim, connection: ConnectionId, id: number) {
+  const socket = sim.sockets.get(connection);
+  const call = socket?.calls.get(id);
+  return (
+    !!socket &&
+    !!call &&
+    !call.stopping &&
+    !socket.slowSetup &&
+    !socket.closing &&
+    sim.hears(connection)
+  );
+}
+
+function isLive(connection: ConnectionModel | undefined) {
+  return connection !== undefined && connection.state.phase !== 'closed';
+}
+
 const SEED = 7925;
 
 test('random event sequences keep every invariant', () => {
@@ -1093,7 +1299,8 @@ test('close() finishing leaves a replaced connection opened since serving', () =
     runScenario({
       lazy: false,
       slowFirstSocket: false,
-      moving: false,
+      start: 'none',
+      eagerData: false,
       actions: [
         { type: 'request', method: 'query' },
         { type: 'socket', pick: 0, action: 'open', call: 0 },
