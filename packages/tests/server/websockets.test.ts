@@ -1973,7 +1973,7 @@ function holdFrames(
 }
 
 describe('a server-requested reconnect hands subscriptions off', () => {
-  function setup() {
+  function setup(wsClient: Partial<WebSocketClientOptions> = {}) {
     const t = initTRPC.create();
     const ee = new EventEmitter();
     const log: number[] = [];
@@ -2018,10 +2018,30 @@ describe('a server-requested reconnect hands subscriptions off', () => {
           };
         }),
       ),
+      texts: subscriptionProcedure.subscription(() =>
+        observable<string>((emit) => {
+          const onText = (text: string) => emit.next(text);
+          ee.on('text', onText);
+          return () => {
+            ee.off('text', onText);
+          };
+        }),
+      ),
+      /** Never ends once stopped, so the server never sends `stopped`. */
+      stubborn: t.procedure.subscription(async function* () {
+        try {
+          for await (const [value] of on(ee, 'stubborn')) {
+            yield value as number;
+          }
+        } finally {
+          await createDeferred<void>().promise;
+        }
+      }),
     });
     const ctx = testServerAndClientResource(router, {
       clientLink: 'wsLink',
       wsClient: {
+        ...wsClient,
         lazy: { enabled: false, closeMs: 0 },
         retryDelayMs: () => 20,
         onOpen,
@@ -3071,6 +3091,190 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     } finally {
       oldFrames?.release();
       held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test("an untracked subscription isn't let go at a keepAlive PONG that its old socket's events are queued around", async () => {
+    const {
+      ctx,
+      ee,
+      valuesStarted,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup({
+      keepAlive: { enabled: true, intervalMs: 50, pongTimeoutMs: 10_000 },
+    });
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    let oldFrames: ReturnType<typeof holdFrames> | undefined;
+    const keepAlivePongsHeld = vi.fn();
+    const pingsAfterStop = vi.fn();
+    // The server has answered by the time this listener runs.
+    oldServerSocket.on('message', (raw) => {
+      // oxlint-disable-next-line typescript/no-base-to-string
+      if (String(raw) !== 'PING') return;
+      if (stopsOn(oldServerSocket).length > 0) pingsAfterStop();
+      else if (oldFrames && oldFrames.count() > 0) keepAlivePongsHeld();
+    });
+    const seen: unknown[] = [];
+    const subscription = ctx.client.values.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(valuesStarted).toHaveBeenCalledTimes(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('values')).toHaveLength(2);
+      });
+      oldFrames = holdFrames(oldServerSocket, 'sent', {
+        matches: (message) => 'result' in message,
+        later: 'wait',
+      });
+      ee.emit('value', 1);
+      // A keepAlive PONG waits behind 1, and 2 behind it.
+      await vi.waitFor(() => {
+        expect(keepAlivePongsHeld).toHaveBeenCalledTimes(1);
+      });
+      ee.emit('value', 2);
+      await vi.waitFor(() => {
+        expect(oldFrames!.count()).toBe(3);
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(ee.listenerCount('value')).toBe(1);
+        expect(pingsAfterStop).toHaveBeenCalledTimes(1);
+      });
+
+      oldFrames.release();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      ee.emit('value', 3);
+      await vi.waitFor(() => {
+        expect(seen).toContain(3);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2, 3]);
+    } finally {
+      oldFrames?.release();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test("an untracked subscription gets a large event the old socket's PONG is queued behind", async () => {
+    const {
+      ctx,
+      ee,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const pingsAfterStop = vi.fn();
+    oldServerSocket.on('message', (raw) => {
+      // oxlint-disable-next-line typescript/no-base-to-string
+      if (String(raw) === 'PING' && stopsOn(oldServerSocket).length > 0) {
+        pingsAfterStop();
+      }
+    });
+    const seen: unknown[] = [];
+    const subscription = ctx.client.texts.subscribe(undefined, {
+      ...observe(seen),
+      onData: (text) => seen.push(text.length),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    const reading = oldClientSocket as unknown as WebSocket;
+    try {
+      await vi.waitFor(() => {
+        expect(ee.listenerCount('text')).toBe(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('texts')).toHaveLength(2);
+      });
+      // The client stops reading the old socket, so the event backs up there.
+      reading.pause();
+      const large = 4 * 1024 * 1024;
+      ee.emit('text', 'x'.repeat(large));
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+        expect(ee.listenerCount('text')).toBe(1);
+        expect(pingsAfterStop).toHaveBeenCalledTimes(1);
+      });
+
+      reading.resume();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      ee.emit('text', 'after');
+      await vi.waitFor(() => {
+        expect(seen).toContain(5);
+      });
+      expect(seen).toEqual(['pending', 'started', large, 5]);
+    } finally {
+      reading.resume();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('an untracked subscription leaves the old socket at the PONG to the PING after its stop, even if the procedure never stops', async () => {
+    const { ctx, ee, observe, waitForOpen } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.stubborn.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    try {
+      await vi.waitFor(() => {
+        expect(ee.listenerCount('stubborn')).toBe(1);
+      });
+      ee.emit('stubborn', 1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+      const frames: string[] = [];
+      oldServerSocket.on('message', (raw) => {
+        // oxlint-disable-next-line typescript/no-base-to-string
+        const text = String(raw);
+        frames.push(text === 'PING' ? text : JSON.parse(text).method);
+      });
+      const oldClosed = new Promise((resolve) =>
+        oldClientSocket.addEventListener('close', resolve),
+      );
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      // The old socket can't end the subscription, so only the PONG lets it go.
+      await oldClosed;
+      expect(frames).toEqual(['subscription.stop', 'PING']);
+      ee.emit('stubborn', 2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2]);
+    } finally {
       subscription.unsubscribe();
       await ctx.wsClient.close();
     }
