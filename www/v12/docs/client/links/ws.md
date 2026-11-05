@@ -49,15 +49,16 @@ A connection that doesn't open, because the WebSocket fails or `connectionParams
 
 ### Rolling deploys
 
-A server that is shutting down drains its connections ([Rolling deploys](../../adapters/overview.md#rolling-deploys)) and sends each client a `reconnect` message. The link then:
+A server that is shutting down drains its connections ([Rolling deploys](../../adapters/overview.md#rolling-deploys)) and sends each client a `reconnect` message. It keeps serving that connection until the client leaves, so the link switches over without a gap:
 
-- sends new calls on a new connection, which the load balancer routes to a server that isn't shutting down;
-- moves its subscriptions there at once: each one is stopped on the old connection and subscribes again from the last event it handled, and events still arriving for it on the old connection are dropped, so none is missed or seen twice;
-- closes the old connection once the queries and mutations already sent on it have their results.
+- It opens a new connection, which the load balancer routes to a server that isn't shutting down. Until that one is open and its `connectionParams` have resolved, new queries, mutations and subscriptions still go on the old connection.
+- Then each subscription subscribes on the new connection from the last event it handled, and keeps receiving on the old one until the new one answers it. Only then is it stopped on the old connection, whose later events for it are dropped. The new connection resends the events the old one delivered in between, and the link drops each of those once by its `tracked()` id, so none is missed or seen twice.
+- If the new connection fails to open or drops before it answers, the subscription stays on the old connection, and the link tries again with its reconnect backoff for as long as the old one serves, without failing anything. If the old connection closes first, subscriptions that haven't moved reconnect as after a dropped connection, and ones already sent to the new connection stay there.
+- It closes the old connection once the queries and mutations sent on it have their results and every subscription has moved.
 
-Nothing already sent is sent again, so a mutation never runs twice. A query or mutation the server doesn't finish before its drain timeout fails with `NETWORK_ERROR`, as on a dropped connection.
+Subscribers see none of this: no error and no second `started`. Nothing already sent is sent again, so a mutation never runs twice. A query or mutation the server doesn't finish before its drain timeout fails with `NETWORK_ERROR`, as on a dropped connection.
 
-A subscription without `tracked()` ids has no event to resume from, so it **starts over** on the new connection: the resolver runs again from the start, without `lastEventId`. Give events ids if the client must not miss any. A subscription made with `{ reconnect: false }` stays on the old connection and ends with `NETWORK_ERROR` when the server closes it.
+A subscription without `tracked()` ids has no event to resume from, so it **starts over** on the new connection: the resolver runs again from the start, without `lastEventId`. Its events can't be matched, so while both connections deliver it, an event can arrive twice, but none is missed. Give events ids if the client must see each one once. A subscription made with `{ reconnect: false }` stays on the old connection and ends with `NETWORK_ERROR` when the server closes it.
 
 ## Keep-alive
 

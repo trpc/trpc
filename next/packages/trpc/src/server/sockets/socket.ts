@@ -454,6 +454,7 @@ export const connectionReceiver: (
             return yield* Effect.fail(normalizeCause(exit.cause));
           }
           if (kind === 'subscription') {
+            yield* conn.send({ id, type: 'started' });
             yield* emitEvents(
               interrupt.abortUnlessDone(
                 exit.value as Stream.Stream<unknown, AnyTrpcError>,
