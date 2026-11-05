@@ -355,7 +355,6 @@ export class WsClient {
       );
     }
     if (this.reconnecting) return;
-    this.replacementError = null;
 
     const tryReconnect = async (attemptIndex: number) => {
       try {

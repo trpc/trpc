@@ -2897,6 +2897,59 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('a new socket lost while the old one is open shows its loss once the old one closes', async () => {
+    const {
+      ctx,
+      eventsSubscribed,
+      onOpen,
+      receivedFor,
+      waitForOpen,
+      holdConnectionParams,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const subscription = ctx.client.events.subscribe(undefined, {
+      onData: vi.fn(),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let release: ReturnType<typeof holdConnectionParams> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+      });
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(2);
+      });
+      const lostClientSocket = ctx.wsClient.connection!.ws;
+      release = holdConnectionParams();
+      receivedFor('events')[1]!.socket.terminate();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(3);
+      });
+
+      const shown: { state: string; error: unknown }[] = [];
+      ctx.wsClient.connectionState.subscribe({
+        next: ({ state, error }) => shown.push({ state, error }),
+      });
+      oldServerSocket.terminate();
+      await vi.waitFor(() => {
+        expect(shown.at(-1)?.state).toBe('connecting');
+      });
+      expect(shown.at(-1)?.error).toMatchObject({
+        message: 'WebSocket closed',
+        cause: { cause: { target: lostClientSocket } },
+      });
+    } finally {
+      release?.resolve();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test('an untracked subscription gets the events the old socket sent before it was stopped there', async () => {
     const {
       ctx,
