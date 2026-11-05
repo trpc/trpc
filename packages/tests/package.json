@@ -39,5 +39,8 @@
     "ws": "catalog:",
     "yup": "^1.0.0",
     "zod-form-data": "^3.0.1"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2"
   }
 }

@@ -351,6 +351,9 @@ importers:
       '@effect/platform-node':
         specifier: 'catalog:'
         version: 4.1.1(effect@4.1.1)(redis@6.3.1(@opentelemetry/api@1.10.0))
+      '@fast-check/vitest':
+        specifier: 0.5.0
+        version: 0.5.0(vitest@5.0.0)
       '@manypkg/cli':
         specifier: ^0.22.0
         version: 0.22.0
@@ -2849,6 +2852,10 @@ importers:
       zod-form-data:
         specifier: ^3.0.1
         version: 3.0.1(zod@4.6.7)
+    devDependencies:
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
 
   packages/upgrade:
     dependencies:
@@ -5813,6 +5820,11 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@fast-check/vitest@0.5.0':
+    resolution: {integrity: sha512-Kgbj2smuq1P4OhGKuPATs5i2fAxNmGbJ/zSmTrzWhQSLUrHREbKWgv9WGbNUOXcx77q6joLVMmTygyXuwP2Bog==}
+    peerDependencies:
+      vitest: ^4.1.0 || ^5.0.0
 
   '@fastify/ajv-compiler@4.0.5':
     resolution: {integrity: sha512-KoWKW+MhvfTRWL4qrhUwAAZoaChluo0m0vbiJlGMt2GXvL4LVPQEjt8kSpHI3IBq5Rez8fg+XeH3cneztq+C7A==}
@@ -12685,6 +12697,10 @@ packages:
     resolution: {integrity: sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==}
     engines: {node: '>=8.0.0'}
 
+  fast-check@4.10.2:
+    resolution: {integrity: sha512-iK2f+YrcmoeGqk6fA0ea2bptcu/itMIm4NfEozq6N25+aG6h7s5HZbB/k1aV7b5w5sFLMCbbtRUsTVR+BgC3xw==}
+    engines: {node: '>=12.17.0'}
+
   fast-content-type-parse@3.0.0:
     resolution: {integrity: sha512-ZvLdcY8P+N8mGQJahJV5G4U88CSvT1rP8ApL6uETe88MBXrBHAkZlSEySdUlyztF7ccb+Znos3TFqaepHxdhBg==}
 
@@ -15884,6 +15900,9 @@ packages:
 
   pure-rand@6.1.0:
     resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
+
+  pure-rand@8.4.2:
+    resolution: {integrity: sha512-vvuOGgcuPJAirlHvuQw1TrOiw7ptaIXXmIbNuiNOY6lNGJJH49PQ1Kj4nd783nPdQhQdicgOjVI2yI/9BD6/Ng==}
 
   qified@0.10.1:
     resolution: {integrity: sha512-+Owyggi9IxT1ePKGafcI87ubSmxol6smwJ+RAHDQlx9+9cPwFWDiKFFCPuWhr9ignlGpZ9vDQLw67N4dcTVFEA==}
@@ -21969,6 +21988,11 @@ snapshots:
 
   '@exodus/bytes@1.15.1': {}
 
+  '@fast-check/vitest@0.5.0(vitest@5.0.0)':
+    dependencies:
+      fast-check: 4.10.2
+      vitest: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+
   '@fastify/ajv-compiler@4.0.5':
     dependencies:
       ajv: 8.18.0
@@ -27421,6 +27445,7 @@ snapshots:
     optionalDependencies:
       vite: 8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
 
+
   '@vitest/mocker@5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
@@ -30162,6 +30187,10 @@ snapshots:
   fast-check@3.23.2:
     dependencies:
       pure-rand: 6.1.0
+
+  fast-check@4.10.2:
+    dependencies:
+      pure-rand: 8.4.2
 
   fast-content-type-parse@3.0.0: {}
 
@@ -33486,7 +33515,8 @@ snapshots:
 
   path-exists@3.0.0: {}
 
-  path-exists@4.0.0: {}
+  path-exists@4.0.0:
+    optional: true
 
   path-is-absolute@1.0.1: {}
 
@@ -33986,6 +34016,8 @@ snapshots:
   punycode@2.3.1: {}
 
   pure-rand@6.1.0: {}
+
+  pure-rand@8.4.2: {}
 
   qified@0.10.1:
     dependencies:
@@ -36973,6 +37005,7 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.9.1
 
+
   vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
@@ -37026,6 +37059,7 @@ snapshots:
       jsdom: 29.0.0
     transitivePeerDependencies:
       - msw
+
 
   vitest@5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)):
     dependencies:
