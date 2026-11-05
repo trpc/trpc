@@ -1,6 +1,11 @@
 {
   "name": "root",
   "private": true,
+  "bolt": {
+    "workspaces": [
+      "packages/*"
+    ]
+  },
   "type": "module",
   "engines": {
     "node": "^26.0.0",
