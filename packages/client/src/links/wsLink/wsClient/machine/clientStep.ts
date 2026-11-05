@@ -140,12 +140,14 @@ export class Step {
     return id === undefined ? undefined : this.requests.get(id);
   }
 
-  sentOn(connection: ConnectionId) {
-    return [...this.requests.values()].filter(
-      (request) =>
-        request.state.kind === 'sent' &&
-        request.state.connection === connection,
-    );
+  /** Requests sent on `connection`, or moving to it. */
+  sentOrMovingTo(connection: ConnectionId) {
+    return [...this.requests.values()].filter((request) => {
+      const state = request.state;
+      return state.kind === 'moving'
+        ? state.to === connection
+        : state.kind === 'sent' && state.connection === connection;
+    });
   }
 
   /** Requests `connection` serves: sent on it, or moving or leaving to or from it. */
@@ -379,14 +381,15 @@ export class Step {
   /**
    * Starts moving the subscriptions on connections the ready one replaced:
    * each is sent on the ready one too, and stays on its old connection until
-   * the ready one confirms it. Returns the ones to send.
+   * the ready one confirms it. One still moving to a replaced connection
+   * moves to the ready one instead. Returns the ones to send.
    */
   startMoves(): RequestId[] {
     const lifecycle = this.lifecycle;
     if (lifecycle.kind !== 'open') return [];
     const moved: RequestId[] = [];
     for (const previous of drainingConnections(this)) {
-      for (const request of this.sentOn(previous)) {
+      for (const request of this.sentOrMovingTo(previous)) {
         if (request.method !== 'subscription') continue;
         this.applyRequestTransition(
           request,

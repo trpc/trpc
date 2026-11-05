@@ -618,9 +618,24 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       }
       case 'sendStop': {
         // D6: break after make. A subscription leaves its old connection
-        // only once the new one has answered it, unless it ended.
+        // only once the new one has answered it, unless it ended. One
+        // moving on to a newer connection is stopped on the one it was
+        // moving to, while its old connection still serves it.
         const state = before.requests.get(effect.request)?.state;
-        if (after.requests.has(effect.request) && state?.kind === 'moving') {
+        const next = after.requests.get(effect.request)?.state;
+        if (
+          state?.kind === 'moving' &&
+          next?.kind === 'moving' &&
+          next.to !== state.to
+        ) {
+          check(
+            effect.connection === state.to && next.from === state.from,
+            `subscription ${effect.request} stopped on connection ${effect.connection} while moving on from connection ${state.to}`,
+          );
+        } else if (
+          after.requests.has(effect.request) &&
+          state?.kind === 'moving'
+        ) {
           check(
             effect.connection === state.from && frameFrom === state.to,
             `subscription ${effect.request} stopped on connection ${effect.connection} before connection ${state.to} answered`,
@@ -855,6 +870,13 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         covered.add('subscription moved before started');
         user.movedBeforeStarted = true;
       }
+    }
+    if (
+      previous?.kind === 'moving' &&
+      state.kind === 'moving' &&
+      previous.to !== state.to
+    ) {
+      covered.add('moved on from a new socket replaced mid-move');
     }
     if (previous?.kind === 'moving' && state.kind !== 'moving') {
       if (state.kind === 'sent' && state.connection === previous.from) {
@@ -1652,6 +1674,62 @@ test('a subscription moved on before its new connection replayed drops the repla
   ]);
 });
 
+test('a subscription moving to a connection that a newer one replaces moves there instead, and is stopped on it', () => {
+  let request: SubscriptionRequest = {
+    id: 1,
+    method: 'subscription',
+    lastEventId: '1',
+    wire: 1,
+    wiredUpTo: 1,
+    state: { kind: 'sent', connection: 1, started: true, replayed: [] },
+  };
+  const next: unknown[] = [];
+  const stops: ConnectionId[] = [];
+  function apply(event: RequestEvent | { type: 'move'; to: ConnectionId }) {
+    const result =
+      event.type === 'move'
+        ? moveSubscription(request, event.to)
+        : requestTransition(request, event);
+    assert(result.request.method === 'subscription');
+    request = result.request;
+    for (const effect of result.effects) {
+      if (effect.type === 'next' && 'result' in effect.message) {
+        next.push(effect.message.result);
+      }
+      if (effect.type === 'sendStop') stops.push(effect.connection);
+      expect(effect.type).not.toBe('invariantViolation');
+    }
+  }
+  const data = (connection: ConnectionId, id: string): RequestEvent => ({
+    type: 'response',
+    connection,
+    message: { id: 1, result: { type: 'data', id, data: Number(id) } },
+  });
+
+  apply({ type: 'move', to: 2 });
+  apply(data(1, '2'));
+  apply({ type: 'move', to: 3 });
+  expect(stops).toEqual([2]);
+  expect(request.wiredUpTo).toBe(3);
+  expect(request.state).toMatchObject({ kind: 'moving', from: 1, to: 3 });
+  // Connection 1 serves it until connection 3 confirms it.
+  apply(data(1, '3'));
+  apply({
+    type: 'response',
+    connection: 3,
+    message: { id: 1, result: { type: 'started' } },
+  });
+  expect(stops).toEqual([2, 1]);
+  apply(data(3, '2'));
+  apply(data(3, '3'));
+  apply(data(3, '4'));
+  expect(next).toEqual([
+    { type: 'data', id: '2', data: 2 },
+    { type: 'data', id: '3', data: 3 },
+    { type: 'data', id: '4', data: 4 },
+  ]);
+});
+
 test('a move drops replayed events by id, whatever the ids look like', () => {
   // Event ids are opaque: these neither increase nor parse as numbers.
   let request: SubscriptionRequest = {
@@ -1795,6 +1873,7 @@ const requestEvents: {
   { label: 'unbatch', event: { type: 'unbatch' } },
   { label: 'send', event: { type: 'send', connection: 1 } },
   { label: 'move', event: { type: 'move', to: 2 } },
+  { label: 'move to a newer one', event: { type: 'move', to: 3 } },
   {
     label: 'connectionLost',
     event: { type: 'connectionLost', connection: 1, cause: null },

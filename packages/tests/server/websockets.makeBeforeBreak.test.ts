@@ -371,22 +371,20 @@ describe('make before break', () => {
       await vi.waitFor(() => expect(h.receivedFor('slow')).toHaveLength(1));
       expect(h.receivedFor('slow')[0]!.socket).toBe(h.serverSockets[1]);
 
-      // B -> C while the move to B is pending: it moves on once B confirms it
+      // B -> C while the move to B is pending: it moves on to C at once,
+      // and is stopped on B; A serves it until C confirms it
       h.ctx.wssHandler.broadcastReconnectNotification();
-      await vi.waitFor(() => expect(h.serverSockets).toHaveLength(3));
+      await vi.waitFor(() => expect(h.receivedFor('events')).toHaveLength(3));
+      expect(h.receivedFor('events')[2]!.socket).toBe(h.serverSockets[2]);
       gate.resolve();
       await vi.waitFor(() =>
-        expect(h.eventsSubscribed).toHaveBeenCalledTimes(3),
+        expect(
+          clientFrames.filter((f) => f.includes('subscription.stop')),
+        ).toEqual([
+          '1> {"id":1,"method":"subscription.stop"}',
+          '0> {"id":1,"method":"subscription.stop"}',
+        ]),
       );
-      expect(h.receivedFor('events')[2]!.socket).toBe(h.serverSockets[2]);
-      // stopped on A, then on B
-      await vi.waitFor(() => expect(h.cleanupEntered).toHaveBeenCalledTimes(2));
-      expect(
-        clientFrames.filter((f) => f.includes('subscription.stop')),
-      ).toEqual([
-        '0> {"id":1,"method":"subscription.stop"}',
-        '1> {"id":1,"method":"subscription.stop"}',
-      ]);
 
       h.retry.delayMs = 5_000;
       h.serverSockets[2]!.terminate();

@@ -692,8 +692,10 @@ function subscriptionTransition(
 }
 
 /**
- * A subscription on a replaced connection is sent on `to` as well. Only one
- * that is `sent` on another connection moves.
+ * A subscription on a replaced connection is sent on `to` as well. One that
+ * is `sent` on another connection moves. One still moving to a connection
+ * that was replaced before confirming it is stopped there and moves to `to`
+ * instead. Either way its old connection serves it until `to` confirms it.
  */
 export function moveSubscription(
   request: SubscriptionRequest,
@@ -701,7 +703,14 @@ export function moveSubscription(
 ): SubscriptionTransition {
   const state = request.state;
   const event = { type: 'move' };
-  if (state.kind !== 'sent' || state.connection === to) {
+  let from: ConnectionId;
+  const effects: RequestEffect[] = [];
+  if (state.kind === 'sent' && state.connection !== to) {
+    from = state.connection;
+  } else if (state.kind === 'moving' && state.from !== to && state.to !== to) {
+    from = state.from;
+    effects.push(stop(request, state.to));
+  } else {
     return illegal(request, event);
   }
   return {
@@ -710,13 +719,13 @@ export function moveSubscription(
       wiredUpTo: newest(request.wiredUpTo, to),
       state: {
         kind: 'moving',
-        from: state.connection,
+        from,
         to,
         started: state.started,
         replayed: state.replayed,
       },
     },
-    effects: [],
+    effects,
   };
 }
 
