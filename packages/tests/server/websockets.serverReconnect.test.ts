@@ -469,7 +469,6 @@ test("a subscription's move completes on the new socket's started, with no event
   const newClientSocket = ctx.wsClient.connection!.ws;
   const newFrames: unknown[] = [];
   newClientSocket.addEventListener('message', (event) => {
-    // oxlint-disable-next-line typescript/no-base-to-string
     const text = String(event.data);
     if (text !== 'PING' && text !== 'PONG') newFrames.push(JSON.parse(text));
   });
@@ -502,7 +501,6 @@ function holdFrames(
   const held: (() => void)[] = [];
   let holding = true;
   const parse = (raw: unknown) => {
-    // oxlint-disable-next-line typescript/no-base-to-string
     const text = String(raw);
     return text === 'PING' || text === 'PONG' ? null : JSON.parse(text);
   };
@@ -551,7 +549,6 @@ test("the old socket's event sent after the new one's started is dropped, and th
   assert(oldServerSocket);
   const oldEvents: string[] = [];
   oldClientSocket.addEventListener('message', (event) => {
-    // oxlint-disable-next-line typescript/no-base-to-string
     const text = String(event.data);
     if (text === 'PING' || text === 'PONG') return;
     const message = JSON.parse(text);
