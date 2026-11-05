@@ -2232,8 +2232,8 @@ describe('a server-requested reconnect hands subscriptions off', () => {
   test("the old socket's data and stopped for a moved subscription are dropped", async () => {
     const {
       ctx,
-      ee,
-      valuesStarted,
+      push,
+      eventsSubscribed,
       slowResult,
       receivedFor,
       resultsOn,
@@ -2244,28 +2244,28 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     const { oldClientSocket, oldServerSocket } = await waitForOpen();
     const oldResults = resultsOn(oldClientSocket);
     const seen: unknown[] = [];
-    const subscription = ctx.client.values.subscribe(undefined, {
+    const subscription = ctx.client.events.subscribe(undefined, {
       ...observe(seen),
-      onData: (value) => seen.push(value),
+      onData: ({ data }) => seen.push(data),
     });
     // Keeps the old socket open after the subscription moves.
     const slow = ctx.client.slow.query();
     try {
       await vi.waitFor(() => {
-        expect(valuesStarted).toHaveBeenCalledTimes(1);
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
         expect(receivedFor('slow')).toHaveLength(1);
       });
-      const { id } = receivedFor('values')[0]!;
+      const { id } = receivedFor('events')[0]!;
 
       // The old socket won't see the stop until it's resumed.
       oldServerSocket.pause();
       ctx.wssHandler.broadcastReconnectNotification();
       await vi.waitFor(() => {
-        expect(valuesStarted).toHaveBeenCalledTimes(2);
+        expect(eventsSubscribed).toHaveBeenCalledTimes(2);
       });
-      ee.emit('value', 1);
+      push(1);
       await vi.waitFor(() => {
-        expect(oldResults).toContainEqual({ id, type: 'data' });
+        expect(oldResults).toContainEqual({ id, type: 'data', eventId: '1' });
       });
       oldServerSocket.resume();
       await vi.waitFor(() => {
@@ -2278,7 +2278,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
       });
-      ee.emit('value', 2);
+      push(2);
       await vi.waitFor(() => {
         expect(seen).toContain(2);
       });
@@ -2894,6 +2894,59 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       expect(seen).toEqual(['pending', 'started', 1, 2, 3]);
     } finally {
       release?.resolve();
+      held?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('an untracked subscription gets the events the old socket sent before it was stopped there', async () => {
+    const {
+      ctx,
+      ee,
+      valuesStarted,
+      receivedFor,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.values.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(valuesStarted).toHaveBeenCalledTimes(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('values')).toHaveLength(2);
+      });
+      // The old socket's frames now arrive after the new socket's.
+      const send = oldServerSocket.send.bind(oldServerSocket) as (
+        ...args: unknown[]
+      ) => void;
+      Object.assign(oldServerSocket, {
+        send: (...args: unknown[]) => setTimeout(() => send(...args), 50),
+      });
+      // Only the old socket listens yet.
+      ee.emit('value', 1);
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      ee.emit('value', 2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2]);
+    } finally {
       held?.resolve();
       subscription.unsubscribe();
       await ctx.wsClient.close();

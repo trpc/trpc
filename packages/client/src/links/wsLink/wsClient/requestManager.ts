@@ -38,6 +38,12 @@ interface Request {
    * its successor replays and are dropped from it.
    */
   overlapEventIds: Set<string> | null;
+  /**
+   * The socket a subscription moved from, until everything it sent before
+   * the stop has arrived. Its events without ids are still delivered, since
+   * the new socket may have started listening after it sent them.
+   */
+  movedFrom: WebSocket | null;
 }
 
 /**
@@ -79,6 +85,7 @@ export class RequestManager {
       ws: null,
       successor: null,
       overlapEventIds: null,
+      movedFrom: null,
       callbacks: {
         next: callbacks.next,
         complete: () => {
@@ -134,6 +141,7 @@ export class RequestManager {
     for (const request of requests) {
       request.ws = ws;
       request.successor = null;
+      request.movedFrom = null;
       this.pendingRequests[request.id] = request;
     }
     return requests;
@@ -148,7 +156,14 @@ export class RequestManager {
     if (request?.message !== message) return;
 
     delete this.pendingRequests[id];
-    this.outgoingRequests.push({ ...request, id, ws: null, successor: null });
+    this.outgoingRequests.push({
+      ...request,
+      id,
+      ws: null,
+      successor: null,
+      overlapEventIds: null,
+      movedFrom: null,
+    });
   }
 
   /**

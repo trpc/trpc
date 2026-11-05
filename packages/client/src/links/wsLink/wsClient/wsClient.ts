@@ -28,7 +28,7 @@ import {
   TRPCWebSocketClosedError,
 } from './utils';
 import type { WebSocketConnectionOptions } from './wsConnection';
-import { backwardCompatibility, WsConnection } from './wsConnection';
+import { backwardCompatibility, sendPing, WsConnection } from './wsConnection';
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
@@ -275,6 +275,7 @@ export class WsClient {
           this.stopSubscription(id, pending.successor);
         }
         this.closeIfDrained(pending?.ws);
+        this.closeIfDrained(pending?.movedFrom);
 
         signal?.removeEventListener('abort', onAbort);
       };
@@ -457,25 +458,43 @@ export class WsClient {
 
   /**
    * Completes a subscription's move once its new socket has confirmed it:
-   * stops it on the old socket, whose later messages for it are dropped, and
-   * closes that socket once nothing is left on it.
+   * stops it on the old socket, whose later messages for it are dropped
+   * apart from events without ids, and closes that socket once everything it
+   * sent before the stop has arrived and nothing else is left on it.
    */
   private confirmMove(request: {
     message: TRPCClientOutgoingMessage;
     ws: WebSocket | null;
     successor: WebSocket | null;
+    movedFrom: WebSocket | null;
   }) {
     const previous = request.ws;
+    const earlier = request.movedFrom;
     request.ws = request.successor;
     request.successor = null;
-    this.stopSubscription(request.message.id, previous);
+    request.movedFrom = null;
+    if (previous && this.stopSubscription(request.message.id, previous)) {
+      request.movedFrom = previous;
+      // `stopped` can wait on the procedure, but the "PONG" can't.
+      sendPing(previous, () => this.releaseMovedFrom(request, previous));
+    }
+    this.closeIfDrained(earlier);
     this.closeIfDrained(previous);
+  }
+
+  private releaseMovedFrom(
+    request: { movedFrom: WebSocket | null },
+    ws: WebSocket,
+  ) {
+    if (request.movedFrom !== ws) return;
+    request.movedFrom = null;
+    this.closeIfDrained(ws);
   }
 
   private hasRequestsOn(ws: WebSocket | null) {
     return this.requestManager
       .getPendingRequests()
-      .some((request) => request.ws === ws);
+      .some((request) => request.ws === ws || request.movedFrom === ws);
   }
 
   /**
@@ -560,6 +579,7 @@ export class WsClient {
           request.successor = null;
           request.overlapEventIds = null;
         }
+        if (request.movedFrom === ws) request.movedFrom = null;
       }
       const lost = this.failPendingRequests(ws, cause).filter((request) => {
         if (!request.successor) return true;
@@ -687,7 +707,17 @@ export class WsClient {
     if (request.successor === ws) {
       this.confirmMove(request);
     } else if (request.ws !== ws) {
-      // A subscription moved to a new socket ignores the old one's frames.
+      // A subscription moved to a new socket ignores the old one's frames,
+      // apart from events without ids until it's stopped there: those can't
+      // be replayed, and the new socket may have started listening after
+      // the old one sent them.
+      if (ws === request.movedFrom) {
+        if (result?.type === 'stopped') {
+          this.releaseMovedFrom(request, ws);
+        } else if (result?.type === 'data' && result.id === undefined) {
+          callUserCallback(() => request.callbacks.next(message));
+        }
+      }
       return;
     }
     // The subscriber doesn't see a move, even one its old socket didn't
