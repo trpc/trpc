@@ -1,7 +1,7 @@
 import type { Encoder } from './wsClient/encoder';
 import { jsonEncoder } from './wsClient/encoder';
 import type { WebSocketClientOptions } from './wsClient/options';
-import { WsClient } from './wsClient/wsClient';
+import { createWsClientRuntime } from './wsClient/wsClient';
 
 /**
  * Opens and manages a WebSocket connection to a tRPC server. Pass it to
@@ -10,7 +10,7 @@ import { WsClient } from './wsClient/wsClient';
  * @see https://trpc.io/docs/client/links/wsLink#wslink--createwsclient-options
  */
 export function createWSClient(opts: WebSocketClientOptions) {
-  return new WsClient(opts);
+  return createWsClientRuntime(opts);
 }
 
 /**
