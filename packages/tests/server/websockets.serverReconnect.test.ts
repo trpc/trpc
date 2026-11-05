@@ -160,7 +160,7 @@ test('a subscription keeps receiving on the old socket while the new one waits o
   sub.unsubscribe();
 });
 
-test('a subscription keeps receiving on the old socket while the new one fails to open, and the 3rd failure in a row shows', async () => {
+test('a subscription keeps receiving on the old socket while the new one fails to open, and the last failure shows once the old one closes', async () => {
   let failParams = true;
   let failures = 0;
   await using ctx = setup({
@@ -178,29 +178,40 @@ test('a subscription keeps receiving on the old socket while the new one fails t
   });
   ctx.push();
   await vi.waitFor(() => expect(data).toEqual([1]));
-  const shown: { failures: number; error: unknown }[] = [];
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const shown: { failures: number; state: string; error: unknown }[] = [];
   ctx.wsClient.connectionState.subscribe({
     next: (state) => {
-      if (failures > 0) shown.push({ failures, error: state.error });
+      if (failures > 0) shown.push({ failures, ...state });
     },
   });
 
   ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(failures).toBeGreaterThanOrEqual(3));
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1, 2]));
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  expect(ctx.subscribedFrom).toHaveBeenCalledTimes(1);
+  expect(shown).toEqual([]);
+
+  oldServerSocket.terminate();
   await vi.waitFor(() => expect(shown.length).toBeGreaterThan(0));
-  expect(shown[0]).toEqual({
-    failures: 3,
+  const [first] = shown;
+  assert(first);
+  expect(first).toEqual({
+    failures: first.failures,
+    type: 'state',
+    state: 'connecting',
     error: expect.objectContaining({
       message: 'Initialization error',
       cause: expect.objectContaining({
-        cause: expect.objectContaining({ message: 'token unavailable 3' }),
+        cause: expect.objectContaining({
+          message: `token unavailable ${first.failures}`,
+        }),
       }),
     }),
   });
-  expect(ctx.subscribedFrom).toHaveBeenCalledTimes(1);
-  ctx.push();
-  await vi.waitFor(() => expect(data).toEqual([1, 2]));
-  // New requests go on the old socket meanwhile.
-  expect(await ctx.client.greeting.query()).toBe('hello');
 
   failParams = false;
   await vi.waitFor(() => {

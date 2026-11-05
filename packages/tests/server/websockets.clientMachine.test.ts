@@ -17,7 +17,6 @@ import {
   clientTransition,
   initialClient,
   sendingConnection,
-  VISIBLE_REPLACEMENT_FAILURES,
 } from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
 import type {
   ConnectionEvent,
@@ -95,7 +94,7 @@ const covered = coverage([
   'subscription confirmed on its new socket',
   'move undone by a lost successor',
   'old socket lost during a move',
-  'replacement failure shown',
+  'replacement failure shown once the old socket ends',
   'retired socket frame dropped',
   'batch send failed',
   'backoff continued',
@@ -493,14 +492,20 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         }
         break;
       case 'emitState':
-        if (effect.state.state === 'connecting' && after.handover !== null) {
-          // D5: replacing a connection stays invisible until it fails 3
-          // times in a row.
+        if (effect.state.state === 'connecting') {
+          // D5: no `connecting` while a handover is serving. A failed
+          // replacement shows once the handover ends.
           check(
-            after.failedReplacements >= VISIBLE_REPLACEMENT_FAILURES,
-            `connecting shown after ${after.failedReplacements} failed replacements`,
+            after.handover === null,
+            `connecting shown while connection ${after.handover} serves`,
           );
-          covered.add('replacement failure shown');
+          if (before.handover !== null && before.replacementError !== null) {
+            check(
+              effect.state.error === before.replacementError,
+              'the last replacement error is not the one shown',
+            );
+            covered.add('replacement failure shown once the old socket ends');
+          }
         }
         break;
       case 'closed': {
@@ -1081,6 +1086,31 @@ test('random event sequences keep every invariant, unseeded', () => {
   );
 });
 
+test('close() finishing leaves a replaced connection opened since serving', () => {
+  // The second socket has nothing in flight when close() finishes, but it
+  // takes new requests until its replacement is ready.
+  expect(() =>
+    runScenario({
+      lazy: false,
+      slowFirstSocket: false,
+      moving: false,
+      actions: [
+        { type: 'request', method: 'query' },
+        { type: 'socket', pick: 0, action: 'open', call: 0 },
+        { type: 'socket', pick: 0, action: 'params', call: 0 },
+        { type: 'close' },
+        { type: 'sendFails' },
+        { type: 'request', method: 'query' },
+        { type: 'socket', pick: 0, action: 'open', call: 0 },
+        { type: 'socket', pick: 0, action: 'params', call: 0 },
+        { type: 'socket', pick: 0, action: 'reconnect', call: 0 },
+        { type: 'request', method: 'query' },
+        { type: 'socket', pick: 1, action: 'answer', call: 0 },
+      ],
+    }),
+  ).not.toThrow();
+});
+
 test('a subscription moved on before its new connection replayed drops the replay', () => {
   let request: RequestModel = {
     id: 1,
@@ -1094,7 +1124,9 @@ test('a subscription moved on before its new connection replayed drops the repla
     const result = requestTransition(request, event);
     request = result.request;
     for (const effect of result.effects) {
-      if (effect.type === 'next') next.push(effect.message.result);
+      if (effect.type === 'next' && 'result' in effect.message) {
+        next.push(effect.message.result);
+      }
       expect(effect.type).not.toBe('invariantViolation');
     }
   }

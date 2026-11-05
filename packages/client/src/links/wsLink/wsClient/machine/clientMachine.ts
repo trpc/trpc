@@ -41,12 +41,6 @@ export type PublicState =
   | { state: 'connecting'; error: ConnectingError | null }
   | { state: 'pending' };
 
-/**
- * A replacement that fails this many times in a row while the old connection
- * still serves requests is shown as `connecting` with the last error.
- */
-export const VISIBLE_REPLACEMENT_FAILURES = 3;
-
 export interface ClientModel {
   readonly lazy: boolean;
   readonly lifecycle: Lifecycle;
@@ -67,8 +61,11 @@ export interface ClientModel {
   readonly publicState: PublicState;
   /** Set by `close()`: the queries and mutations it waits for. */
   readonly closing: ReadonlySet<RequestId> | null;
-  /** Failed replacement attempts in a row while connections drain. */
-  readonly failedReplacements: number;
+  /**
+   * Why the latest attempt to replace the handover failed. Shown only once
+   * the handover ends, since until then it serves every request.
+   */
+  readonly replacementError: ConnectingError | null;
   readonly lastConnectionId: ConnectionId;
 }
 
@@ -144,7 +141,7 @@ class Step {
   inactivity: boolean;
   publicState: PublicState;
   closing: Set<RequestId> | null;
-  failedReplacements: number;
+  replacementError: ConnectingError | null;
   lastConnectionId: ConnectionId;
   readonly lazy: boolean;
   readonly effects: ClientEffect[] = [];
@@ -160,7 +157,7 @@ class Step {
     this.inactivity = model.inactivity;
     this.publicState = model.publicState;
     this.closing = model.closing && new Set(model.closing);
-    this.failedReplacements = model.failedReplacements;
+    this.replacementError = model.replacementError;
     this.lastConnectionId = model.lastConnectionId;
   }
 
@@ -177,7 +174,7 @@ class Step {
         inactivity: this.inactivity,
         publicState: this.publicState,
         closing: this.closing,
-        failedReplacements: this.failedReplacements,
+        replacementError: this.replacementError,
         lastConnectionId: this.lastConnectionId,
       },
       effects: this.effects,
@@ -431,7 +428,7 @@ class Step {
       return;
     }
     this.lifecycle = { kind: 'open', connection };
-    this.failedReplacements = 0;
+    this.replacementError = null;
     if (this.lazy) {
       this.inactivity = true;
       this.effects.push({ type: 'startTimer', timer: 'inactivity' });
@@ -468,7 +465,7 @@ class Step {
         this.applyRequest(request, { type: 'unbatch' });
       }
     }
-    this.failedReplacements = 0;
+    this.replacementError = null;
     this.scheduleReconnect(nextRetryIndex(before, { type: 'drain' }));
   }
 
@@ -505,7 +502,10 @@ class Step {
         (lifecycle.kind === 'backoff' || lifecycle.kind === 'connecting') &&
         this.handover === null
       ) {
-        this.setConnecting({ message: 'WebSocket closed', cause });
+        this.setConnecting(
+          this.replacementError ?? { message: 'WebSocket closed', cause },
+        );
+        this.replacementError = null;
       }
       this.moveStragglers();
       this.scheduleFlush();
@@ -519,14 +519,12 @@ class Step {
         : lost.retryIndex + 1
       : nextRetryIndex(lost, event);
     if (this.handover !== null) {
-      // The connection it replaced still serves, so this is shown only once
-      // replacing it has failed a few times in a row.
-      if (++this.failedReplacements >= VISIBLE_REPLACEMENT_FAILURES) {
-        this.setConnecting({
-          message: opening ? 'Initialization error' : 'WebSocket closed',
-          cause,
-        });
-      }
+      // The connection it replaced still serves every request, so this stays
+      // `pending` until that one ends too.
+      this.replacementError = {
+        message: opening ? 'Initialization error' : 'WebSocket closed',
+        cause,
+      };
       this.scheduleReconnect(retryIndex);
       this.scheduleFlush();
       return;
@@ -555,7 +553,7 @@ class Step {
     const lifecycle = this.lifecycle;
     this.lifecycle = { kind: 'idle' };
     this.handover = null;
-    this.failedReplacements = 0;
+    this.replacementError = null;
     if (lifecycle.kind === 'backoff') {
       this.effects.push({ type: 'cancelTimer', timer: 'backoff' });
     } else if (lifecycle.kind === 'connecting') {
@@ -579,6 +577,9 @@ class Step {
     this.closing = null;
     for (const connection of [...this.draining]) {
       if (this.servedBy(connection).length > 0) continue;
+      // `close()` cleared the handover, so this one was opened since, for
+      // requests made after it.
+      if (connection === this.handover) continue;
       this.forget(connection);
       this.closeConnection(connection);
     }
@@ -841,7 +842,7 @@ export function initialClient(opts: { lazy: boolean }): ClientTransition {
       ? { state: 'idle' }
       : { state: 'connecting', error: null },
     closing: null,
-    failedReplacements: 0,
+    replacementError: null,
     lastConnectionId: 0,
   });
   if (!opts.lazy) step.connect(null);
