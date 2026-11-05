@@ -947,7 +947,7 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
     const onStoppedMock = vi.fn();
     const onCompleteMock = vi.fn();
     const unsub = ctx.client.onMessageObservable.subscribe(undefined, {
-      onStarted: onStartedMock(),
+      onStarted: onStartedMock,
       onData: onDataMock,
       onError: onErrorMock,
       onStopped: onStoppedMock,
