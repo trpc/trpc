@@ -11,7 +11,7 @@ import type { Plugin } from 'vite';
 
 import type { OgCard } from '../src/og/card.ts';
 import { sponsorCloudPath } from '../src/og/sponsor-cloud.ts';
-import { ogImagePath } from '../src/seo.ts';
+import { ogImagePath, ogImageSize } from '../src/seo.ts';
 import { site } from '../src/site.ts';
 import { cardFooter } from '../src/sponsors.ts';
 
@@ -37,8 +37,12 @@ export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
 /** The packages that lay out, rasterize and letter the cards. */
 const rendererPackages = ['satori', '@resvg/resvg-wasm', '@fontsource/inter'];
 
-/** The modules outside `src/og` that the cards are laid out with. */
-const rendererModules = ['src/content/inline-code.ts', 'src/seo.ts'];
+/**
+ * The module outside `src/og` that lays out the cards' text. Of `seo.ts`
+ * they use only `ogImageSize`, which `ogCardsVersion` hashes, so a change
+ * to a page's head doesn't change every card's URL.
+ */
+const rendererModules = ['src/content/inline-code.ts'];
 
 /**
  * What the cards are drawn with: `src/og`'s modules and `rendererModules`,
@@ -67,7 +71,7 @@ const rendererFiles = Effect.fn('rendererFiles')(function* () {
 /**
  * A short hash of what the cards draw but the live numbers and avatar
  * pictures: every card, the sponsors along their foot, the site's name and
- * tagline, and the renderer (`rendererFiles`).
+ * tagline, the cards' size, and the renderer (`rendererFiles`).
  * Social sites keep a card by its URL for days, so `ogImageUrl` puts this
  * in it, and a card that changes gets a new URL; a deploy that changes no
  * card keeps the old one.
@@ -84,7 +88,8 @@ export const ogCardsVersion = Effect.fn('ogCardsVersion')(function* (
   const hash = createHash('sha256')
     .update(ogCardsSource(cards))
     .update(JSON.stringify(cardFooter))
-    .update(JSON.stringify(site));
+    .update(JSON.stringify(site))
+    .update(JSON.stringify(ogImageSize));
   for (const content of contents) {
     hash.update(content);
   }
