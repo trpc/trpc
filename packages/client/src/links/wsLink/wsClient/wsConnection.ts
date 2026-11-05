@@ -20,6 +20,27 @@ function asyncWsOpen(ws: WebSocket) {
   return promise;
 }
 
+const pongCallbacks = new WeakMap<WebSocket, ((() => void) | null)[]>();
+
+/**
+ * Sends "PING" on `ws` and calls `onPong`, if given, once its "PONG"
+ * arrives. The server answers in order, so by then everything it sent before
+ * it read this "PING" has arrived too.
+ */
+export function sendPing(ws: WebSocket, onPong: (() => void) | null) {
+  let callbacks = pongCallbacks.get(ws);
+  if (!callbacks) {
+    const queue: ((() => void) | null)[] = [];
+    callbacks = queue;
+    pongCallbacks.set(ws, queue);
+    ws.addEventListener('message', ({ data }) => {
+      if (data === 'PONG') queue.shift()?.();
+    });
+  }
+  callbacks.push(onPong);
+  ws.send('PING');
+}
+
 interface PingPongOptions {
   /**
    * The interval (in milliseconds) between "PING" messages.
@@ -53,7 +74,7 @@ function setupPingInterval(
 
   function start() {
     pingTimeout = setTimeout(() => {
-      ws.send('PING');
+      sendPing(ws, null);
       pongTimeout = setTimeout(() => {
         ws.close();
       }, pongTimeoutMs);
