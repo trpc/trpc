@@ -491,15 +491,23 @@ test("a subscription's move completes on the new socket's started, with no event
 
 /**
  * Holds back the frames `socket` gets or sends that match, until released.
- * Later frames pass.
+ * `later`: whether the frames after a held one pass it, or wait behind it as
+ * they would on a backed-up socket, `PING` and `PONG` included.
  */
 function holdFrames(
   socket: WebSocket,
   direction: 'received' | 'sent',
-  matches: (message: any) => boolean,
+  {
+    matches,
+    later,
+  }: { matches: (message: any) => boolean; later: 'pass' | 'wait' },
 ) {
   const held: (() => void)[] = [];
   let holding = true;
+  const holds = (message: unknown) =>
+    holding &&
+    ((later === 'wait' && held.length > 0) ||
+      (message !== null && matches(message)));
   const parse = (raw: unknown) => {
     const text = String(raw);
     return text === 'PING' || text === 'PONG' ? null : JSON.parse(text);
@@ -507,8 +515,9 @@ function holdFrames(
   if (direction === 'received') {
     const emit = socket.emit.bind(socket);
     socket.emit = ((name: string, ...args: unknown[]) => {
-      const message = name === 'message' ? parse(args[0]) : null;
-      if (holding && message !== null && matches(message)) {
+      if (name !== 'message') return emit(name, ...args);
+      const message = parse(args[0]);
+      if (holds(message)) {
         held.push(() => emit(name, ...args));
         return true;
       }
@@ -518,7 +527,7 @@ function holdFrames(
     const send = socket.send.bind(socket);
     socket.send = ((data: unknown, ...args: unknown[]) => {
       const message = parse(data);
-      if (holding && message !== null && matches(message)) {
+      if (holds(message)) {
         held.push(() => (send as any)(data, ...args));
         return;
       }
@@ -555,19 +564,17 @@ test("the old socket's event sent after the new one's started is dropped, and th
     if (message.result?.type === 'data') oldEvents.push(message.result.id);
   });
   // A query in flight keeps the old socket open after the move.
-  const answers = holdFrames(
-    oldServerSocket,
-    'sent',
-    (message) => message.result?.data === 'hello',
-  );
+  const answers = holdFrames(oldServerSocket, 'sent', {
+    matches: (message) => message.result?.data === 'hello',
+    later: 'pass',
+  });
   const query = ctx.client.greeting.query();
   await vi.waitFor(() => expect(answers.count()).toBe(1));
   // The old server reads the stop only when released.
-  const stops = holdFrames(
-    oldServerSocket,
-    'received',
-    (message) => message.method === 'subscription.stop',
-  );
+  const stops = holdFrames(oldServerSocket, 'received', {
+    matches: (message) => message.method === 'subscription.stop',
+    later: 'pass',
+  });
   const newSetup = ctx.holdNextSetup();
   using _newSetup = makeResource({}, () => newSetup.resolve());
 
@@ -581,11 +588,10 @@ test("the old socket's event sent after the new one's started is dropped, and th
   );
   assert(newServerSocket);
   // The new server's `started` goes out; its events wait.
-  const newEvents = holdFrames(
-    newServerSocket,
-    'sent',
-    (message) => message.result?.type === 'data',
-  );
+  const newEvents = holdFrames(newServerSocket, 'sent', {
+    matches: (message) => message.result?.type === 'data',
+    later: 'pass',
+  });
   newSetup.resolve();
   await vi.waitFor(() => expect(stops.count()).toBe(1));
   await vi.waitFor(() => expect(newEvents.count()).toBe(1));
@@ -767,11 +773,10 @@ test("an untracked subscription gets an event only the old socket had, even when
   await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
 
   // The old socket is backed up: its frames arrive late, in order.
-  const oldFrames = holdFrames(
-    oldServerSocket,
-    'sent',
-    (message) => 'result' in message,
-  );
+  const oldFrames = holdFrames(oldServerSocket, 'sent', {
+    matches: (message) => 'result' in message,
+    later: 'wait',
+  });
   // Only the old socket listens, so only it has 2.
   ctx.ee.emit('generated', 2);
   await vi.waitFor(() => expect(oldFrames.count()).toBe(1));
