@@ -172,6 +172,7 @@ export class WsClient {
    */
   public async close() {
     this.allowReconnect = false;
+    this.replacementError = null;
     this.inactivityTimeout.stop();
 
     const requestsToAwait: Promise<void>[] = [];
@@ -301,6 +302,12 @@ export class WsClient {
    */
   private nextConnection: WsConnection | null = null;
   /**
+   * Why the latest attempt to replace a socket that's still open failed.
+   * It's shown once that socket closes, since until then it serves every
+   * request.
+   */
+  private replacementError: TRPCWebSocketClosedError | null = null;
+  /**
    * The retry attempt that opened the current connection.
    */
   private connectionAttemptIndex = 0;
@@ -330,15 +337,18 @@ export class WsClient {
     }
 
     if (closedError) {
+      const error = this.replacementError ?? closedError;
+      this.replacementError = null;
       callUserCallback(() =>
         this.connectionState.next({
           type: 'state',
           state: 'connecting',
-          error: TRPCClientError.from(closedError),
+          error: TRPCClientError.from(error),
         }),
       );
     }
     if (this.reconnecting) return;
+    this.replacementError = null;
 
     const tryReconnect = async (attemptIndex: number) => {
       try {
@@ -359,6 +369,7 @@ export class WsClient {
           if (this.allowReconnect) {
             this.activeConnection = next;
             this.connectionAttemptIndex = attemptIndex;
+            this.replacementError = null;
             this.handOff(previous.ws);
           } else {
             await next.close();
@@ -366,19 +377,20 @@ export class WsClient {
         }
         this.reconnecting = null;
       } catch (error) {
-        // While the old socket is open, it keeps serving every request, so a
-        // failed attempt to replace it isn't surfaced.
-        if (this.allowReconnect && !this.activeConnection.isOpen()) {
+        const closedError = new TRPCWebSocketClosedError({
+          message: 'Initialization error',
+          cause: error,
+        });
+        if (this.allowReconnect && this.activeConnection.isOpen()) {
+          // The old socket keeps serving every request, so this is shown only
+          // once it closes.
+          this.replacementError = closedError;
+        } else if (this.allowReconnect) {
           callUserCallback(() =>
             this.connectionState.next({
               type: 'state',
               state: 'connecting',
-              error: TRPCClientError.from(
-                new TRPCWebSocketClosedError({
-                  message: 'Initialization error',
-                  cause: error,
-                }),
-              ),
+              error: TRPCClientError.from(closedError),
             }),
           );
         }

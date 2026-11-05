@@ -2386,16 +2386,42 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
       expect(seen).toEqual(['pending', 'started', 1]);
 
-      oldServerSocket.terminate();
+      // Later attempts wait on connectionParams, so no newer error replaces
+      // the last one.
       failConnectionParams(false);
-      await vi.waitFor(() => {
-        expect(ctx.wsClient.connection?.state).toBe('connecting');
-        expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
+      const shown: { state: string; error: unknown }[] = [];
+      ctx.wsClient.connectionState.subscribe({
+        next: ({ state, error }) => shown.push({ state, error }),
       });
+      oldServerSocket.terminate();
+      await vi.waitFor(() => {
+        expect(shown.filter(({ state }) => state === 'connecting')).toEqual([
+          {
+            state: 'connecting',
+            error: expect.objectContaining({
+              message: 'Initialization error',
+              cause: expect.objectContaining({
+                cause: expect.objectContaining({
+                  message: expect.stringMatching(/^token unavailable/),
+                }),
+              }),
+            }),
+          },
+        ]);
+      });
+
+      // Nothing serves requests until the new socket is ready.
+      const settled = vi.fn();
+      void ctx.client.greeting.query().then(settled);
+      await sleep(50);
+      expect(settled).not.toHaveBeenCalled();
       release.resolve();
       await vi.waitFor(() => {
+        expect(settled).toHaveBeenCalledWith('hello');
         expect(valuesStarted).toHaveBeenCalledTimes(2);
       });
+      expect(receivedFor('greeting')).toHaveLength(2);
+      expect(receivedFor('greeting')[1]!.socket).not.toBe(oldServerSocket);
       ee.emit('value', 2);
       await vi.waitFor(() => {
         expect(seen).toContain(2);
