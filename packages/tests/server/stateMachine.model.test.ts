@@ -202,8 +202,9 @@ function runActions(actions: readonly Action[]) {
     // After every step, the machine and the world agree.
     const { status } = model.state;
     check(
-      (status === 'connecting' || status === 'open') ===
-        (world.socket !== 'none'),
+      status === 'connecting' || status === 'open'
+        ? world.socket === status
+        : world.socket === 'none',
       `${status} with socket ${world.socket}`,
     );
     check(

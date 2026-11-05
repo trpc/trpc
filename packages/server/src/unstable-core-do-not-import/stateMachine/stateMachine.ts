@@ -27,11 +27,18 @@ export interface StateMachine<
   ) => MachineTransition<TState, TEffect>;
 }
 
-/** The members of a union with this `type`. */
+/**
+ * The members of a union whose `type` can be one of `TType`, including a
+ * member whose `type` is itself a union.
+ */
 export type OfType<
   TUnion extends { readonly type: string },
   TType extends TUnion['type'],
-> = Extract<TUnion, { readonly type: TType }>;
+> = TUnion extends unknown
+  ? [Extract<TUnion['type'], TType>] extends [never]
+    ? never
+    : TUnion
+  : never;
 
 /**
  * Ends a `switch` that handles every member of a union. Passing anything but

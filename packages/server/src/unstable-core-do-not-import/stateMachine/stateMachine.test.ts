@@ -77,6 +77,22 @@ test('step runs one transition without a runtime, and effects split by type', ()
   splitEffects(effects, ['bell']);
 });
 
+test('an effect whose type is a union matches each of its types', () => {
+  type IoEffect = { type: 'read' | 'write'; path: string } | { type: 'close' };
+  const effects: IoEffect[] = [
+    { type: 'read', path: 'a' },
+    { type: 'write', path: 'b' },
+    { type: 'close' },
+  ];
+  const { matching, rest } = splitEffects(effects, ['read']);
+  expectTypeOf(matching).toEqualTypeOf<
+    { type: 'read' | 'write'; path: string }[]
+  >();
+  expectTypeOf(rest).toEqualTypeOf<IoEffect[]>();
+  expect(matching).toEqual([{ type: 'read', path: 'a' }]);
+  expect(rest).toEqual([{ type: 'write', path: 'b' }, { type: 'close' }]);
+});
+
 test('an event sent while effects run waits its turn', async () => {
   const seen: string[] = [];
   await using runtime = createMachineRuntime({
@@ -145,6 +161,90 @@ test('a throwing effect, listener or transition reaches onError and nothing else
   ]);
   expect(ran).toEqual(['ring', 'ring']);
   expect(runtime.state).toEqual({ status: 'closed' });
+});
+
+test('an async effect or listener that rejects reaches onError', async () => {
+  const errors: unknown[] = [];
+  await using runtime = createMachineRuntime({
+    machine: door([]),
+    run: async () => {
+      throw new Error('effect');
+    },
+    onError: (error) => errors.push((error as Error).message),
+  });
+  runtime.subscribe(async () => {
+    throw new Error('listener');
+  });
+  runtime.send({ type: 'knock' });
+  await vi.waitFor(() => expect(errors).toEqual(['effect', 'listener']));
+});
+
+test('an onError that throws rethrows asynchronously, and the runtime carries on', async () => {
+  vi.useFakeTimers();
+  try {
+    const disposed: string[] = [];
+    const errors: unknown[] = [];
+    const runtime = createMachineRuntime({
+      machine: door([]),
+      run(effect, runtime) {
+        if (effect.type === 'ring') throw new Error('effect');
+        runtime.use(
+          makeResource({}, () => {
+            disposed.push(effect.type);
+            throw new Error('dispose');
+          }),
+        );
+      },
+      onError: (error) => {
+        errors.push((error as Error).message);
+        throw error;
+      },
+    });
+
+    runtime.send({ type: 'knock' });
+    runtime.send({ type: 'open' });
+    expect(runtime.state.status).toBe('open');
+    runtime.send({ type: 'close' });
+    // oxlint-disable-next-line trpc/no-symbol-dispose
+    await runtime[Symbol.asyncDispose]();
+    expect(disposed).toEqual(['log', 'log']);
+    expect(errors).toEqual(['effect', 'dispose', 'dispose']);
+
+    expect(() => vi.runOnlyPendingTimers()).toThrow('effect');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('disposing the runtime from an effect stops the effects and listeners after it', async () => {
+  const ran: string[] = [];
+  const runtime = createMachineRuntime({
+    machine: {
+      initial: { state: { status: 'closed' }, effects: [] },
+      transition: (state: DoorState, event: DoorEvent) =>
+        event.type === 'knock'
+          ? {
+              state,
+              effects: [
+                { type: 'ring' },
+                { type: 'log', message: 'late' },
+              ] as DoorEffect[],
+            }
+          : doorTransition(state, event),
+    },
+    run(effect, runtime) {
+      ran.push(effect.type);
+      // oxlint-disable-next-line trpc/no-symbol-dispose
+      if (effect.type === 'ring') void runtime[Symbol.asyncDispose]();
+    },
+    onError: (error) => {
+      throw error;
+    },
+  });
+  runtime.subscribe(() => ran.push('listener'));
+  runtime.send({ type: 'open' });
+  runtime.send({ type: 'knock' });
+  expect(ran).toEqual(['log', 'listener', 'ring']);
 });
 
 test('intake reads every source in one loop, in the order values arrive', async () => {
@@ -263,6 +363,57 @@ test('a resource map disposes what it replaces, deletes or holds', () => {
   expect(map.size).toBe(0);
 });
 
+test('a resource map disposes a replacement as the newest entry', () => {
+  const disposed: string[] = [];
+  const resource = (name: string) =>
+    makeResource({ name }, () => disposed.push(name));
+  const map = createResourceMap<number, ReturnType<typeof resource>>();
+
+  map.set(1, resource('a'));
+  map.set(2, resource('b'));
+  map.set(1, resource('c'));
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  map[Symbol.dispose]();
+  expect(disposed).toEqual(['a', 'c', 'b']);
+});
+
+test('a disposed resource map disposes what it is given', () => {
+  const disposed: string[] = [];
+  const resource = (name: string) =>
+    makeResource({ name }, () => disposed.push(name));
+  const map = createResourceMap<number, ReturnType<typeof resource>>();
+
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  map[Symbol.dispose]();
+  map.set(1, resource('late'));
+  expect(disposed).toEqual(['late']);
+  expect(map.has(1)).toBe(false);
+});
+
+test('a resource map disposes every entry when one throws, then throws', () => {
+  const disposed: string[] = [];
+  const resource = (name: string) =>
+    makeResource({ name }, () => {
+      disposed.push(name);
+      throw new Error(name);
+    });
+  const map = createResourceMap<number, ReturnType<typeof resource>>();
+
+  map.set(1, resource('a'));
+  expect(() =>
+    // oxlint-disable-next-line trpc/no-symbol-dispose
+    map[Symbol.dispose](),
+  ).toThrow('a');
+
+  const many = createResourceMap<number, ReturnType<typeof resource>>();
+  many.set(1, resource('b'));
+  many.set(2, resource('c'));
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  expect(() => many[Symbol.dispose]()).toThrow(AggregateError);
+  expect(disposed).toEqual(['a', 'c', 'b']);
+  expect(many.size).toBe(0);
+});
+
 test('a resource map releases an entry without disposing it, only if it is still the same one', () => {
   const disposed: string[] = [];
   const resource = (name: string) =>
@@ -312,6 +463,19 @@ test('disposing the timers clears them and ends their events', async () => {
   // oxlint-disable-next-line trpc/no-symbol-dispose
   timers[Symbol.dispose]();
   expect(await events.next()).toEqual({ done: true, value: undefined });
+});
+
+test('disposed timers start nothing', () => {
+  vi.useFakeTimers();
+  try {
+    const timers = createMachineTimers<'a'>();
+    // oxlint-disable-next-line trpc/no-symbol-dispose
+    timers[Symbol.dispose]();
+    timers.start('a', 1_000);
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('the diagram is drawn from the transition', () => {

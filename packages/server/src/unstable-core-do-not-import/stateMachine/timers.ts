@@ -57,8 +57,9 @@ export function createMachineTimers<TTimer>() {
     {
       /** Every timer that goes off, in order, for one reader. */
       events,
-      /** Starts `timer`, or restarts it if it's running. */
+      /** Starts `timer`, or restarts it if it's running. Ignored once disposed. */
       start(timer: TTimer, ms: number) {
+        if (ended.signal.aborted) return;
         cancel(timer);
         const start = ++starts;
         running.set(timer, {
