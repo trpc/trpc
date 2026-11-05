@@ -1985,6 +1985,10 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     let failConnectionParams = false;
     let connectionParamsFailures = 0;
     let subscriptionGate: Promise<void> | null = null;
+    let cleanupGate: Promise<void> | null = null;
+    const cleanupEntered = vi.fn();
+    let retryDelayMs = 20;
+    const retryAttempts = vi.fn();
     // The server sends `started` once the procedure call has resolved.
     const subscriptionProcedure = t.procedure.use(async (opts) => {
       await subscriptionGate;
@@ -2000,12 +2004,17 @@ describe('a server-requested reconnect hands subscriptions off', () => {
           eventsSubscribed(opts.input?.lastEventId ?? null);
           let index = Number(opts.input?.lastEventId ?? 0);
           const pushed = on(ee, 'push', { signal: opts.signal });
-          while (true) {
-            while (index < log.length) {
-              index++;
-              yield tracked(String(index), log[index - 1]!);
+          try {
+            while (true) {
+              while (index < log.length) {
+                index++;
+                yield tracked(String(index), log[index - 1]!);
+              }
+              await pushed.next();
             }
-            await pushed.next();
+          } finally {
+            cleanupEntered();
+            await cleanupGate;
           }
         }),
       values: subscriptionProcedure.subscription(() =>
@@ -2043,7 +2052,10 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       wsClient: {
         ...wsClient,
         lazy: { enabled: false, closeMs: 0 },
-        retryDelayMs: () => 20,
+        retryDelayMs: (attemptIndex) => {
+          retryAttempts(attemptIndex);
+          return retryDelayMs;
+        },
         onOpen,
         connectionParams: async () => {
           if (failConnectionParams) {
@@ -2064,7 +2076,9 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       method: unknown;
       path: unknown;
     }[] = [];
+    const serverSockets: WebSocket[] = [];
     ctx.wss.on('connection', (socket) => {
+      serverSockets.push(socket);
       socket.on('message', (data) => {
         // oxlint-disable-next-line typescript/no-base-to-string
         const text = data.toString();
@@ -2140,6 +2154,9 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       valuesStarted,
       slowResult,
       onOpen,
+      cleanupEntered,
+      retryAttempts,
+      serverSockets,
       receivedFor,
       stopsOn,
       resultsOn,
@@ -2163,6 +2180,15 @@ describe('a server-requested reconnect hands subscriptions off', () => {
         const gate = createDeferred<void>();
         subscriptionGate = gate.promise;
         return gate;
+      },
+      /** Holds back the end of `events` subscriptions stopped from now on. */
+      holdCleanup: () => {
+        const gate = createDeferred<void>();
+        cleanupGate = gate.promise;
+        return gate;
+      },
+      setRetryDelayMs: (ms: number) => {
+        retryDelayMs = ms;
       },
     };
   }
@@ -3126,6 +3152,313 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       release?.resolve();
       held?.resolve();
       subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('a subscription lost with the new socket is sent to the old one under a new id, while the old one is still stopping it', async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      cleanupEntered,
+      serverSockets,
+      slowResult,
+      receivedFor,
+      observe,
+      waitForOpen,
+      holdCleanup,
+      setRetryDelayMs,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    // Keeps the old socket open after the subscription moves.
+    const slow = ctx.client.slow.query();
+    let cleanup: ReturnType<typeof holdCleanup> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+        expect(receivedFor('slow')).toHaveLength(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      // The old socket's copy is stopped, but hasn't ended.
+      cleanup = holdCleanup();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(cleanupEntered).toHaveBeenCalledTimes(1);
+      });
+      setRetryDelayMs(10_000);
+      serverSockets[1]!.terminate();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(3);
+      });
+      const [first, , resent] = receivedFor('events');
+      expect(resent!.socket).toBe(oldServerSocket);
+      expect(resent!.id).not.toBe(first!.id);
+
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 'started', 2]);
+      expect(eventsSubscribed.mock.calls).toEqual([[null], ['1'], ['1']]);
+    } finally {
+      cleanup?.resolve();
+      slowResult.resolve('cleanup');
+      await slow.catch(() => null);
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test("a subscription lost with the new socket isn't ended by the old socket's late stopped", async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      serverSockets,
+      slowResult,
+      receivedFor,
+      observe,
+      waitForOpen,
+      setRetryDelayMs,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    // Keeps the old socket open after the subscription moves.
+    const slow = ctx.client.slow.query();
+    let stopped: ReturnType<typeof holdFrames> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+        expect(receivedFor('slow')).toHaveLength(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      stopped = holdFrames(oldServerSocket, 'sent', {
+        matches: (message) => message.result?.type === 'stopped',
+        later: 'pass',
+      });
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(stopped!.count()).toBe(1);
+      });
+      setRetryDelayMs(10_000);
+      serverSockets[1]!.terminate();
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(3);
+      });
+      expect(receivedFor('events')[2]!.socket).toBe(oldServerSocket);
+
+      // The stopped copy's `stopped` arrives after the copy sent again.
+      stopped.release();
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 'started', 2]);
+    } finally {
+      stopped?.release();
+      slowResult.resolve('cleanup');
+      await slow.catch(() => null);
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('a subscription moving to a socket that a newer one replaces is stopped there, and can be sent there again', async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      slowResult,
+      receivedFor,
+      stopsOn,
+      observe,
+      waitForOpen,
+      holdSubscriptions,
+      setRetryDelayMs,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    let held: ReturnType<typeof holdSubscriptions> | undefined;
+    let slow: Promise<string> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      held = holdSubscriptions();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(2);
+      });
+      const { socket: replaced, id } = receivedFor('events')[1]!;
+      // Keeps the replaced socket open.
+      slow = ctx.client.slow.query();
+      await vi.waitFor(() => {
+        expect(receivedFor('slow')).toHaveLength(1);
+      });
+      expect(receivedFor('slow')[0]!.socket).toBe(replaced);
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(3);
+        expect(stopsOn(replaced)).toEqual([id]);
+      });
+      held.resolve();
+      await vi.waitFor(() => {
+        expect(stopsOn(oldServerSocket)).toHaveLength(1);
+      });
+
+      setRetryDelayMs(10_000);
+      receivedFor('events')[2]!.socket.terminate();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(4);
+      });
+      expect(receivedFor('events')[3]!.socket).toBe(replaced);
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 'started', 2]);
+    } finally {
+      held?.resolve();
+      slowResult.resolve('cleanup');
+      await slow?.catch(() => null);
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('a new socket that closes while its connectionParams are pending leaves every request on the old one', async () => {
+    const onClose = vi.fn();
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      onOpen,
+      retryAttempts,
+      serverSockets,
+      receivedFor,
+      observe,
+      waitForOpen,
+      holdConnectionParams,
+      setRetryDelayMs,
+    } = setup({ onClose });
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    let release: ReturnType<typeof holdConnectionParams> | undefined;
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+      const shown: string[] = [];
+      ctx.wsClient.connectionState.subscribe({
+        next: ({ state }) => shown.push(state),
+      });
+
+      release = holdConnectionParams();
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+      });
+      setRetryDelayMs(10_000);
+      serverSockets[1]!.terminate();
+      await vi.waitFor(() => {
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+      release.resolve();
+      // The attempt has failed once the next one waits.
+      await vi.waitFor(() => {
+        expect(retryAttempts).toHaveBeenLastCalledWith(1);
+      });
+
+      expect(shown).toEqual(['pending']);
+      expect(oldClientSocket.readyState).toBe(WebSocket.OPEN);
+      expect(await ctx.client.greeting.query()).toBe('hello');
+      expect(receivedFor('greeting')[0]!.socket).toBe(oldServerSocket);
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 2]);
+    } finally {
+      release?.resolve();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
+  test('a new socket that closes while its connectionParams are pending leaves an idle client on the old one', async () => {
+    const onClose = vi.fn();
+    const {
+      ctx,
+      onOpen,
+      retryAttempts,
+      serverSockets,
+      waitForOpen,
+      holdConnectionParams,
+      setRetryDelayMs,
+    } = setup({ onClose });
+    await using _ctx = ctx;
+    const { oldClientSocket } = await waitForOpen();
+    const release = holdConnectionParams();
+    try {
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(onOpen).toHaveBeenCalledTimes(2);
+      });
+      setRetryDelayMs(10_000);
+      serverSockets[1]!.terminate();
+      await vi.waitFor(() => {
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+      release.resolve();
+      await vi.waitFor(() => {
+        expect(retryAttempts).toHaveBeenLastCalledWith(1);
+      });
+
+      expect(ctx.wsClient.connection?.ws).toBe(oldClientSocket);
+      expect(ctx.wsClient.connection?.state).toBe('open');
+      expect(ctx.wsClient.connectionState.get().state).toBe('pending');
+    } finally {
+      release.resolve();
       await ctx.wsClient.close();
     }
   });
