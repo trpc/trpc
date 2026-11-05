@@ -637,7 +637,7 @@ export function clientTransition(
         id: event.id,
         method: event.method,
         lastEventId: event.lastEventId,
-        state: { kind: 'queued', batch: null, hideStarted: false },
+        state: { kind: 'queued', batch: null, started: false },
       });
       step.resetInactivity();
       if (step.lifecycle.kind === 'backoff') {

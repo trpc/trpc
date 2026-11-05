@@ -6,6 +6,7 @@ import { initTRPC, tracked } from '@trpc/server';
 import {
   createDeferred,
   makeAsyncResource,
+  makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import { WebSocket } from 'ws';
 import { z } from 'zod';
@@ -212,5 +213,45 @@ test('subscribers see no second started and no connecting state when a subscript
   expect(onStarted).toHaveBeenCalledTimes(1);
   expect(ctx.states).toEqual([]);
   expect(onConnectionStateChange).not.toHaveBeenCalled();
+  sub.unsubscribe();
+});
+
+test('a subscription moved before its started arrived still reports onStarted once', async () => {
+  const t = initTRPC.create();
+  const ee = new EventEmitter();
+  const firstSetup = createDeferred<void>();
+  const firstSetupEntered = createDeferred<void>();
+  let calls = 0;
+  const router = t.router({
+    events: t.procedure
+      .use(async (opts) => {
+        if (++calls === 1) {
+          firstSetupEntered.resolve();
+          await firstSetup.promise;
+        }
+        return opts.next();
+      })
+      .subscription(({ signal }) => on(ee, 'push', { signal })),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: { retryDelayMs: () => 10 },
+  });
+  using _firstSetup = makeResource({}, () => firstSetup.resolve());
+
+  const onStarted = vi.fn();
+  const data: unknown[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (value) => data.push(value),
+  });
+  await firstSetupEntered.promise;
+
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(calls).toBe(2));
+  await vi.waitFor(() => expect(ee.listenerCount('push')).toBe(1));
+  ee.emit('push', 'after the move');
+  await vi.waitFor(() => expect(data).toEqual([['after the move']]));
+  expect(onStarted).toHaveBeenCalledTimes(1);
   sub.unsubscribe();
 });

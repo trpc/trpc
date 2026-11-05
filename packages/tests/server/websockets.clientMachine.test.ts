@@ -62,6 +62,8 @@ interface SimSocket {
   released: boolean;
   /** The server started closing it: nothing more is written. */
   closing: boolean;
+  /** Its subscriptions never finish setting up, so it never sends `started`. */
+  readonly slowSetup: boolean;
   closed: boolean;
   /** What the server got on this socket and still answers. */
   readonly calls: Map<number, ServerCall>;
@@ -74,6 +76,8 @@ interface UserRequest {
   lastData: number;
   /** A visible `started` is expected: first send, or after a loss. */
   startedAllowed: boolean;
+  /** Moved to another socket before any `started` reached the user. */
+  movedBeforeStarted: boolean;
 }
 
 type Step = ModelStep<ClientModel, ClientEvent, ClientEffect>;
@@ -81,6 +85,8 @@ type Step = ModelStep<ClientModel, ClientEvent, ClientEffect>;
 /** Paths the random runs must reach, or the invariants prove little. */
 const covered = coverage([
   'subscription moved',
+  'subscription moved before started',
+  'started shown after a move before started',
   'replacement failure shown',
   'retired socket frame dropped',
   'batch send failed',
@@ -105,11 +111,13 @@ class Sim {
   /** The last request made before the latest `close()`. */
   closedAfter = 0;
   sendFails = false;
+  private readonly slowFirstSocket: boolean;
 
-  constructor(lazy: boolean) {
+  constructor(opts: { lazy: boolean; slowFirstSocket: boolean }) {
+    this.slowFirstSocket = opts.slowFirstSocket;
     this.machine = simulateMachine({
       machine: {
-        initial: initialClient({ lazy }),
+        initial: initialClient({ lazy: opts.lazy }),
         transition: clientTransition,
       },
       check: (step) => this.check(step),
@@ -161,6 +169,7 @@ class Sim {
       terminals: 0,
       lastData: 0,
       startedAllowed: true,
+      movedBeforeStarted: false,
     });
     this.observeWritability();
     this.dispatch({ type: 'request', id, method, lastEventId: null });
@@ -206,6 +215,7 @@ class Sim {
           released: false,
           closing: false,
           closed: false,
+          slowSetup: this.slowFirstSocket && this.sockets.size === 0,
           calls: new Map(),
         });
         break;
@@ -389,8 +399,15 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           // D1: a moved subscription's handover is invisible.
           check(request.startedAllowed, `second started for ${effect.request}`);
           request.startedAllowed = false;
+          if (request.movedBeforeStarted) {
+            covered.add('started shown after a move before started');
+          }
         }
         if (result?.type === 'data' && request.method === 'subscription') {
+          check(
+            !request.startedAllowed,
+            `subscription ${effect.request} got data before started`,
+          );
           // Every event exactly once, in order.
           const id = Number(result.id);
           check(
@@ -464,25 +481,27 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     if (previous?.state.kind !== 'sent' || request.state.kind === 'settled') {
       continue;
     }
-    if (request.state.kind === 'sent') {
-      // A move is sent on the new connection in the same step.
-      if (request.state.connection !== previous.state.connection) {
-        check(
-          request.state.hideStarted,
-          `request ${id} moved without hiding started`,
-        );
-        covered.add('subscription moved');
-      }
-      continue;
-    }
-    if (request.state.hideStarted) {
+    const user = sim.requests.get(id)!;
+    const moved = effects.some(
+      (effect) => effect.type === 'sendStop' && effect.request === id,
+    );
+    if (request.state.kind === 'sent' && !moved) continue;
+    if (moved) {
+      // D1: the new connection's `started` is dropped only if the old one's
+      // was shown.
+      check(
+        request.state.started === !user.startedAllowed,
+        `request ${id} moved with started ${request.state.started}, but the user ${user.startedAllowed ? "hasn't" : 'has'} seen it`,
+      );
       covered.add('subscription moved');
+      if (user.startedAllowed) {
+        covered.add('subscription moved before started');
+        user.movedBeforeStarted = true;
+      }
     } else {
       // A subscription that lost its socket shows `started` again.
-      sim.requests.get(id)!.startedAllowed = true;
-      if (sim.requests.get(id)!.lastData > 0) {
-        covered.add('subscription resumed after a loss');
-      }
+      user.startedAllowed = true;
+      if (user.lastData > 0) covered.add('subscription resumed after a loss');
     }
   }
   checkModel(after);
@@ -777,7 +796,9 @@ function runSocketAction(
       if (!sim.hears(connection)) return;
       // A frame for a request this socket doesn't own, or never saw.
       const id = (callIndex % (sim.lastRequestId + 2)) + 1;
+      const state = sim.model.requests.get(id)?.state;
       if (socket.calls.has(id)) return;
+      if (state?.kind === 'sent' && state.connection === connection) return;
       frame(sim, connection, {
         id,
         result: { type: 'data', id: '1', data: 'stray' },
@@ -814,6 +835,7 @@ function runSocketAction(
         return;
       }
       if (!call.started) {
+        if (socket.slowSetup) return;
         call.started = true;
         frame(sim, connection, { id, result: { type: 'started' } });
         return;
@@ -866,15 +888,18 @@ function run(sim: Sim, action: Action) {
 interface Scenario {
   lazy: boolean;
   actions: Action[];
+  /** The first socket never starts a subscription, so moves beat `started`. */
+  slowFirstSocket: boolean;
 }
 
 const scenarioArb: fc.Arbitrary<Scenario> = fc.record({
   lazy: fc.boolean(),
   actions: fc.array(actionArb, { maxLength: 150, size: 'max' }),
+  slowFirstSocket: fc.boolean(),
 });
 
-function runScenario({ lazy, actions }: Scenario) {
-  const sim = new Sim(lazy);
+function runScenario({ lazy, slowFirstSocket, actions }: Scenario) {
+  const sim = new Sim({ lazy, slowFirstSocket });
   for (const action of actions) run(sim, action);
   // Let everything settle: the server answers and ends every socket, and
   // the client closes.
@@ -921,7 +946,7 @@ test('random event sequences keep every invariant', () => {
     fc.property(scenarioArb, (scenario) => {
       runScenario(scenario);
     }),
-    { seed: SEED, numRuns: 2_000 },
+    { seed: SEED, numRuns: 4_000 },
   );
   expect(covered.missing()).toEqual([]);
 });
@@ -995,8 +1020,8 @@ function connectionDiagram() {
 }
 
 const requestSamples: RequestState[] = [
-  { kind: 'queued', batch: null, hideStarted: false },
-  { kind: 'sent', connection: 1, hideStarted: false },
+  { kind: 'queued', batch: null, started: false },
+  { kind: 'sent', connection: 1, started: false },
   { kind: 'settled' },
 ];
 
@@ -1077,7 +1102,7 @@ function clientDiagram() {
     fc.property(scenarioArb, (scenario) => {
       edges.push(...runScenario(scenario).lifecycleEdges.values());
     }),
-    { seed: SEED, numRuns: 2_000 },
+    { seed: SEED, numRuns: 4_000 },
   );
   return stateDiagram({
     initial: [

@@ -7,7 +7,10 @@ export type RequestMethod = 'query' | 'mutation' | 'subscription';
 
 /**
  * Where a request is. Only the connection a request was sent on can answer
- * it, so frames from a connection it has left never reach it.
+ * it, so frames from a connection it has left never reach it. `started`: the
+ * subscriber has seen `started` since the subscription last (re)started. A
+ * move keeps it, so the new connection's `started` is dropped only if the old
+ * one's was shown; a lost connection clears it, so `started` shows again.
  */
 export type RequestState =
   /**
@@ -15,12 +18,9 @@ export type RequestState =
    * the request was made or became ready while it waited, or on the next
    * ready connection when `batch` is `null`.
    */
-  | { kind: 'queued'; batch: ConnectionId | null; hideStarted: boolean }
-  /**
-   * Sent on `connection`. `hideStarted` is set when a subscription moved
-   * there without being lost, so its second `started` is dropped.
-   */
-  | { kind: 'sent'; connection: ConnectionId; hideStarted: boolean }
+  | { kind: 'queued'; batch: ConnectionId | null; started: boolean }
+  /** Sent on `connection`. */
+  | { kind: 'sent'; connection: ConnectionId; started: boolean }
   | { kind: 'settled' };
 
 export interface RequestModel {
@@ -113,7 +113,7 @@ function onQueued(
           state: {
             kind: 'sent',
             connection: event.connection,
-            hideStarted: state.hideStarted,
+            started: state.started,
           },
         },
         effects: [],
@@ -123,7 +123,7 @@ function onQueued(
         return {
           request: {
             ...request,
-            state: { kind: 'queued', batch: null, hideStarted: false },
+            state: { kind: 'queued', batch: null, started: false },
           },
           effects: [],
         };
@@ -171,7 +171,7 @@ function onSent(
       return {
         request: {
           ...request,
-          state: { kind: 'queued', batch: null, hideStarted: true },
+          state: { kind: 'queued', batch: null, started: state.started },
         },
         effects: [
           {
@@ -186,7 +186,7 @@ function onSent(
         return {
           request: {
             ...request,
-            state: { kind: 'queued', batch: null, hideStarted: false },
+            state: { kind: 'queued', batch: null, started: false },
           },
           effects: [],
         };
@@ -202,10 +202,11 @@ function onSent(
       const { message } = event;
       if ('result' in message && isSubscription) {
         const result = message.result;
-        if (result.type === 'started' && state.hideStarted) {
+        if (result.type === 'started') {
+          if (state.started) return { request, effects: [] };
           return {
-            request: { ...request, state: { ...state, hideStarted: false } },
-            effects: [],
+            request: { ...request, state: { ...state, started: true } },
+            effects: [{ type: 'next', request: request.id, message }],
           };
         }
         if (result.type !== 'stopped') {
