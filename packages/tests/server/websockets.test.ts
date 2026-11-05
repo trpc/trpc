@@ -2164,6 +2164,43 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('a subscription moved before it started on the old socket reports started once', async () => {
+    const { ctx, ee, valuesStarted, observe, waitForOpen } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    // The old socket won't see the subscription until it's resumed.
+    oldServerSocket.pause();
+    const sent = vi.spyOn(oldClientSocket, 'send');
+    const seen: unknown[] = [];
+    const subscription = ctx.client.values.subscribe(undefined, {
+      ...observe(seen),
+      onData: (value) => seen.push(value),
+    });
+    try {
+      await vi.waitFor(() => {
+        expect(sent).toHaveBeenCalledTimes(1);
+      });
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(valuesStarted).toHaveBeenCalledTimes(1);
+      });
+      ee.emit('value', 1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      oldServerSocket.resume();
+      await vi.waitFor(() => {
+        expect(oldClientSocket.readyState).toBe(WebSocket.CLOSED);
+      });
+      expect(seen).toEqual(['pending', 'started', 1]);
+    } finally {
+      oldServerSocket.resume();
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test("the old socket's data and stopped for a moved subscription are dropped", async () => {
     const {
       ctx,

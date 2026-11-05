@@ -315,6 +315,8 @@ export class WsClient {
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
+  /** Subscriptions whose subscriber has seen `started`. */
+  private readonly started = new WeakSet<TRPCClientOutgoingMessage>();
   /**
    * Subscriptions resubscribed while their old socket was still open. The
    * subscriber already saw them start, so the new socket's `started` is
@@ -446,7 +448,10 @@ export class WsClient {
     if (subscriptions.length) {
       this.send(subscriptions.map(({ message }) => message));
       for (const request of subscriptions) {
-        if (this.stopSubscription(request.message.id, request.ws)) {
+        if (
+          this.stopSubscription(request.message.id, request.ws) &&
+          this.started.has(request.message)
+        ) {
           this.handedOff.add(request.message);
         }
         retired.add(request.ws);
@@ -655,6 +660,8 @@ export class WsClient {
     if ('result' in message && request.message.method === 'subscription') {
       if (message.result.type === 'data') {
         request.message.params.lastEventId = message.result.id;
+      } else if (message.result.type === 'started') {
+        this.started.add(request.message);
       }
 
       if (message.result.type !== 'stopped') {
