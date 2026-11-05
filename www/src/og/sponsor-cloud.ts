@@ -110,7 +110,8 @@ export const sponsorCloudUrl = `${site.url}${sponsorCloudReadmePath}`;
  * How long the PNG is kept: ten minutes on the CDN when an avatar it draws
  * didn't load; otherwise for good at its version, and at the READMEs' URL
  * (`readme`) a day on the CDN, whose copy a deploy replaces, while camo
- * and browsers check it each time, which its `ETag` makes cheap.
+ * and browsers check it each time, which its `ETag`, its version that day,
+ * makes cheap.
  */
 export function sponsorCloudCacheControl(opts: {
   readonly avatars: ReadonlyMap<string, string>;

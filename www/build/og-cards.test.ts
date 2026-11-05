@@ -52,6 +52,9 @@ describe('ogCardsSource', () => {
   it("refuses a page whose card's URL would be another's", () => {
     expect(() => ogCardsSource([doc('/index')])).toThrow("home card's");
     expect(() => ogCardsSource([doc('/_/sponsor-cloud')])).toThrow('/_');
+    expect(() => ogCardsSource([doc('/docs/abcdef0123-20261105')])).toThrow(
+      'looks like a version',
+    );
     expect(() => ogCardsSource([doc('/docs/abcdef0123')])).toThrow(
       'looks like a version',
     );

@@ -1,6 +1,11 @@
 import { composeRewrites, createRouter } from '@tanstack/react-router';
 
 import { startAnalytics } from './analytics.ts';
+import {
+  type DehydratedCardDay,
+  dehydrateCardDay,
+  hydrateCardDay,
+} from './card-day.ts';
 import { errorOptions } from './components/error-page.tsx';
 import { NotFound } from './components/not-found.tsx';
 import { firstDocRewrite } from './first-doc.ts';
@@ -29,11 +34,13 @@ export function getRouter() {
     defaultHashScrollIntoView: { behavior: 'instant', block: 'start' },
     // Content only changes with a deploy, so a loaded page never goes stale.
     defaultStaleTime: Number.POSITIVE_INFINITY,
-    dehydrate: (): DehydratedRelease & RenderedPath => ({
+    dehydrate: (): DehydratedCardDay & DehydratedRelease & RenderedPath => ({
+      ...dehydrateCardDay(),
       ...dehydrateRelease(),
       ...dehydrateRenderedPath(router),
     }),
     hydrate: (dehydrated) => {
+      hydrateCardDay(dehydrated);
       hydrateRelease(dehydrated);
       hydrateRenderedPath(dehydrated);
     },

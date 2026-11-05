@@ -199,7 +199,7 @@ export function postHead(slug: string) {
         datePublished: post.date,
         description: post.description,
         headline: post.title,
-        image: ogImageUrl(path, null),
+        image: ogImageUrl(path),
         inLanguage: 'en',
         mainEntityOfPage: trpcPostUrl(post.slug),
         publisher: { '@type': 'Organization', name: site.name, url: site.url },

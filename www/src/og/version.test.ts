@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type * as Live from './live.ts';
+
 import {
   dailyVersion,
   notAPage,
   ogImagePath,
   requestedPage,
-  untilVersionChanges,
+  untilTomorrow,
   utcDay,
   versionRedirect,
   versionRedirectCacheControl,
@@ -22,13 +24,24 @@ vi.mock('virtual:og-cards', () => ({
   ]),
 }));
 
+const drawing = vi.hoisted(() => ({ cloud: false }));
+
 vi.mock('./render.ts', () => ({
   renderOgImage: () => {
     throw new Error('drew a card');
   },
   renderSponsorCloud: () => {
-    throw new Error('drew the sponsor cloud');
+    if (!drawing.cloud) {
+      throw new Error('drew the sponsor cloud');
+    }
+    return new Uint8Array(1);
   },
+}));
+
+vi.mock('./live.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof Live>()),
+  fetchCloudAvatars: async (images: ReadonlyArray<string>) =>
+    new Map(images.map((image) => [image, 'data:,'])),
 }));
 
 const { serveOgImage } = await import('./serve.ts');
@@ -49,23 +62,16 @@ describe('ogImagePath', () => {
 });
 
 describe('dailyVersion', () => {
-  it("is the cards' version and the UTC day", () => {
+  it('is the hash and the UTC day', () => {
     const day = utcDay(new Date('2026-11-05T23:59:59Z'));
     expect(day).toBe('20261105');
     expect(dailyVersion('abc', day)).toBe('abc-20261105');
     expect(dailyVersion('', day)).toBe('');
   });
 
-  it('stays current until the next UTC day, and any other version a day', () => {
-    expect(untilVersionChanges(true, new Date('2026-11-05T23:59:00Z'))).toBe(
-      60,
-    );
-    expect(untilVersionChanges(true, new Date('2026-11-05T00:00:00Z'))).toBe(
-      86_400,
-    );
-    expect(untilVersionChanges(false, new Date('2026-11-05T23:59:00Z'))).toBe(
-      86_400,
-    );
+  it('stays current until the next UTC day', () => {
+    expect(untilTomorrow(new Date('2026-11-05T23:59:00Z'))).toBe(60);
+    expect(untilTomorrow(new Date('2026-11-05T00:00:00Z'))).toBe(86_400);
   });
 });
 
@@ -77,13 +83,14 @@ describe('requestedPage', () => {
     for (const [path, page] of [
       ['/og/docs/a', '/docs/a'],
       ['/og/docs/a.png', '/docs/a'],
-      ['/og/docs/a/abcdef0123.png', '/docs/a'],
-      ['/og/docs/abcdef0123-20261105.png', '/docs'],
+      ['/og/docs/a/abcdef0123-20261105.png', '/docs/a'],
+      ['/og/docs/abcdef0123-20261104.png', '/docs'],
+      ['/og/docs/abcdef0123.png', '/docs'],
       ['/og/index', '/'],
       ['/og/index.png', '/'],
-      ['/og/index/abcdef0123.png', '/'],
+      ['/og/index/abcdef0123-20261105.png', '/'],
       ['/og/_/cloud.png', '/_/cloud'],
-      ['/og/_/cloud/abcdef0123.png', '/_/cloud'],
+      ['/og/_/cloud/abcdef0123-20261105.png', '/_/cloud'],
     ] as const) {
       expect(requestedPage(path, exists), path).toBe(page);
     }
@@ -92,7 +99,7 @@ describe('requestedPage', () => {
   it('names nothing where no page is', () => {
     for (const path of [
       '/og/docs/b/c.png',
-      '/og/docs/a/abcdef0123',
+      '/og/docs/a/abcdef0123-20261105',
       '/og/docs/a/made-up.png',
       '/og/nothing.png',
       '/og/_/other.png',
@@ -140,29 +147,39 @@ describe('serveOgImage', () => {
   });
 
   afterEach(() => {
+    drawing.cloud = false;
     vi.unstubAllEnvs();
     vi.useRealTimers();
   });
 
-  it('redirects a card at no version, another version, or with a query, before drawing it', async () => {
+  it("redirects any card at no version, another version or another day, as yesterday's, or with a query, to today's until tomorrow, before drawing it", async () => {
+    vi.useFakeTimers({
+      now: new Date('2026-11-05T23:00:00Z'),
+      toFake: ['Date'],
+    });
     for (const path of [
       '/og/docs/server/procedures',
       '/og/docs/server/procedures.png',
-      '/og/docs/server/procedures/0000000000.png',
-      '/og/docs/server/procedures/abcdef0123.png?cache=bust',
+      '/og/docs/server/procedures/0000000000-20261105.png',
+      '/og/docs/server/procedures/abcdef0123.png',
+      '/og/docs/server/procedures/abcdef0123-20261104.png',
+      '/og/docs/server/procedures/abcdef0123-20261105.png?cache=bust',
     ]) {
       const response = await get(path);
       expect(response.status, path).toBe(307);
       expect(response.headers.get('location'), path).toBe(
-        '/og/docs/server/procedures/abcdef0123.png',
+        '/og/docs/server/procedures/abcdef0123-20261105.png',
+      );
+      expect(response.headers.get('cache-control'), path).toBe(
+        versionRedirectCacheControl(3600),
       );
     }
     await expect(
-      get('/og/docs/server/procedures/abcdef0123.png'),
+      get('/og/docs/server/procedures/abcdef0123-20261105.png'),
     ).rejects.toThrow('drew a card');
   });
 
-  it("redirects the home card at another day, as yesterday's, to today's until tomorrow", async () => {
+  it('dates the home card the same way, so its numbers refresh daily', async () => {
     vi.useFakeTimers({
       now: new Date('2026-11-05T23:00:00Z'),
       toFake: ['Date'],
@@ -170,7 +187,6 @@ describe('serveOgImage', () => {
     for (const path of [
       '/og/index',
       '/og/index.png',
-      '/og/index/abcdef0123.png',
       '/og/index/abcdef0123-20261104.png',
       '/og/index/abcdef0123-20261105.png?x=1',
     ]) {
@@ -201,25 +217,48 @@ describe('serveOgImage', () => {
     );
   });
 
-  it('redirects the sponsor cloud at another version to its current one, in _', async () => {
+  it("tags the READMEs' sponsor cloud with its version that day, so a cache checking it gets that day's avatars", async () => {
+    vi.useFakeTimers({
+      now: new Date('2026-11-05T12:00:00Z'),
+      toFake: ['Date'],
+    });
+    drawing.cloud = true;
+    const response = await get('/og/_/sponsor-cloud.png');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('etag')).toBe('"c10dc10dc1-20261105"');
+    expect(response.headers.get('cache-control')).toBe(
+      'public, max-age=0, must-revalidate, s-maxage=86400',
+    );
+    vi.setSystemTime(new Date('2026-11-06T00:00:00Z'));
+    expect((await get('/og/_/sponsor-cloud.png')).headers.get('etag')).toBe(
+      '"c10dc10dc1-20261106"',
+    );
+  });
+
+  it("redirects the sponsor cloud at another version or day to today's, in _", async () => {
+    vi.useFakeTimers({
+      now: new Date('2026-11-05T12:00:00Z'),
+      toFake: ['Date'],
+    });
     for (const path of [
       '/og/_/sponsor-cloud',
-      '/og/_/sponsor-cloud/0000000000.png',
+      '/og/_/sponsor-cloud/0000000000-20261105.png',
+      '/og/_/sponsor-cloud/c10dc10dc1-20261104.png',
     ]) {
       expect((await get(path)).headers.get('location'), path).toBe(
-        '/og/_/sponsor-cloud/c10dc10dc1.png',
+        '/og/_/sponsor-cloud/c10dc10dc1-20261105.png',
       );
     }
-    await expect(get('/og/_/sponsor-cloud/c10dc10dc1.png')).rejects.toThrow(
-      'drew the sponsor cloud',
-    );
+    await expect(
+      get('/og/_/sponsor-cloud/c10dc10dc1-20261105.png'),
+    ).rejects.toThrow('drew the sponsor cloud');
   });
 
   it('answers a path without an image with a 404, whatever its version or query', async () => {
     for (const path of [
       '/og/nothing.png?v=abc',
-      '/og/nothing/abcdef0123.png',
-      '/og/docs/server/x/abcdef0123.png',
+      '/og/nothing/abcdef0123-20261105.png',
+      '/og/docs/server/x/abcdef0123-20261105.png',
       '/og/docs/server/procedures/made-up.png',
       '/og/_/nothing.png',
     ]) {
