@@ -458,6 +458,60 @@ describe('a stop that arrives while the subscription starts', () => {
   );
 });
 
+test('a stopped subscription sends no data, not even what it yields because of the stop, before or after the PONG of a PING sent with the stop', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    values: t.procedure.subscription(({ signal }): AsyncIterable<string> => {
+      let pending: ((result: IteratorResult<string>) => void) | null = null;
+      // added before the adapter's own abort listener
+      signal?.addEventListener('abort', () =>
+        pending?.({ done: false, value: 'after-abort' }),
+      );
+      return {
+        [Symbol.asyncIterator]: () => ({
+          next: () =>
+            new Promise((resolve) => {
+              pending = resolve;
+            }),
+          return: async () => ({ done: true, value: undefined }),
+        }),
+      };
+    }),
+  });
+  await using ctx = testServerAndClientResource(router);
+  await using socket = await rawSocketResource(ctx.wssUrl);
+  socket.ws.send(
+    JSON.stringify({
+      id: 1,
+      method: 'subscription',
+      params: { path: 'values' },
+    }),
+  );
+  await socket.received(1);
+
+  const tcp = (
+    socket.ws as unknown as { _socket: { cork(): void; uncork(): void } }
+  )._socket;
+  tcp.cork();
+  socket.ws.send(JSON.stringify({ id: 1, method: 'subscription.stop' }));
+  socket.ws.send('PING');
+  tcp.uncork();
+
+  const stopped = JSON.stringify({ id: 1, result: { type: 'stopped' } });
+  await vi.waitFor(() => {
+    expect(socket.frames).toContain('PONG');
+    expect(socket.frames).toContain(stopped);
+  });
+  const afterStop = socket.frames.slice(1);
+  const afterPong = afterStop.slice(afterStop.indexOf('PONG') + 1);
+  expect(afterStop.filter((frame) => frame.includes('after-abort'))).toEqual(
+    [],
+  );
+  expect(afterPong.filter((frame) => frame.includes('after-abort'))).toEqual(
+    [],
+  );
+});
+
 describe('frames that wsLink never sends', () => {
   function greetingServer(
     opts?: Pick<WSSHandlerOptions<AnyRouter>, 'maxBatchSize'> & {

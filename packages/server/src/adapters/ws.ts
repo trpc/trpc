@@ -547,6 +547,11 @@ async function nextUnlessStopped(
   }
   try {
     const next = await iterator.next();
+    // a value that arrives with the stop, such as one yielded because of
+    // it, would be sent after the stop, and after a PONG sent with it
+    if (signal.aborted) {
+      return STOPPED;
+    }
     return next.done ? COMPLETED : { kind: 'data', value: next.value };
   } catch (cause) {
     const error = getTRPCErrorFromUnknown(cause);
