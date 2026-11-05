@@ -157,11 +157,16 @@ const shown: Live = {
   stats: { downloads: 7_926_494, stars: 40_759 },
 };
 
-/** `shown`, with the avatar of every sponsor along the foot loaded: a blue square. */
+/** `shown`, with the avatar of every sponsor along the foot and on `/sponsor`'s card loaded: a blue square. */
 const withSponsors: Live = {
   ...shown,
   avatars: new Map(
-    [...cardFooter.partners, ...cardFooter.backers].map((sponsor) => [
+    [
+      ...cardFooter.partners,
+      ...cardFooter.backers,
+      ...sponsorCard.partners,
+      ...sponsorCard.backers,
+    ].map((sponsor) => [
       sponsor.image,
       `data:image/svg+xml;base64,${Buffer.from(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
