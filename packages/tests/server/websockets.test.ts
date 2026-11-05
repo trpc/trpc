@@ -2229,7 +2229,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
-  test("the old socket's data and stopped for a moved subscription are dropped", async () => {
+  test("the old socket's untracked data is delivered until its stopped, even after the new one's started", async () => {
     const {
       ctx,
       ee,
@@ -2282,7 +2282,9 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(seen).toContain(2);
       });
-      expect(seen).toEqual(['pending', 'started', 1, 2]);
+      // Both sockets listened when 1 was published. The new one can't
+      // resend an untracked event, so the old one's copy is delivered too.
+      expect(seen).toEqual(['pending', 'started', 1, 1, 2]);
     } finally {
       slowResult.resolve('cleanup');
       oldServerSocket.resume();
@@ -3872,9 +3874,11 @@ describe('auth / connectionParams', async () => {
     whoami: t.procedure.query((opts) => {
       return opts.ctx.user;
     }),
-    iterable: t.procedure.subscription(async function* () {
-      await new Promise((_resolve) => {
-        // Intentionally never resolve to keep subscription active
+    iterable: t.procedure.subscription(async function* ({ signal }) {
+      // Active until stopped. A moved untracked subscription's old socket
+      // closes once its server has ended the subscription there.
+      await new Promise((resolve) => {
+        signal?.addEventListener('abort', resolve);
       });
       yield null;
     }),
