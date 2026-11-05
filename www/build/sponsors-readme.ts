@@ -64,12 +64,12 @@ function table(sponsors: ReadonlyArray<Sponsor>, tier: Tier) {
 }
 
 /**
- * The sponsor cloud's picture at `cloudVersion` (`sponsorCloudVersion` in
- * `og-cards.ts`), centered, linking to the cloud on `/sponsor`.
+ * The sponsor cloud's picture, centered, linking to the cloud on `/sponsor`,
+ * at a URL that never changes, so the READMEs change only with the sponsors.
  */
-export function sponsorCloudMarkdown(cloudVersion: string) {
+export function sponsorCloudMarkdown() {
   const href = `${site.url}${sponsorPage.path}#${sponsorPage.cloudId}`;
-  const src = escapeHtml(sponsorCloudUrl(cloudVersion));
+  const src = escapeHtml(sponsorCloudUrl);
   return [
     '<p align="center">',
     `  <a href="${href}"><img src="${src}" width="${sponsorCloudDisplayWidth}" alt="${site.name}'s sponsors, each drawn bigger the more they've given"/></a>`,
@@ -77,14 +77,8 @@ export function sponsorCloudMarkdown(cloudVersion: string) {
   ].join('\n');
 }
 
-/**
- * The cloud, at `cloudVersion`, and the tiers' Markdown (HTML tables, which
- * GitHub renders with avatars).
- */
-export function sponsorsMarkdown(
-  sponsors: ReadonlyArray<Sponsor>,
-  cloudVersion: string,
-) {
+/** The cloud and the tiers' Markdown (HTML tables, which GitHub renders with avatars). */
+export function sponsorsMarkdown(sponsors: ReadonlyArray<Sponsor>) {
   const byWeight = sponsors
     .filter((sponsor) => sponsor.imageless !== true)
     .toSorted((a, b) => b.weight - a.weight || a.createdAt - b.createdAt);
@@ -107,7 +101,7 @@ export function sponsorsMarkdown(
     },
   ];
   return [
-    ...(byWeight.length === 0 ? [] : [sponsorCloudMarkdown(cloudVersion)]),
+    ...(byWeight.length === 0 ? [] : [sponsorCloudMarkdown()]),
     ...tiers
       .filter((entry) => entry.sponsors.length > 0)
       .map((entry) => table(entry.sponsors, entry.tier)),

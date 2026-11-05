@@ -1,4 +1,4 @@
-import { dailyVersion, versionedPath } from './og/version.ts';
+import { dailyVersion, ogImagePath } from './og/version.ts';
 import { blog, type CopiedVersion, docPath, site } from './site.ts';
 
 type JsonValue =
@@ -104,11 +104,6 @@ export function postDate(date: string) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-/** Where a page's social card is served (`routes/og.$.ts`). */
-export function ogImagePath(path: string) {
-  return `/og${path === '/' ? '/index' : path}.png`;
-}
-
 /** Social cards' size, in pixels. */
 export const ogImageSize = { height: 630, width: 1200 } as const;
 
@@ -120,10 +115,7 @@ export const ogImageSize = { height: 630, width: 1200 } as const;
 export function ogImageUrl(path: string, day: string | null) {
   const version = import.meta.env.OG_CARDS_VERSION;
   return new URL(
-    versionedPath(
-      ogImagePath(path),
-      day === null ? version : dailyVersion(version, day),
-    ),
+    ogImagePath(path, day === null ? version : dailyVersion(version, day)),
     import.meta.env.DEPLOYMENT_ORIGIN || site.url,
   ).href;
 }

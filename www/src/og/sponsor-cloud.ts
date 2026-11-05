@@ -2,8 +2,10 @@
  * `/sponsor`'s cloud of sponsors as a PNG, for the READMEs
  * (`build/sponsors-readme.ts`): each sponsor a circle of their avatar,
  * packed as the page packs them (`components/sponsors/pack.ts`), on a
- * transparent background. `routes/og.$.ts` serves it at `sponsorCloudUrl`,
- * with the avatars fetched on request (`live.ts`); `render.ts` draws it.
+ * transparent background. `og/serve.ts` serves it at `sponsorCloudUrl`
+ * for the READMEs, and at its version as an image that isn't a page's
+ * (`og/version.ts`), with the avatars fetched on request (`live.ts`);
+ * `render.ts` draws it.
  *
  * The build scripts import this with Node, so it imports nothing through
  * `~/`.
@@ -12,9 +14,22 @@ import { cloudPadding, packSponsors } from '../components/sponsors/pack.ts';
 import { site } from '../site.ts';
 import { avatarUrl, type Sponsor, sponsorKey } from '../sponsors.ts';
 
-import { immutableCacheControl, versionedPath } from './version.ts';
+import { immutableCacheControl, notAPage, ogImagePath } from './version.ts';
 
-export const sponsorCloudPath = '/og/sponsor-cloud.png';
+/** The cloud as an image that isn't a page's: `/og/_/sponsor-cloud/<version>.png`. */
+export const sponsorCloudPage = notAPage('sponsor-cloud');
+
+/**
+ * Where the READMEs show it, which never changes: its path without a
+ * version, which `og/serve.ts` answers with the current cloud rather than
+ * redirect, as GitHub's image proxy (camo, which npm's READMEs use too)
+ * keeps a redirect's target by the README's URL, with the target's
+ * caching.
+ */
+export const sponsorCloudReadmePath = ogImagePath(sponsorCloudPage, '');
+
+/** The READMEs' URL before `sponsorCloudReadmePath`, which packages on npm keep. */
+export const legacySponsorCloudPath = '/og/sponsor-cloud.png';
 
 /** The PNG's width in pixels: twice the width the READMEs show it at. */
 export const sponsorCloudWidth = 1200;
@@ -91,26 +106,27 @@ export const sponsorCloudSource = (sponsors: ReadonlyArray<Sponsor>) =>
     )
     .join('\n');
 
-/**
- * Where the READMEs show the PNG at `version`: absolute, so it draws on
- * npm, and versioned, so GitHub's image proxy fetches it again when it
- * changes rather than keep the last one (`og/version.ts`).
- */
-export const sponsorCloudUrl = (version: string) =>
-  `${site.url}${versionedPath(sponsorCloudPath, version)}`;
+/** Where the READMEs show the PNG: absolute, so it draws on npm. */
+export const sponsorCloudUrl = `${site.url}${sponsorCloudReadmePath}`;
 
 /**
  * How long the PNG is kept: ten minutes on the CDN when an avatar it draws
- * didn't load, and for good otherwise. A README asking for another version
- * (one from before a deploy, or a package's on npm from an older one) is
- * redirected to the current one first (`og/version.ts`).
+ * didn't load; otherwise for good at its version, and at the READMEs' URL
+ * (`readme`) a day on the CDN, whose copy a deploy replaces, while camo
+ * and browsers check it each time, which its `ETag` makes cheap.
  */
 export function sponsorCloudCacheControl(opts: {
   readonly avatars: ReadonlyMap<string, string>;
   readonly bubbles: ReadonlyArray<CloudBubble>;
+  readonly readme: boolean;
 }) {
   const missing = opts.bubbles.some(
     (bubble) => !opts.avatars.has(bubble.image),
   );
-  return missing ? 'public, max-age=0, s-maxage=600' : immutableCacheControl;
+  if (missing) {
+    return 'public, max-age=0, s-maxage=600';
+  }
+  return opts.readme
+    ? 'public, max-age=0, must-revalidate, s-maxage=86400'
+    : immutableCacheControl;
 }

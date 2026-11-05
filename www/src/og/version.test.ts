@@ -2,19 +2,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   dailyVersion,
-  requestedImage,
+  notAPage,
+  ogImagePath,
+  requestedPage,
   untilVersionChanges,
   utcDay,
-  versionedPath,
   versionRedirect,
   versionRedirectCacheControl,
 } from './version.ts';
 
 vi.mock('virtual:og-cards', () => ({
   cards: new Map([
-    ['/og/index.png', { kind: 'home', path: '/' }],
+    ['/', { kind: 'home', path: '/' }],
+    ['/docs', { kind: 'doc', path: '/docs' }],
     [
-      '/og/docs/server/procedures.png',
+      '/docs/server/procedures',
       { kind: 'doc', path: '/docs/server/procedures' },
     ],
   ]),
@@ -29,22 +31,20 @@ vi.mock('./render.ts', () => ({
   },
 }));
 
-const { Route } = await import('../routes/og.$.ts');
+const { serveOgImage } = await import('./serve.ts');
 
-const get = (path: string) => {
-  const handlers = Route.options.server?.handlers;
-  if (typeof handlers !== 'object' || typeof handlers.GET !== 'function') {
-    throw new Error('No GET handler');
-  }
-  return handlers.GET({
-    request: new Request(`https://trpc.io${path}`),
-  } as Parameters<typeof handlers.GET>[0]) as Promise<Response>;
-};
+const get = (path: string) =>
+  serveOgImage(new Request(`https://trpc.io${path}`));
 
-describe('versionedPath', () => {
-  it('puts the version after /og/', () => {
-    expect(versionedPath('/og/docs/a.png', 'abc')).toBe('/og/abc/docs/a.png');
-    expect(versionedPath('/og/docs/a.png', '')).toBe('/og/docs/a.png');
+describe('ogImagePath', () => {
+  it("is /og and the page's path, then the version", () => {
+    expect(ogImagePath('/docs/server/procedures', 'abc')).toBe(
+      '/og/docs/server/procedures/abc.png',
+    );
+    expect(ogImagePath('/', 'abc')).toBe('/og/index/abc.png');
+    expect(ogImagePath(notAPage('cloud'), 'abc')).toBe('/og/_/cloud/abc.png');
+    expect(ogImagePath('/docs/quickstart', '')).toBe('/og/docs/quickstart.png');
+    expect(ogImagePath('/', '')).toBe('/og/index.png');
   });
 });
 
@@ -69,55 +69,65 @@ describe('dailyVersion', () => {
   });
 });
 
-describe('requestedImage', () => {
-  const exists = (path: string) => path === '/og/docs/a.png';
+describe('requestedPage', () => {
+  const pages = new Set(['/', '/docs', '/docs/a', '/_/cloud']);
+  const exists = (page: string) => pages.has(page);
 
-  it('reads an image and its version from the path', () => {
-    expect(requestedImage('/og/docs/a.png', exists)).toEqual({
-      path: '/og/docs/a.png',
-      version: '',
-    });
-    expect(requestedImage('/og/abc/docs/a.png', exists)).toEqual({
-      path: '/og/docs/a.png',
-      version: 'abc',
-    });
+  it('reads the page from /og and its path, with .png, without, or with a version', () => {
+    for (const [path, page] of [
+      ['/og/docs/a', '/docs/a'],
+      ['/og/docs/a.png', '/docs/a'],
+      ['/og/docs/a/abcdef0123.png', '/docs/a'],
+      ['/og/docs/abcdef0123-20261105.png', '/docs'],
+      ['/og', '/'],
+      ['/og/index', '/'],
+      ['/og/index.png', '/'],
+      ['/og/index/abcdef0123.png', '/'],
+      ['/og/abcdef0123.png', '/'],
+      ['/og/_/cloud.png', '/_/cloud'],
+      ['/og/_/cloud/abcdef0123.png', '/_/cloud'],
+    ] as const) {
+      expect(requestedPage(path, exists), path).toBe(page);
+    }
   });
 
-  it('names nothing where no image is', () => {
-    for (const path of ['/og/abc/docs/b.png', '/og/a/b/docs/a.png', '/og/']) {
-      expect(requestedImage(path, exists), path).toBeUndefined();
+  it('names nothing where no page is', () => {
+    for (const path of [
+      '/og/docs/b/c.png',
+      '/og/docs/a/abcdef0123',
+      '/og/docs/a/made-up.png',
+      '/og/nothing.png',
+      '/og/_/other.png',
+      '/ogx.png',
+      '/docs/a',
+    ]) {
+      expect(requestedPage(path, exists), path).toBeUndefined();
     }
   });
 });
 
 describe('versionRedirect', () => {
-  const image = { path: '/og/a.png', version: 'abc' };
-
   it('leaves the URL at the current version alone', () => {
     expect(
-      versionRedirect(
-        new URL('https://trpc.io/og/abc/a.png'),
-        image,
-        'abc',
-        60,
-      ),
+      versionRedirect(new URL('https://trpc.io/og/a/abc.png'), '/a', 'abc', 60),
     ).toBeUndefined();
   });
 
-  it('redirects another version, or any query, to the current version alone', () => {
-    for (const [url, requested] of [
-      ['/og/a.png', { ...image, version: '' }],
-      ['/og/old/a.png', { ...image, version: 'old' }],
-      ['/og/abc/a.png?x=1', image],
-    ] as const) {
+  it('redirects any other URL for the page, or any query, to the current version alone', () => {
+    for (const url of [
+      '/og/a',
+      '/og/a.png',
+      '/og/a/old.png',
+      '/og/a/abc.png?x=1',
+    ]) {
       const redirect = versionRedirect(
         new URL(`https://trpc.io${url}`),
-        requested,
+        '/a',
         'abc',
         60,
       );
       expect(redirect?.status, url).toBe(307);
-      expect(redirect?.headers.get('location'), url).toBe('/og/abc/a.png');
+      expect(redirect?.headers.get('location'), url).toBe('/og/a/abc.png');
       expect(redirect?.headers.get('cache-control'), url).toBe(
         versionRedirectCacheControl(60),
       );
@@ -125,10 +135,10 @@ describe('versionRedirect', () => {
   });
 });
 
-describe('/og/*', () => {
+describe('serveOgImage', () => {
   beforeEach(() => {
-    vi.stubEnv('OG_CARDS_VERSION', 'abc');
-    vi.stubEnv('SPONSOR_CLOUD_VERSION', 'cloud1');
+    vi.stubEnv('OG_CARDS_VERSION', 'abcdef0123');
+    vi.stubEnv('SPONSOR_CLOUD_VERSION', 'c10dc10dc1');
   });
 
   afterEach(() => {
@@ -138,20 +148,20 @@ describe('/og/*', () => {
 
   it('redirects a card at no version, another version, or with a query, before drawing it', async () => {
     for (const path of [
+      '/og/docs/server/procedures',
       '/og/docs/server/procedures.png',
-      '/og/made-up/docs/server/procedures.png',
-      '/og/docs/server/procedures.png?v=abc',
-      '/og/abc/docs/server/procedures.png?cache=bust',
+      '/og/docs/server/procedures/0000000000.png',
+      '/og/docs/server/procedures/abcdef0123.png?cache=bust',
     ]) {
       const response = await get(path);
       expect(response.status, path).toBe(307);
       expect(response.headers.get('location'), path).toBe(
-        '/og/abc/docs/server/procedures.png',
+        '/og/docs/server/procedures/abcdef0123.png',
       );
     }
-    await expect(get('/og/abc/docs/server/procedures.png')).rejects.toThrow(
-      'drew a card',
-    );
+    await expect(
+      get('/og/docs/server/procedures/abcdef0123.png'),
+    ).rejects.toThrow('drew a card');
   });
 
   it("redirects the home card at another day, as yesterday's, to today's until tomorrow", async () => {
@@ -160,41 +170,57 @@ describe('/og/*', () => {
       toFake: ['Date'],
     });
     for (const path of [
+      '/og',
+      '/og/index',
       '/og/index.png',
-      '/og/abc/index.png',
-      '/og/abc-20261104/index.png',
-      '/og/abc-20261105/index.png?x=1',
+      '/og/index/abcdef0123.png',
+      '/og/index/abcdef0123-20261104.png',
+      '/og/index/abcdef0123-20261105.png?x=1',
     ]) {
       const response = await get(path);
       expect(response.status, path).toBe(307);
       expect(response.headers.get('location'), path).toBe(
-        '/og/abc-20261105/index.png',
+        '/og/index/abcdef0123-20261105.png',
       );
       expect(response.headers.get('cache-control'), path).toBe(
         versionRedirectCacheControl(3600),
       );
     }
-    await expect(get('/og/abc-20261105/index.png')).rejects.toThrow(
+    await expect(get('/og/index/abcdef0123-20261105.png')).rejects.toThrow(
       'drew a card',
     );
     vi.setSystemTime(new Date('2026-11-06T00:00:01Z'));
     expect(
-      (await get('/og/abc-20261105/index.png')).headers.get('location'),
-    ).toBe('/og/abc-20261106/index.png');
+      (await get('/og/index/abcdef0123-20261105.png')).headers.get('location'),
+    ).toBe('/og/index/abcdef0123-20261106.png');
   });
 
-  it("redirects the sponsor cloud at another version, as the READMEs' old ?v= URL, before drawing it", async () => {
+  it("draws the READMEs' sponsor cloud at its URL, and redirects the old one and any query to it", async () => {
     for (const path of [
       '/og/sponsor-cloud.png?v=b6cfa2a2',
-      '/og/abc/sponsor-cloud.png',
+      '/og/_/sponsor-cloud.png?x=1',
     ]) {
       const response = await get(path);
       expect(response.status, path).toBe(307);
       expect(response.headers.get('location'), path).toBe(
-        '/og/cloud1/sponsor-cloud.png',
+        '/og/_/sponsor-cloud.png',
       );
     }
-    await expect(get('/og/cloud1/sponsor-cloud.png')).rejects.toThrow(
+    await expect(get('/og/_/sponsor-cloud.png')).rejects.toThrow(
+      'drew the sponsor cloud',
+    );
+  });
+
+  it('redirects the sponsor cloud at another version to its current one, in _', async () => {
+    for (const path of [
+      '/og/_/sponsor-cloud',
+      '/og/_/sponsor-cloud/0000000000.png',
+    ]) {
+      expect((await get(path)).headers.get('location'), path).toBe(
+        '/og/_/sponsor-cloud/c10dc10dc1.png',
+      );
+    }
+    await expect(get('/og/_/sponsor-cloud/c10dc10dc1.png')).rejects.toThrow(
       'drew the sponsor cloud',
     );
   });
@@ -202,8 +228,10 @@ describe('/og/*', () => {
   it('answers a path without an image with a 404, whatever its version or query', async () => {
     for (const path of [
       '/og/nothing.png?v=abc',
-      '/og/abc/nothing.png',
-      '/og/abc/abc/index.png',
+      '/og/nothing/abcdef0123.png',
+      '/og/docs/server/x/abcdef0123.png',
+      '/og/docs/server/procedures/made-up.png',
+      '/og/_/nothing.png',
     ]) {
       expect((await get(path)).status, path).toBe(404);
     }

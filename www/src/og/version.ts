@@ -1,14 +1,18 @@
 /**
- * The social cards and the sponsor cloud are served with their version in
- * the path, `/og/<version>/docs/quickstart.png`, a hash of what they draw
- * (`build/og-cards.ts`), so a changed image gets a new URL and an image at
- * the current version can be cached for good. The home card's version
- * also has the UTC day (`dailyVersion`), for its live numbers, and the
- * home page is regenerated through the day to name it
- * (`build/on-demand.ts`). `routes/og.$.ts` redirects
- * any other URL for one (its path without a version, an outdated or
- * made-up one, or any query) to the current version's before it draws
- * anything, so no URL but the current one makes it draw an image.
+ * A page's social card is at `/og` and the page's path, then its version,
+ * a hash of what it draws (`build/og-cards.ts`):
+ * `/og/docs/quickstart/<version>.png`, and the home page's
+ * `/og/index/<version>.png`. So a changed card gets a new URL, and one at
+ * the current version can be cached for good. Images that aren't a page's,
+ * as the READMEs' sponsor cloud, are in `_` (`notAPage`), which no page's
+ * path starts with. The home card's version also has the UTC day
+ * (`dailyVersion`), for its live numbers, and the home page is regenerated
+ * through the day to name it (`build/on-demand.ts`).
+ *
+ * `og/serve.ts` redirects any other URL for one to it before it draws
+ * anything: `/og` and the page's path, with `.png` or without, at another
+ * version, or with a query. So no URL but the current one draws an image,
+ * and `/og/docs/quickstart` shows that page's card.
  *
  * The build scripts import this with Node, so it imports nothing.
  */
@@ -45,52 +49,80 @@ export const untilVersionChanges = (daily: boolean, now: Date) => {
   return daily ? day - Math.floor((now.getTime() / 1000) % day) : day;
 };
 
-/** `/og/a/b.png` at `version`: `/og/<version>/a/b.png`, or as is with no version. */
-export const versionedPath = (path: string, version: string) =>
-  version ? path.replace(/^\/og\//, `/og/${version}/`) : path;
-
-/** What a request's path names: an image's unversioned path, and the version it asks for. */
-export interface RequestedImage {
-  readonly path: string;
-  readonly version: string;
-}
+/**
+ * What a version looks like: the cards' and the cloud's hash, and the
+ * home card's day (`dailyVersion`). No page's last segment may look like
+ * one (`ogCardsSource`), or its card's URL would be its parent's.
+ */
+export const versionLike = /^[0-9a-f]{10}(?:-\d{8})?$/;
 
 /**
- * The image `pathname` names, if one `exists`: `/og/a.png` at no version
- * (`''`), or `/og/<version>/a.png`.
+ * Where `name`, an image that isn't a page's card, is served as if it were
+ * a page's: in `_`, which is never escaped in a URL and starts no page's
+ * path (`ogCardsSource`).
  */
-export function requestedImage(
+export const notAPage = (name: string) => `/_/${name}`;
+
+/** The home page's segment in its card's URL, as `/og/index`. */
+const homeSegment = '/index';
+
+/** Where `page`'s card is at `version`; at no version, `/og` and its path with `.png`. */
+export const ogImagePath = (page: string, version: string) => {
+  const base = `/og${page === '/' ? homeSegment : page}`;
+  return version ? `${base}/${version}.png` : `${base}.png`;
+};
+
+/**
+ * The page `pathname` asks for the card of, if one `exists`: `/og` and its
+ * path, with `.png` or without, or with `/<version>.png` after it, any
+ * that looks like one, so another redirects (`versionRedirect`).
+ */
+export function requestedPage(
   pathname: string,
-  exists: (path: string) => boolean,
-): RequestedImage | undefined {
-  if (exists(pathname)) {
-    return { path: pathname, version: '' };
-  }
-  const versioned = /^\/og\/([^/]+)(\/.+)$/.exec(pathname);
-  const [, version = '', rest = ''] = versioned ?? [];
-  const path = `/og${rest}`;
-  return versioned !== null && exists(path) ? { path, version } : undefined;
-}
-
-/**
- * A redirect from `url`, which asks for `requested`, to its image at
- * `current`, the version this deploy draws now, without a query, which
- * the CDN keeps `seconds`; or `undefined` when `url` is that already.
- */
-export function versionRedirect(
-  url: URL,
-  requested: RequestedImage,
-  current: string,
-  seconds: number,
-) {
-  if (requested.version === current && url.search === '') {
+  exists: (page: string) => boolean,
+): string | undefined {
+  if (!/^\/og(?:$|\/)/.test(pathname)) {
     return undefined;
   }
-  return new Response(null, {
+  const png = pathname.endsWith('.png');
+  const named = (png ? pathname.slice(0, -'.png'.length) : pathname).slice(
+    '/og'.length,
+  );
+  const page = (path: string) =>
+    path === '' || path === homeSegment ? '/' : path;
+  if (exists(page(named))) {
+    return page(named);
+  }
+  const slash = named.lastIndexOf('/');
+  const parent = page(named.slice(0, slash));
+  return png && versionLike.test(named.slice(slash + 1)) && exists(parent)
+    ? parent
+    : undefined;
+}
+
+/** A redirect to `location`, which the CDN keeps `seconds`. */
+export const redirectTo = (location: string, seconds: number) =>
+  new Response(null, {
     headers: {
       'Cache-Control': versionRedirectCacheControl(seconds),
-      Location: versionedPath(requested.path, current),
+      Location: location,
     },
     status: 307,
   });
+
+/**
+ * A redirect from `url`, which asks for `page`'s card, to it at `current`,
+ * the version this deploy draws now, without a query, which the CDN keeps
+ * `seconds`; or `undefined` when `url` is that already.
+ */
+export function versionRedirect(
+  url: URL,
+  page: string,
+  current: string,
+  seconds: number,
+) {
+  const canonical = ogImagePath(page, current);
+  return url.pathname === canonical && url.search === ''
+    ? undefined
+    : redirectTo(canonical, seconds);
 }

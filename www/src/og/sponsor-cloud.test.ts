@@ -80,10 +80,8 @@ describe('cloudLayout', () => {
 });
 
 describe('sponsorCloudUrl', () => {
-  it('is absolute, with the version in its path', () => {
-    expect(sponsorCloudUrl('0123abcdef')).toBe(
-      'https://trpc.io/og/0123abcdef/sponsor-cloud.png',
-    );
+  it('is absolute, in _, and never changes', () => {
+    expect(sponsorCloudUrl).toBe('https://trpc.io/og/_/sponsor-cloud.png');
   });
 });
 
@@ -109,19 +107,25 @@ describe('sponsorCloudCacheControl', () => {
   const { bubbles } = cloudLayout([sponsor('a', 40), sponsor('b', 20)]);
   const all = new Map(bubbles.map((bubble) => [bubble.image, 'data:']));
 
-  it('caches it for good when every avatar loaded', () => {
-    expect(sponsorCloudCacheControl({ avatars: all, bubbles })).toBe(
-      immutableCacheControl,
-    );
+  it('caches it for good at its version when every avatar loaded, and has the READMEs check it each time', () => {
+    expect(
+      sponsorCloudCacheControl({ avatars: all, bubbles, readme: false }),
+    ).toBe(immutableCacheControl);
+    expect(
+      sponsorCloudCacheControl({ avatars: all, bubbles, readme: true }),
+    ).toBe('public, max-age=0, must-revalidate, s-maxage=86400');
   });
 
   it('caches it briefly when an avatar is missing', () => {
-    expect(
-      sponsorCloudCacheControl({
-        avatars: new Map([...all].slice(0, 1)),
-        bubbles,
-      }),
-    ).toBe('public, max-age=0, s-maxage=600');
+    for (const readme of [false, true]) {
+      expect(
+        sponsorCloudCacheControl({
+          avatars: new Map([...all].slice(0, 1)),
+          bubbles,
+          readme,
+        }),
+      ).toBe('public, max-age=0, s-maxage=600');
+    }
   });
 });
 

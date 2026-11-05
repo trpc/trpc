@@ -62,13 +62,14 @@ describe('onDemandRoutes', () => {
   });
 
   it('sends the social cards to the function, with their path', () => {
-    const og = all.find((route) => route.src?.startsWith('^(/og/'));
+    const og = all.find((route) => route.src?.startsWith('^(/og'));
     const src = new RegExp(og?.src ?? '');
-    expect(src.exec('/og/docs/client/links.png')?.[1]).toBe(
-      '/og/docs/client/links.png',
+    expect(src.exec('/og/docs/client/links/abcdef0123.png')?.[1]).toBe(
+      '/og/docs/client/links/abcdef0123.png',
     );
-    expect(src.test('/og/index.png')).toBe(true);
-    expect(src.test('/og/')).toBe(false);
+    expect(src.test('/og/docs/client/links')).toBe(true);
+    expect(src.test('/og')).toBe(true);
+    expect(src.test('/ogx')).toBe(false);
     expect(src.test('/docs/og/a.png')).toBe(false);
     expect(og?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
     expect(og?.has).toBeUndefined();

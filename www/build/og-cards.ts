@@ -1,6 +1,6 @@
 /**
- * `virtual:og-cards`: what each page's social card shows, by the card's path
- * (`ogImagePath`), for `routes/og.$.ts` to render on request. It also sets
+ * `virtual:og-cards`: what each page's social card shows, by the page's
+ * path, for `routes/og.$.ts` to render on request. It also sets
  * the versions in their URLs (`og/version.ts`):
  * `import.meta.env.OG_CARDS_VERSION` and `SPONSOR_CLOUD_VERSION`.
  */
@@ -11,31 +11,43 @@ import { Effect, FileSystem, Path } from 'effect';
 import type { Plugin } from 'vite';
 
 import type { OgCard } from '../src/og/card.ts';
-import {
-  sponsorCloudPath,
-  sponsorCloudSource,
-} from '../src/og/sponsor-cloud.ts';
-import { ogImagePath, ogImageSize } from '../src/seo.ts';
+import { sponsorCloudSource } from '../src/og/sponsor-cloud.ts';
+import { versionLike } from '../src/og/version.ts';
+import { ogImageSize } from '../src/seo.ts';
 import { site } from '../src/site.ts';
 import { cardFooter, drawnSponsors, type Sponsor } from '../src/sponsors.ts';
 
 const moduleId = 'virtual:og-cards';
 const resolvedId = `\0${moduleId}`;
 
-/** The module's source: a map from each card's path to the card. */
+/**
+ * Why `path` can't have a social card, if it can't: its card's URL would be
+ * another's (`og/version.ts`) were it `/index`, the home card's, in `_`,
+ * the images that aren't a page's, or ending in what looks like a version.
+ */
+const clash = (path: string) =>
+  path === '/index'
+    ? "is the home card's"
+    : path === '/_' || path.startsWith('/_/')
+      ? "is in /_, the images that aren't a page's"
+      : versionLike.test(path.split('/').at(-1) ?? '')
+        ? 'ends in what looks like a version'
+        : undefined;
+
+/** The module's source: a map from each card's page to the card. */
 export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
-  const byPath = new Map<string, OgCard>();
+  const byPage = new Map<string, OgCard>();
   for (const card of cards) {
-    const path = ogImagePath(card.path);
-    if (path === sponsorCloudPath) {
-      throw new Error(`${card.path}'s social card would be the sponsor cloud`);
+    const reason = clash(card.path);
+    if (reason !== undefined) {
+      throw new Error(`${card.path}'s social card ${reason}`);
     }
-    if (byPath.has(path)) {
+    if (byPage.has(card.path)) {
       throw new Error(`Two social cards for ${card.path}`);
     }
-    byPath.set(path, card);
+    byPage.set(card.path, card);
   }
-  return `export const cards = new Map(${JSON.stringify([...byPath])});\n`;
+  return `export const cards = new Map(${JSON.stringify([...byPage])});\n`;
 };
 
 /** The packages that lay out, rasterize and letter the cards. */
@@ -115,9 +127,8 @@ const cloudModules = ['src/components/sponsors/pack.ts', 'src/sponsors.ts'];
 /**
  * A short hash of what the sponsor cloud draws of `sponsors` but their
  * pictures (`sponsorCloudSource`), and its renderer (`rendererFiles` and
- * `cloudModules`), which `sponsorCloudUrl` puts in its path: the READMEs'
- * sponsors sync (`build/sponsors-sync.ts`) writes it, and the build
- * serves the cloud at it.
+ * `cloudModules`): the build serves the cloud at it, and as the `ETag` of
+ * the READMEs' URL for it (`sponsorCloudUrl`).
  */
 export const sponsorCloudVersion = Effect.fn('sponsorCloudVersion')(function* (
   sponsors: ReadonlyArray<Sponsor>,

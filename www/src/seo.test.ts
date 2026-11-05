@@ -69,7 +69,7 @@ describe('ogImageUrl', () => {
   it("carries the cards' version, so social sites fetch a changed card again", () => {
     vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
     expect(ogImageUrl('/docs/server/procedures', null)).toBe(
-      `${site.url}/og/0123abcdef/docs/server/procedures.png`,
+      `${site.url}/og/docs/server/procedures/0123abcdef.png`,
     );
   });
 
@@ -77,11 +77,11 @@ describe('ogImageUrl', () => {
     vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
     const head = pageHead({ cardDay: '20261105', description: '', path: '/' });
     expect(head.meta).toContainEqual({
-      content: `${site.url}/og/0123abcdef-20261105/index.png`,
+      content: `${site.url}/og/index/0123abcdef-20261105.png`,
       property: 'og:image',
     });
     expect(head.meta).toContainEqual({
-      content: `${site.url}/og/0123abcdef-20261105/index.png`,
+      content: `${site.url}/og/index/0123abcdef-20261105.png`,
       name: 'twitter:image',
     });
   });

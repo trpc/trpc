@@ -3,7 +3,8 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect } from 'effect';
 
 import { drawnSponsors, type Sponsor, sponsors } from '../src/sponsors.ts';
-import { sponsorCloudVersion } from './og-cards.ts';
+import type { OgCard } from '../src/og/card.ts';
+import { ogCardsSource, sponsorCloudVersion } from './og-cards.ts';
 
 const sponsor = (login: string, weight: number): Sponsor => ({
   createdAt: 0,
@@ -37,4 +38,26 @@ describe('sponsorCloudVersion', () => {
         );
       }).pipe(Effect.provide(NodeServices.layer)),
   );
+});
+
+describe('ogCardsSource', () => {
+  const doc = (path: string): OgCard => ({
+    description: '',
+    kind: 'doc',
+    path,
+    title: path,
+    url: `https://trpc.io${path}`,
+  });
+
+  it("refuses a page whose card's URL would be another's", () => {
+    expect(() => ogCardsSource([doc('/index')])).toThrow("home card's");
+    expect(() => ogCardsSource([doc('/_/sponsor-cloud')])).toThrow('/_');
+    expect(() => ogCardsSource([doc('/docs/abcdef0123')])).toThrow(
+      'looks like a version',
+    );
+    expect(() => ogCardsSource([doc('/a'), doc('/a')])).toThrow('Two');
+    expect(ogCardsSource([doc('/docs/a'), doc('/_docs')])).toContain(
+      '"/docs/a"',
+    );
+  });
 });

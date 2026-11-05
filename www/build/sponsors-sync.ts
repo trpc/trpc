@@ -62,7 +62,6 @@ import {
   fetchBackers,
   type OpenCollectiveBacker,
 } from './sponsors-opencollective.ts';
-import { sponsorCloudVersion } from './og-cards.ts';
 import { sponsorsMarkdown, withSponsorsBlock } from './sponsors-readme.ts';
 
 /** The accounts whose sponsors the site shows, together. */
@@ -194,10 +193,7 @@ const readmeUpdates = Effect.fn('readmeUpdates')(function* (opts: {
   readonly sponsors: ReadonlyArray<Sponsor>;
 }) {
   const fs = yield* FileSystem.FileSystem;
-  const markdown = sponsorsMarkdown(
-    opts.sponsors,
-    yield* sponsorCloudVersion(opts.sponsors),
-  );
+  const markdown = sponsorsMarkdown(opts.sponsors);
   return yield* Effect.forEach(opts.readmes, (readme) =>
     Effect.gen(function* () {
       const before = yield* fs.readFileString(readme);
