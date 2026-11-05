@@ -28,6 +28,7 @@ While an agent works on a PR, the PR body starts with a callout that says so and
 - `<activity>`: what you are doing now, in one line.
 - ` ([agent run](<run-url>))` is optional. Add it when your run has a URL.
 - The markers let the script replace or remove the callout without touching the rest of the body. Keep one callout per body, and change it with the script, not by hand.
+- Don't write the markers anywhere else in the body, even in code spans; the script then refuses the body.
 
 ## Script
 
