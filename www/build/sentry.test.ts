@@ -1,4 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
+import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite';
+import { vi } from 'vitest';
 
 import {
   defaultTracesSampleRate,
@@ -8,6 +10,14 @@ import {
   sentryUploadPlugins,
   trpcIo,
 } from './sentry.ts';
+
+vi.mock(import('@sentry/tanstackstart-react/vite'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    sentryTanstackStart: vi.fn(actual.sentryTanstackStart),
+  };
+});
 
 const vercelPreview = {
   SENTRY_DSN: 'https://public@o1.ingest.sentry.io/2',
@@ -77,7 +87,11 @@ describe('sentrySettings', () => {
 
   it("lets Sentry's variables override trpc.io's", () => {
     expect(
-      sentrySettings({ ...trpcIoProduction, ...vercelPreview, ...upload }),
+      sentrySettings({
+        ...trpcIoProduction,
+        SENTRY_DSN: vercelPreview.SENTRY_DSN,
+        ...upload,
+      }),
     ).toMatchObject({
       dsn: vercelPreview.SENTRY_DSN,
       org: upload.SENTRY_ORG,
@@ -161,6 +175,9 @@ describe('sentryUploadPlugins', () => {
     expect(
       pluginNames(sentryUploadPlugins(env, sentrySettings(env), '/dist')),
     ).toContain('sentry-tanstackstart-react-source-maps');
+    expect(vi.mocked(sentryTanstackStart)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ org: trpcIo.org, project: trpcIo.project }),
+    );
     expect(
       sentryUploadPlugins(
         trpcIoProduction,

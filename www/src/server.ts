@@ -20,8 +20,9 @@ const reporting =
 if (reporting) {
   init({
     ...sentryOptions,
-    // Node prints its warnings there too, one per cold start.
-    ignoreErrors: [/^\(node:\d+\) \w*Warning: /],
+    // Node prints its experimental-feature warnings there too, one per cold
+    // start.
+    ignoreErrors: [/^\(node:\d+\) ExperimentalWarning: /],
     // React's render errors only reach `console.error`
     // (`renderRouterToStream`).
     integrations: [captureConsoleIntegration({ levels: ['error'] })],
