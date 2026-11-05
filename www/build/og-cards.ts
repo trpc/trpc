@@ -1,12 +1,17 @@
 /**
  * `virtual:og-cards`: what each page's social card shows, by the card's path
- * (`ogImagePath`), for `routes/og.$.ts` to render on request.
+ * (`ogImagePath`), for `routes/og.$.ts` to render on request. It also sets
+ * `import.meta.env.OG_CARDS_VERSION` (`ogImageUrl`).
  */
+import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+
 import type { Plugin } from 'vite';
 
 import type { OgCard } from '../src/og/card.ts';
 import { sponsorCloudPath } from '../src/og/sponsor-cloud.ts';
 import { ogImagePath } from '../src/seo.ts';
+import { cardFooter } from '../src/sponsors.ts';
 
 const moduleId = 'virtual:og-cards';
 const resolvedId = `\0${moduleId}`;
@@ -27,9 +32,44 @@ export const ogCardsSource = (cards: ReadonlyArray<OgCard>) => {
   return `export const cards = new Map(${JSON.stringify([...byPath])});\n`;
 };
 
+const ogDir = new URL('../src/og/', import.meta.url);
+
+/** What the cards are drawn with: `src/og`'s modules and the wordmark. */
+const rendererFiles = () => [
+  ...readdirSync(ogDir)
+    .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
+    .toSorted()
+    .map((name) => new URL(name, ogDir)),
+  new URL('../public/img/logo-text-black.svg', import.meta.url),
+];
+
+/**
+ * A short hash of what the cards draw but the live numbers and avatar
+ * pictures: every card, the sponsors along their foot, and the renderer.
+ * Social sites keep a card by its URL for days, so `ogImageUrl` puts this
+ * in it, and a card that changes gets a new URL; a deploy that changes no
+ * card keeps the old one.
+ */
+export const ogCardsVersion = (cards: ReadonlyArray<OgCard>) => {
+  const hash = createHash('sha256')
+    .update(ogCardsSource(cards))
+    .update(JSON.stringify(cardFooter));
+  for (const file of rendererFiles()) {
+    hash.update(readFileSync(file));
+  }
+  return hash.digest('hex').slice(0, 10);
+};
+
 export function ogCards(cards: ReadonlyArray<OgCard>): Plugin {
   const source = ogCardsSource(cards);
   return {
+    config: () => ({
+      define: {
+        'import.meta.env.OG_CARDS_VERSION': JSON.stringify(
+          ogCardsVersion(cards),
+        ),
+      },
+    }),
     load: (id) => (id === resolvedId ? source : undefined),
     name: 'trpc-www:og-cards',
     resolveId: (id) => (id === moduleId ? resolvedId : undefined),

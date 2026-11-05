@@ -3,6 +3,8 @@ interface ImportMetaEnv {
   readonly VERCEL_ENV: string;
   /** Where this build is served, at build time (`deploymentOrigin` in `seo.ts`). */
   readonly DEPLOYMENT_ORIGIN: string;
+  /** The social cards' version, at build time (`ogCardsVersion` in `build/og-cards.ts`). */
+  readonly OG_CARDS_VERSION: string;
   /** When this build ran, in ms since the epoch. */
   readonly BUILT_AT: number;
 }

@@ -106,12 +106,20 @@ export function ogImagePath(path: string) {
 /** Social cards' size, in pixels. */
 export const ogImageSize = { height: 630, width: 1200 } as const;
 
-/** A page's social card, as an absolute URL on the deployment that serves it. */
+/**
+ * A page's social card, as an absolute URL on the deployment that serves it,
+ * with `?v=` the cards' version (`build/og-cards.ts`), so social sites fetch
+ * it again when the cards change.
+ */
 export function ogImageUrl(path: string) {
-  return new URL(
+  const url = new URL(
     ogImagePath(path),
     import.meta.env.DEPLOYMENT_ORIGIN || site.url,
-  ).href;
+  );
+  if (import.meta.env.OG_CARDS_VERSION) {
+    url.searchParams.set('v', import.meta.env.OG_CARDS_VERSION);
+  }
+  return url.href;
 }
 
 function articleMeta(article: ArticleSeo | undefined) {

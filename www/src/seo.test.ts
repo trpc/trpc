@@ -65,4 +65,9 @@ describe('ogImageUrl', () => {
   it('is on site.url without a build host', () => {
     expect(ogImageUrl('/')).toBe(`${site.url}/og/index.png`);
   });
+
+  it("carries the cards' version, so social sites fetch a changed card again", () => {
+    vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
+    expect(ogImageUrl('/')).toBe(`${site.url}/og/index.png?v=0123abcdef`);
+  });
 });
