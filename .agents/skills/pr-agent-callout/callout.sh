@@ -106,9 +106,10 @@ case $1 in
     if [[ $body == *$'\n'* && $first_line == *$'\r' ]]; then
       nl=$'\r\n'
     fi
-    line="> 🤖 An agent is working on this PR: $activity"
-    [[ -z $url ]] || line+=" ([agent run]($url))"
-    block="$START$nl> [!NOTE]$nl$line$nl$END"
+    now="> **Now:** $activity"
+    [[ -z $url ]] || now+=" · [agent run]($url)"
+    title='> 🤖 🚧 **An agent is working on this PR** 🚧'
+    block="$START$nl> [!NOTE]$nl$title$nl>$nl$now$nl$END"
     if [[ $has == 1 ]]; then
       new="$before$block$after"
     else

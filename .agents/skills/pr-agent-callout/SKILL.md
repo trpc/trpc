@@ -19,14 +19,16 @@ While an agent works on a PR, the PR body starts with a callout that says so and
 ```md
 <!-- agent-callout:start -->
 > [!NOTE]
-> 🤖 An agent is working on this PR: <activity> ([agent run](<run-url>))
+> 🤖 🚧 **An agent is working on this PR** 🚧
+>
+> **Now:** <activity> · [agent run](<run-url>)
 <!-- agent-callout:end -->
 
 <the rest of the body>
 ```
 
 - `<activity>`: what you are doing now, in one line.
-- ` ([agent run](<run-url>))` is optional. Add it when your run has a URL.
+- ` · [agent run](<run-url>)` is optional. Add it when your run has a URL.
 - The markers let the script replace or remove the callout without touching the rest of the body. Keep one callout per body, and change it with the script, not by hand.
 - Don't write the markers anywhere else in the body, even in code spans; the script then refuses the body.
 

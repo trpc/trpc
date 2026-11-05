@@ -78,13 +78,13 @@ expect_edits() {
   [[ ${n:-0} == "$1" ]] || fail "expected $1 edits, got ${n:-0}"
 }
 
-callout() { # <line ending> <activity line>
-  printf '%s' "<!-- agent-callout:start -->$1> [!NOTE]$1> 🤖 An agent is working on this PR: $2$1<!-- agent-callout:end -->"
+callout() { # <line ending> <text after "Now:">
+  printf '%s' "<!-- agent-callout:start -->$1> [!NOTE]$1> 🤖 🚧 **An agent is working on this PR** 🚧$1>$1> **Now:** $2$1<!-- agent-callout:end -->"
 }
 
 url='https://example.com/agents/run-1'
 lf_body=$'## Why\n\nFixes a bug.\n\n## Testing\n\nRan it.\n'
-lf_a="$(callout $'\n' "Fixing the failing test ([agent run]($url))")"
+lf_a="$(callout $'\n' "Fixing the failing test · [agent run]($url)")"
 lf_b="$(callout $'\n' 'Waiting for CI')"
 
 start 'set on a body without a callout' "$lf_body"
@@ -122,7 +122,7 @@ crlf_body=$'## Why\r\n\r\nFixes a bug.\r\n\r\n## Testing\r\n\r\nRan it.\r\n'
 start 'set on a CRLF body uses CRLF' "$crlf_body"
 run set 'Fixing the failing test' "$url"
 expect_ok
-expect_body "$(callout $'\r\n' "Fixing the failing test ([agent run]($url))")"$'\r\n\r\n'"$crlf_body"
+expect_body "$(callout $'\r\n' "Fixing the failing test · [agent run]($url)")"$'\r\n\r\n'"$crlf_body"
 
 name='set replaces a CRLF callout'
 run set 'Waiting for CI'
