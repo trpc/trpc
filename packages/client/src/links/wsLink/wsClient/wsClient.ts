@@ -47,7 +47,8 @@ export class WsClient {
   /**
    * The last id sent on the wire. Each request gets its own instead of its
    * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
-   * late frames for that attempt must not reach the retry.
+   * late frames for that attempt must not reach the retry. A subscription
+   * sent again after its socket was lost gets a new one for the same reason.
    */
   private lastRequestId = 0;
   private readonly connectionOptions: WebSocketConnectionOptions;
@@ -231,33 +232,30 @@ export class WsClient {
       OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
       TRPCClientError<AnyTRPCRouter>
     >((observer) => {
-      const id = ++this.lastRequestId;
-      const abort = this.batchSend(
-        {
-          id,
-          method: type,
-          params: {
-            input: transformer.input.serialize(input),
-            path,
-            lastEventId,
-          },
+      const message: TRPCClientOutgoingMessage = {
+        id: ++this.lastRequestId,
+        method: type,
+        params: {
+          input: transformer.input.serialize(input),
+          path,
+          lastEventId,
         },
-        {
-          ...observer,
-          next(event) {
-            const transformed = transformResult(event, transformer.output);
+      };
+      const abort = this.batchSend(message, {
+        ...observer,
+        next(event) {
+          const transformed = transformResult(event, transformer.output);
 
-            if (!transformed.ok) {
-              observer.error(TRPCClientError.from(transformed.error));
-              return;
-            }
+          if (!transformed.ok) {
+            observer.error(TRPCClientError.from(transformed.error));
+            return;
+          }
 
-            observer.next({
-              result: transformed.result,
-            });
-          },
+          observer.next({
+            result: transformed.result,
+          });
         },
-      );
+      });
 
       const onAbort = () => observer.complete();
       if (signal?.aborted) {
@@ -267,6 +265,8 @@ export class WsClient {
       }
 
       return () => {
+        // A subscription sent again after its socket was lost has a new id.
+        const { id } = message;
         const pending = this.requestManager.getPendingRequest(id);
         abort();
 
@@ -591,7 +591,8 @@ export class WsClient {
 
       for (const { message, callbacks } of lost) {
         this.started.delete(message);
-        this.requestManager.requeue(message);
+        // The active socket may still have its old id, e.g. while stopping it.
+        this.requestManager.requeue(message, ++this.lastRequestId);
         this.flushOutgoing(message, callbacks);
       }
       if (restored) this.reconnect(null);

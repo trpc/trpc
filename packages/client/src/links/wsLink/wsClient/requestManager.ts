@@ -148,17 +148,21 @@ export class RequestManager {
   }
 
   /**
-   * Moves a pending request back to the outgoing queue, to be sent again.
+   * Moves a pending request back to the outgoing queue, to be sent again
+   * with `id`. Its earlier id's late frames then match nothing.
    */
-  public requeue(message: TRPCClientOutgoingMessage) {
-    const id = String(message.id);
-    const request = this.pendingRequests[id];
+  public requeue(
+    message: TRPCClientOutgoingMessage,
+    id: TRPCClientOutgoingMessage['id'],
+  ) {
+    const request = this.pendingRequests[String(message.id)];
     if (request?.message !== message) return;
 
-    delete this.pendingRequests[id];
+    delete this.pendingRequests[String(message.id)];
+    message.id = id;
     this.outgoingRequests.push({
       ...request,
-      id,
+      id: String(id),
       ws: null,
       successor: null,
       overlapEventIds: null,
