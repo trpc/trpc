@@ -39,7 +39,8 @@ export type QueryState =
  * clears it, so `started` shows again.
  */
 export type SubscriptionState =
-  | Queued
+  /** Queued, and still leaving each of `left`. */
+  | (Queued & { left: readonly Left[] })
   /** Sent on `connection`. */
   | {
       kind: 'sent';
@@ -81,6 +82,8 @@ export type SubscriptionState =
 export interface Left {
   readonly connection: ConnectionId;
   readonly to: ConnectionId;
+  /** The `wire` it was sent with there, which a resent one may not share. */
+  readonly wire: WireId;
 }
 
 /**
@@ -217,10 +220,10 @@ function fail(request: RequestModel, failure: RequestFailure): RequestEffect {
  * Where `batch`, `unbatch` or `send` takes a queued request, or `null` when
  * it's batched for another connection.
  */
-function rebatch(
-  state: Queued,
+function rebatch<TState extends Queued>(
+  state: TState,
   event: Extract<RequestEvent, { type: 'batch' | 'unbatch' | 'send' }>,
-): Queued | { kind: 'sent'; connection: ConnectionId } | null {
+): TState | { kind: 'sent'; connection: ConnectionId } | null {
   switch (event.type) {
     case 'batch':
       if (state.batch !== null && state.batch !== event.connection) {
@@ -323,10 +326,16 @@ type Subscription<TKind extends SubscriptionState['kind']> = Extract<
 
 type SubscriptionTransition = RequestTransition<SubscriptionRequest>;
 
-/** A subscription whose connection is gone resumes on the next one. */
-function resume(request: SubscriptionRequest): SubscriptionTransition {
+/**
+ * A subscription whose connection is gone resumes on the next one, and goes
+ * on leaving `left`.
+ */
+function resume(
+  request: SubscriptionRequest,
+  left: readonly Left[],
+): SubscriptionTransition {
   return {
-    request: { ...request, state: { kind: 'queued', batch: null } },
+    request: { ...request, state: { kind: 'queued', batch: null, left } },
     effects: [],
   };
 }
@@ -400,19 +409,49 @@ function onSubscriptionQueued(
         request: {
           ...request,
           wiredUpTo: newest(request.wiredUpTo, next.connection),
-          state: { ...next, started: false, replayed: [] },
+          state: servedOn(next.connection, state.left, {
+            started: false,
+            replayed: [],
+          }),
         },
         effects: [],
       };
     }
     case 'connectionLost':
-      return resume(request);
+      return {
+        request: {
+          ...request,
+          state: {
+            ...state,
+            batch: state.batch === event.connection ? null : state.batch,
+            left: without(state.left, event.connection),
+          },
+        },
+        effects: [],
+      };
+    case 'response': {
+      if (!isLeftFrame(state.left, event)) return illegal(request, event);
+      const { left, effects } = fromLeft(request, state.left, event);
+      return { request: { ...request, state: { ...state, left } }, effects };
+    }
+    case 'fenced':
+      if (!isLeft(state.left, event.connection)) {
+        return illegal(request, event);
+      }
+      return {
+        request: {
+          ...request,
+          state: {
+            ...state,
+            left: fenced(state.left, event.connection, event.to),
+          },
+        },
+        effects: [],
+      };
     case 'unsubscribe':
     case 'clientClose':
       return settled(request, [complete(request)]);
-    case 'response':
     case 'sendFailed':
-    case 'fenced':
       return illegal(request, event);
     default:
       return exhaustive(event, illegal(request, event));
@@ -429,7 +468,7 @@ function onSubscriptionSent(
       if (event.connection !== state.connection) {
         return illegal(request, event);
       }
-      return resume(request);
+      return resume(request, []);
     case 'response': {
       if (event.connection !== state.connection) {
         return illegal(request, event);
@@ -509,7 +548,12 @@ function fromLeft(
   { connection, message }: Extract<RequestEvent, { type: 'response' }>,
 ): { left: readonly Left[]; effects: RequestEffect[] } {
   if (!('result' in message) || message.result.type === 'stopped') {
-    return { left: without(left, connection), effects: [] };
+    return {
+      left: left.filter(
+        (entry) => entry.connection !== connection || entry.wire !== message.id,
+      ),
+      effects: [],
+    };
   }
   if (message.result.type !== 'data' || message.result.id !== undefined) {
     return { left, effects: [] };
@@ -535,6 +579,16 @@ function isLeft(left: readonly Left[], connection: ConnectionId) {
   return left.some((entry) => entry.connection === connection);
 }
 
+/** Whether a frame is from a connection left, for the `wire` it holds there. */
+function isLeftFrame(
+  left: readonly Left[],
+  { connection, message }: Extract<RequestEvent, { type: 'response' }>,
+) {
+  return left.some(
+    (entry) => entry.connection === connection && entry.wire === message.id,
+  );
+}
+
 function onMoving(
   request: SubscriptionRequest,
   state: Subscription<'moving'>,
@@ -542,6 +596,10 @@ function onMoving(
 ): SubscriptionTransition {
   switch (event.type) {
     case 'response': {
+      if (isLeftFrame(state.left, event)) {
+        const { left, effects } = fromLeft(request, state.left, event);
+        return { request: { ...request, state: { ...state, left } }, effects };
+      }
       if (event.connection === state.to) {
         // The new connection's first frame for it, `started` from a tRPC
         // server, is the ack: stop it on the old one. The new one resends
@@ -572,7 +630,10 @@ function onMoving(
               state: {
                 kind: 'leaving',
                 to: state.to,
-                left: [{ connection: state.from, to: state.to }, ...state.left],
+                left: [
+                  { connection: state.from, to: state.to, wire: request.wire },
+                  ...state.left,
+                ],
                 started: switchedState.started,
                 replayed: switchedState.replayed,
               },
@@ -584,10 +645,6 @@ function onMoving(
           request: switched.request,
           effects: [stopOld, ...switched.effects],
         };
-      }
-      if (isLeft(state.left, event.connection)) {
-        const { left, effects } = fromLeft(request, state.left, event);
-        return { request: { ...request, state: { ...state, left } }, effects };
       }
       if (event.connection !== state.from) return illegal(request, event);
       // Until then, the old connection serves it.
@@ -621,7 +678,11 @@ function onMoving(
         return {
           request: {
             ...request,
-            state: servedOn(state.from, state.left, state),
+            state: servedOn(
+              state.from,
+              without(state.left, event.connection),
+              state,
+            ),
           },
           effects: [],
         };
@@ -630,7 +691,14 @@ function onMoving(
         // Already sent on the new connection, which resends what the old
         // one delivered since.
         return {
-          request: { ...request, state: servedOn(state.to, state.left, state) },
+          request: {
+            ...request,
+            state: servedOn(
+              state.to,
+              without(state.left, event.connection),
+              state,
+            ),
+          },
           effects: [],
         };
       }
@@ -696,6 +764,10 @@ function onLeaving(
   });
   switch (event.type) {
     case 'response': {
+      if (isLeftFrame(state.left, event)) {
+        const { left, effects } = fromLeft(request, state.left, event);
+        return { request: leaving(left), effects };
+      }
       if (event.connection === state.to) {
         const served = onSubscriptionSent(request, onTo, event);
         const servedState = served.request.state;
@@ -712,20 +784,18 @@ function onLeaving(
           effects: served.effects,
         };
       }
-      if (!isLeft(state.left, event.connection)) {
-        return illegal(request, event);
-      }
-      const { left, effects } = fromLeft(request, state.left, event);
-      return { request: leaving(left), effects };
+      return illegal(request, event);
     }
     case 'connectionLost':
+      if (event.connection === state.to) {
+        return resume(request, without(state.left, event.connection));
+      }
       if (isLeft(state.left, event.connection)) {
         return {
           request: leaving(without(state.left, event.connection)),
           effects: [],
         };
       }
-      if (event.connection === state.to) return resume(request);
       return illegal(request, event);
     case 'fenced':
       if (!isLeft(state.left, event.connection)) {
@@ -844,6 +914,14 @@ export function needsFreshWire(
   return request.wiredUpTo !== null && connection <= request.wiredUpTo;
 }
 
+/** The `wire`s `request` is answered with: its own, and those of `left`. */
+export function wiresOf(request: RequestModel): WireId[] {
+  const state = request.state;
+  return 'left' in state
+    ? [request.wire, ...state.left.map((entry) => entry.wire)]
+    : [request.wire];
+}
+
 /** The connections serving `request`. */
 export function servingConnections(request: RequestModel): ConnectionId[] {
   const state = request.state;
@@ -859,6 +937,7 @@ export function servingConnections(request: RequestModel): ConnectionId[] {
     case 'leaving':
       return [state.to, ...state.left.map((entry) => entry.connection)];
     case 'queued':
+      return 'left' in state ? state.left.map((entry) => entry.connection) : [];
     case 'settled':
       return [];
     default:

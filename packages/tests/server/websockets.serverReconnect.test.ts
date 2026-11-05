@@ -825,6 +825,57 @@ test("an untracked subscription gets an event only the old socket had, even when
   sub.unsubscribe();
 });
 
+test('an untracked subscription gets an event only the old socket had when the new socket is lost before it arrives', async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const data: number[] = [];
+  const sub = ctx.client.generated.subscribe(undefined, {
+    onData: (value) => data.push(value),
+  });
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('generated')).toBe(1));
+  ctx.ee.emit('generated', 1);
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+
+  const oldFrames = holdFrames(oldServerSocket, 'sent', {
+    matches: (message) => 'result' in message,
+    later: 'wait',
+  });
+  ctx.ee.emit('generated', 2);
+  await vi.waitFor(() => expect(oldFrames.count()).toBe(1));
+  const stopped = vi.fn();
+  oldServerSocket.on('message', (raw) => {
+    // oxlint-disable-next-line typescript/no-base-to-string
+    if (String(raw).includes('subscription.stop')) stopped();
+  });
+  newSetup.resolve();
+  await vi.waitFor(() => expect(stopped).toHaveBeenCalledTimes(1));
+  const newServerSocket = [...ctx.wss.clients].find(
+    (socket) => socket !== oldServerSocket,
+  );
+  assert(newServerSocket);
+  newServerSocket.terminate();
+  // The subscription is sent again before the old socket's event arrives.
+  await vi.waitFor(() =>
+    expect(ctx.socketsFor('generated').length).toBeGreaterThanOrEqual(3),
+  );
+
+  oldFrames.release();
+  await vi.waitFor(() => expect(data).toContain(2));
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('generated')).toBe(1));
+  ctx.ee.emit('generated', 3);
+  await vi.waitFor(() => expect(data.at(-1)).toBe(3));
+  expect(data).toEqual([1, 2, 3]);
+  sub.unsubscribe();
+});
+
 test("a tracked subscription gets an event without an id that only the old socket had, even when it arrives after the new socket's started", async () => {
   await using ctx = setup({ connectionParams: async () => ({}) });
   const data: number[] = [];

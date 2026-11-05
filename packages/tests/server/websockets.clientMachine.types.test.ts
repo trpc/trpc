@@ -24,11 +24,17 @@ test("a query or mutation can't move, show started or resume", () => {
     started: false,
     replayed: [],
   };
+  const queuedLeaving: QueryState = {
+    kind: 'queued',
+    batch: null,
+    // @ts-expect-error nor leave a connection while it waits
+    left: [{ connection: 1, to: 2, wire: 1 }],
+  };
   const leaving: QueryState = {
     // @ts-expect-error nor leaving
     kind: 'leaving',
     to: 2,
-    left: [{ connection: 1, to: 2 }],
+    left: [{ connection: 1, to: 2, wire: 1 }],
     started: false,
     replayed: [],
   };
@@ -50,13 +56,14 @@ test("a query or mutation can't move, show started or resume", () => {
   };
   // @ts-expect-error only a subscription moves
   moveSubscription(query, 2);
-  expect([moving, leaving, started, resumable]).toHaveLength(4);
+  expect([moving, queuedLeaving, leaving, started, resumable]).toHaveLength(5);
 });
 
 test("a queued subscription hasn't been started", () => {
   const queued: SubscriptionState = {
     kind: 'queued',
     batch: null,
+    left: [],
     // @ts-expect-error `started` is cleared whenever it queues
     started: true,
   };
@@ -67,6 +74,7 @@ test('a queued subscription has no events to replay', () => {
   const queued: SubscriptionState = {
     kind: 'queued',
     batch: null,
+    left: [],
     // @ts-expect-error a queued subscription starts afresh
     replayed: ['1'],
   };

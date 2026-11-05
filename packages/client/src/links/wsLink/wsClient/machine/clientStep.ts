@@ -27,6 +27,7 @@ import {
   needsFreshWire,
   requestTransition,
   servingConnections,
+  wiresOf,
 } from './requestMachine';
 
 /** A connection that ended without the client closing it. */
@@ -103,16 +104,17 @@ export class Step {
   }
 
   applyRequestTransition(request: RequestModel, result: RequestTransition) {
+    const wires = wiresOf(result.request);
+    for (const wire of wiresOf(request)) {
+      if (!wires.includes(wire)) this.wires.delete(wire);
+    }
     if (result.request.state.kind === 'settled') {
       this.requests.delete(request.id);
-      this.wires.delete(request.wire);
+      this.wires.delete(result.request.wire);
       if (this.closing?.delete(request.id)) this.finishCloseIfDone();
     } else {
       this.requests.set(request.id, result.request);
-      if (result.request.wire !== request.wire) {
-        this.wires.delete(request.wire);
-        this.wires.set(result.request.wire, request.id);
-      }
+      for (const wire of wires) this.wires.set(wire, request.id);
     }
     this.effects.push(...result.effects);
   }
@@ -128,7 +130,14 @@ export class Step {
     this.requests.set(
       id,
       method === 'subscription'
-        ? { id, method, lastEventId, wire, wiredUpTo: null, state }
+        ? {
+            id,
+            method,
+            lastEventId,
+            wire,
+            wiredUpTo: null,
+            state: { ...state, left: [] },
+          }
         : { id, method, wire, state },
     );
     this.wires.set(wire, id);

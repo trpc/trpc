@@ -61,9 +61,10 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
   [*] --> queued
-  queued --> queued : batch, unbatch, connectionLost
+  queued --> queued : batch, unbatch, connectionLost, started, data, stopped, error, fenced, an earlier move's fence
   queued --> sent : send
   queued --> settled : unsubscribe, clientClose
+  queued --> leaving : send
   sent --> moving : move, move to a newer one
   sent --> queued : connectionLost
   sent --> sent : started, data

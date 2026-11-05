@@ -105,7 +105,7 @@ interface UserRequest {
   successorReplaced: ConnectionId | null;
   /**
    * The connection its latest move left, until that's lost or the
-   * subscription resumes afresh after a loss.
+   * subscription resumes afresh after losing the socket it was sent on.
    */
   leftFrom: ConnectionId | null;
 }
@@ -136,6 +136,8 @@ const covered = coverage([
   'event after the run delivered after a move',
   "old socket's untracked event delivered after the move completed",
   "old socket's event without an id delivered to a tracked subscription after the move completed",
+  "old socket's untracked event delivered after the new one was lost",
+  'resent on a socket it is still leaving',
   'old socket ended a subscription that left it',
   'old socket fenced a subscription that left it',
   'fence answered after the subscription stopped leaving',
@@ -403,13 +405,13 @@ function servingOf(state: RequestState | undefined): ConnectionId[] {
     case 'leaving':
       return [...leftOf(state), state.to];
     default:
-      return [];
+      return leftOf(state);
   }
 }
 
 /** The connections a subscription has left and still hears from. */
 function leftOf(state: RequestState | undefined): ConnectionId[] {
-  return state?.kind === 'moving' || state?.kind === 'leaving'
+  return state && 'left' in state
     ? state.left.map((entry) => entry.connection)
     : [];
 }
@@ -421,7 +423,8 @@ function isLeaving(
   to: ConnectionId,
 ) {
   return (
-    (state?.kind === 'moving' || state?.kind === 'leaving') &&
+    state !== undefined &&
+    'left' in state &&
     state.left.some(
       (entry) => entry.connection === connection && entry.to === to,
     )
@@ -507,7 +510,11 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     );
     if (awaited) {
       check(
-        !leftOf(after.requests.get(id)?.state).includes(event.connection),
+        !isLeaving(
+          after.requests.get(id)?.state,
+          event.connection,
+          event.fence.to,
+        ),
         `subscription ${id} still leaving connection ${event.connection} after its fence`,
       );
     } else {
@@ -623,8 +630,18 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           }
         }
         if (result?.type === 'data' && request.method === 'subscription') {
+          // A socket it left may still send what its earlier run had,
+          // after the subscription was lost and queued to start again.
+          const fromEarlierRun =
+            state !== undefined &&
+            'left' in state &&
+            state.left.some(
+              (entry) =>
+                entry.connection === frameFrom &&
+                entry.wire === effect.message.id,
+            );
           check(
-            !request.startedAllowed,
+            !request.startedAllowed || fromEarlierRun,
             `subscription ${effect.request} got data before started`,
           );
           if (result.id === undefined) {
@@ -791,6 +808,11 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         covered.add(
           "old socket's untracked event delivered after the move completed",
         );
+        if (state.kind === 'queued') {
+          covered.add(
+            "old socket's untracked event delivered after the new one was lost",
+          );
+        }
         if (
           request?.method === 'subscription' &&
           request.lastEventId !== null
@@ -881,6 +903,13 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     if (previous?.kind === 'leaving' && state.kind === 'moving') {
       covered.add('moved on while still leaving a socket');
     }
+    if (
+      previous?.kind === 'queued' &&
+      state.kind === 'leaving' &&
+      leftOf(state).includes(state.to)
+    ) {
+      covered.add('resent on a socket it is still leaving');
+    }
     if (previous?.kind === 'leaving' && state.kind !== 'leaving') {
       if (
         state.kind === 'sent' &&
@@ -896,7 +925,10 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         covered.add('new socket lost while a subscription left the old one');
       }
     }
-    if (state.kind === 'queued' || user.leftFrom === lost) {
+    if (
+      (state.kind === 'queued' && previous?.kind === 'sent') ||
+      user.leftFrom === lost
+    ) {
       user.leftFrom = null;
     }
     if (previous?.kind === 'sent' && state.kind === 'moving') {
@@ -1885,12 +1917,14 @@ function connectionDiagram() {
 /** Sent on connection 1; a move goes to connection 2. */
 const requestSamples: RequestState[] = [
   { kind: 'queued', batch: null },
+  { kind: 'queued', batch: null, left: [] },
+  { kind: 'queued', batch: null, left: [{ connection: 1, to: 2, wire: 1 }] },
   { kind: 'sent', connection: 1, started: false, replayed: [] },
   { kind: 'moving', from: 1, to: 2, left: [], started: false, replayed: [] },
   {
     kind: 'leaving',
     to: 2,
-    left: [{ connection: 1, to: 2 }],
+    left: [{ connection: 1, to: 2, wire: 1 }],
     started: false,
     replayed: [],
   },
@@ -1952,11 +1986,11 @@ function requestDiagram(method: RequestMethod) {
   return stateDiagram({
     initial: [{ to: 'queued', label: null }],
     edges: sampleTransitions({
-      // Only subscriptions move.
-      states: requestSamples.filter(
-        (state) =>
-          method === 'subscription' ||
-          (state.kind !== 'moving' && state.kind !== 'leaving'),
+      // Only subscriptions move, or leave connections.
+      states: requestSamples.filter((state) =>
+        method === 'subscription'
+          ? state.kind !== 'queued' || 'left' in state
+          : !('left' in state),
       ),
       // A tracked subscription has delivered an event, so it has an id to
       // resume from.
