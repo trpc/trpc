@@ -32,6 +32,11 @@ export function bumpVersion(version: string, bump: Bump) {
   }
 }
 
+/** `11.24.0` → `11`. */
+export function majorOf(version: string) {
+  return parse(version)[0];
+}
+
 /**
  * The canary for the commit `sha`, `commits` commits after the release
  * `version`: `11.22.1` → `11.22.2-canary.42.gd3cd94bdd`. npm drops `+build`

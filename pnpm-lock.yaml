@@ -2931,6 +2931,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.1.1
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
