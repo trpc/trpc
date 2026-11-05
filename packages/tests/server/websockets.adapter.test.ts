@@ -217,6 +217,43 @@ describe('responses that cannot be encoded', () => {
     expect(signal?.aborted).toBe(true);
     expect(onError).toHaveBeenCalledOnce();
   });
+
+  test('a started message that cannot be encoded is reported, even when the iterator then cannot be opened', async () => {
+    const encoder: Encoder = {
+      encode: (data) => {
+        if (
+          isObject(data) &&
+          isObject(data['result']) &&
+          data['result']['type'] === 'started'
+        ) {
+          throw new Error('cannot encode started');
+        }
+        return jsonEncoder.encode(data);
+      },
+      decode: (data) => jsonEncoder.decode(data),
+    };
+    const onError = vi.fn<OnError>();
+    const t = initTRPC.create();
+    const router = t.router({
+      values: t.procedure.subscription((): AsyncIterable<number> => ({
+        [Symbol.asyncIterator]: () => {
+          throw new Error('cannot open');
+        },
+      })),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+      wssServer: { onError, experimental_encoder: encoder },
+    });
+
+    ctx.client.values.subscribe(undefined, {});
+
+    await vi.waitFor(() =>
+      expect(onError.mock.calls.map(([opts]) => opts.error.message)).toContain(
+        'cannot encode started',
+      ),
+    );
+  });
 });
 
 describe('procedures that return the wrong thing', () => {

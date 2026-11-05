@@ -1172,6 +1172,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const opened = attempt(() => iteratorResource(start.iterable));
       if (!opened.ok) {
         subscription.abort();
+        if (!sent.ok) {
+          reportError(request, sent.error);
+        }
         yield* finalErrorReply(request, opened.error);
         yield* finalReply(request, stopped);
         return;
