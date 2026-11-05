@@ -256,8 +256,10 @@ export function disposeNow(resource: Disposable) {
 
 /**
  * Resources by key, like a `Map` that disposes what it drops: `set` disposes
- * the one it replaces, and `delete` the one it removes. Disposing the map
- * disposes them all, newest first.
+ * the one it replaces, and `delete` the one it removes. `release` hands an
+ * entry back without disposing it, such as a subscription that completed by
+ * itself and must not be aborted. Disposing the map disposes them all,
+ * newest first.
  */
 export function createResourceMap<TKey, TResource extends Disposable>() {
   const map = new Map<TKey, TResource>();
@@ -279,6 +281,15 @@ export function createResourceMap<TKey, TResource extends Disposable>() {
         if (!resource) return false;
         map.delete(key);
         disposeNow(resource);
+        return true;
+      },
+      /**
+       * Removes `key` without disposing it, only if it still holds
+       * `resource`: a stale release must not drop the entry that replaced it.
+       */
+      release(key: TKey, resource: TResource) {
+        if (map.get(key) !== resource) return false;
+        map.delete(key);
         return true;
       },
     },
