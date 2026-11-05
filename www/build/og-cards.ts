@@ -11,6 +11,7 @@ import type { Plugin } from 'vite';
 import type { OgCard } from '../src/og/card.ts';
 import { sponsorCloudPath } from '../src/og/sponsor-cloud.ts';
 import { ogImagePath } from '../src/seo.ts';
+import { site } from '../src/site.ts';
 import { cardFooter } from '../src/sponsors.ts';
 
 const moduleId = 'virtual:og-cards';
@@ -54,8 +55,8 @@ const rendererFiles = () => [
 
 /**
  * A short hash of what the cards draw but the live numbers and avatar
- * pictures: every card, the sponsors along their foot, and the renderer
- * (`rendererFiles`).
+ * pictures: every card, the sponsors along their foot, the site's name and
+ * tagline, and the renderer (`rendererFiles`).
  * Social sites keep a card by its URL for days, so `ogImageUrl` puts this
  * in it, and a card that changes gets a new URL; a deploy that changes no
  * card keeps the old one.
@@ -63,7 +64,8 @@ const rendererFiles = () => [
 export const ogCardsVersion = (cards: ReadonlyArray<OgCard>) => {
   const hash = createHash('sha256')
     .update(ogCardsSource(cards))
-    .update(JSON.stringify(cardFooter));
+    .update(JSON.stringify(cardFooter))
+    .update(JSON.stringify(site));
   for (const file of rendererFiles()) {
     hash.update(readFileSync(file));
   }
