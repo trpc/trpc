@@ -201,11 +201,13 @@ test('a subscription without tracked ids gets every event at least once while bo
   expect(feed.events).toEqual([0, 1, 0]);
 });
 
-test('after an untracked subscription moves, the old stream keeps delivering until it ends', async () => {
+test('after an untracked subscription moves, the old stream keeps delivering until it ends; drainIn null sets no deadline', async () => {
   const server = scripted();
   const feed = subscribe(server.fetch);
   const old = await server.nth(0);
-  old.push(connected + message(0) + reconnect);
+  old.push(
+    connected + message(0) + 'event: reconnect\ndata: {"drainIn":null}\n\n',
+  );
   const next = await server.nth(1);
   next.push(connected);
   await sleep(5);
@@ -241,6 +243,39 @@ test.each([
     expect(feed.events).toEqual([1, 2]);
   },
 );
+
+test("at a reconnect notice's deadline, the old stream is left, even before the new one answers", async () => {
+  const server = scripted();
+  const feed = subscribe(server.fetch);
+  const old = await server.nth(0);
+  old.push(
+    connected + message(0, '0') + 'event: reconnect\ndata: {"drainIn":30}\n\n',
+  );
+  const next = await server.nth(1);
+  expect(next.lastEventId).toBe('0');
+  const noticed = Date.now();
+  await until(() => old.aborted);
+  expect(Date.now() - noticed).toBeGreaterThanOrEqual(20);
+  next.push(connected + message(1, '1') + done);
+  await feed.finished;
+  expect(feed.events).toEqual([0, 1]);
+  expect(server.streams).toHaveLength(2);
+});
+
+test("an untracked move's old stream delivers until the notice's deadline", async () => {
+  const server = scripted();
+  const feed = subscribe(server.fetch);
+  const old = await server.nth(0);
+  old.push(connected + 'event: reconnect\ndata: {"drainIn":30}\n\n');
+  const next = await server.nth(1);
+  next.push(connected);
+  old.push(message(1));
+  await until(() => feed.events.length === 1);
+  await until(() => old.aborted);
+  next.push(message(2) + done);
+  await feed.finished;
+  expect(feed.events).toEqual([1, 2]);
+});
 
 test('a subscription made with { reconnect: false } ignores reconnect and stays on its stream', async () => {
   const server = scripted();

@@ -66,7 +66,10 @@ export const serveV11Socket = (
           Effect.sync(() => outbox.close(1012, 'Service restart')),
           FiberMap.clear(calls),
         );
-        const leave = core.drains.add(() => close);
+        const leave = core.drains.add({
+          drain: () => close,
+          notify: () => Effect.void,
+        });
         if (leave) yield* Effect.addFinalizer(() => Effect.sync(leave));
         else yield* close;
         return v11Session(core, outbox, calls, opts);

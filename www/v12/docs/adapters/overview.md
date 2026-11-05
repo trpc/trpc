@@ -95,6 +95,18 @@ process.once('SIGTERM', async () => {
 });
 ```
 
+When the load balancer keeps routing to a stopping server for a while, notify clients without refusing anyone: `handler.broadcastReconnect({ drainIn })` sends every WebSocket, socket and SSE client a `reconnect` notice saying the connection closes in `drainIn`. It drains nothing and closes nothing. The links move as on a drain, and let the old connection go at `drainIn` if it's still open. Every notice carries its `drainIn`, a drain's being its timeout ([When the notice is sent](../subscriptions/overview.md#when-the-notice-is-sent)).
+
+```ts
+process.once('SIGTERM', async () => {
+  // The platform kills the process 30 s after SIGTERM.
+  await handler.broadcastReconnect({ drainIn: '20 seconds' });
+  setTimeout(() => {
+    void handler.dispose().then(() => server.close());
+  }, 20_000);
+});
+```
+
 The timeout is `createFetchHandler({ websocket: { drainTimeout } })`, `'10 seconds'` by default; keep it under your platform's grace period. Like every time option in tRPC, it takes an Effect `Duration.Input`: milliseconds, a string like `'30 seconds'`, or a `Duration`. A `MessagePort` has nowhere to move, so the drain waits for its calls and then closes it. Cloudflare's hibernating sockets don't drain, since a deploy gives the Durable Object no hook to run one: clients reconnect and resume as after a dropped connection.
 
 ## Compression

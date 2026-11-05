@@ -240,16 +240,19 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
      */
     pingInterval?: Duration.Input | false;
     /**
-     * End each subscription's stream after this long; `httpLink` moves it
-     * to a new one from its last `tracked()` id. `reconnectNotice` before
-     * the end, the server sends a `reconnect` event, so the client opens
-     * the new stream while this one still delivers.
+     * End each subscription's stream this long after it starts; `httpLink`
+     * moves it to a new one from its last `tracked()` id. At
+     * `maxDuration - reconnectNotice`, the server sends a `reconnect` event
+     * with `drainIn: reconnectNotice`, so the client opens the new stream
+     * while this one still delivers. Must be zero or more.
      * @default undefined, streams last until the subscription ends
      */
     maxDuration?: Duration.Input;
     /**
-     * How long before `maxDuration` the server sends `reconnect`.
-     * @default '5 seconds'
+     * How long before `maxDuration` the server sends `reconnect`: the
+     * client's time to move. Must be zero or more and at most
+     * `maxDuration`, or `createFetchHandler` throws.
+     * @default '5 seconds', or `maxDuration` when that's shorter
      */
     reconnectNotice?: Duration.Input;
   };
@@ -399,7 +402,8 @@ export interface FetchHandler<TPlatform = undefined> {
    * its calls settle. Each SSE subscription gets a `reconnect` event:
    * `httpLink` opens a new stream from its last `tracked()` id and leaves
    * this one once that's connected. At `timeout` the handler closes what's
-   * left (1012, "service restart"; SSE streams end), interrupting its calls. During the drain, upgrades
+   * left (1012, "service restart"; SSE streams end), interrupting its
+   * calls. Each notice's `drainIn` is `timeout`. During the drain, upgrades
    * get a 503 and sockets handed to `websocket()` are closed (1012), so
    * clients reconnect elsewhere; after it, the handler takes connections
    * again. `serve()` drains when its layer is released, and refuses
@@ -416,6 +420,28 @@ export interface FetchHandler<TPlatform = undefined> {
   drain(opts?: {
     /** @default the handler's `websocket.drainTimeout` */
     timeout?: Duration.Input;
+  }): Promise<void>;
+  /**
+   * Sends every open WebSocket, socket and SSE client a `reconnect`
+   * notice whose `drainIn` says the connection closes in `drainIn`, and
+   * nothing else: the handler keeps serving them and takes new ones, and
+   * closes nothing. `wsLink` and `httpLink` move as on a drain, and let
+   * the old connection go at the deadline if it's still open. Resolves
+   * once the notices are written; a client that doesn't read its notice
+   * within `drainIn` is skipped. Rejects a negative `drainIn`.
+   *
+   * @example
+   * ```ts
+   * process.once('SIGTERM', async () => {
+   *   // The load balancer may route here for a while yet, so keep serving.
+   *   await handler.broadcastReconnect({ drainIn: '20 seconds' });
+   *   setTimeout(() => void handler.dispose(), 20_000);
+   * });
+   * ```
+   */
+  broadcastReconnect(opts: {
+    /** How long until the server closes the connections. */
+    drainIn: Duration.Input;
   }): Promise<void>;
   /**
    * Ends what the handler started. Within `websocket.drainTimeout`, it
@@ -544,6 +570,7 @@ function buildFetchHandler(
       ),
     routes: http.routes,
     drain: (o) => Effect.runPromise(drains.drain({ timeout: o?.timeout })),
+    broadcastReconnect: (o) => Effect.runPromise(drains.broadcast(o.drainIn)),
     dispose: base.dispose,
     [Symbol.asyncDispose]: base.dispose,
   };

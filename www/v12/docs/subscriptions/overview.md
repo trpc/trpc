@@ -85,7 +85,19 @@ While a subscription is quiet, the handler sends a `: ping` comment every 15 sec
 
 ### Stream lifetime
 
-Each stream starts with a `connected` event. `createFetchHandler({ sse: { maxDuration: '10 minutes' } })` ends each one after that long, for platforms that cap response time; streams last until the subscription ends by default. `reconnectNotice` (`'5 seconds'` by default) before the end, and when the handler drains, the server sends a `reconnect` event, and `httpLink` moves the subscription to a new stream before the old one ends ([Subscriptions](../client/links/http.md#subscriptions)). The stream then ends without `done`, so an `EventSource` reconnects with `Last-Event-ID` by itself.
+Each stream starts with a `connected` event. `createFetchHandler({ sse: { maxDuration: '10 minutes' } })` ends each one that long after it starts, for platforms that cap response time; streams last until the subscription ends by default. Before a stream ends, the server sends a `reconnect` event, and `httpLink` moves the subscription to a new stream ([Subscriptions](../client/links/http.md#subscriptions)). The stream then ends without `done`, so an `EventSource` reconnects with `Last-Event-ID` by itself.
+
+#### When the notice is sent
+
+The server sends `reconnect` in three cases. Its data is `{ "drainIn": ms }`, the milliseconds until the server closes the stream:
+
+| Trigger                                                       | When                                                    | `drainIn`                                                                   |
+| ------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `sse.maxDuration`                                             | `maxDuration - reconnectNotice` after the stream starts | `reconnectNotice`                                                           |
+| `handler.drain({ timeout })`, `dispose()`, `serve()` stopping | at once, to every open stream                           | the drain's `timeout` (`websocket.drainTimeout`, `'10 seconds'` by default) |
+| `handler.broadcastReconnect({ drainIn })`                     | at once, to every open stream                           | `drainIn`                                                                   |
+
+`sse.reconnectNotice` is `'5 seconds'` by default, or `maxDuration` when that's shorter. `createFetchHandler` throws for a negative one or one longer than `maxDuration`. `httpLink` opens the new stream when the notice arrives, and leaves the old one once the new one is connected, or at `drainIn` at the latest. A drain ends the stream once its client leaves, or at its timeout. A broadcast doesn't end anything itself. It tells clients the server will be gone in `drainIn` ([Rolling deploys](../adapters/overview.md#rolling-deploys)). WebSocket clients get the same notice from a drain or a broadcast, as a `{ type: 'reconnect', drainIn }` message.
 
 ## Reading with `EventSource`
 

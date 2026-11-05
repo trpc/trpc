@@ -53,6 +53,38 @@ export interface HttpHandler {
   readonly batch: { readonly maxItems: number } | undefined;
 }
 
+const sseLifetime = (
+  sse:
+    | {
+        readonly maxDuration?: Duration.Input | undefined;
+        readonly reconnectNotice?: Duration.Input | undefined;
+      }
+    | undefined,
+): HttpHandler['sseLifetime'] => {
+  if (sse?.maxDuration === undefined) return undefined;
+  const end = Duration.fromInputUnsafe(sse.maxDuration);
+  if (Duration.isNegative(end)) {
+    throw new Error(
+      `sse.maxDuration must be zero or more, got ${Duration.format(end)}`,
+    );
+  }
+  if (sse.reconnectNotice === undefined) {
+    return { end, notice: Duration.min(end, Duration.seconds(5)) };
+  }
+  const notice = Duration.fromInputUnsafe(sse.reconnectNotice);
+  if (Duration.isNegative(notice)) {
+    throw new Error(
+      `sse.reconnectNotice must be zero or more, got ${Duration.format(notice)}`,
+    );
+  }
+  if (Duration.isGreaterThan(notice, end)) {
+    throw new Error(
+      `sse.reconnectNotice must be at most sse.maxDuration, got ${Duration.format(notice)} for ${Duration.format(end)}`,
+    );
+  }
+  return { end, notice };
+};
+
 /** @internal */
 export const makeHttpHandler = (
   opts: {
@@ -87,16 +119,7 @@ export const makeHttpHandler = (
     paths: makeUrlPaths(opts.router, opts.experimental_pathSeparator ?? '.'),
     maxBodySize: opts.maxBodySize ?? Infinity,
     ssePing: timerOption(opts.sse?.pingInterval, '15 seconds'),
-    sseLifetime:
-      opts.sse?.maxDuration === undefined
-        ? undefined
-        : {
-            end: Duration.fromInputUnsafe(opts.sse.maxDuration),
-            notice: Duration.max(
-              Duration.zero,
-              Duration.fromInputUnsafe(opts.sse.reconnectNotice ?? '5 seconds'),
-            ),
-          },
+    sseLifetime: sseLifetime(opts.sse),
     drains,
     batch: maxItems === undefined ? undefined : { maxItems },
   };

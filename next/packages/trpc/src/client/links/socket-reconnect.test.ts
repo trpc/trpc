@@ -615,6 +615,26 @@ test("after an untracked subscription moves, the old connection's deferred value
   await c.link.close();
 });
 
+test("at a reconnect notice's deadline, the old connection is let go: a subscription waiting on the new one moves there", async () => {
+  const c = connect();
+  const feed = subscribe(c.client);
+  const old = await c.socket(0);
+  const first = await old.request('feed');
+  old.receive({ id: first.id, type: 'started' });
+  old.receive(event(first.id, 0, '0'));
+  old.receive({ type: 'reconnect', drainIn: 30 });
+  const next = await c.socket(1);
+  const moved = await next.request('feed');
+  expect(moved.lastEventId).toBe('0');
+  await until(() => old.readyState === 3);
+  next.receive(event(moved.id, 1, '1'));
+  next.receive({ id: moved.id, type: 'done' });
+  await feed.done;
+  expect(feed.events).toEqual([0, 1]);
+  expect(ScriptedWebSocket.opened).toHaveLength(2);
+  await c.link.close();
+});
+
 test("after an untracked subscription moves, the old connection's events are delivered until it's lost", async () => {
   const c = connect();
   const feed = subscribe(c.client);

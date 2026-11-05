@@ -1,9 +1,20 @@
 import { Context, Duration, Effect } from 'effect';
 
-/** Drains one connection within `timeout`: asks its client to move, waits, closes. @internal */
-export type DrainConnection = (
-  timeout: Duration.Duration,
-) => Effect.Effect<void>;
+/** A connection a handler can ask to move. @internal */
+export interface DrainConnection {
+  /** Asks its client to move within `timeout`, waits for it, then closes. */
+  readonly drain: (timeout: Duration.Duration) => Effect.Effect<void>;
+  /** Asks its client to move within `drainIn`, and keeps serving it. */
+  readonly notify: (drainIn: Duration.Duration) => Effect.Effect<void>;
+}
+
+/**
+ * A notice's `drainIn`: the milliseconds until the server closes the
+ * connection, or `null` for no deadline.
+ * @internal
+ */
+export const drainInMillis = (drainIn: Duration.Duration): number | null =>
+  Duration.isFinite(drainIn) ? Math.round(Duration.toMillis(drainIn)) : null;
 
 /** The socket connections a handler serves, so it can drain them. @internal */
 export interface SocketDrains {
@@ -27,6 +38,12 @@ export interface SocketDrains {
     readonly timeout?: Duration.Input | undefined;
     readonly final?: boolean;
   }) => Effect.Effect<void>;
+  /**
+   * Asks every open connection's client to move within `drainIn`, without
+   * draining: connections stay open and new ones are taken. A notice its
+   * client doesn't read by then is given up.
+   */
+  readonly broadcast: (drainIn: Duration.Input) => Effect.Effect<void>;
 }
 
 /** @internal */
@@ -62,10 +79,26 @@ export const makeSocketDrains = (
         const timeout = Duration.fromInputUnsafe(
           opts.timeout ?? defaultTimeout,
         );
-        return Effect.forEach([...open], (drain) => drain(timeout), {
+        return Effect.forEach([...open], (c) => c.drain(timeout), {
           concurrency: 'unbounded',
           discard: true,
         }).pipe(Effect.ensuring(Effect.sync(release)));
+      }),
+    broadcast: (input) =>
+      Effect.suspend(() => {
+        const drainIn = Duration.fromInputUnsafe(input);
+        if (Duration.isNegative(drainIn)) {
+          return Effect.die(
+            new Error(
+              `broadcastReconnect: drainIn must be zero or more, got ${Duration.format(drainIn)}`,
+            ),
+          );
+        }
+        return Effect.forEach(
+          [...open],
+          (c) => Effect.timeoutOption(c.notify(drainIn), drainIn),
+          { concurrency: 'unbounded', discard: true },
+        );
       }),
   };
 };
