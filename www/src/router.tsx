@@ -1,6 +1,7 @@
 import { composeRewrites, createRouter } from '@tanstack/react-router';
 
 import { startAnalytics } from './analytics.ts';
+import { errorOptions } from './components/error-page.tsx';
 import { NotFound } from './components/not-found.tsx';
 import { firstDocRewrite } from './first-doc.ts';
 import {
@@ -19,6 +20,7 @@ import {
 
 export function getRouter() {
   const router = createRouter({
+    ...errorOptions,
     defaultNotFoundComponent: NotFound,
     // Hovering a link loads the page's content chunk, so the click renders
     // without waiting.

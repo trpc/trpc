@@ -63,6 +63,7 @@
     "github-slugger": "2.0.0",
     "hast-util-to-html": "9.0.5",
     "hast-util-to-string": "3.0.1",
+    "jsdom": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "playwright-core": "1.64.1",
