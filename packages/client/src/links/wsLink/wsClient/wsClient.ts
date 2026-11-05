@@ -362,7 +362,6 @@ export class WsClient {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
-          const previous = this.activeConnection;
           const next = this.createConnection();
           this.nextConnection = next;
           try {
@@ -380,6 +379,9 @@ export class WsClient {
           }
 
           if (this.allowReconnect) {
+            // Read only now: losing the active socket while `next` opened may
+            // have restored the one it replaced.
+            const previous = this.activeConnection;
             this.activeConnection = next;
             this.retiredConnection = previous.isOpen() ? previous : null;
             this.connectionAttemptIndex = attemptIndex;
