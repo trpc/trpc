@@ -3,14 +3,10 @@
  * into the site (`src/sentry-config.ts`), and the plugins that upload its
  * source maps (`decisions/docs-site-sentry.md`).
  * Without a DSN the site reports nothing; without an auth token, an
- * organization and a project the build uploads nothing. trpc.io's
- * production build has a DSN, an organization and a project of its own
- * (`trpcIo`), so only the auth token has to be in its environment.
+ * organization and a project the build uploads nothing.
  */
 import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite';
 import type { PluginOption } from 'vite';
-
-import { indexedHost } from '../src/seo.ts';
 
 export type Env = Readonly<Record<string, string | undefined>>;
 
@@ -20,32 +16,10 @@ export interface SentrySettings {
   /** `''` turns Sentry off. */
   readonly dsn: string;
   readonly environment: string;
-  /** Where the build uploads its source maps, or `''`. */
-  readonly org: string;
-  readonly project: string;
   /** The commit's SHA, or `''`. */
   readonly release: string;
   readonly tracesSampleRate: number;
 }
-
-/**
- * Sentry's `trpclabs/www`, which v12.trpc.io reports to too (as environment
- * `v12`). The DSN is public: it's in every page's scripts.
- */
-export const trpcIo = {
-  dsn: 'https://9df52ec0a03cdbc35fb0bbf121a9d1f8@o1028692.ingest.us.sentry.io/4512299651301376',
-  org: 'trpclabs',
-  project: 'www',
-} as const;
-
-/**
- * A production build of the Vercel project whose production domain is
- * trpc.io. That project's variables are per environment and branch: its
- * Sentry ones are on the `v12` branch's previews only.
- */
-const isTrpcIo = (env: Env) =>
-  env['VERCEL_ENV'] === 'production' &&
-  env['VERCEL_PROJECT_PRODUCTION_URL'] === indexedHost;
 
 /** The share of page loads and navigations traced, unless `SENTRY_TRACES_SAMPLE_RATE` says otherwise. */
 export const defaultTracesSampleRate = 0.05;
@@ -61,18 +35,13 @@ function sampleRate(value: string | undefined) {
  * Sentry's integration on Vercel names the DSN `NEXT_PUBLIC_SENTRY_DSN`,
  * Next.js's prefix for values the browser may see; the DSN is public.
  */
-export const sentrySettings = (env: Env): SentrySettings => {
-  const defaults = isTrpcIo(env) ? trpcIo : { dsn: '', org: '', project: '' };
-  return {
-    branch: env['VERCEL_GIT_COMMIT_REF'] || env['GITHUB_REF_NAME'] || '',
-    dsn: env['SENTRY_DSN'] || env['NEXT_PUBLIC_SENTRY_DSN'] || defaults.dsn,
-    environment: env['VERCEL_ENV'] || 'development',
-    org: env['SENTRY_ORG'] || defaults.org,
-    project: env['SENTRY_PROJECT'] || defaults.project,
-    release: env['VERCEL_GIT_COMMIT_SHA'] || env['GITHUB_SHA'] || '',
-    tracesSampleRate: sampleRate(env['SENTRY_TRACES_SAMPLE_RATE']),
-  };
-};
+export const sentrySettings = (env: Env): SentrySettings => ({
+  branch: env['VERCEL_GIT_COMMIT_REF'] || env['GITHUB_REF_NAME'] || '',
+  dsn: env['SENTRY_DSN'] || env['NEXT_PUBLIC_SENTRY_DSN'] || '',
+  environment: env['VERCEL_ENV'] || 'development',
+  release: env['VERCEL_GIT_COMMIT_SHA'] || env['GITHUB_SHA'] || '',
+  tracesSampleRate: sampleRate(env['SENTRY_TRACES_SAMPLE_RATE']),
+});
 
 /**
  * `define` entries for `__TRPC_SENTRY_*__` (`src/env.d.ts`). Not
@@ -102,7 +71,9 @@ export function sentryUploadPlugins(
   dist: string,
 ): Array<PluginOption> {
   const authToken = env['SENTRY_AUTH_TOKEN'];
-  if (!authToken || !settings.org || !settings.project) {
+  const org = env['SENTRY_ORG'];
+  const project = env['SENTRY_PROJECT'];
+  if (!authToken || !org || !project) {
     return [];
   }
   return sentryTanstackStart({
@@ -114,8 +85,8 @@ export function sentryUploadPlugins(
     errorHandler: (error) => {
       console.warn(`[sentry] ${error.message}`);
     },
-    org: settings.org,
-    project: settings.project,
+    org,
+    project,
     // Injected, the release would change the entry chunk on every deploy;
     // the page brings it instead (`src/sentry-client.ts`).
     release: {
