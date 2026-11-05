@@ -6,6 +6,7 @@ import {
   sentryDefines,
   sentrySettings,
   sentryUploadPlugins,
+  trpcIo,
 } from './sentry.ts';
 
 const vercelPreview = {
@@ -13,6 +14,13 @@ const vercelPreview = {
   VERCEL_ENV: 'preview',
   VERCEL_GIT_COMMIT_REF: 'v12-sentry',
   VERCEL_GIT_COMMIT_SHA: '0123abc',
+} satisfies Env;
+
+const trpcIoProduction = {
+  VERCEL_ENV: 'production',
+  VERCEL_GIT_COMMIT_REF: 'main',
+  VERCEL_GIT_COMMIT_SHA: 'd7f0ddb',
+  VERCEL_PROJECT_PRODUCTION_URL: 'trpc.io',
 } satisfies Env;
 
 const upload = {
@@ -36,8 +44,44 @@ describe('sentrySettings', () => {
       branch: 'v12-sentry',
       dsn: 'https://public@o1.ingest.sentry.io/2',
       environment: 'preview',
+      org: '',
+      project: '',
       release: '0123abc',
       tracesSampleRate: defaultTracesSampleRate,
+    });
+  });
+
+  it("reports trpc.io's production build to trpclabs/www without Sentry's variables", () => {
+    expect(sentrySettings(trpcIoProduction)).toEqual({
+      branch: 'main',
+      dsn: trpcIo.dsn,
+      environment: 'production',
+      org: 'trpclabs',
+      project: 'www',
+      release: 'd7f0ddb',
+      tracesSampleRate: defaultTracesSampleRate,
+    });
+  });
+
+  it("leaves trpc.io's previews and other projects' production off", () => {
+    expect(
+      sentrySettings({ ...trpcIoProduction, VERCEL_ENV: 'preview' }),
+    ).toMatchObject({ dsn: '', org: '', project: '' });
+    expect(
+      sentrySettings({
+        ...trpcIoProduction,
+        VERCEL_PROJECT_PRODUCTION_URL: 'trpc-fork.vercel.app',
+      }),
+    ).toMatchObject({ dsn: '', org: '', project: '' });
+  });
+
+  it("lets Sentry's variables override trpc.io's", () => {
+    expect(
+      sentrySettings({ ...trpcIoProduction, ...vercelPreview, ...upload }),
+    ).toMatchObject({
+      dsn: vercelPreview.SENTRY_DSN,
+      org: upload.SENTRY_ORG,
+      project: upload.SENTRY_PROJECT,
     });
   });
 
@@ -52,6 +96,8 @@ describe('sentrySettings', () => {
       branch: '',
       dsn: '',
       environment: 'development',
+      org: '',
+      project: '',
       release: '',
       tracesSampleRate: defaultTracesSampleRate,
     });
@@ -105,5 +151,22 @@ describe('sentryUploadPlugins', () => {
     );
     expect(names).toContain('sentry-tanstackstart-react-source-maps');
     expect(names).toContain('sentry-orchestrion-disabled');
+  });
+
+  it("uploads trpc.io's production build's source maps with the auth token alone", () => {
+    const env = {
+      ...trpcIoProduction,
+      SENTRY_AUTH_TOKEN: upload.SENTRY_AUTH_TOKEN,
+    };
+    expect(
+      pluginNames(sentryUploadPlugins(env, sentrySettings(env), '/dist')),
+    ).toContain('sentry-tanstackstart-react-source-maps');
+    expect(
+      sentryUploadPlugins(
+        trpcIoProduction,
+        sentrySettings(trpcIoProduction),
+        '/dist',
+      ),
+    ).toEqual([]);
   });
 });
