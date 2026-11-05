@@ -39,11 +39,12 @@ interface Request {
    */
   overlapEventIds: Set<string> | null;
   /**
-   * The socket a subscription moved from, until everything it sent before
-   * the stop has arrived. Its events without ids are still delivered, since
-   * the new socket may have started listening after it sent them.
+   * The sockets a subscription moved from, each until everything it sent
+   * before the stop has arrived. Their events without ids are still
+   * delivered, since the new socket may have started listening after they
+   * were sent.
    */
-  movedFrom: WebSocket | null;
+  movedFrom: Set<WebSocket>;
 }
 
 /**
@@ -85,7 +86,7 @@ export class RequestManager {
       ws: null,
       successor: null,
       overlapEventIds: null,
-      movedFrom: null,
+      movedFrom: new Set(),
       callbacks: {
         next: callbacks.next,
         complete: () => {
@@ -141,7 +142,7 @@ export class RequestManager {
     for (const request of requests) {
       request.ws = ws;
       request.successor = null;
-      request.movedFrom = null;
+      request.movedFrom = new Set();
       this.pendingRequests[request.id] = request;
     }
     return requests;
@@ -166,7 +167,7 @@ export class RequestManager {
       ws: null,
       successor: null,
       overlapEventIds: null,
-      movedFrom: null,
+      movedFrom: new Set(),
     });
   }
 
