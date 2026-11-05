@@ -1,4 +1,5 @@
 import { check, coverage, simulateMachine } from './___machineModel';
+import { fc, test } from '@fast-check/vitest';
 import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
   MachineTransition,
@@ -13,7 +14,6 @@ import {
   sampleTransitions,
   stateDiagram,
 } from '@trpc/server/unstable-core-do-not-import';
-import fc from 'fast-check';
 
 // A reconnecting socket with backoff: the smallest machine with the shape
 // of the WebSocket client's.
@@ -218,18 +218,19 @@ const actionsArb = fc.array(
   { maxLength: 50, size: 'max' },
 );
 
-test('random action sequences keep every invariant', () => {
-  goals.reset();
-  fc.assert(fc.property(actionsArb, runActions), {
+describe('reaching every coverage goal', () => {
+  beforeAll(() => goals.reset());
+  test.prop([actionsArb], {
     seed: 7925,
     numRuns: 500,
-  });
-  expect(goals.missing()).toEqual([]);
+    reporter: goals.report,
+  })('random action sequences keep every invariant', runActions);
 });
 
-test('random action sequences keep every invariant, unseeded', () => {
-  fc.assert(fc.property(actionsArb, runActions), { numRuns: 500 });
-});
+test.prop([actionsArb], { numRuns: 500 })(
+  'random action sequences keep every invariant, unseeded',
+  runActions,
+);
 
 test('the diagram matches the transition', () => {
   const edges = sampleTransitions({

@@ -2,6 +2,8 @@ import type {
   MachineTransition,
   StateMachine,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { RunDetails } from 'fast-check';
+import { defaultReportMessage } from 'fast-check';
 
 /**
  * A model-based test harness for the pure state machines that
@@ -89,15 +91,29 @@ export function simulateMachine<
 
 /**
  * Paths the random runs must reach, or the invariants prove little. Mark
- * them from `check`, and assert `missing()` is empty after a seeded run.
+ * them from `check`, `reset()` before a seeded property, and pass `report`
+ * as its fast-check `reporter`.
  */
 export function coverage<const TGoal extends string>(goals: readonly TGoal[]) {
   const covered = new Set<TGoal>();
+  const missing = () => goals.filter((goal) => !covered.has(goal));
   return {
     add(goal: TGoal) {
       covered.add(goal);
     },
-    missing: () => goals.filter((goal) => !covered.has(goal)),
+    missing,
     reset: () => covered.clear(),
+    /**
+     * Fails a failed property as fast-check would, with the seed and path
+     * that replay it. A passed one must have reached every goal.
+     */
+    report: <TValues>(details: RunDetails<TValues>) => {
+      if (details.failed) {
+        throw new Error(defaultReportMessage(details), {
+          cause: details.errorInstance,
+        });
+      }
+      expect(missing()).toEqual([]);
+    },
   };
 }
