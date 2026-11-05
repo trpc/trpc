@@ -7,18 +7,20 @@ import { check, coverage, simulateMachine } from './___machineModel';
  * `clientTransition`, plays the server's side of the effects, and checks the
  * invariants after every step.
  */
+import {
+  clientTransition,
+  initialClient,
+} from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
 import type {
   ClientEffect,
   ClientEvent,
   ClientModel,
   Timer,
-} from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
+} from '@trpc/client/links/wsLink/wsClient/machine/clientModel';
 import {
-  clientTransition,
   drainingConnections,
-  initialClient,
   sendingConnection,
-} from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
+} from '@trpc/client/links/wsLink/wsClient/machine/clientModel';
 import type {
   ConnectionEvent,
   ConnectionModel,

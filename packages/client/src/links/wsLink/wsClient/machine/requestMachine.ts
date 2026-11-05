@@ -661,6 +661,23 @@ export function moveSubscription(
   };
 }
 
+/** The connections serving `request`. */
+export function servingConnections(request: RequestModel): ConnectionId[] {
+  const state = request.state;
+  switch (state.kind) {
+    case 'sent':
+      return [state.connection];
+    case 'moving':
+    case 'leaving':
+      return [state.from, state.to];
+    case 'queued':
+    case 'settled':
+      return [];
+    default:
+      return state satisfies never;
+  }
+}
+
 /**
  * The request state machine: one pure step. Effects are returned as data;
  * the client runs them.

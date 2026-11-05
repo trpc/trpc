@@ -20,19 +20,15 @@ import { TRPCClientError } from '../../../TRPCClientError';
 import type { TRPCConnectionState } from '../../internals/subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
 import { jsonEncoder } from './encoder';
+import { clientTransition, initialClient } from './machine/clientMachine';
 import type {
   ClientEffect,
   ClientEvent,
   ClientModel,
   PublicState,
   Timer,
-} from './machine/clientMachine';
-import {
-  clientTransition,
-  drainingConnections,
-  initialClient,
-  sendingConnection,
-} from './machine/clientMachine';
+} from './machine/clientModel';
+import { drainingConnections, sendingConnection } from './machine/clientModel';
 import type { ConnectionEvent } from './machine/connectionMachine';
 import type {
   ConnectionId,

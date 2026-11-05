@@ -1,7 +1,7 @@
 import type {
   ClientModel,
   Handover,
-} from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
+} from '@trpc/client/links/wsLink/wsClient/machine/clientModel';
 import type {
   QueryRequest,
   QueryState,
