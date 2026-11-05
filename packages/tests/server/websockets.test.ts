@@ -2598,7 +2598,7 @@ describe('a server-requested reconnect hands subscriptions off', () => {
       await vi.waitFor(() => {
         expect(receivedFor('events')).toHaveLength(2);
       });
-      const newResults = resultsOn(ctx.wsClient.connection!.ws!);
+      const newResults = resultsOn(ctx.wsClient.connection!.ws);
       push(2);
       push(3);
       await vi.waitFor(() => {
