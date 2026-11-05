@@ -28,6 +28,8 @@ import { isObservable, observableToAsyncIterable } from '../observable';
 // oxlint-disable-next-line no-restricted-imports
 import {
   createDeferred,
+  createResourceMap,
+  disposeNow,
   exhaustive,
   isAbortError,
   isAsyncIterable,
@@ -455,7 +457,11 @@ type SubscriptionRegistration = Disposable & {
  * all.
  */
 function subscriptionsResource() {
-  const active = new Map<number | string, { abort: () => void }>();
+  // disposing an entry aborts its subscription
+  const active = createResourceMap<
+    number | string,
+    Disposable & { abort: () => void }
+  >();
   return makeResource(
     {
       stop: (id: number | string) => active.get(id)?.abort(),
@@ -484,23 +490,19 @@ function subscriptionsResource() {
           signal: controller.signal,
           abort: controller.abort,
         };
-        active.set(id, subscription);
+        const entry = makeResource(
+          { abort: controller.abort },
+          controller.abort,
+        );
+        active.set(id, entry);
         return {
           ok: true,
-          value: makeResource(subscription, () => {
-            if (active.get(id) === subscription) {
-              active.delete(id);
-            }
-          }),
+          // a subscription that ended by itself isn't aborted
+          value: makeResource(subscription, () => active.release(id, entry)),
         };
       },
     },
-    () => {
-      for (const subscription of active.values()) {
-        subscription.abort();
-      }
-      active.clear();
-    },
+    () => disposeNow(active),
   );
 }
 
