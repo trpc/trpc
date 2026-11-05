@@ -16,6 +16,7 @@ import type {
 import {
   clientTransition,
   initialClient,
+  sendingConnection,
   VISIBLE_REPLACEMENT_FAILURES,
 } from '@trpc/client/links/wsLink/wsClient/machine/clientMachine';
 import type {
@@ -35,6 +36,7 @@ import { requestTransition } from '@trpc/client/links/wsLink/wsClient/machine/re
 import type {
   DiagramEdge,
   TRPCClientIncomingMessage,
+  TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   sampleTransitions,
@@ -87,6 +89,12 @@ const covered = coverage([
   'subscription moved',
   'subscription moved before started',
   'started shown after a move before started',
+  'new request sent on a replaced socket',
+  'old socket event delivered during a move',
+  'replayed event dropped',
+  'subscription confirmed on its new socket',
+  'move undone by a lost successor',
+  'old socket lost during a move',
   'replacement failure shown',
   'retired socket frame dropped',
   'batch send failed',
@@ -110,6 +118,8 @@ class Sim {
   lastRequestId = 0;
   /** The last request made before the latest `close()`. */
   closedAfter = 0;
+  /** The last connection opened before the latest `close()`. */
+  closedConnectionsUpTo = 0;
   sendFails = false;
   private readonly slowFirstSocket: boolean;
 
@@ -131,12 +141,12 @@ class Sim {
 
   // The interpreter's `observeWritability`.
   private observeWritability() {
-    const lifecycle = this.model.lifecycle;
-    if (lifecycle.kind !== 'open') return;
-    if (this.writable(lifecycle.connection)) return;
+    const connection = sendingConnection(this.model);
+    if (connection === null) return;
+    if (this.writable(connection)) return;
     this.dispatch({
       type: 'connection',
-      connection: lifecycle.connection,
+      connection,
       event: { type: 'socketUnwritable' },
     });
   }
@@ -291,10 +301,21 @@ function liveRequestIds(model: ClientModel) {
   return [...model.requests.keys()];
 }
 
-function sentOn(model: ClientModel, connection: ConnectionId) {
-  return [...model.requests.values()].filter(
-    (request) =>
-      request.state.kind === 'sent' && request.state.connection === connection,
+/** The connections that may answer a request. */
+function servingOf(state: RequestState | undefined): ConnectionId[] {
+  switch (state?.kind) {
+    case 'sent':
+      return [state.connection];
+    case 'moving':
+      return [state.from, state.to];
+    default:
+      return [];
+  }
+}
+
+function servedBy(model: ClientModel, connection: ConnectionId) {
+  return [...model.requests.values()].filter((request) =>
+    servingOf(request.state).includes(connection),
   );
 }
 
@@ -304,7 +325,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     event?.type === 'frame' ? event.connection : (null as ConnectionId | null);
   if (event?.type === 'frame' && typeof event.message.id === 'number') {
     const state = before.requests.get(event.message.id)?.state;
-    if (state?.kind !== 'sent' || state.connection !== event.connection) {
+    if (!servingOf(state).includes(event.connection)) {
       if (
         before.connections.get(event.connection)?.state.phase === 'draining'
       ) {
@@ -356,18 +377,21 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
   for (const effect of effects) {
     switch (effect.type) {
       case 'sendRequests': {
-        // Subscriptions move only to a ready socket, and requests go only
-        // on the current one.
+        // Requests go on the ready connection, or while there is none, on
+        // the one it replaces, which still serves until then.
         const connection = after.connections.get(effect.connection);
         check(
-          connection?.state.phase === 'ready',
-          `sent on connection ${effect.connection} in phase ${connection?.state.phase}`,
+          effect.connection === sendingConnection(after),
+          `sent on connection ${effect.connection}, which takes no new requests`,
         );
-        check(
-          after.lifecycle.kind === 'open' &&
-            after.lifecycle.connection === effect.connection,
-          'sent on a connection that is not current',
-        );
+        if (connection?.state.phase === 'draining') {
+          covered.add('new request sent on a replaced socket');
+        } else {
+          check(
+            connection?.state.phase === 'ready',
+            `sent on connection ${effect.connection} in phase ${connection?.state.phase}`,
+          );
+        }
         for (const { id } of effect.requests) {
           const request = sim.requests.get(id)!;
           // I3: a query or mutation is sent at most once.
@@ -375,6 +399,14 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
             request.method === 'subscription' || request.sends === 0,
             `${request.method} ${id} sent twice`,
           );
+          // Subscriptions move only to a ready connection.
+          const previous = before.requests.get(id)?.state.kind;
+          if (previous === 'sent' || previous === 'moving') {
+            check(
+              connection?.state.phase === 'ready',
+              `subscription ${id} moved to connection ${effect.connection} in phase ${connection?.state.phase}`,
+            );
+          }
         }
         break;
       }
@@ -384,15 +416,16 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           request.terminals === 0,
           `next after the end of ${effect.request}`,
         );
-        // I1/I2: only the socket a request was sent on can answer it, so a
-        // retired socket's late frames never reach a moved subscription.
+        // I1/I2: only the sockets a request was sent on can answer it, so
+        // a retired socket's late frames never reach a moved subscription.
         const state = before.requests.get(effect.request)?.state;
         check(
-          frameFrom !== null &&
-            state?.kind === 'sent' &&
-            state.connection === frameFrom,
+          frameFrom !== null && servingOf(state).includes(frameFrom),
           `request ${effect.request} answered by connection ${frameFrom}, not its own`,
         );
+        if (state?.kind === 'moving' && frameFrom === state.from) {
+          covered.add('old socket event delivered during a move');
+        }
         const result =
           'result' in effect.message ? effect.message.result : null;
         if (result?.type === 'started') {
@@ -425,13 +458,30 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         check(request.terminals === 1, `request ${effect.request} ended twice`);
         break;
       }
+      case 'sendStop': {
+        // D6: break after make. A subscription leaves its old connection
+        // only once the new one has answered it, unless it ended.
+        const state = before.requests.get(effect.request)?.state;
+        if (after.requests.has(effect.request) && state?.kind === 'moving') {
+          check(
+            effect.connection === state.from && frameFrom === state.to,
+            `subscription ${effect.request} stopped on connection ${effect.connection} before connection ${state.to} answered`,
+          );
+        } else {
+          check(
+            !after.requests.has(effect.request),
+            `subscription ${effect.request} stopped without moving or ending`,
+          );
+        }
+        break;
+      }
       case 'closeSocket': {
         // I12: make before break.
         const previous = before.connections.get(effect.connection);
         if (previous?.state.phase === 'draining') {
           check(
-            sentOn(after, effect.connection).length === 0,
-            `draining connection ${effect.connection} closed with requests in flight`,
+            servedBy(after, effect.connection).length === 0,
+            `draining connection ${effect.connection} closed while serving requests`,
           );
         }
         break;
@@ -443,14 +493,9 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         }
         break;
       case 'emitState':
-        if (
-          effect.state.state === 'connecting' &&
-          after.draining.length > 0 &&
-          before.lifecycle.kind !== 'open'
-        ) {
+        if (effect.state.state === 'connecting' && after.handover !== null) {
           // D5: replacing a connection stays invisible until it fails 3
-          // times in a row. Losing a replacement that was ready is not
-          // hidden.
+          // times in a row.
           check(
             after.failedReplacements >= VISIBLE_REPLACEMENT_FAILURES,
             `connecting shown after ${after.failedReplacements} failed replacements`,
@@ -465,7 +510,10 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           [...after.requests.keys()].every((id) => id > sim.closedAfter),
           'closed with live requests',
         );
-        check(after.draining.length === 0, 'closed with draining connections');
+        check(
+          after.draining.every((id) => id > sim.closedConnectionsUpTo),
+          'closed with draining connections from before close()',
+        );
         if (sim.lastRequestId === sim.closedAfter) {
           check(after.lifecycle.kind === 'idle', 'closed but not idle');
         }
@@ -476,33 +524,70 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     }
   }
 
-  for (const [id, request] of after.requests) {
-    const previous = before.requests.get(id);
-    if (previous?.state.kind !== 'sent' || request.state.kind === 'settled') {
-      continue;
+  if (event?.type === 'frame' && typeof event.message.id === 'number') {
+    const previous = before.requests.get(event.message.id);
+    const message = event.message;
+    const eventId =
+      'result' in message && message.result.type === 'data'
+        ? message.result.id
+        : undefined;
+    if (
+      previous &&
+      servingOf(previous.state).includes(event.connection) &&
+      eventId !== undefined &&
+      previous.replayed.includes(eventId) &&
+      !effects.some((effect) => effect.type === 'next')
+    ) {
+      covered.add('replayed event dropped');
     }
+  }
+
+  for (const [id, request] of after.requests) {
+    const previous = before.requests.get(id)?.state;
+    const state = request.state;
     const user = sim.requests.get(id)!;
-    const moved = effects.some(
-      (effect) => effect.type === 'sendStop' && effect.request === id,
-    );
-    if (request.state.kind === 'sent' && !moved) continue;
-    if (moved) {
-      // D1: the new connection's `started` is dropped only if the old one's
-      // was shown.
+    if (request.method === 'subscription') {
+      // D1: `started` shows once per (re)start, so a move's `started` is
+      // dropped only if the old connection's was shown.
+      if (
+        state.kind === 'queued' &&
+        (previous?.kind === 'sent' || previous?.kind === 'moving')
+      ) {
+        // A subscription that lost its socket shows `started` again.
+        user.startedAllowed = true;
+        if (user.lastData > 0) covered.add('subscription resumed after a loss');
+      }
       check(
-        request.state.started === !user.startedAllowed,
-        `request ${id} moved with started ${request.state.started}, but the user ${user.startedAllowed ? "hasn't" : 'has'} seen it`,
+        state.kind === 'settled' || state.started === !user.startedAllowed,
+        `subscription ${id} has started ${'started' in state && state.started}, but the user ${user.startedAllowed ? "hasn't" : 'has'} seen it`,
       );
+    }
+    if (previous?.kind === 'sent' && state.kind === 'moving') {
       covered.add('subscription moved');
       if (user.startedAllowed) {
         covered.add('subscription moved before started');
         user.movedBeforeStarted = true;
       }
-    } else {
-      // A subscription that lost its socket shows `started` again.
-      user.startedAllowed = true;
-      if (user.lastData > 0) covered.add('subscription resumed after a loss');
     }
+    if (previous?.kind === 'moving' && state.kind !== 'moving') {
+      if (state.kind === 'sent' && state.connection === previous.from) {
+        covered.add('move undone by a lost successor');
+      } else if (frameFrom === previous.to) {
+        covered.add('subscription confirmed on its new socket');
+      } else if (state.kind === 'sent' && state.connection === previous.to) {
+        covered.add('old socket lost during a move');
+      }
+    }
+  }
+  if (event?.type === 'timer' && event.timer === 'flush') {
+    // I15: a flush sends every queued request when a connection takes them.
+    check(
+      sendingConnection(after) === null ||
+        [...after.requests.values()].every(
+          (request) => request.state.kind !== 'queued',
+        ),
+      'requests left queued after a flush',
+    );
   }
   checkModel(after);
 }
@@ -536,6 +621,12 @@ function checkModel(model: ClientModel) {
   if (current !== null) {
     check(model.connections.has(current), 'current connection missing');
   }
+  if (model.handover !== null) {
+    check(
+      model.draining.at(-1) === model.handover,
+      `handover ${model.handover} isn't the newest draining connection`,
+    );
+  }
   for (const id of liveRequestIds(model)) {
     const state = model.requests.get(id)!.state;
     // I4: every request is queued or owned by a live connection.
@@ -545,10 +636,17 @@ function checkModel(model: ClientModel) {
         phase === 'ready' || phase === 'draining',
         `request ${id} sent on connection ${state.connection} in phase ${phase}`,
       );
+    } else if (state.kind === 'moving') {
+      const from = model.connections.get(state.from)?.state.phase;
+      const to = model.connections.get(state.to)?.state.phase;
+      check(
+        from === 'draining' && (to === 'ready' || to === 'draining'),
+        `request ${id} moving from a ${from} connection to a ${to} one`,
+      );
     } else if (state.kind === 'queued' && state.batch !== null) {
       check(
-        lifecycle.kind === 'open' && lifecycle.connection === state.batch,
-        `request ${id} batched for a connection that isn't current`,
+        state.batch === sendingConnection(model),
+        `request ${id} batched for a connection that takes no new requests`,
       );
     }
     check(state.kind !== 'settled', `settled request ${id} kept`);
@@ -798,7 +896,7 @@ function runSocketAction(
       const id = (callIndex % (sim.lastRequestId + 2)) + 1;
       const state = sim.model.requests.get(id)?.state;
       if (socket.calls.has(id)) return;
-      if (state?.kind === 'sent' && state.connection === connection) return;
+      if (servingOf(state).includes(connection)) return;
       frame(sim, connection, {
         id,
         result: { type: 'data', id: '1', data: 'stray' },
@@ -865,6 +963,7 @@ function run(sim: Sim, action: Action) {
     }
     case 'close':
       sim.closedAfter = sim.lastRequestId;
+      sim.closedConnectionsUpTo = sim.model.lastConnectionId;
       sim.dispatch({ type: 'close' });
       return;
     case 'timer':
@@ -890,20 +989,42 @@ interface Scenario {
   actions: Action[];
   /** The first socket never starts a subscription, so moves beat `started`. */
   slowFirstSocket: boolean;
+  /** Start with a subscription moving to a new socket. */
+  moving: boolean;
 }
 
 const scenarioArb: fc.Arbitrary<Scenario> = fc.record({
   lazy: fc.boolean(),
   actions: fc.array(actionArb, { maxLength: 150, size: 'max' }),
   slowFirstSocket: fc.boolean(),
+  moving: fc.boolean(),
 });
 
-function runScenario({ lazy, slowFirstSocket, actions }: Scenario) {
+/** Random runs seldom get a new socket ready before the old one goes. */
+function newest(action: SocketAction): Action {
+  return { type: 'socket', pick: 0, action, call: 0 };
+}
+const startMove: Action[] = [
+  { type: 'request', method: 'subscription' },
+  newest('open'),
+  newest('params'),
+  newest('started'),
+  newest('data'),
+  newest('reconnect'),
+  { type: 'timer', timer: 'backoff' },
+  newest('open'),
+  newest('params'),
+];
+
+function runScenario({ lazy, slowFirstSocket, moving, actions }: Scenario) {
   const sim = new Sim({ lazy, slowFirstSocket });
-  for (const action of actions) run(sim, action);
+  for (const action of moving ? [...startMove, ...actions] : actions) {
+    run(sim, action);
+  }
   // Let everything settle: the server answers and ends every socket, and
   // the client closes.
   sim.closedAfter = sim.lastRequestId;
+  sim.closedConnectionsUpTo = sim.model.lastConnectionId;
   sim.dispatch({ type: 'close' });
   for (const [connection, socket] of sim.sockets) {
     for (const [id, call] of socket.calls) {
@@ -1019,53 +1140,51 @@ function connectionDiagram() {
   });
 }
 
+/** Sent on connection 1; a move goes to connection 2. */
 const requestSamples: RequestState[] = [
   { kind: 'queued', batch: null, started: false },
   { kind: 'sent', connection: 1, started: false },
+  { kind: 'moving', from: 1, to: 2, started: false },
   { kind: 'settled' },
+];
+
+const responses: { label: string; message: TRPCResponseMessage }[] = [
+  { label: 'started', message: { id: 1, result: { type: 'started' } } },
+  { label: 'data', message: { id: 1, result: { type: 'data', data: 1 } } },
+  { label: 'stopped', message: { id: 1, result: { type: 'stopped' } } },
+  {
+    label: 'error',
+    message: {
+      id: 1,
+      error: {
+        message: '',
+        code: -32603,
+        data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+      },
+    } as never,
+  },
 ];
 
 const requestEvents: { label: string; event: RequestEvent }[] = [
   { label: 'batch', event: { type: 'batch', connection: 1 } },
   { label: 'unbatch', event: { type: 'unbatch' } },
   { label: 'send', event: { type: 'send', connection: 1 } },
-  { label: 'move', event: { type: 'move' } },
-  { label: 'connectionLost', event: { type: 'connectionLost', cause: null } },
+  { label: 'move', event: { type: 'move', to: 2 } },
   {
-    label: 'started',
-    event: {
-      type: 'response',
-      message: { id: 1, result: { type: 'started' } },
-    },
+    label: 'connectionLost',
+    event: { type: 'connectionLost', connection: 1, cause: null },
   },
   {
-    label: 'data',
-    event: {
-      type: 'response',
-      message: { id: 1, result: { type: 'data', data: 1 } },
-    },
+    label: 'connectionLost on new',
+    event: { type: 'connectionLost', connection: 2, cause: null },
   },
-  {
-    label: 'stopped',
-    event: {
-      type: 'response',
-      message: { id: 1, result: { type: 'stopped' } },
-    },
-  },
-  {
-    label: 'error',
-    event: {
-      type: 'response',
-      message: {
-        id: 1,
-        error: {
-          message: '',
-          code: -32603,
-          data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
-        },
-      } as never,
-    },
-  },
+  ...responses.flatMap(({ label, message }) => [
+    { label, event: { type: 'response', connection: 1, message } } as const,
+    {
+      label: `${label} on new`,
+      event: { type: 'response', connection: 2, message },
+    } as const,
+  ]),
   { label: 'unsubscribe', event: { type: 'unsubscribe' } },
   { label: 'clientClose', event: { type: 'clientClose' } },
   { label: 'sendFailed', event: { type: 'sendFailed', cause: null } },
@@ -1075,11 +1194,22 @@ function requestDiagram(method: RequestMethod) {
   return stateDiagram({
     initial: [{ to: 'queued', label: null }],
     edges: sampleTransitions({
-      states: requestSamples,
+      // Only subscriptions move.
+      states: requestSamples.filter(
+        (state) => method === 'subscription' || state.kind !== 'moving',
+      ),
       events: requestEvents,
       next(state, { event }) {
+        // Only a moving subscription hears from its new connection.
+        if (
+          state.kind !== 'moving' &&
+          'connection' in event &&
+          event.connection === 2
+        ) {
+          return null;
+        }
         const result = requestTransition(
-          { id: 1, method, lastEventId: null, state },
+          { id: 1, method, lastEventId: null, replayed: [], state },
           event,
         );
         return result.effects.some(

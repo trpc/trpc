@@ -64,8 +64,12 @@ stateDiagram-v2
   queued --> queued : batch, unbatch, connectionLost
   queued --> sent : send
   queued --> settled : unsubscribe, clientClose
-  sent --> queued : move, connectionLost
+  sent --> moving : move
+  sent --> queued : connectionLost
   sent --> sent : started, data
   sent --> settled : stopped, error, unsubscribe, clientClose, sendFailed
+  moving --> sent : connectionLost, connectionLost on new, started on new, data on new
+  moving --> moving : started, data
+  moving --> settled : stopped, stopped on new, error, error on new, unsubscribe, clientClose, sendFailed
   settled --> [*]
 ```

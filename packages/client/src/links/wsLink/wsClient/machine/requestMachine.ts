@@ -6,7 +6,7 @@ export type RequestId = number;
 export type RequestMethod = 'query' | 'mutation' | 'subscription';
 
 /**
- * Where a request is. Only the connection a request was sent on can answer
+ * Where a request is. Only the connections a request was sent on can answer
  * it, so frames from a connection it has left never reach it. `started`: the
  * subscriber has seen `started` since the subscription last (re)started. A
  * move keeps it, so the new connection's `started` is dropped only if the old
@@ -14,13 +14,22 @@ export type RequestMethod = 'query' | 'mutation' | 'subscription';
  */
 export type RequestState =
   /**
-   * Waiting to be sent: in the next batch on `batch`, which was ready when
-   * the request was made or became ready while it waited, or on the next
-   * ready connection when `batch` is `null`.
+   * Waiting to be sent: in the next batch on `batch`, which serves new
+   * requests, or on the next connection that does when `batch` is `null`.
    */
   | { kind: 'queued'; batch: ConnectionId | null; started: boolean }
   /** Sent on `connection`. */
   | { kind: 'sent'; connection: ConnectionId; started: boolean }
+  /**
+   * A subscription moving make-before-break: sent on `to`, and still served
+   * by `from` until `to` confirms it. Only then is it stopped on `from`.
+   */
+  | {
+      kind: 'moving';
+      from: ConnectionId;
+      to: ConnectionId;
+      started: boolean;
+    }
   | { kind: 'settled' };
 
 export interface RequestModel {
@@ -28,18 +37,30 @@ export interface RequestModel {
   readonly method: RequestMethod;
   /** The id of the last event delivered, sent when a subscription resumes. */
   readonly lastEventId: string | null;
+  /**
+   * Event ids an old connection delivered while the subscription moved.
+   * The new connection resumes from the `lastEventId` sent with it, so it
+   * sends them again; each is dropped once. Kept until a connection serving
+   * the subscription alone sends an event that isn't one of them, which ends
+   * its replay.
+   */
+  readonly replayed: readonly string[];
   readonly state: RequestState;
 }
 
 export type RequestEvent =
   | { type: 'batch'; connection: ConnectionId }
-  /** The connection it was batched for was replaced before the batch went out. */
+  /** The connection it was batched for no longer serves new requests. */
   | { type: 'unbatch' }
   | { type: 'send'; connection: ConnectionId }
-  /** A subscription moves off a replaced connection that is draining. */
-  | { type: 'move' }
-  | { type: 'connectionLost'; cause: unknown }
-  | { type: 'response'; message: TRPCResponseMessage }
+  /** A subscription on a replaced connection is sent on `to` as well. */
+  | { type: 'move'; to: ConnectionId }
+  | { type: 'connectionLost'; connection: ConnectionId; cause: unknown }
+  | {
+      type: 'response';
+      connection: ConnectionId;
+      message: TRPCResponseMessage;
+    }
   | { type: 'unsubscribe' }
   | { type: 'clientClose' }
   | { type: 'sendFailed'; cause: unknown };
@@ -83,6 +104,36 @@ function settle(
   return { request: { ...request, state: { kind: 'settled' } }, effects };
 }
 
+function stop(request: RequestModel, connection: ConnectionId): RequestEffect {
+  return { type: 'sendStop', connection, request: request.id };
+}
+
+/** A subscription whose connection is gone resumes on the next one. */
+function resume(request: RequestModel): RequestTransition {
+  return {
+    request: {
+      ...request,
+      replayed: [],
+      state: { kind: 'queued', batch: null, started: false },
+    },
+    effects: [],
+  };
+}
+
+function lose(
+  request: RequestModel,
+  event: Extract<RequestEvent, { type: 'connectionLost' }>,
+): RequestTransition {
+  if (request.method === 'subscription') return resume(request);
+  return settle(request, [
+    {
+      type: 'fail',
+      request: request.id,
+      failure: { kind: 'connectionLost', cause: event.cause },
+    },
+  ]);
+}
+
 function onQueued(
   request: RequestModel,
   state: Extract<RequestState, { kind: 'queued' }>,
@@ -119,22 +170,7 @@ function onQueued(
         effects: [],
       };
     case 'connectionLost':
-      if (isSubscription) {
-        return {
-          request: {
-            ...request,
-            state: { kind: 'queued', batch: null, started: false },
-          },
-          effects: [],
-        };
-      }
-      return settle(request, [
-        {
-          type: 'fail',
-          request: request.id,
-          failure: { kind: 'connectionLost', cause: event.cause },
-        },
-      ]);
+      return lose(request, event);
     case 'unsubscribe':
       return settle(request, [{ type: 'complete', request: request.id }]);
     case 'clientClose':
@@ -159,6 +195,57 @@ function onQueued(
   }
 }
 
+interface Received {
+  readonly started: boolean;
+  readonly lastEventId: string | null;
+  readonly replayed: readonly string[];
+  /** The id of the event delivered, if it has one. */
+  readonly delivered: string | null;
+  readonly effects: RequestEffect[];
+}
+
+/**
+ * What a subscription makes of a `started` or an event from a connection
+ * serving it, or `null` when the message ends it.
+ */
+function receive(
+  request: RequestModel,
+  started: boolean,
+  message: TRPCResponseMessage,
+): Received | null {
+  if (!('result' in message) || request.method !== 'subscription') return null;
+  const result = message.result;
+  const unchanged: Received = {
+    started,
+    lastEventId: request.lastEventId,
+    replayed: request.replayed,
+    delivered: null,
+    effects: [],
+  };
+  if (result.type === 'started') {
+    if (started) return unchanged;
+    return {
+      ...unchanged,
+      started: true,
+      effects: [{ type: 'next', request: request.id, message }],
+    };
+  }
+  if (result.type === 'stopped') return null;
+  const id = result.type === 'data' ? (result.id ?? null) : null;
+  if (id !== null && request.replayed.includes(id)) {
+    return {
+      ...unchanged,
+      replayed: request.replayed.filter((replayed) => replayed !== id),
+    };
+  }
+  return {
+    ...unchanged,
+    lastEventId: id ?? request.lastEventId,
+    delivered: id,
+    effects: [{ type: 'next', request: request.id, message }],
+  };
+}
+
 function onSent(
   request: RequestModel,
   state: Extract<RequestState, { kind: 'sent' }>,
@@ -167,61 +254,44 @@ function onSent(
   const isSubscription = request.method === 'subscription';
   switch (event.type) {
     case 'move':
-      if (!isSubscription) return illegal(request, event);
+      if (!isSubscription || event.to === state.connection) {
+        return illegal(request, event);
+      }
       return {
         request: {
           ...request,
-          state: { kind: 'queued', batch: null, started: state.started },
-        },
-        effects: [
-          {
-            type: 'sendStop',
-            connection: state.connection,
-            request: request.id,
+          state: {
+            kind: 'moving',
+            from: state.connection,
+            to: event.to,
+            started: state.started,
           },
-        ],
+        },
+        effects: [],
       };
     case 'connectionLost':
-      if (isSubscription) {
+      if (event.connection !== state.connection) {
+        return illegal(request, event);
+      }
+      return lose(request, event);
+    case 'response': {
+      if (event.connection !== state.connection) {
+        return illegal(request, event);
+      }
+      const received = receive(request, state.started, event.message);
+      if (received) {
         return {
           request: {
             ...request,
-            state: { kind: 'queued', batch: null, started: false },
+            lastEventId: received.lastEventId,
+            replayed: received.delivered === null ? received.replayed : [],
+            state: { ...state, started: received.started },
           },
-          effects: [],
+          effects: received.effects,
         };
       }
       return settle(request, [
-        {
-          type: 'fail',
-          request: request.id,
-          failure: { kind: 'connectionLost', cause: event.cause },
-        },
-      ]);
-    case 'response': {
-      const { message } = event;
-      if ('result' in message && isSubscription) {
-        const result = message.result;
-        if (result.type === 'started') {
-          if (state.started) return { request, effects: [] };
-          return {
-            request: { ...request, state: { ...state, started: true } },
-            effects: [{ type: 'next', request: request.id, message }],
-          };
-        }
-        if (result.type !== 'stopped') {
-          const lastEventId =
-            result.type === 'data' && result.id !== undefined
-              ? result.id
-              : request.lastEventId;
-          return {
-            request: { ...request, lastEventId },
-            effects: [{ type: 'next', request: request.id, message }],
-          };
-        }
-      }
-      return settle(request, [
-        { type: 'next', request: request.id, message },
+        { type: 'next', request: request.id, message: event.message },
         { type: 'complete', request: request.id },
       ]);
     }
@@ -230,11 +300,7 @@ function onSent(
         request,
         isSubscription
           ? [
-              {
-                type: 'sendStop',
-                connection: state.connection,
-                request: request.id,
-              },
+              stop(request, state.connection),
               { type: 'complete', request: request.id },
             ]
           : [{ type: 'complete', request: request.id }],
@@ -260,6 +326,106 @@ function onSent(
   }
 }
 
+function onMoving(
+  request: RequestModel,
+  state: Extract<RequestState, { kind: 'moving' }>,
+  event: RequestEvent,
+): RequestTransition {
+  switch (event.type) {
+    case 'response': {
+      if (event.connection === state.to) {
+        // The new connection has it: stop it on the old one, whose frames
+        // for it are dropped from now on.
+        const switched = onSent(
+          {
+            ...request,
+            state: { kind: 'sent', connection: state.to, started: state.started },
+          },
+          { kind: 'sent', connection: state.to, started: state.started },
+          event,
+        );
+        return {
+          request: switched.request,
+          effects: [stop(request, state.from), ...switched.effects],
+        };
+      }
+      if (event.connection !== state.from) return illegal(request, event);
+      // Until then, the old connection serves it.
+      const received = receive(request, state.started, event.message);
+      if (received) {
+        return {
+          request: {
+            ...request,
+            lastEventId: received.lastEventId,
+            replayed:
+              received.delivered === null
+                ? received.replayed
+                : [...received.replayed, received.delivered],
+            state: { ...state, started: received.started },
+          },
+          effects: received.effects,
+        };
+      }
+      return settle(request, [
+        stop(request, state.to),
+        { type: 'next', request: request.id, message: event.message },
+        { type: 'complete', request: request.id },
+      ]);
+    }
+    case 'connectionLost':
+      if (event.connection === state.to) {
+        // Moved nowhere: the old connection still serves it.
+        return {
+          request: {
+            ...request,
+            state: {
+              kind: 'sent',
+              connection: state.from,
+              started: state.started,
+            },
+          },
+          effects: [],
+        };
+      }
+      if (event.connection === state.from) {
+        // Already sent on the new connection, which resends what the old
+        // one delivered since.
+        return {
+          request: {
+            ...request,
+            state: { kind: 'sent', connection: state.to, started: state.started },
+          },
+          effects: [],
+        };
+      }
+      return illegal(request, event);
+    case 'unsubscribe':
+      return settle(request, [
+        stop(request, state.from),
+        stop(request, state.to),
+        { type: 'complete', request: request.id },
+      ]);
+    case 'clientClose':
+      return settle(request, [{ type: 'complete', request: request.id }]);
+    case 'sendFailed':
+      return settle(request, [
+        stop(request, state.from),
+        {
+          type: 'fail',
+          request: request.id,
+          failure: { kind: 'sendFailed', cause: event.cause },
+        },
+      ]);
+    case 'batch':
+    case 'unbatch':
+    case 'send':
+    case 'move':
+      return illegal(request, event);
+    default:
+      return exhaustive(event, illegal(request, event));
+  }
+}
+
 /**
  * The request state machine: one pure step. Effects are returned as data;
  * the client runs them.
@@ -274,6 +440,8 @@ export function requestTransition(
       return onQueued(request, state, event);
     case 'sent':
       return onSent(request, state, event);
+    case 'moving':
+      return onMoving(request, state, event);
     case 'settled':
       return illegal(request, event);
     default:

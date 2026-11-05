@@ -12,9 +12,11 @@ import { WebSocket } from 'ws';
 import { z } from 'zod';
 
 /**
- * A server-requested reconnect is make-before-break: subscriptions stay on the
- * old socket until the new one is open and has sent its connectionParams, then
- * move with their `lastEventId`.
+ * A server-requested reconnect is make-before-break. Until the new socket is
+ * open and has sent its connectionParams, the old one serves everything, new
+ * requests included. Then each subscription is sent on the new socket with
+ * its `lastEventId`, and stopped on the old one once the new one has started
+ * it.
  */
 function setup(opts: {
   connectionParams: (attempt: number) => Promise<Record<string, string>>;
@@ -23,12 +25,38 @@ function setup(opts: {
   const ee = new EventEmitter();
   const events: number[] = [];
   const subscribedFrom = vi.fn<(lastEventId: string | null) => void>();
+  /** The server-side signal of each `events` subscription, in order. */
+  const signals: AbortSignal[] = [];
+  let setupGate: Promise<void> | null = null;
+  const setupHeld = vi.fn();
+  /** Holds back the next subscription's setup, and so its `started`. */
+  async function heldSetup() {
+    const gate = setupGate;
+    setupGate = null;
+    if (gate) {
+      setupHeld();
+      await gate;
+    }
+  }
   const router = t.router({
     greeting: t.procedure.query(() => 'hello'),
+    echo: t.procedure.input(z.string()).mutation(({ input }) => input),
+    /** Untracked, and listening before its setup is held. */
+    values: t.procedure.subscription(async ({ signal }) => {
+      const values = on(ee, 'value', { signal });
+      await heldSetup();
+      return values;
+    }),
     events: t.procedure
       .input(z.object({ lastEventId: z.string().nullish() }).optional())
+      .use(async (mwOpts) => {
+        await heldSetup();
+        return mwOpts.next();
+      })
       .subscription(async function* (subOpts) {
         subscribedFrom(subOpts.input?.lastEventId ?? null);
+        assert(subOpts.signal);
+        signals.push(subOpts.signal);
         let sent = Number(subOpts.input?.lastEventId ?? 0);
         const pushes = on(ee, 'push', { signal: subOpts.signal });
         while (true) {
@@ -56,12 +84,37 @@ function setup(opts: {
   ctx.wsClient.connectionState.subscribe({
     next: (state) => states.push(state.state),
   });
+  /** The server socket each request came on, by path. */
+  const received: { socket: WebSocket; path: unknown }[] = [];
+  ctx.wss.on('connection', (socket) => {
+    socket.on('message', (raw) => {
+      // oxlint-disable-next-line typescript/no-base-to-string
+      const text = raw.toString();
+      if (text === 'PING' || text === 'PONG') return;
+      for (const message of [JSON.parse(text)].flat()) {
+        if (message.method === 'connectionParams') continue;
+        received.push({ socket, path: message.params?.path });
+      }
+    });
+  });
 
   return makeAsyncResource(
     Object.assign(ctx, {
       onOpen,
       states,
+      ee,
       subscribedFrom,
+      signals,
+      setupHeld,
+      socketsFor: (path: string) =>
+        received
+          .filter((request) => request.path === path)
+          .map((request) => request.socket),
+      holdNextSetup() {
+        const gate = createDeferred<void>();
+        setupGate = gate.promise;
+        return gate;
+      },
       push() {
         events.push(events.length + 1);
         ee.emit('push');
@@ -146,11 +199,10 @@ test('a subscription keeps receiving on the old socket while the new one fails t
   expect(ctx.subscribedFrom).toHaveBeenCalledTimes(1);
   ctx.push();
   await vi.waitFor(() => expect(data).toEqual([1, 2]));
-  // New requests wait for the replacement rather than fail.
-  const greeting = ctx.client.greeting.query();
+  // New requests go on the old socket meanwhile.
+  expect(await ctx.client.greeting.query()).toBe('hello');
 
   failParams = false;
-  expect(await greeting).toBe('hello');
   await vi.waitFor(() => {
     expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['2']]);
   });
@@ -296,5 +348,217 @@ test('a moved subscription is stopped on the old socket while that socket still 
   await vi.waitFor(() =>
     expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
   );
+  sub.unsubscribe();
+});
+
+test('queries, mutations and subscriptions made while the new socket opens go on the old one', async () => {
+  const paramsGate = createDeferred<void>();
+  await using ctx = setup({
+    connectionParams: async (attempt) => {
+      if (attempt > 1) await paramsGate.promise;
+      return {};
+    },
+  });
+  using _paramsGate = makeResource({}, () => paramsGate.resolve());
+  await vi.waitFor(() => expect(ctx.wsClient.connection?.state).toBe('open'));
+  const oldSocket = ctx.wsClient.connection!.ws;
+  const [oldServerSocket] = ctx.wss.clients;
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.onOpen).toHaveBeenCalledTimes(2));
+
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  expect(await ctx.client.echo.mutate('hi')).toBe('hi');
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  for (const path of ['greeting', 'echo', 'events']) {
+    expect(ctx.socketsFor(path)).toEqual([oldServerSocket]);
+  }
+
+  // The new subscription moves with the rest.
+  paramsGate.resolve();
+  await vi.waitFor(() => expect(oldSocket.readyState).toBe(WebSocket.CLOSED));
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1, 2]));
+  expect(onStarted).toHaveBeenCalledTimes(1);
+  sub.unsubscribe();
+});
+
+test('a subscription is stopped on the old socket only once the new one has started it', async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+  // The new socket has the subscription but hasn't started it, so the old
+  // one still serves it.
+  ctx.push();
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1, 2, 3]));
+  expect(ctx.signals[0]?.aborted).toBe(false);
+
+  // The new socket resends events 2 and 3, which are dropped.
+  newSetup.resolve();
+  await vi.waitFor(() => expect(ctx.signals[0]?.aborted).toBe(true));
+  ctx.push();
+  await vi.waitFor(() => expect(data.at(-1)).toBe(4));
+  expect(data).toEqual([1, 2, 3, 4]);
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  expect(onStarted).toHaveBeenCalledTimes(1);
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
+  sub.unsubscribe();
+});
+
+test('the old socket closing while the new one opens falls back to a normal reconnect', async () => {
+  const paramsGate = createDeferred<void>();
+  await using ctx = setup({
+    connectionParams: async (attempt) => {
+      if (attempt > 1) await paramsGate.promise;
+      return {};
+    },
+  });
+  using _paramsGate = makeResource({}, () => paramsGate.resolve());
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.onOpen).toHaveBeenCalledTimes(2));
+  ctx.states.length = 0;
+
+  oldServerSocket.terminate();
+  await vi.waitFor(() => expect(ctx.states).toEqual(['connecting']));
+  // Nothing serves requests until the new socket is ready.
+  const greeting = ctx.client.greeting.query();
+  ctx.push();
+  paramsGate.resolve();
+  expect(await greeting).toBe('hello');
+  await vi.waitFor(() => expect(data).toEqual([1, 2]));
+  expect(ctx.socketsFor('greeting')).not.toContain(oldServerSocket);
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  expect(onStarted).toHaveBeenCalledTimes(2);
+  sub.unsubscribe();
+});
+
+test('the old socket closing while a subscription moves leaves it on the new one with no gap or duplicate', async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+  ctx.push();
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1, 2, 3]));
+  ctx.states.length = 0;
+
+  oldServerSocket.terminate();
+  ctx.push();
+  newSetup.resolve();
+  await vi.waitFor(() => expect(data.at(-1)).toBe(4));
+  expect(data).toEqual([1, 2, 3, 4]);
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  expect(onStarted).toHaveBeenCalledTimes(1);
+  expect(ctx.states).toEqual([]);
+  sub.unsubscribe();
+});
+
+test('a new socket lost before it starts a subscription leaves the subscription on the old one', async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const onStarted = vi.fn();
+  const data: number[] = [];
+  const sub = ctx.client.events.subscribe(undefined, {
+    onStarted,
+    onData: (envelope) => data.push(envelope.data),
+  });
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const lostSetup = ctx.holdNextSetup();
+  using _lostSetup = makeResource({}, () => lostSetup.resolve());
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+  ctx.states.length = 0;
+
+  const nextSetup = ctx.holdNextSetup();
+  using _nextSetup = makeResource({}, () => nextSetup.resolve());
+  const lostServerSocket = [...ctx.wss.clients].find(
+    (socket) => socket !== oldServerSocket,
+  );
+  assert(lostServerSocket);
+  lostServerSocket.terminate();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(2));
+  ctx.push();
+  await vi.waitFor(() => expect(data).toEqual([1, 2]));
+  expect(ctx.signals[0]?.aborted).toBe(false);
+
+  nextSetup.resolve();
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
+  ctx.push();
+  await vi.waitFor(() => expect(data.at(-1)).toBe(3));
+  expect(data).toEqual([1, 2, 3]);
+  expect(ctx.subscribedFrom.mock.calls).toEqual([[null], ['1']]);
+  expect(onStarted).toHaveBeenCalledTimes(1);
+  expect(ctx.states).toEqual([]);
+  sub.unsubscribe();
+});
+
+test('an untracked subscription gets an event published while both sockets listen twice, and misses none', async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const data: unknown[] = [];
+  const sub = ctx.client.values.subscribe(undefined, {
+    onData: (value) => data.push(value),
+  });
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('value')).toBe(1));
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+
+  // The new socket listens, but hasn't started the subscription.
+  ctx.ee.emit('value', 1);
+  await vi.waitFor(() => expect(data).toEqual([[1]]));
+  newSetup.resolve();
+  await vi.waitFor(() => expect(data).toEqual([[1], [1]]));
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('value')).toBe(1));
+  ctx.ee.emit('value', 2);
+  await vi.waitFor(() => expect(data).toEqual([[1], [1], [2]]));
   sub.unsubscribe();
 });

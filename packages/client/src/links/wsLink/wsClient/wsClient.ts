@@ -27,7 +27,11 @@ import type {
   PublicState,
   Timer,
 } from './machine/clientMachine';
-import { clientTransition, initialClient } from './machine/clientMachine';
+import {
+  clientTransition,
+  initialClient,
+  sendingConnection,
+} from './machine/clientMachine';
 import type { ConnectionEvent } from './machine/connectionMachine';
 import type {
   ConnectionId,
@@ -158,12 +162,12 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
    * looks before relying on it.
    */
   function observeWritability() {
-    const lifecycle = runtime.state.lifecycle;
-    if (lifecycle.kind !== 'open') return;
-    if (transports.get(lifecycle.connection)?.isWritable()) return;
+    const connection = sendingConnection(runtime.state);
+    if (connection === null) return;
+    if (transports.get(connection)?.isWritable()) return;
     runtime.send({
       type: 'connection',
-      connection: lifecycle.connection,
+      connection,
       event: { type: 'socketUnwritable' },
     });
   }

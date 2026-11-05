@@ -54,6 +54,11 @@ export interface ClientModel {
   readonly connections: ReadonlyMap<ConnectionId, ConnectionModel>;
   /** Connections replaced at the server's request, oldest first. */
   readonly draining: readonly ConnectionId[];
+  /**
+   * The newest connection the server asked to replace. It takes new requests
+   * whenever no connection is ready, until it's closed or lost.
+   */
+  readonly handover: ConnectionId | null;
   /** Every live request. Settled requests are removed. */
   readonly requests: ReadonlyMap<RequestId, RequestModel>;
   readonly flushScheduled: boolean;
@@ -113,6 +118,19 @@ export interface ClientTransition {
 }
 
 /**
+ * The connection new requests go on: the ready one, or while there is none,
+ * the one the server asked to replace, which still serves until then.
+ */
+export function sendingConnection(
+  model: Pick<ClientModel, 'lifecycle' | 'handover'>,
+): ConnectionId | null {
+  const { lifecycle } = model;
+  if (lifecycle.kind === 'open') return lifecycle.connection;
+  if (lifecycle.kind === 'idle') return null;
+  return model.handover;
+}
+
+/**
  * The mutable scratchpad for one transition. Nothing outside a transition
  * sees it: `clientTransition` returns a fresh model and the effects.
  */
@@ -120,6 +138,7 @@ class Step {
   lifecycle: Lifecycle;
   readonly connections: Map<ConnectionId, ConnectionModel>;
   draining: ConnectionId[];
+  handover: ConnectionId | null;
   readonly requests: Map<RequestId, RequestModel>;
   flushScheduled: boolean;
   inactivity: boolean;
@@ -135,6 +154,7 @@ class Step {
     this.lifecycle = model.lifecycle;
     this.connections = new Map(model.connections);
     this.draining = [...model.draining];
+    this.handover = model.handover;
     this.requests = new Map(model.requests);
     this.flushScheduled = model.flushScheduled;
     this.inactivity = model.inactivity;
@@ -151,6 +171,7 @@ class Step {
         lifecycle: this.lifecycle,
         connections: this.connections,
         draining: this.draining,
+        handover: this.handover,
         requests: this.requests,
         flushScheduled: this.flushScheduled,
         inactivity: this.inactivity,
@@ -181,6 +202,13 @@ class Step {
       (request) =>
         request.state.kind === 'sent' &&
         request.state.connection === connection,
+    );
+  }
+
+  /** Requests `connection` serves: sent on it, or moving to or from it. */
+  servedBy(connection: ConnectionId) {
+    return [...this.requests.values()].filter((request) =>
+      servingConnections(request).includes(connection),
     );
   }
 
@@ -251,17 +279,25 @@ class Step {
   }
 
   /**
-   * Closes a replaced connection once nothing is in flight on it and its
-   * replacement is ready, or the client is closing.
+   * Closes a replaced connection once its replacement is ready, or the
+   * client is closing, and nothing is left on it: every request sent on it
+   * has finished, and every subscription that moved has been confirmed on
+   * the new connection.
    */
   closeIfDrained(connection: ConnectionId) {
     if (this.connections.get(connection)?.state.phase !== 'draining') return;
     if (this.lifecycle.kind !== 'open' && this.lifecycle.kind !== 'idle') {
       return;
     }
-    if (this.sentOn(connection).length > 0) return;
-    this.draining = this.draining.filter((id) => id !== connection);
+    if (this.servedBy(connection).length > 0) return;
+    this.forget(connection);
     this.closeConnection(connection);
+  }
+
+  /** A replaced connection no longer serves anything. */
+  forget(connection: ConnectionId) {
+    this.draining = this.draining.filter((id) => id !== connection);
+    if (this.handover === connection) this.handover = null;
   }
 
   // --- state and timers ---------------------------------------------------
@@ -299,19 +335,19 @@ class Step {
 
   /**
    * Sends the queued requests as one batch: on the next tick when a
-   * connection is ready, so requests made together go together, or as soon
-   * as the next connection is ready.
+   * connection serves new requests, so requests made together go together,
+   * or as soon as the next connection is ready.
    */
   scheduleFlush() {
-    const lifecycle = this.lifecycle;
-    if (lifecycle.kind === 'idle') {
+    if (this.lifecycle.kind === 'idle') {
       if (this.queued().length === 0) return;
       if (this.publicState.state === 'idle') this.setConnecting(null);
       this.connect(null);
       return;
     }
-    if (lifecycle.kind !== 'open') return;
-    this.batchFor(lifecycle.connection);
+    const connection = sendingConnection(this);
+    if (connection === null) return;
+    this.batchFor(connection);
     if (this.flushScheduled) return;
     this.flushScheduled = true;
     this.effects.push({ type: 'startTimer', timer: 'flush' });
@@ -319,29 +355,72 @@ class Step {
 
   batchFor(connection: ConnectionId) {
     for (const request of this.queued()) {
-      if (request.state.kind === 'queued' && request.state.batch === null) {
-        this.applyRequest(request, { type: 'batch', connection });
+      if (request.state.kind !== 'queued') continue;
+      if (request.state.batch !== null && request.state.batch !== connection) {
+        // Batched for a replaced connection that no longer takes requests.
+        this.applyRequest(request, { type: 'unbatch' });
       }
+      this.applyRequest(this.requests.get(request.id) ?? request, {
+        type: 'batch',
+        connection,
+      });
     }
   }
 
-  flush() {
+  /**
+   * Sends the queued requests, and the subscriptions in `moved` that just
+   * started moving to this connection, as one batch.
+   */
+  flush(moved: readonly RequestId[]) {
     this.stopFlush();
-    if (this.lifecycle.kind !== 'open') return;
-    const connection = this.lifecycle.connection;
+    const connection = sendingConnection(this);
+    if (connection === null) return;
     const queued = this.queued();
-    if (queued.length === 0) return;
     for (const request of queued) {
       this.applyRequest(request, { type: 'send', connection });
     }
+    const requests = [
+      ...moved.flatMap((id) => this.requests.get(id) ?? []),
+      ...queued,
+    ];
+    if (requests.length === 0) return;
     this.effects.push({
       type: 'sendRequests',
       connection,
-      requests: queued.map((request) => ({
+      requests: requests.map((request) => ({
         id: request.id,
         lastEventId: request.lastEventId,
       })),
     });
+  }
+
+  /**
+   * Starts moving the subscriptions on connections the ready one replaced:
+   * each is sent on the ready one too, and stays on its old connection until
+   * the ready one confirms it. Returns the ones to send.
+   */
+  startMoves(): RequestId[] {
+    const lifecycle = this.lifecycle;
+    if (lifecycle.kind !== 'open') return [];
+    const moved: RequestId[] = [];
+    for (const previous of this.draining) {
+      for (const request of this.sentOn(previous)) {
+        if (request.method !== 'subscription') continue;
+        this.applyRequest(request, { type: 'move', to: lifecycle.connection });
+        moved.push(request.id);
+      }
+    }
+    return moved;
+  }
+
+  /**
+   * A subscription can land on a replaced connection after the moves began:
+   * the connection it was moving to was replaced too, or the one it was
+   * moving from was lost. It moves on at once.
+   */
+  moveStragglers() {
+    const moved = this.startMoves();
+    if (moved.length > 0) this.flush(moved);
   }
 
   // --- lifecycle steps ----------------------------------------------------
@@ -361,38 +440,33 @@ class Step {
       this.setState({ state: 'pending' });
     }
 
-    // Subscriptions move off the connections this one replaced only now, so
-    // they're never without a connection that can deliver their events.
-    for (const previous of this.draining) {
-      for (const request of this.sentOn(previous)) {
-        if (request.method === 'subscription') {
-          this.applyRequest(request, { type: 'move' });
-        }
-      }
-    }
+    // Subscriptions are sent here before they leave the connections this one
+    // replaced, which serve them until this one confirms each.
+    const moved = this.startMoves();
+    this.batchFor(connection);
+    this.flush(moved);
     for (const previous of [...this.draining]) {
       this.closeIfDrained(previous);
     }
-
-    this.batchFor(connection);
-    this.flush();
   }
 
   /**
-   * The server asked the current connection to reconnect. A ready one drains
-   * while a new one opens: nothing in flight on it fails or is sent again.
+   * The server asked the current connection to reconnect. A ready one keeps
+   * serving while a new one opens: what's in flight on it finishes there, and
+   * new requests go on it until the new one is ready.
    */
   retire(connection: ConnectionId, before: ConnectionModel) {
     if (before.state.phase === 'ready') {
       // Invisible to subscribers: the state stays `pending` while the old
-      // connection serves its requests.
+      // connection serves.
       this.applyConnection(connection, { type: 'drain' });
       this.draining.push(connection);
+      this.handover = connection;
     } else {
       this.closeConnection(connection);
-    }
-    for (const request of this.queuedFor(connection)) {
-      this.applyRequest(request, { type: 'unbatch' });
+      for (const request of this.queuedFor(connection)) {
+        this.applyRequest(request, { type: 'unbatch' });
+      }
     }
     this.failedReplacements = 0;
     this.scheduleReconnect(nextRetryIndex(before, { type: 'drain' }));
@@ -401,15 +475,21 @@ class Step {
   /**
    * Settles the requests of a connection that is gone. Queries and mutations
    * sent on it fail, since they may have run, and so do those waiting for its
-   * next batch. Subscriptions are queued to resume on the next connection.
+   * next batch, unless it was standing in for its replacement: those wait
+   * for the replacement. Subscriptions are queued to resume on the next
+   * connection; one moving away carries on on the other connection.
    */
   onLost(connection: ConnectionId, cause: unknown) {
-    this.draining = this.draining.filter((id) => id !== connection);
-    for (const request of [
-      ...this.sentOn(connection),
-      ...this.queuedFor(connection),
-    ]) {
-      this.applyRequest(request, { type: 'connectionLost', cause });
+    const wasHandover = this.handover === connection;
+    this.forget(connection);
+    for (const request of this.queuedFor(connection)) {
+      this.applyRequest(
+        request,
+        wasHandover ? { type: 'unbatch' } : { type: 'connectionLost', connection, cause },
+      );
+    }
+    for (const request of this.servedBy(connection)) {
+      this.applyRequest(request, { type: 'connectionLost', connection, cause });
     }
   }
 
@@ -417,27 +497,42 @@ class Step {
   afterLost(lost: ConnectionModel, event: ConnectionEvent, cause: unknown) {
     const lifecycle = this.lifecycle;
     if (!this.isCurrent(lost.id)) {
-      // A draining connection: its subscriptions go on the current one, if
+      // A replaced connection: its subscriptions go on the current one, if
       // it's ready, or wait for the next.
       if (
         (lifecycle.kind === 'backoff' || lifecycle.kind === 'connecting') &&
-        this.draining.length === 0
+        this.handover === null
       ) {
         this.setConnecting({ message: 'WebSocket closed', cause });
       }
+      this.moveStragglers();
       this.scheduleFlush();
       return;
     }
 
-    if (lifecycle.kind === 'connecting') {
-      if (this.draining.length === 0) {
-        this.setConnecting({ message: 'Initialization error', cause });
-      } else if (++this.failedReplacements >= VISIBLE_REPLACEMENT_FAILURES) {
-        this.setConnecting({ message: 'Initialization error', cause });
+    const opening = lifecycle.kind === 'connecting';
+    const retryIndex = opening
+      ? lost.retryIndex === null
+        ? 0
+        : lost.retryIndex + 1
+      : nextRetryIndex(lost, event);
+    if (this.handover !== null) {
+      // The connection it replaced still serves, so this is shown only once
+      // replacing it has failed a few times in a row.
+      if (++this.failedReplacements >= VISIBLE_REPLACEMENT_FAILURES) {
+        this.setConnecting({
+          message: opening ? 'Initialization error' : 'WebSocket closed',
+          cause,
+        });
       }
-      this.scheduleReconnect(
-        lost.retryIndex === null ? 0 : lost.retryIndex + 1,
-      );
+      this.scheduleReconnect(retryIndex);
+      this.scheduleFlush();
+      return;
+    }
+
+    if (opening) {
+      this.setConnecting({ message: 'Initialization error', cause });
+      this.scheduleReconnect(retryIndex);
       return;
     }
 
@@ -457,6 +552,7 @@ class Step {
     this.stopFlush();
     const lifecycle = this.lifecycle;
     this.lifecycle = { kind: 'idle' };
+    this.handover = null;
     this.failedReplacements = 0;
     if (lifecycle.kind === 'backoff') {
       this.effects.push({ type: 'cancelTimer', timer: 'backoff' });
@@ -480,8 +576,8 @@ class Step {
     if (!this.closing || this.closing.size > 0) return;
     this.closing = null;
     for (const connection of [...this.draining]) {
-      if (this.sentOn(connection).length > 0) continue;
-      this.draining = this.draining.filter((id) => id !== connection);
+      if (this.servedBy(connection).length > 0) continue;
+      this.forget(connection);
       this.closeConnection(connection);
     }
     if (this.lifecycle.kind === 'idle') {
@@ -496,6 +592,22 @@ class Step {
       this.setConnecting(null);
     }
     this.effects.push({ type: 'closed' });
+  }
+}
+
+/** The connections serving `request`. */
+function servingConnections(request: RequestModel): ConnectionId[] {
+  const state = request.state;
+  switch (state.kind) {
+    case 'sent':
+      return [state.connection];
+    case 'moving':
+      return [state.from, state.to];
+    case 'queued':
+    case 'settled':
+      return [];
+    default:
+      return state satisfies never;
   }
 }
 
@@ -611,14 +723,12 @@ function onFrame(
 
   const request =
     typeof message.id === 'number' ? step.requests.get(message.id) : undefined;
-  if (
-    request?.state.kind !== 'sent' ||
-    request.state.connection !== connection
-  ) {
-    return;
-  }
-  step.applyRequest(request, { type: 'response', message });
-  if (!step.requests.has(request.id)) step.closeIfDrained(connection);
+  if (!request) return;
+  const serving = servingConnections(request);
+  if (!serving.includes(connection)) return;
+  step.applyRequest(request, { type: 'response', connection, message });
+  step.moveStragglers();
+  for (const previous of serving) step.closeIfDrained(previous);
 }
 
 /**
@@ -637,11 +747,13 @@ export function clientTransition(
         id: event.id,
         method: event.method,
         lastEventId: event.lastEventId,
+        replayed: [],
         state: { kind: 'queued', batch: null, started: false },
       });
       step.resetInactivity();
-      if (step.lifecycle.kind === 'backoff') {
-        // A new request doesn't wait out the backoff.
+      if (step.lifecycle.kind === 'backoff' && step.handover === null) {
+        // A new request doesn't wait out the backoff, unless a replaced
+        // connection still takes requests meanwhile.
         step.effects.push({ type: 'cancelTimer', timer: 'backoff' });
         step.connect(step.lifecycle.retryIndex);
       }
@@ -651,10 +763,10 @@ export function clientTransition(
     case 'unsubscribe': {
       const request = step.requests.get(event.id);
       if (!request) break;
-      const sentOn =
-        request.state.kind === 'sent' ? request.state.connection : null;
       step.applyRequest(request, { type: 'unsubscribe' });
-      if (sentOn !== null) step.closeIfDrained(sentOn);
+      for (const previous of servingConnections(request)) {
+        step.closeIfDrained(previous);
+      }
       break;
     }
     case 'close':
@@ -664,7 +776,7 @@ export function clientTransition(
       switch (event.timer) {
         case 'flush':
           step.flushScheduled = false;
-          step.flush();
+          step.flush([]);
           break;
         case 'backoff':
           if (step.lifecycle.kind === 'backoff') {
@@ -695,7 +807,7 @@ export function clientTransition(
     case 'sendFailed':
       for (const id of event.requests) {
         const request = step.requests.get(id);
-        if (request?.state.kind === 'sent') {
+        if (request?.state.kind === 'sent' || request?.state.kind === 'moving') {
           step.applyRequest(request, {
             type: 'sendFailed',
             cause: event.cause,
@@ -716,6 +828,7 @@ export function initialClient(opts: { lazy: boolean }): ClientTransition {
     lifecycle: { kind: 'idle' },
     connections: new Map(),
     draining: [],
+    handover: null,
     requests: new Map(),
     flushScheduled: false,
     inactivity: false,
