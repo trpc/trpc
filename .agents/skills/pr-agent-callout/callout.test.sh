@@ -25,8 +25,8 @@ case "$*" in
   "pr view $number --json body --template {{.body}}")
     cat "$STUB/body"
     ;;
-  "pr edit $number --body-file "*)
-    cp "$5" "$STUB/body"
+  "api --method PATCH repos/{owner}/{repo}/pulls/$number -F body=@"*)
+    cp "${6#body=@}" "$STUB/body"
     printf '%s\n' "${GH_TOKEN-unset}" >>"$STUB/tokens"
     ;;
   *)
@@ -74,7 +74,7 @@ expect_body() {
 
 expect_edits() {
   local n
-  n=$(grep -c '^pr edit' "$STUB/calls" 2>/dev/null || true)
+  n=$(grep -c '^api --method PATCH' "$STUB/calls" 2>/dev/null || true)
   [[ ${n:-0} == "$1" ]] || fail "expected $1 edits, got ${n:-0}"
 }
 

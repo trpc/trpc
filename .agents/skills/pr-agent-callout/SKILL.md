@@ -34,7 +34,7 @@ While an agent works on a PR, the PR body starts with a callout that says so and
 
 ## Script
 
-`callout.sh`, beside this file, needs bash, `gh` and coreutils. Run it inside the repository with the PR's branch checked out; it finds the PR with `gh pr view`. `gh` uses `GH_TOKEN` and `GH_REPO` when they are set.
+`callout.sh`, beside this file, needs bash 3.2 or later, `gh` and coreutils. Run it inside the repository with the PR's branch checked out under its own name, since `gh pr view` finds the PR by branch. `gh`'s token must be able to edit pull requests; if yours can't, set `GH_TOKEN` to one that can. `GH_REPO` picks the repository.
 
 ```sh
 <skill-dir>/callout.sh set "Fixing the failing test" https://example.com/my-run

@@ -5,7 +5,7 @@
 #   callout.sh set "<activity>" [run-url]
 #   callout.sh clear
 #
-# Run it inside the repository, on the PR's branch. Needs bash, gh and
+# Run it inside the repository, on the PR's branch. Needs bash 3.2+, gh and
 # coreutils; gh uses GH_TOKEN and GH_REPO when they are set.
 set -euo pipefail
 export LC_ALL=C
@@ -77,8 +77,11 @@ write_body() {
     exit 0
   fi
   printf '%s' "$new" >"$tmp/new"
-  gh pr edit "$pr" --body-file "$tmp/new" >/dev/null 2>"$tmp/err" ||
-    die "could not update the body of PR #$pr: $(cat "$tmp/err")"
+  # Not `gh pr edit`: it also reads the PR's reviewers, which some tokens
+  # that may edit the body can't.
+  gh api --method PATCH "repos/{owner}/{repo}/pulls/$pr" -F "body=@$tmp/new" \
+    >/dev/null 2>"$tmp/err" ||
+    die "could not update the body of PR #$pr; gh's token needs to be able to edit pull requests (set GH_TOKEN to use another): $(cat "$tmp/err")"
 }
 
 [[ $# -ge 1 ]] || usage
