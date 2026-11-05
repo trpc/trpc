@@ -3320,6 +3320,56 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('an old socket restored while a newer socket opens is closed once that one opens, if nothing is left on it', async () => {
+    const {
+      ctx,
+      slowResult,
+      slowStarted,
+      onOpen,
+      serverSockets,
+      waitForOpen,
+      holdConnectionParams,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldClientSocket, oldServerSocket } = await waitForOpen();
+    // Keeps the old socket open after the new one replaces it.
+    const slow = ctx.client.slow.query();
+    await slowStarted.calledTimes(1);
+
+    ctx.wssHandler.broadcastReconnectNotification();
+    await vi.waitFor(
+      () => {
+        expect(ctx.wsClient.connection!.ws).not.toBe(oldClientSocket);
+      },
+      { timeout: 5_000 },
+    );
+    const params = holdConnectionParams();
+    serverSockets[1]!.send(JSON.stringify({ id: null, method: 'reconnect' }));
+    await onOpen.calledTimes(3);
+
+    // The old socket is restored while the newest one's connectionParams
+    // are pending, and finishes its last request.
+    serverSockets[1]!.terminate();
+    await vi.waitFor(
+      () => {
+        expect(ctx.wsClient.connection!.ws).toBe(oldClientSocket);
+      },
+      { timeout: 5_000 },
+    );
+    slowResult.resolve('done');
+    expect(await slow).toBe('done');
+
+    params.resolve();
+    await vi.waitFor(
+      () => {
+        expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED);
+      },
+      { timeout: 3_000 },
+    );
+    expect(ctx.wss.clients.size).toBe(1);
+    expect(await ctx.client.greeting.query()).toBe('hello');
+  });
+
   test("a subscription lost with the new socket isn't ended by the old socket's late stopped", async () => {
     const {
       ctx,
