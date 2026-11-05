@@ -365,6 +365,11 @@ export class WsClient {
           this.nextConnection = next;
           try {
             await next.open();
+            // `open()` resolves even if the socket closed while its
+            // `connectionParams` were pending.
+            if (!next.isOpen()) {
+              throw new Error('WebSocket closed before it was ready');
+            }
           } catch (error) {
             await next.close().catch(() => null);
             throw error;
