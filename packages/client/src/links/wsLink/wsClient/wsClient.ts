@@ -561,8 +561,8 @@ export class WsClient {
 
     /**
      * Fails the queries and mutations sent on `ws`. Its subscriptions are
-     * sent again: by `reconnect()`, or, if `ws` was replaced without one, on
-     * the active socket.
+     * sent again on the active socket if that's open, or else by
+     * `reconnect()` once the next one opens.
      */
     const handleCloseOrError = (cause: unknown) => {
       if (ws === this.retiredConnection?.ws) this.retiredConnection = null;
@@ -594,7 +594,12 @@ export class WsClient {
         request.successor = null;
         return false;
       });
-      if (ws === this.activeConnection.ws || this.reconnecting) return;
+      if (
+        ws === this.activeConnection.ws ||
+        (this.reconnecting && !this.activeConnection.isOpen())
+      ) {
+        return;
+      }
 
       for (const { message, callbacks } of lost) {
         this.started.delete(message);

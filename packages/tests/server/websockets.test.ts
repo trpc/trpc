@@ -3220,6 +3220,68 @@ describe('a server-requested reconnect hands subscriptions off', () => {
     }
   });
 
+  test('a subscription lost with the new socket is sent to the old one while a newer socket is still opening', async () => {
+    const {
+      ctx,
+      push,
+      eventsSubscribed,
+      serverSockets,
+      slowResult,
+      receivedFor,
+      observe,
+      waitForOpen,
+      retryAttempts,
+      setRetryDelayMs,
+    } = setup();
+    await using _ctx = ctx;
+    const { oldServerSocket } = await waitForOpen();
+    const seen: unknown[] = [];
+    const subscription = ctx.client.events.subscribe(undefined, {
+      ...observe(seen),
+      onData: ({ data }) => seen.push(data),
+    });
+    // Keeps the old socket open after the subscription moves.
+    const slow = ctx.client.slow.query();
+    try {
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(1);
+        expect(receivedFor('slow')).toHaveLength(1);
+      });
+      push(1);
+      await vi.waitFor(() => {
+        expect(seen).toContain(1);
+      });
+
+      ctx.wssHandler.broadcastReconnectNotification();
+      await vi.waitFor(() => {
+        expect(eventsSubscribed).toHaveBeenCalledTimes(2);
+      });
+      setRetryDelayMs(10_000);
+      const attempts = retryAttempts.mock.calls.length;
+      serverSockets[1]!.send(JSON.stringify({ id: null, method: 'reconnect' }));
+      await vi.waitFor(() => {
+        expect(retryAttempts.mock.calls.length).toBeGreaterThan(attempts);
+      });
+      serverSockets[1]!.terminate();
+      await vi.waitFor(() => {
+        expect(receivedFor('events')).toHaveLength(3);
+      });
+      expect(receivedFor('events')[2]!.socket).toBe(oldServerSocket);
+
+      push(2);
+      await vi.waitFor(() => {
+        expect(seen).toContain(2);
+      });
+      expect(seen).toEqual(['pending', 'started', 1, 'started', 2]);
+      expect(eventsSubscribed.mock.calls).toEqual([[null], ['1'], ['1']]);
+    } finally {
+      slowResult.resolve('cleanup');
+      await slow.catch(() => null);
+      subscription.unsubscribe();
+      await ctx.wsClient.close();
+    }
+  });
+
   test("a subscription lost with the new socket isn't ended by the old socket's late stopped", async () => {
     const {
       ctx,
