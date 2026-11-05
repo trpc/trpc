@@ -48,22 +48,14 @@ test("a queued subscription hasn't been started", () => {
   expect(queued.kind).toBe('queued');
 });
 
-test('only a subscription that is sent or moving has events to replay', () => {
+test('a queued subscription has no events to replay', () => {
   const queued: SubscriptionState = {
     kind: 'queued',
     batch: null,
     // @ts-expect-error a queued subscription starts afresh
     replayed: ['1'],
   };
-  const leaving: SubscriptionState = {
-    kind: 'leaving',
-    from: 1,
-    to: 2,
-    started: true,
-    // @ts-expect-error a leaving subscription is untracked
-    replayed: ['1'],
-  };
-  expect([queued, leaving]).toHaveLength(2);
+  expect(queued.kind).toBe('queued');
 });
 
 test("a replacement error can't outlive its handover", () => {

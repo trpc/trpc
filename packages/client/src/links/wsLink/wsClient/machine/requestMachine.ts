@@ -57,10 +57,10 @@ export type SubscriptionState =
       replayed: Replayed;
     }
   /**
-   * An untracked subscription that `to` has confirmed, being stopped on
-   * `from`. `to` can't resend what `from` sent before `to` listened, so
-   * `from`'s untracked events are still delivered until `from` has handled
-   * the stop: it answers the `PING` sent after it (the fence), ends the
+   * Served by `to`, which has confirmed it, and being stopped on `from`.
+   * `to` can't resend events without ids that `from` sent before `to`
+   * listened, so `from`'s are still delivered until `from` has handled the
+   * stop: it answers the `PING` sent after it (the fence), ends the
    * subscription, or is lost. A server that never answers `PING` still ends
    * it or is lost.
    */
@@ -69,6 +69,7 @@ export type SubscriptionState =
       from: ConnectionId;
       to: ConnectionId;
       started: boolean;
+      replayed: Replayed;
     }
   | Settled;
 
@@ -77,8 +78,8 @@ export type SubscriptionState =
  * connection resumes from the `lastEventId` sent with it, so it sends them
  * again; each is dropped once. Kept until a connection serving the
  * subscription alone sends an event that isn't one of them, which ends its
- * replay. Only a tracked subscription has ids to replay, so a `leaving` one
- * has none, and a queued one starts afresh.
+ * replay. Only a tracked subscription has ids to replay, and a queued one
+ * starts afresh.
  */
 type Replayed = readonly string[];
 
@@ -453,9 +454,9 @@ function onMoving(
     case 'response': {
       if (event.connection === state.to) {
         // The new connection's first frame for it, `started` from a tRPC
-        // server, is the ack: stop it on the old one. The new one resends a
-        // tracked subscription's events, so the old one's are dropped from
-        // now on; an untracked one is `leaving` until the old one has handled
+        // server, is the ack: stop it on the old one. The new one resends
+        // events with ids, so the old one's are dropped from now on; it is
+        // `leaving` the old one for those without, until that has handled
         // the stop.
         const switched = onSubscriptionSent(
           request,
@@ -469,10 +470,7 @@ function onMoving(
         );
         const stopOld = stop(request, state.from);
         const switchedState = switched.request.state;
-        if (
-          switchedState.kind === 'sent' &&
-          switched.request.lastEventId === null
-        ) {
+        if (switchedState.kind === 'sent') {
           const fence: RequestEffect = {
             type: 'sendFence',
             connection: state.from,
@@ -486,6 +484,7 @@ function onMoving(
                 from: state.from,
                 to: state.to,
                 started: switchedState.started,
+                replayed: switchedState.replayed,
               },
             },
             effects: [stopOld, fence, ...switched.effects],
@@ -587,7 +586,7 @@ function onLeaving(
     kind: 'sent',
     connection: state.to,
     started: state.started,
-    replayed: [],
+    replayed: state.replayed,
   };
   const remaining: SubscriptionRequest = { ...request, state: onTo };
   switch (event.type) {
@@ -599,7 +598,11 @@ function onLeaving(
         return {
           request: {
             ...served.request,
-            state: { ...state, started: servedState.started },
+            state: {
+              ...state,
+              started: servedState.started,
+              replayed: servedState.replayed,
+            },
           },
           effects: served.effects,
         };

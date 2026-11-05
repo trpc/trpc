@@ -129,11 +129,12 @@ const covered = coverage([
   'new socket lost after the move completed',
   'event after the run delivered after a move',
   "old socket's untracked event delivered after the move completed",
-  'old socket ended an untracked subscription that left it',
-  'old socket fenced an untracked subscription that left it',
+  "old socket's event without an id delivered to a tracked subscription after the move completed",
+  'old socket ended a subscription that left it',
+  'old socket fenced a subscription that left it',
   'fence answered after the subscription stopped leaving',
-  'old socket lost while an untracked subscription left it',
-  'new socket lost while an untracked subscription left the old one',
+  'old socket lost while a subscription left it',
+  'new socket lost while a subscription left the old one',
   'replacement failure shown once the old socket ends',
   'retired socket frame dropped',
   'batch send failed',
@@ -145,6 +146,8 @@ const covered = coverage([
   'connection released without a close',
 ]);
 
+/** The data of a `note`: an event without an id, not counted in `lastData`. */
+const note = 'note';
 const fakeEvent = {} as Event;
 const fakeCloseEvent = { code: 1000 } as CloseEvent;
 
@@ -569,7 +572,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
           );
           if (result.id === undefined) {
             // Untracked: counted, since duplicates are allowed.
-            request.lastData++;
+            if (result.data !== note) request.lastData++;
             break;
           }
           // Every event exactly once, in order.
@@ -713,6 +716,15 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
         covered.add(
           "old socket's untracked event delivered after the move completed",
         );
+        const request = before.requests.get(id);
+        if (
+          request?.method === 'subscription' &&
+          request.lastEventId !== null
+        ) {
+          covered.add(
+            "old socket's event without an id delivered to a tracked subscription after the move completed",
+          );
+        }
       }
     }
   }
@@ -796,15 +808,13 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     }
     if (previous?.kind === 'leaving' && state.kind !== 'leaving') {
       if (state.kind === 'sent' && lost === previous.from) {
-        covered.add('old socket lost while an untracked subscription left it');
+        covered.add('old socket lost while a subscription left it');
       } else if (state.kind === 'sent' && event?.type === 'fenced') {
-        covered.add('old socket fenced an untracked subscription that left it');
+        covered.add('old socket fenced a subscription that left it');
       } else if (state.kind === 'sent') {
-        covered.add('old socket ended an untracked subscription that left it');
+        covered.add('old socket ended a subscription that left it');
       } else if (lost === previous.to) {
-        covered.add(
-          'new socket lost while an untracked subscription left the old one',
-        );
+        covered.add('new socket lost while a subscription left the old one');
       }
     }
     if (state.kind === 'queued' || user.leftFrom === lost) {
@@ -994,6 +1004,7 @@ type SocketAction =
   | 'answerError'
   | 'started'
   | 'data'
+  | 'note'
   | 'stopped'
   | 'stray'
   | 'released';
@@ -1024,6 +1035,7 @@ const socketActionWeights: Record<SocketAction, number> = {
   answerError: 1,
   started: 4,
   data: 6,
+  note: 2,
   stopped: 2,
   stray: 1,
   released: 2,
@@ -1187,6 +1199,7 @@ function runSocketAction(
     case 'answerError':
     case 'started':
     case 'data':
+    case 'note':
     case 'stopped': {
       if (!sim.hears(connection)) return;
       const entry = pick(calls, callIndex);
@@ -1211,6 +1224,12 @@ function runSocketAction(
         if (!call.stopping) return;
         socket.calls.delete(id);
         frame(sim, connection, { id, result: { type: 'stopped' } });
+        return;
+      }
+      if (action === 'note') {
+        // An event without an id, which a tracked subscription can send too.
+        if (!call.started || call.stopHandled) return;
+        frame(sim, connection, { id, result: { type: 'data', data: note } });
         return;
       }
       const eager =
@@ -1571,7 +1590,9 @@ test('a subscription moved on before its new connection replayed drops the repla
     connection: 2,
     message: { id: 1, result: { type: 'started' } },
   });
-  // Connection 2 resumes from event 1, and is replaced before it resends 2.
+  // Connection 1 has handled the stop; connection 2 resumes from event 1,
+  // and is replaced before it resends 2.
+  apply({ type: 'fenced', connection: 1, to: 2 });
   apply({ type: 'move', to: 3 });
   apply(data(2, '2'));
   apply(data(2, '3'));
@@ -1645,7 +1666,7 @@ const requestSamples: RequestState[] = [
   { kind: 'queued', batch: null },
   { kind: 'sent', connection: 1, started: false, replayed: [] },
   { kind: 'moving', from: 1, to: 2, started: false, replayed: [] },
-  { kind: 'leaving', from: 1, to: 2, started: false },
+  { kind: 'leaving', from: 1, to: 2, started: false, replayed: [] },
   { kind: 'settled' },
 ];
 

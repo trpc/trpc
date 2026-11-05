@@ -73,6 +73,20 @@ function setup(opts: {
           await createDeferred<void>().promise;
         }
       }),
+    /** Tracked, and also yields events without ids, which can't be resent. */
+    mixed: t.procedure
+      .input(z.object({ lastEventId: z.string().nullish() }).optional())
+      .use(async (mwOpts) => {
+        await heldSetup();
+        return mwOpts.next();
+      })
+      .subscription(async function* ({ signal }) {
+        for await (const [event] of on(ee, 'mixed', { signal })) {
+          const { id, data } = event as { id: string | null; data: number };
+          if (id === null) yield { data };
+          else yield tracked(id, { data });
+        }
+      }),
     events: t.procedure
       .input(z.object({ lastEventId: z.string().nullish() }).optional())
       .use(async (mwOpts) => {
@@ -808,6 +822,49 @@ test("an untracked subscription gets an event only the old socket had, even when
   ctx.ee.emit('generated', 3);
   await vi.waitFor(() => expect(data.at(-1)).toBe(3));
   expect(data).toEqual([1, 2, 3]);
+  sub.unsubscribe();
+});
+
+test("a tracked subscription gets an event without an id that only the old socket had, even when it arrives after the new socket's started", async () => {
+  await using ctx = setup({ connectionParams: async () => ({}) });
+  const data: number[] = [];
+  const sub = ctx.client.mixed.subscribe(undefined, {
+    onData: (value) => data.push('id' in value ? value.data.data : value.data),
+  });
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('mixed')).toBe(1));
+  ctx.ee.emit('mixed', { id: '1', data: 1 });
+  await vi.waitFor(() => expect(data).toEqual([1]));
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+  const newSetup = ctx.holdNextSetup();
+  using _newSetup = makeResource({}, () => newSetup.resolve());
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(ctx.setupHeld).toHaveBeenCalledTimes(1));
+
+  // The old socket is backed up: its frames arrive late, in order.
+  const oldFrames = holdFrames(oldServerSocket, 'sent', {
+    matches: (message) => 'result' in message,
+    later: 'wait',
+  });
+  // Only the old socket listens, so only it has 2, which has no id.
+  ctx.ee.emit('mixed', { id: null, data: 2 });
+  await vi.waitFor(() => expect(oldFrames.count()).toBe(1));
+  const stopped = vi.fn();
+  oldServerSocket.on('message', (raw) => {
+    // oxlint-disable-next-line typescript/no-base-to-string
+    if (String(raw).includes('subscription.stop')) stopped();
+  });
+  newSetup.resolve();
+  await vi.waitFor(() => expect(stopped).toHaveBeenCalledTimes(1));
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('mixed')).toBe(1));
+
+  oldFrames.release();
+  ctx.ee.emit('mixed', { id: '3', data: 3 });
+  await vi.waitFor(() => expect(data.at(-1)).toBe(3));
+  expect(data).toEqual([1, 2, 3]);
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
   sub.unsubscribe();
 });
 
