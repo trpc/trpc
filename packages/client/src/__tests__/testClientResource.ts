@@ -183,7 +183,10 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   // server on a reused port. Its `close()` isn't awaited: it stops
   // reconnecting at once, but can wait on requests that end only once the
   // server, closed next, closes their socket.
-  return makeAsyncResource(ctx, async () => {
+  // `typeof ctx` already has `[Symbol.asyncDispose]` from the server
+  // resource, and unlike `& AsyncDisposable` it still fits `konn()` contexts.
+  const resource: typeof ctx = makeAsyncResource(ctx, async () => {
     void wsClient.close().catch(() => null);
   });
+  return resource;
 }
