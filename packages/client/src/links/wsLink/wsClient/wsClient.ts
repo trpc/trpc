@@ -34,6 +34,7 @@ import type {
   ConnectionId,
   RequestFailure,
   RequestId,
+  WireId,
 } from './machine/requestMachine';
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
@@ -123,9 +124,9 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   const requestManager = new RequestManager();
   const closeWaiters: (() => void)[] = [];
   /**
-   * The last id sent on the wire. Each request gets its own instead of its
-   * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
-   * late frames for that attempt must not reach the retry.
+   * The last request's id. Each request gets its own instead of its
+   * `op.id`, which a retry shares with the failed attempt. The model gives
+   * each its id on the wire.
    */
   let lastRequestId = 0;
 
@@ -208,7 +209,7 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
         transports
           .get(effect.connection)
           ?.send(
-            encoder.encode({ id: effect.request, method: 'subscription.stop' }),
+            encoder.encode({ id: effect.wire, method: 'subscription.stop' }),
           );
         return;
       case 'next': {
@@ -283,17 +284,25 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   function sendRequests(
     machine: ClientRuntime,
     connection: ConnectionId,
-    requests: readonly { id: RequestId; lastEventId: string | null }[],
+    requests: readonly {
+      id: RequestId;
+      wire: WireId;
+      lastEventId: string | null;
+    }[],
   ) {
     try {
       const messages: TRPCClientOutgoingMessage[] = [];
-      for (const { id, lastEventId } of requests) {
+      for (const { id, wire, lastEventId } of requests) {
         const message = requestManager.get(id)?.message;
         if (!message) continue;
         messages.push(
           lastEventId !== null && 'params' in message
-            ? { ...message, params: { ...message.params, lastEventId } }
-            : message,
+            ? {
+                ...message,
+                id: wire,
+                params: { ...message.params, lastEventId },
+              }
+            : { ...message, id: wire },
         );
       }
       transports

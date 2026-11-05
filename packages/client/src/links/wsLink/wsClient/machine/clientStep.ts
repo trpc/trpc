@@ -20,9 +20,11 @@ import type {
   RequestId,
   RequestModel,
   RequestTransition,
+  WireId,
 } from './requestMachine';
 import {
   moveSubscription,
+  needsFreshWire,
   requestTransition,
   servingConnections,
 } from './requestMachine';
@@ -47,6 +49,8 @@ export class Step {
   replaced: ConnectionId[];
   handover: Handover | null;
   readonly requests: Map<RequestId, RequestModel>;
+  readonly wires: Map<WireId, RequestId>;
+  lastWireId: WireId;
   flushScheduled: boolean;
   inactivity: boolean;
   publicState: PublicState;
@@ -62,6 +66,8 @@ export class Step {
     this.replaced = [...model.replaced];
     this.handover = model.handover;
     this.requests = new Map(model.requests);
+    this.wires = new Map(model.wires);
+    this.lastWireId = model.lastWireId;
     this.flushScheduled = model.flushScheduled;
     this.inactivity = model.inactivity;
     this.publicState = model.publicState;
@@ -78,6 +84,8 @@ export class Step {
         replaced: this.replaced,
         handover: this.handover,
         requests: this.requests,
+        wires: this.wires,
+        lastWireId: this.lastWireId,
         flushScheduled: this.flushScheduled,
         inactivity: this.inactivity,
         publicState: this.publicState,
@@ -97,11 +105,39 @@ export class Step {
   applyRequestTransition(request: RequestModel, result: RequestTransition) {
     if (result.request.state.kind === 'settled') {
       this.requests.delete(request.id);
+      this.wires.delete(request.wire);
       if (this.closing?.delete(request.id)) this.finishCloseIfDone();
     } else {
       this.requests.set(request.id, result.request);
+      if (result.request.wire !== request.wire) {
+        this.wires.delete(request.wire);
+        this.wires.set(result.request.wire, request.id);
+      }
     }
     this.effects.push(...result.effects);
+  }
+
+  /** Adds a request, queued, with a fresh `wire`. */
+  addRequest(
+    id: RequestId,
+    method: RequestModel['method'],
+    lastEventId: string | null,
+  ) {
+    const wire = ++this.lastWireId;
+    const state = { kind: 'queued', batch: null } as const;
+    this.requests.set(
+      id,
+      method === 'subscription'
+        ? { id, method, lastEventId, wire, wiredUpTo: null, state }
+        : { id, method, wire, state },
+    );
+    this.wires.set(wire, id);
+  }
+
+  /** The live request a frame with this id answers, if any. */
+  answeredBy(wire: WireId) {
+    const id = this.wires.get(wire);
+    return id === undefined ? undefined : this.requests.get(id);
   }
 
   sentOn(connection: ConnectionId) {
@@ -297,18 +333,25 @@ export class Step {
     if (connection === null) return;
     const queued = this.queued();
     for (const request of queued) {
-      this.applyRequest(request, { type: 'send', connection });
+      const sent =
+        request.method === 'subscription' && needsFreshWire(request, connection)
+          ? { ...request, wire: ++this.lastWireId, wiredUpTo: null }
+          : request;
+      this.applyRequestTransition(
+        request,
+        requestTransition(sent, { type: 'send', connection }),
+      );
     }
-    const requests = [
-      ...moved.flatMap((id) => this.requests.get(id) ?? []),
-      ...queued,
-    ];
+    const requests = [...moved, ...queued.map((request) => request.id)].flatMap(
+      (id) => this.requests.get(id) ?? [],
+    );
     if (requests.length === 0) return;
     this.effects.push({
       type: 'sendRequests',
       connection,
       requests: requests.map((request) => ({
         id: request.id,
+        wire: request.wire,
         lastEventId:
           request.method === 'subscription' ? request.lastEventId : null,
       })),

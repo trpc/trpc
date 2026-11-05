@@ -109,7 +109,7 @@ function onFrame(
   }
 
   const request =
-    typeof message.id === 'number' ? step.requests.get(message.id) : undefined;
+    typeof message.id === 'number' ? step.answeredBy(message.id) : undefined;
   if (!request) return;
   const serving = servingConnections(request);
   if (!serving.includes(connection)) return;
@@ -145,18 +145,7 @@ export function clientTransition(
   const step = new Step(model);
   switch (event.type) {
     case 'request': {
-      const queued = { kind: 'queued', batch: null } as const;
-      step.requests.set(
-        event.id,
-        event.method === 'subscription'
-          ? {
-              id: event.id,
-              method: event.method,
-              lastEventId: event.lastEventId,
-              state: queued,
-            }
-          : { id: event.id, method: event.method, state: queued },
-      );
+      step.addRequest(event.id, event.method, event.lastEventId);
       step.resetInactivity();
       if (step.lifecycle.kind === 'backoff' && step.handover === null) {
         // A new request doesn't wait out the backoff, unless a replaced
@@ -244,6 +233,8 @@ export function initialClient(opts: { lazy: boolean }): ClientTransition {
     replaced: [],
     handover: null,
     requests: new Map(),
+    wires: new Map(),
+    lastWireId: 0,
     flushScheduled: false,
     inactivity: false,
     publicState: opts.lazy

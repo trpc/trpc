@@ -3,6 +3,8 @@ import { exhaustive } from '@trpc/server/unstable-core-do-not-import';
 
 export type ConnectionId = number;
 export type RequestId = number;
+/** The id a request is sent with, and answered with. */
+export type WireId = number;
 export type RequestMethod = 'query' | 'mutation' | 'subscription';
 
 /**
@@ -99,6 +101,7 @@ export type RequestState = QueryState | SubscriptionState;
 export interface QueryRequest {
   readonly id: RequestId;
   readonly method: 'query' | 'mutation';
+  readonly wire: WireId;
   readonly state: QueryState;
 }
 
@@ -107,6 +110,14 @@ export interface SubscriptionRequest {
   readonly method: 'subscription';
   /** The id of the last event delivered, sent when it resumes. */
   readonly lastEventId: string | null;
+  readonly wire: WireId;
+  /**
+   * The newest connection `wire` was sent on, or `null` before it's sent.
+   * A server that was sent the stop for it holds `wire` until it has ended
+   * that subscription, so it's resent with a fresh one on any connection no
+   * newer; see `needsFreshWire`.
+   */
+  readonly wiredUpTo: ConnectionId | null;
   readonly state: SubscriptionState;
 }
 
@@ -139,7 +150,12 @@ export type RequestEffect =
   | { type: 'next'; request: RequestId; message: TRPCResponseMessage }
   | { type: 'complete'; request: RequestId }
   | { type: 'fail'; request: RequestId; failure: RequestFailure }
-  | { type: 'sendStop'; connection: ConnectionId; request: RequestId }
+  | {
+      type: 'sendStop';
+      connection: ConnectionId;
+      request: RequestId;
+      wire: WireId;
+    }
   | { type: 'sendFence'; connection: ConnectionId; fence: Fence }
   | { type: 'invariantViolation'; message: string };
 
@@ -173,7 +189,12 @@ function settled<TRequest extends RequestModel>(
 }
 
 function stop(request: RequestModel, connection: ConnectionId): RequestEffect {
-  return { type: 'sendStop', connection, request: request.id };
+  return {
+    type: 'sendStop',
+    connection,
+    request: request.id,
+    wire: request.wire,
+  };
 }
 
 function complete(request: RequestModel): RequestEffect {
@@ -364,13 +385,14 @@ function onSubscriptionQueued(
     case 'send': {
       const next = rebatch(state, event);
       if (!next) return illegal(request, event);
+      if (next.kind !== 'sent') {
+        return { request: { ...request, state: next }, effects: [] };
+      }
       return {
         request: {
           ...request,
-          state:
-            next.kind === 'sent'
-              ? { ...next, started: false, replayed: [] }
-              : next,
+          wiredUpTo: newest(request.wiredUpTo, next.connection),
+          state: { ...next, started: false, replayed: [] },
         },
         effects: [],
       };
@@ -687,6 +709,7 @@ export function moveSubscription(
   return {
     request: {
       ...request,
+      wiredUpTo: newest(request.wiredUpTo, to),
       state: {
         kind: 'moving',
         from: state.connection,
@@ -697,6 +720,23 @@ export function moveSubscription(
     },
     effects: [],
   };
+}
+
+function newest(wiredUpTo: ConnectionId | null, connection: ConnectionId) {
+  return wiredUpTo === null ? connection : Math.max(wiredUpTo, connection);
+}
+
+/**
+ * Whether a queued subscription needs a fresh `wire` to be sent on
+ * `connection`: that connection may still hold its current one. Its server
+ * would answer `Duplicate id`, or end the resent subscription with the
+ * `stopped` meant for the stopped one.
+ */
+export function needsFreshWire(
+  request: SubscriptionRequest,
+  connection: ConnectionId,
+) {
+  return request.wiredUpTo !== null && connection <= request.wiredUpTo;
 }
 
 /** The connections serving `request`. */

@@ -24,6 +24,7 @@ test("a query or mutation can't move, show started or resume", () => {
   const resumable: RequestModel = {
     id: 1,
     method: 'query',
+    wire: 1,
     // @ts-expect-error nor an event to resume from
     lastEventId: '1',
     state: { kind: 'queued', batch: null },
@@ -31,6 +32,7 @@ test("a query or mutation can't move, show started or resume", () => {
   const query: QueryRequest = {
     id: 1,
     method: 'mutation',
+    wire: 1,
     state: { kind: 'sent', connection: 1 },
   };
   // @ts-expect-error only a subscription moves

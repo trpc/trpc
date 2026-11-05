@@ -12,6 +12,7 @@ import type {
   RequestId,
   RequestMethod,
   RequestModel,
+  WireId,
 } from './requestMachine';
 
 /**
@@ -65,6 +66,9 @@ export interface ClientModel {
   readonly handover: Handover | null;
   /** Every live request. Settled requests are removed. */
   readonly requests: ReadonlyMap<RequestId, RequestModel>;
+  /** Each live request's `wire`, which the server's frames carry. */
+  readonly wires: ReadonlyMap<WireId, RequestId>;
+  readonly lastWireId: WireId;
   readonly flushScheduled: boolean;
   /** Lazy mode: the inactivity timer is running. */
   readonly inactivity: boolean;
@@ -105,7 +109,11 @@ export type ClientEffect =
   | {
       type: 'sendRequests';
       connection: ConnectionId;
-      requests: readonly { id: RequestId; lastEventId: string | null }[];
+      requests: readonly {
+        id: RequestId;
+        wire: WireId;
+        lastEventId: string | null;
+      }[];
     }
   | { type: 'startTimer'; timer: 'flush' | 'inactivity' }
   /** Wait `retryDelayMs(retryIndex)`, then fire the `backoff` timer. */

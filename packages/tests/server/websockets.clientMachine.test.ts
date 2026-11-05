@@ -35,11 +35,13 @@ import type {
   QueryState,
   RequestEvent,
   RequestMethod,
+  RequestId,
   RequestModel,
   RequestState,
   RequestTransition,
   SubscriptionRequest,
   SubscriptionState,
+  WireId,
 } from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
 import {
   moveSubscription,
@@ -58,6 +60,8 @@ import {
 // --- the simulated world ----------------------------------------------------
 
 interface ServerCall {
+  /** The client's request it was sent for. */
+  readonly request: RequestId;
   readonly method: RequestMethod;
   /** Subscriptions: the id of the next event this socket sends. */
   next: number;
@@ -80,8 +84,8 @@ interface SimSocket {
   /** Its subscriptions never finish setting up, so it never sends `started`. */
   readonly slowSetup: boolean;
   closed: boolean;
-  /** What the server got on this socket and still answers. */
-  readonly calls: Map<number, ServerCall>;
+  /** What the server got on this socket and still answers, by wire id. */
+  readonly calls: Map<WireId, ServerCall>;
   /** The fences sent on it and not yet answered, oldest first. */
   readonly fences: Fence[];
 }
@@ -308,11 +312,17 @@ class Sim {
           break;
         }
         const socket = this.sockets.get(effect.connection)!;
-        for (const { id, lastEventId } of effect.requests) {
+        for (const { id, wire, lastEventId } of effect.requests) {
           const request = this.requests.get(id)!;
           request.sends++;
           if (!this.writable(effect.connection)) continue;
-          socket.calls.set(id, {
+          // The server answers `Duplicate id` while it still holds one.
+          check(
+            !socket.calls.has(wire),
+            `request ${id} sent as ${wire} on connection ${effect.connection}, which still holds it`,
+          );
+          socket.calls.set(wire, {
+            request: id,
             method: request.method,
             next: Number(lastEventId ?? 0) + 1,
             started: false,
@@ -325,7 +335,7 @@ class Sim {
       case 'sendStop': {
         const call = this.sockets
           .get(effect.connection)
-          ?.calls.get(effect.request);
+          ?.calls.get(effect.wire);
         if (call && this.writable(effect.connection)) call.stopping = true;
         break;
       }
@@ -367,6 +377,20 @@ function liveRequestIds(model: ClientModel) {
   return [...model.requests.keys()];
 }
 
+/** The live request a frame with this wire id answers. */
+function answeredBy(model: ClientModel, wire: WireId) {
+  const id = model.wires.get(wire);
+  return id === undefined ? undefined : model.requests.get(id);
+}
+
+/** A call the server still runs for `request` on `socket`, the stopping one first. */
+function callFor(socket: SimSocket | undefined, request: RequestId) {
+  const calls = [...(socket?.calls.values() ?? [])].filter(
+    (call) => call.request === request,
+  );
+  return calls.find((call) => call.stopping) ?? calls[0];
+}
+
 /** The connections that may answer a request. */
 function servingOf(state: RequestState | undefined): ConnectionId[] {
   switch (state?.kind) {
@@ -397,7 +421,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     event.message.result.type === 'data'
   ) {
     // Sent before the old socket read its stop: the new one has it.
-    const state = before.requests.get(event.message.id)?.state;
+    const state = answeredBy(before, event.message.id)?.state;
     const call = sim.sockets.get(event.connection)?.calls.get(event.message.id);
     if (
       state?.kind === 'sent' &&
@@ -431,7 +455,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       ? event.connection
       : null;
   if (event?.type === 'frame' && typeof event.message.id === 'number') {
-    const state = before.requests.get(event.message.id)?.state;
+    const state = answeredBy(before, event.message.id)?.state;
     if (!servingOf(state).includes(event.connection)) {
       if (
         before.connections.get(event.connection)?.state.phase === 'draining'
@@ -699,24 +723,25 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     // Untracked: no event is lost from the socket serving the subscription,
     // or from the one it moved away from, while that one is up and its
     // server still runs it.
-    const id = event.message.id;
-    const state = before.requests.get(id)?.state;
+    const wire = event.message.id;
+    const request = answeredBy(before, wire);
+    const state = request?.state;
     const left =
-      sim.requests.get(id)?.leftFrom === event.connection &&
-      !!sim.sockets.get(event.connection)?.calls.has(id);
+      request !== undefined &&
+      sim.requests.get(request.id)?.leftFrom === event.connection &&
+      !!sim.sockets.get(event.connection)?.calls.has(wire);
     if (
       state !== undefined &&
       (left || servingOf(state).includes(event.connection))
     ) {
       check(
         effects.some((effect) => effect.type === 'next'),
-        `untracked event for ${event.message.id} from connection ${event.connection} dropped`,
+        `untracked event for ${request?.id} from connection ${event.connection} dropped`,
       );
       if (state?.kind === 'leaving' && event.connection === state.from) {
         covered.add(
           "old socket's untracked event delivered after the move completed",
         );
-        const request = before.requests.get(id);
         if (
           request?.method === 'subscription' &&
           request.lastEventId !== null
@@ -730,7 +755,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
   }
 
   if (event?.type === 'frame' && typeof event.message.id === 'number') {
-    const previous = before.requests.get(event.message.id);
+    const previous = answeredBy(before, event.message.id);
     const message = event.message;
     const eventId =
       'result' in message && message.result.type === 'data'
@@ -784,7 +809,7 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       lost !== null &&
       state.kind === 'sent' &&
       state.connection !== lost &&
-      sim.sockets.get(lost)?.calls.get(id)?.stopping
+      callFor(sim.sockets.get(lost), id)?.stopping
     ) {
       covered.add('old socket lost after the move completed');
     }
@@ -1186,8 +1211,8 @@ function runSocketAction(
     case 'stray':
       if (!sim.hears(connection)) return;
       // A frame for a request this socket doesn't own, or never saw.
-      const id = (callIndex % (sim.lastRequestId + 2)) + 1;
-      const state = sim.model.requests.get(id)?.state;
+      const id = (callIndex % (sim.model.lastWireId + 2)) + 1;
+      const state = answeredBy(sim.model, id)?.state;
       if (socket.calls.has(id)) return;
       if (servingOf(state).includes(connection)) return;
       frame(sim, connection, {
@@ -1235,7 +1260,7 @@ function runSocketAction(
       const eager =
         action === 'data' &&
         sim.eagerData &&
-        !sim.requests.get(id)!.startedAllowed;
+        !sim.requests.get(call.request)!.startedAllowed;
       if (!call.started && !eager) {
         if (socket.slowSetup) return;
         call.started = true;
@@ -1263,7 +1288,7 @@ function answerFence(
   if (!sim.hears(connection)) return false;
   const fence = socket.fences.shift();
   if (!fence) return false;
-  const call = socket.calls.get(fence.request);
+  const call = callFor(socket, fence.request);
   if (call) call.stopHandled = true;
   sim.dispatch({ type: 'fenced', connection, fence });
   return true;
@@ -1423,6 +1448,7 @@ function probeEveryLiveSubscription(sim: Sim) {
   for (const id of [...sim.model.requests.keys()]) {
     const user = sim.requests.get(id)!;
     if (user.method !== 'subscription') continue;
+    const wire = sim.model.requests.get(id)!.wire;
     const before = user.lastData;
     let probed = false;
     // Each frame can move it on, so the serving socket is looked up again.
@@ -1438,16 +1464,16 @@ function probeEveryLiveSubscription(sim: Sim) {
       // A moving one is served by its old socket until the new one answers.
       const connection = servingOf(state)
         .reverse()
-        .find((serving) => canSend(sim, serving, id));
+        .find((serving) => canSend(sim, serving, wire));
       if (connection === undefined) break;
-      const call = sim.sockets.get(connection)!.calls.get(id)!;
+      const call = sim.sockets.get(connection)!.calls.get(wire)!;
       probed = true;
       if (!call.started) {
         call.started = true;
-        frame(sim, connection, { id, result: { type: 'started' } });
+        frame(sim, connection, { id: wire, result: { type: 'started' } });
         continue;
       }
-      sendEvent(sim, { connection, id, call });
+      sendEvent(sim, { connection, id: wire, call });
     }
     if (!probed || user.terminals > 0) continue;
     check(
@@ -1491,9 +1517,9 @@ function sendEvent(
   });
 }
 
-function canSend(sim: Sim, connection: ConnectionId, id: number) {
+function canSend(sim: Sim, connection: ConnectionId, wire: WireId) {
   const socket = sim.sockets.get(connection);
-  const call = socket?.calls.get(id);
+  const call = socket?.calls.get(wire);
   return (
     !!socket &&
     !!call &&
@@ -1560,6 +1586,8 @@ test('a subscription moved on before its new connection replayed drops the repla
     id: 1,
     method: 'subscription',
     lastEventId: '1',
+    wire: 1,
+    wiredUpTo: 1,
     state: { kind: 'sent', connection: 1, started: true, replayed: [] },
   };
   const next: unknown[] = [];
@@ -1761,9 +1789,11 @@ function requestDiagram(method: RequestMethod) {
                 id: 1,
                 method,
                 lastEventId,
+                wire: 1,
+                wiredUpTo: 1,
                 state: state as SubscriptionState,
               }
-            : { id: 1, method, state: state as QueryState };
+            : { id: 1, method, wire: 1, state: state as QueryState };
         let result: RequestTransition;
         if (event.type === 'move') {
           if (request.method !== 'subscription') return null;
