@@ -2,6 +2,7 @@ import type { OperationResultEnvelope, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createTRPCUntypedClient,
+  getUntypedClient,
   TRPCClientError,
 } from '@trpc/client';
 import type { TRPCSubscriptionCallbacks } from '@trpc/client/internals/TRPCUntypedClient';
@@ -552,43 +553,54 @@ test('types', async () => {
   expectTypeOf(mixed).toEqualTypeOf<Unsubscribable>();
   mixed.unsubscribe();
 
-  // callbacks that may all be undefined are a type error
-  const only = () => {
-    const partial: {
-      onData?: (data: number) => void;
-      onError?: (err: TRPCClientError<any>) => void;
-    } = {};
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, partial);
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, { onData: undefined });
-    const allUndefined = {
-      signal: new AbortController().signal,
-      onData: undefined,
-      onError: undefined,
-    };
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, allUndefined);
+  // callbacks that may all be undefined are a type error; at runtime the
+  // subscription has no callbacks, so it's iterated
+  const partial: {
+    onData?: (data: number) => void;
+    onError?: (err: TRPCClientError<any>) => void;
+  } = {};
+  const allUndefined = {
+    signal: new AbortController().signal,
+    onData: undefined,
+    onError: undefined,
   };
-  void only;
+  const withoutDefinedCallbacks = [
+    // @ts-expect-error pass at least one defined callback
+    ctx.client.onEvent.subscribe(undefined, partial),
+    // @ts-expect-error pass at least one defined callback
+    ctx.client.onEvent.subscribe(undefined, { onData: undefined }),
+    // @ts-expect-error pass at least one defined callback
+    ctx.client.onEvent.subscribe(undefined, allUndefined),
+  ] as unknown[] as AsyncIterableIterator<number>[];
+  for (const iterable of withoutDefinedCallbacks) {
+    expect(iterable).not.toHaveProperty('unsubscribe');
+    await iterable.return?.();
+    expect(await iterable.next()).toEqual({ value: undefined, done: true });
+  }
 
-  const untyped = createTRPCUntypedClient<AppRouter>({ links: [] });
-  // only type-checked; the client has no links to run
-  const untypedTypes = () => {
-    expectTypeOf(untyped.subscription('onEvent', undefined)).toEqualTypeOf<
-      AsyncIterableIterator<unknown>
-    >();
-    expectTypeOf(
-      untyped.subscription('onEvent', undefined, {
-        onData: () => {
-          // noop
-        },
-      }),
-    ).toEqualTypeOf<Unsubscribable>();
+  // the untyped client has the same overloads
+  const untyped = getUntypedClient(ctx.client);
+  expectTypeOf(createTRPCUntypedClient<AppRouter>).returns.toEqualTypeOf<
+    typeof untyped
+  >();
+  const untypedSub = untyped.subscription('onEvent', undefined);
+  expectTypeOf(untypedSub).toEqualTypeOf<AsyncIterableIterator<unknown>>();
+  await untypedSub.return?.();
+  const untypedWithCallbacks = untyped.subscription('onEvent', undefined, {
+    onData: () => {
+      // noop
+    },
+  });
+  expectTypeOf(untypedWithCallbacks).toEqualTypeOf<Unsubscribable>();
+  untypedWithCallbacks.unsubscribe();
+  const untypedWithoutDefinedCallbacks = untyped.subscription(
+    'onEvent',
+    undefined,
     // @ts-expect-error pass at least one defined callback
-    untyped.subscription('onEvent', undefined, { onData: undefined });
-  };
-  void untypedTypes;
+    { onData: undefined },
+  ) as unknown as AsyncIterableIterator<unknown>;
+  expect(untypedWithoutDefinedCallbacks).not.toHaveProperty('unsubscribe');
+  await untypedWithoutDefinedCallbacks.return?.();
 });
 
 test('a subscription has callbacks or is iterated, never both', async () => {
