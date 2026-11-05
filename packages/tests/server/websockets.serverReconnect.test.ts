@@ -255,3 +255,46 @@ test('a subscription moved before its started arrived still reports onStarted on
   expect(onStarted).toHaveBeenCalledTimes(1);
   sub.unsubscribe();
 });
+
+test('a moved subscription is stopped on the old socket while that socket still drains', async () => {
+  const t = initTRPC.create();
+  const ee = new EventEmitter();
+  const held = createDeferred<string>();
+  const heldRunning = createDeferred<void>();
+  const signals: AbortSignal[] = [];
+  const router = t.router({
+    held: t.procedure.query(() => {
+      heldRunning.resolve();
+      return held.promise;
+    }),
+    events: t.procedure.subscription(({ signal }) => {
+      assert(signal);
+      signals.push(signal);
+      return on(ee, 'push', { signal });
+    }),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: { retryDelayMs: () => 10 },
+  });
+  using _held = makeResource({}, () => held.resolve('released'));
+  const sub = ctx.client.events.subscribe(undefined, { onData: vi.fn() });
+  await vi.waitFor(() => expect(signals).toHaveLength(1));
+  const query = ctx.client.held.query();
+  await heldRunning.promise;
+  const [oldServerSocket] = ctx.wss.clients;
+  assert(oldServerSocket);
+
+  ctx.wssHandler.broadcastReconnectNotification();
+  await vi.waitFor(() => expect(signals).toHaveLength(2));
+  await vi.waitFor(() => expect(signals[0]?.aborted).toBe(true));
+  expect(oldServerSocket.readyState).toBe(WebSocket.OPEN);
+  expect(signals[1]?.aborted).toBe(false);
+
+  held.resolve('released');
+  expect(await query).toBe('released');
+  await vi.waitFor(() =>
+    expect(oldServerSocket.readyState).toBe(WebSocket.CLOSED),
+  );
+  sub.unsubscribe();
+});
