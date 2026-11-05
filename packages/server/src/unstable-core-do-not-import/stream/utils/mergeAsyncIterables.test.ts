@@ -1,4 +1,4 @@
-import { run } from '../../utils';
+import { run, sleep } from '../../utils';
 import { createDeferred } from './createDeferred';
 import { mergeAsyncIterables } from './mergeAsyncIterables';
 
@@ -159,4 +159,41 @@ test('empty', async () => {
   }
 
   expect(aggregate).toEqual([]);
+});
+
+test('lets go of the last yielded value while it waits for the next', async () => {
+  const gc = globalThis.gc;
+  if (!gc) throw new Error('run with --expose-gc');
+  const refs: WeakRef<Uint8Array>[] = [];
+  const later = createDeferred();
+  const merged = mergeAsyncIterables<Uint8Array | null>();
+  merged.add(
+    run(async function* () {
+      const value = new Uint8Array(50 * 1024 * 1024);
+      refs.push(new WeakRef(value));
+      yield value;
+    }),
+  );
+  merged.add(
+    run(async function* () {
+      await later.promise;
+      yield null;
+    }),
+  );
+  const iterator = merged[Symbol.asyncIterator]();
+
+  let first: IteratorResult<Uint8Array | null> | null = await iterator.next();
+  expect(first.value?.byteLength).toBe(50 * 1024 * 1024);
+  first = null;
+  const second = iterator.next();
+
+  await vi.waitFor(async () => {
+    await sleep(0);
+    gc();
+    // Not the value itself: printing 50 MB on failure would crash the worker.
+    expect(refs[0]?.deref() === undefined).toBe(true);
+  });
+  later.resolve();
+  expect(await second).toEqual({ done: false, value: null });
+  await iterator.return?.();
 });
