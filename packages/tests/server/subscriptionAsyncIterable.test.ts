@@ -591,50 +591,77 @@ test('types', async () => {
   void untypedTypes;
 });
 
-test('types: a subscription has callbacks or is iterated, never both', () => {
-  const ctx = createControlledClient();
-  const onData = (_data: number) => {
-    // noop
-  };
-  const signal = new AbortController().signal;
+test('a subscription has callbacks or is iterated, never both', async () => {
+  // callbacks that are all undefined aren't callbacks
+  expectTypeOf<{
+    onData: undefined;
+    onError: undefined;
+  }>().not.toMatchTypeOf<
+    TRPCSubscriptionCallbacks<number, TRPCClientError<AppRouter>>
+  >();
 
-  // only type-checked
-  const types = async () => {
+  {
+    const ctx = createControlledClient();
+    const onData = vi.fn<(data: number) => void>();
     const withCallbacks = ctx.client.onEvent.subscribe(undefined, { onData });
-    /* oxlint-disable typescript/await-thenable */
-    // @ts-expect-error a subscription with callbacks isn't iterable
-    for await (const _ of withCallbacks) {
-      // noop
-    }
-    /* oxlint-enable typescript/await-thenable */
+    await expect(async () => {
+      /* oxlint-disable typescript/await-thenable */
+      // @ts-expect-error a subscription with callbacks isn't iterable
+      for await (const _ of withCallbacks) {
+        // noop
+      }
+      /* oxlint-enable typescript/await-thenable */
+    }).rejects.toThrowError(TypeError);
+    ctx.emit(1);
+    expect(onData).toHaveBeenCalledWith(1);
+    withCallbacks.unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
 
-    // callbacks that are all undefined aren't callbacks
-    expectTypeOf<{
-      onData: undefined;
-      onError: undefined;
-    }>().not.toMatchTypeOf<
-      TRPCSubscriptionCallbacks<number, TRPCClientError<AppRouter>>
-    >();
-
-    // options that may or may not have callbacks are neither
-    const maybeCallbacks = ():
-      | { onData: typeof onData }
-      | Record<never, never> => ({});
+  // options that may or may not have callbacks are neither
+  {
+    const ctx = createControlledClient();
+    const maybeCallbacks = { onData: vi.fn() } as
+      | { onData: (data: number) => void }
+      | Record<never, never>;
     // @ts-expect-error either pass callbacks or don't
-    ctx.client.onEvent.subscribe(undefined, maybeCallbacks());
-    const maybeUndefinedCallbacks = ():
+    const sub = ctx.client.onEvent.subscribe(undefined, maybeCallbacks);
+    expect(Symbol.asyncIterator in sub).toBe(false);
+    sub.unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
+  {
+    const ctx = createControlledClient();
+    const maybeUndefinedCallbacks = { onData: undefined } as
       | { onData: undefined }
-      | Record<never, never> => ({});
-    // @ts-expect-error either pass callbacks or don't
-    ctx.client.onEvent.subscribe(undefined, maybeUndefinedCallbacks());
+      | Record<never, never>;
+    const sub = ctx.client.onEvent.subscribe(
+      undefined,
+      // @ts-expect-error either pass callbacks or don't
+      maybeUndefinedCallbacks,
+    );
+    expect(sub).not.toHaveProperty('unsubscribe');
+    await (sub as unknown as AsyncIterableIterator<number>).return?.();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
 
-    // TypeScript has no exact types, so a type without the callback keys
-    // can still hold them
-    const callbacks = { signal, onData };
+  // TypeScript has no exact types, so a type without the callback keys
+  // can still hold them
+  {
+    const ctx = createControlledClient();
+    const onData = vi.fn<(data: number) => void>();
+    const callbacks = { signal: new AbortController().signal, onData };
     const widened: { signal?: AbortSignal } = callbacks;
-    expectTypeOf(
-      ctx.client.onEvent.subscribe(undefined, widened),
-    ).toEqualTypeOf<AsyncIterableIterator<number>>();
-  };
-  void types;
+    const sub = ctx.client.onEvent.subscribe(undefined, widened);
+    expectTypeOf(sub).toEqualTypeOf<AsyncIterableIterator<number>>();
+    await expect(async () => {
+      for await (const _ of sub) {
+        // noop
+      }
+    }).rejects.toThrowError(TypeError);
+    ctx.emit(1);
+    expect(onData).toHaveBeenCalledWith(1);
+    (sub as unknown as Unsubscribable).unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
 });
