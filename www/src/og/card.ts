@@ -111,15 +111,18 @@ export type OgCard = DocCard | HomeCard | PostCard | SponsorCard;
 export const colors = {
   background: '#ffffff',
   border: '#e4e4e7',
-  /** The logo's blue. */
+  /** The site's blue since before the new logo. */
   brand: '#398ccb',
-  /** Too light for text on white; for the rule and the glow. */
-  brandLight: '#589ed3',
   foreground: '#18181b',
   /** Text links' blue on a light page (`--brand-dark`). */
-  link: '#2e77af',
+  link: '#116eab',
   mutedForeground: '#52525b',
+  /** Button fills, with white on them. */
+  primary: '#247ab8',
 } as const;
+
+/** The logo's gradient ends in cyan, too light for text on white. */
+const cyan = '#22d4fc';
 
 export interface Assets {
   /** The home page's dot grid, fading out toward the bottom. */
@@ -128,7 +131,7 @@ export interface Assets {
   /** A heart in white, for the sponsor card's button. */
   readonly heart: string;
   readonly npm: string;
-  /** The logo with its name in black. */
+  /** The logo with its name, in the logo's ink. */
   readonly wordmark: string;
 }
 
@@ -239,7 +242,7 @@ const box = (style: CSSProperties, ...children: ReadonlyArray<ReactNode>) =>
   h('div', { style: { display: 'flex', ...style } }, ...children);
 
 /** The wordmark's width over its height, from its `viewBox`. */
-const wordmarkRatio = 429 / 128;
+const wordmarkRatio = 314.364 / 84.998;
 
 const wordmark = (assets: Assets, height: number) =>
   h('img', {
@@ -251,11 +254,12 @@ const wordmark = (assets: Assets, height: number) =>
 /** The card's width inside its margins. */
 const innerWidth = 1200 - 2 * 72;
 
-const gradient = `linear-gradient(90deg, ${colors.link}, ${colors.brandLight})`;
+const gradient = `linear-gradient(90deg, ${colors.brand}, ${cyan})`;
 
 /**
- * White under the home page's dot grid and its blue glow, over a rule in
- * the brand's blues, with `footer` above the rule if there is one.
+ * White under the home page's dot grid and its blue glow, over a rule from
+ * the brand's blue to the logo's cyan, with `footer` above the rule if
+ * there is one.
  */
 const frame = (
   assets: Assets,
@@ -267,7 +271,7 @@ const frame = (
       backgroundColor: colors.background,
       backgroundImage: [
         'radial-gradient(ellipse 60% 70% at 85% 0%, rgba(57, 140, 203, 0.2), rgba(57, 140, 203, 0) 100%)',
-        'radial-gradient(ellipse 45% 55% at 0% 100%, rgba(88, 158, 211, 0.14), rgba(88, 158, 211, 0) 100%)',
+        'radial-gradient(ellipse 45% 55% at 0% 100%, rgba(34, 212, 252, 0.12), rgba(34, 212, 252, 0) 100%)',
       ].join(', '),
       boxSizing: 'border-box',
       color: colors.foreground,
@@ -572,7 +576,7 @@ const sponsorButton = (assets: Assets) =>
   box(
     {
       alignItems: 'center',
-      backgroundColor: colors.brand,
+      backgroundColor: colors.primary,
       borderRadius: 999,
       color: colors.background,
       fontSize: 28,

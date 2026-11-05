@@ -1,9 +1,11 @@
-<a href="https://trpc.io/" target="_blank" rel="noopener">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://assets.trpc.io/www/trpc-readme-dark.png" />
-    <img alt="tRPC" src="https://assets.trpc.io/www/trpc-readme.png" />
-  </picture>
-</a>
+<p align="center">
+  <a href="https://trpc.io/" target="_blank" rel="noopener">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./www/public/img/logo-text-white.svg" />
+      <img alt="tRPC" src="./www/public/img/logo-text-black.svg" height="80" />
+    </picture>
+  </a>
+</p>
 
 <div align="center">
   <h1>tRPC</h1>

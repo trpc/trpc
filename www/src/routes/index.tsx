@@ -343,7 +343,7 @@ function HomePage() {
             id="hero-code"
           >
             <DocBody
-              className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
+              className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_color-mix(in_oklab,var(--brand)_15%,transparent)]"
               html={v11Call.html}
             />
             <p className="text-sm text-muted-foreground">

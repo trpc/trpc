@@ -173,10 +173,10 @@ describe('colors', () => {
     background: '--background',
     border: '--border',
     brand: '--brand',
-    brandLight: '--brand-light',
     foreground: '--foreground',
     link: '--brand-dark',
     mutedForeground: '--muted-foreground',
+    primary: '--primary',
   };
 
   it("are the site's light theme", () => {

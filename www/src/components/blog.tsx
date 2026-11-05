@@ -113,11 +113,11 @@ function FeaturedPost(props: { readonly post: PostMeta }) {
   const post = props.post;
   return (
     <Link
-      className="group relative grid gap-4 overflow-hidden rounded-xl border bg-gradient-to-br from-[oklch(0.62_0.12_245/0.12)] via-transparent to-transparent p-6 transition-colors hover:bg-accent/40 sm:p-8"
+      className="group relative grid gap-4 overflow-hidden rounded-xl border bg-gradient-to-br from-brand/12 via-transparent to-transparent p-6 transition-colors hover:bg-accent/40 sm:p-8"
       params={{ slug: post.slug }}
       to="/blog/$slug"
     >
-      <span className="w-max rounded-full border border-[oklch(0.62_0.12_245/0.4)] px-2.5 py-0.5 text-xs font-medium text-link">
+      <span className="w-max rounded-full border border-brand/40 px-2.5 py-0.5 text-xs font-medium text-link">
         Latest
       </span>
       <PostDetails post={post} />
