@@ -83,6 +83,11 @@ interface UserRequest {
   movedTo: ConnectionId | null;
   /** The connection it was moving to got a reconnect notice mid-move. */
   successorReplaced: ConnectionId | null;
+  /**
+   * The connection its latest move left, until that's lost or the
+   * subscription resumes afresh after a loss.
+   */
+  leftFrom: ConnectionId | null;
 }
 
 type Step = ModelStep<ClientModel, ClientEvent, ClientEffect>;
@@ -107,6 +112,10 @@ const covered = coverage([
   'old socket lost after the move completed',
   'new socket lost after the move completed',
   'event after the run delivered after a move',
+  "old socket's untracked event delivered after the move completed",
+  'old socket ended an untracked subscription that left it',
+  'old socket lost while an untracked subscription left it',
+  'new socket lost while an untracked subscription left the old one',
   'replacement failure shown once the old socket ends',
   'retired socket frame dropped',
   'batch send failed',
@@ -139,14 +148,18 @@ class Sim {
    * server always sends `started` first, but the client doesn't rely on it.
    */
   readonly eagerData: boolean;
+  /** Subscriptions send events without ids, so they can't be resumed. */
+  readonly untracked: boolean;
 
   constructor(opts: {
     lazy: boolean;
     slowFirstSocket: boolean;
     eagerData: boolean;
+    untracked: boolean;
   }) {
     this.slowFirstSocket = opts.slowFirstSocket;
     this.eagerData = opts.eagerData;
+    this.untracked = opts.untracked;
     this.machine = simulateMachine({
       machine: {
         initial: initialClient({ lazy: opts.lazy }),
@@ -204,6 +217,7 @@ class Sim {
       movedBeforeStarted: false,
       movedTo: null,
       successorReplaced: null,
+      leftFrom: null,
     });
     this.observeWritability();
     this.dispatch({ type: 'request', id, method, lastEventId: null });
@@ -331,6 +345,7 @@ function servingOf(state: RequestState | undefined): ConnectionId[] {
     case 'sent':
       return [state.connection];
     case 'moving':
+    case 'leaving':
       return [state.from, state.to];
     default:
       return [];
@@ -505,6 +520,11 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
             !request.startedAllowed,
             `subscription ${effect.request} got data before started`,
           );
+          if (result.id === undefined) {
+            // Untracked: counted, since duplicates are allowed.
+            request.lastData++;
+            break;
+          }
           // Every event exactly once, in order.
           const id = Number(result.id);
           check(
@@ -594,6 +614,37 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     }
   }
 
+  if (
+    event?.type === 'frame' &&
+    typeof event.message.id === 'number' &&
+    'result' in event.message &&
+    event.message.result.type === 'data' &&
+    event.message.result.id === undefined
+  ) {
+    // Untracked: no event is lost from the socket serving the subscription,
+    // or from the one it moved away from, while that one is up and its
+    // server still runs it.
+    const id = event.message.id;
+    const state = before.requests.get(id)?.state;
+    const left =
+      sim.requests.get(id)?.leftFrom === event.connection &&
+      !!sim.sockets.get(event.connection)?.calls.has(id);
+    if (
+      state !== undefined &&
+      (left || servingOf(state).includes(event.connection))
+    ) {
+      check(
+        effects.some((effect) => effect.type === 'next'),
+        `untracked event for ${event.message.id} from connection ${event.connection} dropped`,
+      );
+      if (state?.kind === 'leaving' && event.connection === state.from) {
+        covered.add(
+          "old socket's untracked event delivered after the move completed",
+        );
+      }
+    }
+  }
+
   if (event?.type === 'frame' && typeof event.message.id === 'number') {
     const previous = before.requests.get(event.message.id);
     const message = event.message;
@@ -621,7 +672,9 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
       // dropped only if the old connection's was shown.
       if (
         state.kind === 'queued' &&
-        (previous?.kind === 'sent' || previous?.kind === 'moving')
+        (previous?.kind === 'sent' ||
+          previous?.kind === 'moving' ||
+          previous?.kind === 'leaving')
       ) {
         // A subscription that lost its socket shows `started` again.
         user.startedAllowed = true;
@@ -648,7 +701,22 @@ function checkStep(sim: Sim, step: Step & { before: ClientModel }) {
     ) {
       covered.add('old socket lost after the move completed');
     }
+    if (previous?.kind === 'leaving' && state.kind !== 'leaving') {
+      if (state.kind === 'sent' && lost === previous.from) {
+        covered.add('old socket lost while an untracked subscription left it');
+      } else if (state.kind === 'sent') {
+        covered.add('old socket ended an untracked subscription that left it');
+      } else if (lost === previous.to) {
+        covered.add(
+          'new socket lost while an untracked subscription left the old one',
+        );
+      }
+    }
+    if (state.kind === 'queued' || user.leftFrom === lost) {
+      user.leftFrom = null;
+    }
     if (previous?.kind === 'sent' && state.kind === 'moving') {
+      user.leftFrom = previous.connection;
       if (user.successorReplaced === previous.connection) {
         covered.add('moved on from a new socket replaced mid-move');
       }
@@ -749,7 +817,7 @@ function checkModel(model: ClientModel) {
         phase === 'ready' || phase === 'draining',
         `request ${id} sent on connection ${state.connection} in phase ${phase}`,
       );
-    } else if (state.kind === 'moving') {
+    } else if (state.kind === 'moving' || state.kind === 'leaving') {
       const from = model.connections.get(state.from)?.state.phase;
       const to = model.connections.get(state.to)?.state.phase;
       check(
@@ -1056,11 +1124,7 @@ function runSocketAction(
         return;
       }
       if (action !== 'data') return;
-      const eventId = call.next++;
-      frame(sim, connection, {
-        id,
-        result: { type: 'data', id: String(eventId), data: eventId },
-      });
+      sendEvent(sim, { connection, id, call });
       return;
     }
     default:
@@ -1109,6 +1173,7 @@ interface Scenario {
   /** A scripted start, so random runs reach each point of a move. */
   start: keyof typeof starts;
   eagerData: boolean;
+  untracked: boolean;
 }
 
 const scenarioArb: fc.Arbitrary<Scenario> = fc.record({
@@ -1117,6 +1182,7 @@ const scenarioArb: fc.Arbitrary<Scenario> = fc.record({
   slowFirstSocket: fc.boolean(),
   start: fc.constantFrom('none', 'moving', 'busyOldSocket', 'secondNotice'),
   eagerData: fc.boolean(),
+  untracked: fc.boolean(),
 });
 
 /** Random runs seldom get a new socket ready before the old one goes. */
@@ -1164,9 +1230,10 @@ function runScenario({
   slowFirstSocket,
   start,
   eagerData,
+  untracked,
   actions,
 }: Scenario) {
-  const sim = new Sim({ lazy, slowFirstSocket, eagerData });
+  const sim = new Sim({ lazy, slowFirstSocket, eagerData, untracked });
   for (const action of [...starts[start], ...actions]) {
     run(sim, action);
   }
@@ -1223,7 +1290,13 @@ function probeEveryLiveSubscription(sim: Sim) {
     // Each frame can move it on, so the serving socket is looked up again.
     for (let i = 0; i < 400 && user.lastData === before; i++) {
       const state = sim.model.requests.get(id)?.state;
-      if (state?.kind !== 'sent' && state?.kind !== 'moving') break;
+      if (
+        state?.kind !== 'sent' &&
+        state?.kind !== 'moving' &&
+        state?.kind !== 'leaving'
+      ) {
+        break;
+      }
       // A moving one is served by its old socket until the new one answers.
       const connection = servingOf(state)
         .reverse()
@@ -1236,11 +1309,7 @@ function probeEveryLiveSubscription(sim: Sim) {
         frame(sim, connection, { id, result: { type: 'started' } });
         continue;
       }
-      const eventId = call.next++;
-      frame(sim, connection, {
-        id,
-        result: { type: 'data', id: String(eventId), data: eventId },
-      });
+      sendEvent(sim, { connection, id, call });
     }
     if (!probed || user.terminals > 0) continue;
     check(
@@ -1251,6 +1320,19 @@ function probeEveryLiveSubscription(sim: Sim) {
       covered.add('event after the run delivered after a move');
     }
   }
+}
+
+function sendEvent(
+  sim: Sim,
+  opts: { connection: ConnectionId; id: number; call: ServerCall },
+) {
+  const eventId = opts.call.next++;
+  frame(sim, opts.connection, {
+    id: opts.id,
+    result: sim.untracked
+      ? { type: 'data', data: eventId }
+      : { type: 'data', id: String(eventId), data: eventId },
+  });
 }
 
 function canSend(sim: Sim, connection: ConnectionId, id: number) {
@@ -1301,6 +1383,7 @@ test('close() finishing leaves a replaced connection opened since serving', () =
       slowFirstSocket: false,
       start: 'none',
       eagerData: false,
+      untracked: false,
       actions: [
         { type: 'request', method: 'query' },
         { type: 'socket', pick: 0, action: 'open', call: 0 },
@@ -1424,6 +1507,7 @@ const requestSamples: RequestState[] = [
   { kind: 'queued', batch: null, started: false },
   { kind: 'sent', connection: 1, started: false },
   { kind: 'moving', from: 1, to: 2, started: false },
+  { kind: 'leaving', from: 1, to: 2, started: false },
   { kind: 'settled' },
 ];
 
@@ -1475,20 +1559,37 @@ function requestDiagram(method: RequestMethod) {
     edges: sampleTransitions({
       // Only subscriptions move.
       states: requestSamples.filter(
-        (state) => method === 'subscription' || state.kind !== 'moving',
+        (state) =>
+          method === 'subscription' ||
+          (state.kind !== 'moving' && state.kind !== 'leaving'),
       ),
-      events: requestEvents,
-      next(state, { event }) {
-        // Only a moving subscription hears from its new connection.
+      // A tracked subscription has delivered an event, so it has an id to
+      // resume from.
+      events: [
+        ...requestEvents.map((sample) => ({ ...sample, lastEventId: null })),
+        ...requestEvents
+          .filter(
+            ({ label }) =>
+              label === 'started on new' || label === 'data on new',
+          )
+          .map((sample) => ({
+            ...sample,
+            label: `${sample.label}, tracked`,
+            lastEventId: '1',
+          })),
+      ],
+      next(state, { event, lastEventId }) {
+        // Only a moving or leaving subscription hears from its new connection.
         if (
           state.kind !== 'moving' &&
+          state.kind !== 'leaving' &&
           'connection' in event &&
           event.connection === 2
         ) {
           return null;
         }
         const result = requestTransition(
-          { id: 1, method, lastEventId: null, replayed: [], state },
+          { id: 1, method, lastEventId, replayed: [], state },
           event,
         );
         return result.effects.some(

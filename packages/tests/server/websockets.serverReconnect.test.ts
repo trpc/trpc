@@ -785,9 +785,7 @@ test("an untracked subscription gets an event only the old socket had, even when
   });
   newSetup.resolve();
   await vi.waitFor(() => expect(stopped).toHaveBeenCalledTimes(1));
-  await vi.waitFor(() =>
-    expect(ctx.ee.listenerCount('generated')).toBe(1),
-  );
+  await vi.waitFor(() => expect(ctx.ee.listenerCount('generated')).toBe(1));
 
   oldFrames.release();
   ctx.ee.emit('generated', 3);

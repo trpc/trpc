@@ -68,8 +68,13 @@ stateDiagram-v2
   sent --> queued : connectionLost
   sent --> sent : started, data
   sent --> settled : stopped, error, unsubscribe, clientClose, sendFailed
-  moving --> sent : connectionLost, connectionLost on new, started on new, data on new
+  moving --> sent : connectionLost, connectionLost on new, started on new, tracked, data on new, tracked
   moving --> moving : started, data
+  moving --> leaving : started on new, data on new
   moving --> settled : stopped, stopped on new, error, error on new, unsubscribe, clientClose, sendFailed
+  leaving --> sent : connectionLost, stopped, error
+  leaving --> queued : connectionLost on new
+  leaving --> leaving : started, started on new, data, data on new, started on new, tracked, data on new, tracked
+  leaving --> settled : stopped on new, error on new, unsubscribe, clientClose, sendFailed
   settled --> [*]
 ```

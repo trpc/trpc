@@ -30,6 +30,18 @@ export type RequestState =
       to: ConnectionId;
       started: boolean;
     }
+  /**
+   * An untracked subscription that `to` has confirmed, being stopped on
+   * `from`. `to` can't resend what `from` sent before `to` listened, so
+   * `from`'s untracked events are still delivered until it ends the
+   * subscription or is lost.
+   */
+  | {
+      kind: 'leaving';
+      from: ConnectionId;
+      to: ConnectionId;
+      started: boolean;
+    }
   | { kind: 'settled' };
 
 export interface RequestModel {
@@ -335,8 +347,9 @@ function onMoving(
     case 'response': {
       if (event.connection === state.to) {
         // The new connection's first frame for it, `started` from a tRPC
-        // server, is the ack: stop it on the old one, whose frames for it are
-        // dropped from now on.
+        // server, is the ack: stop it on the old one. The new one resends a
+        // tracked subscription's events, so the old one's are dropped from
+        // now on; an untracked one is `leaving` until the old one stops.
         const switched = onSent(
           {
             ...request,
@@ -349,10 +362,26 @@ function onMoving(
           { kind: 'sent', connection: state.to, started: state.started },
           event,
         );
-        return {
-          request: switched.request,
-          effects: [stop(request, state.from), ...switched.effects],
-        };
+        const effects = [stop(request, state.from), ...switched.effects];
+        const switchedState = switched.request.state;
+        if (
+          switchedState.kind === 'sent' &&
+          switched.request.lastEventId === null
+        ) {
+          return {
+            request: {
+              ...switched.request,
+              state: {
+                kind: 'leaving',
+                from: state.from,
+                to: state.to,
+                started: switchedState.started,
+              },
+            },
+            effects,
+          };
+        }
+        return { request: switched.request, effects };
       }
       if (event.connection !== state.from) return illegal(request, event);
       // Until then, the old connection serves it.
@@ -435,6 +464,79 @@ function onMoving(
   }
 }
 
+function onLeaving(
+  request: RequestModel,
+  state: Extract<RequestState, { kind: 'leaving' }>,
+  event: RequestEvent,
+): RequestTransition {
+  const remaining: RequestModel = {
+    ...request,
+    state: { kind: 'sent', connection: state.to, started: state.started },
+  };
+  switch (event.type) {
+    case 'response': {
+      if (event.connection === state.to) {
+        const served = onSent(
+          request,
+          { kind: 'sent', connection: state.to, started: state.started },
+          event,
+        );
+        const servedState = served.request.state;
+        if (servedState.kind !== 'sent') return served;
+        return {
+          request: {
+            ...served.request,
+            state: { ...state, started: servedState.started },
+          },
+          effects: served.effects,
+        };
+      }
+      if (event.connection !== state.from) return illegal(request, event);
+      const message = event.message;
+      if (!('result' in message) || message.result.type === 'stopped') {
+        // It has stopped it.
+        return { request: remaining, effects: [] };
+      }
+      // A tracked event is `to`'s to send, and `started` has been handled.
+      if (message.result.type !== 'data' || message.result.id !== undefined) {
+        return { request, effects: [] };
+      }
+      return {
+        request,
+        effects: [{ type: 'next', request: request.id, message }],
+      };
+    }
+    case 'connectionLost':
+      if (event.connection === state.from) {
+        return { request: remaining, effects: [] };
+      }
+      if (event.connection === state.to) return resume(request);
+      return illegal(request, event);
+    case 'unsubscribe':
+      return settle(request, [
+        stop(request, state.to),
+        { type: 'complete', request: request.id },
+      ]);
+    case 'clientClose':
+      return settle(request, [{ type: 'complete', request: request.id }]);
+    case 'sendFailed':
+      return settle(request, [
+        {
+          type: 'fail',
+          request: request.id,
+          failure: { kind: 'sendFailed', cause: event.cause },
+        },
+      ]);
+    case 'batch':
+    case 'unbatch':
+    case 'send':
+    case 'move':
+      return illegal(request, event);
+    default:
+      return exhaustive(event, illegal(request, event));
+  }
+}
+
 /**
  * The request state machine: one pure step. Effects are returned as data;
  * the client runs them.
@@ -451,6 +553,8 @@ export function requestTransition(
       return onSent(request, state, event);
     case 'moving':
       return onMoving(request, state, event);
+    case 'leaving':
+      return onLeaving(request, state, event);
     case 'settled':
       return illegal(request, event);
     default:

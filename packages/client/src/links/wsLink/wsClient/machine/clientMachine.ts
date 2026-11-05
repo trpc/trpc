@@ -202,7 +202,7 @@ class Step {
     );
   }
 
-  /** Requests `connection` serves: sent on it, or moving to or from it. */
+  /** Requests `connection` serves: sent on it, or moving or leaving to or from it. */
   servedBy(connection: ConnectionId) {
     return [...this.requests.values()].filter((request) =>
       servingConnections(request).includes(connection),
@@ -605,6 +605,7 @@ function servingConnections(request: RequestModel): ConnectionId[] {
     case 'sent':
       return [state.connection];
     case 'moving':
+    case 'leaving':
       return [state.from, state.to];
     case 'queued':
     case 'settled':
@@ -812,7 +813,8 @@ export function clientTransition(
         const request = step.requests.get(id);
         if (
           request?.state.kind === 'sent' ||
-          request?.state.kind === 'moving'
+          request?.state.kind === 'moving' ||
+          request?.state.kind === 'leaving'
         ) {
           step.applyRequest(request, {
             type: 'sendFailed',
