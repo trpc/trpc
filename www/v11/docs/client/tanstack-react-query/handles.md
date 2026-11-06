@@ -1662,43 +1662,6 @@ async function loader(id: string) {
 - The load rejects as soon as one entry fails, without waiting for the others. If several fail, you get the first to fail.
 - Errors that don't come from the request, such as a cancelled query, reject as they are.
 
-### Errors as values {#errors-as-values}
-
-Wrap a fetch or ensure entry in `settleEntry` to get its error on `data` instead of a rejected load. `data.post` is then `{ status: 'success', data }` or `{ status: 'error', error }`, with a `TRPCEntryError`:
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: loader.ts
-import { trpc } from '~/trpc/server';
-declare function notFound(): never;
-declare const id: string;
-// ---cut---
-import {
-  ensureEntry,
-  loadHandles,
-  prefetchInfiniteEntry,
-  settleEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-
-const [handles, data] = await loadHandles(trpc, {
-  post: settleEntry(ensureEntry(trpc.post.byId, { id })),
-  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
-});
-if (data.post.status === 'error') {
-  if (data.post.error.code === 'NOT_FOUND') {
-    notFound();
-  }
-  throw data.post.error;
-}
-data.post.data.title;
-//        ^?
-```
-
-- A settled entry never makes the load reject. The load still rejects if an entry you didn't settle fails.
-- `handles` has a handle for every entry, failed or not. A component that reads a failed one gets the error in its error boundary, as with a [prefetch entry](#errors-prefetch).
-- Settling a prefetch entry is a type error: it never makes the load reject.
-
 ### With prefetch entries {#errors-prefetch}
 
 A prefetch entry never makes the load reject. The component that reads the handle gets the error instead, and the nearest error boundary shows it. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.

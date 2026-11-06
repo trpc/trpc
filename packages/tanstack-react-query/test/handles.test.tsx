@@ -31,7 +31,6 @@ import {
   waterfallInfiniteHandle,
   fromHandle,
   isTRPCEntryError,
-  settleEntry,
   TRPCEntryError,
 } from '../src/unstable-handles';
 import type {
@@ -114,45 +113,6 @@ function makeServerProxy(resource: ReturnType<typeof ctx>) {
 }
 
 describe('types', () => {
-  test('settleEntry turns an entry into a result on data', async () => {
-    const trpc = {} as TRPC;
-    if (Math.random() < 2) return;
-    const [handles, data] = await loadHandles(trpc, {
-      post: settleEntry(ensureEntry(trpc.post.byId, { id: '1' })),
-      list: settleEntry(fetchInfiniteEntry(trpc.post.list, { limit: 2 })),
-      viewer: ensureEntry(trpc.viewer),
-    });
-    expectTypeOf(handles.post).toEqualTypeOf<
-      inferQueryHandle<TRPC['post']['byId']>
-    >();
-    expectTypeOf(data.viewer).toEqualTypeOf<{ name: string }>();
-    if (data.post.status === 'error') {
-      expectTypeOf(data.post.error.code).toEqualTypeOf<
-        TRPC_ERROR_CODE_KEY | undefined
-      >();
-      expectTypeOf(data.post.error.cause).toEqualTypeOf<
-        TRPCClientErrorLike<AppRouter> | TRPCError
-      >();
-      // @ts-expect-error a failed entry has no data
-      void data.post.data;
-    } else {
-      expectTypeOf(data.post.data).toEqualTypeOf<{
-        id: string;
-        title: string;
-      }>();
-    }
-    if (data.list.status === 'success') {
-      expectTypeOf(data.list.data.pages[0]!.items).toEqualTypeOf<number[]>();
-    }
-
-    // @ts-expect-error a prefetch entry never fails the load
-    settleEntry(prefetchEntry(trpc.post.byId, { id: '1' }));
-    // @ts-expect-error nor does an infinite one
-    settleEntry(prefetchInfiniteEntry(trpc.post.list, { limit: 2 }));
-    // @ts-expect-error an entry is settled once
-    settleEntry(settleEntry(fetchEntry(trpc.post.byId, { id: '1' })));
-  });
-
   test('isTRPCEntryError narrows to the error of the procedure it matches', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
@@ -529,56 +489,6 @@ describe('loading', () => {
     });
     expect((error as TRPCEntryError).cause).toBeInstanceOf(TRPCClientError);
     expect(isTRPCEntryError(error, trpc.post.byId)).toBe(true);
-  });
-
-  test('a settled entry resolves to a result, and only unsettled entries reject', async () => {
-    await using resource = ctx();
-    const server = makeServerProxy(resource);
-
-    const [handles, data] = await loadHandles(server.trpc, {
-      missingPost: settleEntry(
-        ensureEntry(server.trpc.post.byId, { id: 'missing' }),
-      ),
-      post: settleEntry(fetchEntry(server.trpc.post.byId, { id: '1' })),
-      viewer: ensureEntry(server.trpc.viewer),
-    });
-    expect(data.post).toEqual({
-      status: 'success',
-      data: { id: '1', title: 'Post 1' },
-    });
-    expect(data.viewer).toEqual({ name: 'KATT' });
-    expect(data.missingPost.status).toBe('error');
-    const failed = data.missingPost as Extract<
-      typeof data.missingPost,
-      { status: 'error' }
-    >;
-    expect(failed.error).toBeInstanceOf(TRPCEntryError);
-    expect(failed.error).toMatchObject({
-      key: 'missingPost',
-      path: 'post.byId',
-      code: 'NOT_FOUND',
-    });
-    expect(handles.missingPost.input).toEqual({ id: 'missing' });
-
-    await expect(
-      loadHandles(server.trpc, {
-        settled: settleEntry(ensureEntry(server.trpc.post.byId, { id: '1' })),
-        post: ensureEntry(server.trpc.post.byId, { id: 'missing' }),
-      }),
-    ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
-  });
-
-  test('JavaScript callers get a readable error for settling a prefetch entry', async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
-    expect(() =>
-      settleEntry(prefetchEntry(trpc.post.byId, { id: '1' }) as any),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`settleEntry()\` takes a fetch or ensure entry: a prefetch entry never makes the load reject]`,
-    );
-    expect(() => settleEntry({} as any)).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\` for \`settleEntry()\`, got {}]`,
-    );
   });
 
   test('keeps an entry named __proto__ as its own key', async () => {

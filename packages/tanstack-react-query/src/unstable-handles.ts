@@ -11,7 +11,6 @@ export {
   waterfallInfiniteHandle,
   fromHandle,
   isTRPCEntryError,
-  settleEntry,
   TRPCEntryError,
 } from './internals/handles';
 export type {
@@ -23,7 +22,6 @@ export type {
   AnyTRPCEntry,
   TRPCEntryKind,
   TRPCLoadedHandles,
-  TRPCEntryResult,
   TRPCEntryOptions,
   TRPCInfiniteEntryOptions,
   inferQueryHandle,

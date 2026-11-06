@@ -111,15 +111,9 @@ export type TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
 export interface TRPCQueryEntry<
   TDef extends ResolverDef = ResolverDef,
   TKind extends TRPCEntryKind = TRPCEntryKind,
-  TSettled extends boolean = false,
 > {
   /** Type-only: never present at runtime. */
-  readonly [entryDef]: {
-    def: TDef;
-    kind: TKind;
-    type: 'query';
-    settled: TSettled;
-  };
+  readonly [entryDef]: { def: TDef; kind: TKind; type: 'query' };
 }
 
 /**
@@ -129,50 +123,29 @@ export interface TRPCQueryEntry<
 export interface TRPCInfiniteQueryEntry<
   TDef extends ResolverDef = ResolverDef,
   TKind extends TRPCEntryKind = TRPCEntryKind,
-  TSettled extends boolean = false,
 > {
   /** Type-only: never present at runtime. */
-  readonly [entryDef]: {
-    def: TDef;
-    kind: TKind;
-    type: 'infinite';
-    settled: TSettled;
-  };
+  readonly [entryDef]: { def: TDef; kind: TKind; type: 'infinite' };
 }
 
 /** Any query or infinite query entry. */
 export type AnyTRPCEntry =
-  | TRPCQueryEntry<any, any, any>
-  | TRPCInfiniteQueryEntry<any, any, any>;
-
-/**
- * What `data` has for an entry wrapped in `settleEntry()`: its data, or the
- * error it failed with.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
- */
-export type TRPCEntryResult<TDef extends ResolverDef, TData> =
-  | { readonly status: 'success'; readonly data: TData }
-  | { readonly status: 'error'; readonly error: TRPCEntryError<TDef> };
+  | TRPCQueryEntry<any, any>
+  | TRPCInfiniteQueryEntry<any, any>;
 
 type HandleOfEntry<TEntry> =
-  TEntry extends TRPCQueryEntry<infer TDef, any, any>
+  TEntry extends TRPCQueryEntry<infer TDef, any>
     ? TRPCQueryHandle<TDef>
-    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any, any>
+    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
       ? TRPCInfiniteQueryHandle<TDef>
       : never;
 
 type DataOfEntry<TEntry> =
-  TEntry extends TRPCQueryEntry<infer TDef, any, any>
+  TEntry extends TRPCQueryEntry<infer TDef, any>
     ? TDef['output']
-    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any, any>
+    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
       ? TRPCInfiniteData<TDef['input'], TDef['output']>
       : never;
-
-type ResultOfEntry<TEntry> = TEntry extends {
-  readonly [entryDef]: { def: infer TDef extends ResolverDef; settled: true };
-}
-  ? TRPCEntryResult<TDef, DataOfEntry<TEntry>>
-  : DataOfEntry<TEntry>;
 
 type HandlesOf<TEntries extends Record<string, AnyTRPCEntry>> = {
   [TKey in keyof TEntries]: HandleOfEntry<TEntries[TKey]>;
@@ -185,7 +158,7 @@ type DataOf<TEntries extends Record<string, AnyTRPCEntry>> = {
     }
       ? TKey
       : never
-  ]: ResultOfEntry<TEntries[TKey]>;
+  ]: DataOfEntry<TEntries[TKey]>;
 };
 
 /**
@@ -322,19 +295,17 @@ interface EntryState {
   kind: TRPCEntryKind;
   type: HandleType;
   options: any;
-  /** From `settleEntry()`: resolve to a result instead of rejecting */
-  settled: boolean;
 }
 
 function createEntry(state: EntryState) {
   return { [entryState]: state };
 }
 
-function readEntry(name: string, entry: unknown): EntryState {
+function readEntry(key: string, entry: unknown): EntryState {
   const state = (entry as { [entryState]?: EntryState } | null)?.[entryState];
   if (!state) {
     throw new Error(
-      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\` for ${name}, got ${JSON.stringify(entry)}`,
+      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\` for "${key}", got ${JSON.stringify(entry)}`,
     );
   }
   return state;
@@ -434,21 +405,14 @@ async function startEntries(
   entries: Record<string, unknown>,
 ) {
   const states = Object.entries(entries).map(
-    ([key, entry]) => [key, readEntry(`"${key}"`, entry)] as const,
+    ([key, entry]) => [key, readEntry(key, entry)] as const,
   );
   const loads = states.map(([key, state]) => ({
     key,
     state,
-    promise: startEntry(queryClient, state).then(
-      (data) => (state.settled ? { status: 'success', data } : data),
-      (error: unknown) => {
-        const entryError = toEntryError(key, state, error);
-        if (state.settled && entryError instanceof TRPCEntryError) {
-          return { status: 'error', error: entryError };
-        }
-        throw entryError;
-      },
-    ),
+    promise: startEntry(queryClient, state).catch((error: unknown) => {
+      throw toEntryError(key, state, error);
+    }),
   }));
   const waited = loads.filter((load) => load.state.kind !== 'prefetch');
   const results = await Promise.all(waited.map((load) => load.promise));
@@ -641,7 +605,6 @@ function entry(opts: {
     type: opts.type,
     kind: opts.kind,
     options: ctx.options(opts.type, opts.input, opts.opts),
-    settled: false,
   });
 }
 
@@ -678,42 +641,6 @@ function waterfall(opts: {
     type,
     renderClient,
   });
-}
-
-/**
- * Wraps a fetch or ensure entry so a failure doesn't make the load reject.
- * Its key on `data` holds `{ status: 'success', data }` or
- * `{ status: 'error', error }` instead, with a `TRPCEntryError`.
- * @example
- * ```ts
- * const [handles, data] = await loadHandles(trpc, {
- *   post: settleEntry(ensureEntry(trpc.post.byId, { id })),
- * });
- * if (data.post.status === 'error') {
- *   if (data.post.error.code === 'NOT_FOUND') throw notFound();
- *   throw data.post.error;
- * }
- * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
- */
-export function settleEntry<
-  TDef extends ResolverDef,
-  TKind extends 'fetch' | 'ensure',
->(entry: TRPCQueryEntry<TDef, TKind>): TRPCQueryEntry<TDef, TKind, true>;
-export function settleEntry<
-  TDef extends ResolverDef,
-  TKind extends 'fetch' | 'ensure',
->(
-  entry: TRPCInfiniteQueryEntry<TDef, TKind>,
-): TRPCInfiniteQueryEntry<TDef, TKind, true>;
-export function settleEntry(entry: unknown): unknown {
-  const state = readEntry('`settleEntry()`', entry);
-  if (state.kind === 'prefetch') {
-    throw new Error(
-      '`settleEntry()` takes a fetch or ensure entry: a prefetch entry never makes the load reject',
-    );
-  }
-  return createEntry({ ...state, settled: true });
 }
 
 /**
