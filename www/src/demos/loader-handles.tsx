@@ -219,7 +219,7 @@ export function LoaderHandles(_props: DemoProps) {
           <pre className="overflow-x-auto font-mono text-[0.7rem] leading-relaxed">
             <span className="text-muted-foreground">
               {
-                'loader: ({ params: { id } }) =>\n  trpc.unstable_$loadHandles({'
+                'loader: async ({ params: { id } }) => {\n  const [handles] = await trpc.unstable_$loadHandles({'
               }
             </span>
             {
@@ -228,7 +228,9 @@ export function LoaderHandles(_props: DemoProps) {
             {
               '\n    comments: trpc.post.comments\n      .unstable_$prefetchInfiniteEntry(…),'
             }
-            <span className="text-muted-foreground">{'\n  })'}</span>
+            <span className="text-muted-foreground">
+              {'\n  });\n  return handles;\n}'}
+            </span>
           </pre>
         </Panel>
         <Connector active={step === 1} label="returns" />
