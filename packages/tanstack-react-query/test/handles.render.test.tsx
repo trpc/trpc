@@ -79,9 +79,9 @@ function setup(resource: ReturnType<typeof ctx>) {
   }
   function PostPage(props: { id: string; flipKeys?: boolean }) {
     const trpc = resource.useTRPC();
-    const post = trpc.post.byId.unstable_$prefetch({ id: props.id });
+    const post = trpc.post.byId.unstable_$waterfallHandle({ id: props.id });
     // Same input, different key order
-    const comments = trpc.post.comments.unstable_$prefetchInfinite(
+    const comments = trpc.post.comments.unstable_$waterfallInfiniteHandle(
       props.flipKeys
         ? { limit: 2, postId: props.id }
         : { postId: props.id, limit: 2 },
@@ -100,7 +100,7 @@ function setup(resource: ReturnType<typeof ctx>) {
   return { PostPage, Post };
 }
 
-describe('unstable_$prefetch on useTRPC() during render', () => {
+describe('unstable_$waterfallHandle on useTRPC() during render', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -108,15 +108,20 @@ describe('unstable_$prefetch on useTRPC() during render', () => {
   test('returns typed handles', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    expectTypeOf(trpc.post.byId.unstable_$prefetch({ id: '1' })).toEqualTypeOf<
-      unstable_inferQueryHandle<TRPC['post']['byId']>
-    >();
+    expectTypeOf(
+      trpc.post.byId.unstable_$waterfallHandle({ id: '1' }),
+    ).toEqualTypeOf<unstable_inferQueryHandle<TRPC['post']['byId']>>();
   });
 
-  test('starts every query before any reader renders', async () => {
+  test('starts nothing itself: readers in their own boundaries start together', async () => {
     await using resource = ctx();
     const { PostPage } = setup(resource);
-    const utils = resource.renderApp(<PostPage id="1" />);
+    function Page() {
+      const trpc = resource.useTRPC();
+      trpc.post.byId.unstable_$waterfallHandle({ id: 'unread' });
+      return <PostPage id="1" />;
+    }
+    const utils = resource.renderApp(<Page />);
 
     expect(resource.queryClient.isFetching()).toBe(2);
     expect(utils.container).toHaveTextContent('loading post');
@@ -186,7 +191,7 @@ describe('unstable_$prefetch on useTRPC() during render', () => {
     await using resource = ctx();
     function Page() {
       const trpc = resource.useTRPC();
-      const post = trpc.post.byId.unstable_$prefetch({ id: '1' });
+      const post = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
       const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(post));
       return <p>{`${postQuery.data.title} v${postQuery.data.version}`}</p>;
     }
@@ -206,10 +211,7 @@ describe('unstable_$prefetch on useTRPC() during render', () => {
     await using resource = ctx();
     function Page() {
       const trpc = resource.useTRPC();
-      const post = trpc.post.byId.unstable_$prefetch(
-        { id: 'missing' },
-        { retry: false },
-      );
+      const post = trpc.post.byId.unstable_$waterfallHandle({ id: 'missing' });
       const postQuery = useSuspenseQuery(
         trpc.unstable_$fromHandle(post, { retry: false }),
       );
@@ -238,5 +240,55 @@ describe('unstable_$prefetch on useTRPC() during render', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(resource.calls).toHaveBeenCalledTimes(1);
     error.mockRestore();
+  });
+
+  test("switching input reads the loader's query first, then the new one", async () => {
+    await using resource = ctx();
+    const [{ comments }] =
+      await resource.optionsProxyClient.unstable_$loadHandles({
+        comments:
+          resource.optionsProxyClient.post.comments.unstable_$fetchInfiniteEntry(
+            { postId: '1', limit: 2 },
+          ),
+      });
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    let setLimit: (limit: number) => void = () => {};
+    function Comments(props: {
+      comments: unstable_inferInfiniteQueryHandle<TRPC['post']['comments']>;
+    }) {
+      const trpc = resource.useTRPC();
+      const [limit, _setLimit] = React.useState(props.comments.input.limit);
+      setLimit = _setLimit;
+      const handle = trpc.post.comments.unstable_$waterfallInfiniteHandle(
+        props.comments,
+        (input) => ({ ...input, limit }),
+      );
+      const commentsQuery = useSuspenseInfiniteQuery(
+        trpc.unstable_$fromHandle(handle, {
+          getNextPageParam: (last) => last.nextCursor,
+        }),
+      );
+      return (
+        <p>{`limit:${handle.input.limit} comments:${commentsQuery.data.pages.flatMap((p) => p.items).join(',')}`}</p>
+      );
+    }
+    const utils = resource.renderApp(
+      <React.Suspense fallback={<p>loading</p>}>
+        <Comments comments={comments} />
+      </React.Suspense>,
+    );
+    expect(utils.container).toHaveTextContent('limit:2 comments:0,1');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    React.act(() => setLimit(3));
+    await vi.waitFor(() =>
+      expect(utils.container).toHaveTextContent('limit:3 comments:0,1'),
+    );
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    expect(resource.calls).toHaveBeenLastCalledWith('post.comments', {
+      postId: '1',
+      limit: 3,
+    });
   });
 });

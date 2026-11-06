@@ -19,12 +19,14 @@ import type {
   ExtractCursorType,
   FeatureFlags,
   ResolverDef,
+  TRPCInfiniteData,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
 } from './types';
 import { readQueryKey } from './utils';
 
 declare const handleDef: unique symbol;
+declare const entryDef: unique symbol;
 
 type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
   transformer: TDef['transformer'];
@@ -48,32 +50,34 @@ type HandleQueryKey<
   : [path: string[], opts?: { input?: TInput; type?: TType }];
 
 /**
- * A serializable reference to a query started on the server (or in a loader).
- * Pass it to a client component and read it with `trpc.unstable_$fromHandle(handle)`.
+ * A serializable reference to a query, from `trpc.unstable_$loadHandles()` or
+ * `trpc.<path>.unstable_$waterfallHandle()`. Pass it to a component and read it with
+ * `trpc.unstable_$fromHandle(handle)`.
  */
 export interface unstable_TRPCQueryHandle<
   TDef extends ResolverDef = ResolverDef,
 > {
   /**
-   * Type-only: never present at runtime. Required, so only the handle verbs
-   * create handles.
+   * Type-only: never present at runtime. Required, so only
+   * `unstable_$loadHandles` and `unstable_$waterfallHandle` create handles.
    */
   readonly [handleDef]: TDef & { kind: 'query' };
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
-  /** The input the query was started with. The key is absent when the input is `undefined`. */
+  /** The query's input. The key is absent when the input is `undefined`. */
   readonly input: TDef['input'];
 }
 
 /**
- * A serializable reference to an infinite query started on the server (or in a loader).
+ * A serializable reference to an infinite query, from `trpc.unstable_$loadHandles()` or
+ * `trpc.<path>.unstable_$waterfallInfiniteHandle()`.
  * Read it with `trpc.unstable_$fromHandle(handle, { getNextPageParam })`.
  */
 export interface unstable_TRPCInfiniteQueryHandle<
   TDef extends ResolverDef = ResolverDef,
 > {
   /**
-   * Type-only: never present at runtime. Required, so only the handle verbs
-   * create handles.
+   * Type-only: never present at runtime. Required, so only
+   * `unstable_$loadHandles` and `unstable_$waterfallInfiniteHandle` create handles.
    */
   readonly [handleDef]: TDef & { kind: 'infinite' };
   readonly queryKey: HandleQueryKey<
@@ -81,7 +85,7 @@ export interface unstable_TRPCInfiniteQueryHandle<
     InfiniteHandleInput<TDef['input']>,
     'infinite'
   >;
-  /** The input the query was started with, without `cursor` and `direction` */
+  /** The query's input, without `cursor` and `direction` */
   readonly input: InfiniteHandleInput<TDef['input']>;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
 }
@@ -91,8 +95,81 @@ export type unstable_AnyTRPCHandle =
   | unstable_TRPCQueryHandle<any>
   | unstable_TRPCInfiniteQueryHandle<any>;
 
-/** Options for starting a query that returns a handle */
-export interface unstable_TRPCPrefetchOptions
+/**
+ * How `unstable_$loadHandles` starts an entry's query, named after the
+ * `QueryClient` method it calls: `prefetchQuery`, `fetchQuery` or `ensureQueryData`.
+ */
+export type unstable_TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
+
+/**
+ * A query for `trpc.unstable_$loadHandles()` to start, from
+ * `unstable_$prefetchEntry`, `unstable_$fetchEntry` or `unstable_$ensureEntry`.
+ * Creating it starts nothing.
+ */
+export interface unstable_TRPCQueryEntry<
+  TDef extends ResolverDef = ResolverDef,
+  TKind extends unstable_TRPCEntryKind = unstable_TRPCEntryKind,
+> {
+  /** Type-only: never present at runtime. */
+  readonly [entryDef]: { def: TDef; kind: TKind; type: 'query' };
+}
+
+/**
+ * An infinite query for `trpc.unstable_$loadHandles()` to start, from
+ * `unstable_$prefetchInfiniteEntry`, `unstable_$fetchInfiniteEntry` or
+ * `unstable_$ensureInfiniteEntry`. Creating it starts nothing.
+ */
+export interface unstable_TRPCInfiniteQueryEntry<
+  TDef extends ResolverDef = ResolverDef,
+  TKind extends unstable_TRPCEntryKind = unstable_TRPCEntryKind,
+> {
+  /** Type-only: never present at runtime. */
+  readonly [entryDef]: { def: TDef; kind: TKind; type: 'infinite' };
+}
+
+/** Any query or infinite query entry. */
+export type unstable_AnyTRPCEntry =
+  | unstable_TRPCQueryEntry<any, any>
+  | unstable_TRPCInfiniteQueryEntry<any, any>;
+
+type HandleOfEntry<TEntry> =
+  TEntry extends unstable_TRPCQueryEntry<infer TDef, any>
+    ? unstable_TRPCQueryHandle<TDef>
+    : TEntry extends unstable_TRPCInfiniteQueryEntry<infer TDef, any>
+      ? unstable_TRPCInfiniteQueryHandle<TDef>
+      : never;
+
+type DataOfEntry<TEntry> =
+  TEntry extends unstable_TRPCQueryEntry<infer TDef, any>
+    ? TDef['output']
+    : TEntry extends unstable_TRPCInfiniteQueryEntry<infer TDef, any>
+      ? TRPCInfiniteData<TDef['input'], TDef['output']>
+      : never;
+
+type LoadedHandles<TEntries extends Record<string, unstable_AnyTRPCEntry>> = {
+  [TKey in keyof TEntries]: HandleOfEntry<TEntries[TKey]>;
+};
+
+type LoadedData<TEntries extends Record<string, unstable_AnyTRPCEntry>> = {
+  [TKey in keyof TEntries as TEntries[TKey] extends {
+    readonly [entryDef]: { kind: 'fetch' | 'ensure' };
+  }
+    ? TKey
+    : never]: DataOfEntry<TEntries[TKey]>;
+};
+
+/**
+ * What `trpc.unstable_$loadHandles()` resolves to: `[handles, data]`. `handles` has a handle
+ * for every entry, by the entry's key; return them from the loader. `data` has the data of
+ * every fetch and ensure entry, by the entry's key.
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#loader-data
+ */
+export type unstable_TRPCLoadedHandles<
+  TEntries extends Record<string, unstable_AnyTRPCEntry>,
+> = readonly [handles: LoadedHandles<TEntries>, data: LoadedData<TEntries>];
+
+/** Options for an entry */
+export interface unstable_TRPCEntryOptions
   extends
     Pick<
       FetchQueryOptions,
@@ -107,12 +184,12 @@ type HandleGetNextPageParam<TDef extends ResolverDef> =
   >;
 
 /**
- * Options for starting an infinite query that returns a handle. Pass
- * `pages` and `getNextPageParam` to load several pages up front.
+ * Options for an infinite query entry. Pass `pages` and `getNextPageParam`
+ * to load several pages up front.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
-export type unstable_TRPCPrefetchInfiniteOptions<TDef extends ResolverDef> =
-  unstable_TRPCPrefetchOptions & {
+export type unstable_TRPCInfiniteEntryOptions<TDef extends ResolverDef> =
+  unstable_TRPCEntryOptions & {
     initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
   } & (
       | {
@@ -130,90 +207,131 @@ export type unstable_TRPCPrefetchInfiniteOptions<TDef extends ResolverDef> =
         }
     );
 
-/** Verbs added to query procedures */
+type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
+  ? [input?: TDef['input'], opts?: unstable_TRPCEntryOptions]
+  : [input: TDef['input'], opts?: unstable_TRPCEntryOptions];
+
+/** Entries and handles added to query procedures */
 export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
   /**
-   * Start the query without waiting and return a serializable handle for it.
-   * Never throws: errors surface where the handle is read.
-   *
-   * Same as `void queryClient.prefetchQuery(trpc.<path>.queryOptions(input, opts))`.
-   * On `useTRPC()`, call it during render: like TanStack's `usePrefetchQuery`, it only
-   * starts a query the cache has no state for.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles
+   * An entry for `trpc.unstable_$loadHandles()` that starts the query without waiting,
+   * like `queryClient.prefetchQuery`. It never makes the load reject: errors surface
+   * where the handle is read. Creating the entry starts nothing.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#prefetch
    */
-  unstable_$prefetch: (
-    ...args: undefined extends TDef['input']
-      ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-      : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-  ) => unstable_TRPCQueryHandle<TDef>;
+  unstable_$prefetchEntry: (
+    ...args: EntryArgs<TDef>
+  ) => unstable_TRPCQueryEntry<TDef, 'prefetch'>;
   /**
-   * Start the query and wait until the cache has data for it, so a loader can hold
-   * navigation until then. The handle carries no data: read it with `useSuspenseQuery`
-   * to get data that's always defined. Rejects if that request fails.
-   *
-   * Same as `await queryClient.ensureQueryData({ ...trpc.<path>.queryOptions(input, opts), revalidateIfStale: true })`.
-   * Not available on `useTRPC()`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles
-   */
-  unstable_$ensure: (
-    ...args: undefined extends TDef['input']
-      ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-      : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-  ) => Promise<unstable_TRPCQueryHandle<TDef>>;
-  /**
-   * Like `unstable_$ensure`, but stale data in the cache is refetched before it resolves.
-   * Rejects if that request fails.
-   *
-   * Same as `await queryClient.fetchQuery(trpc.<path>.queryOptions(input, opts))`.
-   * Not available on `useTRPC()`.
+   * An entry for `trpc.unstable_$loadHandles()` that waits for fresh data, like
+   * `queryClient.fetchQuery`: cached data is used only if it isn't stale. The load
+   * rejects if the request fails. Creating the entry starts nothing.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
    */
-  unstable_$fetch: (
-    ...args: undefined extends TDef['input']
-      ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-      : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
-  ) => Promise<unstable_TRPCQueryHandle<TDef>>;
+  unstable_$fetchEntry: (
+    ...args: EntryArgs<TDef>
+  ) => unstable_TRPCQueryEntry<TDef, 'fetch'>;
+  /**
+   * An entry for `trpc.unstable_$loadHandles()` that uses any cached data, even stale,
+   * like `queryClient.ensureQueryData`. It fetches and waits only when the cache has no
+   * data, and the load rejects if that request fails. Readers refetch stale data in the
+   * background when they mount. Creating the entry starts nothing.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#ensure
+   */
+  unstable_$ensureEntry: (
+    ...args: EntryArgs<TDef>
+  ) => unstable_TRPCQueryEntry<TDef, 'ensure'>;
+  /**
+   * Builds a handle without starting its query: the component that reads it fetches
+   * when it renders, which makes it a request waterfall. The name keeps that visible.
+   * Use it for an input you only know during render, like an id from another query's data.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
+   */
+  unstable_$waterfallHandle: {
+    (
+      ...args: undefined extends TDef['input']
+        ? [input?: TDef['input']]
+        : [input: TDef['input']]
+    ): unstable_TRPCQueryHandle<TDef>;
+    /**
+     * Switches a handle, like one a loader passed down, to a new input, like a term the
+     * user is typing. While the new input maps to the handle's own query, it returns the
+     * handle as is, so the first render reads what the loader started.
+     * @see https://trpc.io/docs/client/tanstack-react-query/handles#switching-input
+     */
+    (
+      handle: unstable_TRPCQueryHandle<TDef>,
+      switchInput: (input: TDef['input']) => TDef['input'],
+    ): unstable_TRPCQueryHandle<TDef>;
+  };
 }
 
-/** Verbs added to query procedures with a `cursor` input */
+/** Entries and handles added to query procedures with a `cursor` input */
 export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
   /**
-   * Like `unstable_$prefetch`, for an infinite query. Loads the first page unless `pages` is set.
-   *
-   * Same as `void queryClient.prefetchInfiniteQuery(trpc.<path>.infiniteQueryOptions(input, opts))`.
-   * On `useTRPC()`, call it during render, like `unstable_$prefetch`.
+   * Like `unstable_$prefetchEntry`, for an infinite query. Loads the first page unless `pages` is set.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
    */
-  unstable_$prefetchInfinite: (
+  unstable_$prefetchInfiniteEntry: (
     input: TDef['input'],
-    opts?: unstable_TRPCPrefetchInfiniteOptions<TDef>,
-  ) => unstable_TRPCInfiniteQueryHandle<TDef>;
+    opts?: unstable_TRPCInfiniteEntryOptions<TDef>,
+  ) => unstable_TRPCInfiniteQueryEntry<TDef, 'prefetch'>;
   /**
-   * Like `unstable_$ensure`, for an infinite query.
-   *
-   * Same as `await queryClient.ensureInfiniteQueryData({ ...trpc.<path>.infiniteQueryOptions(input, opts), revalidateIfStale: true })`.
-   * Not available on `useTRPC()`.
+   * Like `unstable_$fetchEntry`, for an infinite query.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
    */
-  unstable_$ensureInfinite: (
+  unstable_$fetchInfiniteEntry: (
     input: TDef['input'],
-    opts?: unstable_TRPCPrefetchInfiniteOptions<TDef>,
-  ) => Promise<unstable_TRPCInfiniteQueryHandle<TDef>>;
+    opts?: unstable_TRPCInfiniteEntryOptions<TDef>,
+  ) => unstable_TRPCInfiniteQueryEntry<TDef, 'fetch'>;
   /**
-   * Like `unstable_$fetch`, for an infinite query.
-   *
-   * Same as `await queryClient.fetchInfiniteQuery(trpc.<path>.infiniteQueryOptions(input, opts))`.
-   * Not available on `useTRPC()`.
+   * Like `unstable_$ensureEntry`, for an infinite query.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
    */
-  unstable_$fetchInfinite: (
+  unstable_$ensureInfiniteEntry: (
     input: TDef['input'],
-    opts?: unstable_TRPCPrefetchInfiniteOptions<TDef>,
-  ) => Promise<unstable_TRPCInfiniteQueryHandle<TDef>>;
+    opts?: unstable_TRPCInfiniteEntryOptions<TDef>,
+  ) => unstable_TRPCInfiniteQueryEntry<TDef, 'ensure'>;
+  /**
+   * Like `unstable_$waterfallHandle`, for an infinite query.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
+   */
+  unstable_$waterfallInfiniteHandle: {
+    (input: TDef['input']): unstable_TRPCInfiniteQueryHandle<TDef>;
+    (
+      handle: unstable_TRPCInfiniteQueryHandle<TDef>,
+      switchInput: (
+        input: InfiniteHandleInput<TDef['input']>,
+      ) => InfiniteHandleInput<TDef['input']>,
+    ): unstable_TRPCInfiniteQueryHandle<TDef>;
+  };
 }
 
-/** Readers added to every router level of the options proxy */
-export interface DecorateHandleReaders<TFeatureFlags extends FeatureFlags> {
+/** Helpers added to every router level of the options proxy */
+export interface DecorateHandleHelpers<TFeatureFlags extends FeatureFlags> {
+  /**
+   * Starts every entry before it waits for any, so the order of the entries doesn't
+   * matter. Resolves to `[handles, data]` once every fetch and ensure entry has data:
+   * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
+   * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
+   *
+   * Not available on `useTRPC()`.
+   * @example
+   * ```ts
+   * const [handles, data] = await trpc.unstable_$loadHandles({
+   *   comments: trpc.post.comments.unstable_$prefetchInfiniteEntry({ postId: id }),
+   *   post: trpc.post.byId.unstable_$ensureEntry({ id }),
+   * });
+   * if (!data.post.published) throw notFound();
+   * return handles;
+   * ```
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles
+   */
+  unstable_$loadHandles: <
+    TEntries extends Record<string, unstable_AnyTRPCEntry>,
+  >(
+    entries: TEntries,
+  ) => Promise<unstable_TRPCLoadedHandles<TEntries>>;
   /**
    * Options for a handle: the same options `trpc.<path>.queryOptions(input)` or
    * `trpc.<path>.infiniteQueryOptions(input, opts)` return for the handle's procedure and input.
@@ -255,23 +373,33 @@ export interface DecorateHandleReaders<TFeatureFlags extends FeatureFlags> {
 }
 
 /**
- * The handle type a query procedure's `unstable_$prefetch()` returns, for
- * typing props. `unstable_$ensure()` and `unstable_$fetch()` resolve to the
- * same type.
+ * The handle type of a query procedure, for typing props.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
  */
 export type unstable_inferQueryHandle<
   TProcedure extends DecorateQueryHandleVerbs<any>,
-> = ReturnType<TProcedure['unstable_$prefetch']>;
+> =
+  ReturnType<
+    TProcedure['unstable_$prefetchEntry']
+  > extends unstable_TRPCQueryEntry<infer TDef, any>
+    ? unstable_TRPCQueryHandle<TDef>
+    : never;
 
 /**
- * The handle type an infinite query procedure's
- * `unstable_$prefetchInfinite()` returns, for typing props.
+ * The handle type of an infinite query procedure, for typing props.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
  */
 export type unstable_inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryHandleVerbs<any>,
-> = ReturnType<TProcedure['unstable_$prefetchInfinite']>;
+> =
+  ReturnType<
+    TProcedure['unstable_$prefetchInfiniteEntry']
+  > extends unstable_TRPCInfiniteQueryEntry<infer TDef, any>
+    ? unstable_TRPCInfiniteQueryHandle<TDef>
+    : never;
+
+const notAHandle =
+  'Expected a tRPC handle from `.unstable_$loadHandles()` or `.unstable_$waterfallHandle()`';
 
 /**
  * @internal
@@ -282,15 +410,13 @@ export function readHandle(
 ) {
   const queryKey = handle?.queryKey as unknown as TRPCQueryKey<any> | undefined;
   if (!Array.isArray(queryKey)) {
-    throw new Error(
-      `Expected a tRPC handle from \`.unstable_$prefetch()\` / \`.unstable_$ensure()\` / \`.unstable_$fetch()\`, got ${JSON.stringify(handle)}`,
-    );
+    throw new Error(`${notAHandle}, got ${JSON.stringify(handle)}`);
   }
   const data = readQueryKey(queryKey);
   const type = data.args?.type;
   if (type !== 'query' && type !== 'infinite') {
     throw new Error(
-      `Expected a tRPC handle from \`.unstable_$prefetch()\` / \`.unstable_$ensure()\` / \`.unstable_$fetch()\`, got a key of type ${String(type)} for "${data.path.join('.')}"`,
+      `${notAHandle}, got a key of type ${String(type)} for "${data.path.join('.')}"`,
     );
   }
   if ((data.prefix?.[0] ?? undefined) !== prefix) {
@@ -306,76 +432,129 @@ export function readHandle(
   };
 }
 
-/**
- * @internal
- */
-export type HandleVerb = 'prefetch' | 'ensure' | 'fetch';
-
-/**
- * A prefetch during render runs on every render, so it follows the rule of
- * TanStack's `usePrefetchQuery`: start only a query the cache has no state for.
- * Stale data is refetched by the reader's observer, and an error stays until
- * the reader's error boundary resets it: restarting it here would suspend the
- * reader again.
- */
-function needsRenderPrefetch(queryClient: QueryClient, options: any) {
-  return !queryClient.getQueryState(options.queryKey);
-}
+type HandleType = 'query' | 'infinite';
 
 /**
  * @internal
  */
-export function startHandle(opts: {
-  queryClient: QueryClient;
-  options: any;
-  kind: 'query' | 'infinite';
-  verb: HandleVerb;
-  inRender: boolean;
-}) {
-  const { queryClient, options, kind, verb, inRender } = opts;
+export function toHandle(options: any, type: HandleType) {
   const input = readQueryKey(options.queryKey).args?.input;
   // Next.js rejects `undefined` in `getServerSideProps` / `getStaticProps` props
   const handle: Record<string, unknown> = {
     queryKey: options.queryKey,
     ...(input !== undefined && { input }),
   };
-  if (kind === 'infinite' && options.initialPageParam != null) {
+  if (type === 'infinite' && options.initialPageParam != null) {
     handle['initialCursor'] = options.initialPageParam;
   }
-  if (inRender) {
-    if (needsRenderPrefetch(queryClient, options)) {
-      void (kind === 'infinite'
-        ? queryClient.prefetchInfiniteQuery(options)
-        : queryClient.prefetchQuery(options));
-    }
-    return handle;
-  }
-  const toHandle = () => handle;
+  return handle;
+}
 
-  if (kind === 'infinite') {
-    switch (verb) {
+const entryState = Symbol('trpc.handleEntry');
+
+interface EntryState {
+  kind: unstable_TRPCEntryKind;
+  type: HandleType;
+  options: any;
+}
+
+/**
+ * @internal
+ */
+export function createEntry(state: EntryState) {
+  return { [entryState]: state };
+}
+
+function readEntry(key: string, entry: unknown): EntryState {
+  const state = (entry as { [entryState]?: EntryState } | null)?.[entryState];
+  if (!state) {
+    throw new Error(
+      `Expected an entry from \`.unstable_$prefetchEntry()\`, \`.unstable_$fetchEntry()\` or \`.unstable_$ensureEntry()\` for "${key}", got ${JSON.stringify(entry)}`,
+    );
+  }
+  return state;
+}
+
+function startEntry(queryClient: QueryClient, state: EntryState) {
+  const { options } = state;
+  if (state.type === 'infinite') {
+    switch (state.kind) {
       case 'prefetch':
-        void queryClient.prefetchInfiniteQuery(options);
-        return handle;
+        return queryClient.prefetchInfiniteQuery(options);
       case 'ensure':
-        return queryClient
-          .ensureInfiniteQueryData({ ...options, revalidateIfStale: true })
-          .then(toHandle);
+        return queryClient.ensureInfiniteQueryData(options);
       case 'fetch':
-        return queryClient.fetchInfiniteQuery(options).then(toHandle);
+        return queryClient.fetchInfiniteQuery(options);
     }
   }
-  switch (verb) {
+  switch (state.kind) {
     case 'prefetch':
-      void queryClient.prefetchQuery(options);
-      return handle;
+      return queryClient.prefetchQuery(options);
     case 'ensure':
-      return queryClient
-        .ensureQueryData({ ...options, revalidateIfStale: true })
-        .then(toHandle);
+      return queryClient.ensureQueryData(options);
     case 'fetch':
-      return queryClient.fetchQuery(options).then(toHandle);
+      return queryClient.fetchQuery(options);
   }
+}
+
+/**
+ * @internal
+ */
+export async function loadHandles(
+  queryClient: QueryClient,
+  entries: Record<string, unknown>,
+) {
+  const states = Object.entries(entries).map(
+    ([key, entry]) => [key, readEntry(key, entry)] as const,
+  );
+  const loads = states.map(([key, state]) => {
+    const promise = startEntry(queryClient, state);
+    return {
+      key,
+      state,
+      promise: state.kind === 'prefetch' ? undefined : promise,
+    };
+  });
+  const results = await Promise.all(loads.map((load) => load.promise));
+
+  const handles: Record<string, unknown> = {};
+  const data: Record<string, unknown> = {};
+  loads.forEach((load, index) => {
+    handles[load.key] = toHandle(load.state.options, load.state.type);
+    if (load.promise) {
+      data[load.key] = results[index];
+    }
+  });
+  return [handles, data] as const;
+}
+
+/**
+ * Handles that start nothing. Their readers fetch during render by design, so
+ * a fetch during server rendering isn't a missing hydration.
+ */
+const waterfallHandles = new WeakSet<object>();
+
+/**
+ * @internal
+ */
+export function waterfallHandle(options: any, type: HandleType) {
+  const handle = toHandle(options, type);
+  waterfallHandles.add(handle);
+  return handle;
+}
+
+/**
+ * @internal
+ */
+export function switchHandle(opts: {
+  previous: unstable_AnyTRPCHandle;
+  options: any;
+  type: HandleType;
+}) {
+  if (hashKey(opts.options.queryKey) === hashKey(opts.previous.queryKey)) {
+    return opts.previous;
+  }
+  return waterfallHandle(opts.options, opts.type);
 }
 
 /**
@@ -451,20 +630,23 @@ function refetchRejectedHydration(queryClient: QueryClient, options: any) {
 /**
  * @internal
  */
-export function prepareHandleRead<TOptions extends { queryFn?: unknown }>(
-  queryClient: QueryClient,
-  handle: ReturnType<typeof readHandle>,
-  options: TOptions,
-): TOptions {
+export function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
+  queryClient: QueryClient;
+  rawHandle: unstable_AnyTRPCHandle;
+  handle: ReturnType<typeof readHandle>;
+  options: TOptions;
+}): TOptions {
+  const { options } = opts;
   if (
     globalThis.process?.env?.['NODE_ENV'] !== 'production' &&
-    typeof options.queryFn === 'function'
+    typeof options.queryFn === 'function' &&
+    !waterfallHandles.has(opts.rawHandle)
   ) {
     options.queryFn = warnIfNotHydrated(
-      handle.path,
+      opts.handle.path,
       options.queryFn as QueryFunction<any, any, any>,
     );
   }
-  refetchRejectedHydration(queryClient, options);
+  refetchRejectedHydration(opts.queryClient, options);
   return options;
 }

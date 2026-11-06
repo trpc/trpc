@@ -86,28 +86,73 @@ function makeServerClient() {
   });
 }
 
+function makeServerProxy(resource: ReturnType<typeof ctx>) {
+  const queryClient = makeServerClient();
+  const trpc = createTRPCOptionsProxy({
+    router: resource.appRouter,
+    ctx: {},
+    queryClient,
+  });
+  return { queryClient, trpc };
+}
+
 describe('types', () => {
+  test('a load gives a handle for every entry and data for fetch and ensure entries', async () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    type PostHandle = unstable_inferQueryHandle<TRPC['post']['byId']>;
+    type ListHandle = unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
+
+    const [handles, data] = await trpc.unstable_$loadHandles({
+      prefetched: trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+      fetched: trpc.post.byId.unstable_$fetchEntry({ id: '2' }),
+      ensured: trpc.post.byId.unstable_$ensureEntry({ id: '3' }),
+      list: trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 }),
+      viewer: trpc.viewer.unstable_$prefetchEntry(),
+    });
+    expectTypeOf(handles.prefetched).toEqualTypeOf<PostHandle>();
+    expectTypeOf(handles.fetched).toEqualTypeOf<PostHandle>();
+    expectTypeOf(handles.ensured).toEqualTypeOf<PostHandle>();
+    expectTypeOf(handles.list).toEqualTypeOf<ListHandle>();
+    expectTypeOf(handles.viewer).toEqualTypeOf<
+      unstable_inferQueryHandle<TRPC['viewer']>
+    >();
+
+    expectTypeOf(data).toEqualTypeOf<{
+      fetched: { id: string; title: string };
+      ensured: { id: string; title: string };
+      list: {
+        pages: { items: number[]; nextCursor: number }[];
+        pageParams: (number | null)[];
+      };
+    }>();
+    // @ts-expect-error a prefetched query may have no data yet
+    void data.prefetched;
+
+    // @ts-expect-error the tuple is readonly
+    handles[0] = handles;
+  });
+
+  test('entries check their input', () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    // @ts-expect-error input is required
+    trpc.post.byId.unstable_$prefetchEntry();
+    // @ts-expect-error input is checked
+    trpc.post.byId.unstable_$fetchEntry({ id: 1 });
+    trpc.viewer.unstable_$ensureEntry();
+    // @ts-expect-error only entries can be loaded
+    void trpc.unstable_$loadHandles({ post: { id: '1' } });
+  });
+
   test('handles infer input and output', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     type PostHandle = unstable_inferQueryHandle<TRPC['post']['byId']>;
 
     expectTypeOf(
-      trpc.post.byId.unstable_$prefetch({ id: '1' }),
+      trpc.post.byId.unstable_$waterfallHandle({ id: '1' }),
     ).toEqualTypeOf<PostHandle>();
-    // The verbs that wait return the same handle
-    expectTypeOf(trpc.post.byId.unstable_$ensure({ id: '1' })).toEqualTypeOf<
-      Promise<PostHandle>
-    >();
-    expectTypeOf(trpc.post.byId.unstable_$fetch({ id: '1' })).toEqualTypeOf<
-      Promise<PostHandle>
-    >();
-
-    // @ts-expect-error input is required
-    trpc.post.byId.unstable_$prefetch();
-    // @ts-expect-error input is checked
-    trpc.post.byId.unstable_$prefetch({ id: 1 });
-    trpc.viewer.unstable_$prefetch();
 
     function Post(props: { handle: PostHandle }) {
       const t = {} as TRPC;
@@ -132,6 +177,9 @@ describe('types', () => {
     const queryKey = [['post', 'byId'], { input: { id: '1' } }];
     // @ts-expect-error not a handle
     trpc.unstable_$fromHandle({ queryKey });
+    // nor is an entry
+    // @ts-expect-error not a handle
+    trpc.unstable_$fromHandle(trpc.post.byId.unstable_$prefetchEntry({ id }));
   });
 
   test('infinite handles need getNextPageParam and do not mix with query handles', () => {
@@ -139,7 +187,7 @@ describe('types', () => {
     if (Math.random() < 2) return;
     type ListHandle = unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
 
-    const list = trpc.post.list.unstable_$prefetchInfinite({ limit: 2 });
+    const list = trpc.post.list.unstable_$waterfallInfiniteHandle({ limit: 2 });
     expectTypeOf(list).toEqualTypeOf<ListHandle>();
 
     const opts = trpc.unstable_$fromHandle(list, {
@@ -151,41 +199,65 @@ describe('types', () => {
     trpc.unstable_$fromHandle(list);
 
     const query: unstable_TRPCQueryHandle<any> =
-      trpc.post.byId.unstable_$prefetch({ id: '1' });
+      trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
     void query;
     // @ts-expect-error an infinite handle isn't a query handle
     const wrong: unstable_inferQueryHandle<TRPC['post']['list']> = list;
     void wrong;
     // @ts-expect-error a query handle isn't an infinite handle
     const wrong2: unstable_TRPCInfiniteQueryHandle<any> =
-      trpc.post.byId.unstable_$prefetch({
+      trpc.post.byId.unstable_$waterfallHandle({
         id: '1',
       });
     void wrong2;
   });
 
-  test('unstable_$fromHandle is on every router level', () => {
+  test('unstable_$fromHandle and unstable_$loadHandles are on every router level', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    const handle = trpc.post.byId.unstable_$prefetch({ id: '1' });
+    const handle = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
     expectTypeOf(trpc.post.unstable_$fromHandle(handle)).toEqualTypeOf(
       trpc.unstable_$fromHandle(handle),
     );
+    const entries = { post: trpc.post.byId.unstable_$fetchEntry({ id: '1' }) };
+    expectTypeOf(trpc.post.unstable_$loadHandles(entries)).toEqualTypeOf(
+      trpc.unstable_$loadHandles(entries),
+    );
   });
 
-  test('infinite verbs only load several pages with getNextPageParam', () => {
+  test('infinite entries only load several pages with getNextPageParam', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    trpc.post.list.unstable_$prefetchInfinite(
+    trpc.post.list.unstable_$fetchInfiniteEntry(
       { limit: 2 },
       { pages: 2, getNextPageParam: (last) => last.nextCursor },
     );
     // @ts-expect-error pages needs getNextPageParam
-    trpc.post.list.unstable_$prefetchInfinite({ limit: 2 }, { pages: 2 });
-    trpc.post.list.unstable_$prefetchInfinite(
+    trpc.post.list.unstable_$fetchInfiniteEntry({ limit: 2 }, { pages: 2 });
+    trpc.post.list.unstable_$prefetchInfiniteEntry(
       { limit: 2 },
       { getNextPageParam: (last) => last.nextCursor },
     );
+  });
+
+  test('waterfall handles switch to an input of the same procedure', () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    const post = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
+    expectTypeOf(
+      trpc.post.byId.unstable_$waterfallHandle(post, (input) => {
+        expectTypeOf(input).toEqualTypeOf<{ id: string }>();
+        return { ...input, id: '2' };
+      }),
+    ).toEqualTypeOf(post);
+    // @ts-expect-error the new input is checked
+    trpc.post.byId.unstable_$waterfallHandle(post, () => ({ id: 2 }));
+
+    const list = trpc.post.list.unstable_$waterfallInfiniteHandle({ limit: 2 });
+    trpc.post.list.unstable_$waterfallInfiniteHandle(list, (input) => {
+      expectTypeOf(input).toEqualTypeOf<{ limit: number }>();
+      return { limit: 3 };
+    });
   });
 
   test('handles of same-signature procedures are interchangeable, and that is safe', () => {
@@ -194,39 +266,329 @@ describe('types', () => {
     // Same input and output: the read follows the handle's own path, so this
     // can never read the wrong procedure.
     const draft: unstable_inferQueryHandle<TRPC['post']['byId']> =
-      trpc.post.draftById.unstable_$prefetch({ id: '1' });
+      trpc.post.draftById.unstable_$waterfallHandle({ id: '1' });
     void draft;
   });
 });
 
-describe('runtime', () => {
-  test('server prefetch -> dehydrate -> hydrate -> read without a refetch', async () => {
+declare const id: string;
+
+describe('loading', () => {
+  test('entries start nothing until loaded', async () => {
     await using resource = ctx();
+    const server = makeServerProxy(resource);
+    server.trpc.post.byId.unstable_$prefetchEntry({ id: '1' });
+    server.trpc.post.byId.unstable_$fetchEntry({ id: '2' });
+    server.trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(resource.calls).not.toHaveBeenCalled();
+    expect(server.queryClient.getQueryCache().getAll()).toHaveLength(0);
+  });
 
-    // Server: a request-scoped client and the in-process proxy
-    const serverQueryClient = makeServerClient();
-    const serverTrpc = createTRPCOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient: serverQueryClient,
+  test('starts every entry before it waits for any, whatever the order', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+    const promise = server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$fetchEntry({ id: '1' }),
+      list: server.trpc.post.list.unstable_$prefetchInfiniteEntry({
+        limit: 2,
+      }),
+    });
+    // Both are in flight before the load resolves
+    expect(server.queryClient.isFetching()).toBe(2);
+    const [handles, data] = await promise;
+    expect(data).toEqual({ post: { id: '1', title: 'Post 1' } });
+    expect(handles).toEqual({
+      post: {
+        queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
+        input: { id: '1' },
+      },
+      list: {
+        queryKey: [['post', 'list'], { input: { limit: 2 }, type: 'infinite' }],
+        input: { limit: 2 },
+      },
+    });
+  });
+
+  test('resolves without waiting for prefetch entries', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+    const [handles, data] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+    });
+    expect(data).toEqual({});
+    expect(server.queryClient.isFetching()).toBe(1);
+    expect(handles.post.input).toEqual({ id: '1' });
+  });
+
+  test('rejects when a fetch or ensure entry fails; prefetch entries never reject', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+
+    await expect(
+      server.trpc.unstable_$loadHandles({
+        post: server.trpc.post.byId.unstable_$ensureEntry({ id: 'missing' }),
+        list: server.trpc.post.list.unstable_$fetchEntry({ limit: 2 }),
+      }),
+    ).rejects.toBeInstanceOf(TRPCError);
+    await expect(
+      server.trpc.unstable_$loadHandles({
+        post: server.trpc.post.byId.unstable_$fetchEntry({ id: 'missing' }),
+      }),
+    ).rejects.toBeInstanceOf(TRPCError);
+
+    const [handles] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$prefetchEntry({ id: 'missing' }),
+    });
+    expect(handles.post.input).toEqual({ id: 'missing' });
+  });
+
+  test('throws a readable error for a value that is not an entry', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    await expect(
+      trpc.unstable_$loadHandles({ post: { id: '1' } as any }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[Error: Expected an entry from \`.unstable_$prefetchEntry()\`, \`.unstable_$fetchEntry()\` or \`.unstable_$ensureEntry()\` for "post", got {"id":"1"}]`,
+    );
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
+
+  test('an ensure entry uses stale cached data without refetching', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+    const queryKey = server.trpc.post.byId.queryKey({ id: '1' });
+    server.queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
+
+    const [, data] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
+    });
+    expect(data.post.title).toBe('stale');
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
+
+  test('an ensure entry refetches on the reader that mounts', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+    // Suspense readers treat data younger than a second as fresh
+    resource.queryClient.setQueryData(
+      trpc.post.byId.queryKey({ id: '1' }),
+      { id: '1', title: 'stale' },
+      { updatedAt: Date.now() - 2_000 },
+    );
+    const [{ post }] = await trpc.unstable_$loadHandles({
+      post: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
     });
 
-    const handle = serverTrpc.post.byId.unstable_$prefetch({ id: '1' });
-    const listHandle = serverTrpc.post.list.unstable_$prefetchInfinite({
-      limit: 2,
+    function Post() {
+      const t = resource.useTRPC();
+      const postQuery = useSuspenseQuery(t.unstable_$fromHandle(post));
+      return <p>title:{postQuery.data.title}</p>;
+    }
+    const utils = resource.renderApp(<Post />);
+    expect(utils.container).toHaveTextContent('title:stale');
+    await vi.waitFor(() =>
+      expect(utils.container).toHaveTextContent('title:Post 1'),
+    );
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+  });
+
+  test('a fetch entry waits for stale data to refetch', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+    const queryKey = server.trpc.post.byId.queryKey({ id: '1' });
+    server.queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
+
+    const [, data] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$fetchEntry({ id: '1' }),
     });
+    expect(data.post.title).toBe('Post 1');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    const [, fresh] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$fetchEntry(
+        { id: '1' },
+        { staleTime: Infinity },
+      ),
+    });
+    expect(fresh.post.title).toBe('Post 1');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+  });
+
+  test('infinite entries can load several pages up front', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const getNextPageParam = (last: { nextCursor: number }) => last.nextCursor;
+    const [handles, data] = await trpc.unstable_$loadHandles({
+      ensured: trpc.post.list.unstable_$ensureInfiniteEntry(
+        { limit: 2 },
+        { pages: 2, getNextPageParam },
+      ),
+      fetched: trpc.post.list.unstable_$fetchInfiniteEntry(
+        { limit: 3, cursor: 10 },
+        { pages: 2, getNextPageParam },
+      ),
+    });
+    expect(data.ensured.pages.flatMap((page) => page.items)).toEqual([
+      0, 1, 2, 3,
+    ]);
+    expect(data.fetched.pages.flatMap((page) => page.items)).toEqual([
+      10, 11, 12, 13,
+    ]);
+    expect(handles.fetched).toEqual({
+      queryKey: [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
+      input: { limit: 3 },
+      initialCursor: 10,
+    });
+    expect(
+      resource.queryClient
+        .getQueryData(
+          trpc.unstable_$fromHandle(handles.ensured, { getNextPageParam })
+            .queryKey,
+        )
+        ?.pages.flatMap((page) => page.items),
+    ).toEqual([0, 1, 2, 3]);
+  });
+
+  test('infinite fetch entries refetch every cached page with getNextPageParam', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const getNextPageParam = (last: { nextCursor: number }) => last.nextCursor;
+    await trpc.unstable_$loadHandles({
+      list: trpc.post.list.unstable_$fetchInfiniteEntry(
+        { limit: 2 },
+        { pages: 2, getNextPageParam },
+      ),
+    });
+    resource.calls.mockClear();
+
+    await trpc.unstable_$loadHandles({
+      list: trpc.post.list.unstable_$fetchInfiniteEntry(
+        { limit: 2 },
+        { getNextPageParam },
+      ),
+    });
+    expect(
+      resource.queryClient
+        .getQueryData(trpc.post.list.infiniteQueryKey({ limit: 2 }))
+        ?.pages.flatMap((page) => page.items),
+    ).toEqual([0, 1, 2, 3]);
+    expect(
+      resource.calls.mock.calls.map(([, input]) => input.cursor ?? null),
+    ).toEqual([null, 2]);
+  });
+
+  test("useTRPC() can't load handles", async () => {
+    await using resource = ctx();
+    let error: unknown;
+    function Component() {
+      const trpc = resource.useTRPC();
+      try {
+        void trpc.unstable_$loadHandles({
+          post: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
+        });
+      } catch (cause) {
+        error = cause;
+      }
+      expect(typeof trpc.unstable_$fromHandle).toBe('function');
+      return null;
+    }
+    resource.renderApp(<Component />);
+    expect(error).toMatchInlineSnapshot(
+      `[Error: \`unstable_$loadHandles()\` on \`useTRPC()\` waits for its queries, which a render can't. Load handles in a route loader or server component, or build one in a component with \`unstable_$waterfallHandle\` and wait where you read it, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
+    );
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
+});
+
+describe('waterfall handles', () => {
+  test('start nothing, and the reader fetches once', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+    const handle = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
     expect(handle).toEqual({
       queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
       input: { id: '1' },
     });
-    expect(listHandle).toEqual({
-      queryKey: [['post', 'list'], { input: { limit: 2 }, type: 'infinite' }],
-      input: { limit: 2 },
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(resource.calls).not.toHaveBeenCalled();
+
+    function Post() {
+      const t = resource.useTRPC();
+      const postQuery = useSuspenseQuery(t.unstable_$fromHandle(handle));
+      return <p>title:{postQuery.data.title}</p>;
+    }
+    const utils = resource.renderApp(
+      <React.Suspense fallback="loading">
+        <Post />
+      </React.Suspense>,
+    );
+    await vi.waitFor(() =>
+      expect(utils.container).toHaveTextContent('title:Post 1'),
+    );
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+  });
+
+  test("switching keeps a loader's handle while the key is the same", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const [{ post, list }] = await trpc.unstable_$loadHandles({
+      post: trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+      list: trpc.post.list.unstable_$prefetchInfiniteEntry({
+        limit: 2,
+        cursor: 4,
+      }),
+    });
+    const loaded = overTheWire({ post, list });
+
+    expect(
+      trpc.post.byId.unstable_$waterfallHandle(loaded.post, (input) => ({
+        ...input,
+      })),
+    ).toBe(loaded.post);
+    expect(
+      trpc.post.byId.unstable_$waterfallHandle(loaded.post, () => ({
+        id: '2',
+      })),
+    ).toEqual({
+      queryKey: [['post', 'byId'], { input: { id: '2' }, type: 'query' }],
+      input: { id: '2' },
     });
 
-    await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
-    const state = overTheWire(dehydrate(serverQueryClient));
-    const props = overTheWire({ handle, listHandle });
+    expect(
+      trpc.post.list.unstable_$waterfallInfiniteHandle(
+        loaded.list,
+        (input) => input,
+      ),
+    ).toBe(loaded.list);
+    expect(
+      trpc.post.list.unstable_$waterfallInfiniteHandle(loaded.list, () => ({
+        limit: 3,
+      })),
+    ).toEqual({
+      queryKey: [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
+      input: { limit: 3 },
+      initialCursor: 4,
+    });
+  });
+});
+
+describe('runtime', () => {
+  test('server load -> dehydrate -> hydrate -> read without a refetch', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+
+    const [handles] = await server.trpc.unstable_$loadHandles({
+      handle: server.trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+      listHandle: server.trpc.post.list.unstable_$prefetchInfiniteEntry({
+        limit: 2,
+      }),
+    });
+
+    await vi.waitFor(() => expect(server.queryClient.isFetching()).toBe(0));
+    const state = overTheWire(dehydrate(server.queryClient));
+    const props = overTheWire(handles);
     expect(resource.calls).toHaveBeenCalledTimes(2);
 
     // Browser: a fresh client hydrated from the server's state
@@ -272,11 +634,11 @@ describe('runtime', () => {
   test('handle reads share cache entries with queryOptions(input)', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyClient;
-    const handle = trpc.post.byId.unstable_$prefetch({ id: '1' });
+    const handle = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
     expect(trpc.unstable_$fromHandle(handle).queryKey).toEqual(
       trpc.post.byId.queryOptions({ id: '1' }).queryKey,
     );
-    const list = trpc.post.list.unstable_$prefetchInfinite({ limit: 2 });
+    const list = trpc.post.list.unstable_$waterfallInfiniteHandle({ limit: 2 });
     expect(
       trpc.unstable_$fromHandle(list, { getNextPageParam: (l) => l.nextCursor })
         .queryKey,
@@ -288,40 +650,16 @@ describe('runtime', () => {
     );
   });
 
-  test('unstable_$ensure waits and rejects; prefetch never throws', async () => {
-    await using resource = ctx();
-    const serverTrpc = createTRPCOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient: makeServerClient(),
-    });
-
-    const handle = await serverTrpc.post.byId.unstable_$ensure({ id: '1' });
-    expect(handle.queryKey[1]?.input).toEqual({ id: '1' });
-
-    await expect(
-      serverTrpc.post.byId.unstable_$ensure({ id: 'missing' }),
-    ).rejects.toBeInstanceOf(TRPCError);
-
-    expect(() =>
-      serverTrpc.post.byId.unstable_$prefetch({ id: 'missing' }),
-    ).not.toThrow();
-  });
-
   test('a server failure is retried in the browser, which reports a typed TRPCClientError', async () => {
     await using resource = ctx();
-    const serverQueryClient = makeServerClient();
-    const serverTrpc = createTRPCOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient: serverQueryClient,
+    const server = makeServerProxy(resource);
+    const [handles] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$prefetchEntry({ id: 'missing' }),
     });
-    const handle = overTheWire(
-      serverTrpc.post.byId.unstable_$prefetch({ id: 'missing' }),
-    );
-    await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
+    const handle = overTheWire(handles.post);
+    await vi.waitFor(() => expect(server.queryClient.isFetching()).toBe(0));
     // Errors aren't dehydrated by default, so the browser fetches it itself
-    hydrate(resource.queryClient, overTheWire(dehydrate(serverQueryClient)));
+    hydrate(resource.queryClient, overTheWire(dehydrate(server.queryClient)));
 
     const browser = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -373,7 +711,7 @@ describe('runtime', () => {
       queryClient: makeServerClient(),
       keyPrefix: 'server',
     });
-    const handle = serverTrpc.post.byId.unstable_$prefetch({ id: '1' });
+    const handle = serverTrpc.post.byId.unstable_$waterfallHandle({ id: '1' });
     expect(() =>
       resource.optionsProxyClient.unstable_$fromHandle(handle as any),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -390,9 +728,10 @@ describe('runtime', () => {
       queryClient: serverQueryClient,
       keyPrefix: 'app',
     });
-    const handle = overTheWire(
-      serverTrpc.post.byId.unstable_$prefetch({ id: '1' }),
-    );
+    const [handles] = await serverTrpc.unstable_$loadHandles({
+      post: serverTrpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+    });
+    const handle = overTheWire(handles.post);
     await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
     hydrate(resource.queryClient, overTheWire(dehydrate(serverQueryClient)));
 
@@ -411,18 +750,15 @@ describe('runtime', () => {
   describe('a query dehydrated as pending that rejects later', () => {
     async function setup(id: string) {
       const resource = ctx();
-      const serverQueryClient = makeServerClient();
-      const serverTrpc = createTRPCOptionsProxy({
-        router: resource.appRouter,
-        ctx: {},
-        queryClient: serverQueryClient,
+      const server = makeServerProxy(resource);
+      const [{ handle }] = await server.trpc.unstable_$loadHandles({
+        handle:
+          id === 'missing'
+            ? server.trpc.post.byId.unstable_$prefetchEntry({ id })
+            : server.trpc.flaky.unstable_$prefetchEntry({ id }),
       });
-      const handle =
-        id === 'missing'
-          ? serverTrpc.post.byId.unstable_$prefetch({ id })
-          : serverTrpc.flaky.unstable_$prefetch({ id });
       // Dehydrated while pending: the promise crosses (as Flight does) and rejects later
-      const state = dehydrate(serverQueryClient);
+      const state = dehydrate(server.queryClient);
       expect(state.queries[0]?.state.status).toBe('pending');
 
       const browser = new QueryClient({
@@ -537,105 +873,16 @@ describe('runtime', () => {
     });
   });
 
-  test('unstable_$ensure resolves at once with stale data and revalidates', async () => {
-    await using resource = ctx();
-    const queryClient = makeServerClient();
-    const serverTrpc = createTRPCOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient,
-    });
-    const queryKey = serverTrpc.post.byId.queryKey({ id: '1' });
-    queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
-
-    const handle = await serverTrpc.post.byId.unstable_$ensure({ id: '1' });
-    expect(queryClient.getQueryData(queryKey)?.title).toBe('stale');
-    await vi.waitFor(() =>
-      expect(queryClient.getQueryData(queryKey)?.title).toBe('Post 1'),
-    );
-    expect(resource.calls).toHaveBeenCalledTimes(1);
-  });
-
-  test('unstable_$fetch waits for stale data to refetch and rejects', async () => {
-    await using resource = ctx();
-    const queryClient = makeServerClient();
-    const serverTrpc = createTRPCOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient,
-    });
-    const queryKey = serverTrpc.post.byId.queryKey({ id: '1' });
-    queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
-
-    const handle = await serverTrpc.post.byId.unstable_$fetch({ id: '1' });
-    expect(queryClient.getQueryData(queryKey)?.title).toBe('Post 1');
-    expect(resource.calls).toHaveBeenCalledTimes(1);
-
-    const fresh = await serverTrpc.post.byId.unstable_$fetch(
-      { id: '1' },
-      { staleTime: Infinity },
-    );
-    expect(fresh).toEqual(handle);
-    expect(resource.calls).toHaveBeenCalledTimes(1);
-
-    await expect(
-      serverTrpc.post.byId.unstable_$fetch({ id: 'missing' }),
-    ).rejects.toBeInstanceOf(TRPCError);
-  });
-
-  test('unstable_$fetchInfinite loads pages and returns an infinite handle', async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
-    const handle = await trpc.post.list.unstable_$fetchInfinite(
-      { limit: 2 },
-      { pages: 2, getNextPageParam: (last) => last.nextCursor },
-    );
-    expectTypeOf(handle).toEqualTypeOf<
-      unstable_inferInfiniteQueryHandle<TRPC['post']['list']>
-    >();
-    expect(
-      resource.queryClient
-        .getQueryData(
-          trpc.unstable_$fromHandle(handle, {
-            getNextPageParam: (last) => last.nextCursor,
-          }).queryKey,
-        )
-        ?.pages.flatMap((page) => page.items),
-    ).toEqual([0, 1, 2, 3]);
-  });
-
-  test('infinite verbs refetch every cached page with getNextPageParam', async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
-    const getNextPageParam = (last: { nextCursor: number }) => last.nextCursor;
-    await trpc.post.list.unstable_$fetchInfinite(
-      { limit: 2 },
-      { pages: 2, getNextPageParam },
-    );
-    resource.calls.mockClear();
-
-    const handle = await trpc.post.list.unstable_$fetchInfinite(
-      { limit: 2 },
-      { getNextPageParam },
-    );
-    expect(
-      resource.queryClient
-        .getQueryData(trpc.post.list.infiniteQueryKey({ limit: 2 }))
-        ?.pages.flatMap((page) => page.items),
-    ).toEqual([0, 1, 2, 3]);
-    expect(
-      resource.calls.mock.calls.map(([, input]) => input.cursor ?? null),
-    ).toEqual([null, 2]);
-  });
-
   test('handles carry their input', async () => {
     await using resource = ctx();
-    const trpc = createTRPCOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient: makeServerClient(),
+    const server = makeServerProxy(resource);
+    const [{ post, list }] = await server.trpc.unstable_$loadHandles({
+      post: server.trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+      list: server.trpc.post.list.unstable_$prefetchInfiniteEntry({
+        limit: 2,
+        cursor: 4,
+      }),
     });
-    const post = trpc.post.byId.unstable_$prefetch({ id: '1' });
     expectTypeOf(post.input).toEqualTypeOf<{ id: string }>();
     expect(post.input).toEqual({ id: '1' });
     // A plain tuple with a typed input: no `unknown` and no tag, so router serializability checks accept it
@@ -643,10 +890,6 @@ describe('runtime', () => {
       [path: string[], opts?: { input?: { id: string }; type?: 'query' }]
     >();
 
-    const list = trpc.post.list.unstable_$prefetchInfinite({
-      limit: 2,
-      cursor: 4,
-    });
     expectTypeOf(list.input).toEqualTypeOf<{ limit: number }>();
     expectTypeOf(list.queryKey).toEqualTypeOf<
       [path: string[], opts?: { input?: { limit: number }; type?: 'infinite' }]
@@ -662,12 +905,15 @@ describe('runtime', () => {
   test('procedures without input', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const handle = await trpc.viewer.unstable_$ensure();
-    expect(handle).toEqual({
+    const [{ viewer }, data] = await trpc.unstable_$loadHandles({
+      viewer: trpc.viewer.unstable_$ensureEntry(),
+    });
+    expect(viewer).toEqual({
       queryKey: [['viewer'], { type: 'query' }],
     });
+    expect(data.viewer).toEqual({ name: 'KATT' });
     await expect(
-      resource.queryClient.fetchQuery(trpc.unstable_$fromHandle(handle)),
+      resource.queryClient.fetchQuery(trpc.unstable_$fromHandle(viewer)),
     ).resolves.toEqual({ name: 'KATT' });
   });
 
@@ -675,18 +921,25 @@ describe('runtime', () => {
     await using resource = ctx();
     const server = resource.optionsProxyServer;
     const client = resource.optionsProxyClient;
+    const [loaded] = await server.unstable_$loadHandles({
+      prefetch: server.viewer.unstable_$prefetchEntry(),
+      ensure: server.viewer.unstable_$ensureEntry(),
+      fetch: server.viewer.unstable_$fetchEntry(),
+      explicitUndefined: server.viewer.unstable_$prefetchEntry(undefined),
+      prefetchInfinite:
+        server.viewer.unstable_$prefetchInfiniteEntry(undefined),
+      ensureInfinite: server.viewer.unstable_$ensureInfiniteEntry(undefined),
+      withInput: server.post.byId.unstable_$ensureEntry({ id: '1' }),
+    });
     const handles = {
-      prefetch: server.viewer.unstable_$prefetch(),
-      ensure: await server.viewer.unstable_$ensure(),
-      fetch: await server.viewer.unstable_$fetch(),
-      explicitUndefined: server.viewer.unstable_$prefetch(undefined),
-      prefetchInfinite: server.viewer.unstable_$prefetchInfinite(undefined),
-      ensureInfinite: await server.viewer.unstable_$ensureInfinite(undefined),
-      withInput: await server.post.byId.unstable_$ensure({ id: '1' }),
+      ...loaded,
+      waterfall: server.viewer.unstable_$waterfallHandle(),
     };
 
-    for (const handle of Object.values(handles).slice(0, 6)) {
-      expect(Object.keys(handle)).toEqual(['queryKey']);
+    for (const [key, handle] of Object.entries(handles)) {
+      if (key !== 'withInput') {
+        expect(Object.keys(handle)).toEqual(['queryKey']);
+      }
     }
     expect(handles.withInput.input).toEqual({ id: '1' });
     // `getServerSideProps` and `getStaticProps` reject `undefined` anywhere in props
@@ -699,43 +952,5 @@ describe('runtime', () => {
     expect(client.unstable_$fromHandle(read.withInput).queryKey).toEqual(
       client.post.byId.queryOptions({ id: '1' }).queryKey,
     );
-  });
-
-  test('infinite verbs can load several pages up front', async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
-    const handle = await trpc.post.list.unstable_$ensureInfinite(
-      { limit: 2 },
-      { pages: 2, getNextPageParam: (last) => last.nextCursor },
-    );
-    expect(
-      resource.queryClient
-        .getQueryData(
-          trpc.unstable_$fromHandle(handle, {
-            getNextPageParam: (last) => last.nextCursor,
-          }).queryKey,
-        )
-        ?.pages.flatMap((page) => page.items),
-    ).toEqual([0, 1, 2, 3]);
-  });
-
-  test("useTRPC() doesn't take the verbs that wait", async () => {
-    await using resource = ctx();
-    let error: unknown;
-    function Component() {
-      const trpc = resource.useTRPC();
-      try {
-        void trpc.post.byId.unstable_$ensure({ id: '1' });
-      } catch (cause) {
-        error = cause;
-      }
-      expect(typeof trpc.unstable_$fromHandle).toBe('function');
-      return null;
-    }
-    resource.renderApp(<Component />);
-    expect(error).toMatchInlineSnapshot(
-      `[Error: \`post.byId.unstable_$ensure()\` on \`useTRPC()\` waits for its query, which a render can't. Start queries in components with \`unstable_$prefetch\` or \`unstable_$prefetchInfinite\`, and wait where you read the handle, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
-    );
-    expect(resource.calls).not.toHaveBeenCalled();
   });
 });

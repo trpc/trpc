@@ -178,14 +178,20 @@ describe('unstable_createHydrateClient in server components', () => {
     const server = makeServer(resource);
 
     const a = server.trpc.post.byDay.queryKey({ day: new Date('2026-01-01') });
-    server.trpc.post.byDay.unstable_$prefetch({ day: new Date('2026-01-01') });
+    await server.trpc.unstable_$loadHandles({
+      handle: server.trpc.post.byDay.unstable_$prefetchEntry({
+        day: new Date('2026-01-01'),
+      }),
+    });
     const outer = sentBy(server.queryClient);
     expect(outer.queries).toHaveLength(1);
     expect(outer.queries[0]!.state.status).toBe('pending');
 
     // A nested server component starts another query
-    await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-02'),
+    await server.trpc.unstable_$loadHandles({
+      handle: server.trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-02'),
+      }),
     });
     const inner = sentBy(server.queryClient);
     expect(inner.queries).toHaveLength(1);
@@ -208,8 +214,10 @@ describe('unstable_createHydrateClient in server components', () => {
       day: new Date('2026-01-01'),
     });
 
-    await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
+    await server.trpc.unstable_$loadHandles({
+      handle: server.trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-01'),
+      }),
     });
     expect(hashes(sentBy(server.queryClient))).toHaveLength(1);
 
@@ -235,7 +243,11 @@ describe('unstable_createHydrateClient in server components', () => {
       },
     });
 
-    server.trpc.post.byDay.unstable_$prefetch({ day: new Date('2026-01-01') });
+    await server.trpc.unstable_$loadHandles({
+      handle: server.trpc.post.byDay.unstable_$prefetchEntry({
+        day: new Date('2026-01-01'),
+      }),
+    });
     expect(sentBy(server.queryClient).queries).toEqual([]);
 
     await server.queryClient.ensureQueryData(
@@ -248,11 +260,15 @@ describe('unstable_createHydrateClient in server components', () => {
     await using resource = ctx();
     const first = makeServer(resource);
     const second = makeServer(resource);
-    await first.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
+    await first.trpc.unstable_$loadHandles({
+      handle: first.trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-01'),
+      }),
     });
-    await second.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
+    await second.trpc.unstable_$loadHandles({
+      handle: second.trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-01'),
+      }),
     });
 
     expect(sentBy(first.queryClient).queries).toHaveLength(1);
@@ -264,12 +280,16 @@ describe('unstable_createHydrateClient in server components', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
 
-    const outerPost = server.trpc.post.byDay.unstable_$prefetch({
-      day: new Date('2026-01-01'),
+    const [{ outerPost }] = await server.trpc.unstable_$loadHandles({
+      outerPost: server.trpc.post.byDay.unstable_$prefetchEntry({
+        day: new Date('2026-01-01'),
+      }),
     });
     const outerState = sentBy(server.queryClient);
-    const innerPost = await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-02'),
+    const [{ innerPost }] = await server.trpc.unstable_$loadHandles({
+      innerPost: server.trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-02'),
+      }),
     });
     const innerState = sentBy(server.queryClient);
 
@@ -293,8 +313,10 @@ describe('unstable_createHydrateClient in server components', () => {
   test('takes a lazy query client, like `createTRPCOptionsProxy`', async () => {
     await using resource = ctx();
     const server = makeServer(resource);
-    await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
+    await server.trpc.unstable_$loadHandles({
+      handle: server.trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-01'),
+      }),
     });
 
     expect(sentBy(() => server.queryClient).queries).toHaveLength(1);
@@ -328,13 +350,19 @@ describe('dehydrate and HydrationBoundary from a server loader', () => {
       ctx: {},
       queryClient,
     });
-    const post = await trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
+    const [{ post }] = await trpc.unstable_$loadHandles({
+      post: trpc.post.byDay.unstable_$ensureEntry({
+        day: new Date('2026-01-01'),
+      }),
     });
-    const later = trpc.post.byDay.unstable_$prefetch({
-      day: new Date('2026-01-02'),
+    const [{ later }] = await trpc.unstable_$loadHandles({
+      later: trpc.post.byDay.unstable_$prefetchEntry({
+        day: new Date('2026-01-02'),
+      }),
     });
-    const list = trpc.post.list.unstable_$prefetchInfinite({});
+    const [{ list }] = await trpc.unstable_$loadHandles({
+      list: trpc.post.list.unstable_$prefetchInfiniteEntry({}),
+    });
     const loaderData = {
       dehydratedState: dehydrate(queryClient),
       post,
