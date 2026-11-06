@@ -345,9 +345,9 @@ export function getRouter() {
 
 Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: TRPC }>()`.
 
-## 5. Start queries in loaders
+## 5. Load handles in loaders
 
-A loader starts queries and returns their handles as loader data. For each query, choose whether the loader waits for it. [Starting a query](/docs/client/tanstack-react-query/handles#starting-a-query) compares the two. Every input should come from the route's params or search params: see [Start every query from the URL](#url-as-input).
+A loader lists its queries as entries, loads them with `trpc.unstable_$loadHandles`, and returns the handles as loader data. For each entry, choose whether the loader waits for it. [Loading handles](/docs/client/tanstack-react-query/handles#starting-a-query) compares the options. Every input should come from the route's params or search params: see [Start every query from the URL](#url-as-input).
 
 - On the first visit, the loader runs on the server, and the data is sent with the page.
 - On later navigations, the loader runs in the browser against the tab's cache. Fresh data is reused; stale data renders at once and refetches.
@@ -355,9 +355,9 @@ A loader starts queries and returns their handles as loader data. For each query
 ```demo starting-queries variants=prefetch,ensure,reader
 ```
 
-### Without waiting: `unstable_$prefetch` {#loader-prefetch}
+### Without waiting: prefetch entries {#loader-prefetch}
 
-The loader returns at once, and the route renders before the data arrives:
+The load resolves at once, and the route renders before the data arrives:
 
 ```tsx twoslash title='src/routes/posts.$id.comments.tsx'
 // @include: start-app
@@ -403,12 +403,15 @@ import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 
 export const Route = createFileRoute('/posts/$id/comments')({
-  loader: ({ context: { trpc }, params }) => ({
-    comments: trpc.post.comments.unstable_$prefetchInfinite(
-      { postId: params.id, limit: 20 },
-      { getNextPageParam: (last) => last.nextCursor },
-    ),
-  }),
+  loader: async ({ context: { trpc }, params }) => {
+    const [handles] = await trpc.unstable_$loadHandles({
+      comments: trpc.post.comments.unstable_$prefetchInfiniteEntry(
+        { postId: params.id, limit: 20 },
+        { getNextPageParam: (last) => last.nextCursor },
+      ),
+    });
+    return handles;
+  },
   component: CommentsPage,
 });
 
@@ -423,10 +426,10 @@ function CommentsPage() {
 ```
 
 - **Wrap the reader in `Suspense`.** `Comments` suspends until the data arrives. Without your own boundary, the suspension reaches the nearest boundary above it: the route's `pendingComponent`, or a parent route's. That can blank much more of the page than you want.
-- The loader never throws for these queries. If a request fails, `Comments` throws, and the route's `errorComponent` (or the router's default) shows the error.
+- The load never rejects for these queries. If a request fails, `Comments` throws, and the route's `errorComponent` (or the router's default) shows the error.
 - **Pass `getNextPageParam` to infinite queries.** The loader runs again on client navigations, and if the cached pages are stale, it refetches every page the user loaded. That [needs `getNextPageParam`](/docs/client/tanstack-react-query/handles#infinite-queries) from page two on.
 
-### Waiting: `unstable_$ensure` {#loader-ensure}
+### Waiting: ensure entries {#loader-ensure}
 
 The loader waits, so the route renders with the data in place:
 
@@ -475,15 +478,17 @@ import { Post } from '~/components/post';
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const post = await trpc.post.byId
-      .unstable_$ensure({ id: params.id })
+    const [handles] = await trpc
+      .unstable_$loadHandles({
+        post: trpc.post.byId.unstable_$ensureEntry({ id: params.id }),
+      })
       .catch((cause) => {
         if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
           throw notFound();
         }
         throw cause;
       });
-    return { post };
+    return handles;
   },
   component: PostPage,
 });
@@ -497,9 +502,9 @@ function PostPage() {
 - The data is in the cache before the route renders, so `Post` shows the post at once. If the cache loses the post later, `Post` suspends and shows the nearest `Suspense` fallback, or the route's `pendingComponent`: see [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
 - The navigation waits for the loader. On a slow request, the router shows the route's `pendingComponent`, if it has one.
 - The loader can act on errors, as here with `notFound()`.
-- The handle carries no data. To use the data in the loader, for example for the route's `head`, read it with `await context.queryClient.ensureQueryData(context.trpc.unstable_$fromHandle(post))` and return what you need. See [Using the data in a loader](/docs/client/tanstack-react-query/handles#loader-data).
+- The handle carries no data. To use the data in the loader, for example for the route's `head`, read it from the load's `data`: `const [handles, data] = await trpc.unstable_$loadHandles(…)`, and return what you need. See [Using the data in a loader](/docs/client/tanstack-react-query/handles#loader-data).
 
-To wait for some queries and stream others in the same loader, see [Combining both](/docs/client/tanstack-react-query/handles#combining-both): start every query first, then await.
+To wait for some queries and stream others in the same loader, list them all in one load: see [Waiting for some, streaming others](/docs/client/tanstack-react-query/handles#combining-both).
 
 ## 6. Read handles in components
 
@@ -523,8 +528,8 @@ export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId
 
 ```demo loader-handles
 route loader
-├─ trpc.post.byId.unstable_$prefetch({ id })        → post handle     → <Post post={post} />
-└─ trpc.post.comments.unstable_$prefetchInfinite()  → comments handle → <Comments comments={comments} />
+├─ trpc.post.byId.unstable_$prefetchEntry({ id })        → post handle     → <Post post={post} />
+└─ trpc.post.comments.unstable_$prefetchInfiniteEntry()  → comments handle → <Comments comments={comments} />
 ```
 
 ## Start every query from the URL {#url-as-input}
@@ -580,9 +585,12 @@ export const Route = createFileRoute('/posts')({
     page: z.number().int().positive().default(1),
   }),
   loaderDeps: ({ search }) => search,
-  loader: ({ context: { trpc }, deps }) => ({
-    posts: trpc.post.list.unstable_$prefetch(deps),
-  }),
+  loader: async ({ context: { trpc }, deps }) => {
+    const [handles] = await trpc.unstable_$loadHandles({
+      posts: trpc.post.list.unstable_$prefetchEntry(deps),
+    });
+    return handles;
+  },
   component: PostsPage,
 });
 
@@ -605,7 +613,7 @@ function PostsPage() {
 A link to `/posts?sort=top` starts the query for the top posts as the navigation begins. The back button brings back the last sort, and a shared link opens the same view. Keep the sort in `useState` and you lose all three, since the loader can't see component state.
 
 ```demo url-input
-/posts?sort=top&page=2  →  trpc.post.list.unstable_$prefetch({ sort: 'top', page: 2 })
+/posts?sort=top&page=2  →  trpc.post.list.unstable_$prefetchEntry({ sort: 'top', page: 2 })
 ```
 
 If a query can't take its input from the URL, for example because it needs an id from another query's result, reshape the procedure: see [If the URL isn't enough, reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures).
@@ -616,4 +624,4 @@ If a query can't take its input from the URL, for example because it needs an id
 
 ## Don't return handles from server functions {#server-functions}
 
-A server function runs with its own `QueryClient`, which never reaches the page. Return data from server functions, and start queries in loaders. In development, tRPC warns when it renders a handle whose data never reached the page's `QueryClient`.
+A server function runs with its own `QueryClient`, which never reaches the page. Return data from server functions, and load handles in loaders. In development, tRPC warns when it renders a handle whose data never reached the page's `QueryClient`.

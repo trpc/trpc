@@ -28,15 +28,16 @@ export const Route = createFileRoute('/channels/$channelId')({
       throw notFound();
     }
   },
-  loader: (opts) => {
+  loader: async (opts) => {
     const { trpc } = opts.context;
-    return {
-      channels: trpc.channel.list.unstable_$prefetch(),
-      posts: trpc.post.infinite.unstable_$prefetchInfinite(
+    const [handles] = await trpc.unstable_$loadHandles({
+      channels: trpc.channel.list.unstable_$prefetchEntry(),
+      posts: trpc.post.infinite.unstable_$prefetchInfiniteEntry(
         { channelId: opts.params.channelId },
         { getNextPageParam: (d) => d.nextCursor },
       ),
-    };
+    });
+    return handles;
   },
   component: ChannelPage,
 });

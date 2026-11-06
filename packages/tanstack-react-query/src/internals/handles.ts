@@ -518,23 +518,21 @@ export async function loadHandles(
   const states = Object.entries(entries).map(
     ([key, entry]) => [key, readEntry(key, entry)] as const,
   );
-  const loads = states.map(([key, state]) => {
-    const promise = startEntry(queryClient, state);
-    return {
-      key,
-      state,
-      promise: state.kind === 'prefetch' ? undefined : promise,
-    };
-  });
-  const results = await Promise.all(loads.map((load) => load.promise));
+  const loads = states.map(([key, state]) => ({
+    key,
+    state,
+    promise: startEntry(queryClient, state),
+  }));
+  const waited = loads.filter((load) => load.state.kind !== 'prefetch');
+  const results = await Promise.all(waited.map((load) => load.promise));
 
   const handles: Record<string, unknown> = {};
-  const data: Record<string, unknown> = {};
-  loads.forEach((load, index) => {
+  for (const load of loads) {
     handles[load.key] = toHandle(load.state.options, load.state.type);
-    if (load.promise) {
-      data[load.key] = results[index];
-    }
+  }
+  const data: Record<string, unknown> = {};
+  waited.forEach((load, index) => {
+    data[load.key] = results[index];
   });
   return [handles, data] as const;
 }

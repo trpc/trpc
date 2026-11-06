@@ -263,15 +263,26 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
 }
 ```
 
-### `unstable_$prefetch`, `unstable_$ensure` and `unstable_$fromHandle` - passing queries as handles {#handles}
+### `unstable_$loadHandles` and `unstable_$fromHandle` - passing queries as handles {#handles}
 
-On the server or in a route loader, `trpc.x.unstable_$prefetch(input)`, `await trpc.x.unstable_$ensure(input)` and `await trpc.x.unstable_$fetch(input)` start a query and return a serializable handle. Components read it with `trpc.unstable_$fromHandle(handle)`, which returns the same options as `trpc.x.queryOptions(input)`. Infinite queries have `unstable_$prefetchInfinite`, `unstable_$ensureInfinite` and `unstable_$fetchInfinite`, and their handles give the same options as `trpc.x.infiniteQueryOptions(input)`. Type props with `unstable_inferQueryHandle` and `unstable_inferInfiniteQueryHandle`.
+On the server or in a route loader, list the queries as entries and load them in one call:
 
-- `unstable_$prefetch` doesn't wait. The reader shows a loading state until the data streams in: a `Suspense` fallback with `useSuspenseQuery`, or `status: 'pending'` with `useQuery`.
-- `unstable_$ensure` waits until the data is in the cache, so the reader shows the data on its first render.
-- Handles carry no data, whichever method made them. If the cache loses the data, for example after `queryClient.resetQueries()`, the reader loads it again, so give it a loading state either way. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
-- `unstable_$fetch` also waits, and refetches stale data before it resolves.
-- Methods with a `$` are tRPC helpers built on TanStack Query. Each one maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
+```ts
+const [handles, data] = await trpc.unstable_$loadHandles({
+  comments: trpc.post.comments.unstable_$prefetchInfiniteEntry({ postId: id }),
+  post: trpc.post.byId.unstable_$ensureEntry({ id }),
+});
+```
+
+The load starts every entry before it waits for any, and resolves to a serializable handle for every entry and the data of the entries it waited for. Components read a handle with `trpc.unstable_$fromHandle(handle)`, which returns the same options as `trpc.x.queryOptions(input)`, or `trpc.x.infiniteQueryOptions(input)` for an infinite handle. Type props with `unstable_inferQueryHandle` and `unstable_inferInfiniteQueryHandle`.
+
+- `unstable_$prefetchEntry` doesn't wait. The reader shows a loading state until the data streams in: a `Suspense` fallback with `useSuspenseQuery`, or `status: 'pending'` with `useQuery`.
+- `unstable_$ensureEntry` waits until the data is in the cache, so the reader shows the data on its first render.
+- `unstable_$fetchEntry` also waits, and refetches stale data before it resolves.
+- Infinite queries have `unstable_$prefetchInfiniteEntry`, `unstable_$ensureInfiniteEntry` and `unstable_$fetchInfiniteEntry`.
+- For an input only known during render, `trpc.x.unstable_$waterfallHandle(input)` builds a handle in the component. On `useTRPC()`, it starts the query if the cache has no state for it.
+- Handles carry no data. If the cache loses the data, for example after `queryClient.resetQueries()`, the reader loads it again, so give it a loading state either way. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
+- Methods with a `$` are tRPC helpers built on TanStack Query. Each entry maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
 
 :::info
 We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).

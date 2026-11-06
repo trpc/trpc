@@ -300,7 +300,7 @@ export function UrlInput(_props: DemoProps) {
             </p>
             <pre className="overflow-x-auto rounded-lg border bg-background p-2.5 font-mono text-[0.7rem] leading-relaxed">
               {sortLivesIn === 'url'
-                ? `loaderDeps: ({ search }) => search,\n// ${formatInput(fromUrl)}\nloader: ({ deps }) =>\n  trpc.post.list.unstable_$prefetch(deps),`
+                ? `loaderDeps: ({ search }) => search,\n// ${formatInput(fromUrl)}\nloader: ({ deps }) =>\n  trpc.unstable_$loadHandles({\n    posts: trpc.post.list.unstable_$prefetchEntry(deps),\n  }),`
                 : `loaderDeps: ({ search }) => search,\n// ${formatInput({ page: fromUrl.page })}\n// The sort is in useState, so the list\n// can only start once the page renders.`}
             </pre>
           </div>

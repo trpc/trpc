@@ -28,7 +28,7 @@ import { type TRPC, useTRPC } from './session.tsx';
 
 /**
  * Where a blog starts its queries: in route loaders with one of the three
- * verbs, at the top of each page as it renders, or in each component that
+ * entries, at the top of each page as it renders, or in each component that
  * reads one.
  */
 export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader' | 'top';
@@ -52,50 +52,52 @@ function usePostId() {
   return Number(params.id);
 }
 
+/** Handles built at the top of a page as it renders, which starts them */
 function startList(trpc: TRPC, page: number) {
-  return { list: trpc.post.list.unstable_$prefetch({ page }) };
+  return { list: trpc.post.list.unstable_$waterfallHandle({ page }) };
 }
 
 function startPost(trpc: TRPC, id: number) {
   return {
-    comments: trpc.post.comments.unstable_$prefetch({ postId: id }),
-    more: trpc.post.moreByAuthor.unstable_$prefetch({ postId: id }),
-    post: trpc.post.byId.unstable_$prefetch({ id }),
+    comments: trpc.post.comments.unstable_$waterfallHandle({ postId: id }),
+    more: trpc.post.moreByAuthor.unstable_$waterfallHandle({ postId: id }),
+    post: trpc.post.byId.unstable_$waterfallHandle({ id }),
   };
 }
 
-async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
+function entryFor<TInput, TPrefetch, TEnsure, TFetch>(
+  verb: LoaderVerb,
+  procedure: {
+    readonly unstable_$prefetchEntry: (input: TInput) => TPrefetch;
+    readonly unstable_$ensureEntry: (input: TInput) => TEnsure;
+    readonly unstable_$fetchEntry: (input: TInput) => TFetch;
+  },
+  input: TInput,
+) {
   switch (verb) {
     case 'prefetch':
-      return startList(trpc, page);
+      return procedure.unstable_$prefetchEntry(input);
     case 'ensure':
-      return { list: await trpc.post.list.unstable_$ensure({ page }) };
+      return procedure.unstable_$ensureEntry(input);
     case 'fetch':
-      return { list: await trpc.post.list.unstable_$fetch({ page }) };
+      return procedure.unstable_$fetchEntry(input);
   }
 }
 
+async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
+  const [handles] = await trpc.unstable_$loadHandles({
+    list: entryFor(verb, trpc.post.list, { page }),
+  });
+  return handles;
+}
+
 async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
-  switch (verb) {
-    case 'prefetch':
-      return startPost(trpc, id);
-    case 'ensure': {
-      const [post, comments, more] = await Promise.all([
-        trpc.post.byId.unstable_$ensure({ id }),
-        trpc.post.comments.unstable_$ensure({ postId: id }),
-        trpc.post.moreByAuthor.unstable_$ensure({ postId: id }),
-      ]);
-      return { comments, more, post };
-    }
-    case 'fetch': {
-      const [post, comments, more] = await Promise.all([
-        trpc.post.byId.unstable_$fetch({ id }),
-        trpc.post.comments.unstable_$fetch({ postId: id }),
-        trpc.post.moreByAuthor.unstable_$fetch({ postId: id }),
-      ]);
-      return { comments, more, post };
-    }
-  }
+  const [handles] = await trpc.unstable_$loadHandles({
+    comments: entryFor(verb, trpc.post.comments, { postId: id }),
+    more: entryFor(verb, trpc.post.moreByAuthor, { postId: id }),
+    post: entryFor(verb, trpc.post.byId, { id }),
+  });
+  return handles;
 }
 
 type ListHandles = ReturnType<typeof startList>;

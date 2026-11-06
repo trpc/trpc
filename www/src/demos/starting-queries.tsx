@@ -14,7 +14,7 @@ const blogs = {
 const code = (text: string) => <span className="font-mono">{text}</span>;
 
 /**
- * `unstable_$prefetch`, `$ensure` and `$fetch`, in the loaders of one blog,
+ * `unstable_$prefetchEntry`, `$ensureEntry` and `$fetchEntry`, in the loaders of one blog,
  * next to the same blog with no loader.
  */
 export function StartingQueries(props: DemoProps) {
@@ -28,19 +28,19 @@ export function StartingQueries(props: DemoProps) {
         {
           description:
             'The page shows at once, with skeletons until the data comes in. Stale data shows at once and refetches.',
-          label: code('$prefetch'),
+          label: code('$prefetchEntry'),
           value: 'prefetch',
         },
         {
           description:
             'The page waits for the data on the first visit. Stale data shows at once and refetches.',
-          label: code('$ensure'),
+          label: code('$ensureEntry'),
           value: 'ensure',
         },
         {
           description:
             'The page waits for the data, and waits again for a refetch when the data is stale.',
-          label: code('$fetch'),
+          label: code('$fetchEntry'),
           value: 'fetch',
         },
         {

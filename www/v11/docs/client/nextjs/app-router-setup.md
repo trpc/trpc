@@ -419,7 +419,7 @@ export const caller = appRouter.createCaller(createContext);
 You're all set! You can now prefetch queries in server components and consume them in client components.
 
 :::tip
-To avoid repeating the procedure and input in client components, start queries with `unstable_$prefetch` or `unstable_$ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
+To avoid repeating the procedure and input in client components, load them with `trpc.unstable_$loadHandles` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
 :::
 
 ```twoslash include app-router

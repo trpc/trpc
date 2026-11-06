@@ -184,7 +184,7 @@ function Users() {
 ```
 
 :::tip
-Once a component is on `queryOptions`, you can also start its query ahead of time. `await trpc.greeting.unstable_$ensure({ name: 'Jerry' })` in a route loader or server component returns a **handle**, and the component reads it with `useQuery(trpc.unstable_$fromHandle(props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+Once a component is on `queryOptions`, you can also start its query ahead of time. `await trpc.unstable_$loadHandles({ greeting: trpc.greeting.unstable_$ensureEntry({ name: 'Jerry' }) })` in a route loader or server component returns a **handle** for it, and the component reads it with `useQuery(trpc.unstable_$fromHandle(props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 ### Migrating Invalidations and other QueryClient usages

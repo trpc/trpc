@@ -40,9 +40,13 @@ import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
 export const Route = createFileRoute('/')({
-  loader: (opts) => ({
-    channels: opts.context.trpc.channel.list.unstable_$prefetch(),
-  }),
+  loader: async (opts) => {
+    const { trpc } = opts.context;
+    const [handles] = await trpc.unstable_$loadHandles({
+      channels: trpc.channel.list.unstable_$prefetchEntry(),
+    });
+    return handles;
+  },
   component: Home,
 });
 
