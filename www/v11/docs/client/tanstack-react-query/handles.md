@@ -175,10 +175,12 @@ const [handles, data] = await loadHandles(trpc, {
   comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
 });
 data.post.title;
+// The comments were only prefetched, not awaited, so they aren't on `data`.
+// Read them in the component with `fromHandle(trpc, handles.comments)`.
 data.comments;
 ```
 
-`data` only has the entries the load waited for. The comments may have no data yet, so reading them is a type error, not a silent `undefined`.
+`data` only has the entries the load waited for. The comments may have no data yet, so reading them is a type error, not a silent `undefined`. If the post is missing, the load rejects with an error that names the `post` entry: see [Errors](#errors-ensure).
 
 The page gets the handles as props, and reads them without naming a procedure or repeating an input:
 
@@ -1613,21 +1615,106 @@ Handle inputs cross to the client inside the handle, through React's own seriali
 
 ## Errors {#errors}
 
+### With ensure and fetch entries {#errors-ensure}
+
+When an ensure or fetch entry fails, `loadHandles` rejects with a `TRPCEntryError` that says which entry it was:
+
+- `error.key`: the entry's key, such as `'post'`.
+- `error.path`: the procedure, such as `'post.byId'`.
+- `error.code`: the tRPC error code, such as `'NOT_FOUND'`.
+- `error.cause`: the request's error. That's a `TRPCError` on the server proxy, and a `TRPCClientError` on a client-backed proxy, such as one in a TanStack Start loader.
+
+`isTRPCEntryError(error, trpc.post.byId)` checks that the failed entry was for that procedure, and types `error.cause` with its errors. In the post page at the top, only the post is awaited, so only the post can make the load reject. If the page waits for the comments too, check which one failed, so a missing post gets a 404:
+
+```ts twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: loader.ts
+import { trpc } from '~/trpc/server';
+declare function notFound(): never;
+declare function reportError(error: unknown): void;
+// ---cut---
+import {
+  ensureEntry,
+  ensureInfiniteEntry,
+  isTRPCEntryError,
+  loadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
+
+async function loader(id: string) {
+  try {
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id }),
+      comments: ensureInfiniteEntry(trpc.post.comments, { postId: id }),
+    });
+    return handles;
+  } catch (error) {
+    if (isTRPCEntryError(error, trpc.post.byId) && error.code === 'NOT_FOUND') {
+      notFound();
+    }
+    if (isTRPCEntryError(error, trpc.post.comments)) {
+      reportError(error.cause);
+      //                ^?
+    }
+    throw error;
+  }
+}
+```
+
+- The load rejects as soon as one entry fails, without waiting for the others. If several fail, you get the first to fail.
+- Errors that don't come from the request, such as a cancelled query, reject as they are.
+
 ### With prefetch entries {#errors-prefetch}
 
-A prefetch entry never makes the load reject. The component that reads the handle gets the error instead, and the nearest error boundary shows it:
+A prefetch entry never makes the load reject. The component that reads the handle gets the error instead, and the nearest error boundary shows it. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.
+
+```tsx twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: react-error-boundary.d.ts
+declare module 'react-error-boundary' {
+  export function ErrorBoundary(props: {
+    fallbackRender: (props: { error: unknown }) => React.ReactNode;
+    children: React.ReactNode;
+  }): React.ReactNode;
+}
+// @filename: post-comments.tsx
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
+// ---cut---
+import { isTRPCClientError } from '@trpc/client';
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { Comments } from '~/components/comments';
+import type { AppRouter } from '~/server/router';
+
+function CommentsError(props: { error: unknown }) {
+  if (isTRPCClientError<AppRouter>(props.error)) {
+    return <p>Couldn't load the comments ({props.error.data?.code}).</p>;
+  }
+  throw props.error;
+}
+
+export function PostComments(props: {
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
+}) {
+  return (
+    <ErrorBoundary fallbackRender={CommentsError}>
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={props.comments} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+```
+
+In the browser, that's a `TRPCClientError`:
 
 - If the query failed before it was dehydrated, it isn't sent. The browser fetches it again and gets a `TRPCClientError`.
 - If it was dehydrated while pending and failed later, TanStack Query passes a redacted error to the browser. A handle read then refetches the query once, even with `retry: false`, so error boundaries get a `TRPCClientError` with `data.code`. A query that always fails costs one extra request.
 
 To log or report these errors in one place, whichever component reads the handle, use the `onError` callback of your `QueryClient`'s [`QueryCache`](https://tanstack.com/query/latest/docs/reference/QueryCache).
-
-### With ensure and fetch entries {#errors-ensure}
-
-When an ensure or fetch entry fails, the load rejects where you await it, as soon as that entry fails:
-
-- On the server proxy, with a `TRPCError`.
-- On a client-backed proxy, such as one in a TanStack Start loader, with a `TRPCClientError`.
 
 ## Invalidation and staleness {#invalidation-and-staleness}
 

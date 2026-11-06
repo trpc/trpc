@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { TRPCClientError } from '@trpc/client';
+import type { TRPCClientErrorLike } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { TRPC_ERROR_CODE_KEY } from '@trpc/server';
 import * as React from 'react';
@@ -29,6 +30,8 @@ import {
   waterfallHandle,
   waterfallInfiniteHandle,
   fromHandle,
+  isTRPCEntryError,
+  TRPCEntryError,
 } from '../src/unstable-handles';
 import type {
   TRPCLoaderOptionsProxy,
@@ -110,6 +113,34 @@ function makeServerProxy(resource: ReturnType<typeof ctx>) {
 }
 
 describe('types', () => {
+  test('isTRPCEntryError narrows to the error of the procedure it matches', async () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    try {
+      await loadHandles(trpc, {
+        post: ensureEntry(trpc.post.byId, { id: '1' }),
+      });
+    } catch (error) {
+      // @ts-expect-error a rejection is `unknown` until it's narrowed
+      void error.cause;
+      if (isTRPCEntryError(error, trpc.post.byId)) {
+        expectTypeOf(error.key).toEqualTypeOf<string>();
+        expectTypeOf(error.path).toEqualTypeOf<string>();
+        expectTypeOf(error.code).toEqualTypeOf<
+          TRPC_ERROR_CODE_KEY | undefined
+        >();
+        expectTypeOf(error.cause).toEqualTypeOf<
+          TRPCClientErrorLike<AppRouter> | TRPCError
+        >();
+      }
+      if (isTRPCEntryError(error)) {
+        expectTypeOf(error.cause).toExtend<
+          TRPCClientErrorLike<any> | TRPCError
+        >();
+      }
+    }
+  });
+
   test('a load gives a handle for every entry and data for fetch and ensure entries', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
@@ -400,17 +431,62 @@ describe('loading', () => {
         post: ensureEntry(server.trpc.post.byId, { id: 'missing' }),
         list: fetchEntry(server.trpc.post.list, { limit: 2 }),
       }),
-    ).rejects.toBeInstanceOf(TRPCError);
+    ).rejects.toBeInstanceOf(TRPCEntryError);
     await expect(
       loadHandles(server.trpc, {
         post: fetchEntry(server.trpc.post.byId, { id: 'missing' }),
       }),
-    ).rejects.toBeInstanceOf(TRPCError);
+    ).rejects.toBeInstanceOf(TRPCEntryError);
 
     const [handles] = await loadHandles(server.trpc, {
       post: prefetchEntry(server.trpc.post.byId, { id: 'missing' }),
     });
     expect(handles.post.input).toEqual({ id: 'missing' });
+  });
+
+  test('a failed entry says which entry failed, and keeps the TRPCError on the server proxy', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+
+    const error = await loadHandles(server.trpc, {
+      list: ensureInfiniteEntry(server.trpc.post.list, { limit: 2 }),
+      missingPost: ensureEntry(server.trpc.post.byId, { id: 'missing' }),
+    }).catch((cause: unknown) => cause);
+
+    expect(error).toBeInstanceOf(TRPCEntryError);
+    expect(error).toMatchObject({
+      key: 'missingPost',
+      path: 'post.byId',
+      code: 'NOT_FOUND',
+    });
+    expect(String(error)).toMatchInlineSnapshot(
+      `"TRPCEntryError: Entry "missingPost" (post.byId) failed: NOT_FOUND"`,
+    );
+    expect((error as TRPCEntryError).cause).toBeInstanceOf(TRPCError);
+    expect(isTRPCEntryError(error)).toBe(true);
+    expect(isTRPCEntryError(error, server.trpc.post.byId)).toBe(true);
+    expect(isTRPCEntryError(error, server.trpc.post.list)).toBe(false);
+    expect(isTRPCEntryError(new Error('nope'), server.trpc.post.byId)).toBe(
+      false,
+    );
+    expect(isTRPCEntryError(null)).toBe(false);
+  });
+
+  test('a failed entry keeps the TRPCClientError on a client-backed proxy', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const error = await loadHandles(trpc, {
+      post: fetchEntry(trpc.post.byId, { id: 'missing' }),
+    }).catch((cause: unknown) => cause);
+
+    expect(error).toMatchObject({
+      key: 'post',
+      path: 'post.byId',
+      code: 'NOT_FOUND',
+    });
+    expect((error as TRPCEntryError).cause).toBeInstanceOf(TRPCClientError);
+    expect(isTRPCEntryError(error, trpc.post.byId)).toBe(true);
   });
 
   test('keeps an entry named __proto__ as its own key', async () => {

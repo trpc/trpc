@@ -10,6 +10,8 @@ export {
   waterfallHandle,
   waterfallInfiniteHandle,
   fromHandle,
+  isTRPCEntryError,
+  TRPCEntryError,
 } from './internals/handles';
 export type {
   TRPCQueryHandle,

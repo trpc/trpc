@@ -7,6 +7,8 @@ import type {
 import { hashKey, isCancelledError } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { isTRPCClientError } from '@trpc/client';
+import type { TRPC_ERROR_CODE_KEY, TRPCError } from '@trpc/server';
+import { getTRPCErrorFromUnknown } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
@@ -337,6 +339,67 @@ function startEntry(queryClient: QueryClient, state: EntryState) {
   }
 }
 
+/**
+ * What `loadHandles()` rejects with when a fetch or ensure entry fails. It
+ * names the entry, and keeps the request's error as `cause`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
+ */
+export class TRPCEntryError<
+  TDef extends ResolverDef = ResolverDef,
+> extends Error {
+  /** The entry's key in the object passed to `loadHandles()` */
+  readonly key: string;
+  /** The procedure's path, such as `post.byId` */
+  readonly path: string;
+  /** The tRPC error code, such as `NOT_FOUND`, when the error has one */
+  readonly code: TRPC_ERROR_CODE_KEY | undefined;
+  // oxlint-disable-next-line typescript/ban-ts-comment
+  // @ts-ignore `override` fails where the `lib` has no `Error.cause`
+  /**
+   * The request's error: a `TRPCError` on a proxy created with `router`, a
+   * `TRPCClientError` on one created with `client`.
+   */
+  public override readonly cause: ErrorOf<TDef> | TRPCError;
+
+  constructor(opts: {
+    key: string;
+    path: string;
+    code: TRPC_ERROR_CODE_KEY | undefined;
+    cause: ErrorOf<TDef> | TRPCError;
+  }) {
+    super(`Entry "${opts.key}" (${opts.path}) failed: ${opts.cause.message}`);
+    this.name = 'TRPCEntryError';
+    this.cause = opts.cause;
+    this.key = opts.key;
+    this.path = opts.path;
+    this.code = opts.code;
+  }
+}
+
+function codeOfShape(data: unknown): TRPC_ERROR_CODE_KEY | undefined {
+  const code = (data as { code?: unknown } | null | undefined)?.code;
+  return typeof code === 'string' ? (code as TRPC_ERROR_CODE_KEY) : undefined;
+}
+
+function entryCause(error: unknown) {
+  if (isTRPCClientError(error)) {
+    return { cause: error, code: codeOfShape(error.data) };
+  }
+  const cause = getTRPCErrorFromUnknown(error);
+  return { cause, code: cause.code };
+}
+
+function toEntryError(key: string, state: EntryState, error: unknown) {
+  if (isCancelledError(error)) {
+    return error;
+  }
+  return new TRPCEntryError({
+    key,
+    path: readQueryKey(state.options.queryKey).path.join('.'),
+    ...entryCause(error),
+  });
+}
+
 async function startEntries(
   queryClient: QueryClient,
   entries: Record<string, unknown>,
@@ -347,7 +410,9 @@ async function startEntries(
   const loads = states.map(([key, state]) => ({
     key,
     state,
-    promise: startEntry(queryClient, state),
+    promise: startEntry(queryClient, state).catch((error: unknown) => {
+      throw toEntryError(key, state, error);
+    }),
   }));
   const waited = loads.filter((load) => load.state.kind !== 'prefetch');
   const results = await Promise.all(waited.map((load) => load.promise));
@@ -576,6 +641,35 @@ function waterfall(opts: {
     type,
     renderClient,
   });
+}
+
+/**
+ * Whether `error` is a failed entry from `loadHandles()`. Pass a procedure to
+ * check that the entry was for it, which types `error.cause` with its errors.
+ * @example
+ * ```ts
+ * } catch (error) {
+ *   if (isTRPCEntryError(error, trpc.post.byId) && error.code === 'NOT_FOUND') {
+ *     throw notFound();
+ *   }
+ *   throw error;
+ * }
+ * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
+ */
+export function isTRPCEntryError<TDef extends ResolverDef>(
+  error: unknown,
+  procedure: DecorateQueryProcedure<TDef>,
+): error is TRPCEntryError<TDef>;
+export function isTRPCEntryError(error: unknown): error is TRPCEntryError;
+export function isTRPCEntryError(error: unknown, procedure?: unknown) {
+  if (!(error instanceof TRPCEntryError)) {
+    return false;
+  }
+  return (
+    procedure === undefined ||
+    error.path === readProxy(procedure, 'isTRPCEntryError').path.join('.')
+  );
 }
 
 /**
