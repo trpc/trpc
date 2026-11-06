@@ -1740,7 +1740,7 @@ importers:
         version: 6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2)
       '@shared/ui':
         specifier: workspace:*
-        version: file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react-is@17.0.2)(react@19.1.0)(supports-color@10.0.0)
+        version: file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react-is@17.0.2)(react@19.1.0)(redux@5.0.1)(supports-color@10.0.0)
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -2110,7 +2110,7 @@ importers:
         version: link:../../packages/server
       nuxt:
         specifier: ^3.21.11
-        version: 3.21.11(245b1c6afad3da3e0fac79bee6151c12)
+        version: 3.21.11(685af835e847ef48f626d0e54514b90e)
       trpc-nuxt:
         specifier: ^1.0.2
         version: 1.0.2(@trpc/client@packages+client)(@trpc/server@packages+server)
@@ -2251,7 +2251,7 @@ importers:
         version: 0.41.3
       '@shared/ui':
         specifier: workspace:*
-        version: file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react-is@17.0.2)(react@19.1.0)(supports-color@10.0.0)
+        version: file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react-is@17.0.2)(react@19.1.0)(redux@5.0.1)(supports-color@10.0.0)
       '@tanstack/react-query':
         specifier: ^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
@@ -2743,7 +2743,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 'catalog:'
-        version: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
       ws:
         specifier: 'catalog:'
         version: 8.21.3
@@ -3267,7 +3267,7 @@ importers:
         version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/react-router-ssr-query':
         specifier: ^1.167.3
-        version: 1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.3.0))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.3.0))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.39)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/react-start':
         specifier: catalog:www
         version: 1.168.61(crossws@0.4.12(srvx@1.0.8))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.16)(rollup@4.63.1)(supports-color@10.0.0)(vite-plugin-solid@2.11.15(@testing-library/jest-dom@6.9.1)(solid-js@1.9.18)(supports-color@10.0.0)(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)))(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2)(esbuild@0.28.2)(uglify-js@3.19.3))
@@ -5798,15 +5798,6 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
-
-  '@exodus/bytes@1.15.0':
-    resolution: {integrity: sha512-UY0nlA+feH81UGSHv92sLEPLCeZFjXOuHhrIo0HQydScuQc8s0A7kL/UdgwgDq8g8ilksmuoF35YVTNphV2aBQ==}
-    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
-    peerDependencies:
-      '@noble/hashes': ^1.8.0 || ^2.0.0
-    peerDependenciesMeta:
-      '@noble/hashes':
-        optional: true
 
   '@exodus/bytes@1.15.1':
     resolution: {integrity: sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q==}
@@ -11812,9 +11803,6 @@ packages:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
 
-  csstype@3.1.3:
-    resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
-
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
@@ -14901,8 +14889,8 @@ packages:
     resolution: {integrity: sha512-BKwRP/O0UvoMKp7GNdwPlObhYGB5DQqwhEDQlNKuoqwVYSxkSZCSbHjnFFmUEtwSKRPU4kNK8PbDYYitwaE3QA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  node-forge@1.4.0:
-    resolution: {integrity: sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==}
+  node-forge@1.4.3:
+    resolution: {integrity: sha512-P6wzfh6t70avmV8FrVEAd/36sOPJQ+hkaJVX1Laap9J/77m7M0eyozDvc8SwnDf4P7MP94gwbAAo0rg3YVXT+g==}
     engines: {node: '>= 6.13.0'}
 
   node-gyp-build@4.8.4:
@@ -16425,9 +16413,6 @@ packages:
 
   sax@1.2.1:
     resolution: {integrity: sha512-8I2a3LovHTOpm7NV5yOyO8IHqgVsfK4+UuySrXU8YXkSRX7k6hCV9b3HrkKCr3nMpgj+0bmocaJJWpvp1oc7ZA==}
-
-  sax@1.2.4:
-    resolution: {integrity: sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==}
 
   sax@1.6.1:
     resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
@@ -21968,8 +21953,6 @@ snapshots:
       levn: 0.4.1
     optional: true
 
-  '@exodus/bytes@1.15.0': {}
-
   '@exodus/bytes@1.15.1': {}
 
   '@fastify/ajv-compiler@4.0.5':
@@ -22692,7 +22675,7 @@ snapshots:
       jju: 1.4.0
       js-yaml: 4.1.1
 
-  '@mapbox/node-pre-gyp@2.0.0(supports-color@10.0.0)':
+  '@mapbox/node-pre-gyp@2.0.0(encoding@0.1.13)(supports-color@10.0.0)':
     dependencies:
       consola: 3.4.2
       detect-libc: 2.1.2
@@ -23060,7 +23043,7 @@ snapshots:
       - rolldown
       - unplugin
 
-  '@nuxt/nitro-server@3.21.11(df31a507296265eacdec4d58136c3d7b)':
+  '@nuxt/nitro-server@3.21.11(e3b83745bb1b9da5ada2393423371d2e)':
     dependencies:
       '@nuxt/devalue': 2.0.2
       '@nuxt/kit': 3.21.11(magicast@0.5.5)
@@ -23077,8 +23060,8 @@ snapshots:
       impound: 1.2.0(@rspack/core@1.7.12(@swc/helpers@0.5.20))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))
       klona: 2.0.6
       mocked-exports: 0.1.1
-      nitropack: 2.13.4(@rspack/core@1.7.12(@swc/helpers@0.5.20))(@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@opentelemetry/api@1.10.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@6.0.3))(typescript@6.0.3))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@6.0.3)))(oxc-parser@0.143.0)(rolldown@1.2.16)(srvx@0.11.22)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))(xml2js@0.6.2)
-      nuxt: 3.21.11(245b1c6afad3da3e0fac79bee6151c12)
+      nitropack: 2.13.4(@rspack/core@1.7.12(@swc/helpers@0.5.20))(@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@opentelemetry/api@1.10.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@6.0.3))(typescript@6.0.3))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@6.0.3)))(encoding@0.1.13)(oxc-parser@0.143.0)(rolldown@1.2.16)(srvx@0.11.22)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))(xml2js@0.6.2)
+      nuxt: 3.21.11(685af835e847ef48f626d0e54514b90e)
       ohash: 2.0.11
       pathe: 2.0.3
       pkg-types: 2.3.3
@@ -23150,7 +23133,7 @@ snapshots:
       rc9: 3.1.0
       std-env: 4.2.0
 
-  '@nuxt/vite-builder@3.21.11(@types/node@24.13.4)(eslint@10.10.0(jiti@2.7.0)(supports-color@10.0.0))(lightningcss@1.33.0)(magicast@0.5.5)(nuxt@3.21.11(245b1c6afad3da3e0fac79bee6151c12))(oxlint@1.90.0(oxlint-tsgolint@7.0.2005))(rolldown@1.2.16)(rollup-plugin-visualizer@7.1.1(rolldown@1.2.16)(rollup@4.63.1))(rollup@4.63.1)(supports-color@10.0.0)(terser@5.34.0)(tsx@4.21.0)(typescript@6.0.3)(vue@3.5.42(typescript@6.0.3))(yaml@2.9.1)':
+  '@nuxt/vite-builder@3.21.11(@types/node@24.13.4)(eslint@10.10.0(jiti@2.7.0)(supports-color@10.0.0))(lightningcss@1.33.0)(magicast@0.5.5)(nuxt@3.21.11(685af835e847ef48f626d0e54514b90e))(oxlint@1.90.0(oxlint-tsgolint@7.0.2005))(rolldown@1.2.16)(rollup-plugin-visualizer@7.1.1(rolldown@1.2.16)(rollup@4.63.1))(rollup@4.63.1)(supports-color@10.0.0)(terser@5.34.0)(tsx@4.21.0)(typescript@6.0.3)(vue@3.5.42(typescript@6.0.3))(yaml@2.9.1)':
     dependencies:
       '@nuxt/kit': 3.21.11(magicast@0.5.5)
       '@rollup/plugin-replace': 6.0.3(rollup@4.63.1)
@@ -23170,7 +23153,7 @@ snapshots:
       magic-string: 0.30.21
       mlly: 1.8.2
       mocked-exports: 0.1.1
-      nuxt: 3.21.11(245b1c6afad3da3e0fac79bee6151c12)
+      nuxt: 3.21.11(685af835e847ef48f626d0e54514b90e)
       nypm: 0.6.10
       ohash: 2.0.11
       pathe: 2.0.3
@@ -26321,7 +26304,7 @@ snapshots:
     transitivePeerDependencies:
       - '@tanstack/router-core'
 
-  '@tanstack/react-router-ssr-query@1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.3.0))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@tanstack/react-router-ssr-query@1.167.3(@tanstack/query-core@5.105.0)(@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.3.0))(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.39)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@tanstack/query-core': 5.105.0
       '@tanstack/react-query': 5.105.0(@types/react@19.1.0)(react@19.3.0)
@@ -27160,7 +27143,7 @@ snapshots:
 
   '@types/react@19.1.0':
     dependencies:
-      csstype: 3.1.3
+      csstype: 3.2.3
 
   '@types/resolve@1.20.2': {}
 
@@ -27310,9 +27293,9 @@ snapshots:
       ws: 8.22.1
     optional: true
 
-  '@vercel/nft@1.11.0(rollup@4.63.1)(supports-color@10.0.0)':
+  '@vercel/nft@1.11.0(encoding@0.1.13)(rollup@4.63.1)(supports-color@10.0.0)':
     dependencies:
-      '@mapbox/node-pre-gyp': 2.0.0(supports-color@10.0.0)
+      '@mapbox/node-pre-gyp': 2.0.0(encoding@0.1.13)(supports-color@10.0.0)
       '@rollup/pluginutils': 5.1.4(rollup@4.63.1)
       acorn: 8.18.0
       acorn-import-attributes: 1.9.5(acorn@8.18.0)
@@ -27424,6 +27407,15 @@ snapshots:
     optionalDependencies:
       vite: 8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
 
+  '@vitest/mocker@5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      '@vitest/spy': 5.0.0
+      estree-walker: 3.0.3
+      magic-string: 1.3.1
+    optionalDependencies:
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+
   '@vitest/mocker@5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
@@ -27514,7 +27506,7 @@ snapshots:
       '@vue/shared': 3.5.42
       entities: 7.0.1
       estree-walker: 2.0.2
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   '@vue/compiler-dom@3.5.16':
     dependencies:
@@ -27535,8 +27527,8 @@ snapshots:
       '@vue/shared': 3.5.42
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.28
-      source-map-js: 1.2.1
+      postcss: 8.5.32
+      source-map-js: 1.2.2
 
   '@vue/compiler-ssr@3.5.42':
     dependencies:
@@ -28993,7 +28985,7 @@ snapshots:
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   css-what@7.0.0: {}
 
@@ -29048,8 +29040,6 @@ snapshots:
   csso@5.0.5:
     dependencies:
       css-tree: 2.2.1
-
-  csstype@3.1.3: {}
 
   csstype@3.2.3: {}
 
@@ -30934,7 +30924,7 @@ snapshots:
 
   html-encoding-sniffer@6.0.0:
     dependencies:
-      '@exodus/bytes': 1.15.0
+      '@exodus/bytes': 1.15.1
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -31749,7 +31739,7 @@ snapshots:
       h3: 1.15.11
       http-shutdown: 1.2.2
       jiti: 2.7.0
-      node-forge: 1.4.0
+      node-forge: 1.4.3
       pathe: 2.0.3
       std-env: 4.2.0
       tinyclip: 0.1.15
@@ -31906,7 +31896,7 @@ snapshots:
 
   magic-string@0.30.21:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   magic-string@1.3.1:
     dependencies:
@@ -31927,7 +31917,7 @@ snapshots:
     dependencies:
       '@babel/parser': 7.29.8
       '@babel/types': 7.29.8
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   make-dir@1.3.0:
     dependencies:
@@ -32664,7 +32654,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       unstorage: 2.0.0-beta.0
 
-  nitropack@2.13.4(@rspack/core@1.7.12(@swc/helpers@0.5.20))(@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@opentelemetry/api@1.10.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@6.0.3))(typescript@6.0.3))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@6.0.3)))(oxc-parser@0.143.0)(rolldown@1.2.16)(srvx@0.11.22)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))(xml2js@0.6.2):
+  nitropack@2.13.4(@rspack/core@1.7.12(@swc/helpers@0.5.20))(@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@opentelemetry/api@1.10.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@6.0.3))(typescript@6.0.3))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@6.0.3)))(encoding@0.1.13)(oxc-parser@0.143.0)(rolldown@1.2.16)(srvx@0.11.22)(supports-color@10.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))(xml2js@0.6.2):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@rollup/plugin-alias': 6.0.0(rollup@4.63.1)
@@ -32674,7 +32664,7 @@ snapshots:
       '@rollup/plugin-node-resolve': 16.0.3(rollup@4.63.1)
       '@rollup/plugin-replace': 6.0.3(rollup@4.63.1)
       '@rollup/plugin-terser': 1.0.0(rollup@4.63.1)
-      '@vercel/nft': 1.11.0(rollup@4.63.1)(supports-color@10.0.0)
+      '@vercel/nft': 1.11.0(encoding@0.1.13)(rollup@4.63.1)(supports-color@10.0.0)
       archiver: 7.0.1
       c12: 3.3.4(magicast@0.5.5)
       chokidar: 5.0.0
@@ -32817,7 +32807,7 @@ snapshots:
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
 
-  node-forge@1.4.0: {}
+  node-forge@1.4.3: {}
 
   node-gyp-build@4.8.4: {}
 
@@ -32906,16 +32896,16 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
-  nuxt@3.21.11(245b1c6afad3da3e0fac79bee6151c12):
+  nuxt@3.21.11(685af835e847ef48f626d0e54514b90e):
     dependencies:
       '@dxup/nuxt': 0.5.10(@rspack/core@1.7.12(@swc/helpers@0.5.20))(esbuild@0.28.2)(magicast@0.5.5)(oxc-parser@0.143.0)(rolldown@1.2.16)(rollup@4.63.1)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3))
       '@nuxt/cli': 3.37.0(@nuxt/schema@3.21.11)(cac@6.7.14)(commander@15.0.0)(magicast@0.5.5)(supports-color@10.0.0)
       '@nuxt/devtools': 3.4.2(@vercel/functions@3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1))(db0@0.3.4(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@opentelemetry/api@1.10.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@6.0.3))(typescript@6.0.3))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@6.0.3))))(ioredis@5.11.1(supports-color@10.0.0))(magic-string@0.30.21)(oxc-parser@0.143.0)(rolldown@1.2.16)(supports-color@10.0.0)(unplugin@3.3.0(@rspack/core@1.7.12(@swc/helpers@0.5.20))(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.63.1)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(webpack@5.95.0(@swc/core@1.16.2(@swc/helpers@0.5.20))(esbuild@0.28.2)(uglify-js@3.19.3)))(vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))(vue@3.5.42(typescript@6.0.3))
       '@nuxt/kit': 3.21.11(magicast@0.5.5)
-      '@nuxt/nitro-server': 3.21.11(df31a507296265eacdec4d58136c3d7b)
+      '@nuxt/nitro-server': 3.21.11(e3b83745bb1b9da5ada2393423371d2e)
       '@nuxt/schema': 3.21.11
       '@nuxt/telemetry': 2.9.1(@nuxt/kit@3.21.11(magicast@0.5.5))
-      '@nuxt/vite-builder': 3.21.11(@types/node@24.13.4)(eslint@10.10.0(jiti@2.7.0)(supports-color@10.0.0))(lightningcss@1.33.0)(magicast@0.5.5)(nuxt@3.21.11(245b1c6afad3da3e0fac79bee6151c12))(oxlint@1.90.0(oxlint-tsgolint@7.0.2005))(rolldown@1.2.16)(rollup-plugin-visualizer@7.1.1(rolldown@1.2.16)(rollup@4.63.1))(rollup@4.63.1)(supports-color@10.0.0)(terser@5.34.0)(tsx@4.21.0)(typescript@6.0.3)(vue@3.5.42(typescript@6.0.3))(yaml@2.9.1)
+      '@nuxt/vite-builder': 3.21.11(@types/node@24.13.4)(eslint@10.10.0(jiti@2.7.0)(supports-color@10.0.0))(lightningcss@1.33.0)(magicast@0.5.5)(nuxt@3.21.11(685af835e847ef48f626d0e54514b90e))(oxlint@1.90.0(oxlint-tsgolint@7.0.2005))(rolldown@1.2.16)(rollup-plugin-visualizer@7.1.1(rolldown@1.2.16)(rollup@4.63.1))(rollup@4.63.1)(supports-color@10.0.0)(terser@5.34.0)(tsx@4.21.0)(typescript@6.0.3)(vue@3.5.42(typescript@6.0.3))(yaml@2.9.1)
       '@unhead/vue': 2.1.17(vue@3.5.42(typescript@6.0.3))
       '@vue/shared': 3.5.42
       c12: 3.3.4(magicast@0.5.5)
@@ -34777,8 +34767,6 @@ snapshots:
 
   sax@1.2.1: {}
 
-  sax@1.2.4: {}
-
   sax@1.6.1: {}
 
   saxes@6.0.0:
@@ -35901,7 +35889,7 @@ snapshots:
   terser@5.34.0:
     dependencies:
       '@jridgewell/source-map': 0.3.6
-      acorn: 8.14.1
+      acorn: 8.18.0
       commander: 2.20.3
       source-map-support: 0.5.21
 
@@ -36977,6 +36965,22 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.9.1
 
+  vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.32
+      rolldown: 1.2.16
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 24.13.4
+      esbuild: 0.27.7
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      terser: 5.34.0
+      tsx: 4.21.0
+      yaml: 2.8.2
+
   vite@8.3.5(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
@@ -37020,6 +37024,32 @@ snapshots:
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
       vite: 8.3.0(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@edge-runtime/vm': 2.0.2
+      '@opentelemetry/api': 1.10.0
+      '@types/node': 24.13.4
+      '@vitest/coverage-istanbul': 5.0.0(vitest@5.0.0)
+      '@vitest/ui': 5.0.0(vitest@5.0.0)
+      jsdom: 29.0.0
+    transitivePeerDependencies:
+      - msw
+
+  vitest@5.0.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.0.0)(@vitest/ui@5.0.0)(jsdom@29.0.0)(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+    dependencies:
+      '@types/chai': 5.2.3
+      '@vitest/mocker': 5.0.0(vite@8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      chai: 6.2.2
+      es-module-lexer: 2.3.2
+      expect-type: 1.4.0
+      magic-string: 1.3.1
+      obug: 2.2.1
+      picomatch: 4.0.7
+      std-env: 4.2.0
+      tinybench: 6.1.4
+      tinyexec: 1.3.0
+      tinyglobby: 0.2.17
+      vite: 8.3.5(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@edge-runtime/vm': 2.0.2
@@ -37295,7 +37325,7 @@ snapshots:
 
   whatwg-url@16.0.1:
     dependencies:
-      '@exodus/bytes': 1.15.0
+      '@exodus/bytes': 1.15.1
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
@@ -37451,7 +37481,7 @@ snapshots:
 
   xml2js@0.6.2:
     dependencies:
-      sax: 1.2.4
+      sax: 1.6.1
       xmlbuilder: 11.0.1
 
   xmlbuilder2@4.0.3:
