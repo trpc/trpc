@@ -124,24 +124,44 @@ function wordsOf(text: string): Words {
   };
 }
 
-/** `handles` is `handle`, `queries` is `query`, `batching` is `batch`. */
-function stem(lower: string) {
+const stemsOf = new Map<string, ReadonlySet<string>>();
+
+/** What `lower` may be a form of: `cases` of `cas` or `case`, `settings` of `sett`. */
+function stems(lower: string): ReadonlySet<string> {
+  const cached = stemsOf.get(lower);
+  if (cached) {
+    return cached;
+  }
+  const singular = [lower];
   if (lower.length > 4 && lower.endsWith('ies')) {
-    return `${lower.slice(0, -3)}y`;
+    singular.push(`${lower.slice(0, -3)}y`);
   }
   if (/(?:s|x|z|ch|sh)es$/.test(lower)) {
-    return lower.slice(0, -2);
+    singular.push(lower.slice(0, -2));
   }
   if (lower.length > 3 && lower.endsWith('s') && !lower.endsWith('ss')) {
-    return lower.slice(0, -1);
+    singular.push(lower.slice(0, -1));
   }
-  if (lower.length > 6 && lower.endsWith('ing')) {
-    return lower.slice(0, -3);
-  }
-  return lower;
+  const found = new Set(
+    singular.flatMap((one) =>
+      one.length > 6 && one.endsWith('ing') ? [one, one.slice(0, -3)] : [one],
+    ),
+  );
+  stemsOf.set(lower, found);
+  return found;
 }
 
-const same = (a: string, b: string) => a === b || stem(a) === stem(b);
+/**
+ * Whether two lowercased words are one, give or take a plural or `-ing`:
+ * `handle` and `handles`, `query` and `queries`, `batch` and `batching`.
+ */
+export function sameWord(a: string, b: string) {
+  if (a === b) {
+    return true;
+  }
+  const ofB = stems(b);
+  return [...stems(a)].some((one) => ofB.has(one));
+}
 
 /**
  * How well a name matches the query's words: 3 when it's the query, 2 when
@@ -160,7 +180,7 @@ function nameMatch(name: Words, query: Words) {
     pairs.some(
       ([names, queried]) =>
         names.length === queried.length &&
-        queried.every((one, at) => same(one, names[at] ?? '')),
+        queried.every((one, at) => sameWord(one, names[at] ?? '')),
     )
   ) {
     return 3;
@@ -170,7 +190,7 @@ function nameMatch(name: Words, query: Words) {
       queried.every((one, at) => {
         const named = names[at] ?? '';
         return (
-          same(one, named) ||
+          sameWord(one, named) ||
           (at === queried.length - 1 && named.startsWith(one))
         );
       }),
@@ -181,10 +201,10 @@ function nameMatch(name: Words, query: Words) {
   const all = [...name.whole, ...name.parts];
   // `queryOptions`'s parts only in that order: not `inferQueryProcedureOptions`.
   const hasParts = name.parts.some((_, start) =>
-    query.parts.every((one, at) => same(one, name.parts[start + at] ?? '')),
+    query.parts.every((one, at) => sameWord(one, name.parts[start + at] ?? '')),
   );
   return hasParts ||
-    query.whole.every((one) => all.some((named) => same(one, named)))
+    query.whole.every((one) => all.some((named) => sameWord(one, named)))
     ? 1
     : 0;
 }
@@ -199,7 +219,9 @@ function namesMatch(names: ReadonlyArray<Words>, query: Words) {
       : names
           .flatMap((name) => [...name.whole, ...name.parts])
           .filter((named) =>
-            queried.some((one) => same(one, named) || named.startsWith(one)),
+            queried.some(
+              (one) => sameWord(one, named) || named.startsWith(one),
+            ),
           ),
   );
   return { level, terms };

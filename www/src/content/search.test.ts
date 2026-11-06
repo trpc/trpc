@@ -4,6 +4,7 @@ import {
   entriesById,
   groupBySection,
   highlight,
+  sameWord,
   searchDocs,
   type SearchMatch,
 } from './search.ts';
@@ -148,6 +149,26 @@ describe('entriesById', () => {
         (entry) => entry.id,
       ),
     ).toEqual(['client/links#batching', 'client/links']);
+  });
+});
+
+describe('sameWord', () => {
+  it.each([
+    ['case', 'cases'],
+    ['setting', 'settings'],
+    ['handle', 'handles'],
+    ['query', 'queries'],
+    ['class', 'classes'],
+    ['batch', 'batching'],
+  ])('takes %s and %s as one, both ways', (a, b) => {
+    expect(sameWord(a, b)).toBe(true);
+    expect(sameWord(b, a)).toBe(true);
+  });
+
+  it('keeps other words apart', () => {
+    expect(sameWord('handle', 'handling')).toBe(false);
+    expect(sameWord('case', 'cast')).toBe(false);
+    expect(sameWord('class', 'clas')).toBe(false);
   });
 });
 
