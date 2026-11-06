@@ -32,7 +32,10 @@ describe('cache tags generation', () => {
   });
 
   test('generateCacheTags with nested procedure and input', () => {
-    const tags = generateCacheTags('page.home.header', { size: 'medium' });
+    const tags = generateCacheTags({
+      procedurePath: 'page.home.header',
+      input: { size: 'medium' },
+    });
     expect(tags).toEqual([
       'page',
       'page.home',
@@ -42,22 +45,43 @@ describe('cache tags generation', () => {
   });
 
   test('generateCacheTags with nested procedure and no input', () => {
-    const tags = generateCacheTags('page.home.header');
+    const tags = generateCacheTags({
+      procedurePath: 'page.home.header',
+      input: undefined,
+    });
     expect(tags).toEqual(['page', 'page.home', 'page.home.header']);
   });
 
+  test('generateCacheTags with null input', () => {
+    const tags = generateCacheTags({
+      procedurePath: 'page.home.header',
+      input: null,
+    });
+    expect(tags).toEqual([
+      'page',
+      'page.home',
+      'page.home.header',
+      'page.home.header?input=null',
+    ]);
+  });
+
   test('generateCacheTags with single-level procedure and input', () => {
-    const tags = generateCacheTags('posts', { limit: 10 });
+    const tags = generateCacheTags({
+      procedurePath: 'posts',
+      input: { limit: 10 },
+    });
     expect(tags).toEqual(['posts', 'posts?input={"limit":10}']);
   });
 
   test('generateCacheTags with falsy input', () => {
-    const tags = generateCacheTags('posts.byId', 0);
+    const tags = generateCacheTags({ procedurePath: 'posts.byId', input: 0 });
     expect(tags).toEqual(['posts', 'posts.byId', 'posts.byId?input=0']);
   });
 
   test('generateCacheTags with empty path returns empty array', () => {
-    expect(generateCacheTags('')).toEqual([]);
+    expect(generateCacheTags({ procedurePath: '', input: undefined })).toEqual(
+      [],
+    );
   });
 });
 
