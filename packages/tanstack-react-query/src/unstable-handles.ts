@@ -1,6 +1,7 @@
 export type { TRPCLoaderOptionsProxy } from './internals/createOptionsProxy';
 export {
   loadHandles,
+  loadHandlesSettled,
   prefetchEntry,
   fetchEntry,
   ensureEntry,
@@ -22,6 +23,8 @@ export type {
   AnyTRPCEntry,
   TRPCEntryKind,
   TRPCLoadedHandles,
+  TRPCSettledHandles,
+  TRPCEntryResult,
   TRPCEntryOptions,
   TRPCInfiniteEntryOptions,
   inferQueryHandle,

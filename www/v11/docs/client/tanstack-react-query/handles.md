@@ -1662,6 +1662,43 @@ async function loader(id: string) {
 - The load rejects as soon as one entry fails, without waiting for the others. If several fail, you get the first to fail.
 - Errors that don't come from the request, such as a cancelled query, reject as they are.
 
+### Errors as values {#errors-as-values}
+
+`loadHandlesSettled` takes the same entries, but never rejects because an entry failed. It waits for every fetch and ensure entry to settle, then resolves to `[handles, results]`. Each of those entries has `{ status: 'success', data }` or `{ status: 'error', error }` on `results`, with a `TRPCEntryError`:
+
+```ts twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: loader.ts
+import { trpc } from '~/trpc/server';
+declare function notFound(): never;
+declare const id: string;
+// ---cut---
+import {
+  ensureEntry,
+  loadHandlesSettled,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+
+const [handles, results] = await loadHandlesSettled(trpc, {
+  post: ensureEntry(trpc.post.byId, { id }),
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+});
+if (results.post.status === 'error') {
+  if (results.post.error.code === 'NOT_FOUND') {
+    notFound();
+  }
+  throw results.post.error;
+}
+results.post.data.title;
+//           ^?
+```
+
+- It waits for every entry, even after one has failed, so you see all the failures, not just the first.
+- `results` has no key for prefetch entries, as `data` hasn't with `loadHandles`.
+- `handles` has a handle for every entry, failed or not. A component that reads a failed one gets the error in its error boundary, as with a [prefetch entry](#errors-prefetch).
+- A cancelled query still rejects, as with `loadHandles`: the load was called off, so there's no result to give.
+
 ### With prefetch entries {#errors-prefetch}
 
 A prefetch entry never makes the load reject. The component that reads the handle gets the error instead, and the nearest error boundary shows it. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.

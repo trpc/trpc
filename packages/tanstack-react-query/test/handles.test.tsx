@@ -4,6 +4,7 @@ import {
   defaultShouldDehydrateQuery,
   dehydrate,
   hydrate,
+  isCancelledError,
   QueryClient,
   QueryClientProvider,
   useSuspenseInfiniteQuery,
@@ -21,6 +22,7 @@ import type { TRPCOptionsProxy } from '../src';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 import {
   loadHandles,
+  loadHandlesSettled,
   prefetchEntry,
   fetchEntry,
   ensureEntry,
@@ -71,6 +73,9 @@ const ctx = () => {
         }),
     }),
     viewer: t.procedure.query(() => ({ name: 'KATT' })),
+    slow: t.procedure.query(
+      () => new Promise<string>((resolve) => setTimeout(resolve, 50, 'slow')),
+    ),
     flaky: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
       calls('flaky', opts.input);
       if (calls.mock.calls.filter(([path]) => path === 'flaky').length === 1) {
@@ -113,6 +118,44 @@ function makeServerProxy(resource: ReturnType<typeof ctx>) {
 }
 
 describe('types', () => {
+  test('loadHandlesSettled gives a result for every fetch and ensure entry', async () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    const [handles, results] = await loadHandlesSettled(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: '1' }),
+      list: fetchInfiniteEntry(trpc.post.list, { limit: 2 }),
+      prefetched: prefetchEntry(trpc.viewer),
+    });
+    expectTypeOf(handles.post).toEqualTypeOf<
+      inferQueryHandle<TRPC['post']['byId']>
+    >();
+    expectTypeOf(handles.prefetched).toEqualTypeOf<
+      inferQueryHandle<TRPC['viewer']>
+    >();
+    expectTypeOf<keyof typeof results>().toEqualTypeOf<'post' | 'list'>();
+    // @ts-expect-error a prefetch entry has no result: it isn't waited for
+    void results.prefetched;
+
+    if (results.post.status === 'error') {
+      expectTypeOf(results.post.error.code).toEqualTypeOf<
+        TRPC_ERROR_CODE_KEY | undefined
+      >();
+      expectTypeOf(results.post.error.cause).toEqualTypeOf<
+        TRPCClientErrorLike<AppRouter> | TRPCError
+      >();
+      // @ts-expect-error a failed entry has no data
+      void results.post.data;
+    } else {
+      expectTypeOf(results.post.data).toEqualTypeOf<{
+        id: string;
+        title: string;
+      }>();
+    }
+    if (results.list.status === 'success') {
+      expectTypeOf(results.list.data.pages[0]!.items).toEqualTypeOf<number[]>();
+    }
+  });
+
   test('isTRPCEntryError narrows to the error of the procedure it matches', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
@@ -300,6 +343,8 @@ describe('types', () => {
     void loadHandles(trpc, {});
     // @ts-expect-error not its router levels either
     void loadHandles(trpc.post, {});
+    // @ts-expect-error nor settled
+    void loadHandlesSettled(trpc, {});
     // @ts-expect-error entries are only for loadHandles
     prefetchEntry(trpc.post.byId, { id: '1' });
     // @ts-expect-error entries are only for loadHandles
@@ -508,6 +553,50 @@ describe('loading', () => {
     expect(() => loadHandles(post, {})).toThrowErrorMatchingInlineSnapshot(
       `[Error: \`loadHandles()\` takes the root proxy, \`trpc\`, got \`trpc.post\`]`,
     );
+    expect(() =>
+      loadHandlesSettled(post, {}),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`loadHandlesSettled()\` takes the root proxy, \`trpc\`, got \`trpc.post\`]`,
+    );
+  });
+
+  test('loadHandlesSettled waits for every entry, and resolves failures as results', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+
+    const [handles, results] = await loadHandlesSettled(server.trpc, {
+      missingPost: ensureEntry(server.trpc.post.byId, { id: 'missing' }),
+      slow: fetchEntry(server.trpc.slow),
+      comments: prefetchEntry(server.trpc.post.byId, { id: 'missing' }),
+    });
+    expect(results.slow).toEqual({ status: 'success', data: 'slow' });
+    expect(results.missingPost.status).toBe('error');
+    const failed = results.missingPost as Extract<
+      typeof results.missingPost,
+      { status: 'error' }
+    >;
+    expect(failed.error).toBeInstanceOf(TRPCEntryError);
+    expect(failed.error).toMatchObject({
+      key: 'missingPost',
+      path: 'post.byId',
+      code: 'NOT_FOUND',
+    });
+    expect(Object.keys(results)).toEqual(['missingPost', 'slow']);
+    expect(Object.keys(handles)).toEqual(['missingPost', 'slow', 'comments']);
+    expect(handles.missingPost.input).toEqual({ id: 'missing' });
+  });
+
+  test('loadHandlesSettled rejects for a cancelled query, as loadHandles does', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+
+    for (const load of [loadHandles, loadHandlesSettled]) {
+      const loading = load(server.trpc, {
+        slow: ensureEntry(server.trpc.slow),
+      });
+      await server.queryClient.cancelQueries();
+      await expect(loading).rejects.toSatisfy(isCancelledError);
+    }
   });
 
   test('JavaScript callers get a readable error for a value that is not a proxy', async () => {

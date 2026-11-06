@@ -151,15 +151,40 @@ type HandlesOf<TEntries extends Record<string, AnyTRPCEntry>> = {
   [TKey in keyof TEntries]: HandleOfEntry<TEntries[TKey]>;
 };
 
+type DefOfEntry<TEntry> = TEntry extends {
+  readonly [entryDef]: { def: infer TDef extends ResolverDef };
+}
+  ? TDef
+  : never;
+
+/** Only fetch and ensure entries are waited for, so only they have data */
+type WaitedKey<TEntries, TKey extends keyof TEntries> = TEntries[TKey] extends {
+  readonly [entryDef]: { kind: 'fetch' | 'ensure' };
+}
+  ? TKey
+  : never;
+
 type DataOf<TEntries extends Record<string, AnyTRPCEntry>> = {
-  [
-    TKey in keyof TEntries as TEntries[TKey] extends {
-      readonly [entryDef]: { kind: 'fetch' | 'ensure' };
-    }
-      ? TKey
-      : never
-  ]: DataOfEntry<TEntries[TKey]>;
+  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: DataOfEntry<
+    TEntries[TKey]
+  >;
 };
+
+type ResultsOf<TEntries extends Record<string, AnyTRPCEntry>> = {
+  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: TRPCEntryResult<
+    DefOfEntry<TEntries[TKey]>,
+    DataOfEntry<TEntries[TKey]>
+  >;
+};
+
+/**
+ * What `loadHandlesSettled()` has for a fetch or ensure entry: its data, or
+ * the error it failed with.
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
+ */
+export type TRPCEntryResult<TDef extends ResolverDef, TData> =
+  | { readonly status: 'success'; readonly data: TData }
+  | { readonly status: 'error'; readonly error: TRPCEntryError<TDef> };
 
 /**
  * What `loadHandles()` resolves to: `[handles, data]`. `handles` has a handle
@@ -169,6 +194,14 @@ type DataOf<TEntries extends Record<string, AnyTRPCEntry>> = {
  */
 export type TRPCLoadedHandles<TEntries extends Record<string, AnyTRPCEntry>> =
   readonly [handles: HandlesOf<TEntries>, data: DataOf<TEntries>];
+
+/**
+ * What `loadHandlesSettled()` resolves to: `[handles, results]`. `results`
+ * has a `TRPCEntryResult` for every fetch and ensure entry, by the entry's key.
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
+ */
+export type TRPCSettledHandles<TEntries extends Record<string, AnyTRPCEntry>> =
+  readonly [handles: HandlesOf<TEntries>, results: ResultsOf<TEntries>];
 
 /** Options for an entry */
 export interface TRPCEntryOptions
@@ -400,10 +433,25 @@ function toEntryError(key: string, state: EntryState, error: unknown) {
   });
 }
 
-async function startEntries(
-  queryClient: QueryClient,
-  entries: Record<string, unknown>,
-) {
+function settleLoad(promise: Promise<unknown>) {
+  return promise.then(
+    (data) => ({ status: 'success', data }),
+    (error: unknown) => {
+      if (error instanceof TRPCEntryError) {
+        return { status: 'error', error };
+      }
+      throw error;
+    },
+  );
+}
+
+async function startEntries(opts: {
+  queryClient: QueryClient;
+  entries: Record<string, unknown>;
+  /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
+  settle: boolean;
+}) {
+  const { queryClient, entries } = opts;
   const states = Object.entries(entries).map(
     ([key, entry]) => [key, readEntry(key, entry)] as const,
   );
@@ -415,7 +463,11 @@ async function startEntries(
     }),
   }));
   const waited = loads.filter((load) => load.state.kind !== 'prefetch');
-  const results = await Promise.all(waited.map((load) => load.promise));
+  const results = await Promise.all(
+    waited.map((load) =>
+      opts.settle ? settleLoad(load.promise) : load.promise,
+    ),
+  );
 
   const handles = Object.fromEntries(
     loads.map((load) => [
@@ -579,6 +631,16 @@ function readProxy(proxy: unknown, fn: string): TRPCHandleProxyContext {
   return getContext();
 }
 
+function readLoaderRoot(trpc: unknown, fn: string) {
+  const ctx = readLoaderProxy(trpc, fn);
+  if (ctx.path.length > 0) {
+    throw new Error(
+      `\`${fn}()\` takes the root proxy, \`trpc\`, got \`trpc.${ctx.path.join('.')}\``,
+    );
+  }
+  return ctx;
+}
+
 function readLoaderProxy(proxy: unknown, fn: string) {
   const ctx = readProxy(proxy, fn);
   if (ctx.inRender) {
@@ -697,13 +759,44 @@ export function loadHandles<TEntries extends Record<string, AnyTRPCEntry>>(
   trpc: TRPCLoaderBrand<'root'>,
   entries: TEntries,
 ): Promise<TRPCLoadedHandles<TEntries>> {
-  const ctx = readLoaderProxy(trpc, 'loadHandles');
-  if (ctx.path.length > 0) {
-    throw new Error(
-      `\`loadHandles()\` takes the root proxy, \`trpc\`, got \`trpc.${ctx.path.join('.')}\``,
-    );
-  }
-  return startEntries(ctx.getQueryClient(), entries) as Promise<any>;
+  return startEntries({
+    queryClient: readLoaderRoot(trpc, 'loadHandles').getQueryClient(),
+    entries,
+    settle: false,
+  }) as Promise<any>;
+}
+
+/**
+ * Like `loadHandles()`, but it waits for every fetch and ensure entry to
+ * settle and never rejects because one failed. Resolves to `[handles, results]`:
+ * `results` has `{ status: 'success', data }` or `{ status: 'error', error }`,
+ * with a `TRPCEntryError`, for every fetch and ensure entry.
+ *
+ * A cancelled query still rejects, as it does with `loadHandles()`.
+ * @example
+ * ```ts
+ * const [handles, results] = await loadHandlesSettled(trpc, {
+ *   post: ensureEntry(trpc.post.byId, { id }),
+ *   comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+ * });
+ * if (results.post.status === 'error') {
+ *   if (results.post.error.code === 'NOT_FOUND') throw notFound();
+ *   throw results.post.error;
+ * }
+ * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
+ */
+export function loadHandlesSettled<
+  TEntries extends Record<string, AnyTRPCEntry>,
+>(
+  trpc: TRPCLoaderBrand<'root'>,
+  entries: TEntries,
+): Promise<TRPCSettledHandles<TEntries>> {
+  return startEntries({
+    queryClient: readLoaderRoot(trpc, 'loadHandlesSettled').getQueryClient(),
+    entries,
+    settle: true,
+  }) as Promise<any>;
 }
 
 /**
