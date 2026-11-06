@@ -1003,6 +1003,22 @@ export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
   return anchors;
 });
 
+/** The `h2` and `h3` headings a page renders, without compiling its code. */
+export const headingsOf = Effect.fn('headingsOf')(function* (markdown: string) {
+  const headings: Array<DocHeading> = [];
+  const processor = parsing(
+    { basePath: '/docs', slug: 'index', sourceUrl: '' },
+    headings,
+    [],
+    [],
+  );
+  yield* Effect.tryPromise({
+    catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
+    try: async () => processor.run(processor.parse(markdown)),
+  });
+  return headings;
+});
+
 const twoslashFence = /^[ \t]*```\w*[^\n]*\btwoslash\b/m;
 
 export const renderMarkdown = Effect.fn('renderMarkdown')(function* (

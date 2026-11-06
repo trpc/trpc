@@ -102,8 +102,113 @@ function entriesOf(docs: ReadonlyArray<DocMeta>): ReadonlyArray<SearchEntry> {
 /** Where TypeDoc's pages are (`referenceSlug` in `api-reference/convert.ts`). */
 const referencePrefix = 'typedoc/';
 
+/** The words the index splits text into, as MiniSearch's tokenizer does. */
+const word = /[^\n\r\p{Z}\p{P}]+/gu;
+
+/** A name's words, lowercased: as written, and split at camelCase. */
+interface Words {
+  readonly parts: ReadonlyArray<string>;
+  readonly whole: ReadonlyArray<string>;
+}
+
+function wordsOf(text: string): Words {
+  const written = Array.from(
+    stripInlineCode(text).matchAll(word),
+    ([found]) => found,
+  );
+  return {
+    parts: written
+      .flatMap((one) => one.split(camelBoundary))
+      .map((part) => part.toLowerCase()),
+    whole: written.map((one) => one.toLowerCase()),
+  };
+}
+
+/** `handles` is `handle`, `queries` is `query`, `batching` is `batch`. */
+function stem(lower: string) {
+  if (lower.length > 4 && lower.endsWith('ies')) {
+    return `${lower.slice(0, -3)}y`;
+  }
+  if (/(?:s|x|z|ch|sh)es$/.test(lower)) {
+    return lower.slice(0, -2);
+  }
+  if (lower.length > 3 && lower.endsWith('s') && !lower.endsWith('ss')) {
+    return lower.slice(0, -1);
+  }
+  if (lower.length > 6 && lower.endsWith('ing')) {
+    return lower.slice(0, -3);
+  }
+  return lower;
+}
+
+const same = (a: string, b: string) => a === b || stem(a) === stem(b);
+
+/**
+ * How well a name matches the query's words: 3 when it's the query, 2 when
+ * it starts with it (the last word as far as it's typed), 1 when it has
+ * each of its words, 0 when not.
+ */
+function nameMatch(name: Words, query: Words) {
+  if (query.whole.length === 0) {
+    return 0;
+  }
+  const pairs = [
+    [name.whole, query.whole],
+    [name.parts, query.parts],
+  ] as const;
+  if (
+    pairs.some(
+      ([names, queried]) =>
+        names.length === queried.length &&
+        queried.every((one, at) => same(one, names[at] ?? '')),
+    )
+  ) {
+    return 3;
+  }
+  if (
+    pairs.some(([names, queried]) =>
+      queried.every((one, at) => {
+        const named = names[at] ?? '';
+        return (
+          same(one, named) ||
+          (at === queried.length - 1 && named.startsWith(one))
+        );
+      }),
+    )
+  ) {
+    return 2;
+  }
+  const all = [...name.whole, ...name.parts];
+  // `queryOptions`'s parts only in that order: not `inferQueryProcedureOptions`.
+  const hasParts = name.parts.some((_, start) =>
+    query.parts.every((one, at) => same(one, name.parts[start + at] ?? '')),
+  );
+  return hasParts ||
+    query.whole.every((one) => all.some((named) => same(one, named)))
+    ? 1
+    : 0;
+}
+
+/** The best of `names`' matches, and the words of theirs it matched. */
+function namesMatch(names: ReadonlyArray<Words>, query: Words) {
+  const level = Math.max(0, ...names.map((name) => nameMatch(name, query)));
+  const queried = [...query.whole, ...query.parts];
+  const terms = new Set(
+    level === 0
+      ? []
+      : names
+          .flatMap((name) => [...name.whole, ...name.parts])
+          .filter((named) =>
+            queried.some((one) => same(one, named) || named.startsWith(one)),
+          ),
+  );
+  return { level, terms };
+}
+
 interface Index {
   readonly byId: ReadonlyMap<string, SearchEntry>;
+  /** A page's label, title and slug's last part; a heading's text. */
+  readonly names: ReadonlyMap<string, ReadonlyArray<Words>>;
   readonly pages: ReadonlyArray<SearchEntry>;
   readonly search: MiniSearch<SearchEntry>;
 }
@@ -157,8 +262,22 @@ function indexOf(docs: ReadonlyArray<DocMeta>): Index {
     tokenize,
   });
   search.addAll(entries);
+  const names = new Map(
+    entries.map((entry) => [
+      entry.id,
+      (entry.hash === undefined
+        ? [
+            entry.text,
+            titles.get(entry.slug) ?? '',
+            entry.slug.split('/').at(-1) ?? '',
+          ]
+        : [entry.text]
+      ).map(wordsOf),
+    ]),
+  );
   const index: Index = {
     byId,
+    names,
     pages: entries.filter((entry) => entry.hash === undefined),
     search,
   };
@@ -188,23 +307,67 @@ export function searchDocs(
       .slice(0, Math.min(8, limit))
       .map((entry) => ({ entry, match: noMatch }));
   }
-  return index.search
-    .search(query)
-    .slice(0, limit)
-    .flatMap((result) => {
-      const entry = index.byId.get(String(result.id));
-      return entry
-        ? [
-            {
-              entry,
-              match: {
-                queryTerms: result.queryTerms,
-                terms: new Set(result.terms),
-              },
+  const queried = wordsOf(query);
+  const matchOf = (entry: SearchEntry) =>
+    namesMatch(index.names.get(entry.id) ?? [], queried);
+  const found = index.search.search(query).flatMap((result) => {
+    const entry = index.byId.get(String(result.id));
+    return entry
+      ? [
+          {
+            entry,
+            level: matchOf(entry).level,
+            match: {
+              queryTerms: result.queryTerms,
+              terms: new Set(result.terms),
             },
-          ]
-        : [];
-    });
+            score: result.score,
+          },
+        ]
+      : [];
+  });
+  const foundIds = new Set(found.map((hit) => hit.entry.id));
+  // A page named for the query that the index missed: `batching` for
+  // `httpBatchLink`, which it only finds by prefix and with typos.
+  const named = index.pages.flatMap((entry) => {
+    if (foundIds.has(entry.id)) {
+      return [];
+    }
+    const { level, terms } = matchOf(entry);
+    return level > 0
+      ? [
+          {
+            entry,
+            level,
+            match: { queryTerms: [...new Set(queried.whole)], terms },
+            score: 0,
+          },
+        ]
+      : [];
+  });
+  return [...found, ...named]
+    .toSorted(
+      (a, b) =>
+        tierOf(b.entry, b.level) - tierOf(a.entry, a.level) ||
+        b.level - a.level ||
+        b.score - a.score,
+    )
+    .slice(0, limit)
+    .map(({ entry, match }) => ({ entry, match }));
+}
+
+/**
+ * What's named for the query first: the guides' pages, their headings, the
+ * API reference's pages, its headings; then the rest by score.
+ */
+function tierOf(entry: SearchEntry, level: number) {
+  if (level === 0) {
+    return 0;
+  }
+  return (
+    (entry.slug.startsWith(referencePrefix) ? 0 : 2) +
+    (entry.hash === undefined ? 2 : 1)
+  );
 }
 
 /** The entries `ids` name in `docs`, in order, skipping any that are gone. */
@@ -244,9 +407,6 @@ export interface TextRun {
   readonly marked: boolean;
   readonly text: string;
 }
-
-/** The words the index splits text into, as MiniSearch's tokenizer does. */
-const word = /[^\n\r\p{Z}\p{P}]+/gu;
 
 /** How much of `part`'s start `match` marks: a typed prefix, or a found word. */
 function markedLength(part: string, match: SearchMatch) {

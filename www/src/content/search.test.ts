@@ -96,6 +96,17 @@ describe('searchDocs', () => {
     expect(ids('links overview')[0]).toBe('client/links');
   });
 
+  it('ranks a page named for the query over headings, plural or not', () => {
+    expect(ids('batching')[0]).toBe('client/links/httpBatchLink');
+    expect(ids('link')[0]).toBe('client/links');
+    expect(
+      marked(
+        '`httpBatchLink`',
+        matchOf('batching', 'client/links/httpBatchLink'),
+      ),
+    ).toEqual(['Batch']);
+  });
+
   it("finds experiments' pages, marked", () => {
     const [hit] = searchDocs(docs, 'tanstack db', 20);
     expect(hit?.entry).toMatchObject({
