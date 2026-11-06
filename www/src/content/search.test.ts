@@ -93,6 +93,7 @@ describe('searchDocs', () => {
 
   it("finds a page by its full title, where it's labelled shorter", () => {
     expect(ids('overview')).toEqual(['client/links']);
+    expect(ids('links overview')[0]).toBe('client/links');
   });
 
   it("finds experiments' pages, marked", () => {

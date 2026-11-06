@@ -5,6 +5,7 @@ import {
   readRecent,
   rememberRecent,
   withRecent,
+  writeRecent,
 } from './recent-searches.ts';
 
 describe('parseRecent', () => {
@@ -67,5 +68,18 @@ describe('rememberRecent', () => {
       },
     });
     expect(readRecent('v11')).toEqual([]);
+  });
+
+  it("doesn't throw where storage won't write", () => {
+    const denied = () => {
+      throw new Error('denied');
+    };
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      removeItem: denied,
+      setItem: denied,
+    });
+    expect(() => rememberRecent('v11', 'client/links')).not.toThrow();
+    expect(() => writeRecent('v11', [])).not.toThrow();
   });
 });
