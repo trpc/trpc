@@ -5,110 +5,30 @@ import {
 } from '../../observable/observable';
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import type { ProcedureType } from '../procedure';
-import {
-  type AnyRouter,
-  type inferRouterContext,
-  type inferRouterError,
-} from '../router';
+import type { AnyProcedure, ProcedureType } from '../procedure';
+import type { AnyRouter } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import {
-  abortSignalsAnyPonyfill,
-  isAsyncIterable,
-  isObject,
-  run,
-} from '../utils';
+import { abortSignalsAnyPonyfill, isAsyncIterable, isObject } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
+import type { Outcome } from './outcome';
+import { attempt, fail, ok, settle } from './outcome';
 import { urlPathToProcedurePath } from './pathSeparator';
+import type { RequestLifetime } from './responseBody';
+import {
+  batchStreamBody,
+  requestLifetime,
+  subscriptionBody,
+} from './responseBody';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
   TRPCRequestInfo,
+  TRPCRequestInfoProcedureCall,
 } from './types';
-
-/**
- * `decodeURIComponent` throws a plain `URIError` on malformed escape sequences,
- * which would otherwise surface as an `INTERNAL_SERVER_ERROR` even though the
- * request itself is at fault
- */
-function decodePath(path: string) {
-  try {
-    return decodeURIComponent(path);
-  } catch (cause) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: `Invalid URL-encoding in path "${path}"`,
-      cause,
-    });
-  }
-}
-
-function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
-  return run(async function* () {
-    throw err;
-  });
-}
-type HTTPMethods =
-  | 'GET'
-  | 'POST'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH';
-
-function combinedAbortController(signal: AbortSignal) {
-  const controller = new AbortController();
-  const combinedSignal = abortSignalsAnyPonyfill([signal, controller.signal]);
-  return {
-    signal: combinedSignal,
-    controller,
-  };
-}
-
-/**
- * A client that leaves may only cancel the response body, without aborting
- * the request's signal, and the procedures streaming into it wait on that.
- */
-function abortOnCancel(
-  stream: ReadableStream<Uint8Array>,
-  controller: AbortController,
-): ReadableStream<Uint8Array> {
-  const reader = stream.getReader();
-  return new ReadableStream({
-    async pull(enqueuer) {
-      const chunk = await reader.read();
-      if (chunk.done) {
-        enqueuer.close();
-      } else {
-        enqueuer.enqueue(chunk.value);
-      }
-    },
-    cancel(reason) {
-      controller.abort();
-      return reader.cancel(reason);
-    },
-  });
-}
-
-const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
-  mutation: ['POST'],
-  query: ['GET'],
-  subscription: ['GET'],
-};
-const TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE: Record<
-  ProcedureType,
-  HTTPMethods[]
-> = {
-  // never allow GET to do a mutation
-  mutation: ['POST'],
-  query: ['GET', 'POST'],
-  subscription: ['GET', 'POST'],
-};
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
@@ -120,132 +40,320 @@ interface ResolveHTTPRequestOptions<
    * If the request had an issue before reaching the handler
    */
   error: TRPCError | null;
+  /**
+   * Headers set outside `responseMeta`, such as the fetch adapter's
+   * `resHeaders`. If the response fails after `responseMeta` ran, the error
+   * response drops the headers `responseMeta` returned but keeps these. Every
+   * other response gets them from `responseMeta`.
+   */
+  resHeaders?: Headers;
 }
 
-function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
-  ctx: inferRouterContext<TRouter> | undefined;
-  info: TRPCRequestInfo | undefined;
-  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
-  untransformedJSON:
-    | TRPCResponse<unknown, inferRouterError<TRouter>>
-    | TRPCResponse<unknown, inferRouterError<TRouter>>[]
-    | null;
-  /**
-   * errors aligned with `untransformedJSON` by index; entries are `undefined`
-   * for successful responses
-   */
-  errors: (TRPCError | undefined)[];
+// ---------- the request
+
+/** What's known about the request so far, shared by every step */
+interface RequestScope {
+  // `any`, so every router's options fit: `TRouter` only matters to callers
+  opts: ResolveHTTPRequestOptions<any>;
+  config: AnyRouter['_def']['_config'];
+  url: URL;
+  /** The headers every response gets: `vary`, and `allow` once a call sets it */
   headers: Headers;
-}) {
-  const {
-    ctx,
-    info,
-    responseMeta,
-    untransformedJSON,
-    errors = [],
-    headers,
-  } = initOpts;
+  /** The headers of the response being built, once a builder starts it */
+  responseHeaders?: Headers;
+  /** Set once the request is parsed */
+  info?: TRPCRequestInfo;
+  /** Set once the request is accepted */
+  ctx?: Outcome<unknown>;
+  /** Set once `responseMeta` is called, so it's never called twice */
+  responseMetaCalled?: true;
+}
 
-  const definedErrors = errors.filter((error): error is TRPCError =>
-    Boolean(error),
-  );
+/** A request that was parsed and accepted, with its context created */
+interface AcceptedRequest extends RequestScope {
+  info: TRPCRequestInfo;
+  ctx: Outcome<unknown>;
+  lifetime: RequestLifetime;
+}
 
-  let status = untransformedJSON
-    ? getHTTPStatusCode(untransformedJSON, errors)
-    : 200;
+/** A call that returned */
+interface CallOk {
+  data: unknown;
+  /** The signal the procedure got */
+  signal: AbortSignal;
+  /** Aborts the procedure's signal, to end a subscription */
+  abort: () => void;
+}
 
-  const eagerGeneration = !untransformedJSON;
-  const data = eagerGeneration
-    ? []
-    : Array.isArray(untransformedJSON)
-      ? untransformedJSON
-      : [untransformedJSON];
+type PendingCalls = Promise<Outcome<CallOk>>[];
 
+/** Where an error happened, for `onError` and the error formatter */
+interface ErrorSource {
+  type: ProcedureType | 'unknown';
+  call?: TRPCRequestInfoProcedureCall;
+}
+
+function sourceOf(call: TRPCRequestInfoProcedureCall): ErrorSource {
+  return { type: call.procedure?._def.type ?? 'unknown', call };
+}
+
+function ctxOf(scope: RequestScope) {
+  return scope.ctx?.ok ? scope.ctx.value : undefined;
+}
+
+function reportError(
+  scope: RequestScope,
+  error: TRPCError,
+  source: ErrorSource,
+) {
+  scope.opts.onError?.({
+    error,
+    path: source.call?.path,
+    input: source.call?.result(),
+    ctx: ctxOf(scope),
+    type: source.type,
+    req: scope.opts.req,
+  });
+}
+
+function errorShape(
+  scope: RequestScope,
+  error: TRPCError,
+  source: ErrorSource,
+) {
+  return getErrorShape({
+    config: scope.config,
+    ctx: ctxOf(scope),
+    error,
+    input: source.call?.result(),
+    path: source.call?.path,
+    type: source.type,
+  });
+}
+
+/**
+ * `decodeURIComponent` throws a plain `URIError` on malformed escape sequences,
+ * which would otherwise surface as an `INTERNAL_SERVER_ERROR` even though the
+ * request itself is at fault
+ */
+function decodePath(path: string): Outcome<string> {
+  try {
+    return ok(decodeURIComponent(path));
+  } catch (cause) {
+    return fail(
+      new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Invalid URL-encoding in path "${path}"`,
+        cause,
+      }),
+    );
+  }
+}
+
+async function parseRequest(
+  scope: RequestScope,
+): Promise<Outcome<TRPCRequestInfo>> {
+  const { opts, config, url } = scope;
+  const path = decodePath(opts.path);
+  if (!path.ok) {
+    return path;
+  }
+  return getRequestInfo({
+    req: opts.req,
+    path: urlPathToProcedurePath(path.value, config.pathSeparator),
+    router: opts.router,
+    searchParams: url.searchParams,
+    headers: opts.req.headers,
+    url,
+    maxBatchSize: opts.maxBatchSize,
+  });
+}
+
+/** Why the request is rejected before its context is created, if it is */
+function rejectRequest(
+  scope: RequestScope,
+  info: TRPCRequestInfo,
+): TRPCError | null {
+  const { opts } = scope;
+  const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
+  if (info.isBatchCall && !allowBatching) {
+    return new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Batching is not enabled on the server`,
+    });
+  }
+  /**
+   * @deprecated
+   */
+  const isStreamCall =
+    getAcceptHeader(opts.req.headers) === 'application/jsonl';
+  if (isStreamCall && !info.isBatchCall) {
+    return new TRPCError({
+      message: `Streaming requests must be batched (you can do a batch of 1)`,
+      code: 'BAD_REQUEST',
+    });
+  }
+  return null;
+}
+
+// ---------- the procedure calls
+
+function acceptedMethods(
+  type: ProcedureType,
+  allowMethodOverride: boolean | undefined,
+): string[] {
+  // never allow GET to do a mutation
+  if (type === 'mutation') {
+    return ['POST'];
+  }
+  return allowMethodOverride ? ['GET', 'POST'] : ['GET'];
+}
+
+/** The procedure to call, unless the call is rejected */
+function procedureFor(
+  request: AcceptedRequest,
+  call: TRPCRequestInfoProcedureCall,
+): Outcome<AnyProcedure> {
+  const { opts, headers, info } = request;
+  if (opts.error) {
+    return fail(opts.error);
+  }
+  const proc = call.procedure;
+  if (!proc) {
+    return fail(
+      new TRPCError({
+        code: 'NOT_FOUND',
+        message: `No procedure found on path "${call.path}"`,
+      }),
+    );
+  }
+  const type = proc._def.type;
+  const accepted = acceptedMethods(type, opts.allowMethodOverride);
+  if (!accepted.includes(opts.req.method)) {
+    // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
+    headers.set('allow', accepted.join(', '));
+    return fail(
+      new TRPCError({
+        code: 'METHOD_NOT_SUPPORTED',
+        message: `Unsupported ${opts.req.method}-request to ${type} procedure at path "${call.path}"`,
+      }),
+    );
+  }
+  if (type === 'subscription' && info.isBatchCall) {
+    return fail(
+      new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Cannot batch subscription calls`,
+      }),
+    );
+  }
+  return ok(proc);
+}
+
+/**
+ * Calls a procedure, reporting the error if it fails. The procedure is
+ * called synchronously, so a batch's procedures start in order.
+ */
+async function resolveCall(
+  request: AcceptedRequest,
+  call: TRPCRequestInfoProcedureCall,
+): Promise<Outcome<CallOk>> {
+  const { ctx, lifetime } = request;
+  const result = await settle(async () => {
+    const proc = procedureFor(request, call);
+    if (!proc.ok) {
+      return proc;
+    }
+    if (!ctx.ok) {
+      return ctx;
+    }
+    const controller = new AbortController();
+    const signal = abortSignalsAnyPonyfill([
+      lifetime.signal,
+      controller.signal,
+    ]);
+    const data: unknown = await proc.value({
+      path: call.path,
+      getRawInput: call.getRawInput,
+      ctx: ctx.value,
+      type: proc.value._def.type,
+      signal,
+      batchIndex: call.batchIndex,
+    });
+    return ok<CallOk>({ data, signal, abort: () => controller.abort() });
+  });
+  if (!result.ok) {
+    reportError(request, result.error, sourceOf(call));
+  }
+  return result;
+}
+
+// ---------- the response
+
+/**
+ * Runs `responseMeta` and adds its headers, returning the status. `results`
+ * is `null` for streamed responses, which start before the results are known.
+ */
+function applyResponseMeta(
+  scope: RequestScope,
+  headers: Headers,
+  results: {
+    data: TRPCResponse[];
+    /** aligned with `data` by index; `undefined` for successful responses */
+    errors: (TRPCError | undefined)[];
+  } | null,
+): number {
+  const { opts, info } = scope;
+  scope.responseMetaCalled = true;
   const meta =
-    responseMeta?.({
-      ctx,
+    opts.responseMeta?.({
+      ctx: ctxOf(scope),
       info,
       paths: info?.calls.map((call) => call.path),
-      data,
-      errors: definedErrors,
-      eagerGeneration,
+      data: results?.data ?? [],
+      errors: results?.errors.filter((error) => error !== undefined) ?? [],
+      eagerGeneration: !results,
       type:
-        info?.calls.find((call) => call.procedure?._def.type)?.procedure?._def
-          .type ?? 'unknown',
+        info?.calls.find((call) => call.procedure)?.procedure!._def.type ??
+        'unknown',
     }) ?? {};
 
-  if (meta.headers) {
-    if (meta.headers instanceof Headers) {
-      for (const [key, value] of meta.headers.entries()) {
-        headers.append(key, value);
-      }
-    } else {
-      /**
-       * @deprecated, delete in v12
-       */
-      for (const [key, value] of Object.entries(meta.headers)) {
-        if (Array.isArray(value)) {
-          for (const v of value) {
-            headers.append(key, v);
-          }
-        } else if (typeof value === 'string') {
-          headers.set(key, value);
+  if (meta.headers instanceof Headers) {
+    for (const [key, value] of meta.headers.entries()) {
+      headers.append(key, value);
+    }
+  } else if (meta.headers) {
+    /**
+     * @deprecated, delete in v12
+     */
+    for (const [key, value] of Object.entries(meta.headers)) {
+      if (Array.isArray(value)) {
+        for (const v of value) {
+          headers.append(key, v);
         }
+      } else if (typeof value === 'string') {
+        headers.set(key, value);
       }
     }
   }
-  if (meta.status) {
-    status = meta.status;
-  }
 
-  return {
-    status,
-  };
+  if (meta.status) {
+    return meta.status;
+  }
+  return results ? getHTTPStatusCode(results.data, results.errors) : 200;
 }
 
-function caughtErrorToData<TRouter extends AnyRouter>(
-  cause: unknown,
-  errorOpts: {
-    opts: Pick<
-      ResolveHTTPRequestOptions<TRouter>,
-      'onError' | 'req' | 'router'
-    >;
-    ctx: inferRouterContext<TRouter> | undefined;
-    type: ProcedureType | 'unknown';
-    path?: string;
-    input?: unknown;
-  },
-) {
-  const { router, req, onError } = errorOpts.opts;
-  const error = getTRPCErrorFromUnknown(cause);
-  onError?.({
-    error,
-    path: errorOpts.path,
-    input: errorOpts.input,
-    ctx: errorOpts.ctx,
-    type: errorOpts.type,
-    req,
-  });
-  const untransformedJSON = {
-    error: getErrorShape({
-      config: router._def._config,
-      error,
-      type: errorOpts.type,
-      path: errorOpts.path,
-      input: errorOpts.input,
-      ctx: errorOpts.ctx,
-    }),
-  };
-  const transformedJSON = transformTRPCResponse(
-    router._def._config,
-    untransformedJSON,
-  );
-  const body = JSON.stringify(transformedJSON);
-  return {
-    error,
-    untransformedJSON,
-    body,
-  };
+/** Starts the headers of the response being built, on top of the request's */
+function startHeaders(
+  scope: RequestScope,
+  init: Record<string, string>,
+): Headers {
+  const headers = new Headers(scope.headers);
+  for (const [key, value] of Object.entries(init)) {
+    headers.set(key, value);
+  }
+  scope.responseHeaders = headers;
+  return headers;
 }
 
 /**
@@ -267,7 +375,265 @@ function isDataStream(v: unknown) {
   );
 }
 
-type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
+function streamInJSONResponseError() {
+  return new TRPCError({
+    code: 'UNSUPPORTED_MEDIA_TYPE',
+    message:
+      'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
+  });
+}
+
+/**
+ * `httpLink` and `httpBatchLink`: waits for every call, blocking on the
+ * slowest one, then responds with all the results.
+ */
+async function jsonResponse(
+  request: AcceptedRequest,
+  calls: PendingCalls,
+): Promise<Outcome<Response>> {
+  const { info } = request;
+  const results = await Promise.all(calls);
+  const headers = startHeaders(request, { 'content-type': 'application/json' });
+
+  const outcomes = results.map((result, index) => {
+    if (!result.ok || !isDataStream(result.value.data)) {
+      return result;
+    }
+    const error = streamInJSONResponseError();
+    reportError(request, error, sourceOf(info.calls[index]!));
+    return fail(error);
+  });
+  const data = outcomes.map((outcome, index): TRPCResponse => {
+    if (outcome.ok) {
+      return { result: { data: outcome.value.data } };
+    }
+    const source = sourceOf(info.calls[index]!);
+    return { error: errorShape(request, outcome.error, source) };
+  });
+
+  // serialized first, so `responseMeta` only sees a response that can be sent
+  const body = JSON.stringify(
+    transformTRPCResponse(request.config, info.isBatchCall ? data : data[0]!),
+  );
+  const status = applyResponseMeta(request, headers, {
+    data,
+    errors: outcomes.map((outcome) => (outcome.ok ? undefined : outcome.error)),
+  });
+  return ok(new Response(body, { status, headers }));
+}
+
+/**
+ * `httpBatchStreamLink`: responds straight away, then streams each result
+ * as it settles.
+ */
+function jsonlResponse(
+  request: AcceptedRequest,
+  calls: PendingCalls,
+): Outcome<Response> {
+  const { config, info, lifetime } = request;
+  const headers = startHeaders(request, {
+    'content-type': config.jsonl?.contentType ?? 'application/json',
+    'transfer-encoding': 'chunked',
+  });
+  const status = applyResponseMeta(request, headers, null);
+
+  const stream = jsonlStreamProducer({
+    ...config.jsonl,
+    /**
+     * Example structure for `maxDepth: 4`:
+     * {
+     *   // 1
+     *   0: {
+     *     // 2
+     *     result: {
+     *       // 3
+     *       data: // 4
+     *     }
+     *   }
+     * }
+     */
+    maxDepth: Infinity,
+    data: calls.map(async (pending, index) => {
+      const result = await pending;
+      if (!result.ok) {
+        const source = sourceOf(info.calls[index]!);
+        return { error: errorShape(request, result.error, source) };
+      }
+
+      /**
+       * Not very pretty, but we need to wrap nested data in promises
+       * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+       */
+      const { data } = result.value;
+      return {
+        result: Promise.resolve({
+          data: isObservable(data)
+            ? observableToAsyncIterable(data, lifetime.signal)
+            : Promise.resolve(data),
+        }),
+      };
+    }),
+    serialize: (data) => config.transformer.output.serialize(data),
+    onError: (cause) => {
+      const error = getTRPCErrorFromUnknown(cause.error);
+      reportError(request, error, { type: info.type });
+    },
+    formatError(errorOpts) {
+      // no need to call `onError` here as it will be propagated through the stream itself
+      const source = sourceOf(info.calls[errorOpts.path[0] as number]!);
+      const error = getTRPCErrorFromUnknown(errorOpts.error);
+      return errorShape(request, error, source);
+    },
+  });
+
+  return ok(
+    new Response(batchStreamBody(stream, lifetime), { headers, status }),
+  );
+}
+
+async function* throwing(error: TRPCError): AsyncGenerator<never> {
+  throw error;
+}
+
+/** What a subscription streams: its values, or the error it ends with */
+function subscriptionIterable(
+  request: AcceptedRequest,
+  result: Outcome<CallOk>,
+): AsyncIterable<unknown> {
+  if (!result.ok) {
+    return throwing(result.error);
+  }
+  if (!(request.config.sse?.enabled ?? true)) {
+    return throwing(
+      new TRPCError({
+        code: 'METHOD_NOT_SUPPORTED',
+        message: 'Missing experimental flag "sseSubscriptions"',
+      }),
+    );
+  }
+  const { data } = result.value;
+  if (isObservable(data)) {
+    return observableToAsyncIterable(data, request.lifetime.signal);
+  }
+  if (isAsyncIterable(data)) {
+    return data;
+  }
+  return throwing(
+    new TRPCError({
+      message: `Subscription ${
+        request.info.calls[0]!.path
+      } did not return an observable or a AsyncGenerator`,
+      code: 'INTERNAL_SERVER_ERROR',
+    }),
+  );
+}
+
+/**
+ * `httpSubscriptionLink`: streams the subscription's values as server-sent
+ * events.
+ */
+async function sseResponse(
+  request: AcceptedRequest,
+  calls: PendingCalls,
+): Promise<Outcome<Response>> {
+  const { config, opts, url, info, lifetime } = request;
+  const source = sourceOf(info.calls[0]!);
+  const result = await calls[0]!;
+
+  const stream = sseStreamProducer({
+    ...config.sse,
+    lastEventId: getLastEventId({
+      headers: opts.req.headers,
+      searchParams: url.searchParams,
+    }),
+    data: subscriptionIterable(request, result),
+    serialize: (v) => config.transformer.output.serialize(v),
+    formatError(errorOpts) {
+      const error = getTRPCErrorFromUnknown(errorOpts.error);
+      // a call that failed streams only its own error, reported when it failed
+      if (result.ok) {
+        reportError(request, error, source);
+      }
+      return errorShape(request, error, source);
+    },
+  });
+  const headers = startHeaders(request, sseHeaders);
+  const status = applyResponseMeta(request, headers, null);
+
+  const body = result.ok
+    ? subscriptionBody(stream, {
+        lifetime,
+        call: result.value,
+        maxDurationMs: config.sse?.maxDurationMs,
+      })
+    : stream;
+  return ok(new Response(body, { headers, status }));
+}
+
+/**
+ * The response for an error that fails the whole request, such as a
+ * malformed request or a `responseMeta`, `errorFormatter` or transformer that
+ * throws.
+ */
+function errorResponse(scope: RequestScope, error: TRPCError): Response {
+  const source: ErrorSource = { type: scope.info?.type ?? 'unknown' };
+  reportError(scope, error, source);
+
+  const data: TRPCResponse = { error: errorShape(scope, error, source) };
+  const body = JSON.stringify(transformTRPCResponse(scope.config, data));
+  const results = { data: [data], errors: [error] };
+  if (!scope.responseMetaCalled) {
+    const headers = scope.responseHeaders ?? scope.headers;
+    const status = applyResponseMeta(scope, headers, results);
+    return new Response(body, { status, headers });
+  }
+
+  // `responseMeta` ran for a response that failed: drop its headers, and the
+  // response's, as they describe that response, not this one
+  const headers = new Headers(scope.headers);
+  for (const [key, value] of scope.opts.resHeaders ?? []) {
+    headers.append(key, value);
+  }
+  headers.set('content-type', 'application/json');
+  const status = getHTTPStatusCode(results.data, results.errors);
+  return new Response(body, { status, headers });
+}
+
+/**
+ * Parses the request, resolves its procedure calls, then builds the response
+ * for the link that sent it.
+ */
+async function respond(scope: RequestScope): Promise<Outcome<Response>> {
+  const parsed = await parseRequest(scope);
+  if (!parsed.ok) {
+    return parsed;
+  }
+  const info = (scope.info = parsed.value);
+
+  const rejection = rejectRequest(scope, info);
+  if (rejection) {
+    return fail(rejection);
+  }
+
+  const ctx = (scope.ctx = await attempt(() =>
+    scope.opts.createContext({ info }),
+  ));
+  // the same object, so the fallback sees what the response did
+  const request: AcceptedRequest = Object.assign(scope, {
+    info,
+    ctx,
+    lifetime: requestLifetime(scope.opts.req),
+  });
+  const calls = info.calls.map((call) => resolveCall(request, call));
+
+  if (!info.isBatchCall && info.type === 'subscription') {
+    return sseResponse(request, calls);
+  }
+  if (info.isBatchCall && info.accept === 'application/jsonl') {
+    return jsonlResponse(request, calls);
+  }
+  return jsonResponse(request, calls);
+}
 
 /**
  * Handles a Fetch API `Request` for a router and returns its `Response`.
@@ -276,583 +642,21 @@ type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
-  const { router, req } = opts;
-  const headers = new Headers([['vary', 'trpc-accept, accept']]);
-  const config = router._def._config;
+  const url = new URL(opts.req.url);
 
-  const url = new URL(req.url);
-
-  if (req.method === 'HEAD') {
+  if (opts.req.method === 'HEAD') {
     // can be used for lambda warmup
     return new Response(null, {
       status: 204,
     });
   }
 
-  const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
-  const allowMethodOverride =
-    (opts.allowMethodOverride ?? false) && req.method === 'POST';
-
-  type $Context = inferRouterContext<TRouter>;
-
-  const infoTuple: ResultTuple<TRPCRequestInfo> = await run(async () => {
-    try {
-      return [
-        undefined,
-        await getRequestInfo({
-          req,
-          path: urlPathToProcedurePath(
-            decodePath(opts.path),
-            config.pathSeparator,
-          ),
-          router,
-          searchParams: url.searchParams,
-          headers: opts.req.headers,
-          url,
-          maxBatchSize: opts.maxBatchSize,
-        }),
-      ];
-    } catch (cause) {
-      return [getTRPCErrorFromUnknown(cause), undefined];
-    }
-  });
-
-  interface ContextManager {
-    valueOrUndefined: () => $Context | undefined;
-    value: () => $Context;
-    create: (info: TRPCRequestInfo) => Promise<void>;
-  }
-  const ctxManager: ContextManager = run(() => {
-    let result: ResultTuple<$Context> | undefined = undefined;
-    return {
-      valueOrUndefined: () => {
-        if (!result) {
-          return undefined;
-        }
-        return result[1];
-      },
-      value: () => {
-        const [err, ctx] = result!;
-        if (err) {
-          throw err;
-        }
-        return ctx;
-      },
-      create: async (info) => {
-        if (result) {
-          throw new Error(
-            'This should only be called once - report a bug in tRPC',
-          );
-        }
-        try {
-          const ctx = await opts.createContext({
-            info,
-          });
-          result = [undefined, ctx];
-        } catch (cause) {
-          result = [getTRPCErrorFromUnknown(cause), undefined];
-        }
-      },
-    };
-  });
-
-  const methodMapper = allowMethodOverride
-    ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
-    : TYPE_ACCEPTED_METHOD_MAP;
-
-  /**
-   * @deprecated
-   */
-  const isStreamCall = getAcceptHeader(req.headers) === 'application/jsonl';
-
-  const experimentalSSE = config.sse?.enabled ?? true;
-  try {
-    const [infoError, info] = infoTuple;
-    if (infoError) {
-      throw infoError;
-    }
-    if (info.isBatchCall && !allowBatching) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `Batching is not enabled on the server`,
-      });
-    }
-    /* istanbul ignore if -- @preserve */
-    if (isStreamCall && !info.isBatchCall) {
-      throw new TRPCError({
-        message: `Streaming requests must be batched (you can do a batch of 1)`,
-        code: 'BAD_REQUEST',
-      });
-    }
-    await ctxManager.create(info);
-
-    interface RPCResultOk {
-      data: unknown;
-      /**
-       * Only set for subscriptions
-       */
-      abort?: ReturnType<typeof combinedAbortController>;
-    }
-    type RPCResult = ResultTuple<RPCResultOk>;
-    const bodyCancelled = new AbortController();
-    const callSignal = abortSignalsAnyPonyfill([
-      opts.req.signal,
-      bodyCancelled.signal,
-    ]);
-    const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
-      const proc = call.procedure;
-      const combinedAbort = combinedAbortController(callSignal);
-      try {
-        if (opts.error) {
-          throw opts.error;
-        }
-
-        if (!proc) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `No procedure found on path "${call.path}"`,
-          });
-        }
-
-        if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
-          const accepted = opts.allowMethodOverride
-            ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
-            : TYPE_ACCEPTED_METHOD_MAP;
-          // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
-          headers.set('allow', accepted[proc._def.type].join(', '));
-          throw new TRPCError({
-            code: 'METHOD_NOT_SUPPORTED',
-            message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
-          });
-        }
-
-        if (proc._def.type === 'subscription') {
-          /* istanbul ignore if -- @preserve */
-          if (info.isBatchCall) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Cannot batch subscription calls`,
-            });
-          }
-        }
-        const data: unknown = await proc({
-          path: call.path,
-          getRawInput: call.getRawInput,
-          ctx: ctxManager.value(),
-          type: proc._def.type,
-          signal: combinedAbort.signal,
-          batchIndex: call.batchIndex,
-        });
-        return [
-          undefined,
-          {
-            data,
-            abort:
-              proc._def.type === 'subscription' ? combinedAbort : undefined,
-          },
-        ];
-      } catch (cause) {
-        const error = getTRPCErrorFromUnknown(cause);
-        const input = call.result();
-
-        opts.onError?.({
-          error,
-          path: call.path,
-          input,
-          ctx: ctxManager.valueOrUndefined(),
-          type: call.procedure?._def.type ?? 'unknown',
-          req: opts.req,
-        });
-
-        return [error, undefined];
-      }
-    });
-
-    // ----------- response handlers -----------
-    if (!info.isBatchCall) {
-      const [call] = info.calls;
-      const [error, result] = await rpcCalls[0]!;
-
-      switch (info.type) {
-        case 'unknown':
-        case 'mutation':
-        case 'query': {
-          // httpLink
-          headers.set('content-type', 'application/json');
-
-          if (isDataStream(result?.data)) {
-            throw new TRPCError({
-              code: 'UNSUPPORTED_MEDIA_TYPE',
-              message:
-                'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
-            });
-          }
-          const res: TRPCResponse<unknown, inferRouterError<TRouter>> = error
-            ? {
-                error: getErrorShape({
-                  config,
-                  ctx: ctxManager.valueOrUndefined(),
-                  error,
-                  input: call!.result(),
-                  path: call!.path,
-                  type: info.type,
-                }),
-              }
-            : { result: { data: result.data } };
-
-          const headResponse = initResponse({
-            ctx: ctxManager.valueOrUndefined(),
-            info,
-            responseMeta: opts.responseMeta,
-            errors: error ? [error] : [],
-            headers,
-            untransformedJSON: [res],
-          });
-          return new Response(
-            JSON.stringify(transformTRPCResponse(config, res)),
-            {
-              status: headResponse.status,
-              headers,
-            },
-          );
-        }
-        case 'subscription': {
-          // httpSubscriptionLink
-
-          const iterable: AsyncIterable<unknown> = run(() => {
-            if (error) {
-              return errorToAsyncIterable(error);
-            }
-            if (!experimentalSSE) {
-              return errorToAsyncIterable(
-                new TRPCError({
-                  code: 'METHOD_NOT_SUPPORTED',
-                  message: 'Missing experimental flag "sseSubscriptions"',
-                }),
-              );
-            }
-
-            if (!isObservable(result.data) && !isAsyncIterable(result.data)) {
-              return errorToAsyncIterable(
-                new TRPCError({
-                  message: `Subscription ${
-                    call!.path
-                  } did not return an observable or a AsyncGenerator`,
-                  code: 'INTERNAL_SERVER_ERROR',
-                }),
-              );
-            }
-            const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data, callSignal)
-              : result.data;
-            return dataAsIterable;
-          });
-
-          const stream = sseStreamProducer({
-            ...config.sse,
-            lastEventId: getLastEventId({
-              headers: req.headers,
-              searchParams: url.searchParams,
-            }),
-            data: iterable,
-            serialize: (v) => config.transformer.output.serialize(v),
-            formatError(errorOpts) {
-              const error = getTRPCErrorFromUnknown(errorOpts.error);
-              const input = call?.result();
-              const path = call?.path;
-              const type = call?.procedure?._def.type ?? 'unknown';
-
-              opts.onError?.({
-                error,
-                path,
-                input,
-                ctx: ctxManager.valueOrUndefined(),
-                req: opts.req,
-                type,
-              });
-
-              const shape = getErrorShape({
-                config,
-                ctx: ctxManager.valueOrUndefined(),
-                error,
-                input,
-                path,
-                type,
-              });
-
-              return shape;
-            },
-          });
-          for (const [key, value] of Object.entries(sseHeaders)) {
-            headers.set(key, value);
-          }
-
-          const headResponse = initResponse({
-            ctx: ctxManager.valueOrUndefined(),
-            info,
-            responseMeta: opts.responseMeta,
-            errors: [],
-            headers,
-            untransformedJSON: null,
-          });
-
-          const abort = result?.abort;
-          let responseBody: ReadableStream<Uint8Array> = stream;
-
-          // Fixes: https://github.com/trpc/trpc/issues/7094
-          if (abort) {
-            const reader = stream.getReader();
-            const maxDurationTimer = config.sse?.maxDurationMs
-              ? setTimeout(
-                  () => abort.controller.abort(),
-                  config.sse.maxDurationMs,
-                )
-              : undefined;
-            const onStreamEnd = () => {
-              clearTimeout(maxDurationTimer);
-              abort.signal.removeEventListener('abort', onAbort);
-            };
-            const onAbort = () => {
-              onStreamEnd();
-              void reader.cancel();
-            };
-            if (abort.signal.aborted) {
-              onAbort();
-            } else {
-              abort.signal.addEventListener('abort', onAbort, { once: true });
-            }
-
-            responseBody = new ReadableStream({
-              async pull(controller) {
-                const chunk = await reader.read().catch((cause: unknown) => {
-                  onStreamEnd();
-                  throw cause;
-                });
-                if (chunk.done) {
-                  onStreamEnd();
-                  controller.close();
-                } else {
-                  controller.enqueue(chunk.value);
-                }
-              },
-              cancel() {
-                onStreamEnd();
-                bodyCancelled.abort();
-                return reader.cancel();
-              },
-            });
-          }
-
-          return new Response(responseBody, {
-            headers,
-            status: headResponse.status,
-          });
-        }
-      }
-    }
-
-    // batch response handlers
-    if (info.accept === 'application/jsonl') {
-      // httpBatchStreamLink
-      headers.set(
-        'content-type',
-        config.jsonl?.contentType ?? 'application/json',
-      );
-      headers.set('transfer-encoding', 'chunked');
-      const headResponse = initResponse({
-        ctx: ctxManager.valueOrUndefined(),
-        info,
-        responseMeta: opts.responseMeta,
-        errors: [],
-        headers,
-        untransformedJSON: null,
-      });
-      const stream = jsonlStreamProducer({
-        ...config.jsonl,
-        /**
-         * Example structure for `maxDepth: 4`:
-         * {
-         *   // 1
-         *   0: {
-         *     // 2
-         *     result: {
-         *       // 3
-         *       data: // 4
-         *     }
-         *   }
-         * }
-         */
-        maxDepth: Infinity,
-        data: rpcCalls.map(async (res, index) => {
-          const [error, result] = await res;
-
-          const call = info.calls[index];
-
-          if (error) {
-            return {
-              error: getErrorShape({
-                config,
-                ctx: ctxManager.valueOrUndefined(),
-                error,
-                input: call!.result(),
-                path: call!.path,
-                type: call!.procedure?._def.type ?? 'unknown',
-              }),
-            };
-          }
-
-          /**
-           * Not very pretty, but we need to wrap nested data in promises
-           * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
-           */
-          const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data, callSignal)
-            : Promise.resolve(result.data);
-          return {
-            result: Promise.resolve({
-              data: iterable,
-            }),
-          };
-        }),
-        serialize: (data) => config.transformer.output.serialize(data),
-        onError: (cause) => {
-          opts.onError?.({
-            error: getTRPCErrorFromUnknown(cause.error),
-            path: undefined,
-            input: undefined,
-            ctx: ctxManager.valueOrUndefined(),
-            req: opts.req,
-            type: info?.type ?? 'unknown',
-          });
-        },
-
-        formatError(errorOpts) {
-          const call = info?.calls[errorOpts.path[0] as any];
-
-          const error = getTRPCErrorFromUnknown(errorOpts.error);
-          const input = call?.result();
-          const path = call?.path;
-          const type = call?.procedure?._def.type ?? 'unknown';
-
-          // no need to call `onError` here as it will be propagated through the stream itself
-
-          const shape = getErrorShape({
-            config,
-            ctx: ctxManager.valueOrUndefined(),
-            error,
-            input,
-            path,
-            type,
-          });
-
-          return shape;
-        },
-      });
-
-      return new Response(abortOnCancel(stream, bodyCancelled), {
-        headers,
-        status: headResponse.status,
-      });
-    }
-
-    // httpBatchLink
-    /**
-     * Non-streaming response:
-     * - await all responses in parallel, blocking on the slowest one
-     * - create headers with known response body
-     * - return a complete HTTPResponse
-     */
-    headers.set('content-type', 'application/json');
-    const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
-      (res): RPCResult => {
-        const [error, result] = res;
-        if (error) {
-          return res;
-        }
-
-        if (isDataStream(result.data)) {
-          return [
-            new TRPCError({
-              code: 'UNSUPPORTED_MEDIA_TYPE',
-              message:
-                'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
-            }),
-            undefined,
-          ];
-        }
-        return res;
-      },
-    );
-    const resultAsRPCResponse = results.map(
-      (
-        [error, result],
-        index,
-      ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
-        const call = info.calls[index]!;
-        if (error) {
-          return {
-            error: getErrorShape({
-              config,
-              ctx: ctxManager.valueOrUndefined(),
-              error,
-              input: call.result(),
-              path: call.path,
-              type: call.procedure?._def.type ?? 'unknown',
-            }),
-          };
-        }
-        return {
-          result: { data: result.data },
-        };
-      },
-    );
-
-    const errors = results.map(([error]) => error);
-
-    const headResponse = initResponse({
-      ctx: ctxManager.valueOrUndefined(),
-      info,
-      responseMeta: opts.responseMeta,
-      untransformedJSON: resultAsRPCResponse,
-      errors,
-      headers,
-    });
-
-    return new Response(
-      JSON.stringify(transformTRPCResponse(config, resultAsRPCResponse)),
-      {
-        status: headResponse.status,
-        headers,
-      },
-    );
-  } catch (cause) {
-    const [_infoError, info] = infoTuple;
-    const ctx = ctxManager.valueOrUndefined();
-    // we get here if
-    // - batching is called when it's not enabled
-    // - `createContext()` throws
-    // - `router._def._config.transformer.output.serialize()` throws
-    // - post body is too large
-    // - input deserialization fails
-    // - `errorFormatter` return value is malformed
-    const { error, untransformedJSON, body } = caughtErrorToData(cause, {
-      opts,
-      ctx: ctxManager.valueOrUndefined(),
-      type: info?.type ?? 'unknown',
-    });
-
-    const headResponse = initResponse({
-      ctx,
-      info,
-      responseMeta: opts.responseMeta,
-      untransformedJSON,
-      errors: [error],
-      headers,
-    });
-
-    return new Response(body, {
-      status: headResponse.status,
-      headers,
-    });
-  }
+  const scope: RequestScope = {
+    opts,
+    config: opts.router._def._config,
+    url,
+    headers: new Headers([['vary', 'trpc-accept, accept']]),
+  };
+  const response = await settle(() => respond(scope));
+  return response.ok ? response.value : errorResponse(scope, response.error);
 }
