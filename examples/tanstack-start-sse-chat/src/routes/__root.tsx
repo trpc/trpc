@@ -18,13 +18,13 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import { CodeXmlIcon, SearchXIcon } from 'lucide-react';
-import type { TRPC } from '~/lib/trpc';
+import type { LoaderTRPC } from '~/lib/trpc';
 import { sessionQuery } from '~/queries';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: TRPC;
+  trpc: LoaderTRPC;
 }>()({
   head: () => ({
     meta: [

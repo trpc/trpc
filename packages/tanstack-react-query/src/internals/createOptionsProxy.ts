@@ -25,7 +25,10 @@ import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
 import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateHandleHelpers,
+  DecorateInfiniteQueryEntryVerbs,
   DecorateInfiniteQueryHandleVerbs,
+  DecorateLoadHandles,
+  DecorateQueryEntryVerbs,
   DecorateQueryHandleVerbs,
   unstable_TRPCEntryKind,
 } from './handles';
@@ -291,16 +294,24 @@ export interface DecorateSubscriptionProcedure<
   subscriptionOptions: TRPCSubscriptionOptions<TDef>;
 }
 
+type IfCanLoad<TCanLoad extends boolean, T> = TCanLoad extends true
+  ? T
+  : unknown;
+
 /**
- * The helpers for a procedure of the given type.
+ * The helpers for a procedure of the given type. With `TCanLoad`, also the entries for
+ * `unstable_$loadHandles`, which `useTRPC()` doesn't have.
  */
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
+  TCanLoad extends boolean = false,
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef> &
+      IfCanLoad<TCanLoad, DecorateQueryEntryVerbs<TDef>> &
       (TDef['input'] extends OptionalCursorInput
-        ? DecorateInfiniteQueryProcedure<TDef>
+        ? DecorateInfiniteQueryProcedure<TDef> &
+            IfCanLoad<TCanLoad, DecorateInfiniteQueryEntryVerbs<TDef>>
         : Record<string, never>)
   : TType extends 'mutation'
     ? DecorateMutationProcedure<TDef>
@@ -315,10 +326,11 @@ export type DecoratedRouterRecord<
   TRoot extends AnyTRPCRootTypes,
   TRecord extends TRPCRouterRecord,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  TCanLoad extends boolean = false,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
-      ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags> &
+      ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags, TCanLoad> &
           DecorateRouterKeyable<TFeatureFlags> &
           DecorateHandleHelpers<TFeatureFlags>
       : $Value extends AnyTRPCProcedure
@@ -330,14 +342,15 @@ export type DecoratedRouterRecord<
               transformer: TRoot['transformer'];
               errorShape: inferProcedureErrorShape<TRoot, $Value>;
               featureFlags: TFeatureFlags;
-            }
+            },
+            TCanLoad
           >
         : never
     : never;
 };
 
 /**
- * The object returned by `useTRPC()` and `createTRPCOptionsProxy`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
+ * The object returned by `useTRPC()`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage
  */
 export type TRPCOptionsProxy<
@@ -350,6 +363,24 @@ export type TRPCOptionsProxy<
 > &
   DecorateRouterKeyable<TFeatureFlags> &
   DecorateHandleHelpers<TFeatureFlags>;
+
+/**
+ * The object returned by `createTRPCOptionsProxy`: a {@link TRPCOptionsProxy} that can
+ * also load handles, in a route loader or a server component.
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles
+ */
+export type unstable_TRPCLoaderOptionsProxy<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+> = DecoratedRouterRecord<
+  TRouter['_def']['_config']['$types'],
+  TRouter['_def']['record'],
+  TFeatureFlags,
+  true
+> &
+  DecorateRouterKeyable<TFeatureFlags> &
+  DecorateHandleHelpers<TFeatureFlags> &
+  DecorateLoadHandles;
 
 /**
  * Options shared by every {@link createTRPCOptionsProxy} call.
@@ -420,7 +451,10 @@ export const renderHandleVerbs = Symbol('renderHandleVerbs');
 
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
+  | keyof DecorateQueryEntryVerbs<any>
+  | keyof DecorateInfiniteQueryEntryVerbs<any>
   | keyof DecorateHandleHelpers<any>
+  | keyof DecorateLoadHandles
   | keyof DecorateInfiniteQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
   | keyof DecorateSubscriptionProcedure<any>;
@@ -444,7 +478,7 @@ export function createTRPCOptionsProxy<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
-): TRPCOptionsProxy<TRouter, TFeatureFlags> {
+): unstable_TRPCLoaderOptionsProxy<TRouter, TFeatureFlags> {
   const prefix = opts.keyPrefix;
 
   const callIt = (type: TRPCProcedureType): any => {
@@ -672,6 +706,11 @@ export function createTRPCOptionsProxy<
               `Load handles in a route loader or server component, or build one in a component with \`unstable_$waterfallHandle\` ` +
               `and wait where you read it, with \`useSuspenseQuery\`. ` +
               `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
+          );
+        }
+        if (path.length > 0) {
+          throw new Error(
+            `\`${[...path, utilName].join('.')}()\` is only on the root proxy: call \`trpc.${utilName}()\``,
           );
         }
         return loadHandles(unwrapLazyArg(opts.queryClient), arg1);

@@ -21,11 +21,11 @@ import {
 import { Button } from '@shared/ui/components/button';
 
 import { Reserve } from '../reserve.tsx';
-import type { Session, TRPC } from './session.tsx';
+import type { LoaderTRPC, Session } from './session.tsx';
 
 /** What a demo's route loaders get as `context`. */
 export interface DemoContext {
-  readonly trpc: TRPC;
+  readonly trpc: LoaderTRPC;
 }
 
 interface TabContext {

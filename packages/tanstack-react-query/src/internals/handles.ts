@@ -213,8 +213,10 @@ type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
   ? [input?: TDef['input'], opts?: unstable_TRPCEntryOptions]
   : [input: TDef['input'], opts?: unstable_TRPCEntryOptions];
 
-/** Entries and handles added to query procedures */
-export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
+/**
+ * Entries added to query procedures on a proxy that can load handles, not on `useTRPC()`
+ */
+export interface DecorateQueryEntryVerbs<TDef extends ResolverDef> {
   /**
    * An entry for `trpc.unstable_$loadHandles()` that starts the query without waiting,
    * like `queryClient.prefetchQuery`. It never makes the load reject: errors surface
@@ -243,6 +245,10 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
   unstable_$ensureEntry: (
     ...args: EntryArgs<TDef>
   ) => unstable_TRPCQueryEntry<TDef, 'ensure'>;
+}
+
+/** Handles added to query procedures */
+export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
   /**
    * Builds a handle for an input you only know during render, like an id from another
    * query's data, which makes it a request waterfall. The name keeps that visible.
@@ -271,8 +277,11 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
   };
 }
 
-/** Entries and handles added to query procedures with a `cursor` input */
-export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
+/**
+ * Entries added to query procedures with a `cursor` input on a proxy that can load
+ * handles, not on `useTRPC()`
+ */
+export interface DecorateInfiniteQueryEntryVerbs<TDef extends ResolverDef> {
   /**
    * Like `unstable_$prefetchEntry`, for an infinite query. Loads the first page unless `pages` is set.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
@@ -297,6 +306,10 @@ export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
     input: TDef['input'],
     opts?: unstable_TRPCInfiniteEntryOptions<TDef>,
   ) => unstable_TRPCInfiniteQueryEntry<TDef, 'ensure'>;
+}
+
+/** Handles added to query procedures with a `cursor` input */
+export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
   /**
    * Like `unstable_$waterfallHandle`, for an infinite query.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
@@ -312,15 +325,16 @@ export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
   };
 }
 
-/** Helpers added to every router level of the options proxy */
-export interface DecorateHandleHelpers<TFeatureFlags extends FeatureFlags> {
+/**
+ * Added to the root of a proxy that can load handles, not to `useTRPC()`, since a
+ * render can't wait for queries
+ */
+export interface DecorateLoadHandles {
   /**
    * Starts every entry before it waits for any, so the order of the entries doesn't
    * matter. Resolves to `[handles, data]` once every fetch and ensure entry has data:
    * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
    * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
-   *
-   * Not available on `useTRPC()`.
    * @example
    * ```ts
    * const [handles, data] = await trpc.unstable_$loadHandles({
@@ -337,6 +351,10 @@ export interface DecorateHandleHelpers<TFeatureFlags extends FeatureFlags> {
   >(
     entries: TEntries,
   ) => Promise<unstable_TRPCLoadedHandles<TEntries>>;
+}
+
+/** Helpers added to every router level of the options proxy */
+export interface DecorateHandleHelpers<TFeatureFlags extends FeatureFlags> {
   /**
    * Options for a handle: the same options `trpc.<path>.queryOptions(input)` or
    * `trpc.<path>.infiniteQueryOptions(input, opts)` return for the handle's procedure and input.
@@ -383,12 +401,7 @@ export interface DecorateHandleHelpers<TFeatureFlags extends FeatureFlags> {
  */
 export type unstable_inferQueryHandle<
   TProcedure extends DecorateQueryHandleVerbs<any>,
-> =
-  ReturnType<
-    TProcedure['unstable_$prefetchEntry']
-  > extends unstable_TRPCQueryEntry<infer TDef, any>
-    ? unstable_TRPCQueryHandle<TDef>
-    : never;
+> = ReturnType<TProcedure['unstable_$waterfallHandle']>;
 
 /**
  * The handle type of an infinite query procedure, for typing props.
@@ -396,12 +409,7 @@ export type unstable_inferQueryHandle<
  */
 export type unstable_inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryHandleVerbs<any>,
-> =
-  ReturnType<
-    TProcedure['unstable_$prefetchInfiniteEntry']
-  > extends unstable_TRPCInfiniteQueryEntry<infer TDef, any>
-    ? unstable_TRPCInfiniteQueryHandle<TDef>
-    : never;
+> = ReturnType<TProcedure['unstable_$waterfallInfiniteHandle']>;
 
 const notAHandle =
   'Expected a tRPC handle from `.unstable_$loadHandles()` or `.unstable_$waterfallHandle()`';

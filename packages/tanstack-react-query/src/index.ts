@@ -1,6 +1,7 @@
 export { createTRPCContext } from './internals/Context';
 export type {
   TRPCOptionsProxy,
+  unstable_TRPCLoaderOptionsProxy,
   inferInput,
   inferOutput,
   DecorateMutationProcedure,

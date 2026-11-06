@@ -90,12 +90,17 @@ export function createQueryClient() {
 
 // @filename: lib/trpc.ts
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
-import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCContext,
+  type TRPCOptionsProxy,
+  type unstable_TRPCLoaderOptionsProxy,
+} from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import type { AppRouter } from '~/server/routers/_app';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 export type TRPC = TRPCOptionsProxy<AppRouter>;
+export type LoaderTRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 export const makeTRPCClient = () =>
   createTRPCClient<AppRouter>({
     links: [httpBatchStreamLink({ url: '/api/trpc', transformer: superjson })],
@@ -104,11 +109,11 @@ export const makeTRPCClient = () =>
 // @filename: routes/__root.tsx
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext } from '@tanstack/react-router';
-import type { TRPC } from '~/lib/trpc';
+import type { LoaderTRPC } from '~/lib/trpc';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: TRPC;
+  trpc: LoaderTRPC;
 }>()();
 ```
 
@@ -214,6 +219,7 @@ import {
 import {
   createTRPCContext,
   type TRPCOptionsProxy,
+  type unstable_TRPCLoaderOptionsProxy,
 } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import { createContext } from '~/server/context';
@@ -221,6 +227,8 @@ import { appRouter, type AppRouter } from '~/server/routers/_app';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 export type TRPC = TRPCOptionsProxy<AppRouter>;
+// The router context's proxy: unlike useTRPC()'s, it can load handles
+export type LoaderTRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 
 const getLinks = createIsomorphicFn()
   .server((): TRPCLink<AppRouter>[] => [
@@ -343,7 +351,7 @@ export function getRouter() {
 }
 ```
 
-Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: TRPC }>()`.
+Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: LoaderTRPC }>()`. `LoaderTRPC` is the type `createTRPCOptionsProxy` returns. Unlike `useTRPC()`'s type, it can load handles.
 
 ## 5. Load handles in loaders
 

@@ -343,7 +343,8 @@ Avoid awaiting one load and then starting another: the second load's requests wa
 | No loaders or server components, such as a SPA | The top of the page, [as it renders](#in-render) | `unstable_$waterfallHandle` on `useTRPC()` |
 
 - In server components, the request's `QueryClient` starts empty, so an ensure entry always waits for the request.
-- `unstable_$loadHandles` throws on `useTRPC()`: a render can't wait. In components, build handles with [`unstable_$waterfallHandle`](#waterfall-handles).
+- Only the proxy from `createTRPCOptionsProxy` can load handles. Its type is `unstable_TRPCLoaderOptionsProxy<AppRouter>`: use it to type a router context. `useTRPC()` has no `unstable_$loadHandles` and no entries, since a render can't wait. In components, build handles with [`unstable_$waterfallHandle`](#waterfall-handles).
+- `unstable_$loadHandles` is on the root proxy only, `trpc.unstable_$loadHandles`, and one load can take entries from any procedure.
 
 ## Start every query from the URL {#url-as-input}
 
@@ -1078,14 +1079,17 @@ export function makeQueryClient() {
 
 // @filename: app/trpc/server.ts
 import type { QueryClient } from '@tanstack/react-query';
-import { createTRPCOptionsProxy, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  type unstable_TRPCLoaderOptionsProxy,
+} from '@trpc/tanstack-react-query';
 import { createContext } from 'react-router';
 import { appRouter, type AppRouter } from '~/server/router';
 import { makeQueryClient } from './query-client';
 
 export const trpcContext = createContext<{
   queryClient: QueryClient;
-  trpc: TRPCOptionsProxy<AppRouter>;
+  trpc: unstable_TRPCLoaderOptionsProxy<AppRouter>;
 }>();
 
 export function createServerTRPC() {
@@ -1225,14 +1229,17 @@ export const makeQueryClient = () => new QueryClient();
 // @filename: app/trpc/server.ts
 // ---cut---
 import type { QueryClient } from '@tanstack/react-query';
-import { createTRPCOptionsProxy, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  type unstable_TRPCLoaderOptionsProxy,
+} from '@trpc/tanstack-react-query';
 import { createContext } from 'react-router';
 import { appRouter, type AppRouter } from '~/server/router';
 import { makeQueryClient } from './query-client';
 
 export const trpcContext = createContext<{
   queryClient: QueryClient;
-  trpc: TRPCOptionsProxy<AppRouter>;
+  trpc: unstable_TRPCLoaderOptionsProxy<AppRouter>;
 }>();
 
 export function createServerTRPC() {

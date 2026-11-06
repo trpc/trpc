@@ -14,6 +14,7 @@ import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type {
   TRPCOptionsProxy,
+  unstable_TRPCLoaderOptionsProxy,
   unstable_inferInfiniteQueryHandle,
   unstable_inferQueryHandle,
 } from '../src';
@@ -44,7 +45,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCOptionsProxy<AppRouter>;
+type TRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 type Post = { id: string; title: string };
 type ListPage = { items: number[]; nextCursor: number };
 

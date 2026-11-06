@@ -24,7 +24,7 @@ import {
   PostSkeleton,
 } from './blog.tsx';
 import { type DemoContext, DemoLink, useDemoLoaderData } from './browser.tsx';
-import { type TRPC, useTRPC } from './session.tsx';
+import { type LoaderTRPC, type TRPC, useTRPC } from './session.tsx';
 
 /**
  * Where a blog starts its queries: in route loaders with one of the three
@@ -84,14 +84,14 @@ function entryFor<TInput, TPrefetch, TEnsure, TFetch>(
   }
 }
 
-async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
+async function loadList(verb: LoaderVerb, trpc: LoaderTRPC, page: number) {
   const [handles] = await trpc.unstable_$loadHandles({
     list: entryFor(verb, trpc.post.list, { page }),
   });
   return handles;
 }
 
-async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
+async function loadPost(verb: LoaderVerb, trpc: LoaderTRPC, id: number) {
   const [handles] = await trpc.unstable_$loadHandles({
     comments: entryFor(verb, trpc.post.comments, { postId: id }),
     more: entryFor(verb, trpc.post.moreByAuthor, { postId: id }),

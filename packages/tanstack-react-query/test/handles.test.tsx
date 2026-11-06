@@ -18,6 +18,7 @@ import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type {
   TRPCOptionsProxy,
+  unstable_TRPCLoaderOptionsProxy,
   unstable_inferInfiniteQueryHandle,
   unstable_inferQueryHandle,
   unstable_TRPCInfiniteQueryHandle,
@@ -67,7 +68,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCOptionsProxy<AppRouter>;
+type TRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 
 /** What the server's dehydrated state looks like after crossing the wire */
 function overTheWire<T>(value: T): T {
@@ -213,7 +214,7 @@ describe('types', () => {
     void wrong2;
   });
 
-  test('unstable_$fromHandle and unstable_$loadHandles are on every router level', () => {
+  test('unstable_$fromHandle is on every router level, unstable_$loadHandles only on the root', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     const handle = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
@@ -221,9 +222,41 @@ describe('types', () => {
       trpc.unstable_$fromHandle(handle),
     );
     const entries = { post: trpc.post.byId.unstable_$fetchEntry({ id: '1' }) };
-    expectTypeOf(trpc.post.unstable_$loadHandles(entries)).toEqualTypeOf(
-      trpc.unstable_$loadHandles(entries),
-    );
+    void trpc.unstable_$loadHandles(entries);
+    // @ts-expect-error a load can mix entries from any router level
+    void trpc.post.unstable_$loadHandles(entries);
+  });
+
+  test("useTRPC() can't load handles or build entries", () => {
+    const { useTRPC } = createTRPCContext<AppRouter>();
+    if (Math.random() < 2) return;
+    const trpc = useTRPC();
+    // @ts-expect-error a render can't wait for queries
+    void trpc.unstable_$loadHandles({});
+    // @ts-expect-error not on router levels either
+    void trpc.post.unstable_$loadHandles({});
+    // @ts-expect-error entries are only for unstable_$loadHandles
+    trpc.post.byId.unstable_$prefetchEntry({ id: '1' });
+    // @ts-expect-error entries are only for unstable_$loadHandles
+    trpc.post.byId.unstable_$ensureEntry({ id: '1' });
+    // @ts-expect-error entries are only for unstable_$loadHandles
+    trpc.post.byId.unstable_$fetchEntry({ id: '1' });
+    // @ts-expect-error entries are only for unstable_$loadHandles
+    trpc.post.list.unstable_$prefetchInfiniteEntry({ limit: 2 });
+    // @ts-expect-error entries are only for unstable_$loadHandles
+    trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 });
+    // @ts-expect-error entries are only for unstable_$loadHandles
+    trpc.post.list.unstable_$fetchInfiniteEntry({ limit: 2 });
+
+    const handle = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
+    expectTypeOf(handle).toEqualTypeOf<
+      unstable_inferQueryHandle<TRPC['post']['byId']>
+    >();
+    trpc.post.list.unstable_$waterfallInfiniteHandle({ limit: 2 });
+    void trpc.unstable_$fromHandle(handle);
+
+    // A proxy that can load handles still fits where useTRPC()'s type is expected
+    expectTypeOf<TRPC>().toMatchTypeOf<TRPCOptionsProxy<AppRouter>>();
   });
 
   test('infinite entries only load several pages with getNextPageParam', () => {
@@ -352,6 +385,17 @@ describe('loading', () => {
     });
     expect(Object.keys(handles)).toEqual(['__proto__']);
     expect(Object.keys(data)).toEqual(['__proto__']);
+  });
+
+  test('JavaScript callers get a readable error for unstable_$loadHandles on a router level', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post: any = trpc.post;
+    expect(() =>
+      post.unstable_$loadHandles({}),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`post.unstable_$loadHandles()\` is only on the root proxy: call \`trpc.unstable_$loadHandles()\`]`,
+    );
   });
 
   test('throws a readable error for a value that is not an entry', async () => {
@@ -493,9 +537,8 @@ describe('loading', () => {
     function Component() {
       const trpc = resource.useTRPC();
       try {
-        void trpc.unstable_$loadHandles({
-          post: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
-        });
+        // @ts-expect-error JavaScript callers get a runtime error instead
+        void trpc.unstable_$loadHandles({});
       } catch (cause) {
         error = cause;
       }
@@ -819,7 +862,7 @@ describe('runtime', () => {
           return this.state.error ? 'errored' : this.props.children;
         }
       }
-      function renderRead(read: (trpc: TRPC) => any) {
+      function renderRead(read: (trpc: TRPCOptionsProxy<AppRouter>) => any) {
         function Read() {
           const readQuery = useSuspenseQuery(read(useTRPC()));
           return <p>data:{JSON.stringify(readQuery.data)}</p>;
