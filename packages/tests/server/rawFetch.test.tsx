@@ -55,3 +55,27 @@ Object {
 `);
   }
 });
+
+test('errors thrown before the call runs are sent as json', async () => {
+  await using ctx = factory();
+  const { httpUrl } = ctx;
+
+  const unsupported = await fetch(`${httpUrl}/myMutation`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'text/plain',
+    },
+    body: JSON.stringify({ name: 'alexdotjs' }),
+  });
+  expect(unsupported.status).toBe(415);
+  expect(unsupported.headers.get('content-type')).toBe('application/json');
+
+  const mixed = await fetch(
+    `${httpUrl}/myQuery,myMutation?batch=1&input=${JSON.stringify({
+      '0': { name: 'alexdotjs' },
+      '1': { name: 'alexdotjs' },
+    })}`,
+  );
+  expect(mixed.status).toBe(400);
+  expect(mixed.headers.get('content-type')).toBe('application/json');
+});
