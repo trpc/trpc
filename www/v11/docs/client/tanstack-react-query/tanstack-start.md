@@ -90,17 +90,12 @@ export function createQueryClient() {
 
 // @filename: lib/trpc.ts
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
-import {
-  createTRPCContext,
-  type TRPCOptionsProxy,
-  type unstable_TRPCLoaderOptionsProxy,
-} from '@trpc/tanstack-react-query';
+import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import type { AppRouter } from '~/server/routers/_app';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 export type TRPC = TRPCOptionsProxy<AppRouter>;
-export type LoaderTRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 export const makeTRPCClient = () =>
   createTRPCClient<AppRouter>({
     links: [httpBatchStreamLink({ url: '/api/trpc', transformer: superjson })],
@@ -109,11 +104,12 @@ export const makeTRPCClient = () =>
 // @filename: routes/__root.tsx
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext } from '@tanstack/react-router';
-import type { LoaderTRPC } from '~/lib/trpc';
+import type { TRPCLoaderOptionsProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/routers/_app';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: LoaderTRPC;
+  trpc: TRPCLoaderOptionsProxy<AppRouter>;
 }>()();
 ```
 
@@ -155,26 +151,28 @@ export function getRouter() {
 ```twoslash include start-components
 // @filename: components/post.tsx
 import { useSuspenseQuery } from '@tanstack/react-query';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
-export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId']> }) {
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
   return <h1>{postQuery.data.title}</h1>;
 }
 
 // @filename: components/comments.tsx
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import type { unstable_inferInfiniteQueryHandle } from '@trpc/tanstack-react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
 export function Comments(props: {
-  comments: unstable_inferInfiniteQueryHandle<TRPC['post']['comments']>;
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
 }) {
   const trpc = useTRPC();
   const commentsQuery = useSuspenseInfiniteQuery(
-    trpc.unstable_$fromHandle(props.comments, {
+    fromHandle(trpc, props.comments, {
       getNextPageParam: (last) => last.nextCursor,
     }),
   );
@@ -216,19 +214,13 @@ import {
   localLink,
   type TRPCLink,
 } from '@trpc/client';
-import {
-  createTRPCContext,
-  type TRPCOptionsProxy,
-  type unstable_TRPCLoaderOptionsProxy,
-} from '@trpc/tanstack-react-query';
+import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import { createContext } from '~/server/context';
 import { appRouter, type AppRouter } from '~/server/routers/_app';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 export type TRPC = TRPCOptionsProxy<AppRouter>;
-// The router context's proxy: unlike useTRPC()'s, it can load handles
-export type LoaderTRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 
 const getLinks = createIsomorphicFn()
   .server((): TRPCLink<AppRouter>[] => [
@@ -351,11 +343,11 @@ export function getRouter() {
 }
 ```
 
-Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: LoaderTRPC }>()`. `LoaderTRPC` is the type `createTRPCOptionsProxy` returns. Unlike `useTRPC()`'s type, it can load handles.
+Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: TRPCLoaderOptionsProxy<AppRouter> }>()`. `TRPCLoaderOptionsProxy`, from `@trpc/tanstack-react-query/unstable-handles`, is the type `createTRPCOptionsProxy` returns. Unlike `useTRPC()`'s type, `loadHandles` and the entries accept it.
 
 ## 5. Load handles in loaders
 
-A loader lists its queries as entries, loads them with `trpc.unstable_$loadHandles`, and returns the handles as loader data. For each entry, choose whether the loader waits for it. [Loading handles](/docs/client/tanstack-react-query/handles#starting-a-query) compares the options. Every input should come from the route's params or search params: see [Start every query from the URL](#url-as-input).
+A loader lists its queries as entries, loads them with `loadHandles`, and returns the handles as loader data. For each entry, choose whether the loader waits for it. [Loading handles](/docs/client/tanstack-react-query/handles#starting-a-query) compares the options. Every input should come from the route's params or search params: see [Start every query from the URL](#url-as-input).
 
 - On the first visit, the loader runs on the server, and the data is sent with the page.
 - On later navigations, the loader runs in the browser against the tab's cache. Fresh data is reused; stale data renders at once and refetches.
@@ -407,13 +399,15 @@ declare module '@tanstack/react-start' {
 // @filename: routes/posts.$id.comments.tsx
 // ---cut---
 import { createFileRoute } from '@tanstack/react-router';
+import { loadHandles, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 
 export const Route = createFileRoute('/posts/$id/comments')({
   loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await trpc.unstable_$loadHandles({
-      comments: trpc.post.comments.unstable_$prefetchInfiniteEntry(
+    const [handles] = await loadHandles(trpc, {
+      comments: prefetchInfiniteEntry(
+        trpc.post.comments,
         { postId: params.id, limit: 20 },
         { getNextPageParam: (last) => last.nextCursor },
       ),
@@ -482,20 +476,19 @@ declare module '@tanstack/react-start' {
 // ---cut---
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { isTRPCClientError } from '@trpc/client';
+import { loadHandles, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
 import { Post } from '~/components/post';
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await trpc
-      .unstable_$loadHandles({
-        post: trpc.post.byId.unstable_$ensureEntry({ id: params.id }),
-      })
-      .catch((cause) => {
-        if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
-          throw notFound();
-        }
-        throw cause;
-      });
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+    }).catch((cause) => {
+      if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
+        throw notFound();
+      }
+      throw cause;
+    });
     return handles;
   },
   component: PostPage,
@@ -510,13 +503,13 @@ function PostPage() {
 - The data is in the cache before the route renders, so `Post` shows the post at once. If the cache loses the post later, `Post` suspends and shows the nearest `Suspense` fallback, or the route's `pendingComponent`: see [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
 - The navigation waits for the loader. On a slow request, the router shows the route's `pendingComponent`, if it has one.
 - The loader can act on errors, as here with `notFound()`.
-- The handle carries no data. To use the data in the loader, for example for the route's `head`, read it from the load's `data`: `const [handles, data] = await trpc.unstable_$loadHandles(…)`, and return what you need. See [Using the data in a loader](/docs/client/tanstack-react-query/handles#loader-data).
+- The handle carries no data. To use the data in the loader, for example for the route's `head`, read it from the load's `data`: `const [handles, data] = await loadHandles(trpc, …)`, and return what you need. See [Using the data in a loader](/docs/client/tanstack-react-query/handles#loader-data).
 
 To wait for some queries and stream others in the same loader, list them all in one load: see [Waiting for some, streaming others](/docs/client/tanstack-react-query/handles#combining-both).
 
 ## 6. Read handles in components
 
-Components read handles with `unstable_$fromHandle` from `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles#nextjs-app-router), minus `'use client'`:
+Components read handles with `fromHandle` and `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles#nextjs-app-router), minus `'use client'`:
 
 ```tsx twoslash title='src/components/post.tsx'
 // @include: start-app
@@ -524,20 +517,21 @@ Components read handles with `unstable_$fromHandle` from `useTRPC()`. They're th
 // @filename: components/post.tsx
 // ---cut---
 import { useSuspenseQuery } from '@tanstack/react-query';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
-export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId']> }) {
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
   return <h1>{postQuery.data.title}</h1>;
 }
 ```
 
 ```demo loader-handles
 route loader
-├─ trpc.post.byId.unstable_$prefetchEntry({ id })        → post handle     → <Post post={post} />
-└─ trpc.post.comments.unstable_$prefetchInfiniteEntry()  → comments handle → <Comments comments={comments} />
+├─ prefetchEntry(trpc.post.byId, { id })            → post handle     → <Post post={post} />
+└─ prefetchInfiniteEntry(trpc.post.comments, …)     → comments handle → <Comments comments={comments} />
 ```
 
 ## Start every query from the URL {#url-as-input}
@@ -584,6 +578,7 @@ declare module '@tanstack/react-start' {
 // ---cut---
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import { loadHandles, prefetchEntry, fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { z } from 'zod';
 import { useTRPC } from '../lib/trpc';
 
@@ -594,8 +589,8 @@ export const Route = createFileRoute('/posts')({
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ context: { trpc }, deps }) => {
-    const [handles] = await trpc.unstable_$loadHandles({
-      posts: trpc.post.list.unstable_$prefetchEntry(deps),
+    const [handles] = await loadHandles(trpc, {
+      posts: prefetchEntry(trpc.post.list, deps),
     });
     return handles;
   },
@@ -606,7 +601,7 @@ function PostsPage() {
   const trpc = useTRPC();
   const loaderData = Route.useLoaderData();
   const postsQuery = useSuspenseQuery(
-    trpc.unstable_$fromHandle(loaderData.posts),
+    fromHandle(trpc, loaderData.posts),
   );
   return (
     <ul>
@@ -621,7 +616,7 @@ function PostsPage() {
 A link to `/posts?sort=top` starts the query for the top posts as the navigation begins. The back button brings back the last sort, and a shared link opens the same view. Keep the sort in `useState` and you lose all three, since the loader can't see component state.
 
 ```demo url-input
-/posts?sort=top&page=2  →  trpc.post.list.unstable_$prefetchEntry({ sort: 'top', page: 2 })
+/posts?sort=top&page=2  →  prefetchEntry(trpc.post.list, { sort: 'top', page: 2 })
 ```
 
 If a query can't take its input from the URL, for example because it needs an id from another query's result, reshape the procedure: see [If the URL isn't enough, reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures).

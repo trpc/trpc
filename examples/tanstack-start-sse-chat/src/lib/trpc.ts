@@ -12,7 +12,6 @@ import {
 import {
   createTRPCContext,
   type TRPCOptionsProxy,
-  type unstable_TRPCLoaderOptionsProxy,
 } from '@trpc/tanstack-react-query';
 import SuperJSON from 'superjson';
 import { createContext } from '~/server/context';
@@ -22,8 +21,6 @@ import { appRouter } from '~/server/routers/_app';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 export type TRPC = TRPCOptionsProxy<AppRouter>;
-/** The router context's proxy: unlike `useTRPC()`'s, it can load handles */
-export type LoaderTRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
 
 /**
  * During SSR, procedures are called in this process with the page request.

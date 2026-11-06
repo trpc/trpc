@@ -115,7 +115,7 @@ export default function PostPage(
 The page reads the query as it would without prefetching, so `status` is `'success'` on the first render. Use the same input in both places: it's part of the query key.
 
 :::tip
-To stop the two inputs from drifting apart, return a **handle** instead of the `id`. `const [handles] = await trpc.unstable_$loadHandles({ post: trpc.post.byId.unstable_$ensureEntry({ id }) })` waits for the data like `prefetchQuery`, and rejects like `fetchQuery` if the query fails. Return `handles` in `props`, and the page reads it with `useQuery(trpc.unstable_$fromHandle(props.post))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+To stop the two inputs from drifting apart, return a **handle** instead of the `id`. `const [handles] = await loadHandles(trpc, { post: ensureEntry(trpc.post.byId, { id }) })` waits for the data like `prefetchQuery`, and rejects like `fetchQuery` if the query fails. Return `handles` in `props`, and the page reads it with `useQuery(fromHandle(trpc, props.post))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 `prefetchQuery` never throws, and the cache only sends queries that succeeded, so a failed query fetches again in the browser. To act on an error on the server, use `fetchQuery`, which returns the data or throws. See [Set the status and cache headers](#set-the-status-and-cache-headers).

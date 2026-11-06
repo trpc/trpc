@@ -17,14 +17,15 @@ import {
   Outlet,
   Scripts,
 } from '@tanstack/react-router';
+import type { TRPCLoaderOptionsProxy } from '@trpc/tanstack-react-query/unstable-handles';
 import { CodeXmlIcon, SearchXIcon } from 'lucide-react';
-import type { LoaderTRPC } from '~/lib/trpc';
 import { sessionQuery } from '~/queries';
+import type { AppRouter } from '~/server/routers/_app';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: LoaderTRPC;
+  trpc: TRPCLoaderOptionsProxy<AppRouter>;
 }>()({
   head: () => ({
     meta: [

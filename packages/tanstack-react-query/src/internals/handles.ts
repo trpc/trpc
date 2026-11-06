@@ -24,7 +24,6 @@ import type {
 } from './queryOptions';
 import type {
   ExtractCursorType,
-  FeatureFlags,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
@@ -528,26 +527,31 @@ function readLoaderProxy(proxy: unknown, fn: string) {
   return ctx;
 }
 
-function entry(
-  fn: string,
-  type: HandleType,
-  kind: TRPCEntryKind,
-  procedure: unknown,
-  input: unknown,
-  opts: unknown,
-) {
-  const ctx = readLoaderProxy(procedure, fn);
-  return createEntry({ type, kind, options: ctx.options(type, input, opts) });
+function entry(opts: {
+  fn: string;
+  type: HandleType;
+  kind: TRPCEntryKind;
+  procedure: unknown;
+  input: unknown;
+  opts: unknown;
+}) {
+  const ctx = readLoaderProxy(opts.procedure, opts.fn);
+  return createEntry({
+    type: opts.type,
+    kind: opts.kind,
+    options: ctx.options(opts.type, opts.input, opts.opts),
+  });
 }
 
-function waterfall(
-  fn: string,
-  type: HandleType,
-  procedure: unknown,
-  inputOrHandle: unknown,
-  switchInput: unknown,
-) {
-  const ctx = readProxy(procedure, fn);
+function waterfall(opts: {
+  fn: string;
+  type: HandleType;
+  procedure: unknown;
+  inputOrHandle: unknown;
+  switchInput: unknown;
+}) {
+  const { fn, type, inputOrHandle, switchInput } = opts;
+  const ctx = readProxy(opts.procedure, fn);
   const renderClient = ctx.inRender ? ctx.getQueryClient() : null;
   if (typeof switchInput !== 'function') {
     return createWaterfallHandle({
@@ -621,7 +625,14 @@ export function prefetchEntry(
   input?: unknown,
   opts?: unknown,
 ): unknown {
-  return entry('prefetchEntry', 'query', 'prefetch', procedure, input, opts);
+  return entry({
+    fn: 'prefetchEntry',
+    type: 'query',
+    kind: 'prefetch',
+    procedure,
+    input,
+    opts,
+  });
 }
 
 /**
@@ -639,7 +650,14 @@ export function fetchEntry(
   input?: unknown,
   opts?: unknown,
 ): unknown {
-  return entry('fetchEntry', 'query', 'fetch', procedure, input, opts);
+  return entry({
+    fn: 'fetchEntry',
+    type: 'query',
+    kind: 'fetch',
+    procedure,
+    input,
+    opts,
+  });
 }
 
 /**
@@ -658,7 +676,14 @@ export function ensureEntry(
   input?: unknown,
   opts?: unknown,
 ): unknown {
-  return entry('ensureEntry', 'query', 'ensure', procedure, input, opts);
+  return entry({
+    fn: 'ensureEntry',
+    type: 'query',
+    kind: 'ensure',
+    procedure,
+    input,
+    opts,
+  });
 }
 
 /**
@@ -670,14 +695,14 @@ export function prefetchInfiniteEntry<TDef extends ResolverDef>(
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'prefetch'> {
-  return entry(
-    'prefetchInfiniteEntry',
-    'infinite',
-    'prefetch',
+  return entry({
+    fn: 'prefetchInfiniteEntry',
+    type: 'infinite',
+    kind: 'prefetch',
     procedure,
     input,
     opts,
-  ) as any;
+  }) as any;
 }
 
 /**
@@ -689,14 +714,14 @@ export function fetchInfiniteEntry<TDef extends ResolverDef>(
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'fetch'> {
-  return entry(
-    'fetchInfiniteEntry',
-    'infinite',
-    'fetch',
+  return entry({
+    fn: 'fetchInfiniteEntry',
+    type: 'infinite',
+    kind: 'fetch',
     procedure,
     input,
     opts,
-  ) as any;
+  }) as any;
 }
 
 /**
@@ -708,14 +733,14 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'ensure'> {
-  return entry(
-    'ensureInfiniteEntry',
-    'infinite',
-    'ensure',
+  return entry({
+    fn: 'ensureInfiniteEntry',
+    type: 'infinite',
+    kind: 'ensure',
     procedure,
     input,
     opts,
-  ) as any;
+  }) as any;
 }
 
 /**
@@ -747,13 +772,13 @@ export function waterfallHandle(
   inputOrHandle?: unknown,
   switchInput?: unknown,
 ): unknown {
-  return waterfall(
-    'waterfallHandle',
-    'query',
+  return waterfall({
+    fn: 'waterfallHandle',
+    type: 'query',
     procedure,
     inputOrHandle,
     switchInput,
-  );
+  });
 }
 
 /**
@@ -780,13 +805,13 @@ export function waterfallInfiniteHandle(
   inputOrHandle: unknown,
   switchInput?: unknown,
 ): unknown {
-  return waterfall(
-    'waterfallInfiniteHandle',
-    'infinite',
+  return waterfall({
+    fn: 'waterfallInfiniteHandle',
+    type: 'infinite',
     procedure,
     inputOrHandle,
     switchInput,
-  );
+  });
 }
 
 /**

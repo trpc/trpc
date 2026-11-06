@@ -3,8 +3,8 @@ import {
   createTRPCContext,
   createTRPCOptionsProxy,
   type TRPCOptionsProxy,
-  type unstable_TRPCLoaderOptionsProxy,
 } from '@trpc/tanstack-react-query';
+import type { TRPCLoaderOptionsProxy } from '@trpc/tanstack-react-query/unstable-handles';
 import type { ReactNode } from 'react';
 
 import { type AppRouter, createDemoClient } from './backend.ts';
@@ -14,7 +14,7 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 /** The loaders' proxy: unlike `useTRPC()`'s, it can load handles */
-export type LoaderTRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
+export type LoaderTRPC = TRPCLoaderOptionsProxy<AppRouter>;
 
 /** How long a demo's data stays fresh. */
 export const staleTime = 5000;

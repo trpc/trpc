@@ -7,7 +7,13 @@ import { buttonVariants } from '@shared/ui/components/button';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import {
+  loadHandles,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+  fromHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { HashIcon, LogInIcon, LogOutIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { z } from 'zod';
@@ -30,9 +36,10 @@ export const Route = createFileRoute('/channels/$channelId')({
   },
   loader: async (opts) => {
     const { trpc } = opts.context;
-    const [handles] = await trpc.unstable_$loadHandles({
-      channels: trpc.channel.list.unstable_$prefetchEntry(),
-      posts: trpc.post.infinite.unstable_$prefetchInfiniteEntry(
+    const [handles] = await loadHandles(trpc, {
+      channels: prefetchEntry(trpc.channel.list),
+      posts: prefetchInfiniteEntry(
+        trpc.post.infinite,
         { channelId: opts.params.channelId },
         { getNextPageParam: (d) => d.nextCursor },
       ),
@@ -128,24 +135,20 @@ function ChannelPage() {
   );
 }
 
-type ChannelsHandle = unstable_inferQueryHandle<TRPC['channel']['list']>;
+type ChannelsHandle = inferQueryHandle<TRPC['channel']['list']>;
 
 function ChannelName(
   props: Readonly<{ channels: ChannelsHandle; channelId: string }>,
 ) {
   const trpc = useTRPC();
-  const channelsQuery = useSuspenseQuery(
-    trpc.unstable_$fromHandle(props.channels),
-  );
+  const channelsQuery = useSuspenseQuery(fromHandle(trpc, props.channels));
   return channelsQuery.data.find((channel) => channel.id === props.channelId)
     ?.name;
 }
 
 function ChannelList(props: Readonly<{ channels: ChannelsHandle }>) {
   const trpc = useTRPC();
-  const channelsQuery = useSuspenseQuery(
-    trpc.unstable_$fromHandle(props.channels),
-  );
+  const channelsQuery = useSuspenseQuery(fromHandle(trpc, props.channels));
 
   return channelsQuery.data.map((channel) => (
     <Link

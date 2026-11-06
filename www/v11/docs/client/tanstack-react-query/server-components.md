@@ -356,7 +356,7 @@ createTRPCOptionsProxy<AppRouter>({
 ## Using your API
 
 :::tip
-To avoid repeating the procedure and input in client components, load them with `trpc.unstable_$loadHandles` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+To avoid repeating the procedure and input in client components, load them with `loadHandles` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,

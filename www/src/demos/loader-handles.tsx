@@ -23,7 +23,7 @@ import { useOnScreen, usePrefersReducedMotion } from './use-playback.ts';
 
 const steps = [
   {
-    text: 'Before the route renders, its loader passes prefetch entries for the post and its comments to unstable_$loadHandles. Both requests go out at once.',
+    text: 'Before the route renders, its loader passes prefetch entries for the post and its comments to loadHandles. Both requests go out at once.',
     title: 'The loader starts both queries',
   },
   {
@@ -31,7 +31,7 @@ const steps = [
     title: 'It returns handles right away',
   },
   {
-    text: 'Post and Comments each get a handle and read it with trpc.unstable_$fromHandle(). Until their data arrives, they suspend and show their Suspense fallbacks.',
+    text: 'Post and Comments each get a handle and read it with fromHandle(trpc, handle). Until their data arrives, they suspend and show their Suspense fallbacks.',
     title: 'Components read the handles',
   },
   {
@@ -219,14 +219,12 @@ export function LoaderHandles(_props: DemoProps) {
           <pre className="overflow-x-auto font-mono text-[0.7rem] leading-relaxed">
             <span className="text-muted-foreground">
               {
-                'loader: async ({ params: { id } }) => {\n  const [handles] = await trpc.unstable_$loadHandles({'
+                'loader: async ({ params: { id } }) => {\n  const [handles] = await loadHandles(trpc, {'
               }
             </span>
+            {'\n    post: prefetchEntry(trpc.post.byId, { id }),'}
             {
-              '\n    post: trpc.post.byId\n      .unstable_$prefetchEntry({ id }),'
-            }
-            {
-              '\n    comments: trpc.post.comments\n      .unstable_$prefetchInfiniteEntry(…),'
+              '\n    comments: prefetchInfiniteEntry(\n      trpc.post.comments,\n      …,\n    ),'
             }
             <span className="text-muted-foreground">
               {'\n  });\n  return handles;\n}'}

@@ -46,7 +46,7 @@ const posts: ReadonlyArray<Post> = [
   },
   {
     authorId: 2,
-    body: 'Type a prop with unstable_inferQueryHandle, and the component can only read the query it was given.',
+    body: 'Type a prop with inferQueryHandle, and the component can only read the query it was given.',
     id: 5,
     minutes: 2,
     title: 'Typing props with handles',
