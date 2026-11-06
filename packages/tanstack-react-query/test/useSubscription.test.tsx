@@ -929,3 +929,23 @@ describe('http', () => {
     utils.unmount();
   });
 });
+
+describe('subscriptionOptions', () => {
+  test('explicit null opts is not replaced by the default', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      events: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
+    });
+    await using ctx = testReactResource(router);
+
+    expect(() =>
+      ctx.optionsProxyClient.events.subscriptionOptions(
+        undefined,
+        // @ts-expect-error - JS callers can pass null
+        null,
+      ),
+    ).toThrow(TypeError);
+  });
+});

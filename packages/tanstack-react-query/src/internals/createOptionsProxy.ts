@@ -519,6 +519,7 @@ export function createTRPCOptionsProxy<
       pathKey: () => {
         return getQueryKeyInternal({
           path,
+          input: undefined,
           type: 'any',
           prefix,
         });
@@ -528,6 +529,7 @@ export function createTRPCOptionsProxy<
           ...arg1,
           queryKey: getQueryKeyInternal({
             path,
+            input: undefined,
             type: 'any',
             prefix,
           }),
@@ -660,7 +662,7 @@ export function createTRPCOptionsProxy<
 
       subscriptionOptions: () => {
         return trpcSubscriptionOptions({
-          opts: arg2,
+          opts: arg2 === undefined ? {} : arg2,
           path,
           input: arg1,
           queryKey: getQueryKeyInternal({

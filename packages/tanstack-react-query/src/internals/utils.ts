@@ -56,15 +56,19 @@ export function readQueryKey(queryKey: AnyTRPCQueryKey) {
 /**
  * @internal
  */
-export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
-  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>,
-  opts: TOptions,
-  infiniteParams?: {
+export function getClientArgs<
+  TOptions,
+  TFeatureFlags extends FeatureFlags,
+>(args: {
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
+  opts: TOptions;
+  infiniteParams: {
     pageParam: any;
     direction: 'forward' | 'backward';
-  },
-) {
-  const queryKeyData = readQueryKey(queryKey);
+  } | null;
+}) {
+  const { infiniteParams } = args;
+  const queryKeyData = readQueryKey(args.queryKey);
 
   let input = queryKeyData.args?.input;
   if (infiniteParams) {
@@ -76,7 +80,11 @@ export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
       direction: infiniteParams.direction,
     };
   }
-  return [queryKeyData.path.join('.'), input, (opts as any)?.trpc] as const;
+  return [
+    queryKeyData.path.join('.'),
+    input,
+    (args.opts as any)?.trpc,
+  ] as const;
 }
 
 /**
@@ -120,7 +128,7 @@ export async function buildQueryFromAsyncIterable<
  */
 export function getQueryKeyInternal(opts: {
   path: string[];
-  input?: unknown;
+  input: unknown;
   type: QueryType;
   prefix: string | undefined;
 }): AnyTRPCQueryKey {
