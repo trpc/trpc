@@ -603,8 +603,8 @@ describe('waterfall handles', () => {
     expect(resource.queryClient.isFetching()).toBe(1);
   });
 
-  test("can't switch a handle for another procedure", () => {
-    const resource = ctx();
+  test("can't switch a handle for another procedure", async () => {
+    await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const draft = trpc.post.draftById.unstable_$waterfallHandle({ id: '1' });
     expect(() =>
