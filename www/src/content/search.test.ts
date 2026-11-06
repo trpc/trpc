@@ -78,6 +78,10 @@ describe('searchDocs', () => {
     expect(ids('lnks')).toContain('client/links');
   });
 
+  it('takes no typo in a word of three letters', () => {
+    expect(ids('lnk')).toEqual([]);
+  });
+
   it('finds every word of a query, inside camelCase too', () => {
     expect(ids('query options')[0]).toBe(
       'integrations/tanstack-query/react#query-options',

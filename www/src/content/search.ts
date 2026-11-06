@@ -255,7 +255,8 @@ function indexOf(docs: ReadonlyArray<DocMeta>): Index {
         );
       },
       combineWith: 'AND',
-      fuzzy: 0.2,
+      // A typo in a short word finds other short words: `sse`, `ssg` and `use`.
+      fuzzy: (term) => (term.length > 3 ? 0.2 : false),
       prefix: true,
       tokenize: defaultTokenize,
     },
