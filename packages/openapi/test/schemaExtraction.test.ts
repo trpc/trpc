@@ -120,6 +120,7 @@ describe('extractDescriptions', () => {
         "properties": Map {
           "name" => "Category name",
         },
+        "self": null,
       }
     `);
   });
@@ -156,6 +157,7 @@ describe('extractDescriptions', () => {
           "name" => "Category name",
           "children.foo.label" => "Foo label",
         },
+        "self": null,
       }
     `);
   });
@@ -303,7 +305,11 @@ describe('collectRuntimeDescriptions', () => {
 describe('applyDescriptions', () => {
   it('applies top-level description', () => {
     const schema: SchemaObject = { type: 'object', properties: {} };
-    applyDescriptions(schema, { self: 'A schema', properties: new Map() });
+    applyDescriptions({
+      schema,
+      descs: { self: 'A schema', properties: new Map() },
+      schemas: {},
+    });
     expect(schema.description).toBe('A schema');
   });
 
@@ -313,7 +319,11 @@ describe('applyDescriptions', () => {
       description: 'Existing',
       properties: {},
     };
-    applyDescriptions(schema, { self: 'New', properties: new Map() });
+    applyDescriptions({
+      schema,
+      descs: { self: 'New', properties: new Map() },
+      schemas: {},
+    });
     expect(schema.description).toBe('New');
   });
 
@@ -329,7 +339,11 @@ describe('applyDescriptions', () => {
       ['name', 'User name'],
       ['age', 'User age'],
     ]);
-    applyDescriptions(schema, { properties: props });
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: {},
+    });
     expect(requirePropertySchema(schema, 'name').description).toBe('User name');
     expect(requirePropertySchema(schema, 'age').description).toBe('User age');
   });
@@ -347,7 +361,11 @@ describe('applyDescriptions', () => {
       },
     };
     const props = new Map([['address.street', 'Street name']]);
-    applyDescriptions(schema, { properties: props });
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: {},
+    });
     const address = requirePropertySchema(schema, 'address');
     expect(requirePropertySchema(address, 'street').description).toBe(
       'Street name',
@@ -374,7 +392,11 @@ describe('applyDescriptions', () => {
       ['children.name', 'Child name'],
       ['children.age', 'Child age'],
     ]);
-    applyDescriptions(schema, { properties: props });
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: {},
+    });
     const items = requireArrayItemsSchema(
       requirePropertySchema(schema, 'children'),
     );
@@ -390,7 +412,11 @@ describe('applyDescriptions', () => {
       },
     };
     const props = new Map([['[]', 'A string item']]);
-    applyDescriptions(schema, { properties: props });
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: {},
+    });
     expect(requireArrayItemsSchema(schema).description).toBe('A string item');
   });
 
@@ -402,7 +428,11 @@ describe('applyDescriptions', () => {
       },
     };
     const props = new Map([['name', 'New']]);
-    applyDescriptions(schema, { properties: props });
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: {},
+    });
     expect(requirePropertySchema(schema, 'name').description).toBe('New');
   });
 
@@ -414,11 +444,43 @@ describe('applyDescriptions', () => {
       },
     };
     const props = new Map([['profile', 'Profile details']]);
-    applyDescriptions(schema, { properties: props });
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: {},
+    });
 
     const profile = requirePropertySchema(schema, 'profile');
     expect(profile.$ref).toBeUndefined();
     expect(profile.allOf).toEqual([{ $ref: '#/components/schemas/Profile' }]);
     expect(profile.description).toBe('Profile details');
+  });
+
+  it('follows component refs to apply nested descriptions', () => {
+    const schema: SchemaObject = {
+      type: 'object',
+      properties: {
+        profile: { $ref: '#/components/schemas/Profile' },
+      },
+    };
+    const profileSchema: SchemaObject = {
+      type: 'object',
+      properties: {
+        bio: { type: 'string' },
+      },
+    };
+    const props = new Map([['profile.bio', 'Short bio']]);
+    applyDescriptions({
+      schema,
+      descs: { self: null, properties: props },
+      schemas: { Profile: profileSchema },
+    });
+
+    expect(requirePropertySchema(schema, 'profile')).toEqual({
+      $ref: '#/components/schemas/Profile',
+    });
+    expect(requirePropertySchema(profileSchema, 'bio').description).toBe(
+      'Short bio',
+    );
   });
 });
