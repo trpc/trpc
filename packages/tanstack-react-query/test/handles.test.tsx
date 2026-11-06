@@ -354,7 +354,7 @@ describe('loading', () => {
     expect(resource.calls).not.toHaveBeenCalled();
   });
 
-  test('an ensure entry uses stale cached data without refetching', async () => {
+  test('an ensure entry resolves at once with stale data and refetches it from the loader', async () => {
     await using resource = ctx();
     const server = makeServerProxy(resource);
     const queryKey = server.trpc.post.byId.queryKey({ id: '1' });
@@ -364,34 +364,31 @@ describe('loading', () => {
       post: server.trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
     });
     expect(data.post.title).toBe('stale');
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(resource.calls).not.toHaveBeenCalled();
-  });
-
-  test('an ensure entry refetches on the reader that mounts', async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyClient;
-    // Suspense readers treat data younger than a second as fresh
-    resource.queryClient.setQueryData(
-      trpc.post.byId.queryKey({ id: '1' }),
-      { id: '1', title: 'stale' },
-      { updatedAt: Date.now() - 2_000 },
-    );
-    const [{ post }] = await trpc.unstable_$loadHandles({
-      post: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
-    });
-
-    function Post() {
-      const t = resource.useTRPC();
-      const postQuery = useSuspenseQuery(t.unstable_$fromHandle(post));
-      return <p>title:{postQuery.data.title}</p>;
-    }
-    const utils = resource.renderApp(<Post />);
-    expect(utils.container).toHaveTextContent('title:stale');
+    // No reader has mounted: the load started the refetch
     await vi.waitFor(() =>
-      expect(utils.container).toHaveTextContent('title:Post 1'),
+      expect(server.queryClient.getQueryData(queryKey)?.title).toBe('Post 1'),
     );
     expect(resource.calls).toHaveBeenCalledTimes(1);
+  });
+
+  test('an infinite ensure entry refetches stale pages from the loader', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+    const queryKey = server.trpc.post.list.infiniteQueryKey({ limit: 2 });
+    server.queryClient.setQueryData(queryKey, {
+      pages: [{ items: [-1], nextCursor: 2 }],
+      pageParams: [null],
+    });
+
+    const [, data] = await server.trpc.unstable_$loadHandles({
+      list: server.trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 }),
+    });
+    expect(data.list.pages[0]?.items).toEqual([-1]);
+    await vi.waitFor(() =>
+      expect(
+        server.queryClient.getQueryData(queryKey)?.pages[0]?.items,
+      ).toEqual([0, 1]),
+    );
   });
 
   test('a fetch entry waits for stale data to refetch', async () => {

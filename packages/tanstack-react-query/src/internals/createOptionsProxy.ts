@@ -407,7 +407,8 @@ export type TRPCOptionsProxyOptions<
   );
 
 /**
- * Marks the `useTRPC()` proxy, which is used during render and can't load handles
+ * Marks the `useTRPC()` proxy, which is used during render: its waterfall
+ * handles start their queries, and it can't load handles
  * @internal
  */
 export const renderHandleVerbs = Symbol('renderHandleVerbs');
@@ -505,18 +506,23 @@ export function createTRPCOptionsProxy<
             query: callIt('query'),
           });
 
-    const entry = (
-      type: 'query' | 'infinite',
-      kind: unstable_TRPCEntryKind,
-    ) => createEntry({ type, kind, options: handleOptions(type, arg1, arg2) });
+    const entry = (type: 'query' | 'infinite', kind: unstable_TRPCEntryKind) =>
+      createEntry({ type, kind, options: handleOptions(type, arg1, arg2) });
+
+    const inRender = () =>
+      (opts as { [renderHandleVerbs]?: boolean })[renderHandleVerbs] === true;
 
     const waterfall = (type: 'query' | 'infinite') => {
+      const renderClient = inRender() ? unwrapLazyArg(opts.queryClient) : null;
       if (typeof arg2 !== 'function') {
-        return waterfallHandle(handleOptions(type, arg1, undefined), type);
+        return waterfallHandle({
+          options: handleOptions(type, arg1, undefined),
+          type,
+          renderClient,
+        });
       }
       const previous = arg1;
-      return switchHandle({
-        previous,
+      return switchHandle(previous, {
         options: handleOptions(
           type,
           arg2(previous.input),
@@ -525,6 +531,7 @@ export function createTRPCOptionsProxy<
             : undefined,
         ),
         type,
+        renderClient,
       });
     };
 
@@ -650,10 +657,7 @@ export function createTRPCOptionsProxy<
         });
       },
       unstable_$loadHandles: () => {
-        if (
-          (opts as { [renderHandleVerbs]?: boolean })[renderHandleVerbs] ===
-          true
-        ) {
+        if (inRender()) {
           throw new Error(
             `\`${[...path, utilName].join('.')}()\` on \`useTRPC()\` waits for its queries, which a render can't. ` +
               `Load handles in a route loader or server component, or build one in a component with \`unstable_$waterfallHandle\` ` +

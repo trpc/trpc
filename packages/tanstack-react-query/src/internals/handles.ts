@@ -151,11 +151,13 @@ type LoadedHandles<TEntries extends Record<string, unstable_AnyTRPCEntry>> = {
 };
 
 type LoadedData<TEntries extends Record<string, unstable_AnyTRPCEntry>> = {
-  [TKey in keyof TEntries as TEntries[TKey] extends {
-    readonly [entryDef]: { kind: 'fetch' | 'ensure' };
-  }
-    ? TKey
-    : never]: DataOfEntry<TEntries[TKey]>;
+  [
+    TKey in keyof TEntries as TEntries[TKey] extends {
+      readonly [entryDef]: { kind: 'fetch' | 'ensure' };
+    }
+      ? TKey
+      : never
+  ]: DataOfEntry<TEntries[TKey]>;
 };
 
 /**
@@ -233,18 +235,21 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
   ) => unstable_TRPCQueryEntry<TDef, 'fetch'>;
   /**
    * An entry for `trpc.unstable_$loadHandles()` that uses any cached data, even stale,
-   * like `queryClient.ensureQueryData`. It fetches and waits only when the cache has no
-   * data, and the load rejects if that request fails. Readers refetch stale data in the
-   * background when they mount. Creating the entry starts nothing.
+   * like `queryClient.ensureQueryData({ revalidateIfStale: true })`. It fetches and waits
+   * only when the cache has no data, and the load rejects if that request fails. Stale
+   * data is refetched in the background. Creating the entry starts nothing.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#ensure
    */
   unstable_$ensureEntry: (
     ...args: EntryArgs<TDef>
   ) => unstable_TRPCQueryEntry<TDef, 'ensure'>;
   /**
-   * Builds a handle without starting its query: the component that reads it fetches
-   * when it renders, which makes it a request waterfall. The name keeps that visible.
-   * Use it for an input you only know during render, like an id from another query's data.
+   * Builds a handle for an input you only know during render, like an id from another
+   * query's data, which makes it a request waterfall. The name keeps that visible.
+   *
+   * On `useTRPC()`, call it during render: like TanStack's `usePrefetchQuery`, it starts
+   * the query if the cache has no state for it. On other proxies it starts nothing, and
+   * the component that reads the handle fetches when it renders.
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
    */
   unstable_$waterfallHandle: {
@@ -482,7 +487,10 @@ function startEntry(queryClient: QueryClient, state: EntryState) {
       case 'prefetch':
         return queryClient.prefetchInfiniteQuery(options);
       case 'ensure':
-        return queryClient.ensureInfiniteQueryData(options);
+        return queryClient.ensureInfiniteQueryData({
+          ...options,
+          revalidateIfStale: true,
+        });
       case 'fetch':
         return queryClient.fetchInfiniteQuery(options);
     }
@@ -491,7 +499,10 @@ function startEntry(queryClient: QueryClient, state: EntryState) {
     case 'prefetch':
       return queryClient.prefetchQuery(options);
     case 'ensure':
-      return queryClient.ensureQueryData(options);
+      return queryClient.ensureQueryData({
+        ...options,
+        revalidateIfStale: true,
+      });
     case 'fetch':
       return queryClient.fetchQuery(options);
   }
@@ -529,32 +540,61 @@ export async function loadHandles(
 }
 
 /**
- * Handles that start nothing. Their readers fetch during render by design, so
- * a fetch during server rendering isn't a missing hydration.
+ * Waterfall handles. Their readers may fetch during render by design, so a
+ * fetch during server rendering isn't a missing hydration.
  */
 const waterfallHandles = new WeakSet<object>();
 
 /**
+ * A render runs again and again, so it follows the rule of TanStack's
+ * `usePrefetchQuery`: start only a query the cache has no state for. Stale
+ * data is refetched by the reader's observer, and an error stays until the
+ * reader's error boundary resets it: restarting it here would suspend the
+ * reader again.
+ */
+function prefetchInRender(
+  queryClient: QueryClient,
+  options: any,
+  type: HandleType,
+) {
+  if (queryClient.getQueryState(options.queryKey)) {
+    return;
+  }
+  void (type === 'infinite'
+    ? queryClient.prefetchInfiniteQuery(options)
+    : queryClient.prefetchQuery(options));
+}
+
+interface WaterfallOptions {
+  options: any;
+  type: HandleType;
+  /** The `useTRPC()` proxy's client, which starts the query during render */
+  renderClient: QueryClient | null;
+}
+
+/**
  * @internal
  */
-export function waterfallHandle(options: any, type: HandleType) {
-  const handle = toHandle(options, type);
+export function waterfallHandle(opts: WaterfallOptions) {
+  const handle = toHandle(opts.options, opts.type);
   waterfallHandles.add(handle);
+  if (opts.renderClient) {
+    prefetchInRender(opts.renderClient, opts.options, opts.type);
+  }
   return handle;
 }
 
 /**
  * @internal
  */
-export function switchHandle(opts: {
-  previous: unstable_AnyTRPCHandle;
-  options: any;
-  type: HandleType;
-}) {
-  if (hashKey(opts.options.queryKey) === hashKey(opts.previous.queryKey)) {
-    return opts.previous;
+export function switchHandle(
+  previous: unstable_AnyTRPCHandle,
+  opts: WaterfallOptions,
+) {
+  if (hashKey(opts.options.queryKey) === hashKey(previous.queryKey)) {
+    return previous;
   }
-  return waterfallHandle(opts.options, opts.type);
+  return waterfallHandle(opts);
 }
 
 /**
@@ -630,7 +670,9 @@ function refetchRejectedHydration(queryClient: QueryClient, options: any) {
 /**
  * @internal
  */
-export function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
+export function prepareHandleRead<
+  TOptions extends { queryFn?: unknown },
+>(opts: {
   queryClient: QueryClient;
   rawHandle: unstable_AnyTRPCHandle;
   handle: ReturnType<typeof readHandle>;

@@ -113,21 +113,47 @@ describe('unstable_$waterfallHandle on useTRPC() during render', () => {
     ).toEqualTypeOf<unstable_inferQueryHandle<TRPC['post']['byId']>>();
   });
 
-  test('starts nothing itself: readers in their own boundaries start together', async () => {
+  test('starts every query before any reader renders', async () => {
     await using resource = ctx();
     const { PostPage } = setup(resource);
-    function Page() {
-      const trpc = resource.useTRPC();
-      trpc.post.byId.unstable_$waterfallHandle({ id: 'unread' });
-      return <PostPage id="1" />;
-    }
-    const utils = resource.renderApp(<Page />);
+    const utils = resource.renderApp(<PostPage id="1" />);
 
     expect(resource.queryClient.isFetching()).toBe(2);
     expect(utils.container).toHaveTextContent('loading post');
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('Post 1 v1');
       expect(utils.container).toHaveTextContent('comments:0,1');
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+  });
+
+  test('handles read one after another in one component still load in parallel', async () => {
+    await using resource = ctx();
+    function Both(props: {
+      a: unstable_inferQueryHandle<TRPC['post']['byId']>;
+      b: unstable_inferQueryHandle<TRPC['post']['byId']>;
+    }) {
+      const trpc = resource.useTRPC();
+      const a = useSuspenseQuery(trpc.unstable_$fromHandle(props.a));
+      const b = useSuspenseQuery(trpc.unstable_$fromHandle(props.b));
+      return <p>{`${a.data.title} ${b.data.title}`}</p>;
+    }
+    function Page() {
+      const trpc = resource.useTRPC();
+      const a = trpc.post.byId.unstable_$waterfallHandle({ id: 'a' });
+      const b = trpc.post.byId.unstable_$waterfallHandle({ id: 'b' });
+      return (
+        <React.Suspense fallback={<p>loading</p>}>
+          <Both a={a} b={b} />
+        </React.Suspense>
+      );
+    }
+    const utils = resource.renderApp(<Page />);
+    // `Both` suspends on `a`, but `b` started with the page
+    expect(resource.queryClient.isFetching()).toBe(2);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post a');
+      expect(utils.container).toHaveTextContent('Post b');
     });
     expect(resource.calls).toHaveBeenCalledTimes(2);
   });

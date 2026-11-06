@@ -162,7 +162,7 @@ describe('server rendering', () => {
     warn.mockRestore();
   });
 
-  test('waterfall handles fetch in the server render, without a hydration warning', async () => {
+  test('useTRPC() starts waterfall handles in the server render', async () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     function Page() {
