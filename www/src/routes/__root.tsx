@@ -12,6 +12,7 @@ import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
 import { ThemeProvider } from '~/components/theme-provider.tsx';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
+import { validateQuerySearch } from '~/pages.ts';
 import { indexable } from '~/seo.ts';
 import { blog, site } from '~/site.ts';
 import { validateTabSearch } from '~/tabs.ts';
@@ -80,6 +81,7 @@ export const Route = createRootRoute({
   validateSearch: (search: Record<string, unknown>) => ({
     ...validateTabSearch(search),
     ...validateFlagSearch(search),
+    ...validateQuerySearch(search),
   }),
 });
 

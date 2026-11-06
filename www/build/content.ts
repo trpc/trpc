@@ -273,6 +273,8 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   return sources.map((source) => ({
     description: source.frontmatter.description,
     experiment: source.frontmatter.experiment,
+    label: source.frontmatter.label,
+    parent: source.frontmatter.parent,
     path: pagePath(dirs, source.slug),
     section: source.frontmatter.section,
     slug: source.slug,
