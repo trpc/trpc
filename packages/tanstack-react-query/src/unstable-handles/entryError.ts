@@ -1,13 +1,7 @@
-import type { TRPCClientErrorLike } from '@trpc/client';
 import { isTRPCClientError } from '@trpc/client';
 import type { TRPC_ERROR_CODE_KEY, TRPCError } from '@trpc/server';
 import { getTRPCErrorFromUnknown } from '@trpc/server/unstable-core-do-not-import';
-import type { ResolverDef } from '../internals/types';
-
-export type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
-  transformer: TDef['transformer'];
-  errorShape: TDef['errorShape'];
-}>;
+import type { ErrorOf, TRPCHandleDef } from './types';
 
 /**
  * What `loadHandles()` rejects with when a fetch or ensure entry fails. It
@@ -15,7 +9,7 @@ export type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
  */
 export class TRPCEntryError<
-  TDef extends ResolverDef = ResolverDef,
+  TDef extends TRPCHandleDef = TRPCHandleDef,
 > extends Error {
   /** The entry's key in the object passed to `loadHandles()` */
   readonly key: string;

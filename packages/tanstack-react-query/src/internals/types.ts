@@ -1,5 +1,4 @@
 import type { InfiniteData } from '@tanstack/react-query';
-import type { TRPCRequestOptions } from '@trpc/client';
 
 /**
  * Turn a set of optional properties into required
@@ -44,91 +43,18 @@ export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
   NonNullable<ExtractCursorType<TInput>> | null
 >;
 
-/**
- * tRPC options for a single query or mutation, passed as `trpc`.
- * @public
- */
-export interface TRPCReactRequestOptions
-  // For RQ, we use their internal AbortSignals instead of letting the user pass their own
-  extends Omit<TRPCRequestOptions, 'signal'> {
-  /**
-   * Opt out of SSR for this query by passing `ssr: false`
-   */
-  ssr?: boolean;
-  /**
-   * Opt out or into aborting request on unmount
-   */
-  abortOnUnmount?: boolean;
-}
-
-/**
- * Adds the `trpc` option to TanStack Query options.
- * @public
- */
-export interface TRPCQueryBaseOptions {
-  /**
-   * tRPC-related options
-   */
-  trpc?: TRPCReactRequestOptions;
-}
-
-/**
- * Extra fields that tRPC adds to the options it returns.
- * @public
- */
-export interface TRPCQueryOptionsResult {
-  /**
-   * tRPC details about the options, such as the procedure path.
-   */
-  trpc: {
-    /**
-     * The dot-separated procedure path, such as `post.byId`.
-     */
-    path: string;
-  };
-}
-
-/**
- * The kind of query a key matches. `any` matches both.
- * @public
- */
-export type QueryType = 'any' | 'infinite' | 'query';
-
-/**
- * A tRPC query key: the procedure path, then the input and query type.
- * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
- * @public
- */
-export type TRPCQueryKeyWithoutPrefix = [
-  path: string[],
-  opts?: { input?: unknown; type?: Exclude<QueryType, 'any'> },
-];
-
-/**
- * A tRPC query key that starts with a key prefix.
- * @see https://trpc.io/docs/client/tanstack-react-query/usage#keyPrefix
- * @public
- */
-export type TRPCQueryKeyWithPrefix = [
-  prefix: string[],
-  ...TRPCQueryKeyWithoutPrefix,
-];
-
-/**
- * A tRPC query key, with a prefix if `TPrefixEnabled` is `true`.
- * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
- */
-export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
-  TPrefixEnabled extends true
-    ? TRPCQueryKeyWithPrefix
-    : TRPCQueryKeyWithoutPrefix;
-
-/**
- * Any tRPC query key, with or without a prefix.
- */
-export type AnyTRPCQueryKey =
-  | TRPCQueryKeyWithoutPrefix
-  | TRPCQueryKeyWithPrefix;
+export type {
+  AnyTRPCQueryKey,
+  QueryType,
+  TRPCQueryKey,
+  TRPCQueryKeyWithoutPrefix,
+  TRPCQueryKeyWithPrefix,
+} from '../shared/queryKey';
+export type {
+  TRPCQueryBaseOptions,
+  TRPCQueryOptionsResult,
+  TRPCReactRequestOptions,
+} from '../shared/queryFn';
 
 /**
  * A tRPC mutation key that starts with a key prefix.

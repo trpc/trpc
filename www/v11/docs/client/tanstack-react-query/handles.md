@@ -59,6 +59,9 @@ export const appRouter = t.router({
     addComment: t.procedure
       .input(z.object({ postId: z.string(), text: z.string() }))
       .mutation(({ input }) => ({ id: 'c1', text: input.text })),
+    rename: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation(({ input }) => input),
   }),
 });
 export type AppRouter = typeof appRouter;
@@ -280,6 +283,58 @@ A handle carries the query's key and input, but no data. The data lives in the c
 
 The components that read handles are the same everywhere: with or without server components, and whether the handle came from a loader or from a component.
 
+## Using handles on their own {#standalone}
+
+An app that reads every query through a handle doesn't need `useTRPC()`. `createTRPCHandleContext` gives components a proxy that reads handles, and the tRPC client for mutations. With `createTRPCLoaderProxy` for the loaders, the app loads nothing else from `@trpc/tanstack-react-query`:
+
+```tsx twoslash
+// @include: handles-router
+// @filename: trpc/handles.tsx
+// ---cut---
+import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/router';
+
+export const { TRPCHandleProvider, useTRPCHandles, useTRPCClient } =
+  createTRPCHandleContext<AppRouter>();
+export type TRPC = TRPCHandleProxy<AppRouter>;
+```
+
+Render `<TRPCHandleProvider trpcClient={trpcClient} queryClient={queryClient}>` where you would render `<TRPCProvider>`. The post page's `Post` then reads its handle the same way, and renames the post with the client:
+
+```tsx twoslash
+// @include: handles-router
+// @filename: trpc/handles.tsx
+import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/router';
+
+export const { TRPCHandleProvider, useTRPCHandles, useTRPCClient } =
+  createTRPCHandleContext<AppRouter>();
+export type TRPC = TRPCHandleProxy<AppRouter>;
+// @filename: components/post.tsx
+// ---cut---
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPCClient, useTRPCHandles, type TRPC } from '~/trpc/handles';
+
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+  const trpc = useTRPCHandles();
+  const client = useTRPCClient();
+  const queryClient = useQueryClient();
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+  const rename = useMutation({
+    mutationFn: (title: string) =>
+      client.post.rename.mutate({ id: postQuery.data.id, title }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: trpc.post.byId.queryKey() }),
+  });
+  return <h1 onClick={() => rename.mutate('Renamed')}>{postQuery.data.title}</h1>;
+}
+```
+
+- `useTRPCHandles()` has the router's queries and their keys: `queryKey`, `infiniteQueryKey` and `pathKey`, for `fromHandle`, `waterfallHandle` and invalidation. It has no `queryOptions` and no mutations, and it can't load handles.
+- A handle has the same type whichever proxy built it, and `useTRPC()` reads it too, so an app can move one component at a time.
+- Both proxies use TanStack Query's `QueryClient` and hooks, and the same query keys as `useTRPC()`, so they share cache entries with it.
+
 ## Loading handles {#starting-a-query}
 
 A loader lists its queries as **entries**, and `loadHandles(trpc, entries)` starts them all at once, then returns a handle for each:
@@ -431,8 +486,8 @@ Each entry is one TanStack Query call with the procedure's `queryOptions` or `in
 | `ensureEntry(trpc.x, input, opts)`                                   | `await queryClient.ensureQueryData({ ...trpc.x.queryOptions(input, opts), revalidateIfStale: true })`                                                                    |
 | `fetchEntry(trpc.x, input, opts)`                                    | `await queryClient.fetchQuery(trpc.x.queryOptions(input, opts))`                                                                                                         |
 | `prefetchInfiniteEntry`, `ensureInfiniteEntry`, `fetchInfiniteEntry` | `prefetchInfiniteQuery`, `ensureInfiniteQueryData` (with `revalidateIfStale: true`), `fetchInfiniteQuery`                                                                |
-| `waterfallHandle(trpc.x, input)` on `useTRPC()`, in render           | [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery)`(trpc.x.queryOptions(input))`, as a plain call instead of a hook |
-| `waterfallHandle(trpc.x, input)` on other proxies                    | Nothing: the reader's `useQuery(trpc.x.queryOptions(input))` starts the query                                                                                            |
+| `waterfallHandle(trpc.x, input)` on `useTRPC()` or `useTRPCHandles()`, in render | [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery)`(trpc.x.queryOptions(input))`, as a plain call instead of a hook |
+| `waterfallHandle(trpc.x, input)` on a loader proxy | Nothing: the reader's `useQuery(trpc.x.queryOptions(input))` starts the query                                                                                            |
 | `fromHandle(trpc, handle, opts)`                                     | `trpc.x.queryOptions(handle.input, opts)`, with `x` taken from the handle                                                                                                |
 
 The `queryClient` is the one the proxy was created with. The entry names follow the TanStack Query method each one calls.
@@ -474,7 +529,7 @@ Avoid awaiting one load and then starting another: the second load's requests wa
 | No loaders or server components, such as a SPA | The top of the page, [as it renders](#in-render) | `waterfallHandle` on `useTRPC()`        |
 
 - In server components, the request's `QueryClient` starts empty, so an ensure entry always waits for the request.
-- Only a proxy from `createTRPCLoaderProxy` can load handles. It takes the same options as `createTRPCOptionsProxy` and has the same helpers, such as `queryOptions`. Its type is `TRPCLoaderOptionsProxy<AppRouter>`: use it to type a router context. Both come from `@trpc/tanstack-react-query/unstable-handles`. Passing `useTRPC()`, a proxy from `createTRPCOptionsProxy`, or their procedures to `loadHandles` or an entry is a type error. In components, build handles with [`waterfallHandle`](#waterfall-handles).
+- Only a proxy from `createTRPCLoaderProxy` can load handles. It takes the same options as `createTRPCOptionsProxy`, and has the router's queries and their keys, but not helpers such as `queryOptions`. Its type is `TRPCLoaderProxy<AppRouter>`: use it to type a router context. Both come from `@trpc/tanstack-react-query/unstable-handles`. Passing `useTRPC()`, `useTRPCHandles()`, a proxy from `createTRPCOptionsProxy`, or their procedures to `loadHandles` or an entry is a type error. In components, build handles with [`waterfallHandle`](#waterfall-handles).
 - `loadHandles` takes the root proxy, `trpc`, and one load can take entries from any procedure.
 
 ## Start every query from the URL {#url-as-input}
@@ -939,7 +994,7 @@ const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, { authorId });
 //    ^?
 ```
 
-- On `useTRPC()`, it starts the query, following the rule of TanStack Query's [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery): only if the cache has no entry for it, with no data, no error and no request in flight. The cache looks it up by TanStack Query's query hash, which ignores the order of keys in the input, so re-renders with the same input start nothing. When an input changes, the new query starts.
+- On `useTRPC()` or `useTRPCHandles()`, it starts the query, following the rule of TanStack Query's [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery): only if the cache has no entry for it, with no data, no error and no request in flight. The cache looks it up by TanStack Query's query hash, which ignores the order of keys in the input, so re-renders with the same input start nothing. When an input changes, the new query starts.
 - On a proxy from `createTRPCLoaderProxy`, it starts nothing: the component that reads the handle fetches when it renders.
 - It returns the same handle type as an entry, so it goes to the same components.
 - It's a plain call, not a hook: you can call it conditionally, and React Compiler can memoize it.
@@ -992,7 +1047,7 @@ export function PostPage(props: { id: string }) {
 - Build handles high in the tree: in the page, not in the components that read them. A handle built below a component that suspends starts only after that component's data arrives.
 - A query with cached data renders it at once. The component that reads the handle refetches it in the background if it's stale, as `useQuery` and `useSuspenseQuery` do by default.
 - With server rendering, the queries start in the server render too. TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start) streams them to the browser. Elsewhere, such as React Router's framework mode, nothing sends their data to the browser, which fetches them again: load them in a [loader](#react-router) instead.
-- A proxy from `createTRPCLoaderProxy` is for loaders and server components, and its waterfall handles start nothing. Build waterfall handles in render with `useTRPC()`.
+- A proxy from `createTRPCLoaderProxy` is for loaders and server components, and its waterfall handles start nothing. Build waterfall handles in render with `useTRPC()` or `useTRPCHandles()`.
 
 ### Switching input {#switching-input}
 
@@ -1234,7 +1289,7 @@ export function makeQueryClient() {
 import type { QueryClient } from '@tanstack/react-query';
 import {
   createTRPCLoaderProxy,
-  type TRPCLoaderOptionsProxy,
+  type TRPCLoaderProxy,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { createContext } from 'react-router';
 import { appRouter, type AppRouter } from '~/server/router';
@@ -1242,7 +1297,7 @@ import { makeQueryClient } from './query-client';
 
 export const trpcContext = createContext<{
   queryClient: QueryClient;
-  trpc: TRPCLoaderOptionsProxy<AppRouter>;
+  trpc: TRPCLoaderProxy<AppRouter>;
 }>();
 
 export function createServerTRPC() {
@@ -1386,7 +1441,7 @@ export const makeQueryClient = () => new QueryClient();
 import type { QueryClient } from '@tanstack/react-query';
 import {
   createTRPCLoaderProxy,
-  type TRPCLoaderOptionsProxy,
+  type TRPCLoaderProxy,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { createContext } from 'react-router';
 import { appRouter, type AppRouter } from '~/server/router';
@@ -1394,7 +1449,7 @@ import { makeQueryClient } from './query-client';
 
 export const trpcContext = createContext<{
   queryClient: QueryClient;
-  trpc: TRPCLoaderOptionsProxy<AppRouter>;
+  trpc: TRPCLoaderProxy<AppRouter>;
 }>();
 
 export function createServerTRPC() {

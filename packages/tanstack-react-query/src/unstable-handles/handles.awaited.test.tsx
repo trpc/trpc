@@ -26,7 +26,7 @@ import {
   fromHandle,
 } from '.';
 import type {
-  TRPCLoaderOptionsProxy,
+  TRPCLoaderProxy,
   inferQueryHandle,
   inferInfiniteQueryHandle,
 } from '.';
@@ -57,7 +57,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCLoaderOptionsProxy<AppRouter>;
+type TRPC = TRPCLoaderProxy<AppRouter>;
 type Post = { id: string; title: string };
 type ListPage = { items: number[]; nextCursor: number };
 

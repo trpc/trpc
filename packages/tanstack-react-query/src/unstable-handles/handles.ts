@@ -6,48 +6,41 @@ import type {
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError } from '@tanstack/react-query';
 import { isTRPCClientError } from '@trpc/client';
-import type {
-  DecorateInfiniteQueryProcedure,
-  DecorateQueryProcedure,
-  DecorateRouterKeyable,
-} from '../internals/createOptionsProxy';
-import type {
-  UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
-  UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
-} from '../internals/infiniteQueryOptions';
-import type {
-  UnusedSkipTokenTRPCQueryOptionsIn,
-  UnusedSkipTokenTRPCQueryOptionsOut,
-} from '../internals/queryOptions';
-import type {
-  ExtractCursorType,
-  ResolverDef,
-  TRPCInfiniteData,
-  TRPCQueryBaseOptions,
-  TRPCQueryKey,
-} from '../internals/types';
-import { readQueryKey } from '../internals/utils';
-import type { ErrorOf } from './entryError';
+import type { TRPCQueryBaseOptions } from '../shared/queryFn';
+import type { AnyTRPCQueryKey } from '../shared/queryKey';
+import { readQueryKey } from '../shared/queryKey';
 import { entryCause, TRPCEntryError } from './entryError';
-import type { TRPCLoaderBrand } from './loaderProxy';
-import { isLoaderProxy } from './loaderProxy';
+import { isLoaderProxy } from './proxy';
+import type {
+  DefOf,
+  ErrorOf,
+  ExtractCursorType,
+  HandleInfiniteQueryOptionsIn,
+  HandleInfiniteQueryOptionsOut,
+  HandleQueryOptionsIn,
+  HandleQueryOptionsOut,
+  InfiniteDefOf,
+  InfiniteHandleInput,
+  InfiniteQueryProcedureLike,
+  QueryProcedureLike,
+  TRPCHandleDef,
+  TRPCHandleRouter,
+  TRPCInfiniteData,
+  TRPCLoaderBrand,
+} from './types';
 
 declare const handleDef: unique symbol;
 declare const entryDef: unique symbol;
-
-type InfiniteHandleInput<TInput> = TInput extends object
-  ? Omit<TInput, 'cursor' | 'direction'>
-  : TInput;
 
 /**
  * A plain tuple typed with the procedure's input. TanStack Router's serializability check
  * rejects `unknown` inputs and `DataTag`-ged keys, so handles in `beforeLoad` need this shape.
  */
 type HandleQueryKey<
-  TDef extends ResolverDef,
+  TDef extends TRPCHandleDef,
   TInput,
   TType extends 'query' | 'infinite',
-> = TDef['featureFlags']['keyPrefix'] extends true
+> = TDef['keyPrefix'] extends true
   ? [prefix: string[], path: string[], opts?: { input?: TInput; type?: TType }]
   : [path: string[], opts?: { input?: TInput; type?: TType }];
 
@@ -55,7 +48,7 @@ type HandleQueryKey<
  * A serializable reference to a query, from `loadHandles()` or `waterfallHandle()`.
  * Pass it to a component and read it with `fromHandle(trpc, handle)`.
  */
-export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
+export interface TRPCQueryHandle<TDef extends TRPCHandleDef = TRPCHandleDef> {
   /**
    * Type-only: never present at runtime. Required, so only
    * `loadHandles` and `waterfallHandle` create handles.
@@ -71,7 +64,7 @@ export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
  * `waterfallInfiniteHandle()`. Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
  */
 export interface TRPCInfiniteQueryHandle<
-  TDef extends ResolverDef = ResolverDef,
+  TDef extends TRPCHandleDef = TRPCHandleDef,
 > {
   /**
    * Type-only: never present at runtime. Required, so only
@@ -103,7 +96,7 @@ export type TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
  * Creating it starts nothing.
  */
 export interface TRPCQueryEntry<
-  TDef extends ResolverDef = ResolverDef,
+  TDef extends TRPCHandleDef = TRPCHandleDef,
   TKind extends TRPCEntryKind = TRPCEntryKind,
 > {
   /** Type-only: never present at runtime. */
@@ -115,7 +108,7 @@ export interface TRPCQueryEntry<
  * `fetchInfiniteEntry` or `ensureInfiniteEntry`. Creating it starts nothing.
  */
 export interface TRPCInfiniteQueryEntry<
-  TDef extends ResolverDef = ResolverDef,
+  TDef extends TRPCHandleDef = TRPCHandleDef,
   TKind extends TRPCEntryKind = TRPCEntryKind,
 > {
   /** Type-only: never present at runtime. */
@@ -146,7 +139,7 @@ type HandlesOf<TEntries extends Record<string, AnyTRPCEntry>> = {
 };
 
 type DefOfEntry<TEntry> = TEntry extends {
-  readonly [entryDef]: { def: infer TDef extends ResolverDef };
+  readonly [entryDef]: { def: infer TDef extends TRPCHandleDef };
 }
   ? TDef
   : never;
@@ -176,7 +169,7 @@ type ResultsOf<TEntries extends Record<string, AnyTRPCEntry>> = {
  * the error it failed with.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
  */
-export type TRPCEntryResult<TDef extends ResolverDef, TData> =
+export type TRPCEntryResult<TDef extends TRPCHandleDef, TData> =
   | { readonly status: 'success'; readonly data: TData }
   | { readonly status: 'error'; readonly error: TRPCEntryError<TDef> };
 
@@ -206,7 +199,7 @@ export interface TRPCEntryOptions
     >,
     TRPCQueryBaseOptions {}
 
-type HandleGetNextPageParam<TDef extends ResolverDef> =
+type HandleGetNextPageParam<TDef extends TRPCHandleDef> =
   GetNextPageParamFunction<
     NonNullable<ExtractCursorType<TDef['input']>> | null,
     TDef['output']
@@ -217,7 +210,7 @@ type HandleGetNextPageParam<TDef extends ResolverDef> =
  * to load several pages up front.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
-export type TRPCInfiniteEntryOptions<TDef extends ResolverDef> =
+export type TRPCInfiniteEntryOptions<TDef extends TRPCHandleDef> =
   TRPCEntryOptions & {
     initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
   } & (
@@ -236,19 +229,18 @@ export type TRPCInfiniteEntryOptions<TDef extends ResolverDef> =
         }
     );
 
-type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
+type EntryArgs<TDef extends TRPCHandleDef> = undefined extends TDef['input']
   ? [input?: TDef['input'], opts?: TRPCEntryOptions]
   : [input: TDef['input'], opts?: TRPCEntryOptions];
 
-type WaterfallArgs<TDef extends ResolverDef> = undefined extends TDef['input']
+type WaterfallArgs<TDef extends TRPCHandleDef> = undefined extends TDef['input']
   ? [input?: TDef['input']]
   : [input: TDef['input']];
 
-type LoaderQueryProcedure<TDef extends ResolverDef> =
-  DecorateQueryProcedure<TDef> & TRPCLoaderBrand<'procedure'>;
+type LoaderQueryProcedure = QueryProcedureLike & TRPCLoaderBrand<'procedure'>;
 
-type LoaderInfiniteQueryProcedure<TDef extends ResolverDef> =
-  DecorateInfiniteQueryProcedure<TDef> & TRPCLoaderBrand<'procedure'>;
+type LoaderInfiniteQueryProcedure = InfiniteQueryProcedureLike &
+  TRPCLoaderBrand<'procedure'>;
 
 /**
  * The handle type of a query procedure, for typing props.
@@ -258,26 +250,21 @@ type LoaderInfiniteQueryProcedure<TDef extends ResolverDef> =
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
  */
-export type inferQueryHandle<TProcedure extends DecorateQueryProcedure<any>> =
-  TProcedure extends DecorateQueryProcedure<infer TDef>
-    ? TRPCQueryHandle<TDef>
-    : never;
+export type inferQueryHandle<TProcedure extends QueryProcedureLike> =
+  TRPCQueryHandle<DefOf<TProcedure>>;
 
 /**
  * The handle type of an infinite query procedure, for typing props.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
  */
 export type inferInfiniteQueryHandle<
-  TProcedure extends DecorateInfiniteQueryProcedure<any>,
-> =
-  TProcedure extends DecorateInfiniteQueryProcedure<infer TDef>
-    ? TRPCInfiniteQueryHandle<TDef>
-    : never;
+  TProcedure extends InfiniteQueryProcedureLike,
+> = TRPCInfiniteQueryHandle<InfiniteDefOf<TProcedure>>;
 const notAHandle =
   'Expected a tRPC handle from `loadHandles()` or `waterfallHandle()`';
 
 function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
-  const queryKey = handle?.queryKey as unknown as TRPCQueryKey<any> | undefined;
+  const queryKey = handle?.queryKey as unknown as AnyTRPCQueryKey | undefined;
   if (!Array.isArray(queryKey)) {
     throw new Error(`${notAHandle}, got ${JSON.stringify(handle)}`);
   }
@@ -616,7 +603,7 @@ function readLoaderProxy(proxy: unknown, fn: string) {
   const ctx = readProxy(proxy, fn);
   if (!ctx.isLoader) {
     throw new Error(
-      `\`${fn}()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. ` +
+      `\`${fn}()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\`, \`useTRPCHandles()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. ` +
         `Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` ` +
         `and wait where you read it, with \`useSuspenseQuery\`. ` +
         `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
@@ -695,10 +682,10 @@ function waterfall(opts: {
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
  */
-export function isTRPCEntryError<TDef extends ResolverDef>(
+export function isTRPCEntryError<TProcedure extends QueryProcedureLike>(
   error: unknown,
-  procedure: DecorateQueryProcedure<TDef>,
-): error is TRPCEntryError<TDef>;
+  procedure: TProcedure,
+): error is TRPCEntryError<DefOf<TProcedure>>;
 export function isTRPCEntryError(error: unknown): error is TRPCEntryError;
 export function isTRPCEntryError(error: unknown, procedure?: unknown) {
   if (!(error instanceof TRPCEntryError)) {
@@ -779,10 +766,10 @@ export function loadHandlesSettled<
  * the handle is read. Creating the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#prefetch
  */
-export function prefetchEntry<TDef extends ResolverDef>(
-  procedure: LoaderQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
-): TRPCQueryEntry<TDef, 'prefetch'>;
+export function prefetchEntry<TProcedure extends LoaderQueryProcedure>(
+  procedure: TProcedure,
+  ...args: EntryArgs<DefOf<TProcedure>>
+): TRPCQueryEntry<DefOf<TProcedure>, 'prefetch'>;
 export function prefetchEntry(
   procedure: unknown,
   input?: unknown,
@@ -804,10 +791,10 @@ export function prefetchEntry(
  * Creating the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
  */
-export function fetchEntry<TDef extends ResolverDef>(
-  procedure: LoaderQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
-): TRPCQueryEntry<TDef, 'fetch'>;
+export function fetchEntry<TProcedure extends LoaderQueryProcedure>(
+  procedure: TProcedure,
+  ...args: EntryArgs<DefOf<TProcedure>>
+): TRPCQueryEntry<DefOf<TProcedure>, 'fetch'>;
 export function fetchEntry(
   procedure: unknown,
   input?: unknown,
@@ -830,10 +817,10 @@ export function fetchEntry(
  * refetched in the background. Creating the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#ensure
  */
-export function ensureEntry<TDef extends ResolverDef>(
-  procedure: LoaderQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
-): TRPCQueryEntry<TDef, 'ensure'>;
+export function ensureEntry<TProcedure extends LoaderQueryProcedure>(
+  procedure: TProcedure,
+  ...args: EntryArgs<DefOf<TProcedure>>
+): TRPCQueryEntry<DefOf<TProcedure>, 'ensure'>;
 export function ensureEntry(
   procedure: unknown,
   input?: unknown,
@@ -853,11 +840,13 @@ export function ensureEntry(
  * Like `prefetchEntry`, for an infinite query. Loads the first page unless `pages` is set.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
-export function prefetchInfiniteEntry<TDef extends ResolverDef>(
-  procedure: LoaderInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-  opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'prefetch'> {
+export function prefetchInfiniteEntry<
+  TProcedure extends LoaderInfiniteQueryProcedure,
+>(
+  procedure: TProcedure,
+  input: InfiniteDefOf<TProcedure>['input'],
+  opts?: TRPCInfiniteEntryOptions<InfiniteDefOf<TProcedure>>,
+): TRPCInfiniteQueryEntry<InfiniteDefOf<TProcedure>, 'prefetch'> {
   return entry({
     fn: 'prefetchInfiniteEntry',
     type: 'infinite',
@@ -872,11 +861,13 @@ export function prefetchInfiniteEntry<TDef extends ResolverDef>(
  * Like `fetchEntry`, for an infinite query.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
-export function fetchInfiniteEntry<TDef extends ResolverDef>(
-  procedure: LoaderInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-  opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'fetch'> {
+export function fetchInfiniteEntry<
+  TProcedure extends LoaderInfiniteQueryProcedure,
+>(
+  procedure: TProcedure,
+  input: InfiniteDefOf<TProcedure>['input'],
+  opts?: TRPCInfiniteEntryOptions<InfiniteDefOf<TProcedure>>,
+): TRPCInfiniteQueryEntry<InfiniteDefOf<TProcedure>, 'fetch'> {
   return entry({
     fn: 'fetchInfiniteEntry',
     type: 'infinite',
@@ -891,11 +882,13 @@ export function fetchInfiniteEntry<TDef extends ResolverDef>(
  * Like `ensureEntry`, for an infinite query.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
-export function ensureInfiniteEntry<TDef extends ResolverDef>(
-  procedure: LoaderInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-  opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'ensure'> {
+export function ensureInfiniteEntry<
+  TProcedure extends LoaderInfiniteQueryProcedure,
+>(
+  procedure: TProcedure,
+  input: InfiniteDefOf<TProcedure>['input'],
+  opts?: TRPCInfiniteEntryOptions<InfiniteDefOf<TProcedure>>,
+): TRPCInfiniteQueryEntry<InfiniteDefOf<TProcedure>, 'ensure'> {
   return entry({
     fn: 'ensureInfiniteEntry',
     type: 'infinite',
@@ -915,21 +908,23 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
  * it starts nothing, and the component that reads the handle fetches when it renders.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
  */
-export function waterfallHandle<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  ...args: WaterfallArgs<TDef>
-): TRPCQueryHandle<TDef>;
+export function waterfallHandle<TProcedure extends QueryProcedureLike>(
+  procedure: TProcedure,
+  ...args: WaterfallArgs<DefOf<TProcedure>>
+): TRPCQueryHandle<DefOf<TProcedure>>;
 /**
  * Switches a handle, like one a loader passed down, to a new input, like a term the
  * user is typing. While the new input maps to the handle's own query, it returns the
  * handle as is, so the first render reads what the loader started.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#switching-input
  */
-export function waterfallHandle<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  handle: NoInfer<TRPCQueryHandle<TDef>>,
-  switchInput: (input: NoInfer<TDef['input']>) => NoInfer<TDef['input']>,
-): TRPCQueryHandle<TDef>;
+export function waterfallHandle<TProcedure extends QueryProcedureLike>(
+  procedure: TProcedure,
+  handle: NoInfer<TRPCQueryHandle<DefOf<TProcedure>>>,
+  switchInput: (
+    input: NoInfer<DefOf<TProcedure>['input']>,
+  ) => NoInfer<DefOf<TProcedure>['input']>,
+): TRPCQueryHandle<DefOf<TProcedure>>;
 export function waterfallHandle(
   procedure: unknown,
   inputOrHandle?: unknown,
@@ -948,21 +943,25 @@ export function waterfallHandle(
  * Like `waterfallHandle`, for an infinite query.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
  */
-export function waterfallInfiniteHandle<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-): TRPCInfiniteQueryHandle<TDef>;
+export function waterfallInfiniteHandle<
+  TProcedure extends InfiniteQueryProcedureLike,
+>(
+  procedure: TProcedure,
+  input: InfiniteDefOf<TProcedure>['input'],
+): TRPCInfiniteQueryHandle<InfiniteDefOf<TProcedure>>;
 /**
  * Like `waterfallHandle`'s switch form, for an infinite query.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#switching-input
  */
-export function waterfallInfiniteHandle<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  handle: NoInfer<TRPCInfiniteQueryHandle<TDef>>,
+export function waterfallInfiniteHandle<
+  TProcedure extends InfiniteQueryProcedureLike,
+>(
+  procedure: TProcedure,
+  handle: NoInfer<TRPCInfiniteQueryHandle<InfiniteDefOf<TProcedure>>>,
   switchInput: (
-    input: NoInfer<InfiniteHandleInput<TDef['input']>>,
-  ) => NoInfer<InfiniteHandleInput<TDef['input']>>,
-): TRPCInfiniteQueryHandle<TDef>;
+    input: NoInfer<InfiniteHandleInput<InfiniteDefOf<TProcedure>['input']>>,
+  ) => NoInfer<InfiniteHandleInput<InfiniteDefOf<TProcedure>['input']>>,
+): TRPCInfiniteQueryHandle<InfiniteDefOf<TProcedure>>;
 export function waterfallInfiniteHandle(
   procedure: unknown,
   inputOrHandle: unknown,
@@ -984,37 +983,37 @@ export function waterfallInfiniteHandle(
  * `trpc` is the proxy or a router on the handle's path, usually `useTRPC()`.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#reading-a-handle
  */
-export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
-  trpc: DecorateRouterKeyable<NoInfer<TDef['featureFlags']>>,
+export function fromHandle<TDef extends TRPCHandleDef, TData = TDef['output']>(
+  trpc: TRPCHandleRouter<NoInfer<TDef['keyPrefix']>>,
   handle: TRPCQueryHandle<TDef>,
-  opts?: UnusedSkipTokenTRPCQueryOptionsIn<
+  opts?: HandleQueryOptionsIn<
     NoInfer<TDef['output']>,
     TData,
     ErrorOf<TDef>,
-    TDef['featureFlags']
+    TDef['keyPrefix']
   >,
-): UnusedSkipTokenTRPCQueryOptionsOut<
+): HandleQueryOptionsOut<
   TDef['output'],
   TData,
   ErrorOf<TDef>,
-  TDef['featureFlags']
+  TDef['keyPrefix']
 >;
-export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
-  trpc: DecorateRouterKeyable<NoInfer<TDef['featureFlags']>>,
+export function fromHandle<TDef extends TRPCHandleDef, TData = TDef['output']>(
+  trpc: TRPCHandleRouter<NoInfer<TDef['keyPrefix']>>,
   handle: TRPCInfiniteQueryHandle<TDef>,
-  opts: UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+  opts: HandleInfiniteQueryOptionsIn<
     TDef['input'],
     NoInfer<TDef['output']>,
     TData,
     ErrorOf<TDef>,
-    TDef['featureFlags']
+    TDef['keyPrefix']
   >,
-): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+): HandleInfiniteQueryOptionsOut<
   TDef['input'],
   TDef['output'],
   TData,
   ErrorOf<TDef>,
-  TDef['featureFlags']
+  TDef['keyPrefix']
 >;
 export function fromHandle(
   trpc: unknown,
