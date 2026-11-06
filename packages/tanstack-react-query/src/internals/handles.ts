@@ -648,12 +648,14 @@ function waterfall(opts: {
  * check that the entry was for it, which types `error.cause` with its errors.
  * @example
  * ```ts
- * } catch (error) {
+ * const [handles] = await loadHandles(trpc, {
+ *   post: ensureEntry(trpc.post.byId, { id }),
+ * }).catch((error: unknown) => {
  *   if (isTRPCEntryError(error, trpc.post.byId) && error.code === 'NOT_FOUND') {
  *     throw notFound();
  *   }
  *   throw error;
- * }
+ * });
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
  */

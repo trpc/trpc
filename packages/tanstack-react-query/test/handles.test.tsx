@@ -116,11 +116,9 @@ describe('types', () => {
   test('isTRPCEntryError narrows to the error of the procedure it matches', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    try {
-      await loadHandles(trpc, {
-        post: ensureEntry(trpc.post.byId, { id: '1' }),
-      });
-    } catch (error) {
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: '1' }),
+    }).catch((error: unknown) => {
       // @ts-expect-error a rejection is `unknown` until it's narrowed
       void error.cause;
       if (isTRPCEntryError(error, trpc.post.byId)) {
@@ -138,7 +136,11 @@ describe('types', () => {
           TRPCClientErrorLike<any> | TRPCError
         >();
       }
-    }
+      throw error;
+    });
+    expectTypeOf(handles.post).toEqualTypeOf<
+      inferQueryHandle<TRPC['post']['byId']>
+    >();
   });
 
   test('a load gives a handle for every entry and data for fetch and ensure entries', async () => {

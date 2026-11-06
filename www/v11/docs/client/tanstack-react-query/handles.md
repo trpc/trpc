@@ -1624,7 +1624,7 @@ When an ensure or fetch entry fails, `loadHandles` rejects with a `TRPCEntryErro
 - `error.code`: the tRPC error code, such as `'NOT_FOUND'`.
 - `error.cause`: the request's error. That's a `TRPCError` on the server proxy, and a `TRPCClientError` on a client-backed proxy, such as one in a TanStack Start loader.
 
-`isTRPCEntryError(error, trpc.post.byId)` checks that the failed entry was for that procedure, and types `error.cause` with its errors. In the post page at the top, only the post is awaited, so only the post can make the load reject. If the page waits for the comments too, check which one failed, so a missing post gets a 404:
+`isTRPCEntryError(error, trpc.post.byId)` checks that the failed entry was for that procedure, and types `error.cause` with its errors. In the post page at the top, only the post is awaited, so only the post can make the load reject. If the page waits for the comments too, chain `.catch` to check which one failed, so a missing post gets a 404:
 
 ```ts twoslash
 // @include: handles-router
@@ -1642,22 +1642,20 @@ import {
 } from '@trpc/tanstack-react-query/unstable-handles';
 
 async function loader(id: string) {
-  try {
-    const [handles] = await loadHandles(trpc, {
-      post: ensureEntry(trpc.post.byId, { id }),
-      comments: ensureInfiniteEntry(trpc.post.comments, { postId: id }),
-    });
-    return handles;
-  } catch (error) {
+  const [handles] = await loadHandles(trpc, {
+    post: ensureEntry(trpc.post.byId, { id }),
+    comments: ensureInfiniteEntry(trpc.post.comments, { postId: id }),
+  }).catch((error: unknown) => {
     if (isTRPCEntryError(error, trpc.post.byId) && error.code === 'NOT_FOUND') {
       notFound();
     }
     if (isTRPCEntryError(error, trpc.post.comments)) {
       reportError(error.cause);
-      //                ^?
+      //              ^?
     }
     throw error;
-  }
+  });
+  return handles;
 }
 ```
 
