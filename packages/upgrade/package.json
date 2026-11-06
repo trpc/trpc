@@ -1,6 +1,6 @@
 {
   "name": "@trpc/upgrade",
-  "version": "11.24.0",
+  "version": "11.25.0",
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
