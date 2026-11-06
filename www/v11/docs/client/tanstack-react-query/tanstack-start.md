@@ -52,7 +52,13 @@ export const appRouter = t.router({
   post: t.router({
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(({ input }) => ({ id: input.id, title: 'Hello' })),
+      .query(({ input }) => ({ id: input.id, title: 'Hello', authorId: 'u1' })),
+    byAuthor: t.procedure
+      .input(z.object({ authorId: z.string(), cursor: z.number().nullish() }))
+      .query(() => ({
+        items: [] as { id: string; title: string }[],
+        nextCursor: null as number | null,
+      })),
     comments: t.procedure
       .input(
         z.object({
@@ -177,6 +183,24 @@ export function Comments(props: {
     }),
   );
   return <p>{commentsQuery.data.pages.length} pages</p>;
+}
+
+// @filename: components/more-by-author.tsx
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC, type TRPC } from '~/lib/trpc';
+
+export function MoreByAuthor(props: {
+  posts: inferInfiniteQueryHandle<TRPC['post']['byAuthor']>;
+}) {
+  const trpc = useTRPC();
+  const postsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.posts, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  return <p>{postsQuery.data.pages.length} pages</p>;
 }
 ```
 
@@ -624,6 +648,96 @@ If a query can't take its input from the URL, for example because it needs an id
 ## Handles in `beforeLoad` {#before-load}
 
 `beforeLoad` can return handles too, for example to start a query in a parent route and read it in child routes. TanStack Router checks that values returned from `beforeLoad` are serializable, and handles pass that check as they are: their query keys and inputs are typed from the procedure.
+
+<details>
+<summary>Escape hatch: loading a dependent query before render (TanStack Router)</summary>
+
+`beforeLoad` runs before the loader, so it can wait for the post and hand its data to the loader through the route context. The loader then starts more by the post's author from `post.authorId`:
+
+```tsx twoslash title='src/routes/posts.$id.tsx'
+// @include: start-app
+// @include: start-lib
+// @include: start-router
+// @include: start-components
+// @filename: routeTree.gen.ts
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as PostsIdRouteImport } from './routes/posts.$id';
+
+const PostsIdRoute = PostsIdRouteImport.update({
+  id: '/posts/$id',
+  path: '/posts/$id',
+  getParentRoute: () => rootRouteImport,
+} as any);
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/posts/$id': {
+      id: '/posts/$id';
+      path: '/posts/$id';
+      fullPath: '/posts/$id';
+      preLoaderRoute: typeof PostsIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+  }
+}
+
+export const routeTree = rootRouteImport.addChildren({ PostsIdRoute });
+
+import type { getRouter } from './router';
+import type { createStart } from '@tanstack/react-start';
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
+  }
+}
+// @filename: routes/posts.$id.tsx
+// ---cut---
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { Comments } from '~/components/comments';
+import { MoreByAuthor } from '~/components/more-by-author';
+import { Post } from '~/components/post';
+
+export const Route = createFileRoute('/posts/$id')({
+  beforeLoad: async ({ context: { trpc }, params }) => {
+    const [handles, data] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
+    });
+    return { postHandles: handles, post: data.post };
+  },
+  loader: async ({ context: { trpc, postHandles, post } }) => {
+    // Starts only after beforeLoad has the post
+    const [handles] = await loadHandles(trpc, {
+      moreByAuthor: prefetchInfiniteEntry(trpc.post.byAuthor, {
+        authorId: post.authorId,
+      }),
+    });
+    return { ...postHandles, ...handles };
+  },
+  component: PostPage,
+});
+
+function PostPage() {
+  const loaderData = Route.useLoaderData();
+  return (
+    <>
+      <Post post={loaderData.post} />
+      <Comments comments={loaderData.comments} />
+      <MoreByAuthor posts={loaderData.moreByAuthor} />
+    </>
+  );
+}
+```
+
+This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or a [`waterfallHandle`](/docs/client/tanstack-react-query/handles#waterfall-in-a-component) in the component, which fetches the dependent query in render instead. Reach for `beforeLoad` only when the dependent data must be in the cache before the page renders.
+
+</details>
 
 ## Don't return handles from server functions {#server-functions}
 

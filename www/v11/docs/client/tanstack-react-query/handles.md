@@ -28,24 +28,22 @@ const t = initTRPC.create();
 export type Post = { id: string; title: string; authorId: string };
 
 export const appRouter = t.router({
-  viewer: t.procedure.query(() => ({ id: 'u1', name: 'Alex', orgId: 'o1' })),
-  org: t.router({
-    byId: t.procedure
-      .input(z.object({ orgId: z.string() }))
-      .query(({ input }) => ({ id: input.orgId, name: 'tRPC' })),
-  }),
-  user: t.router({
-    byId: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) => ({ id: input.id, name: 'Alex' })),
-  }),
+  viewer: t.procedure.query(() => ({ id: 'u1', name: 'Alex' })),
   post: t.router({
     byId: t.procedure
       .input(z.object({ id: z.string() }))
       .query(({ input }): Post => ({ id: input.id, title: 'Hello', authorId: 'u1' })),
-    related: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query((): Post[] => []),
+    byAuthor: t.procedure
+      .input(
+        z.object({
+          authorId: z.string(),
+          cursor: z.number().nullish(),
+        }),
+      )
+      .query(() => ({
+        items: [] as Post[],
+        nextCursor: null as number | null,
+      })),
     comments: t.procedure
       .input(
         z.object({
@@ -128,33 +126,108 @@ export function Comments(props: {
   );
   return <p>{commentsQuery.data.pages.length} pages</p>;
 }
+
+// @filename: components/more-by-author.tsx
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC, type TRPC } from '~/trpc/client';
+
+export function MoreByAuthor(props: {
+  posts: inferInfiniteQueryHandle<TRPC['post']['byAuthor']>;
+}) {
+  const trpc = useTRPC();
+  const postsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.posts, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  return (
+    <ul>
+      {postsQuery.data.pages.flatMap((page) =>
+        page.items.map((post) => <li key={post.id}>{post.title}</li>),
+      )}
+    </ul>
+  );
+}
 ```
+
+Take a post page. Its loader, or server component, lists the queries the page needs and loads them in one call:
+
+```ts twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: loader.ts
+// @errors: 2339
+import { trpc } from '~/trpc/server';
+declare const id: string;
+// ---cut---
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+
+const [handles, data] = await loadHandles(trpc, {
+  // 1. The post: the load waits for it
+  post: ensureEntry(trpc.post.byId, { id }),
+  // 2. Its comments: start at the same time, and stream in later
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+});
+data.post.title;
+data.comments;
+```
+
+`data` only has the entries the load waited for. The comments may have no data yet, so reading them is a type error, not a silent `undefined`.
+
+The page gets the handles as props, and reads them without naming a procedure or repeating an input:
 
 ```tsx twoslash
 // @include: handles-router
 // @include: handles-trpc
-// @filename: intro.tsx
-import { useSuspenseQuery } from '@tanstack/react-query';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+// @include: handles-components
+// @filename: post-page.tsx
+import type { inferInfiniteQueryHandle, inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPC } from '~/trpc/client';
-import { trpc } from '~/trpc/server';
-declare const id: string;
-declare const props: { post: inferQueryHandle<TRPC['post']['byId']> };
 // ---cut---
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   fromHandle,
-  loadHandles,
-  prefetchEntry,
+  waterfallInfiniteHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { Comments } from '~/components/comments';
+import { MoreByAuthor } from '~/components/more-by-author';
+import { useTRPC } from '~/trpc/client';
 
-// Server component or route loader: list the queries, and load them in one call
-const [handles] = await loadHandles(trpc, {
-  post: prefetchEntry(trpc.post.byId, { id }),
-});
+export function PostPage(props: {
+  post: inferQueryHandle<TRPC['post']['byId']>;
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
+}) {
+  const trpc = useTRPC();
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+  // 3. More by the author: ⚠️ a waterfall
+  const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, {
+    authorId: postQuery.data.authorId,
+  });
 
-// Component: no procedure, no input, fully typed
-const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+  return (
+    <article>
+      <h1>{postQuery.data.title}</h1>
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={props.comments} />
+      </Suspense>
+      <Suspense fallback={<p>Loading more by this author…</p>}>
+        <MoreByAuthor posts={moreByAuthor} />
+      </Suspense>
+    </article>
+  );
+}
 ```
+
+:::warning ⚠️ Waterfall
+`post.byAuthor` needs the post's `authorId`, which the page only has once the post has loaded. So its request starts after the post's request has finished, a full round trip later. `waterfallHandle` and `waterfallInfiniteHandle` keep that visible in the code. To remove the wait, let the loader start it from the URL, for example with a procedure that takes the post's id: see [If the URL isn't enough, reshape the procedure](#reshape-procedures).
+:::
 
 Handles fix a gap in the usual prefetch pattern: the server prefetches `trpc.post.byId.queryOptions({ id })`, and the client repeats the same procedure and input:
 
@@ -182,14 +255,14 @@ declare const id: string;
 import {
   ensureEntry,
   loadHandles,
-  prefetchEntry,
+  prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 
 const [handles, data] = await loadHandles(trpc, {
-  // Doesn't wait
-  related: prefetchEntry(trpc.post.related, { id }),
   // Waits for the post, unless the cache has it
   post: ensureEntry(trpc.post.byId, { id }),
+  // Doesn't wait
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
 });
 handles.post;
 //      ^?
@@ -198,7 +271,7 @@ data.post;
 ```
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so the order of the entries doesn't matter, and you can't make one wait for another by accident.
-- It resolves to `[handles, data]`: a handle for every entry, by its key, and the data of the entries it waited for. Return `handles` from the loader, or pass them to components as props.
+- It resolves to `[handles, data]`: a handle for every entry, by its key, and the data of the entries it waited for. Return `handles` from the loader, or pass them to components as props. Reading a prefetch entry's `data` is a type error.
 - It rejects as soon as an entry it waits for fails, so you can handle the error where you load, for example to show a not-found page.
 
 Each entry chooses whether the page waits for its query:
@@ -334,16 +407,16 @@ A page can wait for some queries and stream others. List them all in one load:
 // @include: handles-trpc
 // @filename: snippet.ts
 import { trpc } from '~/trpc/server';
-import { loadHandles, prefetchEntry, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
 declare const id: string;
 // ---cut---
 const [handles] = await loadHandles(trpc, {
-  related: prefetchEntry(trpc.post.related, { id }),
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
   post: ensureEntry(trpc.post.byId, { id }),
 });
 ```
 
-Here the post is ready when the page renders, and the related posts stream in behind their own loading state. Both requests start together, whatever order you list them in.
+Here the post is ready when the page renders, and the comments stream in behind their own loading state. Both requests start together, whatever order you list them in.
 
 Avoid awaiting one load and then starting another: the second load's requests wait for every entry the first one waited for. Use a second load only when its input comes from the first one's data: see [Dependent queries](#waterfall-in-a-loader).
 
@@ -727,12 +800,12 @@ To use the data where you load it, for example to set the page title or redirect
 // @include: handles-trpc
 // @filename: snippet.ts
 import { trpc } from '~/trpc/server';
-import { loadHandles, prefetchEntry, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
 declare const id: string;
 declare function notFound(): never;
 // ---cut---
 const [handles, data] = await loadHandles(trpc, {
-  related: prefetchEntry(trpc.post.related, { id }),
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
   post: ensureEntry(trpc.post.byId, { id }),
 });
 if (!data.post.title) notFound();
@@ -745,7 +818,7 @@ if (!data.post.title) notFound();
 
 ## Infinite queries {#infinite-queries}
 
-For procedures with a `cursor` input, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`. They load the first page. To load more pages up front, pass `pages` with `getNextPageParam`:
+The post page's comments and more by its author are lists, so they're infinite queries. For procedures with a `cursor` input, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`. They load the first page. To load more pages up front, pass `pages` with `getNextPageParam`:
 
 ```ts twoslash
 // @include: handles-router
@@ -819,11 +892,11 @@ A handle from `loadHandles` refers to a query the load already started. When the
 // @include: handles-trpc
 // @filename: snippet.tsx
 import { useTRPC } from '~/trpc/client';
-import { waterfallHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { waterfallInfiniteHandle } from '@trpc/tanstack-react-query/unstable-handles';
 declare const authorId: string;
 const trpc = useTRPC();
 // ---cut---
-const author = waterfallHandle(trpc.user.byId, { id: authorId });
+const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, { authorId });
 //    ^?
 ```
 
@@ -888,7 +961,7 @@ export function PostPage(props: { id: string }) {
 If the user can change a list's sort or filter, put it in a [search param](#url-as-input), and the loader starts the new query when it changes. Only switch the input in the component when the URL can't hold it, such as a term the user is typing.
 :::
 
-To switch a handle a loader passed down to a new input, pass the handle and a function of its input:
+Say the post page's comments can be sorted. To switch the handle the loader passed down to a new input, pass the handle and a function of its input:
 
 ```tsx twoslash title='comments.tsx'
 // @jsx: react-jsx
@@ -967,7 +1040,7 @@ Handles are built around this. Queries start in loaders and server components, w
 ```
 1. |-> post.byId
 1. |-> post.comments
-1. |-> user.byId
+1. |-> post.moreByAuthor
 ```
 
 instead of one after the other, as each component renders and finds out what it needs:
@@ -975,7 +1048,7 @@ instead of one after the other, as each component renders and finds out what it 
 ```
 1. |-> post.byId
 2.   |-> post.comments
-3.     |-> user.byId
+3.     |-> post.byAuthor
 ```
 
 The demo runs one blog all three ways. Watch the network panel:
@@ -991,7 +1064,7 @@ To keep it that way:
 
 ### Dependent queries {#dependent-queries}
 
-A query whose input comes from another query's result is a waterfall by construction. Most pages don't need one: put the input in the route, or [reshape the procedure](#reshape-procedures) so the page can start it from the URL. For example, `trpc.viewer.org` instead of `trpc.viewer` and then `trpc.org.byId`.
+A query whose input comes from another query's result is a waterfall by construction. Most pages don't need one: put the input in the route, or [reshape the procedure](#reshape-procedures) so the page can start it from the URL. For example, `trpc.post.moreByAuthor({ postId })` instead of `trpc.post.byId` and then `trpc.post.byAuthor({ authorId })`.
 
 When the data really can't be reshaped, for example a third-party API you don't control, there are two explicit ways. Both pay the extra round trip.
 
@@ -1004,51 +1077,56 @@ Load the first query, then build the second load's entries from its `data`:
 // @include: handles-trpc
 // @filename: snippet.ts
 import { trpc } from '~/trpc/server';
-import { loadHandles, prefetchEntry, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
+declare const id: string;
 // ---cut---
-const [first, { viewer }] = await loadHandles(trpc, {
-  viewer: ensureEntry(trpc.viewer),
+const [first, { post }] = await loadHandles(trpc, {
+  post: ensureEntry(trpc.post.byId, { id }),
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
 });
 const [second] = await loadHandles(trpc, {
-  org: prefetchEntry(trpc.org.byId, { orgId: viewer.orgId }),
+  moreByAuthor: prefetchInfiniteEntry(trpc.post.byAuthor, {
+    authorId: post.authorId,
+  }),
 });
 const handles = { ...first, ...second };
 ```
 
-The page waits for the first request, and the second starts only after it.
+The page waits for the post, and more by its author starts only after it.
 
 ### In a component {#waterfall-in-a-component}
 
-When an input is only known at render time, such as an id from a parent query's result, build a [waterfall handle](#waterfall-handles) in the component that has the input, and pass it to the one that renders it:
+When an input is only known at render time, such as an id from a parent query's result, build a [waterfall handle](#waterfall-handles) in the component that has the input, and pass it to the one that renders it, as the post page at the top does for more by the author:
 
 ```tsx twoslash
 // @include: handles-router
 // @include: handles-trpc
-// @filename: post-author.tsx
-import { Suspense } from 'react';
+// @include: handles-components
+// @filename: more-from-author.tsx
 import type { Post } from '~/server/router';
-import { useTRPC, type TRPC } from '~/trpc/client';
-import { waterfallHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-declare function AuthorCard(props: {
-  author: inferQueryHandle<TRPC['user']['byId']>;
-}): React.ReactNode;
-declare function AuthorSkeleton(): React.ReactNode;
 // ---cut---
-function PostAuthor(props: { post: Post }) {
+import { waterfallInfiniteHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { MoreByAuthor } from '~/components/more-by-author';
+import { useTRPC } from '~/trpc/client';
+
+function MoreFromAuthor(props: { post: Post }) {
   const trpc = useTRPC();
-  const author = waterfallHandle(trpc.user.byId, { id: props.post.authorId });
+  const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, {
+    authorId: props.post.authorId,
+  });
   return (
-    <Suspense fallback={<AuthorSkeleton />}>
-      <AuthorCard author={author} />
+    <Suspense fallback={<p>Loading more by this author…</p>}>
+      <MoreByAuthor posts={moreByAuthor} />
     </Suspense>
   );
 }
 ```
 
-- The query starts when `PostAuthor` renders, an extra round trip after its parent's data arrives.
-- Reading `trpc.user.byId.queryOptions(input)` with `useSuspenseQuery` works too, as it always has.
+- The query starts when `MoreFromAuthor` renders, an extra round trip after its parent's data arrives.
+- Reading `trpc.post.byAuthor.infiniteQueryOptions(input, opts)` with `useSuspenseInfiniteQuery` works too, as it always has.
 - In the Next.js App Router, load the dependent query in the server component instead, as in the [loader example](#waterfall-in-a-loader).
+- In TanStack Router, `beforeLoad` can wait for the first query before the loader runs. It's an escape hatch, for when the dependent data must be there before the page renders: see [TanStack Start › Handles in `beforeLoad`](/docs/client/tanstack-react-query/tanstack-start#before-load).
 
 ## React Router {#react-router}
 

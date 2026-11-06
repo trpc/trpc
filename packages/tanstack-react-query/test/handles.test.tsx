@@ -121,6 +121,8 @@ describe('types', () => {
       fetched: fetchEntry(trpc.post.byId, { id: '2' }),
       ensured: ensureEntry(trpc.post.byId, { id: '3' }),
       list: ensureInfiniteEntry(trpc.post.list, { limit: 2 }),
+      fetchedList: fetchInfiniteEntry(trpc.post.list, { limit: 3 }),
+      prefetchedList: prefetchInfiniteEntry(trpc.post.list, { limit: 4 }),
       viewer: prefetchEntry(trpc.viewer),
     });
     const [handles, data] = loaded;
@@ -139,9 +141,18 @@ describe('types', () => {
         pages: { items: number[]; nextCursor: number }[];
         pageParams: (number | null)[];
       };
+      fetchedList: {
+        pages: { items: number[]; nextCursor: number }[];
+        pageParams: (number | null)[];
+      };
     }>();
     // @ts-expect-error a prefetched query may have no data yet
     void data.prefetched;
+    // @ts-expect-error nor a prefetched infinite query
+    void data.prefetchedList;
+    expectTypeOf<keyof typeof data>().toEqualTypeOf<
+      'fetched' | 'ensured' | 'list' | 'fetchedList'
+    >();
 
     // @ts-expect-error the tuple is readonly
     loaded[0] = handles;

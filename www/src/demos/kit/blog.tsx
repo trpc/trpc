@@ -1,6 +1,9 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { ChevronRight, MessageSquare, UserRound } from 'lucide-react';
-import { type ReactNode, useId } from 'react';
+import { type ComponentProps, type ReactNode, useId } from 'react';
 
 import { Skeleton } from '@shared/ui/components/skeleton';
 
@@ -9,7 +12,10 @@ import { blogData } from './backend.ts';
 import { DemoLink, WithoutLinks } from './browser.tsx';
 import { type TRPC, useTRPC } from './session.tsx';
 import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  inferInfiniteQueryHandle,
+  inferQueryHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
 
 /** The same components read the handles in every demo, as in an app. */
 export function Post(props: {
@@ -123,11 +129,15 @@ export function CommentList(props: {
 }
 
 export function Comments(props: {
-  readonly comments: inferQueryHandle<TRPC['post']['comments']>;
+  readonly comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
 }) {
   const trpc = useTRPC();
-  const commentsQuery = useSuspenseQuery(fromHandle(trpc, props.comments));
-  return <CommentList comments={commentsQuery.data} />;
+  const commentsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.comments, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  return <CommentList comments={commentItems(commentsQuery.data)} />;
 }
 
 export function CommentsSkeleton(props: { readonly postId: number }) {
@@ -313,11 +323,36 @@ export function MoreByAuthorSkeleton(props: { readonly postId: number }) {
 
 /** The author's other posts, as links. Its query starts from the URL too. */
 export function MoreByAuthor(props: {
-  readonly more: inferQueryHandle<TRPC['post']['moreByAuthor']>;
+  readonly more: inferInfiniteQueryHandle<TRPC['post']['moreByAuthor']>;
 }) {
   const trpc = useTRPC();
-  const moreQuery = useSuspenseQuery(fromHandle(trpc, props.more));
-  return <MoreByAuthorList more={moreQuery.data} />;
+  const moreQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.more, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  return <MoreByAuthorList more={morePosts(moreQuery.data)} />;
+}
+
+/** Every comment on the pages loaded so far */
+export function commentItems(data: {
+  readonly pages: ReadonlyArray<{
+    readonly items: ComponentProps<typeof CommentList>['comments'];
+  }>;
+}) {
+  return data.pages.flatMap((page) => page.items);
+}
+
+/** The author and every post on the pages loaded so far */
+export function morePosts(data: {
+  readonly pages: ReadonlyArray<
+    ComponentProps<typeof MoreByAuthorList>['more']
+  >;
+}) {
+  return {
+    author: data.pages[0]?.author ?? '',
+    posts: data.pages.flatMap((page) => page.posts),
+  };
 }
 
 export function NotFound() {
