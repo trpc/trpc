@@ -12,13 +12,25 @@ import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
-import type {
-  TRPCOptionsProxy,
-  unstable_TRPCLoaderOptionsProxy,
-  unstable_inferInfiniteQueryHandle,
-  unstable_inferQueryHandle,
-} from '../src';
+import type { TRPCOptionsProxy } from '../src';
 import { createTRPCOptionsProxy } from '../src';
+import {
+  loadHandles,
+  prefetchEntry,
+  fetchEntry,
+  ensureEntry,
+  prefetchInfiniteEntry,
+  fetchInfiniteEntry,
+  ensureInfiniteEntry,
+  waterfallHandle,
+  waterfallInfiniteHandle,
+  fromHandle,
+} from '../src/unstable-handles';
+import type {
+  TRPCLoaderOptionsProxy,
+  inferQueryHandle,
+  inferInfiniteQueryHandle,
+} from '../src/unstable-handles';
 
 const ctx = () => {
   const t = initTRPC.create();
@@ -45,7 +57,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = unstable_TRPCLoaderOptionsProxy<AppRouter>;
+type TRPC = TRPCLoaderOptionsProxy<AppRouter>;
 type Post = { id: string; title: string };
 type ListPage = { items: number[]; nextCursor: number };
 
@@ -68,14 +80,14 @@ describe('types', () => {
   test('every entry gives the same handle, with no data', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    type PostHandle = unstable_inferQueryHandle<TRPC['post']['byId']>;
-    type ListHandle = unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
+    type PostHandle = inferQueryHandle<TRPC['post']['byId']>;
+    type ListHandle = inferInfiniteQueryHandle<TRPC['post']['list']>;
 
-    const [handles] = await trpc.unstable_$loadHandles({
-      ensured: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
-      fetched: trpc.post.byId.unstable_$fetchEntry({ id: '1' }),
-      ensuredList: trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 }),
-      fetchedList: trpc.post.list.unstable_$fetchInfiniteEntry({ limit: 2 }),
+    const [handles] = await loadHandles(trpc, {
+      ensured: ensureEntry(trpc.post.byId, { id: '1' }),
+      fetched: fetchEntry(trpc.post.byId, { id: '1' }),
+      ensuredList: ensureInfiniteEntry(trpc.post.list, { limit: 2 }),
+      fetchedList: fetchInfiniteEntry(trpc.post.list, { limit: 2 }),
     });
     expectTypeOf(handles.ensured).toEqualTypeOf<PostHandle>();
     expectTypeOf(handles.fetched).toEqualTypeOf<PostHandle>();
@@ -92,33 +104,32 @@ describe('types', () => {
   test('useQuery data is possibly undefined and useSuspenseQuery data is defined, for every entry', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    const [loaded] = await trpc.unstable_$loadHandles({
-      prefetched: trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
-      ensured: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
-      fetched: trpc.post.byId.unstable_$fetchEntry({ id: '1' }),
-      prefetchedList: trpc.post.list.unstable_$prefetchInfiniteEntry({
+    const [loaded] = await loadHandles(trpc, {
+      prefetched: prefetchEntry(trpc.post.byId, { id: '1' }),
+      ensured: ensureEntry(trpc.post.byId, { id: '1' }),
+      fetched: fetchEntry(trpc.post.byId, { id: '1' }),
+      prefetchedList: prefetchInfiniteEntry(trpc.post.list, {
         limit: 2,
       }),
-      ensuredList: trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 }),
-      fetchedList: trpc.post.list.unstable_$fetchInfiniteEntry({ limit: 2 }),
+      ensuredList: ensureInfiniteEntry(trpc.post.list, { limit: 2 }),
+      fetchedList: fetchInfiniteEntry(trpc.post.list, { limit: 2 }),
     });
     const handles = [
       loaded.prefetched,
       loaded.ensured,
       loaded.fetched,
-      trpc.post.byId.unstable_$waterfallHandle({ id: '1' }),
+      waterfallHandle(trpc.post.byId, { id: '1' }),
     ];
     for (const handle of handles) {
+      expectTypeOf(useQuery(fromHandle(trpc, handle)).data).toEqualTypeOf<
+        Post | undefined
+      >();
       expectTypeOf(
-        useQuery(trpc.unstable_$fromHandle(handle)).data,
-      ).toEqualTypeOf<Post | undefined>();
-      expectTypeOf(
-        useQuery(
-          trpc.unstable_$fromHandle(handle, { select: (post) => post.title }),
-        ).data,
+        useQuery(fromHandle(trpc, handle, { select: (post) => post.title }))
+          .data,
       ).toEqualTypeOf<string | undefined>();
       expectTypeOf(
-        useSuspenseQuery(trpc.unstable_$fromHandle(handle)).data,
+        useSuspenseQuery(fromHandle(trpc, handle)).data,
       ).toEqualTypeOf<Post>();
     }
 
@@ -126,19 +137,17 @@ describe('types', () => {
       loaded.prefetchedList,
       loaded.ensuredList,
       loaded.fetchedList,
-      trpc.post.list.unstable_$waterfallInfiniteHandle({ limit: 2 }),
+      waterfallInfiniteHandle(trpc.post.list, { limit: 2 }),
     ];
     const getNextPageParam = (last: ListPage) => last.nextCursor;
     for (const handle of listHandles) {
       expectTypeOf(
-        useInfiniteQuery(
-          trpc.unstable_$fromHandle(handle, { getNextPageParam }),
-        ).data?.pages,
+        useInfiniteQuery(fromHandle(trpc, handle, { getNextPageParam })).data
+          ?.pages,
       ).toEqualTypeOf<ListPage[] | undefined>();
       expectTypeOf(
-        useSuspenseInfiniteQuery(
-          trpc.unstable_$fromHandle(handle, { getNextPageParam }),
-        ).data.pages,
+        useSuspenseInfiniteQuery(fromHandle(trpc, handle, { getNextPageParam }))
+          .data.pages,
       ).toEqualTypeOf<ListPage[]>();
     }
   });
@@ -146,22 +155,22 @@ describe('types', () => {
   test("placeholderData doesn't widen data", () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    const post = trpc.post.byId.unstable_$waterfallHandle({ id: '1' });
+    const post = waterfallHandle(trpc.post.byId, { id: '1' });
 
     const postQuery = useQuery(
-      trpc.unstable_$fromHandle(post, {
+      fromHandle(trpc, post, {
         placeholderData: { id: '1', title: 'x' },
       }),
     );
     expectTypeOf(postQuery.data).toEqualTypeOf<Post | undefined>();
 
     // @ts-expect-error `extra` isn't in the procedure's output
-    trpc.unstable_$fromHandle(post, {
+    fromHandle(trpc, post, {
       placeholderData: { id: '1', title: 'x', extra: 1 },
     });
   });
 
-  test('only unstable_$loadHandles and unstable_$waterfallHandle create handles', () => {
+  test('only loadHandles and waterfallHandle create handles', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     const handBuilt = {
@@ -172,9 +181,9 @@ describe('types', () => {
       input: { id: '1' },
     };
     // @ts-expect-error a hand-built object isn't a handle
-    trpc.unstable_$fromHandle(handBuilt);
+    fromHandle(trpc, handBuilt);
     // @ts-expect-error nor can it be passed as one
-    const prop: unstable_inferQueryHandle<TRPC['post']['byId']> = handBuilt;
+    const prop: inferQueryHandle<TRPC['post']['byId']> = handBuilt;
     void prop;
   });
 });
@@ -184,19 +193,22 @@ describe('runtime', () => {
     await using resource = ctx();
     const server = serverProxy(resource);
 
-    const [{ ensured, fetched, list, fetchedList }] =
-      await server.trpc.unstable_$loadHandles({
-        ensured: server.trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
-        fetched: server.trpc.post.byId.unstable_$fetchEntry({ id: '2' }),
-        list: server.trpc.post.list.unstable_$ensureInfiniteEntry(
+    const [{ ensured, fetched, list, fetchedList }] = await loadHandles(
+      server.trpc,
+      {
+        ensured: ensureEntry(server.trpc.post.byId, { id: '1' }),
+        fetched: fetchEntry(server.trpc.post.byId, { id: '2' }),
+        list: ensureInfiniteEntry(
+          server.trpc.post.list,
           { limit: 2 },
           { pages: 2, getNextPageParam: (last) => last.nextCursor },
         ),
-        fetchedList: server.trpc.post.list.unstable_$fetchInfiniteEntry({
+        fetchedList: fetchInfiniteEntry(server.trpc.post.list, {
           limit: 3,
           cursor: 10,
         }),
-      });
+      },
+    );
     expect(ensured).toEqual({
       queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
       input: { id: '1' },
@@ -233,8 +245,8 @@ describe('runtime', () => {
   test("a clear() doesn't bring the loader's data back to a useQuery reader", async () => {
     await using resource = ctx();
     const server = serverProxy(resource);
-    const [handles] = await server.trpc.unstable_$loadHandles({
-      post: server.trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
+    const [handles] = await loadHandles(server.trpc, {
+      post: ensureEntry(server.trpc.post.byId, { id: '1' }),
     });
     const post = overTheWire(handles.post);
     hydrate(resource.queryClient, dehydrate(server.queryClient));
@@ -243,7 +255,7 @@ describe('runtime', () => {
     function Post(_props: { render: number }) {
       const trpc = resource.useTRPC();
       const postQuery = useQuery(
-        trpc.unstable_$fromHandle(post, { staleTime: Infinity }),
+        fromHandle(trpc, post, { staleTime: Infinity }),
       );
       renders.push(postQuery.data?.title);
       return <p>{postQuery.data?.title ?? 'no data'}</p>;
@@ -265,8 +277,8 @@ describe('runtime', () => {
   test('after a clear(), a useSuspenseQuery reader suspends and fetches again', async () => {
     await using resource = ctx();
     const server = serverProxy(resource);
-    const [handles] = await server.trpc.unstable_$loadHandles({
-      post: server.trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
+    const [handles] = await loadHandles(server.trpc, {
+      post: ensureEntry(server.trpc.post.byId, { id: '1' }),
     });
     const post = overTheWire(handles.post);
     hydrate(resource.queryClient, dehydrate(server.queryClient));
@@ -274,7 +286,7 @@ describe('runtime', () => {
     function Post(_props: { render: number }) {
       const trpc = resource.useTRPC();
       const postQuery = useSuspenseQuery(
-        trpc.unstable_$fromHandle(post, { staleTime: Infinity }),
+        fromHandle(trpc, post, { staleTime: Infinity }),
       );
       return <p>{postQuery.data.title}</p>;
     }
@@ -296,14 +308,14 @@ describe('runtime', () => {
   test('a prefetched handle read with useQuery starts without data', async () => {
     await using resource = ctx();
     const server = serverProxy(resource);
-    const [handles] = await server.trpc.unstable_$loadHandles({
-      post: server.trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
+    const [handles] = await loadHandles(server.trpc, {
+      post: prefetchEntry(server.trpc.post.byId, { id: '1' }),
     });
     const post = overTheWire(handles.post);
     const renders: (string | undefined)[] = [];
     function Post() {
       const trpc = resource.useTRPC();
-      const postQuery = useQuery(trpc.unstable_$fromHandle(post));
+      const postQuery = useQuery(fromHandle(trpc, post));
       renders.push(postQuery.data?.title);
       return <p>{postQuery.data?.title ?? 'loading'}</p>;
     }
@@ -324,15 +336,10 @@ describe('runtime', () => {
       id: '1',
       title: 'Fixture',
     });
-    const [{ post }] = await trpc.unstable_$loadHandles({
-      post: trpc.post.byId.unstable_$ensureEntry(
-        { id: '1' },
-        { staleTime: Infinity },
-      ),
+    const [{ post }] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: '1' }, { staleTime: Infinity }),
     });
-    expect(
-      queryClient.getQueryData(trpc.unstable_$fromHandle(post).queryKey),
-    ).toEqual({
+    expect(queryClient.getQueryData(fromHandle(trpc, post).queryKey)).toEqual({
       id: '1',
       title: 'Fixture',
     });

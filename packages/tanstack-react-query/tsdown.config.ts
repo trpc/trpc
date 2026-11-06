@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 
-export const input = ['src/index.ts'];
+export const input = ['src/index.ts', 'src/unstable-handles.ts'];
 const reactServerInput = 'src/index.react-server.ts';
 
 export default defineConfig({

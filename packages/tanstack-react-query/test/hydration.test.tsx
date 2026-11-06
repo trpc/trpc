@@ -18,17 +18,24 @@ import { renderToPipeableStream, renderToString } from 'react-dom/server';
 import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import type {
-  TRPCOptionsProxy,
-  unstable_inferInfiniteQueryHandle,
-  unstable_inferQueryHandle,
-} from '../src';
+import type { TRPCOptionsProxy } from '../src';
 import {
   unstable_createHydrateClient as createClientHydrateClient,
   createTRPCOptionsProxy as createClientOptionsProxy,
   createTRPCContext,
 } from '../src';
 import * as rsc from '../src/index.react-server';
+import {
+  loadHandles,
+  prefetchEntry,
+  ensureEntry,
+  prefetchInfiniteEntry,
+  fromHandle,
+} from '../src/unstable-handles';
+import type {
+  inferQueryHandle,
+  inferInfiniteQueryHandle,
+} from '../src/unstable-handles';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -147,23 +154,19 @@ function hashes(state: DehydratedState) {
   return state.queries.map((query) => query.queryHash);
 }
 
-function Post(props: {
-  post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
-}) {
+function Post(props: { post: inferQueryHandle<TRPC['post']['byDay']> }) {
   const trpc = trpcContext.useTRPC();
-  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
   const post = postQuery.data;
   return (
     <p>{`${post.title} v${post.version} fetchedAt:${post.fetchedAt.toISOString()}`}</p>
   );
 }
 
-function List(props: {
-  list: unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
-}) {
+function List(props: { list: inferInfiniteQueryHandle<TRPC['post']['list']> }) {
   const trpc = trpcContext.useTRPC();
   const listQuery = useSuspenseInfiniteQuery(
-    trpc.unstable_$fromHandle(props.list, {
+    fromHandle(trpc, props.list, {
       getNextPageParam: (page) => page.nextCursor,
     }),
   );
@@ -178,8 +181,8 @@ describe('unstable_createHydrateClient in server components', () => {
     const server = makeServer(resource);
 
     const a = server.trpc.post.byDay.queryKey({ day: new Date('2026-01-01') });
-    await server.trpc.unstable_$loadHandles({
-      handle: server.trpc.post.byDay.unstable_$prefetchEntry({
+    await loadHandles(server.trpc, {
+      handle: prefetchEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
@@ -188,8 +191,8 @@ describe('unstable_createHydrateClient in server components', () => {
     expect(outer.queries[0]!.state.status).toBe('pending');
 
     // A nested server component starts another query
-    await server.trpc.unstable_$loadHandles({
-      handle: server.trpc.post.byDay.unstable_$ensureEntry({
+    await loadHandles(server.trpc, {
+      handle: ensureEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-02'),
       }),
     });
@@ -214,8 +217,8 @@ describe('unstable_createHydrateClient in server components', () => {
       day: new Date('2026-01-01'),
     });
 
-    await server.trpc.unstable_$loadHandles({
-      handle: server.trpc.post.byDay.unstable_$ensureEntry({
+    await loadHandles(server.trpc, {
+      handle: ensureEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
@@ -243,8 +246,8 @@ describe('unstable_createHydrateClient in server components', () => {
       },
     });
 
-    await server.trpc.unstable_$loadHandles({
-      handle: server.trpc.post.byDay.unstable_$prefetchEntry({
+    await loadHandles(server.trpc, {
+      handle: prefetchEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
@@ -260,13 +263,13 @@ describe('unstable_createHydrateClient in server components', () => {
     await using resource = ctx();
     const first = makeServer(resource);
     const second = makeServer(resource);
-    await first.trpc.unstable_$loadHandles({
-      handle: first.trpc.post.byDay.unstable_$ensureEntry({
+    await loadHandles(first.trpc, {
+      handle: ensureEntry(first.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
-    await second.trpc.unstable_$loadHandles({
-      handle: second.trpc.post.byDay.unstable_$ensureEntry({
+    await loadHandles(second.trpc, {
+      handle: ensureEntry(second.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
@@ -280,14 +283,14 @@ describe('unstable_createHydrateClient in server components', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
 
-    const [{ outerPost }] = await server.trpc.unstable_$loadHandles({
-      outerPost: server.trpc.post.byDay.unstable_$prefetchEntry({
+    const [{ outerPost }] = await loadHandles(server.trpc, {
+      outerPost: prefetchEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
     const outerState = sentBy(server.queryClient);
-    const [{ innerPost }] = await server.trpc.unstable_$loadHandles({
-      innerPost: server.trpc.post.byDay.unstable_$ensureEntry({
+    const [{ innerPost }] = await loadHandles(server.trpc, {
+      innerPost: ensureEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-02'),
       }),
     });
@@ -313,8 +316,8 @@ describe('unstable_createHydrateClient in server components', () => {
   test('takes a lazy query client, like `createTRPCOptionsProxy`', async () => {
     await using resource = ctx();
     const server = makeServer(resource);
-    await server.trpc.unstable_$loadHandles({
-      handle: server.trpc.post.byDay.unstable_$ensureEntry({
+    await loadHandles(server.trpc, {
+      handle: ensureEntry(server.trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
@@ -350,18 +353,18 @@ describe('dehydrate and HydrationBoundary from a server loader', () => {
       ctx: {},
       queryClient,
     });
-    const [{ post }] = await trpc.unstable_$loadHandles({
-      post: trpc.post.byDay.unstable_$ensureEntry({
+    const [{ post }] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byDay, {
         day: new Date('2026-01-01'),
       }),
     });
-    const [{ later }] = await trpc.unstable_$loadHandles({
-      later: trpc.post.byDay.unstable_$prefetchEntry({
+    const [{ later }] = await loadHandles(trpc, {
+      later: prefetchEntry(trpc.post.byDay, {
         day: new Date('2026-01-02'),
       }),
     });
-    const [{ list }] = await trpc.unstable_$loadHandles({
-      list: trpc.post.list.unstable_$prefetchInfiniteEntry({}),
+    const [{ list }] = await loadHandles(trpc, {
+      list: prefetchInfiniteEntry(trpc.post.list, {}),
     });
     const loaderData = {
       dehydratedState: dehydrate(queryClient),

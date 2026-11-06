@@ -1,7 +1,6 @@
 export { createTRPCContext } from './internals/Context';
 export type {
   TRPCOptionsProxy,
-  unstable_TRPCLoaderOptionsProxy,
   inferInput,
   inferOutput,
   DecorateMutationProcedure,
@@ -25,19 +24,5 @@ export type {
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
 export type * from './internals/types';
-export type {
-  unstable_TRPCQueryHandle,
-  unstable_TRPCInfiniteQueryHandle,
-  unstable_AnyTRPCHandle,
-  unstable_TRPCQueryEntry,
-  unstable_TRPCInfiniteQueryEntry,
-  unstable_AnyTRPCEntry,
-  unstable_TRPCEntryKind,
-  unstable_TRPCLoadedHandles,
-  unstable_TRPCEntryOptions,
-  unstable_TRPCInfiniteEntryOptions,
-  unstable_inferQueryHandle,
-  unstable_inferInfiniteQueryHandle,
-} from './internals/handles';
 export { unstable_createHydrateClient } from './internals/HydrateClient';
 export type { unstable_HydrateClientProps } from './internals/HydrateClient';
