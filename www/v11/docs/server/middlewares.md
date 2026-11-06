@@ -218,8 +218,6 @@ tRPC has an API called `.concat()` which allows you to independently define a pa
 
 This helper primarily targets creating plugins and libraries with tRPC.
 
-<!-- TODO: add docs with a real-world example of a plugin or something -->
-
 ```ts twoslash
 // @target: esnext
 // ------------------------------------------------
@@ -289,6 +287,56 @@ export const appRouter = router({
     return opts.ctx.fromPlugin;
   })
 })
+```
+
+### Sharing output schemas with plugins
+
+An output validator describes the final value returned by a procedure. Keep a
+plugin's output schema separate from its middleware procedure, then compose it
+with the application's schema using the validator library's schema-composition
+API. Add one `.output()` validator to the final procedure.
+
+```ts twoslash
+// @target: esnext
+// @filename: myPlugin.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const pluginT = initTRPC.create();
+
+export const pluginOutput = z.object({
+  some: z.string(),
+});
+
+export const pluginProc = pluginT.procedure.use((opts) =>
+  opts.next({
+    ctx: {
+      additional: 'from plugin',
+    },
+  }),
+);
+
+// @filename: app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import { pluginOutput, pluginProc } from './myPlugin';
+
+const t = initTRPC.create();
+
+const procedureWithPlugin = t.procedure.concat(pluginProc);
+
+export const appRouter = t.router({
+  hello: procedureWithPlugin
+    .output(
+      pluginOutput.extend({
+        regular: z.literal('output'),
+      }),
+    )
+    .query(({ ctx }) => ({
+      some: ctx.additional,
+      regular: 'output' as const,
+    })),
+});
 ```
 
 ## Extending middlewares
