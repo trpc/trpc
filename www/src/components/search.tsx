@@ -470,7 +470,7 @@ function SearchPanel(props: { readonly onFollow: () => void }) {
               search.cancel();
               props.onFollow();
             }}
-            search={{ q: query }}
+            search={{ q: search.query }}
             to={searchPage.path}
           >
             All results
