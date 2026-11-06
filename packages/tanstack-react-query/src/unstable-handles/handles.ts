@@ -5,41 +5,35 @@ import type {
   QueryFunction,
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
 import { isTRPCClientError } from '@trpc/client';
-import type { TRPC_ERROR_CODE_KEY, TRPCError } from '@trpc/server';
-import { getTRPCErrorFromUnknown } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
   DecorateRouterKeyable,
-  TRPCHandleProxyContext,
-  TRPCLoaderBrand,
-} from './createOptionsProxy';
+} from '../internals/createOptionsProxy';
 import type {
   UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
   UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
-} from './infiniteQueryOptions';
+} from '../internals/infiniteQueryOptions';
 import type {
   UnusedSkipTokenTRPCQueryOptionsIn,
   UnusedSkipTokenTRPCQueryOptionsOut,
-} from './queryOptions';
+} from '../internals/queryOptions';
 import type {
   ExtractCursorType,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
-} from './types';
-import { readQueryKey } from './utils';
+} from '../internals/types';
+import { readQueryKey } from '../internals/utils';
+import type { ErrorOf } from './entryError';
+import { entryCause, TRPCEntryError } from './entryError';
+import type { TRPCLoaderBrand } from './loaderProxy';
+import { isLoaderProxy } from './loaderProxy';
 
 declare const handleDef: unique symbol;
 declare const entryDef: unique symbol;
-
-type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
-  transformer: TDef['transformer'];
-  errorShape: TDef['errorShape'];
-}>;
 
 type InfiniteHandleInput<TInput> = TInput extends object
   ? Omit<TInput, 'cursor' | 'direction'>
@@ -372,56 +366,6 @@ function startEntry(queryClient: QueryClient, state: EntryState) {
   }
 }
 
-/**
- * What `loadHandles()` rejects with when a fetch or ensure entry fails. It
- * names the entry, and keeps the request's error as `cause`.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
- */
-export class TRPCEntryError<
-  TDef extends ResolverDef = ResolverDef,
-> extends Error {
-  /** The entry's key in the object passed to `loadHandles()` */
-  readonly key: string;
-  /** The procedure's path, such as `post.byId` */
-  readonly path: string;
-  /** The tRPC error code, such as `NOT_FOUND`, when the error has one */
-  readonly code: TRPC_ERROR_CODE_KEY | undefined;
-  // oxlint-disable-next-line typescript/ban-ts-comment
-  // @ts-ignore `override` fails where the `lib` has no `Error.cause`
-  /**
-   * The request's error: a `TRPCError` on a proxy created with `router`, a
-   * `TRPCClientError` on one created with `client`.
-   */
-  public override readonly cause: ErrorOf<TDef> | TRPCError;
-
-  constructor(opts: {
-    key: string;
-    path: string;
-    code: TRPC_ERROR_CODE_KEY | undefined;
-    cause: ErrorOf<TDef> | TRPCError;
-  }) {
-    super(`Entry "${opts.key}" (${opts.path}) failed: ${opts.cause.message}`);
-    this.name = 'TRPCEntryError';
-    this.cause = opts.cause;
-    this.key = opts.key;
-    this.path = opts.path;
-    this.code = opts.code;
-  }
-}
-
-function codeOfShape(data: unknown): TRPC_ERROR_CODE_KEY | undefined {
-  const code = (data as { code?: unknown } | null | undefined)?.code;
-  return typeof code === 'string' ? (code as TRPC_ERROR_CODE_KEY) : undefined;
-}
-
-function entryCause(error: unknown) {
-  if (isTRPCClientError(error)) {
-    return { cause: error, code: codeOfShape(error.data) };
-  }
-  const cause = getTRPCErrorFromUnknown(error);
-  return { cause, code: cause.code };
-}
-
 function toEntryError(key: string, state: EntryState, error: unknown) {
   if (isCancelledError(error)) {
     return error;
@@ -510,7 +454,7 @@ function prefetchInRender(
 interface WaterfallOptions {
   options: any;
   type: HandleType;
-  /** The `useTRPC()` proxy's client, which starts the query during render */
+  /** The client that starts the query during render, `null` on a loader proxy */
   renderClient: QueryClient | null;
 }
 
@@ -621,14 +565,41 @@ function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
   return options;
 }
 
-function readProxy(proxy: unknown, fn: string): TRPCHandleProxyContext {
-  const getContext = (proxy as { '~handles'?: unknown } | null)?.['~handles'];
-  if (typeof getContext !== 'function') {
+interface ProxyContext {
+  proxy: any;
+  path: string[];
+  prefix: string | undefined;
+  /** Whether it's from `createTRPCLoaderProxy`, which can load handles */
+  isLoader: boolean;
+}
+
+function readProxy(proxy: unknown, fn: string): ProxyContext {
+  const queryKey = (proxy as { queryKey?: unknown } | null)?.queryKey;
+  if (typeof queryKey !== 'function') {
     throw new Error(
       `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got ${String(proxy)}`,
     );
   }
-  return getContext();
+  const key = readQueryKey(queryKey());
+  return {
+    proxy,
+    path: key.path,
+    prefix: key.prefix?.[0],
+    isLoader: isLoaderProxy(proxy as object),
+  };
+}
+
+function queryClientOf(ctx: ProxyContext): QueryClient {
+  return ctx.proxy['~queryClient']();
+}
+
+function optionsOf(
+  procedure: any,
+  type: HandleType,
+): (input: unknown, opts: unknown) => any {
+  return type === 'infinite'
+    ? procedure.infiniteQueryOptions
+    : procedure.queryOptions;
 }
 
 function readLoaderRoot(trpc: unknown, fn: string) {
@@ -643,9 +614,9 @@ function readLoaderRoot(trpc: unknown, fn: string) {
 
 function readLoaderProxy(proxy: unknown, fn: string) {
   const ctx = readProxy(proxy, fn);
-  if (ctx.inRender) {
+  if (!ctx.isLoader) {
     throw new Error(
-      `\`${fn}()\` needs the proxy from \`createTRPCOptionsProxy\`, not \`useTRPC()\`: loading waits for queries, which a render can't. ` +
+      `\`${fn}()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. ` +
         `Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` ` +
         `and wait where you read it, with \`useSuspenseQuery\`. ` +
         `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
@@ -666,7 +637,7 @@ function entry(opts: {
   return createEntry({
     type: opts.type,
     kind: opts.kind,
-    options: ctx.options(opts.type, opts.input, opts.opts),
+    options: optionsOf(ctx.proxy, opts.type)(opts.input, opts.opts),
   });
 }
 
@@ -679,10 +650,10 @@ function waterfall(opts: {
 }) {
   const { fn, type, inputOrHandle, switchInput } = opts;
   const ctx = readProxy(opts.procedure, fn);
-  const renderClient = ctx.inRender ? ctx.getQueryClient() : null;
+  const renderClient = ctx.isLoader ? null : queryClientOf(ctx);
   if (typeof switchInput !== 'function') {
     return createWaterfallHandle({
-      options: ctx.options(type, inputOrHandle, undefined),
+      options: optionsOf(ctx.proxy, type)(inputOrHandle, undefined),
       type,
       renderClient,
     });
@@ -692,14 +663,17 @@ function waterfall(opts: {
     type === 'infinite'
       ? { initialCursor: (previous as TRPCInfiniteQueryHandle).initialCursor }
       : undefined;
-  const own = ctx.options(type, previous.input, handleOpts);
+  const own = optionsOf(ctx.proxy, type)(previous.input, handleOpts);
   if (hashKey(own.queryKey) !== hashKey(previous.queryKey)) {
     throw new Error(
       `\`${fn}(trpc.${ctx.path.join('.')}, handle, switchInput)\` can only switch a handle for \`${ctx.path.join('.')}\`, got one for ${JSON.stringify(previous.queryKey)}`,
     );
   }
   return switchHandle(previous, {
-    options: ctx.options(type, switchInput(previous.input), handleOpts),
+    options: optionsOf(ctx.proxy, type)(
+      switchInput(previous.input),
+      handleOpts,
+    ),
     type,
     renderClient,
   });
@@ -742,7 +716,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
  * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
  *
- * Takes the root of the proxy from `createTRPCOptionsProxy`, not `useTRPC()`, since a
+ * Takes the root of the proxy from `createTRPCLoaderProxy`, not `useTRPC()`, since a
  * render can't wait for queries.
  * @example
  * ```ts
@@ -760,7 +734,7 @@ export function loadHandles<TEntries extends Record<string, AnyTRPCEntry>>(
   entries: TEntries,
 ): Promise<TRPCLoadedHandles<TEntries>> {
   return startEntries({
-    queryClient: readLoaderRoot(trpc, 'loadHandles').getQueryClient(),
+    queryClient: queryClientOf(readLoaderRoot(trpc, 'loadHandles')),
     entries,
     settle: false,
   }) as Promise<any>;
@@ -793,7 +767,7 @@ export function loadHandlesSettled<
   entries: TEntries,
 ): Promise<TRPCSettledHandles<TEntries>> {
   return startEntries({
-    queryClient: readLoaderRoot(trpc, 'loadHandlesSettled').getQueryClient(),
+    queryClient: queryClientOf(readLoaderRoot(trpc, 'loadHandlesSettled')),
     entries,
     settle: true,
   }) as Promise<any>;
@@ -937,8 +911,8 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
  * query's data, which makes it a request waterfall. The name keeps that visible.
  *
  * With `useTRPC()`, call it during render: like TanStack's `usePrefetchQuery`, it starts
- * the query if the cache has no state for it. With other proxies it starts nothing, and
- * the component that reads the handle fetches when it renders.
+ * the query if the cache has no state for it. With a proxy from `createTRPCLoaderProxy`
+ * it starts nothing, and the component that reads the handle fetches when it renders.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
  */
 export function waterfallHandle<TDef extends ResolverDef>(
@@ -1007,7 +981,7 @@ export function waterfallInfiniteHandle(
  * Options for a handle: the same options `trpc.<path>.queryOptions(input)` or
  * `trpc.<path>.infiniteQueryOptions(input, opts)` return for the handle's procedure and
  * input. Pass them to `useQuery`, `useSuspenseQuery`, `useSuspenseInfiniteQuery`, etc.
- * `trpc` is any level of the proxy, usually `useTRPC()`.
+ * `trpc` is the proxy or a router on the handle's path, usually `useTRPC()`.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#reading-a-handle
  */
 export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
@@ -1049,21 +1023,25 @@ export function fromHandle(
 ): unknown {
   const ctx = readProxy(trpc, 'fromHandle');
   const handle = readHandle(rawHandle, ctx.prefix);
-  const options = ctx.optionsAt({
-    type: handle.type,
-    path: handle.path,
-    queryKey: handle.queryKey,
-    input: handle.input,
-    opts:
-      handle.type === 'infinite'
-        ? {
-            initialCursor: (rawHandle as TRPCInfiniteQueryHandle).initialCursor,
-            ...opts,
-          }
-        : opts,
-  });
+  if (!ctx.path.every((segment, index) => handle.path[index] === segment)) {
+    throw new Error(
+      `\`fromHandle(trpc.${ctx.path.join('.')}, handle)\` got a handle for \`${handle.path.join('.')}\`, which isn't in \`${ctx.path.join('.')}\`. Pass the root proxy, \`trpc\``,
+    );
+  }
+  const procedure = handle.path
+    .slice(ctx.path.length)
+    .reduce((level, segment) => level[segment], ctx.proxy);
+  const options = optionsOf(procedure, handle.type)(
+    handle.input,
+    handle.type === 'infinite'
+      ? {
+          initialCursor: (rawHandle as TRPCInfiniteQueryHandle).initialCursor,
+          ...opts,
+        }
+      : opts,
+  );
   return prepareHandleRead({
-    queryClient: ctx.getQueryClient(),
+    queryClient: queryClientOf(ctx),
     rawHandle,
     handle,
     options,

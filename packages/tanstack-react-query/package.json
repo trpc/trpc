@@ -45,12 +45,12 @@
     },
     "./unstable-handles": {
       "import": {
-        "types": "./dist/unstable-handles.d.mts",
-        "default": "./dist/unstable-handles.mjs"
+        "types": "./dist/unstable-handles/index.d.mts",
+        "default": "./dist/unstable-handles/index.mjs"
       },
       "require": {
-        "types": "./dist/unstable-handles.d.cts",
-        "default": "./dist/unstable-handles.cjs"
+        "types": "./dist/unstable-handles/index.d.cts",
+        "default": "./dist/unstable-handles/index.cjs"
       }
     }
   },

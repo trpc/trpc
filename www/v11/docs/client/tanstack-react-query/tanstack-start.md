@@ -123,7 +123,7 @@ export const Route = createRootRouteWithContext<{
 // @filename: router.tsx
 import { createRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { createTRPCLoaderProxy } from '@trpc/tanstack-react-query/unstable-handles';
 import { createQueryClient } from '~/lib/query-client';
 import { makeTRPCClient, TRPCProvider } from '~/lib/trpc';
 import type { AppRouter } from '~/server/routers/_app';
@@ -132,7 +132,7 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
   const queryClient = createQueryClient();
   const trpcClient = makeTRPCClient();
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCLoaderProxy<AppRouter>({
     client: trpcClient,
     queryClient,
   });
@@ -314,7 +314,7 @@ export const Route = createFileRoute('/api/trpc/$')({
 
 ## 4. Put the proxy in the router context
 
-Create one proxy per router with `createTRPCOptionsProxy`, and pass it to loaders through the router context:
+Create one proxy per router with `createTRPCLoaderProxy`, and pass it to loaders through the router context:
 
 ```tsx twoslash title='src/router.tsx'
 // @include: start-app
@@ -336,7 +336,7 @@ declare module '@tanstack/react-start' {
 // ---cut---
 import { createRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { createTRPCLoaderProxy } from '@trpc/tanstack-react-query/unstable-handles';
 import { createQueryClient } from '~/lib/query-client';
 import { makeTRPCClient, TRPCProvider } from '~/lib/trpc';
 import type { AppRouter } from '~/server/routers/_app';
@@ -345,7 +345,7 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
   const queryClient = createQueryClient();
   const trpcClient = makeTRPCClient();
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCLoaderProxy<AppRouter>({
     client: trpcClient,
     queryClient,
   });
@@ -367,7 +367,7 @@ export function getRouter() {
 }
 ```
 
-Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: TRPCLoaderOptionsProxy<AppRouter> }>()`. `TRPCLoaderOptionsProxy`, from `@trpc/tanstack-react-query/unstable-handles`, is the type `createTRPCOptionsProxy` returns. Unlike `useTRPC()`'s type, `loadHandles` and the entries accept it.
+Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: TRPCLoaderOptionsProxy<AppRouter> }>()`. `createTRPCLoaderProxy` and `TRPCLoaderOptionsProxy`, its type, come from `@trpc/tanstack-react-query/unstable-handles`. It works like `createTRPCOptionsProxy`, and unlike `useTRPC()`'s proxy, `loadHandles` and the entries accept it.
 
 ## 5. Load handles in loaders
 

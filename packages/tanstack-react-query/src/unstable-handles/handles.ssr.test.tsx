@@ -17,16 +17,17 @@ import { renderToPipeableStream } from 'react-dom/server';
 import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { TRPCOptionsProxy } from '../src';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 import {
+  createTRPCLoaderProxy,
   loadHandles,
   prefetchEntry,
   ensureEntry,
   waterfallHandle,
   fromHandle,
-} from '../src/unstable-handles';
-import type { inferQueryHandle } from '../src/unstable-handles';
+} from '.';
+import type { inferQueryHandle } from '.';
+import type { TRPCOptionsProxy } from '..';
+import { createTRPCContext } from '..';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -67,7 +68,7 @@ function makeServer(resource: ReturnType<typeof ctx>) {
       },
     },
   });
-  const trpc = createTRPCOptionsProxy({
+  const trpc = createTRPCLoaderProxy({
     router: resource.appRouter,
     ctx: {},
     queryClient,
@@ -130,7 +131,7 @@ function Post(props: { post: inferQueryHandle<TRPC['post']['byDay']> }) {
 describe('server rendering', () => {
   test('renders ensured and pending handles from the dehydrated state, without fetching again', async () => {
     await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const server = makeServer(resource);
 
     const [{ ensured, pending }] = await loadHandles(server.trpc, {
@@ -170,7 +171,7 @@ describe('server rendering', () => {
 
   test('useTRPC() starts waterfall handles in the server render', async () => {
     await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     function Page() {
       const trpc = trpcContext.useTRPC();
       const a = waterfallHandle(trpc.post.byDay, {
@@ -197,7 +198,7 @@ describe('server rendering', () => {
 
   test('warns once when a handle is read during server rendering without hydration', async () => {
     await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const server = makeServer(resource);
     const [{ handle }] = await loadHandles(server.trpc, {
       handle: prefetchEntry(server.trpc.post.byDay, {
@@ -222,7 +223,7 @@ describe('server rendering', () => {
 
   test('a handle from an ensure entry needs hydration too', async () => {
     await using resource = ctx();
-    using warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    using warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const server = makeServer(resource);
     const [{ handle }] = await loadHandles(server.trpc, {
       handle: ensureEntry(server.trpc.post.byDay, {

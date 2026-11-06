@@ -1,4 +1,4 @@
-import { testReactResource } from './__helpers';
+import { testReactResource } from '../../test/__helpers';
 import {
   dehydrate,
   hydrate,
@@ -12,9 +12,8 @@ import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { TRPCOptionsProxy } from '../src';
-import { createTRPCOptionsProxy } from '../src';
 import {
+  createTRPCLoaderProxy,
   loadHandles,
   prefetchEntry,
   fetchEntry,
@@ -25,12 +24,13 @@ import {
   waterfallHandle,
   waterfallInfiniteHandle,
   fromHandle,
-} from '../src/unstable-handles';
+} from '.';
 import type {
   TRPCLoaderOptionsProxy,
   inferQueryHandle,
   inferInfiniteQueryHandle,
-} from '../src/unstable-handles';
+} from '.';
+import type { TRPCOptionsProxy } from '..';
 
 const ctx = () => {
   const t = initTRPC.create();
@@ -68,7 +68,7 @@ function overTheWire<T>(value: T): T {
 /** A server-side proxy on its own query client, like a loader or a server component */
 function serverProxy(resource: ReturnType<typeof ctx>) {
   const queryClient = new QueryClient();
-  const trpc = createTRPCOptionsProxy({
+  const trpc = createTRPCLoaderProxy({
     router: resource.appRouter,
     ctx: {},
     queryClient,
@@ -327,7 +327,7 @@ describe('runtime', () => {
   test('tests can build a handle from fixture data without calling the procedure', async () => {
     await using resource = ctx();
     const queryClient = new QueryClient();
-    const trpc = createTRPCOptionsProxy({
+    const trpc = createTRPCLoaderProxy({
       router: resource.appRouter,
       ctx: {},
       queryClient,

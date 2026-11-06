@@ -1,24 +1,23 @@
-import { testReactResource } from './__helpers';
+import { testReactResource } from '../../test/__helpers';
 import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
+import { getUntypedClient } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { afterEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { TRPCOptionsProxy } from '../src';
 import {
+  createTRPCLoaderProxy,
   loadHandles,
   fetchInfiniteEntry,
   waterfallHandle,
   waterfallInfiniteHandle,
   fromHandle,
-} from '../src/unstable-handles';
-import type {
-  inferQueryHandle,
-  inferInfiniteQueryHandle,
-} from '../src/unstable-handles';
+} from '.';
+import type { inferQueryHandle, inferInfiniteQueryHandle } from '.';
+import type { TRPCOptionsProxy } from '..';
 
 const ctx = () => {
   const t = initTRPC.create();
@@ -49,7 +48,21 @@ const ctx = () => {
         }),
     }),
   });
-  return { ...testReactResource(appRouter), calls, appRouter };
+  const resource = testReactResource(appRouter);
+  return {
+    ...resource,
+    calls,
+    appRouter,
+    loaderProxyClient: createTRPCLoaderProxy<typeof appRouter>({
+      client: getUntypedClient(resource.client),
+      queryClient: resource.queryClient,
+    }),
+    loaderProxyServer: createTRPCLoaderProxy<typeof appRouter>({
+      router: appRouter,
+      ctx: {},
+      queryClient: resource.queryClient,
+    }),
+  };
 };
 
 /**
@@ -258,7 +271,9 @@ describe('waterfallHandle on useTRPC() during render', () => {
         return this.state.error ? 'errored' : this.props.children;
       }
     }
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     const utils = resource.renderApp(
       <Boundary>
         <React.Suspense fallback={<p>loading</p>}>
@@ -276,21 +291,23 @@ describe('waterfallHandle on useTRPC() during render', () => {
 
   test("switching input reads the loader's query first, then the new one", async () => {
     await using resource = ctx();
-    const [{ comments }] = await loadHandles(resource.optionsProxyClient, {
-      comments: fetchInfiniteEntry(resource.optionsProxyClient.post.comments, {
+    const [{ comments }] = await loadHandles(resource.loaderProxyClient, {
+      comments: fetchInfiniteEntry(resource.loaderProxyClient.post.comments, {
         postId: '1',
         limit: 2,
       }),
     });
     expect(resource.calls).toHaveBeenCalledTimes(1);
 
-    let setLimit: (limit: number) => void = () => {};
+    let setLimit: (limit: number) => void = () => undefined;
     function Comments(props: {
       comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
     }) {
       const trpc = resource.useTRPC();
       const [limit, _setLimit] = React.useState(props.comments.input.limit);
-      setLimit = _setLimit;
+      React.useEffect(() => {
+        setLimit = _setLimit;
+      }, []);
       const handle = waterfallInfiniteHandle(
         trpc.post.comments,
         props.comments,

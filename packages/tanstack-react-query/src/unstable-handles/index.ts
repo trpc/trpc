@@ -1,4 +1,5 @@
-export type { TRPCLoaderOptionsProxy } from './internals/createOptionsProxy';
+export { createTRPCLoaderProxy } from './loaderProxy';
+export type { TRPCLoaderOptionsProxy } from './loaderProxy';
 export {
   loadHandles,
   loadHandlesSettled,
@@ -12,8 +13,8 @@ export {
   waterfallInfiniteHandle,
   fromHandle,
   isTRPCEntryError,
-  TRPCEntryError,
-} from './internals/handles';
+} from './handles';
+export { TRPCEntryError } from './entryError';
 export type {
   TRPCQueryHandle,
   TRPCInfiniteQueryHandle,
@@ -29,4 +30,4 @@ export type {
   TRPCInfiniteEntryOptions,
   inferQueryHandle,
   inferInfiniteQueryHandle,
-} from './internals/handles';
+} from './handles';

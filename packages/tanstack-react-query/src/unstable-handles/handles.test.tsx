@@ -1,4 +1,4 @@
-import { testReactResource } from './__helpers';
+import { testReactResource } from '../../test/__helpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import {
   defaultShouldDehydrateQuery,
@@ -13,14 +13,15 @@ import {
 import { render } from '@testing-library/react';
 import { TRPCClientError } from '@trpc/client';
 import type { TRPCClientErrorLike } from '@trpc/client';
+import { getUntypedClient } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { TRPC_ERROR_CODE_KEY } from '@trpc/server';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { TRPCOptionsProxy } from '../src';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 import {
+  createTRPCLoaderProxy,
   loadHandles,
   loadHandlesSettled,
   prefetchEntry,
@@ -34,14 +35,16 @@ import {
   fromHandle,
   isTRPCEntryError,
   TRPCEntryError,
-} from '../src/unstable-handles';
+} from '.';
 import type {
   TRPCLoaderOptionsProxy,
   TRPCQueryHandle,
   TRPCInfiniteQueryHandle,
   inferQueryHandle,
   inferInfiniteQueryHandle,
-} from '../src/unstable-handles';
+} from '.';
+import type { TRPCOptionsProxy } from '..';
+import { createTRPCContext, createTRPCOptionsProxy } from '..';
 
 const ctx = () => {
   const t = initTRPC.create();
@@ -84,7 +87,21 @@ const ctx = () => {
       return { id: opts.input.id };
     }),
   });
-  return { ...testReactResource(appRouter), calls, appRouter };
+  const resource = testReactResource(appRouter);
+  return {
+    ...resource,
+    calls,
+    appRouter,
+    loaderProxyClient: createTRPCLoaderProxy<typeof appRouter>({
+      client: getUntypedClient(resource.client),
+      queryClient: resource.queryClient,
+    }),
+    loaderProxyServer: createTRPCLoaderProxy<typeof appRouter>({
+      router: appRouter,
+      ctx: {},
+      queryClient: resource.queryClient,
+    }),
+  };
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
@@ -109,7 +126,7 @@ function makeServerClient() {
 
 function makeServerProxy(resource: ReturnType<typeof ctx>) {
   const queryClient = makeServerClient();
-  const trpc = createTRPCOptionsProxy({
+  const trpc = createTRPCLoaderProxy({
     router: resource.appRouter,
     ctx: {},
     queryClient,
@@ -335,9 +352,18 @@ describe('types', () => {
     void prefetchInfiniteEntry(trpc.post.byId, { id: '1' });
   });
 
-  test("useTRPC() can't load handles or build entries", () => {
+  test("useTRPC() and createTRPCOptionsProxy can't load handles or build entries", () => {
     const { useTRPC } = createTRPCContext<AppRouter>();
     if (Math.random() < 2) return;
+    const plain = createTRPCOptionsProxy<AppRouter>({
+      router: {} as AppRouter,
+      ctx: {},
+      queryClient: new QueryClient(),
+    });
+    // @ts-expect-error only a proxy from createTRPCLoaderProxy loads handles
+    void loadHandles(plain, {});
+    // @ts-expect-error nor builds entries
+    prefetchEntry(plain.post.byId, { id: '1' });
     const trpc = useTRPC();
     // @ts-expect-error a render can't wait for queries
     void loadHandles(trpc, {});
@@ -521,7 +547,7 @@ describe('loading', () => {
 
   test('a failed entry keeps the TRPCClientError on a client-backed proxy', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyClient;
+    const trpc = resource.loaderProxyClient;
 
     const error = await loadHandles(trpc, {
       post: fetchEntry(trpc.post.byId, { id: 'missing' }),
@@ -538,7 +564,7 @@ describe('loading', () => {
 
   test('keeps an entry named __proto__ as its own key', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     const [handles, data] = await loadHandles(trpc, {
       ['__proto__']: ensureEntry(trpc.post.byId, { id: '1' }),
     });
@@ -546,9 +572,15 @@ describe('loading', () => {
     expect(Object.keys(data)).toEqual(['__proto__']);
   });
 
-  test('JavaScript callers get a readable error for loadHandles on a router level', async () => {
+  test('JavaScript callers get a readable error for a router level loadHandles or fromHandle cannot take', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
+    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    expect(() =>
+      fromHandle(trpc.viewer as any, handle),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`fromHandle(trpc.viewer, handle)\` got a handle for \`post.byId\`, which isn't in \`viewer\`. Pass the root proxy, \`trpc\`]`,
+    );
     const post: any = trpc.post;
     expect(() => loadHandles(post, {})).toThrowErrorMatchingInlineSnapshot(
       `[Error: \`loadHandles()\` takes the root proxy, \`trpc\`, got \`trpc.post\`]`,
@@ -601,7 +633,7 @@ describe('loading', () => {
 
   test('JavaScript callers get a readable error for a value that is not a proxy', async () => {
     await using resource = ctx();
-    const handle = waterfallHandle(resource.optionsProxyServer.post.byId, {
+    const handle = waterfallHandle(resource.loaderProxyServer.post.byId, {
       id: '1',
     });
     expect(() =>
@@ -618,7 +650,7 @@ describe('loading', () => {
 
   test('throws a readable error for a value that is not an entry', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     await expect(
       loadHandles(trpc, { post: { id: '1' } as any }),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -689,7 +721,7 @@ describe('loading', () => {
 
   test('infinite entries can load several pages up front', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     const getNextPageParam = (last: { nextCursor: number }) => last.nextCursor;
     const [handles, data] = await loadHandles(trpc, {
       ensured: ensureInfiniteEntry(
@@ -725,7 +757,7 @@ describe('loading', () => {
 
   test('infinite fetch entries refetch every cached page with getNextPageParam', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     const getNextPageParam = (last: { nextCursor: number }) => last.nextCursor;
     await loadHandles(trpc, {
       list: fetchInfiniteEntry(
@@ -767,8 +799,11 @@ describe('loading', () => {
       return null;
     }
     resource.renderApp(<Component />);
+    expect(() => loadHandles(resource.optionsProxyServer as any, {})).toThrow(
+      (error as Error).message,
+    );
     expect(error).toMatchInlineSnapshot(
-      `[Error: \`loadHandles()\` needs the proxy from \`createTRPCOptionsProxy\`, not \`useTRPC()\`: loading waits for queries, which a render can't. Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` and wait where you read it, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
+      `[Error: \`loadHandles()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` and wait where you read it, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
@@ -777,7 +812,7 @@ describe('loading', () => {
 describe('waterfall handles', () => {
   test('start nothing, and the reader fetches once', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyClient;
+    const trpc = resource.loaderProxyClient;
     const handle = waterfallHandle(trpc.post.byId, { id: '1' });
     expect(handle).toEqual({
       queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
@@ -804,7 +839,7 @@ describe('waterfall handles', () => {
 
   test("switching keeps a loader's handle while the key is the same", async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     const [{ post, list }] = await loadHandles(trpc, {
       post: prefetchEntry(trpc.post.byId, { id: '1' }),
       list: prefetchInfiniteEntry(trpc.post.list, {
@@ -844,7 +879,7 @@ describe('waterfall handles', () => {
 
   test('switching restarts a query the cache lost, before any reader asks', async () => {
     await using resource = ctx();
-    const server = resource.optionsProxyServer;
+    const server = resource.loaderProxyServer;
     const [{ post }] = await loadHandles(server, {
       post: prefetchEntry(server.post.byId, { id: '1' }),
     });
@@ -863,7 +898,7 @@ describe('waterfall handles', () => {
 
   test("can't switch a handle for another procedure", async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     const draft = waterfallHandle(trpc.post.draftById, { id: '1' });
     expect(() =>
       waterfallHandle(trpc.post.byId, draft, (input) => input),
@@ -930,7 +965,7 @@ describe('runtime', () => {
 
   test('handle reads share cache entries with queryOptions(input)', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyClient;
+    const trpc = resource.loaderProxyClient;
     const handle = waterfallHandle(trpc.post.byId, { id: '1' });
     expect(fromHandle(trpc, handle).queryKey).toEqual(
       trpc.post.byId.queryOptions({ id: '1' }).queryKey,
@@ -980,7 +1015,7 @@ describe('runtime', () => {
       useSuspenseQuery(fromHandle(trpc, handle));
       return null;
     }
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const utils = render(
       <QueryClientProvider client={browser}>
         <TRPCProvider trpcClient={resource.client} queryClient={browser}>
@@ -1002,7 +1037,7 @@ describe('runtime', () => {
 
   test('a mismatched keyPrefix is a loud error, not a silent cache miss', async () => {
     await using resource = ctx();
-    const serverTrpc = createTRPCOptionsProxy<AppRouter, { keyPrefix: true }>({
+    const serverTrpc = createTRPCLoaderProxy<AppRouter, { keyPrefix: true }>({
       router: resource.appRouter,
       ctx: {},
       queryClient: makeServerClient(),
@@ -1010,7 +1045,7 @@ describe('runtime', () => {
     });
     const handle = waterfallHandle(serverTrpc.post.byId, { id: '1' });
     expect(() =>
-      fromHandle(resource.optionsProxyClient, handle as any),
+      fromHandle(resource.loaderProxyClient, handle as any),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: The handle for "post.byId" was created with keyPrefix "server", but this proxy uses undefined]`,
     );
@@ -1019,7 +1054,7 @@ describe('runtime', () => {
   test('round trip with the same keyPrefix on both sides', async () => {
     await using resource = ctx();
     const serverQueryClient = makeServerClient();
-    const serverTrpc = createTRPCOptionsProxy<AppRouter, { keyPrefix: true }>({
+    const serverTrpc = createTRPCLoaderProxy<AppRouter, { keyPrefix: true }>({
       router: resource.appRouter,
       ctx: {},
       queryClient: serverQueryClient,
@@ -1032,7 +1067,7 @@ describe('runtime', () => {
     await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
     hydrate(resource.queryClient, overTheWire(dehydrate(serverQueryClient)));
 
-    const browserTrpc = createTRPCOptionsProxy<AppRouter, { keyPrefix: true }>({
+    const browserTrpc = createTRPCLoaderProxy<AppRouter, { keyPrefix: true }>({
       client: resource.client,
       queryClient: resource.queryClient,
       keyPrefix: 'app',
@@ -1092,20 +1127,26 @@ describe('runtime', () => {
           </QueryClientProvider>,
         );
       }
-      return {
-        resource,
-        handle,
-        browser,
-        hydrateBrowser: (s: DehydratedState) => hydrate(browser, s),
-        state,
-        renderRead,
-        caught: () => caught,
-        [Symbol.asyncDispose]: () => resource[Symbol.asyncDispose](),
-      };
+      return makeAsyncResource(
+        {
+          resource,
+          handle,
+          browser,
+          hydrateBrowser: (s: DehydratedState) => hydrate(browser, s),
+          state,
+          renderRead,
+          caught: () => caught,
+        },
+        async () => {
+          await using _resource = resource;
+        },
+      );
     }
 
     test('is refetched once by a handle read, even with retry: false', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
       await using t = await setup('1');
       t.hydrateBrowser(t.state);
       const utils = t.renderRead((trpc) =>
@@ -1120,7 +1161,9 @@ describe('runtime', () => {
     });
 
     test('reports a typed TRPCClientError instead of a redacted error', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
       await using t = await setup('missing');
       t.hydrateBrowser(t.state);
       const utils = t.renderRead((trpc) =>
@@ -1138,9 +1181,11 @@ describe('runtime', () => {
 
     test('a cancelled query is not refetched', async () => {
       await using t = await setup('missing');
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
       t.hydrateBrowser(t.state);
-      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+      const browserTrpc = createTRPCLoaderProxy<AppRouter>({
         client: t.resource.client,
         queryClient: t.browser,
       });
@@ -1153,7 +1198,9 @@ describe('runtime', () => {
     });
 
     test('a queryOptions(input) read is left alone', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const spy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
       await using t = await setup('missing');
       t.hydrateBrowser(t.state);
       const utils = t.renderRead((trpc) =>
@@ -1199,7 +1246,7 @@ describe('runtime', () => {
 
   test('procedures without input', async () => {
     await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
+    const trpc = resource.loaderProxyServer;
     const [{ viewer }, data] = await loadHandles(trpc, {
       viewer: ensureEntry(trpc.viewer),
     });
@@ -1214,8 +1261,8 @@ describe('runtime', () => {
 
   test('handles of procedures without input have no input key, so Next.js can serialize them', async () => {
     await using resource = ctx();
-    const server = resource.optionsProxyServer;
-    const client = resource.optionsProxyClient;
+    const server = resource.loaderProxyServer;
+    const client = resource.loaderProxyClient;
     const [loaded] = await loadHandles(server, {
       prefetch: prefetchEntry(server.viewer),
       ensure: ensureEntry(server.viewer),

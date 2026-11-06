@@ -265,7 +265,7 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
 
 ### `loadHandles` and `fromHandle` - passing queries as handles {#handles}
 
-On the server or in a route loader, list the queries as entries and load them in one call:
+On the server or in a route loader, create the proxy with `createTRPCLoaderProxy`, which takes the same options as `createTRPCOptionsProxy`. List the queries as entries and load them in one call:
 
 ```ts
 import {

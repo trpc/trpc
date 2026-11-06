@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createTRPCContext,
-  createTRPCOptionsProxy,
   type TRPCOptionsProxy,
 } from '@trpc/tanstack-react-query';
-import type { TRPCLoaderOptionsProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import {
+  createTRPCLoaderProxy,
+  type TRPCLoaderOptionsProxy,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import type { ReactNode } from 'react';
 
 import { type AppRouter, createDemoClient } from './backend.ts';
@@ -41,7 +43,7 @@ export function createSession(latency: number, origin?: string) {
     client,
     network,
     queryClient,
-    trpc: createTRPCOptionsProxy<AppRouter>({ client, queryClient }),
+    trpc: createTRPCLoaderProxy<AppRouter>({ client, queryClient }),
   };
 }
 

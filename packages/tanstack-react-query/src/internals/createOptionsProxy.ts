@@ -270,29 +270,14 @@ export interface DecorateSubscriptionProcedure<
   subscriptionOptions: TRPCSubscriptionOptions<TDef>;
 }
 
-declare const loaderBrand: unique symbol;
-
 /**
- * Type-only: marks the root of `createTRPCOptionsProxy`'s proxy, which `loadHandles`
- * from `@trpc/tanstack-react-query/unstable-handles` takes, and its query procedures,
- * which the entries take. `useTRPC()` doesn't have it, since a render can't wait for
- * queries.
- * @internal
- */
-export interface TRPCLoaderBrand<TLevel extends 'root' | 'procedure'> {
-  readonly [loaderBrand]: TLevel;
-}
-
-/**
- * The helpers for a procedure of the given type
+ * The helpers for a procedure of the given type.
  */
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
-  TCanLoad extends boolean = false,
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef> &
-      (TCanLoad extends true ? TRPCLoaderBrand<'procedure'> : unknown) &
       (TDef['input'] extends OptionalCursorInput
         ? DecorateInfiniteQueryProcedure<TDef>
         : Record<string, never>)
@@ -309,11 +294,10 @@ export type DecoratedRouterRecord<
   TRoot extends AnyTRPCRootTypes,
   TRecord extends TRPCRouterRecord,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-  TCanLoad extends boolean = false,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
-      ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags, TCanLoad> &
+      ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags> &
           DecorateRouterKeyable<TFeatureFlags>
       : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
@@ -324,15 +308,14 @@ export type DecoratedRouterRecord<
               transformer: TRoot['transformer'];
               errorShape: inferProcedureErrorShape<TRoot, $Value>;
               featureFlags: TFeatureFlags;
-            },
-            TCanLoad
+            }
           >
         : never
     : never;
 };
 
 /**
- * The object returned by `useTRPC()`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
+ * The object returned by `useTRPC()` and `createTRPCOptionsProxy`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage
  */
 export type TRPCOptionsProxy<
@@ -344,46 +327,6 @@ export type TRPCOptionsProxy<
   TFeatureFlags
 > &
   DecorateRouterKeyable<TFeatureFlags>;
-
-/**
- * The object returned by `createTRPCOptionsProxy`: a {@link TRPCOptionsProxy} that can
- * also load handles, in a route loader or a server component.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles
- */
-export type TRPCLoaderOptionsProxy<
-  TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> = DecoratedRouterRecord<
-  TRouter['_def']['_config']['$types'],
-  TRouter['_def']['record'],
-  TFeatureFlags,
-  true
-> &
-  DecorateRouterKeyable<TFeatureFlags> &
-  TRPCLoaderBrand<'root'>;
-
-/**
- * What the handle functions in `@trpc/tanstack-react-query/unstable-handles` read
- * from a proxy, through its hidden `~handles` helper
- * @internal
- */
-export interface TRPCHandleProxyContext {
-  path: string[];
-  prefix: string | undefined;
-  /** Whether it's the `useTRPC()` proxy, which is used during render */
-  inRender: boolean;
-  getQueryClient: () => QueryClient;
-  /** Options for this path's procedure */
-  options: (type: 'query' | 'infinite', input: unknown, opts: unknown) => any;
-  /** Options for another path's procedure, with its existing key */
-  optionsAt: (opts: {
-    type: 'query' | 'infinite';
-    path: string[];
-    queryKey: unknown;
-    input: unknown;
-    opts: unknown;
-  }) => any;
-}
 
 /**
  * Options shared by every {@link createTRPCOptionsProxy} call.
@@ -445,15 +388,8 @@ export type TRPCOptionsProxyOptions<
     | TRPCOptionsProxyOptionsExternal<TRouter>
   );
 
-/**
- * Marks the `useTRPC()` proxy, which is used during render: its waterfall
- * handles start their queries, and it can't load handles
- * @internal
- */
-export const renderHandleVerbs = Symbol('renderHandleVerbs');
-
 type UtilsMethods =
-  | '~handles'
+  | '~queryClient'
   | keyof DecorateQueryProcedure<any>
   | keyof DecorateInfiniteQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
@@ -478,7 +414,7 @@ export function createTRPCOptionsProxy<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
-): TRPCLoaderOptionsProxy<TRouter, TFeatureFlags> {
+): TRPCOptionsProxy<TRouter, TFeatureFlags> {
   const prefix = opts.keyPrefix;
 
   const callIt = (type: TRPCProcedureType): any => {
@@ -512,44 +448,11 @@ export function createTRPCOptionsProxy<
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
-    const handleOptionsAt: TRPCHandleProxyContext['optionsAt'] = (o) =>
-      o.type === 'infinite'
-        ? trpcInfiniteQueryOptions({
-            input: o.input,
-            opts: o.opts as any,
-            path: o.path,
-            queryClient: opts.queryClient,
-            queryKey: o.queryKey as any,
-            query: callIt('query'),
-          })
-        : trpcQueryOptions({
-            input: o.input,
-            opts: o.opts as any,
-            path: o.path,
-            queryClient: opts.queryClient,
-            queryKey: o.queryKey as any,
-            query: callIt('query'),
-          });
-
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
-      '~handles': (): TRPCHandleProxyContext => ({
-        path,
-        prefix,
-        inRender:
-          (opts as { [renderHandleVerbs]?: boolean })[renderHandleVerbs] ===
-          true,
-        getQueryClient: () => unwrapLazyArg(opts.queryClient),
-        options: (type, input, handleOpts) =>
-          handleOptionsAt({
-            type,
-            path,
-            queryKey: getQueryKeyInternal({ path, input, type, prefix }),
-            input,
-            opts: handleOpts,
-          }),
-        optionsAt: handleOptionsAt,
-      }),
+      // Untyped on purpose: the `QueryClient` this proxy uses, for code that
+      // only gets the proxy, like other entry points of this package
+      '~queryClient': () => unwrapLazyArg(opts.queryClient),
 
       pathKey: () => {
         return getQueryKeyInternal({
