@@ -526,14 +526,15 @@ export async function loadHandles(
   const waited = loads.filter((load) => load.state.kind !== 'prefetch');
   const results = await Promise.all(waited.map((load) => load.promise));
 
-  const handles: Record<string, unknown> = {};
-  for (const load of loads) {
-    handles[load.key] = toHandle(load.state.options, load.state.type);
-  }
-  const data: Record<string, unknown> = {};
-  waited.forEach((load, index) => {
-    data[load.key] = results[index];
-  });
+  const handles = Object.fromEntries(
+    loads.map((load) => [
+      load.key,
+      toHandle(load.state.options, load.state.type),
+    ]),
+  );
+  const data = Object.fromEntries(
+    waited.map((load, index) => [load.key, results[index]]),
+  );
   return [handles, data] as const;
 }
 
@@ -590,6 +591,9 @@ export function switchHandle(
   opts: WaterfallOptions,
 ) {
   if (hashKey(opts.options.queryKey) === hashKey(previous.queryKey)) {
+    if (opts.renderClient) {
+      prefetchInRender(opts.renderClient, opts.options, opts.type);
+    }
     return previous;
   }
   return waterfallHandle(opts);

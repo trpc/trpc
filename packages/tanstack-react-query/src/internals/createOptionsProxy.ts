@@ -1,4 +1,9 @@
-import type { DataTag, QueryClient, QueryFilters } from '@tanstack/react-query';
+import {
+  hashKey,
+  type DataTag,
+  type QueryClient,
+  type QueryFilters,
+} from '@tanstack/react-query';
 import type {
   TRPCClient,
   TRPCClientErrorLike,
@@ -522,14 +527,18 @@ export function createTRPCOptionsProxy<
         });
       }
       const previous = arg1;
+      const handleOpts =
+        type === 'infinite'
+          ? { initialCursor: previous.initialCursor }
+          : undefined;
+      const own = handleOptions(type, previous.input, handleOpts);
+      if (hashKey(own.queryKey) !== hashKey(previous.queryKey)) {
+        throw new Error(
+          `\`${path.join('.')}.${utilName}()\` can only switch a handle for \`${path.join('.')}\`, got one for ${JSON.stringify(previous.queryKey)}`,
+        );
+      }
       return switchHandle(previous, {
-        options: handleOptions(
-          type,
-          arg2(previous.input),
-          type === 'infinite'
-            ? { initialCursor: previous.initialCursor }
-            : undefined,
-        ),
+        options: handleOptions(type, arg2(previous.input), handleOpts),
         type,
         renderClient,
       });

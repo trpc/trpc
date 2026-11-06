@@ -8,7 +8,7 @@ parent: "client/tanstack-react-query"
 order: 53
 ---
 
-A **handle** is a small, serializable reference to a query you loaded in a server component or a route loader. Pass it to a component, and the component reads the query, fully typed, without naming the procedure or repeating its input.
+A **handle** is a small, serializable reference to a query. You usually load it in a server component or a route loader, or build it during render with [`unstable_$waterfallHandle`](#waterfall-handles). Pass it to a component, and the component reads the query, fully typed, without naming the procedure or repeating its input.
 
 :::info
 We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
@@ -919,7 +919,8 @@ export function Comments(props: {
 }
 ```
 
-- While the new input maps to the loader's query, it returns the loader's handle as is, so the first render reads what the loader started.
+- While the new input maps to the loader's query, it returns the loader's handle as is, so the first render reads what the loader started. On `useTRPC()`, it restarts that query if the cache lost it.
+- The handle must come from the same procedure. Switching a `post.draftById` handle with `post.byId.unstable_$waterfallHandle` throws, even when their types match.
 - When the input changes, the new query starts when the component renders with it, on `useTRPC()` before the reader does. Its first page is still a waterfall. Wrap `setSort` in `startTransition`, or pass `placeholderData: keepPreviousData` to `unstable_$fromHandle`, to keep showing the old list while it loads.
 
 ## Request waterfalls {#waterfalls}

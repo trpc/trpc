@@ -103,13 +103,14 @@ describe('types', () => {
     type PostHandle = unstable_inferQueryHandle<TRPC['post']['byId']>;
     type ListHandle = unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
 
-    const [handles, data] = await trpc.unstable_$loadHandles({
+    const loaded = await trpc.unstable_$loadHandles({
       prefetched: trpc.post.byId.unstable_$prefetchEntry({ id: '1' }),
       fetched: trpc.post.byId.unstable_$fetchEntry({ id: '2' }),
       ensured: trpc.post.byId.unstable_$ensureEntry({ id: '3' }),
       list: trpc.post.list.unstable_$ensureInfiniteEntry({ limit: 2 }),
       viewer: trpc.viewer.unstable_$prefetchEntry(),
     });
+    const [handles, data] = loaded;
     expectTypeOf(handles.prefetched).toEqualTypeOf<PostHandle>();
     expectTypeOf(handles.fetched).toEqualTypeOf<PostHandle>();
     expectTypeOf(handles.ensured).toEqualTypeOf<PostHandle>();
@@ -130,7 +131,7 @@ describe('types', () => {
     void data.prefetched;
 
     // @ts-expect-error the tuple is readonly
-    handles[0] = handles;
+    loaded[0] = handles;
   });
 
   test('entries check their input', () => {
@@ -341,6 +342,16 @@ describe('loading', () => {
       post: server.trpc.post.byId.unstable_$prefetchEntry({ id: 'missing' }),
     });
     expect(handles.post.input).toEqual({ id: 'missing' });
+  });
+
+  test('keeps an entry named __proto__ as its own key', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const [handles, data] = await trpc.unstable_$loadHandles({
+      ['__proto__']: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
+    });
+    expect(Object.keys(handles)).toEqual(['__proto__']);
+    expect(Object.keys(data)).toEqual(['__proto__']);
   });
 
   test('throws a readable error for a value that is not an entry', async () => {
@@ -568,6 +579,39 @@ describe('waterfall handles', () => {
       input: { limit: 3 },
       initialCursor: 4,
     });
+  });
+
+  test('switching restarts a query the cache lost, before any reader asks', async () => {
+    await using resource = ctx();
+    const server = resource.optionsProxyServer;
+    const [{ post }] = await server.unstable_$loadHandles({
+      post: server.post.byId.unstable_$prefetchEntry({ id: '1' }),
+    });
+    const loaded = overTheWire(post);
+    resource.queryClient.clear();
+
+    function Page() {
+      const t = resource.useTRPC();
+      const handle = t.post.byId.unstable_$waterfallHandle(
+        loaded,
+        (input) => input,
+      );
+      return <p>{handle === loaded ? 'same handle' : 'new handle'}</p>;
+    }
+    const utils = resource.renderApp(<Page />);
+    expect(utils.container).toHaveTextContent('same handle');
+    expect(resource.queryClient.isFetching()).toBe(1);
+  });
+
+  test("can't switch a handle for another procedure", () => {
+    const resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const draft = trpc.post.draftById.unstable_$waterfallHandle({ id: '1' });
+    expect(() =>
+      trpc.post.byId.unstable_$waterfallHandle(draft, (input) => input),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`post.byId.unstable_$waterfallHandle()\` can only switch a handle for \`post.byId\`, got one for [["post","draftById"],{"input":{"id":"1"},"type":"query"}]]`,
+    );
   });
 });
 

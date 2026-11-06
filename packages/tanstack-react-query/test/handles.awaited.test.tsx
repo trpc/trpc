@@ -324,7 +324,10 @@ describe('runtime', () => {
       title: 'Fixture',
     });
     const [{ post }] = await trpc.unstable_$loadHandles({
-      post: trpc.post.byId.unstable_$ensureEntry({ id: '1' }),
+      post: trpc.post.byId.unstable_$ensureEntry(
+        { id: '1' },
+        { staleTime: Infinity },
+      ),
     });
     expect(
       queryClient.getQueryData(trpc.unstable_$fromHandle(post).queryKey),
