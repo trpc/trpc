@@ -117,11 +117,18 @@ function indexOf(docs: ReadonlyArray<DocMeta>): Index {
   }
   const entries = entriesOf(docs);
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const titles = new Map(docs.map((doc) => [doc.slug, doc.title]));
   const search = new MiniSearch<SearchEntry>({
     extractField: (entry, field) => {
       // A page's path: `httpbatchlink` finds `client/links/httpBatchLink`.
       if (field === 'path') {
         return entry.hash === undefined ? entry.slug : '';
+      }
+      // A page's full title, where the sidebar's label is shorter.
+      if (field === 'title') {
+        return entry.hash === undefined
+          ? stripInlineCode(titles.get(entry.slug) ?? '')
+          : '';
       }
       const value = entry[field as keyof SearchEntry];
       if (typeof value === 'string') {
@@ -129,7 +136,7 @@ function indexOf(docs: ReadonlyArray<DocMeta>): Index {
       }
       return Array.isArray(value) ? stripInlineCode(value.join(' ')) : '';
     },
-    fields: ['text', 'trail', 'section', 'description', 'path'],
+    fields: ['text', 'title', 'trail', 'section', 'description', 'path'],
     searchOptions: {
       boost: { description: 0.5, path: 0.5, section: 0.5, text: 3 },
       // Pages over their headings, guides over the API reference, listed
@@ -178,7 +185,7 @@ export function searchDocs(
   if (query.trim() === '') {
     return index.pages
       .filter((entry) => !entry.experimental)
-      .slice(0, 8)
+      .slice(0, Math.min(8, limit))
       .map((entry) => ({ entry, match: noMatch }));
   }
   return index.search

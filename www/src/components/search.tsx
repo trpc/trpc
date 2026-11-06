@@ -72,6 +72,7 @@ export function useSearchQuery() {
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     if (urlQuery !== written.current) {
+      clearTimeout(timer.current);
       written.current = urlQuery;
       setQuery(urlQuery ?? '');
     }
@@ -220,7 +221,17 @@ function SearchPanel(props: { readonly onFollow: () => void }) {
   const search = useSearchQuery();
   const query = useDeferredValue(search.query);
   const [active, setActive] = useState(0);
-  const [recentIds, setRecentIds] = useState(() => readRecent(version.id));
+  const [recent, setRecent] = useState(() => ({
+    ids: readRecent(version.id),
+    version: version.id,
+  }));
+  // Back or forward to another version's page keeps the dialog open.
+  const recentIds =
+    recent.version === version.id ? recent.ids : readRecent(version.id);
+  const saveRecent = (ids: ReadonlyArray<string>) => {
+    writeRecent(version.id, ids);
+    setRecent({ ids, version: version.id });
+  };
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -249,9 +260,7 @@ function SearchPanel(props: { readonly onFollow: () => void }) {
   }, [listId, query, selected]);
 
   const remember = (entry: SearchEntry) => {
-    const next = withRecent(recentIds, entry.id);
-    writeRecent(version.id, next);
-    setRecentIds(next);
+    saveRecent(withRecent(recentIds, entry.id));
   };
   const follow = (entry: SearchEntry) => {
     remember(entry);
@@ -289,17 +298,16 @@ function SearchPanel(props: { readonly onFollow: () => void }) {
           }}
           onKeyDown={(event) => {
             const count = options.length;
+            if (event.nativeEvent.isComposing) {
+              return;
+            }
             if (event.key === 'ArrowDown' && count > 0) {
               event.preventDefault();
               setActive((selected + 1) % count);
             } else if (event.key === 'ArrowUp' && count > 0) {
               event.preventDefault();
               setActive((selected - 1 + count) % count);
-            } else if (
-              event.key === 'Enter' &&
-              !event.nativeEvent.isComposing &&
-              options[selected]
-            ) {
+            } else if (event.key === 'Enter' && options[selected]) {
               event.preventDefault();
               const link = document.getElementById(optionId(selected));
               if (!(link instanceof HTMLAnchorElement)) {
@@ -401,6 +409,11 @@ function SearchPanel(props: { readonly onFollow: () => void }) {
                           ? {}
                           : { hash: entry.hash })}
                         id={optionId(index)}
+                        onAuxClick={(event) => {
+                          if (event.button === 1) {
+                            remember(entry);
+                          }
+                        }}
                         onClick={(event) => {
                           if (modified(event)) {
                             remember(entry);
@@ -441,8 +454,7 @@ function SearchPanel(props: { readonly onFollow: () => void }) {
           <button
             className="ml-auto font-medium hover:text-foreground"
             onClick={() => {
-              writeRecent(version.id, []);
-              setRecentIds([]);
+              saveRecent([]);
               setActive(0);
               inputRef.current?.focus();
             }}

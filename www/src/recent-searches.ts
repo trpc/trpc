@@ -54,3 +54,8 @@ export function writeRecent(version: string, ids: ReadonlyArray<string>) {
     // Not remembered, then.
   }
 }
+
+/** Puts `id` first in `version`'s stored list. */
+export function rememberRecent(version: string, id: string) {
+  writeRecent(version, withRecent(readRecent(version), id));
+}

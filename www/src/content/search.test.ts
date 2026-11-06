@@ -13,9 +13,10 @@ const docs: ReadonlyArray<DocMeta> = [
   {
     description: 'Calls go through a chain of links.',
     headings: [{ depth: 2, id: 'batching', text: 'Batching requests' }],
+    label: 'Links',
     section: 'Client',
     slug: 'client/links',
-    title: 'Links',
+    title: 'Links Overview',
   },
   {
     description: 'Batches calls into one request.',
@@ -86,6 +87,12 @@ describe('searchDocs', () => {
 
   it('stops at the limit', () => {
     expect(searchDocs(docs, 'client', 2)).toHaveLength(2);
+    expect(searchDocs(docs, '', 2)).toHaveLength(2);
+    expect(searchDocs(docs, '', 0)).toEqual([]);
+  });
+
+  it("finds a page by its full title, where it's labelled shorter", () => {
+    expect(ids('overview')).toEqual(['client/links']);
   });
 
   it("finds experiments' pages, marked", () => {

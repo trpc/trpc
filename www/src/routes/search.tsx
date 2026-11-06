@@ -11,6 +11,7 @@ import { SearchHit } from '~/components/search-hit.tsx';
 import { v11Docs } from '~/content/docs.ts';
 import { groupBySection, searchDocs } from '~/content/search.ts';
 import { searchPage, searchParam } from '~/pages.ts';
+import { rememberRecent } from '~/recent-searches.ts';
 import { pageHead } from '~/seo.ts';
 
 /**
@@ -85,7 +86,7 @@ function SearchPage() {
             search.change(event.target.value);
           }}
           onKeyDown={(event) => {
-            if (event.key === 'ArrowDown') {
+            if (event.key === 'ArrowDown' && !event.nativeEvent.isComposing) {
               moveFocus(event, listRef.current);
             }
           }}
@@ -138,6 +139,14 @@ function SearchPage() {
                   <Link
                     className="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm transition-colors hover:bg-accent/50 focus-visible:bg-accent/50"
                     data-search-hit
+                    onAuxClick={(event) => {
+                      if (event.button === 1) {
+                        rememberRecent(v11Docs.id, hit.entry.id);
+                      }
+                    }}
+                    onClick={() => {
+                      rememberRecent(v11Docs.id, hit.entry.id);
+                    }}
                     {...(hit.entry.hash === undefined
                       ? {}
                       : { hash: hit.entry.hash })}
