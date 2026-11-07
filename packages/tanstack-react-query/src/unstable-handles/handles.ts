@@ -311,6 +311,8 @@ interface EntryState {
   kind: TRPCEntryKind;
   type: HandleType;
   options: any;
+  /** The `QueryClient` of the proxy that built the entry */
+  queryClient: QueryClient;
 }
 
 function createEntry(state: EntryState) {
@@ -385,9 +387,15 @@ async function startEntries(opts: {
   settle: boolean;
 }) {
   const { queryClient, entries } = opts;
-  const states = Object.entries(entries).map(
-    ([key, entry]) => [key, readEntry(key, entry)] as const,
-  );
+  const states = Object.entries(entries).map(([key, entry]) => {
+    const state = readEntry(key, entry);
+    if (state.queryClient !== queryClient) {
+      throw new Error(
+        `The entry for "${key}" was built with a proxy for another QueryClient than the root proxy that loads it`,
+      );
+    }
+    return [key, state] as const;
+  });
   const loads = states.map(([key, state]) => ({
     key,
     state,
@@ -431,8 +439,8 @@ function warnIfNotHydrated(
         warnedNotHydrated.add(queryHash);
         // oxlint-disable-next-line no-console
         console.warn(
-          `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering: ` +
-            `the query it refers to isn't in this QueryClient. ` +
+          `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering. ` +
+            `Unless its data is stale, the query it refers to isn't in this QueryClient. ` +
             `Render the reading component inside <HydrateClient> or <HydrationBoundary>, and don't return handles from server functions or server actions. ` +
             `See https://trpc.io/docs/client/tanstack-react-query/handles#where-handles-dont-work`,
         );
@@ -449,7 +457,15 @@ const watchedHydrations = new WeakSet<Promise<unknown>>();
  * redacted error, before any `retry` from `fromHandle()` applies. Refetch such
  * a query once so error boundaries see a `TRPCClientError` from this client.
  */
-function refetchRejectedHydration(queryClient: QueryClient, options: any) {
+function refetchRejectedHydration(
+  queryClient: QueryClient,
+  type: HandleType,
+  options: any,
+) {
+  const enabled =
+    typeof options.enabled === 'function'
+      ? options.enabled
+      : () => options.enabled;
   if (isServerEnvironment()) {
     return;
   }
@@ -471,11 +487,18 @@ function refetchRejectedHydration(queryClient: QueryClient, options: any) {
     if (
       isTRPCClientError(error) ||
       isCancelledError(error) ||
-      query.state.fetchStatus !== 'idle'
+      query.state.fetchStatus !== 'idle' ||
+      enabled(query) === false
     ) {
       return;
     }
-    query.fetch(queryClient.defaultQueryOptions(options)).catch(() => {
+    // Older query-core versions take the infinite behavior from the fetch's
+    // options, so `query.fetch` would store a bare page there
+    const refetch =
+      type === 'infinite'
+        ? queryClient.fetchInfiniteQuery(options)
+        : query.fetch(queryClient.defaultQueryOptions(options));
+    refetch.catch(() => {
       // surfaces through the query's state
     });
   });
@@ -496,7 +519,7 @@ function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
       options.queryFn as QueryFunction<any, any, any>,
     );
   }
-  refetchRejectedHydration(opts.queryClient, options);
+  refetchRejectedHydration(opts.queryClient, opts.handle.type, options);
   return options;
 }
 
@@ -562,6 +585,7 @@ function entry(opts: {
     type: opts.type,
     kind: opts.kind,
     options: optionsOf(ctx.proxy, opts.type)(opts.input, opts.opts),
+    queryClient: queryClientOf(ctx),
   });
 }
 

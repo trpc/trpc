@@ -33,7 +33,11 @@ const ctx = () => {
         .query((opts) => {
           calls('post.comments', opts.input);
           const start = opts.input.cursor ?? 0;
-          return { items: [start, start + 1], nextCursor: start + 2 };
+          const count = opts.input.limit ?? 2;
+          return {
+            items: Array.from({ length: count }, (_, i) => start + i),
+            nextCursor: start + count,
+          };
         }),
     }),
   });
@@ -126,7 +130,7 @@ describe("a component that changes a handle's input with queryOptions", () => {
 
     React.act(() => setLimit(3));
     await vi.waitFor(() =>
-      expect(utils.container).toHaveTextContent('limit:3 comments:0,1'),
+      expect(utils.container).toHaveTextContent('limit:3 comments:0,1,2'),
     );
     expect(resource.calls).toHaveBeenCalledTimes(2);
     expect(resource.calls).toHaveBeenLastCalledWith('post.comments', {

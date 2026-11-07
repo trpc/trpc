@@ -4,6 +4,7 @@ import {
   defaultShouldDehydrateQuery,
   dehydrate,
   hydrate,
+  InfiniteQueryObserver,
   isCancelledError,
   QueryClient,
   QueryClientProvider,
@@ -34,6 +35,7 @@ import {
   TRPCEntryError,
 } from '.';
 import type {
+  AnyTRPCHandle,
   TRPCQueryHandle,
   TRPCInfiniteQueryHandle,
   inferQueryHandle,
@@ -82,6 +84,18 @@ const ctx = () => {
       }
       return { id: opts.input.id };
     }),
+    flakyList: t.procedure
+      .input(z.object({ cursor: z.number().nullish() }))
+      .query((opts) => {
+        calls('flakyList', opts.input);
+        if (
+          calls.mock.calls.filter(([path]) => path === 'flakyList').length === 1
+        ) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }
+        const start = opts.input.cursor ?? 0;
+        return { items: [start, start + 1], nextCursor: start + 2 };
+      }),
   });
   const resource = testReactResource(appRouter);
   return {
@@ -608,6 +622,21 @@ describe('loading', () => {
     expect(resource.calls).not.toHaveBeenCalled();
   });
 
+  test("rejects an entry built with another QueryClient's proxy", async () => {
+    await using resource = ctx();
+    const a = makeServerProxy(resource);
+    const b = makeServerProxy(resource);
+    await expect(
+      loadHandles(a.trpc, {
+        post: prefetchEntry(b.trpc.post.byId, { id: '1' }),
+      }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[Error: The entry for "post" was built with a proxy for another QueryClient than the root proxy that loads it]`,
+    );
+    expect(resource.calls).not.toHaveBeenCalled();
+    expect(a.queryClient.getQueryCache().getAll()).toHaveLength(0);
+  });
+
   test('an ensure entry resolves at once with stale data and refetches it from the loader', async () => {
     await using resource = ctx();
     const server = makeServerProxy(resource);
@@ -966,18 +995,27 @@ describe('runtime', () => {
   });
 
   describe('a query dehydrated as pending that rejects later', () => {
-    async function setup(id: string) {
+    async function setup(failure: 'missing' | 'flaky' | 'flakyList') {
       const resource = ctx();
       const server = makeServerProxy(resource);
-      const [{ handle }] = await loadHandles(server.trpc, {
-        handle:
-          id === 'missing'
-            ? prefetchEntry(server.trpc.post.byId, { id })
-            : prefetchEntry(server.trpc.flaky, { id }),
-      });
-      // Dehydrated while pending: the promise crosses (as Flight does) and rejects later
-      const state = dehydrate(server.queryClient);
-      expect(state.queries[0]?.state.status).toBe('pending');
+      const entries = {
+        missing: () => prefetchEntry(server.trpc.post.byId, { id: 'missing' }),
+        flaky: () => prefetchEntry(server.trpc.flaky, { id: '1' }),
+        flakyList: () => prefetchInfiniteEntry(server.trpc.flakyList, {}),
+      };
+      let handle: AnyTRPCHandle;
+      let state: DehydratedState;
+      try {
+        [{ handle }] = await loadHandles(server.trpc, {
+          handle: entries[failure](),
+        });
+        // Dehydrated while pending: the promise crosses (as Flight does) and rejects later
+        state = dehydrate(server.queryClient);
+        expect(state.queries[0]?.state.status).toBe('pending');
+      } catch (cause) {
+        await using _resource = resource;
+        throw cause;
+      }
 
       const browser = new QueryClient({
         defaultOptions: { queries: { retry: false } },
@@ -1033,7 +1071,7 @@ describe('runtime', () => {
       const spy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => undefined);
-      await using t = await setup('1');
+      await using t = await setup('flaky');
       t.hydrateBrowser(t.state);
       const utils = t.renderRead((trpc) =>
         fromHandle(trpc, t.handle as TRPCQueryHandle<any>),
@@ -1043,6 +1081,36 @@ describe('runtime', () => {
       );
       // once on the server, once from the browser
       expect(t.resource.calls).toHaveBeenCalledTimes(2);
+      spy.mockRestore();
+    });
+
+    test('an infinite query is refetched as pages', async () => {
+      const spy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      await using t = await setup('flakyList');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const options = fromHandle(
+        browserTrpc,
+        t.handle as inferInfiniteQueryHandle<TRPC['flakyList']>,
+        { getNextPageParam: (last) => last.nextCursor },
+      );
+      await vi.waitFor(() =>
+        expect(t.browser.getQueryData(options.queryKey)).toEqual({
+          pages: [{ items: [0, 1], nextCursor: 2 }],
+          pageParams: [undefined],
+        }),
+      );
+      const observer = new InfiniteQueryObserver(t.browser, options);
+      const next = await observer.fetchNextPage();
+      expect(next.data?.pages.map((page) => page.items)).toEqual([
+        [0, 1],
+        [2, 3],
+      ]);
       spy.mockRestore();
     });
 
@@ -1081,6 +1149,26 @@ describe('runtime', () => {
       expect(t.browser.isFetching()).toBe(0);
       expect(t.resource.calls).toHaveBeenCalledTimes(1);
       spy.mockRestore();
+    });
+
+    test('a disabled read is not refetched', async () => {
+      await using t = await setup('flaky');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const options = fromHandle(
+        browserTrpc,
+        t.handle as inferQueryHandle<TRPC['flaky']>,
+        { enabled: false },
+      );
+      await vi.waitFor(() =>
+        expect(t.browser.getQueryState(options.queryKey)?.status).toBe('error'),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(t.browser.isFetching()).toBe(0);
+      expect(t.resource.calls).toHaveBeenCalledTimes(1);
     });
 
     test('a queryOptions(input) read is left alone', async () => {
