@@ -285,7 +285,7 @@ The components that read handles are the same everywhere: with or without server
 
 ## Using handles on their own {#standalone}
 
-An app that reads every query through a handle doesn't need `useTRPC()`. `createTRPCHandleContext` gives components a proxy that reads handles, and the tRPC client for mutations. With `createTRPCLoaderProxy` for the loaders, the app loads nothing else from `@trpc/tanstack-react-query`:
+An app that reads every query through a handle doesn't need `useTRPC()`. `createTRPCHandleContext` returns a provider and two hooks, which you name: one gives components a proxy that reads handles, the other the tRPC client for mutations. With `createTRPCLoaderProxy` for the loaders, the app loads nothing else from `@trpc/tanstack-react-query`:
 
 ```tsx twoslash
 // @include: handles-router
@@ -294,7 +294,7 @@ An app that reads every query through a handle doesn't need `useTRPC()`. `create
 import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
 import type { AppRouter } from '~/server/router';
 
-export const { TRPCHandleProvider, useTRPCHandles, useTRPCClient } =
+export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
   createTRPCHandleContext<AppRouter>();
 export type TRPC = TRPCHandleProxy<AppRouter>;
 ```
@@ -307,7 +307,7 @@ Render `<TRPCHandleProvider trpcClient={trpcClient} queryClient={queryClient}>` 
 import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
 import type { AppRouter } from '~/server/router';
 
-export const { TRPCHandleProvider, useTRPCHandles, useTRPCClient } =
+export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
   createTRPCHandleContext<AppRouter>();
 export type TRPC = TRPCHandleProxy<AppRouter>;
 // @filename: components/post.tsx

@@ -14,7 +14,11 @@ import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
-import type { inferQueryHandle, TRPCLoaderProxy } from '.';
+import type {
+  CreateTRPCHandleContextResult,
+  inferQueryHandle,
+  TRPCLoaderProxy,
+} from '.';
 import {
   createTRPCHandleContext,
   createTRPCLoaderProxy,
@@ -118,7 +122,7 @@ describe('standalone', () => {
       ctx: {},
       queryClient,
     });
-    const { TRPCHandleProvider, useTRPCHandles, useTRPCClient } =
+    const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
       createTRPCHandleContext<AppRouter>();
 
     const [handles, data] = await loadHandles(loader, {
@@ -175,7 +179,7 @@ describe('standalone', () => {
     expect(await screen.findByText('Renamed by 1')).toBeTruthy();
   });
 
-  test('useTRPCHandles() has only the queries and their keys', () => {
+  test('createTRPCHandleContext returns a readonly tuple, and useTRPCHandles() has only the queries and their keys', () => {
     const t = initTRPC.create();
     const appRouter = t.router({
       post: t.router({
@@ -183,7 +187,14 @@ describe('standalone', () => {
         add: t.procedure.input(z.string()).mutation(() => 'added'),
       }),
     });
-    const { useTRPCHandles } = createTRPCHandleContext<typeof appRouter>();
+    const context = createTRPCHandleContext<typeof appRouter>();
+    expectTypeOf(context).toEqualTypeOf<
+      CreateTRPCHandleContextResult<typeof appRouter>
+    >();
+    expectTypeOf(context).toMatchTypeOf<readonly unknown[]>();
+    expectTypeOf(context).not.toMatchTypeOf<unknown[]>();
+    expectTypeOf(context.length).toEqualTypeOf<3>();
+    const [, useTRPCHandles] = context;
     if (Math.random() < 2) return;
     const trpc = useTRPCHandles();
     expectTypeOf(trpc.post.byId.queryKey)

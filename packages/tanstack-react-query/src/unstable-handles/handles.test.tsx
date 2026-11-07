@@ -395,7 +395,8 @@ describe('types', () => {
     waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
     void fromHandle(trpc, handle);
 
-    const handles = createTRPCHandleContext<AppRouter>().useTRPCHandles();
+    const [, useTRPCHandles] = createTRPCHandleContext<AppRouter>();
+    const handles = useTRPCHandles();
     // @ts-expect-error useTRPCHandles() reads handles, and can't load them
     void loadHandles(handles, {});
     // @ts-expect-error nor build entries

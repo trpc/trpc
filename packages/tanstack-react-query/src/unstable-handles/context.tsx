@@ -7,39 +7,40 @@ import { createRenderProxy } from './proxy';
 import type { TRPCHandleFeatureFlags, TRPCHandleProxy } from './types';
 
 /**
- * What {@link createTRPCHandleContext} returns.
+ * The props of the provider from {@link createTRPCHandleContext}
  */
-export interface CreateTRPCHandleContextResult<
+export type TRPCHandleProviderProps<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends TRPCHandleFeatureFlags = { keyPrefix: false },
-> {
-  /**
-   * Provides the tRPC client and `QueryClient` to `useTRPCHandles` and
-   * `useTRPCClient`.
-   */
-  TRPCHandleProvider: React.FC<
-    {
-      children: React.ReactNode;
-      queryClient: QueryClient;
-      trpcClient: TRPCClient<TRouter>;
-    } & KeyPrefixOptions<TFeatureFlags>
-  >;
-  /**
-   * Returns the handle proxy, for `fromHandle` and `waterfallHandle`.
-   * @see https://trpc.io/docs/client/tanstack-react-query/handles#standalone
-   */
-  useTRPCHandles: () => TRPCHandleProxy<TRouter, TFeatureFlags>;
-  /** Returns the tRPC client, for calling mutations */
-  useTRPCClient: () => TRPCClient<TRouter>;
-}
+> = {
+  children: React.ReactNode;
+  queryClient: QueryClient;
+  trpcClient: TRPCClient<TRouter>;
+} & KeyPrefixOptions<TFeatureFlags>;
 
 /**
- * Creates a `TRPCHandleProvider` and the `useTRPCHandles` and
- * `useTRPCClient` hooks, for an app that reads handles without `useTRPC()`.
+ * What {@link createTRPCHandleContext} returns: the provider, the hook for
+ * the handle proxy, and the hook for the tRPC client. Name them as you like.
+ */
+export type CreateTRPCHandleContextResult<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends TRPCHandleFeatureFlags = { keyPrefix: false },
+> = readonly [
+  TRPCHandleProvider: React.FC<TRPCHandleProviderProps<TRouter, TFeatureFlags>>,
+  useTRPCHandles: () => TRPCHandleProxy<TRouter, TFeatureFlags>,
+  useTRPCClient: () => TRPCClient<TRouter>,
+];
+
+/**
+ * Creates a provider and two hooks, for an app that reads handles without
+ * `useTRPC()`:
+ * - the provider gives the tRPC client and `QueryClient` to the hooks;
+ * - the first hook returns the handle proxy, for `fromHandle` and `waterfallHandle`;
+ * - the second returns the tRPC client, for mutations.
  *
  * @example
  * ```ts
- * export const { TRPCHandleProvider, useTRPCHandles, useTRPCClient } =
+ * export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
  *   createTRPCHandleContext<AppRouter>();
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#standalone
@@ -54,10 +55,9 @@ export function createTRPCHandleContext<
     TFeatureFlags
   > | null>(null);
 
-  const TRPCHandleProvider: CreateTRPCHandleContextResult<
-    TRouter,
-    TFeatureFlags
-  >['TRPCHandleProvider'] = (props) => {
+  const TRPCHandleProvider: React.FC<
+    TRPCHandleProviderProps<TRouter, TFeatureFlags>
+  > = (props) => {
     const value = React.useMemo(
       () =>
         createRenderProxy<TRouter, TFeatureFlags>({
@@ -97,5 +97,5 @@ export function createTRPCHandleContext<
     return client;
   }
 
-  return { TRPCHandleProvider, useTRPCHandles, useTRPCClient };
+  return [TRPCHandleProvider, useTRPCHandles, useTRPCClient] as const;
 }
