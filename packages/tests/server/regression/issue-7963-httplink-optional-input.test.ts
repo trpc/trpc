@@ -25,3 +25,15 @@ describe.each(['httpLink', 'httpBatchLink'] as const)('%s', (clientLink) => {
     });
   });
 });
+
+test('a malformed JSON body is still a bad request', async () => {
+  await using ctx = testServerAndClientResource(appRouter);
+
+  const res = await fetch(`${ctx.httpUrl}/logout`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{',
+  });
+
+  expect(res.status).toBe(400);
+});
