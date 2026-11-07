@@ -1,6 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
-import { createTRPCLoaderProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createQueryClient } from '~/lib/query-client';
 import { makeTRPCClient, TRPCProvider } from '~/lib/trpc';
 import type { AppRouter } from '~/server/routers/_app';
@@ -9,7 +9,7 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
   const queryClient = createQueryClient();
   const trpcClient = makeTRPCClient();
-  const trpc = createTRPCLoaderProxy<AppRouter>({
+  const trpc = createTRPCOptionsProxy<AppRouter>({
     client: trpcClient,
     queryClient,
   });

@@ -9,7 +9,6 @@ import * as React from 'react';
 import { afterEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
-  createTRPCLoaderProxy,
   loadHandles,
   fetchInfiniteEntry,
   waterfallHandle,
@@ -53,15 +52,6 @@ const ctx = () => {
     ...resource,
     calls,
     appRouter,
-    loaderProxyClient: createTRPCLoaderProxy<typeof appRouter>({
-      client: getUntypedClient(resource.client),
-      queryClient: resource.queryClient,
-    }),
-    loaderProxyServer: createTRPCLoaderProxy<typeof appRouter>({
-      router: appRouter,
-      ctx: {},
-      queryClient: resource.queryClient,
-    }),
   };
 };
 
@@ -291,8 +281,8 @@ describe('waterfallHandle on useTRPC() during render', () => {
 
   test("switching input reads the loader's query first, then the new one", async () => {
     await using resource = ctx();
-    const [{ comments }] = await loadHandles(resource.loaderProxyClient, {
-      comments: fetchInfiniteEntry(resource.loaderProxyClient.post.comments, {
+    const [{ comments }] = await loadHandles(resource.optionsProxyClient, {
+      comments: fetchInfiniteEntry(resource.optionsProxyClient.post.comments, {
         postId: '1',
         limit: 2,
       }),

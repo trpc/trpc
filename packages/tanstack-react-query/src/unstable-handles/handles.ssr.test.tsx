@@ -18,7 +18,6 @@ import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
-  createTRPCLoaderProxy,
   loadHandles,
   prefetchEntry,
   ensureEntry,
@@ -27,7 +26,7 @@ import {
 } from '.';
 import type { inferQueryHandle } from '.';
 import type { TRPCOptionsProxy } from '..';
-import { createTRPCContext } from '..';
+import { createTRPCContext, createTRPCOptionsProxy } from '..';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -68,7 +67,7 @@ function makeServer(resource: ReturnType<typeof ctx>) {
       },
     },
   });
-  const trpc = createTRPCLoaderProxy({
+  const trpc = createTRPCOptionsProxy({
     router: resource.appRouter,
     ctx: {},
     queryClient,

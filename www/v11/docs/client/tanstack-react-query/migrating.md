@@ -184,7 +184,7 @@ function Users() {
 ```
 
 :::tip
-Once a component is on `queryOptions`, you can also start its query ahead of time. `const [{ greeting }] = await loadHandles(trpc, { greeting: ensureEntry(trpc.greeting, { name: 'Jerry' }) })` in a route loader or server component, with a proxy from `createTRPCLoaderProxy`, gives you a **handle** for it. Pass `greeting` to the component, which reads it with `useQuery(fromHandle(trpc, props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+Once a component is on `queryOptions`, you can also start its query ahead of time. `const [{ greeting }] = await loadHandles(trpc, { greeting: ensureEntry(trpc.greeting, { name: 'Jerry' }) })` in a route loader or server component gives you a **handle** for it. Pass `greeting` to the component, which reads it with `useQuery(fromHandle(trpc, props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 ### Migrating Invalidations and other QueryClient usages

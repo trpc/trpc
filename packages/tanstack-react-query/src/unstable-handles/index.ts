@@ -1,5 +1,3 @@
-export { createTRPCLoaderProxy } from './loaderProxy';
-export type { TRPCLoaderOptionsProxy } from './loaderProxy';
 export {
   loadHandles,
   loadHandlesSettled,

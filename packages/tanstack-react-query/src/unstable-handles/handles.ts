@@ -21,6 +21,7 @@ import type {
 } from '../internals/queryOptions';
 import type {
   ExtractCursorType,
+  FeatureFlags,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
@@ -29,8 +30,6 @@ import type {
 import { readQueryKey } from '../internals/utils';
 import type { ErrorOf } from './entryError';
 import { entryCause, TRPCEntryError } from './entryError';
-import type { TRPCLoaderBrand } from './loaderProxy';
-import { isLoaderProxy } from './loaderProxy';
 
 declare const handleDef: unique symbol;
 declare const entryDef: unique symbol;
@@ -244,12 +243,6 @@ type WaterfallArgs<TDef extends ResolverDef> = undefined extends TDef['input']
   ? [input?: TDef['input']]
   : [input: TDef['input']];
 
-type LoaderQueryProcedure<TDef extends ResolverDef> =
-  DecorateQueryProcedure<TDef> & TRPCLoaderBrand<'procedure'>;
-
-type LoaderInfiniteQueryProcedure<TDef extends ResolverDef> =
-  DecorateInfiniteQueryProcedure<TDef> & TRPCLoaderBrand<'procedure'>;
-
 /**
  * The handle type of a query procedure, for typing props.
  * @example
@@ -454,24 +447,19 @@ function prefetchInRender(
 interface WaterfallOptions {
   options: any;
   type: HandleType;
-  /** The client that starts the query during render, `null` on a loader proxy */
-  renderClient: QueryClient | null;
+  queryClient: QueryClient;
 }
 
 function createWaterfallHandle(opts: WaterfallOptions) {
   const handle = toHandle(opts.options, opts.type);
   waterfallHandles.add(handle);
-  if (opts.renderClient) {
-    prefetchInRender(opts.renderClient, opts.options, opts.type);
-  }
+  prefetchInRender(opts.queryClient, opts.options, opts.type);
   return handle;
 }
 
 function switchHandle(previous: AnyTRPCHandle, opts: WaterfallOptions) {
   if (hashKey(opts.options.queryKey) === hashKey(previous.queryKey)) {
-    if (opts.renderClient) {
-      prefetchInRender(opts.renderClient, opts.options, opts.type);
-    }
+    prefetchInRender(opts.queryClient, opts.options, opts.type);
     return previous;
   }
   return createWaterfallHandle(opts);
@@ -569,12 +557,15 @@ interface ProxyContext {
   proxy: any;
   path: string[];
   prefix: string | undefined;
-  /** Whether it's from `createTRPCLoaderProxy`, which can load handles */
-  isLoader: boolean;
 }
 
 function readProxy(proxy: unknown, fn: string): ProxyContext {
   const queryKey = (proxy as { queryKey?: unknown } | null)?.queryKey;
+  if (Array.isArray(queryKey)) {
+    throw new Error(
+      `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got a handle for \`${readQueryKey(queryKey as TRPCQueryKey<any>).path.join('.')}\``,
+    );
+  }
   if (typeof queryKey !== 'function') {
     throw new Error(
       `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got ${String(proxy)}`,
@@ -585,7 +576,6 @@ function readProxy(proxy: unknown, fn: string): ProxyContext {
     proxy,
     path: key.path,
     prefix: key.prefix?.[0],
-    isLoader: isLoaderProxy(proxy as object),
   };
 }
 
@@ -602,24 +592,11 @@ function optionsOf(
     : procedure.queryOptions;
 }
 
-function readLoaderRoot(trpc: unknown, fn: string) {
-  const ctx = readLoaderProxy(trpc, fn);
+function readRoot(trpc: unknown, fn: string) {
+  const ctx = readProxy(trpc, fn);
   if (ctx.path.length > 0) {
     throw new Error(
       `\`${fn}()\` takes the root proxy, \`trpc\`, got \`trpc.${ctx.path.join('.')}\``,
-    );
-  }
-  return ctx;
-}
-
-function readLoaderProxy(proxy: unknown, fn: string) {
-  const ctx = readProxy(proxy, fn);
-  if (!ctx.isLoader) {
-    throw new Error(
-      `\`${fn}()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. ` +
-        `Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` ` +
-        `and wait where you read it, with \`useSuspenseQuery\`. ` +
-        `See https://trpc.io/docs/client/tanstack-react-query/handles#in-render`,
     );
   }
   return ctx;
@@ -633,7 +610,7 @@ function entry(opts: {
   input: unknown;
   opts: unknown;
 }) {
-  const ctx = readLoaderProxy(opts.procedure, opts.fn);
+  const ctx = readProxy(opts.procedure, opts.fn);
   return createEntry({
     type: opts.type,
     kind: opts.kind,
@@ -650,12 +627,12 @@ function waterfall(opts: {
 }) {
   const { fn, type, inputOrHandle, switchInput } = opts;
   const ctx = readProxy(opts.procedure, fn);
-  const renderClient = ctx.isLoader ? null : queryClientOf(ctx);
+  const queryClient = queryClientOf(ctx);
   if (typeof switchInput !== 'function') {
     return createWaterfallHandle({
       options: optionsOf(ctx.proxy, type)(inputOrHandle, undefined),
       type,
-      renderClient,
+      queryClient,
     });
   }
   const previous = inputOrHandle as AnyTRPCHandle;
@@ -675,7 +652,7 @@ function waterfall(opts: {
       handleOpts,
     ),
     type,
-    renderClient,
+    queryClient,
   });
 }
 
@@ -716,8 +693,9 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
  * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
  *
- * Takes the root of the proxy from `createTRPCLoaderProxy`, not `useTRPC()`, since a
- * render can't wait for queries.
+ * Takes the root of an options proxy, from `createTRPCOptionsProxy` or `useTRPC()`.
+ * Call it in a route loader, a server component or an event handler, not during
+ * render: every render would start the entries again.
  * @example
  * ```ts
  * const [handles, data] = await loadHandles(trpc, {
@@ -729,12 +707,15 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles
  */
-export function loadHandles<TEntries extends Record<string, AnyTRPCEntry>>(
-  trpc: TRPCLoaderBrand<'root'>,
+export function loadHandles<
+  TFeatureFlags extends FeatureFlags,
+  TEntries extends Record<string, AnyTRPCEntry>,
+>(
+  trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
 ): Promise<TRPCLoadedHandles<TEntries>> {
   return startEntries({
-    queryClient: queryClientOf(readLoaderRoot(trpc, 'loadHandles')),
+    queryClient: queryClientOf(readRoot(trpc, 'loadHandles')),
     entries,
     settle: false,
   }) as Promise<any>;
@@ -761,13 +742,14 @@ export function loadHandles<TEntries extends Record<string, AnyTRPCEntry>>(
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
  */
 export function loadHandlesSettled<
+  TFeatureFlags extends FeatureFlags,
   TEntries extends Record<string, AnyTRPCEntry>,
 >(
-  trpc: TRPCLoaderBrand<'root'>,
+  trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
 ): Promise<TRPCSettledHandles<TEntries>> {
   return startEntries({
-    queryClient: queryClientOf(readLoaderRoot(trpc, 'loadHandlesSettled')),
+    queryClient: queryClientOf(readRoot(trpc, 'loadHandlesSettled')),
     entries,
     settle: true,
   }) as Promise<any>;
@@ -780,7 +762,7 @@ export function loadHandlesSettled<
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#prefetch
  */
 export function prefetchEntry<TDef extends ResolverDef>(
-  procedure: LoaderQueryProcedure<TDef>,
+  procedure: DecorateQueryProcedure<TDef>,
   ...args: EntryArgs<TDef>
 ): TRPCQueryEntry<TDef, 'prefetch'>;
 export function prefetchEntry(
@@ -805,7 +787,7 @@ export function prefetchEntry(
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
  */
 export function fetchEntry<TDef extends ResolverDef>(
-  procedure: LoaderQueryProcedure<TDef>,
+  procedure: DecorateQueryProcedure<TDef>,
   ...args: EntryArgs<TDef>
 ): TRPCQueryEntry<TDef, 'fetch'>;
 export function fetchEntry(
@@ -831,7 +813,7 @@ export function fetchEntry(
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#ensure
  */
 export function ensureEntry<TDef extends ResolverDef>(
-  procedure: LoaderQueryProcedure<TDef>,
+  procedure: DecorateQueryProcedure<TDef>,
   ...args: EntryArgs<TDef>
 ): TRPCQueryEntry<TDef, 'ensure'>;
 export function ensureEntry(
@@ -854,7 +836,7 @@ export function ensureEntry(
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
 export function prefetchInfiniteEntry<TDef extends ResolverDef>(
-  procedure: LoaderInfiniteQueryProcedure<TDef>,
+  procedure: DecorateInfiniteQueryProcedure<TDef>,
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'prefetch'> {
@@ -873,7 +855,7 @@ export function prefetchInfiniteEntry<TDef extends ResolverDef>(
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
 export function fetchInfiniteEntry<TDef extends ResolverDef>(
-  procedure: LoaderInfiniteQueryProcedure<TDef>,
+  procedure: DecorateInfiniteQueryProcedure<TDef>,
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'fetch'> {
@@ -892,7 +874,7 @@ export function fetchInfiniteEntry<TDef extends ResolverDef>(
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
  */
 export function ensureInfiniteEntry<TDef extends ResolverDef>(
-  procedure: LoaderInfiniteQueryProcedure<TDef>,
+  procedure: DecorateInfiniteQueryProcedure<TDef>,
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'ensure'> {
@@ -910,9 +892,8 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
  * Builds a handle for an input you only know during render, like an id from another
  * query's data, which makes it a request waterfall. The name keeps that visible.
  *
- * With `useTRPC()`, call it during render: like TanStack's `usePrefetchQuery`, it starts
- * the query if the cache has no state for it. With a proxy from `createTRPCLoaderProxy`
- * it starts nothing, and the component that reads the handle fetches when it renders.
+ * Call it during render: like TanStack's `usePrefetchQuery`, it starts the query if the
+ * cache has no state for it.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
  */
 export function waterfallHandle<TDef extends ResolverDef>(

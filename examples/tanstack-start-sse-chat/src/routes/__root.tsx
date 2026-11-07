@@ -17,7 +17,7 @@ import {
   Outlet,
   Scripts,
 } from '@tanstack/react-router';
-import type { TRPCLoaderOptionsProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { CodeXmlIcon, SearchXIcon } from 'lucide-react';
 import { sessionQuery } from '~/queries';
 import type { AppRouter } from '~/server/routers/_app';
@@ -25,7 +25,7 @@ import appCss from '~/styles.css?url';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: TRPCLoaderOptionsProxy<AppRouter>;
+  trpc: TRPCOptionsProxy<AppRouter>;
 }>()({
   head: () => ({
     meta: [

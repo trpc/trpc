@@ -29,7 +29,7 @@ import {
   PostSkeleton,
 } from './blog.tsx';
 import { type DemoContext, DemoLink, useDemoLoaderData } from './browser.tsx';
-import { type LoaderTRPC, type TRPC, useTRPC } from './session.tsx';
+import { type TRPC, useTRPC } from './session.tsx';
 import {
   ensureEntry,
   ensureInfiniteEntry,
@@ -93,14 +93,14 @@ const infiniteEntryFor = {
   prefetch: prefetchInfiniteEntry,
 } satisfies Record<LoaderVerb, unknown>;
 
-async function loadList(verb: LoaderVerb, trpc: LoaderTRPC, page: number) {
+async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
   const [handles] = await loadHandles(trpc, {
     list: entryFor[verb](trpc.post.list, { page }),
   });
   return handles;
 }
 
-async function loadPost(verb: LoaderVerb, trpc: LoaderTRPC, id: number) {
+async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
   const [handles] = await loadHandles(trpc, {
     comments: infiniteEntryFor[verb](trpc.post.comments, { postId: id }),
     more: infiniteEntryFor[verb](trpc.post.moreByAuthor, { postId: id }),

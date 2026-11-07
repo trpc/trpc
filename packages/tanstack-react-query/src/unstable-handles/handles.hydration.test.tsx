@@ -18,19 +18,15 @@ import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
-  createTRPCLoaderProxy,
   loadHandles,
   prefetchEntry,
   ensureEntry,
   prefetchInfiniteEntry,
   fromHandle,
 } from '.';
-import type {
-  TRPCLoaderOptionsProxy,
-  inferQueryHandle,
-  inferInfiniteQueryHandle,
-} from '.';
-import { createTRPCContext } from '..';
+import type { inferQueryHandle, inferInfiniteQueryHandle } from '.';
+import type { TRPCOptionsProxy } from '..';
+import { createTRPCContext, createTRPCOptionsProxy } from '..';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -64,7 +60,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCLoaderOptionsProxy<AppRouter>;
+type TRPC = TRPCOptionsProxy<AppRouter>;
 
 function makeServerQueryClient() {
   return new QueryClient({
@@ -152,7 +148,7 @@ describe('dehydrate and HydrationBoundary from a server loader', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const queryClient = makeServerQueryClient();
     // A React Router `loader`: the default build, on the server
-    const trpc = createTRPCLoaderProxy({
+    const trpc = createTRPCOptionsProxy({
       router: resource.appRouter,
       ctx: {},
       queryClient,
