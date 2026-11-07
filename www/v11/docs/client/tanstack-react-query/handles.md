@@ -56,6 +56,9 @@ export const appRouter = t.router({
         items: [] as { id: string; text: string }[],
         nextCursor: null as number | null,
       })),
+    addComment: t.procedure
+      .input(z.object({ postId: z.string(), text: z.string() }))
+      .mutation(({ input }) => ({ id: 'c1', text: input.text })),
   }),
 });
 export type AppRouter = typeof appRouter;
@@ -224,6 +227,42 @@ export function PostPage(props: {
   );
 }
 ```
+
+Mutations don't change: use `useTRPC()`'s `mutationOptions`. To show a new comment, refresh the comments handle when the mutation succeeds:
+
+```tsx twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: add-comment.tsx
+// ---cut---
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC, type TRPC } from '~/trpc/client';
+
+export function AddComment(props: {
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
+}) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const addComment = useMutation(
+    trpc.post.addComment.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: props.comments.queryKey }),
+    }),
+  );
+  return (
+    <button
+      onClick={() =>
+        addComment.mutate({ postId: props.comments.input.postId, text: 'Nice!' })
+      }
+    >
+      Add a comment
+    </button>
+  );
+}
+```
+
+`{ queryKey: props.comments.queryKey }` refreshes exactly the query the handle names. `trpc.post.comments.queryFilter(…)` would miss it, since the comments are an infinite query: see [Invalidation](#invalidation-and-staleness).
 
 :::warning ⚠️ Waterfall
 `post.byAuthor` needs the post's `authorId`, which the page only has once the post has loaded. So its request starts after the post's request has finished, a full round trip later. `waterfallHandle` and `waterfallInfiniteHandle` keep that visible in the code. To remove the wait, let the loader start it from the URL, for example with a procedure that takes the post's id: see [If the URL isn't enough, reshape the procedure](#reshape-procedures).
@@ -1755,7 +1794,39 @@ To log or report these errors in one place, whichever component reads the handle
 
 ## Invalidation and staleness {#invalidation-and-staleness}
 
-Handle reads use normal tRPC query keys, so invalidation doesn't change: `queryClient.invalidateQueries(trpc.post.pathFilter())`, `trpc.post.byId.queryFilter(input)` and `{ queryKey: handle.queryKey }` all match.
+Handle reads use normal tRPC query keys, so invalidation doesn't change. Pass any of these to `queryClient.invalidateQueries`:
+
+- `{ queryKey: handle.queryKey }` matches the handle's own query, plain or infinite.
+- `trpc.post.pathFilter()` matches every query under `post`, plain and infinite.
+- `trpc.post.byId.queryFilter(input)` matches a query handle. An infinite handle's key has `type: 'infinite'`, so `queryFilter` misses it: use `trpc.post.comments.infiniteQueryFilter(input)`.
+
+To update a handle's data in place, build its key from the procedure and `handle.input`: `trpc.post.byId.queryKey(handle.input)`, or `infiniteQueryKey` for an infinite handle. `setQueryData` then checks the data's type. `handle.queryKey` is a plain array, so that the handle serializes, and carries no data type.
+
+```ts twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: snippet.ts
+import type { QueryClient } from '@tanstack/react-query';
+import type {
+  inferInfiniteQueryHandle,
+  inferQueryHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
+declare const trpc: TRPC;
+declare const queryClient: QueryClient;
+declare const handles: {
+  post: inferQueryHandle<TRPC['post']['byId']>;
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
+};
+// ---cut---
+queryClient.setQueryData(trpc.post.byId.queryKey(handles.post.input), (post) =>
+  post ? { ...post, title: 'Renamed' } : post,
+);
+queryClient.setQueryData(
+  trpc.post.comments.infiniteQueryKey(handles.comments.input),
+  (comments) => comments && { ...comments, pages: comments.pages.slice(0, 1) },
+);
+```
 
 `fromHandle` keeps TanStack Query's refetch defaults. Hydrated data keeps the server's fetch time, so set a `staleTime` above 0 in your query client, as the setup guides do, or the client refetches right after hydration. To change it for one read, pass `staleTime` to `fromHandle`.
 
