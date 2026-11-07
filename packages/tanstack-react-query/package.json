@@ -42,6 +42,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./unstable-handles": {
+      "import": {
+        "types": "./dist/unstable-handles/index.d.mts",
+        "default": "./dist/unstable-handles/index.mjs"
+      },
+      "require": {
+        "types": "./dist/unstable-handles/index.d.cts",
+        "default": "./dist/unstable-handles/index.cjs"
+      }
     }
   },
   "files": [
@@ -49,6 +59,7 @@
     "src",
     "README.md",
     "package.json",
+    "unstable-handles",
     "!**/*.test.*",
     "!**/__tests__",
     "skills"

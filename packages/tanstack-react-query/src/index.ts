@@ -24,14 +24,5 @@ export type {
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
 export type * from './internals/types';
-export type {
-  unstable_TRPCQueryHandle,
-  unstable_TRPCInfiniteQueryHandle,
-  unstable_AnyTRPCHandle,
-  unstable_TRPCPrefetchOptions,
-  unstable_TRPCPrefetchInfiniteOptions,
-  unstable_inferQueryHandle,
-  unstable_inferInfiniteQueryHandle,
-} from './internals/handles';
 export { unstable_createHydrateClient } from './internals/HydrateClient';
 export type { unstable_HydrateClientProps } from './internals/HydrateClient';
