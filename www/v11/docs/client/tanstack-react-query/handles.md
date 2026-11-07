@@ -59,9 +59,6 @@ export const appRouter = t.router({
     addComment: t.procedure
       .input(z.object({ postId: z.string(), text: z.string() }))
       .mutation(({ input }) => ({ id: 'c1', text: input.text })),
-    rename: t.procedure
-      .input(z.object({ id: z.string(), title: z.string() }))
-      .mutation(({ input }) => input),
   }),
 });
 export type AppRouter = typeof appRouter;
@@ -285,7 +282,7 @@ The components that read handles are the same everywhere: with or without server
 
 ## Using handles on their own {#standalone}
 
-An app that reads every query through a handle doesn't need `useTRPC()`. `createTRPCHandleContext` returns a provider and two hooks, which you name: one gives components a proxy that reads handles, the other the tRPC client for mutations. With `createTRPCLoaderProxy` for the loaders, the app loads nothing else from `@trpc/tanstack-react-query`:
+An app that reads every query through a handle doesn't need `useTRPC()`. `createTRPCHandleContext` returns a provider and two hooks, which you name: one returns a proxy that reads handles and runs mutations, the other the tRPC client. With `createTRPCLoaderProxy` for the loaders, the app loads nothing else from `@trpc/tanstack-react-query`:
 
 ```tsx twoslash
 // @include: handles-router
@@ -299,7 +296,7 @@ export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
 export type TRPC = TRPCHandleProxy<AppRouter>;
 ```
 
-Render `<TRPCHandleProvider trpcClient={trpcClient} queryClient={queryClient}>` where you would render `<TRPCProvider>`. The post page's `Post` then reads its handle the same way, and renames the post with the client:
+Render `<TRPCHandleProvider trpcClient={trpcClient} queryClient={queryClient}>` where you would render `<TRPCProvider>`. The post page's `Post` then reads its handle the same way:
 
 ```tsx twoslash
 // @include: handles-router
@@ -312,28 +309,72 @@ export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
 export type TRPC = TRPCHandleProxy<AppRouter>;
 // @filename: components/post.tsx
 // ---cut---
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPCClient, useTRPCHandles, type TRPC } from '~/trpc/handles';
+import { useTRPCHandles, type TRPC } from '~/trpc/handles';
 
 export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
   const trpc = useTRPCHandles();
-  const client = useTRPCClient();
-  const queryClient = useQueryClient();
   const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
-  const rename = useMutation({
-    mutationFn: (title: string) =>
-      client.post.rename.mutate({ id: postQuery.data.id, title }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: trpc.post.byId.queryKey() }),
-  });
-  return <h1 onClick={() => rename.mutate('Renamed')}>{postQuery.data.title}</h1>;
+  return <h1>{postQuery.data.title}</h1>;
 }
 ```
 
-- `useTRPCHandles()` has the router's queries and their keys: `queryKey`, `infiniteQueryKey` and `pathKey`, for `fromHandle`, `waterfallHandle` and invalidation. It has no `queryOptions` and no mutations, and it can't load handles.
+- `useTRPCHandles()` has the router's queries and their keys, `queryKey`, `infiniteQueryKey` and `pathKey`, for `fromHandle`, `waterfallHandle` and invalidation. It has `mutationOptions` and `mutationKey` on mutations. It has no `queryOptions`, and it can't load handles.
 - A handle has the same type whichever proxy built it, and `useTRPC()` reads it too, so an app can move one component at a time.
-- Both proxies use TanStack Query's `QueryClient` and hooks, and the same query keys as `useTRPC()`, so they share cache entries with it.
+- Both proxies use TanStack Query's `QueryClient` and hooks, and the same query and mutation keys as `useTRPC()`, so they share cache entries with it.
+
+### Mutations {#standalone-mutations}
+
+A mutation procedure on `useTRPCHandles()` has `mutationOptions`, the same as on `useTRPC()`. After it succeeds, refresh a handle's query with the handle's own key. Adding a comment refreshes the comments the loader started:
+
+```tsx twoslash
+// @include: handles-router
+// @filename: trpc/handles.tsx
+import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/router';
+
+export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
+  createTRPCHandleContext<AppRouter>();
+export type TRPC = TRPCHandleProxy<AppRouter>;
+// @filename: components/comments.tsx
+// ---cut---
+import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { fromHandle, type inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPCHandles, type TRPC } from '~/trpc/handles';
+
+export function Comments(props: {
+  postId: string;
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
+}) {
+  const trpc = useTRPCHandles();
+  const queryClient = useQueryClient();
+  const commentsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.comments, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  const addComment = useMutation(
+    trpc.post.addComment.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: props.comments.queryKey }),
+    }),
+  );
+  return (
+    <form
+      action={(form) =>
+        addComment.mutate({ postId: props.postId, text: String(form.get('text')) })
+      }
+    >
+      <p>{commentsQuery.data.pages.flatMap((page) => page.items).length} comments</p>
+      <input name="text" />
+    </form>
+  );
+}
+```
+
+- Invalidating and updating handle data work as in [Invalidation and staleness](#invalidation-and-staleness). `useTRPCHandles()` has the keys but not the filters: instead of `trpc.post.comments.infiniteQueryFilter(input)`, pass `{ queryKey: trpc.post.comments.infiniteQueryKey(input) }`, and `{ queryKey: trpc.post.pathKey() }` instead of `trpc.post.pathFilter()`.
+- A mutation passed to `fromHandle`, `waterfallHandle` or an entry is a type error. So are `mutationOptions` on a query and any mutation on the loader proxy, which has none because a loader can't call `useMutation`. To call a procedure outside React, use the client from `useTRPCClient()`.
 
 ## Loading handles {#starting-a-query}
 

@@ -1,6 +1,7 @@
 import type {
   DataTag,
   InfiniteData,
+  UseMutationOptions,
   UnusedSkipTokenInfiniteOptions,
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import type {
   coerceAsyncIterableToArray,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCMutationKey } from '../shared/mutationKey';
 import type {
   TRPCQueryBaseOptions,
   TRPCQueryOptionsResult,
@@ -288,10 +290,75 @@ export interface TRPCHandleRouter<TKeyPrefix extends boolean> {
   pathKey: () => TRPCQueryKey<TKeyPrefix>;
 }
 
-type QueryKeyOf<TKey, TValue> = TValue extends AnyTRPCProcedure
+/**
+ * Options `mutationOptions` takes
+ * @internal
+ */
+export type HandleMutationOptionsIn<TInput, TError, TOutput, TContext> =
+  DistributiveOmit<
+    UseMutationOptions<TOutput, TError, TInput, TContext>,
+    'mutationKey' | 'mutationFn'
+  > &
+    TRPCQueryBaseOptions;
+
+/**
+ * Options `mutationOptions` returns, for `useMutation`
+ * @internal
+ */
+export interface HandleMutationOptionsOut<
+  TInput,
+  TError,
+  TOutput,
+  TContext,
+  TKeyPrefix extends boolean,
+>
+  extends
+    UseMutationOptions<TOutput, TError, TInput, TContext>,
+    TRPCQueryOptionsResult {
+  mutationKey: TRPCMutationKey<TKeyPrefix>;
+}
+
+/**
+ * A mutation procedure of `useTRPCHandles()`
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#standalone-mutations
+ */
+export interface TRPCHandleMutationProcedure<TDef extends TRPCHandleDef> {
+  '~types': {
+    input: TDef['input'];
+    output: TDef['output'];
+    errorShape: TDef['errorShape'];
+  };
+  /** Options for `useMutation`, the same as `useTRPC()`'s `mutationOptions` */
+  mutationOptions: <TContext = unknown>(
+    opts?: HandleMutationOptionsIn<
+      TDef['input'],
+      ErrorOf<TDef>,
+      TDef['output'],
+      TContext
+    >,
+  ) => HandleMutationOptionsOut<
+    TDef['input'],
+    ErrorOf<TDef>,
+    TDef['output'],
+    TContext,
+    TDef['keyPrefix']
+  >;
+  /** The mutation key, such as for `useIsMutating` or `setMutationDefaults` */
+  mutationKey: () => TRPCMutationKey<TDef['keyPrefix']>;
+}
+
+type KeptKey<
+  TKey,
+  TValue,
+  TMutations extends boolean,
+> = TValue extends AnyTRPCProcedure
   ? TValue['_def']['type'] extends 'query'
     ? TKey
-    : never
+    : TValue['_def']['type'] extends 'mutation'
+      ? TMutations extends true
+        ? TKey
+        : never
+      : never
   : TKey;
 
 type HandleProcedure<
@@ -300,6 +367,7 @@ type HandleProcedure<
   TKeyPrefix extends boolean,
   TBrand,
 > = HandleProcedureOf<
+  TProcedure['_def']['type'],
   HandleDefOf<
     inferProcedureInput<TProcedure>,
     inferTransformedProcedureOutput<TRoot, TProcedure>,
@@ -310,16 +378,20 @@ type HandleProcedure<
 >;
 
 type HandleProcedureOf<
+  TType,
   TDef extends TRPCHandleDef,
   TBrand,
-> = TRPCHandleQueryProcedure<TDef> &
-  TBrand &
-  (TDef['input'] extends CursorInput | void
-    ? TRPCHandleInfiniteQueryProcedure<TDef>
-    : unknown);
+> = TType extends 'mutation'
+  ? TRPCHandleMutationProcedure<TDef>
+  : TRPCHandleQueryProcedure<TDef> &
+      TBrand &
+      (TDef['input'] extends CursorInput | void
+        ? TRPCHandleInfiniteQueryProcedure<TDef>
+        : unknown);
 
 /**
- * The queries of a router, as a handle proxy has them
+ * The queries of a router, and its mutations when `TMutations` is `true`,
+ * as a handle proxy has them
  * @internal
  */
 export type HandleRouterRecord<
@@ -327,12 +399,13 @@ export type HandleRouterRecord<
   TRecord extends TRPCRouterRecord,
   TKeyPrefix extends boolean,
   TBrand,
+  TMutations extends boolean,
 > = {
   [
-    TKey in keyof TRecord as QueryKeyOf<TKey, TRecord[TKey]>
+    TKey in keyof TRecord as KeptKey<TKey, TRecord[TKey], TMutations>
   ]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
-      ? HandleRouterRecord<TRoot, $Value, TKeyPrefix, TBrand> &
+      ? HandleRouterRecord<TRoot, $Value, TKeyPrefix, TBrand, TMutations> &
           TRPCHandleRouter<TKeyPrefix>
       : $Value extends AnyTRPCProcedure
         ? HandleProcedure<TRoot, $Value, TKeyPrefix, TBrand>
@@ -350,7 +423,7 @@ export interface TRPCHandleFeatureFlags {
 
 /**
  * The proxy from `useTRPCHandles()`: the router's queries, for
- * `fromHandle` and `waterfallHandle`, and their keys
+ * `fromHandle` and `waterfallHandle`, their keys, and its mutations
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#standalone
  */
 export type TRPCHandleProxy<
@@ -360,7 +433,8 @@ export type TRPCHandleProxy<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record'],
   TFeatureFlags['keyPrefix'],
-  unknown
+  unknown,
+  true
 > &
   TRPCHandleRouter<TFeatureFlags['keyPrefix']>;
 
@@ -388,7 +462,8 @@ export type TRPCLoaderProxy<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record'],
   TFeatureFlags['keyPrefix'],
-  TRPCLoaderBrand<'procedure'>
+  TRPCLoaderBrand<'procedure'>,
+  false
 > &
   TRPCHandleRouter<TFeatureFlags['keyPrefix']> &
   TRPCLoaderBrand<'root'>;

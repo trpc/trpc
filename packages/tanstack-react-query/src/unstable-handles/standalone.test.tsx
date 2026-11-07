@@ -9,14 +9,17 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCClient, unstable_localLink } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import * as React from 'react';
-import { describe, expect, expectTypeOf, test } from 'vitest';
+import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type {
   CreateTRPCHandleContextResult,
+  inferInfiniteQueryHandle,
   inferQueryHandle,
+  TRPCHandleProxy,
   TRPCLoaderProxy,
 } from '.';
 import {
@@ -72,6 +75,7 @@ describe('standalone', () => {
     expect(moduleGraph(path.join(srcDir, 'unstable-handles/index.ts')))
       .toMatchInlineSnapshot(`
         Array [
+          "shared/mutationKey.ts",
           "shared/queryFn.ts",
           "shared/queryKey.ts",
           "unstable-handles/context.tsx",
@@ -179,7 +183,7 @@ describe('standalone', () => {
     expect(await screen.findByText('Renamed by 1')).toBeTruthy();
   });
 
-  test('createTRPCHandleContext returns a readonly tuple, and useTRPCHandles() has only the queries and their keys', () => {
+  test('createTRPCHandleContext returns a readonly tuple, and useTRPCHandles() has the queries, their keys and the mutations', () => {
     const t = initTRPC.create();
     const appRouter = t.router({
       post: t.router({
@@ -200,9 +204,145 @@ describe('standalone', () => {
     expectTypeOf(trpc.post.byId.queryKey)
       .parameter(0)
       .toEqualTypeOf<string | undefined>();
-    // @ts-expect-error mutations are for useTRPCClient()
-    void trpc.post.add;
     // @ts-expect-error read a handle with fromHandle instead
     void trpc.post.byId.queryOptions('1');
+    // @ts-expect-error queries have no mutationOptions
+    void trpc.post.byId.mutationOptions();
+
+    const addOptions = trpc.post.add.mutationOptions({
+      onError: (error) => {
+        expectTypeOf(error).toEqualTypeOf<
+          TRPCClientErrorLike<typeof appRouter>
+        >();
+      },
+    });
+    expectTypeOf(addOptions.mutationKey).toEqualTypeOf<[path: string[]]>();
+    expectTypeOf(useMutation(addOptions).mutate)
+      .parameter(0)
+      .toEqualTypeOf<string>();
+    // @ts-expect-error a mutation isn't a query
+    waterfallHandle(trpc.post.add, '1');
+    // @ts-expect-error nor has queryKey
+    void trpc.post.add.queryKey;
+
+    const loader = {} as TRPCLoaderProxy<typeof appRouter>;
+    // @ts-expect-error a loader can't run useMutation, so it has no mutations
+    void loader.post.add;
+    // @ts-expect-error nor can an entry take one
+    ensureEntry(trpc.post.add, '1');
+  });
+
+  test('a mutation refreshes the infinite handle a loader started', async () => {
+    const t = initTRPC.create();
+    const comments = ['first'];
+    const appRouter = t.router({
+      post: t.router({
+        comments: t.procedure
+          .input(z.object({ postId: z.string(), cursor: z.number().nullish() }))
+          .query(() => ({ items: [...comments], nextCursor: null })),
+        addComment: t.procedure
+          .input(z.object({ postId: z.string(), text: z.string() }))
+          .mutation((opts) => {
+            if (!opts.input.text) {
+              throw new TRPCError({ code: 'BAD_REQUEST' });
+            }
+            comments.push(opts.input.text);
+          }),
+      }),
+    });
+    type AppRouter = typeof appRouter;
+    const queryClient = new QueryClient();
+    const trpcClient = createTRPCClient<AppRouter>({
+      links: [
+        unstable_localLink({
+          router: appRouter,
+          createContext: async () => ({}),
+        }),
+      ],
+    });
+    const loader = createTRPCLoaderProxy<AppRouter>({
+      router: appRouter,
+      ctx: {},
+      queryClient,
+    });
+    const [TRPCHandleProvider, useTRPCHandles] =
+      createTRPCHandleContext<AppRouter>();
+    const [handles] = await loadHandles(loader, {
+      comments: prefetchInfiniteEntry(loader.post.comments, { postId: '1' }),
+    });
+    const errors: (string | undefined)[] = [];
+
+    function Comments(props: {
+      comments: inferInfiniteQueryHandle<
+        TRPCHandleProxy<AppRouter>['post']['comments']
+      >;
+    }) {
+      const trpc = useTRPCHandles();
+      const qc = useQueryClient();
+      const commentsQuery = useSuspenseInfiniteQuery(
+        fromHandle(trpc, props.comments, {
+          getNextPageParam: (page) => page.nextCursor,
+        }),
+      );
+      const addComment = useMutation(
+        trpc.post.addComment.mutationOptions({
+          onSuccess: () =>
+            qc.invalidateQueries({ queryKey: props.comments.queryKey }),
+          onError: (error) => {
+            errors.push(error.data?.code);
+          },
+        }),
+      );
+      return (
+        <div>
+          <p>{commentsQuery.data.pages[0]!.items.join(', ')}</p>
+          <button
+            onClick={() => addComment.mutate({ postId: '1', text: 'second' })}
+          >
+            add
+          </button>
+          <button onClick={() => addComment.mutate({ postId: '1', text: '' })}>
+            add empty
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TRPCHandleProvider trpcClient={trpcClient} queryClient={queryClient}>
+          <React.Suspense fallback="loading">
+            <Comments comments={handles.comments} />
+          </React.Suspense>
+        </TRPCHandleProvider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('first')).toBeTruthy();
+
+    fireEvent.click(screen.getByText('add'));
+    expect(await screen.findByText('first, second')).toBeTruthy();
+    expect(
+      queryClient.getMutationCache().getAll()[0]!.options.mutationKey,
+    ).toEqual([['post', 'addComment']]);
+
+    fireEvent.click(screen.getByText('add empty'));
+    await vi.waitFor(() => expect(errors).toEqual(['BAD_REQUEST']));
+  });
+
+  test('the loader proxy has no mutationOptions at runtime either', () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      add: t.procedure.mutation(() => 'added'),
+    });
+    const loader = createTRPCLoaderProxy({
+      router: appRouter,
+      ctx: {},
+      queryClient: new QueryClient(),
+    });
+    expect(() =>
+      (loader as any).add.mutationOptions(),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: \`trpc.add.mutationOptions()\` isn't on this handle proxy. It has \`queryKey\`, \`infiniteQueryKey\` and \`pathKey\`, and reads handles with \`fromHandle\`. Mutations are on \`useTRPCHandles()\`]`,
+    );
   });
 });

@@ -983,6 +983,31 @@ describe('runtime', () => {
     expect(resource.calls).toHaveBeenCalledTimes(2);
   });
 
+  test('useTRPCHandles() builds the same mutation key as useTRPC()', async () => {
+    await using resource = ctx();
+    const [TRPCHandleProvider, useTRPCHandles] =
+      createTRPCHandleContext<AppRouter>();
+    function Probe() {
+      const trpc = useTRPCHandles();
+      return (
+        <p>{JSON.stringify(trpc.post.add.mutationOptions().mutationKey)}</p>
+      );
+    }
+    const utils = render(
+      <TRPCHandleProvider
+        trpcClient={resource.client}
+        queryClient={resource.queryClient}
+      >
+        <Probe />
+      </TRPCHandleProvider>,
+    );
+    expect(utils.container).toHaveTextContent(
+      JSON.stringify(
+        resource.optionsProxyClient.post.add.mutationOptions().mutationKey,
+      ),
+    );
+  });
+
   test('handle reads share cache entries with queryOptions(input)', async () => {
     await using resource = ctx();
     const trpc = resource.loaderProxyClient;

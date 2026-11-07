@@ -7,6 +7,7 @@ import {
   isFunction,
   type MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
+import { getMutationKeyInternal } from '../shared/mutationKey';
 import type { QueryCall, TRPCQueryBaseOptions } from '../shared/queryFn';
 import {
   createInfiniteQueryFn,
@@ -61,15 +62,24 @@ function unwrapLazyArg<T>(valueOrLazy: T | (() => T)): T {
   return (isFunction(valueOrLazy) ? valueOrLazy() : valueOrLazy) as T;
 }
 
-/**
- * @internal
- */
-export function clientCall(
-  client: TRPCUntypedClient<AnyTRPCRouter> | TRPCClient<AnyTRPCRouter>,
-): QueryCall {
-  const untypedClient =
-    client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+type AnyClient = TRPCUntypedClient<AnyTRPCRouter> | TRPCClient<AnyTRPCRouter>;
+
+type MutationCall = typeof TRPCUntypedClient.prototype.mutation;
+
+function untypedClientOf(client: AnyClient) {
+  return client instanceof TRPCUntypedClient
+    ? client
+    : getUntypedClient(client);
+}
+
+function clientCall(client: AnyClient): QueryCall {
+  const untypedClient = untypedClientOf(client);
   return (path, input, opts) => untypedClient.query(path, input, opts);
+}
+
+function clientMutate(client: AnyClient): MutationCall {
+  const untypedClient = untypedClientOf(client);
+  return (path, input, opts) => untypedClient.mutation(path, input, opts);
 }
 
 function routerCall(router: AnyTRPCRouter, ctx: unknown): QueryCall {
@@ -93,23 +103,27 @@ type HandleUtil =
   | 'queryKey'
   | 'infiniteQueryKey'
   | 'queryOptions'
-  | 'infiniteQueryOptions';
+  | 'infiniteQueryOptions'
+  | 'mutationKey'
+  | 'mutationOptions';
 
 type HandleOptionsIn = TRPCQueryBaseOptions & {
   initialCursor?: unknown;
 } & Record<string, unknown>;
 
 /**
- * Creates a handle proxy. It has only what the handle functions read: the
- * keys, `queryOptions`, `infiniteQueryOptions` and `~queryClient`.
+ * Creates a handle proxy. It has what the handle functions read: the keys,
+ * `queryOptions`, `infiniteQueryOptions` and `~queryClient`. With `mutate`,
+ * it also has `mutationKey` and `mutationOptions`.
  * @internal
  */
 export function createHandleProxy(opts: {
   call: QueryCall;
+  mutate: MutationCall | null;
   queryClient: QueryClient | (() => QueryClient);
   prefix: string | undefined;
 }): object {
-  const { call, prefix } = opts;
+  const { call, mutate, prefix } = opts;
   return createTRPCRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
     const util = path.pop() as HandleUtil;
@@ -162,11 +176,26 @@ export function createHandleProxy(opts: {
           trpc: createTRPCOptionsResult({ path }),
         };
       }
-      default:
-        throw new TypeError(
-          `\`trpc.${[...path, util].join('.')}()\` isn't on a handle proxy. It has \`queryKey\`, \`infiniteQueryKey\` and \`pathKey\`, and reads handles with \`fromHandle\``,
-        );
+      case 'mutationKey':
+        return getMutationKeyInternal({ path, prefix });
+      case 'mutationOptions': {
+        if (mutate) {
+          const mutationOpts = input as TRPCQueryBaseOptions | undefined;
+          const mutationKey = getMutationKeyInternal({ path, prefix });
+          return {
+            ...mutationOpts,
+            mutationKey,
+            mutationFn: (variables: unknown) =>
+              mutate(path.join('.'), variables, mutationOpts?.trpc),
+            trpc: createTRPCOptionsResult({ path }),
+          };
+        }
+        break;
+      }
     }
+    throw new TypeError(
+      `\`trpc.${[...path, util].join('.')}()\` isn't on this handle proxy. It has \`queryKey\`, \`infiniteQueryKey\` and \`pathKey\`, and reads handles with \`fromHandle\`. Mutations are on \`useTRPCHandles()\``,
+    );
   });
 }
 
@@ -222,6 +251,7 @@ export function createTRPCLoaderProxy<
         'router' in opts
           ? routerCall(opts.router, opts.ctx)
           : clientCall(opts.client),
+      mutate: null,
       queryClient: opts.queryClient,
       prefix: opts.keyPrefix,
     }),
@@ -241,6 +271,7 @@ export function createRenderProxy<
 }) {
   return createHandleProxy({
     call: clientCall(opts.client),
+    mutate: clientMutate(opts.client),
     queryClient: opts.queryClient,
     prefix: opts.prefix,
   }) as TRPCHandleProxy<TRouter, TFeatureFlags>;
