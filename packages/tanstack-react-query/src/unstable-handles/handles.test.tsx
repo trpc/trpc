@@ -21,6 +21,7 @@ import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
+  createTRPCHandleContext,
   createTRPCLoaderProxy,
   loadHandles,
   loadHandlesSettled,
@@ -37,7 +38,7 @@ import {
   TRPCEntryError,
 } from '.';
 import type {
-  TRPCLoaderOptionsProxy,
+  TRPCLoaderProxy,
   TRPCQueryHandle,
   TRPCInfiniteQueryHandle,
   inferQueryHandle,
@@ -58,6 +59,9 @@ const ctx = () => {
         }
         return { id: opts.input.id, title: `Post ${opts.input.id}` };
       }),
+      add: t.procedure
+        .input(z.object({ title: z.string() }))
+        .mutation((opts) => ({ id: 'new', title: opts.input.title })),
       draftById: t.procedure
         .input(z.object({ id: z.string() }))
         .query((opts) => ({
@@ -105,7 +109,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCLoaderOptionsProxy<AppRouter>;
+type TRPC = TRPCLoaderProxy<AppRouter>;
 
 /** What the server's dehydrated state looks like after crossing the wire */
 function overTheWire<T>(value: T): T {
@@ -391,8 +395,24 @@ describe('types', () => {
     waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
     void fromHandle(trpc, handle);
 
-    // A proxy that can load handles still fits where useTRPC()'s type is expected
-    expectTypeOf<TRPC>().toMatchTypeOf<TRPCOptionsProxy<AppRouter>>();
+    const [, useTRPCHandles] = createTRPCHandleContext<AppRouter>();
+    const handles = useTRPCHandles();
+    // @ts-expect-error useTRPCHandles() reads handles, and can't load them
+    void loadHandles(handles, {});
+    // @ts-expect-error nor build entries
+    prefetchEntry(handles.post.byId, { id: '1' });
+  });
+
+  test('a loader proxy has only the handles and keys, not the useTRPC() helpers', () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    // @ts-expect-error read a handle with fromHandle instead
+    void trpc.post.byId.queryOptions({ id: '1' });
+    // @ts-expect-error mutations are for the client
+    void trpc.post.add;
+    expectTypeOf(trpc.post.byId.queryKey({ id: '1' })).toMatchTypeOf<
+      ReturnType<TRPCOptionsProxy<AppRouter>['post']['byId']['queryKey']>
+    >();
   });
 
   test('infinite entries only load several pages with getNextPageParam', () => {
@@ -803,7 +823,7 @@ describe('loading', () => {
       (error as Error).message,
     );
     expect(error).toMatchInlineSnapshot(
-      `[Error: \`loadHandles()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` and wait where you read it, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
+      `[Error: \`loadHandles()\` needs the proxy from \`createTRPCLoaderProxy\`, not \`useTRPC()\`, \`useTRPCHandles()\` or \`createTRPCOptionsProxy\`: loading waits for queries, which a render can't. Load handles in a route loader or server component, or build one in a component with \`waterfallHandle\` and wait where you read it, with \`useSuspenseQuery\`. See https://trpc.io/docs/client/tanstack-react-query/handles#in-render]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
@@ -963,19 +983,45 @@ describe('runtime', () => {
     expect(resource.calls).toHaveBeenCalledTimes(2);
   });
 
+  test('useTRPCHandles() builds the same mutation key as useTRPC()', async () => {
+    await using resource = ctx();
+    const [TRPCHandleProvider, useTRPCHandles] =
+      createTRPCHandleContext<AppRouter>();
+    function Probe() {
+      const trpc = useTRPCHandles();
+      return (
+        <p>{JSON.stringify(trpc.post.add.mutationOptions().mutationKey)}</p>
+      );
+    }
+    const utils = render(
+      <TRPCHandleProvider
+        trpcClient={resource.client}
+        queryClient={resource.queryClient}
+      >
+        <Probe />
+      </TRPCHandleProvider>,
+    );
+    expect(utils.container).toHaveTextContent(
+      JSON.stringify(
+        resource.optionsProxyClient.post.add.mutationOptions().mutationKey,
+      ),
+    );
+  });
+
   test('handle reads share cache entries with queryOptions(input)', async () => {
     await using resource = ctx();
     const trpc = resource.loaderProxyClient;
     const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    const stable = resource.optionsProxyClient;
     expect(fromHandle(trpc, handle).queryKey).toEqual(
-      trpc.post.byId.queryOptions({ id: '1' }).queryKey,
+      stable.post.byId.queryOptions({ id: '1' }).queryKey,
     );
     const list = waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
     expect(
       fromHandle(trpc, list, { getNextPageParam: (l) => l.nextCursor })
         .queryKey,
     ).toEqual(
-      trpc.post.list.infiniteQueryOptions(
+      stable.post.list.infiniteQueryOptions(
         { limit: 2 },
         { getNextPageParam: (l) => l.nextCursor },
       ).queryKey,
@@ -1287,11 +1333,12 @@ describe('runtime', () => {
     expect(overTheWire(handles)).toStrictEqual(handles);
 
     const read = overTheWire(handles);
+    const stable = resource.optionsProxyClient;
     expect(fromHandle(client, read.ensure).queryKey).toEqual(
-      client.viewer.queryOptions().queryKey,
+      stable.viewer.queryOptions().queryKey,
     );
     expect(fromHandle(client, read.withInput).queryKey).toEqual(
-      client.post.byId.queryOptions({ id: '1' }).queryKey,
+      stable.post.byId.queryOptions({ id: '1' }).queryKey,
     );
   });
 });

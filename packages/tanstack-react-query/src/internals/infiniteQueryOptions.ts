@@ -2,7 +2,6 @@ import type {
   DataTag,
   DefinedInitialDataInfiniteOptions,
   QueryClient,
-  QueryFunction,
   SkipToken,
   UndefinedInitialDataInfiniteOptions,
   UnusedSkipTokenInfiniteOptions,
@@ -10,6 +9,7 @@ import type {
 import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
+import { createInfiniteQueryFn } from '../shared/queryFn';
 import type {
   ExtractCursorType,
   FeatureFlags,
@@ -19,7 +19,7 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult, getClientArgs } from './utils';
+import { createTRPCOptionsResult } from './utils';
 
 type ReservedOptions =
   | 'queryKey'
@@ -277,30 +277,11 @@ export function trpcInfiniteQueryOptions<
   const { input, query, path, queryKey, opts } = args;
   const inputIsSkipToken = input === skipToken;
 
-  const queryFn: QueryFunction<
-    unknown,
-    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
-    unknown
-  > = async (queryFnContext) => {
-    const actualOpts = {
-      ...opts,
-      trpc: {
-        ...opts?.trpc,
-        ...(opts?.trpc?.abortOnUnmount
-          ? { signal: queryFnContext.signal }
-          : { signal: null }),
-      },
-    };
-
-    const result = await query(
-      ...getClientArgs(queryKey, actualOpts, {
-        direction: queryFnContext.direction,
-        pageParam: queryFnContext.pageParam,
-      }),
-    );
-
-    return result;
-  };
+  const queryFn = createInfiniteQueryFn({
+    query,
+    queryKey,
+    trpc: opts?.trpc,
+  });
 
   return Object.assign(
     infiniteQueryOptions({

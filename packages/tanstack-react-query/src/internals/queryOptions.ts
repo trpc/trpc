@@ -2,7 +2,6 @@ import type {
   DataTag,
   DefinedInitialDataOptions,
   QueryClient,
-  QueryFunction,
   SkipToken,
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
@@ -13,7 +12,7 @@ import type {
   coerceAsyncIterableToArray,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
+import { createQueryFn } from '../shared/queryFn';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -22,12 +21,7 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import {
-  buildQueryFromAsyncIterable,
-  createTRPCOptionsResult,
-  getClientArgs,
-  unwrapLazyArg,
-} from './utils';
+import { createTRPCOptionsResult, unwrapLazyArg } from './utils';
 
 type ReservedOptions = 'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash';
 
@@ -246,29 +240,7 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   const inputIsSkipToken = input === skipToken;
 
-  const queryFn: QueryFunction<
-    unknown,
-    TRPCQueryKey<TFeatureFlags['keyPrefix']>
-  > = async (queryFnContext) => {
-    const actualOpts = {
-      ...opts,
-      trpc: {
-        ...opts?.trpc,
-        ...(opts?.trpc?.abortOnUnmount
-          ? { signal: queryFnContext.signal }
-          : { signal: null }),
-      },
-    };
-    const queryKey = queryFnContext.queryKey;
-
-    const result = await query(...getClientArgs(queryKey, actualOpts));
-
-    if (isAsyncIterable(result)) {
-      return buildQueryFromAsyncIterable(result, queryClient, queryKey);
-    }
-
-    return result;
-  };
+  const queryFn = createQueryFn({ query, queryClient, trpc: opts?.trpc });
 
   return Object.assign(
     queryOptions({

@@ -1,5 +1,18 @@
-export { createTRPCLoaderProxy } from './loaderProxy';
-export type { TRPCLoaderOptionsProxy } from './loaderProxy';
+export { createTRPCLoaderProxy } from './proxy';
+export type { TRPCLoaderProxyOptions } from './proxy';
+export { createTRPCHandleContext } from './context';
+export type {
+  CreateTRPCHandleContextResult,
+  TRPCHandleProviderProps,
+} from './context';
+export type {
+  TRPCLoaderProxy,
+  TRPCHandleProxy,
+  TRPCHandleFeatureFlags,
+  TRPCHandleQueryProcedure,
+  TRPCHandleInfiniteQueryProcedure,
+  TRPCHandleRouter,
+} from './types';
 export {
   loadHandles,
   loadHandlesSettled,
