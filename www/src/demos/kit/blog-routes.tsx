@@ -1,4 +1,7 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   createRoute,
@@ -9,12 +12,14 @@ import { type ReactNode, Suspense } from 'react';
 
 import {
   CommentList,
+  commentItems,
   Comments,
   CommentsSection,
   CommentsSkeleton,
   MoreByAuthor,
   MoreByAuthorList,
   MoreByAuthorSkeleton,
+  morePosts,
   NotFound,
   Post,
   PostArticle,
@@ -24,11 +29,22 @@ import {
   PostSkeleton,
 } from './blog.tsx';
 import { type DemoContext, DemoLink, useDemoLoaderData } from './browser.tsx';
-import { type TRPC, useTRPC } from './session.tsx';
+import { type LoaderTRPC, type TRPC, useTRPC } from './session.tsx';
+import {
+  ensureEntry,
+  ensureInfiniteEntry,
+  fetchEntry,
+  fetchInfiniteEntry,
+  loadHandles,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+  waterfallHandle,
+  waterfallInfiniteHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
 
 /**
  * Where a blog starts its queries: in route loaders with one of the three
- * verbs, at the top of each page as it renders, or in each component that
+ * entries, at the top of each page as it renders, or in each component that
  * reads one.
  */
 export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader' | 'top';
@@ -52,50 +68,45 @@ function usePostId() {
   return Number(params.id);
 }
 
+/** Handles built at the top of a page as it renders, which starts them */
 function startList(trpc: TRPC, page: number) {
-  return { list: trpc.post.list.unstable_$prefetch({ page }) };
+  return { list: waterfallHandle(trpc.post.list, { page }) };
 }
 
 function startPost(trpc: TRPC, id: number) {
   return {
-    comments: trpc.post.comments.unstable_$prefetch({ postId: id }),
-    more: trpc.post.moreByAuthor.unstable_$prefetch({ postId: id }),
-    post: trpc.post.byId.unstable_$prefetch({ id }),
+    comments: waterfallInfiniteHandle(trpc.post.comments, { postId: id }),
+    more: waterfallInfiniteHandle(trpc.post.moreByAuthor, { postId: id }),
+    post: waterfallHandle(trpc.post.byId, { id }),
   };
 }
 
-async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
-  switch (verb) {
-    case 'prefetch':
-      return startList(trpc, page);
-    case 'ensure':
-      return { list: await trpc.post.list.unstable_$ensure({ page }) };
-    case 'fetch':
-      return { list: await trpc.post.list.unstable_$fetch({ page }) };
-  }
+const entryFor = {
+  ensure: ensureEntry,
+  fetch: fetchEntry,
+  prefetch: prefetchEntry,
+} satisfies Record<LoaderVerb, unknown>;
+
+const infiniteEntryFor = {
+  ensure: ensureInfiniteEntry,
+  fetch: fetchInfiniteEntry,
+  prefetch: prefetchInfiniteEntry,
+} satisfies Record<LoaderVerb, unknown>;
+
+async function loadList(verb: LoaderVerb, trpc: LoaderTRPC, page: number) {
+  const [handles] = await loadHandles(trpc, {
+    list: entryFor[verb](trpc.post.list, { page }),
+  });
+  return handles;
 }
 
-async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
-  switch (verb) {
-    case 'prefetch':
-      return startPost(trpc, id);
-    case 'ensure': {
-      const [post, comments, more] = await Promise.all([
-        trpc.post.byId.unstable_$ensure({ id }),
-        trpc.post.comments.unstable_$ensure({ postId: id }),
-        trpc.post.moreByAuthor.unstable_$ensure({ postId: id }),
-      ]);
-      return { comments, more, post };
-    }
-    case 'fetch': {
-      const [post, comments, more] = await Promise.all([
-        trpc.post.byId.unstable_$fetch({ id }),
-        trpc.post.comments.unstable_$fetch({ postId: id }),
-        trpc.post.moreByAuthor.unstable_$fetch({ postId: id }),
-      ]);
-      return { comments, more, post };
-    }
-  }
+async function loadPost(verb: LoaderVerb, trpc: LoaderTRPC, id: number) {
+  const [handles] = await loadHandles(trpc, {
+    comments: infiniteEntryFor[verb](trpc.post.comments, { postId: id }),
+    more: infiniteEntryFor[verb](trpc.post.moreByAuthor, { postId: id }),
+    post: entryFor[verb](trpc.post.byId, { id }),
+  });
+  return handles;
 }
 
 type ListHandles = ReturnType<typeof startList>;
@@ -228,18 +239,24 @@ function ReaderList(): ReactNode {
 
 function CommentsByPost(props: { readonly postId: number }) {
   const trpc = useTRPC();
-  const commentsQuery = useSuspenseQuery(
-    trpc.post.comments.queryOptions({ postId: props.postId }),
+  const commentsQuery = useSuspenseInfiniteQuery(
+    trpc.post.comments.infiniteQueryOptions(
+      { postId: props.postId },
+      { getNextPageParam: (last) => last.nextCursor },
+    ),
   );
-  return <CommentList comments={commentsQuery.data} />;
+  return <CommentList comments={commentItems(commentsQuery.data)} />;
 }
 
 function MoreByPost(props: { readonly postId: number }) {
   const trpc = useTRPC();
-  const moreQuery = useSuspenseQuery(
-    trpc.post.moreByAuthor.queryOptions({ postId: props.postId }),
+  const moreQuery = useSuspenseInfiniteQuery(
+    trpc.post.moreByAuthor.infiniteQueryOptions(
+      { postId: props.postId },
+      { getNextPageParam: (last) => last.nextCursor },
+    ),
   );
-  return <MoreByAuthorList more={moreQuery.data} />;
+  return <MoreByAuthorList more={morePosts(moreQuery.data)} />;
 }
 
 /** The post, then what renders inside it, which only starts once it's in. */

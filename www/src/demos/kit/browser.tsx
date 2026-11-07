@@ -21,11 +21,11 @@ import {
 import { Button } from '@shared/ui/components/button';
 
 import { Reserve } from '../reserve.tsx';
-import type { Session, TRPC } from './session.tsx';
+import type { LoaderTRPC, Session } from './session.tsx';
 
 /** What a demo's route loaders get as `context`. */
 export interface DemoContext {
-  readonly trpc: TRPC;
+  readonly trpc: LoaderTRPC;
 }
 
 interface TabContext {
@@ -214,7 +214,7 @@ function LiveBrowser(props: {
       context: { trpc: props.session.trpc } satisfies DemoContext,
       // On a page it has visited, TanStack Router shows the kept loader
       // data and reruns the loader behind it by default, which hides what
-      // `$ensure` and `$fetch` wait for.
+      // `ensureEntry` and `fetchEntry` wait for.
       defaultStaleReloadMode: 'blocking',
       history: createMemoryHistory({ initialEntries: [props.initial] }),
       InnerWrap: Chrome,
