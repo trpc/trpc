@@ -7,8 +7,6 @@ export {
   prefetchInfiniteEntry,
   fetchInfiniteEntry,
   ensureInfiniteEntry,
-  waterfallHandle,
-  waterfallInfiniteHandle,
   fromHandle,
   isTRPCEntryError,
 } from './handles';

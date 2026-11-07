@@ -8,7 +8,7 @@ parent: "client/tanstack-react-query"
 order: 53
 ---
 
-A **handle** is a small, serializable reference to a query. You usually load it in a server component or a route loader, or build it during render with [`waterfallHandle`](#waterfall-handles). Pass it to a component, and the component reads the query, fully typed, without naming the procedure or repeating its input.
+A **handle** is a small, serializable reference to a query. You load it in a server component, a route loader or an event handler. Pass it to a component, and the component reads the query, fully typed, without naming the procedure or repeating its input.
 
 :::info
 The handle APIs are plain functions from `@trpc/tanstack-react-query/unstable-handles`. The `unstable-` in the path means they're new and may change, but you're safe to use them! [Read more](/docs/faq#unstable).
@@ -132,18 +132,15 @@ export function Comments(props: {
 
 // @filename: components/more-by-author.tsx
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC, type TRPC } from '~/trpc/client';
+import { useTRPC } from '~/trpc/client';
 
-export function MoreByAuthor(props: {
-  posts: inferInfiniteQueryHandle<TRPC['post']['byAuthor']>;
-}) {
+export function MoreByAuthor(props: { authorId: string }) {
   const trpc = useTRPC();
   const postsQuery = useSuspenseInfiniteQuery(
-    fromHandle(trpc, props.posts, {
-      getNextPageParam: (last) => last.nextCursor,
-    }),
+    trpc.post.byAuthor.infiniteQueryOptions(
+      { authorId: props.authorId },
+      { getNextPageParam: (last) => last.nextCursor },
+    ),
   );
   return (
     <ul>
@@ -196,10 +193,7 @@ import type { inferInfiniteQueryHandle, inferQueryHandle } from '@trpc/tanstack-
 import type { TRPC } from '~/trpc/client';
 // ---cut---
 import { useSuspenseQuery } from '@tanstack/react-query';
-import {
-  fromHandle,
-  waterfallInfiniteHandle,
-} from '@trpc/tanstack-react-query/unstable-handles';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 import { MoreByAuthor } from '~/components/more-by-author';
@@ -211,10 +205,6 @@ export function PostPage(props: {
 }) {
   const trpc = useTRPC();
   const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
-  // 3. More by the author: ⚠️ a waterfall
-  const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, {
-    authorId: postQuery.data.authorId,
-  });
 
   return (
     <article>
@@ -222,8 +212,9 @@ export function PostPage(props: {
       <Suspense fallback={<p>Loading comments…</p>}>
         <Comments comments={props.comments} />
       </Suspense>
+      {/* 3. More by the author: ⚠️ a waterfall */}
       <Suspense fallback={<p>Loading more by this author…</p>}>
-        <MoreByAuthor posts={moreByAuthor} />
+        <MoreByAuthor authorId={postQuery.data.authorId} />
       </Suspense>
     </article>
   );
@@ -267,7 +258,7 @@ export function AddComment(props: {
 `{ queryKey: props.comments.queryKey }` refreshes exactly the query the handle names. `trpc.post.comments.queryFilter(…)` would miss it, since the comments are an infinite query: see [Invalidation](#invalidation-and-staleness).
 
 :::warning ⚠️ Waterfall
-`post.byAuthor` needs the post's `authorId`, which the page only has once the post has loaded. So its request starts after the post's request has finished, a full round trip later. `waterfallHandle` and `waterfallInfiniteHandle` keep that visible in the code. To remove the wait, let the loader start it from the URL, for example with a procedure that takes the post's id: see [If the URL isn't enough, reshape the procedure](#reshape-procedures).
+`post.byAuthor` needs the post's `authorId`, which the page only has once the post has loaded. So its request starts after the post's request has finished, a full round trip later. `MoreByAuthor` reads it with `trpc.post.byAuthor.infiniteQueryOptions`, as it would without handles. To remove the wait, let the loader start it from the URL, for example with a procedure that takes the post's id: see [If the URL isn't enough, reshape the procedure](#reshape-procedures).
 :::
 
 Handles fix a gap in the usual prefetch pattern: the server prefetches `trpc.post.byId.queryOptions({ id })`, and the client repeats the same procedure and input:
@@ -280,7 +271,7 @@ With handles, the client reads exactly what the server started. They work best w
 
 A handle carries the query's key and input, but no data. The data lives in the cache: see [Handles carry no data](#no-data). The cache fills through TanStack Query's dehydrate and hydrate, as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start). In a server loader, return `dehydrate(queryClient)` with the handles, as in [React Router](#react-router-ssr).
 
-The components that read handles are the same everywhere: with or without server components, and whether the handle came from a loader or from a component.
+The components that read handles are the same everywhere: with or without server components, and whatever loaded the handle.
 
 ## Loading handles {#starting-a-query}
 
@@ -433,8 +424,6 @@ Each entry is one TanStack Query call with the procedure's `queryOptions` or `in
 | `ensureEntry(trpc.x, input, opts)`                                   | `await queryClient.ensureQueryData({ ...trpc.x.queryOptions(input, opts), revalidateIfStale: true })`                                                                    |
 | `fetchEntry(trpc.x, input, opts)`                                    | `await queryClient.fetchQuery(trpc.x.queryOptions(input, opts))`                                                                                                         |
 | `prefetchInfiniteEntry`, `ensureInfiniteEntry`, `fetchInfiniteEntry` | `prefetchInfiniteQuery`, `ensureInfiniteQueryData` (with `revalidateIfStale: true`), `fetchInfiniteQuery`                                                                |
-| `waterfallHandle(trpc.x, input)` on `useTRPC()`, in render           | [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery)`(trpc.x.queryOptions(input))`, as a plain call instead of a hook |
-| `waterfallHandle(trpc.x, input)` on other proxies                    | Nothing: the reader's `useQuery(trpc.x.queryOptions(input))` starts the query                                                                                            |
 | `fromHandle(trpc, handle, opts)`                                     | `trpc.x.queryOptions(handle.input, opts)`, with `x` taken from the handle                                                                                                |
 
 The `queryClient` is the one the proxy was created with. The entry names follow the TanStack Query method each one calls.
@@ -473,11 +462,11 @@ Avoid awaiting one load and then starting another: the second load's requests wa
 | Next.js App Router                             | Server components                                | The server proxy from `trpc/server.tsx` |
 | TanStack Start, TanStack Router                | Route loaders                                    | The proxy in your router context        |
 | React Router                                   | `loader` or `clientLoader`                       | See [React Router](#react-router)       |
-| No loaders or server components, such as a SPA | The top of the page, [as it renders](#in-render) | `waterfallHandle` on `useTRPC()`        |
+| No loaders or server components, such as a SPA | Event handlers, such as a link's hover           | `useTRPC()`                             |
 
 - In server components, the request's `QueryClient` starts empty, so an ensure entry always waits for the request.
 - `loadHandles` and the entries take any tRPC options proxy: one from `createTRPCOptionsProxy`, or `useTRPC()`. Type a router context with `TRPCOptionsProxy<AppRouter>`.
-- Load handles where the code can wait: a loader, a server component, or an event handler, such as preloading a page on hover. Don't call `loadHandles` during render: every render starts its entries again, and a render can't wait for them. In components, build handles with [`waterfallHandle`](#waterfall-handles).
+- Load handles where the code can wait: a loader, a server component, or an event handler, such as preloading a page on hover. Don't call `loadHandles` during render: every render starts its entries again, and a render can't wait for them. A component that renders before anything loaded its query reads it directly, with `useSuspenseQuery(trpc.x.queryOptions(input))`.
 - `loadHandles` takes the root proxy, `trpc`, and one load can take entries from any procedure.
 
 ## Start every query from the URL {#url-as-input}
@@ -773,9 +762,9 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 }
 ```
 
-A handle can only come from `loadHandles` or `waterfallHandle`. A raw input, an entry, or an object with the right `queryKey` and `input` written by hand, doesn't type-check. In tests, build one with `waterfallHandle`: see [Testing components that take handles](#testing). At runtime, `fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
+A handle can only come from `loadHandles`. A raw input, an entry, or an object with the right `queryKey` and `input` written by hand, doesn't type-check. In tests, load one over a seeded cache: see [Testing components that take handles](#testing). At runtime, `fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
 
-`inferQueryHandle` accepts a handle from any entry or from `waterfallHandle`: they all have the same type.
+`inferQueryHandle` accepts a handle from any entry: they all have the same type.
 
 ### Reading with `useQuery` {#use-query}
 
@@ -925,83 +914,13 @@ const [handles] = await loadHandles(trpc, {
 });
 ```
 
-## Waterfall handles {#waterfall-handles}
-
-A handle from `loadHandles` refers to a query the load already started. When the input is only known during render, such as component state or an id from another query's data, no loader can start the query. `waterfallHandle(trpc.<path>, input)` builds a handle for it during render. The query can only start once that component renders, so it's a request waterfall, and the name keeps that visible.
-
-```tsx twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.tsx
-import { useTRPC } from '~/trpc/client';
-import { waterfallInfiniteHandle } from '@trpc/tanstack-react-query/unstable-handles';
-declare const authorId: string;
-const trpc = useTRPC();
-// ---cut---
-const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, { authorId });
-//    ^?
-```
-
-- It starts the query, following the rule of TanStack Query's [`usePrefetchQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/usePrefetchQuery): only if the cache has no entry for it, with no data, no error and no request in flight. The cache looks it up by TanStack Query's query hash, which ignores the order of keys in the input, so re-renders with the same input start nothing. When an input changes, the new query starts.
-- It returns the same handle type as an entry, so it goes to the same components.
-- It's a plain call, not a hook: you can call it conditionally, and React Compiler can memoize it.
-- For infinite queries, use `waterfallInfiniteHandle`.
-- Searching for `waterfallHandle` lists the waterfalls in your app.
-
-### Without a loader: in render {#in-render}
-
-Not every app has a route loader or server components to load handles in. A single-page app, or a page whose input lives in component state, can build waterfall handles at the top of the page as it renders, and pass them down:
-
-```tsx twoslash title='pages/post-page.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @filename: pages/comments.tsx
-export { Comments } from '~/components/comments';
-// @filename: pages/post.tsx
-export { Post } from '~/components/post';
-// @filename: pages/post-page.tsx
-// ---cut---
-import { Suspense } from 'react';
-import { useTRPC } from '~/trpc/client';
-import { Comments } from './comments';
-import { Post } from './post';
-import { waterfallHandle, waterfallInfiniteHandle } from '@trpc/tanstack-react-query/unstable-handles';
-
-export function PostPage(props: { id: string }) {
-  const trpc = useTRPC();
-  const post = waterfallHandle(trpc.post.byId, { id: props.id });
-  const comments = waterfallInfiniteHandle(trpc.post.comments, {
-    postId: props.id,
-    limit: 20,
-  });
-
-  return (
-    <>
-      <Suspense fallback={<p>Loading post…</p>}>
-        <Post post={post} />
-      </Suspense>
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <Comments comments={comments} />
-      </Suspense>
-    </>
-  );
-}
-```
-
-`Post` and `Comments` are the same components a loader or a server component would feed. Both queries start before either of them renders, so they load in parallel instead of one after the other, even if they share one `Suspense` boundary.
-
-- Build handles high in the tree: in the page, not in the components that read them. A handle built below a component that suspends starts only after that component's data arrives.
-- A query with cached data renders it at once. The component that reads the handle refetches it in the background if it's stale, as `useQuery` and `useSuspenseQuery` do by default.
-- With server rendering, the queries start in the server render too. TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start) streams them to the browser. Elsewhere, such as React Router's framework mode, nothing sends their data to the browser, which fetches them again: load them in a [loader](#react-router) instead.
-
-### Switching input {#switching-input}
+## Changing a handle's input {#switching-input}
 
 :::warning Prefer the URL
 If the user can change a list's sort or filter, put it in a [search param](#url-as-input), and the loader starts the new query when it changes. Only switch the input in the component when the URL can't hold it, such as a term the user is typing.
 :::
 
-Say the post page's comments can be sorted. To switch the handle the loader passed down to a new input, pass the handle and a function of its input:
+Say the post page's comments can be sorted. A handle names one input, so to read another, call the procedure directly, starting from the handle's input:
 
 ```tsx twoslash title='comments.tsx'
 // @jsx: react-jsx
@@ -1038,7 +957,6 @@ import { trpc as serverTRPC } from './server';
 const useTRPC = () => serverTRPC;
 // ---cut---
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { waterfallInfiniteHandle, fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useState } from 'react';
 
@@ -1048,15 +966,11 @@ export function Comments(props: {
   const trpc = useTRPC();
   // Start from the loader's input, so the first render reads the query it started
   const [sort, setSort] = useState(props.comments.input.sort);
-  const comments = waterfallInfiniteHandle(
-    trpc.post.comments,
-    props.comments,
-    (input) => ({ ...input, sort }),
-  );
   const commentsQuery = useSuspenseInfiniteQuery(
-    fromHandle(trpc, comments, {
-      getNextPageParam: (last) => last.nextCursor,
-    }),
+    trpc.post.comments.infiniteQueryOptions(
+      { ...props.comments.input, sort },
+      { getNextPageParam: (last) => last.nextCursor },
+    ),
   );
   return (
     <>
@@ -1067,9 +981,8 @@ export function Comments(props: {
 }
 ```
 
-- While the new input maps to the loader's query, it returns the loader's handle as is, so the first render reads what the loader started. It restarts that query if the cache lost it.
-- The handle must come from the same procedure. Switching a `post.draftById` handle with `waterfallHandle(trpc.post.byId, …)` throws, even when their types match.
-- When the input changes, the new query starts when the component renders with it, before the reader does. Its first page is still a waterfall. Wrap `setSort` in `startTransition`, or pass `placeholderData: keepPreviousData` to `fromHandle`, to keep showing the old list while it loads.
+- While the input matches the handle's, `infiniteQueryOptions` returns the same query key, so the first render reads the loader's cache entry instead of fetching again. For a query handle, use `useQuery(trpc.x.queryOptions({ ...handle.input, term }))` the same way.
+- When the input changes, the new query starts when the component renders with it: its first page is a waterfall. Wrap `setSort` in `startTransition`, or pass `placeholderData: keepPreviousData`, to keep showing the old list while it loads.
 
 ## Request waterfalls {#waterfalls}
 
@@ -1091,7 +1004,7 @@ instead of one after the other, as each component renders and finds out what it 
 3.     |-> post.byAuthor
 ```
 
-The demo runs one blog all three ways. Watch the network panel:
+The demo runs one blog both ways. Watch the network panel:
 
 ```demo waterfalls
 ```
@@ -1136,35 +1049,29 @@ The page waits for the post, and more by its author starts only after it.
 
 ### In a component {#waterfall-in-a-component}
 
-When an input is only known at render time, such as an id from a parent query's result, build a [waterfall handle](#waterfall-handles) in the component that has the input, and pass it to the one that renders it, as the post page at the top does for more by the author:
+When an input is only known at render time, such as an id from a parent query's result, read the query in the component that gets the input, as `MoreByAuthor` does in the post page at the top:
 
 ```tsx twoslash
 // @include: handles-router
 // @include: handles-trpc
-// @include: handles-components
-// @filename: more-from-author.tsx
-import type { Post } from '~/server/router';
-// ---cut---
-import { waterfallInfiniteHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense } from 'react';
-import { MoreByAuthor } from '~/components/more-by-author';
+// @filename: more-by-author.tsx
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useTRPC } from '~/trpc/client';
-
-function MoreFromAuthor(props: { post: Post }) {
-  const trpc = useTRPC();
-  const moreByAuthor = waterfallInfiniteHandle(trpc.post.byAuthor, {
-    authorId: props.post.authorId,
-  });
-  return (
-    <Suspense fallback={<p>Loading more by this author…</p>}>
-      <MoreByAuthor posts={moreByAuthor} />
-    </Suspense>
-  );
+declare const authorId: string;
+function MoreByAuthor() {
+const trpc = useTRPC();
+// ---cut---
+const postsQuery = useSuspenseInfiniteQuery(
+  trpc.post.byAuthor.infiniteQueryOptions(
+    { authorId },
+    { getNextPageParam: (last) => last.nextCursor },
+  ),
+);
+// ---cut-after---
 }
 ```
 
-- The query starts when `MoreFromAuthor` renders, an extra round trip after its parent's data arrives.
-- Reading `trpc.post.byAuthor.infiniteQueryOptions(input, opts)` with `useSuspenseInfiniteQuery` works too, as it always has.
+- The query starts when `MoreByAuthor` renders, an extra round trip after its parent's data arrives.
 - In the Next.js App Router, load the dependent query in the server component instead, as in the [loader example](#waterfall-in-a-loader).
 - In TanStack Router, `beforeLoad` can wait for the first query before the loader runs. It's an escape hatch, for when the dependent data must be there before the page renders: see [TanStack Start › Handles in `beforeLoad`](/docs/client/tanstack-react-query/tanstack-start#before-load).
 
@@ -1833,7 +1740,7 @@ queryClient.setQueryData(
 
 ## What a handle guarantees {#what-a-handle-guarantees}
 
-- **Types:** only `loadHandles` and `waterfallHandle` create handles. The key, procedure, input and kind (query or infinite) always agree, and output, `select` and error types flow to the read.
+- **Types:** only `loadHandles` creates handles. The key, procedure, input and kind (query or infinite) always agree, and output, `select` and error types flow to the read.
 - **Runtime:** `fromHandle` checks the handle's shape and `keyPrefix`.
 - **Development:** if a handle's query runs during server rendering, its data never reached that `QueryClient`. tRPC logs a warning once per query. The warning is off in production.
 
@@ -1841,7 +1748,7 @@ Handles aren't signed. A handle names a query the browser could call anyway, and
 
 ## Testing components that take handles {#testing}
 
-Handles can't be written by hand, so create them in the test with a proxy over a test `QueryClient`. Seed the cache with fixture data, then build the handle with `waterfallHandle`. The reader finds the fixture without calling the procedure:
+Handles can't be written by hand, so create them in the test with a proxy over a test `QueryClient`. Seed the cache with fixture data, then load the handle with a prefetch entry, which leaves fresh data alone. The reader finds the fixture without calling the procedure:
 
 ```tsx twoslash title='post.test.tsx'
 // @jsx: react-jsx
@@ -1862,7 +1769,7 @@ export const appRouter = t.router({
 // ---cut---
 import { QueryClient } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import { waterfallHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { loadHandles, prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
 import { appRouter } from './router';
 
 const queryClient = new QueryClient({
@@ -1874,7 +1781,9 @@ queryClient.setQueryData(trpc.post.byId.queryKey({ id: '1' }), {
   id: '1',
   title: 'Hello',
 });
-const post = waterfallHandle(trpc.post.byId, { id: '1' });
+const [{ post }] = await loadHandles(trpc, {
+  post: prefetchEntry(trpc.post.byId, { id: '1' }),
+});
 ```
 
 - Render the component under a `QueryClientProvider` and `TRPCProvider` with the same `queryClient`. The component reads the fixture from the cache.

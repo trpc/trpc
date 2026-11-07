@@ -20,8 +20,6 @@ import {
   prefetchInfiniteEntry,
   fetchInfiniteEntry,
   ensureInfiniteEntry,
-  waterfallHandle,
-  waterfallInfiniteHandle,
   fromHandle,
 } from '.';
 import type { inferQueryHandle, inferInfiniteQueryHandle } from '.';
@@ -110,12 +108,7 @@ describe('types', () => {
       ensuredList: ensureInfiniteEntry(trpc.post.list, { limit: 2 }),
       fetchedList: fetchInfiniteEntry(trpc.post.list, { limit: 2 }),
     });
-    const handles = [
-      loaded.prefetched,
-      loaded.ensured,
-      loaded.fetched,
-      waterfallHandle(trpc.post.byId, { id: '1' }),
-    ];
+    const handles = [loaded.prefetched, loaded.ensured, loaded.fetched];
     for (const handle of handles) {
       expectTypeOf(useQuery(fromHandle(trpc, handle)).data).toEqualTypeOf<
         Post | undefined
@@ -133,7 +126,6 @@ describe('types', () => {
       loaded.prefetchedList,
       loaded.ensuredList,
       loaded.fetchedList,
-      waterfallInfiniteHandle(trpc.post.list, { limit: 2 }),
     ];
     const getNextPageParam = (last: ListPage) => last.nextCursor;
     for (const handle of listHandles) {
@@ -148,10 +140,12 @@ describe('types', () => {
     }
   });
 
-  test("placeholderData doesn't widen data", () => {
+  test("placeholderData doesn't widen data", async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    const post = waterfallHandle(trpc.post.byId, { id: '1' });
+    const [{ post }] = await loadHandles(trpc, {
+      post: prefetchEntry(trpc.post.byId, { id: '1' }),
+    });
 
     const postQuery = useQuery(
       fromHandle(trpc, post, {
@@ -166,7 +160,7 @@ describe('types', () => {
     });
   });
 
-  test('only loadHandles and waterfallHandle create handles', () => {
+  test('only loadHandles creates handles', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     const handBuilt = {

@@ -51,13 +51,13 @@ type HandleQueryKey<
   : [path: string[], opts?: { input?: TInput; type?: TType }];
 
 /**
- * A serializable reference to a query, from `loadHandles()` or `waterfallHandle()`.
+ * A serializable reference to a query, from `loadHandles()`.
  * Pass it to a component and read it with `fromHandle(trpc, handle)`.
  */
 export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
   /**
    * Type-only: never present at runtime. Required, so only
-   * `loadHandles` and `waterfallHandle` create handles.
+   * `loadHandles` creates handles.
    */
   readonly [handleDef]: TDef & { kind: 'query' };
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
@@ -66,15 +66,15 @@ export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
 }
 
 /**
- * A serializable reference to an infinite query, from `loadHandles()` or
- * `waterfallInfiniteHandle()`. Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
+ * A serializable reference to an infinite query, from `loadHandles()`.
+ * Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
  */
 export interface TRPCInfiniteQueryHandle<
   TDef extends ResolverDef = ResolverDef,
 > {
   /**
    * Type-only: never present at runtime. Required, so only
-   * `loadHandles` and `waterfallInfiniteHandle` create handles.
+   * `loadHandles` creates handles.
    */
   readonly [handleDef]: TDef & { kind: 'infinite' };
   readonly queryKey: HandleQueryKey<
@@ -239,10 +239,6 @@ type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
   ? [input?: TDef['input'], opts?: TRPCEntryOptions]
   : [input: TDef['input'], opts?: TRPCEntryOptions];
 
-type WaterfallArgs<TDef extends ResolverDef> = undefined extends TDef['input']
-  ? [input?: TDef['input']]
-  : [input: TDef['input']];
-
 /**
  * The handle type of a query procedure, for typing props.
  * @example
@@ -266,8 +262,7 @@ export type inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryProcedure<infer TDef>
     ? TRPCInfiniteQueryHandle<TDef>
     : never;
-const notAHandle =
-  'Expected a tRPC handle from `loadHandles()` or `waterfallHandle()`';
+const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
 function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
   const queryKey = handle?.queryKey as unknown as TRPCQueryKey<any> | undefined;
@@ -418,53 +413,6 @@ async function startEntries(opts: {
   return [handles, data] as const;
 }
 
-/**
- * Waterfall handles. Their readers may fetch during render by design, so a
- * fetch during server rendering isn't a missing hydration.
- */
-const waterfallHandles = new WeakSet<object>();
-
-/**
- * A render runs again and again, so it follows the rule of TanStack's
- * `usePrefetchQuery`: start only a query the cache has no state for. Stale
- * data is refetched by the reader's observer, and an error stays until the
- * reader's error boundary resets it: restarting it here would suspend the
- * reader again.
- */
-function prefetchInRender(
-  queryClient: QueryClient,
-  options: any,
-  type: HandleType,
-) {
-  if (queryClient.getQueryState(options.queryKey)) {
-    return;
-  }
-  void (type === 'infinite'
-    ? queryClient.prefetchInfiniteQuery(options)
-    : queryClient.prefetchQuery(options));
-}
-
-interface WaterfallOptions {
-  options: any;
-  type: HandleType;
-  queryClient: QueryClient;
-}
-
-function createWaterfallHandle(opts: WaterfallOptions) {
-  const handle = toHandle(opts.options, opts.type);
-  waterfallHandles.add(handle);
-  prefetchInRender(opts.queryClient, opts.options, opts.type);
-  return handle;
-}
-
-function switchHandle(previous: AnyTRPCHandle, opts: WaterfallOptions) {
-  if (hashKey(opts.options.queryKey) === hashKey(previous.queryKey)) {
-    prefetchInRender(opts.queryClient, opts.options, opts.type);
-    return previous;
-  }
-  return createWaterfallHandle(opts);
-}
-
 function isServerEnvironment() {
   return typeof window === 'undefined' || 'Deno' in globalThis;
 }
@@ -534,15 +482,13 @@ function refetchRejectedHydration(queryClient: QueryClient, options: any) {
 
 function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
   queryClient: QueryClient;
-  rawHandle: AnyTRPCHandle;
   handle: ReturnType<typeof readHandle>;
   options: TOptions;
 }): TOptions {
   const { options } = opts;
   if (
     globalThis.process?.env?.['NODE_ENV'] !== 'production' &&
-    typeof options.queryFn === 'function' &&
-    !waterfallHandles.has(opts.rawHandle)
+    typeof options.queryFn === 'function'
   ) {
     options.queryFn = warnIfNotHydrated(
       opts.handle.path,
@@ -615,44 +561,6 @@ function entry(opts: {
     type: opts.type,
     kind: opts.kind,
     options: optionsOf(ctx.proxy, opts.type)(opts.input, opts.opts),
-  });
-}
-
-function waterfall(opts: {
-  fn: string;
-  type: HandleType;
-  procedure: unknown;
-  inputOrHandle: unknown;
-  switchInput: unknown;
-}) {
-  const { fn, type, inputOrHandle, switchInput } = opts;
-  const ctx = readProxy(opts.procedure, fn);
-  const queryClient = queryClientOf(ctx);
-  if (typeof switchInput !== 'function') {
-    return createWaterfallHandle({
-      options: optionsOf(ctx.proxy, type)(inputOrHandle, undefined),
-      type,
-      queryClient,
-    });
-  }
-  const previous = inputOrHandle as AnyTRPCHandle;
-  const handleOpts =
-    type === 'infinite'
-      ? { initialCursor: (previous as TRPCInfiniteQueryHandle).initialCursor }
-      : undefined;
-  const own = optionsOf(ctx.proxy, type)(previous.input, handleOpts);
-  if (hashKey(own.queryKey) !== hashKey(previous.queryKey)) {
-    throw new Error(
-      `\`${fn}(trpc.${ctx.path.join('.')}, handle, switchInput)\` can only switch a handle for \`${ctx.path.join('.')}\`, got one for ${JSON.stringify(previous.queryKey)}`,
-    );
-  }
-  return switchHandle(previous, {
-    options: optionsOf(ctx.proxy, type)(
-      switchInput(previous.input),
-      handleOpts,
-    ),
-    type,
-    queryClient,
   });
 }
 
@@ -889,76 +797,6 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
 }
 
 /**
- * Builds a handle for an input you only know during render, like an id from another
- * query's data, which makes it a request waterfall. The name keeps that visible.
- *
- * Call it during render: like TanStack's `usePrefetchQuery`, it starts the query if the
- * cache has no state for it.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
- */
-export function waterfallHandle<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  ...args: WaterfallArgs<TDef>
-): TRPCQueryHandle<TDef>;
-/**
- * Switches a handle, like one a loader passed down, to a new input, like a term the
- * user is typing. While the new input maps to the handle's own query, it returns the
- * handle as is, so the first render reads what the loader started.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#switching-input
- */
-export function waterfallHandle<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  handle: NoInfer<TRPCQueryHandle<TDef>>,
-  switchInput: (input: NoInfer<TDef['input']>) => NoInfer<TDef['input']>,
-): TRPCQueryHandle<TDef>;
-export function waterfallHandle(
-  procedure: unknown,
-  inputOrHandle?: unknown,
-  switchInput?: unknown,
-): unknown {
-  return waterfall({
-    fn: 'waterfallHandle',
-    type: 'query',
-    procedure,
-    inputOrHandle,
-    switchInput,
-  });
-}
-
-/**
- * Like `waterfallHandle`, for an infinite query.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#waterfall-handles
- */
-export function waterfallInfiniteHandle<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-): TRPCInfiniteQueryHandle<TDef>;
-/**
- * Like `waterfallHandle`'s switch form, for an infinite query.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#switching-input
- */
-export function waterfallInfiniteHandle<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  handle: NoInfer<TRPCInfiniteQueryHandle<TDef>>,
-  switchInput: (
-    input: NoInfer<InfiniteHandleInput<TDef['input']>>,
-  ) => NoInfer<InfiniteHandleInput<TDef['input']>>,
-): TRPCInfiniteQueryHandle<TDef>;
-export function waterfallInfiniteHandle(
-  procedure: unknown,
-  inputOrHandle: unknown,
-  switchInput?: unknown,
-): unknown {
-  return waterfall({
-    fn: 'waterfallInfiniteHandle',
-    type: 'infinite',
-    procedure,
-    inputOrHandle,
-    switchInput,
-  });
-}
-
-/**
  * Options for a handle: the same options `trpc.<path>.queryOptions(input)` or
  * `trpc.<path>.infiniteQueryOptions(input, opts)` return for the handle's procedure and
  * input. Pass them to `useQuery`, `useSuspenseQuery`, `useSuspenseInfiniteQuery`, etc.
@@ -1023,7 +861,6 @@ export function fromHandle(
   );
   return prepareHandleRead({
     queryClient: queryClientOf(ctx),
-    rawHandle,
     handle,
     options,
   });

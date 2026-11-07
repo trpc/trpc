@@ -38,16 +38,13 @@ import {
   loadHandles,
   prefetchEntry,
   prefetchInfiniteEntry,
-  waterfallHandle,
-  waterfallInfiniteHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
 
 /**
  * Where a blog starts its queries: in route loaders with one of the three
- * entries, at the top of each page as it renders, or in each component that
- * reads one.
+ * entries, or in each component that reads one.
  */
-export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader' | 'top';
+export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader';
 
 type LoaderVerb = Extract<Strategy, 'ensure' | 'fetch' | 'prefetch'>;
 
@@ -66,19 +63,6 @@ function usePage() {
 function usePostId() {
   const params: { readonly id?: string } = useParams({ strict: false });
   return Number(params.id);
-}
-
-/** Handles built at the top of a page as it renders, which starts them */
-function startList(trpc: TRPC, page: number) {
-  return { list: waterfallHandle(trpc.post.list, { page }) };
-}
-
-function startPost(trpc: TRPC, id: number) {
-  return {
-    comments: waterfallInfiniteHandle(trpc.post.comments, { postId: id }),
-    more: waterfallInfiniteHandle(trpc.post.moreByAuthor, { postId: id }),
-    post: waterfallHandle(trpc.post.byId, { id }),
-  };
 }
 
 const entryFor = {
@@ -109,8 +93,8 @@ async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
   return handles;
 }
 
-type ListHandles = ReturnType<typeof startList>;
-type PostHandles = ReturnType<typeof startPost>;
+type ListHandles = Awaited<ReturnType<typeof loadList>>;
+type PostHandles = Awaited<ReturnType<typeof loadPost>>;
 
 function ListPage(props: { readonly children: ReactNode }) {
   return (
@@ -208,17 +192,6 @@ function PostFromHandles(props: PostHandles) {
       }
     />
   );
-}
-
-function TopOfList(): ReactNode {
-  const trpc = useTRPC();
-  const page = usePage();
-  return <ListFromHandles page={page} {...startList(trpc, page)} />;
-}
-
-function TopOfPost(): ReactNode {
-  const trpc = useTRPC();
-  return <PostFromHandles {...startPost(trpc, usePostId())} />;
 }
 
 function ListByPage(props: { readonly page: number }) {
@@ -359,8 +332,6 @@ export function createBlogRoutes(strategy: Strategy) {
   switch (strategy) {
     case 'reader':
       return createRenderRoutes(ReaderList, ReaderPost);
-    case 'top':
-      return createRenderRoutes(TopOfList, TopOfPost);
     case 'ensure':
     case 'fetch':
     case 'prefetch':

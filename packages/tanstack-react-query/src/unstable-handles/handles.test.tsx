@@ -29,8 +29,6 @@ import {
   prefetchInfiniteEntry,
   fetchInfiniteEntry,
   ensureInfiniteEntry,
-  waterfallHandle,
-  waterfallInfiniteHandle,
   fromHandle,
   isTRPCEntryError,
   TRPCEntryError,
@@ -252,14 +250,15 @@ describe('types', () => {
     void loadHandles(trpc, { post: { id: '1' } });
   });
 
-  test('handles infer input and output', () => {
+  test('handles infer input and output', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     type PostHandle = inferQueryHandle<TRPC['post']['byId']>;
 
-    expectTypeOf(
-      waterfallHandle(trpc.post.byId, { id: '1' }),
-    ).toEqualTypeOf<PostHandle>();
+    const [handles] = await loadHandles(trpc, {
+      post: prefetchEntry(trpc.post.byId, { id: '1' }),
+    });
+    expectTypeOf(handles.post).toEqualTypeOf<PostHandle>();
 
     function Post(props: { handle: PostHandle }) {
       const t = {} as TRPC;
@@ -289,12 +288,14 @@ describe('types', () => {
     fromHandle(trpc, prefetchEntry(trpc.post.byId, { id }));
   });
 
-  test('infinite handles need getNextPageParam and do not mix with query handles', () => {
+  test('infinite handles need getNextPageParam and do not mix with query handles', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     type ListHandle = inferInfiniteQueryHandle<TRPC['post']['list']>;
 
-    const list = waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
+    const [{ list }] = await loadHandles(trpc, {
+      list: prefetchInfiniteEntry(trpc.post.list, { limit: 2 }),
+    });
     expectTypeOf(list).toEqualTypeOf<ListHandle>();
 
     const opts = fromHandle(trpc, list, {
@@ -305,27 +306,21 @@ describe('types', () => {
     // @ts-expect-error infinite handles need options
     fromHandle(trpc, list);
 
-    const query: TRPCQueryHandle<any> = waterfallHandle(trpc.post.byId, {
-      id: '1',
-    });
+    const post = {} as inferQueryHandle<TRPC['post']['byId']>;
+    const query: TRPCQueryHandle<any> = post;
     void query;
     // @ts-expect-error an infinite handle isn't a query handle
     const wrong: inferQueryHandle<TRPC['post']['list']> = list;
     void wrong;
     // @ts-expect-error a query handle isn't an infinite handle
-    const wrong2: TRPCInfiniteQueryHandle<any> = waterfallHandle(
-      trpc.post.byId,
-      {
-        id: '1',
-      },
-    );
+    const wrong2: TRPCInfiniteQueryHandle<any> = post;
     void wrong2;
   });
 
   test('fromHandle takes any router level, loadHandles a router', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    const handle = {} as inferQueryHandle<TRPC['post']['byId']>;
     expectTypeOf(fromHandle(trpc.post, handle)).toEqualTypeOf(
       fromHandle(trpc, handle),
     );
@@ -354,18 +349,12 @@ describe('types', () => {
       list: ensureInfiniteEntry(trpc.post.list, { limit: 2 }),
     });
 
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
-    expectTypeOf(handle).toEqualTypeOf<
-      inferQueryHandle<TRPC['post']['byId']>
-    >();
-    waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
-    void fromHandle(trpc, handle);
+    void fromHandle(trpc, {} as inferQueryHandle<TRPC['post']['byId']>);
   });
 
   test('a handle is not a proxy', () => {
-    const trpc = {} as TRPC;
     if (Math.random() < 2) return;
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    const handle = {} as inferQueryHandle<TRPC['post']['byId']>;
     // @ts-expect-error loadHandles takes the proxy
     void loadHandles(handle, {});
     // @ts-expect-error entries take a procedure
@@ -391,35 +380,13 @@ describe('types', () => {
     );
   });
 
-  test('waterfall handles switch to an input of the same procedure', () => {
-    const trpc = {} as TRPC;
-    if (Math.random() < 2) return;
-    const post = waterfallHandle(trpc.post.byId, { id: '1' });
-    expectTypeOf(
-      waterfallHandle(trpc.post.byId, post, (input) => {
-        expectTypeOf(input).toEqualTypeOf<{ id: string }>();
-        return { ...input, id: '2' };
-      }),
-    ).toEqualTypeOf(post);
-    // @ts-expect-error the new input is checked
-    waterfallHandle(trpc.post.byId, post, () => ({ id: 2 }));
-
-    const list = waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
-    waterfallInfiniteHandle(trpc.post.list, list, (input) => {
-      expectTypeOf(input).toEqualTypeOf<{ limit: number }>();
-      return { limit: 3 };
-    });
-  });
-
   test('handles of same-signature procedures are interchangeable, and that is safe', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     // Same input and output: the read follows the handle's own path, so this
     // can never read the wrong procedure.
-    const draft: inferQueryHandle<TRPC['post']['byId']> = waterfallHandle(
-      trpc.post.draftById,
-      { id: '1' },
-    );
+    const draft: inferQueryHandle<TRPC['post']['byId']> =
+      {} as inferQueryHandle<TRPC['post']['draftById']>;
     void draft;
   });
 });
@@ -554,7 +521,9 @@ describe('loading', () => {
   test('JavaScript callers get a readable error for a router level loadHandles or fromHandle cannot take', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    const [{ handle }] = await loadHandles(trpc, {
+      handle: prefetchEntry(trpc.post.byId, { id: '1' }),
+    });
     expect(() =>
       fromHandle(trpc.viewer as any, handle),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -612,8 +581,9 @@ describe('loading', () => {
 
   test('JavaScript callers get a readable error for a value that is not a proxy', async () => {
     await using resource = ctx();
-    const handle = waterfallHandle(resource.optionsProxyServer.post.byId, {
-      id: '1',
+    const trpc = resource.optionsProxyServer;
+    const [{ handle }] = await loadHandles(trpc, {
+      handle: prefetchEntry(trpc.post.byId, { id: '1' }),
     });
     expect(() =>
       fromHandle({} as any, handle),
@@ -809,110 +779,13 @@ describe('loading', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: \`loadHandles()\` takes the root proxy, \`trpc\`, got \`trpc.post.byId\`]`,
     );
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    const [{ handle }] = await loadHandles(trpc, {
+      handle: prefetchEntry(trpc.post.byId, { id: '1' }),
+    });
     expect(() =>
       loadHandles(handle as any, {}),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: \`loadHandles()\` expects a tRPC options proxy or one of its procedures, got a handle for \`post.byId\`]`,
-    );
-  });
-});
-
-describe('waterfall handles', () => {
-  test('start a query the cache has no state for, which the reader reuses', async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyClient;
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
-    expect(handle).toEqual({
-      queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
-      input: { id: '1' },
-    });
-    expect(resource.queryClient.isFetching()).toBe(1);
-    expect(waterfallHandle(trpc.post.byId, { id: '1' })).toEqual(handle);
-
-    function Post() {
-      const t = resource.useTRPC();
-      const postQuery = useSuspenseQuery(fromHandle(t, handle));
-      return <p>title:{postQuery.data.title}</p>;
-    }
-    const utils = resource.renderApp(
-      <React.Suspense fallback="loading">
-        <Post />
-      </React.Suspense>,
-    );
-    await vi.waitFor(() =>
-      expect(utils.container).toHaveTextContent('title:Post 1'),
-    );
-    expect(resource.calls).toHaveBeenCalledTimes(1);
-  });
-
-  test("switching keeps a loader's handle while the key is the same", async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
-    const [{ post, list }] = await loadHandles(trpc, {
-      post: prefetchEntry(trpc.post.byId, { id: '1' }),
-      list: prefetchInfiniteEntry(trpc.post.list, {
-        limit: 2,
-        cursor: 4,
-      }),
-    });
-    const loaded = overTheWire({ post, list });
-
-    expect(
-      waterfallHandle(trpc.post.byId, loaded.post, (input) => ({
-        ...input,
-      })),
-    ).toBe(loaded.post);
-    expect(
-      waterfallHandle(trpc.post.byId, loaded.post, () => ({
-        id: '2',
-      })),
-    ).toEqual({
-      queryKey: [['post', 'byId'], { input: { id: '2' }, type: 'query' }],
-      input: { id: '2' },
-    });
-
-    expect(
-      waterfallInfiniteHandle(trpc.post.list, loaded.list, (input) => input),
-    ).toBe(loaded.list);
-    expect(
-      waterfallInfiniteHandle(trpc.post.list, loaded.list, () => ({
-        limit: 3,
-      })),
-    ).toEqual({
-      queryKey: [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
-      input: { limit: 3 },
-      initialCursor: 4,
-    });
-  });
-
-  test('switching restarts a query the cache lost, before any reader asks', async () => {
-    await using resource = ctx();
-    const server = resource.optionsProxyServer;
-    const [{ post }] = await loadHandles(server, {
-      post: prefetchEntry(server.post.byId, { id: '1' }),
-    });
-    const loaded = overTheWire(post);
-    resource.queryClient.clear();
-
-    function Page() {
-      const t = resource.useTRPC();
-      const handle = waterfallHandle(t.post.byId, loaded, (input) => input);
-      return <p>{handle === loaded ? 'same handle' : 'new handle'}</p>;
-    }
-    const utils = resource.renderApp(<Page />);
-    expect(utils.container).toHaveTextContent('same handle');
-    expect(resource.queryClient.isFetching()).toBe(1);
-  });
-
-  test("can't switch a handle for another procedure", async () => {
-    await using resource = ctx();
-    const trpc = resource.optionsProxyServer;
-    const draft = waterfallHandle(trpc.post.draftById, { id: '1' });
-    expect(() =>
-      waterfallHandle(trpc.post.byId, draft, (input) => input),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`waterfallHandle(trpc.post.byId, handle, switchInput)\` can only switch a handle for \`post.byId\`, got one for [["post","draftById"],{"input":{"id":"1"},"type":"query"}]]`,
     );
   });
 });
@@ -975,11 +848,13 @@ describe('runtime', () => {
   test('handle reads share cache entries with queryOptions(input)', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyClient;
-    const handle = waterfallHandle(trpc.post.byId, { id: '1' });
+    const [{ handle, list }] = await loadHandles(trpc, {
+      handle: prefetchEntry(trpc.post.byId, { id: '1' }),
+      list: prefetchInfiniteEntry(trpc.post.list, { limit: 2 }),
+    });
     expect(fromHandle(trpc, handle).queryKey).toEqual(
       trpc.post.byId.queryOptions({ id: '1' }).queryKey,
     );
-    const list = waterfallInfiniteHandle(trpc.post.list, { limit: 2 });
     expect(
       fromHandle(trpc, list, { getNextPageParam: (l) => l.nextCursor })
         .queryKey,
@@ -1052,7 +927,9 @@ describe('runtime', () => {
       queryClient: makeServerClient(),
       keyPrefix: 'server',
     });
-    const handle = waterfallHandle(serverTrpc.post.byId, { id: '1' });
+    const [{ handle }] = await loadHandles(serverTrpc, {
+      handle: prefetchEntry(serverTrpc.post.byId, { id: '1' }),
+    });
     expect(() =>
       fromHandle(resource.optionsProxyClient, handle as any),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -1272,7 +1149,7 @@ describe('runtime', () => {
     await using resource = ctx();
     const server = resource.optionsProxyServer;
     const client = resource.optionsProxyClient;
-    const [loaded] = await loadHandles(server, {
+    const [handles] = await loadHandles(server, {
       prefetch: prefetchEntry(server.viewer),
       ensure: ensureEntry(server.viewer),
       fetch: fetchEntry(server.viewer),
@@ -1281,10 +1158,6 @@ describe('runtime', () => {
       ensureInfinite: ensureInfiniteEntry(server.viewer, undefined),
       withInput: ensureEntry(server.post.byId, { id: '1' }),
     });
-    const handles = {
-      ...loaded,
-      waterfall: waterfallHandle(server.viewer),
-    };
 
     for (const [key, handle] of Object.entries(handles)) {
       if (key !== 'withInput') {

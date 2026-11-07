@@ -17,13 +17,7 @@ import { renderToPipeableStream } from 'react-dom/server';
 import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import {
-  loadHandles,
-  prefetchEntry,
-  ensureEntry,
-  waterfallHandle,
-  fromHandle,
-} from '.';
+import { loadHandles, prefetchEntry, ensureEntry, fromHandle } from '.';
 import type { inferQueryHandle } from '.';
 import type { TRPCOptionsProxy } from '..';
 import { createTRPCContext, createTRPCOptionsProxy } from '..';
@@ -163,33 +157,6 @@ describe('server rendering', () => {
     expect(html).toContain('Posts on 2026-01-01');
     expect(html).toContain('Posts on 2026-01-02');
     expect(html).toContain('fetchedAt:1970-01-01T00:00:00.000Z');
-    expect(resource.calls).toHaveBeenCalledTimes(2);
-    expect(trpcWarnings(warn)).toEqual([]);
-    warn.mockRestore();
-  });
-
-  test('useTRPC() starts waterfall handles in the server render', async () => {
-    await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    function Page() {
-      const trpc = trpcContext.useTRPC();
-      const a = waterfallHandle(trpc.post.byDay, {
-        day: new Date('2026-03-01'),
-      });
-      const b = waterfallHandle(trpc.post.byDay, {
-        day: new Date('2026-03-02'),
-      });
-      return (
-        <>
-          <Post post={a} />
-          <Post post={b} />
-        </>
-      );
-    }
-
-    const html = await renderClientTree(resource, undefined, <Page />);
-    expect(html).toContain('Posts on 2026-03-01');
-    expect(html).toContain('Posts on 2026-03-02');
     expect(resource.calls).toHaveBeenCalledTimes(2);
     expect(trpcWarnings(warn)).toEqual([]);
     warn.mockRestore();

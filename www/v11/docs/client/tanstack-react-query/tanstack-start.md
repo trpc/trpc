@@ -735,7 +735,7 @@ function PostPage() {
 }
 ```
 
-This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or a [`waterfallHandle`](/docs/client/tanstack-react-query/handles#waterfall-in-a-component) in the component, which fetches the dependent query in render instead. Reach for `beforeLoad` only when the dependent data must be in the cache before the page renders.
+This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or [read the dependent query in the component](/docs/client/tanstack-react-query/handles#waterfall-in-a-component), which fetches it in render instead. Reach for `beforeLoad` only when the dependent data must be in the cache before the page renders.
 
 </details>
 

@@ -287,7 +287,7 @@ The load starts every entry before it waits for any, and resolves to a serializa
 - `fetchEntry` also waits, and refetches stale data before it resolves.
 - For infinite queries, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`.
 - When an ensure or fetch entry fails, the load rejects with a `TRPCEntryError` naming the entry. `isTRPCEntryError(error, trpc.post.byId)` checks which procedure failed, and `loadHandlesSettled` returns each entry's error as a value instead: see [Errors](/docs/client/tanstack-react-query/handles#errors-ensure).
-- For an input only known during render, `waterfallHandle(trpc.x, input)` builds a handle in the component. It starts the query if the cache has no state for it.
+- For an input only known during render, read the query directly with `trpc.x.queryOptions(input)`.
 - Handles carry no data. If the cache loses the data, for example after `queryClient.resetQueries()`, the reader loads it again, so give it a loading state either way. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
 - Each entry maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
 
