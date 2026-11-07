@@ -499,8 +499,11 @@ declare module '@tanstack/react-start' {
 // @filename: routes/posts.$id.tsx
 // ---cut---
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { isTRPCClientError } from '@trpc/client';
-import { loadHandles, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import {
+  ensureEntry,
+  isTRPCEntryError,
+  loadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { Post } from '~/components/post';
 
 export const Route = createFileRoute('/posts/$id')({
@@ -508,7 +511,7 @@ export const Route = createFileRoute('/posts/$id')({
     const [handles] = await loadHandles(trpc, {
       post: ensureEntry(trpc.post.byId, { id: params.id }),
     }).catch((cause) => {
-      if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
+      if (isTRPCEntryError(cause, trpc.post.byId) && cause.code === 'NOT_FOUND') {
         throw notFound();
       }
       throw cause;
@@ -695,7 +698,8 @@ declare module '@tanstack/react-start' {
 // ---cut---
 import { createFileRoute } from '@tanstack/react-router';
 import {
-  ensureEntry,
+  ensureInfiniteEntry,
+  fetchEntry,
   loadHandles,
   prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
@@ -706,7 +710,8 @@ import { Post } from '~/components/post';
 export const Route = createFileRoute('/posts/$id')({
   beforeLoad: async ({ context: { trpc }, params }) => {
     const [handles, data] = await loadHandles(trpc, {
-      post: ensureEntry(trpc.post.byId, { id: params.id }),
+      // Fresh, since the loader builds another query's input from it
+      post: fetchEntry(trpc.post.byId, { id: params.id }),
       comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
     });
     return { postHandles: handles, post: data.post };
@@ -714,9 +719,11 @@ export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc, postHandles, post } }) => {
     // Starts only after beforeLoad has the post
     const [handles] = await loadHandles(trpc, {
-      moreByAuthor: prefetchInfiniteEntry(trpc.post.byAuthor, {
-        authorId: post.authorId,
-      }),
+      moreByAuthor: ensureInfiniteEntry(
+        trpc.post.byAuthor,
+        { authorId: post.authorId },
+        { getNextPageParam: (last) => last.nextCursor },
+      ),
     });
     return { ...postHandles, ...handles };
   },

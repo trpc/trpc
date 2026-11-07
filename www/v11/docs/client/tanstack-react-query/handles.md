@@ -240,7 +240,10 @@ export function AddComment(props: {
   const addComment = useMutation(
     trpc.post.addComment.mutationOptions({
       onSuccess: () =>
-        queryClient.invalidateQueries({ queryKey: props.comments.queryKey }),
+        queryClient.invalidateQueries({
+          queryKey: props.comments.queryKey,
+          exact: true,
+        }),
     }),
   );
   return (
@@ -255,7 +258,7 @@ export function AddComment(props: {
 }
 ```
 
-`{ queryKey: props.comments.queryKey }` refreshes exactly the query the handle names. `trpc.post.comments.queryFilter(…)` would miss it, since the comments are an infinite query: see [Invalidation](#invalidation-and-staleness).
+`{ queryKey: props.comments.queryKey, exact: true }` refreshes exactly the query the handle names. `trpc.post.comments.queryFilter(…)` would miss it, since the comments are an infinite query: see [Invalidation](#invalidation-and-staleness).
 
 :::warning ⚠️ Waterfall
 `post.byAuthor` needs the post's `authorId`, which the page only has once the post has loaded. So its request starts after the post's request has finished, a full round trip later. `MoreByAuthor` reads it with `trpc.post.byAuthor.infiniteQueryOptions`, as it would without handles. To remove the wait, let the loader start it from the URL, for example with a procedure that takes the post's id: see [If the URL isn't enough, reshape the procedure](#reshape-procedures).
@@ -352,7 +355,7 @@ const [handles] = await loadHandles(trpc, {
 
   Without a boundary of your own, React shows the fallback of the nearest boundary above it, which may cover the whole page.
 
-- It never makes the load reject. If the request fails, the component that reads the handle gets the error, and the nearest error boundary shows it.
+- It never makes the load reject. If the request fails, the component that reads the handle gets the error: `useSuspenseQuery` throws it to the nearest error boundary, and `useQuery` returns it as `status: 'error'`.
 - Its data isn't in `data`: the query may not have any yet. Reading `data.post` is a type error.
 
 Use it for data the page can show a placeholder for: slow queries, content below the fold, secondary panels.
@@ -409,7 +412,7 @@ const [handles, data] = await loadHandles(trpc, {
 | In `data`              | No                                | Yes                                           | Yes                   |
 | With stale data        | Refetches in the background       | Resolves at once, refetches in the background | Waits for the refetch |
 | Reader's first render  | Loading state, or cached data     | The data                                      | The data              |
-| When the request fails | An error boundary shows the error | The load rejects                              | The load rejects      |
+| When the request fails | The reader gets the error         | The load rejects                              | The load rejects      |
 
 ```demo starting-queries
 ```
@@ -856,20 +859,21 @@ The post page's comments and more by its author are lists, so they're infinite q
 // @include: handles-trpc
 // @filename: snippet.ts
 import { trpc } from '~/trpc/server';
-import { loadHandles, prefetchInfiniteEntry, ensureInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import { loadHandles, ensureInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
 declare const id: string;
 // ---cut---
 const [handles, data] = await loadHandles(trpc, {
-  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id, limit: 20 }),
-  firstThree: ensureInfiniteEntry(
+  comments: ensureInfiniteEntry(
     trpc.post.comments,
     { postId: id, limit: 20 },
     { pages: 3, getNextPageParam: (last) => last.nextCursor },
   ),
 });
-data.firstThree.pages;
-//              ^?
+data.comments.pages;
+//            ^?
 ```
+
+`pages` applies when the cache has no pages for the query. If it already has some, an ensure entry resolves with those. Two entries for the same query share one cache entry, so list each query once.
 
 Functions can't cross to the client, so pass `getNextPageParam` when you read an infinite handle:
 
@@ -982,7 +986,7 @@ export function Comments(props: {
 ```
 
 - While the input matches the handle's, `infiniteQueryOptions` returns the same query key, so the first render reads the loader's cache entry instead of fetching again. For a query handle, use `useQuery(trpc.x.queryOptions({ ...handle.input, term }))` the same way.
-- When the input changes, the new query starts when the component renders with it: its first page is a waterfall. Wrap `setSort` in `startTransition`, or pass `placeholderData: keepPreviousData`, to keep showing the old list while it loads.
+- When the input changes, the new query starts when the component renders with it: its first page is a waterfall. Wrap `setSort` in `startTransition` to keep showing the old list while it loads.
 
 ## Request waterfalls {#waterfalls}
 
@@ -1528,8 +1532,11 @@ export { Comments } from '~/components/comments';
 export { Post } from '~/components/post';
 // @filename: app/posts/[id]/page.tsx
 // ---cut---
-import { TRPCError } from '@trpc/server';
-import { loadHandles, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import {
+  ensureEntry,
+  isTRPCEntryError,
+  loadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { notFound } from 'next/navigation';
 import { HydrateClient, trpc } from '~/trpc/server';
 import { Post } from './post';
@@ -1541,7 +1548,9 @@ export default async function PostPage(props: {
   const [{ post }] = await loadHandles(trpc, {
     post: ensureEntry(trpc.post.byId, { id }),
   }).catch((cause) => {
-    if (cause instanceof TRPCError && cause.code === 'NOT_FOUND') notFound();
+    if (isTRPCEntryError(cause, trpc.post.byId) && cause.code === 'NOT_FOUND') {
+      notFound();
+    }
     throw cause;
   });
 
@@ -1643,14 +1652,14 @@ results.post.data.title;
 //           ^?
 ```
 
-- It waits for every entry, even after one has failed, so you see all the failures, not just the first.
+- It waits for every fetch and ensure entry, even after one has failed, so you see all their failures, not just the first.
 - `results` has no key for prefetch entries, as `data` hasn't with `loadHandles`.
-- `handles` has a handle for every entry, failed or not. A component that reads a failed one gets the error in its error boundary, as with a [prefetch entry](#errors-prefetch).
+- `handles` has a handle for every entry, failed or not. A component that reads a failed one gets the error, as with a [prefetch entry](#errors-prefetch).
 - A cancelled query still rejects, as with `loadHandles`: the load was called off, so there's no result to give.
 
 ### With prefetch entries {#errors-prefetch}
 
-A prefetch entry never makes the load reject. The component that reads the handle gets the error instead, and the nearest error boundary shows it. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.
+A prefetch entry never makes the load reject. The component that reads the handle gets the error instead: `useSuspenseQuery` throws it to the nearest error boundary, and `useQuery` returns it as `status: 'error'`, unless you pass `throwOnError`. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.
 
 ```tsx twoslash
 // @include: handles-router
@@ -1732,7 +1741,12 @@ queryClient.setQueryData(trpc.post.byId.queryKey(handles.post.input), (post) =>
 );
 queryClient.setQueryData(
   trpc.post.comments.infiniteQueryKey(handles.comments.input),
-  (comments) => comments && { ...comments, pages: comments.pages.slice(0, 1) },
+  (comments) =>
+    comments && {
+      ...comments,
+      pages: comments.pages.slice(0, 1),
+      pageParams: comments.pageParams.slice(0, 1),
+    },
 );
 ```
 
@@ -1741,7 +1755,7 @@ queryClient.setQueryData(
 ## What a handle guarantees {#what-a-handle-guarantees}
 
 - **Types:** only `loadHandles` creates handles. The key, procedure, input and kind (query or infinite) always agree, and output, `select` and error types flow to the read.
-- **Runtime:** `fromHandle` checks the handle's shape and `keyPrefix`.
+- **Runtime:** `fromHandle` checks the handle's shape and `keyPrefix`. `loadHandles` rejects an entry built with a proxy for another `QueryClient`.
 - **Development:** if a handle's query runs during server rendering, its data never reached that `QueryClient`. tRPC logs a warning once per query. The warning is off in production.
 
 Handles aren't signed. A handle names a query the browser could call anyway, and every refetch runs input validation and auth on the server again. Put permission checks in your procedures.
