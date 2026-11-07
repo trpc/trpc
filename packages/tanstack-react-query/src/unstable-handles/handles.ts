@@ -262,6 +262,7 @@ export type inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryProcedure<infer TDef>
     ? TRPCInfiniteQueryHandle<TDef>
     : never;
+
 const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
 function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
