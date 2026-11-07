@@ -22,6 +22,7 @@ import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
+  createTRPCHandleContext,
   loadHandles,
   loadHandlesSettled,
   prefetchEntry,
@@ -56,6 +57,9 @@ const ctx = () => {
         }
         return { id: opts.input.id, title: `Post ${opts.input.id}` };
       }),
+      add: t.procedure
+        .input(z.object({ title: z.string() }))
+        .mutation((opts) => ({ id: 'new', title: opts.input.title })),
       draftById: t.procedure
         .input(z.object({ id: z.string() }))
         .query((opts) => ({
@@ -872,6 +876,31 @@ describe('runtime', () => {
     });
     // No browser request: the data came from the server's cache
     expect(resource.calls).toHaveBeenCalledTimes(2);
+  });
+
+  test('useTRPCHandles() builds the same mutation key as useTRPC()', async () => {
+    await using resource = ctx();
+    const [TRPCHandleProvider, useTRPCHandles] =
+      createTRPCHandleContext<AppRouter>();
+    function Probe() {
+      const trpc = useTRPCHandles();
+      return (
+        <p>{JSON.stringify(trpc.post.add.mutationOptions().mutationKey)}</p>
+      );
+    }
+    const utils = render(
+      <TRPCHandleProvider
+        trpcClient={resource.client}
+        queryClient={resource.queryClient}
+      >
+        <Probe />
+      </TRPCHandleProvider>,
+    );
+    expect(utils.container).toHaveTextContent(
+      JSON.stringify(
+        resource.optionsProxyClient.post.add.mutationOptions().mutationKey,
+      ),
+    );
   });
 
   test('handle reads share cache entries with queryOptions(input)', async () => {

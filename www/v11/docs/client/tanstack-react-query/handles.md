@@ -276,6 +276,115 @@ A handle carries the query's key and input, but no data. The data lives in the c
 
 The components that read handles are the same everywhere: with or without server components, and whatever loaded the handle.
 
+## Using handles on their own {#standalone}
+
+An app that reads every query through a handle doesn't need `useTRPC()`. `createTRPCHandleContext` returns a provider and two hooks, which you name: one returns a proxy that reads handles and runs mutations, the other the tRPC client. `createTRPCHandleProxy` builds the same proxy for loaders and server components. It takes `client`, or `router` and `ctx`, like `createTRPCOptionsProxy`. With both, the app loads nothing else from `@trpc/tanstack-react-query`:
+
+```tsx twoslash
+// @include: handles-router
+// @filename: trpc/handles.tsx
+// ---cut---
+import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/router';
+
+export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
+  createTRPCHandleContext<AppRouter>();
+export type TRPC = TRPCHandleProxy<AppRouter>;
+```
+
+```ts twoslash title='trpc/server.ts'
+// @include: handles-router
+// @filename: trpc/server.ts
+// ---cut---
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import { appRouter } from '~/server/router';
+
+export const queryClient = new QueryClient();
+export const trpc = createTRPCHandleProxy({ router: appRouter, ctx: {}, queryClient });
+```
+
+Render `<TRPCHandleProvider trpcClient={trpcClient} queryClient={queryClient}>` where you would render `<TRPCProvider>`. The post page's `Post` then reads its handle the same way:
+
+```tsx twoslash
+// @include: handles-router
+// @filename: trpc/handles.tsx
+import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/router';
+
+export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
+  createTRPCHandleContext<AppRouter>();
+export type TRPC = TRPCHandleProxy<AppRouter>;
+// @filename: components/post.tsx
+// ---cut---
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPCHandles, type TRPC } from '~/trpc/handles';
+
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+  const trpc = useTRPCHandles();
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+  return <h1>{postQuery.data.title}</h1>;
+}
+```
+
+- Both return a `TRPCHandleProxy<AppRouter>`. It has the router's queries, with `queryOptions`, `infiniteQueryOptions` and their keys, `queryKey`, `infiniteQueryKey` and `pathKey`, and its mutations, with `mutationOptions` and `mutationKey`. `loadHandles`, the entries and `fromHandle` take it as they take `useTRPC()`.
+- A query whose input is only known during render reads `trpc.x.queryOptions(input)` directly, as with `useTRPC()`: see [In a component](#waterfall-in-a-component).
+- A handle has the same type whichever proxy built it, and `useTRPC()` reads it too, so an app can move one component at a time.
+- Both proxies use TanStack Query's `QueryClient` and hooks, and the same query and mutation keys as `useTRPC()`, so they share cache entries with it.
+
+### Mutations {#standalone-mutations}
+
+A mutation procedure on `useTRPCHandles()` has `mutationOptions`, the same as on `useTRPC()`. After it succeeds, refresh a handle's query with the handle's own key. Adding a comment refreshes the comments the loader started:
+
+```tsx twoslash
+// @include: handles-router
+// @filename: trpc/handles.tsx
+import { createTRPCHandleContext, type TRPCHandleProxy } from '@trpc/tanstack-react-query/unstable-handles';
+import type { AppRouter } from '~/server/router';
+
+export const [TRPCHandleProvider, useTRPCHandles, useTRPCClient] =
+  createTRPCHandleContext<AppRouter>();
+export type TRPC = TRPCHandleProxy<AppRouter>;
+// @filename: components/comments.tsx
+// ---cut---
+import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { fromHandle, type inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPCHandles, type TRPC } from '~/trpc/handles';
+
+export function Comments(props: {
+  postId: string;
+  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
+}) {
+  const trpc = useTRPCHandles();
+  const queryClient = useQueryClient();
+  const commentsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.comments, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  const addComment = useMutation(
+    trpc.post.addComment.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: props.comments.queryKey }),
+    }),
+  );
+  return (
+    <form
+      action={(form) =>
+        addComment.mutate({ postId: props.postId, text: String(form.get('text')) })
+      }
+    >
+      <p>{commentsQuery.data.pages.flatMap((page) => page.items).length} comments</p>
+      <input name="text" />
+    </form>
+  );
+}
+```
+
+- Invalidating and updating handle data work as in [Invalidation and staleness](#invalidation-and-staleness). `useTRPCHandles()` has the keys but not the filters: instead of `trpc.post.comments.infiniteQueryFilter(input)`, pass `{ queryKey: trpc.post.comments.infiniteQueryKey(input) }`, and `{ queryKey: trpc.post.pathKey() }` instead of `trpc.post.pathFilter()`.
+- A mutation passed to `fromHandle` or an entry is a type error, and so is `mutationOptions` on a query. To call a procedure outside TanStack Query, use the client from `useTRPCClient()`.
+
 ## Loading handles {#starting-a-query}
 
 A loader lists its queries as **entries**, and `loadHandles(trpc, entries)` starts them all at once, then returns a handle for each:

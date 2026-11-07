@@ -1,3 +1,17 @@
+export { createTRPCHandleProxy } from './proxy';
+export type { TRPCHandleProxyOptions } from './proxy';
+export { createTRPCHandleContext } from './context';
+export type {
+  CreateTRPCHandleContextResult,
+  TRPCHandleProviderProps,
+} from './context';
+export type {
+  TRPCHandleProxy,
+  TRPCHandleFeatureFlags,
+  TRPCHandleQueryProcedure,
+  TRPCHandleInfiniteQueryProcedure,
+  TRPCHandleRouter,
+} from './types';
 export {
   loadHandles,
   loadHandlesSettled,
