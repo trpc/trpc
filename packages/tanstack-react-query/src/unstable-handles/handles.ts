@@ -478,6 +478,7 @@ function refetchRejectedHydration(
     !promise ||
     query.state.data !== undefined ||
     query.state.fetchStatus === 'idle' ||
+    enabled(query) === false ||
     watchedHydrations.has(promise)
   ) {
     return;
@@ -492,12 +493,18 @@ function refetchRejectedHydration(
     ) {
       return;
     }
+    const defaulted = queryClient.defaultQueryOptions(options);
     // Older query-core versions take the infinite behavior from the fetch's
-    // options, so `query.fetch` would store a bare page there
+    // options, so `query.fetch` would store a bare page there.
+    // `fetchInfiniteQuery` skips retries unless asked, unlike a query's fetch
+    // in the browser, which retries 3 times by default.
     const refetch =
       type === 'infinite'
-        ? queryClient.fetchInfiniteQuery(options)
-        : query.fetch(queryClient.defaultQueryOptions(options));
+        ? queryClient.fetchInfiniteQuery({
+            ...options,
+            retry: defaulted.retry ?? 3,
+          })
+        : query.fetch(defaulted);
     refetch.catch(() => {
       // surfaces through the query's state
     });

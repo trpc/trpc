@@ -355,7 +355,7 @@ const [handles] = await loadHandles(trpc, {
 
   Without a boundary of your own, React shows the fallback of the nearest boundary above it, which may cover the whole page.
 
-- It never makes the load reject. If the request fails, the component that reads the handle gets the error: `useSuspenseQuery` throws it to the nearest error boundary, and `useQuery` returns it as `status: 'error'`.
+- It never makes the load reject. If the request fails, the component that reads the handle gets the error: `useQuery` returns it as `status: 'error'`, and `useSuspenseQuery` throws it to the nearest error boundary unless it has cached data to show.
 - Its data isn't in `data`: the query may not have any yet. Reading `data.post` is a type error.
 
 Use it for data the page can show a placeholder for: slow queries, content below the fold, secondary panels.
@@ -873,7 +873,7 @@ data.comments.pages;
 //            ^?
 ```
 
-`pages` applies when the cache has no pages for the query. If it already has some, an ensure entry resolves with those. Two entries for the same query share one cache entry, so list each query once.
+`pages` applies when the cache has no pages for the query. If it already has some, an ensure entry resolves with those, and if a request for the query is already in flight, the entry joins it and gets the pages that request loads. Two entries for the same query share one cache entry, so list each query once.
 
 Functions can't cross to the client, so pass `getNextPageParam` when you read an infinite handle:
 
@@ -1659,7 +1659,7 @@ results.post.data.title;
 
 ### With prefetch entries {#errors-prefetch}
 
-A prefetch entry never makes the load reject. The component that reads the handle gets the error instead: `useSuspenseQuery` throws it to the nearest error boundary, and `useQuery` returns it as `status: 'error'`, unless you pass `throwOnError`. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.
+A prefetch entry never makes the load reject. The component that reads the handle gets the error instead: `useQuery` returns it as `status: 'error'`, unless you pass `throwOnError`, and `useSuspenseQuery` throws it to the nearest error boundary unless it has cached data to show. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.
 
 ```tsx twoslash
 // @include: handles-router

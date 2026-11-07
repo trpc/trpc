@@ -712,7 +712,11 @@ export const Route = createFileRoute('/posts/$id')({
     const [handles, data] = await loadHandles(trpc, {
       // Fresh, since the loader builds another query's input from it
       post: fetchEntry(trpc.post.byId, { id: params.id }),
-      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
+      comments: prefetchInfiniteEntry(
+        trpc.post.comments,
+        { postId: params.id },
+        { getNextPageParam: (last) => last.nextCursor },
+      ),
     });
     return { postHandles: handles, post: data.post };
   },

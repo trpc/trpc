@@ -1171,6 +1171,22 @@ describe('runtime', () => {
       expect(t.resource.calls).toHaveBeenCalledTimes(1);
     });
 
+    test('an enabled read after a disabled one is refetched', async () => {
+      await using t = await setup('flaky');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const handle = t.handle as inferQueryHandle<TRPC['flaky']>;
+      fromHandle(browserTrpc, handle, { enabled: false });
+      const options = fromHandle(browserTrpc, handle);
+      await vi.waitFor(() =>
+        expect(t.browser.getQueryData(options.queryKey)).toEqual({ id: '1' }),
+      );
+      expect(t.resource.calls).toHaveBeenCalledTimes(2);
+    });
+
     test('a queryOptions(input) read is left alone', async () => {
       const spy = vi
         .spyOn(console, 'error')
