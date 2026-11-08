@@ -7,7 +7,6 @@ import {
   loadPage,
   pageHtml,
   registerPages,
-  reloadWindow,
 } from './page-html.ts';
 
 const page = (html: string) => () =>
@@ -63,34 +62,45 @@ test('a page that fails to load is tried once more before it hydrates', async ()
   expect(pageHtml({ htmlKey: 'pages/retried.md' })).toBe('<p>Retried</p>');
 });
 
-test('a page that keeps failing reloads once, then gives up', async () => {
+/** Makes this page load look like one by `type`: `navigate` or `reload`. */
+function loadedBy(type: 'navigate' | 'reload') {
+  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+    { type } as unknown as PerformanceEntry,
+  ]);
+}
+
+test('a page that keeps failing reloads once, then gives up, however slow', async () => {
   const offline = new Error('offline');
   registerPages({ 'pages/gone.md': () => Promise.reject(offline) });
   const reload = vi.fn<() => void>();
+  loadedBy('navigate');
   // Never settles: the page is reloading.
   void hydratePages({ pages: ['pages/gone.md'] }, reload);
   await vi.waitFor(() => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
-  // After the reload, it fails again.
+  // The reloaded page fails again, however long that took.
+  loadedBy('reload');
+  vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 60_000);
   await expect(hydratePages({ pages: ['pages/gone.md'] }, reload)).rejects.toBe(
     offline,
   );
   expect(reload).toHaveBeenCalledTimes(1);
+  vi.restoreAllMocks();
 });
 
-test("an old reload's mark doesn't stop a later visit's reload", async () => {
+test("a reload's leftover mark doesn't stop a later visit's reload", async () => {
   registerPages({
     'pages/later.md': () => Promise.reject(new Error('offline')),
   });
   // A reload for this page, whose reader left before it hydrated.
-  sessionStorage.setItem(
-    'trpc-docs:reloaded-for:pages/later.md',
-    String(Date.now() - reloadWindow),
-  );
+  sessionStorage.setItem('trpc-docs:reloaded-for:pages/later.md', '');
+  // A later visit, by a link.
+  loadedBy('navigate');
   const reload = vi.fn<() => void>();
   void hydratePages({ pages: ['pages/later.md'] }, reload);
   await vi.waitFor(() => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
+  vi.restoreAllMocks();
 });
