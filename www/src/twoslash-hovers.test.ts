@@ -162,8 +162,15 @@ test('cleanup closes the popup and stops listening', () => {
 /** A block whose popups' content the page loads (`data-popup`). */
 function installLazyBlock(loadPopups: LoadPopups) {
   cleanup();
-  document.body.innerHTML = `<div id="root"><pre class="twoslash"><code><span class="line"><span class="twoslash-hover" id="lazy"><span class="twoslash-popup-container" data-popup="1" id="lazy-popup"></span>lazy</span><span id="lazy-plain"> = 1</span></span></code></pre></div>`;
+  document.body.innerHTML = `<div id="root"><pre class="twoslash"><code><span class="line"><span class="twoslash-hover" data-popup="1" id="lazy">lazy</span><span id="lazy-plain"> = 1</span></span></code></pre></div>`;
   cleanup = installTwoslashHovers(element('root'), loadPopups);
+}
+
+/** The lazy name's popup's content, once it has one. */
+function lazyPopup() {
+  return (
+    element('lazy').querySelector('.twoslash-popup-container')?.innerHTML ?? ''
+  );
 }
 
 const lazyPopups = [
@@ -179,8 +186,8 @@ test('the popups load once the pointer enters a block, before it rests on a name
   expect(loadPopups).toHaveBeenCalledTimes(1);
   await vi.advanceTimersByTimeAsync(openDelay);
   expect(openName()).toBe('lazy');
-  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
-  expect(element('lazy-popup').hasAttribute('data-popup')).toBe(false);
+  expect(lazyPopup()).toBe('<code>const lazy: 1</code>');
+  expect(element('lazy').hasAttribute('data-popup')).toBe(false);
 });
 
 test('a popup that opens before the popups load is filled once they do', async () => {
@@ -189,10 +196,10 @@ test('a popup that opens before the popups load is filled once they do', async (
   // A tap: no pointer events before the click.
   element('lazy').click();
   expect(openName()).toBe('lazy');
-  expect(element('lazy-popup').innerHTML).toBe('');
+  expect(lazyPopup()).toBe('');
   resolve(lazyPopups);
   await vi.advanceTimersByTimeAsync(0);
-  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
+  expect(lazyPopup()).toBe('<code>const lazy: 1</code>');
 });
 
 test('a failed load of the popups is tried again when a popup opens', async () => {
@@ -212,7 +219,7 @@ test('a failed load of the popups is tried again when a popup opens', async () =
   // Opening the popup tries again.
   await vi.advanceTimersByTimeAsync(openDelay);
   expect(loadPopups).toHaveBeenCalledTimes(2);
-  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
+  expect(lazyPopup()).toBe('<code>const lazy: 1</code>');
   logged.mockRestore();
 });
 
@@ -229,6 +236,6 @@ test('a tapped name whose popup fails to load closes, so the next tap tries agai
   element('lazy').click();
   await vi.advanceTimersByTimeAsync(0);
   expect(openName()).toBe('lazy');
-  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
+  expect(lazyPopup()).toBe('<code>const lazy: 1</code>');
   logged.mockRestore();
 });
