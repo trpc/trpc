@@ -11,9 +11,16 @@ function shikiColors(node: Element) {
   }
   const colors = new Map<string, string>();
   for (const declaration of style.split(';')) {
-    const [name, value] = declaration.split(':');
-    if (name !== undefined && value !== undefined) {
-      colors.set(name.trim(), value.trim().toLowerCase());
+    // A value can hold a colon too (a quoted font name), so split at the first.
+    const colon = declaration.indexOf(':');
+    if (colon !== -1) {
+      colors.set(
+        declaration.slice(0, colon).trim(),
+        declaration
+          .slice(colon + 1)
+          .trim()
+          .toLowerCase(),
+      );
     }
   }
   return colors;

@@ -86,3 +86,23 @@ test('unwraps a bare span inside a bare span', () => {
     `<pre class="shiki" style="${blockColors}">inner text</pre>`,
   );
 });
+
+test('keeps a token style whose value differs after a colon', () => {
+  const blockFont = 'font-family:"a:b"';
+  const tokenFont = 'font-family:"a:c"';
+  const tree: Root = {
+    type: 'root',
+    children: [
+      {
+        type: 'element',
+        tagName: 'pre',
+        properties: { class: 'shiki', style: blockFont },
+        children: [span(tokenFont, 'text')],
+      },
+    ],
+  };
+  compactCode(tree);
+  expect(toHtml(tree)).toBe(
+    `<pre class="shiki" style="font-family:&#x22;a:b&#x22;"><span style="font-family:&#x22;a:c&#x22;">text</span></pre>`,
+  );
+});
