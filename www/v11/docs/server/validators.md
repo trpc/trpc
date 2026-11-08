@@ -358,7 +358,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [effect](https://effect.website/docs/schema/introduction/)
 
-This example uses Effect 4. On Effect 3, use `Schema.standardSchemaV1` in place of `Schema.toStandardSchemaV1`.
+This example uses Effect 4. On Effect 3.13 or later, use `Schema.standardSchemaV1` in place of `Schema.toStandardSchemaV1`.
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
