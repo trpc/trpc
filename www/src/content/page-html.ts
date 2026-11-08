@@ -87,12 +87,19 @@ export function dehydratePages(router: {
 
 const reloadedKey = (key: string) => `trpc-docs:reloaded-for:${key}`;
 
-/** Whether this tab reloaded for `key` already, forgetting it either way. */
+/**
+ * How long a reload for a page counts as this attempt's. A reader who
+ * leaves before the reloaded page hydrates leaves its mark in the tab, and
+ * a later visit's failure gets its own reload.
+ */
+export const reloadWindow = 10_000;
+
+/** Whether this tab just reloaded for `key`, forgetting it either way. */
 function reloadedFor(key: string) {
   try {
-    const reloaded = sessionStorage.getItem(reloadedKey(key)) !== null;
+    const at = Number(sessionStorage.getItem(reloadedKey(key)));
     sessionStorage.removeItem(reloadedKey(key));
-    return reloaded;
+    return at > 0 && Date.now() - at < reloadWindow;
   } catch {
     // Storage is off (a private window): never reload, so never loop.
     return true;
@@ -101,7 +108,7 @@ function reloadedFor(key: string) {
 
 function markReloaded(key: string) {
   try {
-    sessionStorage.setItem(reloadedKey(key), '');
+    sessionStorage.setItem(reloadedKey(key), String(Date.now()));
     return true;
   } catch {
     return false;

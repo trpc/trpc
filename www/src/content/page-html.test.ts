@@ -7,6 +7,7 @@ import {
   loadPage,
   pageHtml,
   registerPages,
+  reloadWindow,
 } from './page-html.ts';
 
 const page = (html: string) => () =>
@@ -76,4 +77,20 @@ test('a page that keeps failing reloads once, then gives up', async () => {
     offline,
   );
   expect(reload).toHaveBeenCalledTimes(1);
+});
+
+test("an old reload's mark doesn't stop a later visit's reload", async () => {
+  registerPages({
+    'pages/later.md': () => Promise.reject(new Error('offline')),
+  });
+  // A reload for this page, whose reader left before it hydrated.
+  sessionStorage.setItem(
+    'trpc-docs:reloaded-for:pages/later.md',
+    String(Date.now() - reloadWindow),
+  );
+  const reload = vi.fn<() => void>();
+  void hydratePages({ pages: ['pages/later.md'] }, reload);
+  await vi.waitFor(() => {
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
 });
