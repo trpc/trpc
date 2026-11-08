@@ -42,7 +42,7 @@
     "sonner": "2.0.8"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.1.1",
+    "@effect/platform-node": "4.1.2",
     "@effect/vitest": "4.1.2",
     "@resvg/resvg-js": "2.6.2",
     "@samples/v11": "workspace:*",
