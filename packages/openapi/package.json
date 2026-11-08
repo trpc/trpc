@@ -76,7 +76,7 @@
     "ion-js": "^5.2.1",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "superjson": "^1.12.4",
+    "superjson": "^2.2.6",
     "tsdown": "catalog:",
     "typescript": "catalog:ts-api",
     "vscode-languageserver-textdocument": "^1.0.12",

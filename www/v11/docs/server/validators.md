@@ -358,6 +358,8 @@ export type AppRouter = typeof appRouter;
 
 ### With [effect](https://effect.website/docs/schema/introduction/)
 
+This example uses Effect 4. On Effect 3, use `Schema.standardSchemaV1` in place of `Schema.toStandardSchemaV1`.
+
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { Schema } from 'effect';
@@ -368,8 +370,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(Schema.standardSchemaV1(Schema.Struct({ name: Schema.String })))
-    .output(Schema.standardSchemaV1(Schema.Struct({ greeting: Schema.String })))
+    .input(Schema.toStandardSchemaV1(Schema.Struct({ name: Schema.String })))
+    .output(Schema.toStandardSchemaV1(Schema.Struct({ greeting: Schema.String })))
     .query(({ input }) => {
       //      ^?
       return {

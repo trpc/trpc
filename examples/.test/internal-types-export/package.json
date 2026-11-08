@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@tsconfig/esm": "^1.0.5",
-    "@tsconfig/node-lts": "^18.12.2",
+    "@tsconfig/node-lts": "^24.0.1",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^24.19.2",
     "tsdown": "0.23.7",

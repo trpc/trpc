@@ -28,7 +28,7 @@
     "@types/react-dom": "^19.3.0",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^1.12.0",
+    "start-server-and-test": "^3.0.13",
     "typescript": "^5.9.2"
   }
 }

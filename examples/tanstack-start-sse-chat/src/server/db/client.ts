@@ -18,7 +18,6 @@ const queryClient = postgres(DB_URL, {
   // statements nor pipelined queries. With pipelining off, `sql.begin()` can't
   // be used, so don't add transactions without moving off the pooler.
   prepare: false,
-  // @ts-expect-error -- supported at runtime but missing from the types
   max_pipeline: 0,
 });
 export const db = drizzle(queryClient, { schema });

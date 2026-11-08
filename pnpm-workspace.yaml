@@ -52,12 +52,12 @@ catalog:
   oxlint: ^1.92.0
   oxlint-tsgolint: ^7.0.2006
   '@oxlint/plugins': ^1.92.0
-  oxfmt: ^0.75.0
+  oxfmt: ^0.77.0
   vitest: ^5.0.5
   '@vitest/coverage-istanbul': ^5.0.5
   '@vitest/ui': ^5.0.5
   vite: ^8.3.3
-  jsdom: ^30.0.1
+  jsdom: ^31.0.0
   turbo: ^2.11.10
   undici: ^8.12.2
   ws: ^8.22.1
@@ -70,7 +70,6 @@ catalog:
   next: ^15.5.28
   '@effect/platform-node': 4.1.2
   effect: 4.1.2
-
 catalogs:
   ts-api:
     typescript: ^6.0.3

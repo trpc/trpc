@@ -217,7 +217,7 @@
     "oxlint-tsgolint": "catalog:",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "superjson": "^1.12.4",
+    "superjson": "^2.2.6",
     "superstruct": "^2.0.2",
     "tsdown": "catalog:",
     "typescript": "catalog:",

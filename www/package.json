@@ -39,7 +39,7 @@
     "next-themes": "0.4.6",
     "react": "catalog:www",
     "react-dom": "catalog:www",
-    "satori": "0.62.0",
+    "satori": "0.63.2",
     "sonner": "2.0.8"
   },
   "devDependencies": {
