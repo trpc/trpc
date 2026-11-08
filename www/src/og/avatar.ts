@@ -69,7 +69,17 @@ export class AvatarSizeError extends Data.TaggedError('AvatarSizeError')<{
   }
 }
 
+/** A drawable type with no bytes, which satori can't draw. */
+export class AvatarEmptyError extends Data.TaggedError('AvatarEmptyError')<{
+  readonly url: string;
+}> {
+  override get message() {
+    return `${this.url}: an empty body`;
+  }
+}
+
 export type AvatarError =
+  | AvatarEmptyError
   | AvatarRequestError
   | AvatarSizeError
   | AvatarStatusError
@@ -78,6 +88,8 @@ export type AvatarError =
 
 const mayPass = (error: AvatarError) =>
   Match.valueTags(error, {
+    // A host can send an empty body while it's having trouble.
+    AvatarEmptyError: () => true,
     AvatarRequestError: () => true,
     AvatarSizeError: () => false,
     AvatarStatusError: (failed) =>
@@ -241,6 +253,9 @@ export class Avatars extends Context.Service<
               ),
             ),
           );
+          if (bytes.length === 0) {
+            return yield* new AvatarEmptyError({ url });
+          }
           if (
             contentType === 'image/svg+xml' &&
             !sizableSvg(bytes.toString('utf8'))
@@ -282,9 +297,18 @@ export class Avatars extends Context.Service<
     );
 }
 
+/** How long a call to a shared store may take before it counts as a miss. */
+const storeTimeout = '1 second';
+
+/** A `data:` URI of a drawable avatar with bytes, as `Avatars` makes one. */
+const avatarUri = /^data:image\/(?:jpeg|png|svg\+xml);base64,./;
+
 /**
  * `fromHost`, but an avatar `shared.store` has, and keeping each that
- * loads there. The store failing is a miss, and a failure isn't kept.
+ * loads there. A store that fails, takes over `storeTimeout` or has no
+ * avatar for it is a miss, and a failure isn't kept. Nor is an avatar
+ * when less than a second of `timeToLive` is left, as a store may take a
+ * TTL of 0 as no expiry.
  */
 const throughShared =
   (
@@ -295,17 +319,19 @@ const throughShared =
     Effect.gen(function* () {
       const url = avatarUrl(image);
       const kept = yield* Effect.tryPromise(() => shared.store.get(url)).pipe(
+        Effect.timeout(storeTimeout),
         Effect.orElseSucceed(() => null),
       );
-      if (typeof kept === 'string' && kept.startsWith('data:')) {
+      if (typeof kept === 'string' && avatarUri.test(kept)) {
         return kept;
       }
       const uri = yield* fromHost(url);
-      yield* Effect.tryPromise(() =>
-        shared.store.set(url, uri, {
-          ttl: Duration.toSeconds(lifetime(shared.timeToLive)),
-        }),
-      ).pipe(Effect.ignore);
+      const ttl = Math.floor(Duration.toSeconds(lifetime(shared.timeToLive)));
+      if (ttl >= 1) {
+        yield* Effect.tryPromise(() =>
+          shared.store.set(url, uri, { ttl }),
+        ).pipe(Effect.timeout(storeTimeout), Effect.ignore);
+      }
       return uri;
     });
 

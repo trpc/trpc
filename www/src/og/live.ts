@@ -18,7 +18,7 @@ import { getCache } from '@vercel/functions';
 
 import { Avatars, fetchAvatars } from './avatar.ts';
 import type { CardFooter, OgCard } from './card.ts';
-import { immutableCacheControl, untilTomorrow } from './version.ts';
+import { immutableCacheControl } from './version.ts';
 
 export interface Stats {
   /** `@trpc/server`'s npm downloads last week. */
@@ -143,9 +143,14 @@ const runtimeCache = getCache({
  * (`version.ts`): a card drawn on a new day fetches its avatars again, so
  * a new picture shows on it.
  */
-/** For `seconds`, or until the UTC day ends if that's sooner. */
+const dayMs = 24 * 60 * 60 * 1000;
+
+/**
+ * For `seconds`, or until the UTC day ends if that's sooner, to the
+ * millisecond, so nothing kept outlives the day by a fraction of a second.
+ */
 export const todayAtMost = (seconds: number) => () =>
-  Duration.seconds(Math.min(seconds, untilTomorrow(new Date())));
+  Duration.millis(Math.min(seconds * 1000, dayMs - (Date.now() % dayMs)));
 
 const onRequest = ManagedRuntime.make(
   Avatars.layer({

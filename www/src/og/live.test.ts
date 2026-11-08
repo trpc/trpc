@@ -191,6 +191,8 @@ describe('todayAtMost', () => {
     expect(Duration.toSeconds(todayAtMost(3600)())).toBe(3600);
     vi.setSystemTime(new Date('2026-11-05T23:59:30Z'));
     expect(Duration.toSeconds(todayAtMost(3600)())).toBe(30);
+    vi.setSystemTime(new Date('2026-11-05T23:59:59.750Z'));
+    expect(Duration.toMillis(todayAtMost(3600)())).toBe(250);
     vi.useRealTimers();
   });
 });

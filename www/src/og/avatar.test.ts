@@ -3,6 +3,7 @@ import { FetchHttpClient } from 'effect/http';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AvatarEmptyError,
   AvatarRequestError,
   Avatars,
   AvatarSizeError,
@@ -10,6 +11,7 @@ import {
   AvatarTimeoutError,
   AvatarTypeError,
   avatarUrl,
+  type Lifetime,
   type SharedStore,
   fetchAvatars,
   sizableSvg,
@@ -151,6 +153,20 @@ describe('Avatars', () => {
     expect(server.hits.filter((hit) => hit === '/stuck.png')).toHaveLength(3);
   });
 
+  it('tries an empty body again, as the host may be having trouble', async () => {
+    await using server = await serveAvatars({
+      '/empty.png': { body: '', type: 'image/png' },
+      '/recovers.png': [{ body: '', type: 'image/png' }, png()],
+    });
+    expect(Result.isSuccess(await fetchOne(server.url('/recovers.png')))).toBe(
+      true,
+    );
+    expect(await failureOf(server.url('/empty.png'))).toEqual(
+      new AvatarEmptyError({ url: server.url('/empty.png') }),
+    );
+    expect(server.hits.filter((hit) => hit === '/empty.png')).toHaveLength(3);
+  });
+
   it('fails without a response when nothing listens', async () => {
     const server = await serveAvatars({});
     const url = server.url('/a.png');
@@ -243,13 +259,16 @@ describe('Avatars with a shared cache', () => {
     return { kept, store };
   };
 
-  /** A server instance: its own memory, and `store`. */
-  const instance = (store: SharedStore) =>
+  /** A server instance: its own memory, and `store`, keeping avatars `timeToLive`. */
+  const instance = (
+    store: SharedStore,
+    timeToLive: Lifetime = () => '30 seconds',
+  ) =>
     ManagedRuntime.make(
       Avatars.layer({
         cache: { capacity: 10, timeToLive: '1 hour' },
         retries: 0,
-        shared: { store, timeToLive: () => '30 seconds' },
+        shared: { store, timeToLive },
         timeout: '2 seconds',
       }).pipe(Layer.provide(FetchHttpClient.layer)),
     );
@@ -280,5 +299,30 @@ describe('Avatars with a shared cache', () => {
     expect(
       (await offline.runPromise(fetchAvatars([server.url('/a.png')]))).size,
     ).toBe(1);
+  });
+
+  it("fetches an avatar the store has no image data for, or doesn't answer for in time", async () => {
+    await using server = await serveAvatars({ '/a.png': png() });
+    const image = server.url('/a.png');
+    for (const store of [
+      { get: async () => 'data:image/png;base64,', set: async () => {} },
+      { get: async () => 'not an avatar', set: async () => {} },
+      {
+        get: () => new Promise<never>(() => {}),
+        set: () => new Promise<never>(() => {}),
+      },
+    ] satisfies Array<SharedStore>) {
+      await using runtime = instance(store);
+      expect((await runtime.runPromise(fetchAvatars([image]))).size).toBe(1);
+    }
+    expect(server.hits).toEqual(['/a.png', '/a.png', '/a.png']);
+  });
+
+  it('keeps nothing there with less than a second to live, which a store may take as no expiry', async () => {
+    await using server = await serveAvatars({ '/a.png': png() });
+    const { kept, store } = mapStore();
+    await using runtime = instance(store, () => '500 millis');
+    await runtime.runPromise(fetchAvatars([server.url('/a.png')]));
+    expect(kept.size).toBe(0);
   });
 });
