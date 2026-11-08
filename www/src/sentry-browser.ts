@@ -40,8 +40,9 @@ export function startSentry(
     ignoreErrors: [
       // Outlook's link scanner, opening a link from an email.
       'Object Not Found Matching Id:',
-      // A crypto wallet extension.
-      'window.ethereum',
+      // A crypto wallet extension setting its address, which the site
+      // doesn't read: "(evaluating 'window.ethereum.selectedAddress = …')".
+      /\(evaluating 'window\.ethereum\./,
     ],
     integrations: (defaults) => [
       // No session per page load: Sentry hears from a visitor only for an

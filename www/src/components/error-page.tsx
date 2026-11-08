@@ -1,10 +1,17 @@
-import { type ErrorComponentProps, Link } from '@tanstack/react-router';
+import {
+  type AnyRouter,
+  type ErrorComponentProps,
+  Link,
+} from '@tanstack/react-router';
 import { useEffect } from 'react';
 
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 
-import { isChunkLoadError, reloadOnce } from '~/reload-once.ts';
+import { forgetReload, isChunkLoadError, reloadOnce } from '~/reload-once.ts';
+
+/** The page's reload, as {@link ErrorPage} and {@link forgetRouteReload} name it. */
+const routeReloadKey = () => `route:${window.location.pathname}`;
 
 /**
  * What a route that throws renders, in place of its own content
@@ -25,7 +32,7 @@ function ErrorPage(props: {
   const { error, reload } = props;
   useEffect(() => {
     if (isChunkLoadError(error)) {
-      reloadOnce(`route:${window.location.pathname}`, reload);
+      reloadOnce(routeReloadKey(), reload);
     }
   }, [error, reload]);
   return (
@@ -62,4 +69,19 @@ export function errorOptions(reload: () => void) {
       <ErrorPage error={props.error} reload={reload} />
     ),
   } as const;
+}
+
+/**
+ * For `getRouter()`, in the browser: a page that renders without a route
+ * error forgets its reload, so a later deploy's stale chunk reloads it again.
+ */
+export function forgetRouteReload(router: AnyRouter) {
+  if (router.isServer) {
+    return;
+  }
+  router.subscribe('onRendered', () => {
+    if (!router.state.matches.some((match) => match.status === 'error')) {
+      forgetReload(routeReloadKey());
+    }
+  });
 }

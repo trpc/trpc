@@ -6,7 +6,7 @@ import {
   dehydrateCardDay,
   hydrateCardDay,
 } from './card-day.ts';
-import { errorOptions } from './components/error-page.tsx';
+import { errorOptions, forgetRouteReload } from './components/error-page.tsx';
 import {
   type DehydratedPages,
   dehydratePages,
@@ -62,6 +62,7 @@ export function getRouter() {
     scrollRestorationBehavior: 'instant',
   });
   traceRouter(router);
+  forgetRouteReload(router);
   startAnalytics(router);
   return router;
 }

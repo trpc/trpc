@@ -17,26 +17,34 @@ function isReload() {
   return entry && 'type' in entry ? entry.type === 'reload' : undefined;
 }
 
+/** This page load, as the marks name it: when it started. */
+const thisLoad = () => String(performance.timeOrigin);
+
 /**
- * Whether this page load is the reload for `key`, forgetting the mark
- * either way. A reader who leaves before the reloaded page loads leaves
- * the mark in the tab, and a later visit, which isn't a reload, ignores it.
+ * Whether `key` has already reloaded: this page load asked for it (an
+ * effect that runs twice) or is the reload it asked for. A reader who left
+ * before the reloaded page loaded leaves the mark in the tab, and a later
+ * visit, which isn't a reload, ignores it. The mark stays until
+ * {@link forgetReload}, so a page that fails again never reloads again.
  */
-export function forgetReload(key: string) {
+function reloadedFor(key: string) {
   try {
-    const marked = sessionStorage.getItem(reloadedKey(key)) !== null;
-    sessionStorage.removeItem(reloadedKey(key));
+    const mark = sessionStorage.getItem(reloadedKey(key));
+    if (mark === null) {
+      return false;
+    }
     // Not knowing, a mark means this is the reload, so it never loops.
-    return marked && (isReload() ?? true);
+    return mark === thisLoad() || (isReload() ?? true);
   } catch {
     // Storage is off (a private window): never reload, so never loop.
     return true;
   }
 }
 
+/** Records that this page load reloads for `key`; false where storage is off. */
 function markReloaded(key: string) {
   try {
-    sessionStorage.setItem(reloadedKey(key), '');
+    sessionStorage.setItem(reloadedKey(key), thisLoad());
     return true;
   } catch {
     return false;
@@ -44,11 +52,23 @@ function markReloaded(key: string) {
 }
 
 /**
- * Calls `reload` for `key`, unless this page load is already its reload.
- * Returns whether it did.
+ * Forgets `key`'s reload once what failed has loaded, so a later deploy can
+ * reload it again.
+ */
+export function forgetReload(key: string) {
+  try {
+    sessionStorage.removeItem(reloadedKey(key));
+  } catch {
+    // Storage is off: there's no mark.
+  }
+}
+
+/**
+ * Calls `reload` for `key`, unless this page load already has, or is that
+ * reload. Returns whether it did.
  */
 export function reloadOnce(key: string, reload: () => void) {
-  if (forgetReload(key) || !markReloaded(key)) {
+  if (reloadedFor(key) || !markReloaded(key)) {
     return false;
   }
   reload();

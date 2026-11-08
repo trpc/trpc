@@ -8,13 +8,13 @@ import {
   Outlet,
   RouterProvider,
 } from '@tanstack/react-router';
-import { act, createElement, Fragment } from 'react';
+import { act, createElement, Fragment, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 
-import { errorOptions } from './error-page.tsx';
+import { errorOptions, forgetRouteReload } from './error-page.tsx';
 
 declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
@@ -72,7 +72,14 @@ async function renderThrowing(error: unknown, reload: () => void) {
   const container = document.body.appendChild(document.createElement('div'));
   const root = createRoot(container);
   await act(async () => {
-    root.render(createElement(RouterProvider, { router }));
+    // As `client.tsx` renders it: in development, effects run twice.
+    root.render(
+      createElement(
+        StrictMode,
+        null,
+        createElement(RouterProvider, { router }),
+      ),
+    );
   });
   await vi.waitFor(() => {
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
@@ -115,4 +122,36 @@ test("another error doesn't reload the page", async () => {
   const reload = vi.fn<() => void>();
   await using _page = await renderThrowing(new Error('A bug'), reload);
   expect(reload).not.toHaveBeenCalled();
+});
+
+test("a page that renders forgets its reload, so a later deploy's reloads it again", async () => {
+  sessionStorage.clear();
+  // The reload for this page, which now renders.
+  sessionStorage.setItem('trpc-docs:reloaded-for:route:/', '');
+  const rootRoute = createRootRoute({ component: () => createElement(Outlet) });
+  const home = createRoute({
+    component: () => createElement('p', null, 'Home'),
+    getParentRoute: () => rootRoute,
+    path: '/',
+  });
+  const router = createRouter({
+    ...errorOptions(() => {}),
+    history: createMemoryHistory(),
+    routeTree: rootRoute.addChildren([home]),
+  });
+  forgetRouteReload(router);
+  const container = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(createElement(RouterProvider, { router }));
+  });
+  await vi.waitFor(() => {
+    expect(container.textContent).toBe('Home');
+  });
+  await vi.waitFor(() => {
+    expect(sessionStorage.getItem('trpc-docs:reloaded-for:route:/')).toBeNull();
+  });
+  await act(async () => {
+    root.unmount();
+  });
 });
