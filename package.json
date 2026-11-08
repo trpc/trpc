@@ -37,7 +37,7 @@
     "release": "node tooling/release/src/bin/release.ts",
     "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d--%H-%M') next && git merge --ff main"
   },
-  "dependencies": {
+  "devDependencies": {
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@effect/platform-node": "catalog:",
