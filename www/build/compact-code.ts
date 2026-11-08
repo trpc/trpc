@@ -38,6 +38,15 @@ function isBareSpan(node: ElementContent): node is Element {
   );
 }
 
+/** `children` with each bare span, and each inside it, replaced by its children. */
+function unwrapBareSpans(
+  children: ReadonlyArray<ElementContent>,
+): Array<ElementContent> {
+  return children.flatMap((child) =>
+    isBareSpan(child) ? unwrapBareSpans(child.children) : [child],
+  );
+}
+
 /**
  * Drops what code blocks repeat. Shiki gives each token its colours
  * (`--shiki-light`, `--shiki-dark`), and most tokens have the block's
@@ -64,14 +73,11 @@ export function compactCode(tree: Root) {
       }
       return undefined;
     });
-    // Children first, so a bare span inside a bare span goes too.
     visit(pre, 'element', (node) => {
       if (classNames(node).includes('twoslash-popup-container')) {
         return SKIP;
       }
-      node.children = node.children.flatMap((child) =>
-        isBareSpan(child) ? child.children : [child],
-      );
+      node.children = unwrapBareSpans(node.children);
       return undefined;
     });
     return SKIP;

@@ -61,3 +61,28 @@ test("drops a token's colours where they're its block's, and the span left bare"
       '</span></code></pre>',
   );
 });
+
+test('unwraps a bare span inside a bare span', () => {
+  const tree: Root = {
+    type: 'root',
+    children: [
+      {
+        type: 'element',
+        tagName: 'pre',
+        properties: { class: 'shiki', style: blockColors },
+        children: [
+          {
+            type: 'element',
+            tagName: 'span',
+            properties: {},
+            children: [span(undefined, 'inner'), span(blockColors, ' text')],
+          },
+        ],
+      },
+    ],
+  };
+  compactCode(tree);
+  expect(toHtml(tree)).toBe(
+    `<pre class="shiki" style="${blockColors}">inner text</pre>`,
+  );
+});
