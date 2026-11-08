@@ -3116,8 +3116,8 @@ importers:
         specifier: 4.1.1
         version: 4.1.1(effect@4.1.1)(redis@6.3.1(@opentelemetry/api@1.10.0))
       '@effect/vitest':
-        specifier: 4.1.1
-        version: 4.1.1(effect@4.1.1)(vitest@5.1.0)
+        specifier: 4.1.2
+        version: 4.1.2(effect@4.1.1)(vitest@5.1.0)
       '@resvg/resvg-js':
         specifier: 2.6.2
         version: 2.6.2
@@ -4915,10 +4915,10 @@ packages:
     peerDependencies:
       effect: ^3.8.3
 
-  '@effect/vitest@4.1.1':
-    resolution: {integrity: sha512-VkE9EUXE4G7mXMmV3X3Iu+6k3pZswWjOf7PB2qiaHMoFAZAPtHp+eUZo9oJM4Ip5z+ghQ9K0IDAQM2iG6+w5MA==}
+  '@effect/vitest@4.1.2':
+    resolution: {integrity: sha512-JJPwAHkJHxvM/woW9mMW/khjasAHcmwWdOMAgMy16rfqsxcVhFDnrRsvN9VI2+kMv8zDCCyBE2q1n5hzZlfE0w==}
     peerDependencies:
-      effect: ^4.1.1
+      effect: ^4.1.2
       vitest: '>=5.0.0 <6.0.0'
 
   '@emnapi/core@1.11.1':
@@ -21112,7 +21112,7 @@ snapshots:
       effect: 3.19.19
       fast-check: 3.23.2
 
-  '@effect/vitest@4.1.1(effect@4.1.1)(vitest@5.1.0)':
+  '@effect/vitest@4.1.2(effect@4.1.1)(vitest@5.1.0)':
     dependencies:
       effect: 4.1.1
       vitest: 5.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.13.4)(@vitest/coverage-istanbul@5.1.0)(@vitest/ui@5.1.0)(jsdom@30.0.1)(vite@8.3.6(@types/node@24.13.4)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
