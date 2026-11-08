@@ -1,0 +1,22 @@
+{
+  "name": "@tooling/release",
+  "private": true,
+  "description": "Versions, publishes, tags and creates GitHub releases for the packages in packages/, run by .github/workflows/release.yml",
+  "type": "module",
+  "scripts": {
+    "lint": "oxlint .",
+    "release": "node src/bin/release.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

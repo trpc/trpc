@@ -1,18 +1,26 @@
 import { describe, expect, it } from 'vitest';
 
+import list from '../sponsors.json';
+
 import {
   avatarUrl,
+  byMostGiven,
   cardFooter,
   cardFooterOf,
   drawnSponsors,
   isSmallSponsor,
+  latestSponsorCount,
+  newSponsorMs,
   type Partner,
   partners,
   partnersByTier,
+  profileUrl,
+  recentSponsorsOf,
   type Sponsor,
   sponsorCard,
   sponsorCardAlt,
   sponsorCardOf,
+  sponsorKey,
   sponsors,
   sponsorTiers,
   type SponsorTier,
@@ -24,6 +32,7 @@ const sponsor = (login: string, weight: number): Sponsor => ({
   link: `https://example.com/${login}`,
   login,
   name: login,
+  source: 'github',
   weight,
 });
 
@@ -62,7 +71,10 @@ describe('cardFooter', () => {
 
   it('then the other drawn sponsors most given first, twice as many as it draws faces of, small', () => {
     const others = drawnSponsors
-      .filter((sponsor) => !partners.some((p) => p.login === sponsor.login))
+      .filter(
+        (sponsor) =>
+          !partners.some((p) => sponsorKey(p) === sponsorKey(sponsor)),
+      )
       .toSorted((a, b) => b.weight - a.weight);
     expect(cardFooter.backers).toEqual(
       others.slice(0, cardFooter.faceSlots * 2).map((sponsor) => ({
@@ -87,12 +99,43 @@ describe('partnersByTier', () => {
   });
 });
 
+describe('avatarUrl and profileUrl', () => {
+  it("size the avatar and link the profile on the sponsor's own site", () => {
+    const github = sponsor('fan', 1);
+    const openCollective: Sponsor = {
+      createdAt: 0,
+      imgSrc: 'https://images.opencollective.com/hooli/1a2b3c4/logo.png',
+      link: 'https://www.hooli.dev/',
+      name: 'Hooli',
+      profileUrl: 'https://opencollective.com/hooli',
+      slug: 'hooli',
+      source: 'opencollective',
+      weight: 1,
+    };
+    expect(avatarUrl(github, 64)).toBe('https://example.com/fan.png?s=64');
+    expect(avatarUrl(openCollective, 64)).toBe(
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=64',
+    );
+    expect(profileUrl(github)).toBe('https://github.com/fan');
+    expect(profileUrl(openCollective)).toBe('https://opencollective.com/hooli');
+    expect(sponsorKey(github)).toBe('github/fan');
+    expect(sponsorKey(openCollective)).toBe('opencollective/hooli');
+  });
+});
+
 describe('isSmallSponsor', () => {
   it('is a sponsor below the partner tiers', () => {
     expect(isSmallSponsor({})).toBe(true);
     expect(isSmallSponsor({ tier: 'bronze' })).toBe(true);
     expect(isSmallSponsor({ tier: 'silver' })).toBe(false);
     expect(isSmallSponsor({ tier: 'gold' })).toBe(false);
+  });
+});
+
+describe('sponsors', () => {
+  it('is every entry of sponsors.json, each a GitHub or an Open Collective sponsor', () => {
+    expect(sponsors).toHaveLength(list.length);
+    expect(new Set(sponsors.map(sponsorKey)).size).toBe(sponsors.length);
   });
 });
 
@@ -104,6 +147,86 @@ describe('drawnSponsors', () => {
     for (const sponsor of sponsors.filter((s) => s.imageless === true)) {
       expect(isSmallSponsor(sponsor)).toBe(true);
     }
+  });
+});
+
+describe('byMostGiven', () => {
+  it('orders by weight, then ties by rank, then by who started first', () => {
+    const list: ReadonlyArray<Sponsor> = [
+      { ...sponsor('later', 100), createdAt: 2 },
+      { ...sponsor('ranked-2', 100), rank: 2, tier: 'gold' },
+      sponsor('lighter', 50),
+      { ...sponsor('earlier', 100), createdAt: 1 },
+      { ...sponsor('ranked-1', 100), rank: 1, tier: 'gold' },
+    ];
+    expect(list.toSorted(byMostGiven).map(sponsorKey)).toEqual([
+      'github/ranked-1',
+      'github/ranked-2',
+      'github/earlier',
+      'github/later',
+      'github/lighter',
+    ]);
+  });
+});
+
+describe('recentSponsorsOf', () => {
+  const day = 24 * 60 * 60 * 1000;
+  const now = Date.UTC(2026, 10, 4);
+  const startedDaysAgo = (login: string, days: number): Sponsor => ({
+    ...sponsor(login, 1),
+    createdAt: now - days * day,
+  });
+
+  it('is everyone who started within a month, newest first', () => {
+    const list = [
+      startedDaysAgo('old', 400),
+      startedDaysAgo('week', 7),
+      startedDaysAgo('edge', newSponsorMs / day),
+      startedDaysAgo('today', 0),
+      startedDaysAgo('almost', newSponsorMs / day - 1),
+    ];
+    const recent = recentSponsorsOf(list, now);
+    expect(recent.kind).toBe('new');
+    expect(recent.sponsors.map(sponsorKey)).toEqual([
+      'github/today',
+      'github/week',
+      'github/almost',
+    ]);
+  });
+
+  it('is the latest few, newest first, when nobody started within a month', () => {
+    const list = [
+      startedDaysAgo('a', 300),
+      startedDaysAgo('b', 40),
+      startedDaysAgo('c', 200),
+      startedDaysAgo('d', 90),
+      startedDaysAgo('e', 90),
+    ];
+    const recent = recentSponsorsOf(list, now);
+    expect(recent.kind).toBe('latest');
+    expect(recent.sponsors.map(sponsorKey)).toEqual([
+      'github/b',
+      'github/d',
+      'github/e',
+    ]);
+    expect(recent.sponsors).toHaveLength(latestSponsorCount);
+  });
+
+  it('leaves out sponsors dated after now, new or latest', () => {
+    const future = startedDaysAgo('future', -3);
+    expect(
+      recentSponsorsOf([future, startedDaysAgo('week', 7)], now).sponsors.map(
+        sponsorKey,
+      ),
+    ).toEqual(['github/week']);
+    expect(recentSponsorsOf([future, startedDaysAgo('old', 90)], now)).toEqual({
+      kind: 'latest',
+      sponsors: [startedDaysAgo('old', 90)],
+    });
+  });
+
+  it('is nobody when there are no sponsors', () => {
+    expect(recentSponsorsOf([], now)).toEqual({ kind: 'latest', sponsors: [] });
   });
 });
 

@@ -1,4 +1,7 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   createRoute,
@@ -9,12 +12,14 @@ import { type ReactNode, Suspense } from 'react';
 
 import {
   CommentList,
+  commentItems,
   Comments,
   CommentsSection,
   CommentsSkeleton,
   MoreByAuthor,
   MoreByAuthorList,
   MoreByAuthorSkeleton,
+  morePosts,
   NotFound,
   Post,
   PostArticle,
@@ -25,13 +30,21 @@ import {
 } from './blog.tsx';
 import { type DemoContext, DemoLink, useDemoLoaderData } from './browser.tsx';
 import { type TRPC, useTRPC } from './session.tsx';
+import {
+  ensureEntry,
+  ensureInfiniteEntry,
+  fetchEntry,
+  fetchInfiniteEntry,
+  loadHandles,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
 
 /**
  * Where a blog starts its queries: in route loaders with one of the three
- * verbs, at the top of each page as it renders, or in each component that
- * reads one.
+ * entries, or in each component that reads one.
  */
-export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader' | 'top';
+export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader';
 
 type LoaderVerb = Extract<Strategy, 'ensure' | 'fetch' | 'prefetch'>;
 
@@ -52,61 +65,53 @@ function usePostId() {
   return Number(params.id);
 }
 
-function startList(trpc: TRPC, page: number) {
-  return { list: trpc.post.list.unstable_$prefetch({ page }) };
-}
+const entryFor = {
+  ensure: ensureEntry,
+  fetch: fetchEntry,
+  prefetch: prefetchEntry,
+} satisfies Record<LoaderVerb, unknown>;
 
-function startPost(trpc: TRPC, id: number) {
-  return {
-    comments: trpc.post.comments.unstable_$prefetch({ postId: id }),
-    more: trpc.post.moreByAuthor.unstable_$prefetch({ postId: id }),
-    post: trpc.post.byId.unstable_$prefetch({ id }),
-  };
-}
+const infiniteEntryFor = {
+  ensure: ensureInfiniteEntry,
+  fetch: fetchInfiniteEntry,
+  prefetch: prefetchInfiniteEntry,
+} satisfies Record<LoaderVerb, unknown>;
 
 async function loadList(verb: LoaderVerb, trpc: TRPC, page: number) {
-  switch (verb) {
-    case 'prefetch':
-      return startList(trpc, page);
-    case 'ensure':
-      return { list: await trpc.post.list.unstable_$ensure({ page }) };
-    case 'fetch':
-      return { list: await trpc.post.list.unstable_$fetch({ page }) };
-  }
+  const [handles] = await loadHandles(trpc, {
+    list: entryFor[verb](trpc.post.list, { page }),
+  });
+  return handles;
 }
 
 async function loadPost(verb: LoaderVerb, trpc: TRPC, id: number) {
-  switch (verb) {
-    case 'prefetch':
-      return startPost(trpc, id);
-    case 'ensure': {
-      const [post, comments, more] = await Promise.all([
-        trpc.post.byId.unstable_$ensure({ id }),
-        trpc.post.comments.unstable_$ensure({ postId: id }),
-        trpc.post.moreByAuthor.unstable_$ensure({ postId: id }),
-      ]);
-      return { comments, more, post };
-    }
-    case 'fetch': {
-      const [post, comments, more] = await Promise.all([
-        trpc.post.byId.unstable_$fetch({ id }),
-        trpc.post.comments.unstable_$fetch({ postId: id }),
-        trpc.post.moreByAuthor.unstable_$fetch({ postId: id }),
-      ]);
-      return { comments, more, post };
-    }
-  }
+  const [handles] = await loadHandles(trpc, {
+    comments: infiniteEntryFor[verb](trpc.post.comments, { postId: id }),
+    more: infiniteEntryFor[verb](trpc.post.moreByAuthor, { postId: id }),
+    post: entryFor[verb](trpc.post.byId, { id }),
+  });
+  return handles;
 }
 
-type ListHandles = ReturnType<typeof startList>;
-type PostHandles = ReturnType<typeof startPost>;
+type ListHandles = Awaited<ReturnType<typeof loadList>>;
+type PostHandles = Awaited<ReturnType<typeof loadPost>>;
 
-function ListLayout(props: { readonly children: ReactNode }) {
+function ListPage(props: { readonly children: ReactNode }) {
   return (
     <div className="grid gap-3">
       <h3 className="text-base font-semibold">Latest articles</h3>
-      <Suspense fallback={<PostListSkeleton />}>{props.children}</Suspense>
+      {props.children}
     </div>
+  );
+}
+
+function ListLayout(props: { readonly children: ReactNode }) {
+  return (
+    <ListPage>
+      <Suspense fallback={<PostListSkeleton page={usePage()} />}>
+        {props.children}
+      </Suspense>
+    </ListPage>
   );
 }
 
@@ -133,37 +138,60 @@ function PostLayout(props: {
   );
 }
 
+/** The blog's page at `href` with nothing loaded yet, as tall as it will be. */
+export function PageSkeleton(props: { readonly href: string }) {
+  const url = new URL(props.href, 'https://blog.example');
+  const post = /^\/posts\/(\d+)$/.exec(url.pathname);
+  if (post) {
+    return <PostPageSkeleton id={Number(post[1])} />;
+  }
+  if (url.pathname === '/posts') {
+    return (
+      <ListPage>
+        <PostListSkeleton
+          page={pageFrom(Object.fromEntries(url.searchParams))}
+        />
+      </ListPage>
+    );
+  }
+  return null;
+}
+
+/** An article with nothing loaded yet, as tall as it will be. */
+function PostPageSkeleton(props: { readonly id: number }) {
+  return (
+    <div className="grid gap-4">
+      <span className="text-brand-dark dark:text-brand-light">← All posts</span>
+      <PostSkeleton id={props.id} />
+      <CommentsSection>
+        <CommentsSkeleton postId={props.id} />
+      </CommentsSection>
+      <MoreByAuthorSkeleton postId={props.id} />
+    </div>
+  );
+}
+
 function PostFromHandles(props: PostHandles) {
+  const id = usePostId();
   return (
     <PostLayout
       comments={
-        <Suspense fallback={<CommentsSkeleton />}>
+        <Suspense fallback={<CommentsSkeleton postId={id} />}>
           <Comments comments={props.comments} />
         </Suspense>
       }
       more={
-        <Suspense fallback={<MoreByAuthorSkeleton />}>
+        <Suspense fallback={<MoreByAuthorSkeleton postId={id} />}>
           <MoreByAuthor more={props.more} />
         </Suspense>
       }
       post={
-        <Suspense fallback={<PostSkeleton />}>
+        <Suspense fallback={<PostSkeleton id={id} />}>
           <Post post={props.post} />
         </Suspense>
       }
     />
   );
-}
-
-function TopOfList(): ReactNode {
-  const trpc = useTRPC();
-  const page = usePage();
-  return <ListFromHandles page={page} {...startList(trpc, page)} />;
-}
-
-function TopOfPost(): ReactNode {
-  const trpc = useTRPC();
-  return <PostFromHandles {...startPost(trpc, usePostId())} />;
 }
 
 function ListByPage(props: { readonly page: number }) {
@@ -184,18 +212,24 @@ function ReaderList(): ReactNode {
 
 function CommentsByPost(props: { readonly postId: number }) {
   const trpc = useTRPC();
-  const commentsQuery = useSuspenseQuery(
-    trpc.post.comments.queryOptions({ postId: props.postId }),
+  const commentsQuery = useSuspenseInfiniteQuery(
+    trpc.post.comments.infiniteQueryOptions(
+      { postId: props.postId },
+      { getNextPageParam: (last) => last.nextCursor },
+    ),
   );
-  return <CommentList comments={commentsQuery.data} />;
+  return <CommentList comments={commentItems(commentsQuery.data)} />;
 }
 
 function MoreByPost(props: { readonly postId: number }) {
   const trpc = useTRPC();
-  const moreQuery = useSuspenseQuery(
-    trpc.post.moreByAuthor.queryOptions({ postId: props.postId }),
+  const moreQuery = useSuspenseInfiniteQuery(
+    trpc.post.moreByAuthor.infiniteQueryOptions(
+      { postId: props.postId },
+      { getNextPageParam: (last) => last.nextCursor },
+    ),
   );
-  return <MoreByAuthorList more={moreQuery.data} />;
+  return <MoreByAuthorList more={morePosts(moreQuery.data)} />;
 }
 
 /** The post, then what renders inside it, which only starts once it's in. */
@@ -207,12 +241,12 @@ function PostThenTheRest(props: { readonly id: number }) {
   return (
     <PostLayout
       comments={
-        <Suspense fallback={<CommentsSkeleton />}>
+        <Suspense fallback={<CommentsSkeleton postId={props.id} />}>
           <CommentsByPost postId={props.id} />
         </Suspense>
       }
       more={
-        <Suspense fallback={<MoreByAuthorSkeleton />}>
+        <Suspense fallback={<MoreByAuthorSkeleton postId={props.id} />}>
           <MoreByPost postId={props.id} />
         </Suspense>
       }
@@ -224,7 +258,7 @@ function PostThenTheRest(props: { readonly id: number }) {
 function ReaderPost(): ReactNode {
   const id = usePostId();
   return (
-    <Suspense fallback={<PostSkeleton />}>
+    <Suspense fallback={<PostPageSkeleton id={id} />}>
       <PostThenTheRest id={id} />
     </Suspense>
   );
@@ -298,8 +332,6 @@ export function createBlogRoutes(strategy: Strategy) {
   switch (strategy) {
     case 'reader':
       return createRenderRoutes(ReaderList, ReaderPost);
-    case 'top':
-      return createRenderRoutes(TopOfList, TopOfPost);
     case 'ensure':
     case 'fetch':
     case 'prefetch':

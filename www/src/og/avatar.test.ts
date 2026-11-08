@@ -28,15 +28,30 @@ const failureOf = async (url: string) => {
 };
 
 describe('avatarUrl', () => {
-  it("asks GitHub for 128 pixels, and leaves other hosts' URLs alone", () => {
+  it("asks GitHub and Open Collective for 128 pixels, and leaves other hosts' URLs alone", () => {
     expect(avatarUrl('https://github.com/KATT.png')).toBe(
       'https://github.com/KATT.png?size=128',
     );
     expect(
       avatarUrl('https://avatars.githubusercontent.com/u/459267?v=4'),
     ).toBe('https://avatars.githubusercontent.com/u/459267?v=4&size=128');
+    expect(
+      avatarUrl('https://images.opencollective.com/hooli/1a2b3c4/logo.png'),
+    ).toBe(
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=128',
+    );
     expect(avatarUrl('https://evilgithubusercontent.com/a.png')).toBe(
       'https://evilgithubusercontent.com/a.png',
+    );
+  });
+
+  it('keeps an Open Collective height the URL asks for', () => {
+    expect(
+      avatarUrl(
+        'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=240',
+      ),
+    ).toBe(
+      'https://images.opencollective.com/hooli/1a2b3c4/logo.png?height=240',
     );
   });
 });

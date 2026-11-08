@@ -3,7 +3,10 @@ import type { KeyboardEvent, MouseEvent } from 'react';
 
 import { cn } from '@shared/ui/lib/utils';
 
+import { splitAtDemos } from '~/demos/names.ts';
+import { PageDemo } from '~/demos/page-demos.tsx';
 import { isUrlTabGroup, tabSlug, type UrlTabGroup } from '~/tabs.ts';
+import { installTwoslashHovers } from '~/twoslash-hovers.ts';
 
 const tabStorageKey = (group: string) => `trpc-docs:tab:${group}`;
 
@@ -52,59 +55,6 @@ function codeText(pre: Element) {
     toggle.remove();
   }
   return copy.textContent.trimEnd();
-}
-
-/**
- * Shows a Twoslash hover popup next to its name: below it, or above it when
- * there's more room there, between the sticky header and the bottom of the
- * screen. The popup is `position: fixed`, so the code block's scrolling
- * doesn't clip it, and a type taller than the room scrolls inside it.
- */
-function placePopup(target: EventTarget | null) {
-  const hover = isElement(target)
-    ? target.closest('.twoslash-hover:not(.twoslash-query-persisted)')
-    : null;
-  const popup = hover?.querySelector<HTMLElement>(
-    ':scope > .twoslash-popup-container',
-  );
-  if (!hover || !popup) {
-    return;
-  }
-  const anchor = hover.getBoundingClientRect();
-  const margin = 8;
-  const gap = 6;
-  const header = document.querySelector('[data-site-header]');
-  const top = Math.max(0, header?.getBoundingClientRect().bottom ?? 0) + margin;
-  // A tap leaves the name hovered until the next tap, so it can scroll away.
-  popup.style.visibility =
-    anchor.bottom > top && anchor.top < window.innerHeight ? '' : 'hidden';
-  popup.style.maxHeight = '';
-  const height = popup.offsetHeight;
-  const roomBelow = window.innerHeight - margin - (anchor.bottom + gap);
-  const roomAbove = anchor.top - gap - top;
-  const below = height <= roomBelow || roomBelow >= roomAbove;
-  const room = Math.max(0, below ? roomBelow : roomAbove);
-  popup.style.maxHeight = `${room}px`;
-  popup.style.left = `${Math.max(margin, Math.min(anchor.left, window.innerWidth - popup.offsetWidth - margin))}px`;
-  popup.style.top = `${
-    below ? anchor.bottom + gap : anchor.top - gap - Math.min(height, room)
-  }px`;
-}
-
-/** Keeps the hovered popup beside its name while the page or a block scrolls. */
-function followPopups(root: HTMLElement) {
-  const follow = () => {
-    const hovered = root.querySelector('.twoslash-hover:hover');
-    if (hovered) {
-      placePopup(hovered);
-    }
-  };
-  document.addEventListener('scroll', follow, { capture: true, passive: true });
-  window.addEventListener('resize', follow, { passive: true });
-  return () => {
-    document.removeEventListener('scroll', follow, { capture: true });
-    window.removeEventListener('resize', follow);
-  };
 }
 
 /** Opens or closes a folded code region. The lines stay in the page either way. */
@@ -303,9 +253,12 @@ function copyCode(target: EventTarget | null) {
   return true;
 }
 
+const prose = 'prose prose-neutral max-w-none dark:prose-invert';
+
 /**
- * A page's prerendered HTML. Links between pages navigate client-side and
- * preload on hover, like the router's `<Link>`.
+ * A page's prerendered HTML, with its demos (`PageDemo`) in prose blocks of
+ * their own between it. Links between pages navigate client-side and preload
+ * on hover, like the router's `<Link>`.
  */
 export function DocBody(props: {
   readonly className?: string;
@@ -324,12 +277,7 @@ export function DocBody(props: {
     });
   return (
     <div
-      className={cn(
-        'prose prose-neutral max-w-none dark:prose-invert',
-        props.className,
-      )}
-      // SAFETY: build-time HTML from the repo's own markdown.
-      dangerouslySetInnerHTML={{ __html: props.html }}
+      className={props.className}
       key={props.html}
       onClick={(event) => {
         if (
@@ -362,7 +310,6 @@ export function DocBody(props: {
         pressTab(event, setUrlTab);
       }}
       onPointerOver={(event) => {
-        placePopup(event.target);
         refreshTabHref(event.target);
         const href = internalHref(event.target, event.currentTarget);
         if (href) {
@@ -374,8 +321,28 @@ export function DocBody(props: {
           return undefined;
         }
         restoreTabs(element);
-        return followPopups(element);
+        return installTwoslashHovers(element);
       }}
-    />
+    >
+      {splitAtDemos(props.html).map((part, index) =>
+        typeof part === 'string' ? (
+          <div
+            className={cn(
+              prose,
+              // Typography drops each block's first top margin, which a
+              // heading after a demo still needs.
+              index > 0 && '[&>h2:first-child]:mt-[2em]',
+            )}
+            // SAFETY: build-time HTML from the repo's own markdown.
+            dangerouslySetInnerHTML={{ __html: part }}
+            key={index}
+          />
+        ) : (
+          <div className={prose} key={index}>
+            <PageDemo name={part.name} options={part.options} />
+          </div>
+        ),
+      )}
+    </div>
   );
 }

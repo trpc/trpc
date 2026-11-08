@@ -78,19 +78,41 @@ export function formatCall(path: string, input: unknown) {
   return `${path}(${input === undefined ? '' : formatValue(input)})`;
 }
 
+interface Timer {
+  readonly at: number;
+  readonly run: () => void;
+  handle: ReturnType<typeof setTimeout> | undefined;
+}
+
 /**
  * A demo's pretend network: every request through it waits about `latency`
  * ms times its weight, give or take a random `jitter`, and shows in the
- * network panel, against the trace it started in.
+ * network panel, against the trace it started in. Its clock, `now()`, counts
+ * ms since it was created, and stops while it's paused: requests in flight
+ * wait, and pick up where they were on `resume()`.
  */
 export function createNetwork(random: Random = createRandom(Date.now())) {
   const listeners = new Set<() => void>();
+  const createdAt = performance.now();
+  let pausedAt: number | undefined;
+  let pausedFor = 0;
+  const now = () => (pausedAt ?? performance.now()) - createdAt - pausedFor;
+  const timers = new Set<Timer>();
+  const schedule = (timer: Timer) => {
+    timer.handle = setTimeout(
+      () => {
+        timers.delete(timer);
+        timer.run();
+      },
+      Math.max(0, timer.at - now()),
+    );
+  };
   let nextId = 1;
   let trace: Trace = {
     label: '',
     requests: [],
     shownAt: undefined,
-    startedAt: performance.now(),
+    startedAt: 0,
   };
   let notifying = false;
   const update = (next: Trace) => {
@@ -116,7 +138,7 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
           (request) => request.status === 'pending',
         ),
         shownAt: undefined,
-        startedAt: performance.now(),
+        startedAt: now(),
       });
     },
     end(id: number, status: Exclude<RequestStatus, 'pending'>) {
@@ -130,9 +152,7 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
       update({
         ...trace,
         requests: trace.requests.map((request) =>
-          request.id === id
-            ? { ...request, endedAt: performance.now(), status }
-            : request,
+          request.id === id ? { ...request, endedAt: now(), status } : request,
         ),
       });
     },
@@ -142,11 +162,43 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
         network.latency * weight * random.between(jitter.min, jitter.max),
       );
     },
+    /** Calls `run` after `ms` on the network's clock; returns a cancel. */
+    after(ms: number, run: () => void) {
+      const timer: Timer = { at: now() + ms, handle: undefined, run };
+      timers.add(timer);
+      if (pausedAt === undefined) {
+        schedule(timer);
+      }
+      return () => {
+        timers.delete(timer);
+        clearTimeout(timer.handle);
+      };
+    },
     getTrace: () => trace,
     latency: latencies[1].ms as number,
+    now,
+    pause() {
+      if (pausedAt !== undefined) {
+        return;
+      }
+      pausedAt = performance.now();
+      for (const timer of timers) {
+        clearTimeout(timer.handle);
+      }
+    },
+    resume() {
+      if (pausedAt === undefined) {
+        return;
+      }
+      pausedFor += performance.now() - pausedAt;
+      pausedAt = undefined;
+      for (const timer of timers) {
+        schedule(timer);
+      }
+    },
     shown() {
       if (trace.shownAt === undefined) {
-        update({ ...trace, shownAt: performance.now() });
+        update({ ...trace, shownAt: now() });
       }
     },
     start(path: string, input: unknown, origin?: string) {
@@ -160,14 +212,13 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
             id,
             label: formatCall(path, input),
             origin,
-            startedAt: performance.now(),
+            startedAt: now(),
             status: 'pending',
           },
         ],
       });
       return id;
     },
-    startedAt: performance.now(),
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => {
@@ -179,3 +230,21 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
 }
 
 export type Network = ReturnType<typeof createNetwork>;
+
+const idleTrace: Trace = {
+  label: '',
+  requests: [],
+  shownAt: undefined,
+  startedAt: 0,
+};
+
+/** The network of a demo that hasn't started: no requests yet. */
+export const idleNetwork: Pick<
+  Network,
+  'getTrace' | 'latency' | 'now' | 'subscribe'
+> = {
+  getTrace: () => idleTrace,
+  latency: latencies[1].ms,
+  now: () => 0,
+  subscribe: () => () => {},
+};

@@ -5,16 +5,19 @@
  * post its date, reading time and authors, `/sponsor` its partners and the
  * other sponsors' avatars, and every other page its title, description and
  * URL. Every card but `/sponsor`'s names the partners along its foot, with
- * other sponsors' faces.
+ * other sponsors' faces. The READMEs' sponsor cloud is laid out here too
+ * (`sponsorCloudElement`).
  * `render.ts` draws a card; `routes/og.$.ts` serves it.
  */
 import { type CSSProperties, createElement as h, type ReactNode } from 'react';
 
 import { stripInlineCode } from '~/content/inline-code.ts';
+import { ogImageSize } from '~/seo.ts';
 import { site } from '~/site.ts';
 import { cardFooter } from '~/sponsors.ts';
 
 import { type Live, noLive, type Stats } from './live.ts';
+import type { CloudBubble } from './sponsor-cloud.ts';
 
 /** A docs page's, and every page's but the home page's and a post's. */
 export interface DocCard {
@@ -247,13 +250,21 @@ const wordmark = (assets: Assets, height: number) =>
   });
 
 /** The card's width inside its margins. */
-const innerWidth = 1200 - 2 * 72;
+const innerWidth = ogImageSize.width - 2 * 72;
+
+/**
+ * The bottom fifth of the card, where X, Slack, Discord and LinkedIn may
+ * lay the page's title over it: the cards draw nothing there but the
+ * background.
+ */
+const captionBand = Math.round(ogImageSize.height * 0.2);
 
 const gradient = `linear-gradient(90deg, ${colors.link}, ${colors.brandLight})`;
 
 /**
  * White under the home page's dot grid and its blue glow, over a rule in
- * the brand's blues, with `footer` above the rule if there is one.
+ * the brand's blues, with `footer` at the foot of what it draws if there
+ * is one, above `captionBand`.
  */
 const frame = (
   assets: Assets,
@@ -286,7 +297,7 @@ const frame = (
         boxSizing: 'border-box',
         flex: 1,
         flexDirection: 'column',
-        padding: footer === undefined ? '56px 72px 64px' : '56px 72px 28px',
+        padding: '40px 72px 20px',
         // Above the dot grid, which is positioned.
         position: 'relative',
         width: '100%',
@@ -294,6 +305,7 @@ const frame = (
       ...children,
     ),
     ...(footer === undefined ? [] : [footer]),
+    box({ flexShrink: 0, height: captionBand }),
     box({
       backgroundImage: gradient,
       bottom: 0,
@@ -350,9 +362,9 @@ const description = (text: string) =>
         box(
           {
             color: colors.mutedForeground,
-            fontSize: 32,
+            fontSize: 28,
             lineHeight: 1.4,
-            marginTop: 24,
+            marginTop: 16,
           },
           text,
         ),
@@ -363,7 +375,7 @@ const numberFormat = new Intl.NumberFormat('en-US');
 /** The stars and the downloads that loaded, each beside GitHub's or npm's mark. */
 const statsRow = (assets: Assets, stats: Stats) =>
   box(
-    { alignItems: 'center', gap: 24, marginTop: 48 },
+    { alignItems: 'center', gap: 24, marginTop: 28 },
     ...[
       {
         icon: assets.github,
@@ -410,14 +422,14 @@ const homeCard = (assets: Assets, stats: Stats, footer: ReactNode) =>
         justifyContent: 'center',
         width: '100%',
       },
-      wordmark(assets, 120),
+      wordmark(assets, 96),
       box(
-        { marginTop: 44 },
+        { marginTop: 28 },
         // Without the period the site's tagline has.
         title(site.tagline[0].replace(/\.$/, ''), 72),
       ),
       box(
-        { color: colors.brand, fontSize: 40, fontWeight: 800, marginTop: 16 },
+        { color: colors.brand, fontSize: 40, fontWeight: 800, marginTop: 12 },
         site.tagline[1],
       ),
       statsRow(assets, stats),
@@ -455,11 +467,11 @@ const docCard = (assets: Assets, doc: DocCard, footer: ReactNode) =>
     header(assets, sectionLabel(doc.path)),
     box(
       { flex: 1, flexDirection: 'column', justifyContent: 'center' },
-      title(docTitle(doc.title), 72),
+      title(docTitle(doc.title), 60),
       ...description(docDescription(doc)),
     ),
     box(
-      { color: colors.link, fontSize: 30, fontWeight: 800 },
+      { color: colors.link, fontSize: 28, fontWeight: 800 },
       displayUrl(doc.url),
     ),
   );
@@ -526,11 +538,11 @@ const postCard = (
           color: colors.link,
           fontSize: 26,
           fontWeight: 800,
-          marginBottom: 16,
+          marginBottom: 12,
         },
         `${postDate(post.date)} · ${post.readingMinutes} min read`,
       ),
-      title(truncateWords(plainText(post.title), 70), 64),
+      title(truncateWords(plainText(post.title), 70), 56),
       ...description(truncateWords(plainText(post.description), 110)),
     ),
     box(
@@ -543,6 +555,7 @@ const postCard = (
             author.image === undefined
               ? undefined
               : live.avatars.get(author.image),
+            64,
           ),
           box(
             { flexDirection: 'column' },
@@ -837,7 +850,8 @@ const sponsorsFooter = (footer: CardFooter, live: Live): ReactNode => {
   return box(
     {
       boxSizing: 'border-box',
-      padding: '0 72px 30px',
+      flexShrink: 0,
+      padding: '0 72px',
       position: 'relative',
       width: '100%',
     },
@@ -845,7 +859,7 @@ const sponsorsFooter = (footer: CardFooter, live: Live): ReactNode => {
       {
         alignItems: 'center',
         borderTop: `2px solid ${colors.border}`,
-        paddingTop: 18,
+        paddingTop: 16,
         width: '100%',
       },
       box(
@@ -935,6 +949,53 @@ export const cardElement = (
       return sponsorCard(assets, ogCard, live);
   }
 };
+
+/**
+ * The sponsor cloud (`sponsor-cloud.ts`) at `size`, with nothing behind it: each sponsor's avatar in a white circle with a faint ring,
+ * which reads on GitHub's light and dark themes alike, or their initials on
+ * the brand blue when it didn't load.
+ */
+export const sponsorCloudElement = (
+  bubbles: ReadonlyArray<CloudBubble>,
+  avatars: ReadonlyMap<string, string>,
+  size: { readonly height: number; readonly width: number },
+) =>
+  box(
+    { fontFamily: 'Inter', position: 'relative', ...size },
+    ...bubbles.map((bubble) => {
+      const image = avatars.get(bubble.image);
+      const diameter = bubble.r * 2;
+      const ring = Math.max(1, Math.round(diameter / 80));
+      const inner = diameter - 2 * ring;
+      return box(
+        {
+          alignItems: 'center',
+          backgroundColor:
+            image === undefined ? colors.brand : colors.background,
+          border: `${ring}px solid rgba(24, 24, 27, 0.12)`,
+          borderRadius: 999,
+          color: colors.background,
+          fontSize: Math.round(diameter * 0.36),
+          fontWeight: 800,
+          height: diameter,
+          justifyContent: 'center',
+          left: bubble.x - bubble.r,
+          overflow: 'hidden',
+          position: 'absolute',
+          top: bubble.y - bubble.r,
+          width: diameter,
+        },
+        image === undefined
+          ? initials(bubble.name)
+          : h('img', {
+              height: inner,
+              src: image,
+              style: { borderRadius: 999, objectFit: 'cover' },
+              width: inner,
+            }),
+      );
+    }),
+  );
 
 export const dataUri = (type: string, bytes: Uint8Array) =>
   `data:${type};base64,${Buffer.from(bytes).toString('base64')}`;

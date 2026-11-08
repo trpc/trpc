@@ -931,6 +931,36 @@ test('regression: promise rejects when stream ends cleanly before resolution', a
   expect(error).toHaveProperty('message', 'Stream closed unexpectedly');
 });
 
+test('regression: rejected chunk that is never read does not cause an unhandled rejection', async () => {
+  const unhandled: unknown[] = [];
+  const onUnhandledRejection = (reason: unknown) => {
+    unhandled.push(reason);
+  };
+  process.on('unhandledRejection', onUnhandledRejection);
+
+  try {
+    const [head] = await jsonlStreamConsumer<Record<string, Promise<unknown>>>({
+      from: streamFromLines([
+        JSON.stringify({
+          0: [[0], [null, 0, 0]],
+          1: [[0], [null, 0, 1]],
+        }),
+        JSON.stringify([0, 0, [[{ result: { data: 'ok' } }]]]),
+        JSON.stringify([1, 1, { msg: 'nobody reads this' }]),
+      ]),
+      abortController: new AbortController(),
+    });
+
+    expect(await head[0]).toEqual({ result: { data: 'ok' } });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  } finally {
+    process.off('unhandledRejection', onUnhandledRejection);
+  }
+
+  expect(unhandled).toEqual([]);
+});
+
 // https://github.com/trpc/trpc/issues/7209
 test('regression: stream closing before head rejects headDeferred with descriptive error', async () => {
   const abortController = new AbortController();

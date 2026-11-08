@@ -564,7 +564,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const controller = streamManager.getOrCreate(chunkId);
 
     if (type === CHUNK_VALUE_TYPE_PROMISE) {
-      return run(async () => {
+      const promise = run(async () => {
         using reader = controller.getReaderResource();
 
         const { done, value } = await reader.read();
@@ -581,6 +581,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
             throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
         }
       });
+      // The promise is created eagerly, before anyone reads it, and may never be read.
+      promise.catch(() => {
+        // noop
+      });
+      return promise;
     }
     if (type === CHUNK_VALUE_TYPE_ASYNC_ITERABLE) {
       return run(async function* () {

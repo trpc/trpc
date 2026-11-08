@@ -14,6 +14,7 @@ import type {
   Blockquote,
   Code,
   Heading,
+  Html,
   Link,
   Root as MdastRoot,
   Paragraph,
@@ -32,12 +33,17 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
 import type { DocHeading } from '../src/content/types.ts';
-import { parseDemoFence } from '../src/demos/names.ts';
+import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
 import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
+import {
+  renderPopupMarkdown,
+  renderPopupMarkdownInline,
+  withConciseDocs,
+} from './popup-docs.ts';
 import { appOf, sampleApps } from './sample-apps.ts';
 import type { TwoslashCache } from './twoslash-cache.ts';
 
@@ -364,42 +370,30 @@ function remarkCharts() {
 }
 
 /**
- * A `demo` fence becomes the slot `PageDemos` mounts its demo in
- * (`src/demos/names.ts`). Until then, and without JavaScript, the slot shows
- * the fence's body as a plain code block, or a placeholder the demo's size.
+ * A `demo` fence becomes a marker, where `DocBody` renders the demo
+ * (`src/demos/names.ts`). `DocBody` cuts the page's HTML there, so the fence
+ * has to be one of the page's top-level blocks.
  */
 function remarkDemos() {
   return (tree: MdastRoot) => {
+    visit(tree, 'html', (node: Html) => {
+      if (node.value.includes('<!--demo ')) {
+        throw new Error(
+          `\`${node.value.trim()}\` reads as a demo marker; write a \`demo\` fence instead`,
+        );
+      }
+    });
     visit(tree, 'code', (node: Code, index, parent) => {
       if (node.lang !== 'demo' || !parent || index === undefined) {
         return;
       }
       const demo = parseDemoFence(node.meta ?? '');
-      const fallback =
-        node.value.trim() === ''
-          ? {
-              type: 'html',
-              value: '<div class="demo-placeholder" aria-hidden="true"></div>',
-            }
-          : { lang: null, type: 'code', value: node.value };
-      const slot = {
-        children: [fallback] as unknown as Paragraph['children'],
-        data: {
-          hName: 'div',
-          hProperties: {
-            className: ['demo-slot'],
-            dataDemo: demo.name,
-            ...Object.fromEntries(
-              Object.entries(demo.options).map(([key, value]) => [
-                `data${key.charAt(0).toUpperCase()}${key.slice(1)}`,
-                value,
-              ]),
-            ),
-          },
-        },
-        type: 'paragraph',
-      } satisfies Paragraph;
-      parent.children[index] = slot;
+      if (parent.type !== 'root') {
+        throw new Error(
+          `The \`demo ${demo.name}\` fence is in a ${parent.type}; a demo has to be one of the page's top-level blocks`,
+        );
+      }
+      parent.children[index] = { type: 'html', value: demoMarker(demo) };
     });
   };
 }
@@ -827,7 +821,7 @@ const defaultInlineApp = 'docs';
 
 /**
  * Fences with `twoslash` in their meta are compiled, so hovering a name shows
- * its type, `// ^?` pins a type under the line, and `// @errors: 2345` shows
+ * its type and the first paragraph of its JSDoc, `// ^?` pins a type under the line, and `// @errors: 2345` shows
  * an expected error. A compile error the block doesn't expect fails the
  * build.
  *
@@ -952,7 +946,15 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     flush: session?.flush ?? Effect.void,
     transformer: createTransformerFactory(
       twoslasher,
-      reusingPopups(rendererRich({ jsdoc: false, queryRendering: 'line' })),
+      reusingPopups(
+        withConciseDocs(
+          rendererRich({
+            queryRendering: 'line',
+            renderMarkdown: renderPopupMarkdown,
+            renderMarkdownInline: renderPopupMarkdownInline,
+          }),
+        ),
+      ),
     )({ explicitTrigger: true }),
   };
 });
@@ -1012,6 +1014,22 @@ export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
     try: async () => processor.run(processor.parse(markdown)),
   });
   return anchors;
+});
+
+/** The `h2` and `h3` headings a page renders, without compiling its code. */
+export const headingsOf = Effect.fn('headingsOf')(function* (markdown: string) {
+  const headings: Array<DocHeading> = [];
+  const processor = parsing(
+    { basePath: '/docs', slug: 'index', sourceUrl: '' },
+    headings,
+    [],
+    [],
+  );
+  yield* Effect.tryPromise({
+    catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
+    try: async () => processor.run(processor.parse(markdown)),
+  });
+  return headings;
 });
 
 const twoslashFence = /^[ \t]*```\w*[^\n]*\btwoslash\b/m;

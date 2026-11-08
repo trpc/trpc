@@ -52,6 +52,7 @@ export default defineConfig({
         '**/coverage/**',
         '**/www/**',
         '**/tooling/ui/**',
+        '**/tooling/release/**',
         '**/examples/**',
         // skip codecov for experimental features
         // FIXME: delete me once they're stable

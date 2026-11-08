@@ -20,6 +20,7 @@ import { pageHead } from '~/seo.ts';
 import {
   partners,
   sponsorCardAlt,
+  sponsorKey,
   sponsorPage,
   sponsors,
   sponsorTierUrl,
@@ -337,7 +338,7 @@ function Placements() {
           <a
             className="flex h-14 items-center justify-center rounded-lg border bg-card px-4 text-foreground/80 transition-colors hover:text-foreground"
             href={partner.link}
-            key={partner.login}
+            key={sponsorKey(partner)}
             rel="sponsored noopener"
             target="_blank"
             title={partner.blurb}
@@ -359,17 +360,20 @@ function Placements() {
 function Cloud() {
   return (
     <section
-      aria-labelledby="sponsors"
-      className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
+      aria-labelledby={sponsorPage.cloudId}
+      className="mx-auto max-w-7xl overflow-x-clip px-4 py-16 sm:px-6"
     >
-      <h2 className={cn(sectionTitle, 'mb-2 text-center')} id="sponsors">
+      <h2
+        className={cn(sectionTitle, 'mb-2 text-center')}
+        id={sponsorPage.cloudId}
+      >
         Join {sponsors.length} sponsors
       </h2>
       <p className="mx-auto mb-10 max-w-2xl text-center text-muted-foreground">
         Everyone who sponsors gets a bubble, sized by what they&apos;ve given.
         Thank you, all of you.
       </p>
-      <SponsorCloud className="mx-auto max-w-3xl" />
+      <SponsorCloud className="mx-auto max-w-4xl" you="github" />
     </section>
   );
 }

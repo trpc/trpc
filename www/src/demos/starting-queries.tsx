@@ -1,4 +1,4 @@
-import { createBlogRoutes } from './kit/blog-routes.tsx';
+import { createBlogRoutes, PageSkeleton } from './kit/blog-routes.tsx';
 import { DemoBrowser } from './kit/browser.tsx';
 import { DemoFrame } from './kit/frame.tsx';
 import { staleTime } from './kit/session.tsx';
@@ -14,7 +14,7 @@ const blogs = {
 const code = (text: string) => <span className="font-mono">{text}</span>;
 
 /**
- * `unstable_$prefetch`, `$ensure` and `$fetch`, in the loaders of one blog,
+ * `prefetchEntry`, `ensureEntry` and `fetchEntry`, in the loaders of one blog,
  * next to the same blog with no loader.
  */
 export function StartingQueries(props: DemoProps) {
@@ -28,19 +28,19 @@ export function StartingQueries(props: DemoProps) {
         {
           description:
             'The page shows at once, with skeletons until the data comes in. Stale data shows at once and refetches.',
-          label: code('$prefetch'),
+          label: code('prefetchEntry'),
           value: 'prefetch',
         },
         {
           description:
             'The page waits for the data on the first visit. Stale data shows at once and refetches.',
-          label: code('$ensure'),
+          label: code('ensureEntry'),
           value: 'ensure',
         },
         {
           description:
             'The page waits for the data, and waits again for a refetch when the data is stale.',
-          label: code('$fetch'),
+          label: code('fetchEntry'),
           value: 'fetch',
         },
         {
@@ -55,6 +55,7 @@ export function StartingQueries(props: DemoProps) {
       {(run) => (
         <DemoBrowser
           initial={run.location ?? '/posts/1'}
+          placeholder={(href) => <PageSkeleton href={href} />}
           reload={run.reload}
           routeTree={blogs[run.variant]}
           session={run.session}

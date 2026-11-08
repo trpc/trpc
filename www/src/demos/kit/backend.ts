@@ -46,7 +46,7 @@ const posts: ReadonlyArray<Post> = [
   },
   {
     authorId: 2,
-    body: 'Type a prop with unstable_inferQueryHandle, and the component can only read the query it was given.',
+    body: 'Type a prop with inferQueryHandle, and the component can only read the query it was given.',
     id: 5,
     minutes: 2,
     title: 'Typing props with handles',
@@ -123,12 +123,12 @@ function commentsOf(postId: number) {
   return comments.filter((comment) => comment.postId === postId);
 }
 
-function postOf(id: number) {
-  const post = posts.find((candidate) => candidate.id === id);
-  if (!post) {
-    throw new TRPCError({ code: 'NOT_FOUND', message: `No post ${id}` });
-  }
-  return post;
+function findPost(id: number) {
+  return posts.find((candidate) => candidate.id === id);
+}
+
+function notFound(id: number): never {
+  throw new TRPCError({ code: 'NOT_FOUND', message: `No post ${id}` });
 }
 
 /** What a list shows for a post: enough to pick one. */
@@ -141,6 +141,41 @@ function summaryOf(post: Post) {
     title: post.title,
   };
 }
+
+/**
+ * What the blog's procedures answer, but for `servedAt`, with `undefined`
+ * for a post that doesn't exist. The data never changes, so a skeleton can
+ * take the shape of what it stands in for.
+ */
+export const blogData = {
+  comments: commentsOf,
+  /** One page of the list, with what the page shows in one response. */
+  list: (page: number) => ({
+    pageCount,
+    posts: pageOf(page).map((post) => ({
+      ...summaryOf(post),
+      commentCount: commentsOf(post.id).length,
+    })),
+  }),
+  /** The other posts by a post's author. */
+  moreByAuthor: (postId: number) => {
+    const post = findPost(postId);
+    return (
+      post && {
+        author: authorOf(post.authorId),
+        posts: posts
+          .filter(
+            (other) => other.authorId === post.authorId && other.id !== post.id,
+          )
+          .map(summaryOf),
+      }
+    );
+  },
+  post: (id: number) => {
+    const post = findPost(id);
+    return post && { ...post, author: authorOf(post.authorId) };
+  },
+};
 
 function numbersInput<TKey extends string>(...keys: ReadonlyArray<TKey>) {
   return (input: unknown) => {
@@ -161,53 +196,49 @@ function numbersInput<TKey extends string>(...keys: ReadonlyArray<TKey>) {
 }
 
 /**
+ * An input with a `cursor`, so lists can be read as infinite queries. Every
+ * list in the demo fits on one page, so the cursor is never used.
+ */
+function cursorInput<TKey extends string>(key: TKey) {
+  const parse = numbersInput(key);
+  return (input: unknown): Record<TKey, number> & { cursor?: number | null } =>
+    parse(input);
+}
+
+const lastPage = { nextCursor: null as number | null };
+
+/**
  * A blog's tRPC router, run in the page. Each post response says when it
  * was served, in seconds since the demo started, so a demo can show which
  * copy of the data it renders.
  */
-function createAppRouter(startedAt: number) {
+function createAppRouter(network: Network) {
   // The demo's server runs in the browser, on purpose.
   const t = initTRPC.create({ allowOutsideOfServer: true });
-  const servedAt = () => Math.round((performance.now() - startedAt) / 100) / 10;
+  const servedAt = () => Math.round(network.now() / 100) / 10;
   return t.router({
     post: t.router({
-      byId: t.procedure.input(numbersInput('id')).query(({ input }) => {
-        const post = postOf(input.id);
-        return {
-          ...post,
-          author: authorOf(post.authorId),
-          servedAt: servedAt(),
-        };
-      }),
-      comments: t.procedure
-        .input(numbersInput('postId'))
-        .query(({ input }) => commentsOf(input.postId)),
-      /** One page of the list, with what the page shows in one response. */
-      list: t.procedure.input(numbersInput('page')).query(({ input }) => ({
-        pageCount,
-        posts: pageOf(input.page).map((post) => ({
-          ...summaryOf(post),
-          commentCount: commentsOf(post.id).length,
-        })),
+      byId: t.procedure.input(numbersInput('id')).query(({ input }) => ({
+        ...(blogData.post(input.id) ?? notFound(input.id)),
+        servedAt: servedAt(),
       })),
+      comments: t.procedure.input(cursorInput('postId')).query(({ input }) => ({
+        items: blogData.comments(input.postId),
+        ...lastPage,
+      })),
+      list: t.procedure
+        .input(numbersInput('page'))
+        .query(({ input }) => blogData.list(input.page)),
       /**
        * The other posts by a post's author. It takes the post's id, which is
        * in the URL, so a loader can start it with the post.
        */
       moreByAuthor: t.procedure
-        .input(numbersInput('postId'))
-        .query(({ input }) => {
-          const post = postOf(input.postId);
-          return {
-            author: authorOf(post.authorId),
-            posts: posts
-              .filter(
-                (other) =>
-                  other.authorId === post.authorId && other.id !== post.id,
-              )
-              .map(summaryOf),
-          };
-        }),
+        .input(cursorInput('postId'))
+        .query(({ input }) => ({
+          ...(blogData.moreByAuthor(input.postId) ?? notFound(input.postId)),
+          ...lastPage,
+        })),
     }),
   });
 }
@@ -227,7 +258,8 @@ function networkLink(
       observable((observer) => {
         const request = network.start(op.path, op.input, origin);
         let unsubscribe: (() => void) | undefined;
-        const timer = setTimeout(
+        const cancel = network.after(
+          network.delay(procedureWeights[op.path] ?? 1),
           () => {
             const subscription = next(op).subscribe({
               complete: () => observer.complete(),
@@ -242,10 +274,9 @@ function networkLink(
             });
             unsubscribe = () => subscription.unsubscribe();
           },
-          network.delay(procedureWeights[op.path] ?? 1),
         );
         return () => {
-          clearTimeout(timer);
+          cancel();
           unsubscribe?.();
           network.end(request, 'aborted');
         };
@@ -257,7 +288,7 @@ function networkLink(
  * labels its requests, for a demo with a client per side.
  */
 export function createDemoClient(network: Network, origin?: string) {
-  const router = createAppRouter(network.startedAt);
+  const router = createAppRouter(network);
   return createTRPCClient<AppRouter>({
     links: [
       networkLink(network, origin),

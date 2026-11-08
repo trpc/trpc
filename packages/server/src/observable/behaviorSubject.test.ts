@@ -1,3 +1,4 @@
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import { behaviorSubject } from './behaviorSubject';
 
 test('behaviorSubject', () => {
@@ -76,4 +77,46 @@ test('next() skips an observer cancelled by an earlier observer', () => {
 
   expect(secondNext).toHaveBeenCalledTimes(1);
   expect(secondNext).toHaveBeenCalledWith(0);
+});
+
+describe('a throwing observer', () => {
+  test('next() still notifies the later observers, and rethrows the error asynchronously', () => {
+    using _timers = fakeTimersResource();
+    const subject = behaviorSubject(0);
+    const error = new Error('observer failed');
+    subject.subscribe({
+      next(value) {
+        if (value === 1) throw error;
+      },
+    });
+    const second = vi.fn();
+    subject.subscribe({ next: second });
+
+    expect(() => subject.next(1)).not.toThrow();
+    expect(second.mock.calls).toEqual([[0], [1]]);
+    expect(subject.get()).toBe(1);
+    expect(vi.getTimerCount()).toBe(1);
+    expect(() => vi.runAllTimers()).toThrow(error);
+  });
+
+  test('next() rethrows each observer error separately', () => {
+    using _timers = fakeTimersResource();
+    const subject = behaviorSubject(0);
+    const errors = [new Error('first failed'), new Error('second failed')];
+    for (const error of errors) {
+      subject.subscribe({
+        next(value) {
+          if (value === 1) throw error;
+        },
+      });
+    }
+    const last = vi.fn();
+    subject.subscribe({ next: last });
+
+    expect(() => subject.next(1)).not.toThrow();
+    expect(last).toHaveBeenLastCalledWith(1);
+    expect(vi.getTimerCount()).toBe(2);
+    expect(() => vi.advanceTimersToNextTimer()).toThrow(errors[0]);
+    expect(() => vi.advanceTimersToNextTimer()).toThrow(errors[1]);
+  });
 });

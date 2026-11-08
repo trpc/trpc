@@ -20,6 +20,22 @@ export class TRPCWebSocketClosedError extends Error {
 }
 
 /**
+ * Calls a user callback, including `connectionState` subscribers. A throw
+ * would skip the rest of the client's bookkeeping (e.g. end the reconnect
+ * loop, or, with event-emitter based WebSockets such as `ws`, skip the other
+ * listeners for that event), so it is rethrown asynchronously instead.
+ */
+export function callUserCallback(callback: () => void) {
+  try {
+    callback();
+  } catch (error) {
+    setTimeout(() => {
+      throw error;
+    });
+  }
+}
+
+/**
  * Utility class for managing a timeout that can be started, stopped, and reset.
  * Useful for scenarios where the timeout duration is reset dynamically based on events.
  */

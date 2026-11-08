@@ -2,7 +2,10 @@ import { EventEmitter, on } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import { sleep } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  sleep,
+} from '@trpc/server/unstable-core-do-not-import';
 
 function factory() {
   const ee = new EventEmitter();
@@ -66,5 +69,62 @@ describe('ws subscription memory', () => {
       ctx.ee.emit('data', data);
       return ref;
     }
+  });
+
+  it('frees subscriptions stopped while active or during setup', async () => {
+    const ee = new EventEmitter();
+    const signals: WeakRef<AbortSignal>[] = [];
+    let admission = createDeferred();
+    let setupSignal: AbortSignal | undefined;
+    const t = initTRPC.create();
+    const subscribe = (opts: { signal?: AbortSignal }) => {
+      assert(opts.signal, 'no signal received');
+      signals.push(new WeakRef(opts.signal));
+      return on(ee, 'data', { signal: opts.signal });
+    };
+    const appRouter = t.router({
+      active: t.procedure.subscription(subscribe),
+      slow: t.procedure
+        .use(async (opts) => {
+          setupSignal = opts.signal;
+          await admission.promise;
+          return opts.next();
+        })
+        .subscription(subscribe),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      clientLink: 'wsLink',
+      wsClient: { lazy: { enabled: false, closeMs: 0 } },
+    });
+
+    for (let i = 0; i < 50; i++) {
+      const started = createDeferred();
+      const subscription = ctx.client.active.subscribe(undefined, {
+        onStarted: () => started.resolve(),
+      });
+      await started.promise;
+      subscription.unsubscribe();
+    }
+    for (let i = 0; i < 20; i++) {
+      admission = createDeferred();
+      setupSignal = undefined;
+      const ac = new AbortController();
+      ctx.client.slow.subscribe(undefined, { signal: ac.signal });
+      await vi.waitFor(() => expect(setupSignal).toBeDefined());
+      ac.abort();
+      await vi.waitFor(() => expect(setupSignal?.aborted).toBe(true));
+      admission.resolve();
+    }
+    setupSignal = undefined;
+
+    await vi.waitFor(() => expect(ee.listenerCount('data')).toBe(0));
+    const gc = globalThis.gc;
+    assert(gc, 'run with --expose-gc');
+    await vi.waitFor(async () => {
+      await sleep(0);
+      gc();
+      expect(signals.filter((ref) => ref.deref() !== undefined)).toEqual([]);
+    });
+    expect(signals).toHaveLength(70);
   });
 });

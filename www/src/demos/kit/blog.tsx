@@ -1,19 +1,28 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { ChevronRight, MessageSquare, UserRound } from 'lucide-react';
-import { type ReactNode, useId } from 'react';
+import { type ComponentProps, type ReactNode, useId } from 'react';
 
 import { Skeleton } from '@shared/ui/components/skeleton';
 
-import { DemoLink } from './browser.tsx';
+import { Reserve } from '../reserve.tsx';
+import { blogData } from './backend.ts';
+import { DemoLink, WithoutLinks } from './browser.tsx';
 import { type TRPC, useTRPC } from './session.tsx';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  inferInfiniteQueryHandle,
+  inferQueryHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
 
 /** The same components read the handles in every demo, as in an app. */
 export function Post(props: {
-  readonly post: unstable_inferQueryHandle<TRPC['post']['byId']>;
+  readonly post: inferQueryHandle<TRPC['post']['byId']>;
 }) {
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
   return <PostArticle post={postQuery.data} />;
 }
 
@@ -36,13 +45,41 @@ export function PostArticle(props: {
   );
 }
 
-export function PostSkeleton() {
+/**
+ * A skeleton as tall as `shape`, what it stands in for, so nothing moves
+ * when the data comes in. The demo's data never changes, so a skeleton can
+ * know it.
+ */
+function Shaped(props: {
+  readonly children: ReactNode;
+  readonly shape: ReactNode;
+}) {
   return (
-    <div className="grid gap-2">
-      <Skeleton className="h-5 w-2/3" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-3 w-24" />
-    </div>
+    <Reserve shapes={[<WithoutLinks key="shape">{props.shape}</WithoutLinks>]}>
+      {props.children}
+    </Reserve>
+  );
+}
+
+/** A served-at time as wide as any a reader is likely to see. */
+const widestServedAt = 88.8;
+
+export function PostSkeleton(props: { readonly id: number }) {
+  const post = blogData.post(props.id);
+  return (
+    <Shaped
+      shape={
+        post ? (
+          <PostArticle post={{ ...post, servedAt: widestServedAt }} />
+        ) : null
+      }
+    >
+      <div className="grid gap-2">
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+    </Shaped>
   );
 }
 
@@ -92,25 +129,29 @@ export function CommentList(props: {
 }
 
 export function Comments(props: {
-  readonly comments: unstable_inferQueryHandle<TRPC['post']['comments']>;
+  readonly comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
 }) {
   const trpc = useTRPC();
-  const commentsQuery = useSuspenseQuery(
-    trpc.unstable_$fromHandle(props.comments),
+  const commentsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.comments, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
   );
-  return <CommentList comments={commentsQuery.data} />;
+  return <CommentList comments={commentItems(commentsQuery.data)} />;
 }
 
-export function CommentsSkeleton() {
+export function CommentsSkeleton(props: { readonly postId: number }) {
   return (
-    <div className="grid gap-2">
-      {[0, 1].map((row) => (
-        <div className="flex gap-2" key={row}>
-          <Skeleton className="size-6 shrink-0 rounded-full" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      ))}
-    </div>
+    <Shaped shape={<CommentList comments={blogData.comments(props.postId)} />}>
+      <div className="grid gap-2">
+        {[0, 1].map((row) => (
+          <div className="flex gap-2" key={row}>
+            <Skeleton className="size-6 shrink-0 rounded-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ))}
+      </div>
+    </Shaped>
   );
 }
 
@@ -197,21 +238,33 @@ export function PostListPage(props: {
 }
 
 export function PostList(props: {
-  readonly list: unstable_inferQueryHandle<TRPC['post']['list']>;
+  readonly list: inferQueryHandle<TRPC['post']['list']>;
   readonly page: number;
 }) {
   const trpc = useTRPC();
-  const listQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.list));
+  const listQuery = useSuspenseQuery(fromHandle(trpc, props.list));
   return <PostListPage list={listQuery.data} page={props.page} />;
 }
 
-export function PostListSkeleton(props: { readonly count?: number }) {
+function PostCardSkeletons(props: { readonly count: number }) {
   return (
     <div className="grid gap-2">
-      {Array.from({ length: props.count ?? 3 }, (_, row) => (
+      {Array.from({ length: props.count }, (_, row) => (
         <Skeleton className="h-[4.75rem] w-full rounded-lg" key={row} />
       ))}
     </div>
+  );
+}
+
+export function PostListSkeleton(props: { readonly page: number }) {
+  return (
+    <Shaped
+      shape={
+        <PostListPage list={blogData.list(props.page)} page={props.page} />
+      }
+    >
+      <PostCardSkeletons count={3} />
+    </Shaped>
   );
 }
 
@@ -256,22 +309,50 @@ export function MoreByAuthorList(props: {
   );
 }
 
-export function MoreByAuthorSkeleton() {
+export function MoreByAuthorSkeleton(props: { readonly postId: number }) {
+  const more = blogData.moreByAuthor(props.postId);
   return (
-    <div className="grid gap-2 border-t pt-3">
-      <Skeleton className="h-4 w-28" />
-      <PostListSkeleton count={2} />
-    </div>
+    <Shaped shape={more ? <MoreByAuthorList more={more} /> : null}>
+      <div className="grid gap-2 border-t pt-3">
+        <Skeleton className="h-4 w-28" />
+        <PostCardSkeletons count={2} />
+      </div>
+    </Shaped>
   );
 }
 
 /** The author's other posts, as links. Its query starts from the URL too. */
 export function MoreByAuthor(props: {
-  readonly more: unstable_inferQueryHandle<TRPC['post']['moreByAuthor']>;
+  readonly more: inferInfiniteQueryHandle<TRPC['post']['moreByAuthor']>;
 }) {
   const trpc = useTRPC();
-  const moreQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.more));
-  return <MoreByAuthorList more={moreQuery.data} />;
+  const moreQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.more, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  return <MoreByAuthorList more={morePosts(moreQuery.data)} />;
+}
+
+/** Every comment on the pages loaded so far */
+export function commentItems(data: {
+  readonly pages: ReadonlyArray<{
+    readonly items: ComponentProps<typeof CommentList>['comments'];
+  }>;
+}) {
+  return data.pages.flatMap((page) => page.items);
+}
+
+/** The author and every post on the pages loaded so far */
+export function morePosts(data: {
+  readonly pages: ReadonlyArray<
+    ComponentProps<typeof MoreByAuthorList>['more']
+  >;
+}) {
+  return {
+    author: data.pages[0]?.author ?? '',
+    posts: data.pages.flatMap((page) => page.posts),
+  };
 }
 
 export function NotFound() {

@@ -1,55 +1,73 @@
 import {
   Component,
   type ComponentType,
-  lazy,
+  createElement,
   type ReactNode,
   Suspense,
-  useEffect,
-  useLayoutEffect,
-  useState,
+  use,
 } from 'react';
-import { createPortal } from 'react-dom';
 
-import { type DemoName, type DemoProps, isDemoName } from './names.ts';
+import {
+  type DemoFence,
+  type DemoName,
+  type DemoProps,
+  splitAtDemos,
+} from './names.ts';
 
-const demos: Record<DemoName, ComponentType<DemoProps>> = {
-  'loader-handles': lazy(() =>
-    import('./loader-handles.tsx').then((module) => ({
-      default: module.LoaderHandles,
-    })),
-  ),
-  'request-timeline': lazy(() =>
-    import('./request-timeline.tsx').then((module) => ({
-      default: module.RequestTimeline,
-    })),
-  ),
-  'starting-queries': lazy(() =>
-    import('./starting-queries.tsx').then((module) => ({
-      default: module.StartingQueries,
-    })),
-  ),
-  'url-input': lazy(() =>
-    import('./url-input.tsx').then((module) => ({
-      default: module.UrlInput,
-    })),
-  ),
-  waterfalls: lazy(() =>
-    import('./waterfalls.tsx').then((module) => ({
-      default: module.Waterfalls,
-    })),
-  ),
+type Demo = ComponentType<DemoProps>;
+
+const imports: Record<DemoName, () => Promise<Demo>> = {
+  'loader-handles': async () =>
+    (await import('./loader-handles.tsx')).LoaderHandles,
+  'request-timeline': async () =>
+    (await import('./request-timeline.tsx')).RequestTimeline,
+  'starting-queries': async () =>
+    (await import('./starting-queries.tsx')).StartingQueries,
+  'url-input': async () => (await import('./url-input.tsx')).UrlInput,
+  waterfalls: async () => (await import('./waterfalls.tsx')).Waterfalls,
 };
 
-interface Slot {
-  readonly container: HTMLElement;
-  readonly element: HTMLElement;
-  readonly name: DemoName;
+const loading = new Map<DemoName, Promise<Demo>>();
+
+function load(name: DemoName) {
+  let promise = loading.get(name);
+  if (!promise) {
+    const started = imports[name]();
+    // `use()` reads a settled promise's `status`, so a demo whose code a
+    // loader has already waited for renders without suspending.
+    started.then(
+      (value) => Object.assign(started, { status: 'fulfilled', value }),
+      (reason: unknown) =>
+        Object.assign(started, { reason, status: 'rejected' }),
+    );
+    promise = started;
+    loading.set(name, promise);
+  }
+  return promise;
 }
 
 /**
- * A demo that throws renders nothing, so its slot keeps its static content
- * and the rest of the page keeps working.
+ * Loads the code of the demos in a page's HTML. A route's loader waits for
+ * it, so the server renders the demos into the page and a client-side
+ * navigation shows them at once. Pages without demos load none of it. A demo
+ * whose code fails to load throws when it renders, so `DemoBoundary` hides it
+ * and the page still loads.
  */
+export async function loadPageDemos(html: string) {
+  await Promise.all(
+    splitAtDemos(html).flatMap((part) =>
+      typeof part === 'string' ? [] : [load(part.name).catch(() => {})],
+    ),
+  );
+}
+
+function LoadedDemo(props: DemoFence) {
+  // The same component on every render, once loaded.
+  const demo = use(load(props.name));
+  return createElement(demo, { options: props.options });
+}
+
+/** A demo that throws renders nothing, and the rest of the page keeps working. */
 class DemoBoundary extends Component<
   { readonly children: ReactNode },
   { readonly failed: boolean }
@@ -69,76 +87,16 @@ class DemoBoundary extends Component<
   }
 }
 
-/** Hides the slot's static content once its demo has loaded and rendered. */
-function MarkReady(props: { readonly element: HTMLElement }) {
-  useLayoutEffect(() => {
-    props.element.setAttribute('data-demo-ready', '');
-    return () => props.element.removeAttribute('data-demo-ready');
-  }, [props.element]);
-  return null;
-}
-
 /**
- * Mounts the demos a page's HTML has slots for (`names.ts`), in the browser
- * only and as each slot comes near the screen, so a page's first paint, and
- * pages without demos, load none of their code.
+ * A demo where its page's `demo` fence was. While the page hydrates before
+ * the demo's code has loaded, it keeps the server's HTML until it has.
  */
-export function PageDemos(props: { readonly html: string }) {
-  const [slots, setSlots] = useState<ReadonlyArray<Slot>>([]);
-
-  useEffect(() => {
-    const created: Array<HTMLElement> = [];
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const mounted: Array<Slot> = [];
-        for (const entry of entries) {
-          const element = entry.target;
-          const name = element.getAttribute('data-demo');
-          if (
-            !entry.isIntersecting ||
-            !(element instanceof HTMLElement) ||
-            name === null ||
-            !isDemoName(name)
-          ) {
-            continue;
-          }
-          observer.unobserve(element);
-          const container = document.createElement('div');
-          container.setAttribute('data-demo-root', '');
-          element.append(container);
-          created.push(container);
-          mounted.push({ container, element, name });
-        }
-        if (mounted.length > 0) {
-          setSlots((current) => [...current, ...mounted]);
-        }
-      },
-      { rootMargin: '800px 0px' },
-    );
-    for (const element of document.querySelectorAll('article [data-demo]')) {
-      observer.observe(element);
-    }
-    return () => {
-      observer.disconnect();
-      for (const container of created) {
-        container.remove();
-      }
-      setSlots([]);
-    };
-  }, [props.html]);
-
-  // Slots are only ever appended, so their index is a stable key.
-  return slots.map((slot, index) => {
-    const Demo = demos[slot.name];
-    return createPortal(
-      <DemoBoundary>
-        <Suspense fallback={null}>
-          <Demo options={{ ...slot.element.dataset }} />
-          <MarkReady element={slot.element} />
-        </Suspense>
-      </DemoBoundary>,
-      slot.container,
-      String(index),
-    );
-  });
+export function PageDemo(props: DemoFence) {
+  return (
+    <DemoBoundary>
+      <Suspense fallback={null}>
+        <LoadedDemo name={props.name} options={props.options} />
+      </Suspense>
+    </DemoBoundary>
+  );
 }

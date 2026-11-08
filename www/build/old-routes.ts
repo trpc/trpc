@@ -101,6 +101,7 @@ export type Response =
  * (https://vercel.com/docs/build-output-api/configuration#routes), as far as
  * this site's routes go: a route with a `Location` redirects, `continue`
  * routes only add headers, and `handle: filesystem` serves a file there is.
+ * Vercel matches `src` case-sensitively: `/docs/Router` isn't `/docs/router`.
  */
 export function respond(
   routes: ReadonlyArray<VercelRoute>,
@@ -120,7 +121,7 @@ export function respond(
     if (route.has || route.src === undefined) {
       continue;
     }
-    const match = new RegExp(route.src, 'i').exec(pathname);
+    const match = new RegExp(route.src).exec(pathname);
     if (!match) {
       continue;
     }

@@ -2,14 +2,16 @@
 @import '@shikijs/twoslash/style-rich.css';
 @plugin '@tailwindcss/typography';
 
+/* How tall the sticky header (`SiteHeader`) is. */
 html {
-  scroll-padding-top: 4.5rem;
+  --site-header: 3.5rem;
+  scroll-padding-top: calc(var(--site-header) + 1rem);
 }
 
 /* Below `md`, on the pages that show it, the header has the partners' line (`PartnersBar`) too. */
 @media (width < 48rem) {
   html:has([data-partners-bar='shown']) {
-    scroll-padding-top: 6.75rem;
+    --site-header: 5.75rem;
   }
 }
 
@@ -24,10 +26,130 @@ html {
   }
 }
 
+/* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
+   comes into view: `pop` from hidden, or `boing` when they were already
+   showing, and `shimmer` after; then the reader's (`you`). Each element sets its own `animation-delay`: a theme variable is
+   resolved on `:root`, so one there can't read a delay set per bubble. */
+@theme {
+  --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
+  --animate-sponsor-boing: sponsor-boing 0.8s ease-out both;
+  --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out forwards;
+  --animate-sponsor-confetti: sponsor-confetti 0.9s
+    cubic-bezier(0.2, 0.8, 0.4, 1) backwards;
+  --animate-sponsor-shimmer: sponsor-shimmer 7s ease-in-out infinite;
+  --animate-sponsor-you: sponsor-you 0.8s ease-out both;
+  --animate-sponsor-you-caption: sponsor-you-caption 0.6s ease-out both;
+
+  @keyframes sponsor-pop {
+    0% {
+      opacity: 0;
+      scale: 0.2;
+    }
+    50% {
+      opacity: 1;
+      scale: 1.35;
+    }
+    70% {
+      scale: 0.9;
+    }
+    85% {
+      scale: 1.06;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  @keyframes sponsor-boing {
+    0%,
+    100% {
+      scale: 1;
+    }
+    30% {
+      scale: 1.3;
+    }
+    55% {
+      scale: 0.9;
+    }
+    75% {
+      scale: 1.06;
+    }
+  }
+
+  @keyframes sponsor-ripple {
+    0% {
+      opacity: 0.9;
+      scale: 1;
+    }
+    100% {
+      opacity: 0;
+      scale: 1.9;
+    }
+  }
+
+  @keyframes sponsor-confetti {
+    0% {
+      opacity: 0;
+      top: 50%;
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      top: -75%;
+      scale: 0.4;
+    }
+  }
+
+  /* The reader's own bubble (`YouBubble`), last and calmly. It takes no
+     pointer until it's half in, as `both` holds the first frame while it waits. */
+  @keyframes sponsor-you {
+    0% {
+      opacity: 0;
+      pointer-events: none;
+      scale: 0.85;
+    }
+    100% {
+      opacity: 1;
+      pointer-events: auto;
+      scale: 1;
+    }
+  }
+
+  /* Its caption, a little after it. */
+  @keyframes sponsor-you-caption {
+    0% {
+      opacity: 0;
+      pointer-events: none;
+      translate: -50% 4px;
+    }
+    100% {
+      opacity: 1;
+      pointer-events: auto;
+      translate: -50% 0;
+    }
+  }
+
+  /* A sheen that crosses the avatar once, then rests. */
+  @keyframes sponsor-shimmer {
+    0% {
+      background-position: 150% 0;
+    }
+    25%,
+    100% {
+      background-position: -50% 0;
+    }
+  }
+}
+
 /* In-page links glide to their heading. The router scrolls `instant`ly
-   (`scrollRestorationBehavior`), so a new page starts at the top. */
+   (`scrollRestorationBehavior`), so a new page starts at the top. Off until
+   the page has mounted (`__root.tsx`), so opening a page at a heading jumps
+   there instead of gliding past content that is still loading. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html[data-smooth-scroll] {
     scroll-behavior: smooth;
   }
 }
@@ -279,15 +401,146 @@ html {
   display: none;
 }
 
+/* Hovering a block marks its names faintly; the open one stands out. */
+.twoslash {
+  --twoslash-underline-color: color-mix(
+    in oklch,
+    currentColor 35%,
+    transparent
+  );
+}
+
+.twoslash .twoslash-hover:not(.twoslash-query-persisted) {
+  border-radius: 2px;
+  transition:
+    border-color 0.3s,
+    background-color 0.15s;
+}
+
+.twoslash .twoslash-hover[data-open] {
+  border-bottom-color: currentColor;
+  background-color: color-mix(in oklch, var(--foreground) 9%, transparent);
+}
+
+/* Once `installTwoslashHovers` runs, it opens popups (`data-open`), not
+   `:hover`, so a popup stays while the pointer moves into it. */
+[data-twoslash-hovers]
+  .twoslash
+  .twoslash-hover:not(.twoslash-query-persisted):not([data-open])
+  .twoslash-popup-container {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-twoslash-hovers]
+  .twoslash
+  .twoslash-hover[data-open]
+  .twoslash-popup-container {
+  opacity: 1;
+  pointer-events: auto;
+  user-select: text;
+  transition-duration: 0.1s;
+}
+
+/* A pinned popup says so, with its border. */
+.twoslash .twoslash-hover[data-pinned] .twoslash-popup-container {
+  border-color: color-mix(in oklch, var(--foreground) 35%, var(--border));
+}
+
+/* A type of several lines is a `pre` of its own, without a code block's
+   padding. */
+.code-block .twoslash-popup-code pre {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: 1.5;
+}
+
+/* A popup's type isn't inline code: one background for the whole popup. */
+.twoslash .twoslash-popup-code {
+  border-radius: 0;
+  background: transparent;
+}
+
+/* A `^?` line is its indent (`build/popup-docs.ts`), then the pinned type,
+   which shrinks to the room right of the indent and wraps, instead of
+   running past the block. */
+.twoslash .twoslash-query-line {
+  display: flex;
+  align-items: flex-start;
+}
+
+.twoslash .twoslash-query-indent {
+  flex: none;
+}
+
+.twoslash .twoslash-query-line .twoslash-popup-container {
+  min-width: 0;
+  margin-bottom: 1em;
+}
+
+.twoslash .twoslash-query-line .twoslash-popup-code pre {
+  white-space: pre-wrap;
+}
+
 /* A `^?` type ties the hover popup's z-index and comes later in the page, so
    it would cover the type of a name hovered above it. */
 .twoslash .twoslash-query-line .twoslash-popup-container {
   z-index: 9;
 }
 
+/* A hover's JSDoc: its first paragraph, then `@param`, `@returns`, `@see`
+   and `@deprecated`, as markdown (`build/popup-docs.ts`). */
 .twoslash .twoslash-popup-docs {
   max-width: 36rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
   white-space: normal;
+}
+
+.code-block .shiki .twoslash-popup-docs,
+.code-block .shiki .twoslash-popup-docs span {
+  color: var(--twoslash-docs-color);
+}
+
+.twoslash .twoslash-popup-docs p {
+  margin: 0;
+}
+
+.twoslash .twoslash-popup-docs p + p {
+  margin-top: 0.5em;
+}
+
+.twoslash .twoslash-popup-docs code {
+  border-radius: 0.25rem;
+  background: var(--muted);
+  padding: 0.05em 0.3em;
+  color: var(--popover-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  white-space: nowrap;
+}
+
+.twoslash .twoslash-popup-docs code::before,
+.twoslash .twoslash-popup-docs code::after {
+  content: none;
+}
+
+.code-block .shiki .twoslash-popup-docs a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.twoslash .twoslash-popup-docs-tags {
+  gap: 0.25em;
+}
+
+.code-block .shiki .twoslash-popup-docs-tag-name {
+  color: var(--popover-foreground);
+  font-size: 0.875em;
+  font-weight: 600;
 }
 
 .twoslash .twoslash-error-line {
@@ -625,19 +878,6 @@ figure.tweet .tweet-footer a:hover {
   .code-unpublished[data-flash] {
     animation: none;
   }
-}
-
-/* A `demo` fence's slot (`build/markdown.ts`): its static content shows
-   until `PageDemos` has loaded and rendered the demo. */
-[data-demo][data-demo-ready] > :not([data-demo-root]) {
-  display: none;
-}
-
-.demo-placeholder {
-  min-height: 26rem;
-  margin-block: 2rem;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-xl, 0.75rem);
 }
 
 /* A `chart` fence's bars (`build/charts.ts`) */
