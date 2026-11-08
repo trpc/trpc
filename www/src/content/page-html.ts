@@ -9,6 +9,7 @@
  * hydrates (`hydratePages`): each page's own content-hashed chunk, cached
  * like the rest of the site's code.
  */
+import { forgetReload, reloadOnce } from '~/reload-once.ts';
 
 type PageModule = () => Promise<{
   readonly default: { readonly html: string };
@@ -85,43 +86,6 @@ export function dehydratePages(router: {
   };
 }
 
-const reloadedKey = (key: string) => `trpc-docs:reloaded-for:${key}`;
-
-/**
- * Whether the browser loaded this page by reloading it: unknown where it
- * doesn't say (navigation timing off).
- */
-function isReload() {
-  const entry = performance.getEntriesByType('navigation')[0];
-  return entry && 'type' in entry ? entry.type === 'reload' : undefined;
-}
-
-/**
- * Whether this page load is the reload for `key`, forgetting the mark
- * either way. A reader who leaves before the reloaded page hydrates leaves
- * the mark in the tab, and a later visit, which isn't a reload, ignores it.
- */
-function reloadedFor(key: string) {
-  try {
-    const marked = sessionStorage.getItem(reloadedKey(key)) !== null;
-    sessionStorage.removeItem(reloadedKey(key));
-    // Not knowing, a mark means this is the reload, so it never loops.
-    return marked && (isReload() ?? true);
-  } catch {
-    // Storage is off (a private window): never reload, so never loop.
-    return true;
-  }
-}
-
-function markReloaded(key: string) {
-  try {
-    sessionStorage.setItem(reloadedKey(key), '');
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * For the router's `hydrate`: loads the pages the server rendered before
  * React hydrates them.
@@ -145,14 +109,13 @@ export async function hydratePages(
       try {
         await loadPage(key, load).catch(() => loadPage(key, load));
       } catch (error) {
-        if (reloadedFor(key) || !markReloaded(key)) {
+        if (!reloadOnce(key, reload)) {
           throw error;
         }
-        reload();
         // The page is going away; hydrating it would be wasted.
         await new Promise<never>(() => {});
       }
-      reloadedFor(key);
+      forgetReload(key);
     }),
   );
 }

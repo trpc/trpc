@@ -36,6 +36,13 @@ export function startSentry(
     release,
     // The site's own scripts' errors, not browser extensions'.
     allowUrls: [window.location.origin],
+    // What others' code throws without a stack for `allowUrls` to check.
+    ignoreErrors: [
+      // Outlook's link scanner, opening a link from an email.
+      'Object Not Found Matching Id:',
+      // A crypto wallet extension.
+      'window.ethereum',
+    ],
     integrations: (defaults) => [
       // No session per page load: Sentry hears from a visitor only for an
       // error or a sampled trace.
