@@ -38,11 +38,15 @@ vi.mock('./render.ts', () => ({
   },
 }));
 
-vi.mock('./live.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof Live>()),
-  fetchCloudAvatars: async (images: ReadonlyArray<string>) =>
-    new Map(images.map((image) => [image, 'data:,'])),
-}));
+vi.mock('./live.ts', async (importOriginal) => {
+  const live = await importOriginal<typeof Live>();
+  return {
+    ...live,
+    fetchCloudAvatars: async (images: ReadonlyArray<string>) =>
+      new Map(images.map((image) => [image, 'data:,'])),
+    fetchLive: async () => live.noLive,
+  };
+});
 
 const { serveOgImage } = await import('./serve.ts');
 
