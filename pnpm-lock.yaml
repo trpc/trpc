@@ -3288,7 +3288,7 @@ importers:
         version: link:../../../packages/tanstack-react-query
       '@unkey/ratelimit':
         specifier: 2.0.0
-        version: 2.0.0(@modelcontextprotocol/sdk@1.11.3(supports-color@10.0.0))(zod@4.6.6)
+        version: 2.0.0(zod@4.6.6)
       arktype:
         specifier: catalog:www
         version: 2.2.8
@@ -6411,10 +6411,6 @@ packages:
     resolution: {integrity: sha512-llMXd39jtP0HpQLVI37Bf1m2ADlEb35GYSh1SDSLsBhR+5iCxiNGlT31yqbNtVHygHAtMy6dWFERpU2JgufhPg==}
     engines: {node: '>=18'}
     hasBin: true
-
-  '@modelcontextprotocol/sdk@1.11.3':
-    resolution: {integrity: sha512-rmOWVRUbUJD7iSvJugjUbFZshTAuJ48MXoZ80Osx1GM0K/H1w7rSEvmw8m6vdWxNASgtaHIhAgre4H/E9GJiYQ==}
-    engines: {node: '>=18'}
 
   '@modelcontextprotocol/sdk@1.32.2':
     resolution: {integrity: sha512-SWsVtH/0vULSQStoZ6xxH2K09Li8fXYTMC64ZeogCdpZ3XSi1eCPOByV1OpuJxuI3OcmHhosDWYyii07tpPsLw==}
@@ -12413,12 +12409,6 @@ packages:
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
-
-  express-rate-limit@7.5.0:
-    resolution: {integrity: sha512-eB5zbQh5h+VenMPM3fh+nw1YExi5nMr6HUCR62ELSP11huvxm/Uir1H1QEyTkk5QX6A58pX6NmaTMceKZ0Eodg==}
-    engines: {node: '>= 16'}
-    peerDependencies:
-      express: ^4.11 || 5 || ^5.0.0-beta.1
 
   express-rate-limit@8.7.2:
     resolution: {integrity: sha512-U1ScocxDD9WI09LaBVypvNkOtNR5yWAmZLkuKJdAzIchA4YKFYF6GT5IKER7epG58oXtjvGlV0/6ii0F83EyZg==}
@@ -22349,22 +22339,6 @@ snapshots:
       - encoding
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.11.3(supports-color@10.0.0)':
-    dependencies:
-      content-type: 1.0.5
-      cors: 2.8.6
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      express: 5.2.1(supports-color@10.0.0)
-      express-rate-limit: 7.5.0(express@5.2.1(supports-color@10.0.0))
-      pkce-challenge: 5.0.0
-      raw-body: 3.0.2
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.2(zod@3.25.76)
-    transitivePeerDependencies:
-      - supports-color
-    optional: true
-
   '@modelcontextprotocol/sdk@1.32.2(supports-color@10.0.0)(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 2.1.5(hono@4.13.14)
@@ -26843,15 +26817,13 @@ snapshots:
       unhead: 2.1.17
       vue: 3.5.42(typescript@6.0.3)
 
-  '@unkey/api@2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3(supports-color@10.0.0))(zod@4.6.6)':
+  '@unkey/api@2.0.0-alpha.7(zod@4.6.6)':
     dependencies:
       zod: 4.6.6
-    optionalDependencies:
-      '@modelcontextprotocol/sdk': 1.11.3(supports-color@10.0.0)
 
-  '@unkey/ratelimit@2.0.0(@modelcontextprotocol/sdk@1.11.3(supports-color@10.0.0))(zod@4.6.6)':
+  '@unkey/ratelimit@2.0.0(zod@4.6.6)':
     dependencies:
-      '@unkey/api': 2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3(supports-color@10.0.0))(zod@4.6.6)
+      '@unkey/api': 2.0.0-alpha.7(zod@4.6.6)
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
       - zod
@@ -29588,11 +29560,6 @@ snapshots:
   exit-hook@2.2.1: {}
 
   expect-type@1.4.0: {}
-
-  express-rate-limit@7.5.0(express@5.2.1(supports-color@10.0.0)):
-    dependencies:
-      express: 5.2.1(supports-color@10.0.0)
-    optional: true
 
   express-rate-limit@8.7.2(express@5.2.1(supports-color@7.2.0))(supports-color@10.0.0):
     dependencies:
