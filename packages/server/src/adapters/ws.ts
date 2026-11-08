@@ -1,5 +1,6 @@
 import type { IncomingMessage } from 'http';
-import type { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import { on } from 'node:events';
+import type { RawData, WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -12,22 +13,21 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc/server';
-import type { TRPCRequestInfo } from '../@trpc/server/http';
-import { type BaseHandlerOptions } from '../@trpc/server/http';
+import type { BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage, TRPC_ERROR_CODES_BY_KEY } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
-  TRPCConnectionParamsMessage,
   TRPCErrorShape,
   TRPCReconnectNotification,
+  TRPCRequestMessage,
   TRPCResponseMessage,
-  TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
 // oxlint-disable-next-line no-restricted-imports
 import {
+  createDeferred,
   isAbortError,
   isAsyncIterable,
   isObject,
@@ -35,66 +35,39 @@ import {
   isTrackedEnvelope,
   makeResource,
   run,
-  type MaybePromise,
 } from '../unstable-core-do-not-import';
 // oxlint-disable-next-line no-restricted-imports
-import type { Result } from '../unstable-core-do-not-import';
+import type {
+  CombinedDataTransformer,
+  MaybePromise,
+  Result,
+} from '../unstable-core-do-not-import';
 // oxlint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
+// oxlint-disable-next-line no-restricted-imports
+import { timerResource } from '../unstable-core-do-not-import/stream/utils/timerResource';
 import { Unpromise } from '../vendor/unpromise';
-import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
+import { createURL } from './node-http';
+import type { NodeHTTPCreateContextFnOptions } from './node-http';
 import type { Encoder } from './wsEncoder';
 import { jsonEncoder } from './wsEncoder';
+
+/*
+ * Keeping values collectable: while an async function awaits, V8 keeps
+ * alive a `const` that the previous iteration of a loop declared in its
+ * body, the last value of a `for await` loop, and the last value delegated
+ * with `yield*`. A frame can be as big as `maxPayload` (100 MiB by default)
+ * and a subscription's values can be anything, so the loops that await the
+ * next one keep the current one in a `let` declared outside the loop, and
+ * clear it once they're done with it. `websockets.memory.test.ts` guards
+ * this.
+ */
 
 /**
  * Importing ws causes a build error
  * @see https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
-
-function settle<TValue>(promise: Promise<TValue>): Promise<Result<TValue>> {
-  return promise.then(
-    (value): Result<TValue> => ({ ok: true, value }),
-    (error: unknown): Result<TValue> => ({ ok: false, error }),
-  );
-}
-
-/**
- * What `await using` rejects with when disposal fails after the scope threw:
- * `error` is the disposal failure and `suppressed` the original error.
- */
-function isSuppressedError(
-  cause: unknown,
-): cause is { error: unknown; suppressed: unknown } {
-  return (
-    isObject(cause) &&
-    cause['name'] === 'SuppressedError' &&
-    'error' in cause &&
-    'suppressed' in cause
-  );
-}
-
-/**
- * What the client gets when its error can't be formatted or encoded. It says
- * nothing about the error, which is what `errorFormatter` would have hidden.
- */
-const fallbackErrorShape: TRPCErrorShape = {
-  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
-  message: 'Internal server error',
-  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
-};
-
-/**
- * A procedure that gives up because its subscription was cancelled rejects
- * with an `AbortError`, which is wrapped as an INTERNAL_SERVER_ERROR.
- */
-function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
-  return (
-    signal.aborted &&
-    error.code === 'INTERNAL_SERVER_ERROR' &&
-    isAbortError(error.cause)
-  );
-}
 
 /**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
@@ -169,30 +142,435 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
     experimental_encoder?: Encoder;
   };
 
+/** What `ws` emits a `message` event with. */
+type Message = [data: RawData, isBinary: boolean];
+
+/** A message with requests in it, as the encoder takes it. */
+type Frame = string | Uint8Array;
+
+/** A query, mutation or subscription call from the client. */
+type ProcedureRequest = Pick<TRPCRequestMessage, 'jsonrpc'> & {
+  id: number | string;
+  type: TRPCRequestMessage['method'];
+  path: string;
+  input: unknown;
+  batchIndex: number;
+};
+
+/** Whether a reply could be encoded and sent. */
+type SendResult = Result<void>;
+
 /**
- * `iterator.next()` for a subscription loop that races it against the
- * subscription's `signal`, with a rejection turned into a `TRPCError`.
- *
- * Once the subscription is stopped, the loop doesn't wait for this call, so a
- * rejection after the stop, such as a teardown that throws, goes to
- * `onErrorAfterStop` and resolves `'abort'`. An `AbortError` is how a stopped
- * subscription is expected to end, and isn't reported.
+ * The replies to one request, as a generator that `sendReplies` drives:
+ * each `yield` sends a reply and evaluates to its `SendResult`. As with any
+ * generator, the value passed to the first `next()` is ignored. The driver
+ * never calls `return()` or `throw()`, so a generator always runs to its
+ * end, and its `using` declarations and `finally` blocks always run.
  */
-function nextUnlessStopped<TValue, TReturn>(
-  iterator: AsyncIterator<TValue, TReturn>,
+type Replies = AsyncGenerator<TRPCResponseMessage, void, SendResult>;
+
+/** What `onError` is told about the request an error is tied to. */
+type OnErrorRequest = {
+  type: ProcedureRequest['type'] | 'unknown';
+  path: string | undefined;
+  input: unknown;
+};
+
+/** For errors about a frame or the connection rather than a request. */
+const noRequest: OnErrorRequest = {
+  type: 'unknown',
+  path: undefined,
+  input: undefined,
+};
+
+const OK: SendResult = { ok: true, value: undefined };
+
+/**
+ * What the client gets when its error can't be formatted or sent. It says
+ * nothing about the error, which is what `errorFormatter` would have hidden.
+ */
+const fallbackErrorShape: TRPCErrorShape = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
+
+/**
+ * Queries and mutations aren't cancelled, not even when their connection
+ * closes, so the `signal` they get never aborts.
+ */
+const neverAborted = new AbortController().signal;
+
+/** How a subscription's setup ended: with its iterable, or without. */
+type SubscriptionStart =
+  | { kind: 'started'; iterable: AsyncIterable<unknown> }
+  | { kind: 'stopped' }
+  | { kind: 'failed'; error: TRPCError };
+
+/** How a started subscription ended. */
+type SubscriptionEnd =
+  | { kind: 'completed' }
+  | { kind: 'stopped' }
+  | { kind: 'failed'; error: TRPCError };
+
+/** What a started subscription does next: send a value, or end. */
+type SubscriptionStep = SubscriptionEnd | { kind: 'data'; value: unknown };
+
+const COMPLETED = { kind: 'completed' } as const;
+const STOPPED = { kind: 'stopped' } as const;
+
+function failed(cause: unknown) {
+  return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) } as const;
+}
+
+/** Runs `fn`, with what it throws returned as an error. */
+function attempt<TValue>(fn: () => TValue): Result<TValue> {
+  try {
+    return { ok: true, value: fn() };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+/** Waits for `promise`, with a rejection returned as an error. */
+function settle<TValue>(promise: Promise<TValue>): Promise<Result<TValue>> {
+  return promise.then(
+    (value): Result<TValue> => ({ ok: true, value }),
+    (error: unknown): Result<TValue> => ({ ok: false, error }),
+  );
+}
+
+/**
+ * An `AbortController` that aborts when it's disposed.
+ */
+function abortControllerResource() {
+  const controller = new AbortController();
+  // `abort()` builds an AbortError with a stack trace even when the signal is
+  // already aborted, which is the common case when a subscription ends.
+  const abort = () => {
+    if (!controller.signal.aborted) {
+      controller.abort();
+    }
+  };
+  return makeResource({ signal: controller.signal, abort }, abort);
+}
+
+/**
+ * Resolves once `signal` has aborted, even if it already has. Disposing it
+ * removes the listener.
+ */
+function abortPromiseResource(signal: AbortSignal) {
+  const aborted = createDeferred();
+  const onAbort = () => aborted.resolve();
+  if (signal.aborted) {
+    onAbort();
+  } else {
+    signal.addEventListener('abort', onAbort, { once: true });
+  }
+  return makeResource({ promise: aborted.promise }, () => {
+    signal.removeEventListener('abort', onAbort);
+  });
+}
+
+/**
+ * The messages `client` receives, in order, until it closes. Disposing it
+ * stops listening.
+ */
+function messagesResource(client: WsWebSocket) {
+  const closing = abortControllerResource();
+  const closed = createDeferred();
+  const onClose = () => {
+    closing.abort();
+    closed.resolve();
+  };
+  client.once('close', onClose);
+  // Ended with a signal rather than `on()`'s `close` option, which Node 18
+  // ignores, so it never completes: it rejects once the signal aborts. `on()`
+  // types the values as `any[]`, as it can't know the event's arguments.
+  const messages = on(client, 'message', {
+    signal: closing.signal,
+  }) as unknown as AsyncIterator<Message, never>;
+  return makeResource(
+    {
+      /** Resolves once the connection has closed. */
+      closed: closed.promise,
+      /**
+       * The next message, or `null` once the connection has closed. A
+       * socket error ends the messages too, and is reported by the
+       * connection's `error` listener.
+       */
+      async nextMessage(): Promise<Message | null> {
+        const next = await settle(messages.next());
+        return next.ok ? next.value.value : null;
+      },
+    },
+    () => {
+      client.off('close', onClose);
+      closing.abort();
+    },
+  );
+}
+
+/**
+ * Resolves with what happens first on `client`: a message, the connection
+ * closing, or `ms` passing. Its listeners and timer are removed once it
+ * settles.
+ */
+async function nextActivity(
+  client: WsWebSocket,
+  ms: number,
+): Promise<'message' | 'close' | 'timeout'> {
+  using timer = timerResource(ms);
+  const activity = createDeferred<'message' | 'close'>();
+  const onMessage = () => activity.resolve('message');
+  const onClose = () => activity.resolve('close');
+  client.once('message', onMessage);
+  client.once('close', onClose);
+  using _listeners = makeResource({}, () => {
+    client.off('message', onMessage);
+    client.off('close', onClose);
+  });
+  return await Promise.race([
+    activity.promise,
+    timer.start().then(() => 'timeout' as const),
+  ]);
+}
+
+/** What's in a message. */
+type MessageContent =
+  | { kind: 'frame'; frame: Frame }
+  | { kind: 'ping' }
+  | { kind: 'pong' }
+  | { kind: 'unsupported' };
+
+function messageContent(message: Message): MessageContent {
+  const [data, isBinary] = message;
+  if (!isBinary) {
+    // pings and pongs are text, whatever the encoder
+    // oxlint-disable-next-line typescript/no-base-to-string
+    const text = data.toString();
+    if (text === 'PONG') {
+      return { kind: 'pong' };
+    }
+    if (text === 'PING') {
+      return { kind: 'ping' };
+    }
+  }
+  // ws gives a Buffer for text and binary frames, unless the socket's
+  // `binaryType` was changed
+  if (!Buffer.isBuffer(data)) {
+    return { kind: 'unsupported' };
+  }
+  return { kind: 'frame', frame: isBinary ? data : data.toString('utf8') };
+}
+
+/** What a frame holds: requests, or why it's rejected as a whole. */
+type DecodedFrame =
+  | { kind: 'requests'; requests: TRPCClientOutgoingMessage[] }
+  | { kind: 'oversized'; batch: unknown[] }
+  | { kind: 'malformed'; error: TRPCError };
+
+/**
+ * Decodes a frame: a request or a batch of them. An oversized batch is
+ * rejected before it's parsed, so that no input is deserialized.
+ */
+function decodeFrame(
+  frame: Frame,
+  decoding: {
+    encoder: Encoder;
+    transformer: CombinedDataTransformer;
+    maxBatchSize: number | undefined;
+  },
+): DecodedFrame {
+  const decoded = attempt(() => decoding.encoder.decode(frame));
+  if (!decoded.ok) {
+    return malformedFrame(decoded.error);
+  }
+  const value = decoded.value;
+  const isBatch = Array.isArray(value);
+  const raws: unknown[] = isBatch ? value : [value];
+  if (
+    isBatch &&
+    decoding.maxBatchSize !== undefined &&
+    raws.length > decoding.maxBatchSize
+  ) {
+    return { kind: 'oversized', batch: raws };
+  }
+  const parsed = attempt(() =>
+    raws.map((raw) => parseTRPCMessage(raw, decoding.transformer)),
+  );
+  if (!parsed.ok) {
+    return malformedFrame(parsed.error);
+  }
+  return { kind: 'requests', requests: parsed.value };
+}
+
+function malformedFrame(cause: unknown): DecodedFrame {
+  return {
+    kind: 'malformed',
+    error: new TRPCError({ code: 'PARSE_ERROR', cause }),
+  };
+}
+
+/**
+ * The requests in a rejected batch that a reply can be sent to: those with
+ * an id, other than stops.
+ */
+function requestsToReplyTo(batch: unknown[]) {
+  return batch.flatMap((raw) =>
+    isObject(raw) &&
+    raw['method'] !== 'subscription.stop' &&
+    (typeof raw['id'] === 'number' || typeof raw['id'] === 'string')
+      ? [
+          {
+            id: raw['id'],
+            jsonrpc: raw['jsonrpc'] === '2.0' ? ('2.0' as const) : undefined,
+          },
+        ]
+      : [],
+  );
+}
+
+/** The connection params a client sends as its first frame. */
+function parseConnectionParams(frame: Frame, encoder: Encoder) {
+  const msg = attempt(() => encoder.decode(frame));
+  if (!msg.ok || !isObject(msg.value)) {
+    throw new TRPCError({
+      code: 'PARSE_ERROR',
+      message: `Malformed TRPCConnectionParamsMessage`,
+      cause: msg.ok ? new Error('Message was not an object') : msg.error,
+    });
+  }
+  return parseConnectionParamsFromUnknown(msg.value['data']);
+}
+
+/** A subscription's input, with the `lastEventId` it resumes from. */
+function inputWithLastEventId(params: TRPCRequestMessage['params']) {
+  if (params.lastEventId === undefined) {
+    return params.input;
+  }
+  if (isObject(params.input)) {
+    return { ...params.input, lastEventId: params.lastEventId };
+  }
+  return params.input ?? { lastEventId: params.lastEventId };
+}
+
+/** A subscription's claim on its id. Disposing it frees the id. */
+type SubscriptionRegistration = Disposable & {
+  signal: AbortSignal;
+  abort: () => void;
+};
+
+/**
+ * The subscriptions a connection is serving, by id. Disposing it stops them
+ * all.
+ */
+function subscriptionsResource() {
+  const active = new Map<number | string, { abort: () => void }>();
+  return makeResource(
+    {
+      stop: (id: number | string) => active.get(id)?.abort(),
+      /**
+       * Claims `id` for a subscription until the returned resource is
+       * disposed. An id that's already claimed is refused, so a running
+       * subscription can't be replaced and lose its way to be stopped.
+       */
+      register(
+        id: number | string,
+      ): Result<SubscriptionRegistration, TRPCError> {
+        if (active.has(id)) {
+          return {
+            ok: false,
+            error: new TRPCError({
+              message: `Duplicate id ${id}`,
+              code: 'BAD_REQUEST',
+            }),
+          };
+        }
+        const controller = abortControllerResource();
+        // Not `controller` itself: `makeResource` adds its disposal to the
+        // object it's given, so disposing the registration would also run
+        // the controller's disposal, which aborts.
+        const subscription = {
+          signal: controller.signal,
+          abort: controller.abort,
+        };
+        active.set(id, subscription);
+        return {
+          ok: true,
+          value: makeResource(subscription, () => {
+            if (active.get(id) === subscription) {
+              active.delete(id);
+            }
+          }),
+        };
+      },
+    },
+    () => {
+      for (const subscription of active.values()) {
+        subscription.abort();
+      }
+      active.clear();
+    },
+  );
+}
+
+/**
+ * A procedure that gives up because its subscription was cancelled rejects
+ * with an `AbortError`, which is wrapped as an INTERNAL_SERVER_ERROR.
+ */
+function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
+  return (
+    signal.aborted &&
+    error.code === 'INTERNAL_SERVER_ERROR' &&
+    isAbortError(error.cause)
+  );
+}
+
+/**
+ * `iterator.next()` for a subscription loop, as the loop's next step. A
+ * stopped subscription's iterator isn't asked for more.
+ *
+ * The loop races this against the subscription's `signal`, so once the
+ * subscription is stopped, it doesn't wait for this call: a rejection after
+ * the stop, such as a teardown that throws, goes to `onErrorAfterStop`. An
+ * `AbortError` is how a stopped subscription is expected to end, and isn't
+ * reported.
+ */
+async function nextUnlessStopped(
+  iterator: AsyncIterator<unknown>,
   signal: AbortSignal,
   onErrorAfterStop: (error: TRPCError) => void,
-): Promise<IteratorResult<TValue, TReturn> | TRPCError | 'abort'> {
-  return iterator.next().catch((cause: unknown) => {
+): Promise<SubscriptionStep> {
+  if (signal.aborted) {
+    return STOPPED;
+  }
+  try {
+    const next = await iterator.next();
+    // a value that arrives with the stop, such as one yielded because of
+    // it, would be sent after the stop, and after a PONG sent with it
+    if (signal.aborted) {
+      return STOPPED;
+    }
+    return next.done ? COMPLETED : { kind: 'data', value: next.value };
+  } catch (cause) {
     const error = getTRPCErrorFromUnknown(cause);
     if (!signal.aborted) {
-      return error;
+      return { kind: 'failed', error };
     }
     if (!isAbortError(error.cause)) {
       onErrorAfterStop(error);
     }
-    return 'abort';
-  });
+    return STOPPED;
+  }
+}
+
+function dataResult(value: unknown) {
+  if (isTrackedEnvelope(value)) {
+    const [id, data] = value;
+    return { type: 'data', data: { id, data }, id } as const;
+  }
+  return { type: 'data', data: value } as const;
 }
 
 /**
@@ -202,66 +580,145 @@ function nextUnlessStopped<TValue, TReturn>(
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { createContext, router } = opts;
-  const { transformer } = router._def._config;
+  const config = opts.router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
+  const frameDecoding = {
+    encoder,
+    transformer: config.transformer,
+    maxBatchSize: opts.maxBatchSize,
+  };
 
   return (client: WsWebSocket, req: IncomingMessage) => {
+    void serveConnection(client, req);
+  };
+
+  /**
+   * Serves one connection until it closes. Closing it stops its
+   * subscriptions and aborts the `signal` its context got.
+   *
+   * User code (`createContext`, procedures, `onError`, `errorFormatter`, the
+   * transformer and the encoder) may throw. Only `callOnError`, `errorShape`,
+   * `trySend`, `sendOrReport`, `receiveFrame` and `sendReplies` catch;
+   * everything else passes errors on as values.
+   */
+  async function serveConnection(client: WsWebSocket, req: IncomingMessage) {
     type Context = inferRouterContext<TRouter>;
-    type ContextResult = Result<Context>;
+    type ContextResult = Result<Context, TRPCError>;
 
-    const clientSubscriptions = new Map<number | string, AbortController>();
-    const abortController = new AbortController();
+    // Disposed in reverse: the messages stop first, then the subscriptions
+    // are stopped, and then the context's `signal` aborts.
+    using connection = abortControllerResource();
+    using subscriptions = subscriptionsResource();
+    // Listens before anything is awaited, so that no message is missed.
+    using messages = messagesResource(client);
 
-    function registerSubscription(
-      id: number | string,
-      subscription: AbortController,
-    ) {
-      clientSubscriptions.set(id, subscription);
-      return makeResource({}, () => {
-        clientSubscriptions.delete(id);
-      });
-    }
+    /** The connection's context, once `createContext` has resolved. */
+    let ctx: Context | undefined = undefined;
 
     if (opts.keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = opts.keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
+      handleKeepAlive(client, opts.keepAlive.pingMs, opts.keepAlive.pongWaitMs);
     }
 
-    function respond(untransformedJSON: TRPCResponseMessage) {
-      client.send(
-        encoder.encode(
-          transformTRPCResponse(router._def._config, untransformedJSON),
-        ),
-      );
+    // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
+    // This line was introduced after the following error brought down production systems:
+    // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
+    // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
+    client.on('error', (cause) => {
+      reportError(noRequest, cause);
+    });
+
+    // `null` while the context waits for the connection params, which the
+    // client sends as its first frame.
+    let context: Promise<ContextResult> | null =
+      createURL(req).searchParams.get('connectionParams') === '1'
+        ? null
+        : createConnectionContext(null);
+    let frame: Frame | null; // see "Keeping values collectable"
+    while (true) {
+      frame = await nextFrame();
+      if (frame === null) {
+        break;
+      }
+      if (context === null) {
+        context = createConnectionContext(frame);
+      } else {
+        receiveFrame(frame, context);
+      }
+      frame = null;
+    }
+    // a socket error ends the messages before the connection closes
+    await messages.closed;
+
+    // Sending and reporting
+
+    function send(response: TRPCResponseMessage) {
+      client.send(encoder.encode(transformTRPCResponse(config, response)));
     }
 
-    type ErrorInfo = Parameters<NonNullable<typeof opts.onError>>[0];
+    function trySend(response: TRPCResponseMessage): SendResult {
+      return attempt(() => send(response));
+    }
 
     /**
-     * `onError` runs in listeners and in promises nothing awaits, where a
-     * throw or a rejection would crash the process, so either goes to
-     * `onFailure` instead.
+     * Sends a reply that nothing can retry, reporting it if it can't be
+     * built or sent. One that can't be sent is replaced by the fallback
+     * error, so that a client still learns it was rejected.
      */
-    function guardOnError(
-      info: ErrorInfo,
-      onFailure: (cause: unknown) => void,
+    function sendOrReport(
+      request: OnErrorRequest,
+      reply: () => TRPCResponseMessage,
     ) {
-      try {
-        const result: unknown = opts.onError?.(info);
-        if (isPromise(result)) {
-          result.catch(onFailure);
-        }
-      } catch (cause) {
-        onFailure(cause);
+      const built = attempt(reply);
+      if (!built.ok) {
+        reportInternalError(request, built.error);
+        return;
+      }
+      const sent = trySend(built.value);
+      if (!sent.ok) {
+        reportInternalError(request, sent.error);
+        // a failure here is the one just reported
+        trySend({
+          id: built.value.id,
+          jsonrpc: built.value.jsonrpc,
+          error: fallbackErrorShape,
+        });
       }
     }
 
-    /** Reports an error to `onError`, ignoring an `onError` that fails. */
-    function callOnError(info: ErrorInfo) {
-      guardOnError(info, () => {
-        // ignored, see guardOnError
+    /**
+     * Calls `onError`. Errors are reported from listeners and from promises
+     * nothing awaits, where a throw or a rejection would crash the process,
+     * so an `onError` that fails calls `onFailure` instead.
+     */
+    function callOnError(
+      request: OnErrorRequest,
+      error: TRPCError,
+      onFailure: () => void,
+    ) {
+      const called = attempt((): unknown =>
+        opts.onError?.({
+          error,
+          path: request.path,
+          type: request.type,
+          ctx,
+          req,
+          input: request.input,
+        }),
+      );
+      if (!called.ok) {
+        onFailure();
+      } else if (isPromise(called.value)) {
+        called.value.catch(onFailure);
+      }
+    }
+
+    /** Reports `cause` to `onError`, ignoring an `onError` that fails. */
+    function reportError(request: OnErrorRequest, cause: unknown) {
+      const error = getTRPCErrorFromUnknown(cause);
+      callOnError(request, error, () => {
+        // ignored, see callOnError
       });
+      return error;
     }
 
     /**
@@ -269,584 +726,521 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      * `errorFormatter` that throws or a reply that can't be sent. It's logged
      * when `onError` is missing or fails, so it's never dropped silently.
      */
-    function reportInternalError(info: ErrorInfo) {
+    function reportInternalError(request: OnErrorRequest, cause: unknown) {
+      const error = getTRPCErrorFromUnknown(cause);
       const log = () => {
         // oxlint-disable-next-line no-console
-        console.error('[@trpc/server/adapters/ws]', info.error);
+        console.error('[@trpc/server/adapters/ws]', error);
       };
-      if (!opts.onError) {
+      if (opts.onError) {
+        callOnError(request, error, log);
+      } else {
         log();
-        return;
       }
-      guardOnError(info, log);
     }
 
     /**
-     * The error shape the client gets, or a minimal one when `errorFormatter`
-     * throws, so that the request is still answered.
+     * The error's shape for the client, or the fallback when
+     * `errorFormatter` throws, so that the client still gets an error.
      */
-    function errorShape(call: Omit<ErrorInfo, 'ctx' | 'req'>): TRPCErrorShape {
-      try {
-        return getErrorShape({ config: router._def._config, ctx, ...call });
-      } catch (cause) {
-        reportInternalError({
-          ...call,
-          error: getTRPCErrorFromUnknown(cause),
+    function errorShape(
+      request: OnErrorRequest,
+      error: TRPCError,
+    ): TRPCErrorShape {
+      const shape = attempt((): TRPCErrorShape =>
+        getErrorShape({
+          config,
+          error,
+          type: request.type,
+          path: request.path,
+          input: request.input,
           ctx,
-          req,
-        });
-        return fallbackErrorShape;
+        }),
+      );
+      if (shape.ok) {
+        return shape.value;
       }
+      reportInternalError(request, shape.error);
+      return fallbackErrorShape;
     }
 
-    function reportConnectionError(cause: unknown) {
-      reportInternalError({
-        error: getTRPCErrorFromUnknown(cause),
-        path: undefined,
-        type: 'unknown',
-        ctx,
-        req,
-        input: undefined,
-      });
+    /** Reports `cause` to `onError`, and returns the reply that says why. */
+    function reportedErrorReply(
+      request: OnErrorRequest & Pick<TRPCRequestMessage, 'id' | 'jsonrpc'>,
+      cause: unknown,
+    ): TRPCResponseMessage {
+      const error = reportError(request, cause);
+      return {
+        id: request.id,
+        jsonrpc: request.jsonrpc,
+        error: errorShape(request, error),
+      };
     }
+
+    function connectionErrorShape(error: TRPCError) {
+      return errorShape(noRequest, error);
+    }
+
+    /** The reply to a frame the connection can't tie to a request. */
+    function connectionErrorReply(error: TRPCError): TRPCResponseMessage {
+      return { id: null, error: connectionErrorShape(error) };
+    }
+
+    // The context
 
     /**
-     * Sends a response that isn't tied to a request, reporting it if it
-     * can't be built or sent. One that can't be sent is replaced by the
-     * fallback error, so that a client still learns it was rejected.
+     * Creates the connection's context, with the connection params in
+     * `paramsFrame` when the client sends them. If that fails, the client
+     * is told why and the connection is closed.
      */
-    function respondOrReport(response: () => TRPCResponseMessage) {
-      let message: TRPCResponseMessage | null = null;
-      try {
-        message = response();
-        respond(message);
-      } catch (cause) {
-        reportConnectionError(cause);
-        if (message === null) {
-          return;
-        }
-        try {
-          respond({
-            id: message.id,
-            jsonrpc: message.jsonrpc,
-            error: fallbackErrorShape,
-          });
-        } catch {
-          // the same failure, and it was reported above
-        }
-      }
-    }
-
-    async function createCtxPromise(
-      getConnectionParams: () => TRPCRequestInfo['connectionParams'],
+    async function createConnectionContext(
+      paramsFrame: Frame | null,
     ): Promise<ContextResult> {
-      try {
-        return await run(async (): Promise<ContextResult> => {
-          ctx = await createContext?.({
+      const created = await settle(
+        run(async () =>
+          opts.createContext?.({
             req,
             res: client,
             info: {
-              connectionParams: getConnectionParams(),
+              connectionParams:
+                paramsFrame === null
+                  ? null
+                  : parseConnectionParams(paramsFrame, encoder),
               calls: [],
               isBatchCall: false,
               accept: null,
               type: 'unknown',
-              signal: abortController.signal,
+              signal: connection.signal,
               url: null,
             },
-          });
-
-          return {
-            ok: true,
-            value: ctx,
-          };
-        });
-      } catch (cause) {
-        const error = getTRPCErrorFromUnknown(cause);
-        callOnError({
-          error,
-          path: undefined,
-          type: 'unknown',
-          ctx,
-          req,
-          input: undefined,
-        });
-        respondOrReport(() => ({
-          id: null,
-          error: errorShape({
-            error,
-            type: 'unknown',
-            path: undefined,
-            input: undefined,
           }),
-        }));
+        ),
+      );
+      if (created.ok) {
+        ctx = created.value;
+        return { ok: true, value: created.value };
+      }
+      const error = reportError(noRequest, created.error);
+      sendOrReport(noRequest, () => connectionErrorReply(error));
 
-        // close in next tick
-        (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
-          client.close();
-        });
-        return {
-          ok: false,
-          error,
-        };
+      // close in next tick
+      (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
+        client.close();
+      });
+      return { ok: false, error };
+    }
+
+    // Frames
+
+    /**
+     * The next frame with requests in it, or `null` once the connection has
+     * closed. Pings are answered along the way.
+     */
+    async function nextFrame(): Promise<Frame | null> {
+      let message: Message | null; // see "Keeping values collectable"
+      while (true) {
+        message = await messages.nextMessage();
+        if (message === null) {
+          return null;
+        }
+        const content = messageContent(message);
+        message = null;
+        switch (content.kind) {
+          case 'frame':
+            return content.frame;
+          case 'ping':
+            if (!opts.dangerouslyDisablePong) {
+              client.send('PONG');
+            }
+            break;
+          case 'pong':
+            // keepAlive listens for any message itself
+            break;
+          case 'unsupported':
+            sendOrReport(noRequest, () =>
+              connectionErrorReply(
+                new TRPCError({
+                  code: 'UNPROCESSABLE_CONTENT',
+                  message: 'Unexpected WebSocket message format',
+                }),
+              ),
+            );
+            break;
+        }
       }
     }
 
-    let ctx: Context | undefined = undefined;
+    /**
+     * Handles a frame: a request or a batch of them. What it throws is
+     * reported, so that it doesn't end the loop that reads frames.
+     */
+    function receiveFrame(frame: Frame, context: Promise<ContextResult>) {
+      const received = attempt(() => {
+        const decoded = decodeFrame(frame, frameDecoding);
+        switch (decoded.kind) {
+          case 'malformed':
+            sendOrReport(noRequest, () => connectionErrorReply(decoded.error));
+            return;
+          case 'oversized':
+            rejectOversizedBatch(decoded.batch);
+            return;
+          case 'requests':
+            for (const [batchIndex, msg] of decoded.requests.entries()) {
+              receiveRequest(msg, batchIndex, context);
+            }
+            return;
+        }
+      });
+      if (!received.ok) {
+        reportInternalError(noRequest, received.error);
+      }
+    }
 
     /**
-     * promise for initializing the context
-     *
-     * - the context promise will be created immediately on connection if no connectionParams are expected
-     * - if connection params are expected, they will be created once received
+     * Every request in the batch gets the error, as in a batched HTTP call,
+     * so that no client waits for a reply forever.
      */
-    let ctxPromise =
-      createURL(req).searchParams.get('connectionParams') === '1'
-        ? null
-        : createCtxPromise(() => null);
+    function rejectOversizedBatch(batch: unknown[]) {
+      const error = reportError(
+        noRequest,
+        new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Batch call exceeds maximum size`,
+        }),
+      );
+      const shape = connectionErrorShape(error);
+      const requests = requestsToReplyTo(batch);
+      if (requests.length === 0) {
+        sendOrReport(noRequest, () => ({ id: null, error: shape }));
+      }
+      for (const request of requests) {
+        sendOrReport(noRequest, () => ({ ...request, error: shape }));
+      }
+    }
 
-    async function handleRequest(
+    // Requests
+
+    /**
+     * Handles a request as soon as it's received: a stop or a duplicate id
+     * takes effect right away, and a subscription is registered before any
+     * `await`, so that a stop or a disconnect during its setup cancels it.
+     */
+    function receiveRequest(
       msg: TRPCClientOutgoingMessage,
       batchIndex: number,
-      ctxResult: Promise<ContextResult>,
+      context: Promise<ContextResult>,
     ) {
-      const { id, jsonrpc } = msg;
-
-      if (id === null) {
-        const error = getTRPCErrorFromUnknown(
-          new TRPCError({
-            code: 'PARSE_ERROR',
-            message: '`id` is required',
-          }),
-        );
-        callOnError({
-          error,
-          path: undefined,
-          type: 'unknown',
-          ctx,
-          req,
-          input: undefined,
+      if (msg.id === null) {
+        const error = new TRPCError({
+          code: 'PARSE_ERROR',
+          message: '`id` is required',
         });
-        respond({
-          id,
-          jsonrpc,
-          error: errorShape({
+        sendOrReport(noRequest, () =>
+          reportedErrorReply(
+            { ...noRequest, id: msg.id, jsonrpc: msg.jsonrpc },
             error,
-            type: 'unknown',
-            path: undefined,
-            input: undefined,
-          }),
-        });
+          ),
+        );
         return;
       }
       if (msg.method === 'subscription.stop') {
-        clientSubscriptions.get(id)?.abort();
+        subscriptions.stop(msg.id);
         return;
       }
-      const { path, lastEventId } = msg.params;
-      let { input } = msg.params;
-      const type = msg.method;
+      const request: ProcedureRequest = {
+        id: msg.id,
+        jsonrpc: msg.jsonrpc,
+        type: msg.method,
+        path: msg.params.path,
+        input: inputWithLastEventId(msg.params),
+        batchIndex,
+      };
 
-      if (lastEventId !== undefined) {
-        if (isObject(input)) {
-          input = {
-            ...input,
-            lastEventId: lastEventId,
-          };
-        } else {
-          input ??= {
-            lastEventId: lastEventId,
-          };
-        }
+      if (request.type !== 'subscription') {
+        void sendReplies(request, procedureReplies(request, context));
+        return;
       }
-      const abortController = new AbortController();
-      // `abort()` builds an AbortError with a stack trace even when the
-      // signal is already aborted, which is the common case on a stop.
-      const abort = () => {
-        if (!abortController.signal.aborted) {
-          abortController.abort();
-        }
-      };
-      const reportError = (cause: unknown) => {
-        const error = getTRPCErrorFromUnknown(cause);
-        callOnError({ error, path, type, ctx, req, input });
-        return error;
-      };
-      const respondWithError = (cause: unknown) => {
-        const error = reportError(cause);
-        respond({
-          id,
-          jsonrpc,
-          error: errorShape({ error, type, path, input }),
-        });
-      };
-
-      if (type === 'subscription' && clientSubscriptions.has(id)) {
-        // duplicate request ids for client
-        respondWithError(
-          new TRPCError({
-            message: `Duplicate id ${id}`,
-            code: 'BAD_REQUEST',
-          }),
+      const registration = subscriptions.register(request.id);
+      if (!registration.ok) {
+        sendOrReport(request, () =>
+          reportedErrorReply(request, registration.error),
         );
         return;
       }
+      void sendReplies(
+        request,
+        subscriptionReplies(request, registration.value, context),
+      );
+    }
 
-      const execute = async () => {
-        // Registered before any await so that a stop or a disconnect during
-        // context creation or the procedure call cancels the subscription.
-        // The id is freed once this has settled, after the iterator's
-        // disposal and right before the client is told it may reuse it.
-        using _subscription =
-          type === 'subscription'
-            ? registerSubscription(id, abortController)
-            : null;
-
-        const res = await ctxResult;
-        if (!res.ok) {
-          throw res.error;
-        }
-
-        if (abortController.signal.aborted) {
+    /**
+     * Sends a request's replies, telling the generator whether each went
+     * out. Nothing awaits it, so it never rejects: a reply that throws while
+     * it's built is reported to `onError`.
+     */
+    async function sendReplies(request: ProcedureRequest, replies: Replies) {
+      // see "Keeping values collectable"
+      let next: Result<IteratorResult<TRPCResponseMessage, void>> | null;
+      let sent = OK;
+      while (true) {
+        next = await settle(replies.next(sent));
+        if (!next.ok) {
+          reportInternalError(request, next.error);
           return;
         }
-
-        const result = await callTRPCProcedure({
-          router,
-          path,
-          getRawInput: async () => input,
-          ctx,
-          type,
-          signal: abortController.signal,
-          batchIndex,
-        });
-
-        const isIterableResult =
-          isAsyncIterable(result) || isObservable(result);
-
-        if (type !== 'subscription') {
-          if (isIterableResult) {
-            throw new TRPCError({
-              code: 'UNSUPPORTED_MEDIA_TYPE',
-              message: `Cannot return an async iterable or observable from a ${type} procedure with WebSockets`,
-            });
-          }
-          // send the value as data if the method is not a subscription
-          respond({
-            id,
-            jsonrpc,
-            result: {
-              type: 'data',
-              data: result,
-            },
-          });
+        if (next.value.done) {
           return;
         }
-
-        if (!isIterableResult) {
-          throw new TRPCError({
-            message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
-            code: 'INTERNAL_SERVER_ERROR',
-          });
-        }
-
-        const iterable = isObservable(result)
-          ? observableToAsyncIterable(result, abortController.signal)
-          : result;
-
-        // A failed iterator cleanup is reported to the server only: the
-        // client still gets `stopped`, so a subscription that completed or
-        // was stopped doesn't turn into a failed one.
-        if (abortController.signal.aborted) {
-          try {
-            // dispose the iterator without consuming it
-            await using _iterator = iteratorResource(iterable);
-          } catch (cause) {
-            reportError(cause);
-          }
-          return;
-        }
-
-        respond({
-          id,
-          jsonrpc,
-          result: {
-            type: 'started',
-          },
-        });
-
-        let ended = false;
-        try {
-          await using iterator = iteratorResource(iterable);
-          let completed = false;
-          // Disposed before the iterator, so cleanup that waits for
-          // cancellation is woken when iteration ends other than by `done`.
-          using _abortUnlessCompleted = makeResource({}, () => {
-            if (!completed) {
-              abort();
-            }
-          });
-
-          const abortPromise = new Promise<'abort'>((resolve) => {
-            abortController.signal.onabort = () => resolve('abort');
-          });
-          // We need those declarations outside the loop for garbage collection reasons. If they
-          // were declared inside, they would not be freed until the next value is present.
-          let next:
-            | null
-            | TRPCError
-            | Awaited<
-                typeof abortPromise | ReturnType<(typeof iterator)['next']>
-              >;
-          let result: null | TRPCResultMessage<unknown>['result'];
-
-          while (true) {
-            next = await Unpromise.race([
-              nextUnlessStopped(iterator, abortController.signal, (error) =>
-                callOnError({ error, path, type, ctx, req, input }),
-              ),
-              abortPromise,
-            ]);
-
-            if (next === 'abort') {
-              break;
-            }
-            if (next instanceof Error) {
-              // Report the error only after the iterator's disposal settles.
-              throw next;
-            }
-            if (next.done) {
-              completed = true;
-              break;
-            }
-
-            result = {
-              type: 'data',
-              data: next.value,
-            };
-
-            if (isTrackedEnvelope(next.value)) {
-              const [id, data] = next.value;
-              result.id = id;
-              result.data = {
-                id,
-                data,
-              };
-            }
-
-            respond({
-              id,
-              jsonrpc,
-              result,
-            });
-
-            // free up references for garbage collection
-            next = null;
-            result = null;
-          }
-          ended = true;
-        } catch (cause) {
-          abort();
-          if (ended) {
-            reportError(cause);
-          } else if (isSuppressedError(cause)) {
-            // the client gets the iteration error, the server both
-            respondWithError(cause.suppressed);
-            reportError(cause.error);
-          } else {
-            respondWithError(cause);
-          }
-        }
-      };
-
-      const outcome = await settle(execute());
-      if (!outcome.ok) {
-        const error = getTRPCErrorFromUnknown(outcome.error);
-        if (!isCancelledSetup(error, abortController.signal)) {
-          try {
-            respondWithError(error);
-          } catch (cause) {
-            // the error reply couldn't be encoded or sent
-            reportInternalError({
-              error: getTRPCErrorFromUnknown(cause),
-              path,
-              type,
-              ctx,
-              req,
-              input,
-            });
-            respondOrReport(() => ({ id, jsonrpc, error: fallbackErrorShape }));
-          }
-          return;
-        }
-      }
-      if (type === 'subscription') {
-        respond({ id, jsonrpc, result: { type: 'stopped' } });
+        sent = trySend(next.value.value);
+        next = null;
       }
     }
-    client.on('message', (rawData, isBinary) => {
-      // Handle PING/PONG as text regardless of encoder
-      if (!isBinary) {
-        // oxlint-disable-next-line typescript/no-base-to-string
-        const msgStr = rawData.toString();
-        if (msgStr === 'PONG') {
-          return;
-        }
-        if (msgStr === 'PING') {
-          if (!opts.dangerouslyDisablePong) {
-            client.send('PONG');
-          }
-          return;
-        }
-      }
 
-      // Convert rawData to a format our encoder accepts
-      // ws gives us Buffer for both text and binary frames
-      if (!Buffer.isBuffer(rawData)) {
+    /**
+     * Yields a request's final reply. Nothing can be done if it can't be
+     * sent, so that's reported.
+     */
+    async function* finalReply(
+      request: ProcedureRequest,
+      reply: TRPCResponseMessage,
+    ): Replies {
+      const sent = yield reply;
+      if (!sent.ok) {
+        reportInternalError(request, sent.error);
+      }
+    }
+
+    /**
+     * Yields the error reply that ends a request. If it can't be sent, the
+     * client gets the fallback error instead, so that it isn't left waiting.
+     */
+    async function* finalErrorReply(
+      request: ProcedureRequest,
+      cause: unknown,
+    ): Replies {
+      const sent = yield reportedErrorReply(request, cause);
+      if (!sent.ok) {
+        reportInternalError(request, sent.error);
+        yield* finalReply(request, {
+          id: request.id,
+          jsonrpc: request.jsonrpc,
+          error: fallbackErrorShape,
+        });
+      }
+    }
+
+    function callProcedure(
+      request: ProcedureRequest,
+      created: Context,
+      signal: AbortSignal,
+    ): Promise<Result<unknown>> {
+      return settle(
+        callTRPCProcedure({
+          router: opts.router,
+          path: request.path,
+          getRawInput: async () => request.input,
+          ctx: created,
+          type: request.type,
+          signal,
+          batchIndex: request.batchIndex,
+        }),
+      );
+    }
+
+    // Queries and mutations
+
+    /** The reply to a query or a mutation. */
+    async function* procedureReplies(
+      request: ProcedureRequest,
+      context: Promise<ContextResult>,
+    ): Replies {
+      const created = await context;
+      const result = created.ok
+        ? await callProcedure(request, created.value, neverAborted)
+        : created;
+      if (!result.ok) {
+        yield* finalErrorReply(request, result.error);
+        return;
+      }
+      if (isAsyncIterable(result.value) || isObservable(result.value)) {
         const error = new TRPCError({
-          code: 'UNPROCESSABLE_CONTENT',
-          message: 'Unexpected WebSocket message format',
+          code: 'UNSUPPORTED_MEDIA_TYPE',
+          message: `Cannot return an async iterable or observable from a ${request.type} procedure with WebSockets`,
         });
-        respondOrReport(() => ({
-          id: null,
-          error: errorShape({
-            error,
-            type: 'unknown',
-            path: undefined,
-            input: undefined,
+        yield* finalErrorReply(request, error);
+        return;
+      }
+      const sent = yield {
+        id: request.id,
+        jsonrpc: request.jsonrpc,
+        result: {
+          type: 'data',
+          data: result.value,
+        },
+      };
+      if (!sent.ok) {
+        yield* finalErrorReply(request, sent.error);
+      }
+    }
+
+    // Subscriptions
+
+    /**
+     * Calls a subscription's procedure for its iterable. One that arrives
+     * after a stop is disposed without being consumed.
+     */
+    async function startSubscription(
+      request: ProcedureRequest,
+      context: Promise<ContextResult>,
+      signal: AbortSignal,
+    ): Promise<SubscriptionStart> {
+      const created = await context;
+      if (created.ok && signal.aborted) {
+        return STOPPED;
+      }
+      const result = created.ok
+        ? await callProcedure(request, created.value, signal)
+        : created;
+      if (!result.ok) {
+        const error = getTRPCErrorFromUnknown(result.error);
+        return isCancelledSetup(error, signal)
+          ? STOPPED
+          : { kind: 'failed', error };
+      }
+      const iterable = isObservable(result.value)
+        ? observableToAsyncIterable(result.value, signal)
+        : isAsyncIterable(result.value)
+          ? result.value
+          : null;
+      if (iterable === null) {
+        return failed(
+          new TRPCError({
+            message: `Subscription ${request.path} did not return an observable or a AsyncGenerator`,
+            code: 'INTERNAL_SERVER_ERROR',
           }),
-        }));
-        return;
+        );
       }
-      const data: string | Uint8Array = isBinary
-        ? rawData
-        : rawData.toString('utf8');
-
-      if (!ctxPromise) {
-        // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
-        ctxPromise = createCtxPromise(() => {
-          let msg;
-          try {
-            msg = encoder.decode(data) as TRPCConnectionParamsMessage;
-
-            if (!isObject(msg)) {
-              throw new Error('Message was not an object');
-            }
-          } catch (cause) {
-            throw new TRPCError({
-              code: 'PARSE_ERROR',
-              message: `Malformed TRPCConnectionParamsMessage`,
-              cause,
-            });
-          }
-
-          const connectionParams = parseConnectionParamsFromUnknown(msg.data);
-
-          return connectionParams;
-        });
-        return;
-      }
-
-      const parsedMsgs = run(() => {
-        try {
-          const msgJSON: unknown = encoder.decode(data);
-          const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
-
-          if (
-            Array.isArray(msgJSON) &&
-            typeof opts.maxBatchSize === 'number' &&
-            msgs.length > opts.maxBatchSize
-          ) {
-            const error = new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Batch call exceeds maximum size`,
-            });
-            callOnError({
-              error,
-              path: undefined,
-              type: 'unknown',
-              ctx,
-              req,
-              input: undefined,
-            });
-            const shape = errorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-            });
-
-            // Checked before parsing so that no input is deserialized.
-            // Every request in the batch gets the error, as a batched HTTP
-            // call does, so that clients do not wait for a response forever.
-            let responded = false;
-            for (const raw of msgs) {
-              if (
-                isObject(raw) &&
-                raw['method'] !== 'subscription.stop' &&
-                (typeof raw['id'] === 'number' || typeof raw['id'] === 'string')
-              ) {
-                const id = raw['id'];
-                const jsonrpc = raw['jsonrpc'] === '2.0' ? '2.0' : undefined;
-                respondOrReport(() => ({ id, jsonrpc, error: shape }));
-                responded = true;
-              }
-            }
-            if (!responded) {
-              respondOrReport(() => ({ id: null, error: shape }));
-            }
-            return [];
-          }
-
-          return msgs.map((raw) => parseTRPCMessage(raw, transformer));
-        } catch (cause) {
-          const error = new TRPCError({
-            code: 'PARSE_ERROR',
-            cause,
-          });
-
-          respondOrReport(() => ({
-            id: null,
-            error: errorShape({
-              error,
-              type: 'unknown',
-              path: undefined,
-              input: undefined,
-            }),
-          }));
-
-          return [];
+      if (signal.aborted) {
+        const cleanup = await settle(
+          run(async () => {
+            await using _iterator = iteratorResource(iterable);
+          }),
+        );
+        if (!cleanup.ok) {
+          reportError(request, cleanup.error);
         }
-      });
-
-      for (const [index, msg] of parsedMsgs.entries()) {
-        handleRequest(msg, index, ctxPromise).catch(reportConnectionError);
+        return STOPPED;
       }
-    });
+      return { kind: 'started', iterable };
+    }
 
-    // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
-    // This line was introduced after the following error brought down production systems:
-    // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
-    // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
-    client.on('error', (cause) => {
-      callOnError({
-        ctx,
-        error: getTRPCErrorFromUnknown(cause),
-        input: undefined,
-        path: undefined,
-        type: 'unknown',
-        req,
-      });
-    });
+    /**
+     * A subscription's replies: `started`, its data, and how it ended.
+     *
+     * It owns the id until its last reply, which is sent only after its
+     * iterator's disposal has settled, so the client can reuse the id right
+     * away. A failed iterator cleanup goes to `onError` only: the client
+     * still gets `stopped`, so a subscription that completed or was stopped
+     * doesn't turn into a failed one.
+     */
+    async function* subscriptionReplies(
+      request: ProcedureRequest,
+      registration: SubscriptionRegistration,
+      context: Promise<ContextResult>,
+    ): Replies {
+      using subscription = registration;
+      const stopped: TRPCResponseMessage = {
+        id: request.id,
+        jsonrpc: request.jsonrpc,
+        result: { type: 'stopped' },
+      };
 
-    client.once('close', () => {
-      for (const sub of clientSubscriptions.values()) {
-        sub.abort();
+      const start = await startSubscription(
+        request,
+        context,
+        subscription.signal,
+      );
+      if (start.kind === 'stopped') {
+        yield* finalReply(request, stopped);
+        return;
       }
-      clientSubscriptions.clear();
-      abortController.abort();
-    });
-  };
+      if (start.kind === 'failed') {
+        yield* finalErrorReply(request, start.error);
+        return;
+      }
+
+      let sent = yield {
+        id: request.id,
+        jsonrpc: request.jsonrpc,
+        result: { type: 'started' },
+      };
+      const opened = attempt(() => iteratorResource(start.iterable));
+      if (!opened.ok) {
+        subscription.abort();
+        if (!sent.ok) {
+          reportError(request, sent.error);
+        }
+        yield* finalErrorReply(request, opened.error);
+        yield* finalReply(request, stopped);
+        return;
+      }
+      // Set by the loop. Only the iterator's disposal, which runs after it,
+      // can throw.
+      let end: SubscriptionEnd = STOPPED;
+      let cleanup = OK;
+      try {
+        await using iterator = opened.value;
+        // The subscription may have been stopped while `started` was sent.
+        using aborted = abortPromiseResource(subscription.signal);
+        const stop = aborted.promise.then(() => STOPPED);
+        // `Unpromise.race` rather than `Promise.race`: `stop` lives as long
+        // as the subscription, and `Promise.race` would add a reaction to it
+        // for every value.
+        const nextStep = () =>
+          Unpromise.race([
+            nextUnlessStopped(iterator, subscription.signal, (error) =>
+              reportError(request, error),
+            ),
+            stop,
+          ]);
+
+        let step: SubscriptionStep | null; // see "Keeping values collectable"
+        while (true) {
+          step = sent.ok ? await nextStep() : failed(sent.error);
+          if (step.kind !== 'data') {
+            break;
+          }
+          sent = yield {
+            id: request.id,
+            jsonrpc: request.jsonrpc,
+            result: dataResult(step.value),
+          };
+          step = null;
+        }
+        end = step;
+        if (end.kind !== 'completed') {
+          // before the iterator's disposal, so that a cleanup that waits for
+          // cancellation is woken
+          subscription.abort();
+        }
+      } catch (cause) {
+        // only the iterator's disposal throws
+        cleanup = { ok: false, error: cause };
+      }
+      if (!cleanup.ok) {
+        // a failed cleanup aborts even a completed subscription
+        subscription.abort();
+      }
+
+      if (end.kind === 'failed') {
+        yield* finalErrorReply(request, end.error);
+      }
+      if (!cleanup.ok) {
+        reportError(request, cleanup.error);
+      }
+      yield* finalReply(request, stopped);
+    }
+  }
 }
 
 /**
@@ -858,37 +1252,28 @@ export function handleKeepAlive(
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {
-  let timeout: NodeJS.Timeout | undefined = undefined;
-  let ping: NodeJS.Timeout | undefined = undefined;
-
-  const schedulePing = () => {
-    const scheduleTimeout = () => {
-      timeout = setTimeout(() => {
-        client.terminate();
-      }, pongWaitMs);
-    };
-    ping = setTimeout(() => {
+  void run(async () => {
+    while (true) {
+      const quiet = await nextActivity(client, pingMs);
+      if (quiet === 'close') {
+        return;
+      }
+      if (quiet === 'message') {
+        continue;
+      }
+      // `send` throws only while a socket is connecting, which a server's
+      // socket never is, so this loop never rejects.
       client.send('PING');
-
-      scheduleTimeout();
-    }, pingMs);
-  };
-
-  const onMessage = () => {
-    clearTimeout(ping);
-    clearTimeout(timeout);
-
-    schedulePing();
-  };
-
-  client.on('message', onMessage);
-
-  client.on('close', () => {
-    clearTimeout(ping);
-    clearTimeout(timeout);
+      const answer = await nextActivity(client, pongWaitMs);
+      if (answer === 'close') {
+        return;
+      }
+      if (answer === 'timeout') {
+        client.terminate();
+        return;
+      }
+    }
   });
-
-  schedulePing();
 }
 
 /**
