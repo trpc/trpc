@@ -41,11 +41,7 @@ function ErrorPage(props: {
         The site may have just been updated; reloading usually fixes it.
       </p>
       <div className="flex gap-2">
-        <button
-          className={cn(buttonVariants())}
-          onClick={reload}
-          type="button"
-        >
+        <button className={cn(buttonVariants())} onClick={reload} type="button">
           Reload
         </button>
         <Link className={cn(buttonVariants({ variant: 'outline' }))} to="/">
