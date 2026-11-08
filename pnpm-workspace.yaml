@@ -87,7 +87,7 @@ catalogs:
     '@types/react-dom': 19.1.1
     '@types/ws': 8.5.10
     '@vitejs/plugin-react': 6.1.2
-    arktype: 2.2.8
+    arktype: 2.2.9
     class-variance-authority: 0.7.1
     cors: 2.8.6
     date-fns: 4.4.0
