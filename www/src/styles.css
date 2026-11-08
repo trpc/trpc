@@ -456,6 +456,33 @@ html {
   line-height: 1.5;
 }
 
+/* A popup's type isn't inline code: one background for the whole popup. */
+.twoslash .twoslash-popup-code {
+  border-radius: 0;
+  background: transparent;
+}
+
+/* A `^?` line is its indent (`build/popup-docs.ts`), then the pinned type,
+   which shrinks to the room right of the indent and wraps, instead of
+   running past the block. */
+.twoslash .twoslash-query-line {
+  display: flex;
+  align-items: flex-start;
+}
+
+.twoslash .twoslash-query-indent {
+  flex: none;
+}
+
+.twoslash .twoslash-query-line .twoslash-popup-container {
+  min-width: 0;
+  margin-bottom: 1em;
+}
+
+.twoslash .twoslash-query-line .twoslash-popup-code pre {
+  white-space: pre-wrap;
+}
+
 /* A `^?` type ties the hover popup's z-index and comes later in the page, so
    it would cover the type of a name hovered above it. */
 .twoslash .twoslash-query-line .twoslash-popup-container {
@@ -491,6 +518,7 @@ html {
   color: var(--popover-foreground);
   font-family: var(--font-mono);
   font-size: 0.875em;
+  white-space: nowrap;
 }
 
 .twoslash .twoslash-popup-docs code::before,
