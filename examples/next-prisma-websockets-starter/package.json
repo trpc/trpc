@@ -46,7 +46,7 @@
     "clsx": "^2.0.0",
     "cookie": "^1.1.1",
     "lucide-react": "1.55.0",
-    "next": "^15.5.25",
+    "next": "^15.5.28",
     "next-auth": "npm:next-auth@^4.24.15",
     "postgres": "^3.4.4",
     "react": "^19.1.0",

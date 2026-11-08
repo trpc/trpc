@@ -368,7 +368,6 @@ test('zod default() mixed default object', async () => {
           foo: z.string(),
           bar: z.string().optional().default('barFoo'),
         })
-        .optional()
         .prefault({ foo: 'fooBar' }),
     )
     .query(({ input }) => {
@@ -415,7 +414,6 @@ test('zod default() defaults within object', async () => {
           foo: z.string().optional().default('defaultFoo'),
           bar: z.string().optional().default('defaultBar'),
         })
-        .optional()
         .prefault({}),
     )
     .query(({ input }) => {
