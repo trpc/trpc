@@ -106,3 +106,21 @@ test('keeps a token style whose value differs after a colon', () => {
     `<pre class="shiki" style="font-family:&#x22;a:b&#x22;"><span style="font-family:&#x22;a:c&#x22;">text</span></pre>`,
   );
 });
+
+test('keeps a token style whose quoted value differs after a semicolon', () => {
+  const tree: Root = {
+    type: 'root',
+    children: [
+      {
+        type: 'element',
+        tagName: 'pre',
+        properties: { class: 'shiki', style: 'font-family:"a;b",monospace' },
+        children: [span('font-family:"a;c",serif', 'text')],
+      },
+    ],
+  };
+  compactCode(tree);
+  expect(toHtml(tree)).toBe(
+    `<pre class="shiki" style="font-family:&#x22;a;b&#x22;,monospace"><span style="font-family:&#x22;a;c&#x22;,serif">text</span></pre>`,
+  );
+});

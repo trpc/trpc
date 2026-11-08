@@ -6,7 +6,9 @@ import { classNames } from './collapse.ts';
 /** A `style` attribute's custom properties, by name, lower-cased. */
 function shikiColors(node: Element) {
   const style = node.properties['style'];
-  if (typeof style !== 'string') {
+  // Shiki's colours are never quoted. A quoted value can hold a `;`, which
+  // splitting would cut, so a style with quotes is left as it is.
+  if (typeof style !== 'string' || /["']/.test(style)) {
     return undefined;
   }
   const colors = new Map<string, string>();
