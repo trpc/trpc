@@ -1,4 +1,5 @@
-import { Effect, Result } from 'effect';
+import { Effect, Layer, ManagedRuntime, Result } from 'effect';
+import { FetchHttpClient } from 'effect/http';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -178,5 +179,44 @@ describe('fetchAvatars', () => {
     expect(server.hits.filter((hit) => hit === '/0.png')).toHaveLength(1);
     expect(server.mostInFlight).toBeLessThanOrEqual(8);
     expect(server.mostInFlight).toBeGreaterThan(1);
+  });
+});
+
+describe('Avatars with a cache', () => {
+  const cachedAvatars = () =>
+    ManagedRuntime.make(
+      Avatars.layer({
+        cache: { capacity: 10, timeToLive: '1 hour' },
+        retries: 0,
+        timeout: '200 millis',
+      }).pipe(Layer.provide(FetchHttpClient.layer)),
+    );
+
+  it('fetches an avatar that loaded once across requests, and shares one under way', async () => {
+    await using server = await serveAvatars({
+      '/a.png': { ...png(), delay: 20 },
+    });
+    await using runtime = cachedAvatars();
+    const images = [server.url('/a.png')];
+    const [first, second] = await Promise.all([
+      runtime.runPromise(fetchAvatars(images)),
+      runtime.runPromise(fetchAvatars(images)),
+    ]);
+    const third = await runtime.runPromise(fetchAvatars(images));
+    expect(first.size).toBe(1);
+    expect(second).toEqual(first);
+    expect(third).toEqual(first);
+    expect(server.hits).toEqual(['/a.png']);
+  });
+
+  it("tries an avatar that didn't load again on the next request", async () => {
+    await using server = await serveAvatars({
+      '/a.png': [{ status: 503 }, png()],
+    });
+    await using runtime = cachedAvatars();
+    const images = [server.url('/a.png')];
+    expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(0);
+    expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(1);
+    expect(server.hits).toEqual(['/a.png', '/a.png']);
   });
 });

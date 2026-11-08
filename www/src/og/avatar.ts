@@ -9,10 +9,12 @@
  * SVG it can't size is not.
  */
 import {
+  Cache,
   Context,
   Data,
   type Duration,
   Effect,
+  Exit,
   Layer,
   Match,
   Option,
@@ -160,6 +162,16 @@ export interface AvatarsOptions {
   readonly timeout?: Duration.Input;
   /** How many times to try again after a failure that may pass. */
   readonly retries?: number;
+  /**
+   * Keeps each avatar that loaded for `timeToLive`, up to `capacity` of
+   * them, and shares a fetch already under way, so cards drawn one after
+   * another fetch the sponsors along their foot once. A failure isn't
+   * kept: the next card tries again.
+   */
+  readonly cache?: {
+    readonly capacity: number;
+    readonly timeToLive: Duration.Input;
+  };
 }
 
 /** Fetches an avatar as a `data:` URI satori can draw. */
@@ -208,22 +220,29 @@ export class Avatars extends Context.Service<
           }
           return `data:${contentType};base64,${bytes.toString('base64')}`;
         });
-        return Avatars.of({
-          fetch: (image) => {
-            const url = avatarUrl(image);
-            return once(url).pipe(
-              Effect.timeoutOrElse({
-                duration: options.timeout ?? '4 seconds',
-                orElse: () => Effect.fail(new AvatarTimeoutError({ url })),
-              }),
-              Effect.retry({
-                schedule: Schedule.exponential('100 millis'),
-                times: options.retries ?? 2,
-                while: mayPass,
-              }),
-            );
-          },
+        const fetch = (image: string) => {
+          const url = avatarUrl(image);
+          return once(url).pipe(
+            Effect.timeoutOrElse({
+              duration: options.timeout ?? '4 seconds',
+              orElse: () => Effect.fail(new AvatarTimeoutError({ url })),
+            }),
+            Effect.retry({
+              schedule: Schedule.exponential('100 millis'),
+              times: options.retries ?? 2,
+              while: mayPass,
+            }),
+          );
+        };
+        const { cache } = options;
+        if (cache === undefined) {
+          return Avatars.of({ fetch });
+        }
+        const cached = yield* Cache.makeWith(fetch, {
+          capacity: cache.capacity,
+          timeToLive: (exit) => (Exit.isSuccess(exit) ? cache.timeToLive : 0),
         });
+        return Avatars.of({ fetch: (image) => Cache.get(cached, image) });
       }),
     );
 }

@@ -7,7 +7,7 @@
  * that fails leaves its part out, and the card is cached briefly
  * (`cacheControl`), so the next request tries again.
  */
-import { Effect, Layer } from 'effect';
+import { Effect, Layer, ManagedRuntime } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 
 import { cardFooter } from '~/sponsors.ts';
@@ -120,24 +120,30 @@ export const live = Effect.fn('live')(function* (
 
 /**
  * A card is drawn while a crawler waits for it, so a try at an avatar gets
- * 3 seconds and one more chance, not the sponsor sync's patience.
+ * 3 seconds and one more chance, not the sponsor sync's patience. Every
+ * card but a post's draws the same sponsors along its foot, so the server
+ * keeps the avatars that loaded for an hour, which a crawler fetching a
+ * page's card after another's, or several at once, draws without
+ * fetching them again. The cards' version changes daily, so a new avatar
+ * shows from the next day's cards, as it would without this.
  */
-const onRequest = Avatars.layer({ retries: 1, timeout: '3 seconds' }).pipe(
-  Layer.provide(FetchHttpClient.layer),
+const onRequest = ManagedRuntime.make(
+  Avatars.layer({
+    cache: { capacity: 1000, timeToLive: '1 hour' },
+    retries: 1,
+    timeout: '3 seconds',
+  }).pipe(Layer.provide(FetchHttpClient.layer)),
 );
 
 /** What `card` shows live, for `routes/og.$.ts`. */
-export const fetchLive = (card: OgCard) =>
-  Effect.runPromise(live(card).pipe(Effect.provide(onRequest)));
+export const fetchLive = (card: OgCard) => onRequest.runPromise(live(card));
 
 /**
  * The avatars of `images` that load, by URL, for the sponsor cloud
  * (`sponsor-cloud.ts`): all at once, as a card's.
  */
 export const fetchCloudAvatars = (images: ReadonlyArray<string>) =>
-  Effect.runPromise(
-    fetchAvatars(images, 'unbounded').pipe(Effect.provide(onRequest)),
-  );
+  onRequest.runPromise(fetchAvatars(images, 'unbounded'));
 
 /**
  * How long `card`'s image, at the current version, is kept: ten minutes
