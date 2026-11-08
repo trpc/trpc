@@ -17,7 +17,7 @@
     "arktype": "^2.0.1",
     "dataloader": "^2.2.2",
     "devalue": "catalog:",
-    "effect": "3.22.2",
+    "effect": "3.22.4",
     "fastify": "catalog:",
     "fastify-plugin": "catalog:",
     "jsdom": "catalog:",
