@@ -8,7 +8,7 @@ parent: "client/tanstack-react-query"
 order: 53
 ---
 
-Handles help you avoid request waterfalls. When a component reads the route's params or search params and starts its own query, that query can only start once the component has rendered. A child it renders only after that query loads starts its own query later still. With handles, the loader reads the URL once, starts every query the page needs up front, and passes each component a typed handle as a prop.
+Handles help you avoid request waterfalls. When a component reads the route's params or search params and starts its own query, that query can only start once the component has rendered. A child it renders only after that query loads starts its own query later still. With handles, the loader reads the URL once, starts every query whose input comes from it up front, and passes each component a typed handle as a prop. A query that needs another query's result still waits for it: see [Dependent queries](#dependent-queries).
 
 A **handle** is a small, serializable reference to a query: its key and input, but no data. You load it in a route loader, a server component or an event handler. The component reads the query from it, fully typed, without naming the procedure or repeating its input.
 
@@ -985,6 +985,7 @@ export function Comments(props: {
 
 - While the input matches the handle's, `infiniteQueryOptions` returns the same query key, so the first render reads the loader's cache entry instead of fetching again. For a query handle, use `trpc.x.queryOptions({ ...handle.input, term })` the same way.
 - A new term's query starts when the component renders with it, so its first page waits for that render. `useDeferredValue` keeps the previous results on screen while it loads.
+- Render `<Comments key={postId} … />`, so moving to another post resets the term to the new handle's.
 
 ## Request waterfalls {#waterfalls}
 
