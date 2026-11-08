@@ -2595,11 +2595,11 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
       zod:
-        specifier: npm:zod@^3.0.0
-        version: 3.25.76
+        specifier: npm:zod@^4.0.0
+        version: 4.6.7
       zod-form-data:
         specifier: npm:zod-form-data@^2.0.1
-        version: 2.0.8(zod@3.25.76)
+        version: 2.0.8(zod@4.6.7)
 
   packages/server:
     devDependencies:
@@ -37135,10 +37135,10 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.3.0
 
-  zod-form-data@2.0.8(zod@3.25.76):
+  zod-form-data@2.0.8(zod@4.6.7):
     dependencies:
       '@rvf/set-get': 7.0.1
-      zod: 3.25.76
+      zod: 4.6.7
 
   zod-form-data@3.0.1(zod@4.6.7):
     dependencies:
