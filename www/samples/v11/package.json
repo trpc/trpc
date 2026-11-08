@@ -24,7 +24,7 @@
     "astro": "7.4.0",
     "cors": "catalog:www",
     "devalue": "catalog:",
-    "effect": "3.22.2",
+    "effect": "3.22.4",
     "event-source-polyfill": "catalog:www",
     "express": "catalog:www",
     "fastify": "catalog:www",
