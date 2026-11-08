@@ -213,12 +213,19 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
 
+    /** Releases the id after cleanup, cancelling closed-socket work on every exit. */
     function registerSubscription(
       id: number | string,
       subscription: AbortController,
     ) {
       clientSubscriptions.set(id, subscription);
       return makeResource({}, () => {
+        if (
+          client.readyState !== WEBSOCKET_OPEN &&
+          !subscription.signal.aborted
+        ) {
+          subscription.abort();
+        }
         clientSubscriptions.delete(id);
       });
     }
@@ -515,7 +522,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           abortController.signal.aborted ||
           (type === 'subscription' && client.readyState !== WEBSOCKET_OPEN)
         ) {
-          abort();
           return;
         }
 

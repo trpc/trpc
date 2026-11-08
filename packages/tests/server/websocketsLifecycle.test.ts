@@ -221,6 +221,40 @@ test('a closing socket never subscribes to an observable returned by pending adm
   expect(sent).not.toHaveBeenCalled();
 });
 
+test('a closing socket aborts signal-owned work when pending admission rejects', async () => {
+  const entered = createDeferred<AbortSignal>();
+  const admission = createDeferred<AsyncIterable<unknown>>();
+  const onError = vi.fn();
+  const t = initTRPC.create();
+  const router = t.router({
+    pending: t.procedure.subscription(({ signal }) => {
+      assert(signal);
+      entered.resolve(signal);
+      return admission.promise;
+    }),
+  });
+  await using ctx = await connectionResource({ router, onError });
+  await ctx.send(subscribe('pending'));
+  const signal = await entered.promise;
+
+  ctx.client.pause();
+  using _resume = makeResource({}, () => ctx.client.resume());
+  const closed = vi.fn();
+  ctx.serverSocket.once('close', closed);
+  const sent = vi.spyOn(ctx.serverSocket, 'send');
+  ctx.serverSocket.close();
+  expect(ctx.serverSocket.readyState).toBe(WebSocket.CLOSING);
+  admission.reject(new Error('admission failed'));
+
+  await new Promise<void>(setImmediate);
+  expect(closed).not.toHaveBeenCalled();
+  expect(signal.aborted).toBe(true);
+  expect(onError.mock.calls).toMatchObject([
+    [{ error: { message: 'admission failed' } }],
+  ]);
+  expect(sent).not.toHaveBeenCalled();
+});
+
 test.each(['query', 'mutation'] as const)(
   'a closing socket still runs an accepted %s after context creation',
   async (type) => {
