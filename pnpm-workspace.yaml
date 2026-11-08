@@ -106,4 +106,4 @@ catalogs:
     typescript: 5.9.2
     ws: 8.21.3
     yup: 1.7.1
-    zod: 4.6.6
+    zod: 4.6.7
