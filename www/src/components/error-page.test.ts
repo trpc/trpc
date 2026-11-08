@@ -12,6 +12,8 @@ import { act, createElement, Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';
 
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
+
 import { errorOptions } from './error-page.tsx';
 
 declare global {
@@ -75,14 +77,11 @@ async function renderThrowing(error: unknown, reload: () => void) {
   await vi.waitFor(() => {
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
   });
-  return {
-    container,
-    [Symbol.asyncDispose]: async () => {
-      await act(async () => {
-        root.unmount();
-      });
-    },
-  };
+  return makeAsyncResource({ container }, async () => {
+    await act(async () => {
+      root.unmount();
+    });
+  });
 }
 
 test("a route that throws keeps the site's shell and the page's title", async () => {

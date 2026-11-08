@@ -39,10 +39,10 @@ const loading = new Map<DemoName, Promise<Demo>>();
 export function withStatus<T>(promise: Promise<T>) {
   promise.then(
     (value) => {
-      Object.assign(promise, { status: 'fulfilled', value });
+      void Object.assign(promise, { status: 'fulfilled', value });
     },
     (reason: unknown) => {
-      Object.assign(promise, { reason, status: 'rejected' });
+      void Object.assign(promise, { reason, status: 'rejected' });
     },
   );
   return promise;
