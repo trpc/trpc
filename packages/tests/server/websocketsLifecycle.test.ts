@@ -12,6 +12,7 @@ import {
   createDeferred,
   isObject,
   makeAsyncResource,
+  makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { RawData } from 'ws';
 import WebSocket, { WebSocketServer } from 'ws';
@@ -82,9 +83,12 @@ async function connectionResource(
     client.once('open', resolve);
     client.once('error', reject);
   });
+  const [serverSocket] = wss.clients;
+  assert(serverSocket);
   return makeAsyncResource(
     {
       client,
+      serverSocket,
       messages,
       async send(message: TRPCClientOutgoingMessage) {
         const count = received;
@@ -105,6 +109,75 @@ async function connectionResource(
 function subscribe(path: string): TRPCClientOutgoingMessage {
   return { id: 1, method: 'subscription', params: { path, input: null } };
 }
+
+test('a closing socket does not admit a subscription after context creation', async () => {
+  const context = createDeferred<object>();
+  const next = vi.fn(() => Promise.resolve(doneResult()));
+  const returned = vi.fn(() => Promise.resolve(doneResult()));
+  const resolver = vi.fn(() => ({
+    [Symbol.asyncIterator]: () => ({ next, return: returned }),
+  }));
+  const t = initTRPC.create();
+  const router = t.router({ pending: t.procedure.subscription(resolver) });
+  await using ctx = await connectionResource({
+    router,
+    createContext: () => context.promise,
+  });
+  await ctx.send(subscribe('pending'));
+
+  // Hold the closing handshake so readyState changes before the close event
+  // can abort the subscription. No timer controls this race.
+  ctx.client.pause();
+  using _resume = makeResource({}, () => ctx.client.resume());
+  const closed = vi.fn();
+  ctx.serverSocket.once('close', closed);
+  const sent = vi.spyOn(ctx.serverSocket, 'send');
+  ctx.serverSocket.close();
+  expect(ctx.serverSocket.readyState).toBe(WebSocket.CLOSING);
+  context.resolve({});
+
+  // After this event-loop turn, context resolution and procedure admission
+  // have drained their microtasks; the paused peer still cannot reply.
+  await new Promise<void>(setImmediate);
+  expect(closed).not.toHaveBeenCalled();
+  expect(resolver).not.toHaveBeenCalled();
+  expect(next).not.toHaveBeenCalled();
+  expect(sent).not.toHaveBeenCalled();
+});
+
+test('a closing socket disposes a subscription returned by pending admission without starting it', async () => {
+  const entered = createDeferred();
+  const admission = createDeferred<AsyncIterable<unknown>>();
+  const next = vi.fn(() => Promise.resolve(doneResult()));
+  const returned = vi.fn(() => Promise.resolve(doneResult()));
+  const t = initTRPC.create();
+  const router = t.router({
+    pending: t.procedure.subscription(() => {
+      entered.resolve();
+      return admission.promise;
+    }),
+  });
+  await using ctx = await connectionResource({ router });
+  await ctx.send(subscribe('pending'));
+  await entered.promise;
+
+  ctx.client.pause();
+  using _resume = makeResource({}, () => ctx.client.resume());
+  const closed = vi.fn();
+  ctx.serverSocket.once('close', closed);
+  const sent = vi.spyOn(ctx.serverSocket, 'send');
+  ctx.serverSocket.close();
+  expect(ctx.serverSocket.readyState).toBe(WebSocket.CLOSING);
+  admission.resolve({
+    [Symbol.asyncIterator]: () => ({ next, return: returned }),
+  });
+
+  await new Promise<void>(setImmediate);
+  expect(closed).not.toHaveBeenCalled();
+  expect(returned).toHaveBeenCalledOnce();
+  expect(next).not.toHaveBeenCalled();
+  expect(sent).not.toHaveBeenCalled();
+});
 
 test('wsLink unsubscribing during middleware never starts the resolver', async () => {
   const entered = createDeferred();

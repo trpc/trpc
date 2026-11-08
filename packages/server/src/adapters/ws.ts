@@ -229,6 +229,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     function respond(untransformedJSON: TRPCResponseMessage) {
+      if (client.readyState !== WEBSOCKET_OPEN) return;
       client.send(
         encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
@@ -507,7 +508,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           throw res.error;
         }
 
-        if (abortController.signal.aborted) {
+        if (
+          abortController.signal.aborted ||
+          client.readyState !== WEBSOCKET_OPEN
+        ) {
           return;
         }
 
@@ -557,7 +561,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         // A failed iterator cleanup is reported to the server only: the
         // client still gets `stopped`, so a subscription that completed or
         // was stopped doesn't turn into a failed one.
-        if (abortController.signal.aborted) {
+        if (
+          abortController.signal.aborted ||
+          client.readyState !== WEBSOCKET_OPEN
+        ) {
           try {
             // dispose the iterator without consuming it
             await using _iterator = iteratorResource(iterable);
