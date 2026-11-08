@@ -104,3 +104,16 @@ test("a reload's leftover mark doesn't stop a later visit's reload", async () =>
   });
   vi.restoreAllMocks();
 });
+
+test('without navigation timing, a mark stops a second reload', async () => {
+  const offline = new Error('offline');
+  registerPages({ 'pages/untimed.md': () => Promise.reject(offline) });
+  sessionStorage.setItem('trpc-docs:reloaded-for:pages/untimed.md', '');
+  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([]);
+  const reload = vi.fn<() => void>();
+  await expect(
+    hydratePages({ pages: ['pages/untimed.md'] }, reload),
+  ).rejects.toBe(offline);
+  expect(reload).not.toHaveBeenCalled();
+  vi.restoreAllMocks();
+});

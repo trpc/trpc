@@ -87,11 +87,13 @@ export function dehydratePages(router: {
 
 const reloadedKey = (key: string) => `trpc-docs:reloaded-for:${key}`;
 
-/** Whether the browser loaded this page by reloading it. */
+/**
+ * Whether the browser loaded this page by reloading it: unknown where it
+ * doesn't say (navigation timing off).
+ */
 function isReload() {
-  return performance
-    .getEntriesByType('navigation')
-    .some((entry) => 'type' in entry && entry.type === 'reload');
+  const entry = performance.getEntriesByType('navigation')[0];
+  return entry && 'type' in entry ? entry.type === 'reload' : undefined;
 }
 
 /**
@@ -103,7 +105,8 @@ function reloadedFor(key: string) {
   try {
     const marked = sessionStorage.getItem(reloadedKey(key)) !== null;
     sessionStorage.removeItem(reloadedKey(key));
-    return marked && isReload();
+    // Not knowing, a mark means this is the reload, so it never loops.
+    return marked && (isReload() ?? true);
   } catch {
     // Storage is off (a private window): never reload, so never loop.
     return true;
