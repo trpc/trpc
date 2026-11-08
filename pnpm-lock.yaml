@@ -490,11 +490,11 @@ importers:
         specifier: 1.70.0
         version: 1.70.0(@types/react@19.3.0)(react@19.3.1)
       next:
-        specifier: ^16.4.5
-        version: 16.4.5(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^15.5.29
+        version: 15.5.29(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       next-auth:
         specifier: 5.0.0-beta.32
-        version: 5.0.0-beta.32(next@16.4.5(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+        version: 5.0.0-beta.32(next@15.5.29(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -3239,14 +3239,14 @@ importers:
         specifier: 'catalog:'
         version: 24.19.2
       typedoc:
-        specifier: 0.28.20
-        version: 0.28.20(typescript@5.9.3)
+        specifier: 0.27.9
+        version: 0.27.9(typescript@5.9.3)
       typedoc-docusaurus-theme:
         specifier: 1.4.3
-        version: 1.4.3(typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@5.9.3)))(typedoc@0.28.20(typescript@5.9.3))
+        version: 1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3)))(typedoc@0.27.9(typescript@5.9.3))
       typedoc-plugin-markdown:
-        specifier: 4.14.1
-        version: 4.14.1(typedoc@0.28.20(typescript@5.9.3))
+        specifier: 4.4.2
+        version: 4.4.2(typedoc@0.27.9(typescript@5.9.3))
       typescript:
         specifier: catalog:www
         version: 5.9.3
@@ -5628,8 +5628,8 @@ packages:
   '@fontsource/inter@5.3.0':
     resolution: {integrity: sha512-RofMylZmjlJEfELXeNHFWBRcSs75rGU/6bV2S2jfnvv/3rPXPGe0LgUJTklcHZ9lM4OZmAVFhcJPnACfb91A3g==}
 
-  '@gerrit0/mini-shiki@3.23.0':
-    resolution: {integrity: sha512-bEMORlG0cqdjVyCEuU0cDQbORWX+kYCeo0kV1lbxF5bt4r7SID2l9bqsxJEM0zndaxpOUT7riCyIVEuqq/Ynxg==}
+  '@gerrit0/mini-shiki@1.27.2':
+    resolution: {integrity: sha512-GeWyHz8ao2gBiUW4OJnQDxXQnFgZQwwQk05t/CVVgNBN7/rK8XZ7xY6YhLVv9tH3VppWWmr9DCl3MwemB/i+Og==}
 
   '@giscus/react@3.1.0':
     resolution: {integrity: sha512-0TCO2TvL43+oOdyVVGHDItwxD1UMKP2ZYpT6gXmhFOqfAJtZxTzJ9hkn34iAF/b6YzyJ4Um89QIt9z/ajmAEeg==}
@@ -8572,8 +8572,8 @@ packages:
     resolution: {integrity: sha512-K0oqxFoL+kEMdz89mHLFO15Tsbv3kFZ6WR1cXZKMvLSc+oqaM00A6pyga1qSeXB22dP0tTiSApRcGBaKWsEccg==}
     engines: {node: '>=20'}
 
-  '@shikijs/engine-oniguruma@3.23.0':
-    resolution: {integrity: sha512-1nWINwKXxKKLqPibT5f4pAFLej9oZzQTsby8942OTlsJzOBZ0MWKiwzMsd+jhzu8YPCHAswGnnN1YtQfirL35g==}
+  '@shikijs/engine-oniguruma@1.29.2':
+    resolution: {integrity: sha512-7iiOx3SG8+g1MnlzZVDYiaeHe7Ez2Kf2HrJzdmGwkRisT7r4rak0e655AcM/tF9JG/kg5fMNYlLLKglbN7gBqA==}
 
   '@shikijs/engine-oniguruma@4.5.0':
     resolution: {integrity: sha512-dKVmbJecVdB9recl8a/CU4jdpNXyjJQrIcesIkpS70s5HS02ohpnCSpMUbotPnEUzbAcLQ+S4hwZYbkBBiTcJw==}
@@ -8582,9 +8582,6 @@ packages:
   '@shikijs/engine-oniguruma@4.6.0':
     resolution: {integrity: sha512-aggd6Q7SuJOXNnsUbfG2XesxBJKBMAw/PDTUo9PyRjMaaJJ2dNrI+q0C+25ARXAK9yLHAlwxc9oRT2u68YKZ7w==}
     engines: {node: '>=20'}
-
-  '@shikijs/langs@3.23.0':
-    resolution: {integrity: sha512-2Ep4W3Re5aB1/62RSYQInK9mM3HsLeB91cHqznAJMuylqjzNVAVCMnNWRHFtcNHXsoNRayP9z1qj4Sq3nMqYXg==}
 
   '@shikijs/langs@4.5.0':
     resolution: {integrity: sha512-wwBTqwduXSz0X4v9Qa2EWeFaYJEw1clCncWjoRNQRbVDu3SPRTRWucnouYapKj3b8Q+sk/41Vbc4B5c8nuYzLA==}
@@ -8606,9 +8603,6 @@ packages:
     resolution: {integrity: sha512-qv3mGfYJuy+TW6UUyC2QrYSEmTxJNGXZ/NmCEsyH0NHfJIOYGvpWm0kNu6P2Ec14jmGwwTfVLMta/FZtY+MrJQ==}
     engines: {node: '>=20'}
 
-  '@shikijs/themes@3.23.0':
-    resolution: {integrity: sha512-5qySYa1ZgAT18HR/ypENL9cUSGOeI2x+4IvYJu4JgVJdizn6kG4ia5Q1jDEOi7gTbN4RbuYtmHh0W3eccOrjMA==}
-
   '@shikijs/themes@4.5.0':
     resolution: {integrity: sha512-zGb87H3UBbpuI4yoh5UguB1XbU+2BDU3kflM7UfZ+Cy2hWo9lBtqjSVK20gmLY6ukYl040hAypGXMgud9vul8Q==}
     engines: {node: '>=20'}
@@ -8623,8 +8617,8 @@ packages:
     peerDependencies:
       typescript: '>=5.5.0'
 
-  '@shikijs/types@3.23.0':
-    resolution: {integrity: sha512-3JZ5HXOZfYjsYSk0yPwBrkupyYSLpAE26Qc0HLghhZNGTZg/SKxXIIgoxOpmmeQP0RRSDJTk1/vPfw9tbw+jSQ==}
+  '@shikijs/types@1.29.2':
+    resolution: {integrity: sha512-VJjK0eIijTZf0QSTODEXCqinjBn0joAHQ+aPSBzrv4O2d/QSbsMw+ZeSRx03kV34Hy7NzUvV/7NqfYGRLrASmw==}
 
   '@shikijs/types@4.5.0':
     resolution: {integrity: sha512-drtPrtD8N0DENyD2cyt6Ajy+IWsiCLgMxODwLTpvH1UsN6a9jf90tNTPjqwHvA+0Lzu9e0txk8DjfqH1p9UJRw==}
@@ -16743,18 +16737,18 @@ packages:
       typedoc: 0.28.x
       typedoc-plugin-markdown: '>=4.11.0'
 
-  typedoc-plugin-markdown@4.14.1:
-    resolution: {integrity: sha512-24XX0oqyBsjBIBNoSH4wbgQkouci/CmgmO1ZBSaVkrcflqXFL2PQ5zFOpkz+Ewow5xQ3q2You+wrcmilNepRKg==}
+  typedoc-plugin-markdown@4.4.2:
+    resolution: {integrity: sha512-kJVkU2Wd+AXQpyL6DlYXXRrfNrHrEIUgiABWH8Z+2Lz5Sq6an4dQ/hfvP75bbokjNDUskOdFlEEm/0fSVyC7eg==}
     engines: {node: '>= 18'}
     peerDependencies:
-      typedoc: 0.28.x
+      typedoc: 0.27.x
 
-  typedoc@0.28.20:
-    resolution: {integrity: sha512-uSKqkh8Cr48vllnEy+jdaAgOeR6Y+QCBW7usgUsKj7gJEfR7stw9U/fE49LBnj2tPRKPY0c0EBJSWe9Appmplg==}
-    engines: {node: '>= 18', pnpm: '>= 10'}
+  typedoc@0.27.9:
+    resolution: {integrity: sha512-/z585740YHURLl9DN2jCWe6OW7zKYm6VoQ93H0sxZ1cwHQEQrUn5BJrEnkWhfzUdyO+BLGjnKUZ9iz9hKloFDw==}
+    engines: {node: '>= 18'}
     hasBin: true
     peerDependencies:
-      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x || 5.9.x || 6.0.x
+      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x
 
   types-ramda@0.30.1:
     resolution: {integrity: sha512-1HTsf5/QVRmLzcGfldPFvkVsAdi1db1BBKzi7iW3KBUlOICg/nKnFS+jGqDJS3YD8VsWbAh7JiHeBvbsw8RPxA==}
@@ -21127,12 +21121,10 @@ snapshots:
 
   '@fontsource/inter@5.3.0': {}
 
-  '@gerrit0/mini-shiki@3.23.0':
+  '@gerrit0/mini-shiki@1.27.2':
     dependencies:
-      '@shikijs/engine-oniguruma': 3.23.0
-      '@shikijs/langs': 3.23.0
-      '@shikijs/themes': 3.23.0
-      '@shikijs/types': 3.23.0
+      '@shikijs/engine-oniguruma': 1.29.2
+      '@shikijs/types': 1.29.2
       '@shikijs/vscode-textmate': 10.1.0
 
   '@giscus/react@3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
@@ -24034,9 +24026,9 @@ snapshots:
       '@shikijs/vscode-textmate': 10.1.0
       oniguruma-to-es: 4.3.6
 
-  '@shikijs/engine-oniguruma@3.23.0':
+  '@shikijs/engine-oniguruma@1.29.2':
     dependencies:
-      '@shikijs/types': 3.23.0
+      '@shikijs/types': 1.29.2
       '@shikijs/vscode-textmate': 10.1.0
 
   '@shikijs/engine-oniguruma@4.5.0':
@@ -24048,10 +24040,6 @@ snapshots:
     dependencies:
       '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
-
-  '@shikijs/langs@3.23.0':
-    dependencies:
-      '@shikijs/types': 3.23.0
 
   '@shikijs/langs@4.5.0':
     dependencies:
@@ -24082,10 +24070,6 @@ snapshots:
       unified: 11.0.5
       unist-util-visit: 5.2.0
 
-  '@shikijs/themes@3.23.0':
-    dependencies:
-      '@shikijs/types': 3.23.0
-
   '@shikijs/themes@4.5.0':
     dependencies:
       '@shikijs/types': 4.5.0
@@ -24103,7 +24087,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@shikijs/types@3.23.0':
+  '@shikijs/types@1.29.2':
     dependencies:
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
@@ -31266,10 +31250,10 @@ snapshots:
       react-dom: 19.3.1(react@19.3.1)
       uuid: 11.1.1
 
-  next-auth@5.0.0-beta.32(next@16.4.5(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1):
+  next-auth@5.0.0-beta.32(next@15.5.29(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1):
     dependencies:
       '@auth/core': 0.41.3
-      next: 16.4.5(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      next: 15.5.29(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react: 19.3.1
 
   next-themes@0.4.6(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
@@ -31351,6 +31335,32 @@ snapshots:
       '@next/swc-win32-x64-msvc': 15.5.29
       '@opentelemetry/api': 1.10.0
       '@playwright/test': 1.51.1
+      sharp: 0.35.5(@types/node@24.19.2)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+
+  next@15.5.29(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+    dependencies:
+      '@next/env': 15.5.29
+      '@swc/helpers': 0.5.15
+      caniuse-lite: 1.0.30001823
+      postcss: 8.4.31
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+      styled-jsx: 5.1.6(@babel/core@7.29.7(supports-color@10.0.0))(react@19.3.1)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 15.5.29
+      '@next/swc-darwin-x64': 15.5.29
+      '@next/swc-linux-arm64-gnu': 15.5.29
+      '@next/swc-linux-arm64-musl': 15.5.29
+      '@next/swc-linux-x64-gnu': 15.5.29
+      '@next/swc-linux-x64-musl': 15.5.29
+      '@next/swc-win32-arm64-msvc': 15.5.29
+      '@next/swc-win32-x64-msvc': 15.5.29
+      '@opentelemetry/api': 1.10.0
+      '@playwright/test': 1.65.0
       sharp: 0.35.5(@types/node@24.19.2)
     transitivePeerDependencies:
       - '@babel/core'
@@ -31475,33 +31485,6 @@ snapshots:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       styled-jsx: 5.1.6(@babel/core@7.27.4(supports-color@10.0.0))(react@19.3.1)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.4.5
-      '@next/swc-darwin-x64': 16.4.5
-      '@next/swc-linux-arm64-gnu': 16.4.5
-      '@next/swc-linux-arm64-musl': 16.4.5
-      '@next/swc-linux-x64-gnu': 16.4.5
-      '@next/swc-linux-x64-musl': 16.4.5
-      '@next/swc-win32-arm64-msvc': 16.4.5
-      '@next/swc-win32-x64-msvc': 16.4.5
-      '@opentelemetry/api': 1.10.0
-      '@playwright/test': 1.65.0
-      sharp: 0.35.5(@types/node@24.19.2)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - babel-plugin-macros
-
-  next@16.4.5(@babel/core@7.29.7(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.0)(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
-    dependencies:
-      '@next/env': 16.4.5
-      '@swc/helpers': 0.5.23
-      baseline-browser-mapping: 2.11.35
-      caniuse-lite: 1.0.30001823
-      postcss: 8.5.23
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
-      styled-jsx: 5.1.6(@babel/core@7.29.7(supports-color@10.0.0))(react@19.3.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.4.5
       '@next/swc-darwin-x64': 16.4.5
@@ -34877,21 +34860,21 @@ snapshots:
       is-typed-array: 1.1.13
       possible-typed-array-names: 1.0.0
 
-  typedoc-docusaurus-theme@1.4.3(typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@5.9.3)))(typedoc@0.28.20(typescript@5.9.3)):
+  typedoc-docusaurus-theme@1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3)))(typedoc@0.27.9(typescript@5.9.3)):
     dependencies:
-      typedoc: 0.28.20(typescript@5.9.3)
-      typedoc-plugin-markdown: 4.14.1(typedoc@0.28.20(typescript@5.9.3))
+      typedoc: 0.27.9(typescript@5.9.3)
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.3))
 
-  typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@5.9.3)):
+  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3)):
     dependencies:
-      typedoc: 0.28.20(typescript@5.9.3)
+      typedoc: 0.27.9(typescript@5.9.3)
 
-  typedoc@0.28.20(typescript@5.9.3):
+  typedoc@0.27.9(typescript@5.9.3):
     dependencies:
-      '@gerrit0/mini-shiki': 3.23.0
+      '@gerrit0/mini-shiki': 1.27.2
       lunr: 2.3.9
       markdown-it: 14.3.3
-      minimatch: 10.2.6
+      minimatch: 9.0.5
       typescript: 5.9.3
       yaml: 2.9.1
 
