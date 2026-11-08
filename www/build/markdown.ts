@@ -37,6 +37,7 @@ import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
 import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
+import { takePopups } from './lazy-popups.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
 import {
@@ -60,6 +61,11 @@ export interface RenderedMarkdown {
   readonly headings: ReadonlyArray<DocHeading>;
   readonly html: string;
   readonly links: ReadonlyArray<DocLink>;
+  /**
+   * The hover popups' content, which `html` leaves out: each popup's
+   * container has its index here (`data-popup`). See {@link takePopups}.
+   */
+  readonly popups: ReadonlyArray<string>;
   /** Each `twoslash` block's `// ^?` types, in order. */
   readonly typeQueries: ReadonlyArray<ReadonlyArray<string>>;
 }
@@ -1091,11 +1097,13 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
     catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
     try: async () => processor.run(processor.parse(markdown)),
   }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
+  const popups = takePopups(tree);
   const rendered: RenderedMarkdown = {
     anchors,
     headings,
     html: toHtml(tree),
     links,
+    popups,
     typeQueries,
   };
   return rendered;

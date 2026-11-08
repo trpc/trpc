@@ -94,6 +94,37 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    'leaves hover popups out of the HTML, listing each distinct one once',
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          [
+            '```ts twoslash',
+            'const one = 1;',
+            'const two = one + one;',
+            '//    ^?',
+            'const three = two;',
+            '```',
+          ].join('\n'),
+        );
+        const popupText = rendered.popups.map(textOf);
+        expect(popupText).toEqual([
+          'const one: 1',
+          'const three: number',
+          'const two: number',
+        ]);
+        const indexes = Array.from(
+          rendered.html.matchAll(/data-popup="(\d+)"><\/span>/g),
+          (match) => match[1],
+        );
+        expect(indexes).toEqual(['0', '0', '0', '1', '2']);
+        expect(textOf(rendered.html)).not.toContain('const one: 1');
+        // The pinned `^?` type shows without a hover, so it stays.
+        expect(textOf(rendered.html)).toContain('const two: number');
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
   it.effect("compiles an inline block next to the docs app's files", () =>
     Effect.gen(function* () {
       const rendered = yield* render(

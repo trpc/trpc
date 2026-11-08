@@ -238,7 +238,7 @@ export function DocPage(props: {
           headings={doc.headings}
           key={doc.slug}
         />
-        <DocBody html={doc.html} />
+        <DocBody html={doc.html} loadPopups={version.loadPopups(doc.slug)} />
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2

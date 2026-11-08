@@ -1,6 +1,8 @@
 import { notFound } from '@tanstack/react-router';
 import { posts } from 'virtual:blog-manifest';
 
+import type { LoadPopups } from '~/twoslash-hovers.ts';
+
 import type { Post, PostMeta } from './types.ts';
 
 export { posts };
@@ -23,6 +25,16 @@ export async function loadPost(slug: string) {
   }
   const post = await load();
   return post.default;
+}
+
+const popups = import.meta.glob<ReadonlyArray<string>>(
+  ['../../blog/*.md', '!../../blog/README.md'],
+  { import: 'default', query: '?popups' },
+);
+
+/** A post's hover popups, which its HTML leaves out. */
+export function loadPostPopups(slug: string): LoadPopups {
+  return async () => (await popups[`../../blog/${slug}.md`]?.()) ?? [];
 }
 
 /** The posts published right before and after `slug`. */
