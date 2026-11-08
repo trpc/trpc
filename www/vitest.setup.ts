@@ -4,7 +4,7 @@
  * test that makes one flakes. Mock what fetches it, or serve it on
  * 127.0.0.1, as `src/og/fake-avatars.ts` does.
  */
-import { afterEach } from 'vitest';
+import { afterAll, afterEach } from 'vitest';
 
 const loopback = new Set(['localhost', '127.0.0.1', '[::1]']);
 const realFetch = globalThis.fetch;
@@ -20,11 +20,15 @@ globalThis.fetch = async (input, init) => {
   throw new TypeError(`Tests are offline: ${url.href}`);
 };
 
-afterEach(() => {
+const failIfReached = () => {
   const urls = reached.splice(0);
   if (urls.length > 0) {
     throw new Error(
       `The test fetched ${urls.join(', ')}. Mock it, or serve it on 127.0.0.1.`,
     );
   }
-});
+};
+
+afterEach(failIfReached);
+// Registered first, so it runs after the file's own `afterAll`s.
+afterAll(failIfReached);
