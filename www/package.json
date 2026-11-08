@@ -61,7 +61,7 @@
     "@www/api-reference": "workspace:*",
     "effect": "catalog:www",
     "github-slugger": "2.0.0",
-    "hast-util-to-html": "9.0.5",
+    "hast-util-to-html": "9.0.6",
     "hast-util-to-string": "3.0.1",
     "jsdom": "catalog:",
     "oxlint": "catalog:",
