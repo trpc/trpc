@@ -16,10 +16,10 @@
  * has `data-twoslash-hovers` while this runs, which turns off the CSS
  * `:hover` popups the prerendered page uses before it hydrates.
  *
- * A page's HTML leaves its popups' content out, as most of it would be
- * popups: each popup is empty, with its index in the page's popups
- * (`data-popup`). They load once the pointer enters a block, or a name is
- * tapped, and each popup is filled the first time it opens.
+ * A page's HTML leaves its popups out, as most of it would be popups: each
+ * name has its popup's index in the page's popups (`data-popup`). They load
+ * once the pointer enters a block, or a name is tapped, and each name gets
+ * its popup the first time it opens.
  */
 
 /** A page's popups, by their index (`data-popup`). */
@@ -90,20 +90,23 @@ export function placePopup(hover: Element) {
 }
 
 /**
- * Fills `popup` with its content from `popups`, unless it's filled already.
- * False while `popups` haven't loaded.
+ * Gives `hover` its popup from `popups`, unless it has it already. False
+ * while `popups` haven't loaded.
  */
-function fillPopup(popup: HTMLElement, popups: ReadonlyArray<string> | null) {
-  const index = popup.dataset['popup'];
-  if (index === undefined) {
+function addPopup(hover: Element, popups: ReadonlyArray<string> | null) {
+  const index = hover.getAttribute('data-popup');
+  if (index === null) {
     return true;
   }
   if (!popups) {
     return false;
   }
+  const popup = document.createElement('span');
+  popup.className = 'twoslash-popup-container';
   // SAFETY: build-time HTML from the repo's own code blocks, as the page's.
   popup.innerHTML = popups[Number(index)] ?? '';
-  delete popup.dataset['popup'];
+  hover.prepend(popup);
+  hover.removeAttribute('data-popup');
   return true;
 }
 
@@ -159,13 +162,12 @@ export function installTwoslashHovers(
       hover.setAttribute('data-open', '');
     }
     hover.toggleAttribute('data-pinned', pinned);
-    const popup = popupOf(hover);
-    if (popup && !fillPopup(popup, popups)) {
+    if (!addPopup(hover, popups)) {
       void load().then((loaded) => {
         if (open !== hover) {
           return;
         }
-        if (loaded && fillPopup(popup, loaded)) {
+        if (loaded && addPopup(hover, loaded)) {
           placePopup(hover);
         } else {
           // Its popup failed to load: closed, the next tap tries again.

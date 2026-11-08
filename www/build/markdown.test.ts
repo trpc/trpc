@@ -115,7 +115,7 @@ describe('renderMarkdown', () => {
           'const two: number',
         ]);
         const indexes = Array.from(
-          rendered.html.matchAll(/data-popup="(\d+)"><\/span>/g),
+          rendered.html.matchAll(/data-popup="(\d+)"/g),
           (match) => match[1],
         );
         expect(indexes).toEqual(['0', '0', '0', '1', '2']);
