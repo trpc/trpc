@@ -8,7 +8,7 @@ parent: "client/tanstack-react-query"
 order: 53
 ---
 
-Handles help you avoid request waterfalls. When a component reads the route's params or search params and starts its own query, that query can only start once the component has rendered, and any query in its children waits again. With handles, the loader reads the URL once, starts every query the page needs up front, and passes each component a typed handle as a prop.
+Handles help you avoid request waterfalls. When a component reads the route's params or search params and starts its own query, that query can only start once the component has rendered. A child it renders only after that query loads starts its own query later still. With handles, the loader reads the URL once, starts every query the page needs up front, and passes each component a typed handle as a prop.
 
 A **handle** is a small, serializable reference to a query: its key and input, but no data. You load it in a route loader, a server component or an event handler. The component reads the query from it, fully typed, without naming the procedure or repeating its input.
 
@@ -372,8 +372,8 @@ const [handles, data] = await loadHandles(trpc, {
 });
 ```
 
-- The load waits until the cache has data for the query, so the data is ready before anything renders. If the request fails, the load rejects.
-- If the cache already has data, even stale, the load resolves at once with it. Stale data is refetched in the background.
+- The load waits until the cache has data for the query, so the data is ready before anything renders. If the cache had no data and the request fails, the load rejects.
+- If the cache already has data, even stale, the load resolves at once with it. Stale data is refetched in the background, and a failed refetch doesn't make the load reject.
 - `data.post` has the data. See [Using the data in a loader](#loader-data).
 - The component that reads the handle finds the data in the cache and renders it at once, with `useSuspenseQuery` or `useQuery`. It still needs a loading state for when the cache loses the data: see [When the cache loses the data](#cache-loses-data).
 
@@ -408,7 +408,7 @@ const [handles, data] = await loadHandles(trpc, {
 | In `data`              | No                                | Yes                                           | Yes                   |
 | With stale data        | Refetches in the background       | Resolves at once, refetches in the background | Waits for the refetch |
 | Reader's first render  | Loading state, or cached data     | The data                                      | The data              |
-| When the request fails | The reader gets the error         | The load rejects                              | The load rejects      |
+| When the request fails | The reader gets the error         | The load rejects, unless it had cached data   | The load rejects      |
 
 ```demo starting-queries
 ```
@@ -918,7 +918,7 @@ const [handles] = await loadHandles(trpc, {
 
 A handle names one input. When the user changes a list's sort or filter, put it in a [search param](#url-as-input): the loader then starts the new query and passes a new handle. Change the input in the component only when the URL can't hold it, such as a term the user is typing.
 
-Say the post page's comments can be searched. To read another input, call the procedure directly, starting from the handle's input:
+Say the post page's comments can be searched, and the loader starts them with an empty term: `{ postId: id, term: '' }`. To read another input, call the procedure directly, starting from the handle's input:
 
 ```tsx twoslash title='comments.tsx'
 // @jsx: react-jsx
@@ -973,7 +973,10 @@ export function Comments(props: {
   );
   return (
     <>
-      <input value={term} onChange={(event) => setTerm(event.target.value)} />
+      <label>
+        Search comments
+        <input value={term} onChange={(event) => setTerm(event.target.value)} />
+      </label>
       <p>{commentsQuery.data.pages[0]?.items.length} comments</p>
     </>
   );
@@ -981,7 +984,7 @@ export function Comments(props: {
 ```
 
 - While the input matches the handle's, `infiniteQueryOptions` returns the same query key, so the first render reads the loader's cache entry instead of fetching again. For a query handle, use `trpc.x.queryOptions({ ...handle.input, term })` the same way.
-- A new term's query starts when the component renders with it, so its first page waits for that render. `useDeferredValue` keeps the old list on screen while it loads.
+- A new term's query starts when the component renders with it, so its first page waits for that render. `useDeferredValue` keeps the previous results on screen while it loads.
 
 ## Request waterfalls {#waterfalls}
 
@@ -1570,7 +1573,7 @@ Handle inputs cross to the client inside the handle, through React's own seriali
 
 ### With ensure and fetch entries {#errors-ensure}
 
-When an ensure or fetch entry fails, `loadHandles` rejects with a `TRPCEntryError` that says which entry it was:
+When a request the load waits for fails, `loadHandles` rejects with a `TRPCEntryError` that says which entry it was. That's any fetch entry's request, and an ensure entry's when the cache had no data:
 
 - `error.key`: the entry's key, such as `'post'`.
 - `error.path`: the procedure, such as `'post.byId'`.
