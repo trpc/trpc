@@ -9,6 +9,7 @@ import { useFlagsOn } from '~/flags.ts';
 import { type CopiedVersion, v9, v10, v11 } from '~/site.ts';
 
 import { listedSections } from './listed.ts';
+import { loadPage, registerPages, type WithoutHtml } from './page-html.ts';
 import type { Doc, DocMeta, DocSection } from './types.ts';
 
 /** One version's pages, and where the site serves them. */
@@ -23,11 +24,14 @@ export interface DocsVersion {
   readonly route: '/docs/$' | '/docs/v10/$' | '/docs/v9/$';
   readonly sections: ReadonlyArray<DocSection>;
   readonly status: CopiedVersion['status'];
-  /** A page, compiled at build time. */
-  readonly load: (slug: string) => Promise<Doc>;
+  /** A page, compiled at build time, with its HTML in `pageHtml`. */
+  readonly load: (slug: string) => Promise<LoadedDoc>;
   /** A page's hover popups, which its HTML leaves out. */
   readonly loadPopups: (slug: string) => LoadPopups;
 }
+
+/** A page as its route's loader returns it, without its HTML. */
+export type LoadedDoc = WithoutHtml<Doc>;
 
 type PageModules = Readonly<Record<string, () => Promise<{ default: Doc }>>>;
 /** Each page's popups (`page.md?popups`), by its file. */
@@ -43,18 +47,19 @@ function docsVersion(
   fallback: string,
 ): DocsVersion {
   const allDocs = version.sections.flatMap((section) => section.docs);
+  registerPages(pages);
   return {
     ...version,
     allDocs,
     firstDoc:
       allDocs.find((doc) => doc.experiment === undefined)?.slug ?? fallback,
     load: async (slug) => {
-      const load = pages[fileOf(slug)];
+      const file = fileOf(slug);
+      const load = pages[file];
       if (!load) {
         throw notFound();
       }
-      const page = await load();
-      return page.default;
+      return loadPage(file, load);
     },
     loadPopups: (slug) => async () => (await popups?.[fileOf(slug)]?.()) ?? [],
   };

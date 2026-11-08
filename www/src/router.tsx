@@ -7,6 +7,11 @@ import {
   hydrateCardDay,
 } from './card-day.ts';
 import { errorOptions } from './components/error-page.tsx';
+import {
+  type DehydratedPages,
+  dehydratePages,
+  hydratePages,
+} from './content/page-html.ts';
 import { NotFound } from './components/not-found.tsx';
 import { firstDocRewrite } from './first-doc.ts';
 import {
@@ -34,15 +39,20 @@ export function getRouter() {
     defaultHashScrollIntoView: { behavior: 'instant', block: 'start' },
     // Content only changes with a deploy, so a loaded page never goes stale.
     defaultStaleTime: Number.POSITIVE_INFINITY,
-    dehydrate: (): DehydratedCardDay & DehydratedRelease & RenderedPath => ({
+    dehydrate: (): DehydratedCardDay &
+      DehydratedPages &
+      DehydratedRelease &
+      RenderedPath => ({
       ...dehydrateCardDay(),
+      ...dehydratePages(router),
       ...dehydrateRelease(),
       ...dehydrateRenderedPath(router),
     }),
-    hydrate: (dehydrated) => {
+    hydrate: async (dehydrated) => {
       hydrateCardDay(dehydrated);
       hydrateRelease(dehydrated);
       hydrateRenderedPath(dehydrated);
+      await hydratePages(dehydrated, () => window.location.reload());
     },
     rewrite: composeRewrites([renderedPathRewrite, firstDocRewrite]),
     routeTree,
