@@ -102,7 +102,7 @@ catalogs:
     server-only: 0.0.1
     superjson: 2.2.6
     superstruct: 2.0.2
-    tailwindcss: 4.3.3
+    tailwindcss: 4.3.5
     typescript: 5.9.2
     ws: 8.21.3
     yup: 1.7.1
