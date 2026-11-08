@@ -3,7 +3,9 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import {
   closeDelay,
+  inlinePopups,
   installTwoslashHovers,
+  type LoadPopups,
   openDelay,
   switchDelay,
 } from './twoslash-hovers.ts';
@@ -19,7 +21,10 @@ let cleanup: () => void = () => {};
 beforeEach(() => {
   vi.useFakeTimers();
   document.body.innerHTML = `<div id="root">${block}</div><p id="page">Page</p>`;
-  cleanup = installTwoslashHovers(element('root'));
+  cleanup = installTwoslashHovers(
+    element('root'),
+    inlinePopups({ popups: [] }),
+  );
 });
 
 afterEach(() => {
@@ -152,4 +157,40 @@ test('cleanup closes the popup and stops listening', () => {
   element('t').click();
   expect(openName()).toBe(null);
   cleanup = () => {};
+});
+
+/** A block whose popups' content the page loads (`data-popup`). */
+function installLazyBlock(loadPopups: LoadPopups) {
+  cleanup();
+  document.body.innerHTML = `<div id="root"><pre class="twoslash"><code><span class="line"><span class="twoslash-hover" id="lazy"><span class="twoslash-popup-container" data-popup="1" id="lazy-popup"></span>lazy</span><span id="lazy-plain"> = 1</span></span></code></pre></div>`;
+  cleanup = installTwoslashHovers(element('root'), loadPopups);
+}
+
+const lazyPopups = [
+  '<code>const other: 2</code>',
+  '<code>const lazy: 1</code>',
+];
+
+test('the popups load once the pointer enters a block, before it rests on a name', async () => {
+  const loadPopups = vi.fn<LoadPopups>(() => Promise.resolve(lazyPopups));
+  installLazyBlock(loadPopups);
+  move(null, 'lazy-plain');
+  move('lazy-plain', 'lazy');
+  expect(loadPopups).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(openDelay);
+  expect(openName()).toBe('lazy');
+  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
+  expect(element('lazy-popup').hasAttribute('data-popup')).toBe(false);
+});
+
+test('a popup that opens before the popups load is filled once they do', async () => {
+  const { promise, resolve } = Promise.withResolvers<ReadonlyArray<string>>();
+  installLazyBlock(() => promise);
+  // A tap: no pointer events before the click.
+  element('lazy').click();
+  expect(openName()).toBe('lazy');
+  expect(element('lazy-popup').innerHTML).toBe('');
+  resolve(lazyPopups);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
 });

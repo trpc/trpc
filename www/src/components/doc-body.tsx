@@ -6,7 +6,7 @@ import { cn } from '@shared/ui/lib/utils';
 import { splitAtDemos } from '~/demos/names.ts';
 import { PageDemo } from '~/demos/page-demos.tsx';
 import { isUrlTabGroup, tabSlug, type UrlTabGroup } from '~/tabs.ts';
-import { installTwoslashHovers } from '~/twoslash-hovers.ts';
+import { installTwoslashHovers, type LoadPopups } from '~/twoslash-hovers.ts';
 
 const tabStorageKey = (group: string) => `trpc-docs:tab:${group}`;
 
@@ -263,6 +263,8 @@ const prose = 'prose prose-neutral max-w-none dark:prose-invert';
 export function DocBody(props: {
   readonly className?: string;
   readonly html: string;
+  /** Its hover popups, which `html` leaves out. */
+  readonly loadPopups: LoadPopups;
 }) {
   const router = useRouter();
   const navigate = useNavigate();
@@ -321,7 +323,7 @@ export function DocBody(props: {
           return undefined;
         }
         restoreTabs(element);
-        return installTwoslashHovers(element);
+        return installTwoslashHovers(element, props.loadPopups);
       }}
     >
       {splitAtDemos(props.html).map((part, index) =>

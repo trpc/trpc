@@ -15,7 +15,22 @@
  * The open name has `data-open` (and `data-pinned` when pinned). The root
  * has `data-twoslash-hovers` while this runs, which turns off the CSS
  * `:hover` popups the prerendered page uses before it hydrates.
+ *
+ * A page's HTML leaves its popups' content out, as most of it would be
+ * popups: each popup is empty, with its index in the page's popups
+ * (`data-popup`). They load once the pointer enters a block, or a name is
+ * tapped, and each popup is filled the first time it opens.
  */
+
+/** A page's popups, by their index (`data-popup`). */
+export type LoadPopups = () => Promise<ReadonlyArray<string>>;
+
+/** Popups that came with their HTML, as a snippet's (`v11/home/step-1.md`). */
+export function inlinePopups(sample: {
+  readonly popups: ReadonlyArray<string>;
+}): LoadPopups {
+  return () => Promise.resolve(sample.popups);
+}
 
 /** How long the pointer rests on a name before its popup opens. */
 export const openDelay = 150;
@@ -74,8 +89,39 @@ export function placePopup(hover: Element) {
   popup.scrollTop = scrollTop;
 }
 
-/** Runs the popups of the Twoslash blocks under `root` until the returned cleanup. */
-export function installTwoslashHovers(root: HTMLElement) {
+/**
+ * Fills `popup` with its content from `popups`, unless it's filled already.
+ * False while `popups` haven't loaded.
+ */
+function fillPopup(popup: HTMLElement, popups: ReadonlyArray<string> | null) {
+  const index = popup.dataset['popup'];
+  if (index === undefined) {
+    return true;
+  }
+  if (!popups) {
+    return false;
+  }
+  // SAFETY: build-time HTML from the repo's own code blocks, as the page's.
+  popup.innerHTML = popups[Number(index)] ?? '';
+  delete popup.dataset['popup'];
+  return true;
+}
+
+/**
+ * Runs the popups of the Twoslash blocks under `root` until the returned
+ * cleanup, with their content from `loadPopups`.
+ */
+export function installTwoslashHovers(
+  root: HTMLElement,
+  loadPopups: LoadPopups,
+) {
+  let popups: ReadonlyArray<string> | null = null;
+  let loading: Promise<ReadonlyArray<string>> | null = null;
+  const load = () =>
+    (loading ??= loadPopups().then((loaded) => {
+      popups = loaded;
+      return loaded;
+    }));
   let open: Element | null = null;
   let pending: Element | null = null;
   let openTimer: ReturnType<typeof setTimeout> | undefined;
@@ -104,6 +150,15 @@ export function installTwoslashHovers(root: HTMLElement) {
       hover.setAttribute('data-open', '');
     }
     hover.toggleAttribute('data-pinned', pinned);
+    const popup = popupOf(hover);
+    if (popup && !fillPopup(popup, popups)) {
+      void load().then((loaded) => {
+        fillPopup(popup, loaded);
+        if (open === hover) {
+          placePopup(hover);
+        }
+      });
+    }
     placePopup(hover);
   };
 
@@ -116,6 +171,14 @@ export function installTwoslashHovers(root: HTMLElement) {
     // A tap also fires pointer events; taps open popups by clicking.
     if (event.pointerType === 'touch') {
       return;
+    }
+    // The popups load while the pointer makes its way to a name.
+    if (
+      popups === null &&
+      isElement(event.target) &&
+      event.target.closest('.twoslash')
+    ) {
+      void load();
     }
     const hover = hoverAt(event.target);
     if (hover === open) {
