@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
-    "@fastify/busboy": "^3.0.0",
+    "@fastify/busboy": "^3.2.2",
     "@fastify/websocket": "catalog:",
     "@js-temporal/polyfill": "^0.4.4",
     "@trpc/client": "workspace:*",

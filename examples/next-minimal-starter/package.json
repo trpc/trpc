@@ -18,7 +18,7 @@
     "@trpc/server": "npm:@trpc/server",
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
     "lucide-react": "1.55.0",
-    "next": "^15.5.25",
+    "next": "^15.5.28",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "server-only": "^0.0.1",
