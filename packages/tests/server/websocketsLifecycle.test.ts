@@ -179,6 +179,39 @@ test('a closing socket disposes a subscription returned by pending admission wit
   expect(sent).not.toHaveBeenCalled();
 });
 
+test.each(['query', 'mutation'] as const)(
+  'a closing socket still runs an accepted %s after context creation',
+  async (type) => {
+    const context = createDeferred<object>();
+    const resolve = vi.fn(() => 'done');
+    const t = initTRPC.create();
+    const router = t.router({
+      query: t.procedure.query(resolve),
+      mutation: t.procedure.mutation(resolve),
+    });
+    await using ctx = await connectionResource({
+      router,
+      createContext: () => context.promise,
+    });
+    await ctx.send({
+      id: 1,
+      method: type,
+      params: { path: type, input: null },
+    });
+
+    ctx.client.pause();
+    using _resume = makeResource({}, () => ctx.client.resume());
+    const sent = vi.spyOn(ctx.serverSocket, 'send');
+    ctx.serverSocket.close();
+    expect(ctx.serverSocket.readyState).toBe(WebSocket.CLOSING);
+    context.resolve({});
+
+    await new Promise<void>(setImmediate);
+    expect(resolve).toHaveBeenCalledOnce();
+    expect(sent).not.toHaveBeenCalled();
+  },
+);
+
 test('wsLink unsubscribing during middleware never starts the resolver', async () => {
   const entered = createDeferred();
   const admission = createDeferred();

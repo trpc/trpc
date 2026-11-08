@@ -510,7 +510,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         if (
           abortController.signal.aborted ||
-          client.readyState !== WEBSOCKET_OPEN
+          (type === 'subscription' && client.readyState !== WEBSOCKET_OPEN)
         ) {
           return;
         }
