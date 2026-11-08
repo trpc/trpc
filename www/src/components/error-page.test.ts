@@ -14,7 +14,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 
-import { errorOptions, forgetRouteReload } from './error-page.tsx';
+import { errorOptions } from './error-page.tsx';
 
 declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
@@ -124,34 +124,28 @@ test("another error doesn't reload the page", async () => {
   expect(reload).not.toHaveBeenCalled();
 });
 
-test("a page that renders forgets its reload, so a later deploy's reloads it again", async () => {
+test("the reloaded page doesn't reload again, however late its chunk fails", async () => {
   sessionStorage.clear();
-  // The reload for this page, which now renders.
-  sessionStorage.setItem('trpc-docs:reloaded-for:route:/', '');
-  const rootRoute = createRootRoute({ component: () => createElement(Outlet) });
-  const home = createRoute({
-    component: () => createElement('p', null, 'Home'),
-    getParentRoute: () => rootRoute,
-    path: '/',
-  });
-  const router = createRouter({
-    ...errorOptions(() => {}),
-    history: createMemoryHistory(),
-    routeTree: rootRoute.addChildren([home]),
-  });
-  forgetRouteReload(router);
-  const container = document.body.appendChild(document.createElement('div'));
-  const root = createRoot(container);
-  await act(async () => {
-    root.render(createElement(RouterProvider, { router }));
-  });
-  await vi.waitFor(() => {
-    expect(container.textContent).toBe('Home');
-  });
-  await vi.waitFor(() => {
-    expect(sessionStorage.getItem('trpc-docs:reloaded-for:route:/')).toBeNull();
-  });
-  await act(async () => {
-    root.unmount();
-  });
+  // Marked just before this page load started, by the page that reloaded.
+  sessionStorage.setItem(
+    'trpc-docs:reloaded-for:route:/',
+    String(performance.timeOrigin - 50),
+  );
+  loadedBy('reload');
+  const reload = vi.fn<() => void>();
+  await using _page = await renderThrowing(staleChunk(), reload);
+  expect(reload).not.toHaveBeenCalled();
+});
+
+test("a reload for an earlier visit doesn't stop this one's", async () => {
+  sessionStorage.clear();
+  // The page reloaded a minute before this load, which the reader reloaded.
+  sessionStorage.setItem(
+    'trpc-docs:reloaded-for:route:/',
+    String(performance.timeOrigin - 60_000),
+  );
+  loadedBy('reload');
+  const reload = vi.fn<() => void>();
+  await using _page = await renderThrowing(staleChunk(), reload);
+  expect(reload).toHaveBeenCalledTimes(1);
 });

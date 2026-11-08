@@ -17,15 +17,20 @@ function isReload() {
   return entry && 'type' in entry ? entry.type === 'reload' : undefined;
 }
 
-/** This page load, as the marks name it: when it started. */
-const thisLoad = () => String(performance.timeOrigin);
+/**
+ * How soon after its mark the reloaded page starts loading: `reload()`
+ * starts the navigation at once, and this leaves room to spare.
+ */
+const reloadStartsWithinMs = 10_000;
 
 /**
  * Whether `key` has already reloaded: this page load asked for it (an
- * effect that runs twice) or is the reload it asked for. A reader who left
- * before the reloaded page loaded leaves the mark in the tab, and a later
- * visit, which isn't a reload, ignores it. The mark stays until
- * {@link forgetReload}, so a page that fails again never reloads again.
+ * effect that runs twice), or is the reload it asked for, however late
+ * what fails fails (a blog post's comments, as they scroll into view). A
+ * reload from an earlier load, a minute ago, doesn't count, so a later
+ * deploy's stale chunk reloads again. A reader who left before the reload
+ * leaves the mark in the tab, and a later visit, which isn't a reload,
+ * ignores it.
  */
 function reloadedFor(key: string) {
   try {
@@ -33,28 +38,35 @@ function reloadedFor(key: string) {
     if (mark === null) {
       return false;
     }
-    // Not knowing, a mark means this is the reload, so it never loops.
-    return mark === thisLoad() || (isReload() ?? true);
+    const reloaded = isReload();
+    const markedAt = Number(mark);
+    if (mark === '' || !Number.isFinite(markedAt)) {
+      // An older deploy's mark, without a time. Not knowing, a mark means
+      // this is the reload, so it never loops.
+      return reloaded ?? true;
+    }
+    const loadedAt = performance.timeOrigin;
+    return (
+      markedAt >= loadedAt ||
+      (reloaded !== false && loadedAt - markedAt < reloadStartsWithinMs)
+    );
   } catch {
     // Storage is off (a private window): never reload, so never loop.
     return true;
   }
 }
 
-/** Records that this page load reloads for `key`; false where storage is off. */
+/** Records when `key` reloaded; false where storage is off. */
 function markReloaded(key: string) {
   try {
-    sessionStorage.setItem(reloadedKey(key), thisLoad());
+    sessionStorage.setItem(reloadedKey(key), String(Date.now()));
     return true;
   } catch {
     return false;
   }
 }
 
-/**
- * Forgets `key`'s reload once what failed has loaded, so a later deploy can
- * reload it again.
- */
+/** Forgets `key`'s reload once what failed has loaded. */
 export function forgetReload(key: string) {
   try {
     sessionStorage.removeItem(reloadedKey(key));
