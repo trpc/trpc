@@ -39,6 +39,11 @@ import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
+import {
+  renderPopupMarkdown,
+  renderPopupMarkdownInline,
+  withConciseDocs,
+} from './popup-docs.ts';
 import { appOf, sampleApps } from './sample-apps.ts';
 import type { TwoslashCache } from './twoslash-cache.ts';
 
@@ -816,7 +821,7 @@ const defaultInlineApp = 'docs';
 
 /**
  * Fences with `twoslash` in their meta are compiled, so hovering a name shows
- * its type, `// ^?` pins a type under the line, and `// @errors: 2345` shows
+ * its type and the first paragraph of its JSDoc, `// ^?` pins a type under the line, and `// @errors: 2345` shows
  * an expected error. A compile error the block doesn't expect fails the
  * build.
  *
@@ -941,7 +946,15 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     flush: session?.flush ?? Effect.void,
     transformer: createTransformerFactory(
       twoslasher,
-      reusingPopups(rendererRich({ jsdoc: false, queryRendering: 'line' })),
+      reusingPopups(
+        withConciseDocs(
+          rendererRich({
+            queryRendering: 'line',
+            renderMarkdown: renderPopupMarkdown,
+            renderMarkdownInline: renderPopupMarkdownInline,
+          }),
+        ),
+      ),
     )({ explicitTrigger: true }),
   };
 });
