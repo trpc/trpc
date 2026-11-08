@@ -58,6 +58,8 @@ export function placePopup(hover: Element) {
   // A pinned popup stays open while its name scrolls away.
   popup.style.visibility =
     anchor.bottom > top && anchor.top < window.innerHeight ? '' : 'hidden';
+  // Measuring clears the max height, which scrolls the popup to its top.
+  const scrollTop = popup.scrollTop;
   popup.style.maxHeight = '';
   const height = popup.offsetHeight;
   const roomBelow = window.innerHeight - margin - (anchor.bottom + gap);
@@ -69,6 +71,7 @@ export function placePopup(hover: Element) {
   popup.style.top = `${
     below ? anchor.bottom + gap : anchor.top - gap - Math.min(height, room)
   }px`;
+  popup.scrollTop = scrollTop;
 }
 
 /** Runs the popups of the Twoslash blocks under `root` until the returned cleanup. */
@@ -191,7 +194,13 @@ export function installTwoslashHovers(root: HTMLElement) {
   };
 
   // Keeps the open popup beside its name while the page or a block scrolls.
-  const follow = () => {
+  // Not when the popup itself scrolls: placing it clears its max height to
+  // measure it, which would scroll a long type back to its top.
+  const follow = (event: Event) => {
+    const popup = open ? popupOf(open) : null;
+    if (popup && isNode(event.target) && popup.contains(event.target)) {
+      return;
+    }
     if (open) {
       placePopup(open);
     }

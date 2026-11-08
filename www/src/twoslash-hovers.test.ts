@@ -132,6 +132,18 @@ test('a click inside a popup keeps it open', () => {
   expect(openName()).toBe('router');
 });
 
+test("scrolling inside a popup doesn't place it again", () => {
+  element('router').click();
+  const popup = element('router-popup');
+  // Placing a popup clears its max height to measure it, which scrolls a
+  // long type back to its top.
+  popup.style.maxHeight = '123px';
+  popup.dispatchEvent(new Event('scroll'));
+  expect(popup.style.maxHeight).toBe('123px');
+  document.dispatchEvent(new Event('scroll'));
+  expect(popup.style.maxHeight).not.toBe('123px');
+});
+
 test('cleanup closes the popup and stops listening', () => {
   element('router').click();
   cleanup();
