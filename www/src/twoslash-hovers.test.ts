@@ -194,3 +194,24 @@ test('a popup that opens before the popups load is filled once they do', async (
   await vi.advanceTimersByTimeAsync(0);
   expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
 });
+
+test('a failed load of the popups is tried again when a popup opens', async () => {
+  const loadPopups = vi
+    .fn<LoadPopups>()
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue(lazyPopups);
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  installLazyBlock(loadPopups);
+  // Entering the block starts a load, which fails.
+  move(null, 'lazy');
+  await vi.advanceTimersByTimeAsync(0);
+  expect(logged).toHaveBeenCalledWith(
+    'Twoslash popups failed to load',
+    new Error('offline'),
+  );
+  // Opening the popup tries again.
+  await vi.advanceTimersByTimeAsync(openDelay);
+  expect(loadPopups).toHaveBeenCalledTimes(2);
+  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
+  logged.mockRestore();
+});

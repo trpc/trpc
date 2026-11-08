@@ -116,12 +116,21 @@ export function installTwoslashHovers(
   loadPopups: LoadPopups,
 ) {
   let popups: ReadonlyArray<string> | null = null;
-  let loading: Promise<ReadonlyArray<string>> | null = null;
+  let loading: Promise<ReadonlyArray<string> | null> | null = null;
+  // After a failed load (offline, or a deploy removed the chunk), popups
+  // stay empty and the next hover tries again.
   const load = () =>
-    (loading ??= loadPopups().then((loaded) => {
-      popups = loaded;
-      return loaded;
-    }));
+    (loading ??= loadPopups().then(
+      (loaded) => {
+        popups = loaded;
+        return loaded;
+      },
+      (error: unknown) => {
+        console.error('Twoslash popups failed to load', error);
+        loading = null;
+        return null;
+      },
+    ));
   let open: Element | null = null;
   let pending: Element | null = null;
   let openTimer: ReturnType<typeof setTimeout> | undefined;
@@ -153,8 +162,7 @@ export function installTwoslashHovers(
     const popup = popupOf(hover);
     if (popup && !fillPopup(popup, popups)) {
       void load().then((loaded) => {
-        fillPopup(popup, loaded);
-        if (open === hover) {
+        if (loaded && fillPopup(popup, loaded) && open === hover) {
           placePopup(hover);
         }
       });
