@@ -194,6 +194,13 @@ export interface AvatarsOptions {
     readonly store: SharedStore;
     readonly timeToLive: Lifetime;
   };
+  /**
+   * The period both caches key an avatar by, such as the UTC day
+   * (`live.ts`), read when a fetch starts: nothing kept in one period is
+   * drawn in the next, and a fetch started in one isn't shared with the
+   * next. One period throughout unless given.
+   */
+  readonly period?: () => string;
 }
 
 /**
@@ -277,25 +284,34 @@ export class Avatars extends Context.Service<
             }),
           );
         const { cache, shared } = options;
-        const fetch =
+        const period = options.period ?? (() => '');
+        // A key is the period and the URL as fetched, so two URLs for one
+        // avatar share an entry, and two periods never do.
+        const fetch = (key: string) =>
           shared === undefined
-            ? (image: string) => fromHost(avatarUrl(image))
-            : throughShared(fromHost, shared);
+            ? fromHost(urlOf(key))
+            : throughShared(fromHost, shared, key);
+        const keyOf = (image: string) => `${period()}\n${avatarUrl(image)}`;
         if (cache === undefined) {
-          return Avatars.of({ fetch });
+          return Avatars.of({ fetch: (image) => fetch(keyOf(image)) });
         }
         const cached = yield* Cache.makeWith(fetch, {
           capacity: cache.capacity,
           timeToLive: (exit) =>
             Exit.isSuccess(exit) ? lifetime(cache.timeToLive) : 0,
         });
-        // Keyed as fetched, so two URLs for one avatar share an entry.
         return Avatars.of({
-          fetch: (image) => Cache.get(cached, avatarUrl(image)),
+          fetch: (image) => Cache.get(cached, keyOf(image)),
         });
       }),
     );
 }
+
+/**
+ * The URL in a cache key: a period and an avatar's URL as fetched
+ * (`avatarUrl`) on two lines, as no URL holds a line break.
+ */
+const urlOf = (key: string) => key.slice(key.indexOf('\n') + 1);
 
 /** How long a call to a shared store may take before it counts as a miss. */
 const storeTimeout = '1 second';
@@ -310,30 +326,30 @@ const avatarUri = /^data:image\/(?:jpeg|png|svg\+xml);base64,./;
  * when less than a second of `timeToLive` is left, as a store may take a
  * TTL of 0 as no expiry.
  */
-const throughShared =
-  (
-    fromHost: (url: string) => Effect.Effect<string, AvatarError>,
-    shared: NonNullable<AvatarsOptions['shared']>,
-  ) =>
-  (image: string) =>
-    Effect.gen(function* () {
-      const url = avatarUrl(image);
-      const kept = yield* Effect.tryPromise(() => shared.store.get(url)).pipe(
+const throughShared = (
+  fromHost: (url: string) => Effect.Effect<string, AvatarError>,
+  shared: NonNullable<AvatarsOptions['shared']>,
+  key: string,
+) =>
+  Effect.gen(function* () {
+    const url = urlOf(key);
+    const kept = yield* Effect.tryPromise(() => shared.store.get(key)).pipe(
+      Effect.timeout(storeTimeout),
+      Effect.orElseSucceed(() => null),
+    );
+    if (typeof kept === 'string' && avatarUri.test(kept)) {
+      return kept;
+    }
+    const uri = yield* fromHost(url);
+    const ttl = Math.floor(Duration.toSeconds(lifetime(shared.timeToLive)));
+    if (ttl >= 1) {
+      yield* Effect.tryPromise(() => shared.store.set(key, uri, { ttl })).pipe(
         Effect.timeout(storeTimeout),
-        Effect.orElseSucceed(() => null),
+        Effect.ignore,
       );
-      if (typeof kept === 'string' && avatarUri.test(kept)) {
-        return kept;
-      }
-      const uri = yield* fromHost(url);
-      const ttl = Math.floor(Duration.toSeconds(lifetime(shared.timeToLive)));
-      if (ttl >= 1) {
-        yield* Effect.tryPromise(() =>
-          shared.store.set(url, uri, { ttl }),
-        ).pipe(Effect.timeout(storeTimeout), Effect.ignore);
-      }
-      return uri;
-    });
+    }
+    return uri;
+  });
 
 /**
  * The avatars of `images` that loaded, by URL; the rest are left out.

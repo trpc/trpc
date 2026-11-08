@@ -18,7 +18,7 @@ import { getCache } from '@vercel/functions';
 
 import { Avatars, fetchAvatars } from './avatar.ts';
 import type { CardFooter, OgCard } from './card.ts';
-import { immutableCacheControl } from './version.ts';
+import { immutableCacheControl, utcDay } from './version.ts';
 
 export interface Stats {
   /** `@trpc/server`'s npm downloads last week. */
@@ -155,6 +155,9 @@ export const todayAtMost = (seconds: number) => () =>
 const onRequest = ManagedRuntime.make(
   Avatars.layer({
     cache: { capacity: 1000, timeToLive: todayAtMost(60 * 60) },
+    // The cards' version names the day, so each day's cards fetch their
+    // own avatars, not ones kept, or being fetched, the day before.
+    period: () => utcDay(new Date()),
     retries: 1,
     shared: { store: runtimeCache, timeToLive: todayAtMost(24 * 60 * 60) },
     timeout: '3 seconds',
