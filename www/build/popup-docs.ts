@@ -6,6 +6,7 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
 type NodeHover = Parameters<TwoslashRenderer['nodeStaticInfo']>[0];
+type NodeQuery = Parameters<NonNullable<TwoslashRenderer['lineQuery']>>[0];
 
 /**
  * The JSDoc tags a hover popup shows. `@example`s are long, and `@since`,
@@ -14,20 +15,21 @@ type NodeHover = Parameters<TwoslashRenderer['nodeStaticInfo']>[0];
 const shownTags = new Set(['deprecated', 'param', 'returns', 'see']);
 
 /**
- * A hover's JSDoc as a popup shows it: its first paragraph, so a long
- * comment (Node's `console`) stays a short popup, and only
- * {@link shownTags}.
+ * A hover's or a `^?` type's JSDoc as a popup shows it: its first
+ * paragraph, so a long comment (Node's `console`) stays a short popup, and
+ * only {@link shownTags}.
  */
-export function conciseDocs(info: NodeHover): NodeHover {
-  const { docs: allDocs, tags: allTags, ...hover } = info;
-  const docs = allDocs?.trim().split(/\n\s*\n/)[0];
-  const tags = allTags?.filter(([name]) => shownTags.has(name));
-  const concise: NodeHover = hover;
+export function conciseDocs<T extends NodeHover | NodeQuery>(info: T): T {
+  const docs = info.docs?.trim().split(/\n\s*\n/)[0];
+  const tags = info.tags?.filter(([name]) => shownTags.has(name));
+  const concise = { ...info };
+  delete concise.docs;
+  delete concise.tags;
   if (docs) {
-    concise.docs = docs;
+    Object.assign(concise, { docs });
   }
   if (tags?.length) {
-    concise.tags = tags;
+    Object.assign(concise, { tags });
   }
   return concise;
 }
@@ -104,12 +106,46 @@ export function renderPopupMarkdownInline(
   );
 }
 
-/** `renderer` with each hover's JSDoc made {@link conciseDocs}. */
+/**
+ * A `^?` line with its indent, a run of spaces, in an element of its own.
+ * The line is a flex row, which would drop bare spaces, so the pinned type
+ * shrinks to the room right of its indent instead of running past the
+ * block.
+ */
+function indentedQueryLine(line: ElementContent): ElementContent {
+  if (line.type !== 'element') {
+    return line;
+  }
+  return {
+    ...line,
+    children: line.children.map((child) =>
+      child.type === 'text'
+        ? {
+            type: 'element',
+            tagName: 'span',
+            properties: { class: 'twoslash-query-indent' },
+            children: [child],
+          }
+        : child,
+    ),
+  };
+}
+
+/**
+ * `renderer` with each hover's and `^?` type's JSDoc made
+ * {@link conciseDocs}, and each `^?` line's indent an element
+ * ({@link indentedQueryLine}).
+ */
 export function withConciseDocs(renderer: TwoslashRenderer): TwoslashRenderer {
   return {
     ...renderer,
     nodeStaticInfo(info, node) {
       return renderer.nodeStaticInfo.call(this, conciseDocs(info), node);
+    },
+    lineQuery(query, node) {
+      const lines =
+        renderer.lineQuery?.call(this, conciseDocs(query), node) ?? [];
+      return lines.map(indentedQueryLine);
     },
   };
 }
