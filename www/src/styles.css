@@ -401,15 +401,118 @@ html {
   display: none;
 }
 
+/* Hovering a block marks its names faintly; the open one stands out. */
+.twoslash {
+  --twoslash-underline-color: color-mix(
+    in oklch,
+    currentColor 35%,
+    transparent
+  );
+}
+
+.twoslash .twoslash-hover:not(.twoslash-query-persisted) {
+  border-radius: 2px;
+  transition:
+    border-color 0.3s,
+    background-color 0.15s;
+}
+
+.twoslash .twoslash-hover[data-open] {
+  border-bottom-color: currentColor;
+  background-color: color-mix(in oklch, var(--foreground) 9%, transparent);
+}
+
+/* Once `installTwoslashHovers` runs, it opens popups (`data-open`), not
+   `:hover`, so a popup stays while the pointer moves into it. */
+[data-twoslash-hovers]
+  .twoslash
+  .twoslash-hover:not(.twoslash-query-persisted):not([data-open])
+  .twoslash-popup-container {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-twoslash-hovers]
+  .twoslash
+  .twoslash-hover[data-open]
+  .twoslash-popup-container {
+  opacity: 1;
+  pointer-events: auto;
+  user-select: text;
+  transition-duration: 0.1s;
+}
+
+/* A pinned popup says so, with its border. */
+.twoslash .twoslash-hover[data-pinned] .twoslash-popup-container {
+  border-color: color-mix(in oklch, var(--foreground) 35%, var(--border));
+}
+
+/* A type of several lines is a `pre` of its own, without a code block's
+   padding. */
+.code-block .twoslash-popup-code pre {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: 1.5;
+}
+
 /* A `^?` type ties the hover popup's z-index and comes later in the page, so
    it would cover the type of a name hovered above it. */
 .twoslash .twoslash-query-line .twoslash-popup-container {
   z-index: 9;
 }
 
+/* A hover's JSDoc: its first paragraph, then `@param`, `@returns`, `@see`
+   and `@deprecated`, as markdown (`build/popup-docs.ts`). */
 .twoslash .twoslash-popup-docs {
   max-width: 36rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
   white-space: normal;
+}
+
+.code-block .shiki .twoslash-popup-docs,
+.code-block .shiki .twoslash-popup-docs span {
+  color: var(--twoslash-docs-color);
+}
+
+.twoslash .twoslash-popup-docs p {
+  margin: 0;
+}
+
+.twoslash .twoslash-popup-docs p + p {
+  margin-top: 0.5em;
+}
+
+.twoslash .twoslash-popup-docs code {
+  border-radius: 0.25rem;
+  background: var(--muted);
+  padding: 0.05em 0.3em;
+  color: var(--popover-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.twoslash .twoslash-popup-docs code::before,
+.twoslash .twoslash-popup-docs code::after {
+  content: none;
+}
+
+.code-block .shiki .twoslash-popup-docs a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.twoslash .twoslash-popup-docs-tags {
+  gap: 0.25em;
+}
+
+.code-block .shiki .twoslash-popup-docs-tag-name {
+  color: var(--popover-foreground);
+  font-size: 0.875em;
+  font-weight: 600;
 }
 
 .twoslash .twoslash-error-line {
