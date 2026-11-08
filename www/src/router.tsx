@@ -52,7 +52,7 @@ export function getRouter() {
       hydrateCardDay(dehydrated);
       hydrateRelease(dehydrated);
       hydrateRenderedPath(dehydrated);
-      await hydratePages(dehydrated);
+      await hydratePages(dehydrated, () => window.location.reload());
     },
     rewrite: composeRewrites([renderedPathRewrite, firstDocRewrite]),
     routeTree,

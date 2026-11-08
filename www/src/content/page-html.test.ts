@@ -1,4 +1,5 @@
-import { expect, test } from 'vitest';
+// @vitest-environment jsdom
+import { expect, test, vi } from 'vitest';
 
 import {
   dehydratePages,
@@ -42,6 +43,37 @@ test('the pages the server rendered load in the browser before it hydrates', asy
   };
   const dehydrated = dehydratePages(router);
   expect(dehydrated).toEqual({ pages: ['pages/hydrated.md'] });
-  await hydratePages(dehydrated);
+  await hydratePages(dehydrated, () => {
+    throw new Error('reloaded');
+  });
   expect(pageHtml({ htmlKey: 'pages/hydrated.md' })).toBe('<p>Hydrated</p>');
+});
+
+test('a page that fails to load is tried once more before it hydrates', async () => {
+  const load = vi
+    .fn<ReturnType<typeof page>>()
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockImplementation(page('<p>Retried</p>'));
+  registerPages({ 'pages/retried.md': load });
+  const reload = vi.fn<() => void>();
+  await hydratePages({ pages: ['pages/retried.md'] }, reload);
+  expect(load).toHaveBeenCalledTimes(2);
+  expect(reload).not.toHaveBeenCalled();
+  expect(pageHtml({ htmlKey: 'pages/retried.md' })).toBe('<p>Retried</p>');
+});
+
+test('a page that keeps failing reloads once, then gives up', async () => {
+  const offline = new Error('offline');
+  registerPages({ 'pages/gone.md': () => Promise.reject(offline) });
+  const reload = vi.fn<() => void>();
+  // Never settles: the page is reloading.
+  void hydratePages({ pages: ['pages/gone.md'] }, reload);
+  await vi.waitFor(() => {
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+  // After the reload, it fails again.
+  await expect(hydratePages({ pages: ['pages/gone.md'] }, reload)).rejects.toBe(
+    offline,
+  );
+  expect(reload).toHaveBeenCalledTimes(1);
 });

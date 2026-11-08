@@ -85,15 +85,60 @@ export function dehydratePages(router: {
   };
 }
 
-/** For the router's `hydrate`: loads the pages the server rendered before React hydrates them. */
-export async function hydratePages(dehydrated: DehydratedPages) {
+const reloadedKey = (key: string) => `trpc-docs:reloaded-for:${key}`;
+
+/** Whether this tab reloaded for `key` already, forgetting it either way. */
+function reloadedFor(key: string) {
+  try {
+    const reloaded = sessionStorage.getItem(reloadedKey(key)) !== null;
+    sessionStorage.removeItem(reloadedKey(key));
+    return reloaded;
+  } catch {
+    // Storage is off (a private window): never reload, so never loop.
+    return true;
+  }
+}
+
+function markReloaded(key: string) {
+  try {
+    sessionStorage.setItem(reloadedKey(key), '');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * For the router's `hydrate`: loads the pages the server rendered before
+ * React hydrates them.
+ *
+ * Without its page, the app can't hydrate, so a failed load is tried once
+ * more, then the page reloads once: a tab opened before a deploy asks for
+ * a chunk the deploy replaced, and the reload brings the new page's. If it
+ * fails after the reload too, it rejects, and the page stays as the server
+ * rendered it.
+ */
+export async function hydratePages(
+  dehydrated: DehydratedPages,
+  reload: () => void,
+) {
   await Promise.all(
     dehydrated.pages.map(async (key) => {
       const load = modules.get(key);
       if (!load) {
         throw new Error(`${key} isn't a registered page`);
       }
-      await loadPage(key, load);
+      try {
+        await loadPage(key, load).catch(() => loadPage(key, load));
+      } catch (error) {
+        if (reloadedFor(key) || !markReloaded(key)) {
+          throw error;
+        }
+        reload();
+        // The page is going away; hydrating it would be wasted.
+        await new Promise<never>(() => {});
+      }
+      reloadedFor(key);
     }),
   );
 }
