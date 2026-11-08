@@ -20,7 +20,7 @@
     "@types/bun": "^1.1.12",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^3.0.13",
+    "start-server-and-test": "^1.15.5",
     "typescript": "^5.9.2",
     "wait-port": "^1.1.0"
   }

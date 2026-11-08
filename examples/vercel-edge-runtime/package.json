@@ -16,7 +16,7 @@
     "@edge-runtime/types": "^4.0.0",
     "edge-runtime": "^4.0.1",
     "esbuild": "^0.28.2",
-    "start-server-and-test": "^3.0.13",
+    "start-server-and-test": "^1.15.5",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2"
   },

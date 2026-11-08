@@ -2,7 +2,7 @@
   "name": "examples-next-websockets-encoder",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=18.15.0"
   },
   "packageManager": "pnpm@10.33.1",
   "scripts": {
@@ -23,7 +23,7 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^16.4.5",
+    "next": "^15.5.29",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tsx": "^4.23.15",

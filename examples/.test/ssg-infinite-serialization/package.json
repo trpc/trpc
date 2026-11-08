@@ -16,7 +16,7 @@
     "@trpc/next": "^11.16.0",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "^11.16.0",
-    "next": "^16.4.5",
+    "next": "^15.5.29",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.2.1"
@@ -28,7 +28,7 @@
     "@types/react-dom": "^19.3.0",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^3.0.13",
+    "start-server-and-test": "^1.15.5",
     "typescript": "^5.9.2"
   }
 }
