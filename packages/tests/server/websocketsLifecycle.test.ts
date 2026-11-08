@@ -56,6 +56,7 @@ function onAbort(signal: AbortSignal | undefined) {
   });
 }
 
+/** A real socket pair whose server endpoint can start a held close handshake. */
 async function connectionResource(
   opts: Omit<WSSHandlerOptions<AnyRouter>, 'wss'>,
 ) {

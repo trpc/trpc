@@ -228,6 +228,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       handleKeepAlive(client, pingMs, pongWaitMs);
     }
 
+    /** Drops replies once closing starts, before the close event cancels work. */
     function respond(untransformedJSON: TRPCResponseMessage) {
       if (client.readyState !== WEBSOCKET_OPEN) return;
       client.send(
@@ -406,6 +407,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? null
         : createCtxPromise(() => null);
 
+    /** Runs a decoded call; deferred subscription admission must respect disconnects. */
     async function handleRequest(
       msg: TRPCClientOutgoingMessage,
       batchIndex: number,
@@ -493,6 +495,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
 
+      /** Keeps a subscription owned until admission, iteration and disposal settle. */
       const execute = async () => {
         // Registered before any await so that a stop or a disconnect during
         // context creation or the procedure call cancels the subscription.
