@@ -1,10 +1,10 @@
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
-import { Effect } from 'effect';
+import { Duration, Effect } from 'effect';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CardFooter, OgCard } from './card.ts';
 import { footerWith, png, serveAvatars, testAvatars } from './fake-avatars.ts';
-import { cacheControl, fetchStats, live, noLive } from './live.ts';
+import { cacheControl, fetchStats, live, noLive, todayAtMost } from './live.ts';
 import { immutableCacheControl } from './version.ts';
 
 const home: OgCard = { kind: 'home', path: '/' };
@@ -179,5 +179,18 @@ describe('cacheControl', () => {
         avatars: new Map([...fetched.avatars, [server.url('/b.png'), 'data:']]),
       }),
     ).toBe(immutableCacheControl);
+  });
+});
+
+describe('todayAtMost', () => {
+  it('keeps an avatar no later than the end of the UTC day, when the cards get a new version', () => {
+    vi.useFakeTimers({
+      now: new Date('2026-11-05T12:00:00Z'),
+      toFake: ['Date'],
+    });
+    expect(Duration.toSeconds(todayAtMost(3600)())).toBe(3600);
+    vi.setSystemTime(new Date('2026-11-05T23:59:30Z'));
+    expect(Duration.toSeconds(todayAtMost(3600)())).toBe(30);
+    vi.useRealTimers();
   });
 });

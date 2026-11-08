@@ -7,7 +7,7 @@
  * that fails leaves its part out, and the card is cached briefly
  * (`cacheControl`), so the next request tries again.
  */
-import { Effect, Layer, ManagedRuntime } from 'effect';
+import { Duration, Effect, Layer, ManagedRuntime } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 
 import { cardFooter } from '~/sponsors.ts';
@@ -18,7 +18,7 @@ import { getCache } from '@vercel/functions';
 
 import { Avatars, fetchAvatars } from './avatar.ts';
 import type { CardFooter, OgCard } from './card.ts';
-import { immutableCacheControl } from './version.ts';
+import { immutableCacheControl, untilTomorrow } from './version.ts';
 
 export interface Stats {
   /** `@trpc/server`'s npm downloads last week. */
@@ -137,16 +137,21 @@ const runtimeCache = getCache({
  * A card is drawn while a crawler waits for it, so a try at an avatar gets
  * 3 seconds and one more chance, not the sponsor sync's patience. Every
  * card but a post's draws the same sponsors along its foot, so an avatar
- * that loaded is kept a day in the Runtime Cache, for every instance, and
- * an hour in each instance's memory, which shares a fetch under way. The
- * cards' version changes daily, so a new picture shows on the next day's
- * cards, or the one after.
+ * that loaded is kept in the Runtime Cache, for every instance, and an
+ * hour in each instance's memory, which shares a fetch under way. Both let
+ * it go when the UTC day ends, as the cards' version changes then
+ * (`version.ts`): a card drawn on a new day fetches its avatars again, so
+ * a new picture shows on it.
  */
+/** For `seconds`, or until the UTC day ends if that's sooner. */
+export const todayAtMost = (seconds: number) => () =>
+  Duration.seconds(Math.min(seconds, untilTomorrow(new Date())));
+
 const onRequest = ManagedRuntime.make(
   Avatars.layer({
-    cache: { capacity: 1000, timeToLive: '1 hour' },
+    cache: { capacity: 1000, timeToLive: todayAtMost(60 * 60) },
     retries: 1,
-    shared: { store: runtimeCache, timeToLive: '1 day' },
+    shared: { store: runtimeCache, timeToLive: todayAtMost(24 * 60 * 60) },
     timeout: '3 seconds',
   }).pipe(Layer.provide(FetchHttpClient.layer)),
 );

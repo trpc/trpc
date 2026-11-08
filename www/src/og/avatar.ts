@@ -163,14 +163,14 @@ export interface AvatarsOptions {
   /** How many times to try again after a failure that may pass. */
   readonly retries?: number;
   /**
-   * Keeps each avatar that loaded for `timeToLive`, up to `capacity` of
+   * Keeps each avatar that loaded for `timeToLive` (`Lifetime`), up to `capacity` of
    * them, and shares a fetch already under way, so cards drawn one after
    * another fetch the sponsors along their foot once. A failure isn't
    * kept: the next card tries again.
    */
   readonly cache?: {
     readonly capacity: number;
-    readonly timeToLive: Duration.Input;
+    readonly timeToLive: Lifetime;
   };
   /**
    * A cache that server instances share, such as Vercel's Runtime Cache
@@ -180,9 +180,18 @@ export interface AvatarsOptions {
    */
   readonly shared?: {
     readonly store: SharedStore;
-    readonly timeToLive: Duration.Input;
+    readonly timeToLive: Lifetime;
   };
 }
+
+/**
+ * How long a cache keeps an avatar: a duration, or one worked out as the
+ * avatar is kept, such as until the cards' version changes (`live.ts`).
+ */
+export type Lifetime = Duration.Input | (() => Duration.Input);
+
+const lifetime = (input: Lifetime) =>
+  typeof input === 'function' ? input() : input;
 
 /** What `shared` needs of a cache: Vercel's `RuntimeCache` has it. */
 export interface SharedStore {
@@ -262,9 +271,13 @@ export class Avatars extends Context.Service<
         }
         const cached = yield* Cache.makeWith(fetch, {
           capacity: cache.capacity,
-          timeToLive: (exit) => (Exit.isSuccess(exit) ? cache.timeToLive : 0),
+          timeToLive: (exit) =>
+            Exit.isSuccess(exit) ? lifetime(cache.timeToLive) : 0,
         });
-        return Avatars.of({ fetch: (image) => Cache.get(cached, image) });
+        // Keyed as fetched, so two URLs for one avatar share an entry.
+        return Avatars.of({
+          fetch: (image) => Cache.get(cached, avatarUrl(image)),
+        });
       }),
     );
 }
@@ -290,7 +303,7 @@ const throughShared =
       const uri = yield* fromHost(url);
       yield* Effect.tryPromise(() =>
         shared.store.set(url, uri, {
-          ttl: Duration.toSeconds(shared.timeToLive),
+          ttl: Duration.toSeconds(lifetime(shared.timeToLive)),
         }),
       ).pipe(Effect.ignore);
       return uri;

@@ -189,7 +189,7 @@ describe('Avatars with a cache', () => {
       Avatars.layer({
         cache: { capacity: 10, timeToLive: '1 hour' },
         retries: 0,
-        timeout: '200 millis',
+        timeout: '2 seconds',
       }).pipe(Layer.provide(FetchHttpClient.layer)),
     );
 
@@ -249,8 +249,8 @@ describe('Avatars with a shared cache', () => {
       Avatars.layer({
         cache: { capacity: 10, timeToLive: '1 hour' },
         retries: 0,
-        shared: { store, timeToLive: '1 day' },
-        timeout: '200 millis',
+        shared: { store, timeToLive: () => '30 seconds' },
+        timeout: '2 seconds',
       }).pipe(Layer.provide(FetchHttpClient.layer)),
     );
 
@@ -264,7 +264,7 @@ describe('Avatars with a shared cache', () => {
     expect(await second.runPromise(fetchAvatars(images))).toEqual(fetched);
     expect(fetched.size).toBe(1);
     expect(server.hits).toEqual(['/a.png']);
-    expect(kept.get(avatarUrl(server.url('/a.png')))?.ttl).toBe(86_400);
+    expect(kept.get(avatarUrl(server.url('/a.png')))?.ttl).toBe(30);
   });
 
   it("keeps no failure there, and fetches each avatar when it can't reach the store", async () => {
