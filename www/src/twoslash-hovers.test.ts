@@ -215,3 +215,20 @@ test('a failed load of the popups is tried again when a popup opens', async () =
   expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
   logged.mockRestore();
 });
+
+test('a tapped name whose popup fails to load closes, so the next tap tries again', async () => {
+  const loadPopups = vi
+    .fn<LoadPopups>()
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue(lazyPopups);
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  installLazyBlock(loadPopups);
+  element('lazy').click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(openName()).toBe(null);
+  element('lazy').click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(openName()).toBe('lazy');
+  expect(element('lazy-popup').innerHTML).toBe('<code>const lazy: 1</code>');
+  logged.mockRestore();
+});

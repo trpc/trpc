@@ -162,8 +162,14 @@ export function installTwoslashHovers(
     const popup = popupOf(hover);
     if (popup && !fillPopup(popup, popups)) {
       void load().then((loaded) => {
-        if (loaded && fillPopup(popup, loaded) && open === hover) {
+        if (open !== hover) {
+          return;
+        }
+        if (loaded && fillPopup(popup, loaded)) {
           placePopup(hover);
+        } else {
+          // Its popup failed to load: closed, the next tap tries again.
+          close();
         }
       });
     }
