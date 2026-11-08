@@ -17,7 +17,7 @@
     "@types/node": "^24.19.2",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^1.15.5",
+    "start-server-and-test": "^1.12.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "wrangler": "^4.131.1"
