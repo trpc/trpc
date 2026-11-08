@@ -18,7 +18,12 @@ import {
   CollapsedTableOfContents,
   TableOfContents,
 } from '~/components/toc.tsx';
-import { findPost, postNeighbours, posts } from '~/content/blog.ts';
+import {
+  findPost,
+  loadPostPopups,
+  postNeighbours,
+  posts,
+} from '~/content/blog.ts';
 import type { Post, PostAuthor, PostMeta } from '~/content/types.ts';
 import {
   absoluteUrl,
@@ -261,7 +266,7 @@ export function BlogPost(props: { readonly post: Post }) {
           headings={post.headings}
           key={post.slug}
         />
-        <DocBody html={post.html} />
+        <DocBody html={post.html} loadPopups={loadPostPopups(post.slug)} />
         <footer className="mt-12 grid gap-6 border-t pt-6">
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {atTrpcIo ? null : (
