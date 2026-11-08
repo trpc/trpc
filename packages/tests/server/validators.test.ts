@@ -578,9 +578,7 @@ test('effect schema', async () => {
   await expect(
     // @ts-expect-error this only accepts {text: string}
     ctx.client.num.query({ text: 123 }),
-  ).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Expected string]`,
-  );
+  ).rejects.toMatchInlineSnapshot(`[TRPCClientError: Expected string]`);
 });
 
 test('runtypes', async () => {

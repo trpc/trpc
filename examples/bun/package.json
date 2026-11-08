@@ -17,7 +17,7 @@
     "@trpc/server": "npm:@trpc/server"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.4",
+    "@types/bun": "^1.1.12",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
     "start-server-and-test": "^3.0.13",

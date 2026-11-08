@@ -15,10 +15,10 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
-    "nuxt": "^3.21.11",
-    "trpc-nuxt": "^1.0.2",
+    "nuxt": "^4.6.4",
+    "trpc-nuxt": "^2.2.0",
     "vue": "^3.5.45",
-    "vue-router": "^4.5.0"
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0"

@@ -67,7 +67,7 @@ catalog:
   '@hey-api/openapi-ts': ^0.99.0
   '@fastify/websocket': ^11.3.7
   fastify-plugin: ^6.0.1
-  next: ^15.5.28
+  next: ^15.5.29
   '@effect/platform-node': 4.1.2
   effect: 4.1.2
 catalogs:
