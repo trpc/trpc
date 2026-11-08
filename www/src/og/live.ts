@@ -12,6 +12,10 @@ import { FetchHttpClient } from 'effect/http';
 
 import { cardFooter } from '~/sponsors.ts';
 
+import { createHash } from 'node:crypto';
+
+import { getCache } from '@vercel/functions';
+
 import { Avatars, fetchAvatars } from './avatar.ts';
 import type { CardFooter, OgCard } from './card.ts';
 import { immutableCacheControl } from './version.ts';
@@ -119,18 +123,30 @@ export const live = Effect.fn('live')(function* (
 });
 
 /**
+ * Vercel's Runtime Cache, which the server's instances in a region share;
+ * elsewhere, as in dev, an in-memory one. A key is its avatar's URL's
+ * SHA-256: the default hash is 32 bits, and two avatars sharing one would
+ * draw the wrong face.
+ */
+const runtimeCache = getCache({
+  keyHashFunction: (key) => createHash('sha256').update(key).digest('hex'),
+  namespace: 'og-avatar',
+});
+
+/**
  * A card is drawn while a crawler waits for it, so a try at an avatar gets
  * 3 seconds and one more chance, not the sponsor sync's patience. Every
- * card but a post's draws the same sponsors along its foot, so the server
- * keeps the avatars that loaded for an hour, which a crawler fetching a
- * page's card after another's, or several at once, draws without
- * fetching them again. The cards' version changes daily, so a new avatar
- * shows from the next day's cards, as it would without this.
+ * card but a post's draws the same sponsors along its foot, so an avatar
+ * that loaded is kept a day in the Runtime Cache, for every instance, and
+ * an hour in each instance's memory, which shares a fetch under way. The
+ * cards' version changes daily, so a new picture shows on the next day's
+ * cards, or the one after.
  */
 const onRequest = ManagedRuntime.make(
   Avatars.layer({
     cache: { capacity: 1000, timeToLive: '1 hour' },
     retries: 1,
+    shared: { store: runtimeCache, timeToLive: '1 day' },
     timeout: '3 seconds',
   }).pipe(Layer.provide(FetchHttpClient.layer)),
 );

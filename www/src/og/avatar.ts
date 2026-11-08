@@ -12,7 +12,7 @@ import {
   Cache,
   Context,
   Data,
-  type Duration,
+  Duration,
   Effect,
   Exit,
   Layer,
@@ -172,6 +172,26 @@ export interface AvatarsOptions {
     readonly capacity: number;
     readonly timeToLive: Duration.Input;
   };
+  /**
+   * A cache that server instances share, such as Vercel's Runtime Cache
+   * (`live.ts`), which keeps each avatar that loaded for `timeToLive`, so
+   * a new instance draws the avatars another fetched. One it can't reach
+   * or that has none is a miss: the avatar is fetched.
+   */
+  readonly shared?: {
+    readonly store: SharedStore;
+    readonly timeToLive: Duration.Input;
+  };
+}
+
+/** What `shared` needs of a cache: Vercel's `RuntimeCache` has it. */
+export interface SharedStore {
+  readonly get: (key: string) => Promise<unknown>;
+  readonly set: (
+    key: string,
+    value: unknown,
+    options: { readonly ttl: number },
+  ) => Promise<void>;
 }
 
 /** Fetches an avatar as a `data:` URI satori can draw. */
@@ -220,9 +240,8 @@ export class Avatars extends Context.Service<
           }
           return `data:${contentType};base64,${bytes.toString('base64')}`;
         });
-        const fetch = (image: string) => {
-          const url = avatarUrl(image);
-          return once(url).pipe(
+        const fromHost = (url: string) =>
+          once(url).pipe(
             Effect.timeoutOrElse({
               duration: options.timeout ?? '4 seconds',
               orElse: () => Effect.fail(new AvatarTimeoutError({ url })),
@@ -233,8 +252,11 @@ export class Avatars extends Context.Service<
               while: mayPass,
             }),
           );
-        };
-        const { cache } = options;
+        const { cache, shared } = options;
+        const fetch =
+          shared === undefined
+            ? (image: string) => fromHost(avatarUrl(image))
+            : throughShared(fromHost, shared);
         if (cache === undefined) {
           return Avatars.of({ fetch });
         }
@@ -246,6 +268,33 @@ export class Avatars extends Context.Service<
       }),
     );
 }
+
+/**
+ * `fromHost`, but an avatar `shared.store` has, and keeping each that
+ * loads there. The store failing is a miss, and a failure isn't kept.
+ */
+const throughShared =
+  (
+    fromHost: (url: string) => Effect.Effect<string, AvatarError>,
+    shared: NonNullable<AvatarsOptions['shared']>,
+  ) =>
+  (image: string) =>
+    Effect.gen(function* () {
+      const url = avatarUrl(image);
+      const kept = yield* Effect.tryPromise(() => shared.store.get(url)).pipe(
+        Effect.orElseSucceed(() => null),
+      );
+      if (typeof kept === 'string' && kept.startsWith('data:')) {
+        return kept;
+      }
+      const uri = yield* fromHost(url);
+      yield* Effect.tryPromise(() =>
+        shared.store.set(url, uri, {
+          ttl: Duration.toSeconds(shared.timeToLive),
+        }),
+      ).pipe(Effect.ignore);
+      return uri;
+    });
 
 /**
  * The avatars of `images` that loaded, by URL; the rest are left out.

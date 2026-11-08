@@ -10,6 +10,7 @@ import {
   AvatarTimeoutError,
   AvatarTypeError,
   avatarUrl,
+  type SharedStore,
   fetchAvatars,
   sizableSvg,
 } from './avatar.ts';
@@ -218,5 +219,66 @@ describe('Avatars with a cache', () => {
     expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(0);
     expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(1);
     expect(server.hits).toEqual(['/a.png', '/a.png']);
+  });
+});
+
+describe('Avatars with a shared cache', () => {
+  /** A store kept in a map, as Vercel's Runtime Cache, failing when `broken`. */
+  const mapStore = (broken = false) => {
+    const kept = new Map<string, { ttl: number; value: unknown }>();
+    const store: SharedStore = {
+      get: async (key) => {
+        if (broken) {
+          throw new Error('unreachable');
+        }
+        return kept.get(key)?.value ?? null;
+      },
+      set: async (key, value, options) => {
+        if (broken) {
+          throw new Error('unreachable');
+        }
+        kept.set(key, { ttl: options.ttl, value });
+      },
+    };
+    return { kept, store };
+  };
+
+  /** A server instance: its own memory, and `store`. */
+  const instance = (store: SharedStore) =>
+    ManagedRuntime.make(
+      Avatars.layer({
+        cache: { capacity: 10, timeToLive: '1 hour' },
+        retries: 0,
+        shared: { store, timeToLive: '1 day' },
+        timeout: '200 millis',
+      }).pipe(Layer.provide(FetchHttpClient.layer)),
+    );
+
+  it('draws an avatar another instance fetched from the store, without fetching it', async () => {
+    await using server = await serveAvatars({ '/a.png': png() });
+    const { kept, store } = mapStore();
+    const images = [server.url('/a.png')];
+    await using first = instance(store);
+    await using second = instance(store);
+    const fetched = await first.runPromise(fetchAvatars(images));
+    expect(await second.runPromise(fetchAvatars(images))).toEqual(fetched);
+    expect(fetched.size).toBe(1);
+    expect(server.hits).toEqual(['/a.png']);
+    expect(kept.get(avatarUrl(server.url('/a.png')))?.ttl).toBe(86_400);
+  });
+
+  it("keeps no failure there, and fetches each avatar when it can't reach the store", async () => {
+    await using server = await serveAvatars({
+      '/a.png': png(),
+      '/down.png': { status: 503 },
+    });
+    const { kept, store } = mapStore();
+    await using runtime = instance(store);
+    await runtime.runPromise(fetchAvatars([server.url('/down.png')]));
+    expect(kept.size).toBe(0);
+    await using offline = instance(mapStore(true).store);
+    expect(
+      (await offline.runPromise(fetchAvatars([server.url('/a.png')]))).size,
+    ).toBe(1);
   });
 });
