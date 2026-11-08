@@ -26,13 +26,14 @@ import {
   ancestors,
   childrenOf,
   type DocsVersion,
+  type LoadedDoc,
   findDoc,
   listedDocs,
   neighbours,
   useListedDocs,
 } from '~/content/docs.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
-import type { Doc } from '~/content/types.ts';
+import { pageHtml } from '~/content/page-html.ts';
 import { loadPageDemos } from '~/demos/page-demos.tsx';
 import { experiments } from '~/experiments.ts';
 import { useEnableOnVisit } from '~/flags.ts';
@@ -61,7 +62,7 @@ export async function loadDocPage(version: DocsVersion, slug: string) {
     throw notFound();
   }
   const doc = await version.load(slug);
-  await loadPageDemos(doc.html);
+  await loadPageDemos(pageHtml(doc));
   return { doc };
 }
 
@@ -144,7 +145,7 @@ const footerLink =
   'inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground';
 
 export function DocPage(props: {
-  readonly doc: Doc;
+  readonly doc: LoadedDoc;
   readonly version: DocsVersion;
 }) {
   const doc = props.doc;
@@ -238,7 +239,10 @@ export function DocPage(props: {
           headings={doc.headings}
           key={doc.slug}
         />
-        <DocBody html={doc.html} loadPopups={version.loadPopups(doc.slug)} />
+        <DocBody
+          html={pageHtml(doc)}
+          loadPopups={version.loadPopups(doc.slug)}
+        />
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2
