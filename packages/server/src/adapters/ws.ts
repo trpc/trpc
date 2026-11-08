@@ -515,6 +515,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           abortController.signal.aborted ||
           (type === 'subscription' && client.readyState !== WEBSOCKET_OPEN)
         ) {
+          abort();
           return;
         }
 
@@ -557,10 +558,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
-        // Conversion subscribes immediately; do not start a late observable
-        // after closing begins. Late async iterables are disposed below.
-        if (isObservable(result) && client.readyState !== WEBSOCKET_OPEN)
-          return;
+        // Closing precedes the close event: cancel signal-owned work before
+        // releasing the id or waiting for cleanup. Conversion would subscribe
+        // immediately, so leave a late observable untouched.
+        if (client.readyState !== WEBSOCKET_OPEN) {
+          abort();
+          if (isObservable(result)) return;
+        }
 
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
@@ -573,6 +577,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           abortController.signal.aborted ||
           client.readyState !== WEBSOCKET_OPEN
         ) {
+          abort();
           try {
             // dispose the iterator without consuming it
             await using _iterator = iteratorResource(iterable);

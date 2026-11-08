@@ -148,20 +148,20 @@ test('a closing socket does not admit a subscription after context creation', as
 });
 
 test('a closing socket disposes a subscription returned by pending admission without starting it', async () => {
-  const entered = createDeferred();
+  const entered = createDeferred<AbortSignal>();
   const admission = createDeferred<AsyncIterable<unknown>>();
   const next = vi.fn(() => Promise.resolve(doneResult()));
-  const returned = vi.fn(() => Promise.resolve(doneResult()));
   const t = initTRPC.create();
   const router = t.router({
-    pending: t.procedure.subscription(() => {
-      entered.resolve();
+    pending: t.procedure.subscription(({ signal }) => {
+      assert(signal);
+      entered.resolve(signal);
       return admission.promise;
     }),
   });
   await using ctx = await connectionResource({ router });
   await ctx.send(subscribe('pending'));
-  await entered.promise;
+  const signal = await entered.promise;
 
   ctx.client.pause();
   using _resume = makeResource({}, () => ctx.client.resume());
@@ -170,19 +170,21 @@ test('a closing socket disposes a subscription returned by pending admission wit
   const sent = vi.spyOn(ctx.serverSocket, 'send');
   ctx.serverSocket.close();
   expect(ctx.serverSocket.readyState).toBe(WebSocket.CLOSING);
+  const returned = vi.fn(() => onAbort(signal).then(doneResult));
   admission.resolve({
     [Symbol.asyncIterator]: () => ({ next, return: returned }),
   });
 
   await new Promise<void>(setImmediate);
   expect(closed).not.toHaveBeenCalled();
+  expect(signal.aborted).toBe(true);
   expect(returned).toHaveBeenCalledOnce();
   expect(next).not.toHaveBeenCalled();
   expect(sent).not.toHaveBeenCalled();
 });
 
 test('a closing socket never subscribes to an observable returned by pending admission', async () => {
-  const entered = createDeferred();
+  const entered = createDeferred<AbortSignal>();
   const subscribed = vi.fn();
   const unsubscribed = vi.fn();
   const source = observable<number>(() => {
@@ -192,14 +194,15 @@ test('a closing socket never subscribes to an observable returned by pending adm
   const admission = createDeferred<typeof source>();
   const t = initTRPC.create();
   const router = t.router({
-    pending: t.procedure.subscription(() => {
-      entered.resolve();
+    pending: t.procedure.subscription(({ signal }) => {
+      assert(signal);
+      entered.resolve(signal);
       return admission.promise;
     }),
   });
   await using ctx = await connectionResource({ router });
   await ctx.send(subscribe('pending'));
-  await entered.promise;
+  const signal = await entered.promise;
 
   ctx.client.pause();
   using _resume = makeResource({}, () => ctx.client.resume());
@@ -212,6 +215,7 @@ test('a closing socket never subscribes to an observable returned by pending adm
 
   await new Promise<void>(setImmediate);
   expect(closed).not.toHaveBeenCalled();
+  expect(signal.aborted).toBe(true);
   expect(subscribed).not.toHaveBeenCalled();
   expect(unsubscribed).not.toHaveBeenCalled();
   expect(sent).not.toHaveBeenCalled();
