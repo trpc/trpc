@@ -103,7 +103,7 @@ catalogs:
     superjson: 2.2.6
     superstruct: 2.0.2
     tailwindcss: 4.3.3
-    typescript: 5.9.2
+    typescript: 5.9.3
     ws: 8.21.3
     yup: 1.7.1
     zod: 4.6.6
