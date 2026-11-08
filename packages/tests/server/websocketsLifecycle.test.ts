@@ -4,6 +4,7 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { observable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCResponseMessage,
@@ -177,6 +178,42 @@ test('a closing socket disposes a subscription returned by pending admission wit
   expect(closed).not.toHaveBeenCalled();
   expect(returned).toHaveBeenCalledOnce();
   expect(next).not.toHaveBeenCalled();
+  expect(sent).not.toHaveBeenCalled();
+});
+
+test('a closing socket never subscribes to an observable returned by pending admission', async () => {
+  const entered = createDeferred();
+  const subscribed = vi.fn();
+  const unsubscribed = vi.fn();
+  const source = observable<number>(() => {
+    subscribed();
+    return unsubscribed;
+  });
+  const admission = createDeferred<typeof source>();
+  const t = initTRPC.create();
+  const router = t.router({
+    pending: t.procedure.subscription(() => {
+      entered.resolve();
+      return admission.promise;
+    }),
+  });
+  await using ctx = await connectionResource({ router });
+  await ctx.send(subscribe('pending'));
+  await entered.promise;
+
+  ctx.client.pause();
+  using _resume = makeResource({}, () => ctx.client.resume());
+  const closed = vi.fn();
+  ctx.serverSocket.once('close', closed);
+  const sent = vi.spyOn(ctx.serverSocket, 'send');
+  ctx.serverSocket.close();
+  expect(ctx.serverSocket.readyState).toBe(WebSocket.CLOSING);
+  admission.resolve(source);
+
+  await new Promise<void>(setImmediate);
+  expect(closed).not.toHaveBeenCalled();
+  expect(subscribed).not.toHaveBeenCalled();
+  expect(unsubscribed).not.toHaveBeenCalled();
   expect(sent).not.toHaveBeenCalled();
 });
 

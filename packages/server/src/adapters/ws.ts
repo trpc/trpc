@@ -557,6 +557,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
+        // Conversion subscribes immediately; do not start a late observable
+        // after closing begins. Late async iterables are disposed below.
+        if (isObservable(result) && client.readyState !== WEBSOCKET_OPEN)
+          return;
+
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
