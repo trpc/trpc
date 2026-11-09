@@ -1,5 +1,4 @@
-import { Effect, Layer, ManagedRuntime, Result } from 'effect';
-import { FetchHttpClient } from 'effect/http';
+import { Effect, Result } from 'effect';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -11,12 +10,17 @@ import {
   AvatarTimeoutError,
   AvatarTypeError,
   avatarUrl,
-  type Lifetime,
-  type SharedStore,
   fetchAvatars,
   sizableSvg,
 } from './avatar.ts';
-import { png, serveAvatars, svg, testAvatars } from './fake-avatars.ts';
+import {
+  cachedInstance,
+  mapCache,
+  png,
+  serveAvatars,
+  svg,
+  testAvatars,
+} from './fake-avatars.ts';
 
 const fetchOne = (url: string) =>
   Effect.runPromise(
@@ -199,21 +203,12 @@ describe('fetchAvatars', () => {
   });
 });
 
-describe('Avatars with a cache', () => {
-  const cachedAvatars = () =>
-    ManagedRuntime.make(
-      Avatars.layer({
-        cache: { capacity: 10, timeToLive: '1 hour' },
-        retries: 0,
-        timeout: '2 seconds',
-      }).pipe(Layer.provide(FetchHttpClient.layer)),
-    );
-
+describe('Avatars.layerCached', () => {
   it('fetches an avatar that loaded once across requests, and shares one under way', async () => {
     await using server = await serveAvatars({
       '/a.png': { ...png(), delay: 20 },
     });
-    await using runtime = cachedAvatars();
+    await using runtime = cachedInstance(mapCache().store);
     const images = [server.url('/a.png')];
     const [first, second] = await Promise.all([
       runtime.runPromise(fetchAvatars(images)),
@@ -226,115 +221,38 @@ describe('Avatars with a cache', () => {
     expect(server.hits).toEqual(['/a.png']);
   });
 
-  it("tries an avatar that didn't load again on the next request", async () => {
+  it('keeps no failure, in memory or the store, so the next request tries again', async () => {
     await using server = await serveAvatars({
       '/a.png': [{ status: 503 }, png()],
     });
-    await using runtime = cachedAvatars();
+    const { kept, store } = mapCache();
+    await using runtime = cachedInstance(store);
     const images = [server.url('/a.png')];
     expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(0);
+    expect(kept.size).toBe(0);
     expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(1);
     expect(server.hits).toEqual(['/a.png', '/a.png']);
   });
-});
-
-describe('Avatars with a shared cache', () => {
-  /** A store kept in a map, as Vercel's Runtime Cache, failing when `broken`. */
-  const mapStore = (broken = false) => {
-    const kept = new Map<string, { ttl: number; value: unknown }>();
-    const store: SharedStore = {
-      get: async (key) => {
-        if (broken) {
-          throw new Error('unreachable');
-        }
-        return kept.get(key)?.value ?? null;
-      },
-      set: async (key, value, options) => {
-        if (broken) {
-          throw new Error('unreachable');
-        }
-        kept.set(key, { ttl: options.ttl, value });
-      },
-    };
-    return { kept, store };
-  };
-
-  /** A server instance: its own memory, and `store`, keeping avatars `timeToLive`. */
-  const instance = (
-    store: SharedStore,
-    timeToLive: Lifetime = () => '30 seconds',
-    period: () => string = () => 'today',
-  ) =>
-    ManagedRuntime.make(
-      Avatars.layer({
-        cache: { capacity: 10, timeToLive: '1 hour' },
-        period,
-        retries: 0,
-        shared: { store, timeToLive },
-        timeout: '2 seconds',
-      }).pipe(Layer.provide(FetchHttpClient.layer)),
-    );
 
   it('draws an avatar another instance fetched from the store, without fetching it', async () => {
     await using server = await serveAvatars({ '/a.png': png() });
-    const { kept, store } = mapStore();
+    const { store } = mapCache();
     const images = [server.url('/a.png')];
-    await using first = instance(store);
-    await using second = instance(store);
+    await using first = cachedInstance(store);
+    await using second = cachedInstance(store);
     const fetched = await first.runPromise(fetchAvatars(images));
-    expect(await second.runPromise(fetchAvatars(images))).toEqual(fetched);
     expect(fetched.size).toBe(1);
+    expect(await second.runPromise(fetchAvatars(images))).toEqual(fetched);
     expect(server.hits).toEqual(['/a.png']);
-    expect([...kept.values()].map((entry) => entry.ttl)).toEqual([30]);
-  });
-
-  it("keeps no failure there, and fetches each avatar when it can't reach the store", async () => {
-    await using server = await serveAvatars({
-      '/a.png': png(),
-      '/down.png': { status: 503 },
-    });
-    const { kept, store } = mapStore();
-    await using runtime = instance(store);
-    await runtime.runPromise(fetchAvatars([server.url('/down.png')]));
-    expect(kept.size).toBe(0);
-    await using offline = instance(mapStore(true).store);
-    expect(
-      (await offline.runPromise(fetchAvatars([server.url('/a.png')]))).size,
-    ).toBe(1);
-  });
-
-  it("fetches an avatar the store has no image data for, or doesn't answer for in time", async () => {
-    await using server = await serveAvatars({ '/a.png': png() });
-    const image = server.url('/a.png');
-    for (const store of [
-      { get: async () => 'data:image/png;base64,', set: async () => {} },
-      { get: async () => 'not an avatar', set: async () => {} },
-      {
-        get: () => new Promise<never>(() => {}),
-        set: () => new Promise<never>(() => {}),
-      },
-    ] satisfies Array<SharedStore>) {
-      await using runtime = instance(store);
-      expect((await runtime.runPromise(fetchAvatars([image]))).size).toBe(1);
-    }
-    expect(server.hits).toEqual(['/a.png', '/a.png', '/a.png']);
-  });
-
-  it('keeps nothing there with less than a second to live, which a store may take as no expiry', async () => {
-    await using server = await serveAvatars({ '/a.png': png() });
-    const { kept, store } = mapStore();
-    await using runtime = instance(store, () => '500 millis');
-    await runtime.runPromise(fetchAvatars([server.url('/a.png')]));
-    expect(kept.size).toBe(0);
   });
 
   it('draws nothing kept, or being fetched, in an earlier period, from memory or the store', async () => {
     await using server = await serveAvatars({
       '/a.png': [{ ...png([1]), delay: 50 }, png([2])],
     });
-    const { kept, store } = mapStore();
+    const { kept, store } = mapCache();
     let day = 'monday';
-    await using runtime = instance(store, undefined, () => day);
+    await using runtime = cachedInstance(store, { period: () => day });
     const images = [server.url('/a.png')];
     // Monday's fetch is under way when Tuesday starts.
     const monday = runtime.runPromise(fetchAvatars(images));
