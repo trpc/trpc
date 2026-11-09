@@ -8,8 +8,7 @@
   ],
   "minimumReleaseAge": "7 days",
   "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 6am on monday"]
+    "enabled": false
   },
   "vulnerabilityAlerts": {
     "schedule": ["at any time"],
