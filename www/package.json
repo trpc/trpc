@@ -27,23 +27,23 @@
     "@resvg/resvg-wasm": "catalog:www",
     "@sentry/tanstackstart-react": "11.11.0",
     "@shared/ui": "workspace:*",
-    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:www",
     "@tanstack/react-start": "catalog:www",
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
     "@trpc/tanstack-react-query": "workspace:*",
     "@vercel/functions": "^3.10.5",
-    "lucide-react": "1.70.0",
+    "lucide-react": "catalog:www",
     "minisearch": "7.2.0",
-    "next-themes": "0.4.6",
+    "next-themes": "catalog:www",
     "react": "catalog:www",
     "react-dom": "catalog:www",
     "satori": "0.63.2",
-    "sonner": "2.0.8"
+    "sonner": "catalog:www"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.1.2",
+    "@effect/platform-node": "catalog:",
     "@effect/vitest": "4.1.2",
     "@resvg/resvg-js": "2.6.2",
     "@samples/v11": "workspace:*",
@@ -72,7 +72,7 @@
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "remark-rehype": "11.1.2",
-    "shiki": "4.6.0",
+    "shiki": "catalog:www",
     "tailwindcss": "catalog:www",
     "twoslash": "0.3.9",
     "typescript": "catalog:",
@@ -81,7 +81,7 @@
     "unist-util-visit": "5.2.0",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "yaml": "2.9.1"
+    "yaml": "catalog:"
   },
   "engines": {
     "node": "^24.11.0"

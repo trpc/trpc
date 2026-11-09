@@ -110,17 +110,17 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/intent": "0.5.6",
+    "@tanstack/intent": "catalog:",
     "@trpc/server": "workspace:*",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "catalog:",
-    "dataloader": "^2.2.3",
+    "dataloader": "catalog:",
     "isomorphic-fetch": "^3.0.0",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "tsdown": "catalog:",
-    "tslib": "^2.9.1",
+    "tslib": "catalog:",
     "typescript": "catalog:",
     "undici": "catalog:",
     "ws": "catalog:"

@@ -70,11 +70,42 @@ catalog:
   next: ^16.4.5
   '@effect/platform-node': 4.1.2
   effect: 4.1.2
+  '@tanstack/intent': 0.5.6
+  '@testing-library/dom': ^10.4.2
+  '@testing-library/jest-dom': ^7.0.1
+  '@testing-library/react': ^16.3.3
+  '@testing-library/user-event': ^14.6.8
+  event-source-polyfill: ^1.0.31
+  express: ^5.3.0
+  hash-sum: ^2.0.0
+  konn: ^0.7.0
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  superjson: ^2.2.6
+  tsx: ^4.23.15
+  zod: ^4.2.1
+  '@tanstack/react-query': ^5.107.1
+  '@types/express': ^5.0.6
+  '@types/react': ^19.3.0
+  '@types/react-dom': ^19.3.0
+  myzod: ^1.12.1
+  superstruct: ^2.0.2
+  yup: ^1.7.1
+  tslib: ^2.9.1
+  dataloader: ^2.2.3
+  node-fetch: ^3.3.2
+  sury: 11.1.0
+  yaml: 2.9.1
+
 catalogs:
   ts-api:
     typescript: ^6.0.3
   www:
     '@fastify/websocket': 11.3.7
+    lucide-react: 1.70.0
+    next-themes: 0.4.6
+    sonner: 2.0.8
+    shiki: 4.6.0
     '@resvg/resvg-wasm': 2.6.2
     '@tanstack/react-router': 1.170.46
     '@tanstack/react-start': 1.169.5
