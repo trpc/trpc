@@ -14,6 +14,7 @@ import { ContentError, messageOf } from './content-error.ts';
 import { fromDocusaurus } from './docusaurus-syntax.ts';
 import {
   type DocLink,
+  excerptOf,
   pagePath,
   releaseTwoslashers,
   resolveLink,
@@ -275,6 +276,7 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   const sources = yield* readSources(dirs);
   return sources.map((source) => ({
     description: source.frontmatter.description,
+    excerpt: excerptOf(source.markdown),
     experiment: source.frontmatter.experiment,
     label: source.frontmatter.label,
     parent: source.frontmatter.parent,

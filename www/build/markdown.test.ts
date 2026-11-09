@@ -6,6 +6,7 @@ import { splitAtDemos } from '../src/demos/names.ts';
 import { brokenLinks } from './content.ts';
 import {
   anchorsOf,
+  excerptOf,
   releaseTwoslashers,
   renderMarkdown,
   resolveLink,
@@ -557,5 +558,47 @@ describe('brokenLinks', () => {
       "a: links to b.md, which isn't a page",
       'a: links to a.md#missing, which has no such heading',
     ]);
+  });
+});
+
+describe('excerptOf', () => {
+  it("is the page's first paragraph, with inline code and links' text, on one line", () => {
+    expect(
+      excerptOf(
+        'Call `createCaller()` from\nthe [same server](./server.md), **directly**.\n\nMore.',
+      ),
+    ).toBe('Call `createCaller()` from the same server, directly.');
+  });
+
+  it('skips headings, code, HTML and images before it', () => {
+    expect(
+      excerptOf(
+        [
+          '<div align="center">',
+          '',
+          '![Logo](./logo.png)',
+          '',
+          '</div>',
+          '',
+          '## Example app',
+          '',
+          '```ts',
+          'const a = 1;',
+          '```',
+          '',
+          'The adapter serves your router.',
+        ].join('\n'),
+      ),
+    ).toBe('The adapter serves your router.');
+  });
+
+  it('ends one leading into a list in an ellipsis, not a colon', () => {
+    expect(
+      excerptOf('A procedure can be one of:\n\n- a query\n- a mutation'),
+    ).toBe('A procedure can be one of…');
+  });
+
+  it('is empty for a page without a paragraph', () => {
+    expect(excerptOf('## Only a heading\n\n```ts\nx;\n```')).toBe('');
   });
 });
