@@ -114,25 +114,25 @@
     }
   },
   "devDependencies": {
-    "@tanstack/intent": "0.5.6",
-    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/intent": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "@trpc/client": "workspace:*",
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "workspace:*",
-    "@types/express": "^5.0.6",
+    "@types/express": "catalog:",
     "@types/node": "catalog:",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "devalue": "catalog:",
-    "express": "^5.3.0",
+    "express": "catalog:",
     "next": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "zod": "^4.2.1"
+    "zod": "catalog:"
   },
   "publishConfig": {
     "access": "public"

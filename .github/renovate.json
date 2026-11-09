@@ -15,7 +15,7 @@
     "schedule": ["at any time"],
     "minimumReleaseAge": null
   },
-  "ignorePaths": ["**/node_modules/**", "**/examples/**"],
+  "ignorePaths": ["**/node_modules/**"],
   "ignoreDeps": ["@swc/core", "autofix-ci/action"],
   "updateInternalDeps": true,
   "nvm": {
@@ -31,6 +31,12 @@
     },
     {
       "matchPackageNames": ["pnpm"],
+      "enabled": false
+    },
+    {
+      "description": "Examples get minor and patch updates only; move them across majors by hand",
+      "matchFileNames": ["examples/**"],
+      "matchUpdateTypes": ["major"],
       "enabled": false
     },
     {
