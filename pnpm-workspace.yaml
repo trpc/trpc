@@ -52,7 +52,7 @@ catalog:
   oxlint: ^1.92.0
   oxlint-tsgolint: ^7.0.2006
   '@oxlint/plugins': ^1.92.0
-  oxfmt: ^0.77.0
+  oxfmt: ^0.78.0
   vitest: ^5.0.5
   '@vitest/coverage-istanbul': ^5.0.5
   '@vitest/ui': ^5.0.5
