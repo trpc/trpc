@@ -1,3 +1,5 @@
+import { runInNewContext } from 'node:vm';
+
 import { describe, expect, it } from '@effect/vitest';
 
 import {
@@ -98,11 +100,14 @@ describe('savedTabsScript', () => {
         append: (style: (typeof appended)[number]) => appended.push(style),
       },
     };
-    new Function('document', 'localStorage', 'location', savedTabsScript)(
+    // A context of its own, with a page's globals: the script can't reach
+    // this module.
+    runInNewContext(savedTabsScript, {
       document,
-      storageOf({}),
-      { search: '' },
-    );
+      localStorage: storageOf({}),
+      location: { search: '' },
+      URLSearchParams,
+    });
     expect(appended).toHaveLength(1);
     expect(appended[0]?.id).toBe('saved-tabs');
     expect(appended[0]?.textContent).toContain(
