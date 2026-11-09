@@ -319,7 +319,7 @@ export function BlogPost(props: { readonly post: LoadedPost }) {
         </footer>
       </article>
       <aside className="hidden xl:block">
-        <div className="sticky top-22">
+        <div className="sticky top-22 max-h-[calc(100dvh-6.5rem)] overflow-y-auto overscroll-contain">
           <TableOfContents headings={post.headings} key={post.slug} />
         </div>
       </aside>

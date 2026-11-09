@@ -286,10 +286,10 @@ The load starts every entry before it waits for any, and resolves to a serializa
 - `ensureEntry` waits until the data is in the cache, so the reader shows the data on its first render.
 - `fetchEntry` also waits, and refetches stale data before it resolves.
 - For infinite queries, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`.
-- When an ensure or fetch entry fails, the load rejects with a `TRPCEntryError` naming the entry. `isTRPCEntryError(error, trpc.post.byId)` checks which procedure failed, and `loadHandlesSettled` returns each entry's error as a value instead: see [Errors](/docs/client/tanstack-react-query/handles#errors-ensure).
+- When an ensure or fetch entry fails, the load rejects with a `TRPCEntryError` naming the entry. `isTRPCEntryError(error, trpc.post.byId)` checks which procedure failed, and `loadHandlesSettled` returns each entry's error as a value instead: see [Errors](/docs/client/tanstack-react-query/handles#errors).
 - For an input only known during render, read the query directly with `trpc.x.queryOptions(input)`.
 - Handles carry no data. If the cache loses the data, for example after `queryClient.resetQueries()`, the reader loads it again, so give it a loading state either way. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
-- Each entry maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
+- Each entry maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#starting-a-query).
 
 :::info
 The handle APIs are plain functions from `@trpc/tanstack-react-query/unstable-handles`. The `unstable-` in the path means they're new and may change, but you're safe to use them! [Read more](/docs/faq#unstable).
