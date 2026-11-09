@@ -5,16 +5,13 @@ import { cn } from '@shared/ui/lib/utils';
 
 import { splitAtDemos } from '~/demos/names.ts';
 import { PageDemo } from '~/demos/page-demos.tsx';
+import { isUrlTabGroup, tabSlug, type UrlTabGroup } from '~/tabs.ts';
 import {
-  isUrlTabGroup,
-  readSavedTabs,
-  savedTabsStyleId,
-  tabCookie,
-  tabSlug,
-  tabStoragePrefix,
-  type UrlTabGroup,
-  urlTabGroups,
-} from '~/tabs.ts';
+  restoreTabsOnce,
+  saveTab,
+  selectTab,
+  showLinkedTabs,
+} from '~/tabs-dom.ts';
 import { installTwoslashHovers, type LoadPopups } from '~/twoslash-hovers.ts';
 
 function isElement(target: EventTarget | null): target is Element {
@@ -87,91 +84,6 @@ function toggleCodeCollapse(target: EventTarget | null) {
   open.toggleAttribute('hidden', !willOpen);
   button.setAttribute('aria-expanded', String(willOpen));
   return true;
-}
-
-/** Shows `tab` in every tab group named `group` under `root`. */
-function selectTab(root: ParentNode, group: string, tab: string) {
-  for (const tabs of root.querySelectorAll(`[data-tabs="${group}"]`)) {
-    if (!tabs.querySelector(`:scope > [data-tab="${tab}"]`)) {
-      continue;
-    }
-    for (const block of tabs.querySelectorAll(':scope > [data-tab]')) {
-      block.toggleAttribute(
-        'data-active',
-        block.getAttribute('data-tab') === tab,
-      );
-    }
-    for (const button of tabs.querySelectorAll('[data-tab-select]')) {
-      button.setAttribute(
-        'aria-selected',
-        String(button.getAttribute('data-tab-select') === tab),
-      );
-    }
-  }
-}
-
-/** The reader's saved tab for `group`, from localStorage or its cookie. */
-function storedTab(group: string) {
-  let storage: Storage | null = null;
-  try {
-    storage = localStorage;
-  } catch {
-    // Storage is blocked: the cookie still counts.
-  }
-  return readSavedTabs(document.cookie, storage)[group] ?? null;
-}
-
-/** The tab `search` picks for `group` (`?framework=nextjs`), if it picks one. */
-function urlTab(root: ParentNode, group: string, search: string) {
-  if (!isUrlTabGroup(group)) {
-    return null;
-  }
-  const value = new URLSearchParams(search).get(group);
-  for (const link of root.querySelectorAll(`[data-tab-group="${group}"]`)) {
-    const tab = link.getAttribute('data-tab-select');
-    if (tab !== null && tabSlug(tab) === value) {
-      return tab;
-    }
-  }
-  return null;
-}
-
-/**
- * Applies the tab the URL picks, or else the reader's stored choice, like
- * the package manager.
- */
-/**
- * Shows the tabs a link on this page picks (`?framework=nextjs#frameworks`).
- * The page stays mounted, so `restoreTabs` doesn't run again; this runs
- * before the router scrolls to the link's hash, which may be in one of them.
- */
-function showLinkedTabs(root: HTMLElement, search: string) {
-  for (const group of urlTabGroups) {
-    const tab = urlTab(root, group, search);
-    if (tab !== null) {
-      selectTab(root, group, tab);
-    }
-  }
-}
-
-function restoreTabs(root: HTMLElement) {
-  const groups = new Set(
-    Array.from(root.querySelectorAll('[data-tabs]'), (tabs) =>
-      tabs.getAttribute('data-tabs'),
-    ),
-  );
-  for (const group of groups) {
-    const tab =
-      group === null
-        ? null
-        : (urlTab(root, group, window.location.search) ?? storedTab(group));
-    if (group !== null && tab !== null) {
-      selectTab(root, group, tab);
-    }
-  }
-  // The tabs are applied now, so the CSS that showed them before is spent,
-  // and would pin them against a later click.
-  document.getElementById(savedTabsStyleId)?.remove();
 }
 
 /**
@@ -261,14 +173,7 @@ function activateTab(
   if (isUrlTabGroup(group)) {
     setUrlTab(group, tabSlug(tab));
   }
-  // A cookie as well as localStorage, so the choice outlasts either being
-  // cleared or blocked.
-  document.cookie = tabCookie(group, tab);
-  try {
-    localStorage.setItem(tabStoragePrefix + group, tab);
-  } catch {
-    // Storage is blocked: the cookie keeps the choice.
-  }
+  saveTab(group, tab);
 }
 
 function copyCode(target: EventTarget | null) {
@@ -365,7 +270,7 @@ export function DocBody(props: {
         if (!element) {
           return undefined;
         }
-        restoreTabs(element);
+        restoreTabsOnce(element);
         return installTwoslashHovers(element, props.loadPopups);
       }}
     >
