@@ -164,8 +164,8 @@ import { createRootRouteWithContext } from '@tanstack/react-router';
 import type { TRPC } from '~/trpc/client';
 export const Route = createRootRouteWithContext<{ trpc: TRPC }>()();
 // @filename: routeTree.gen.ts
-import type { Route as rootRoute } from './routes/__root';
-import type { Route as postRoute } from './routes/posts.$id';
+import { Route as rootRoute } from './routes/__root';
+import { Route as postRoute } from './routes/posts.$id';
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/posts/$id': {
@@ -175,6 +175,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof postRoute;
       parentRoute: typeof rootRoute;
     };
+  }
+}
+const PostRoute = postRoute.update({
+  id: '/posts/$id',
+  path: '/posts/$id',
+  getParentRoute: () => rootRoute,
+} as any);
+export const routeTree = rootRoute.addChildren({ PostRoute });
+// @filename: router.tsx
+// `Route.useLoaderData()` is `any` unless a router is registered
+import { createRouter } from '@tanstack/react-router';
+import type { TRPC } from '~/trpc/client';
+import { routeTree } from './routeTree.gen';
+declare const trpc: TRPC;
+export const router = createRouter({ routeTree, context: { trpc } });
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
   }
 }
 ```
