@@ -14,6 +14,10 @@ The classic React Query integration (`@trpc/react-query`) only gets bug fixes, a
 
 By default, tRPC does not cancel requests via React Query. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
 
+When enabled, tRPC passes TanStack React Query's `AbortSignal` to the request. This also allows cancellation when a query becomes unused after its input changes, or when you call `queryClient.cancelQueries()` or `utils.someRoute.cancel()`. An unused cancelled query reverts to its previous state instead of caching a late result. See [TanStack Query cancellation](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation).
+
+With batched HTTP links, the underlying request is aborted only when all operations in the batch are cancelled.
+
 :::note
 @tanstack/react-query only supports aborting queries.
 :::
