@@ -33,7 +33,7 @@
   ],
   "dependencies": {
     "@bomb.sh/args": "0.3.1",
-    "@clack/prompts": "1.8.1",
+    "@clack/prompts": "1.9.0",
     "jscodeshift": "17.4.0",
     "typescript": "catalog:ts-api"
   },
