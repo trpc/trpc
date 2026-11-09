@@ -103,6 +103,6 @@ catalogs:
     superstruct: 2.0.2
     tailwindcss: 4.3.5
     typescript: 5.9.3
-    ws: 8.22.1
+    ws: 8.22.2
     yup: 1.7.1
     zod: 4.6.7
