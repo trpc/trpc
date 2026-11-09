@@ -8,9 +8,11 @@ import {
 import { type ReactNode, useEffect } from 'react';
 
 import { SiteFooter } from '~/components/site-footer.tsx';
+import { AnnouncementBar } from '~/components/announcement-bar.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
 import { ThemeProvider } from '~/components/theme-provider.tsx';
+import { announcementScript } from '~/announcement.ts';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
 import { validateQuerySearch } from '~/pages.ts';
 import { indexable } from '~/seo.ts';
@@ -73,7 +75,7 @@ export const Route = createRootRoute({
         ? []
         : [{ content: 'noindex', name: 'robots' }]),
     ],
-    scripts: [{ children: themeScript }],
+    scripts: [{ children: themeScript }, { children: announcementScript }],
   }),
   // Every navigation keeps `?flags=`, so the flags stay on page to page.
   search: { middlewares: [retainSearchParams<FlagSearch>(['flags'])] },
@@ -102,6 +104,7 @@ function RootDocument(props: { readonly children: ReactNode }) {
           >
             Skip to content
           </a>
+          <AnnouncementBar />
           <SiteHeader />
           <div className="flex-1" id="content">
             {props.children}
