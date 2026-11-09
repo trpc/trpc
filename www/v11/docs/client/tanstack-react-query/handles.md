@@ -289,6 +289,52 @@ Load handles where the code can wait:
 | React Router                   | `loader` or `clientLoader` | See [React Router](#react-router)       |
 | A SPA without loaders          | Event handlers, such as a link's hover | `useTRPC()`                 |
 
+#### Conditional queries {#conditional-queries}
+
+Put TanStack Query's `skipToken` in place of an entry to start nothing for it. Here, a post page loads its comments only when the URL opens the comments tab, `/posts/1?tab=comments`:
+
+```tsx twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: routes/post.tsx
+import { createRootRouteWithContext, createRoute } from '@tanstack/react-router';
+import type { TRPC } from '~/trpc/client';
+const rootRoute = createRootRouteWithContext<{ trpc: TRPC }>()();
+// ---cut---
+import { skipToken } from '@tanstack/react-query';
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { z } from 'zod';
+
+export const postRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/posts/$id',
+  validateSearch: z.object({
+    tab: z.enum(['post', 'comments']).default('post'),
+  }),
+  loaderDeps: ({ search }) => ({ tab: search.tab }),
+  loader: async ({ context: { trpc }, params: { id }, deps }) => {
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id }),
+      comments:
+        deps.tab === 'comments'
+          ? prefetchInfiniteEntry(trpc.post.comments, { postId: id })
+          : skipToken,
+    });
+    handles.comments;
+    //      ^?
+    return handles;
+  },
+});
+```
+
+- Its handle is `undefined`, so render the reader only when there's a handle: `{handles.comments && <Comments comments={handles.comments} />}`.
+- It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
+- Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Dependent queries](#dependent-queries).
+
 #### TanStack Query equivalents {#tanstack-equivalents}
 
 Each entry is one TanStack Query call:
