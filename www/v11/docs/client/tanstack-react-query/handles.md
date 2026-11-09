@@ -257,9 +257,14 @@ data.comments;
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
 - `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
-- `data` has the data of the entries the load waited for. Use it for the page title, a redirect or a not-found check. Return `handles`, not `data`, so the data doesn't cross to the browser twice.
 - List every query in one load. A second load waits for everything the first one waited for: use one only for [dependent queries](#dependent-queries).
 - Don't call `loadHandles` during render. A component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
+
+#### Using the data in a loader {#loader-data}
+
+`data` has the data of the entries the load waited for. Use it for the page title, a redirect or a not-found check. Return `handles`, not `data`, so the data doesn't cross to the browser twice.
+
+#### Waiting for some, streaming others {#combining-both}
 
 Each entry chooses whether the page waits for its query:
 
@@ -282,6 +287,8 @@ Load handles where the code can wait:
 | TanStack Start, TanStack Router | Route loaders             | The proxy in your router context        |
 | React Router                   | `loader` or `clientLoader` | See [React Router](#react-router)       |
 | A SPA without loaders          | Event handlers, such as a link's hover | `useTRPC()`                 |
+
+#### TanStack Query equivalents {#tanstack-equivalents}
 
 Each entry is one TanStack Query call:
 
@@ -554,11 +561,16 @@ const [aQuery, bQuery] = useSuspenseQueries({
 });
 ```
 
-- Type props with `inferQueryHandle<TRPC['post']['byId']>`, and export `type TRPC = TRPCOptionsProxy<AppRouter>` from `trpc/client.tsx`.
 - Only `loadHandles` makes handles. A hand-written object doesn't type-check, and `fromHandle` throws on it.
 - `handle.input` is the typed input. It leaves out `cursor` and `direction`.
 - Reads share cache entries with `trpc.<path>.queryOptions(input)`.
 - `handle.queryKey` carries no data type, so the handle stays serializable. For a typed key, use `fromHandle(trpc, handle).queryKey` or `trpc.post.byId.queryKey(handle.input)`.
+
+#### Typing props {#typing-props}
+
+Type props with `inferQueryHandle<TRPC['post']['byId']>`, or `inferInfiniteQueryHandle` for an infinite handle. Export `type TRPC = TRPCOptionsProxy<AppRouter>` from `trpc/client.tsx` once.
+
+#### Reading with `useQuery` {#use-query}
 
 With `useQuery`, no `Suspense` boundary is needed:
 
@@ -629,7 +641,9 @@ data.comments.pages;
 
 A query whose input comes from another query's result is a waterfall. Each step costs a round trip. First try to [reshape the procedure](#reshape-procedures). If you can't, there are two ways, and both pay the round trip.
 
-In a loader, load the first query, then build the second load from its `data`:
+#### In a loader {#waterfall-in-a-loader}
+
+Load the first query, then build the second load from its `data`:
 
 ```ts twoslash
 // @include: handles-router
@@ -651,7 +665,9 @@ const [second] = await loadHandles(trpc, {
 const handles = { ...first, ...second };
 ```
 
-Or read it in the component that gets the input, as `MoreByAuthor` does at the top:
+#### In a component {#waterfall-in-a-component}
+
+Read it in the component that gets the input, as `MoreByAuthor` does at the top:
 
 ```tsx twoslash
 // @include: handles-router
@@ -951,6 +967,8 @@ import { unstable_createHydrateClient } from '@trpc/tanstack-react-query';
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
+#### `HydrateClient` {#hydrate-client}
+
 `HydrateClient` sends the request's queries to the browser, pending ones too. Render one in each server component that loads handles:
 
 ```tsx twoslash title='app/posts/[id]/page.tsx'
@@ -1006,6 +1024,8 @@ async function CommentsSection(props: { id: string }) {
 
 ## Errors {#errors}
 
+#### With ensure and fetch entries {#errors-ensure}
+
 When an entry the load waits for fails, `loadHandles` rejects with a `TRPCEntryError`. `isTRPCEntryError(error, trpc.post.byId)` checks which procedure failed and types `error.cause`:
 
 ```ts twoslash
@@ -1044,6 +1064,8 @@ async function loader(id: string) {
 - `error.key` is the entry's key, `error.path` the procedure, `error.code` the tRPC code.
 - The load rejects on the first failure, without waiting for the others.
 
+#### Errors as values {#errors-as-values}
+
 `loadHandlesSettled` never rejects for a failed entry. It returns each waited-for entry's result as a value:
 
 ```ts twoslash
@@ -1073,6 +1095,8 @@ if (results.post.status === 'error') {
 results.post.data.title;
 //           ^?
 ```
+
+#### With prefetch entries {#errors-prefetch}
 
 A prefetch entry never makes the load reject. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
 
@@ -1133,10 +1157,18 @@ const [{ post }] = await loadHandles(trpc, {
 
 ## FAQ {#faq}
 
-**Are handles safe to send to the browser?** Yes. A handle names a query the browser could call anyway, and every refetch runs validation and auth on the server again.
+#### Are handles safe to send to the browser? {#handles-safe}
 
-**Where don't handles work?** In server functions and server actions: their `QueryClient` never hydrates the page, so return data instead. A handle in the URL or `localStorage` gains nothing over its input.
+Yes. A handle names a query the browser could call anyway, and every refetch runs validation and auth on the server again.
 
-**Why functions, not methods on `trpc`?** Methods on `trpc` return plain TanStack Query options. Handles are helpers on top, and apps that don't use them don't load their code.
+#### Where don't handles work? {#where-handles-dont-work}
 
-**Why one load call, not one per query?** So a loader can't make a waterfall by the order of its lines.
+In server functions and server actions: their `QueryClient` never hydrates the page, so return data instead. A handle in the URL or `localStorage` gains nothing over its input.
+
+#### Why functions, not methods on `trpc`? {#why-functions}
+
+Methods on `trpc` return plain TanStack Query options. Handles are helpers on top, and apps that don't use them don't load their code.
+
+#### Why one load call, not one per query? {#why-one-load}
+
+So a loader can't make a waterfall by the order of its lines.

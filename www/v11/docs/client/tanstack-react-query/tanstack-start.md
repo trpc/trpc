@@ -530,9 +530,9 @@ function PostPage() {
 - The data is in the cache before the route renders, so `Post` shows the post at once. If the cache loses the post later, `Post` suspends and shows the nearest `Suspense` fallback, or the route's `pendingComponent`: see [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
 - The navigation waits for the loader. On a slow request, the router shows the route's `pendingComponent`, if it has one.
 - The loader can act on errors, as here with `notFound()`.
-- The handle carries no data. To use the data in the loader, for example for the route's `head`, read it from the load's `data`: `const [handles, data] = await loadHandles(trpc, …)`, and return what you need. See [Using the data in a loader](/docs/client/tanstack-react-query/handles#starting-a-query).
+- The handle carries no data. To use the data in the loader, for example for the route's `head`, read it from the load's `data`: `const [handles, data] = await loadHandles(trpc, …)`, and return what you need. See [Using the data in a loader](/docs/client/tanstack-react-query/handles#loader-data).
 
-To wait for some queries and stream others in the same loader, list them all in one load: see [Waiting for some, streaming others](/docs/client/tanstack-react-query/handles#starting-a-query).
+To wait for some queries and stream others in the same loader, list them all in one load: see [Waiting for some, streaming others](/docs/client/tanstack-react-query/handles#combining-both).
 
 ## 6. Read handles in components
 
@@ -746,7 +746,7 @@ function PostPage() {
 }
 ```
 
-This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or [read the dependent query in the component](/docs/client/tanstack-react-query/handles#dependent-queries), which fetches it in render instead. Reach for `beforeLoad` only when the dependent data must be in the cache before the page renders.
+This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or [read the dependent query in the component](/docs/client/tanstack-react-query/handles#waterfall-in-a-component), which fetches it in render instead. Reach for `beforeLoad` only when the dependent data must be in the cache before the page renders.
 
 </details>
 

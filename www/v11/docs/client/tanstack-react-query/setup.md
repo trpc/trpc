@@ -330,7 +330,7 @@ export default function UserList() {
 ```
 
 :::tip
-A component that starts its own query can only fetch once it renders. If a route loader or server component knows the input, start the query there with `const [{ user }] = await loadHandles(trpc, { user: ensureEntry(trpc.getUser, { id }) })`. That gives you a **handle**: pass `user` to the component, which reads the query with `useQuery(fromHandle(trpc, props.user))`, without repeating the procedure or its input. The handle only names the query, so the data must be in the browser's cache. A loader in the browser already shares that cache. A server has to send its cache along, for example with [`HydrateClient`](/docs/client/tanstack-react-query/handles#nextjs-app-router) in Next.js. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+A component that starts its own query can only fetch once it renders. If a route loader or server component knows the input, start the query there with `const [{ user }] = await loadHandles(trpc, { user: ensureEntry(trpc.getUser, { id }) })`. That gives you a **handle**: pass `user` to the component, which reads the query with `useQuery(fromHandle(trpc, props.user))`, without repeating the procedure or its input. The handle only names the query, so the data must be in the browser's cache. A loader in the browser already shares that cache. A server has to send its cache along, for example with [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client) in Next.js. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 ### 5. Invalidate queries after a mutation
