@@ -15,7 +15,7 @@ import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
 import { validateQuerySearch } from '~/pages.ts';
 import { indexable } from '~/seo.ts';
 import { blog, site } from '~/site.ts';
-import { validateTabSearch } from '~/tabs.ts';
+import { savedTabsScript, validateTabSearch } from '~/tabs.ts';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRoute({
@@ -73,7 +73,7 @@ export const Route = createRootRoute({
         ? []
         : [{ content: 'noindex', name: 'robots' }]),
     ],
-    scripts: [{ children: themeScript }],
+    scripts: [{ children: themeScript }, { children: savedTabsScript }],
   }),
   // Every navigation keeps `?flags=`, so the flags stay on page to page.
   search: { middlewares: [retainSearchParams<FlagSearch>(['flags'])] },
