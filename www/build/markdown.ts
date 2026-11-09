@@ -18,6 +18,7 @@ import type {
   Link,
   Root as MdastRoot,
   Paragraph,
+  PhrasingContent,
 } from 'mdast';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -1005,6 +1006,47 @@ function parsing(
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeHeadings(headings, anchors));
+}
+
+/**
+ * Inline Markdown as a description reads it: inline code in backticks, as
+ * titles and descriptions write it (`src/content/inline-code.ts`), links
+ * and emphasis as their text, and images and HTML left out.
+ */
+const phrasingText = (nodes: ReadonlyArray<PhrasingContent>): string =>
+  nodes
+    .map((node) => {
+      if (node.type === 'text') {
+        return node.value;
+      }
+      if (node.type === 'inlineCode') {
+        return `\`${node.value}\``;
+      }
+      if (node.type === 'break') {
+        return ' ';
+      }
+      return 'children' in node ? phrasingText(node.children) : '';
+    })
+    .join('');
+
+/**
+ * A page's first paragraph with text, past any headings, code or HTML
+ * before it, as one line, as Docusaurus described a page without a
+ * description: its social card shows it (`vite.config.ts`). One that leads
+ * into a list, ending in a colon, ends in an ellipsis instead. Empty for a
+ * page without one.
+ */
+export function excerptOf(markdown: string) {
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(markdown);
+  for (const node of tree.children) {
+    if (node.type === 'paragraph') {
+      const text = phrasingText(node.children).replace(/\s+/g, ' ').trim();
+      if (text !== '') {
+        return text.replace(/:$/, '…');
+      }
+    }
+  }
+  return '';
 }
 
 /** The ids of the headings a page renders, which links can point at. */
