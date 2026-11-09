@@ -257,7 +257,6 @@ data.comments;
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
 - `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
-- List every query in one load. A second load waits for everything the first one waited for: use one only for [dependent queries](#dependent-queries).
 - Don't call `loadHandles` during render. A component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
 
 #### Using the data in a loader {#loader-data}
@@ -265,6 +264,8 @@ data.comments;
 `data` has the data of the entries the load waited for. Use it for the page title, a redirect or a not-found check. Return `handles`, not `data`, so the data doesn't cross to the browser twice.
 
 #### Waiting for some, streaming others {#combining-both}
+
+List every query in one load, whether the page waits for it or not. They all start together. A second load waits for everything the first one waited for, so use one only for [dependent queries](#dependent-queries).
 
 Each entry chooses whether the page waits for its query:
 
@@ -1016,6 +1017,7 @@ async function CommentsSection(props: { id: string }) {
 }
 ```
 
+- The client components that read handles start with `'use client'`, and are otherwise the ones in [Reading a handle](#reading-a-handle).
 - It sends each query once per request, so nesting is fine. A query is sent again only when the server has newer data.
 - Give each handle its own `Suspense` boundary, so one slow query doesn't hold back the rest.
 - For a 404, use an ensure entry and call `notFound()`: see [Errors](#errors).
@@ -1163,7 +1165,9 @@ Yes. A handle names a query the browser could call anyway, and every refetch run
 
 #### Where don't handles work? {#where-handles-dont-work}
 
-In server functions and server actions: their `QueryClient` never hydrates the page, so return data instead. A handle in the URL or `localStorage` gains nothing over its input.
+- **Server functions and server actions:** their `QueryClient` never hydrates the page, so return data instead.
+- **Outside hydration:** a reader rendered on the server outside `HydrateClient` or `HydrationBoundary` fetches its query again. In development, tRPC warns once per query.
+- **URLs and storage:** a handle there gains nothing over its input.
 
 #### Why functions, not methods on `trpc`? {#why-functions}
 
