@@ -376,6 +376,17 @@ html {
   --twoslash-docs-font: var(--font-sans);
   --twoslash-code-font: var(--font-mono);
   --twoslash-popup-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  /* A `// ^^^` range under a line, such as the handle APIs on the handles page */
+  --twoslash-highlighted-bg: color-mix(in oklab, var(--brand) 14%, transparent);
+  --twoslash-highlighted-border: color-mix(
+    in oklab,
+    var(--brand) 45%,
+    transparent
+  );
+}
+
+.twoslash-highlighted {
+  border-radius: 0.25rem;
 }
 
 .twoslash .twoslash-popup-container {

@@ -320,7 +320,7 @@ export function DocPage(props: {
         </footer>
       </article>
       <aside className="hidden xl:block">
-        <div className="sticky top-22 grid gap-10">
+        <div className="sticky top-22 grid max-h-[calc(100dvh-6.5rem)] gap-10 overflow-y-auto">
           <TableOfContents headings={doc.headings} key={doc.slug} />
           {showPartners ? <PartnersRail /> : null}
         </div>
