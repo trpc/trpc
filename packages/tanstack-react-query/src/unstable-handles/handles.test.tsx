@@ -8,6 +8,7 @@ import {
   isCancelledError,
   QueryClient,
   QueryClientProvider,
+  skipToken,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
@@ -171,6 +172,38 @@ describe('types', () => {
     }
     if (results.list.status === 'success') {
       expectTypeOf(results.list.data.pages[0]!.items).toEqualTypeOf<number[]>();
+    }
+  });
+
+  test('a skipToken entry has an `undefined` handle and no data or result', async () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    const isAdmin = Math.random() < 0.5;
+    const [handles, data] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: '1' }),
+      draft: isAdmin
+        ? ensureEntry(trpc.post.draftById, { id: '1' })
+        : skipToken,
+      never: skipToken,
+    });
+    expectTypeOf(handles.draft).toEqualTypeOf<
+      inferQueryHandle<TRPC['post']['draftById']> | undefined
+    >();
+    expectTypeOf(handles.never).toEqualTypeOf<undefined>();
+    expectTypeOf<keyof typeof data>().toEqualTypeOf<'post'>();
+    // @ts-expect-error a maybe-skipped entry may have no data
+    void data.draft;
+
+    const [, results] = await loadHandlesSettled(trpc, {
+      draft: isAdmin ? fetchEntry(trpc.post.draftById, { id: '1' }) : skipToken,
+    });
+    expectTypeOf<keyof typeof results>().toEqualTypeOf<never>();
+
+    const client = {} as TRPC;
+    // @ts-expect-error read a maybe-skipped handle only once it's there
+    fromHandle(client, handles.draft);
+    if (handles.draft) {
+      fromHandle(client, handles.draft);
     }
   });
 
@@ -522,6 +555,34 @@ describe('loading', () => {
     expect(isTRPCEntryError(error, trpc.post.byId)).toBe(true);
   });
 
+  test('a skipToken entry starts nothing and has no handle, data or result', async () => {
+    await using resource = ctx();
+    const server = makeServerProxy(resource);
+    const draftFor = (isAdmin: boolean) =>
+      isAdmin
+        ? ensureEntry(server.trpc.post.draftById, { id: '1' })
+        : skipToken;
+    const [handles, data] = await loadHandles(server.trpc, {
+      post: ensureEntry(server.trpc.post.byId, { id: '1' }),
+      draft: draftFor(false),
+      never: skipToken,
+    });
+    expect(resource.calls.mock.calls).toEqual([['post.byId', { id: '1' }]]);
+    expect(server.queryClient.getQueryCache().getAll()).toHaveLength(1);
+    expect(handles.draft).toBeUndefined();
+    expect(handles.never).toBeUndefined();
+    // Absent, not `undefined`, so Next.js can serialize the handles as props
+    expect(Object.keys(handles)).toEqual(['post']);
+    expect(overTheWire(handles)).toStrictEqual(handles);
+    expect(data).toEqual({ post: { id: '1', title: 'Post 1' } });
+
+    const [settledHandles, results] = await loadHandlesSettled(server.trpc, {
+      draft: draftFor(false),
+    });
+    expect(settledHandles).toEqual({});
+    expect(results).toEqual({});
+  });
+
   test('keeps an entry named __proto__ as its own key', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
@@ -617,7 +678,7 @@ describe('loading', () => {
     await expect(
       loadHandles(trpc, { post: { id: '1' } as any }),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\` for "post", got {"id":"1"}]`,
+      `[Error: Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, or \`skipToken\`, for "post", got {"id":"1"}]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });

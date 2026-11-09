@@ -19,6 +19,7 @@ export type {
   TRPCInfiniteQueryEntry,
   AnyTRPCEntry,
   TRPCEntryKind,
+  TRPCLoadEntries,
   TRPCLoadedHandles,
   TRPCSettledHandles,
   TRPCEntryResult,
