@@ -35,8 +35,8 @@ import { visit } from 'unist-util-visit';
 import type { DocHeading } from '../src/content/types.ts';
 import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
+import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
-import { highlightLines } from './highlight.ts';
 import { compactCode } from './compact-code.ts';
 import { takePopups } from './lazy-popups.ts';
 import { ContentError, messageOf } from './content-error.ts';
@@ -52,8 +52,6 @@ import type { TwoslashCache } from './twoslash-cache.ts';
 /** A link from one page to another, checked once every page has rendered. */
 export interface DocLink {
   readonly hash: string | undefined;
-  /** The link's query, such as `?framework=nextjs` to pick a tab, or `''`. */
-  readonly search: string;
   readonly slug: string;
 }
 
@@ -210,7 +208,7 @@ export function resolveLink(
     ? /^(.+)\.md$/.exec(pathname.slice(folder.length))?.[1]
     : undefined;
   if (slug !== undefined) {
-    return { kind: 'doc', link: { hash, search: target.search, slug } };
+    return { kind: 'doc', link: { hash, slug } };
   }
   return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
 }
@@ -236,7 +234,7 @@ function servedLink(
   const hash = target.hash
     ? decodeURIComponent(target.hash.slice(1))
     : undefined;
-  return { kind: 'doc', link: { hash, search: target.search, slug } };
+  return { kind: 'doc', link: { hash, slug } };
 }
 
 /** A page's path: `<basePath>/<slug>`, and `basePath` itself for `firstDoc`. */
@@ -271,7 +269,7 @@ function remarkLinks(
       );
       if (resolved.kind === 'doc') {
         links.push(resolved.link);
-        node.url = `${pagePath(options, resolved.link.slug)}${resolved.link.search}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
+        node.url = `${pagePath(options, resolved.link.slug)}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
       } else if (resolved.kind === 'source') {
         node.url = `${options.sourceUrl}/${resolved.path}`;
       }
@@ -520,8 +518,8 @@ function rehypeCodeBlocks() {
 }
 
 /**
- * Puts a button per tab above a `code-tabs` group's blocks. `DocBody`
- * switches them, and keeps the choice (`src/tabs-dom.ts`).
+ * Puts a button per tab above a `code-tabs` group's blocks, or a link to the
+ * tab (`?framework=nextjs`) in a group kept in the URL (`src/tabs.ts`).
  */
 function rehypeCodeTabs() {
   return (tree: HastRoot) => {
@@ -558,6 +556,7 @@ function rehypeCodeTabs() {
           delete block.properties['dataActive'];
         }
       }
+      const inUrl = isUrlTabGroup(group);
       node.children.unshift({
         children: tabs.map((tab, index): Element => ({
           children: [{ type: 'text', value: tab }],
@@ -567,9 +566,13 @@ function rehypeCodeTabs() {
             dataTabGroup: group,
             dataTabSelect: tab,
             role: 'tab',
-            type: 'button',
+            ...(inUrl
+              ? {
+                  href: `?${new URLSearchParams({ [group]: tabSlug(tab) })}`,
+                }
+              : { type: 'button' }),
           },
-          tagName: 'button',
+          tagName: inUrl ? 'a' : 'button',
           type: 'element',
         })),
         properties: { className: ['code-tabs-list'], role: 'tablist' },
@@ -1069,7 +1072,6 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
       themes: { dark: 'github-dark', light: 'github-light' },
       transformers: [
         ...(blocks ? [blocks.transformer] : []),
-        highlightLines(),
         collapseRegions(() => {
           collapseId += 1;
           return `code-collapse-${collapseId}`;

@@ -330,8 +330,8 @@ describe('renderMarkdown', () => {
         ].join(' '),
       );
       expect(rendered.links).toEqual([
-        { hash: 'options', search: '', slug: 'client/batching' },
-        { hash: undefined, search: '', slug: 'server/procedures' },
+        { hash: 'options', slug: 'client/batching' },
+        { hash: undefined, slug: 'server/procedures' },
       ]);
       expect(rendered.html).toContain('href="/docs/client/batching#options"');
       expect(rendered.html).toContain('href="/docs/server/procedures"');
@@ -447,7 +447,7 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
-  it.effect('renders a group kept in the URL as buttons too', () =>
+  it.effect('links each tab of a group kept in the URL to it', () =>
     Effect.gen(function* () {
       const rendered = yield* render(
         [
@@ -466,42 +466,12 @@ describe('renderMarkdown', () => {
         ].join('\n'),
       );
       expect(rendered.html).toMatch(
-        /<button [^>]*data-tab-group="framework"[^>]*>Next\.js<\/button>/,
+        /<a [^>]*href="\?framework=nextjs"[^>]*>Next\.js<\/a>/,
       );
-      expect(rendered.html).not.toMatch(/<a [^>]*code-tab/);
-    }).pipe(Effect.provide(NodeServices.layer)),
-  );
-});
-
-describe('highlighted lines', () => {
-  it.effect(
-    'mark a line ending in `// [!code highlight]` and drop the comment',
-    () =>
-      Effect.gen(function* () {
-        const rendered = yield* render(
-          '```ts\nconst a = 1; // [!code highlight]\nconst b = 2;\n```',
-        );
-        expect(rendered.html).toMatch(/<span class="line highlighted">/);
-        expect(rendered.html).not.toContain('[!code');
-        expect(rendered.html.match(/class="line highlighted"/g)).toHaveLength(
-          1,
-        );
-      }).pipe(Effect.provide(NodeServices.layer)),
-  );
-});
-
-describe('page links', () => {
-  it.effect('keep their query, so a link can pick a tab', () =>
-    Effect.gen(function* () {
-      const rendered = yield* render(
-        '[Next.js](../server/router.md?framework=nextjs#lazy) and [setup](/docs/server/routers?framework=react-router)',
+      expect(rendered.html).toMatch(
+        /<a [^>]*href="\?framework=tanstack-start"[^>]*>TanStack Start<\/a>/,
       );
-      expect(rendered.html).toContain(
-        'href="/docs/server/router?framework=nextjs#lazy"',
-      );
-      expect(rendered.html).toContain(
-        'href="/docs/server/routers?framework=react-router"',
-      );
+      expect(rendered.html).not.toMatch(/<a [^>]*type="button"/);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 });
@@ -510,11 +480,11 @@ describe('resolveLink', () => {
   it('resolves relative page links from nested pages', () => {
     expect(resolveLink('client/links', '../server/router.md#lazy')).toEqual({
       kind: 'doc',
-      link: { hash: 'lazy', search: '', slug: 'server/router' },
+      link: { hash: 'lazy', slug: 'server/router' },
     });
     expect(resolveLink('getting-started', 'client/links.md')).toEqual({
       kind: 'doc',
-      link: { hash: undefined, search: '', slug: 'client/links' },
+      link: { hash: undefined, slug: 'client/links' },
     });
   });
 
@@ -531,10 +501,7 @@ describe('resolveLink', () => {
     ).toEqual({ kind: 'source', path: 'examples/a/README.md' });
     expect(
       resolveLink('client/links', '../server/router.md#lazy', 'www/docs'),
-    ).toEqual({
-      kind: 'doc',
-      link: { hash: 'lazy', search: '', slug: 'server/router' },
-    });
+    ).toEqual({ kind: 'doc', link: { hash: 'lazy', slug: 'server/router' } });
     expect(resolveLink('a', '../README.md', 'www/docs')).toEqual({
       kind: 'source',
       path: 'www/README.md',
@@ -555,18 +522,18 @@ describe('resolveLink', () => {
     const v10 = { basePath: '/docs/v10', firstDoc: 'introduction' };
     expect(resolveLink('a', '/docs/server/routers#lazy', 'docs', v11)).toEqual({
       kind: 'doc',
-      link: { hash: 'lazy', search: '', slug: 'server/routers' },
+      link: { hash: 'lazy', slug: 'server/routers' },
     });
     expect(resolveLink('a', '/docs', 'docs', v11)).toEqual({
       kind: 'doc',
-      link: { hash: undefined, search: '', slug: 'introduction' },
+      link: { hash: undefined, slug: 'introduction' },
     });
     expect(resolveLink('a', '/docs/v10/server/routers', 'docs', v11)).toEqual({
       kind: 'other',
     });
     expect(resolveLink('a', '/docs/v10/server/routers', 'docs', v10)).toEqual({
       kind: 'doc',
-      link: { hash: undefined, search: '', slug: 'server/routers' },
+      link: { hash: undefined, slug: 'server/routers' },
     });
     expect(resolveLink('a', '/blog/a', 'docs', v11)).toEqual({ kind: 'other' });
   });
@@ -580,9 +547,9 @@ describe('brokenLinks', () => {
           anchors: ['intro'],
           doc: { slug: 'a' },
           links: [
-            { hash: 'intro', search: '', slug: 'a' },
-            { hash: undefined, search: '', slug: 'b' },
-            { hash: 'missing', search: '', slug: 'a' },
+            { hash: 'intro', slug: 'a' },
+            { hash: undefined, slug: 'b' },
+            { hash: 'missing', slug: 'a' },
           ],
         },
       ]),

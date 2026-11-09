@@ -14,8 +14,7 @@ const contentDir = fileURLToPath(new URL('../v11/docs', import.meta.url));
 
 /** Everything that names a trpc.io docs page, up to where a URL ends. */
 const docsLink = /(?:https?:\/\/)?(?:www\.)?trpc\.io\/docs[^\s'"`)>\]},]*/g;
-// A query, such as `?framework=nextjs` to pick a tab, doesn't change the page.
-const canonical = /^https:\/\/trpc\.io(\/docs[^#?]*)(?:\?[^#]*)?(?:#(.+))?$/;
+const canonical = /^https:\/\/trpc\.io(\/docs[^#]*)(?:#(.+))?$/;
 
 /** Each `trpc.io/docs` link in the published packages' sources, by file and line. */
 const packageLinks = Effect.gen(function* () {

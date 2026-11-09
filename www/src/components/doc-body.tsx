@@ -1,10 +1,12 @@
 import { useRouter } from '@tanstack/react-router';
+import { useState } from 'react';
 
 import { cn } from '@shared/ui/lib/utils';
 
 import { splitAtDemos } from '~/demos/names.ts';
 import { PageDemo } from '~/demos/page-demos.tsx';
-import { chooseLinkedTabs, chooseTab, restoreTabs } from '~/tabs-dom.ts';
+import { FrameworkTabs } from '~/components/framework-tabs.tsx';
+import { isUrlTabGroup, savedTab, saveTab } from '~/tabs.ts';
 import { installTwoslashHovers, type LoadPopups } from '~/twoslash-hovers.ts';
 
 function isElement(target: EventTarget | null): target is Element {
@@ -27,14 +29,10 @@ function internalHref(target: EventTarget | null, root: HTMLElement) {
   ) {
     return undefined;
   }
-  if (
-    url.pathname === window.location.pathname &&
-    url.search === window.location.search &&
-    url.hash
-  ) {
+  if (url.pathname === window.location.pathname && url.hash) {
     return undefined;
   }
-  return url.pathname + url.search + url.hash;
+  return url.pathname + url.hash;
 }
 
 /** The code a block shows, without Twoslash's types and error messages. */
@@ -79,9 +77,51 @@ function toggleCodeCollapse(target: EventTarget | null) {
   return true;
 }
 
+/** Shows `tab` in every tab group named `group` under `root`. */
+function selectTab(root: ParentNode, group: string, tab: string) {
+  for (const tabs of root.querySelectorAll(`[data-tabs="${group}"]`)) {
+    if (!tabs.querySelector(`:scope > [data-tab="${tab}"]`)) {
+      continue;
+    }
+    for (const block of tabs.querySelectorAll(':scope > [data-tab]')) {
+      block.toggleAttribute(
+        'data-active',
+        block.getAttribute('data-tab') === tab,
+      );
+    }
+    for (const button of tabs.querySelectorAll('[data-tab-select]')) {
+      button.setAttribute(
+        'aria-selected',
+        String(button.getAttribute('data-tab-select') === tab),
+      );
+    }
+  }
+}
+
+/**
+ * Shows the reader's saved tab in each group, like the package manager. A
+ * group kept in the URL is `FrameworkTabs`'.
+ */
+function restoreTabs(root: HTMLElement) {
+  const groups = new Set(
+    Array.from(root.querySelectorAll('[data-tabs]'), (tabs) =>
+      tabs.getAttribute('data-tabs'),
+    ),
+  );
+  for (const group of groups) {
+    if (group === null || isUrlTabGroup(group)) {
+      continue;
+    }
+    const tab = savedTab(group);
+    if (tab !== null) {
+      selectTab(root, group, tab);
+    }
+  }
+}
+
 /**
  * Switches a tab group, and every group of its kind on the page, on click,
- * keeping the tab where it is on screen.
+ * keeping the tab where it is on screen, and saves the reader's pick.
  */
 function clickTab(target: EventTarget | null) {
   const button = isElement(target)
@@ -93,12 +133,13 @@ function clickTab(target: EventTarget | null) {
     return false;
   }
   const top = button.getBoundingClientRect().top;
-  chooseTab(group, tab);
+  selectTab(document, group, tab);
   // Groups of its kind above it can change height.
   window.scrollBy({
     behavior: 'instant',
     top: button.getBoundingClientRect().top - top,
   });
+  saveTab(group, tab);
   return true;
 }
 
@@ -134,6 +175,8 @@ export function DocBody(props: {
   readonly loadPopups: LoadPopups;
 }) {
   const router = useRouter();
+  // The rendered page, once mounted, for the tabs `FrameworkTabs` renders into it.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
   return (
     <div
       className={props.className}
@@ -159,20 +202,13 @@ export function DocBody(props: {
         const href = internalHref(event.target, event.currentTarget);
         if (href) {
           event.preventDefault();
-          const url = new URL(href, window.location.href);
-          if (url.pathname === window.location.pathname) {
-            chooseLinkedTabs(event.currentTarget, url.search);
-          }
-          void router.navigate({ href });
+          void router.navigate({ to: href });
         }
       }}
       onPointerOver={(event) => {
         const href = internalHref(event.target, event.currentTarget);
         if (href) {
-          // Preloading needs only the page, not its search or hash.
-          void router.preloadRoute({
-            to: new URL(href, window.location.href).pathname,
-          });
+          void router.preloadRoute({ to: href });
         }
       }}
       ref={(element) => {
@@ -180,6 +216,7 @@ export function DocBody(props: {
           return undefined;
         }
         restoreTabs(element);
+        setRoot(element);
         return installTwoslashHovers(element, props.loadPopups);
       }}
     >
@@ -202,6 +239,7 @@ export function DocBody(props: {
           </div>
         ),
       )}
+      <FrameworkTabs root={root} />
     </div>
   );
 }

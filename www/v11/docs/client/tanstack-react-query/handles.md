@@ -206,8 +206,10 @@ import { useTRPC } from '~/lib/trpc';
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await loadHandles(trpc, { // [!code highlight]
-      post: ensureEntry(trpc.post.byId, { id: params.id }), // [!code highlight]
+    const [handles] = await loadHandles(trpc, {
+//                          ^^^^^^^^^^^
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+//          ^^^^^^^^^^^
     });
     return handles;
   },
@@ -217,7 +219,8 @@ export const Route = createFileRoute('/posts/$id')({
 function PostPage() {
   const handles = Route.useLoaderData();
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post)); // [!code highlight]
+  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
+//                                   ^^^^^^^^^^
   return <h1>{postQuery.data.title}</h1>;
 }
 ```
@@ -243,8 +246,10 @@ import { Post } from './post';
 
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const [handles] = await loadHandles(trpc, { // [!code highlight]
-    post: ensureEntry(trpc.post.byId, { id }), // [!code highlight]
+  const [handles] = await loadHandles(trpc, {
+//                        ^^^^^^^^^^^
+    post: ensureEntry(trpc.post.byId, { id }),
+//        ^^^^^^^^^^^
   });
   return (
     <HydrateClient>
@@ -269,9 +274,11 @@ import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/un
 import { useTRPC, type TRPC } from '~/trpc/client';
 // ---/collapse---
 
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) { // [!code highlight]
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+//                                  ^^^^^^^^^^^^^^^^
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post)); // [!code highlight]
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+//                                   ^^^^^^^^^^
   return <h1>{postQuery.data.title}</h1>;
 }
 ```
@@ -783,9 +790,12 @@ import { Post } from '~/components/post';
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await loadHandles(trpc, { // [!code highlight]
-      post: ensureEntry(trpc.post.byId, { id: params.id }), // [!code highlight]
-      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }), // [!code highlight]
+    const [handles] = await loadHandles(trpc, {
+//                          ^^^^^^^^^^^
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+//          ^^^^^^^^^^^
+      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
+//              ^^^^^^^^^^^^^^^^^^^^^
     });
     return handles;
   },
@@ -836,9 +846,12 @@ import { Post } from './post';
 
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const [handles] = await loadHandles(trpc, { // [!code highlight]
-    post: ensureEntry(trpc.post.byId, { id }), // [!code highlight]
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }), // [!code highlight]
+  const [handles] = await loadHandles(trpc, {
+//                        ^^^^^^^^^^^
+    post: ensureEntry(trpc.post.byId, { id }),
+//        ^^^^^^^^^^^
+    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+//            ^^^^^^^^^^^^^^^^^^^^^
   });
   return (
     <HydrateClient>
@@ -864,9 +877,11 @@ import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/un
 import { useTRPC, type TRPC } from '~/trpc/client';
 // ---/collapse---
 
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) { // [!code highlight]
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+//                                  ^^^^^^^^^^^^^^^^
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post)); // [!code highlight]
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+//                                   ^^^^^^^^^^
   return <h1>{postQuery.data.title}</h1>;
 }
 ```

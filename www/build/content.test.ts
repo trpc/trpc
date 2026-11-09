@@ -69,7 +69,6 @@ describe('experimentPageProblems', () => {
     doc: { experiment: options.experiment, parent: options.parent, slug },
     links: (options.links ?? []).map((link) => ({
       hash: undefined,
-      search: '',
       slug: link,
     })),
   });
