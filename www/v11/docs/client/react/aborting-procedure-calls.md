@@ -14,9 +14,13 @@ The classic React Query integration (`@trpc/react-query`) only gets bug fixes, a
 
 By default, tRPC does not cancel requests via React Query. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
 
-When enabled, tRPC passes TanStack React Query's `AbortSignal` to the request. This also allows cancellation when a query becomes unused after its input changes, or when you call `queryClient.cancelQueries()` or `utils.someRoute.cancel()`. An unused cancelled query reverts to its previous state instead of caching a late result. See [TanStack Query cancellation](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation).
+For `useQuery`, when enabled, tRPC passes TanStack React Query's `AbortSignal` to the request. This also allows cancellation when a query becomes unused after its input changes, or when you call `queryClient.cancelQueries()` or `utils.someRoute.cancel()`. An unused cancelled query reverts to its previous state instead of caching a late result. See [TanStack Query cancellation](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation).
 
-With batched HTTP links, the underlying request is aborted only when all operations in the batch are cancelled.
+`useInfiniteQuery` does not use the `createTRPCReact` global option. Set `trpc: { abortOnUnmount: true }` on the query, or use the provider option. `useQueries` does not forward the signal, even when the global option is enabled, so an unused query may finish and cache its result. Do not rely on unmount cancellation for `useSuspenseQuery` while it is loading.
+
+For infinite queries, omit `cursor` and `direction` from input passed to `utils.someRoute.cancel()`: they are omitted from the infinite query key. Calling `cancel()` without input matches all inputs for that route.
+
+Cancellation depends on the transport. With `wsLink`, cancelling a query locally does not stop a procedure already sent to the server. With batched HTTP links, the underlying request is aborted only when all operations in the batch are cancelled. For `httpBatchLink`, a query with `abortOnUnmount` disabled does not pass a signal, so cancelling it through React Query cannot abort the shared request.
 
 :::note
 @tanstack/react-query only supports aborting queries.
