@@ -77,7 +77,7 @@ catalogs:
     '@fastify/websocket': 11.3.7
     '@resvg/resvg-wasm': 2.6.2
     '@tanstack/react-router': 1.170.46
-    '@tanstack/react-start': 1.169.4
+    '@tanstack/react-start': 1.169.5
     '@types/aws-lambda': 8.10.164
     '@types/cors': 2.8.19
     '@types/event-source-polyfill': 1.0.5
