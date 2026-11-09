@@ -156,6 +156,29 @@ export function MoreByAuthor(props: { authorId: string }) {
 }
 ```
 
+```twoslash include handles-start
+// @filename: lib/trpc.ts
+export { useTRPC, type TRPC } from '~/trpc/client';
+// @filename: routes/__root.tsx
+import { createRootRouteWithContext } from '@tanstack/react-router';
+import type { TRPC } from '~/trpc/client';
+export const Route = createRootRouteWithContext<{ trpc: TRPC }>()();
+// @filename: routeTree.gen.ts
+import type { Route as rootRoute } from './routes/__root';
+import type { Route as postRoute } from './routes/posts.$id';
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/posts/$id': {
+      id: '/posts/$id';
+      path: '/posts/$id';
+      fullPath: '/posts/$id';
+      preLoaderRoute: typeof postRoute;
+      parentRoute: typeof rootRoute;
+    };
+  }
+}
+```
+
 ## In short {#gist}
 
 Load the handles where the page starts, and read each one in a component, which never names the procedure or repeats its input:
@@ -163,7 +186,13 @@ Load the handles where the page starts, and read each one in a component, which 
 <div class="code-tabs" data-tabs="framework">
 <div data-tab="TanStack Start">
 
-```tsx title='src/routes/posts.$id.tsx'
+```tsx twoslash title='src/routes/posts.$id.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @include: handles-start
+// @filename: routes/posts.$id.tsx
+// ---cut---
 // ---collapse---
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -198,7 +227,14 @@ function PostPage() {
 
 The page, a server component, loads the handles:
 
-```tsx title='app/posts/[id]/page.tsx'
+```tsx twoslash title='app/posts/[id]/page.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: app/posts/[id]/post.tsx
+export { Post } from '~/components/post';
+// @filename: app/posts/[id]/page.tsx
+// ---cut---
 // ---collapse---
 import { ensureEntry, loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
 import { HydrateClient, trpc } from '~/trpc/server';
@@ -726,7 +762,13 @@ Each framework loads the handles where the page starts and passes them to the co
 
 After the [TanStack Start setup](/docs/client/tanstack-react-query/tanstack-start), the route's loader loads the handles and its component passes them on:
 
-```tsx title='src/routes/posts.$id.tsx'
+```tsx twoslash title='src/routes/posts.$id.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @include: handles-start
+// @filename: routes/posts.$id.tsx
+// ---cut---
 // ---collapse---
 import { createFileRoute } from '@tanstack/react-router';
 import {
