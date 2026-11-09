@@ -52,6 +52,8 @@ import type { TwoslashCache } from './twoslash-cache.ts';
 /** A link from one page to another, checked once every page has rendered. */
 export interface DocLink {
   readonly hash: string | undefined;
+  /** The link's query, such as `?framework=nextjs` to pick a tab, or `''`. */
+  readonly search: string;
   readonly slug: string;
 }
 
@@ -208,7 +210,7 @@ export function resolveLink(
     ? /^(.+)\.md$/.exec(pathname.slice(folder.length))?.[1]
     : undefined;
   if (slug !== undefined) {
-    return { kind: 'doc', link: { hash, slug } };
+    return { kind: 'doc', link: { hash, search: target.search, slug } };
   }
   return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
 }
@@ -234,7 +236,7 @@ function servedLink(
   const hash = target.hash
     ? decodeURIComponent(target.hash.slice(1))
     : undefined;
-  return { kind: 'doc', link: { hash, slug } };
+  return { kind: 'doc', link: { hash, search: target.search, slug } };
 }
 
 /** A page's path: `<basePath>/<slug>`, and `basePath` itself for `firstDoc`. */
@@ -269,7 +271,7 @@ function remarkLinks(
       );
       if (resolved.kind === 'doc') {
         links.push(resolved.link);
-        node.url = `${pagePath(options, resolved.link.slug)}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
+        node.url = `${pagePath(options, resolved.link.slug)}${resolved.link.search}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
       } else if (resolved.kind === 'source') {
         node.url = `${options.sourceUrl}/${resolved.path}`;
       }

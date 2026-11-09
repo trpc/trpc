@@ -536,7 +536,7 @@ To wait for some queries and stream others in the same loader, list them all in 
 
 ## 6. Read handles in components
 
-Components read handles with `fromHandle` and `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles#nextjs-app-router), minus `'use client'`:
+Components read handles with `fromHandle` and `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles?framework=nextjs#nextjs-app-router), minus `'use client'`:
 
 ```tsx twoslash title='src/components/post.tsx'
 // @include: start-app

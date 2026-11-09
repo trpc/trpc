@@ -584,7 +584,7 @@ function Home() {
 }
 ```
 
-This `HydrateClient` sends every query in the cache each time it renders, so nested ones send the same queries again. `unstable_createHydrateClient(getQueryClient)` creates one that sends each query once per request. See [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client).
+This `HydrateClient` sends every query in the cache each time it renders, so nested ones send the same queries again. `unstable_createHydrateClient(getQueryClient)` creates one that sends each query once per request. See [`HydrateClient`](/docs/client/tanstack-react-query/handles?framework=nextjs#hydrate-client).
 
 :::
 
