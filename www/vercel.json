@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "sh ../next/tooling/vercel-ignore/ignore.sh",
+  "ignoreCommand": "sh ../v12/tooling/vercel-ignore/ignore.sh",
   "installCommand": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 VP_GIT_HOOKS=0 pnpm --filter trpc-repo --filter \"www...\" --filter @tooling/pack install --frozen-lockfile",
   "buildCommand": "if [ \"$VERCEL_GIT_COMMIT_REF\" = v12 ]; then export VERCEL_ENV=production; fi; cd .. && NODE_OPTIONS=--max-old-space-size=4096 pnpm turbo run build --filter www",
   "framework": "tanstack-start",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import trpcPackage from '../../next/packages/trpc/package.json' with { type: 'json' };
+import trpcPackage from '../../v12/packages/trpc/package.json' with { type: 'json' };
 import { unindexedPaths, v12Indexable } from './site.ts';
 
 describe('v12Indexable', () => {

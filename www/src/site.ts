@@ -56,7 +56,7 @@ export const v12 = {
 } as const;
 
 /**
- * The design decisions in `next/.agent-docs/`, rendered for browsing: the
+ * The design decisions in `v12/.agent-docs/`, rendered for browsing: the
  * open questions (`open/`) and the records (`decisions/`). Hidden: nothing on
  * the site links here, and it's `noindex` and out of `robots.txt`'s crawl,
  * the sitemap, `llms.txt` and search, whatever host serves it

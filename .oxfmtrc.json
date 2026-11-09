@@ -15,9 +15,9 @@
     }
   ],
   "ignorePatterns": [
-    // Each has its own: `v11/.oxfmtrc.json`, and `fmt` in `next/vite.config.ts`.
+    // Each has its own: `v11/.oxfmtrc.json`, and `fmt` in `v12/vite.config.ts`.
     "v11/**",
-    "next/**",
+    "v12/**",
     "pnpm-lock.yaml",
     // `vendor-src` writes it.
     "vendor-src.json",

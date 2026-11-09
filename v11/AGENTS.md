@@ -1,6 +1,6 @@
 # Agent instructions
 
-`v11/` is tRPC v11, `main`'s code; v12 is the rewrite in [`next/`](../next/AGENTS.md). The workspace, the shared commands and the skills are in the [root's `AGENTS.md`](../AGENTS.md).
+`v11/` is tRPC v11, `main`'s code; v12 is the rewrite in [`v12/`](../v12/AGENTS.md). The workspace, the shared commands and the skills are in the [root's `AGENTS.md`](../AGENTS.md).
 
 ## Commands
 
@@ -18,7 +18,7 @@ Run them from `v11/`.
 ## Rules
 
 - Every bug fix has a regression test that fails without the fix, and a `Regression check:` line in the PR naming it.
-- No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Port v11 fixes to `next/`, following [`next/AGENTS.md`](../next/AGENTS.md).
+- No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Port v11 fixes to `v12/`, following [`v12/AGENTS.md`](../v12/AGENTS.md).
 - Internal (non-exported) parameters, properties and options are required: pass `null`, `undefined`, a literal or a symbol, whichever fits. Optionals are only for public APIs, normalised once at the boundary.
 - While you work on a PR, follow [`pr-agent-callout`](../.agents/skills/pr-agent-callout/SKILL.md): its body starts with a callout saying what you're doing, until you stop planning to push.
 - CodeRabbit usually reviews a PR within about 15 minutes of each push. Before you finish, wait for its review of your last push, then fix or answer its comments.

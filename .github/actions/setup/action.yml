@@ -1,5 +1,5 @@
 name: setup
-description: Installs the repository's one pnpm workspace (v11/, next/ and www/) with the root's pnpm and Node
+description: Installs the repository's one pnpm workspace (v11/, v12/ and www/) with the root's pnpm and Node
 inputs:
   node-version:
     description: A Node version to use instead of the root's `.nvmrc`

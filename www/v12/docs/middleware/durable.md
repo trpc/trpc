@@ -48,4 +48,4 @@ Over WebSockets there are no per-call headers; key the call from its input with 
 
 On Durable Objects, [durable calls](../adapters/cloudflare.md#durable-calls) keep results in the object's storage.
 
-The [`examples/experimental/durable-jobs`](../../../../next/examples/experimental/durable-jobs/README.md) app runs two servers on one Redis: a payment whose response is lost is charged once, and a report cut on one server resumes on the other.
+The [`examples/experimental/durable-jobs`](../../../../v12/examples/experimental/durable-jobs/README.md) app runs two servers on one Redis: a payment whose response is lost is charged once, and a report cut on one server resumes on the other.

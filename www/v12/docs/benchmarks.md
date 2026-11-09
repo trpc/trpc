@@ -63,7 +63,7 @@ The rows of oRPC v2's [comparison](https://orpc.dev/docs/comparison), in its gro
 
 ## Running them
 
-From `next/` in the [repository](https://github.com/trpc/trpc/tree/v12/next):
+From `v12/` in the [repository](https://github.com/trpc/trpc/tree/v12/next):
 
 ```sh
 pnpm install
@@ -73,4 +73,4 @@ pnpm bench typecheck
 pnpm bench bundle
 ```
 
-Each prints a table. `--snapshot` also writes its results to `www/benchmarks.json`, which this page charts. `runtime` takes `--duration` (seconds, 10 by default) and `--connections` (10), and `typecheck` takes `--routers` (500, 6 procedures each) and `--runs` (3). The harness is [`tooling/bench`](../../../next/tooling/bench/bench.ts).
+Each prints a table. `--snapshot` also writes its results to `www/benchmarks.json`, which this page charts. `runtime` takes `--duration` (seconds, 10 by default) and `--connections` (10), and `typecheck` takes `--routers` (500, 6 procedures each) and `--runs` (3). The harness is [`tooling/bench`](../../../v12/tooling/bench/bench.ts).

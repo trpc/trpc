@@ -47,7 +47,7 @@ const doc = experimental_generateOpenApi(router, {
 - [A contract from OpenAPI](./from-document.md): generate a typed contract module from any OpenAPI 3.0 or 3.1 document, to call APIs that aren't tRPC.
 - [Generating a client with Hey API](./hey-api.md): generate a typed SDK of the REST routes from the document, for apps that can't import the router's type.
 
-The [`examples/experimental/openapi`](../../../../next/examples/experimental/openapi/README.md) app serves one router over RPC and REST, generates its document from types, and calls it with `fetch` and `experimental_openApiLink`.
+The [`examples/experimental/openapi`](../../../../v12/examples/experimental/openapi/README.md) app serves one router over RPC and REST, generates its document from types, and calls it with `fetch` and `experimental_openApiLink`.
 
 ## Credits
 

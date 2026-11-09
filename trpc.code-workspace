@@ -1,8 +1,8 @@
 {
-  // `next` comes first: the Oxc extension finds `vite-plus` (and so
+  // `v12` comes first: the Oxc extension finds `vite-plus` (and so
   // `vite.config.ts`) only from a workspace folder's root.
   "folders": [
-    { "name": "next", "path": "next" },
+    { "name": "v12", "path": "v12" },
     { "name": "v11", "path": "v11" },
     { "name": "root", "path": "." },
   ],
@@ -25,11 +25,11 @@
     "eslint.enable": false,
     "prettier.enable": false,
     "js/ts.experimental.useTsgo": true,
-    // `next`'s TypeScript (7.1 beta), not the extension's bundled build.
+    // `v12`'s TypeScript (7.1 beta), not the extension's bundled build.
     "js/ts.tsdk.path": "./node_modules/typescript",
     "js/ts.preferences.autoImportFileExcludePatterns": ["**/.repos/**"],
     "files.exclude": {
-      "next": true,
+      "v12": true,
       "v11": true,
       "**/.repos": true,
     },
@@ -37,7 +37,7 @@
       "**/.repos/**": true,
     },
     "search.exclude": {
-      "next": true,
+      "v12": true,
       "v11": true,
       "**/.repos": true,
       "**/dist": true,

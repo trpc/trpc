@@ -27,7 +27,7 @@ export interface DecisionsOptions {
   readonly basePath: string;
   /** `.agent-docs`, as an absolute path. */
   readonly dir: string;
-  /** `.agent-docs`'s path in the repo: `next/.agent-docs`. */
+  /** `.agent-docs`'s path in the repo: `v12/.agent-docs`. */
   readonly dirInRepo: string;
   /** The module that lists them: `virtual:decisions-manifest`. */
   readonly manifestId: string;

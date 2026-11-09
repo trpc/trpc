@@ -4,7 +4,7 @@ on:
   push:
     branches: [v12]
     paths:
-      - 'next/**'
+      - 'v12/**'
       - 'www/**'
       - 'tooling/**'
       # The site's v11 docs compile against v11's packages.
@@ -21,7 +21,7 @@ on:
       - '.github/workflows/next.yml'
   pull_request:
     paths:
-      - 'next/**'
+      - 'v12/**'
       - 'www/**'
       - 'tooling/**'
       # The site's v11 docs compile against v11's packages.
@@ -56,7 +56,7 @@ env:
 
 defaults:
   run:
-    working-directory: next
+    working-directory: v12
 
 jobs:
   check:
@@ -111,7 +111,7 @@ jobs:
 
   www:
     # The docs site (www/): its lint, types and tests, the formatting of
-    # everything outside v11/ and next/, then the build, which compiles every
+    # everything outside v11/ and v12/, then the build, which compiles every
     # twoslash block in every version's docs and the blog, and fails on broken
     # links between pages.
     runs-on: ubuntu-latest
@@ -183,8 +183,8 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           install: 'false'
-      # next/'s packages only (`git ls-files` and `--filter` are relative to
-      # next/): v11 and the site keep the lockfile's.
+      # v12/'s packages only (`git ls-files` and `--filter` are relative to
+      # v12/): v11 and the site keep the lockfile's.
       - name: Widen effect pins to ^4.1 and update to the latest 4.x
         run: |
           for f in $(git ls-files '*package.json'); do
@@ -260,7 +260,7 @@ jobs:
       - if: steps.credentials.outputs.present == 'true'
         name: Deploy
         id: deploy
-        working-directory: next/examples/cloudflare
+        working-directory: v12/examples/cloudflare
         run: |
           pnpm run deploy 2>&1 | tee deploy.log
           url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
@@ -268,7 +268,7 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
       - if: steps.credentials.outputs.present == 'true'
         name: Smoke the deployed Worker
-        working-directory: next/examples/cloudflare
+        working-directory: v12/examples/cloudflare
         run: pnpm client "$SMOKE_URL"
         env:
           SMOKE_URL: ${{ steps.deploy.outputs.url }}

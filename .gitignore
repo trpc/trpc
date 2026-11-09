@@ -1,4 +1,4 @@
-# Repo-wide. v11/ and next/ each have their own .gitignore.
+# Repo-wide. v11/ and v12/ each have their own .gitignore.
 *.log
 .DS_Store
 dist/

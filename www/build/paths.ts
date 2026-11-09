@@ -22,8 +22,8 @@ export const twoslashCache: TwoslashCacheOptions = {
 /** The open questions and decisions in `.agent-docs`, for the site and `pnpm decisions:check`. */
 export const decisionsOptions: DecisionsOptions = {
   basePath: decisions.basePath,
-  dir: new URL('../../next/.agent-docs', import.meta.url).pathname,
-  dirInRepo: 'next/.agent-docs',
+  dir: new URL('../../v12/.agent-docs', import.meta.url).pathname,
+  dirInRepo: 'v12/.agent-docs',
   inlineApp: 'decisions',
   manifestId: 'virtual:decisions-manifest',
   repoUrl: `${site.github}/blob/v12`,

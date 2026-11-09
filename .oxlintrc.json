@@ -14,9 +14,9 @@
     "**/vendor/**",
     "**/generated/**",
     "**/routeTree.gen.ts",
-    // Each has its own: `v11/.oxlintrc.json`, and `lint` in `next/vite.config.ts`.
+    // Each has its own: `v11/.oxlintrc.json`, and `lint` in `v12/vite.config.ts`.
     "v11/**",
-    "next/**"
+    "v12/**"
   ],
   "rules": {
     // eslint-plugin-react-hooks `recommended`, minus the opt-outs below.

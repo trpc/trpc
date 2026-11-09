@@ -15,7 +15,7 @@ The whole package is experimental: the package name says so, every export is `@s
 @trpc12/trpc effect @trpc12/experimental-react
 ```
 
-The [`examples/experimental/react-suspense`](../../../../next/examples/experimental/react-suspense/README.md) app uses this package on TanStack Start: a route loader starts the query, and the server render's cache is dehydrated into the browser's client. [`react-atom`](../../../../next/examples/experimental/react-atom/README.md) is the same page with `@trpc12/experimental-react-atom`.
+The [`examples/experimental/react-suspense`](../../../../v12/examples/experimental/react-suspense/README.md) app uses this package on TanStack Start: a route loader starts the query, and the server render's cache is dehydrated into the browser's client. [`react-atom`](../../../../v12/examples/experimental/react-atom/README.md) is the same page with `@trpc12/experimental-react-atom`.
 
 ```tsx twoslash
 // ---cut-start---

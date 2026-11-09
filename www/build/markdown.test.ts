@@ -62,7 +62,7 @@ const render = (markdown: string, slug = 'client/links', inlineApp?: string) =>
       inlineApp,
       samplesDir,
       slug,
-      sourceUrl: 'https://github.com/trpc/trpc/blob/v12/next',
+      sourceUrl: 'https://github.com/trpc/trpc/blob/v12/v12',
     }),
   );
 
@@ -334,7 +334,7 @@ describe('renderMarkdown', () => {
       expect(rendered.html).toContain('href="/docs/client/batching#options"');
       expect(rendered.html).toContain('href="/docs/server/procedures"');
       expect(rendered.html).toContain(
-        'href="https://github.com/trpc/trpc/blob/v12/next/examples/chat/server.ts"',
+        'href="https://github.com/trpc/trpc/blob/v12/v12/examples/chat/server.ts"',
       );
       expect(rendered.html).toContain('href="https://trpc.io"');
     }).pipe(Effect.provide(NodeServices.layer)),

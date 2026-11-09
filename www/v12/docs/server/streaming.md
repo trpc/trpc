@@ -133,4 +133,4 @@ The call's own error lists the stream's failures too, as a subscription's does: 
 
 A streamed query or mutation is one call whose result arrives in pieces; the client consumes it once. A [subscription](../subscriptions/overview.md) is a stream of events the client follows, with `tracked()` ids to resume after a reconnect. For progress of long jobs in TanStack Query, see [Long jobs](../integrations/tanstack-query/streamed-mutations.md#long-jobs).
 
-The [`examples/media-pipeline`](../../../../next/examples/media-pipeline/README.md) app streams upload progress from an Effect `Stream`, a report whose nested promises settle one by one, and an album export from an async generator, each validated with `stream()`.
+The [`examples/media-pipeline`](../../../../v12/examples/media-pipeline/README.md) app streams upload progress from an Effect `Stream`, a report whose nested promises settle one by one, and an album export from an async generator, each validated with `stream()`.

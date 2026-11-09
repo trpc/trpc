@@ -389,7 +389,7 @@ importers:
         specifier: 'catalog:'
         version: 8.3.5(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.23.15)(yaml@2.9.1)
 
-  next:
+  v12:
     dependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: 7.3.1
@@ -417,7 +417,7 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@vitest/browser@5.0.3)(vitest@5.0.3)
 
-  next/examples/cloudflare:
+  v12/examples/cloudflare:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -442,7 +442,7 @@ importers:
         specifier: 4.151.0
         version: 4.151.0(@cloudflare/workers-types@5.20261014.1)(@types/node@26.6.4)
 
-  next/examples/effect:
+  v12/examples/effect:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -461,7 +461,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/effect-observability:
+  v12/examples/effect-observability:
     dependencies:
       '@effect/opentelemetry':
         specifier: 4.1.2
@@ -513,7 +513,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/experimental/durable-jobs:
+  v12/examples/experimental/durable-jobs:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -535,7 +535,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/experimental/framework-matrix:
+  v12/examples/experimental/framework-matrix:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -605,7 +605,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/experimental/mcp:
+  v12/examples/experimental/mcp:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -630,7 +630,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/experimental/nest:
+  v12/examples/experimental/nest:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -673,7 +673,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/experimental/openapi:
+  v12/examples/experimental/openapi:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -695,7 +695,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/experimental/react-atom:
+  v12/examples/experimental/react-atom:
     dependencies:
       '@effect/atom-react':
         specifier: 4.1.2
@@ -756,7 +756,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/experimental/react-suspense:
+  v12/examples/experimental/react-suspense:
     dependencies:
       '@shared/ui':
         specifier: workspace:*
@@ -814,7 +814,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/experimental/worker-threads:
+  v12/examples/experimental/worker-threads:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -833,7 +833,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/media-pipeline:
+  v12/examples/media-pipeline:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -855,7 +855,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/minimal:
+  v12/examples/minimal:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -877,7 +877,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/monorepo:
+  v12/examples/monorepo:
     dependencies:
       '@acme/billing-widget':
         specifier: workspace:*
@@ -896,7 +896,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/monorepo/apps/billing-widget:
+  v12/examples/monorepo/apps/billing-widget:
     dependencies:
       '@acme/billing-contract':
         specifier: workspace:*
@@ -912,7 +912,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/apps/web:
+  v12/examples/monorepo/apps/web:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -928,7 +928,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/api:
+  v12/examples/monorepo/packages/api:
     dependencies:
       '@acme/billing':
         specifier: workspace:*
@@ -950,7 +950,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/billing:
+  v12/examples/monorepo/packages/billing:
     dependencies:
       '@acme/billing-contract':
         specifier: workspace:*
@@ -969,7 +969,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/billing-contract:
+  v12/examples/monorepo/packages/billing-contract:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -982,7 +982,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/posts:
+  v12/examples/monorepo/packages/posts:
     dependencies:
       '@acme/trpc':
         specifier: workspace:*
@@ -998,7 +998,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/server:
+  v12/examples/monorepo/packages/server:
     dependencies:
       '@acme/api':
         specifier: workspace:*
@@ -1017,7 +1017,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/trpc:
+  v12/examples/monorepo/packages/trpc:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -1030,7 +1030,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/monorepo/packages/users:
+  v12/examples/monorepo/packages/users:
     dependencies:
       '@acme/trpc':
         specifier: workspace:*
@@ -1046,7 +1046,7 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
 
-  next/examples/next-app:
+  v12/examples/next-app:
     dependencies:
       '@shared/ui':
         specifier: workspace:*
@@ -1101,7 +1101,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/react-spa:
+  v12/examples/react-spa:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -1168,7 +1168,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/realtime:
+  v12/examples/realtime:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -1193,7 +1193,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/examples/runtime-matrix:
+  v12/examples/runtime-matrix:
     dependencies:
       '@effect/platform-bun':
         specifier: 4.1.2
@@ -1227,7 +1227,7 @@ importers:
         specifier: 4.151.0
         version: 4.151.0(@cloudflare/workers-types@5.20261014.1)(@types/node@26.6.4)
 
-  next/examples/saas-api:
+  v12/examples/saas-api:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -1261,7 +1261,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/examples/v11-migration:
+  v12/examples/v11-migration:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -1313,7 +1313,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/packages/experimental-nest:
+  v12/packages/experimental-nest:
     devDependencies:
       '@effect/platform-node':
         specifier: ^4.1.2
@@ -1352,7 +1352,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-react:
+  v12/packages/experimental-react:
     devDependencies:
       '@tooling/tsconfig':
         specifier: workspace:*
@@ -1388,7 +1388,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-react-atom:
+  v12/packages/experimental-react-atom:
     devDependencies:
       '@effect/atom-react':
         specifier: 4.1.2
@@ -1427,7 +1427,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-tanstack-angular-query:
+  v12/packages/experimental-tanstack-angular-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1479,7 +1479,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-tanstack-db:
+  v12/packages/experimental-tanstack-db:
     devDependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -1509,7 +1509,7 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
-  next/packages/experimental-tanstack-lit-query:
+  v12/packages/experimental-tanstack-lit-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1549,7 +1549,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-tanstack-preact-query:
+  v12/packages/experimental-tanstack-preact-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1586,7 +1586,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-tanstack-solid-query:
+  v12/packages/experimental-tanstack-solid-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1623,7 +1623,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-tanstack-svelte-query:
+  v12/packages/experimental-tanstack-svelte-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1660,7 +1660,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/experimental-tanstack-vue-query:
+  v12/packages/experimental-tanstack-vue-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1697,7 +1697,7 @@ importers:
         specifier: 3.5.43
         version: 3.5.43(typescript@7.1.0-beta)
 
-  next/packages/tanstack-query:
+  v12/packages/tanstack-query:
     devDependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -1736,7 +1736,7 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
-  next/packages/tanstack-react-query:
+  v12/packages/tanstack-react-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1782,7 +1782,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/packages/trpc:
+  v12/packages/trpc:
     devDependencies:
       '@effect/platform-bun':
         specifier: 4.1.2
@@ -1851,7 +1851,7 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
-  next/packages/upgrade:
+  v12/packages/upgrade:
     dependencies:
       '@effect/platform-node':
         specifier: ^4.1.2
@@ -1879,7 +1879,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/spikes:
+  v12/spikes:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -1958,7 +1958,7 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
-  next/test/integration:
+  v12/test/integration:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
@@ -1995,7 +1995,7 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
-  next/tooling/bench:
+  v12/tooling/bench:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -2044,7 +2044,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/tooling/decisions:
+  v12/tooling/decisions:
     dependencies:
       '@effect/platform-node':
         specifier: ^4.1.2
@@ -2069,7 +2069,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/tooling/dev:
+  v12/tooling/dev:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -2094,7 +2094,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/tooling/docs-lint:
+  v12/tooling/docs-lint:
     dependencies:
       '@effect/platform-node':
         specifier: ^4.1.2
@@ -2122,7 +2122,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/tooling/oxlint-plugin:
+  v12/tooling/oxlint-plugin:
     devDependencies:
       '@oxlint/plugins':
         specifier: 1.87.0
@@ -2143,7 +2143,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/tooling/pack:
+  v12/tooling/pack:
     dependencies:
       '@effect/platform-node':
         specifier: ^4.1.2
@@ -2171,7 +2171,7 @@ importers:
         specifier: workspace:*
         version: link:../../../www
 
-  next/tooling/portability:
+  v12/tooling/portability:
     dependencies:
       '@angular/core':
         specifier: 22.2.2
@@ -2250,7 +2250,7 @@ importers:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
 
-  next/tooling/release:
+  v12/tooling/release:
     dependencies:
       '@changesets/assemble-release-plan':
         specifier: 7.0.0
@@ -2284,9 +2284,9 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@vue/language-core@3.3.11)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(playwright@1.51.1)(svelte@5.57.2)(terser@5.34.0)(tsx@4.23.15)(typescript@7.1.0-beta)(yaml@2.9.1)
 
-  next/tooling/tsconfig: {}
+  v12/tooling/tsconfig: {}
 
-  next/tooling/vercel-ignore:
+  v12/tooling/vercel-ignore:
     dependencies:
       '@effect/platform-node':
         specifier: 4.1.2
@@ -5105,13 +5105,13 @@ importers:
         version: link:../v11/packages/tanstack-react-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../next/packages/tanstack-react-query
+        version: link:../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../next/packages/trpc
+        version: link:../v12/packages/trpc
       '@trpc12/upgrade':
         specifier: workspace:*
-        version: link:../next/packages/upgrade
+        version: link:../v12/packages/upgrade
       '@vercel/functions':
         specifier: ^3.10.5
         version: 3.10.5(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1)
@@ -5193,7 +5193,7 @@ importers:
         version: 4.3.5(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.23.15)(yaml@2.9.1))
       '@tooling/decisions':
         specifier: workspace:*
-        version: link:../next/tooling/decisions
+        version: link:../v12/tooling/decisions
       '@trpc/next':
         specifier: workspace:*
         version: link:../v11/packages/next
@@ -5334,22 +5334,22 @@ importers:
         version: 5.107.1(@types/react@19.3.0)(react@19.3.0)
       '@trpc12/experimental-nest':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-nest
+        version: link:../../../v12/packages/experimental-nest
       '@trpc12/experimental-tanstack-db':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-db
+        version: link:../../../v12/packages/experimental-tanstack-db
       '@trpc12/spikes':
         specifier: workspace:*
-        version: link:../../../next/spikes
+        version: link:../../../v12/spikes
       '@trpc12/tanstack-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-query
+        version: link:../../../v12/packages/tanstack-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-react-query
+        version: link:../../../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       effect:
         specifier: 4.1.2
         version: 4.1.2
@@ -5380,7 +5380,7 @@ importers:
     dependencies:
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       effect:
         specifier: 4.1.2
         version: 4.1.2
@@ -5408,10 +5408,10 @@ importers:
         version: 1.170.42(react-dom@19.3.1(react@19.3.0))(react@19.3.0)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-react-query
+        version: link:../../../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       effect:
         specifier: 4.1.2
         version: 4.1.2
@@ -5448,10 +5448,10 @@ importers:
         version: 1.170.42(react-dom@19.3.1(react@19.3.0))(react@19.3.0)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-react-query
+        version: link:../../../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       effect:
         specifier: 4.1.2
         version: 4.1.2
@@ -5488,10 +5488,10 @@ importers:
         version: 1.170.42(react-dom@19.3.1(react@19.3.0))(react@19.3.0)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-react-query
+        version: link:../../../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       effect:
         specifier: 4.1.2
         version: 4.1.2
@@ -5525,10 +5525,10 @@ importers:
         version: 1.170.42(react-dom@19.3.1(react@19.3.0))(react@19.3.0)
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-react-query
+        version: link:../../../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       effect:
         specifier: 4.1.2
         version: 4.1.2
@@ -5770,43 +5770,43 @@ importers:
         version: 11.19.0(typescript@7.1.0-beta)
       '@trpc12/experimental-nest':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-nest
+        version: link:../../../v12/packages/experimental-nest
       '@trpc12/experimental-react':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-react
+        version: link:../../../v12/packages/experimental-react
       '@trpc12/experimental-react-atom':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-react-atom
+        version: link:../../../v12/packages/experimental-react-atom
       '@trpc12/experimental-tanstack-angular-query':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-angular-query
+        version: link:../../../v12/packages/experimental-tanstack-angular-query
       '@trpc12/experimental-tanstack-db':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-db
+        version: link:../../../v12/packages/experimental-tanstack-db
       '@trpc12/experimental-tanstack-lit-query':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-lit-query
+        version: link:../../../v12/packages/experimental-tanstack-lit-query
       '@trpc12/experimental-tanstack-preact-query':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-preact-query
+        version: link:../../../v12/packages/experimental-tanstack-preact-query
       '@trpc12/experimental-tanstack-solid-query':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-solid-query
+        version: link:../../../v12/packages/experimental-tanstack-solid-query
       '@trpc12/experimental-tanstack-svelte-query':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-svelte-query
+        version: link:../../../v12/packages/experimental-tanstack-svelte-query
       '@trpc12/experimental-tanstack-vue-query':
         specifier: workspace:*
-        version: link:../../../next/packages/experimental-tanstack-vue-query
+        version: link:../../../v12/packages/experimental-tanstack-vue-query
       '@trpc12/tanstack-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-query
+        version: link:../../../v12/packages/tanstack-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
-        version: link:../../../next/packages/tanstack-react-query
+        version: link:../../../v12/packages/tanstack-react-query
       '@trpc12/trpc':
         specifier: workspace:*
-        version: link:../../../next/packages/trpc
+        version: link:../../../v12/packages/trpc
       ai:
         specifier: 7.0.138
         version: 7.0.138(zod@4.6.5)

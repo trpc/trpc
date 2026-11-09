@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  // `root` (v11/) and `trpc-next` (next/) are packages that hold packages:
+  // `root` (v11/) and `trpc-next` (v12/) are packages that hold packages:
   // their own `build`, `lint` and `typecheck` run turbo on what they hold,
   // so the root's scripts leave them out (`--filter=!root`), and only their
   // `test`, one Vitest run each over everything they hold, is a task here.
@@ -65,9 +65,9 @@
       // oRPC parity matrix's feature tables.
       "inputs": [
         "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/next/.agent-docs/open/**",
-        "$TURBO_ROOT$/next/.agent-docs/decisions/**",
-        "$TURBO_ROOT$/next/.agent-docs/reference/orpc-parity.md"
+        "$TURBO_ROOT$/v12/.agent-docs/open/**",
+        "$TURBO_ROOT$/v12/.agent-docs/decisions/**",
+        "$TURBO_ROOT$/v12/.agent-docs/reference/orpc-parity.md"
       ],
       "outputs": [".vercel/output/**", "dist/**"]
     },
@@ -142,7 +142,7 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
-    // One run over every package in v11/ or next/: the packages' npm
+    // One run over every package in v11/ or v12/: the packages' npm
     // dependencies are in the lockfile, not in either's package.json.
     "root#test": {
       "env": ["REDIS_URL", "MUTE_REACT_ACT_WARNINGS"],

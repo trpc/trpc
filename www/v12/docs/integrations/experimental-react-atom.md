@@ -13,7 +13,7 @@ experiment: experimental-react
 @trpc12/trpc effect @trpc12/experimental-react-atom @effect/atom-react
 ```
 
-The [`examples/experimental/react-atom`](../../../../next/examples/experimental/react-atom/README.md) app uses this package on TanStack Start, with the server render dehydrated into the browser's registry. [`react-suspense`](../../../../next/examples/experimental/react-suspense/README.md) is the same page with `@trpc12/experimental-react`.
+The [`examples/experimental/react-atom`](../../../../v12/examples/experimental/react-atom/README.md) app uses this package on TanStack Start, with the server render dehydrated into the browser's registry. [`react-suspense`](../../../../v12/examples/experimental/react-suspense/README.md) is the same page with `@trpc12/experimental-react`.
 
 ```tsx twoslash
 // ---cut-start---

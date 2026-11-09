@@ -18,4 +18,4 @@ await Effect.runPromise(program.pipe(Effect.provide(NodeSdk.layer(otel))));
 
 With no tracer (the Promise client, or Effect's default), calls open no span and send no headers or `trace` fields, so they cost nothing and simple requests stay free of CORS preflights. `Effect.provideService(Tracer.DisablePropagation, true)` keeps the spans and drops the headers.
 
-[`examples/effect-observability`](../../../../next/examples/effect-observability/README.md) traces a client and a server with two `NodeSdk` layers and checks that their spans form one trace. Import `NodeSdk` from `@effect/opentelemetry/NodeSdk`: the package's root also loads its browser SDK, which needs `@opentelemetry/sdk-trace-web`.
+[`examples/effect-observability`](../../../../v12/examples/effect-observability/README.md) traces a client and a server with two `NodeSdk` layers and checks that their spans form one trace. Import `NodeSdk` from `@effect/opentelemetry/NodeSdk`: the package's root also loads its browser SDK, which needs `@opentelemetry/sdk-trace-web`.

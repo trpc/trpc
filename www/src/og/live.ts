@@ -10,7 +10,7 @@
 import { Duration, Effect, Layer, ManagedRuntime } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 
-import trpc12Package from '../../../next/packages/trpc/package.json' with { type: 'json' };
+import trpc12Package from '../../../v12/packages/trpc/package.json' with { type: 'json' };
 import { v12 } from '~/site.ts';
 import { cardFooter } from '~/sponsors.ts';
 

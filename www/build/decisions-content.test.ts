@@ -11,7 +11,7 @@ import {
 
 const options: Pick<DecisionsOptions, 'basePath' | 'dirInRepo' | 'repoUrl'> = {
   basePath: '/v12/decisions',
-  dirInRepo: 'next/.agent-docs',
+  dirInRepo: 'v12/.agent-docs',
   repoUrl: 'https://github.com/trpc/trpc/blob/v12',
 };
 
@@ -33,14 +33,14 @@ describe('decisionHref', () => {
 
   it('points every other file at GitHub, by its path in the repo', () => {
     expect(decisionHref(options, 'open/a.md', './README.md')).toBe(
-      'https://github.com/trpc/trpc/blob/v12/next/.agent-docs/open/README.md',
+      'https://github.com/trpc/trpc/blob/v12/v12/.agent-docs/open/README.md',
     );
     expect(decisionHref(options, 'decisions/c.md', '../notes/n.md')).toBe(
-      'https://github.com/trpc/trpc/blob/v12/next/.agent-docs/notes/n.md',
+      'https://github.com/trpc/trpc/blob/v12/v12/.agent-docs/notes/n.md',
     );
     expect(
       decisionHref(options, 'open/a.md', '../../packages/trpc/src/x.ts'),
-    ).toBe('https://github.com/trpc/trpc/blob/v12/next/packages/trpc/src/x.ts');
+    ).toBe('https://github.com/trpc/trpc/blob/v12/v12/packages/trpc/src/x.ts');
     expect(
       decisionHref(options, 'decisions/c.md', '../../../.agents/skills/s/'),
     ).toBe('https://github.com/trpc/trpc/blob/v12/.agents/skills/s/');
@@ -99,7 +99,7 @@ describe('splitProsCons', () => {
 describe('samples/decisions/open', () => {
   it("has only the stubs of open questions, deleted with the question's file", () => {
     const questions = new Set(
-      readdirSync(new URL('../../next/.agent-docs/open', import.meta.url))
+      readdirSync(new URL('../../v12/.agent-docs/open', import.meta.url))
         .filter((file) => file.endsWith('.md'))
         .map((file) => file.slice(0, -'.md'.length)),
     );

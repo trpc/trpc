@@ -55,7 +55,7 @@ const client = createTrpcClient({
 - Closing the port is up to you. Electron's `MessagePortMain` and iframe windows work too.
 - When the port closes or `handler.dispose()` runs, the handler removes the listeners it added, if the port has `off` or `removeEventListener`.
 
-The [`examples/experimental/worker-threads`](../../../../next/examples/experimental/worker-threads/README.md) app serves a router from a Node worker thread: CPU work off the main thread, `connectionParams`, files, and a subscription left early.
+The [`examples/experimental/worker-threads`](../../../../v12/examples/experimental/worker-threads/README.md) app serves a router from a Node worker thread: CPU work off the main thread, `connectionParams`, files, and a subscription left early.
 
 ## Credits
 

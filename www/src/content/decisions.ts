@@ -6,12 +6,12 @@ import type { Decision, OpenQuestion } from './decision-types.ts';
 export { decisionRecords, openQuestions };
 
 const openFiles = import.meta.glob<{ default: OpenQuestion }>([
-  '../../../next/.agent-docs/open/*.md',
-  '!../../../next/.agent-docs/open/README.md',
+  '../../../v12/.agent-docs/open/*.md',
+  '!../../../v12/.agent-docs/open/README.md',
 ]);
 
 const recordFiles = import.meta.glob<{ default: Decision }>(
-  '../../../next/.agent-docs/decisions/*.md',
+  '../../../v12/.agent-docs/decisions/*.md',
 );
 
 export function findOpenQuestion(slug: string) {
@@ -24,7 +24,7 @@ export function findDecision(slug: string) {
 
 /** An open question, compiled at build time, or a 404. */
 export async function loadOpenQuestion(slug: string) {
-  const load = openFiles[`../../../next/.agent-docs/open/${slug}.md`];
+  const load = openFiles[`../../../v12/.agent-docs/open/${slug}.md`];
   if (!load || !findOpenQuestion(slug)) {
     throw notFound();
   }
@@ -33,7 +33,7 @@ export async function loadOpenQuestion(slug: string) {
 
 /** A decision, compiled at build time, or a 404. */
 export async function loadDecision(slug: string) {
-  const load = recordFiles[`../../../next/.agent-docs/decisions/${slug}.md`];
+  const load = recordFiles[`../../../v12/.agent-docs/decisions/${slug}.md`];
   if (!load || !findDecision(slug)) {
     throw notFound();
   }

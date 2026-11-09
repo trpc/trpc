@@ -13,7 +13,7 @@ experiment: tanstack-query-frameworks
 @trpc12/trpc effect @trpc12/experimental-tanstack-svelte-query @tanstack/svelte-query
 ```
 
-The [`examples/experimental/framework-matrix`](../../../../../next/examples/experimental/framework-matrix/README.md) app has a page per adapter (Vue, Solid and Svelte) on one server.
+The [`examples/experimental/framework-matrix`](../../../../../v12/examples/experimental/framework-matrix/README.md) app has a page per adapter (Vue, Solid and Svelte) on one server.
 
 ## Provide the client
 

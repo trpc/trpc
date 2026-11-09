@@ -668,7 +668,7 @@ export function docsContent(options: ContentOptions): Plugin {
       .replaceAll(
         /^```codemod-playground\n[\s\S]*?^```$/gm,
         () =>
-          `The web page runs \`@trpc12/upgrade\` here, in the browser, on v11 code you edit: [its source](${options.sourceUrl}/next/packages/upgrade/src/transform.ts).`,
+          `The web page runs \`@trpc12/upgrade\` here, in the browser, on v11 code you edit: [its source](${options.sourceUrl}/v12/packages/upgrade/src/transform.ts).`,
       )
       .replaceAll(/^```chart\n([\s\S]*?)\n```$/gm, (_fence, json: string) =>
         // `renderDoc` decoded the fence already.

@@ -1,6 +1,6 @@
 {
-	"$schema": "./next/node_modules/vendor-src/schema/vendor-src.schema.json",
-	"dir": "next/.repos",
+	"$schema": "./v12/node_modules/vendor-src/schema/vendor-src.schema.json",
+	"dir": "v12/.repos",
 	"rootAgentsMd": false,
 	"repos": {
 		"effect": {

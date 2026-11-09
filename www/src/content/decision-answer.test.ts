@@ -3,7 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import { decisionAnswerMessage } from './decision-answer.ts';
 
 const question = {
-  path: 'next/.agent-docs/open/tanstack-infinite-handles.md',
+  path: 'v12/.agent-docs/open/tanstack-infinite-handles.md',
   questions: ['Q19.3'],
   title:
     'How should an infinite query get a serializable handle, now that its input is a function?',
@@ -16,7 +16,7 @@ describe('decisionAnswerMessage', () => {
     expect(decisionAnswerMessage(question, option, url)).toBe(
       [
         '- Decision: How should an infinite query get a serializable handle, now that its input is a function?',
-        '- File: `next/.agent-docs/open/tanstack-infinite-handles.md`',
+        '- File: `v12/.agent-docs/open/tanstack-infinite-handles.md`',
         '- Question: Q19.3',
         '- Answer: A) No infinite handles',
         '- Page: https://v12.trpc.io/v12/decisions/open/tanstack-infinite-handles',

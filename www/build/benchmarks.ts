@@ -5,7 +5,7 @@ import type { Chart } from './charts.ts';
 import { ContentError, messageOf } from './content-error.ts';
 
 const Environment = Schema.Struct({
-  /** The commit of `next/` it ran at. */
+  /** The commit of `v12/` it ran at. */
   commit: Schema.String,
   date: Schema.String,
   machine: Schema.String,
@@ -229,7 +229,7 @@ const cellsOf = (line: string) =>
     .map((cell) => cell.trim());
 
 /**
- * The feature tables of `next/.agent-docs/reference/orpc-parity.md`, by their
+ * The feature tables of `v12/.agent-docs/reference/orpc-parity.md`, by their
  * `##` headings: the ones whose columns start Feature, oRPC, v11, v12. The
  * Where column is left out: it links the decisions, which the site doesn't.
  */
@@ -289,7 +289,7 @@ const parityFence = /^```parity\n(?:[ \t]*\n)*```$/gm;
 
 const snapshotUrl = new URL('../benchmarks.json', import.meta.url);
 const parityUrl = new URL(
-  '../../next/.agent-docs/reference/orpc-parity.md',
+  '../../v12/.agent-docs/reference/orpc-parity.md',
   import.meta.url,
 );
 

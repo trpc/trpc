@@ -134,7 +134,7 @@ export const transformer = experimental_createProgressiveJson({
 });
 ```
 
-The [`examples/media-pipeline`](../../../../next/examples/media-pipeline/README.md) app keeps a `Money` class this way, and with superjson's `registerCustom` on a second endpoint, in query URLs and outputs.
+The [`examples/media-pipeline`](../../../../v12/examples/media-pipeline/README.md) app keeps a `Money` class this way, and with superjson's `registerCustom` on a second endpoint, in query URLs and outputs.
 
 ## Hydration
 

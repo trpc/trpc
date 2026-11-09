@@ -1,19 +1,19 @@
 ---
 name: decision-round
-description: Walk the human through open tRPC vNext decisions one at a time with a progress count, each as a short summary linking its page under v12.trpc.io/v12/decisions, then act on the answers. "skip" defers an item: it stays open for later, the agent doesn't decide it and nothing is recorded; "done" stops asking and implements everything answered so far. Use when the human asks for a decision round, to go through open decisions or questions, to review agent calls, or says "ask me" about decisions in next/.agent-docs.
+description: Walk the human through open tRPC vNext decisions one at a time with a progress count, each as a short summary linking its page under v12.trpc.io/v12/decisions, then act on the answers. "skip" defers an item: it stays open for later, the agent doesn't decide it and nothing is recorded; "done" stops asking and implements everything answered so far. Use when the human asks for a decision round, to go through open decisions or questions, to review agent calls, or says "ask me" about decisions in v12/.agent-docs.
 ---
 
 # Decision round
 
 Ask the human one decision at a time. Collect answers until they say `done` (or the queue runs out), then record and implement them in one go. Never write the human's name in docs, decisions or code; say "human" (commit history has the author).
 
-Work from `next/`, with `nvm use` first. Follow `next/AGENTS.md` and `next/.agent-docs/README.md#decisions` for the decision file format.
+Work from `v12/`, with `nvm use` first. Follow `v12/AGENTS.md` and `v12/.agent-docs/README.md#decisions` for the decision file format.
 
 ## 1. Build the queue
 
 Gather candidates, then drop any that a `(human)` decision already answers:
 
-1. **Open questions:** run `pnpm decisions --pending`. Each file in `.agent-docs/open/` is one item, already written up: its options, code, recommendation and links are the item's content ([`open/README.md`](../../../next/.agent-docs/open/README.md)). Ask these first.
+1. **Open questions:** run `pnpm decisions --pending`. Each file in `.agent-docs/open/` is one item, already written up: its options, code, recommendation and links are the item's content ([`open/README.md`](../../../v12/.agent-docs/open/README.md)). Ask these first.
 2. **Open points waiting on a human:** run `pnpm decisions --open`. Include bullets addressed to a human (`Open (human)`, "for a human", "pending a human"). Leave out items blocked outside the repo, such as an upstream release.
 3. **Proposal questions without a human answer:** run `pnpm decisions --questions`. Include every `Qn.m` that only `(agent)` decisions cite, unless an `(agent)` file already quotes a human answer for it.
 4. **Agent calls to review:** run `pnpm decisions --who agent`, plus `--agent-bullets` for agent calls inside human files. Include these only when the human asks to review agent calls, or names a topic.
@@ -44,7 +44,7 @@ Send each item as its own short message, then stop and wait for the reply. Keep 
 ```
 
 - **Copied answers:** each option on an open question's page has a "Copy answer" button, so the human may paste back a few lines (the title, the file's path, the question numbers, the option's letter and title, the page URL), maybe with their own words added. Act on it like a typed reply.
-- **Details link:** an item with an open file links its page, `https://v12.trpc.io/v12/decisions/open/<file name without .md>`: its options' code, pros and cons, and its spike, PR and preview links. An item from a decision (an `Open:` bullet, an agent call, a tentative answer) links that decision's page, `https://v12.trpc.io/v12/decisions/<file name without .md>`. The pages are deployed from `v12`, so a file written in this round has no page yet: land it first (`pnpm land`, then wait for the deployment), or link the file on GitHub, `https://github.com/trpc/trpc/blob/v12/next/.agent-docs/<folder>/<file>`, until it does.
+- **Details link:** an item with an open file links its page, `https://v12.trpc.io/v12/decisions/open/<file name without .md>`: its options' code, pros and cons, and its spike, PR and preview links. An item from a decision (an `Open:` bullet, an agent call, a tentative answer) links that decision's page, `https://v12.trpc.io/v12/decisions/<file name without .md>`. The pages are deployed from `v12`, so a file written in this round has no page yet: land it first (`pnpm land`, then wait for the deployment), or link the file on GitHub, `https://github.com/trpc/trpc/blob/v12/v12/.agent-docs/<folder>/<file>`, until it does.
 - The title is the question itself, in plain words, readable without the rest of the message. Never title an item with an internal label ("Spike C", "option D"): name the thing ("a plain React `use()` hook package").
 - One line per option, under about ten words, naming the thing it does. Spell out every name the first time it appears in the item, even if an earlier item explained it.
 - The recommendation gets ⭐ on its option and a "Recommended" line with its reason in one clause. Choose it Effect-native first, v11's way second (`decisions/effect-native-by-default.md`). It should match the open file's `recommended:`; when an earlier answer in the round changes it, say so in that line.
@@ -77,7 +77,7 @@ When the queue is empty, go to step 3 as if the human had said `done`.
 2. **Ripple:** update the proposals, the docs pages in `www/v12/docs/`, `.agent-docs/reference/orpc-parity.md` and the notes that the answers change.
 3. **Implement** what the answers require: code in Effect style, tests and docs. A `(human)` answer that reverses built code means changing that code, not just the docs. An answer of "spike it" means a spike under `spikes/` and a note in `.agent-docs/notes/`, not shipped code. For work that can't be finished (it needs credentials, an upstream release, or another answer), leave an `Open:` bullet saying what is missing.
 4. **Gates:** run `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm test` and `pnpm example`. Fix anything that fails.
-5. **Ship** semantic commits, one per logical change (decisions with their implementation). Land them with `pnpm land` and watch CI with `pnpm ci:wait` (`next/AGENTS.md`). The records' pages are live once the docs deployment finishes; check one with `curl -sI https://v12.trpc.io/v12/decisions/<file name without .md>` before linking them in the report. No PRs, never `main`, never force-push, no merge commits.
+5. **Ship** semantic commits, one per logical change (decisions with their implementation). Land them with `pnpm land` and watch CI with `pnpm ci:wait` (`v12/AGENTS.md`). The records' pages are live once the docs deployment finishes; check one with `curl -sI https://v12.trpc.io/v12/decisions/<file name without .md>` before linking them in the report. No PRs, never `main`, never force-push, no merge commits.
 
 ## 4. Report
 

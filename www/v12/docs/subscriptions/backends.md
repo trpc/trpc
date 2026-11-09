@@ -7,7 +7,7 @@ order: 1
 experiment: publisher
 ---
 
-No backend packages ship; these recipes are yours to copy and adapt ([`examples/realtime`](../../../../next/examples/realtime/publisher.ts) runs both, across servers). Both serialize events with progressive JSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:
+No backend packages ship; these recipes are yours to copy and adapt ([`examples/realtime`](../../../../v12/examples/realtime/publisher.ts) runs both, across servers). Both serialize events with progressive JSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:
 
 ```ts twoslash
 import { Effect, Layer, Stream } from 'effect';

@@ -66,4 +66,4 @@ A client has no lifetime to release a layer at, so passing it a `layer` is a typ
 
 ## Testing
 
-Test in process with `createRouterClient` or `localLink`; [`examples/saas-api`](../../../../next/examples/saas-api/src/api.test.ts) tests its API with both and with `t.call()`, making each test's runtime with `await using` so its services are released when the test ends. `@trpc12/trpc/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise.
+Test in process with `createRouterClient` or `localLink`; [`examples/saas-api`](../../../../v12/examples/saas-api/src/api.test.ts) tests its API with both and with `t.call()`, making each test's runtime with `await using` so its services are released when the test ends. `@trpc12/trpc/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise.

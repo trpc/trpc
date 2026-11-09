@@ -6,7 +6,7 @@ order: 7
 experiment: cloudflare
 ---
 
-`@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object, and a tracer for Workers Traces. A Worker on its own serves `handler.fetch` ([Fetch](./fetch.md)). The [`examples/cloudflare`](../../../../next/examples/cloudflare/server.ts) app uses all of it.
+`@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object, and a tracer for Workers Traces. A Worker on its own serves `handler.fetch` ([Fetch](./fetch.md)). The [`examples/cloudflare`](../../../../v12/examples/cloudflare/server.ts) app uses all of it.
 
 ## Serving from a Durable Object
 
@@ -169,7 +169,7 @@ export class Room extends DurableObject<Env> {
 
 ## Durable calls
 
-`experimental_durable()` needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../../../next/examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
+`experimental_durable()` needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../../../v12/examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
 
 ```ts twoslash
 // ---cut-start---
