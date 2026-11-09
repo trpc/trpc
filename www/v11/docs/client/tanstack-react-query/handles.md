@@ -257,7 +257,7 @@ data.comments;
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
 - `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
-- Don't call `loadHandles` during render. A component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
+- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
 
 #### Using the data in a loader {#loader-data}
 
@@ -563,7 +563,7 @@ const [aQuery, bQuery] = useSuspenseQueries({
 ```
 
 - Only `loadHandles` makes handles. A hand-written object doesn't type-check, and `fromHandle` throws on it.
-- `handle.input` is the typed input. It leaves out `cursor` and `direction`.
+- `handle.input` is the typed input. An infinite handle's leaves out `cursor` and `direction`.
 - Reads share cache entries with `trpc.<path>.queryOptions(input)`.
 - `handle.queryKey` carries no data type, so the handle stays serializable. For a typed key, use `fromHandle(trpc, handle).queryKey` or `trpc.post.byId.queryKey(handle.input)`.
 
@@ -628,7 +628,7 @@ data.comments.pages;
 //            ^?
 ```
 
-- `pages` applies only when the cache has no pages for the query.
+- `pages` is how many pages the load fetches, also when it refetches stale pages: the cache then keeps only that many. To refetch every page the reader loaded, leave it out.
 - Functions can't cross to the client, so pass `getNextPageParam` again when you read:
 
   ```ts
@@ -1100,13 +1100,13 @@ results.post.data.title;
 
 #### With prefetch entries {#errors-prefetch}
 
-A prefetch entry never makes the load reject. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
+A prefetch entry never makes the load reject. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary, unless the cache has data to keep showing. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
 
 ## Invalidation {#invalidation-and-staleness}
 
 Handles use normal tRPC query keys. Pass any of these to `invalidateQueries`:
 
-- `{ queryKey: handle.queryKey }`: the handle's own query.
+- `{ queryKey: handle.queryKey, exact: true }`: the handle's own query. Without `exact`, it also matches inputs that extend the handle's.
 - `trpc.post.pathFilter()`: every query under `post`.
 - `trpc.post.byId.queryFilter(input)`, or `infiniteQueryFilter` for an infinite handle.
 
@@ -1162,6 +1162,8 @@ const [{ post }] = await loadHandles(trpc, {
 #### Are handles safe to send to the browser? {#handles-safe}
 
 Yes. A handle names a query the browser could call anyway, and every refetch runs validation and auth on the server again.
+
+A handle does carry its input to the browser, as hydrated query keys already do. Only use inputs you'd show the client.
 
 #### Where don't handles work? {#where-handles-dont-work}
 
