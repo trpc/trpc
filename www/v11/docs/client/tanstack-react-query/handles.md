@@ -158,12 +158,49 @@ export function MoreByAuthor(props: { authorId: string }) {
 
 ## In short {#gist}
 
-**1. Load the handles** where the page starts, and pass them on:
+Load the handles where the page starts, and read each one in a component, which never names the procedure or repeats its input:
 
 <div class="code-tabs" data-tabs="framework">
+<div data-tab="TanStack Start">
+
+```tsx title='src/routes/posts.$id.tsx'
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  ensureEntry,
+  fromHandle,
+  loadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC } from '~/lib/trpc';
+
+export const Route = createFileRoute('/posts/$id')({
+  loader: async ({ context: { trpc }, params }) => {
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+    });
+    return handles;
+  },
+  component: PostPage,
+});
+
+function PostPage() {
+  const handles = Route.useLoaderData();
+  const trpc = useTRPC();
+  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
+  return <h1>{postQuery.data.title}</h1>;
+}
+```
+
+</div>
 <div data-tab="Next.js">
 
+The page, a server component, loads the handles:
+
 ```tsx title='app/posts/[id]/page.tsx'
+import { ensureEntry, loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { HydrateClient, trpc } from '~/trpc/server';
+import { Post } from './post';
+
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const [handles] = await loadHandles(trpc, {
@@ -177,31 +214,15 @@ export default async function PostPage(props: { params: Promise<{ id: string }> 
 }
 ```
 
-</div>
-<div data-tab="TanStack Start">
+A client component, in its own file, reads one:
 
-```tsx title='src/routes/posts.$id.tsx'
-export const Route = createFileRoute('/posts/$id')({
-  loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await loadHandles(trpc, {
-      post: ensureEntry(trpc.post.byId, { id: params.id }),
-    });
-    return handles;
-  },
-  component: () => <Post post={Route.useLoaderData().post} />,
-});
-```
-
-</div>
-</div>
-
-**2. Read the handle** in the component. This is the same in every framework:
-
-```tsx twoslash title='components/post.tsx'
+```tsx twoslash title='app/posts/[id]/post.tsx'
 // @include: handles-router
 // @include: handles-trpc
-// @filename: components/post.tsx
+// @filename: app/posts/[id]/post.tsx
 // ---cut---
+'use client';
+
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/trpc/client';
@@ -213,8 +234,11 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 }
 ```
 
-- `Post` never names `trpc.post.byId` or its input. The handle carries both, typed.
-- The data reaches the browser's cache through TanStack Query's dehydrate and hydrate: see [Framework setup](#frameworks).
+</div>
+</div>
+
+- The handle carries the procedure and its input, typed.
+- The data reaches the browser's cache through TanStack Query's dehydrate and hydrate: see [Frameworks](#frameworks).
 - Mutations don't change. To refetch a handle's query after one, invalidate `{ queryKey: handle.queryKey, exact: true }`.
 
 ## Loading handles {#starting-a-query}
@@ -278,8 +302,8 @@ Load handles where the code can wait:
 
 | Your app                       | Where                      | Proxy                                   |
 | ------------------------------ | -------------------------- | --------------------------------------- |
-| Next.js App Router             | Server components          | The server proxy from `trpc/server.tsx` |
 | TanStack Start, TanStack Router | Route loaders             | The proxy in your router context        |
+| Next.js App Router             | Server components          | The server proxy from `trpc/server.tsx` |
 | A SPA without loaders          | Event handlers, such as a link's hover | `useTRPC()`                 |
 
 #### TanStack Query equivalents {#tanstack-equivalents}
@@ -690,6 +714,48 @@ const postsQuery = useSuspenseInfiniteQuery(
 Each framework loads the handles where the page starts and passes them to the components that read them. Set tRPC up with the framework's guide first.
 
 <div class="code-tabs" data-tabs="framework">
+<div data-tab="TanStack Start">
+
+#### On a page {#tanstack-start}
+
+After the [TanStack Start setup](/docs/client/tanstack-react-query/tanstack-start), the route's loader loads the handles and its component passes them on:
+
+```tsx title='src/routes/posts.$id.tsx'
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { Comments } from '~/components/comments';
+import { Post } from '~/components/post';
+
+export const Route = createFileRoute('/posts/$id')({
+  loader: async ({ context: { trpc }, params }) => {
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
+    });
+    return handles;
+  },
+  component: PostPage,
+});
+
+function PostPage() {
+  const handles = Route.useLoaderData();
+  return (
+    <>
+      <Post post={handles.post} />
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={handles.comments} />
+      </Suspense>
+    </>
+  );
+}
+```
+
+</div>
 <div data-tab="Next.js">
 
 #### On a page {#nextjs-app-router}
@@ -758,48 +824,6 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 - It works only in server components, and for `queryClient.prefetchQuery` too.
 - Handle inputs cross through React's serialization, not your transformer. Keep them to JSON values and `Date`s.
 - For a 404, use an ensure entry and call `notFound()`: see [Errors](#errors).
-
-</div>
-<div data-tab="TanStack Start">
-
-#### On a page {#tanstack-start}
-
-After the [TanStack Start setup](/docs/client/tanstack-react-query/tanstack-start), the route's loader loads the handles and its component passes them on:
-
-```tsx title='src/routes/posts.$id.tsx'
-import { createFileRoute } from '@tanstack/react-router';
-import {
-  ensureEntry,
-  loadHandles,
-  prefetchInfiniteEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense } from 'react';
-import { Comments } from '~/components/comments';
-import { Post } from '~/components/post';
-
-export const Route = createFileRoute('/posts/$id')({
-  loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await loadHandles(trpc, {
-      post: ensureEntry(trpc.post.byId, { id: params.id }),
-      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
-    });
-    return handles;
-  },
-  component: PostPage,
-});
-
-function PostPage() {
-  const handles = Route.useLoaderData();
-  return (
-    <>
-      <Post post={handles.post} />
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <Comments comments={handles.comments} />
-      </Suspense>
-    </>
-  );
-}
-```
 
 </div>
 </div>
