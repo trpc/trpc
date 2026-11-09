@@ -15,6 +15,7 @@ import GithubSlugger from 'github-slugger';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import { stripCollapseMarkers } from './collapse.ts';
+import { stripHighlightMarkers } from './highlight.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { fencesOf, fromDocusaurus, inFences } from './docusaurus-syntax.ts';
 import { samplesDir } from './paths.ts';
@@ -132,7 +133,9 @@ const pageMarkdown = Effect.fn('pageMarkdown')(function* (page: Page) {
   if (read.problems.length > 0) {
     return yield* fail(`${page.file}: ${read.problems.join('; ')}`);
   }
-  const lines = stripCollapseMarkers(read.markdown).split('\n');
+  const lines = stripHighlightMarkers(
+    stripCollapseMarkers(read.markdown),
+  ).split('\n');
   for (const fence of fencesOf(lines).toReversed()) {
     if (fence.info !== 'package-install') continue;
     const words = lines

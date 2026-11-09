@@ -10,6 +10,7 @@ import { experimentIds, experiments } from '../src/experiments.ts';
 import { llmsFullTxtPath } from '../src/site.ts';
 import { chartMarkdown, decodeChart } from './charts.ts';
 import { stripCollapseMarkers } from './collapse.ts';
+import { stripHighlightMarkers } from './highlight.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { fromDocusaurus } from './docusaurus-syntax.ts';
 import {
@@ -624,7 +625,7 @@ export function docsContent(options: ContentOptions): Plugin {
    */
   function pageMarkdown(source: Source, page: Rendered) {
     let blockIndex = 0;
-    const body = stripCollapseMarkers(source.markdown)
+    const body = stripHighlightMarkers(stripCollapseMarkers(source.markdown))
       .replaceAll(
         /^```(\w+)([^\n]*)\btwoslash\b([^\n]*)\n([\s\S]*?)^```$/gm,
         (_fence, lang, before, after, code) => {

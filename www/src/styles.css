@@ -302,6 +302,17 @@ html {
   opacity: 1;
 }
 
+/* A line marked `// [!code highlight]` (`build/highlight.ts`), across the
+   block's full width: the negative margin undoes `pre`'s padding. */
+.code-block .line.highlighted {
+  display: inline-block;
+  min-width: calc(100% + 2.25rem);
+  margin-inline: -1.125rem;
+  border-left: 2px solid var(--brand);
+  padding-inline: calc(1.125rem - 2px) 1.125rem;
+  background: color-mix(in oklab, var(--brand) 10%, transparent);
+}
+
 /* Folded lines: “N collapsed lines”, opened from `DocBody`. A tab in the
    indent is two columns, the same as `tab-size` on `pre` above. */
 .code-collapse {

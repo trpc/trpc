@@ -164,6 +164,7 @@ Load the handles where the page starts, and read each one in a component, which 
 <div data-tab="TanStack Start">
 
 ```tsx title='src/routes/posts.$id.tsx'
+// ---collapse---
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import {
@@ -172,11 +173,12 @@ import {
   loadHandles,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC } from '~/lib/trpc';
+// ---/collapse---
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await loadHandles(trpc, {
-      post: ensureEntry(trpc.post.byId, { id: params.id }),
+    const [handles] = await loadHandles(trpc, { // [!code highlight]
+      post: ensureEntry(trpc.post.byId, { id: params.id }), // [!code highlight]
     });
     return handles;
   },
@@ -186,7 +188,7 @@ export const Route = createFileRoute('/posts/$id')({
 function PostPage() {
   const handles = Route.useLoaderData();
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post)); // [!code highlight]
   return <h1>{postQuery.data.title}</h1>;
 }
 ```
@@ -197,14 +199,16 @@ function PostPage() {
 The page, a server component, loads the handles:
 
 ```tsx title='app/posts/[id]/page.tsx'
+// ---collapse---
 import { ensureEntry, loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
 import { HydrateClient, trpc } from '~/trpc/server';
 import { Post } from './post';
+// ---/collapse---
 
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const [handles] = await loadHandles(trpc, {
-    post: ensureEntry(trpc.post.byId, { id }),
+  const [handles] = await loadHandles(trpc, { // [!code highlight]
+    post: ensureEntry(trpc.post.byId, { id }), // [!code highlight]
   });
   return (
     <HydrateClient>
@@ -223,13 +227,15 @@ A client component, in its own file, reads one:
 // ---cut---
 'use client';
 
+// ---collapse---
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/trpc/client';
+// ---/collapse---
 
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) { // [!code highlight]
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post)); // [!code highlight]
   return <h1>{postQuery.data.title}</h1>;
 }
 ```
@@ -721,6 +727,7 @@ Each framework loads the handles where the page starts and passes them to the co
 After the [TanStack Start setup](/docs/client/tanstack-react-query/tanstack-start), the route's loader loads the handles and its component passes them on:
 
 ```tsx title='src/routes/posts.$id.tsx'
+// ---collapse---
 import { createFileRoute } from '@tanstack/react-router';
 import {
   ensureEntry,
@@ -730,12 +737,13 @@ import {
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 import { Post } from '~/components/post';
+// ---/collapse---
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const [handles] = await loadHandles(trpc, {
-      post: ensureEntry(trpc.post.byId, { id: params.id }),
-      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
+    const [handles] = await loadHandles(trpc, { // [!code highlight]
+      post: ensureEntry(trpc.post.byId, { id: params.id }), // [!code highlight]
+      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }), // [!code highlight]
     });
     return handles;
   },
@@ -772,6 +780,7 @@ export { Comments } from '~/components/comments';
 export { Post } from '~/components/post';
 // @filename: app/posts/[id]/page.tsx
 // ---cut---
+// ---collapse---
 import {
   ensureEntry,
   loadHandles,
@@ -781,12 +790,13 @@ import { Suspense } from 'react';
 import { HydrateClient, trpc } from '~/trpc/server';
 import { Comments } from './comments';
 import { Post } from './post';
+// ---/collapse---
 
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const [handles] = await loadHandles(trpc, {
-    post: ensureEntry(trpc.post.byId, { id }),
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+  const [handles] = await loadHandles(trpc, { // [!code highlight]
+    post: ensureEntry(trpc.post.byId, { id }), // [!code highlight]
+    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }), // [!code highlight]
   });
   return (
     <HydrateClient>
@@ -806,13 +816,15 @@ export default async function PostPage(props: { params: Promise<{ id: string }> 
 // ---cut---
 'use client';
 
+// ---collapse---
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/trpc/client';
+// ---/collapse---
 
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) { // [!code highlight]
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post)); // [!code highlight]
   return <h1>{postQuery.data.title}</h1>;
 }
 ```

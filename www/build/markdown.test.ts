@@ -476,6 +476,23 @@ describe('renderMarkdown', () => {
   );
 });
 
+describe('highlighted lines', () => {
+  it.effect(
+    'mark a line ending in `// [!code highlight]` and drop the comment',
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          '```ts\nconst a = 1; // [!code highlight]\nconst b = 2;\n```',
+        );
+        expect(rendered.html).toMatch(/<span class="line highlighted">/);
+        expect(rendered.html).not.toContain('[!code');
+        expect(rendered.html.match(/class="line highlighted"/g)).toHaveLength(
+          1,
+        );
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+});
+
 describe('page links', () => {
   it.effect('keep their query, so a link can pick a tab', () =>
     Effect.gen(function* () {

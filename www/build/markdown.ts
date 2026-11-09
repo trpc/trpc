@@ -37,6 +37,7 @@ import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
 import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
+import { highlightLines } from './highlight.ts';
 import { compactCode } from './compact-code.ts';
 import { takePopups } from './lazy-popups.ts';
 import { ContentError, messageOf } from './content-error.ts';
@@ -1074,6 +1075,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
       themes: { dark: 'github-dark', light: 'github-light' },
       transformers: [
         ...(blocks ? [blocks.transformer] : []),
+        highlightLines(),
         collapseRegions(() => {
           collapseId += 1;
           return `code-collapse-${collapseId}`;
