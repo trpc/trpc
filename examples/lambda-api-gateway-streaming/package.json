@@ -13,14 +13,14 @@
   "dependencies": {
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
-    "tsx": "^4.19.3",
+    "tsx": "^4.23.15",
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.149",
-    "@types/node": "^24.13.4",
-    "oxlint": "^1.90.0",
-    "oxlint-tsgolint": "^7.0.2005",
+    "@types/aws-lambda": "^8.10.164",
+    "@types/node": "^24.19.2",
+    "oxlint": "^1.92.0",
+    "oxlint-tsgolint": "^7.0.2006",
     "typescript": "^5.9.2"
   }
 }

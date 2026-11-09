@@ -53,7 +53,7 @@ export function Post() {
             className="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault();
-              const form = e.target as HTMLFormElement;
+              const form = e.target;
               const data = new FormData(form);
               createPost.mutate(
                 {
