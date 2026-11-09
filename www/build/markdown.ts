@@ -37,6 +37,7 @@ import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
 import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
+import { compactCode } from './compact-code.ts';
 import { takePopups } from './lazy-popups.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
@@ -1097,6 +1098,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
     catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
     try: async () => processor.run(processor.parse(markdown)),
   }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
+  compactCode(tree);
   const popups = takePopups(tree);
   const rendered: RenderedMarkdown = {
     anchors,

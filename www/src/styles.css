@@ -397,12 +397,6 @@ html {
   transform: none;
 }
 
-/* A popup whose content hasn't loaded yet (`installTwoslashHovers` fills
-   it), so hovering before the page hydrates shows no empty box. */
-.twoslash .twoslash-popup-container[data-popup] {
-  display: none;
-}
-
 .twoslash .twoslash-hover:not(.twoslash-query-persisted) .twoslash-popup-arrow {
   display: none;
 }
