@@ -7,14 +7,20 @@
  * that fails leaves its part out, and the card is cached briefly
  * (`cacheControl`), so the next request tries again.
  */
-import { Effect, Layer } from 'effect';
+import { Duration, Effect, Layer, ManagedRuntime } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 
 import { cardFooter } from '~/sponsors.ts';
 
+import { createHash } from 'node:crypto';
+
+import { getCache } from '@vercel/functions';
+import { Persistence } from 'effect/persistence';
+
 import { Avatars, fetchAvatars } from './avatar.ts';
+import { layerBackingRuntimeCache } from './runtime-cache.ts';
 import type { CardFooter, OgCard } from './card.ts';
-import { immutableCacheControl } from './version.ts';
+import { immutableCacheControl, utcDay } from './version.ts';
 
 export interface Stats {
   /** `@trpc/server`'s npm downloads last week. */
@@ -119,25 +125,65 @@ export const live = Effect.fn('live')(function* (
 });
 
 /**
- * A card is drawn while a crawler waits for it, so a try at an avatar gets
- * 3 seconds and one more chance, not the sponsor sync's patience.
+ * Vercel's Runtime Cache, which the server's instances in a region share;
+ * elsewhere, as in dev, an in-memory one. A key is SHA-256 of what it
+ * names: the default hash is 32 bits, and two avatars sharing one would
+ * draw the wrong face. Another host's store would replace this and
+ * `layerBackingRuntimeCache` alone.
  */
-const onRequest = Avatars.layer({ retries: 1, timeout: '3 seconds' }).pipe(
-  Layer.provide(FetchHttpClient.layer),
+const runtimeCache = getCache({
+  keyHashFunction: (key) => createHash('sha256').update(key).digest('hex'),
+  namespace: 'og',
+});
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+/**
+ * For `seconds`, or until the UTC day ends if that's sooner, to the
+ * millisecond, so nothing kept outlives the day by a fraction of a second.
+ */
+export const todayAtMost = (seconds: number) => () =>
+  Duration.millis(Math.min(seconds * 1000, dayMs - (Date.now() % dayMs)));
+
+/**
+ * A card is drawn while a crawler waits for it, so a try at an avatar gets
+ * 3 seconds and one more chance, not the sponsor sync's patience. Every
+ * card but a post's draws the same sponsors along its foot, so an avatar
+ * that loaded is kept in the Runtime Cache, for every instance, and an
+ * hour in each instance's memory, which shares a fetch under way. Both
+ * key it by the UTC day and let it go when the day ends, as the cards'
+ * version changes then (`version.ts`): each day's cards fetch their own
+ * avatars, not ones kept, or being fetched, the day before.
+ */
+const onRequest = ManagedRuntime.make(
+  Avatars.layerCached({
+    capacity: 1000,
+    inMemory: todayAtMost(60 * 60),
+    period: () => utcDay(new Date()),
+    persisted: todayAtMost(24 * 60 * 60),
+  }).pipe(
+    Layer.provide(
+      Avatars.layer({ retries: 1, timeout: '3 seconds' }).pipe(
+        Layer.provide(FetchHttpClient.layer),
+      ),
+    ),
+    Layer.provide(
+      Persistence.layer.pipe(
+        Layer.provide(layerBackingRuntimeCache(runtimeCache)),
+      ),
+    ),
+  ),
 );
 
 /** What `card` shows live, for `routes/og.$.ts`. */
-export const fetchLive = (card: OgCard) =>
-  Effect.runPromise(live(card).pipe(Effect.provide(onRequest)));
+export const fetchLive = (card: OgCard) => onRequest.runPromise(live(card));
 
 /**
  * The avatars of `images` that load, by URL, for the sponsor cloud
  * (`sponsor-cloud.ts`): all at once, as a card's.
  */
 export const fetchCloudAvatars = (images: ReadonlyArray<string>) =>
-  Effect.runPromise(
-    fetchAvatars(images, 'unbounded').pipe(Effect.provide(onRequest)),
-  );
+  onRequest.runPromise(fetchAvatars(images, 'unbounded'));
 
 /**
  * How long `card`'s image, at the current version, is kept: ten minutes

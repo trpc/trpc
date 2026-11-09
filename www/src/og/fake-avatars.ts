@@ -7,11 +7,16 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
-import { Layer } from 'effect';
+import { type Duration, Layer, ManagedRuntime } from 'effect';
 import { FetchHttpClient } from 'effect/http';
+import { Persistence } from 'effect/persistence';
 
 import { Avatars } from './avatar.ts';
 import type { CardFooter, CardSponsor } from './card.ts';
+import {
+  layerBackingRuntimeCache,
+  type RuntimeCacheStore,
+} from './runtime-cache.ts';
 
 export interface Answer {
   readonly body?: string | Uint8Array;
@@ -103,3 +108,62 @@ export const testAvatars = Avatars.layer({
   retries: 2,
   timeout: '200 millis',
 }).pipe(Layer.provide(FetchHttpClient.layer));
+
+/** A `RuntimeCacheStore` in a map, as Vercel's Runtime Cache, ignoring expiry. */
+export const mapCache = () => {
+  const kept = new Map<
+    string,
+    {
+      readonly tags: Array<string>;
+      readonly ttl?: number;
+      readonly value: unknown;
+    }
+  >();
+  const store: RuntimeCacheStore = {
+    delete: async (key) => {
+      kept.delete(key);
+    },
+    expireTag: async (tag) => {
+      for (const [key, entry] of kept) {
+        if (entry.tags.includes(tag)) {
+          kept.delete(key);
+        }
+      }
+    },
+    get: async (key) => kept.get(key)?.value ?? null,
+    set: async (key, value, options) => {
+      kept.set(key, { ...options, value });
+    },
+  };
+  return { kept, store };
+};
+
+/**
+ * A server instance: `Avatars` with its own memory, keeping avatars that
+ * loaded in `store`, which instances can share, `persisted` long, in the
+ * period `period` gives.
+ */
+export const cachedInstance = (
+  store: RuntimeCacheStore,
+  options: {
+    readonly period?: () => string;
+    readonly persisted?: () => Duration.Input;
+  } = {},
+) =>
+  ManagedRuntime.make(
+    Avatars.layerCached({
+      capacity: 10,
+      inMemory: () => '1 hour',
+      period: options.period ?? (() => 'today'),
+      persisted: options.persisted ?? (() => '30 seconds'),
+    }).pipe(
+      Layer.provide(
+        Avatars.layer({ retries: 0, timeout: '2 seconds' }).pipe(
+          Layer.provide(FetchHttpClient.layer),
+        ),
+      ),
+      Layer.provide(
+        Persistence.layer.pipe(Layer.provide(layerBackingRuntimeCache(store))),
+      ),
+    ),
+  );

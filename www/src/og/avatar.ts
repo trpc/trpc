@@ -10,72 +10,93 @@
  */
 import {
   Context,
-  Data,
   type Duration,
   Effect,
+  Exit,
   Layer,
   Match,
   Option,
   Schedule,
+  Schema,
   type Types,
 } from 'effect';
 import { HttpClient } from 'effect/http';
+import { Persistable, PersistedCache } from 'effect/persistence';
 
 /** The fetch failed without a response: a DNS failure or a dropped connection. */
-export class AvatarRequestError extends Data.TaggedError('AvatarRequestError')<{
-  readonly cause: unknown;
-  readonly url: string;
-}> {
+export class AvatarRequestError extends Schema.TaggedError<AvatarRequestError>()(
+  'AvatarRequestError',
+  { cause: Schema.Defect(), url: Schema.String },
+) {
   override get message() {
     return `${this.url}: no response`;
   }
 }
 
-export class AvatarTimeoutError extends Data.TaggedError('AvatarTimeoutError')<{
-  readonly url: string;
-}> {
+export class AvatarTimeoutError extends Schema.TaggedError<AvatarTimeoutError>()(
+  'AvatarTimeoutError',
+  { url: Schema.String },
+) {
   override get message() {
     return `${this.url}: timed out`;
   }
 }
 
-export class AvatarStatusError extends Data.TaggedError('AvatarStatusError')<{
-  readonly status: number;
-  readonly url: string;
-}> {
+export class AvatarStatusError extends Schema.TaggedError<AvatarStatusError>()(
+  'AvatarStatusError',
+  { status: Schema.Number, url: Schema.String },
+) {
   override get message() {
     return `${this.url}: ${this.status}`;
   }
 }
 
 /** Not a JPEG, a PNG or an SVG. */
-export class AvatarTypeError extends Data.TaggedError('AvatarTypeError')<{
-  readonly contentType: string;
-  readonly url: string;
-}> {
+export class AvatarTypeError extends Schema.TaggedError<AvatarTypeError>()(
+  'AvatarTypeError',
+  { contentType: Schema.String, url: Schema.String },
+) {
   override get message() {
     return `${this.url}: ${this.contentType || 'no content type'}`;
   }
 }
 
 /** An SVG without a size satori can read, which it throws on. */
-export class AvatarSizeError extends Data.TaggedError('AvatarSizeError')<{
-  readonly url: string;
-}> {
+export class AvatarSizeError extends Schema.TaggedError<AvatarSizeError>()(
+  'AvatarSizeError',
+  { url: Schema.String },
+) {
   override get message() {
     return `${this.url}: an SVG without a size`;
   }
 }
 
-export type AvatarError =
-  | AvatarRequestError
-  | AvatarSizeError
-  | AvatarStatusError
-  | AvatarTimeoutError
-  | AvatarTypeError;
+/** A drawable type with no bytes, which satori can't draw. */
+export class AvatarEmptyError extends Schema.TaggedError<AvatarEmptyError>()(
+  'AvatarEmptyError',
+  { url: Schema.String },
+) {
+  override get message() {
+    return `${this.url}: an empty body`;
+  }
+}
+
+/** Any way fetching an avatar fails, as a schema, which `AvatarRequest` keeps. */
+export const AvatarError = Schema.Union([
+  AvatarEmptyError,
+  AvatarRequestError,
+  AvatarSizeError,
+  AvatarStatusError,
+  AvatarTimeoutError,
+  AvatarTypeError,
+]);
+
+export type AvatarError = typeof AvatarError.Type;
 
 const mayPass = (error: AvatarError) =>
   Match.valueTags(error, {
+    // A host can send an empty body while it's having trouble.
+    AvatarEmptyError: () => true,
     AvatarRequestError: () => true,
     AvatarSizeError: () => false,
     AvatarStatusError: (failed) =>
@@ -162,6 +183,45 @@ export interface AvatarsOptions {
   readonly retries?: number;
 }
 
+/** A drawable avatar as a `data:` URI with bytes, as `Avatars` makes one. */
+const AvatarUri = Schema.String.pipe(
+  Schema.check(Schema.isPattern(/^data:image\/(?:jpeg|png|svg\+xml);base64,./)),
+);
+
+/**
+ * A request for an avatar at its URL as fetched (`avatarUrl`), in a
+ * `period` such as the UTC day, which its cache key holds: so two URLs
+ * for one avatar share an entry, and two periods never do. A value kept
+ * for it that isn't a drawable avatar is a miss.
+ */
+export class AvatarRequest extends Persistable.Class<{
+  payload: { readonly period: string; readonly url: string };
+}>()('www/og/AvatarRequest', {
+  error: AvatarError,
+  primaryKey: (request) => `${request.period}\n${request.url}`,
+  success: AvatarUri,
+}) {}
+
+export interface CachedAvatarsOptions {
+  /** How many avatars each instance keeps in memory. */
+  readonly capacity: number;
+  /**
+   * The period an avatar is kept for, read when its fetch starts: nothing
+   * kept in one period is drawn in the next, and a fetch started in one
+   * isn't shared with the next.
+   */
+  readonly period: () => string;
+  /** How long an instance keeps an avatar that loaded in memory. */
+  readonly inMemory: () => Duration.Input;
+  /** How long the store (`Persistence`) keeps an avatar that loaded. */
+  readonly persisted: () => Duration.Input;
+}
+
+/** For an avatar that loaded, `timeToLive`; a failure isn't kept. */
+const successesFor =
+  (timeToLive: () => Duration.Input) => (exit: Exit.Exit<unknown, unknown>) =>
+    Exit.isSuccess(exit) ? timeToLive() : 0;
+
 /** Fetches an avatar as a `data:` URI satori can draw. */
 export class Avatars extends Context.Service<
   Avatars,
@@ -200,6 +260,9 @@ export class Avatars extends Context.Service<
               ),
             ),
           );
+          if (bytes.length === 0) {
+            return yield* new AvatarEmptyError({ url });
+          }
           if (
             contentType === 'image/svg+xml' &&
             !sizableSvg(bytes.toString('utf8'))
@@ -208,21 +271,59 @@ export class Avatars extends Context.Service<
           }
           return `data:${contentType};base64,${bytes.toString('base64')}`;
         });
-        return Avatars.of({
-          fetch: (image) => {
-            const url = avatarUrl(image);
-            return once(url).pipe(
-              Effect.timeoutOrElse({
-                duration: options.timeout ?? '4 seconds',
-                orElse: () => Effect.fail(new AvatarTimeoutError({ url })),
-              }),
-              Effect.retry({
-                schedule: Schedule.exponential('100 millis'),
-                times: options.retries ?? 2,
-                while: mayPass,
-              }),
-            );
+        const fromHost = (url: string) =>
+          once(url).pipe(
+            Effect.timeoutOrElse({
+              duration: options.timeout ?? '4 seconds',
+              orElse: () => Effect.fail(new AvatarTimeoutError({ url })),
+            }),
+            Effect.retry({
+              schedule: Schedule.exponential('100 millis'),
+              times: options.retries ?? 2,
+              while: mayPass,
+            }),
+          );
+        return Avatars.of({ fetch: (image) => fromHost(avatarUrl(image)) });
+      }),
+    );
+
+  /**
+   * `Avatars` that keeps each avatar that loaded: in memory, where a
+   * fetch under way is shared, and in the store `Persistence` provides,
+   * which server instances can share, before fetching it with the
+   * `Avatars` it's given. A failure isn't kept, and the next card tries
+   * again. A store that fails is the store's to turn into a miss
+   * (`runtime-cache.ts`); one that still fails is a defect.
+   */
+  static readonly layerCached = (options: CachedAvatarsOptions) =>
+    Layer.effect(
+      Avatars,
+      Effect.gen(function* () {
+        const fromHost = yield* Avatars;
+        const cache = yield* PersistedCache.make(
+          (request: AvatarRequest) => fromHost.fetch(request.url),
+          {
+            inMemoryCapacity: options.capacity,
+            inMemoryTTL: successesFor(options.inMemory),
+            storeId: 'og-avatar',
+            timeToLive: successesFor(options.persisted),
           },
+        );
+        return Avatars.of({
+          fetch: (image) =>
+            cache
+              .get(
+                new AvatarRequest({
+                  period: options.period(),
+                  url: avatarUrl(image),
+                }),
+              )
+              .pipe(
+                Effect.catchTag(
+                  ['PersistenceError', 'SchemaError'],
+                  Effect.die,
+                ),
+              ),
         });
       }),
     );

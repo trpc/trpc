@@ -3090,6 +3090,9 @@ importers:
       '@trpc/tanstack-react-query':
         specifier: workspace:*
         version: link:../packages/tanstack-react-query
+      '@vercel/functions':
+        specifier: ^3.10.5
+        version: 3.11.0(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.1)
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.1.0)(react@19.3.0)
