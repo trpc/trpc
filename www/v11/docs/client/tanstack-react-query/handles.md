@@ -299,6 +299,35 @@ Load handles where the code can wait:
 | React Router                   | `loader` or `clientLoader` | See [React Router](?framework=react-router#frameworks)       |
 | A SPA without loaders          | Event handlers, such as a link's hover | `useTRPC()`                 |
 
+#### Conditional queries {#conditional-queries}
+
+Put TanStack Query's `skipToken` in place of an entry to start nothing for it, such as comments the post's author turned off:
+
+```ts twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: snippet.ts
+import { trpc } from '~/trpc/server';
+import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
+declare const id: string;
+declare const showComments: boolean;
+// ---cut---
+import { skipToken } from '@tanstack/react-query';
+
+const [handles] = await loadHandles(trpc, {
+  post: ensureEntry(trpc.post.byId, { id }),
+  comments: showComments
+    ? prefetchInfiniteEntry(trpc.post.comments, { postId: id })
+    : skipToken,
+});
+handles.comments;
+//      ^?
+```
+
+- Its handle is `undefined`, so render the reader only when there's a handle: `{handles.comments && <Comments comments={handles.comments} />}`.
+- It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
+- The condition comes from what the loader knows: the URL, the session, or another load's data. See [Dependent queries](#dependent-queries).
+
 #### TanStack Query equivalents {#tanstack-equivalents}
 
 Each entry is one TanStack Query call:

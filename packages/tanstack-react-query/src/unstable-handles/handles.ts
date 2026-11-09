@@ -4,7 +4,7 @@ import type {
   QueryClient,
   QueryFunction,
 } from '@tanstack/react-query';
-import { hashKey, isCancelledError } from '@tanstack/react-query';
+import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
 import { isTRPCClientError } from '@trpc/client';
 import type {
   DecorateInfiniteQueryProcedure,
@@ -126,12 +126,21 @@ export type AnyTRPCEntry =
   | TRPCQueryEntry<any, any>
   | TRPCInfiniteQueryEntry<any, any>;
 
+/**
+ * What `loadHandles()` takes per key: an entry, or TanStack Query's
+ * `skipToken` to start nothing for that key.
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#conditional-queries
+ */
+export type TRPCLoadEntries = Record<string, AnyTRPCEntry | typeof skipToken>;
+
 type HandleOfEntry<TEntry> =
   TEntry extends TRPCQueryEntry<infer TDef, any>
     ? TRPCQueryHandle<TDef>
     : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
       ? TRPCInfiniteQueryHandle<TDef>
-      : never;
+      : TEntry extends typeof skipToken
+        ? undefined
+        : never;
 
 type DataOfEntry<TEntry> =
   TEntry extends TRPCQueryEntry<infer TDef, any>
@@ -140,7 +149,7 @@ type DataOfEntry<TEntry> =
       ? TRPCInfiniteData<TDef['input'], TDef['output']>
       : never;
 
-type HandlesOf<TEntries extends Record<string, AnyTRPCEntry>> = {
+type HandlesOf<TEntries extends TRPCLoadEntries> = {
   [TKey in keyof TEntries]: HandleOfEntry<TEntries[TKey]>;
 };
 
@@ -157,13 +166,13 @@ type WaitedKey<TEntries, TKey extends keyof TEntries> = TEntries[TKey] extends {
   ? TKey
   : never;
 
-type DataOf<TEntries extends Record<string, AnyTRPCEntry>> = {
+type DataOf<TEntries extends TRPCLoadEntries> = {
   [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: DataOfEntry<
     TEntries[TKey]
   >;
 };
 
-type ResultsOf<TEntries extends Record<string, AnyTRPCEntry>> = {
+type ResultsOf<TEntries extends TRPCLoadEntries> = {
   [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: TRPCEntryResult<
     DefOfEntry<TEntries[TKey]>,
     DataOfEntry<TEntries[TKey]>
@@ -181,20 +190,24 @@ export type TRPCEntryResult<TDef extends ResolverDef, TData> =
 
 /**
  * What `loadHandles()` resolves to: `[handles, data]`. `handles` has a handle
- * for every entry, by the entry's key; return them from the loader. `data` has the data of
- * every fetch and ensure entry, by the entry's key.
+ * for every entry, by the entry's key, and `undefined` for a `skipToken`; return them
+ * from the loader. `data` has the data of every fetch and ensure entry, by the entry's key.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#loader-data
  */
-export type TRPCLoadedHandles<TEntries extends Record<string, AnyTRPCEntry>> =
-  readonly [handles: HandlesOf<TEntries>, data: DataOf<TEntries>];
+export type TRPCLoadedHandles<TEntries extends TRPCLoadEntries> = readonly [
+  handles: HandlesOf<TEntries>,
+  data: DataOf<TEntries>,
+];
 
 /**
  * What `loadHandlesSettled()` resolves to: `[handles, results]`. `results`
  * has a `TRPCEntryResult` for every fetch and ensure entry, by the entry's key.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
  */
-export type TRPCSettledHandles<TEntries extends Record<string, AnyTRPCEntry>> =
-  readonly [handles: HandlesOf<TEntries>, results: ResultsOf<TEntries>];
+export type TRPCSettledHandles<TEntries extends TRPCLoadEntries> = readonly [
+  handles: HandlesOf<TEntries>,
+  results: ResultsOf<TEntries>,
+];
 
 /** Options for an entry */
 export interface TRPCEntryOptions
@@ -323,7 +336,7 @@ function readEntry(key: string, entry: unknown): EntryState {
   const state = (entry as { [entryState]?: EntryState } | null)?.[entryState];
   if (!state) {
     throw new Error(
-      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\` for "${key}", got ${JSON.stringify(entry)}`,
+      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, or \`skipToken\`, for "${key}", got ${JSON.stringify(entry)}`,
     );
   }
   return state;
@@ -387,14 +400,17 @@ async function startEntries(opts: {
   settle: boolean;
 }) {
   const { queryClient, entries } = opts;
-  const states = Object.entries(entries).map(([key, entry]) => {
+  const states = Object.entries(entries).flatMap(([key, entry]) => {
+    if (entry === skipToken) {
+      return [];
+    }
     const state = readEntry(key, entry);
     if (state.queryClient !== queryClient) {
       throw new Error(
         `The entry for "${key}" was built with a proxy for another QueryClient than the root proxy that loads it`,
       );
     }
-    return [key, state] as const;
+    return [[key, state] as const];
   });
   const loads = states.map(([key, state]) => ({
     key,
@@ -410,6 +426,7 @@ async function startEntries(opts: {
     ),
   );
 
+  // A skipped key is absent rather than `undefined`: Next.js rejects `undefined` in props
   const handles = Object.fromEntries(
     loads.map((load) => [
       load.key,
@@ -633,6 +650,9 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
  * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
  *
+ * Put TanStack Query's `skipToken` in place of an entry to start nothing for that
+ * key: its handle is `undefined`, and `data` has no key for it.
+ *
  * Takes the root of an options proxy, from `createTRPCOptionsProxy` or `useTRPC()`.
  * Call it in a route loader, a server component or an event handler, not during
  * render: every render would start the entries again.
@@ -641,6 +661,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * const [handles, data] = await loadHandles(trpc, {
  *   comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
  *   post: ensureEntry(trpc.post.byId, { id }),
+ *   draft: viewer.isAdmin ? prefetchEntry(trpc.post.draftById, { id }) : skipToken,
  * });
  * if (!data.post.published) throw notFound();
  * return handles;
@@ -649,7 +670,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  */
 export function loadHandles<
   TFeatureFlags extends FeatureFlags,
-  TEntries extends Record<string, AnyTRPCEntry>,
+  TEntries extends TRPCLoadEntries,
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
@@ -683,7 +704,7 @@ export function loadHandles<
  */
 export function loadHandlesSettled<
   TFeatureFlags extends FeatureFlags,
-  TEntries extends Record<string, AnyTRPCEntry>,
+  TEntries extends TRPCLoadEntries,
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
