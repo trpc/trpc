@@ -35,7 +35,6 @@ import { visit } from 'unist-util-visit';
 import type { DocHeading } from '../src/content/types.ts';
 import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
-import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
 import { highlightLines } from './highlight.ts';
 import { compactCode } from './compact-code.ts';
@@ -521,8 +520,8 @@ function rehypeCodeBlocks() {
 }
 
 /**
- * Puts a button per tab above a `code-tabs` group's blocks, or a link to the
- * tab (`?framework=nextjs`) in a group kept in the URL (`src/tabs.ts`).
+ * Puts a button per tab above a `code-tabs` group's blocks. `DocBody`
+ * switches them, and keeps the choice (`src/tabs-dom.ts`).
  */
 function rehypeCodeTabs() {
   return (tree: HastRoot) => {
@@ -559,7 +558,6 @@ function rehypeCodeTabs() {
           delete block.properties['dataActive'];
         }
       }
-      const inUrl = isUrlTabGroup(group);
       node.children.unshift({
         children: tabs.map((tab, index): Element => ({
           children: [{ type: 'text', value: tab }],
@@ -569,13 +567,9 @@ function rehypeCodeTabs() {
             dataTabGroup: group,
             dataTabSelect: tab,
             role: 'tab',
-            ...(inUrl
-              ? {
-                  href: `?${new URLSearchParams({ [group]: tabSlug(tab) })}`,
-                }
-              : { type: 'button' }),
+            type: 'button',
           },
-          tagName: inUrl ? 'a' : 'button',
+          tagName: 'button',
           type: 'element',
         })),
         properties: { className: ['code-tabs-list'], role: 'tablist' },

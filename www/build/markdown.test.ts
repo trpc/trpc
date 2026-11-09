@@ -447,7 +447,7 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
-  it.effect('links each tab of a group kept in the URL to it', () =>
+  it.effect('renders a group kept in the URL as buttons too', () =>
     Effect.gen(function* () {
       const rendered = yield* render(
         [
@@ -466,12 +466,9 @@ describe('renderMarkdown', () => {
         ].join('\n'),
       );
       expect(rendered.html).toMatch(
-        /<a [^>]*href="\?framework=nextjs"[^>]*>Next\.js<\/a>/,
+        /<button [^>]*data-tab-group="framework"[^>]*>Next\.js<\/button>/,
       );
-      expect(rendered.html).toMatch(
-        /<a [^>]*href="\?framework=tanstack-start"[^>]*>TanStack Start<\/a>/,
-      );
-      expect(rendered.html).not.toMatch(/<a [^>]*type="button"/);
+      expect(rendered.html).not.toMatch(/<a [^>]*code-tab/);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

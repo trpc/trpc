@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { restoreTabs, restoreTabsOnce, selectTab } from './tabs-dom.ts';
+import { chooseTab, restoreTabs } from './tabs-dom.ts';
 
 function frameworkTabs() {
   const root = document.createElement('div');
   root.innerHTML = `
     <div class="code-tabs" data-tabs="framework">
       <div class="code-tabs-list" role="tablist">
-        <a data-tab-group="framework" data-tab-select="TanStack Start"></a>
-        <a data-tab-group="framework" data-tab-select="Next.js"></a>
+        <button data-tab-group="framework" data-tab-select="TanStack Start"></button>
+        <button data-tab-group="framework" data-tab-select="Next.js"></button>
       </div>
       <div data-tab="TanStack Start" data-active></div>
       <div data-tab="Next.js"></div>
@@ -53,16 +53,18 @@ describe('restoreTabs', () => {
   });
 });
 
-describe('restoreTabsOnce', () => {
-  it("doesn't switch back a tab clicked after the page restored its tabs", () => {
-    history.replaceState(null, '', '/docs/page?framework=nextjs');
+describe('chooseTab', () => {
+  it('keeps a clicked tab when the page restores its tabs again', () => {
+    history.replaceState(null, '', '/docs/page?framework=nextjs#frameworks');
     const root = frameworkTabs();
-    restoreTabsOnce(root);
+    restoreTabs(root);
     expect(shown(root)).toBe('Next.js');
 
-    // A click shows the tab; the page renders again before the URL changes.
-    selectTab(root, 'framework', 'TanStack Start');
-    restoreTabsOnce(root);
+    chooseTab('framework', 'TanStack Start');
+    expect(window.location.search).toBe('?framework=tanstack-start');
+    expect(window.location.hash).toBe('#frameworks');
+    // Anything that renders the page again restores its tabs.
+    restoreTabs(root);
     expect(shown(root)).toBe('TanStack Start');
   });
 });

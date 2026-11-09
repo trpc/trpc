@@ -1,7 +1,7 @@
 /**
  * Tab groups (`<div class="code-tabs" data-tabs="…">`) whose choice is kept
  * in the URL as well as for the reader: `?framework=tanstack-start` opens a
- * page on that tab, so a link can pick it. Their tabs are links to it.
+ * page on that tab, so a link can pick it.
  */
 export const urlTabGroups = ['framework'] as const;
 

@@ -818,12 +818,6 @@ figure.tweet .tweet-footer a:hover {
   color: var(--foreground);
 }
 
-/* A tab kept in the URL is a link (`src/tabs.ts`). */
-.prose a.code-tab {
-  font-weight: inherit;
-  text-decoration: none;
-}
-
 .code-tab[aria-selected='true'] {
   background: var(--muted);
   color: var(--foreground);

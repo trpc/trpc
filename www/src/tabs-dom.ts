@@ -1,7 +1,10 @@
 /**
- * Tab groups on a rendered page (`<div class="code-tabs" data-tabs="…">`):
- * showing a tab, and keeping the reader's choice. `DocBody` wires them to
- * clicks; `src/tabs.ts` has the parts that don't touch the page.
+ * Tab groups on a rendered page (`<div class="code-tabs" data-tabs="…">`).
+ *
+ * The reader's choice lives in localStorage and a cookie, and for a group
+ * kept in the URL (`?framework=`), in the URL too. Choosing a tab writes all
+ * of them at once, so restoring the tabs at any time shows the same choice.
+ * `src/tabs.ts` has the parts that don't touch the page.
  */
 import {
   isUrlTabGroup,
@@ -14,7 +17,7 @@ import {
 } from '~/tabs.ts';
 
 /** Shows `tab` in every tab group named `group` under `root`. */
-export function selectTab(root: ParentNode, group: string, tab: string) {
+function selectTab(root: ParentNode, group: string, tab: string) {
   for (const tabs of root.querySelectorAll(`[data-tabs="${group}"]`)) {
     if (!tabs.querySelector(`:scope > [data-tab="${tab}"]`)) {
       continue;
@@ -34,11 +37,8 @@ export function selectTab(root: ParentNode, group: string, tab: string) {
   }
 }
 
-/**
- * Keeps `tab` as the reader's choice for `group`, in a cookie as well as
- * localStorage, so it outlasts either being cleared or blocked.
- */
-export function saveTab(group: string, tab: string) {
+/** Keeps `tab` as the reader's choice for `group`, for this and later pages. */
+function saveTab(group: string, tab: string) {
   document.cookie = tabCookie(group, tab);
   try {
     localStorage.setItem(tabStoragePrefix + group, tab);
@@ -48,7 +48,7 @@ export function saveTab(group: string, tab: string) {
 }
 
 /** The reader's saved tab for `group`, from localStorage or its cookie. */
-function storedTab(group: string) {
+function savedTab(group: string) {
   let storage: Storage | null = null;
   try {
     storage = localStorage;
@@ -64,8 +64,8 @@ function urlTab(root: ParentNode, group: string, search: string) {
     return null;
   }
   const value = new URLSearchParams(search).get(group);
-  for (const link of root.querySelectorAll(`[data-tab-group="${group}"]`)) {
-    const tab = link.getAttribute('data-tab-select');
+  for (const button of root.querySelectorAll(`[data-tab-group="${group}"]`)) {
+    const tab = button.getAttribute('data-tab-select');
     if (tab !== null && tabSlug(tab) === value) {
       return tab;
     }
@@ -74,12 +74,25 @@ function urlTab(root: ParentNode, group: string, search: string) {
 }
 
 /**
- * Shows the tabs a link on this page picks (`?framework=nextjs#frameworks`),
- * and keeps them as the reader's choice. The page stays mounted, so
- * `restoreTabs` doesn't run again; this runs before the router scrolls to the
- * link's hash, which may be in one of them.
+ * Shows `tab` in every group named `group` on the page, and keeps it: saved,
+ * and in the URL for a group kept there. The URL changes in place, outside
+ * the router, so nothing renders in between.
  */
-export function showLinkedTabs(root: HTMLElement, search: string) {
+export function chooseTab(group: string, tab: string) {
+  selectTab(document, group, tab);
+  saveTab(group, tab);
+  if (isUrlTabGroup(group)) {
+    const url = new URL(window.location.href);
+    url.searchParams.set(group, tabSlug(tab));
+    window.history.replaceState(window.history.state, '', url);
+  }
+}
+
+/**
+ * Shows the tabs a link on this page picks (`?framework=nextjs#frameworks`)
+ * before the router scrolls to its hash, which may be in one of them.
+ */
+export function chooseLinkedTabs(root: ParentNode, search: string) {
   for (const group of urlTabGroups) {
     const tab = urlTab(root, group, search);
     if (tab !== null) {
@@ -90,8 +103,8 @@ export function showLinkedTabs(root: HTMLElement, search: string) {
 }
 
 /**
- * Applies the tab the URL picks, and keeps it as the reader's choice, or
- * else the reader's saved choice, like the package manager.
+ * Shows each group's tab: the one the URL picks, which is saved too, or else
+ * the reader's saved one. Safe to run again: it reads the same choice.
  */
 export function restoreTabs(root: HTMLElement) {
   const groups = new Set(
@@ -107,7 +120,7 @@ export function restoreTabs(root: HTMLElement) {
     if (linked !== null) {
       saveTab(group, linked);
     }
-    const tab = linked ?? storedTab(group);
+    const tab = linked ?? savedTab(group);
     if (tab !== null) {
       selectTab(root, group, tab);
     }
@@ -115,19 +128,4 @@ export function restoreTabs(root: HTMLElement) {
   // The tabs are applied now, so the CSS that showed them before is spent,
   // and would pin them against a later click.
   document.getElementById(savedTabsStyleId)?.remove();
-}
-
-const restored = new WeakSet<HTMLElement>();
-
-/**
- * `restoreTabs`, once per rendered page. A ref callback runs again on every
- * render, and a click's URL update renders: restoring then could read the
- * URL from before the click and switch the tab back.
- */
-export function restoreTabsOnce(root: HTMLElement) {
-  if (restored.has(root)) {
-    return;
-  }
-  restored.add(root);
-  restoreTabs(root);
 }

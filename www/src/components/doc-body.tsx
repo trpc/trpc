@@ -1,17 +1,10 @@
-import { useNavigate, useRouter } from '@tanstack/react-router';
-import type { KeyboardEvent, MouseEvent } from 'react';
+import { useRouter } from '@tanstack/react-router';
 
 import { cn } from '@shared/ui/lib/utils';
 
 import { splitAtDemos } from '~/demos/names.ts';
 import { PageDemo } from '~/demos/page-demos.tsx';
-import { isUrlTabGroup, tabSlug, type UrlTabGroup } from '~/tabs.ts';
-import {
-  restoreTabsOnce,
-  saveTab,
-  selectTab,
-  showLinkedTabs,
-} from '~/tabs-dom.ts';
+import { chooseLinkedTabs, chooseTab, restoreTabs } from '~/tabs-dom.ts';
 import { installTwoslashHovers, type LoadPopups } from '~/twoslash-hovers.ts';
 
 function isElement(target: EventTarget | null): target is Element {
@@ -88,92 +81,25 @@ function toggleCodeCollapse(target: EventTarget | null) {
 
 /**
  * Switches a tab group, and every group of its kind on the page, on click,
- * keeping the tab where it is on screen. A tab kept in the URL is a link:
- * the URL changes in place, and a click that opens a new tab or window
- * (with a modifier key) is left to the browser.
+ * keeping the tab where it is on screen.
  */
-function clickTab(
-  event: MouseEvent<HTMLElement>,
-  setUrlTab: (group: UrlTabGroup, value: string) => void,
-) {
-  const control = isElement(event.target)
-    ? event.target.closest('[data-tab-select]')
+function clickTab(target: EventTarget | null) {
+  const button = isElement(target)
+    ? target.closest('button[data-tab-select]')
     : null;
-  const group = control?.getAttribute('data-tab-group');
-  const tab = control?.getAttribute('data-tab-select');
-  if (!control || !group || !tab) {
+  const group = button?.getAttribute('data-tab-group');
+  const tab = button?.getAttribute('data-tab-select');
+  if (!button || !group || !tab) {
     return false;
   }
-  if (control.tagName === 'A') {
-    if (
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return true;
-    }
-    event.preventDefault();
-  }
-  activateTab(control, group, tab, setUrlTab);
-  return true;
-}
-
-/**
- * A link tab doesn't activate on Space as a button does, so Space selects it
- * here instead of scrolling the page.
- */
-function pressTab(
-  event: KeyboardEvent<HTMLElement>,
-  setUrlTab: (group: UrlTabGroup, value: string) => void,
-) {
-  if (event.key !== ' ' || !isElement(event.target)) {
-    return;
-  }
-  const control = event.target.closest('a[data-tab-select]');
-  const group = control?.getAttribute('data-tab-group');
-  const tab = control?.getAttribute('data-tab-select');
-  if (!control || !group || !tab) {
-    return;
-  }
-  event.preventDefault();
-  activateTab(control, group, tab, setUrlTab);
-}
-
-/**
- * Points a link tab at the current URL with only its group's value changed,
- * so a tab opened in a new window keeps the rest of the query and the hash.
- */
-function refreshTabHref(target: EventTarget | null) {
-  const link = isElement(target) ? target.closest('a[data-tab-select]') : null;
-  const group = link?.getAttribute('data-tab-group');
-  const tab = link?.getAttribute('data-tab-select');
-  if (!link || !group || !tab) {
-    return;
-  }
-  const url = new URL(window.location.href);
-  url.searchParams.set(group, tabSlug(tab));
-  link.setAttribute('href', url.pathname + url.search + url.hash);
-}
-
-function activateTab(
-  control: Element,
-  group: string,
-  tab: string,
-  setUrlTab: (group: UrlTabGroup, value: string) => void,
-) {
-  const top = control.getBoundingClientRect().top;
-  selectTab(document, group, tab);
+  const top = button.getBoundingClientRect().top;
+  chooseTab(group, tab);
   // Groups of its kind above it can change height.
   window.scrollBy({
     behavior: 'instant',
-    top: control.getBoundingClientRect().top - top,
+    top: button.getBoundingClientRect().top - top,
   });
-  if (isUrlTabGroup(group)) {
-    setUrlTab(group, tabSlug(tab));
-  }
-  saveTab(group, tab);
+  return true;
 }
 
 function copyCode(target: EventTarget | null) {
@@ -208,16 +134,6 @@ export function DocBody(props: {
   readonly loadPopups: LoadPopups;
 }) {
   const router = useRouter();
-  const navigate = useNavigate();
-  const setUrlTab = (group: UrlTabGroup, value: string) =>
-    void navigate({
-      hash: true,
-      hashScrollIntoView: false,
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({ ...prev, [group]: value }),
-      to: '.',
-    });
   return (
     <div
       className={props.className}
@@ -225,7 +141,7 @@ export function DocBody(props: {
       onClick={(event) => {
         if (
           toggleCodeCollapse(event.target) ||
-          clickTab(event, setUrlTab) ||
+          clickTab(event.target) ||
           copyCode(event.target)
         ) {
           return;
@@ -245,19 +161,12 @@ export function DocBody(props: {
           event.preventDefault();
           const url = new URL(href, window.location.href);
           if (url.pathname === window.location.pathname) {
-            showLinkedTabs(event.currentTarget, url.search);
+            chooseLinkedTabs(event.currentTarget, url.search);
           }
           void router.navigate({ href });
         }
       }}
-      onFocus={(event) => {
-        refreshTabHref(event.target);
-      }}
-      onKeyDown={(event) => {
-        pressTab(event, setUrlTab);
-      }}
       onPointerOver={(event) => {
-        refreshTabHref(event.target);
         const href = internalHref(event.target, event.currentTarget);
         if (href) {
           // Preloading needs only the page, not its search or hash.
@@ -270,7 +179,7 @@ export function DocBody(props: {
         if (!element) {
           return undefined;
         }
-        restoreTabsOnce(element);
+        restoreTabs(element);
         return installTwoslashHovers(element, props.loadPopups);
       }}
     >
