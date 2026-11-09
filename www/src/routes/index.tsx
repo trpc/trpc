@@ -44,12 +44,14 @@ import {
   useV12Shown,
   validateHomeSearch,
 } from '~/home-version.ts';
+import type { Sample } from '~/content/types.ts';
 import { partners } from '~/sponsors.ts';
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
 import { site, v12 } from '~/site.ts';
+import { inlinePopups } from '~/twoslash-hovers.ts';
 import v11Define from '../../v11/home/step-1.md';
 import v11Serve from '../../v11/home/step-2.md';
 import v11Call from '../../v11/home/step-3.md';
@@ -84,7 +86,7 @@ export const Route = createFileRoute('/')({
 
 interface Step {
   readonly body: ReactNode;
-  readonly code: string;
+  readonly code: Sample;
   readonly guide: string;
   /** Each version's steps share their ids; the shown one has them. */
   readonly id: 'call' | 'define' | 'serve';
@@ -118,7 +120,7 @@ const v11Steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: v11Define.html,
+    code: v11Define,
     guide: 'Define procedures',
     id: 'define',
     slug: 'server/procedures',
@@ -138,7 +140,7 @@ const v11Steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: v11Serve.html,
+    code: v11Serve,
     guide: 'Adapters',
     id: 'serve',
     slug: 'server/adapters',
@@ -158,7 +160,7 @@ const v11Steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: v11Call.html,
+    code: v11Call,
     guide: 'The vanilla client',
     id: 'call',
     slug: 'client/vanilla',
@@ -181,7 +183,7 @@ const v12Steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: procedure.html,
+    code: procedure,
     guide: 'Procedures',
     id: 'define',
     slug: 'server/procedures',
@@ -196,7 +198,7 @@ const v12Steps: ReadonlyArray<Step> = [
         <code>HttpServer</code>.
       </p>
     ),
-    code: serve.html,
+    code: serve,
     guide: 'Adapters',
     id: 'serve',
     slug: 'adapters/overview',
@@ -217,7 +219,7 @@ const v12Steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: call.html,
+    code: call,
     guide: 'The client',
     id: 'call',
     slug: 'client/overview',
@@ -503,7 +505,11 @@ function Steps(props: { readonly version: HomeVersion }) {
               {step.guide} <ArrowRight className="inline size-4" />
             </Link>
           </div>
-          <DocBody className="min-w-0 [&_.code-block]:my-0!" html={step.code} />
+          <DocBody
+            className="min-w-0 [&_.code-block]:my-0!"
+            html={step.code.html}
+            loadPopups={inlinePopups(step.code)}
+          />
         </li>
       ))}
     </ol>
@@ -616,12 +622,14 @@ function HomePage() {
               <DocBody
                 className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
                 html={v11Call.html}
+                loadPopups={inlinePopups(v11Call)}
               />
             </Panel>
             <Panel version="v12">
               <DocBody
                 className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
                 html={hero.html}
+                loadPopups={inlinePopups(hero)}
               />
             </Panel>
             <p className="text-sm text-muted-foreground">

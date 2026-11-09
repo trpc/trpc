@@ -33,6 +33,7 @@ import {
 import {
   onDemandRoutes,
   pageCacheControl,
+  writePageRevalidation,
   writeOnDemandFunction,
 } from './on-demand.ts';
 import {
@@ -55,7 +56,6 @@ const VercelJson = Schema.Struct({
 });
 
 const contentTypes = new Map([
-  ['.html', 'text/html; charset=utf-8'],
   ['.md', 'text/markdown; charset=utf-8'],
   ['.txt', 'text/plain; charset=utf-8'],
   ['.xml', 'application/xml; charset=utf-8'],
@@ -66,22 +66,16 @@ class VercelOutputError extends Data.TaggedError('VercelOutputError')<{
 }> {}
 
 /**
- * Prerendering writes `/docs/client/links` as
- * `docs/client/links/index.html`; serve it at `/docs/client/links`,
- * without a trailing slash. Markdown and
- * text files get a `charset`, so non-ASCII characters survive. `files` are
- * `/`-separated, relative to the static directory.
+ * Markdown and text files get a `charset`, so non-ASCII characters survive.
+ * The pages aren't files by then, but their functions'
+ * (`writePageRevalidation`). `files` are `/`-separated, relative to the
+ * static directory.
  */
 export const overrides = (files: ReadonlyArray<string>) =>
   Object.fromEntries(
     files.flatMap((file) => {
       const contentType = contentTypes.get(/\.[^./]+$/.exec(file)?.[0] ?? '');
-      if (!contentType || file === 'index.html' || file === '404.html') {
-        return [];
-      }
-      return file.endsWith('/index.html')
-        ? [[file, { contentType, path: file.slice(0, -'/index.html'.length) }]]
-        : [[file, { contentType }]];
+      return contentType ? [[file, { contentType }]] : [];
     }),
   );
 
@@ -458,6 +452,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     `${JSON.stringify(config, null, 2)}\n`,
   );
   yield* writeOnDemandFunction(root, output);
+  yield* writePageRevalidation(output, files);
 });
 
 if (import.meta.main) {

@@ -1,0 +1,29 @@
+export {
+  loadHandles,
+  loadHandlesSettled,
+  prefetchEntry,
+  fetchEntry,
+  ensureEntry,
+  prefetchInfiniteEntry,
+  fetchInfiniteEntry,
+  ensureInfiniteEntry,
+  fromHandle,
+  isTRPCEntryError,
+} from './handles';
+export { TRPCEntryError } from './entryError';
+export type {
+  TRPCQueryHandle,
+  TRPCInfiniteQueryHandle,
+  AnyTRPCHandle,
+  TRPCQueryEntry,
+  TRPCInfiniteQueryEntry,
+  AnyTRPCEntry,
+  TRPCEntryKind,
+  TRPCLoadedHandles,
+  TRPCSettledHandles,
+  TRPCEntryResult,
+  TRPCEntryOptions,
+  TRPCInfiniteEntryOptions,
+  inferQueryHandle,
+  inferInfiniteQueryHandle,
+} from './handles';

@@ -56,7 +56,9 @@ import {
   openQuestions,
 } from '~/content/decisions.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
+import type { Sample } from '~/content/types.ts';
 import { decisions, site } from '~/site.ts';
+import { inlinePopups } from '~/twoslash-hovers.ts';
 
 /**
  * Every page here says `noindex, nofollow`, whatever the host, and has no
@@ -502,6 +504,20 @@ function Section(props: {
   );
 }
 
+/** A part of a decision rendered at build time, with its hover popups. */
+function SampleBody(props: {
+  readonly className?: string;
+  readonly sample: Sample;
+}) {
+  return (
+    <DocBody
+      {...(props.className === undefined ? {} : { className: props.className })}
+      html={props.sample.html}
+      loadPopups={inlinePopups(props.sample)}
+    />
+  );
+}
+
 /** Side by side when its option's card has the room (a container query). */
 function ProsCons(props: { readonly option: QuestionOption }) {
   return (
@@ -510,13 +526,13 @@ function ProsCons(props: { readonly option: QuestionOption }) {
         <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
           <ThumbsUp className="size-3.5" /> Pros
         </p>
-        <DocBody className="prose-sm" html={props.option.pros} />
+        <SampleBody className="prose-sm" sample={props.option.pros} />
       </div>
       <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-3">
         <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-rose-700 dark:text-rose-400">
           <ThumbsDown className="size-3.5" /> Cons
         </p>
-        <DocBody className="prose-sm" html={props.option.cons} />
+        <SampleBody className="prose-sm" sample={props.option.cons} />
       </div>
     </div>
   );
@@ -626,7 +642,7 @@ function OptionCard(props: {
     >
       <CopyAnswer message={props.message} optionId={props.option.id} />
       <OptionHeading option={props.option} recommended={props.recommended} />
-      <DocBody html={props.option.html} />
+      <SampleBody sample={props.option.body} />
       <ProsCons option={props.option} />
     </article>
   );
@@ -842,7 +858,7 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
       </header>
 
       <Section title="Why it matters">
-        <DocBody html={question.why} />
+        <SampleBody sample={question.why} />
       </Section>
 
       <Options question={question} />
@@ -855,7 +871,7 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
             {recommended ? <TextWithCode text={recommended.title} /> : null}
           </span>
         </p>
-        <DocBody html={question.recommendation} />
+        <SampleBody sample={question.recommendation} />
       </aside>
       <Section
         title={
@@ -865,7 +881,7 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
           </span>
         }
       >
-        <DocBody html={question.blocked} />
+        <SampleBody sample={question.blocked} />
       </Section>
 
       {question.details === undefined ? null : (
@@ -888,7 +904,7 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
             </span>
           </CollapsibleTrigger>
           <CollapsibleContent className="border-t px-4 pb-4" keepMounted>
-            <DocBody className="pt-4" html={question.details} />
+            <SampleBody className="pt-4" sample={question.details} />
           </CollapsibleContent>
         </Collapsible>
       )}
@@ -937,7 +953,7 @@ export function DecisionPage(props: { readonly decision: Decision }) {
           <TextWithCode text={decision.title} />
         </h1>
       </header>
-      <DocBody html={decision.html} />
+      <SampleBody sample={decision.body} />
       <footer className="border-t pt-4">
         <SourceLink href={decision.source} />
       </footer>

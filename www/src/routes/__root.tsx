@@ -24,6 +24,7 @@ import {
   homeVersionScript,
   v12Attribute,
 } from '~/home-version.ts';
+import { validateQuerySearch } from '~/pages.ts';
 import { indexable } from '~/seo.ts';
 import { blog, site, v12 } from '~/site.ts';
 import { validateTabSearch } from '~/tabs.ts';
@@ -93,6 +94,7 @@ export const Route = createRootRoute({
   validateSearch: (search: Record<string, unknown>) => ({
     ...validateTabSearch(search),
     ...validateFlagSearch(search),
+    ...validateQuerySearch(search),
   }),
 });
 

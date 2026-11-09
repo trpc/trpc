@@ -8,7 +8,7 @@
   "dependencies": {
     "@angular/core": "22.2.2",
     "@lit/context": "1.1.6",
-    "@tanstack/query-core": "5.105.0",
+    "@tanstack/query-core": "5.107.1",
     "@trpc12/experimental-tanstack-angular-query": "workspace:*",
     "@trpc12/experimental-tanstack-lit-query": "workspace:*",
     "@trpc12/experimental-tanstack-preact-query": "workspace:*",
@@ -18,7 +18,7 @@
     "@trpc12/tanstack-query": "workspace:*",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.1.1",
+    "effect": "4.1.2",
     "lit": "3.3.3",
     "preact": "10.29.8",
     "react": "19.3.0",

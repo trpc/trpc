@@ -190,6 +190,11 @@ test('server render with prefetched data and no subscription, then hydrate witho
         queries: { staleTime: 30_000 },
       },
     });
+  // Vue Query 5.107's `QueryClient` types `isMutating`'s filters so that,
+  // with `exactOptionalPropertyTypes`, it doesn't type as the query-core
+  // `QueryClient` that `dehydrate` and `hydrate` take, though it is one.
+  const asCore = (client: QueryClient) =>
+    client as unknown as Parameters<typeof dehydrate>[0];
   const tree = (queryClient: QueryClient, client: AppClient) =>
     createSSRApp(Page)
       .use(VueQueryPlugin, { queryClient })
@@ -205,12 +210,14 @@ test('server render with prefetched data and no subscription, then hydrate witho
   const html = await renderToString(tree(serverQueryClient, serverClient));
   expect(html).toContain('<h1>2026-01-04</h1><p>idle</p>');
   expect(db.listeners.size).toBe(0);
-  const state = JSON.parse(JSON.stringify(dehydrate(serverQueryClient)));
+  const state = JSON.parse(
+    JSON.stringify(dehydrate(asCore(serverQueryClient))),
+  );
 
   const el = container();
   el.innerHTML = html;
   const browserQueryClient = queryClient();
-  hydrate(browserQueryClient, state);
+  hydrate(asCore(browserQueryClient), state);
   const vueApp = tree(browserQueryClient, app.client);
   vueApp.mount(el);
   using _ = {

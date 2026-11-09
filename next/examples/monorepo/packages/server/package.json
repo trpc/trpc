@@ -7,9 +7,9 @@
   },
   "dependencies": {
     "@acme/api": "workspace:*",
-    "@effect/platform-node": "4.1.1",
+    "@effect/platform-node": "4.1.2",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.1.1"
+    "effect": "4.1.2"
   },
   "devDependencies": {
     "@types/node": "^26.0.0"

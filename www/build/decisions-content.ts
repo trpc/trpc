@@ -16,6 +16,7 @@ import type {
   OpenQuestionMeta,
   QuestionStatus,
 } from '../src/content/decision-types.ts';
+import type { Sample } from '../src/content/types.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { releaseTwoslashers } from './markdown.ts';
 import { closeRenderPool, makePageRenderer } from './page-renderer.ts';
@@ -194,7 +195,8 @@ export function decisionPages(options: DecisionsOptions) {
         sourceUrl: options.repoUrl,
       },
     );
-    return result.html;
+    const sample: Sample = { html: result.html, popups: result.popups };
+    return sample;
   });
 
   const readOpen = Effect.fn('readOpen')(function* (file: string) {
@@ -271,7 +273,7 @@ export function decisionPages(options: DecisionsOptions) {
       const parts = splitProsCons(opt.body);
       return {
         cons: yield* render(at, parts.cons),
-        html: yield* render(at, parts.rest),
+        body: yield* render(at, parts.rest),
         id: opt.id,
         pros: yield* render(at, parts.pros),
         title: opt.title,
@@ -306,7 +308,7 @@ export function decisionPages(options: DecisionsOptions) {
     const at = `decisions/${file}`;
     const page: Decision = {
       ...decisionMeta(decision),
-      html: yield* render(at, text.slice(text.indexOf('\n') + 1)),
+      body: yield* render(at, text.slice(text.indexOf('\n') + 1)),
       source: `${options.repoUrl}/${options.dirInRepo}/${at}`,
     };
     return page;

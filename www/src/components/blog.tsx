@@ -18,8 +18,15 @@ import {
   CollapsedTableOfContents,
   TableOfContents,
 } from '~/components/toc.tsx';
-import { findPost, postNeighbours, posts } from '~/content/blog.ts';
-import type { Post, PostAuthor, PostMeta } from '~/content/types.ts';
+import {
+  findPost,
+  type LoadedPost,
+  loadPostPopups,
+  postNeighbours,
+  posts,
+} from '~/content/blog.ts';
+import { pageHtml } from '~/content/page-html.ts';
+import type { PostAuthor, PostMeta } from '~/content/types.ts';
 import {
   absoluteUrl,
   ogImageUrl,
@@ -214,7 +221,7 @@ export function postHead(slug: string) {
 const footerLink =
   'inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground';
 
-export function BlogPost(props: { readonly post: Post }) {
+export function BlogPost(props: { readonly post: LoadedPost }) {
   const post = props.post;
   const around = postNeighbours(post.slug);
   return (
@@ -261,7 +268,7 @@ export function BlogPost(props: { readonly post: Post }) {
           headings={post.headings}
           key={post.slug}
         />
-        <DocBody html={post.html} />
+        <DocBody html={pageHtml(post)} loadPopups={loadPostPopups(post.slug)} />
         <footer className="mt-12 grid gap-6 border-t pt-6">
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {atTrpcIo ? null : (

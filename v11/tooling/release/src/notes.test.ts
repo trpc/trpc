@@ -11,6 +11,7 @@ import {
   parseNewContributors,
   pullRequestNumber,
   renderNotes,
+  scopedPackages,
   type Change,
   type GitHubInfo,
   type NotesPackage,
@@ -23,6 +24,11 @@ const packages: ReadonlyArray<NotesPackage> = [
   { dir: 'packages/server', name: '@trpc/server' },
   { dir: 'packages/client', name: '@trpc/client' },
   { dir: 'packages/react-query', name: '@trpc/react-query' },
+  {
+    dir: 'packages/tanstack-react-query',
+    name: '@trpc/tanstack-react-query',
+  },
+  { dir: 'packages/upgrade', name: '@trpc/upgrade' },
 ];
 
 const prUrl = (number: number) => `https://github.com/${repo}/pull/${number}`;
@@ -106,6 +112,52 @@ describe('changedPackages', () => {
   });
 });
 
+describe('scopedPackages', () => {
+  it('reads the packages a scope names, by directory or name', () => {
+    expect(scopedPackages('feat(client): a', packages)).toEqual([
+      '@trpc/client',
+    ]);
+    expect(scopedPackages('feat(Client)!: a', packages)).toEqual([
+      '@trpc/client',
+    ]);
+    expect(scopedPackages('fix(`@trpc/upgrade`): a', packages)).toEqual([
+      '@trpc/upgrade',
+    ]);
+    expect(
+      scopedPackages('fix(tanstack-react-query): a (#1)', packages),
+    ).toEqual(['@trpc/tanstack-react-query']);
+  });
+
+  it('reads several, in the given order', () => {
+    expect(scopedPackages('fix(client,server): a', packages)).toEqual([
+      '@trpc/server',
+      '@trpc/client',
+    ]);
+    expect(scopedPackages('fix(upgrade, server): a', packages)).toEqual([
+      '@trpc/server',
+      '@trpc/upgrade',
+    ]);
+    expect(
+      scopedPackages(
+        'fix(`react-query` + `tanstack-react-query`): a',
+        packages,
+      ),
+    ).toEqual(['@trpc/react-query', '@trpc/tanstack-react-query']);
+    expect(scopedPackages('fix(server, www): a', packages)).toEqual([
+      '@trpc/server',
+    ]);
+  });
+
+  it('reads none without a scope naming a public package', () => {
+    expect(scopedPackages('fix: a', packages)).toEqual([]);
+    expect(scopedPackages('fix(deps): a', packages)).toEqual([]);
+    expect(scopedPackages('chore(www): a', packages)).toEqual([]);
+    expect(scopedPackages('fix(tests): a', packages)).toEqual([]);
+    expect(scopedPackages('fix(tanstack-react-quey): a', packages)).toEqual([]);
+    expect(scopedPackages('Update the client (server)', packages)).toEqual([]);
+  });
+});
+
 describe('noteSection', () => {
   it('sorts conventional commits by type', () => {
     expect(noteSection('feat(server): a')).toBe('feat');
@@ -170,15 +222,73 @@ describe('renderNotes', () => {
 `);
   });
 
-  it('lists a pull request under each package it changes', () => {
+  it('lists a pull request only under the packages its scope names', () => {
+    const rendered = notes(
+      [
+        change('a1', 'feat(client): async iterable subscribe (#1)', [
+          'packages/client/src/a.ts',
+          'packages/server/src/a.ts',
+          'packages/tanstack-react-query/src/a.ts',
+        ]),
+        change('a2', 'fix(server,react-query): b (#2)', [
+          'packages/server/src/b.ts',
+        ]),
+      ],
+      github([
+        pr(1, 'feat(client): async iterable subscribe'),
+        pr(2, 'fix(server,react-query): b'),
+      ]),
+    );
+    expect(rendered.match(/^## .*$/gm)).toEqual([
+      '## @trpc/server',
+      '## @trpc/client',
+      '## @trpc/react-query',
+    ]);
+    expect(rendered.match(/async iterable subscribe/g)).toHaveLength(1);
+    expect(rendered.match(/react-query\): b/g)).toHaveLength(2);
+  });
+
+  it("goes by GitHub's title over the commit's", () => {
+    expect(
+      notes(
+        [change('a1', 'fix: a (#1)', ['packages/server/src/a.ts'])],
+        github([pr(1, 'fix(client): a')]),
+      ).match(/^## .*$/gm),
+    ).toEqual(['## @trpc/client']);
+  });
+
+  it('skips a scoped pull request that changes no public package', () => {
+    expect(
+      notes(
+        [
+          change('a1', 'docs(server): a (#1)', [
+            'packages/server/README.md',
+            'www/docs/server.md',
+          ]),
+          change('a2', 'chore(client): bump the examples (#2)', [
+            'examples/next/package.json',
+          ]),
+        ],
+        github([
+          pr(1, 'docs(server): a'),
+          pr(2, 'chore(client): bump the examples'),
+        ]),
+      ),
+    ).toMatch(/^No changes to the published packages\./);
+  });
+
+  it('lists a pull request whose scope names no package under each package it changes', () => {
     const rendered = notes(
       [
         change('a1', 'fix: shared (#1)', [
           'packages/client/src/a.ts',
           'packages/react-query/src/a.ts',
         ]),
+        change('a2', 'fix(deps): bump zod (#2)', [
+          'packages/server/package.json',
+        ]),
       ],
-      github([pr(1, 'fix: shared')]),
+      github([pr(1, 'fix: shared'), pr(2, 'fix(deps): bump zod')]),
     );
     expect(rendered).toContain(
       `## @trpc/client\n\n### Fixes\n\n* fix: shared by @KATT in ${prUrl(1)}`,
@@ -186,7 +296,10 @@ describe('renderNotes', () => {
     expect(rendered).toContain(
       `## @trpc/react-query\n\n### Fixes\n\n* fix: shared by @KATT in ${prUrl(1)}`,
     );
-    expect(rendered).not.toContain('## @trpc/server');
+    expect(rendered).toContain(
+      `## @trpc/server\n\n### Fixes\n\n* fix(deps): bump zod by @KATT in ${prUrl(2)}`,
+    );
+    expect(rendered.match(/^## .*$/gm)).toHaveLength(3);
   });
 
   it('puts breaking changes first and unconventional titles last', () => {

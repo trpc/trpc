@@ -1,5 +1,7 @@
 import type { Area, LinkKind } from '@tooling/decisions/open';
 
+import type { Sample } from './types.ts';
+
 export type { Area, LinkKind };
 
 export type DecisionWho = 'human' | 'human asked' | 'agent';
@@ -31,29 +33,29 @@ export interface QuestionLink {
 
 export interface QuestionOption {
   /** The option's prose and code, without its pros and cons, highlighted at build time. */
-  readonly html: string;
+  readonly body: Sample;
   /** `A`, `B`, … */
   readonly id: string;
   /** Its `- ✅` bullets, as a list, without the mark. */
-  readonly pros: string;
+  readonly pros: Sample;
   /** Its `- ❌` bullets, as a list, without the mark. */
-  readonly cons: string;
+  readonly cons: Sample;
   readonly title: string;
 }
 
 /** An open question, its sections highlighted at build time. */
 export interface OpenQuestion extends OpenQuestionMeta {
-  readonly blocked: string;
+  readonly blocked: Sample;
   /** Collapsed until opened. */
-  readonly details: string | undefined;
+  readonly details: Sample | undefined;
   readonly links: ReadonlyArray<QuestionLink>;
   readonly options: ReadonlyArray<QuestionOption>;
   /** The file's path in the repo (`next/.agent-docs/open/<slug>.md`). */
   readonly path: string;
-  readonly recommendation: string;
+  readonly recommendation: Sample;
   /** The file on GitHub. */
   readonly source: string;
-  readonly why: string;
+  readonly why: Sample;
 }
 
 /** What the index needs about a decision (`.agent-docs/decisions/*.md`). */
@@ -75,7 +77,7 @@ export interface DecisionMeta {
 
 export interface Decision extends DecisionMeta {
   /** The record without its title, highlighted at build time. */
-  readonly html: string;
+  readonly body: Sample;
   /** The file on GitHub. */
   readonly source: string;
 }

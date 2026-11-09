@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { hiddenPaths, llmsTxtPath, site, v12 } from '../src/site.ts';
-import { onDemandFunction } from './on-demand.ts';
+import { onDemandFunction, pageRevalidateSeconds } from './on-demand.ts';
 import { siteTextFiles } from './site-files.ts';
 import { land, type Redirect, servedPaths } from './old-routes.ts';
 import {
@@ -228,20 +228,8 @@ describe('writeVercelOutput', () => {
       );
       expect(config.version).toBe(3);
       expect(config.overrides).toEqual({
-        'blog/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'blog',
-        },
         'docs/client/links.md': {
           contentType: 'text/markdown; charset=utf-8',
-        },
-        'docs/client/links/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'docs/client/links',
-        },
-        'docs/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'docs',
         },
         'docs/introduction.md': {
           contentType: 'text/markdown; charset=utf-8',
@@ -255,32 +243,8 @@ describe('writeVercelOutput', () => {
         },
         'robots.txt': { contentType: 'text/plain; charset=utf-8' },
         'sitemap.xml': { contentType: 'application/xml; charset=utf-8' },
-        'sponsor/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'sponsor',
-        },
-        'docs/v10/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'docs/v10',
-        },
-        'docs/v9/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'docs/v9',
-        },
-        'docs/server/routers/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'docs/server/routers',
-        },
-        'v12/decisions/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'v12/decisions',
-        },
         'v12/docs/getting-started.md': {
           contentType: 'text/markdown; charset=utf-8',
-        },
-        'v12/docs/getting-started/index.html': {
-          contentType: 'text/html; charset=utf-8',
-          path: 'v12/docs/getting-started',
         },
       });
       const moved = config.routes.find(
@@ -345,6 +309,58 @@ describe('writeVercelOutput', () => {
           ),
         ),
       ).toBe(true);
+
+      // Each page is the function's, regenerated daily, from the
+      // prerendered page, whatever its query; other HTML stays a file.
+      const functions = path.join(output, 'functions');
+      for (const [name, link, fallback] of [
+        ['index', `${onDemandFunction}.func`, 'index.prerender-fallback.html'],
+        ['docs', `${onDemandFunction}.func`, 'docs.prerender-fallback.html'],
+        [
+          'docs/client/links',
+          `../../${onDemandFunction}.func`,
+          'links.prerender-fallback.html',
+        ],
+      ] as const) {
+        expect(yield* fs.readLink(path.join(functions, `${name}.func`))).toBe(
+          link,
+        );
+        expect(
+          yield* fs.exists(
+            path.join(functions, `${name}.func/server/server.js`),
+          ),
+        ).toBe(true);
+        expect(
+          JSON.parse(
+            yield* fs.readFileString(
+              path.join(functions, `${name}.prerender-config.json`),
+            ),
+          ),
+        ).toEqual({
+          allowQuery: [],
+          expiration: pageRevalidateSeconds,
+          fallback,
+        });
+        expect(
+          yield* fs.exists(
+            path.join(path.dirname(path.join(functions, name)), fallback),
+          ),
+        ).toBe(true);
+      }
+      expect(
+        yield* fs.readFileString(
+          path.join(functions, 'docs/server/routers.prerender-fallback.html'),
+        ),
+      ).toBe('<h2 id="nesting">Nesting</h2>');
+      expect(yield* fs.exists(path.join(output, 'static/index.html'))).toBe(
+        false,
+      );
+      expect(
+        yield* fs.exists(
+          path.join(output, 'static/docs/client/links/index.html'),
+        ),
+      ).toBe(false);
+      expect(yield* fs.exists(path.join(output, 'static/404.html'))).toBe(true);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 

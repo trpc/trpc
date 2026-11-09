@@ -16,7 +16,7 @@ links:
     url: https://v12.trpc.io/v12/docs/integrations/tanstack-query/handles
   - kind: code
     label: v11's handles.ts
-    url: ../../../v11/packages/tanstack-react-query/src/internals/handles.ts
+    url: ../../../v11/packages/tanstack-react-query/src/unstable-handles/handles.ts
 ---
 
 # How should an infinite query get a serializable handle, now that its input is a function?

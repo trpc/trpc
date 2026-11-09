@@ -33,11 +33,11 @@
   "devDependencies": {
     "@lit/context": "1.1.6",
     "@tanstack/lit-query": "0.2.31",
-    "@tanstack/query-core": "5.105.0",
+    "@tanstack/query-core": "5.107.1",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^26.0.0",
-    "effect": "4.1.1",
+    "effect": "4.1.2",
     "happy-dom": "20.14.6",
     "lit": "3.3.3",
     "typescript": "7.1.0-beta",

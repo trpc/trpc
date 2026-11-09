@@ -16,7 +16,7 @@ import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag, generateCacheTags } from '../shared';
 
-type NextCacheLinkOptions<TRouter extends AnyRouter> = {
+export type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   /**
    * The router to call.
    */

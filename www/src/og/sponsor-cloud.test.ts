@@ -9,11 +9,11 @@ import { renderSponsorCloud } from './render.ts';
 import {
   cloudLayout,
   sponsorCloudCacheControl,
-  sponsorCloudPath,
-  sponsorCloudWidth,
+  sponsorCloudSource,
   sponsorCloudUrl,
-  sponsorCloudVersion,
+  sponsorCloudWidth,
 } from './sponsor-cloud.ts';
+import { immutableCacheControl } from './version.ts';
 
 const sponsor = (login: string, weight: number): Sponsor => ({
   createdAt: 0,
@@ -81,20 +81,22 @@ describe('cloudLayout', () => {
 });
 
 describe('sponsorCloudUrl', () => {
-  it('is absolute, at the version of who it draws', () => {
+  it('is absolute, in _, and never changes', () => {
+    expect(sponsorCloudUrl).toBe(`${site.url}/og/_/sponsor-cloud.png`);
+  });
+});
+
+describe('sponsorCloudSource', () => {
+  it('changes with who it draws, their weight and their avatar, but not the imageless', () => {
     const list = [sponsor('a', 40), sponsor('b', 20)];
-    expect(sponsorCloudUrl(list)).toBe(
-      `${site.url}${sponsorCloudPath}?v=${sponsorCloudVersion(list)}`,
+    expect(sponsorCloudSource(list)).toBe(
+      sponsorCloudSource([...list, { ...sponsor('c', 10), imageless: true }]),
     );
-    expect(sponsorCloudVersion(list)).toMatch(/^[0-9a-f]{8}$/);
-    expect(sponsorCloudVersion(list)).toBe(
-      sponsorCloudVersion([...list, { ...sponsor('c', 10), imageless: true }]),
+    expect(sponsorCloudSource(list)).not.toBe(
+      sponsorCloudSource([sponsor('a', 40), sponsor('b', 21)]),
     );
-    expect(sponsorCloudVersion(list)).not.toBe(
-      sponsorCloudVersion([sponsor('a', 40), sponsor('b', 21)]),
-    );
-    expect(sponsorCloudVersion(list)).not.toBe(
-      sponsorCloudVersion([
+    expect(sponsorCloudSource(list)).not.toBe(
+      sponsorCloudSource([
         sponsor('a', 40),
         { ...sponsor('b', 20), imgSrc: 'https://example.com/b.png' },
       ]),
@@ -105,35 +107,26 @@ describe('sponsorCloudUrl', () => {
 describe('sponsorCloudCacheControl', () => {
   const { bubbles } = cloudLayout([sponsor('a', 40), sponsor('b', 20)]);
   const all = new Map(bubbles.map((bubble) => [bubble.image, 'data:']));
-  const current = 'abcd1234';
 
-  it('caches it as a page when every avatar loaded, at the current version or none', () => {
-    for (const requested of [current, null]) {
-      expect(
-        sponsorCloudCacheControl({ avatars: all, bubbles, current, requested }),
-      ).toBeUndefined();
-    }
+  it('caches it for good at its version when every avatar loaded, and has the READMEs check it each time', () => {
+    expect(
+      sponsorCloudCacheControl({ avatars: all, bubbles, readmeSeconds: null }),
+    ).toBe(immutableCacheControl);
+    expect(
+      sponsorCloudCacheControl({ avatars: all, bubbles, readmeSeconds: 60 }),
+    ).toBe('public, max-age=0, must-revalidate, s-maxage=60');
   });
 
-  it('caches it briefly when an avatar is missing, or another version was asked for', () => {
-    const brief = 'public, max-age=0, s-maxage=600';
-    const one = new Map([...all].slice(0, 1));
-    expect(
-      sponsorCloudCacheControl({
-        avatars: one,
-        bubbles,
-        current,
-        requested: null,
-      }),
-    ).toBe(brief);
-    expect(
-      sponsorCloudCacheControl({
-        avatars: all,
-        bubbles,
-        current,
-        requested: 'ffff0000',
-      }),
-    ).toBe(brief);
+  it('caches it briefly when an avatar is missing', () => {
+    for (const readmeSeconds of [null, 60]) {
+      expect(
+        sponsorCloudCacheControl({
+          avatars: new Map([...all].slice(0, 1)),
+          bubbles,
+          readmeSeconds,
+        }),
+      ).toBe('public, max-age=0, s-maxage=600');
+    }
   });
 });
 

@@ -12,5 +12,6 @@ export default defineConfig({
     environment: 'node',
     include: ['build/**/*.test.ts', 'src/**/*.test.ts'],
     server: { deps: { inline: ['@effect/vitest'] } },
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

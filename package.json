@@ -23,7 +23,7 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "tsx": "^4.19.3",
+    "tsx": "^4.23.15",
     "turbo": "catalog:",
     "typescript": "catalog:ts-api",
     "vite": "catalog:"

@@ -194,7 +194,7 @@ describe('syncSponsors', () => {
         );
         expect(written).not.toContain('the old list');
         expect(written).toContain(
-          `<a href="${site.url}/sponsor#sponsors"><img src="${site.url}/og/sponsor-cloud.png?v=`,
+          `<a href="${site.url}/sponsor#sponsors"><img src="${site.url}/og/_/sponsor-cloud.png"`,
         );
         const block = (text: string) =>
           text.slice(text.indexOf(startMarker), text.indexOf(endMarker));

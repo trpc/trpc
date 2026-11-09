@@ -43,6 +43,7 @@
     "smoke.ts",
     "v12-reveal-check.ts",
     "vite.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "vitest.setup.ts"
   ]
 }

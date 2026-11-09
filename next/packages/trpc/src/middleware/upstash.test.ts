@@ -90,8 +90,9 @@ test('commands are JSON arrays with the token; scripts load once and run by sha'
   await app.get('ping', 'b');
   expect(api.commands).toEqual([
     ['SCRIPT', 'LOAD', expect.stringContaining('redis.call("GET", key)')],
-    ['EVALSHA', 'sha1', '1', 'ratelimiter:ping:a', '1', '30000', '2'],
-    ['EVALSHA', 'sha1', '1', 'ratelimiter:ping:b', '1', '30000', '2'],
+    // Effect's store URL-encodes the key after its prefix (4.1.2).
+    ['EVALSHA', 'sha1', '1', 'ratelimiter:ping%3Aa', '1', '30000', '2'],
+    ['EVALSHA', 'sha1', '1', 'ratelimiter:ping%3Ab', '1', '30000', '2'],
   ]);
   await app.handler.dispose();
 });

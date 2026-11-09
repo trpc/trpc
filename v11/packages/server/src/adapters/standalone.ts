@@ -35,7 +35,7 @@ const trimSlashes = (path: string): string => {
   return path;
 };
 
-type StandaloneHandlerOptions<
+export type StandaloneHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,

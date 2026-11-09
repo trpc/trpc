@@ -28,6 +28,7 @@ import {
   ancestors,
   childrenOf,
   type DocsVersion,
+  type LoadedDoc,
   findDoc,
   listedDocs,
   neighbours,
@@ -35,7 +36,7 @@ import {
   useListedDocs,
 } from '~/content/docs.ts';
 import { stripInlineCode } from '~/content/inline-code.ts';
-import type { Doc } from '~/content/types.ts';
+import { pageHtml } from '~/content/page-html.ts';
 import { loadPageDemos } from '~/demos/page-demos.tsx';
 import { experiments } from '~/experiments.ts';
 import { CodemodPlaygroundSlot } from '~/codemod-playground/slot.tsx';
@@ -66,7 +67,7 @@ export async function loadDocPage(version: DocsVersion, slug: string) {
     throw notFound();
   }
   const doc = await version.load(slug);
-  await loadPageDemos(doc.html);
+  await loadPageDemos(pageHtml(doc));
   return { doc };
 }
 
@@ -160,7 +161,7 @@ const footerLink =
   'inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground';
 
 export function DocPage(props: {
-  readonly doc: Doc;
+  readonly doc: LoadedDoc;
   readonly version: DocsVersion;
 }) {
   const doc = props.doc;
@@ -263,9 +264,14 @@ export function DocPage(props: {
           headings={doc.headings}
           key={doc.slug}
         />
-        <DocBody html={doc.html} />
-        {demo ? <PageDemo demo={demo} html={doc.html} mode="inline" /> : null}
-        <CodemodPlaygroundSlot html={doc.html} />
+        <DocBody
+          html={pageHtml(doc)}
+          loadPopups={version.loadPopups(doc.slug)}
+        />
+        {demo ? (
+          <PageDemo demo={demo} html={pageHtml(doc)} mode="inline" />
+        ) : null}
+        <CodemodPlaygroundSlot html={pageHtml(doc)} />
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2
@@ -355,7 +361,7 @@ export function DocPage(props: {
       <aside className="hidden xl:block">
         {demo ? (
           <div className="sticky top-22 h-[calc(100dvh-7rem)]">
-            <PageDemo demo={demo} html={doc.html} mode="aside" />
+            <PageDemo demo={demo} html={pageHtml(doc)} mode="aside" />
           </div>
         ) : (
           <div className="sticky top-22 grid gap-10">

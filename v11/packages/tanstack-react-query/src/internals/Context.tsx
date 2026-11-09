@@ -3,10 +3,7 @@ import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
-import {
-  createTRPCOptionsProxy,
-  renderHandleVerbs,
-} from './createOptionsProxy';
+import { createTRPCOptionsProxy } from './createOptionsProxy';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -82,16 +79,15 @@ export function createTRPCContext<
   > | null>(null);
 
   const TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags> = (props) => {
-    const value = React.useMemo(() => {
-      // Not a literal argument: the options type doesn't list the internal flag.
-      const opts = {
-        client: props.trpcClient,
-        queryClient: props.queryClient,
-        keyPrefix: props.keyPrefix,
-        [renderHandleVerbs]: true,
-      };
-      return createTRPCOptionsProxy(opts);
-    }, [props.trpcClient, props.queryClient, props.keyPrefix]);
+    const value = React.useMemo(
+      () =>
+        createTRPCOptionsProxy({
+          client: props.trpcClient,
+          queryClient: props.queryClient,
+          keyPrefix: props.keyPrefix,
+        }),
+      [props.trpcClient, props.queryClient, props.keyPrefix],
+    );
     return (
       <TRPCClientContext.Provider value={props.trpcClient}>
         <TRPCContext.Provider value={value}>

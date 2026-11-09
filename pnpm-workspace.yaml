@@ -94,66 +94,65 @@ allowBuilds:
   workerd: true
 
 catalog:
-  '@types/node': ^24.13.4
-  tsdown: 0.23.0
+  '@types/node': ^24.19.2
+  tsdown: 0.23.7
   typescript: 7.1.0-beta
   oxlint: ^1.90.0
   oxlint-tsgolint: ^7.0.2005
   '@oxlint/plugins': ^1.90.0
   oxfmt: ^0.75.0
-  vitest: ^5.0.0
-  '@vitest/coverage-istanbul': ^5.0.0
-  '@vitest/ui': ^5.0.0
-  vite: ^8.3.0
-  jsdom: ^30.0.1
-  turbo: ^2.10.12
-  undici: ^8.10.2
-  ws: ^8.21.3
-  devalue: ^6.0.0
+  vitest: ^5.0.5
+  '@vitest/coverage-istanbul': ^5.0.5
+  '@vitest/ui': ^5.0.5
+  vite: ^8.3.3
+  jsdom: ^31.0.0
+  turbo: ^2.11.10
+  undici: ^8.12.2
+  ws: ^8.22.1
+  devalue: ^6.0.3
   valibot: ^1.5.0
-  fastify: ^5.12.4
+  fastify: ^5.12.6
   '@hey-api/openapi-ts': ^0.99.0
-  '@fastify/websocket': ^11.3.0
-  fastify-plugin: ^6.0.0
-  next: ^15.5.25
-  '@effect/platform-node': 4.1.1
-  effect: 4.1.1
-
+  '@fastify/websocket': ^11.3.7
+  fastify-plugin: ^6.0.1
+  next: ^16.4.5
+  '@effect/platform-node': 4.1.2
+  effect: 4.1.2
 catalogs:
   ts-api:
     typescript: ^6.0.3
   www:
-    '@fastify/websocket': 11.3.0
+    '@fastify/websocket': 11.3.7
     '@resvg/resvg-wasm': 2.6.2
-    '@tanstack/react-router': 1.170.42
-    '@tanstack/react-start': 1.168.61
-    '@types/aws-lambda': 8.10.149
+    '@tanstack/react-router': 1.170.46
+    '@tanstack/react-start': 1.169.4
+    '@types/aws-lambda': 8.10.164
     '@types/cors': 2.8.19
     '@types/event-source-polyfill': 1.0.5
-    '@types/express': 5.0.0
+    '@types/express': 5.0.6
     '@types/react': 19.3.0
     '@types/react-dom': 19.3.0
-    '@types/ws': 8.5.10
-    '@vitejs/plugin-react': 6.1.2
-    arktype: 2.2.8
+    '@types/ws': 8.18.2
+    '@vitejs/plugin-react': 6.2.1
+    arktype: 2.2.9
     class-variance-authority: 0.7.1
     cors: 2.8.6
     date-fns: 4.4.0
-    effect: 4.1.1
+    effect: 4.1.2
     event-source-polyfill: 1.0.31
-    express: 5.2.1
+    express: 5.3.0
     # The v11 docs' blocks pass it to `@trpc/server`'s adapter, whose
-    # `fastify: ^5.12.4` resolves to the workspace's newest.
-    fastify: 5.12.7
-    react-dom: 19.3.0
-    react: 19.3.0
+    # `fastify: ^5.12.6` resolves to the workspace's newest.
+    fastify: 5.12.8
+    react-dom: 19.3.1
+    react: 19.3.1
     runtypes: 7.0.5
     scale-codec: 0.13.0
     server-only: 0.0.1
     superjson: 2.2.6
     superstruct: 2.0.2
-    tailwindcss: 4.3.3
-    typescript: 5.9.2
-    ws: 8.21.3
+    tailwindcss: 4.3.5
+    typescript: 5.9.3
+    ws: 8.22.1
     yup: 1.7.1
-    zod: 4.6.5
+    zod: 4.6.7

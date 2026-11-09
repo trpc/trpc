@@ -1,7 +1,7 @@
 {
   "name": "@trpc/tanstack-react-query",
   "type": "module",
-  "version": "11.24.0",
+  "version": "11.25.2",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -42,6 +42,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./unstable-handles": {
+      "import": {
+        "types": "./dist/unstable-handles/index.d.mts",
+        "default": "./dist/unstable-handles/index.mjs"
+      },
+      "require": {
+        "types": "./dist/unstable-handles/index.d.cts",
+        "default": "./dist/unstable-handles/index.cjs"
+      }
     }
   },
   "files": [
@@ -49,31 +59,32 @@
     "src",
     "README.md",
     "package.json",
+    "unstable-handles",
     "!**/*.test.*",
     "!**/__tests__",
     "skills"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.24.0",
-    "@trpc/server": "11.24.0",
+    "@trpc/client": "11.25.2",
+    "@trpc/server": "11.25.2",
     "react": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
     "@tanstack/intent": "0.5.6",
-    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-query": "^5.107.1",
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "^19.1.0",
+    "@types/react": "^19.3.0",
     "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "superjson": "^1.12.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "superjson": "^2.2.6",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",

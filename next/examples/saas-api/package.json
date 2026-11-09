@@ -11,9 +11,9 @@
     "smoke": "pnpm start"
   },
   "dependencies": {
-    "@effect/platform-node": "4.1.1",
+    "@effect/platform-node": "4.1.2",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.1.1",
+    "effect": "4.1.2",
     "express": "5.2.1",
     "fastify": "5.12.7",
     "zod": "4.6.5"

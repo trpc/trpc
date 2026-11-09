@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/platform-node": "4.1.1",
+    "@effect/platform-node": "4.1.2",
     "effect": "catalog:www",
     "yaml": "2.9.1"
   },
