@@ -30,7 +30,7 @@ import {
 
 export function getRouter() {
   const router = createRouter({
-    ...errorOptions,
+    ...errorOptions(() => window.location.reload()),
     defaultNotFoundComponent: NotFound,
     // Hovering a link loads the page's content chunk, so the click renders
     // without waiting.
