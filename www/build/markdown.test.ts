@@ -330,8 +330,8 @@ describe('renderMarkdown', () => {
         ].join(' '),
       );
       expect(rendered.links).toEqual([
-        { hash: 'options', slug: 'client/batching' },
-        { hash: undefined, slug: 'server/procedures' },
+        { hash: 'options', search: '', slug: 'client/batching' },
+        { hash: undefined, search: '', slug: 'server/procedures' },
       ]);
       expect(rendered.html).toContain('href="/docs/client/batching#options"');
       expect(rendered.html).toContain('href="/docs/server/procedures"');
@@ -476,15 +476,31 @@ describe('renderMarkdown', () => {
   );
 });
 
+describe('page links', () => {
+  it.effect('keep their query, so a link can pick a tab', () =>
+    Effect.gen(function* () {
+      const rendered = yield* render(
+        '[Next.js](../server/router.md?framework=nextjs#lazy) and [setup](/docs/server/routers?framework=react-router)',
+      );
+      expect(rendered.html).toContain(
+        'href="/docs/server/router?framework=nextjs#lazy"',
+      );
+      expect(rendered.html).toContain(
+        'href="/docs/server/routers?framework=react-router"',
+      );
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+});
+
 describe('resolveLink', () => {
   it('resolves relative page links from nested pages', () => {
     expect(resolveLink('client/links', '../server/router.md#lazy')).toEqual({
       kind: 'doc',
-      link: { hash: 'lazy', slug: 'server/router' },
+      link: { hash: 'lazy', search: '', slug: 'server/router' },
     });
     expect(resolveLink('getting-started', 'client/links.md')).toEqual({
       kind: 'doc',
-      link: { hash: undefined, slug: 'client/links' },
+      link: { hash: undefined, search: '', slug: 'client/links' },
     });
   });
 
@@ -501,7 +517,10 @@ describe('resolveLink', () => {
     ).toEqual({ kind: 'source', path: 'examples/a/README.md' });
     expect(
       resolveLink('client/links', '../server/router.md#lazy', 'www/docs'),
-    ).toEqual({ kind: 'doc', link: { hash: 'lazy', slug: 'server/router' } });
+    ).toEqual({
+      kind: 'doc',
+      link: { hash: 'lazy', search: '', slug: 'server/router' },
+    });
     expect(resolveLink('a', '../README.md', 'www/docs')).toEqual({
       kind: 'source',
       path: 'www/README.md',
@@ -522,18 +541,18 @@ describe('resolveLink', () => {
     const v10 = { basePath: '/docs/v10', firstDoc: 'introduction' };
     expect(resolveLink('a', '/docs/server/routers#lazy', 'docs', v11)).toEqual({
       kind: 'doc',
-      link: { hash: 'lazy', slug: 'server/routers' },
+      link: { hash: 'lazy', search: '', slug: 'server/routers' },
     });
     expect(resolveLink('a', '/docs', 'docs', v11)).toEqual({
       kind: 'doc',
-      link: { hash: undefined, slug: 'introduction' },
+      link: { hash: undefined, search: '', slug: 'introduction' },
     });
     expect(resolveLink('a', '/docs/v10/server/routers', 'docs', v11)).toEqual({
       kind: 'other',
     });
     expect(resolveLink('a', '/docs/v10/server/routers', 'docs', v10)).toEqual({
       kind: 'doc',
-      link: { hash: undefined, slug: 'server/routers' },
+      link: { hash: undefined, search: '', slug: 'server/routers' },
     });
     expect(resolveLink('a', '/blog/a', 'docs', v11)).toEqual({ kind: 'other' });
   });
@@ -547,9 +566,9 @@ describe('brokenLinks', () => {
           anchors: ['intro'],
           doc: { slug: 'a' },
           links: [
-            { hash: 'intro', slug: 'a' },
-            { hash: undefined, slug: 'b' },
-            { hash: 'missing', slug: 'a' },
+            { hash: 'intro', search: '', slug: 'a' },
+            { hash: undefined, search: '', slug: 'b' },
+            { hash: 'missing', search: '', slug: 'a' },
           ],
         },
       ]),
