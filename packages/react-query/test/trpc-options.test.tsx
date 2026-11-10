@@ -62,9 +62,7 @@ test('useQuery()', async () => {
   expect(ctx.spyLink).toHaveBeenCalledTimes(1);
   const firstCall = ctx.spyLink.mock.calls[0]![0];
   expect(firstCall.context['foo']).toBe('bar');
-  // aborted only if the query answers with a stream that isn't read to the end
-  expect(firstCall.signal).toBeInstanceOf(AbortSignal);
-  expect({ ...firstCall, signal: '<AbortSignal>' }).toMatchInlineSnapshot(`
+  expect(firstCall).toMatchInlineSnapshot(`
     Object {
       "context": Object {
         "foo": "bar",
@@ -74,7 +72,7 @@ test('useQuery()', async () => {
         "id": "1",
       },
       "path": "greeting",
-      "signal": "<AbortSignal>",
+      "signal": null,
       "type": "query",
     }
   `);

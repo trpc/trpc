@@ -130,10 +130,6 @@ function testContext() {
       call.next('chunk');
       await vi.waitFor(() => expect(received).toContain(chunk));
     },
-    /** Waits for the server to see the request aborted. */
-    async serverAborted(call: ReturnType<typeof createCall>) {
-      await vi.waitFor(() => expect(call.signal?.aborted).toBe(true));
-    },
     /** Sends a chunk and waits for the server to have sent it. */
     async serverChunk(call: ReturnType<typeof createCall>) {
       const before = call.chunks;
@@ -170,7 +166,7 @@ describe.each(['useQuery', 'queryOptions'] as const)(
       expect(t.data()).toEqual(['b1']);
     });
 
-    test('a refetch stops the older stream on the server at its next chunk', async () => {
+    test('a refetch leaves the older stream running to its end on the server', async () => {
       await using t = testContext();
       t.entryPoints[entryPoint]();
       await vi.waitFor(() => expect(t.calls).toHaveLength(1));
@@ -188,13 +184,15 @@ describe.each(['useQuery', 'queryOptions'] as const)(
       newer.next('end');
       await refetch;
 
-      older!.next('chunk');
-      await t.serverAborted(older!);
-      expect(older!.finished).toBe(false);
+      await t.sendChunk(older!, 'a2');
+      await t.sendChunk(older!, 'a3');
+      older!.next('end');
+      await vi.waitFor(() => expect(older!.finished).toBe(true));
+      expect(older!.signal?.aborted).toBe(false);
       expect(t.data()).toEqual(['b1']);
     });
 
-    test('cancelQueries stops the stream on the server at its next chunk', async () => {
+    test('cancelQueries leaves the stream running to its end on the server', async () => {
       await using t = testContext();
       t.entryPoints[entryPoint]();
       await vi.waitFor(() => expect(t.calls).toHaveLength(1));
@@ -204,10 +202,11 @@ describe.each(['useQuery', 'queryOptions'] as const)(
 
       await t.queryClient.cancelQueries({ queryKey: t.queryKey });
 
-      call!.next('chunk');
-      await t.serverAborted(call!);
-      expect(call!.finished).toBe(false);
-      expect(t.data()).toEqual(['a1']);
+      await t.sendChunk(call!, 'a2');
+      await t.sendChunk(call!, 'a3');
+      call!.next('end');
+      await vi.waitFor(() => expect(call!.finished).toBe(true));
+      expect(call!.signal?.aborted).toBe(false);
     });
 
     test('cancelQueries stops the stream from overwriting an optimistic update', async () => {
@@ -242,9 +241,10 @@ describe.each(['useQuery', 'queryOptions'] as const)(
       await vi.waitFor(() => expect(t.data()).toEqual(['b1']));
 
       older!.answer();
-      await t.serverAborted(older!);
+      await t.sendChunk(older!, 'a1');
       expect(t.data()).toEqual(['b1']);
 
+      older!.next('end');
       newer!.next('end');
       await expect(fetchingNewer).resolves.toEqual(['b1']);
       expect(t.data()).toEqual(['b1']);
@@ -263,9 +263,10 @@ describe.each(['useQuery', 'queryOptions'] as const)(
       const [older, newer] = t.calls;
 
       older!.answer();
-      await t.serverAborted(older!);
+      await t.sendChunk(older!, 'a1');
       expect(t.data()).toBeUndefined();
 
+      older!.next('end');
       newer!.answer();
       newer!.next('end');
       await expect(fetchingNewer).resolves.toEqual([]);
@@ -315,7 +316,61 @@ describe('a query that streams, through a retained queryOptions object', () => {
     await expect(fetching).resolves.toEqual(['a1', 'a2']);
   });
 
-  test('a query with its own queryHash removed before it streams stops its stream', async () => {
+  test('one key array under two queryHashes at once gives each its whole stream', async () => {
+    await using t = testContext();
+    const options = t.utils.stream.queryOptions();
+    const fetchingFirst = t.queryClient.fetchQuery({
+      ...options,
+      queryHash: 'first',
+    } as never);
+    await vi.waitFor(() => expect(t.calls).toHaveLength(1));
+    const fetchingSecond = t.queryClient.fetchQuery({
+      ...options,
+      queryHash: 'second',
+    } as never);
+    await vi.waitFor(() => expect(t.calls).toHaveLength(2));
+    const [callFirst, callSecond] = t.calls;
+    callFirst!.answer();
+    callSecond!.answer();
+
+    await t.serverChunk(callFirst!);
+    await t.serverChunk(callSecond!);
+    await t.serverChunk(callFirst!);
+    await t.serverChunk(callSecond!);
+    callFirst!.next('end');
+    callSecond!.next('end');
+
+    await expect(fetchingFirst).resolves.toEqual(['a1', 'a2']);
+    await expect(fetchingSecond).resolves.toEqual(['b1', 'b2']);
+  });
+
+  test('one key array at its hash and under its own queryHash at once keeps the streams apart', async () => {
+    await using t = testContext();
+    const options = t.utils.stream.queryOptions();
+    const fetchingAtHash = t.queryClient.fetchQuery(options as never);
+    await vi.waitFor(() => expect(t.calls).toHaveLength(1));
+    const fetchingOwn = t.queryClient.fetchQuery({
+      ...options,
+      queryHash: 'mine',
+    } as never);
+    await vi.waitFor(() => expect(t.calls).toHaveLength(2));
+    const [callAtHash, callOwn] = t.calls;
+    callAtHash!.answer();
+    callOwn!.answer();
+    const ownData = () => t.queryClient.getQueryCache().get('mine')?.state.data;
+
+    await t.sendChunk(callOwn!, 'b1');
+    expect(t.data() ?? []).not.toContain('b1');
+    await t.sendChunk(callAtHash!, 'a1');
+    expect(ownData() ?? []).not.toContain('a1');
+
+    callAtHash!.next('end');
+    callOwn!.next('end');
+    await expect(fetchingAtHash).resolves.toEqual(['a1']);
+    await expect(fetchingOwn).resolves.toEqual(['b1']);
+  });
+
+  test('a query with its own queryHash removed before it streams leaves the query at the key hash its own result', async () => {
     await using t = testContext();
     const options = t.utils.stream.queryOptions();
     const fetchingAtHash = t.queryClient.fetchQuery(options as never);
@@ -330,13 +385,45 @@ describe('a query that streams, through a retained queryOptions object', () => {
       predicate: (query) => query.queryHash === 'mine',
     });
     callOwn!.answer();
-    await t.serverAborted(callOwn!);
+    await t.sendChunk(callOwn!, 'b1');
     callAtHash!.answer();
     await t.sendChunk(callAtHash!, 'a1');
     callAtHash!.next('end');
     await expect(fetchingAtHash).resolves.toEqual(['a1']);
+
+    await t.sendChunk(callOwn!, 'b2');
+    expect(t.data()).toEqual(['a1']);
+    callOwn!.next('end');
     await expect(fetchingOwn).resolves.toBe('cancelled');
     expect(t.data()).toEqual(['a1']);
+  });
+
+  test('streams into a query with its own queryKeyHashFn when the client default throws', async () => {
+    await using t = testContext();
+    const queryClient = createQueryClient({
+      defaultOptions: {
+        queries: {
+          queryKeyHashFn: () => {
+            throw new Error('this client hashes no tRPC keys');
+          },
+        },
+      },
+    });
+    const fetching = queryClient.fetchQuery({
+      ...t.utils.stream.queryOptions(),
+      queryKeyHashFn: () => 'custom-hash',
+    } as never);
+    await vi.waitFor(() => expect(t.calls).toHaveLength(1));
+    const [call] = t.calls;
+    call!.answer();
+    await t.sendChunk(call!, 'a1');
+    await vi.waitFor(() =>
+      expect(
+        queryClient.getQueryCache().get('custom-hash')?.state.data,
+      ).toEqual(['a1']),
+    );
+    call!.next('end');
+    await expect(fetching).resolves.toEqual(['a1']);
   });
 
   test('a query function called with a context that has no client writes as before', async () => {

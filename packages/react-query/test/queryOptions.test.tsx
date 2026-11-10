@@ -63,9 +63,7 @@ const ctx = konn()
           }),
         iterable: t.procedure.query(async function* () {
           for (let i = 0; i < 3; i++) {
-            // the first value is sent right away: the query stays pending until
-            // it arrives, so there's no render to ask for it
-            if (i > 0) await iterableDeferred.promise;
+            await iterableDeferred.promise;
             yield i + 1;
           }
         }),
@@ -290,50 +288,65 @@ describe('queryOptions', () => {
       expect(utils.container).toHaveTextContent(`success:notFetching`);
     });
 
-    expect(selects).toEqual([[1], [1], [1, 2], [1, 2], [1, 2, 3], [1, 2, 3]]);
+    expect(selects).toEqual([
+      [],
+      [],
+      [1],
+      [1],
+      [1, 2],
+      [1, 2],
+      [1, 2, 3],
+      [1, 2, 3],
+    ]);
 
     expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
       // initial
       ['pending', 'fetching'],
-      // pending until the first value, then streaming the rest
+      // waiting 3 values
+      ['success', 'fetching'],
       ['success', 'fetching'],
       ['success', 'fetching'],
       // done iterating
       ['success', 'idle'],
     ]);
     expect(states).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "data": undefined,
-          "fetchStatus": "fetching",
-          "status": "pending",
-        },
-        Object {
-          "data": Array [
-            1,
-          ],
-          "fetchStatus": "fetching",
-          "status": "success",
-        },
-        Object {
-          "data": Array [
-            1,
-            2,
-          ],
-          "fetchStatus": "fetching",
-          "status": "success",
-        },
-        Object {
-          "data": Array [
-            1,
-            2,
-            3,
-          ],
-          "fetchStatus": "idle",
-          "status": "success",
-        },
-      ]
-    `);
+        Array [
+          Object {
+            "data": undefined,
+            "fetchStatus": "fetching",
+            "status": "pending",
+          },
+          Object {
+            "data": Array [],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+              3,
+            ],
+            "fetchStatus": "idle",
+            "status": "success",
+          },
+        ]
+      `);
   });
 
   test('useSuspenseQuery', async () => {
