@@ -221,7 +221,7 @@ describe.each(['query', 'mutation'] as const)('%s cancellation', (type) => {
     const ctx = localLinkClient({
       router,
       createContext: (opts) => {
-        started.resolve(opts.signal);
+        started.resolve(opts.info.signal);
         return new Promise(() => {
           // never resolves
         });

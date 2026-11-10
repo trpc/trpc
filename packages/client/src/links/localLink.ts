@@ -35,9 +35,16 @@ import type { TRPCLink } from './types';
  */
 export type LocalLinkCreateContextOptions = {
   /**
-   * Aborts when the call is cancelled or unsubscribed.
+   * What tRPC knows about the call, like the `info` that adapters pass to
+   * their `createContext`.
    */
-  signal: AbortSignal;
+  info: {
+    /**
+     * Aborts when the call is cancelled or unsubscribed. Pass it on to work
+     * that creating the context starts, such as `fetch()` calls.
+     */
+    signal: AbortSignal;
+  };
 };
 
 /**
@@ -52,8 +59,8 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
    */
   router: TRouter;
   /**
-   * Creates the context for each call. `signal` aborts when the call is
-   * cancelled.
+   * Creates the context for each call. `info.signal` aborts when the call
+   * is cancelled.
    * @see https://trpc.io/docs/client/links/localLink#createcontext
    */
   createContext: (
@@ -110,7 +117,7 @@ export function localLink<TRouter extends AnyRouter>(
 
           // don't start work for a call that was cancelled before it ran
           throwIfAborted(signal);
-          ctx = await opts.createContext({ signal });
+          ctx = await opts.createContext({ info: { signal } });
           throwIfAborted(signal);
 
           return callProcedure({
