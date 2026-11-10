@@ -302,6 +302,60 @@ describe('renderNotes', () => {
     expect(rendered.match(/^## .*$/gm)).toHaveLength(3);
   });
 
+  it('lists maintenance whose scope names no package once, after the packages', () => {
+    // v11.26.0 and v11.27.0 listed a chore(deps) under every package.
+    const rendered = notes(
+      [
+        change('a1', 'chore(deps): shared versions in the catalog (#1)', [
+          'packages/server/package.json',
+          'packages/client/package.json',
+          'packages/react-query/package.json',
+        ]),
+        change('a2', 'fix(client): a (#2)', ['packages/client/src/a.ts']),
+        change('a3', 'ci: b (#3)', ['packages/server/tsconfig.json']),
+        change('a4', 'chore(client): c (#4)', ['packages/client/src/c.ts']),
+        change('a5', 'chore(deps)!: drop node 18 (#5)', [
+          'packages/server/package.json',
+        ]),
+      ],
+      github([
+        pr(1, 'chore(deps): shared versions in the catalog'),
+        pr(2, 'fix(client): a'),
+        pr(3, 'ci: b'),
+        pr(4, 'chore(client): c'),
+        pr(5, 'chore(deps)!: drop node 18'),
+      ]),
+    );
+    expect(rendered).toBe(`## @trpc/server
+
+### Breaking Changes
+
+* chore(deps)!: drop node 18 by @KATT in ${prUrl(5)}
+
+## @trpc/client
+
+### Fixes
+
+* fix(client): a by @KATT in ${prUrl(2)}
+
+### Chores
+
+* chore(client): c by @KATT in ${prUrl(4)}
+
+## Maintenance
+
+### CI
+
+* ci: b by @KATT in ${prUrl(3)}
+
+### Chores
+
+* chore(deps): shared versions in the catalog by @KATT in ${prUrl(1)}
+
+**Full Changelog**: https://github.com/trpc/trpc/compare/v11.24.0...v11.24.1
+`);
+  });
+
   it('puts breaking changes first and unconventional titles last', () => {
     expect(
       notes(

@@ -11,7 +11,9 @@
  * both in `fix(server, client): a`, so a client feature that also touches
  * the server's types is only a client feature. Without a scope, or with one
  * that names no public package, like `deps`, it goes under each package it
- * changes. GitHub works out who contributed for the first time.
+ * changes, unless it's maintenance, like `chore(deps): a`: that's listed
+ * once, after the packages, since it says nothing about any one of them.
+ * GitHub works out who contributed for the first time.
  */
 import { Effect } from 'effect';
 import { git, output } from './command.ts';
@@ -52,7 +54,11 @@ export interface NotesEntry {
   /** The pull request, or the commit when there's none. */
   readonly url: string;
   readonly author: string | undefined;
-  readonly packages: ReadonlyArray<string>;
+  /**
+   * The packages it's listed under, or `null` for maintenance whose scope
+   * names no package, listed once under `## Maintenance`.
+   */
+  readonly packages: ReadonlyArray<string> | null;
 }
 
 export interface NewContributor {
@@ -144,6 +150,18 @@ const sections = [
 type Section = (typeof sections)[number][0];
 
 /**
+ * Sections of changes to how the repo is built, tested and maintained, which
+ * are only worth listing under a package when their scope names it.
+ */
+const maintenance: ReadonlySet<Section> = new Set([
+  'build',
+  'ci',
+  'chore',
+  'style',
+  'test',
+]);
+
+/**
  * The section of a conventional-commit title: `!` before the colon is a
  * breaking change, and a type not in `sections`, or no type, is another
  * change.
@@ -164,7 +182,7 @@ export function noteSection(title: string): Section {
  * The entries of the notes, oldest first: the changes that change a public
  * package, one per pull request, titled and credited the way GitHub has
  * them, under the packages their title's scope names, or else the packages
- * they change.
+ * they change, or else, for maintenance, under none.
  */
 export function notesEntries(opts: {
   readonly changes: ReadonlyArray<Change>;
@@ -183,7 +201,12 @@ export function notesEntries(opts: {
       number === undefined ? undefined : opts.github.pullRequests.get(number);
     const title = pr?.title ?? change.subject;
     const scoped = scopedPackages(title, opts.packages);
-    const packages = scoped.length > 0 ? scoped : changed;
+    const packages =
+      scoped.length > 0
+        ? scoped
+        : maintenance.has(noteSection(title))
+          ? null
+          : changed;
     const entry: NotesEntry =
       pr === undefined
         ? {
@@ -193,18 +216,20 @@ export function notesEntries(opts: {
             packages,
           }
         : { title, url: pr.url, author: pr.author, packages };
+    // Commits of one pull request share its title, so they're all
+    // maintenance or none are.
     const earlier = entries.get(entry.url);
+    const listed = earlier?.packages;
     entries.set(
       entry.url,
-      earlier === undefined
+      earlier === undefined || listed == null || packages === null
         ? entry
         : {
             ...earlier,
             packages: opts.packages
               .map(({ name }) => name)
               .filter(
-                (name) =>
-                  earlier.packages.includes(name) || packages.includes(name),
+                (name) => listed.includes(name) || packages.includes(name),
               ),
           },
     );
@@ -228,8 +253,9 @@ const bullet = ({ title, url, author }: NotesEntry) =>
 
 /**
  * The notes' Markdown: a `## <package>` for each package `entries` list, in
- * `packages` order, with a `### <type>` for each type; then the new
- * contributors whose first pull request is listed, and the full changelog.
+ * `packages` order, with a `### <type>` for each type; then `## Maintenance`
+ * the same way, the new contributors whose first pull request is listed,
+ * and the full changelog.
  */
 export function renderNotes(opts: {
   readonly entries: ReadonlyArray<NotesEntry>;
@@ -240,23 +266,32 @@ export function renderNotes(opts: {
   readonly tag: string;
 }): string {
   const blocks: Array<string> = [];
-  for (const { name } of opts.packages) {
-    const entries = opts.entries.filter(({ packages }) =>
-      packages.includes(name),
-    );
+  const group = (heading: string, entries: ReadonlyArray<NotesEntry>) => {
     if (entries.length === 0) {
-      continue;
+      return;
     }
-    blocks.push(`## ${name}`);
-    for (const [section, heading] of sections) {
+    blocks.push(`## ${heading}`);
+    for (const [section, sectionHeading] of sections) {
       const listed = entries.filter(
         ({ title }) => noteSection(title) === section,
       );
       if (listed.length > 0) {
-        blocks.push(`### ${heading}\n\n${listed.map(bullet).join('\n')}`);
+        blocks.push(
+          `### ${sectionHeading}\n\n${listed.map(bullet).join('\n')}`,
+        );
       }
     }
+  };
+  for (const { name } of opts.packages) {
+    group(
+      name,
+      opts.entries.filter(({ packages }) => packages?.includes(name)),
+    );
   }
+  group(
+    'Maintenance',
+    opts.entries.filter(({ packages }) => packages === null),
+  );
   if (blocks.length === 0) {
     blocks.push('No changes to the published packages.');
   }
