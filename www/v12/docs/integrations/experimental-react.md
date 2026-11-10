@@ -218,6 +218,8 @@ trpc.post.byId.getData({ id });
 await trpc.post.rename.mutate({ id, title }); // as on the plain client; useMutation tracks it
 ```
 
+A request in flight read its answer before anything that happens while it's on its way, so a later `setData` (an optimistic update) or `hydrate` keeps its data when the answer lands, and an `invalidate` leaves the answer stale and sends another request after it for the queries on screen.
+
 ## Server rendering
 
 On the server, create one client per request (`isServer` defaults to `typeof window === 'undefined'`; a server's cache never drops entries). After the render, `dehydrate(trpc)` encodes the settled queries with the links' transformer, so `Date`s survive with progressive JSON; `hydrate(trpc, state)` writes them into the browser's client before it renders.

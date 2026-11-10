@@ -106,6 +106,10 @@ interface Entry extends MutableEntry {
   readonly callOptions: object | undefined;
   deferred: Pending<unknown> | undefined;
   invalidated: boolean;
+  /** Counts `setData` and hydration writes, so a request knows one landed while it ran. */
+  writes: number;
+  /** Counts invalidations, so a request knows one came while it ran. */
+  invalidations: number;
   error: unknown;
   updatedAt: number;
   fetching: Fiber.Fiber<void> | undefined;
@@ -145,9 +149,16 @@ export interface QueryStore {
   isStale(entry: QueryEntry): boolean;
   /** Starts a request for the entry, or joins the one in flight. Never rejects. */
   refetch(entry: QueryEntry): Promise<void>;
-  /** Marks entries stale and refetches the observed ones; resolves when those settle. */
+  /**
+   * Marks entries stale and refetches the observed ones; resolves when those
+   * settle. A request already in flight started before the invalidation, so
+   * its answer stays stale and another request follows it.
+   */
   invalidate(filter?: QueryFilter): Promise<void>;
-  /** Writes data. Readers re-render without suspending. */
+  /**
+   * Writes data. Readers re-render without suspending. A request in flight
+   * read its answer before this write, so the write keeps its data.
+   */
   setData(path: string, input: unknown, data: unknown): void;
   /** Drops entries and aborts their requests. */
   remove(filter?: QueryFilter): void;
@@ -337,6 +348,8 @@ export function createStore(opts: StoreOptions): QueryStore {
       hasData: false,
       data: undefined,
       invalidated: false,
+      writes: 0,
+      invalidations: 0,
       error: undefined,
       updatedAt: 0,
       fetching: undefined,
@@ -382,27 +395,42 @@ export function createStore(opts: StoreOptions): QueryStore {
     scheduleGc(entry);
   };
 
+  /**
+   * One request for the entry. Its answer was read before anything written
+   * or invalidated while it ran: a write made meanwhile (`setData`,
+   * hydration) keeps its data, and an invalidation made meanwhile leaves the
+   * answer stale.
+   */
   const load = (entry: Entry): Effect.Effect<void> =>
-    Effect.tryPromise({
-      try: (signal) =>
-        opts.request(entry.path, entry.input, entry.callOptions, signal),
-      catch: identity,
-    }).pipe(
-      Effect.match({
-        onSuccess: (value) => {
-          const release = write(entry, value);
-          finish(entry);
-          release();
-        },
-        onFailure: (error) => {
-          entry.error = error;
-          const deferred = entry.deferred;
-          entry.deferred = undefined;
-          finish(entry);
-          deferred?.reject(error);
-        },
-      }),
-    );
+    Effect.suspend(() => {
+      const writes = entry.writes;
+      const invalidations = entry.invalidations;
+      return Effect.tryPromise({
+        try: (signal) =>
+          opts.request(entry.path, entry.input, entry.callOptions, signal),
+        catch: identity,
+      }).pipe(
+        Effect.match({
+          onSuccess: (value) => {
+            if (entry.writes !== writes) {
+              finish(entry);
+              return;
+            }
+            const release = write(entry, value);
+            if (entry.invalidations !== invalidations) entry.invalidated = true;
+            finish(entry);
+            release();
+          },
+          onFailure: (error) => {
+            entry.error = error;
+            const deferred = entry.deferred;
+            entry.deferred = undefined;
+            finish(entry);
+            deferred?.reject(error);
+          },
+        }),
+      );
+    });
 
   const fetch = (entry: Entry): Fiber.Fiber<void> | undefined => {
     if (entry.fetching || disposed) return entry.fetching;
@@ -415,6 +443,26 @@ export function createStore(opts: StoreOptions): QueryStore {
     entry.fetching = fiber;
     notify(entry);
     return fiber;
+  };
+
+  /**
+   * Refetches an invalidated entry. A request already in flight started
+   * before the invalidation, so this one waits for it and then sends another.
+   */
+  const refresh = (entry: Entry): Fiber.Fiber<void> | undefined => {
+    const current = entry.fetching;
+    if (!current) return fetch(entry);
+    return run(
+      awaitAll([current]).pipe(
+        Effect.andThen(
+          Effect.suspend(() =>
+            entry.invalidated && entries.get(entry.key) === entry
+              ? awaitAll([fetch(entry)])
+              : Effect.void,
+          ),
+        ),
+      ),
+    );
   };
 
   const drop = (entry: Entry) => {
@@ -452,7 +500,8 @@ export function createStore(opts: StoreOptions): QueryStore {
       for (const entry of entries.values()) {
         if (!matches(filter, entry)) continue;
         entry.invalidated = true;
-        if (entry.observers > 0) refetches.push(fetch(entry));
+        entry.invalidations++;
+        if (entry.observers > 0) refetches.push(refresh(entry));
         else notify(entry);
       }
       return settled(refetches);
@@ -460,6 +509,7 @@ export function createStore(opts: StoreOptions): QueryStore {
     setData(path, input, data) {
       const key = queryKey(path, input);
       const entry = entries.get(key) ?? create(path, input, undefined);
+      entry.writes++;
       const release = write(entry, data);
       notify(entry);
       scheduleGc(entry);
@@ -517,6 +567,7 @@ export function createStore(opts: StoreOptions): QueryStore {
       const existing = entries.get(key);
       if (existing?.hasData && existing.updatedAt >= updatedAt) return;
       const entry = existing ?? create(path, input, undefined);
+      entry.writes++;
       const release = write(entry, data);
       entry.updatedAt = updatedAt;
       notify(entry);

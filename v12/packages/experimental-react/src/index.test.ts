@@ -300,6 +300,101 @@ test('setData writes data readers see without suspending', async () => {
   expect(db.calls).toEqual(['byId:1']);
 });
 
+/** A link that holds every answer until `open()` lets the ones waiting through. */
+const gated = () => {
+  let waiting: Array<() => void> = [];
+  const hold = link((opts) =>
+    opts
+      .next(opts.op)
+      .pipe(
+        Stream.mapEffect((value) =>
+          Effect.promise(
+            () => new Promise<void>((resolve) => waiting.push(resolve)),
+          ).pipe(Effect.as(value)),
+        ),
+      ),
+  );
+  const open = () => {
+    const released = waiting;
+    waiting = [];
+    for (const resolve of released) resolve();
+  };
+  return { link: hold, open };
+};
+
+test('a write made while a request is in flight keeps its data over the late answer', async () => {
+  using _db = freshDb();
+  const gate = gated();
+  const trpc = make([cacheLink({ staleTime: 60_000 }), gate.link]);
+  const post = trpc.post.byId.query({ id: '1' });
+  await tick(5);
+  const set: Post = { id: '1', title: 'Set', tags: [], at: new Date(0) };
+  trpc.post.byId.setData({ id: '1' }, set);
+  // The first load settles with the write, not the answer in flight.
+  expect(await post).toEqual(set);
+  gate.open();
+  await tick(5);
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Set');
+  expect(trpc.store.entryOf(post)?.snapshot.isFetching).toBe(false);
+
+  // A refetch of cached data, and hydration, the same way.
+  await trpc.post.byId.invalidate({ id: '1' });
+  void trpc.post.byId.query({ id: '1' });
+  await tick(5);
+  trpc.store.seed(
+    'post.byId',
+    { id: '1' },
+    { ...set, title: 'Seeded' },
+    Date.now(),
+  );
+  gate.open();
+  await tick(5);
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Seeded');
+  expect(db.calls).toEqual(['byId:1', 'byId:1']);
+});
+
+test('an invalidation while a request is in flight leaves its answer stale, and refetches what is read', async () => {
+  using _db = freshDb();
+  const gate = gated();
+  const trpc = make([cacheLink({ staleTime: 60_000 }), gate.link]);
+  const read = trpc.post.byId.query({ id: '1' });
+  const unread = trpc.post.byId.query({ id: '2' });
+  const unmount = trpc.store.mount(trpc.store.entryOf(read)!);
+  await tick(5);
+  // The server already answered 'Hello'; the answer is still on its way.
+  db.posts.get('1')!.title = 'Fresh';
+  const invalidated = trpc.post.byId.invalidate();
+  gate.open();
+  expect((await read).title).toBe('Hello');
+  await tick(5);
+  expect(db.calls).toEqual(['byId:1', 'byId:2', 'byId:1']);
+  gate.open();
+  await invalidated;
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Fresh');
+  expect(trpc.store.isStale(trpc.store.entryOf(read)!)).toBe(false);
+  // The unread query keeps its answer, stale until its next call.
+  expect(trpc.store.isStale(trpc.store.entryOf(unread)!)).toBe(true);
+  expect(db.calls).toHaveLength(3);
+  unmount();
+});
+
+test('an invalidated query removed while its request is in flight sends no other request', async () => {
+  using _db = freshDb();
+  const gate = gated();
+  const trpc = make([cacheLink({ staleTime: 60_000 }), gate.link]);
+  const post = trpc.post.byId.query({ id: '1' });
+  const unmount = trpc.store.mount(trpc.store.entryOf(post)!);
+  await tick(5);
+  const invalidated = trpc.post.byId.invalidate();
+  trpc.post.byId.setData({ id: '1' }, (prev) => prev!);
+  trpc.store.remove('post');
+  await invalidated;
+  gate.open();
+  await tick(5);
+  expect(db.calls).toEqual(['byId:1']);
+  unmount();
+});
+
 test('invalidateOnMutationLink: the mutation resolves after the read queries refetch', async () => {
   using _db = freshDb();
   const trpc = make([
