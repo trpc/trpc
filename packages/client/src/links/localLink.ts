@@ -141,7 +141,10 @@ export function localLink<TRouter extends AnyRouter>(
           switch (op.type) {
             case 'query':
             case 'mutation': {
-              const result = await runProcedure(op.input);
+              const result = await Promise.race([
+                runProcedure(op.input),
+                signalPromise,
+              ]);
               if (!isAsyncIterable(result)) {
                 observer.next({
                   result: { data: transformChunk(result) },
