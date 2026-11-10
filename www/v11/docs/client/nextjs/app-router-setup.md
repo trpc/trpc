@@ -195,6 +195,12 @@ export function makeQueryClient() {
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === 'pending',
+        shouldRedactErrors: (error) => {
+          // Next.js detects dynamic pages by catching the errors we throw, so
+          // we must not redact them here. Next.js redacts with a better digest
+          // of its own.
+          return false;
+        },
       },
       hydrate: {
         // deserializeData: superjson.deserialize,
@@ -210,6 +216,10 @@ We're setting a few default options here:
 - `shouldDehydrateQuery`: This is a function that determines whether a query should be dehydrated or not. Since the RSC transport protocol
   supports hydrating promises over the network, we extend the `defaultShouldDehydrateQuery` function to also include queries that are
   still pending. This will allow us to start prefetching in a server component high up the tree, then consuming that promise in a client component further down.
+- `shouldRedactErrors`: Next.js detects dynamic rendering by looking for the `digest` on an error thrown during the render. Because
+  `shouldDehydrateQuery` also dehydrates queries that are still pending, a query that is pending during the build can reject afterwards,
+  and its error gets dehydrated and redacted before Next.js sees the `digest`. The build then fails. Returning `false` here keeps the
+  `digest` intact so Next.js can still recognise the error.
 - `serializeData` and `deserializeData` (optional): If you set up a [data transformer](../../server/data-transformers.md) in the previous step, set this option
   to make sure the data is serialized correctly when hydrating the query client over the server-client boundary.
 
