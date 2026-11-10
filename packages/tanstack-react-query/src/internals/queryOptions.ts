@@ -26,6 +26,7 @@ import {
   buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
   getClientArgs,
+  trackQueryFetch,
   unwrapLazyArg,
 } from './utils';
 
@@ -260,11 +261,15 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
       },
     };
     const queryKey = queryFnContext.queryKey;
+    const queryFetch = trackQueryFetch({
+      context: queryFnContext,
+      fallback: { client: queryClient, queryKey },
+    });
 
     const result = await query(...getClientArgs(queryKey, actualOpts));
 
     if (isAsyncIterable(result)) {
-      return buildQueryFromAsyncIterable(result, queryClient, queryKey);
+      return buildQueryFromAsyncIterable(result, queryFetch);
     }
 
     return result;
