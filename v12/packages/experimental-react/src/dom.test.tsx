@@ -309,6 +309,8 @@ test('select reads cached data without suspending, and keeps the parts that did 
   const view = mount(<Ids />);
   await waitFor(() => expect(view.el.textContent).toBe('1,2'));
   expect(seen).toHaveLength(1);
+  // invalidate() refetches only what a mounted useQuery reads; the mount is an effect.
+  await waitFor(() => expect(trpc.store.entryOf(list)?.observers).toBe(1));
 
   db.posts.get('2')!.tags = ['c'];
   await trpc.post.list.invalidate();
