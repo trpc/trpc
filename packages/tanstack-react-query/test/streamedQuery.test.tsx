@@ -478,6 +478,31 @@ describe('a query that streams', () => {
     ).toEqual(['a1']);
   });
 
+  test('streams into the QueryClient that runs the fetch', async () => {
+    await using t = testContext();
+    // the proxy's own client has this query too, and it's idle
+    t.queryClient.setQueryData(t.options.queryKey, ['other']);
+    const queryClient = new QueryClient();
+    const fetching = queryClient.fetchQuery(t.options as never);
+    await vi.waitFor(() => expect(t.calls).toHaveLength(1));
+    const [call] = t.calls;
+    call!.answer();
+    await t.sendChunk(call!, 'a1');
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData(t.options.queryKey)).toEqual(['a1']),
+    );
+    await t.sendChunk(call!, 'a2');
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryData(t.options.queryKey)).toEqual([
+        'a1',
+        'a2',
+      ]),
+    );
+    call!.next('end');
+    await expect(fetching).resolves.toEqual(['a1', 'a2']);
+    expect(t.data()).toEqual(['other']);
+  });
+
   test('a query function called with a context that has no client writes as before', async () => {
     await using t = testContext();
     const queryFn = t.options.queryFn as unknown as (
