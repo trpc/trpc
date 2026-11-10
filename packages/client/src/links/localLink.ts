@@ -19,12 +19,33 @@ import {
   type inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
-import { abortSignalToPromise, raceAbortSignals } from '../internals/signals';
+import {
+  abortSignalToPromise,
+  raceAbortSignals,
+  throwIfAborted,
+} from '../internals/signals';
 import { getTransformer } from '../internals/transformer';
 import type { TransformerOptions } from '../internals/transformer';
 import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from './internals/subscriptions';
 import type { TRPCLink } from './types';
+
+/**
+ * Passed to {@link LocalLinkOptions.createContext}.
+ */
+export type LocalLinkCreateContextOptions = {
+  /**
+   * What tRPC knows about the call, like the `info` that adapters pass to
+   * their `createContext`.
+   */
+  info: {
+    /**
+     * Aborts when the call is cancelled or unsubscribed. Pass it on to work
+     * that creating the context starts, such as `fetch()` calls.
+     */
+    signal: AbortSignal;
+  };
+};
 
 /**
  * Options for {@link localLink}.
@@ -38,10 +59,13 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
    */
   router: TRouter;
   /**
-   * Creates the context for each call.
+   * Creates the context for each call. `info.signal` aborts when the call
+   * is cancelled.
    * @see https://trpc.io/docs/client/links/localLink#createcontext
    */
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  createContext: (
+    opts: LocalLinkCreateContextOptions,
+  ) => Promise<inferRouterContext<TRouter>>;
   /**
    * Called when a procedure throws.
    * @see https://trpc.io/docs/client/links/localLink#onerror
@@ -91,7 +115,10 @@ export function localLink<TRouter extends AnyRouter>(
         async function runProcedure(newInput: unknown): Promise<unknown> {
           input = newInput;
 
-          ctx = await opts.createContext();
+          // don't start work for a call that was cancelled before it ran
+          throwIfAborted(signal);
+          ctx = await opts.createContext({ info: { signal } });
+          throwIfAborted(signal);
 
           return callProcedure({
             router: opts.router,
