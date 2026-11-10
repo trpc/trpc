@@ -14,6 +14,7 @@ import {
   queryKey,
   type QueryFilter,
   type QueryStore,
+  type ReadOptions,
 } from './store.ts';
 import type { Thenable } from './thenable.ts';
 
@@ -27,6 +28,18 @@ import type { Thenable } from './thenable.ts';
 export type QueryPromise<T, E = unknown> = TrpcPromise<T, E> & Thenable<T>;
 
 /**
+ * `.query()`'s arguments on the React client: the plain client's, with
+ * {@link ReadOptions} (`ssr`) among the call options.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type ReactQueryArgs<TArgs extends readonly unknown[]> = {
+  [K in keyof TArgs]: K extends '1'
+    ? NonNullable<TArgs[K]> & ReadOptions
+    : TArgs[K];
+};
+
+/**
  * A query procedure on the React client.
  * @since 0.1.0
  * @stability experimental
@@ -38,9 +51,11 @@ export interface DecorateQuery<TArgs extends readonly unknown[], T, E> {
    * and read the promise with `useQuery` and `use()`. Fresh cached data
    * makes no request; stale data is returned and refetched in the
    * background. Call options apply to the request this call starts; a
-   * shared request ignores `signal`.
+   * shared request ignores `signal`. `ssr: false` keeps a query only a
+   * browser can run off the server: there, without data, it rejects so
+   * that React renders its readers in the browser.
    */
-  query(...args: TArgs): QueryPromise<T, E>;
+  query(...args: ReactQueryArgs<TArgs>): QueryPromise<T, E>;
   /** Marks the query stale (every input when omitted) and refetches the read ones. */
   invalidate(input?: TArgs[0]): Promise<void>;
   /** Writes the query's data. Readers re-render without suspending. */
@@ -185,10 +200,12 @@ export function createReactClient(opts: {
     const procedure = path.slice(0, -1).join('.');
     switch (name) {
       case 'query': {
-        const { signal: _signal, ...callOptions } = (args[1] ?? {}) as {
-          signal?: AbortSignal;
-        };
-        return store.read(procedure, args[0], callOptions);
+        const {
+          signal: _signal,
+          ssr,
+          ...callOptions
+        } = (args[1] ?? {}) as { signal?: AbortSignal; ssr?: boolean };
+        return store.read(procedure, args[0], callOptions, { ssr });
       }
       case 'invalidate': {
         if (path.length === 1) return store.invalidate(args[0] as QueryFilter);

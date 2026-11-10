@@ -96,3 +96,19 @@ test('queryKey takes the query input', () => {
   // @ts-expect-error: byId takes an input
   trpc.post.byId.queryKey();
 });
+
+test('.query() takes ssr next to the call options, and keeps its types', () => {
+  expectTypeOf(trpc.post.byId.query({ id: '1' }, { ssr: false })).toEqualTypeOf<
+    typeof post
+  >();
+  expectTypeOf(
+    trpc.post.byId.query({ id: '1' }, { ssr: false, signal: undefined }),
+  ).toEqualTypeOf<typeof post>();
+  // @ts-expect-error ssr is a boolean
+  void trpc.post.byId.query({ id: '1' }, { ssr: 'no' });
+  // @ts-expect-error the input is still required
+  void trpc.post.byId.query();
+  expectTypeOf(trpc.post.count.query(undefined, { ssr: false })).toEqualTypeOf<
+    ReturnType<typeof trpc.post.count.query>
+  >();
+});

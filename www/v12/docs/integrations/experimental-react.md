@@ -246,6 +246,22 @@ const state = dehydrate(serverTrpc); // send it with the HTML
 hydrate(trpc, state); // in the browser, before hydrateRoot
 ```
 
+A query only the browser can run (one that needs the browser's session, or reads `localStorage` into its input) takes `ssr: false`. A server's client never starts it: without data, its promise rejects with an error whose `digest` is `BAILOUT_TO_CLIENT_SIDE_RENDERING`, so `use()` renders the nearest `<Suspense>` fallback on the server and the browser renders that boundary, running the query there. Next.js doesn't report that digest; elsewhere, skip it in the render's `onError`. On the browser's client, `ssr: false` changes nothing.
+
+```ts twoslash
+// ---cut-start---
+import { createReactClient } from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import type { AppRouter } from './server.ts';
+const trpc = createReactClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+declare const id: string;
+// ---cut-end---
+const post = trpc.post.byId.query({ id }, { ssr: false }); // in a loader, as any query
+```
+
 A request's client ends with `using`, or with a `scope` when the request is an Effect. Ending it disposes its store: requests still in flight end, and a later `.query()` with no data rejects with `CLIENT_CLOSED_REQUEST`.
 
 ```ts twoslash

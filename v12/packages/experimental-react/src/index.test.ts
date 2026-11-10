@@ -395,6 +395,38 @@ test('an invalidated query removed while its request is in flight sends no other
   unmount();
 });
 
+test('ssr: false: a server store starts nothing, and rejects so React renders the query in the browser', async () => {
+  using _db = freshDb();
+  const server = make([cacheLink()], { isServer: true });
+  const post = server.post.byId.query({ id: '1' }, { ssr: false });
+  await expect(post).rejects.toMatchObject({
+    digest: 'BAILOUT_TO_CLIENT_SIDE_RENDERING',
+    message: 'post.byId has ssr: false, so it loads in the browser',
+  });
+  // useQuery reads the same entry, and its promise is that rejection.
+  expect(server.store.entryOf(post)?.promise).toBe(post);
+  expect(server.post.byId.query({ id: '1' }, { ssr: false })).toBe(post);
+  expect(db.calls).toEqual([]);
+  expect(dehydrate(server).queries).toEqual([]);
+
+  // A read without it starts the request; ssr: false then reads its data.
+  const loaded = server.post.byId.query({ id: '1' });
+  expect(loaded).not.toBe(post);
+  expect(server.post.byId.query({ id: '1' }, { ssr: false })).toBe(loaded);
+  expect((await loaded).title).toBe('Hello');
+  expect(server.post.byId.query({ id: '1' }, { ssr: false }).status).toBe(
+    'fulfilled',
+  );
+  expect(db.calls).toEqual(['byId:1']);
+
+  // The browser runs it as any other query.
+  const browser = make([cacheLink()]);
+  expect(
+    (await browser.post.byId.query({ id: '2' }, { ssr: false })).title,
+  ).toBe('World');
+  expect(db.calls).toEqual(['byId:1', 'byId:2']);
+});
+
 test('invalidateOnMutationLink: the mutation resolves after the read queries refetch', async () => {
   using _db = freshDb();
   const trpc = make([

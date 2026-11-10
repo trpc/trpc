@@ -29,6 +29,7 @@ export {
   type ReactClient,
   type ReactClientOptions,
   type ReactProcedures,
+  type ReactQueryArgs,
 } from './client.ts';
 export {
   useMutation,
@@ -68,5 +69,6 @@ export {
   type QueryFilter,
   type QuerySnapshot,
   type QueryStore,
+  type ReadOptions,
 } from './store.ts';
 export type { Thenable } from './thenable.ts';

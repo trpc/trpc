@@ -180,6 +180,42 @@ test('server render, dehydrate, then hydrateRoot in the browser without a reques
   browser.store.dispose();
 });
 
+test('ssr: false: the server renders the fallback and sends nothing; the browser renders the query', async () => {
+  using dom = domCleanup();
+  const server = make(standardLinks(), true);
+  const app = (trpc: typeof server) => (
+    <Suspense fallback={<p>loading</p>}>
+      <Title post={trpc.post.byId.query({ id: '1' }, { ssr: false })} />
+    </Suspense>
+  );
+  const serverErrors: unknown[] = [];
+  const rendered = await prerender(app(server), {
+    onError: (error) => {
+      serverErrors.push(error);
+    },
+  });
+  const html = await new Response(rendered.prelude).text();
+  expect(html).toContain('<p>loading</p>');
+  expect(serverErrors).toMatchObject([
+    { digest: 'BAILOUT_TO_CLIENT_SIDE_RENDERING' },
+  ]);
+  expect(db.calls).toEqual([]);
+  const state = JSON.parse(JSON.stringify(dehydrate(server)));
+  expect(state.queries).toEqual([]);
+
+  const browser = make(standardLinks({ staleTime: 60_000 }));
+  hydrate(browser, state);
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.body.append(el);
+  const root = hydrateRoot(el, app(browser), { onRecoverableError: () => {} });
+  await waitFor(() => expect(h1(el)).toBe('Hello'));
+  expect(db.calls).toEqual(['byId:1']);
+  expect(dom.warnings).toEqual([]);
+  root.unmount();
+  browser.store.dispose();
+});
+
 test('refetchOnReconnectLink refetches what is on screen and stale when the browser is back online', async () => {
   using _dom = domCleanup();
   const real = Date.now.bind(Date);

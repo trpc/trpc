@@ -127,6 +127,36 @@ interface Entry extends MutableEntry {
 export type QueryFilter = string | ((entry: QueryEntry) => boolean) | undefined;
 
 /**
+ * How `.query()` reads an entry.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export interface ReadOptions {
+  /**
+   * `false` for a query only a browser can run (it reads `localStorage`, a
+   * permission, the service worker). A server store never starts it.
+   * @default true
+   */
+  readonly ssr?: boolean | undefined;
+}
+
+/**
+ * The digest Next.js gives a boundary that renders only in the browser
+ * (`next/dynamic` with `ssr: false`); it doesn't report those errors.
+ */
+const browserRendering = 'BAILOUT_TO_CLIENT_SIDE_RENDERING';
+
+/**
+ * What a server store's `ssr: false` read rejects with. `use()` throws it,
+ * React renders the nearest Suspense fallback on the server, and the
+ * browser renders the boundary.
+ */
+class BrowserOnlyQueryError extends Error {
+  readonly digest = browserRendering;
+  override readonly name = 'BrowserOnlyQueryError';
+}
+
+/**
  * The cache behind a React client. Links and integrations use it; apps use
  * the client's methods.
  * @since 0.1.0
@@ -137,8 +167,15 @@ export interface QueryStore {
   /**
    * `.query()`: the entry's promise, starting a request when needed. After
    * `dispose()`, a query without data rejects with `CLIENT_CLOSED_REQUEST`.
+   * With `ssr: false`, a server store starts nothing: a query without data
+   * rejects with the error that has React render it in the browser.
    */
-  read(path: string, input: unknown, callOptions?: object): Thenable<unknown>;
+  read(
+    path: string,
+    input: unknown,
+    callOptions?: object,
+    readOptions?: ReadOptions,
+  ): Thenable<unknown>;
   /** The entry a promise from `read()` belongs to: the current one for its key. */
   entryOf(promise: Promise<unknown>): QueryEntry | undefined;
   /** The cached entry for a query, if there is one. */
@@ -465,6 +502,33 @@ export function createStore(opts: StoreOptions): QueryStore {
     );
   };
 
+  /**
+   * A server store's `ssr: false` read: the entry's data, or the request
+   * something else started, else a rejection that has React render the
+   * entry's readers in the browser. Its promise is the entry's, so
+   * `useQuery` reads it too.
+   */
+  const leaveToBrowser = (entry: Entry): Thenable<unknown> => {
+    if (entry.hasData || entry.fetching) return entry.promise;
+    const current = entry.promise;
+    if (
+      current.status === 'rejected' &&
+      current.reason instanceof BrowserOnlyQueryError
+    )
+      return current;
+    // A later read without `ssr: false` starts the request with a new promise.
+    entry.deferred = undefined;
+    own(
+      entry,
+      rejected(
+        new BrowserOnlyQueryError(
+          `${entry.path} has ssr: false, so it loads in the browser`,
+        ),
+      ),
+    );
+    return entry.promise;
+  };
+
   const drop = (entry: Entry) => {
     entry.gc?.interruptUnsafe();
     entry.fetching?.interruptUnsafe();
@@ -475,10 +539,13 @@ export function createStore(opts: StoreOptions): QueryStore {
   const store: Store = {
     '~entries': entries,
     isServer: opts.isServer,
-    read(path, input, callOptions) {
+    read(path, input, callOptions, readOptions) {
       const key = queryKey(path, input);
       const cached = entries.get(key);
       if (disposed && !cached?.hasData) return rejected(disposedError());
+      if (opts.isServer && readOptions?.ssr === false) {
+        return leaveToBrowser(cached ?? create(path, input, callOptions));
+      }
       const entry = cached ?? create(path, input, callOptions);
       if (entry.fetching || isStale(entry)) {
         entry.requested = true;
