@@ -275,6 +275,50 @@ describe.each(['query', 'mutation'] as const)('%s cancellation', (type) => {
     expect(ctx.onError).not.toHaveBeenCalled();
   });
 
+  test('works where AbortSignal has no throwIfAborted', async () => {
+    // e.g. older Safari and some React Native AbortController polyfills
+    const original = Object.getOwnPropertyDescriptor(
+      AbortSignal.prototype,
+      'throwIfAborted',
+    );
+    Reflect.deleteProperty(AbortSignal.prototype, 'throwIfAborted');
+    using _restore = makeResource({}, () => {
+      if (original) {
+        Object.defineProperty(
+          AbortSignal.prototype,
+          'throwIfAborted',
+          original,
+        );
+      }
+    });
+    const t = initTRPC.create();
+    const router = t.router({
+      query: t.procedure.query(() => 'hello'),
+      mutation: t.procedure.mutation(() => 'hello'),
+    });
+    const ctx = localLinkClient({
+      router,
+      createContext: async () => ({}),
+    });
+    const call = (signal: AbortSignal | undefined) =>
+      type === 'query'
+        ? ctx.client.query.query(undefined, { signal })
+        : ctx.client.mutation.mutate(undefined, { signal });
+
+    expect(await call(undefined)).toBe('hello');
+
+    const ac = new AbortController();
+    ac.abort();
+    // the fallback throws the global `DOMException`, which this test
+    // environment's DOM shim doesn't make an `Error`, so there's no `cause`
+    await expect(call(ac.signal)).rejects.toMatchObject({
+      name: 'TRPCClientError',
+      message: 'AbortError',
+    });
+    // `onError` skips abort errors, so this shows it was seen as one
+    expect(ctx.onError).not.toHaveBeenCalled();
+  });
+
   test('does not create context or run the procedure when already aborted', async () => {
     const t = initTRPC.create();
     const resolver = vi.fn(() => 'hello');

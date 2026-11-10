@@ -19,7 +19,11 @@ import {
   type inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
-import { abortSignalToPromise, raceAbortSignals } from '../internals/signals';
+import {
+  abortSignalToPromise,
+  raceAbortSignals,
+  throwIfAborted,
+} from '../internals/signals';
 import { getTransformer } from '../internals/transformer';
 import type { TransformerOptions } from '../internals/transformer';
 import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
@@ -105,9 +109,9 @@ export function localLink<TRouter extends AnyRouter>(
           input = newInput;
 
           // don't start work for a call that was cancelled before it ran
-          signal.throwIfAborted();
+          throwIfAborted(signal);
           ctx = await opts.createContext({ signal });
-          signal.throwIfAborted();
+          throwIfAborted(signal);
 
           return callProcedure({
             router: opts.router,
