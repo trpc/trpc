@@ -27,6 +27,16 @@ import type { TRPCConnectionState } from './internals/subscriptions';
 import type { TRPCLink } from './types';
 
 /**
+ * Passed to {@link LocalLinkOptions.createContext}.
+ */
+export type LocalLinkCreateContextOptions = {
+  /**
+   * Aborts when the call is cancelled or unsubscribed.
+   */
+  signal: AbortSignal;
+};
+
+/**
  * Options for {@link localLink}.
  *
  * @see https://trpc.io/docs/client/links/localLink#options
@@ -38,10 +48,13 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
    */
   router: TRouter;
   /**
-   * Creates the context for each call.
+   * Creates the context for each call. `signal` aborts when the call is
+   * cancelled.
    * @see https://trpc.io/docs/client/links/localLink#createcontext
    */
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  createContext: (
+    opts: LocalLinkCreateContextOptions,
+  ) => Promise<inferRouterContext<TRouter>>;
   /**
    * Called when a procedure throws.
    * @see https://trpc.io/docs/client/links/localLink#onerror
@@ -91,7 +104,10 @@ export function localLink<TRouter extends AnyRouter>(
         async function runProcedure(newInput: unknown): Promise<unknown> {
           input = newInput;
 
-          ctx = await opts.createContext();
+          // don't start work for a call that was cancelled before it ran
+          signal.throwIfAborted();
+          ctx = await opts.createContext({ signal });
+          signal.throwIfAborted();
 
           return callProcedure({
             router: opts.router,

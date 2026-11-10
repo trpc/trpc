@@ -179,6 +179,129 @@ describe.each(['query', 'mutation'] as const)('%s cancellation', (type) => {
       cause: { name: 'AbortError' },
     });
   });
+
+  test('aborts the signal the procedure receives', async () => {
+    const t = initTRPC.create();
+    const started = createDeferred<AbortSignal | undefined>();
+    const resolver = (opts: { signal: AbortSignal | undefined }) => {
+      started.resolve(opts.signal);
+      return new Promise<string>(() => {
+        // never resolves
+      });
+    };
+    const router = t.router({
+      query: t.procedure.query(resolver),
+      mutation: t.procedure.mutation(resolver),
+    });
+    const ctx = localLinkClient({
+      router,
+      createContext: async () => ({}),
+    });
+    const ac = new AbortController();
+    const request =
+      type === 'query'
+        ? ctx.client.query.query(undefined, { signal: ac.signal })
+        : ctx.client.mutation.mutate(undefined, { signal: ac.signal });
+    const settled = request.catch(() => null);
+
+    const signal = await started.promise;
+    expect(signal?.aborted).toBe(false);
+    ac.abort();
+    await settled;
+    expect(signal?.aborted).toBe(true);
+  });
+
+  test('passes the signal to createContext', async () => {
+    const t = initTRPC.create();
+    const started = createDeferred<AbortSignal>();
+    const router = t.router({
+      query: t.procedure.query(() => 'hello'),
+      mutation: t.procedure.mutation(() => 'hello'),
+    });
+    const ctx = localLinkClient({
+      router,
+      createContext: (opts) => {
+        started.resolve(opts.signal);
+        return new Promise(() => {
+          // never resolves
+        });
+      },
+    });
+    const ac = new AbortController();
+    const request =
+      type === 'query'
+        ? ctx.client.query.query(undefined, { signal: ac.signal })
+        : ctx.client.mutation.mutate(undefined, { signal: ac.signal });
+    const settled = request.catch(() => null);
+
+    const signal = await started.promise;
+    expect(signal.aborted).toBe(false);
+    ac.abort();
+    await settled;
+    expect(signal.aborted).toBe(true);
+  });
+
+  test('does not run the procedure when aborted during context creation', async () => {
+    const t = initTRPC.create();
+    const started = createDeferred();
+    const context = createDeferred<object>();
+    using _cleanup = makeResource({}, () => context.resolve({}));
+    const resolver = vi.fn(() => 'hello');
+    const router = t.router({
+      query: t.procedure.query(resolver),
+      mutation: t.procedure.mutation(resolver),
+    });
+    const ctx = localLinkClient({
+      router,
+      createContext: () => {
+        started.resolve();
+        return context.promise;
+      },
+    });
+    const ac = new AbortController();
+    const request =
+      type === 'query'
+        ? ctx.client.query.query(undefined, { signal: ac.signal })
+        : ctx.client.mutation.mutate(undefined, { signal: ac.signal });
+    const settled = request.catch(() => null);
+
+    await started.promise;
+    ac.abort();
+    await settled;
+    context.resolve({});
+    // let the pending context promise settle and anything after it run
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(resolver).not.toHaveBeenCalled();
+    expect(ctx.onError).not.toHaveBeenCalled();
+  });
+
+  test('does not create context or run the procedure when already aborted', async () => {
+    const t = initTRPC.create();
+    const resolver = vi.fn(() => 'hello');
+    const router = t.router({
+      query: t.procedure.query(resolver),
+      mutation: t.procedure.mutation(resolver),
+    });
+    const createContext = vi.fn(async () => ({}));
+    const ctx = localLinkClient({
+      router,
+      createContext,
+    });
+    const ac = new AbortController();
+    ac.abort();
+
+    const request =
+      type === 'query'
+        ? ctx.client.query.query(undefined, { signal: ac.signal })
+        : ctx.client.mutation.mutate(undefined, { signal: ac.signal });
+
+    await expect(request).rejects.toMatchObject({
+      name: 'TRPCClientError',
+      cause: { name: 'AbortError' },
+    });
+    expect(createContext).not.toHaveBeenCalled();
+    expect(resolver).not.toHaveBeenCalled();
+  });
 });
 
 test('json serialization', async () => {
