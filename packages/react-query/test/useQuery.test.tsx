@@ -56,7 +56,9 @@ const ctx = konn()
           }),
         iterable: t.procedure.query(async function* () {
           for (let i = 0; i < 3; i++) {
-            await iterableDeferred.promise;
+            // the first value is sent right away: the query stays pending until
+            // it arrives, so there's no render to ask for it
+            if (i > 0) await iterableDeferred.promise;
             yield i + 1;
           }
         }),
@@ -254,8 +256,7 @@ describe('useQuery()', () => {
     expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
       // initial
       ['pending', 'fetching'],
-      // waiting 3 values
-      ['success', 'fetching'],
+      // pending until the first value, then streaming the rest
       ['success', 'fetching'],
       ['success', 'fetching'],
       // done iterating
@@ -267,11 +268,6 @@ describe('useQuery()', () => {
           "data": undefined,
           "fetchStatus": "fetching",
           "status": "pending",
-        },
-        Object {
-          "data": Array [],
-          "fetchStatus": "fetching",
-          "status": "success",
         },
         Object {
           "data": Array [

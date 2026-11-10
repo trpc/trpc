@@ -13,9 +13,8 @@ import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import/cl
 import { getClientArgs } from '../internals/getClientArgs';
 import type { TRPCQueryKey } from '../internals/getQueryKey';
 import {
-  buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
-  trackQueryFetch,
+  streamIntoQuery,
 } from '../internals/trpcResult';
 import type { DefinedTRPCQueryOptionsOut } from '../shared';
 import { type TRPCQueryUtils } from '../shared';
@@ -89,26 +88,29 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       const queryFn = async (
         queryFnContext: QueryFunctionContext<TRPCQueryKey>,
       ): Promise<unknown> => {
+        // aborted if the request answers with a stream that isn't read to the end
+        const abortController = new AbortController();
         const actualOpts = {
           ...opts,
           trpc: {
             ...opts?.trpc,
             ...(opts?.trpc?.abortOnUnmount
               ? { signal: queryFnContext.signal }
-              : { signal: null }),
+              : { signal: abortController.signal }),
           },
         };
-        const queryFetch = trackQueryFetch({
-          context: queryFnContext,
-          fallback: { client: queryClient, queryKey },
-        });
 
         const result = await untypedClient.query(
           ...getClientArgs(queryKey, actualOpts),
         );
 
         if (isAsyncIterable(result)) {
-          return buildQueryFromAsyncIterable(result, queryFetch);
+          return streamIntoQuery({
+            iterable: result,
+            context: queryFnContext,
+            queryClient,
+            abortController,
+          });
         }
 
         return result;

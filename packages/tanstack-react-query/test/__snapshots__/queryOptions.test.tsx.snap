@@ -8,11 +8,6 @@ Array [
     "status": "pending",
   },
   Object {
-    "data": Array [],
-    "fetchStatus": "fetching",
-    "status": "success",
-  },
-  Object {
     "data": Array [
       1,
     ],
@@ -45,11 +40,6 @@ Array [
     "data": undefined,
     "fetchStatus": "fetching",
     "status": "pending",
-  },
-  Object {
-    "data": Array [],
-    "fetchStatus": "fetching",
-    "status": "success",
   },
   Object {
     "data": Array [

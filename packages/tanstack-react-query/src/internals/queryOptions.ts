@@ -23,10 +23,9 @@ import type {
   TRPCQueryOptionsResult,
 } from './types';
 import {
-  buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
   getClientArgs,
-  trackQueryFetch,
+  streamIntoQuery,
   unwrapLazyArg,
 } from './utils';
 
@@ -251,25 +250,28 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
     unknown,
     TRPCQueryKey<TFeatureFlags['keyPrefix']>
   > = async (queryFnContext) => {
+    // aborted if the request answers with a stream that isn't read to the end
+    const abortController = new AbortController();
     const actualOpts = {
       ...opts,
       trpc: {
         ...opts?.trpc,
         ...(opts?.trpc?.abortOnUnmount
           ? { signal: queryFnContext.signal }
-          : { signal: null }),
+          : { signal: abortController.signal }),
       },
     };
     const queryKey = queryFnContext.queryKey;
-    const queryFetch = trackQueryFetch({
-      context: queryFnContext,
-      fallback: { client: queryClient, queryKey },
-    });
 
     const result = await query(...getClientArgs(queryKey, actualOpts));
 
     if (isAsyncIterable(result)) {
-      return buildQueryFromAsyncIterable(result, queryFetch);
+      return streamIntoQuery({
+        iterable: result,
+        context: queryFnContext,
+        queryClient,
+        abortController,
+      });
     }
 
     return result;

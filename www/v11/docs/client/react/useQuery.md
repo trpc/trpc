@@ -146,6 +146,12 @@ When returning an async generator in a query, you will:
 - The `status` will be `success` as soon as the first chunk is received.
 - The `fetchStatus` property which will be `fetching` until the last chunk is received.
 
+The query streams with TanStack Query's [`experimental_streamedQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/functions/experimental_streamedQuery), with its default `refetchMode: 'reset'`:
+
+- When a refetch's response arrives, `data` is cleared and the query is `pending` until the new stream's first chunk.
+- A refetch or `queryClient.cancelQueries()` stops the older stream: its chunks no longer reach the cache, and its request is aborted at its next chunk.
+- Leaving the page doesn't stop the stream, unless you set [`abortOnUnmount`](./aborting-procedure-calls.md).
+
 ### Example
 
 ```tsx twoslash title='server/routers/_app.ts'
@@ -207,7 +213,6 @@ export function MyComponent() {
 | `status`    | `fetchStatus` | `data`      |
 | ----------- | ------------- | ----------- |
 | `'pending'` | `'fetching'`  | `undefined` |
-| `'success'` | `'fetching'`  | `[]`        |
 | `'success'` | `'fetching'`  | `[0]`       |
 | `'success'` | `'fetching'`  | `[0, 1]`    |
 | `'success'` | `'fetching'`  | `[0, 1, 2]` |

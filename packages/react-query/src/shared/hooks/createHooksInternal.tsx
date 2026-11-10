@@ -30,11 +30,7 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import {
-  buildQueryFromAsyncIterable,
-  trackQueryFetch,
-  useHookResult,
-} from '../../internals/trpcResult';
+import { streamIntoQuery, useHookResult } from '../../internals/trpcResult';
 import type {
   QueriesResults,
   TRPCUseQueries,
@@ -214,26 +210,30 @@ export function createRootHooks<
         queryFn: isInputSkipToken
           ? input
           : async (queryFunctionContext) => {
+              // aborted if the request answers with a stream that isn't read
+              // to the end
+              const abortController = new AbortController();
               const actualOpts = {
                 ...ssrOpts,
                 trpc: {
                   ...ssrOpts?.trpc,
                   ...(shouldAbortOnUnmount
                     ? { signal: queryFunctionContext.signal }
-                    : { signal: null }),
+                    : { signal: abortController.signal }),
                 },
               };
-              const queryFetch = trackQueryFetch({
-                context: queryFunctionContext,
-                fallback: { client: queryClient, queryKey },
-              });
 
               const result = await client.query(
                 ...getClientArgs(queryKey, actualOpts),
               );
 
               if (isAsyncIterable(result)) {
-                return buildQueryFromAsyncIterable(result, queryFetch);
+                return streamIntoQuery({
+                  iterable: result,
+                  context: queryFunctionContext,
+                  queryClient,
+                  abortController,
+                });
               }
               return result;
             },
