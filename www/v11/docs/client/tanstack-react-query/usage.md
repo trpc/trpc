@@ -224,6 +224,48 @@ const query = useQuery(
 
 The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `fetchQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `invalidateQueries`, etc.
 
+#### Streaming responses {#streaming}
+
+A query that returns an async generator streams with [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink#generators). `data` is an array of the chunks so far, through TanStack Query's [`experimental_streamedQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/functions/experimental_streamedQuery):
+
+- The query is `pending` until the first chunk, then `success`, and `fetching` until the last chunk.
+- When a refetch's response arrives, `data` is cleared and the query is `pending` until its first chunk.
+- A refetch or `queryClient.cancelQueries()` stops the older stream: its chunks no longer reach the cache, and its request is aborted at its next chunk.
+- Unmounting doesn't stop the stream, unless you set `trpc: { abortOnUnmount: true }`.
+
+```tsx twoslash
+// @jsx: react-jsx
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  numbers: t.procedure.query(async function* () {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server';
+export const { useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Numbers() {
+  const trpc = useTRPC();
+  const query = useQuery(trpc.numbers.queryOptions());
+  //    ^?
+  return <pre>{query.data?.join(', ')}</pre>;
+}
+```
+
 ### `infiniteQueryOptions` - querying infinite data {#infiniteQueryOptions}
 
 Available for all query procedures that take a cursor input. Provides a type-safe wrapper around [Tanstack's `infiniteQueryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
