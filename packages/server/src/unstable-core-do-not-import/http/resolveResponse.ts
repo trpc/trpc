@@ -62,6 +62,8 @@ interface RequestScope {
   ctx: Outcome<unknown> | null;
   /** The methods a rejected call accepts, for the `allow` header */
   allow: string | null;
+  /** The lifetime of the request's calls; set once it's accepted */
+  lifetime: RequestLifetime | null;
 }
 
 /** A request that was parsed and accepted, with its context created */
@@ -729,7 +731,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     info: null,
     ctx: null,
     allow: null,
+    lifetime: null,
   };
   const response = await settle(() => respond(scope));
-  return response.ok ? response.value : errorResponse(scope, response.error);
+  if (response.ok) {
+    return response.value;
+  }
+  // the response the calls would have streamed into is never sent, so
+  // nothing will read them: an observable may already be subscribed to
+  scope.lifetime?.cancelBody();
+  return errorResponse(scope, response.error);
 }

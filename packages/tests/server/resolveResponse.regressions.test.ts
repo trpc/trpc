@@ -11,6 +11,7 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { FetchHandlerRequestOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { observable } from '@trpc/server/observable';
 import {
   lazy,
   makeAsyncResource,
@@ -468,4 +469,33 @@ describe('an error response after responseMeta ran drops its headers', () => {
       expect(res!.headers.get('x-meta')).toBe('yes');
     });
   });
+});
+
+test('a subscription is cancelled when an error response replaces its response', async () => {
+  let signal: AbortSignal | undefined;
+  const unsubscribed = vi.fn();
+  const t = initTRPC.create();
+  const router = t.router({
+    onEvent: t.procedure.subscription((opts) => {
+      signal = opts.signal;
+      return observable<number>(() => unsubscribed);
+    }),
+  });
+
+  const res = await fetchRequestHandler({
+    endpoint: '',
+    req: new Request('http://localhost/onEvent', {
+      headers: { accept: 'text/event-stream' },
+    }),
+    router,
+    createContext: () => ({}),
+    responseMeta() {
+      throw new Error('responseMeta failed');
+    },
+  });
+
+  expect(res.status).toBe(500);
+  // nothing will read the subscription, so it must not stay subscribed
+  expect(unsubscribed).toHaveBeenCalledOnce();
+  expect(signal?.aborted).toBe(true);
 });
