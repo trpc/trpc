@@ -32,6 +32,7 @@ import {
 } from '../../internals/getQueryKey';
 import {
   buildQueryFromAsyncIterable,
+  trackQueryFetch,
   useHookResult,
 } from '../../internals/trpcResult';
 import type {
@@ -222,17 +223,17 @@ export function createRootHooks<
                     : { signal: null }),
                 },
               };
+              const queryFetch = trackQueryFetch({
+                context: queryFunctionContext,
+                fallback: { client: queryClient, queryKey },
+              });
 
               const result = await client.query(
                 ...getClientArgs(queryKey, actualOpts),
               );
 
               if (isAsyncIterable(result)) {
-                return buildQueryFromAsyncIterable(
-                  result,
-                  queryClient,
-                  queryKey,
-                );
+                return buildQueryFromAsyncIterable(result, queryFetch);
               }
               return result;
             },

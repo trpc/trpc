@@ -3,10 +3,9 @@ import {
   observableToAsyncIterable,
 } from '../../observable/observable';
 import { makeResource } from '../stream/utils/disposable';
-import { sampleTransitions, stateDiagram } from './diagram';
 import { createMachineRuntime, createResourceMap } from './runtime';
 import type { MachineTransition, StateMachine } from './stateMachine';
-import { exhaustive, splitEffects, step } from './stateMachine';
+import { exhaustive } from './stateMachine';
 import { createMachineTimers } from './timers';
 
 type DoorState = { status: 'closed' } | { status: 'open'; opens: number };
@@ -49,7 +48,7 @@ function door(
   };
 }
 
-test('step runs one transition without a runtime, and effects split by type', () => {
+test('a machine needs no runtime: its caller keeps the state and runs the effects', () => {
   const machine = door([]);
   let state = machine.initial.state;
   const effects: DoorEffect[] = [];
@@ -59,38 +58,19 @@ test('step runs one transition without a runtime, and effects split by type', ()
     { type: 'open' },
     { type: 'close' },
   ] satisfies DoorEvent[]) {
-    const next = step(machine, state, event);
+    const next = machine.transition(state, event);
     state = next.state;
     effects.push(...next.effects);
   }
   expect(state).toEqual({ status: 'closed' });
 
-  const { matching, rest } = splitEffects(effects, ['log']);
-  expectTypeOf(matching).toEqualTypeOf<{ type: 'log'; message: string }[]>();
-  expectTypeOf(rest).toEqualTypeOf<({ type: 'ring' } | { type: 'throw' })[]>();
-  expect(matching.map((effect) => effect.message)).toEqual([
-    'opened',
-    'closed',
+  // effects are a discriminated union, so a filter narrows them
+  const logs = effects.filter((effect) => effect.type === 'log');
+  expectTypeOf(logs).toEqualTypeOf<{ type: 'log'; message: string }[]>();
+  expect(logs.map((effect) => effect.message)).toEqual(['opened', 'closed']);
+  expect(effects.filter((effect) => effect.type !== 'log')).toEqual([
+    { type: 'ring' },
   ]);
-  expect(rest).toEqual([{ type: 'ring' }]);
-  // @ts-expect-error - 'bell' is not an effect type
-  splitEffects(effects, ['bell']);
-});
-
-test('an effect whose type is a union matches each of its types', () => {
-  type IoEffect = { type: 'read' | 'write'; path: string } | { type: 'close' };
-  const effects: IoEffect[] = [
-    { type: 'read', path: 'a' },
-    { type: 'write', path: 'b' },
-    { type: 'close' },
-  ];
-  const { matching, rest } = splitEffects(effects, ['read']);
-  expectTypeOf(matching).toEqualTypeOf<
-    { type: 'read' | 'write'; path: string }[]
-  >();
-  expectTypeOf(rest).toEqualTypeOf<IoEffect[]>();
-  expect(matching).toEqual([{ type: 'read', path: 'a' }]);
-  expect(rest).toEqual([{ type: 'write', path: 'b' }, { type: 'close' }]);
 });
 
 test('an event sent while effects run waits its turn', async () => {
@@ -434,98 +414,107 @@ test('a resource map releases an entry without disposing it, only if it is still
   expect(disposed).toEqual(['a']);
 });
 
-test('a timer that went off counts unless it was cancelled or restarted before its turn', async () => {
-  using timers = createMachineTimers<'a' | 'b'>();
-  const events = timers.events[Symbol.asyncIterator]();
-
-  timers.start('a', 0);
-  const fired = await events.next();
-  expect(fired.value).toMatchObject({ timer: 'a' });
-  timers.start('a', 1_000);
-  expect(timers.take(fired.value)).toBe(false);
-
-  timers.start('b', 0);
-  const firedB = await events.next();
-  timers.cancel('b');
-  expect(timers.take(firedB.value)).toBe(false);
-
-  timers.start('b', 0);
-  const again = await events.next();
-  expect(timers.take(again.value)).toBe(true);
-  expect(timers.take(again.value)).toBe(false);
-  timers.cancel('a');
-});
-
-test('disposing the timers clears them and ends their events', async () => {
-  const timers = createMachineTimers<'a'>();
-  const events = timers.events[Symbol.asyncIterator]();
-  timers.start('a', 0);
-  // oxlint-disable-next-line trpc/no-symbol-dispose
-  timers[Symbol.dispose]();
-  expect(await events.next()).toEqual({ done: true, value: undefined });
-});
-
-test('disposed timers start nothing', () => {
+test('a timer fires once, unless it was cancelled or restarted first', () => {
   vi.useFakeTimers();
   try {
-    const timers = createMachineTimers<'a'>();
-    // oxlint-disable-next-line trpc/no-symbol-dispose
-    timers[Symbol.dispose]();
-    timers.start('a', 1_000);
+    const fired: string[] = [];
+    using timers = createMachineTimers<'a' | 'b'>((timer) => {
+      fired.push(timer);
+    });
+
+    timers.start('a', 100);
+    timers.start('b', 100);
+    timers.cancel('b');
+    vi.advanceTimersByTime(50);
+    // restarted: it counts from here
+    timers.start('a', 100);
+    vi.advanceTimersByTime(99);
+    expect(fired).toEqual([]);
+    vi.advanceTimersByTime(1);
+    expect(fired).toEqual(['a']);
+
+    vi.advanceTimersByTime(1_000);
+    expect(fired).toEqual(['a']);
     expect(vi.getTimerCount()).toBe(0);
   } finally {
     vi.useRealTimers();
   }
 });
 
-test('the diagram is drawn from the transition', () => {
-  const states: DoorState[] = [
-    { status: 'closed' },
-    { status: 'open', opens: 1 },
-  ];
-  const events: DoorEvent[] = [
-    { type: 'open' },
-    { type: 'close' },
-    { type: 'knock' },
-  ];
-  const edges = sampleTransitions({
-    states,
-    events,
-    next: (state, event) =>
-      event.type === 'knock' ? null : doorTransition(state, event).state,
-    stateName: (state) => state.status,
-    eventName: (event) => event.type,
+test('a timer that is due is still cancelled by the one that fires before it', () => {
+  vi.useFakeTimers();
+  try {
+    const fired: string[] = [];
+    using timers = createMachineTimers<'a' | 'b'>((timer) => {
+      fired.push(timer);
+      timers.cancel('b');
+    });
+    timers.start('a', 100);
+    timers.start('b', 100);
+    vi.advanceTimersByTime(100);
+    expect(fired).toEqual(['a']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('disposing the timers clears them, and they start nothing after', () => {
+  vi.useFakeTimers();
+  try {
+    const fired: string[] = [];
+    const timers = createMachineTimers<'a'>((timer) => {
+      fired.push(timer);
+    });
+    timers.start('a', 100);
+    // oxlint-disable-next-line trpc/no-symbol-dispose
+    timers[Symbol.dispose]();
+    expect(vi.getTimerCount()).toBe(0);
+    timers.start('a', 100);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(1_000);
+    expect(fired).toEqual([]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('a runtime that takes in no source starts no loop, and one that does stops it', async () => {
+  const machine = door([]);
+  const idle = createMachineRuntime({
+    machine,
+    run: () => undefined,
+    onError: (error) => {
+      throw error;
+    },
   });
-  expect(
-    stateDiagram({
-      initial: [{ to: 'closed', label: null }],
-      edges,
-      final: [],
-      sort: false,
-    }),
-  ).toMatchInlineSnapshot(`
-    "stateDiagram-v2
-      [*] --> closed
-      closed --> open : open
-      closed --> closed : close
-      open --> open : open
-      open --> closed : close"
-  `);
-  expect(
-    stateDiagram({
-      initial: [],
-      edges: [...edges].reverse(),
-      final: ['closed'],
-      sort: true,
-    }),
-  ).toMatchInlineSnapshot(`
-    "stateDiagram-v2
-      closed --> closed : close
-      closed --> open : open
-      open --> closed : close
-      open --> open : open
-      closed --> [*]"
-  `);
+  idle.send({ type: 'open' });
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  await idle[Symbol.asyncDispose]();
+  expect(idle.state).toEqual({ status: 'open', opens: 1 });
+
+  let returned = false;
+  const reading = createMachineRuntime({
+    machine,
+    run: () => undefined,
+    onError: (error) => {
+      throw error;
+    },
+  });
+  reading.intake(
+    {
+      [Symbol.asyncIterator]: () => ({
+        next: () => new Promise<IteratorResult<DoorEvent>>(() => undefined),
+        return: async () => {
+          returned = true;
+          return { done: true, value: undefined };
+        },
+      }),
+    },
+    reading.send,
+  );
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  await reading[Symbol.asyncDispose]();
+  expect(returned).toBe(true);
 });
 
 test('exhaustive only takes what no case handled', () => {

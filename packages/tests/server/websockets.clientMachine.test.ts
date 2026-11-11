@@ -1,6 +1,12 @@
 import { isDeepStrictEqual } from 'node:util';
-import type { MachineModel, ModelStep } from './___machineModel';
-import { check, coverage, simulateMachine } from './___machineModel';
+import type { DiagramEdge, MachineModel, ModelStep } from './___machineModel';
+import {
+  check,
+  coverage,
+  sampleTransitions,
+  simulateMachine,
+  stateDiagram,
+} from './___machineModel';
 import { fc, test } from '@fast-check/vitest';
 /**
  * Model-based tests for the wsClient state machines. fast-check generates
@@ -48,13 +54,8 @@ import {
   requestTransition,
 } from '@trpc/client/links/wsLink/wsClient/machine/requestMachine';
 import type {
-  DiagramEdge,
   TRPCClientIncomingMessage,
   TRPCResponseMessage,
-} from '@trpc/server/unstable-core-do-not-import';
-import {
-  sampleTransitions,
-  stateDiagram,
 } from '@trpc/server/unstable-core-do-not-import';
 
 // --- the simulated world ----------------------------------------------------

@@ -15,6 +15,7 @@ import type { TRPCQueryKey } from '../internals/getQueryKey';
 import {
   buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
+  trackQueryFetch,
 } from '../internals/trpcResult';
 import type { DefinedTRPCQueryOptionsOut } from '../shared';
 import { type TRPCQueryUtils } from '../shared';
@@ -97,13 +98,17 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
               : { signal: null }),
           },
         };
+        const queryFetch = trackQueryFetch({
+          context: queryFnContext,
+          fallback: { client: queryClient, queryKey },
+        });
 
         const result = await untypedClient.query(
           ...getClientArgs(queryKey, actualOpts),
         );
 
         if (isAsyncIterable(result)) {
-          return buildQueryFromAsyncIterable(result, queryClient, queryKey);
+          return buildQueryFromAsyncIterable(result, queryFetch);
         }
 
         return result;

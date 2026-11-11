@@ -14,10 +14,12 @@ import { ContentError, messageOf } from './content-error.ts';
 import { fromDocusaurus } from './docusaurus-syntax.ts';
 import {
   type DocLink,
+  excerptOf,
   pagePath,
   releaseTwoslashers,
   resolveLink,
 } from './markdown.ts';
+import { isPopupsId } from './lazy-popups.ts';
 import { closeRenderPool, makePageRenderer } from './page-renderer.ts';
 import { expandSnippets } from './snippets.ts';
 import type { TwoslashCacheOptions } from './twoslash-cache.ts';
@@ -173,6 +175,8 @@ interface Rendered {
   readonly anchors: ReadonlyArray<string>;
   readonly doc: Doc;
   readonly links: ReadonlyArray<DocLink>;
+  /** The page's hover popups, a module of their own (`page.md?popups`). */
+  readonly popups: ReadonlyArray<string>;
   /** Each `twoslash` block's `// ^?` types, for the page's markdown. */
   readonly typeQueries: ReadonlyArray<ReadonlyArray<string>>;
 }
@@ -272,7 +276,10 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   const sources = yield* readSources(dirs);
   return sources.map((source) => ({
     description: source.frontmatter.description,
+    excerpt: excerptOf(source.markdown),
     experiment: source.frontmatter.experiment,
+    label: source.frontmatter.label,
+    parent: source.frontmatter.parent,
     path: pagePath(dirs, source.slug),
     section: source.frontmatter.section,
     slug: source.slug,
@@ -475,6 +482,7 @@ export function docsContent(options: ContentOptions): Plugin {
         v11: yield* v11Page(source),
       },
       links: result.links,
+      popups: result.popups,
       typeQueries: result.typeQueries,
     };
     return page;
@@ -502,7 +510,7 @@ export function docsContent(options: ContentOptions): Plugin {
           }),
       ),
     );
-    const sample: Sample = { html: result.html };
+    const sample: Sample = { html: result.html, popups: result.popups };
     return { files: expanded.files, sample };
   });
 
@@ -527,7 +535,7 @@ export function docsContent(options: ContentOptions): Plugin {
           }),
       ),
     );
-    const sample: Sample = { html: result.html };
+    const sample: Sample = { html: result.html, popups: result.popups };
     return sample;
   });
 
@@ -918,7 +926,8 @@ export function docsContent(options: ContentOptions): Plugin {
         rendered.delete(file);
       }
       const page = await render(source);
-      return { code: `export default ${JSON.stringify(page.doc)};`, map: null };
+      const exported = isPopupsId(id) ? page.popups : page.doc;
+      return { code: `export default ${JSON.stringify(exported)};`, map: null };
     },
   };
 }

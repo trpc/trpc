@@ -67,6 +67,9 @@ type ObserverKey = keyof TRPCSubscriptionObserver<unknown, unknown>;
  * @internal
  */
 export type TRPCSubscriptionWithoutCallbacks<TOpts> = TOpts & {
+  // `keyof` a union only has its shared keys, so this one catches each member
+  [TKey in ObserverKey]?: never;
+} & {
   [TKey in keyof TOpts & ObserverKey]: never;
 };
 
@@ -89,12 +92,6 @@ const observerKeys: ObserverKey[] = [
   'onComplete',
   'onConnectionStateChange',
 ];
-
-function throwOnIterate(): never {
-  throw new Error(
-    "A subscription with callbacks can't be iterated. Call subscribe() without callbacks to use for await.",
-  );
-}
 
 /**
  * The options of `createTRPCClient`.
@@ -216,11 +213,6 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
     const hasCallbacks = observerKeys.some(
       (key) => typeof opts[key] === 'function',
     );
-    if (!hasCallbacks && observerKeys.some((key) => key in opts)) {
-      throw new Error(
-        'subscribe() was called with callbacks, but none of them is defined. Pass at least one callback, or omit them all to iterate with for await.',
-      );
-    }
     const observable$ = this.$request({
       type: 'subscription',
       path,
@@ -262,7 +254,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       };
       return iterator;
     }
-    const subscription = observable$.subscribe({
+    return observable$.subscribe({
       next(envelope) {
         switch (envelope.result.type) {
           case 'state': {
@@ -292,9 +284,6 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       complete() {
         opts.onComplete?.();
       },
-    });
-    return Object.assign(subscription, {
-      [Symbol.asyncIterator]: throwOnIterate,
     });
   }
 }

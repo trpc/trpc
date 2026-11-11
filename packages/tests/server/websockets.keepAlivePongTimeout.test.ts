@@ -6,7 +6,7 @@ import {
   createDeferred,
   makeAsyncResource,
 } from '@trpc/server/unstable-core-do-not-import';
-import type WebSocket from 'ws';
+import type { WebSocket, WebSocketServer } from 'ws';
 
 const t = initTRPC.create();
 const router = t.router({
@@ -27,7 +27,7 @@ const wsClient = {
 // A paused server socket is unresponsive: no pong, and no reply to the
 // closing handshake, which `ws` would wait 30s for.
 function trackServerSockets(
-  ctx: { wss: WebSocket.Server },
+  ctx: { wss: WebSocketServer },
   pause: (index: number) => boolean,
 ) {
   const serverSockets: WebSocket[] = [];

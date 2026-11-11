@@ -97,9 +97,9 @@ export interface WsClient {
  *
  * Every decision is made by pure state machines in `./machine`: one for the
  * client, one per connection and one per request. This function runs them
- * with `createMachineRuntime`, and says what each effect does. Sockets,
- * `connectionParams` and timers are async iterables the runtime reads in one
- * loop; the user's calls send their events at once. Sockets,
+ * with `createMachineRuntime`, and says what each effect does. Sockets and
+ * `connectionParams` are async iterables the runtime reads in one loop;
+ * timers and the user's calls send their events at once. Sockets,
  * listeners, timers and requests are resources: each is disposed by
  * whatever owns it.
  */
@@ -116,7 +116,10 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   const lazy = { ...lazyDefaults, ...opts.lazy };
 
   const transports = createResourceMap<ConnectionId, Transport>();
-  const timers = createMachineTimers<Timer>();
+  const timers = createMachineTimers<Timer>((timer) => {
+    if (timer === 'flush') observeWritability();
+    runtime.send({ type: 'timer', timer });
+  });
   const requestManager = new RequestManager();
   const closeWaiters: (() => void)[] = [];
   /**
@@ -138,11 +141,6 @@ export function createWsClientRuntime(opts: WebSocketClientOptions): WsClient {
   });
   runtime.use(transports);
   runtime.use(timers);
-  runtime.intake(timers.events, (fired) => {
-    if (!timers.take(fired)) return;
-    if (fired.timer === 'flush') observeWritability();
-    runtime.send({ type: 'timer', timer: fired.timer });
-  });
   // A socket the model no longer tracks has nothing left to report.
   runtime.subscribe((model) => {
     for (const id of [...transports.keys()]) {

@@ -121,7 +121,7 @@ const props = {
 These are TanStack React Query's own functions. See [their docs](https://tanstack.com/query/v5/docs/framework/react/guides/prefetching) for more.
 
 :::tip
-The proxy can also start a query and return a **handle** to it: `await trpc.post.byId.unstable_$ensure(input)`. Pass the handle to the page in `props`, and the page reads it with `useQuery(trpc.unstable_$fromHandle(props.post))`, so it can't ask for a different input than the server used. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+`loadHandles` from `@trpc/tanstack-react-query/unstable-handles` can also start queries with this proxy and return **handles** to them: `const [handles] = await loadHandles(trpc, { post: ensureEntry(trpc.post.byId, input) })`. Spread the handles into `props` next to `trpcState`, and the page reads one with `useQuery(fromHandle(trpc, props.post))`, so it can't ask for a different input than the server used. A handle is plain JSON when its input is. If the input has a `Date` or another value your transformer handles, run the handles through the transformer too, as you do the dehydrated state. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` is now `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))`, `fetch` is `fetchQuery`, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.

@@ -10,7 +10,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTags } from '../shared';
 
-interface NextLinkBaseOptions {
+export interface NextLinkBaseOptions {
   /**
    * How many seconds Next.js caches a response. `false` caches it until it is
    * revalidated. A call can override this with `context.revalidate`.
@@ -24,15 +24,17 @@ interface NextLinkBaseOptions {
   batch?: boolean;
 }
 
-type NextLinkSingleOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
-  Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
-    batch?: false;
-  };
+export type NextLinkSingleOptions<TRoot extends AnyRootTypes> =
+  NextLinkBaseOptions &
+    Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
+      batch?: false;
+    };
 
-type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
-  Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
-    batch: true;
-  };
+export type NextLinkBatchOptions<TRoot extends AnyRootTypes> =
+  NextLinkBaseOptions &
+    Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
+      batch: true;
+    };
 
 /**
  * A terminating link that sends calls over HTTP with Next.js cache tags, so

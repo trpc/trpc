@@ -693,8 +693,10 @@ describe('make before break', () => {
       for (const socket of h.serverSockets) socket.terminate();
       gate.resolve();
       await expect(slow).rejects.toThrow();
+      // The server doesn't start the subscription it held on the dead socket
+      // (#7976), so the resumed one is the procedure's second run.
       await vi.waitFor(() =>
-        expect(h.eventsSubscribed.mock.calls.length).toBeGreaterThanOrEqual(3),
+        expect(h.eventsSubscribed).toHaveBeenCalledTimes(2),
       );
       h.push(3);
       await vi.waitFor(() => expect(seen).toContain(3));
