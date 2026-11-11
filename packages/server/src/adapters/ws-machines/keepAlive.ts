@@ -124,7 +124,9 @@ export function keepAliveResource(
     onError: (cause: unknown) => void;
   },
 ) {
-  const timers = createMachineTimers<KeepAliveTimer>();
+  const timers = createMachineTimers<KeepAliveTimer>((timer) =>
+    runtime.send({ type: 'timer', timer }),
+  );
   const runtime = createMachineRuntime({
     machine: keepAliveMachine(opts),
     run(effect) {
@@ -148,12 +150,6 @@ export function keepAliveResource(
     onError: opts.onError,
   });
   runtime.use(timers);
-  runtime.intake(timers.events, (fired) => {
-    // a timer restarted since it went off doesn't count
-    if (timers.take(fired)) {
-      runtime.send({ type: 'timer', timer: fired.timer });
-    }
-  });
   const onMessage = () => runtime.send({ type: 'message' });
   const onClose = () => runtime.send({ type: 'closed' });
   client.on('message', onMessage);

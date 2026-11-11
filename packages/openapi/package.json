@@ -2,7 +2,7 @@
   "name": "@trpc/openapi",
   "type": "module",
   "sideEffects": false,
-  "version": "11.24.0-alpha",
+  "version": "11.28.0-alpha",
   "description": "OpenAPI document generator for tRPC routers",
   "author": "KATT",
   "license": "MIT",
@@ -69,23 +69,23 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "catalog:",
     "@swagger-api/apidom-ls": "^1.6.0",
-    "@tanstack/intent": "0.5.6",
+    "@tanstack/intent": "catalog:",
     "@trpc/server": "workspace:*",
     "@types/node": "catalog:",
-    "bson": "^7.2.0",
+    "bson": "^7.3.4",
     "ion-js": "^5.2.1",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "superjson": "^1.12.4",
+    "superjson": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:ts-api",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
-    "zod": "^4.2.1"
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "@hey-api/openapi-ts": ">=0.94.5",
-    "@trpc/server": "11.24.0",
+    "@trpc/server": "11.28.0",
     "typescript": ">=5.8.2 <7",
     "zod": ">=4.0.0"
   },

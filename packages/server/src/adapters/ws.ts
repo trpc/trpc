@@ -654,7 +654,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     // Sending and reporting
 
+    /** Whether the socket is closing or closed, before its `close` event. */
+    function isClosing() {
+      return client.readyState !== WEBSOCKET_OPEN;
+    }
+
+    /** Sends a reply, or drops it once the socket is closing. */
     function send(response: TRPCResponseMessage) {
+      if (isClosing()) {
+        return;
+      }
       client.send(encoder.encode(transformTRPCResponse(config, response)));
     }
 
@@ -1088,19 +1097,31 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     /**
      * Calls a subscription's procedure for its iterable. One that arrives
      * after a stop is disposed without being consumed.
+     *
+     * A socket starts closing before its `close` event stops its
+     * subscriptions, so a closing socket counts as a stop: the procedure
+     * isn't called, and one that was is cancelled.
      */
     async function startSubscription(
       request: ProcedureRequest,
       context: Promise<ContextResult>,
-      signal: AbortSignal,
+      subscription: SubscriptionRegistration,
     ): Promise<SubscriptionStart> {
+      const { signal } = subscription;
       const created = await context;
-      if (created.ok && signal.aborted) {
+      if (created.ok && (signal.aborted || isClosing())) {
         return STOPPED;
       }
       const result = created.ok
         ? await callProcedure(request, created.value, signal)
         : created;
+      if (isClosing()) {
+        subscription.abort();
+        if (result.ok && isObservable(result.value)) {
+          // converting it would subscribe to it
+          return STOPPED;
+        }
+      }
       if (!result.ok) {
         const error = getTRPCErrorFromUnknown(result.error);
         return isCancelledSetup(error, signal)
@@ -1202,7 +1223,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               const start = await startSubscription(
                 request,
                 context,
-                subscription.signal,
+                subscription,
               );
               if (start.kind === 'started') {
                 iterable = start.iterable;

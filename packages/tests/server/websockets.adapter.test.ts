@@ -753,7 +753,7 @@ test('a socket error is reported to onError', async () => {
     await new Promise<void>((resolve) => wss.close(() => resolve()));
   });
   const address = wss.address();
-  assert(typeof address === 'object');
+  assert(address !== null && typeof address === 'object');
   const wsClient = createWSClient({
     url: `ws://localhost:${address.port}`,
     retryDelayMs: () => 60_000,

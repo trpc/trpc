@@ -11,6 +11,7 @@
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Effect, FileSystem, Path, Schema } from 'effect';
 
+import { fallbackSuffix, functionPage } from './on-demand.ts';
 import { land, type Response, servedPaths } from './old-routes.ts';
 
 const here = (relative: string) => new URL(relative, import.meta.url).pathname;
@@ -54,9 +55,22 @@ const builtLandings = Effect.fn('builtLandings')(function* (
       (info) => info.type === 'File',
     ),
   );
-  const served = servedPaths(
-    files.map((file) => file.split(path.sep).join('/')),
+  // The pages, which their functions serve (`writePageRevalidation`).
+  const pages = (yield* fs.readDirectory(path.join(output, 'functions'), {
+    recursive: true,
+  })).flatMap((entry) =>
+    entry.endsWith(fallbackSuffix)
+      ? [
+          functionPage(
+            entry.slice(0, -fallbackSuffix.length).split(path.sep).join('/'),
+          ),
+        ]
+      : [],
   );
+  const served = servedPaths([
+    ...files.map((file) => file.split(path.sep).join('/')),
+    ...pages,
+  ]);
   return paths.map((pathname): Landing =>
     land(config.routes, served, pathname),
   );

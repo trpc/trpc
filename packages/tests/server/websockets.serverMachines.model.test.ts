@@ -1,4 +1,11 @@
-import { check, coverage, simulateMachine } from './___machineModel';
+import type { DiagramEdge } from './___machineModel';
+import {
+  check,
+  coverage,
+  sampleTransitions,
+  simulateMachine,
+  stateDiagram,
+} from './___machineModel';
 import { TRPCError } from '@trpc/server';
 import type {
   KeepAliveEvent,
@@ -14,11 +21,6 @@ import {
   awaitingEffects,
   subscriptionMachine,
 } from '@trpc/server/adapters/ws-machines/subscription';
-import type { DiagramEdge } from '@trpc/server/unstable-core-do-not-import';
-import {
-  sampleTransitions,
-  stateDiagram,
-} from '@trpc/server/unstable-core-do-not-import';
 import fc from 'fast-check';
 
 const SEED = 7895;

@@ -165,7 +165,16 @@ export default defineConfig({
       { kind: 'home', path: '/' },
       ...copiedPages.flatMap((copy) =>
         copy.pages.map((page) =>
-          docCard(page, copyPageUrl(copy.version, page.slug)),
+          docCard(
+            // A page without a description shows its first paragraph, as
+            // Docusaurus did, rather than the site's tagline.
+            {
+              ...page,
+              description:
+                page.description === '' ? page.excerpt : page.description,
+            },
+            copyPageUrl(copy.version, page.slug),
+          ),
         ),
       ),
       docCard(

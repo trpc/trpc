@@ -6,6 +6,7 @@ import { splitAtDemos } from '../src/demos/names.ts';
 import { brokenLinks } from './content.ts';
 import {
   anchorsOf,
+  excerptOf,
   releaseTwoslashers,
   renderMarkdown,
   resolveLink,
@@ -92,6 +93,37 @@ describe('renderMarkdown', () => {
         ['const second: "b"'],
       ]);
     }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    'leaves hover popups out of the HTML, listing each distinct one once',
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          [
+            '```ts twoslash',
+            'const one = 1;',
+            'const two = one + one;',
+            '//    ^?',
+            'const three = two;',
+            '```',
+          ].join('\n'),
+        );
+        const popupText = rendered.popups.map(textOf);
+        expect(popupText).toEqual([
+          'const one: 1',
+          'const three: number',
+          'const two: number',
+        ]);
+        const indexes = Array.from(
+          rendered.html.matchAll(/data-popup="(\d+)"/g),
+          (match) => match[1],
+        );
+        expect(indexes).toEqual(['0', '0', '0', '1', '2']);
+        expect(textOf(rendered.html)).not.toContain('const one: 1');
+        // The pinned `^?` type shows without a hover, so it stays.
+        expect(textOf(rendered.html)).toContain('const two: number');
+      }).pipe(Effect.provide(NodeServices.layer)),
   );
 
   it.effect("compiles an inline block next to the docs app's files", () =>
@@ -526,5 +558,47 @@ describe('brokenLinks', () => {
       "a: links to b.md, which isn't a page",
       'a: links to a.md#missing, which has no such heading',
     ]);
+  });
+});
+
+describe('excerptOf', () => {
+  it("is the page's first paragraph, with inline code and links' text, on one line", () => {
+    expect(
+      excerptOf(
+        'Call `createCaller()` from\nthe [same server](./server.md), **directly**.\n\nMore.',
+      ),
+    ).toBe('Call `createCaller()` from the same server, directly.');
+  });
+
+  it('skips headings, code, HTML and images before it', () => {
+    expect(
+      excerptOf(
+        [
+          '<div align="center">',
+          '',
+          '![Logo](./logo.png)',
+          '',
+          '</div>',
+          '',
+          '## Example app',
+          '',
+          '```ts',
+          'const a = 1;',
+          '```',
+          '',
+          'The adapter serves your router.',
+        ].join('\n'),
+      ),
+    ).toBe('The adapter serves your router.');
+  });
+
+  it('ends one leading into a list in an ellipsis, not a colon', () => {
+    expect(
+      excerptOf('A procedure can be one of:\n\n- a query\n- a mutation'),
+    ).toBe('A procedure can be one of…');
+  });
+
+  it('is empty for a page without a paragraph', () => {
+    expect(excerptOf('## Only a heading\n\n```ts\nx;\n```')).toBe('');
   });
 });

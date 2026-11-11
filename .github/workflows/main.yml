@@ -88,7 +88,7 @@ jobs:
       - uses: ./.github/setup
 
       - run: pnpm typecheck-www
-      - run: pnpm --filter www test
+      # Compiles the docs' and blog's code samples
       - run: pnpm --filter www check-twoslash
 
   test:
@@ -125,6 +125,10 @@ jobs:
           fail_ci_if_error: true
           # only use token if not a fork PR
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
+
+      # The site's tests import the packages it depends on from their builds
+      - run: pnpm turbo --filter 'www^...' build
+      - run: pnpm --filter www test
 
   e2e:
     # only run on PRs, in the merge queue and on release commits

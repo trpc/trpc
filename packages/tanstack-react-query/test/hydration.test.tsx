@@ -5,11 +5,9 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import type { DehydratedState } from '@tanstack/react-query';
 import {
   defaultShouldDehydrateQuery,
-  dehydrate,
   HydrationBoundary,
   QueryClient,
   QueryClientProvider,
-  useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -18,14 +16,8 @@ import { renderToPipeableStream, renderToString } from 'react-dom/server';
 import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import type {
-  TRPCOptionsProxy,
-  unstable_inferInfiniteQueryHandle,
-  unstable_inferQueryHandle,
-} from '../src';
 import {
   unstable_createHydrateClient as createClientHydrateClient,
-  createTRPCOptionsProxy as createClientOptionsProxy,
   createTRPCContext,
 } from '../src';
 import * as rsc from '../src/index.react-server';
@@ -62,7 +54,6 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCOptionsProxy<AppRouter>;
 
 function makeServerQueryClient() {
   return new QueryClient({
@@ -147,28 +138,14 @@ function hashes(state: DehydratedState) {
   return state.queries.map((query) => query.queryHash);
 }
 
-function Post(props: {
-  post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
-}) {
+function Post(props: { day: Date }) {
   const trpc = trpcContext.useTRPC();
-  const postQuery = useSuspenseQuery(trpc.unstable_$fromHandle(props.post));
+  const postQuery = useSuspenseQuery(
+    trpc.post.byDay.queryOptions({ day: props.day }),
+  );
   const post = postQuery.data;
   return (
     <p>{`${post.title} v${post.version} fetchedAt:${post.fetchedAt.toISOString()}`}</p>
-  );
-}
-
-function List(props: {
-  list: unstable_inferInfiniteQueryHandle<TRPC['post']['list']>;
-}) {
-  const trpc = trpcContext.useTRPC();
-  const listQuery = useSuspenseInfiniteQuery(
-    trpc.unstable_$fromHandle(props.list, {
-      getNextPageParam: (page) => page.nextCursor,
-    }),
-  );
-  return (
-    <p>{`items:${listQuery.data.pages.flatMap((page) => page.items).join(',')}`}</p>
   );
 }
 
@@ -178,15 +155,17 @@ describe('unstable_createHydrateClient in server components', () => {
     const server = makeServer(resource);
 
     const a = server.trpc.post.byDay.queryKey({ day: new Date('2026-01-01') });
-    server.trpc.post.byDay.unstable_$prefetch({ day: new Date('2026-01-01') });
+    void server.queryClient.prefetchQuery(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
     const outer = sentBy(server.queryClient);
     expect(outer.queries).toHaveLength(1);
     expect(outer.queries[0]!.state.status).toBe('pending');
 
     // A nested server component starts another query
-    await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-02'),
-    });
+    await server.queryClient.ensureQueryData(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-02') }),
+    );
     const inner = sentBy(server.queryClient);
     expect(inner.queries).toHaveLength(1);
     expect(inner.queries[0]!.queryKey).toEqual(
@@ -208,9 +187,9 @@ describe('unstable_createHydrateClient in server components', () => {
       day: new Date('2026-01-01'),
     });
 
-    await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
-    });
+    await server.queryClient.ensureQueryData(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
     expect(hashes(sentBy(server.queryClient))).toHaveLength(1);
 
     await new Promise((resolve) => setTimeout(resolve, 2));
@@ -235,7 +214,9 @@ describe('unstable_createHydrateClient in server components', () => {
       },
     });
 
-    server.trpc.post.byDay.unstable_$prefetch({ day: new Date('2026-01-01') });
+    void server.queryClient.prefetchQuery(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
     expect(sentBy(server.queryClient).queries).toEqual([]);
 
     await server.queryClient.ensureQueryData(
@@ -248,12 +229,12 @@ describe('unstable_createHydrateClient in server components', () => {
     await using resource = ctx();
     const first = makeServer(resource);
     const second = makeServer(resource);
-    await first.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
-    });
-    await second.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
-    });
+    await first.queryClient.ensureQueryData(
+      first.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
+    await second.queryClient.ensureQueryData(
+      second.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
 
     expect(sentBy(first.queryClient).queries).toHaveLength(1);
     expect(sentBy(second.queryClient).queries).toHaveLength(1);
@@ -264,21 +245,21 @@ describe('unstable_createHydrateClient in server components', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
 
-    const outerPost = server.trpc.post.byDay.unstable_$prefetch({
-      day: new Date('2026-01-01'),
-    });
+    void server.queryClient.prefetchQuery(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
     const outerState = sentBy(server.queryClient);
-    const innerPost = await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-02'),
-    });
+    await server.queryClient.ensureQueryData(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-02') }),
+    );
     const innerState = sentBy(server.queryClient);
 
     const html = await renderClientTree(
       resource,
       <HydrationBoundary state={outerState}>
-        <Post post={outerPost} />
+        <Post day={new Date('2026-01-01')} />
         <HydrationBoundary state={innerState}>
-          <Post post={innerPost} />
+          <Post day={new Date('2026-01-02')} />
         </HydrationBoundary>
       </HydrationBoundary>,
     );
@@ -293,9 +274,9 @@ describe('unstable_createHydrateClient in server components', () => {
   test('takes a lazy query client, like `createTRPCOptionsProxy`', async () => {
     await using resource = ctx();
     const server = makeServer(resource);
-    await server.trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
-    });
+    await server.queryClient.ensureQueryData(
+      server.trpc.post.byDay.queryOptions({ day: new Date('2026-01-01') }),
+    );
 
     expect(sentBy(() => server.queryClient).queries).toHaveLength(1);
     expect(sentBy(() => server.queryClient).queries).toEqual([]);
@@ -314,51 +295,5 @@ describe('unstable_createHydrateClient outside server components', () => {
     ).toThrow(
       '`HydrateClient` from `unstable_createHydrateClient()` works only in React Server Components',
     );
-  });
-});
-
-describe('dehydrate and HydrationBoundary from a server loader', () => {
-  test('carries transformed data and pending queries with no second fetch', async () => {
-    await using resource = ctx();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const queryClient = makeServerQueryClient();
-    // A React Router `loader`: the default build, on the server
-    const trpc = createClientOptionsProxy({
-      router: resource.appRouter,
-      ctx: {},
-      queryClient,
-    });
-    const post = await trpc.post.byDay.unstable_$ensure({
-      day: new Date('2026-01-01'),
-    });
-    const later = trpc.post.byDay.unstable_$prefetch({
-      day: new Date('2026-01-02'),
-    });
-    const list = trpc.post.list.unstable_$prefetchInfinite({});
-    const loaderData = {
-      dehydratedState: dehydrate(queryClient),
-      post,
-      later,
-      list,
-    };
-    expect(
-      loaderData.dehydratedState.queries.map((query) => query.state.status),
-    ).toEqual(['success', 'pending', 'pending']);
-
-    const html = await renderClientTree(
-      resource,
-      <HydrationBoundary state={loaderData.dehydratedState}>
-        <Post post={loaderData.post} />
-        <Post post={loaderData.later} />
-        <List list={loaderData.list} />
-      </HydrationBoundary>,
-    );
-    expect(html).toContain('Posts on 2026-01-01');
-    expect(html).toContain('Posts on 2026-01-02');
-    expect(html).toContain('fetchedAt:1970-01-01T00:00:00.000Z');
-    expect(html).toContain('items:0,1');
-    expect(resource.calls).toHaveBeenCalledTimes(3);
-    expect(trpcWarnings(warn)).toEqual([]);
-    warn.mockRestore();
   });
 });

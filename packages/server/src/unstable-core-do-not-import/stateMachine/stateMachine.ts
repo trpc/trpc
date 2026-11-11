@@ -10,9 +10,13 @@ export interface MachineTransition<TState, TEffect> {
 /**
  * A pure state machine over unions of states, events and effects. Its
  * `transition` must not throw, read the clock or touch the world: it says
- * what should happen in `effects`, and a runtime does it. That keeps every
+ * what should happen in `effects`, and its caller does it. That keeps every
  * path testable without I/O or timers.
- * @see createMachineRuntime
+ *
+ * A machine that waits on nothing, such as one HTTP request's, needs no
+ * runtime: its caller keeps the state and runs the effects of each
+ * `transition`.
+ * @see createMachineRuntime for a machine that reads sources and owns resources
  */
 export interface StateMachine<
   TState,
@@ -26,12 +30,6 @@ export interface StateMachine<
     event: TEvent,
   ) => MachineTransition<TState, TEffect>;
 }
-
-/** The members of a union with this `type`. */
-export type OfType<
-  TUnion extends { readonly type: string },
-  TType extends TUnion['type'],
-> = Extract<TUnion, { readonly type: TType }>;
 
 /**
  * Ends a `switch` that handles every member of a union. Passing anything but

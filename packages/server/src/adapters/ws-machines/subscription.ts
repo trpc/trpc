@@ -2,7 +2,6 @@ import type { TRPCError } from '../../@trpc/server';
 // oxlint-disable-next-line no-restricted-imports
 import type {
   MachineTransition,
-  OfType,
   StateMachine,
 } from '../../unstable-core-do-not-import';
 // oxlint-disable-next-line no-restricted-imports
@@ -194,7 +193,7 @@ function illegal(
 /** What a `send` that went out, or didn't, leads to. */
 function replied(
   state: SubscriptionState,
-  event: OfType<SubscriptionEvent, 'sent' | 'sendFailed'>,
+  event: Extract<SubscriptionEvent, { type: 'sent' | 'sendFailed' }>,
 ): SubscriptionTransition {
   const failed = event.type === 'sendFailed';
   switch (state.status) {
@@ -238,9 +237,9 @@ function replied(
 
 /** What the iterator's next step leads to. */
 function pulled(
-  event: OfType<
+  event: Extract<
     SubscriptionEvent,
-    'value' | 'completed' | 'stopped' | 'nextFailed'
+    { type: 'value' | 'completed' | 'stopped' | 'nextFailed' }
   >,
 ): SubscriptionTransition {
   switch (event.type) {

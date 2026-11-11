@@ -38,6 +38,8 @@ export interface Doc extends DocMeta {
 /** A region of a sample app's file, from a `sample:` import. */
 export interface Sample {
   readonly html: string;
+  /** Its hover popups, which `html` leaves out (`data-popup`). */
+  readonly popups: ReadonlyArray<string>;
 }
 
 export interface PostAuthor {
