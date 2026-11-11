@@ -546,7 +546,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   };
 
   return (client: WsWebSocket, req: IncomingMessage) => {
-    void serveConnection(client, req);
+    // It only rejects before it listens to the socket, such as for an
+    // upgrade request whose `Host` no URL can be built from. Nothing awaits
+    // it, so the rejection would crash the process.
+    serveConnection(client, req).catch((cause: unknown) => {
+      logInternalError(cause);
+      client.terminate();
+    });
   };
 
   /**

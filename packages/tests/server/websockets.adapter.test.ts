@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { once } from 'node:events';
+import { connect } from 'node:net';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import {
@@ -1034,4 +1036,51 @@ describe('what the adapter it replaces did', () => {
       'Socket trouble',
     ]);
   });
+});
+
+test('an upgrade request whose URL cannot be built is closed, and does not crash the server', async () => {
+  const crashes: unknown[] = [];
+  const onCrash = (error: unknown) => crashes.push(error);
+  process.on('uncaughtException', onCrash);
+  process.on('unhandledRejection', onCrash);
+  await using _listeners = makeAsyncResource({}, async () => {
+    process.off('uncaughtException', onCrash);
+    process.off('unhandledRejection', onCrash);
+  });
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+    // logged below
+  });
+  await using _console = makeAsyncResource({}, async () => {
+    consoleError.mockRestore();
+  });
+  const t = initTRPC.create();
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hello'),
+  });
+  await using ctx = testServerAndClientResource(router);
+  const { hostname, port } = new URL(ctx.wssUrl);
+
+  // `ws` accepts the upgrade, but no URL can be built from this host
+  const socket = connect(Number(port), hostname);
+  // read what the server sends, or the socket never sees it close
+  socket.resume();
+  socket.write(
+    [
+      'GET / HTTP/1.1',
+      'Host: a b',
+      'Connection: Upgrade',
+      'Upgrade: websocket',
+      'Sec-WebSocket-Version: 13',
+      'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==',
+      '',
+      '',
+    ].join('\r\n'),
+  );
+  await once(socket, 'close');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  expect(crashes).toEqual([]);
+  expect(consoleError).toHaveBeenCalledOnce();
+  // and the server still serves others
+  expect(await ctx.client.greeting.query()).toBe('hello');
 });

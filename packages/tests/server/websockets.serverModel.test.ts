@@ -408,6 +408,11 @@ async function runScenario(scenario: Scenario) {
     }
 
     async function settled(step: string) {
+      // A PING is answered in order, so its PONG shows that the server has
+      // taken every frame before it, also one it doesn't reply to, such as a
+      // stop for a subscription that is still being set up.
+      socket.ws.send('PING');
+      expectReply(model, 'pong', { kind: 'pong' });
       const expected = totalReplies(model.replies);
       await vi.waitFor(
         () => {
