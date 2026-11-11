@@ -1030,3 +1030,48 @@ test('regression: a value that cannot be serialized fails only its own promise o
   await expect(head[2]).resolves.toBe('ok');
   expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([['0'], ['1']]);
 });
+
+test('regression: a chunk that cannot be serialized does not start the async values inside it', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  let ticks = 0;
+  let disposed = false;
+  const data = {
+    0: Promise.resolve({
+      big: 1n,
+      updates: {
+        [Symbol.asyncIterator]: () => ({
+          next: async () => {
+            ticks++;
+            // bounded, so that the stream ends even when this is consumed
+            return { done: ticks > 3, value: 'tick' };
+          },
+          return: async () => {
+            disposed = true;
+            return { done: true, value: undefined };
+          },
+        }),
+      },
+      // nothing reads it, so it must not become an unhandled rejection
+      later: Promise.reject(new Error('never sent')),
+    }),
+    1: Promise.resolve('ok'),
+  };
+  const stream = jsonlStreamProducer({
+    data,
+    onError,
+    formatError: ({ error }) => (error as Error).message,
+  });
+
+  // the stream ends: nothing is left streaming for a chunk the client
+  // was never told about
+  const lines = (await new Response(stream).text()).trim().split('\n');
+
+  expect(lines.map((line) => JSON.parse(line))).toEqual([
+    { 0: [[0], [null, 0, 0]], 1: [[0], [null, 0, 1]] },
+    [0, 1, expect.stringContaining('BigInt')],
+    [1, 0, [['ok']]],
+  ]);
+  expect(ticks).toBe(0);
+  expect(disposed).toBe(true);
+  expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([['0']]);
+});
