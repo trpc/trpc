@@ -653,7 +653,7 @@ describe('a throwing callback never crashes the server', () => {
     greeting: t.procedure.query(() => 'hello'),
   });
 
-  test('an errorFormatter that throws for an oversized batch gives each request the fallback error, and later frames are served', async () => {
+  test('an errorFormatter that throws for an oversized batch gives each request a fallback error with its code, and later frames are served', async () => {
     const onError = vi.fn<OnError>();
     const failingFormatter = initTRPC.create({
       errorFormatter: (opts) => {
@@ -679,10 +679,11 @@ describe('a throwing callback never crashes the server', () => {
     socket.ws.send(JSON.stringify([greeting(1), greeting(2)]));
     socket.ws.send(JSON.stringify(greeting(3)));
 
+    // it says nothing beyond the error's code
     const fallback = {
-      code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
-      message: 'Internal server error',
-      data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+      code: TRPC_ERROR_CODES_BY_KEY.BAD_REQUEST,
+      message: 'BAD_REQUEST',
+      data: { code: 'BAD_REQUEST', httpStatus: 400 },
     };
     await socket.received(3);
     expect(socket.responses()).toEqual([

@@ -14,7 +14,7 @@ import {
   TRPCError,
 } from '../@trpc/server';
 import type { BaseHandlerOptions } from '../@trpc/server/http';
-import { parseTRPCMessage, TRPC_ERROR_CODES_BY_KEY } from '../@trpc/server/rpc';
+import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
@@ -31,6 +31,7 @@ import {
   createResourceMap,
   disposeNow,
   exhaustive,
+  getFallbackErrorShape,
   isAbortError,
   isAsyncIterable,
   isObject,
@@ -200,16 +201,6 @@ const noRequest: OnErrorRequest = {
 };
 
 const OK: SendResult = { ok: true, value: undefined };
-
-/**
- * What the client gets when its error can't be formatted or sent. It says
- * nothing about the error, which is what `errorFormatter` would have hidden.
- */
-const fallbackErrorShape: TRPCErrorShape = {
-  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
-  message: 'Internal server error',
-  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
-};
 
 /**
  * Queries and mutations aren't cancelled, not even when their connection
@@ -672,12 +663,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     /**
-     * Sends a reply that nothing can retry, reporting it if it can't be
-     * built or sent. One that can't be sent is replaced by the fallback
-     * error, so that a client still learns it was rejected.
+     * Sends the reply for `error`, which nothing can retry, reporting it if
+     * it can't be built or sent. One that can't be sent is replaced by the
+     * error's fallback shape, so that a client still learns it was rejected.
      */
     function sendOrReport(
       request: OnErrorRequest,
+      error: TRPCError,
       reply: () => TRPCResponseMessage,
     ) {
       const built = attempt(reply);
@@ -692,7 +684,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         trySend({
           id: built.value.id,
           jsonrpc: built.value.jsonrpc,
-          error: fallbackErrorShape,
+          error: getFallbackErrorShape(error),
         });
       }
     }
@@ -749,7 +741,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     /**
-     * The error's shape for the client, or the fallback when
+     * The error's shape for the client, or its fallback shape when
      * `errorFormatter` throws, so that the client still gets an error.
      */
     function errorShape(
@@ -770,7 +762,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return shape.value;
       }
       reportInternalError(request, shape.error);
-      return fallbackErrorShape;
+      return getFallbackErrorShape(error);
     }
 
     /** Reports `cause` to `onError`, and returns the reply that says why. */
@@ -830,7 +822,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return { ok: true, value: created.value };
       }
       const error = reportError(noRequest, created.error);
-      sendOrReport(noRequest, () => connectionErrorReply(error));
+      sendOrReport(noRequest, error, () => connectionErrorReply(error));
 
       // close in next tick
       (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
@@ -865,16 +857,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           case 'pong':
             // keepAlive listens for any message itself
             break;
-          case 'unsupported':
-            sendOrReport(noRequest, () =>
-              connectionErrorReply(
-                new TRPCError({
-                  code: 'UNPROCESSABLE_CONTENT',
-                  message: 'Unexpected WebSocket message format',
-                }),
-              ),
-            );
+          case 'unsupported': {
+            const error = new TRPCError({
+              code: 'UNPROCESSABLE_CONTENT',
+              message: 'Unexpected WebSocket message format',
+            });
+            sendOrReport(noRequest, error, () => connectionErrorReply(error));
             break;
+          }
         }
       }
     }
@@ -888,7 +878,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         const decoded = decodeFrame(frame, frameDecoding);
         switch (decoded.kind) {
           case 'malformed':
-            sendOrReport(noRequest, () => connectionErrorReply(decoded.error));
+            sendOrReport(noRequest, decoded.error, () =>
+              connectionErrorReply(decoded.error),
+            );
             return;
           case 'oversized':
             rejectOversizedBatch(decoded.batch);
@@ -920,10 +912,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const shape = connectionErrorShape(error);
       const requests = requestsToReplyTo(batch);
       if (requests.length === 0) {
-        sendOrReport(noRequest, () => ({ id: null, error: shape }));
+        sendOrReport(noRequest, error, () => ({ id: null, error: shape }));
       }
       for (const request of requests) {
-        sendOrReport(noRequest, () => ({ ...request, error: shape }));
+        sendOrReport(noRequest, error, () => ({ ...request, error: shape }));
       }
     }
 
@@ -944,7 +936,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           code: 'PARSE_ERROR',
           message: '`id` is required',
         });
-        sendOrReport(noRequest, () =>
+        sendOrReport(noRequest, error, () =>
           reportedErrorReply(
             { ...noRequest, id: msg.id, jsonrpc: msg.jsonrpc },
             error,
@@ -971,7 +963,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
       const registration = subscriptions.register(request.id);
       if (!registration.ok) {
-        sendOrReport(request, () =>
+        sendOrReport(request, registration.error, () =>
           reportedErrorReply(request, registration.error),
         );
         return;
@@ -1021,7 +1013,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     /**
      * Yields the error reply that ends a request. If it can't be sent, the
-     * client gets the fallback error instead, so that it isn't left waiting.
+     * client gets the error's fallback shape instead, so that it isn't left
+     * waiting.
      */
     async function* finalErrorReply(
       request: ProcedureRequest,
@@ -1033,7 +1026,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         yield* finalReply(request, {
           id: request.id,
           jsonrpc: request.jsonrpc,
-          error: fallbackErrorShape,
+          error: getFallbackErrorShape(cause),
         });
       }
     }
@@ -1201,7 +1194,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           case 'error':
             return { id, jsonrpc, error: errorShape(request, sent.error) };
           case 'fallback':
-            return { id, jsonrpc, error: fallbackErrorShape };
+            return { id, jsonrpc, error: getFallbackErrorShape(sent.error) };
           case 'stopped':
             return { id, jsonrpc, result: { type: 'stopped' } };
         }

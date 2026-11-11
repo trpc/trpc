@@ -48,8 +48,8 @@ export type SubscriptionState =
   /** Disposing the iterator, which can throw. */
   | { status: 'closing'; end: SubscriptionEnd }
   /** Sending the error that ended the subscription. */
-  | { status: 'sendingError'; after: AfterReply }
-  /** The error couldn't be sent, so the client gets the fallback. */
+  | { status: 'sendingError'; error: TRPCError; after: AfterReply }
+  /** The error couldn't be sent, so the client gets its fallback shape. */
   | { status: 'sendingFallback'; after: AfterReply }
   | { status: 'sendingStopped' }
   | { status: 'ended' };
@@ -73,7 +73,8 @@ export type SubscriptionReply =
   | { kind: 'started' }
   | { kind: 'value' }
   | { kind: 'error'; error: TRPCError }
-  | { kind: 'fallback' }
+  /** The fallback shape of `error`, which says nothing beyond its code. */
+  | { kind: 'fallback'; error: TRPCError }
   | { kind: 'stopped' };
 
 export type SubscriptionEffect =
@@ -147,10 +148,15 @@ function sendError(
   after: AfterReply,
   ...before: SubscriptionEffect[]
 ): SubscriptionTransition {
-  return to({ status: 'sendingError', after }, ...before, report(error), {
-    type: 'send',
-    reply: { kind: 'error', error },
-  });
+  return to(
+    { status: 'sendingError', error, after },
+    ...before,
+    report(error),
+    {
+      type: 'send',
+      reply: { kind: 'error', error },
+    },
+  );
 }
 
 function close(end: SubscriptionEnd): SubscriptionTransition {
@@ -211,7 +217,7 @@ function replied(
         ? to(
             { status: 'sendingFallback', after: state.after },
             reportInternal(event.error),
-            { type: 'send', reply: { kind: 'fallback' } },
+            { type: 'send', reply: { kind: 'fallback', error: state.error } },
           )
         : afterReply(state.after);
     case 'sendingFallback':

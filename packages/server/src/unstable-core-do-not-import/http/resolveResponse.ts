@@ -3,7 +3,7 @@ import {
   isObservable,
   observableToAsyncIterable,
 } from '../../observable/observable';
-import { getErrorShape } from '../error/getErrorShape';
+import { getErrorShape, getFallbackErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import {
@@ -203,6 +203,33 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   };
 }
 
+/**
+ * `getErrorShape`, except that a throwing `errorFormatter` is reported and
+ * leaves the error a shape that says nothing beyond its code, which the HTTP
+ * status reveals anyway, so the error can still be sent.
+ */
+function errorShapeOrFallback<TRouter extends AnyRouter>(
+  opts: Pick<ResolveHTTPRequestOptions<TRouter>, 'onError' | 'req' | 'router'>,
+  call: {
+    error: TRPCError;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    input: unknown;
+    ctx: inferRouterContext<TRouter> | undefined;
+  },
+): inferRouterError<TRouter> {
+  try {
+    return getErrorShape({ config: opts.router._def._config, ...call });
+  } catch (cause) {
+    opts.onError?.({
+      ...call,
+      error: getTRPCErrorFromUnknown(cause),
+      req: opts.req,
+    });
+    return getFallbackErrorShape(call.error);
+  }
+}
+
 function caughtErrorToData<TRouter extends AnyRouter>(
   cause: unknown,
   errorOpts: {
@@ -227,8 +254,7 @@ function caughtErrorToData<TRouter extends AnyRouter>(
     req,
   });
   const untransformedJSON = {
-    error: getErrorShape({
-      config: router._def._config,
+    error: errorShapeOrFallback(errorOpts.opts, {
       error,
       type: errorOpts.type,
       path: errorOpts.path,
@@ -489,8 +515,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
           const res: TRPCResponse<unknown, inferRouterError<TRouter>> = error
             ? {
-                error: getErrorShape({
-                  config,
+                error: errorShapeOrFallback(opts, {
                   ctx: ctxManager.valueOrUndefined(),
                   error,
                   input: call!.result(),
@@ -571,8 +596,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 type,
               });
 
-              const shape = getErrorShape({
-                config,
+              const shape = errorShapeOrFallback(opts, {
                 ctx: ctxManager.valueOrUndefined(),
                 error,
                 input,
@@ -690,8 +714,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           if (error) {
             return {
-              error: getErrorShape({
-                config,
+              error: errorShapeOrFallback(opts, {
                 ctx: ctxManager.valueOrUndefined(),
                 error,
                 input: call!.result(),
@@ -736,8 +759,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           // no need to call `onError` here as it will be propagated through the stream itself
 
-          const shape = getErrorShape({
-            config,
+          const shape = errorShapeOrFallback(opts, {
             ctx: ctxManager.valueOrUndefined(),
             error,
             input,
@@ -791,8 +813,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         const call = info.calls[index]!;
         if (error) {
           return {
-            error: getErrorShape({
-              config,
+            error: errorShapeOrFallback(opts, {
               ctx: ctxManager.valueOrUndefined(),
               error,
               input: call.result(),
