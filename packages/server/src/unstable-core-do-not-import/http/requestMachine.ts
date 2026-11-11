@@ -5,8 +5,7 @@ import type {
   StateMachine,
 } from '../stateMachine/stateMachine';
 import { exhaustive } from '../stateMachine/stateMachine';
-import type { Outcome } from './outcome';
-import type { TRPCRequestInfo, TRPCRequestInfoProcedureCall } from './types';
+import type { TRPCRequestInfoProcedureCall } from './types';
 
 /** Where an error happened, for `onError` and the error formatter */
 export interface ErrorSource {
@@ -14,17 +13,9 @@ export interface ErrorSource {
   call: TRPCRequestInfoProcedureCall | null;
 }
 
-/** What's known about the request; each field is `null` until it is */
-export interface RequestFacts {
-  info: TRPCRequestInfo | null;
-  /** The context, or why it couldn't be created */
-  ctx: Outcome<unknown> | null;
-  /** The methods a rejected call accepts, for the `allow` header */
-  allow: string | null;
-}
-
 /**
- * Where the request is on its way to a response:
+ * Where the request is on its way to a response. That decides what a failure
+ * does: it is always reported, and answered only while nothing was sent.
  * - `receiving`: parsing it, creating its context and calling its procedures.
  * - `building`: a response builder started the response's headers.
  * - `described`: `responseMeta` ran for the response being built.
@@ -32,16 +23,13 @@ export interface RequestFacts {
  * - `done`: nothing more will be sent.
  */
 export type RequestState =
-  | { status: 'receiving'; facts: RequestFacts }
-  | { status: 'building'; facts: RequestFacts; headers: Headers }
-  | { status: 'described'; facts: RequestFacts }
-  | { status: 'streaming'; facts: RequestFacts }
-  | { status: 'done'; facts: RequestFacts };
+  | { status: 'receiving' }
+  | { status: 'building'; headers: Headers }
+  | { status: 'described' }
+  | { status: 'streaming' }
+  | { status: 'done' };
 
 export type RequestEvent =
-  | { type: 'parsed'; info: TRPCRequestInfo }
-  | { type: 'contextCreated'; ctx: Outcome<unknown> }
-  | { type: 'methodRejected'; allow: string }
   | { type: 'headersStarted'; headers: Headers }
   /** A response builder is ready for `responseMeta` */
   | { type: 'describe' }
@@ -67,15 +55,12 @@ export type RequestEffect =
 
 type Step = MachineTransition<RequestState, RequestEffect>;
 
-function withFacts(state: RequestState, facts: RequestFacts): Step {
-  return { state: { ...state, facts }, effects: [] };
-}
+const done: RequestState = { status: 'done' };
 
 function failed(
   state: RequestState,
   event: Extract<RequestEvent, { type: 'failed' }>,
 ): Step {
-  const done: RequestState = { status: 'done', facts: state.facts };
   const report: RequestEffect = {
     type: 'reportError',
     error: event.error,
@@ -130,50 +115,29 @@ export function requestTransition(
 ): Step {
   const stay: Step = { state, effects: [] };
   switch (event.type) {
-    case 'parsed':
-      return state.status === 'receiving'
-        ? withFacts(state, { ...state.facts, info: event.info })
-        : stay;
-    case 'contextCreated':
-      return state.status === 'receiving'
-        ? withFacts(state, { ...state.facts, ctx: event.ctx })
-        : stay;
-    case 'methodRejected':
-      return state.status === 'receiving'
-        ? withFacts(state, { ...state.facts, allow: event.allow })
-        : stay;
     case 'headersStarted':
       return state.status === 'receiving'
         ? {
-            state: {
-              status: 'building',
-              facts: state.facts,
-              headers: event.headers,
-            },
+            state: { status: 'building', headers: event.headers },
             effects: [],
           }
         : stay;
     case 'describe':
       return state.status === 'receiving' || state.status === 'building'
         ? {
-            state: { status: 'described', facts: state.facts },
+            state: { status: 'described' },
             effects: [{ type: 'callResponseMeta' }],
           }
         : stay;
     case 'responded':
       return state.status === 'described'
         ? {
-            state: {
-              status: event.streamed ? 'streaming' : 'done',
-              facts: state.facts,
-            },
+            state: event.streamed ? { status: 'streaming' } : done,
             effects: [],
           }
         : stay;
     case 'bodyEnded':
-      return state.status === 'streaming'
-        ? { state: { status: 'done', facts: state.facts }, effects: [] }
-        : stay;
+      return state.status === 'streaming' ? { state: done, effects: [] } : stay;
     case 'failed':
       return failed(state, event);
     default:
@@ -186,12 +150,6 @@ export const requestMachine: StateMachine<
   RequestEvent,
   RequestEffect
 > = {
-  initial: {
-    state: {
-      status: 'receiving',
-      facts: { info: null, ctx: null, allow: null },
-    },
-    effects: [],
-  },
+  initial: { state: { status: 'receiving' }, effects: [] },
   transition: requestTransition,
 };

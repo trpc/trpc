@@ -6,7 +6,6 @@ import {
   stateDiagram,
 } from './___machineModel';
 import { TRPCError } from '@trpc/server';
-import type { TRPCRequestInfo } from '@trpc/server/http';
 import type {
   RequestEffect,
   RequestEvent,
@@ -23,23 +22,7 @@ const order: Record<RequestState['status'], number> = {
   done: 4,
 };
 
-const info: TRPCRequestInfo = {
-  isBatchCall: false,
-  accept: null,
-  calls: [],
-  type: 'query',
-  connectionParams: null,
-  signal: new AbortController().signal,
-  url: null,
-};
-
 const event = fc.oneof(
-  fc.constant<RequestEvent>({ type: 'parsed', info }),
-  fc.constant<RequestEvent>({
-    type: 'contextCreated',
-    ctx: { ok: true, value: {} },
-  }),
-  fc.constant<RequestEvent>({ type: 'methodRejected', allow: 'POST' }),
   fc.constant(null).map((): RequestEvent => ({
     type: 'headersStarted',
     headers: new Headers(),
@@ -89,10 +72,6 @@ function play(events: readonly RequestEvent[]) {
         return;
       }
       check(order[after.status] >= order[before.status], 'went backwards');
-      check(
-        before.status === 'receiving' || after.facts === before.facts,
-        'facts changed after the response started',
-      );
       check(
         reports.length === (event.type === 'failed' ? 1 : 0),
         'a failure must be reported exactly once',
@@ -151,18 +130,14 @@ test('every sequence of events keeps the request invariants', () => {
 });
 
 test('the diagram matches the transitions', async () => {
-  const facts = { info: null, ctx: null, allow: null };
   const states: RequestState[] = [
-    { status: 'receiving', facts },
-    { status: 'building', facts, headers: new Headers() },
-    { status: 'described', facts },
-    { status: 'streaming', facts },
-    { status: 'done', facts },
+    { status: 'receiving' },
+    { status: 'building', headers: new Headers() },
+    { status: 'described' },
+    { status: 'streaming' },
+    { status: 'done' },
   ];
   const events: RequestEvent[] = [
-    { type: 'parsed', info },
-    { type: 'contextCreated', ctx: { ok: true, value: {} } },
-    { type: 'methodRejected', allow: 'POST' },
     { type: 'headersStarted', headers: new Headers() },
     { type: 'describe' },
     { type: 'responded', streamed: false },

@@ -1,7 +1,6 @@
 ```mermaid
 stateDiagram-v2
   [*] --> receiving
-  receiving --> receiving : parsed, contextCreated, methodRejected
   receiving --> building : headersStarted
   receiving --> described : describe
   receiving --> done : failed

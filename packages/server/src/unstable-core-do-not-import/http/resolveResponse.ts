@@ -17,12 +17,7 @@ import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type { Outcome } from './outcome';
 import { attempt, fail, ok, settle } from './outcome';
 import { urlPathToProcedurePath } from './pathSeparator';
-import type {
-  ErrorSource,
-  RequestEvent,
-  RequestFacts,
-  RequestState,
-} from './requestMachine';
+import type { ErrorSource, RequestEvent, RequestState } from './requestMachine';
 import { requestMachine } from './requestMachine';
 import type { BodyListener, RequestLifetime } from './responseBody';
 import { requestLifetime, streamBody, subscriptionBody } from './responseBody';
@@ -61,6 +56,12 @@ interface RequestScope {
   config: AnyRouter['_def']['_config'];
   url: URL;
   state: RequestState;
+  /** Set once the request is parsed */
+  info: TRPCRequestInfo | null;
+  /** The context, or why it couldn't be created; set once that was tried */
+  ctx: Outcome<unknown> | null;
+  /** The methods a rejected call accepts, for the `allow` header */
+  allow: string | null;
 }
 
 /** A request that was parsed and accepted, with its context created */
@@ -85,13 +86,8 @@ function sourceOf(call: TRPCRequestInfoProcedureCall): ErrorSource {
   return { type: call.procedure?._def.type ?? 'unknown', call };
 }
 
-function factsOf(scope: RequestScope): RequestFacts {
-  return scope.state.facts;
-}
-
 function ctxOf(scope: RequestScope) {
-  const { ctx } = factsOf(scope);
-  return ctx?.ok ? ctx.value : undefined;
+  return scope.ctx?.ok ? scope.ctx.value : undefined;
 }
 
 function reportError(
@@ -249,7 +245,7 @@ function procedureFor(
   const accepted = acceptedMethods(type, opts.allowMethodOverride);
   if (!accepted.includes(opts.req.method)) {
     // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
-    send(request, { type: 'methodRejected', allow: accepted.join(', ') });
+    request.allow = accepted.join(', ');
     return fail(
       new TRPCError({
         code: 'METHOD_NOT_SUPPORTED',
@@ -309,10 +305,10 @@ async function resolveCall(
 // ---------- the response
 
 /** The headers every response gets: `vary`, and `allow` once a call sets it */
-function requestHeaders(facts: RequestFacts): Headers {
+function requestHeaders(scope: RequestScope): Headers {
   const headers = new Headers([['vary', 'trpc-accept, accept']]);
-  if (facts.allow !== null) {
-    headers.set('allow', facts.allow);
+  if (scope.allow !== null) {
+    headers.set('allow', scope.allow);
   }
   return headers;
 }
@@ -333,8 +329,7 @@ function callResponseMeta(
   headers: Headers,
   results: ResponseResults,
 ): number {
-  const { opts } = scope;
-  const { info } = factsOf(scope);
+  const { opts, info } = scope;
   const meta =
     opts.responseMeta?.({
       ctx: ctxOf(scope),
@@ -395,7 +390,7 @@ function startHeaders(
   scope: RequestScope,
   init: Record<string, string>,
 ): Headers {
-  const headers = requestHeaders(factsOf(scope));
+  const headers = requestHeaders(scope);
   for (const [key, value] of Object.entries(init)) {
     headers.set(key, value);
   }
@@ -647,7 +642,7 @@ async function sseResponse(
  */
 function errorResponse(scope: RequestScope, error: TRPCError): Response {
   const source: ErrorSource = {
-    type: factsOf(scope).info?.type ?? 'unknown',
+    type: scope.info?.type ?? 'unknown',
     call: null,
   };
   // a response can only fail before it's returned, so the error replaces it
@@ -658,14 +653,14 @@ function errorResponse(scope: RequestScope, error: TRPCError): Response {
   const body = JSON.stringify(transformTRPCResponse(scope.config, data));
   const results = { data: [data], errors: [error] };
   if (answer?.callResponseMeta) {
-    const headers = answer.headers ?? requestHeaders(factsOf(scope));
+    const headers = answer.headers ?? requestHeaders(scope);
     const status = callResponseMeta(scope, headers, results);
     return new Response(body, { status, headers });
   }
 
   // `responseMeta` ran for a response that failed: drop its headers, and the
   // response's, as they describe that response, not this one
-  const headers = requestHeaders(factsOf(scope));
+  const headers = requestHeaders(scope);
   for (const [key, value] of scope.opts.resHeaders ?? []) {
     headers.append(key, value);
   }
@@ -683,16 +678,16 @@ async function respond(scope: RequestScope): Promise<Outcome<Response>> {
   if (!parsed.ok) {
     return parsed;
   }
-  const info = parsed.value;
-  send(scope, { type: 'parsed', info });
+  const info = (scope.info = parsed.value);
 
   const rejection = rejectRequest(scope, info);
   if (rejection) {
     return fail(rejection);
   }
 
-  const ctx = await attempt(() => scope.opts.createContext({ info }));
-  send(scope, { type: 'contextCreated', ctx });
+  const ctx = (scope.ctx = await attempt(() =>
+    scope.opts.createContext({ info }),
+  ));
   // the same object, so the fallback sees where the response got to
   const request: AcceptedRequest = Object.assign(scope, {
     info,
@@ -731,6 +726,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     config: opts.router._def._config,
     url,
     state: requestMachine.initial.state,
+    info: null,
+    ctx: null,
+    allow: null,
   };
   const response = await settle(() => respond(scope));
   return response.ok ? response.value : errorResponse(scope, response.error);
