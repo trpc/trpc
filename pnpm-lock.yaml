@@ -21373,7 +21373,7 @@ snapshots:
 
   '@fast-check/vitest@0.5.0(vitest@5.1.0)':
     dependencies:
-      fast-check: 3.23.2
+      fast-check: 4.10.2
       vitest: 5.1.0(@edge-runtime/vm@2.0.2)(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-istanbul@5.1.0)(@vitest/ui@5.1.0)(jsdom@29.0.0(@noble/hashes@1.8.0))(vite@8.3.6(@types/node@24.19.2)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.34.0)(tsx@4.23.15)(yaml@2.8.2))
 
   '@fastify/ajv-compiler@4.0.5':

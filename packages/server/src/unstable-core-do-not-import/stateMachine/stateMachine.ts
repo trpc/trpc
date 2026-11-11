@@ -10,9 +10,13 @@ export interface MachineTransition<TState, TEffect> {
 /**
  * A pure state machine over unions of states, events and effects. Its
  * `transition` must not throw, read the clock or touch the world: it says
- * what should happen in `effects`, and a runtime does it. That keeps every
+ * what should happen in `effects`, and its caller does it. That keeps every
  * path testable without I/O or timers.
- * @see createMachineRuntime
+ *
+ * A machine that waits on nothing, such as one HTTP request's, needs no
+ * runtime: its caller keeps the state and runs the effects of each
+ * `transition`.
+ * @see createMachineRuntime for a machine that reads sources and owns resources
  */
 export interface StateMachine<
   TState,
@@ -26,19 +30,6 @@ export interface StateMachine<
     event: TEvent,
   ) => MachineTransition<TState, TEffect>;
 }
-
-/**
- * The members of a union whose `type` can be one of `TType`, including a
- * member whose `type` is itself a union.
- */
-export type OfType<
-  TUnion extends { readonly type: string },
-  TType extends TUnion['type'],
-> = TUnion extends unknown
-  ? [Extract<TUnion['type'], TType>] extends [never]
-    ? never
-    : TUnion
-  : never;
 
 /**
  * Ends a `switch` that handles every member of a union. Passing anything but
@@ -59,52 +50,4 @@ export function exhaustive<TFallback>(
   fallback: TFallback,
 ): TFallback {
   return fallback;
-}
-
-/**
- * One synchronous step, for a short-lived machine that needs no runtime, such
- * as one request's: the caller keeps the state and runs the effects.
- * @see createMachineRuntime for a machine that reads sources and owns resources
- */
-export function step<
-  TState,
-  TEvent extends { readonly type: string },
-  TEffect extends { readonly type: string },
->(
-  machine: StateMachine<TState, TEvent, TEffect>,
-  state: TState,
-  event: TEvent,
-): MachineTransition<TState, TEffect> {
-  return machine.transition(state, event);
-}
-
-/**
- * Splits effects into those of `types` and the rest, in order, each typed as
- * its part of the union.
- * @example
- * ```ts
- * const { matching: writes, rest } = splitEffects(effects, ['write']);
- * ```
- */
-export function splitEffects<
-  TEffect extends { readonly type: string },
-  const TType extends TEffect['type'],
->(
-  effects: readonly TEffect[],
-  types: readonly TType[],
-): {
-  matching: OfType<TEffect, TType>[];
-  rest: Exclude<TEffect, { readonly type: TType }>[];
-} {
-  const wanted: ReadonlySet<string> = new Set(types);
-  const matching: OfType<TEffect, TType>[] = [];
-  const rest: Exclude<TEffect, { readonly type: TType }>[] = [];
-  for (const effect of effects) {
-    if (wanted.has(effect.type)) {
-      matching.push(effect as OfType<TEffect, TType>);
-    } else {
-      rest.push(effect as Exclude<TEffect, { readonly type: TType }>);
-    }
-  }
-  return { matching, rest };
 }

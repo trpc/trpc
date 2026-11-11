@@ -92,17 +92,15 @@ export function createMachineRuntime<
   const listeners = new Set<(state: TState) => void>();
   const resources: Disposable[] = [];
 
-  const stopping = createDeferred();
   /** A value for the loop: a source's value and its `receive`, or the stop. */
   const stop = Symbol();
-  const sources = mergeAsyncIterables<(() => void) | typeof stop>();
-  // Holds the merged stream open while no other source is, and stops it.
-  sources.add(
-    (async function* (): AsyncGenerator<typeof stop> {
-      await stopping.promise;
-      yield stop;
-    })(),
-  );
+  type Received = (() => void) | typeof stop;
+  /**
+   * The loop that reads every source, started by the first `intake`: a
+   * machine that reads none, such as one driven by listeners and timers,
+   * doesn't pay for it.
+   */
+  let reader: ReturnType<typeof startReader> | null = null;
 
   function report(error: unknown) {
     try {
@@ -155,19 +153,31 @@ export function createMachineRuntime<
     running = false;
   }
 
-  const loop = (async () => {
-    // Not `for await`: while it awaits, V8 keeps the last value of a
-    // `for await` loop alive, and with it the value `receive` got. The
-    // thunk is cleared once it has run.
-    await using iterator = iteratorResource(sources);
-    let receive: IteratorResult<(() => void) | typeof stop> | null;
-    while (true) {
-      receive = await iterator.next();
-      if (receive.done || receive.value === stop) break;
-      if (!disposed) attempt(receive.value);
-      receive = null;
-    }
-  })().catch(report);
+  function startReader() {
+    const stopping = createDeferred();
+    const sources = mergeAsyncIterables<Received>();
+    // Holds the merged stream open while no other source is, and stops it.
+    sources.add(
+      (async function* (): AsyncGenerator<typeof stop> {
+        await stopping.promise;
+        yield stop;
+      })(),
+    );
+    const loop = (async () => {
+      // Not `for await`: while it awaits, V8 keeps the last value of a
+      // `for await` loop alive, and with it the value `receive` got. The
+      // thunk is cleared once it has run.
+      await using iterator = iteratorResource(sources);
+      let receive: IteratorResult<Received> | null;
+      while (true) {
+        receive = await iterator.next();
+        if (receive.done || receive.value === stop) break;
+        if (!disposed) attempt(receive.value);
+        receive = null;
+      }
+    })().catch(report);
+    return { sources, stopping, loop };
+  }
 
   const runtime: MachineRuntime<TState, TEvent> = makeAsyncResource(
     {
@@ -184,7 +194,8 @@ export function createMachineRuntime<
         receive: (value: TValue) => void,
       ) {
         if (disposed) return;
-        sources.add(mapSource(source, receive));
+        reader ??= startReader();
+        reader.sources.add(mapSource(source, receive));
       },
       use<TResource extends Disposable>(resource: TResource) {
         if (disposed) {
@@ -208,8 +219,8 @@ export function createMachineRuntime<
       for (const resource of resources.splice(0).reverse()) {
         attempt(() => disposeNow(resource));
       }
-      stopping.resolve();
-      await loop;
+      reader?.stopping.resolve();
+      await reader?.loop;
     },
   );
 

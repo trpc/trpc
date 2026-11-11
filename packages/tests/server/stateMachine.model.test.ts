@@ -1,4 +1,10 @@
-import { check, coverage, simulateMachine } from './___machineModel';
+import {
+  check,
+  coverage,
+  sampleTransitions,
+  simulateMachine,
+  stateDiagram,
+} from './___machineModel';
 import { fc, test } from '@fast-check/vitest';
 import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
@@ -11,8 +17,6 @@ import {
   createResourceMap,
   exhaustive,
   makeResource,
-  sampleTransitions,
-  stateDiagram,
 } from '@trpc/server/unstable-core-do-not-import';
 
 // A reconnecting socket with backoff: the smallest machine with the shape
@@ -276,6 +280,26 @@ test('the diagram matches the transition', () => {
   `);
 });
 
+test('a sorted diagram orders arrows and labels, and draws the final states', () => {
+  expect(
+    stateDiagram({
+      initial: [],
+      edges: [
+        { from: 'open', to: 'idle', label: 'lost' },
+        { from: 'open', to: 'idle', label: 'close' },
+        { from: 'idle', to: 'open', label: 'connect' },
+      ],
+      final: ['idle'],
+      sort: true,
+    }),
+  ).toMatchInlineSnapshot(`
+    "stateDiagram-v2
+      idle --> open : connect
+      open --> idle : close, lost
+      idle --> [*]"
+  `);
+});
+
 // --- the same machine, run for real ------------------------------------------
 
 function fakeSocket() {
@@ -314,7 +338,7 @@ function fakeSocket() {
   );
 }
 
-test('the runtime runs it with sockets and timers as async iterables', async () => {
+test('the runtime runs it with a socket it reads and a timer that calls back', async () => {
   vi.useFakeTimers();
   const opened: ReturnType<typeof fakeSocket>[] = [];
   const runtime = createMachineRuntime({
@@ -347,10 +371,9 @@ test('the runtime runs it with sockets and timers as async iterables', async () 
   });
   const sockets =
     runtime.use(createResourceMap<'current', ReturnType<typeof fakeSocket>>());
-  const timers = runtime.use(createMachineTimers<'backoff'>());
-  runtime.intake(timers.events, (fired) => {
-    if (timers.take(fired)) runtime.send({ type: 'timer' });
-  });
+  const timers = runtime.use(
+    createMachineTimers<'backoff'>(() => runtime.send({ type: 'timer' })),
+  );
 
   runtime.send({ type: 'connect' });
   await vi.waitFor(() => expect(opened[0]?.state.listening).toBe(true));
