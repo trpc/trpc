@@ -1,3 +1,5 @@
+import { inflateSync } from 'node:zlib';
+
 import { Effect } from 'effect';
 import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -27,6 +29,59 @@ const pngSize = (png: Uint8Array) => {
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
   return { height: view.getUint32(20), width: view.getUint32(16) };
 };
+
+const paeth = (a: number, b: number, c: number) => {
+  const p = a + b - c;
+  const [pa, pb, pc] = [Math.abs(p - a), Math.abs(p - b), Math.abs(p - c)];
+  return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+};
+
+/** A PNG's rows of RGBA bytes, as resvg writes it: 8-bit RGBA, not interlaced. */
+const pngRows = (png: Uint8Array) => {
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  expect([png[24], png[25], png[28]]).toEqual([8, 6, 0]);
+  const { height, width } = pngSize(png);
+  const chunks: Array<Uint8Array> = [];
+  for (let at = 8; at < png.length; at += 12 + view.getUint32(at)) {
+    if (String.fromCharCode(...png.subarray(at + 4, at + 8)) === 'IDAT') {
+      chunks.push(png.subarray(at + 8, at + 8 + view.getUint32(at)));
+    }
+  }
+  const data = inflateSync(Buffer.concat(chunks));
+  const stride = width * 4;
+  const rows: Array<Uint8Array> = [];
+  let above = new Uint8Array(stride);
+  for (let y = 0; y < height; y++) {
+    const start = y * (stride + 1);
+    const filter = data[start];
+    const row = data.slice(start + 1, start + 1 + stride);
+    for (let x = 0; x < stride; x++) {
+      const a = x < 4 ? 0 : (row[x - 4] ?? 0);
+      const b = above[x] ?? 0;
+      const c = x < 4 ? 0 : (above[x - 4] ?? 0);
+      const predicted = [0, a, b, (a + b) >> 1, paeth(a, b, c)][filter ?? 0];
+      row[x] = ((row[x] ?? 0) + (predicted ?? 0)) & 0xff;
+    }
+    rows.push(row);
+    above = row;
+  }
+  return rows;
+};
+
+/**
+ * How many of `rows`' pixels are darker than the card's background, its
+ * glow and its dot grid: text, avatars, rules.
+ */
+const inked = (rows: ReadonlyArray<Uint8Array>) =>
+  rows.reduce((sum, row) => {
+    let count = 0;
+    for (let x = 0; x < row.length; x += 4) {
+      if (Math.min(row[x] ?? 0, row[x + 1] ?? 0, row[x + 2] ?? 0) < 200) {
+        count += 1;
+      }
+    }
+    return sum + count;
+  }, 0);
 
 const cards: ReadonlyArray<OgCard> = [
   { kind: 'home', path: '/' },
@@ -78,6 +133,14 @@ const cards: ReadonlyArray<OgCard> = [
     title: 'Query handles: pass the query, not the input',
   },
   {
+    description:
+      'A description long enough that the card cuts it at one hundred and thirty characters, the most a docs page card draws of one, here.',
+    kind: 'doc',
+    path: '/docs/client/tanstack-react-query/server-components',
+    title: 'Set up with React Server Components and the App Router in Next',
+    url: 'https://trpc.io/docs/client/tanstack-react-query/server-components',
+  },
+  {
     description: '',
     kind: 'doc',
     path: '/docs/typedoc/server/index/interfaces/TRPCProcedureBuilder',
@@ -94,11 +157,16 @@ const shown: Live = {
   stats: { downloads: 7_926_494, stars: 40_759 },
 };
 
-/** `shown`, with the avatar of every sponsor along the foot loaded: a blue square. */
+/** `shown`, with the avatar of every sponsor along the foot and on `/sponsor`'s card loaded: a blue square. */
 const withSponsors: Live = {
   ...shown,
   avatars: new Map(
-    [...cardFooter.partners, ...cardFooter.backers].map((sponsor) => [
+    [
+      ...cardFooter.partners,
+      ...cardFooter.backers,
+      ...sponsorCard.partners,
+      ...sponsorCard.backers,
+    ].map((sponsor) => [
       sponsor.image,
       `data:image/svg+xml;base64,${Buffer.from(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><rect width="4" height="4" fill="#398ccb"/></svg>',
@@ -116,6 +184,20 @@ describe('renderOgImage', () => {
         expect([...png.subarray(1, 4)]).toEqual([0x50, 0x4e, 0x47]);
         expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
       }
+    },
+  );
+});
+
+describe('renderOgImage under a caption', () => {
+  it.each(cards)(
+    'draws nothing in the bottom fifth of the $kind card for $path but the background and the rule',
+    async (card) => {
+      const rows = pngRows(await renderOgImage(card, withSponsors));
+      // From 80% of 630px down to the brand rule along the bottom edge.
+      const band = rows.slice(504, 620);
+      expect(band).toHaveLength(116);
+      expect(inked(band)).toBe(0);
+      expect(inked(rows.slice(0, 504))).toBeGreaterThan(0);
     },
   );
 });

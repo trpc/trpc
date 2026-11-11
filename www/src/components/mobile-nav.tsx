@@ -90,7 +90,7 @@ export function MobileNav() {
         <nav aria-label="Main" className="flex flex-col border-b pb-4">
           {docsLinks.map((link) => (
             <Link
-              activeOptions={{ exact: true }}
+              activeOptions={{ exact: true, includeSearch: false }}
               activeProps={{ 'aria-current': 'page' }}
               className="rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground"
               key={link.label}

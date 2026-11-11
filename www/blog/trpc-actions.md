@@ -350,7 +350,6 @@ import { Ratelimit } from '@unkey/ratelimit';
 export const rateLimitedAction = protectedAction.use(async (opts) => {
   const unkey = new Ratelimit({
     rootKey: process.env.UNKEY_ROOT_KEY!,
-    async: true,
     duration: '10s',
     limit: 5,
     namespace: `trpc_${opts.path}`,
@@ -419,7 +418,6 @@ import { Ratelimit } from '@unkey/ratelimit';
 export const rateLimitedAction = protectedAction.use(async (opts) => {
   const unkey = new Ratelimit({
     rootKey: process.env.UNKEY_ROOT_KEY!,
-    async: true,
     duration: '10s',
     limit: 5,
     namespace: `trpc_${opts.path}`,

@@ -1,13 +1,13 @@
-import { useNavigate, useRouter } from '@tanstack/react-router';
-import type { KeyboardEvent, MouseEvent } from 'react';
+import { useRouter } from '@tanstack/react-router';
+import { useState } from 'react';
 
 import { cn } from '@shared/ui/lib/utils';
 
 import { splitAtDemos } from '~/demos/names.ts';
 import { PageDemo } from '~/demos/page-demos.tsx';
-import { isUrlTabGroup, tabSlug, type UrlTabGroup } from '~/tabs.ts';
-
-const tabStorageKey = (group: string) => `trpc-docs:tab:${group}`;
+import { FrameworkTabs } from '~/components/framework-tabs.tsx';
+import { isUrlTabGroup, savedTab, saveTab } from '~/tabs.ts';
+import { installTwoslashHovers, type LoadPopups } from '~/twoslash-hovers.ts';
 
 function isElement(target: EventTarget | null): target is Element {
   return target !== null && 'closest' in target;
@@ -56,59 +56,6 @@ function codeText(pre: Element) {
   return copy.textContent.trimEnd();
 }
 
-/**
- * Shows a Twoslash hover popup next to its name: below it, or above it when
- * there's more room there, between the sticky header and the bottom of the
- * screen. The popup is `position: fixed`, so the code block's scrolling
- * doesn't clip it, and a type taller than the room scrolls inside it.
- */
-function placePopup(target: EventTarget | null) {
-  const hover = isElement(target)
-    ? target.closest('.twoslash-hover:not(.twoslash-query-persisted)')
-    : null;
-  const popup = hover?.querySelector<HTMLElement>(
-    ':scope > .twoslash-popup-container',
-  );
-  if (!hover || !popup) {
-    return;
-  }
-  const anchor = hover.getBoundingClientRect();
-  const margin = 8;
-  const gap = 6;
-  const header = document.querySelector('[data-site-header]');
-  const top = Math.max(0, header?.getBoundingClientRect().bottom ?? 0) + margin;
-  // A tap leaves the name hovered until the next tap, so it can scroll away.
-  popup.style.visibility =
-    anchor.bottom > top && anchor.top < window.innerHeight ? '' : 'hidden';
-  popup.style.maxHeight = '';
-  const height = popup.offsetHeight;
-  const roomBelow = window.innerHeight - margin - (anchor.bottom + gap);
-  const roomAbove = anchor.top - gap - top;
-  const below = height <= roomBelow || roomBelow >= roomAbove;
-  const room = Math.max(0, below ? roomBelow : roomAbove);
-  popup.style.maxHeight = `${room}px`;
-  popup.style.left = `${Math.max(margin, Math.min(anchor.left, window.innerWidth - popup.offsetWidth - margin))}px`;
-  popup.style.top = `${
-    below ? anchor.bottom + gap : anchor.top - gap - Math.min(height, room)
-  }px`;
-}
-
-/** Keeps the hovered popup beside its name while the page or a block scrolls. */
-function followPopups(root: HTMLElement) {
-  const follow = () => {
-    const hovered = root.querySelector('.twoslash-hover:hover');
-    if (hovered) {
-      placePopup(hovered);
-    }
-  };
-  document.addEventListener('scroll', follow, { capture: true, passive: true });
-  window.addEventListener('resize', follow, { passive: true });
-  return () => {
-    document.removeEventListener('scroll', follow, { capture: true });
-    window.removeEventListener('resize', follow);
-  };
-}
-
 /** Opens or closes a folded code region. The lines stay in the page either way. */
 function toggleCodeCollapse(target: EventTarget | null) {
   if (!isElement(target)) {
@@ -151,32 +98,9 @@ function selectTab(root: ParentNode, group: string, tab: string) {
   }
 }
 
-function storedTab(group: string) {
-  try {
-    return localStorage.getItem(tabStorageKey(group));
-  } catch {
-    return null;
-  }
-}
-
-/** The tab the URL picks for `group` (`?framework=nextjs`), if it has one. */
-function urlTab(root: ParentNode, group: string) {
-  if (!isUrlTabGroup(group)) {
-    return null;
-  }
-  const value = new URLSearchParams(window.location.search).get(group);
-  for (const link of root.querySelectorAll(`[data-tab-group="${group}"]`)) {
-    const tab = link.getAttribute('data-tab-select');
-    if (tab !== null && tabSlug(tab) === value) {
-      return tab;
-    }
-  }
-  return null;
-}
-
 /**
- * Applies the tab the URL picks, or else the reader's stored choice, like
- * the package manager.
+ * Shows the reader's saved tab in each group, like the package manager. A
+ * group kept in the URL is `FrameworkTabs`'.
  */
 function restoreTabs(root: HTMLElement) {
   const groups = new Set(
@@ -185,9 +109,11 @@ function restoreTabs(root: HTMLElement) {
     ),
   );
   for (const group of groups) {
-    const tab =
-      group === null ? null : (urlTab(root, group) ?? storedTab(group));
-    if (group !== null && tab !== null) {
+    if (group === null || isUrlTabGroup(group)) {
+      continue;
+    }
+    const tab = savedTab(group);
+    if (tab !== null) {
       selectTab(root, group, tab);
     }
   }
@@ -195,96 +121,26 @@ function restoreTabs(root: HTMLElement) {
 
 /**
  * Switches a tab group, and every group of its kind on the page, on click,
- * keeping the tab where it is on screen. A tab kept in the URL is a link:
- * the URL changes in place, and a click that opens a new tab or window
- * (with a modifier key) is left to the browser.
+ * keeping the tab where it is on screen, and saves the reader's pick.
  */
-function clickTab(
-  event: MouseEvent<HTMLElement>,
-  setUrlTab: (group: UrlTabGroup, value: string) => void,
-) {
-  const control = isElement(event.target)
-    ? event.target.closest('[data-tab-select]')
+function clickTab(target: EventTarget | null) {
+  const button = isElement(target)
+    ? target.closest('button[data-tab-select]')
     : null;
-  const group = control?.getAttribute('data-tab-group');
-  const tab = control?.getAttribute('data-tab-select');
-  if (!control || !group || !tab) {
+  const group = button?.getAttribute('data-tab-group');
+  const tab = button?.getAttribute('data-tab-select');
+  if (!button || !group || !tab) {
     return false;
   }
-  if (control.tagName === 'A') {
-    if (
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return true;
-    }
-    event.preventDefault();
-  }
-  activateTab(control, group, tab, setUrlTab);
-  return true;
-}
-
-/**
- * A link tab doesn't activate on Space as a button does, so Space selects it
- * here instead of scrolling the page.
- */
-function pressTab(
-  event: KeyboardEvent<HTMLElement>,
-  setUrlTab: (group: UrlTabGroup, value: string) => void,
-) {
-  if (event.key !== ' ' || !isElement(event.target)) {
-    return;
-  }
-  const control = event.target.closest('a[data-tab-select]');
-  const group = control?.getAttribute('data-tab-group');
-  const tab = control?.getAttribute('data-tab-select');
-  if (!control || !group || !tab) {
-    return;
-  }
-  event.preventDefault();
-  activateTab(control, group, tab, setUrlTab);
-}
-
-/**
- * Points a link tab at the current URL with only its group's value changed,
- * so a tab opened in a new window keeps the rest of the query and the hash.
- */
-function refreshTabHref(target: EventTarget | null) {
-  const link = isElement(target) ? target.closest('a[data-tab-select]') : null;
-  const group = link?.getAttribute('data-tab-group');
-  const tab = link?.getAttribute('data-tab-select');
-  if (!link || !group || !tab) {
-    return;
-  }
-  const url = new URL(window.location.href);
-  url.searchParams.set(group, tabSlug(tab));
-  link.setAttribute('href', url.pathname + url.search + url.hash);
-}
-
-function activateTab(
-  control: Element,
-  group: string,
-  tab: string,
-  setUrlTab: (group: UrlTabGroup, value: string) => void,
-) {
-  const top = control.getBoundingClientRect().top;
+  const top = button.getBoundingClientRect().top;
   selectTab(document, group, tab);
   // Groups of its kind above it can change height.
   window.scrollBy({
     behavior: 'instant',
-    top: control.getBoundingClientRect().top - top,
+    top: button.getBoundingClientRect().top - top,
   });
-  if (isUrlTabGroup(group)) {
-    setUrlTab(group, tabSlug(tab));
-  }
-  try {
-    localStorage.setItem(tabStorageKey(group), tab);
-  } catch {
-    // Storage is blocked: the choice lasts until the next page.
-  }
+  saveTab(group, tab);
+  return true;
 }
 
 function copyCode(target: EventTarget | null) {
@@ -315,18 +171,12 @@ const prose = 'prose prose-neutral max-w-none dark:prose-invert';
 export function DocBody(props: {
   readonly className?: string;
   readonly html: string;
+  /** Its hover popups, which `html` leaves out. */
+  readonly loadPopups: LoadPopups;
 }) {
   const router = useRouter();
-  const navigate = useNavigate();
-  const setUrlTab = (group: UrlTabGroup, value: string) =>
-    void navigate({
-      hash: true,
-      hashScrollIntoView: false,
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({ ...prev, [group]: value }),
-      to: '.',
-    });
+  // The rendered page, once mounted, for the tabs `FrameworkTabs` renders into it.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
   return (
     <div
       className={props.className}
@@ -334,7 +184,7 @@ export function DocBody(props: {
       onClick={(event) => {
         if (
           toggleCodeCollapse(event.target) ||
-          clickTab(event, setUrlTab) ||
+          clickTab(event.target) ||
           copyCode(event.target)
         ) {
           return;
@@ -355,15 +205,7 @@ export function DocBody(props: {
           void router.navigate({ to: href });
         }
       }}
-      onFocus={(event) => {
-        refreshTabHref(event.target);
-      }}
-      onKeyDown={(event) => {
-        pressTab(event, setUrlTab);
-      }}
       onPointerOver={(event) => {
-        placePopup(event.target);
-        refreshTabHref(event.target);
         const href = internalHref(event.target, event.currentTarget);
         if (href) {
           void router.preloadRoute({ to: href });
@@ -374,7 +216,8 @@ export function DocBody(props: {
           return undefined;
         }
         restoreTabs(element);
-        return followPopups(element);
+        setRoot(element);
+        return installTwoslashHovers(element, props.loadPopups);
       }}
     >
       {splitAtDemos(props.html).map((part, index) =>
@@ -396,6 +239,7 @@ export function DocBody(props: {
           </div>
         ),
       )}
+      <FrameworkTabs root={root} />
     </div>
   );
 }
