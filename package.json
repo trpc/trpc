@@ -41,6 +41,7 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@effect/platform-node": "catalog:",
+    "@fast-check/vitest": "0.5.0",
     "@manypkg/cli": "^0.25.1",
     "@tanstack/intent": "catalog:",
     "@testing-library/dom": "catalog:",
