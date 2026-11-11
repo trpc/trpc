@@ -1218,7 +1218,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
             case 'send': {
-              const sent = yield reply(effect.reply);
+              // a reply that can't be built fails as one that can't be sent
+              const built = attempt(() => reply(effect.reply));
+              const sent: SendResult = built.ok ? yield built.value : built;
               value = null;
               event = sent.ok
                 ? { type: 'sent' }

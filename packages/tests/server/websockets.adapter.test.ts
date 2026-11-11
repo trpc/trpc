@@ -1010,6 +1010,41 @@ describe('what the adapter it replaces did', () => {
     await vi.waitFor(() => expect(signal?.aborted).toBe(true));
   });
 
+  test('a subscription whose reply cannot be built ends with an error, and is stopped', async () => {
+    const onError = vi.fn<OnError>();
+    let signal: AbortSignal | undefined;
+    const t = initTRPC.create();
+    const router = t.router({
+      values: t.procedure.subscription(async function* (opts) {
+        signal = opts.signal;
+        // reading its third item, as the check for a tracked value does,
+        // throws
+        yield Object.defineProperty([1, 2], 2, {
+          get() {
+            throw new Error('Cannot read');
+          },
+        });
+      }),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: { onError },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    socket.ws.send(subscribeTo('values'));
+
+    await socket.received(3);
+    expect(socket.responses()).toMatchObject([
+      { id: 1, result: { type: 'started' } },
+      { id: 1, error: { message: 'Cannot read' } },
+      { id: 1, result: { type: 'stopped' } },
+    ]);
+    expect(signal?.aborted).toBe(true);
+    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+      'Cannot read',
+    ]);
+  });
+
   test('a socket error does not stop the connection from serving frames', async () => {
     const onError = vi.fn<OnError>();
     const t = initTRPC.create();
