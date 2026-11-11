@@ -561,7 +561,7 @@ test('effect schema', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(Schema.standardSchemaV1(Schema.Struct({ text: Schema.String })))
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ text: Schema.String })))
       .query((opts) => {
         const { input } = opts;
         expectTypeOf(input).toEqualTypeOf<{ readonly text: string }>();
@@ -578,9 +578,7 @@ test('effect schema', async () => {
   await expect(
     // @ts-expect-error this only accepts {text: string}
     ctx.client.num.query({ text: 123 }),
-  ).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Expected string, actual 123]`,
-  );
+  ).rejects.toMatchInlineSnapshot(`[TRPCClientError: Expected string]`);
 });
 
 test('runtypes', async () => {

@@ -9,7 +9,6 @@ import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
 import type { TRPC_ERROR_CODE_KEY, TRPCErrorShape, TRPCResponse } from '../rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { splitEffects, step } from '../stateMachine/stateMachine';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
@@ -116,13 +115,14 @@ function reportError(
  * the ones that answer, for the caller to run.
  */
 function send(scope: RequestScope, event: RequestEvent) {
-  const { state, effects } = step(requestMachine, scope.state, event);
+  const { state, effects } = requestMachine.transition(scope.state, event);
   scope.state = state;
-  const { matching: reports, rest } = splitEffects(effects, ['reportError']);
-  for (const report of reports) {
-    reportError(scope, report.error, report.source);
+  for (const effect of effects) {
+    if (effect.type === 'reportError') {
+      reportError(scope, effect.error, effect.source);
+    }
   }
-  return rest;
+  return effects.filter((effect) => effect.type !== 'reportError');
 }
 
 /**
@@ -403,12 +403,11 @@ function applyResponseMeta(
   headers: Headers,
   results: ResponseResults,
 ): number {
-  let status = results ? getHTTPStatusCode(results.data, results.errors) : 200;
   const effects = send(scope, { type: 'describe' });
-  for (const _ of splitEffects(effects, ['callResponseMeta']).matching) {
-    status = callResponseMeta(scope, headers, results);
+  if (effects.some((effect) => effect.type === 'callResponseMeta')) {
+    return callResponseMeta(scope, headers, results);
   }
-  return status;
+  return results ? getHTTPStatusCode(results.data, results.errors) : 200;
 }
 
 /** Starts the headers of the response being built, on top of the request's */
@@ -673,12 +672,12 @@ function errorResponse(scope: RequestScope, error: TRPCError): Response {
   };
   // a response can only fail before it's returned, so the error replaces it
   const effects = send(scope, { type: 'failed', error, source });
-  const answer = splitEffects(effects, ['respondWithError']).matching[0]!;
+  const answer = effects.find((effect) => effect.type === 'respondWithError');
 
   const data: TRPCResponse = { error: errorShape(scope, error, source) };
   const body = JSON.stringify(transformTRPCResponse(scope.config, data));
   const results = { data: [data], errors: [error] };
-  if (answer.callResponseMeta) {
+  if (answer?.callResponseMeta) {
     const headers = answer.headers ?? requestHeaders(factsOf(scope));
     const status = callResponseMeta(scope, headers, results);
     return new Response(body, { status, headers });

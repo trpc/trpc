@@ -54,7 +54,7 @@ export default function IndexPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
-                className="flex-1 rounded bg-gray-700 px-4 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 rounded bg-gray-700 px-4 py-2 text-white outline-hidden focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <p className="font-mono text-blue-400">

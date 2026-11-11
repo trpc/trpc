@@ -1,11 +1,12 @@
-import { check, coverage, simulateMachine } from './___machineModel';
+import {
+  check,
+  coverage,
+  sampleTransitions,
+  simulateMachine,
+  stateDiagram,
+} from './___machineModel';
 import { TRPCError } from '@trpc/server';
 import type { TRPCRequestInfo } from '@trpc/server/http';
-import {
-  sampleTransitions,
-  stateDiagram,
-  step,
-} from '@trpc/server/unstable-core-do-not-import';
 import type {
   RequestEffect,
   RequestEvent,
@@ -177,7 +178,7 @@ test('the diagram matches the transitions', async () => {
     states,
     events,
     next: (state, e) => {
-      const after = step(requestMachine, state, e).state;
+      const after = requestMachine.transition(state, e).state;
       return after === state ? null : after;
     },
     stateName: (state) => state.status,

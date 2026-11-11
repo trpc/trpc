@@ -1,5 +1,11 @@
-import type { RedirectType } from 'next/navigation.js';
+import type { redirect as nextRedirect } from 'next/navigation.js';
 import { TRPCError } from '../../@trpc/server';
+
+/**
+ * Taken from `redirect()`'s signature: Next 15 exports `RedirectType` as an
+ * enum, Next 16 only as a value, typed `'push' | 'replace'`.
+ */
+type RedirectType = NonNullable<Parameters<typeof nextRedirect>[1]>;
 
 /**
  * The error `redirect()` returns, which `nextAppDirCaller` turns into a

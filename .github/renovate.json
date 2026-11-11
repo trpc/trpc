@@ -1,7 +1,20 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", ":preserveSemverRanges"],
-  "ignorePaths": ["**/node_modules/**", "**/examples/**"],
+  "extends": [
+    "config:recommended",
+    ":preserveSemverRanges",
+    "group:allNonMajor",
+    "schedule:weekly"
+  ],
+  "minimumReleaseAge": "7 days",
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "vulnerabilityAlerts": {
+    "schedule": ["at any time"],
+    "minimumReleaseAge": null
+  },
+  "ignorePaths": ["**/node_modules/**"],
   "ignoreDeps": ["@swc/core", "autofix-ci/action"],
   "updateInternalDeps": true,
   "nvm": {
@@ -18,6 +31,24 @@
     {
       "matchPackageNames": ["pnpm"],
       "enabled": false
+    },
+    {
+      "description": "Examples get minor and patch updates only; move them across majors by hand",
+      "matchFileNames": ["examples/**"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "@trpc/react-query tests against zod 3 through this alias",
+      "matchFileNames": ["packages/react-query/package.json"],
+      "matchDepNames": ["zod"],
+      "allowedVersions": "<4"
     }
   ]
 }

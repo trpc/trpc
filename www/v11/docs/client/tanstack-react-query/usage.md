@@ -224,6 +224,48 @@ const query = useQuery(
 
 The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `fetchQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `invalidateQueries`, etc.
 
+#### Streaming responses {#streaming}
+
+A query that returns an async generator streams with [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink#generators). `data` is an array of the chunks so far, through TanStack Query's [`experimental_streamedQuery`](https://tanstack.com/query/latest/docs/framework/react/reference/functions/experimental_streamedQuery):
+
+- The query is `pending` until the first chunk, then `success`, and `fetching` until the last chunk.
+- When a refetch's response arrives, `data` is cleared and the query is `pending` until its first chunk.
+- A refetch or `queryClient.cancelQueries()` stops the older stream: its chunks no longer reach the cache, and its request is aborted at its next chunk.
+- Unmounting doesn't stop the stream, unless you set `trpc: { abortOnUnmount: true }`.
+
+```tsx twoslash
+// @jsx: react-jsx
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  numbers: t.procedure.query(async function* () {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server';
+export const { useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Numbers() {
+  const trpc = useTRPC();
+  const query = useQuery(trpc.numbers.queryOptions());
+  //    ^?
+  return <pre>{query.data?.join(', ')}</pre>;
+}
+```
+
 ### `infiniteQueryOptions` - querying infinite data {#infiniteQueryOptions}
 
 Available for all query procedures that take a cursor input. Provides a type-safe wrapper around [Tanstack's `infiniteQueryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
@@ -263,18 +305,36 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
 }
 ```
 
-### `unstable_$prefetch`, `unstable_$ensure` and `unstable_$fromHandle` - passing queries as handles {#handles}
+### `loadHandles` and `fromHandle` - passing queries as handles {#handles}
 
-On the server or in a route loader, `trpc.x.unstable_$prefetch(input)`, `await trpc.x.unstable_$ensure(input)` and `await trpc.x.unstable_$fetch(input)` start a query and return a serializable handle. Components read it with `trpc.unstable_$fromHandle(handle)`, which returns the same options as `trpc.x.queryOptions(input)`. Infinite queries have `unstable_$prefetchInfinite`, `unstable_$ensureInfinite` and `unstable_$fetchInfinite`, and their handles give the same options as `trpc.x.infiniteQueryOptions(input)`. Type props with `unstable_inferQueryHandle` and `unstable_inferInfiniteQueryHandle`.
+On the server or in a route loader, list the queries as entries and load them in one call with the proxy from `createTRPCOptionsProxy`:
 
-- `unstable_$prefetch` doesn't wait. The reader shows a loading state until the data streams in: a `Suspense` fallback with `useSuspenseQuery`, or `status: 'pending'` with `useQuery`.
-- `unstable_$ensure` waits until the data is in the cache, so the reader shows the data on its first render.
-- Handles carry no data, whichever method made them. If the cache loses the data, for example after `queryClient.resetQueries()`, the reader loads it again, so give it a loading state either way. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
-- `unstable_$fetch` also waits, and refetches stale data before it resolves.
-- Methods with a `$` are tRPC helpers built on TanStack Query. Each one maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
+```ts
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+
+const [handles, data] = await loadHandles(trpc, {
+  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+  post: ensureEntry(trpc.post.byId, { id }),
+});
+```
+
+The load starts every entry before it waits for any, and resolves to a serializable handle for every entry and the data of the entries it waited for. Components read a handle with `fromHandle(trpc, handle)`, which returns the same options as `trpc.x.queryOptions(input)`, or `trpc.x.infiniteQueryOptions(input)` for an infinite handle. Type props with `inferQueryHandle` and `inferInfiniteQueryHandle`.
+
+- `prefetchEntry` doesn't wait. The reader shows a loading state until the data streams in: a `Suspense` fallback with `useSuspenseQuery`, or `status: 'pending'` with `useQuery`.
+- `ensureEntry` waits until the data is in the cache, so the reader shows the data on its first render.
+- `fetchEntry` also waits, and refetches stale data before it resolves.
+- For infinite queries, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`.
+- When an ensure or fetch entry fails, the load rejects with a `TRPCEntryError` naming the entry. `isTRPCEntryError(error, trpc.post.byId)` checks which procedure failed, and `loadHandlesSettled` returns each entry's error as a value instead: see [Errors](/docs/client/tanstack-react-query/handles#errors-ensure).
+- For an input only known during render, read the query directly with `trpc.x.queryOptions(input)`.
+- Handles carry no data. If the cache loses the data, for example after `queryClient.resetQueries()`, the reader loads it again, so give it a loading state either way. See [When the cache loses the data](/docs/client/tanstack-react-query/handles#cache-loses-data).
+- Each entry maps to a single TanStack Query call: see [TanStack Query equivalents](/docs/client/tanstack-react-query/handles#tanstack-equivalents).
 
 :::info
-We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
+The handle APIs are plain functions from `@trpc/tanstack-react-query/unstable-handles`. The `unstable-` in the path means they're new and may change, but you're safe to use them! [Read more](/docs/faq#unstable).
 :::
 
 See [Prefetching with handles](/docs/client/tanstack-react-query/handles).

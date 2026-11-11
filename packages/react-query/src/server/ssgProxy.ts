@@ -39,7 +39,7 @@ import type {
 } from '../shared';
 import { getQueryClient, getQueryType } from '../shared';
 
-type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
+export type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   /**
    * Call this router directly, without HTTP.
    */
@@ -50,18 +50,18 @@ type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   ctx: inferRouterContext<TRouter>;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
-interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
+export interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   /**
    * Call procedures through this tRPC client.
    */
   client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
-type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
+export type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
   CreateTRPCReactQueryClientConfig &
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
-type SSGFns =
+export type SSGFns =
   | 'queryOptions'
   | 'infiniteQueryOptions'
   | 'fetch'
@@ -72,7 +72,7 @@ type SSGFns =
 /**
  * @internal
  */
-type DecoratedProcedureSSGRecord<
+export type DecoratedProcedureSSGRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {

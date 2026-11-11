@@ -130,7 +130,12 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           inputs = JSON.parse(queryInput);
         }
       } else {
-        inputs = await req.json();
+        // `httpLink` sends no body when the input is `undefined`, so treat an
+        // empty body like a GET without `?input=`
+        const body = await req.text();
+        if (body) {
+          inputs = JSON.parse(body);
+        }
       }
       if (inputs === undefined) {
         return emptyObject();

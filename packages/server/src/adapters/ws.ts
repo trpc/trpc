@@ -213,12 +213,19 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
 
+    /** Releases the id after cleanup, cancelling closed-socket work on every exit. */
     function registerSubscription(
       id: number | string,
       subscription: AbortController,
     ) {
       clientSubscriptions.set(id, subscription);
       return makeResource({}, () => {
+        if (
+          client.readyState !== WEBSOCKET_OPEN &&
+          !subscription.signal.aborted
+        ) {
+          subscription.abort();
+        }
         clientSubscriptions.delete(id);
       });
     }
@@ -228,7 +235,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       handleKeepAlive(client, pingMs, pongWaitMs);
     }
 
+    /** Drops replies once closing starts, before the close event cancels work. */
     function respond(untransformedJSON: TRPCResponseMessage) {
+      if (client.readyState !== WEBSOCKET_OPEN) return;
       client.send(
         encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
@@ -405,6 +414,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? null
         : createCtxPromise(() => null);
 
+    /** Runs a decoded call; deferred subscription admission must respect disconnects. */
     async function handleRequest(
       msg: TRPCClientOutgoingMessage,
       batchIndex: number,
@@ -492,6 +502,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
 
+      /** Keeps a subscription owned until admission, iteration and disposal settle. */
       const execute = async () => {
         // Registered before any await so that a stop or a disconnect during
         // context creation or the procedure call cancels the subscription.
@@ -507,7 +518,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           throw res.error;
         }
 
-        if (abortController.signal.aborted) {
+        if (
+          abortController.signal.aborted ||
+          (type === 'subscription' && client.readyState !== WEBSOCKET_OPEN)
+        ) {
           return;
         }
 
@@ -550,6 +564,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
+        // Closing precedes the close event: cancel signal-owned work before
+        // releasing the id or waiting for cleanup. Conversion would subscribe
+        // immediately, so leave a late observable untouched.
+        if (client.readyState !== WEBSOCKET_OPEN) {
+          abort();
+          if (isObservable(result)) return;
+        }
+
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
@@ -557,7 +579,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         // A failed iterator cleanup is reported to the server only: the
         // client still gets `stopped`, so a subscription that completed or
         // was stopped doesn't turn into a failed one.
-        if (abortController.signal.aborted) {
+        if (
+          abortController.signal.aborted ||
+          client.readyState !== WEBSOCKET_OPEN
+        ) {
+          abort();
           try {
             // dispose the iterator without consuming it
             await using _iterator = iteratorResource(iterable);

@@ -1,5 +1,7 @@
+import { RedirectType } from 'next/navigation';
 import { experimental_trpcMiddleware, initTRPC } from '../@trpc/server';
 import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
+import { redirect, TRPCRedirectError } from './next-app-dir/redirect';
 
 test('experimental caller', async () => {
   const t = initTRPC.create();
@@ -90,4 +92,20 @@ test('with path extractor', async () => {
       expect.stringContaining('hello took'),
     );
   }
+});
+
+test('redirect accepts the redirect types of the installed Next.js', () => {
+  // Next 15 types these as an enum, Next 16 as 'push' | 'replace'; tRPC takes
+  // whichever the installed `next/navigation` uses. The tests run on Next 16,
+  // so the bare string is accepted (Next 15's own `redirect()` rejects it)
+  const viaConst = redirect('/a', RedirectType.replace) as unknown;
+  assert(viaConst instanceof TRPCRedirectError);
+  expect(viaConst.args).toEqual(['/a', 'replace']);
+
+  const viaString = redirect('/b', 'push') as unknown;
+  assert(viaString instanceof TRPCRedirectError);
+  expect(viaString.args).toEqual(['/b', 'push']);
+
+  // @ts-expect-error not a Next.js redirect type
+  redirect('/c', 'bogus');
 });

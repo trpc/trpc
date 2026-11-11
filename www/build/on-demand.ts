@@ -1,12 +1,14 @@
 /**
  * What's rendered on request instead of in the build: a URL whose query
  * turns on experiments (`?flags=`, `src/flags.ts`) or searches (`/search?q=`,
- * `src/pages.ts`), and the pages' social cards (`/og/*.png`,
- * `src/routes/og.$.ts`). The build prerenders each page once, without a
+ * `src/pages.ts`), and the pages' social cards (`/og/*`,
+ * `src/og/serve.ts`). The build prerenders each page once, without a
  * query; every combination of flags is a different page, so the host sends
  * those requests to a function running the site's server build, and its CDN
- * caches each URL's response until the next deploy. Everything else is the
- * prerendered file.
+ * caches each URL's response until the next deploy. Each page is
+ * prerendered, then regenerated daily (`writePageRevalidation`), for the
+ * day it names its social card for. Everything else is the prerendered
+ * file.
  */
 import { Effect, FileSystem, Path } from 'effect';
 import type { Plugin } from 'vite';
@@ -17,6 +19,35 @@ import type { VercelRoute } from './old-routes.ts';
 
 /** The function's name, and the path routes rewrite to. */
 export const onDemandFunction = '_ssr';
+
+/** The home page's function's name: the path `/` is served from. */
+export const homeFunction = 'index';
+
+/**
+ * How old a page gets before it's regenerated, in seconds: it names its
+ * social card for the UTC day (`cardDay` in `src/card-day.ts`), and a card
+ * a day or so old is fine, as an old day's URL redirects to today's.
+ */
+export const pageRevalidateSeconds = 86_400;
+
+/**
+ * The function serving the page prerendered as `file`: `docs/a` for
+ * `docs/a/index.html`, `homeFunction` for `index.html`, and none for any
+ * other file.
+ */
+export const pageFunction = (file: string) =>
+  file === 'index.html'
+    ? homeFunction
+    : file.endsWith('/index.html')
+      ? file.slice(0, -'/index.html'.length)
+      : undefined;
+
+/** A page's prerendered file, beside its function's config. */
+export const fallbackSuffix = '.prerender-fallback.html';
+
+/** The page `pageFunction` serves as `name`, as its prerendered file. */
+export const functionPage = (name: string) =>
+  name === homeFunction ? 'index.html' : `${name}/index.html`;
 
 /**
  * The query parameter a rewrite carries the requested path in: the function
@@ -44,8 +75,8 @@ export const flagsValue = (ids: ReadonlyArray<string> = experimentIds) => {
 /** A page's path: not an asset, nor a file with an extension. */
 const pagePath = '^(/(?!assets/)[^.]*)$';
 
-/** The social cards' paths (`ogImagePath`). */
-const ogImagePaths = '^(/og/.+\\.png)$';
+/** The social cards' paths: anything under `/og/` (`src/og/version.ts`). */
+const ogImagePaths = '^(/og/.+)$';
 
 /** Routes sending the flagged requests to the function, before the files. */
 export const onDemandRoutes = (
@@ -72,8 +103,7 @@ export const onDemandRoutes = (
 /**
  * The function's entry: a Node.js handler that renders the requested path
  * with the server build's `fetch`, and lets the CDN cache it like a
- * prerendered page, or as long as the response says (the home page's social
- * card, with live numbers).
+ * prerendered page, or as long as the response says (a social card).
  */
 export const handlerSource = `import { Readable } from 'node:stream';
 import server from './server/server.js';
@@ -84,6 +114,8 @@ export default async function handler(req, res) {
   if (pathname !== null) {
     url.pathname = pathname;
     url.searchParams.delete(${JSON.stringify(pathParam)});
+  } else if (url.pathname === '/${homeFunction}') {
+    url.pathname = '/';
   }
   const headers = new Headers();
   for (const [name, value] of Object.entries(req.headers)) {
@@ -152,6 +184,54 @@ export const writeOnDemandFunction = Effect.fn('writeOnDemandFunction')(
         null,
         2,
       )}\n`,
+    );
+  },
+);
+
+/**
+ * Serves each page prerendered in `<output>/static`, as `files` lists
+ * them, from `onDemandFunction`'s code as Vercel's prerender function
+ * (ISR): the prerendered page first, then regenerated in the background
+ * once it's `pageRevalidateSeconds` old, while the old one is served.
+ * Queries don't make copies of it (`allowQuery`), so no URL makes it
+ * render more often.
+ */
+export const writePageRevalidation = Effect.fn('writePageRevalidation')(
+  function* (output: string, files: ReadonlyArray<string>) {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const functions = path.join(output, 'functions');
+    yield* Effect.forEach(
+      files.flatMap((file) => {
+        const name = pageFunction(file);
+        return name === undefined ? [] : [{ file, name }];
+      }),
+      ({ file, name }) =>
+        Effect.gen(function* () {
+          const at = path.join(functions, name);
+          const fallback = `${path.basename(name)}${fallbackSuffix}`;
+          yield* fs.makeDirectory(path.dirname(at), { recursive: true });
+          yield* fs.symlink(
+            path.relative(
+              path.dirname(at),
+              path.join(functions, `${onDemandFunction}.func`),
+            ),
+            `${at}.func`,
+          );
+          yield* fs.rename(
+            path.join(output, 'static', file),
+            path.join(path.dirname(at), fallback),
+          );
+          yield* fs.writeFileString(
+            `${at}.prerender-config.json`,
+            `${JSON.stringify(
+              { allowQuery: [], expiration: pageRevalidateSeconds, fallback },
+              null,
+              2,
+            )}\n`,
+          );
+        }),
+      { concurrency: 32 },
     );
   },
 );

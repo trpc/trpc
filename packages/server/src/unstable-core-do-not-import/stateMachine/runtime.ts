@@ -17,7 +17,8 @@ export interface MachineRuntime<TState, TEvent> extends AsyncDisposable {
   readonly send: (event: TEvent) => void;
   /**
    * Reads `source` until it ends or the runtime is disposed. Every source is
-   * read by the runtime's one loop, in the order values arrive, and
+   * read by the runtime's one loop: one source's values in their order, and
+   * values from different sources in the order their reads complete.
    * `receive` gets each value when its turn comes; it usually calls `send`,
    * or drops values that no longer count. The runtime lets go of a value
    * once `receive` has run, so a source should too: hold the current value
@@ -34,7 +35,7 @@ export interface MachineRuntime<TState, TEvent> extends AsyncDisposable {
   ): void;
   /** Disposes `resource` with the runtime, newest first, and returns it. */
   use<TResource extends Disposable>(resource: TResource): TResource;
-  /** Calls `listener` after each step, once its effects ran. */
+  /** Calls `listener` after each step, once its effects ran. Ignored once disposed. */
   subscribe(listener: (state: TState) => void): Unsubscribable;
 }
 
@@ -44,11 +45,16 @@ export interface MachineRuntimeOptions<
   TEffect extends { readonly type: string },
 > {
   machine: StateMachine<TState, TEvent, TEffect>;
-  /** Runs one effect. A throw goes to `onError`; the other effects still run. */
+  /**
+   * Runs one effect. A throw, or a promise it returns that rejects, goes to
+   * `onError`; the other effects still run. Once an effect disposes the
+   * runtime, the rest of its step's effects and listeners don't run.
+   */
   run: (effect: TEffect, runtime: MachineRuntime<TState, TEvent>) => void;
   /**
    * Gets whatever an effect, a listener, a `receive`, a disposal or the
-   * machine itself throws. The runtime carries on.
+   * machine itself throws. The runtime carries on. A throw from `onError`
+   * itself is rethrown asynchronously, so it can't stop the runtime midway.
    */
   onError: (error: unknown) => void;
 }
@@ -86,28 +92,40 @@ export function createMachineRuntime<
   const listeners = new Set<(state: TState) => void>();
   const resources: Disposable[] = [];
 
-  const stopping = createDeferred();
   /** A value for the loop: a source's value and its `receive`, or the stop. */
   const stop = Symbol();
-  const sources = mergeAsyncIterables<(() => void) | typeof stop>();
-  // Holds the merged stream open while no other source is, and stops it.
-  sources.add(
-    (async function* (): AsyncGenerator<typeof stop> {
-      await stopping.promise;
-      yield stop;
-    })(),
-  );
+  type Received = (() => void) | typeof stop;
+  /**
+   * The loop that reads every source, started by the first `intake`: a
+   * machine that reads none, such as one driven by listeners and timers,
+   * doesn't pay for it.
+   */
+  let reader: ReturnType<typeof startReader> | null = null;
+
+  function report(error: unknown) {
+    try {
+      opts.onError(error);
+    } catch (thrown) {
+      setTimeout(() => {
+        throw thrown;
+      });
+    }
+  }
 
   function attempt(fn: () => void) {
     try {
-      fn();
+      const result: unknown = fn();
+      if (result instanceof Promise) result.catch(report);
     } catch (error) {
-      opts.onError(error);
+      report(error);
     }
   }
 
   function runEffects(effects: readonly TEffect[]) {
-    for (const effect of effects) attempt(() => opts.run(effect, runtime));
+    for (const effect of effects) {
+      if (disposed) return;
+      attempt(() => opts.run(effect, runtime));
+    }
   }
 
   function step(event: TEvent) {
@@ -115,12 +133,15 @@ export function createMachineRuntime<
     try {
       result = opts.machine.transition(state, event);
     } catch (error) {
-      opts.onError(error);
+      report(error);
       return;
     }
     state = result.state;
     runEffects(result.effects);
-    for (const listener of [...listeners]) attempt(() => listener(state));
+    for (const listener of [...listeners]) {
+      if (disposed) return;
+      attempt(() => listener(state));
+    }
   }
 
   function drain() {
@@ -132,19 +153,31 @@ export function createMachineRuntime<
     running = false;
   }
 
-  const loop = (async () => {
-    // Not `for await`: while it awaits, V8 keeps the last value of a
-    // `for await` loop alive, and with it the value `receive` got. The
-    // thunk is cleared once it has run.
-    await using iterator = iteratorResource(sources);
-    let receive: IteratorResult<(() => void) | typeof stop> | null;
-    while (true) {
-      receive = await iterator.next();
-      if (receive.done || receive.value === stop) break;
-      if (!disposed) attempt(receive.value);
-      receive = null;
-    }
-  })().catch(opts.onError);
+  function startReader() {
+    const stopping = createDeferred();
+    const sources = mergeAsyncIterables<Received>();
+    // Holds the merged stream open while no other source is, and stops it.
+    sources.add(
+      (async function* (): AsyncGenerator<typeof stop> {
+        await stopping.promise;
+        yield stop;
+      })(),
+    );
+    const loop = (async () => {
+      // Not `for await`: while it awaits, V8 keeps the last value of a
+      // `for await` loop alive, and with it the value `receive` got. The
+      // thunk is cleared once it has run.
+      await using iterator = iteratorResource(sources);
+      let receive: IteratorResult<Received> | null;
+      while (true) {
+        receive = await iterator.next();
+        if (receive.done || receive.value === stop) break;
+        if (!disposed) attempt(receive.value);
+        receive = null;
+      }
+    })().catch(report);
+    return { sources, stopping, loop };
+  }
 
   const runtime: MachineRuntime<TState, TEvent> = makeAsyncResource(
     {
@@ -161,7 +194,8 @@ export function createMachineRuntime<
         receive: (value: TValue) => void,
       ) {
         if (disposed) return;
-        sources.add(mapSource(source, receive));
+        reader ??= startReader();
+        reader.sources.add(mapSource(source, receive));
       },
       use<TResource extends Disposable>(resource: TResource) {
         if (disposed) {
@@ -172,6 +206,7 @@ export function createMachineRuntime<
         return resource;
       },
       subscribe(listener: (state: TState) => void) {
+        if (disposed) return { unsubscribe: () => false };
         listeners.add(listener);
         return { unsubscribe: () => listeners.delete(listener) };
       },
@@ -184,8 +219,8 @@ export function createMachineRuntime<
       for (const resource of resources.splice(0).reverse()) {
         attempt(() => disposeNow(resource));
       }
-      stopping.resolve();
-      await loop;
+      reader?.stopping.resolve();
+      await reader?.loop;
     },
   );
 
@@ -259,10 +294,12 @@ export function disposeNow(resource: Disposable) {
  * the one it replaces, and `delete` the one it removes. `release` hands an
  * entry back without disposing it, such as a subscription that completed by
  * itself and must not be aborted. Disposing the map disposes them all,
- * newest first.
+ * newest first, and then throws what they threw; a disposed map disposes
+ * whatever it is given.
  */
 export function createResourceMap<TKey, TResource extends Disposable>() {
   const map = new Map<TKey, TResource>();
+  let disposed = false;
   return makeResource(
     {
       get: (key: TKey) => map.get(key),
@@ -272,7 +309,13 @@ export function createResourceMap<TKey, TResource extends Disposable>() {
         return map.size;
       },
       set(key: TKey, resource: TResource) {
+        if (disposed) {
+          disposeNow(resource);
+          return;
+        }
         const previous = map.get(key);
+        // A replacement is the newest entry, so it is disposed first.
+        map.delete(key);
         map.set(key, resource);
         if (previous && previous !== resource) disposeNow(previous);
       },
@@ -294,9 +337,19 @@ export function createResourceMap<TKey, TResource extends Disposable>() {
       },
     },
     () => {
+      disposed = true;
       const all = [...map.values()].reverse();
       map.clear();
-      for (const resource of all) disposeNow(resource);
+      const errors: unknown[] = [];
+      for (const resource of all) {
+        try {
+          disposeNow(resource);
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+      if (errors.length === 1) throw errors[0];
+      if (errors.length > 1) throw new AggregateError(errors);
     },
   );
 }

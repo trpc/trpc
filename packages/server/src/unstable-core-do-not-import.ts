@@ -39,7 +39,6 @@ export * from './unstable-core-do-not-import/stream/tracked';
 export * from './unstable-core-do-not-import/stream/utils/createDeferred';
 export * from './unstable-core-do-not-import/stream/utils/disposable';
 export * from './unstable-core-do-not-import/stream/utils/asyncIterable';
-export * from './unstable-core-do-not-import/stateMachine/diagram';
 export * from './unstable-core-do-not-import/stateMachine/runtime';
 export * from './unstable-core-do-not-import/stateMachine/stateMachine';
 export * from './unstable-core-do-not-import/stateMachine/timers';
