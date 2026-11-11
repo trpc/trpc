@@ -1160,6 +1160,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       // see "Keeping values collectable"
       let value: unknown = null;
       let step: SubscriptionStep | null = null;
+      let built: Result<TRPCResponseMessage> | null = null;
 
       // `Unpromise.race` rather than `Promise.race`: `stop` lives as long
       // as the subscription, and `Promise.race` would add a reaction to it
@@ -1219,8 +1220,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             }
             case 'send': {
               // a reply that can't be built fails as one that can't be sent
-              const built = attempt(() => reply(effect.reply));
+              built = attempt(() => reply(effect.reply));
               const sent: SendResult = built.ok ? yield built.value : built;
+              // the reply holds the value too
+              built = null;
               value = null;
               event = sent.ok
                 ? { type: 'sent' }
