@@ -134,26 +134,62 @@ class MaxDepthError extends Error {
   }
 }
 
+/**
+ * Yields the stream's lines, each serialized where it was made, so a value
+ * that can't be serialized fails only the promise or iterable it belongs to
+ */
 async function* createBatchStreamProducer(
   opts: JSONLProducerOptions,
-): AsyncIterable<Head | ChunkData | typeof PING_SYM, void> {
+): AsyncIterable<string | typeof PING_SYM, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const mergedIterables = mergeAsyncIterables<ChunkData>();
+  const mergedIterables = mergeAsyncIterables<string>();
+  /**
+   * The async values found while a chunk is encoded. They only start once
+   * the chunk's line is made: the client never hears of the ones in a chunk
+   * that can't be serialized, so those are discarded instead.
+   */
+  type FoundAsync = { start: () => void; discard: () => void };
+  let found: FoundAsync[] = [];
+
+  /** Makes a chunk's line, then starts the async values found in it */
+  function line(encodeChunk: () => Head | ChunkData): string {
+    const children: FoundAsync[] = (found = []);
+    try {
+      const chunk = encodeChunk();
+      const text = JSON.stringify(
+        opts.serialize ? opts.serialize(chunk) : chunk,
+      );
+      for (const child of children) {
+        child.start();
+      }
+      return text;
+    } catch (cause) {
+      for (const child of children) {
+        child.discard();
+      }
+      throw cause;
+    }
+  }
+
   function registerAsync(
-    callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
+    callback: (idx: ChunkIndex) => AsyncIterable<string, void>,
+    discard: () => void,
   ) {
     const idx = counter++ as ChunkIndex;
-
-    const iterable = callback(idx);
-    mergedIterables.add(iterable);
-
+    found.push({ start: () => mergedIterables.add(callback(idx)), discard });
     return idx;
   }
 
   function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
+    // nothing reads a discarded promise, so its rejection is handled here
+    const discard = () => {
+      promise.catch(() => {
+        // its call already failed with the chunk's error
+      });
+    };
     return registerAsync(async function* (idx) {
       const error = checkMaxDepth(path);
       if (error) {
@@ -166,21 +202,29 @@ async function* createBatchStreamProducer(
       }
       try {
         const next = await promise;
-        yield [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
+        yield line(() => [idx, PROMISE_STATUS_FULFILLED, encode(next, path)]);
       } catch (cause) {
         opts.onError?.({ error: cause, path });
-        yield [
+        yield line(() => [
           idx,
           PROMISE_STATUS_REJECTED,
           opts.formatError?.({ error: cause, path }),
-        ];
+        ]);
       }
-    });
+    }, discard);
   }
   function encodeAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
+    // a discarded iterable is disposed without being consumed
+    const discard = () => {
+      run(async () => {
+        await using _iterator = iteratorResource(iterable);
+      }).catch((cause) => {
+        opts.onError?.({ error: cause, path });
+      });
+    };
     return registerAsync(async function* (idx) {
       const error = checkMaxDepth(path);
       if (error) {
@@ -192,21 +236,29 @@ async function* createBatchStreamProducer(
         while (true) {
           const next = await iterator.next();
           if (next.done) {
-            yield [idx, ASYNC_ITERABLE_STATUS_RETURN, encode(next.value, path)];
+            yield line(() => [
+              idx,
+              ASYNC_ITERABLE_STATUS_RETURN,
+              encode(next.value, path),
+            ]);
             break;
           }
-          yield [idx, ASYNC_ITERABLE_STATUS_YIELD, encode(next.value, path)];
+          yield line(() => [
+            idx,
+            ASYNC_ITERABLE_STATUS_YIELD,
+            encode(next.value, path),
+          ]);
         }
       } catch (cause) {
         opts.onError?.({ error: cause, path });
 
-        yield [
+        yield line(() => [
           idx,
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
-        ];
+        ]);
       }
-    });
+    }, discard);
   }
   function checkMaxDepth(path: (string | number)[]) {
     if (opts.maxDepth && path.length > opts.maxDepth) {
@@ -259,15 +311,15 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  const newHead: Head = emptyObject();
-  for (const [key, item] of Object.entries(data)) {
-    newHead[key] = encode(item, [key]);
-  }
+  yield line(() => {
+    const newHead: Head = emptyObject();
+    for (const [key, item] of Object.entries(data)) {
+      newHead[key] = encode(item, [key]);
+    }
+    return newHead;
+  });
 
-  yield newHead;
-
-  let iterable: AsyncIterable<ChunkData | typeof PING_SYM, void> =
-    mergedIterables;
+  let iterable: AsyncIterable<string | typeof PING_SYM, void> = mergedIterables;
   if (opts.pingMs) {
     iterable = withPing(mergedIterables, opts.pingMs);
   }
@@ -281,32 +333,11 @@ async function* createBatchStreamProducer(
  * @see https://jsonlines.org/
  */
 export function jsonlStreamProducer(opts: JSONLProducerOptions) {
-  let stream = readableStreamFrom(createBatchStreamProducer(opts));
-
-  const { serialize } = opts;
-  if (serialize) {
-    stream = stream.pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          if (chunk === PING_SYM) {
-            controller.enqueue(PING_SYM);
-          } else {
-            controller.enqueue(serialize(chunk));
-          }
-        },
-      }),
-    );
-  }
-
-  return stream
+  return readableStreamFrom(createBatchStreamProducer(opts))
     .pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          if (chunk === PING_SYM) {
-            controller.enqueue(' ');
-          } else {
-            controller.enqueue(JSON.stringify(chunk) + '\n');
-          }
+          controller.enqueue(chunk === PING_SYM ? ' ' : chunk + '\n');
         },
       }),
     )

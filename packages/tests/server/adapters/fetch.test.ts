@@ -420,7 +420,7 @@ test.each([
       },
       onError(opts) {
         if (opts.path === 'streamErrors') {
-          // a throwing `onError` makes the SSE stream itself error
+          // a throwing `onError` ends the SSE stream early
           throw new Error('onError failed');
         }
       },
@@ -430,8 +430,6 @@ test.each([
       const reader = res.body.getReader();
       await reader.read();
       await reader.cancel();
-    } else if (path === 'streamErrors') {
-      await expect(res.text()).rejects.toThrow();
     } else {
       await res.text();
     }

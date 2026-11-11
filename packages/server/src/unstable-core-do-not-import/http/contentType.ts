@@ -1,7 +1,10 @@
 import { TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
+import type { Result } from '../types';
 import { emptyObject, isObject } from '../utils';
+import type { Outcome } from './outcome';
+import { fail, ok, settle } from './outcome';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
@@ -40,7 +43,7 @@ type GetRequestInfoOptions = {
 
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  parse: (opts: GetRequestInfoOptions) => Promise<TRPCRequestInfo>;
+  parse: (opts: GetRequestInfoOptions) => Promise<Outcome<TRPCRequestInfo>>;
 };
 
 /**
@@ -110,10 +113,12 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       typeof maxBatchSize === 'number' &&
       paths.length > maxBatchSize
     ) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `Batch call exceeds maximum size`,
-      });
+      return fail(
+        new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Batch call exceeds maximum size`,
+        }),
+      );
     }
 
     type InputRecord = Record<number, unknown>;
@@ -205,12 +210,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     /* istanbul ignore if -- @preserve */
     if (types.size > 1) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `Cannot mix procedure types in call: ${Array.from(types).join(
-          ', ',
-        )}`,
-      });
+      return fail(
+        new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Cannot mix procedure types in call: ${Array.from(
+            types,
+          ).join(', ')}`,
+        }),
+      );
     }
     const type: ProcedureType | 'unknown' =
       types.values().next().value ?? 'unknown';
@@ -229,7 +236,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       signal: req.signal,
       url: opts.url,
     };
-    return info;
+    return ok(info);
   },
 };
 
@@ -240,18 +247,20 @@ const formDataContentTypeHandler: ContentTypeHandler = {
   async parse(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
-      throw new TRPCError({
-        code: 'METHOD_NOT_SUPPORTED',
-        message:
-          'Only POST requests are supported for multipart/form-data requests',
-      });
+      return fail(
+        new TRPCError({
+          code: 'METHOD_NOT_SUPPORTED',
+          message:
+            'Only POST requests are supported for multipart/form-data requests',
+        }),
+      );
     }
     const getInputs = memo(async () => {
       const fd = await req.formData();
       return fd;
     });
     const procedure = await getProcedureAtPath(opts.router, opts.path);
-    return {
+    return ok({
       accept: null,
       calls: [
         {
@@ -267,7 +276,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       connectionParams: null,
       signal: req.signal,
       url: opts.url,
-    };
+    });
   },
 };
 
@@ -278,16 +287,18 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
   async parse(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
-      throw new TRPCError({
-        code: 'METHOD_NOT_SUPPORTED',
-        message:
-          'Only POST requests are supported for application/octet-stream requests',
-      });
+      return fail(
+        new TRPCError({
+          code: 'METHOD_NOT_SUPPORTED',
+          message:
+            'Only POST requests are supported for application/octet-stream requests',
+        }),
+      );
     }
     const getInputs = memo(async () => {
       return req.body;
     });
-    return {
+    return ok({
       calls: [
         {
           batchIndex: 0,
@@ -303,7 +314,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       connectionParams: null,
       signal: req.signal,
       url: opts.url,
-    };
+    });
   },
 };
 
@@ -313,28 +324,38 @@ const handlers = [
   octetStreamContentTypeHandler,
 ];
 
-function getContentTypeHandler(req: Request): ContentTypeHandler {
+function getContentTypeHandler(req: Request): Outcome<ContentTypeHandler> {
   const handler = handlers.find((handler) => handler.isMatch(req));
   if (handler) {
-    return handler;
+    return ok(handler);
   }
 
-  if (!handler && req.method === 'GET') {
+  if (req.method === 'GET') {
     // fallback to JSON for get requests so GET-requests can be opened in browser easily
-    return jsonContentTypeHandler;
+    return ok(jsonContentTypeHandler);
   }
 
-  throw new TRPCError({
-    code: 'UNSUPPORTED_MEDIA_TYPE',
-    message: req.headers.has('content-type')
-      ? `Unsupported content-type "${req.headers.get('content-type')}`
-      : 'Missing content-type header',
-  });
+  return fail(
+    new TRPCError({
+      code: 'UNSUPPORTED_MEDIA_TYPE',
+      message: req.headers.has('content-type')
+        ? `Unsupported content-type "${req.headers.get('content-type')}"`
+        : 'Missing content-type header',
+    }),
+  );
 }
 
-export async function getRequestInfo(
+/**
+ * Parses the procedure calls of a request, or why it can't be parsed. Inputs
+ * are read later, when a procedure asks for them.
+ */
+export function getRequestInfo(
   opts: GetRequestInfoOptions,
-): Promise<TRPCRequestInfo> {
-  const handler = getContentTypeHandler(opts.req);
-  return await handler.parse(opts);
+): Promise<Result<TRPCRequestInfo, TRPCError>> {
+  // `settle()` also catches what isn't rejected here, such as a lazy router
+  // that fails to load or malformed `connectionParams`
+  return settle(() => {
+    const handler = getContentTypeHandler(opts.req);
+    return handler.ok ? handler.value.parse(opts) : handler;
+  });
 }

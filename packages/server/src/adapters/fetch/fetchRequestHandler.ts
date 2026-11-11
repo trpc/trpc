@@ -55,16 +55,19 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     createContext,
     path,
     error: null,
+    resHeaders,
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
     responseMeta(data) {
       const meta = opts.responseMeta?.(data);
+      // a copy, so `resHeaders` keeps only the headers set outside `responseMeta`
+      const headers = new Headers(resHeaders);
 
       if (meta?.headers) {
         if (meta.headers instanceof Headers) {
           for (const [key, value] of meta.headers.entries()) {
-            resHeaders.append(key, value);
+            headers.append(key, value);
           }
         } else {
           /**
@@ -73,17 +76,17 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
           for (const [key, value] of Object.entries(meta.headers)) {
             if (Array.isArray(value)) {
               for (const v of value) {
-                resHeaders.append(key, v);
+                headers.append(key, v);
               }
             } else if (typeof value === 'string') {
-              resHeaders.set(key, value);
+              headers.set(key, value);
             }
           }
         }
       }
 
       return {
-        headers: resHeaders,
+        headers,
         status: meta?.status,
       };
     },
