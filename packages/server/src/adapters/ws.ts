@@ -1,5 +1,4 @@
 import type { IncomingMessage } from 'http';
-import { on } from 'node:events';
 import type { RawData, WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type {
   AnyRouter,
@@ -66,11 +65,11 @@ import { jsonEncoder } from './wsEncoder';
  * Keeping values collectable: while an async function awaits, V8 keeps
  * alive a `const` that the previous iteration of a loop declared in its
  * body, the last value of a `for await` loop, and the last value delegated
- * with `yield*`. A frame can be as big as `maxPayload` (100 MiB by default)
- * and a subscription's values can be anything, so the loops that await the
- * next one keep the current one in a `let` declared outside the loop, and
- * clear it once they're done with it. `websockets.memory.test.ts` guards
- * this.
+ * with `yield*`. A subscription's values can be anything, so the loops that
+ * await the next one keep the current one in a `let` declared outside the
+ * loop, and clear it once they're done with it. Frames are handled in the
+ * listener they arrive in, which holds on to nothing.
+ * `websockets.memory.test.ts` guards this.
  */
 
 /**
@@ -203,12 +202,6 @@ const noRequest: OnErrorRequest = {
 
 const OK: SendResult = { ok: true, value: undefined };
 
-/**
- * Queries and mutations aren't cancelled, not even when their connection
- * closes, so the `signal` they get never aborts.
- */
-const neverAborted = new AbortController().signal;
-
 /** How a subscription's setup ended: with its iterable, or without. */
 type SubscriptionStart =
   | { kind: 'started'; iterable: AsyncIterable<unknown> }
@@ -275,42 +268,22 @@ function abortPromiseResource(signal: AbortSignal) {
 }
 
 /**
- * The messages `client` receives, in order, until it closes. Disposing it
- * stops listening.
+ * Listens to `client` until it's disposed: `onMessage` gets each message as
+ * it's received, and `onClose` is called once it has closed.
  */
-function messagesResource(client: WsWebSocket) {
-  const closing = abortControllerResource();
-  const closed = createDeferred();
-  const onClose = () => {
-    closing.abort();
-    closed.resolve();
-  };
-  client.once('close', onClose);
-  // Ended with a signal rather than `on()`'s `close` option, which Node 18
-  // ignores, so it never completes: it rejects once the signal aborts. `on()`
-  // types the values as `any[]`, as it can't know the event's arguments.
-  const messages = on(client, 'message', {
-    signal: closing.signal,
-  }) as unknown as AsyncIterator<Message, never>;
-  return makeResource(
-    {
-      /** Resolves once the connection has closed. */
-      closed: closed.promise,
-      /**
-       * The next message, or `null` once the connection has closed. A
-       * socket error ends the messages too, and is reported by the
-       * connection's `error` listener.
-       */
-      async nextMessage(): Promise<Message | null> {
-        const next = await settle(messages.next());
-        return next.ok ? next.value.value : null;
-      },
-    },
-    () => {
-      client.off('close', onClose);
-      closing.abort();
-    },
-  );
+function listenersResource(
+  client: WsWebSocket,
+  listeners: {
+    onMessage: (...message: Message) => void;
+    onClose: () => void;
+  },
+) {
+  client.on('message', listeners.onMessage);
+  client.once('close', listeners.onClose);
+  return makeResource({}, () => {
+    client.off('message', listeners.onMessage);
+    client.off('close', listeners.onClose);
+  });
 }
 
 /** What's in a message. */
@@ -320,8 +293,7 @@ type MessageContent =
   | { kind: 'pong' }
   | { kind: 'unsupported' };
 
-function messageContent(message: Message): MessageContent {
-  const [data, isBinary] = message;
+function messageContent(data: RawData, isBinary: boolean): MessageContent {
   if (!isBinary) {
     // pings and pongs are text, whatever the encoder
     // oxlint-disable-next-line typescript/no-base-to-string
@@ -583,19 +555,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
    *
    * User code (`createContext`, procedures, `onError`, `errorFormatter`, the
    * transformer and the encoder) may throw. Only `callOnError`, `errorShape`,
-   * `trySend`, `sendOrReport`, `receiveFrame` and `sendReplies` catch;
+   * `trySend`, `sendOrReport`, `receiveMessage` and `sendReplies` catch;
    * everything else passes errors on as values.
    */
   async function serveConnection(client: WsWebSocket, req: IncomingMessage) {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context, TRPCError>;
 
-    // Disposed in reverse: the messages stop first, then the subscriptions
-    // are stopped, and then the context's `signal` aborts.
     using connection = abortControllerResource();
     using subscriptions = subscriptionsResource();
-    // Listens before anything is awaited, so that no message is missed.
-    using messages = messagesResource(client);
+    const closed = createDeferred();
 
     /** The connection's context, once `createContext` has resolved. */
     let ctx: Context | undefined = undefined;
@@ -622,21 +591,21 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       createURL(req).searchParams.get('connectionParams') === '1'
         ? null
         : createConnectionContext(null);
-    let frame: Frame | null; // see "Keeping values collectable"
-    while (true) {
-      frame = await nextFrame();
-      if (frame === null) {
-        break;
-      }
-      if (context === null) {
-        context = createConnectionContext(frame);
-      } else {
-        receiveFrame(frame, context);
-      }
-      frame = null;
-    }
-    // a socket error ends the messages before the connection closes
-    await messages.closed;
+
+    // Listens before anything is awaited, so that no message is missed.
+    // Messages that arrive together are handled in the same tick: a stop
+    // that comes with its subscription is taken before the subscription's
+    // setup goes on.
+    using _listeners = listenersResource(client, {
+      onMessage: receiveMessage,
+      onClose() {
+        // right away, so that later `close` listeners see them stopped
+        disposeNow(subscriptions);
+        connection.abort();
+        closed.resolve();
+      },
+    });
+    await closed.promise;
 
     // Sending and reporting
 
@@ -829,66 +798,61 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     // Frames
 
     /**
-     * The next frame with requests in it, or `null` once the connection has
-     * closed. Pings are answered along the way.
+     * Handles a message: a ping, a pong, or a frame, which is the
+     * connection params or requests. What it throws is reported, as it runs
+     * in a listener, where a throw would crash the process.
      */
-    async function nextFrame(): Promise<Frame | null> {
-      let message: Message | null; // see "Keeping values collectable"
-      while (true) {
-        message = await messages.nextMessage();
-        if (message === null) {
-          return null;
-        }
-        const content = messageContent(message);
-        message = null;
+    function receiveMessage(...message: Message) {
+      const received = attempt(() => {
+        const content = messageContent(...message);
         switch (content.kind) {
           case 'frame':
-            return content.frame;
+            if (context === null) {
+              context = createConnectionContext(content.frame);
+            } else {
+              receiveFrame(content.frame, context);
+            }
+            return;
           case 'ping':
             if (!opts.dangerouslyDisablePong) {
               client.send('PONG');
             }
-            break;
+            return;
           case 'pong':
             // keepAlive listens for any message itself
-            break;
+            return;
           case 'unsupported': {
             const error = new TRPCError({
               code: 'UNPROCESSABLE_CONTENT',
               message: 'Unexpected WebSocket message format',
             });
             sendOrReport(noRequest, error, () => connectionErrorReply(error));
-            break;
+            return;
           }
-        }
-      }
-    }
-
-    /**
-     * Handles a frame: a request or a batch of them. What it throws is
-     * reported, so that it doesn't end the loop that reads frames.
-     */
-    function receiveFrame(frame: Frame, context: Promise<ContextResult>) {
-      const received = attempt(() => {
-        const decoded = decodeFrame(frame, frameDecoding);
-        switch (decoded.kind) {
-          case 'malformed':
-            sendOrReport(noRequest, decoded.error, () =>
-              connectionErrorReply(decoded.error),
-            );
-            return;
-          case 'oversized':
-            rejectOversizedBatch(decoded.batch);
-            return;
-          case 'requests':
-            for (const [batchIndex, msg] of decoded.requests.entries()) {
-              receiveRequest(msg, batchIndex, context);
-            }
-            return;
         }
       });
       if (!received.ok) {
         reportInternalError(noRequest, received.error);
+      }
+    }
+
+    /** Handles a frame: a request or a batch of them. */
+    function receiveFrame(frame: Frame, context: Promise<ContextResult>) {
+      const decoded = decodeFrame(frame, frameDecoding);
+      switch (decoded.kind) {
+        case 'malformed':
+          sendOrReport(noRequest, decoded.error, () =>
+            connectionErrorReply(decoded.error),
+          );
+          return;
+        case 'oversized':
+          rejectOversizedBatch(decoded.batch);
+          return;
+        case 'requests':
+          for (const [batchIndex, msg] of decoded.requests.entries()) {
+            receiveRequest(msg, batchIndex, context);
+          }
+          return;
       }
     }
 
@@ -1052,8 +1016,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       context: Promise<ContextResult>,
     ): Replies {
       const created = await context;
+      // Queries and mutations aren't cancelled, not even when their
+      // connection closes, so the signal each gets never aborts. It's the
+      // request's own, so that a listener on it doesn't outlive the request.
       const result = created.ok
-        ? await callProcedure(request, created.value, neverAborted)
+        ? await callProcedure(
+            request,
+            created.value,
+            new AbortController().signal,
+          )
         : created;
       if (!result.ok) {
         yield* finalErrorReply(request, result.error);
@@ -1116,11 +1087,19 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           ? STOPPED
           : { kind: 'failed', error };
       }
-      const iterable = isObservable(result.value)
-        ? observableToAsyncIterable(result.value, signal)
-        : isAsyncIterable(result.value)
-          ? result.value
-          : null;
+      const value = result.value;
+      // converting an observable subscribes to it, which can throw
+      const converted = attempt(() =>
+        isObservable(value)
+          ? observableToAsyncIterable(value, signal)
+          : isAsyncIterable(value)
+            ? value
+            : null,
+      );
+      if (!converted.ok) {
+        return failed(converted.error);
+      }
+      const iterable = converted.value;
       if (iterable === null) {
         return failed(
           new TRPCError({
@@ -1158,6 +1137,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       context: Promise<ContextResult>,
     ): Replies {
       using subscription = registration;
+      // A socket starts closing before its `close` event stops the
+      // subscriptions it still has, so one that ends meanwhile is cancelled
+      // here, before its id is freed.
+      using _cancelIfClosing = makeResource({}, () => {
+        if (isClosing()) {
+          subscription.abort();
+        }
+      });
       using aborted = abortPromiseResource(subscription.signal);
       const stop = aborted.promise.then(() => STOPPED);
 

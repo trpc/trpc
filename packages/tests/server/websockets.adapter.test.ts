@@ -15,6 +15,7 @@ import type {
   WSSHandlerOptions,
 } from '@trpc/server/adapters/ws';
 import { applyWSSHandler, jsonEncoder } from '@trpc/server/adapters/ws';
+import { observable } from '@trpc/server/observable';
 import type { TRPCResponseMessage } from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import {
@@ -408,12 +409,12 @@ test('lastEventId is added to an object input when a subscription resumes', asyn
   subscription.unsubscribe();
 });
 
-describe('a stop that arrives while the subscription starts', () => {
-  // Frames that arrive together are handled a few microtasks apart, and how
-  // many depends on what's between them, so a run of pongs moves the stop
-  // across the subscription's setup.
+describe('a stop that arrives in the same read as its subscription', () => {
+  // Frames that arrive together are handled in the same tick, whatever is
+  // between them, so the stop is taken before the subscription's setup goes
+  // on.
   test.each(Array.from({ length: 13 }, (_, pongs) => pongs))(
-    'with %i pongs before it, the subscription stops',
+    'with %i pongs before it, the procedure is not called',
     async (pongs) => {
       let signal: AbortSignal | undefined;
       const t = initTRPC.create();
@@ -452,8 +453,7 @@ describe('a stop that arrives while the subscription starts', () => {
           result: { type: 'stopped' },
         }),
       );
-      // a stop that comes early enough keeps the procedure from running
-      expect(signal === undefined || signal.aborted).toBe(true);
+      expect(signal).toBeUndefined();
     },
   );
 });
@@ -867,4 +867,171 @@ test('broadcastReconnectNotification skips connections that are closing', async 
   );
   await closing.closed;
   expect(closing.frames).toEqual([]);
+});
+
+describe('what the adapter it replaces did', () => {
+  function subscribeTo(path: string) {
+    return JSON.stringify({ id: 1, method: 'subscription', params: { path } });
+  }
+
+  test('a subscription whose observable throws when subscribed to gets the error', async () => {
+    const onError = vi.fn<OnError>();
+    const t = initTRPC.create();
+    const router = t.router({
+      values: t.procedure.subscription(() =>
+        observable<number>(() => {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Not you' });
+        }),
+      ),
+      greeting: t.procedure.query(() => 'hello'),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: { onError },
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+
+    socket.ws.send(subscribeTo('values'));
+    socket.ws.send(
+      JSON.stringify({ id: 2, method: 'query', params: { path: 'greeting' } }),
+    );
+
+    await socket.received(2);
+    // the two requests run concurrently, so their replies come in any order
+    const responses = socket
+      .responses()
+      .sort((a, b) => Number(a.id) - Number(b.id));
+    expect(responses).toMatchObject([
+      { id: 1, error: { message: 'Not you', data: { code: 'UNAUTHORIZED' } } },
+      { id: 2, result: { type: 'data', data: 'hello' } },
+    ]);
+    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+      'Not you',
+    ]);
+  });
+
+  test('every query and mutation gets a signal of its own, which never aborts', async () => {
+    const signals: (AbortSignal | undefined)[] = [];
+    const t = initTRPC.create();
+    const router = t.router({
+      read: t.procedure.query((opts) => {
+        signals.push(opts.signal);
+        return 'ok';
+      }),
+      write: t.procedure.mutation((opts) => {
+        signals.push(opts.signal);
+        return 'ok';
+      }),
+    });
+    await using ctx = testServerAndClientResource(router);
+    {
+      await using socket = await rawSocketResource(ctx.wssUrl);
+      socket.ws.send(
+        JSON.stringify([
+          { id: 1, method: 'query', params: { path: 'read' } },
+          { id: 2, method: 'query', params: { path: 'read' } },
+          { id: 3, method: 'mutation', params: { path: 'write' } },
+        ]),
+      );
+      await socket.received(3);
+    }
+
+    // a listener a procedure adds must not outlive its request's signal
+    expect(new Set(signals).size).toBe(3);
+    expect(signals.map((signal) => signal?.aborted)).toEqual([
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  test('a connection aborts its subscriptions and its context signal before later close listeners run', async () => {
+    let subscriptionSignal: AbortSignal | undefined;
+    let contextSignal: AbortSignal | undefined;
+    const t = initTRPC.create();
+    const router = t.router({
+      values: t.procedure.subscription(async function* (opts) {
+        subscriptionSignal = opts.signal;
+        yield 1;
+        await new Promise(() => {
+          // until it's aborted
+        });
+      }),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: {
+        createContext(opts) {
+          contextSignal = opts.info.signal;
+          return {};
+        },
+      },
+    });
+    // added after the adapter's listeners, so it runs after them
+    const aborted = createDeferred<(boolean | undefined)[]>();
+    ctx.wss.on('connection', (socket) => {
+      socket.once('close', () => {
+        aborted.resolve([subscriptionSignal?.aborted, contextSignal?.aborted]);
+      });
+    });
+    await using socket = await rawSocketResource(ctx.wssUrl);
+    socket.ws.send(subscribeTo('values'));
+    await socket.received(2);
+
+    socket.ws.close();
+
+    expect(await aborted.promise).toEqual([true, true]);
+  });
+
+  test('a subscription that completes while its socket is closing has its signal aborted', async () => {
+    let signal: AbortSignal | undefined;
+    const finish = createDeferred();
+    const t = initTRPC.create();
+    const router = t.router({
+      values: t.procedure.subscription(async function* (opts) {
+        signal = opts.signal;
+        yield 1;
+        await finish.promise;
+      }),
+    });
+    await using ctx = testServerAndClientResource(router);
+    const sockets = serverSockets(ctx.wss);
+    await using socket = await rawSocketResource(ctx.wssUrl);
+    socket.ws.send(subscribeTo('values'));
+    await socket.received(2);
+
+    // a paused peer doesn't answer the closing handshake, so the socket
+    // stays closing
+    socket.ws.pause();
+    sockets[0]!.close();
+    expect(sockets[0]!.readyState).toBe(WebSocket.CLOSING);
+    finish.resolve();
+
+    await vi.waitFor(() => expect(signal?.aborted).toBe(true));
+  });
+
+  test('a socket error does not stop the connection from serving frames', async () => {
+    const onError = vi.fn<OnError>();
+    const t = initTRPC.create();
+    const router = t.router({
+      greeting: t.procedure.query(() => 'hello'),
+    });
+    await using ctx = testServerAndClientResource(router, {
+      wssServer: { onError },
+    });
+    const sockets = serverSockets(ctx.wss);
+    await using socket = await rawSocketResource(ctx.wssUrl);
+    await vi.waitFor(() => expect(sockets).toHaveLength(1));
+
+    sockets[0]!.emit('error', new Error('Socket trouble'));
+    socket.ws.send(
+      JSON.stringify({ id: 1, method: 'query', params: { path: 'greeting' } }),
+    );
+
+    await socket.received(1);
+    expect(socket.responses()).toEqual([
+      { id: 1, result: { type: 'data', data: 'hello' } },
+    ]);
+    expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+      'Socket trouble',
+    ]);
+  });
 });
