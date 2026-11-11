@@ -60,7 +60,11 @@ async function* readUntilAborted(
   signal: AbortSignal,
 ): AsyncGenerator<Uint8Array, void> {
   const reader = stream.getReader();
-  using _abort = abortListener(signal, () => void reader.cancel());
+  using _abort = abortListener(signal, () => {
+    // a stream that already failed rejects with its error, which is the
+    // read's to report
+    reader.cancel().catch(() => undefined);
+  });
 
   while (true) {
     const chunk = await reader.read();

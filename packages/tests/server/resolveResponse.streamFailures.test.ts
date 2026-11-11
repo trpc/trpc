@@ -3,6 +3,8 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -82,4 +84,54 @@ describe('a JSONL value that cannot be serialized fails only its own call', () =
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
     expect(ctx.onErrorSpy.mock.calls[0]![0]).toMatchObject({ path: 'stream' });
   });
+});
+
+test('cancelling a streamed batch whose stream already failed leaves no unhandled rejection', async () => {
+  const unhandled: unknown[] = [];
+  const onUnhandled = (error: unknown) => unhandled.push(error);
+  process.on('unhandledRejection', onUnhandled);
+  using _listener = makeResource({}, () => {
+    process.off('unhandledRejection', onUnhandled);
+  });
+
+  let serialized = 0;
+  const t = initTRPC.create({
+    transformer: {
+      input: { serialize: (v) => v, deserialize: (v) => v },
+      output: {
+        // the head goes out, then nothing can be serialized
+        serialize: (v) => {
+          serialized++;
+          if (serialized > 1) {
+            throw new Error(`Cannot serialize #${serialized}`);
+          }
+          return v;
+        },
+        deserialize: (v) => v,
+      },
+    },
+  });
+  const router = t.router({
+    iter: t.procedure.query(async function* () {
+      yield 1;
+    }),
+  });
+
+  const res = await fetchRequestHandler({
+    endpoint: '',
+    req: new Request('http://localhost/iter?batch=1&input=%7B%7D', {
+      headers: { 'trpc-accept': 'application/jsonl' },
+    }),
+    router,
+    createContext: () => ({}),
+  });
+  expect(res.status).toBe(200);
+  // nothing reads the body: the value fails to serialize, then so does the
+  // error line for it, which fails the stream behind the body
+  await vi.waitFor(() => expect(serialized).toBe(3));
+
+  await res.body!.cancel();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  expect(unhandled).toEqual([]);
 });
