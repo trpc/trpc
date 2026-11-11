@@ -499,3 +499,33 @@ test('a subscription is cancelled when an error response replaces its response',
   expect(unsubscribed).toHaveBeenCalledOnce();
   expect(signal?.aborted).toBe(true);
 });
+
+test('a request that fails before responseMeta ran still gets its error when responseMeta throws', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hello'),
+  });
+
+  // batching is disabled, so the request fails before any response is built
+  const res = await fetchRequestHandler({
+    endpoint: '',
+    req: new Request('http://localhost/greeting?batch=1&input=%7B%7D'),
+    router,
+    createContext: () => ({}),
+    allowBatching: false,
+    onError,
+    responseMeta() {
+      throw new Error('responseMeta failed');
+    },
+  });
+
+  expect(res.status).toBe(400);
+  expect(await res.json()).toMatchObject({
+    error: { message: 'Batching is not enabled on the server' },
+  });
+  expect(onError.mock.calls.map(([opts]) => opts.error.message)).toEqual([
+    'Batching is not enabled on the server',
+    'responseMeta failed',
+  ]);
+});

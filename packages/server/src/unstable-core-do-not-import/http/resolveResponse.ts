@@ -655,13 +655,19 @@ function errorResponse(scope: RequestScope, error: TRPCError): Response {
   const body = JSON.stringify(transformTRPCResponse(scope.config, data));
   const results = { data: [data], errors: [error] };
   if (answer?.callResponseMeta) {
-    const headers = answer.headers ?? requestHeaders(scope);
-    const status = callResponseMeta(scope, headers, results);
-    return new Response(body, { status, headers });
+    try {
+      const headers = answer.headers ?? requestHeaders(scope);
+      const status = callResponseMeta(scope, headers, results);
+      return new Response(body, { status, headers });
+    } catch (cause) {
+      // `responseMeta` threw, or returned a status `Response` rejects: the
+      // error is still sent, without what `responseMeta` added
+      reportError(scope, getTRPCErrorFromUnknown(cause), source);
+    }
   }
 
-  // `responseMeta` ran for a response that failed: drop its headers, and the
-  // response's, as they describe that response, not this one
+  // `responseMeta` failed, or ran for a response that failed: drop its
+  // headers, and the response's, as they describe that response, not this one
   const headers = requestHeaders(scope);
   for (const [key, value] of scope.opts.resHeaders ?? []) {
     headers.append(key, value);
