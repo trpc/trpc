@@ -50,7 +50,7 @@ export const trpc = createTRPCNext<AppRouter>({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/v10/header
+           * @see https://trpc.io/docs/v10
            */
           headers() {
             if (!ctx?.req?.headers) {
@@ -101,7 +101,7 @@ export const trpc = createTRPCNext<AppRouter>({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/v10/header
+           * @see https://trpc.io/docs/v10
            */
           headers() {
             if (!ctx?.req?.headers) {

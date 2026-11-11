@@ -26,7 +26,7 @@ tRPC v10 features a compatibility layer for users coming from v9. `.interop()` a
  *
  * Learn how to create protected base procedures and other things below:
  * @see https://trpc.io/docs/v10/router
- * @see https://trpc.io/docs/v10/procedures
+ * @see https://trpc.io/docs/v10/server/procedures
  */
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
@@ -34,11 +34,11 @@ import { Context } from './context';
 
 const t = initTRPC.context<Context>().create({
   /**
-   * @see https://trpc.io/docs/v10/data-transformers
+   * @see https://trpc.io/docs/v10/server/data-transformers
    */
   transformer: superjson,
   /**
-   * @see https://trpc.io/docs/v10/error-formatting
+   * @see https://trpc.io/docs/v10/server/error-formatting
    */
   errorFormatter(opts) {
     return opts.shape;
@@ -53,12 +53,12 @@ export const router = t.router;
 
 /**
  * Create an unprotected procedure
- * @see https://trpc.io/docs/v10/procedures
+ * @see https://trpc.io/docs/v10/server/procedures
  **/
 export const publicProcedure = t.procedure;
 
 /**
- * @see https://trpc.io/docs/v10/merging-routers
+ * @see https://trpc.io/docs/v10/server/merging-routers
  */
 export const mergeRouters = t.mergeRouters;
 ```

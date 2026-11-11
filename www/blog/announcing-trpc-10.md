@@ -37,10 +37,10 @@ With v10, you can:
 
 In v10, we've revisited the syntax for how you define your backend procedures, opening up more opportunities to bring in your desired logic in healthy ways. This version of tRPC features:
 
-- [Reusable middlewares](https://trpc.io/docs/v10/middlewares) with [Context Extension](https://trpc.io/docs/v10/middlewares#context-extension)
-- [Chainable & reusable procedures](https://trpc.io/docs/v10/procedures#reusable-base-publicprocedures) with the ability to use [multiple input parsers](https://trpc.io/docs/v10/procedures#multiple-input-parsers)
-- Flexible [error handling](https://trpc.io/docs/v10/error-handling) with [custom error formatting](https://trpc.io/docs/v10/error-formatting)
-- [Procedure metadata](https://trpc.io/docs/v10/metadata) to decorate your procedures with more information
+- [Reusable middlewares](https://trpc.io/docs/v10/server/middlewares) with [Context Extension](https://trpc.io/docs/v10/server/middlewares#context-extension)
+- [Chainable & reusable procedures](https://trpc.io/docs/v10/server/procedures#reusable-base-publicprocedures) with the ability to use [multiple input parsers](https://trpc.io/docs/v10/server/procedures#multiple-input-parsers)
+- Flexible [error handling](https://trpc.io/docs/v10/error-handling) with [custom error formatting](https://trpc.io/docs/v10/server/error-formatting)
+- [Procedure metadata](https://trpc.io/docs/v10/server/metadata) to decorate your procedures with more information
 
 ### Massively improved TypeScript performance
 
