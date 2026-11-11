@@ -18,5 +18,27 @@ export const searchPage = {
   title: 'Search',
 } as const;
 
-/** The query parameter `/search` reads, as trpc.io's did. */
+/**
+ * The query parameter `/search` reads, as trpc.io's did. On any other page
+ * it opens the search dialog on it, so a search is a link anywhere.
+ */
 export const searchParam = 'q';
+
+export interface QuerySearch {
+  readonly q?: string | undefined;
+}
+
+/**
+ * `?q=`, if it's there and not empty. The router parses `?q=404` as a
+ * number; it's still what was searched for.
+ */
+export function validateQuerySearch(
+  search: Record<string, unknown>,
+): QuerySearch {
+  const query = search[searchParam];
+  const text =
+    typeof query === 'number' || typeof query === 'boolean'
+      ? String(query)
+      : query;
+  return typeof text === 'string' && text !== '' ? { q: text } : {};
+}

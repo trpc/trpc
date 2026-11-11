@@ -32,7 +32,7 @@ import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
 } from '@trpc/server/unstable-core-do-not-import/procedure';
-import WebSocket from 'ws';
+import WebSocket, { type WebSocketServer } from 'ws';
 import { z } from 'zod';
 
 /**
@@ -5079,7 +5079,7 @@ describe('keep alive on the server', () => {
   afterAll(() => {
     vi.useRealTimers();
   });
-  function attachPongMock(wss: WebSocket.Server) {
+  function attachPongMock(wss: WebSocketServer) {
     const onPong = vi.fn();
 
     wss.on('connection', (ws) => {

@@ -21,12 +21,14 @@ import {
 } from '~/components/sponsors/supported-by.tsx';
 import { UsedBy } from '~/components/used-by/used-by.tsx';
 import { v11Docs } from '~/content/docs.ts';
+import type { Sample } from '~/content/types.ts';
 import { partners } from '~/sponsors.ts';
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
+import { inlinePopups } from '~/twoslash-hovers.ts';
 import v11Define from '../../v11/home/step-1.md';
 import v11Serve from '../../v11/home/step-2.md';
 import v11Call from '../../v11/home/step-3.md';
@@ -60,7 +62,7 @@ export const Route = createFileRoute('/')({
 
 interface Step {
   readonly body: ReactNode;
-  readonly code: string;
+  readonly code: Sample;
   readonly guide: string;
   readonly id: 'call' | 'define' | 'serve';
   readonly slug: string;
@@ -93,7 +95,7 @@ const steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: v11Define.html,
+    code: v11Define,
     guide: 'Define procedures',
     id: 'define',
     slug: 'server/procedures',
@@ -113,7 +115,7 @@ const steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: v11Serve.html,
+    code: v11Serve,
     guide: 'Adapters',
     id: 'serve',
     slug: 'server/adapters',
@@ -133,7 +135,7 @@ const steps: ReadonlyArray<Step> = [
         </p>
       </>
     ),
-    code: v11Call.html,
+    code: v11Call,
     guide: 'The vanilla client',
     id: 'call',
     slug: 'client/vanilla',
@@ -280,7 +282,11 @@ function Steps() {
               {step.guide} <ArrowRight className="inline size-4" />
             </Link>
           </div>
-          <DocBody className="min-w-0 [&_.code-block]:my-0!" html={step.code} />
+          <DocBody
+            className="min-w-0 [&_.code-block]:my-0!"
+            html={step.code.html}
+            loadPopups={inlinePopups(step.code)}
+          />
         </li>
       ))}
     </ol>
@@ -345,6 +351,7 @@ function HomePage() {
             <DocBody
               className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
               html={v11Call.html}
+              loadPopups={inlinePopups(v11Call)}
             />
             <p className="text-sm text-muted-foreground">
               The client of the router{' '}

@@ -1,13 +1,19 @@
 /**
  * The notes of a stable release's GitHub release: the pull requests since the
- * previous tag, under each public package they change, then by their
- * conventional-commit type.
+ * previous tag, under each public package their conventional-commit scope
+ * names, then by their type.
  *
  * A pull request changes a package when its commit changes a file in the
  * package's directory other than Markdown: READMEs change with every
  * sponsor update. Pull requests that change no public package, like the
- * website, tooling or examples, aren't listed. GitHub works out who
- * contributed for the first time.
+ * website, tooling or examples, aren't listed. A listed pull request goes
+ * under the packages its scope names, like `client` in `feat(client): a` or
+ * both in `fix(server, client): a`, so a client feature that also touches
+ * the server's types is only a client feature. Without a scope, or with one
+ * that names no public package, like `deps`, it goes under each package it
+ * changes, unless it's maintenance, like `chore(deps): a`: that's listed
+ * once, after the packages, since it says nothing about any one of them.
+ * GitHub works out who contributed for the first time.
  */
 import { Effect } from 'effect';
 import { git, output } from './command.ts';
@@ -48,7 +54,11 @@ export interface NotesEntry {
   /** The pull request, or the commit when there's none. */
   readonly url: string;
   readonly author: string | undefined;
-  readonly packages: ReadonlyArray<string>;
+  /**
+   * The packages it's listed under, or `null` for maintenance whose scope
+   * names no package, listed once under `## Maintenance`.
+   */
+  readonly packages: ReadonlyArray<string> | null;
 }
 
 export interface NewContributor {
@@ -92,6 +102,34 @@ export function changedPackages(
     .map(({ name }) => name);
 }
 
+/**
+ * The names of the packages the conventional-commit scope of `title` names,
+ * in `packages` order. A scope names a package by its directory, like
+ * `tanstack-react-query`, or its name, like `@trpc/upgrade`, and can name
+ * several: `a,b`, `a, b` or `` `a` + `b` ``.
+ */
+export function scopedPackages(
+  title: string,
+  packages: ReadonlyArray<NotesPackage>,
+): ReadonlyArray<string> {
+  const scope = /^\w+\(([^)]*)\)!?:/.exec(title.trim())?.[1];
+  if (scope === undefined) {
+    return [];
+  }
+  const named = new Set(
+    scope
+      .split(/[,+]/)
+      .map((part) => part.trim().replace(/^`|`$/g, '').toLowerCase()),
+  );
+  return packages
+    .filter(
+      ({ dir, name }) =>
+        named.has(name.toLowerCase()) ||
+        named.has(dir.split('/').at(-1)?.toLowerCase() ?? ''),
+    )
+    .map(({ name }) => name);
+}
+
 const sections = [
   ['breaking', 'Breaking Changes'],
   ['feat', 'Features'],
@@ -110,6 +148,18 @@ const sections = [
 ] as const;
 
 type Section = (typeof sections)[number][0];
+
+/**
+ * Sections of changes to how the repo is built, tested and maintained, which
+ * are only worth listing under a package when their scope names it.
+ */
+const maintenance: ReadonlySet<Section> = new Set([
+  'build',
+  'ci',
+  'chore',
+  'style',
+  'test',
+]);
 
 /**
  * The section of a conventional-commit title: `!` before the colon is a
@@ -131,7 +181,8 @@ export function noteSection(title: string): Section {
 /**
  * The entries of the notes, oldest first: the changes that change a public
  * package, one per pull request, titled and credited the way GitHub has
- * them.
+ * them, under the packages their title's scope names, or else the packages
+ * they change, or else, for maintenance, under none.
  */
 export function notesEntries(opts: {
   readonly changes: ReadonlyArray<Change>;
@@ -141,34 +192,44 @@ export function notesEntries(opts: {
 }): ReadonlyArray<NotesEntry> {
   const entries = new Map<string, NotesEntry>();
   for (const change of opts.changes) {
-    const packages = changedPackages(change.files, opts.packages);
-    if (packages.length === 0 || isReleaseCommit(change.subject)) {
+    const changed = changedPackages(change.files, opts.packages);
+    if (changed.length === 0 || isReleaseCommit(change.subject)) {
       continue;
     }
     const number = pullRequestNumber(change.subject);
     const pr =
       number === undefined ? undefined : opts.github.pullRequests.get(number);
+    const title = pr?.title ?? change.subject;
+    const scoped = scopedPackages(title, opts.packages);
+    const packages =
+      scoped.length > 0
+        ? scoped
+        : maintenance.has(noteSection(title))
+          ? null
+          : changed;
     const entry: NotesEntry =
       pr === undefined
         ? {
-            title: change.subject,
+            title,
             url: `https://github.com/${opts.repo}/commit/${change.sha}`,
             author: opts.github.commitAuthors.get(change.sha),
             packages,
           }
-        : { title: pr.title, url: pr.url, author: pr.author, packages };
+        : { title, url: pr.url, author: pr.author, packages };
+    // Commits of one pull request share its title, so they're all
+    // maintenance or none are.
     const earlier = entries.get(entry.url);
+    const listed = earlier?.packages;
     entries.set(
       entry.url,
-      earlier === undefined
+      earlier === undefined || listed == null || packages === null
         ? entry
         : {
             ...earlier,
             packages: opts.packages
               .map(({ name }) => name)
               .filter(
-                (name) =>
-                  earlier.packages.includes(name) || packages.includes(name),
+                (name) => listed.includes(name) || packages.includes(name),
               ),
           },
     );
@@ -191,9 +252,10 @@ const bullet = ({ title, url, author }: NotesEntry) =>
   `* ${title}${author === undefined ? '' : ` by @${author}`} in ${url}`;
 
 /**
- * The notes' Markdown: a `## <package>` for each package `entries` change, in
- * `packages` order, with a `### <type>` for each type; then the new
- * contributors whose first pull request is listed, and the full changelog.
+ * The notes' Markdown: a `## <package>` for each package `entries` list, in
+ * `packages` order, with a `### <type>` for each type; then `## Maintenance`
+ * the same way, the new contributors whose first pull request is listed,
+ * and the full changelog.
  */
 export function renderNotes(opts: {
   readonly entries: ReadonlyArray<NotesEntry>;
@@ -204,23 +266,32 @@ export function renderNotes(opts: {
   readonly tag: string;
 }): string {
   const blocks: Array<string> = [];
-  for (const { name } of opts.packages) {
-    const entries = opts.entries.filter(({ packages }) =>
-      packages.includes(name),
-    );
+  const group = (heading: string, entries: ReadonlyArray<NotesEntry>) => {
     if (entries.length === 0) {
-      continue;
+      return;
     }
-    blocks.push(`## ${name}`);
-    for (const [section, heading] of sections) {
+    blocks.push(`## ${heading}`);
+    for (const [section, sectionHeading] of sections) {
       const listed = entries.filter(
         ({ title }) => noteSection(title) === section,
       );
       if (listed.length > 0) {
-        blocks.push(`### ${heading}\n\n${listed.map(bullet).join('\n')}`);
+        blocks.push(
+          `### ${sectionHeading}\n\n${listed.map(bullet).join('\n')}`,
+        );
       }
     }
+  };
+  for (const { name } of opts.packages) {
+    group(
+      name,
+      opts.entries.filter(({ packages }) => packages?.includes(name)),
+    );
   }
+  group(
+    'Maintenance',
+    opts.entries.filter(({ packages }) => packages === null),
+  );
   if (blocks.length === 0) {
     blocks.push('No changes to the published packages.');
   }
