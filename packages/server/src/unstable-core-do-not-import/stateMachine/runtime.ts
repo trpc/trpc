@@ -26,7 +26,7 @@ export interface MachineRuntime<TState, TEvent> extends AsyncDisposable {
    * a loop body's `const` keep the last value alive while awaiting.
    *
    * Disposal calls `return()` on `source`, which should remove its
-   * listeners. An async generator only returns at its next `yield`, so one
+   * listeners. So does taking in a source once the runtime is disposed. An async generator only returns at its next `yield`, so one
    * waiting on I/O holds disposal up until the I/O settles.
    */
   intake<TValue>(
@@ -101,6 +101,7 @@ export function createMachineRuntime<
    * doesn't pay for it.
    */
   let reader: ReturnType<typeof startReader> | null = null;
+  let disposal: Promise<void> | null = null;
 
   function report(error: unknown) {
     try {
@@ -193,7 +194,12 @@ export function createMachineRuntime<
         source: AsyncIterable<TValue>,
         receive: (value: TValue) => void,
       ) {
-        if (disposed) return;
+        if (disposed) {
+          // as `use` disposes: a source may already hold what it reads from,
+          // as an observable does once it's turned into an iterable
+          attempt(() => source[Symbol.asyncIterator]().return?.());
+          return;
+        }
         reader ??= startReader();
         reader.sources.add(mapSource(source, receive));
       },
@@ -211,18 +217,20 @@ export function createMachineRuntime<
         return { unsubscribe: () => listeners.delete(listener) };
       },
     },
-    async () => {
-      if (disposed) return;
-      disposed = true;
-      queue.length = 0;
-      listeners.clear();
-      for (const resource of resources.splice(0).reverse()) {
-        attempt(() => disposeNow(resource));
-      }
-      reader?.stopping.resolve();
-      await reader?.loop;
-    },
+    // every call waits for the one cleanup
+    () => (disposal ??= dispose()),
   );
+
+  async function dispose() {
+    disposed = true;
+    queue.length = 0;
+    listeners.clear();
+    for (const resource of resources.splice(0).reverse()) {
+      attempt(() => disposeNow(resource));
+    }
+    reader?.stopping.resolve();
+    await reader?.loop;
+  }
 
   running = true;
   runEffects(opts.machine.initial.effects);

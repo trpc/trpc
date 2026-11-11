@@ -2,6 +2,7 @@ import {
   observable,
   observableToAsyncIterable,
 } from '../../observable/observable';
+import { createDeferred } from '../stream/utils/createDeferred';
 import { makeResource } from '../stream/utils/disposable';
 import { createMachineRuntime, createResourceMap } from './runtime';
 import type { MachineTransition, StateMachine } from './stateMachine';
@@ -515,6 +516,80 @@ test('a runtime that takes in no source starts no loop, and one that does stops 
   // oxlint-disable-next-line trpc/no-symbol-dispose
   await reading[Symbol.asyncDispose]();
   expect(returned).toBe(true);
+});
+
+test('a source taken in after disposal is returned, as a resource used after it is disposed', async () => {
+  const errors: unknown[] = [];
+  const runtime = createMachineRuntime({
+    machine: door([]),
+    run: () => undefined,
+    onError: (error) => errors.push(error),
+  });
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  await runtime[Symbol.asyncDispose]();
+
+  let returned = 0;
+  const source = (onReturn: () => Promise<void>): AsyncIterable<DoorEvent> => ({
+    [Symbol.asyncIterator]: () => ({
+      next: () => new Promise<IteratorResult<DoorEvent>>(() => undefined),
+      return: async () => {
+        await onReturn();
+        return { done: true, value: undefined };
+      },
+    }),
+  });
+  // such as an observable, which is subscribed to when it's made
+  runtime.intake(
+    source(async () => {
+      returned++;
+    }),
+    runtime.send,
+  );
+  runtime.intake(
+    source(async () => {
+      throw new Error('return failed');
+    }),
+    runtime.send,
+  );
+
+  await vi.waitFor(() => expect(errors).toHaveLength(1));
+  expect(returned).toBe(1);
+  expect(errors).toEqual([new Error('return failed')]);
+});
+
+test('disposing a runtime twice waits for the same cleanup', async () => {
+  const returning = createDeferred();
+  const runtime = createMachineRuntime({
+    machine: door([]),
+    run: () => undefined,
+    onError: (error) => {
+      throw error;
+    },
+  });
+  runtime.intake<DoorEvent>(
+    {
+      [Symbol.asyncIterator]: () => ({
+        next: () => new Promise<IteratorResult<DoorEvent>>(() => undefined),
+        return: async () => {
+          await returning.promise;
+          return { done: true, value: undefined };
+        },
+      }),
+    },
+    runtime.send,
+  );
+
+  const settled: string[] = [];
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  const first = runtime[Symbol.asyncDispose]().then(() => settled.push('1'));
+  // oxlint-disable-next-line trpc/no-symbol-dispose
+  const second = runtime[Symbol.asyncDispose]().then(() => settled.push('2'));
+  await new Promise((resolve) => setImmediate(resolve));
+  expect(settled).toEqual([]);
+
+  returning.resolve();
+  await Promise.all([first, second]);
+  expect(settled.sort()).toEqual(['1', '2']);
 });
 
 test('exhaustive only takes what no case handled', () => {
