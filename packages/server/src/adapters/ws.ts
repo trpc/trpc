@@ -54,6 +54,7 @@ import { createURL } from './node-http';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 import { keepAliveResource } from './ws-machines/keepAlive';
 import type {
+  SubscriptionEnd,
   SubscriptionEvent,
   SubscriptionReply,
 } from './ws-machines/subscription';
@@ -211,12 +212,6 @@ const neverAborted = new AbortController().signal;
 /** How a subscription's setup ended: with its iterable, or without. */
 type SubscriptionStart =
   | { kind: 'started'; iterable: AsyncIterable<unknown> }
-  | { kind: 'stopped' }
-  | { kind: 'failed'; error: TRPCError };
-
-/** How a started subscription ended. */
-type SubscriptionEnd =
-  | { kind: 'completed' }
   | { kind: 'stopped' }
   | { kind: 'failed'; error: TRPCError };
 
