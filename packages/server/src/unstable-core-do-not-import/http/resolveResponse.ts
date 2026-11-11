@@ -3,18 +3,17 @@ import {
   isObservable,
   observableToAsyncIterable,
 } from '../../observable/observable';
-import { getErrorShape } from '../error/getErrorShape';
+import { getErrorShape, getFallbackErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
-import type { TRPC_ERROR_CODE_KEY, TRPCErrorShape, TRPCResponse } from '../rpc';
-import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
 import { abortSignalsAnyPonyfill, isAsyncIterable, isObject } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
-import { getHTTPStatusCode, getStatusCodeFromKey } from './getHTTPStatusCode';
+import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type { Outcome } from './outcome';
 import { attempt, fail, ok, settle } from './outcome';
 import { urlPathToProcedurePath } from './pathSeparator';
@@ -148,25 +147,6 @@ function errorShape(
     reportError(scope, getTRPCErrorFromUnknown(cause), source);
     return getFallbackErrorShape(error);
   }
-}
-
-// TODO: import it from `../error/getErrorShape` once #7936 lands
-/**
- * The shape an error gets when its own can't be built or sent, such as when
- * `errorFormatter` throws. It says nothing beyond the error's code, which the
- * HTTP status reveals anyway, and keeps that code so that a client still
- * knows whether to retry.
- * @internal
- */
-function getFallbackErrorShape(
-  cause: unknown,
-): TRPCErrorShape<{ code: TRPC_ERROR_CODE_KEY; httpStatus: number }> {
-  const { code } = getTRPCErrorFromUnknown(cause);
-  return {
-    code: TRPC_ERROR_CODES_BY_KEY[code],
-    message: code,
-    data: { code, httpStatus: getStatusCodeFromKey(code) },
-  };
 }
 
 /**
