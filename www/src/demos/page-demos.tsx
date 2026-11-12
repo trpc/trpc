@@ -13,6 +13,7 @@ import {
   type DemoProps,
   splitAtDemos,
 } from './names.ts';
+import { isChunkLoadError, reloadOnce, reloadPage } from '~/reload-once.ts';
 
 type Demo = ComponentType<DemoProps>;
 
@@ -78,8 +79,12 @@ function LoadedDemo(props: DemoFence) {
   return createElement(demo, { options: props.options });
 }
 
-/** A demo that throws renders nothing, and the rest of the page keeps working. */
-class DemoBoundary extends Component<
+/**
+ * A demo that throws renders nothing, and the rest of the page keeps working.
+ * One whose chunk a deploy replaced reloads the page once, as a route does
+ * (`components/error-page.tsx`), which brings it back.
+ */
+export class DemoBoundary extends Component<
   { readonly children: ReactNode },
   { readonly failed: boolean }
 > {
@@ -91,6 +96,9 @@ class DemoBoundary extends Component<
 
   override componentDidCatch(error: unknown) {
     console.error('A demo failed', error);
+    if (isChunkLoadError(error)) {
+      reloadOnce(`route:${window.location.pathname}`, reloadPage);
+    }
   }
 
   override render() {
