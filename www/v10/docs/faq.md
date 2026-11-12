@@ -62,7 +62,7 @@ Yes, tRPC works with Next.js 13 App Layouts & React Server Components, but we ha
 
 For more information, you can read & follow [this issue](https://github.com/trpc/trpc/issues/3297) where we've referenced a few examples of it.
 
-## Am I safe with using features marked as as `unstable_`? {#unstable}
+## Am I safe with using features marked as `unstable_`? {#unstable}
 
 **tl;dr**: Yes!
 
@@ -74,7 +74,7 @@ If you encounter a feature in tRPC that is marked as `unstable_` it means that t
 - If any changes are done to `unstable_`-feature, they will be included in the release notes (& you'll see type errors)
 - Please report any suggestion on the API design or issues on [github.com/trpc/trpc/issues](https://github.com/trpc/trpc/issues) or in the `#🧪-unstable-experimental-features` on [our Discord](https://trpc.io/discord)
 
-## Am I safe with using features marked as as `experimental_`? {#experimental}
+## Am I safe with using features marked as `experimental_`? {#experimental}
 
 If you encounter a feature in tRPC that is marked as `experimental_` it means that the API is unstable and is very likely to change during any bump of tRPC.
 
