@@ -59,7 +59,7 @@ const getLinks = createIsomorphicFn()
           transformer: SuperJSON,
           // Lets a query read its input from another query's data, in one
           // request. The blog pages load a post and its author this way
-          pipelining: true,
+          experimental_pipelining: true,
           // Queries go as POST, so the Network tab shows their inputs as JSON
           methodOverride: 'POST',
         }),

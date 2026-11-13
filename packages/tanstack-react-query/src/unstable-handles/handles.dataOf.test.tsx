@@ -6,13 +6,13 @@ import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
-  dataOf,
+  experimental_dataOf,
   ensureEntry,
-  entryPerItem,
+  experimental_entryPerItem,
   ensureInfiniteEntry,
   fetchEntry,
   fromHandle,
-  handleOfItem,
+  experimental_handleOfItem,
   isTRPCEntryError,
   loadHandles,
   loadHandlesSettled,
@@ -20,7 +20,7 @@ import {
   prefetchInfiniteEntry,
 } from '.';
 import type {
-  inferHandles,
+  experimental_inferHandles,
   TRPCLoadEntries,
   inferInfiniteQueryHandle,
   inferQueryHandle,
@@ -90,12 +90,12 @@ const pipeliningCtx = (
 ) => {
   const { appRouter, calls } = createAppRouter();
   const resource = testReactResource(appRouter, {
-    server: { allowPipelining: true },
+    server: { experimental_allowPipelining: true },
     client: (opts) => ({
       links: [
         link({
           url: opts.httpUrl,
-          pipelining: true,
+          experimental_pipelining: true,
           fetch: async (input, init) => {
             await new Promise((resolve) => setTimeout(resolve, latency));
             return fetch(input, init);
@@ -118,7 +118,9 @@ describe('dataOf', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       // Listed before the entry it reads: the order doesn't matter
-      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
       post,
     });
 
@@ -145,18 +147,22 @@ describe('dataOf', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const list = prefetchInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' });
 
-    expectTypeOf(dataOf(post).authorId).toEqualTypeOf<string>();
-    expectTypeOf(dataOf(list).pages).toEqualTypeOf<
+    expectTypeOf(experimental_dataOf(post).authorId).toEqualTypeOf<string>();
+    expectTypeOf(experimental_dataOf(list).pages).toEqualTypeOf<
       { items: string[]; nextCursor: null }[]
     >();
     // @ts-expect-error the input is checked against the data's type
-    ensureEntry(trpc.author.byId, { id: dataOf(post).tags });
+    ensureEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 
-    expect(() => `${dataOf(post).authorId}`).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it]`,
+    expect(
+      () => `${experimental_dataOf(post).authorId}`,
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it]`,
     );
-    expect(() => dataOf({} as typeof post)).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got {}]`,
+    expect(() =>
+      experimental_dataOf({} as typeof post),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`experimental_dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got {}]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
@@ -167,17 +173,23 @@ describe('dataOf', () => {
 
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const author = prefetchEntry(trpc.author.byId, {
-      id: dataOf(post).authorId,
+      id: experimental_dataOf(post).authorId,
     });
     const [handles, data] = await loadHandles(trpc, {
       post,
       author,
-      team: prefetchEntry(trpc.team.byId, { id: dataOf(author).teamId }),
+      team: prefetchEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
       tags: prefetchEntry(trpc.tag.byIds, {
-        ids: [dataOf(post).tags[0]!.id, dataOf(post).tags[1]!.id, 'extra'],
+        ids: [
+          experimental_dataOf(post).tags[0]!.id,
+          experimental_dataOf(post).tags[1]!.id,
+          'extra',
+        ],
       }),
       more: prefetchInfiniteEntry(trpc.post.byAuthor, {
-        authorId: dataOf(post).authorId,
+        authorId: experimental_dataOf(post).authorId,
       }),
     });
 
@@ -205,7 +217,9 @@ describe('dataOf', () => {
     const trpc = resource.optionsProxyServer;
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const promise = loadHandles(trpc, {
-      author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      author: prefetchEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
       post,
       team: prefetchEntry(trpc.team.byId, { id: 'team1' }),
     });
@@ -230,7 +244,9 @@ describe('dataOf', () => {
     );
     const [handles] = await loadHandles(trpc, {
       post,
-      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
     });
     expect(handles.author.input).toEqual({ id: 'u1' });
     expect(resource.calls.mock.calls).toEqual([['author.byId', { id: 'u1' }]]);
@@ -247,7 +263,9 @@ describe('dataOf', () => {
     ]) {
       const error = await loadHandles(trpc, {
         post,
-        author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
       }).catch((cause: unknown) => cause);
       expect(error).toMatchObject({
         key: 'post',
@@ -268,13 +286,15 @@ describe('dataOf', () => {
 
     const post = ensureEntry(trpc.post.bySlug, { slug: 'missing' });
     const author = ensureEntry(trpc.author.byId, {
-      id: dataOf(post).authorId,
+      id: experimental_dataOf(post).authorId,
     });
     const [handles, results] = await loadHandlesSettled(trpc, {
       post,
       author,
-      team: prefetchEntry(trpc.team.byId, { id: dataOf(author).teamId }),
-      tags: entryPerItem(dataOf(post).tags, (tag) =>
+      team: prefetchEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
       other: ensureEntry(trpc.team.byId, { id: 'team1' }),
@@ -303,7 +323,7 @@ describe('dataOf', () => {
       loadHandlesSettled(trpc, {
         post: prefetched,
         author: prefetchEntry(trpc.author.byId, {
-          id: dataOf(prefetched).authorId,
+          id: experimental_dataOf(prefetched).authorId,
         }),
       }),
     ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
@@ -317,22 +337,24 @@ describe('dataOf', () => {
     await expect(
       loadHandles(trpc, {
         team: prefetchEntry(trpc.team.byId, { id: 'team1' }),
-        author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
       }),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: The entry for "author" reads the data of an entry with \`dataOf()\` that isn't in this load. Add that entry to the load]`,
+      `[Error: The entry for "author" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
 });
 
-describe('dataOf().map()', () => {
+describe('experimental_dataOf().map()', () => {
   test('reads a part of every item of an array', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
 
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
-    const tagIds = dataOf(post).tags.map((tag) => tag.id);
+    const tagIds = experimental_dataOf(post).tags.map((tag) => tag.id);
     expectTypeOf(tagIds).toEqualTypeOf<string[]>();
     const [handles, data] = await loadHandles(trpc, {
       post,
@@ -348,17 +370,17 @@ describe('dataOf().map()', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
 
     expect(() =>
-      dataOf(post).tags.map((tag) => ({ id: tag.id })),
+      experimental_dataOf(post).tags.map((tag) => ({ id: tag.id })),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`entryPerItem()\`]`,
-    );
-    expect(() => dataOf(post).tags.map(() => dataOf(post).id)).toThrow(
-      /must return the item or a part of it/,
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\`]`,
     );
     expect(() =>
-      dataOf(post).tags.filter((tag) => tag.id === 't1'),
+      experimental_dataOf(post).tags.map(() => experimental_dataOf(post).id),
+    ).toThrow(/must return the item or a part of it/);
+    expect(() =>
+      experimental_dataOf(post).tags.filter((tag) => tag.id === 't1'),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item]`,
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item]`,
     );
   });
 });
@@ -371,12 +393,13 @@ describe('entryPerItem', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      tags: entryPerItem(dataOf(post).tags, (tag) =>
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id, 'extra'] }),
       ),
       // Not waited for, so it has no data
-      alsoTags: entryPerItem(dataOf(post).tags, (tag) =>
-        prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      alsoTags: experimental_entryPerItem(
+        experimental_dataOf(post).tags,
+        (tag) => prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
 
@@ -388,7 +411,7 @@ describe('entryPerItem', () => {
     ]);
 
     const [tag] = data.post.tags;
-    const handle = handleOfItem(handles.tags, tag!);
+    const handle = experimental_handleOfItem(handles.tags, tag!);
     expectTypeOf(handle).toEqualTypeOf<
       inferQueryHandle<TRPC['tag']['byIds']>
     >();
@@ -405,14 +428,16 @@ describe('entryPerItem', () => {
     ).toEqual([{ id: 't1' }, { id: 'extra' }]);
 
     // An item the load never had, such as one from a later page, has a handle too
-    expect(handleOfItem(handles.tags, { id: 'later' }).input).toEqual({
+    expect(
+      experimental_handleOfItem(handles.tags, { id: 'later' }).input,
+    ).toEqual({
       ids: ['later', 'extra'],
     });
     // @ts-expect-error the item has to be one of the list's
-    handleOfItem(handles.tags, { slug: 'nope' });
+    experimental_handleOfItem(handles.tags, { slug: 'nope' });
     // It crosses to the browser as JSON
     expect(
-      handleOfItem(JSON.parse(JSON.stringify(handles.tags)), tag!),
+      experimental_handleOfItem(JSON.parse(JSON.stringify(handles.tags)), tag!),
     ).toEqual(handle);
   });
 
@@ -423,13 +448,15 @@ describe('entryPerItem', () => {
     const posts = ensureInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const [handles, data] = await loadHandles(trpc, {
       posts,
-      authors: entryPerItem(
-        dataOf(posts).pages.map((page) => page.items),
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
         (authorId) => ensureEntry(trpc.author.byId, { id: authorId }),
       ),
     });
     expect(data.authors).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
-    expect(handleOfItem(handles.authors, 'u2').input).toEqual({ id: 'u2' });
+    expect(experimental_handleOfItem(handles.authors, 'u2').input).toEqual({
+      id: 'u2',
+    });
   });
 
   test('an item that fails rejects the load with its place in the list', async () => {
@@ -444,7 +471,7 @@ describe('entryPerItem', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const entries = {
       post,
-      tags: entryPerItem(dataOf(post).tags, (tag) =>
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     } satisfies TRPCLoadEntries;
@@ -461,22 +488,82 @@ describe('entryPerItem', () => {
     ]);
   });
 
-  test('throws for a list that is not from dataOf(), and for a callback that returns no query entry', async () => {
+  test('throws for a list that is not from experimental_dataOf(), and for a callback that returns no query entry', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
 
     expect(() =>
-      entryPerItem([{ id: 't1' }], (tag) =>
+      experimental_entryPerItem([{ id: 't1' }], (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`entryPerItem()\` expects a list from \`dataOf()\`, such as \`dataOf(posts).items\`, got [{"id":"t1"}]]`,
+      `[Error: \`experimental_entryPerItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got [{"id":"t1"}]]`,
     );
-    expect(() =>
-      // @ts-expect-error only a query entry
-      entryPerItem(dataOf(post).tags, (tag) => tag.id),
-    ).toThrow(/must return an entry/);
+    const { tags } = experimental_dataOf(post);
+    // @ts-expect-error only a query entry
+    expect(() => experimental_entryPerItem(tags, (tag) => tag.id)).toThrow(
+      /must return an entry/,
+    );
+  });
+});
+
+describe('without the options', () => {
+  test('a link that pipelines and a server that does not: the load fails, and no query runs with a hole in its input', async () => {
+    const { appRouter, calls } = createAppRouter();
+    await using resource = testReactResource(appRouter, {
+      client: (opts) => ({
+        links: [
+          httpBatchLink({ url: opts.httpUrl, experimental_pipelining: true }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    await expect(
+      loadHandles(trpc, {
+        post,
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
+      }),
+    ).rejects.toMatchObject({
+      key: 'post',
+      cause: {
+        message: expect.stringContaining(
+          'Set `experimental_allowPipelining: true` on its handler',
+        ),
+      },
+    });
+    expect(calls).not.toHaveBeenCalled();
+  });
+
+  test('a link that does not pipeline: the input is filled in on the client, in ordinary batches', async () => {
+    const { appRouter } = createAppRouter();
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({ links: [httpBatchLink({ url: opts.httpUrl })] }),
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    expect(handles.author.input).toEqual({ id: 'u1' });
+    expect(
+      resource.onRequestSpy.mock.calls.map(([req]) =>
+        req.url?.replace(/\?.*/, ''),
+      ),
+    ).toEqual(['/post.bySlug', '/author.byId']);
+    for (const [req] of resource.onRequestSpy.mock.calls) {
+      expect(req.url).toContain('batch=1');
+      expect(req.url).not.toContain('pipe=');
+    }
   });
 });
 
@@ -492,7 +579,7 @@ describe('satisfies TRPCLoadEntries', () => {
         team: isAdmin ? fetchEntry(trpc.team.byId, { id: 'team1' }) : skipToken,
         card: {
           author: prefetchEntry(trpc.author.byId, {
-            id: dataOf(post).authorId,
+            id: experimental_dataOf(post).authorId,
           }),
         },
       } satisfies TRPCLoadEntries;
@@ -501,7 +588,9 @@ describe('satisfies TRPCLoadEntries', () => {
     expectTypeOf(handles.team).toEqualTypeOf<
       inferQueryHandle<TRPC['team']['byId']> | undefined
     >();
-    expectTypeOf(handles).toEqualTypeOf<inferHandles<typeof entries>>();
+    expectTypeOf(handles).toEqualTypeOf<
+      experimental_inferHandles<typeof entries>
+    >();
 
     const notEntries = () =>
       ({
@@ -525,7 +614,7 @@ describe('groups', () => {
       post,
       // The child takes a string. It doesn't know this one arrives later
       authorCard: authorCardEntries(trpc, {
-        authorId: dataOf(post).authorId,
+        authorId: experimental_dataOf(post).authorId,
       }),
     };
   }
@@ -572,7 +661,7 @@ describe('groups', () => {
     });
 
     expectTypeOf(handles.page).toEqualTypeOf<
-      inferHandles<typeof postEntries>
+      experimental_inferHandles<typeof postEntries>
     >();
     expectTypeOf(handles.page.authorCard).toEqualTypeOf<{
       author: inferQueryHandle<TRPC['author']['byId']>;
@@ -610,13 +699,15 @@ describe('groups', () => {
     const { useTRPC } = resource;
 
     function AuthorCard(props: {
-      handles: inferHandles<typeof authorCardEntries>;
+      handles: experimental_inferHandles<typeof authorCardEntries>;
     }) {
       const trpc = useTRPC();
       const author = useSuspenseQuery(fromHandle(trpc, props.handles.author));
       return <address>{author.data.name}</address>;
     }
-    function Post(props: { handles: inferHandles<typeof postEntries> }) {
+    function Post(props: {
+      handles: experimental_inferHandles<typeof postEntries>;
+    }) {
       const trpc = useTRPC();
       const post = useSuspenseQuery(fromHandle(trpc, props.handles.post));
       return (
@@ -676,14 +767,16 @@ describe.each([
 
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const author = prefetchEntry(trpc.author.byId, {
-      id: dataOf(post).authorId,
+      id: experimental_dataOf(post).authorId,
     });
     const [handles, data] = await loadHandles(trpc, {
       post,
       author,
-      team: ensureEntry(trpc.team.byId, { id: dataOf(author).teamId }),
+      team: ensureEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
       tags: prefetchEntry(trpc.tag.byIds, {
-        ids: [dataOf(post).tags[1]!.id, 'extra'],
+        ids: [experimental_dataOf(post).tags[1]!.id, 'extra'],
       }),
     });
 
@@ -723,7 +816,7 @@ describe.each([
     const [handles] = await loadHandles(trpc, {
       post,
       tags: fetchEntry(trpc.tag.byIds, {
-        ids: dataOf(post).tags.map((tag) => tag.id),
+        ids: experimental_dataOf(post).tags.map((tag) => tag.id),
       }),
     });
     expect(handles.tags.input).toEqual({ ids: ['t1', 't2'] });
@@ -745,7 +838,7 @@ describe.each([
     const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      tags: entryPerItem(dataOf(post).tags, (tag) =>
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id, 'extra'] }),
       ),
     });
@@ -756,7 +849,7 @@ describe.each([
     // Every item is a cache entry of its own, with its own result or error
     const [first, second] = data.post.tags.map((tag) =>
       resource.queryClient.getQueryState(
-        fromHandle(trpc, handleOfItem(handles.tags, tag)).queryKey,
+        fromHandle(trpc, experimental_handleOfItem(handles.tags, tag)).queryKey,
       ),
     );
     expect(first?.data).toEqual([{ id: 't1' }, { id: 'extra' }]);
@@ -774,18 +867,20 @@ describe.each([
     const posts = ensureInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const [handles, data] = await loadHandles(trpc, {
       posts,
-      authors: entryPerItem(
-        dataOf(posts).pages.map((page) => page.items),
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
         (authorId) => ensureEntry(trpc.author.byId, { id: authorId }),
       ),
       // The first page is one request's result, which the server can read
       author: ensureEntry(trpc.author.byId, {
-        id: dataOf(posts).pages[0]!.items[0]!,
+        id: experimental_dataOf(posts).pages[0]!.items[0]!,
       }),
     });
     expect(data.authors).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
     expect(handles.author.input).toEqual({ id: 'u1' });
-    expect(handleOfItem(handles.authors, 'u1')).toEqual(handles.author);
+    expect(experimental_handleOfItem(handles.authors, 'u1')).toEqual(
+      handles.author,
+    );
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -804,13 +899,15 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const author = prefetchEntry(
       trpc.author.byId,
-      { id: dataOf(post).authorId },
+      { id: experimental_dataOf(post).authorId },
       { staleTime: Infinity },
     );
     const [handles] = await loadHandles(trpc, {
       post,
       author,
-      team: ensureEntry(trpc.team.byId, { id: dataOf(author).teamId }),
+      team: ensureEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
     });
     expect(handles.team.input).toEqual({ id: 'team1' });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
@@ -822,13 +919,13 @@ describe.each([
     const entries = () => {
       const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
       const author = prefetchEntry(trpc.author.byId, {
-        id: dataOf(post).authorId,
+        id: experimental_dataOf(post).authorId,
       });
       return {
         post,
         author,
         more: prefetchInfiniteEntry(trpc.post.byAuthor, {
-          authorId: dataOf(author).id,
+          authorId: experimental_dataOf(author).id,
         }),
       };
     };
@@ -862,7 +959,9 @@ describe.each([
     );
     const [handles] = await loadHandles(trpc, {
       post,
-      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
     });
     expect(handles.author.input).toEqual({ id: 'u1' });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
@@ -882,7 +981,9 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
     });
     // The handle's input and its data agree
     expect(handles.author.input).toEqual({ id: 'u0' });
@@ -905,11 +1006,15 @@ describe.each([
     });
 
     const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
-    const author = ensureEntry(trpc.author.byId, { id: dataOf(post).authorId });
+    const author = ensureEntry(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    });
     const [handles, data] = await loadHandles(trpc, {
       post,
       author,
-      team: fetchEntry(trpc.team.byId, { id: dataOf(author).teamId }),
+      team: fetchEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
     });
     expect(handles.team.input).toEqual({ id: 'team0' });
     expect(data.team.id).toBe('team0');
@@ -923,7 +1028,9 @@ describe.each([
     await expect(
       loadHandles(trpc, {
         post,
-        author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
       }),
     ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
     expect(resource.calls).not.toHaveBeenCalledWith(
@@ -955,7 +1062,9 @@ describe.each([
     );
     const [, data] = await loadHandles(trpc, {
       post,
-      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
     });
     expect(data.author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
     // The pipelined batch, the retried post, then the author with its input
@@ -975,7 +1084,9 @@ describe.each([
     await expect(
       loadHandles(trpc, {
         post,
-        author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+        author: ensureEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
       }),
     ).rejects.toMatchObject({ key: 'author', code: 'FORBIDDEN' });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
@@ -988,7 +1099,7 @@ describe.each([
     const [handles, data] = await loadHandles(trpc, {
       post,
       more: ensureInfiniteEntry(trpc.post.byAuthor, {
-        authorId: dataOf(post).authorId,
+        authorId: experimental_dataOf(post).authorId,
       }),
     });
     expect(handles.more.input).toEqual({ authorId: 'u1' });

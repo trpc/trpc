@@ -30,9 +30,12 @@ export interface PipelineRead {
 }
 
 /**
- * The `pipe` of a batch request: the reads of each call, by the call's index.
- * It is in the body of a POST, beside the inputs, and in the `pipe` search
- * param of a GET, which has no body.
+ * The `pipe` of a pipelined batch, `?batch=2`: the reads of each call, by the
+ * call's index. It is in the body of a POST, beside the inputs, and in the
+ * `pipe` search param of a GET, which has no body.
+ *
+ * A server that doesn't accept pipelined batches takes `?batch=2` for a call
+ * to one procedure, finds none, and runs nothing.
  */
 export type PipelineReads = Record<
   number,

@@ -12,13 +12,13 @@ import {
 } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
-  dataOf,
+  experimental_dataOf,
   fromHandle,
   prefetchEntry,
   prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type {
-  inferHandles,
+  experimental_inferHandles,
   TRPCLoadEntries,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { useEffect, useRef } from 'react';
@@ -41,14 +41,20 @@ export function authorCardEntries(
     // page are one request. Later pages are requests of their own
     moreByAuthor: prefetchInfiniteEntry(
       trpc.blog.posts,
-      { authorId: dataOf(author).id, exceptSlug: opts.exceptSlug, limit: 5 },
+      {
+        authorId: experimental_dataOf(author).id,
+        exceptSlug: opts.exceptSlug,
+        limit: 5,
+      },
       { getNextPageParam: (lastPage) => lastPage.nextCursor },
     ),
   } satisfies TRPCLoadEntries;
 }
 
 export function AuthorCard(
-  props: Readonly<{ handles: inferHandles<typeof authorCardEntries> }>,
+  props: Readonly<{
+    handles: experimental_inferHandles<typeof authorCardEntries>;
+  }>,
 ) {
   const trpc = useTRPC();
   const authorQuery = useSuspenseQuery(fromHandle(trpc, props.handles.author));

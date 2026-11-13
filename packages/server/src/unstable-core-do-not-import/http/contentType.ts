@@ -36,7 +36,7 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
-  /** Whether a batch may say which inputs to fill in from earlier calls' data */
+  /** Whether to accept a pipelined batch, `?batch=2`. Without it, that is no batch */
   allowPipelining: boolean;
 };
 
@@ -103,7 +103,10 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   },
   async parse(opts) {
     const { req } = opts;
-    const isBatchCall = opts.searchParams.get('batch') === '1';
+    const batch = opts.searchParams.get('batch');
+    // A batch whose calls read their inputs from each other's data
+    const isPipelined = opts.allowPipelining && batch === '2';
+    const isBatchCall = batch === '1' || isPipelined;
     const maxBatchSize = opts.maxBatchSize;
 
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
@@ -119,33 +122,25 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     }
 
     type InputRecord = Record<number, unknown>;
-    /** The `?input=` of a GET, or the body of any other request */
-    const getPayload = memo(async (): Promise<unknown> => {
+    /** The `pipe` in the body of a pipelined batch, once the body is read */
+    let bodyPipe: unknown = undefined;
+    const getInputs = memo(async (): Promise<InputRecord> => {
+      let inputs: unknown = undefined;
       if (req.method === 'GET') {
         const queryInput = opts.searchParams.get('input');
-        return queryInput ? JSON.parse(queryInput) : undefined;
-      }
-      // `httpLink` sends no body when the input is `undefined`, so treat an
-      // empty body like a GET without `?input=`
-      const body = await req.text();
-      return body ? JSON.parse(body) : undefined;
-    });
-    /** A batch's body can have a `pipe` beside its inputs. A GET has it in the URL */
-    const getPipe = async (): Promise<unknown> => {
-      if (!isBatchCall || req.method === 'GET') {
-        return undefined;
-      }
-      const payload = await getPayload.read();
-      return isObject(payload) ? payload['pipe'] : undefined;
-    };
-    const getInputs = memo(async (): Promise<InputRecord> => {
-      const inputs = await getPayload.read();
-      if ((await getPipe()) !== undefined && !opts.allowPipelining) {
-        // Otherwise the calls would run with the holes the client left in their inputs
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Pipelining is not enabled on the server`,
-        });
+        if (queryInput) {
+          inputs = JSON.parse(queryInput);
+        }
+      } else {
+        // `httpLink` sends no body when the input is `undefined`, so treat an
+        // empty body like a GET without `?input=`
+        const body = await req.text();
+        if (body) {
+          inputs = JSON.parse(body);
+        }
+        if (isPipelined && isObject(inputs)) {
+          bodyPipe = inputs['pipe'];
+        }
       }
       if (inputs === undefined) {
         return emptyObject();
@@ -243,7 +238,17 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
       url: opts.url,
-      getPipe,
+      ...(isPipelined && {
+        experimental_getPipe: async () => {
+          // A GET has it in the URL. Any other request has it in its body,
+          // beside the inputs
+          if (req.method === 'GET') {
+            return opts.searchParams.get('pipe') ?? undefined;
+          }
+          await getInputs.read();
+          return bodyPipe;
+        },
+      }),
     };
     return info;
   },

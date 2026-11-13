@@ -141,18 +141,23 @@ declare const entryPerItemDef: unique symbol;
 
 /**
  * An entry to load for every item of a list in another entry's data, from
- * `entryPerItem()`. Its handle is a `TRPCQueryHandlePerItem`.
+ * `experimental_entryPerItem()`. Its handle is a `experimental_TRPCQueryHandlePerItem`.
+ * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
  */
-export interface TRPCEntryPerItem<TEntry = AnyTRPCEntry, TItem = unknown> {
+export interface experimental_TRPCEntryPerItem<
+  TEntry = AnyTRPCEntry,
+  TItem = unknown,
+> {
   /** Type-only: never present at runtime. */
   readonly [entryPerItemDef]: { entry: TEntry; item: TItem };
 }
 
 /**
  * A serializable reference to the query of every item of a list, from an
- * `entryPerItem()` entry. `handleOfItem(handle, item)` gives one item's handle.
+ * `experimental_entryPerItem()` entry. `experimental_handleOfItem(handle, item)` gives one item's handle.
+ * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
  */
-export interface TRPCQueryHandlePerItem<
+export interface experimental_TRPCQueryHandlePerItem<
   TDef extends ResolverDef = ResolverDef,
   TItem = unknown,
 > {
@@ -182,7 +187,7 @@ export interface TRPCLoadEntries {
   [key: string]:
     | AnyTRPCEntry
     | typeof skipToken
-    | TRPCEntryPerItem<any, any>
+    | experimental_TRPCEntryPerItem<any, any>
     | TRPCLoadEntries;
 }
 
@@ -193,11 +198,11 @@ type HandleOfEntry<TEntry> =
       ? TRPCInfiniteQueryHandle<TDef>
       : TEntry extends typeof skipToken
         ? undefined
-        : TEntry extends TRPCEntryPerItem<
+        : TEntry extends experimental_TRPCEntryPerItem<
               TRPCQueryEntry<infer TDef, any>,
               infer TItem
             >
-          ? TRPCQueryHandlePerItem<TDef, TItem>
+          ? experimental_TRPCQueryHandlePerItem<TDef, TItem>
           : TEntry extends TRPCLoadEntries
             ? HandlesOf<TEntry>
             : never;
@@ -229,12 +234,12 @@ type WaitedEntry = {
  */
 type WaitedKey<TEntries, TKey extends keyof TEntries> = TEntries[TKey] extends
   | WaitedEntry
-  | TRPCEntryPerItem<WaitedEntry, any>
+  | experimental_TRPCEntryPerItem<WaitedEntry, any>
   ? TKey
   : TEntries[TKey] extends
         | AnyTRPCEntry
         | typeof skipToken
-        | TRPCEntryPerItem<any, any>
+        | experimental_TRPCEntryPerItem<any, any>
     ? never
     : TKey;
 
@@ -243,7 +248,7 @@ type DataOf<TEntries extends TRPCLoadEntries> = {
     TKey in keyof TEntries as WaitedKey<TEntries, TKey>
   ]: TEntries[TKey] extends AnyTRPCEntry
     ? DataOfEntry<TEntries[TKey]>
-    : TEntries[TKey] extends TRPCEntryPerItem<infer TEntry, any>
+    : TEntries[TKey] extends experimental_TRPCEntryPerItem<infer TEntry, any>
       ? DataOfEntry<TEntry>[]
       : TEntries[TKey] extends TRPCLoadEntries
         ? DataOf<TEntries[TKey]>
@@ -255,7 +260,7 @@ type ResultsOf<TEntries extends TRPCLoadEntries> = {
     TKey in keyof TEntries as WaitedKey<TEntries, TKey>
   ]: TEntries[TKey] extends AnyTRPCEntry
     ? TRPCEntryResult<DefOfEntry<TEntries[TKey]>, DataOfEntry<TEntries[TKey]>>
-    : TEntries[TKey] extends TRPCEntryPerItem<infer TEntry, any>
+    : TEntries[TKey] extends experimental_TRPCEntryPerItem<infer TEntry, any>
       ? TRPCEntryResult<DefOfEntry<TEntry>, DataOfEntry<TEntry>>[]
       : TEntries[TKey] extends TRPCLoadEntries
         ? ResultsOf<TEntries[TKey]>
@@ -367,10 +372,11 @@ export type inferInfiniteQueryHandle<
  * export const postEntries = (trpc: TRPC, id: string) => ({
  *   post: ensureEntry(trpc.post.byId, { id }),
  * });
- * function Post(props: { handles: inferHandles<typeof postEntries> }) {}
+ * function Post(props: { handles: experimental_inferHandles<typeof postEntries> }) {}
  * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#groups
  */
-export type inferHandles<
+export type experimental_inferHandles<
   TEntries extends TRPCLoadEntries | ((...args: any[]) => TRPCLoadEntries),
 > = HandlesOf<
   TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries
@@ -421,14 +427,14 @@ function toHandle(options: any, type: HandleType) {
 const entryState = Symbol('trpc.handleEntry');
 const entryDataRef = Symbol('trpc.entryData');
 
-/** A `dataOf()` value: a path into the data of another entry */
+/** A `experimental_dataOf()` value: a path into the data of another entry */
 interface EntryDataRef {
-  /** The entry `dataOf()` was called with */
+  /** The entry `experimental_dataOf()` was called with */
   entry: object;
   path: PipelinePath;
 }
 
-/** A `dataOf()` value in an entry's input */
+/** A `experimental_dataOf()` value in an entry's input */
 interface EntryInputRef extends EntryDataRef {
   /** Where it is in the input */
   to: string[];
@@ -439,10 +445,10 @@ interface EntryState {
   type: HandleType;
   /** The procedure's path */
   path: string[];
-  /** The `dataOf()` values in the entry's input */
+  /** The `experimental_dataOf()` values in the entry's input */
   refs: EntryInputRef[];
   /**
-   * The query's options, with every `dataOf()` value in the input replaced.
+   * The query's options, with every `experimental_dataOf()` value in the input replaced.
    * Its requests carry `pipeline`, for a link that pipelines.
    */
   options: (opts: {
@@ -451,7 +457,7 @@ interface EntryState {
   }) => any;
   /**
    * Calls the procedure outside the `QueryClient`, with `undefined` for every
-   * `dataOf()` value in the input: the server fills them in. For an infinite
+   * `experimental_dataOf()` value in the input: the server fills them in. For an infinite
    * query, it asks for the first page.
    */
   query: (pipeline: OperationPipeline) => Promise<unknown>;
@@ -469,7 +475,7 @@ function entryStateOf(entry: unknown): EntryState | undefined {
 
 const entryPerItemState = Symbol('trpc.handleEntryPerItem');
 
-/** What `entryPerItem()` returns */
+/** What `experimental_entryPerItem()` returns */
 interface EntryPerItemState {
   /** The entry the callback returned, built with a stand-in for the item */
   entry: object;
@@ -487,7 +493,7 @@ function entryPerItemStateOf(value: unknown): EntryPerItemState | undefined {
 }
 
 const notData =
-  "A `dataOf()` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it";
+  "A `experimental_dataOf()` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it";
 
 function createEntryDataRef(ref: EntryDataRef): unknown {
   // A function, so that `.map()` can be called on it
@@ -498,7 +504,7 @@ function createEntryDataRef(ref: EntryDataRef): unknown {
       }
       if (key === Symbol.toPrimitive) {
         throw new Error(
-          `A \`dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it`,
+          `A \`experimental_dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it`,
         );
       }
       if (typeof key === 'symbol') {
@@ -513,7 +519,7 @@ function createEntryDataRef(ref: EntryDataRef): unknown {
       const method = ref.path[ref.path.length - 1];
       if (method === 'toJSON') {
         // So that an error message can print a value that has one inside
-        return '[a dataOf() value]';
+        return '[a experimental_dataOf() value]';
       }
       const callback = args[0];
       if (method !== 'map' || typeof callback !== 'function') {
@@ -531,7 +537,7 @@ function createEntryDataRef(ref: EntryDataRef): unknown {
         !item.every((segment, index) => mapped.path[index] === segment)
       ) {
         throw new Error(
-          `${notData}. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`entryPerItem()\``,
+          `${notData}. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\``,
         );
       }
       return createEntryDataRef(mapped);
@@ -554,7 +560,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-/** Replaces every `dataOf()` value in an input. `to` is where `value` is in it */
+/** Replaces every `experimental_dataOf()` value in an input. `to` is where `value` is in it */
 function replaceEntryDataRefs(
   value: unknown,
   to: string[],
@@ -718,7 +724,7 @@ interface EntryLeaf {
   entry: object;
   state: EntryState;
   /**
-   * For an entry from `dataOf(entry).map()`: the list it is loaded for every
+   * For an entry from `experimental_dataOf(entry).map()`: the list it is loaded for every
    * item of. Its handle and its data are then lists too
    */
   each: EntryDataRef | null;
@@ -726,6 +732,30 @@ interface EntryLeaf {
 
 /** What `loadHandles()` was given, with `skipToken` keys left out */
 type EntryTree = [name: string, node: EntryLeaf | EntryTree][];
+
+/** Whether a value is something `loadHandles()` loads: an entry or `skipToken` */
+function isLoadable(value: unknown) {
+  return (
+    value === skipToken ||
+    entryStateOf(value) !== undefined ||
+    entryPerItemStateOf(value) !== undefined
+  );
+}
+
+/**
+ * Whether an object is a group of entries. An object with nothing to load in
+ * it is not: it is reported as it was before there were groups.
+ */
+function isGroup(value: unknown): value is Record<string, unknown> {
+  if (!isPlainObject(value) || entryDataRefOf(value)) {
+    return false;
+  }
+  const members = Object.values(value);
+  return (
+    members.length === 0 ||
+    members.some((member) => isLoadable(member) || isGroup(member))
+  );
+}
 
 function readEntries(opts: {
   queryClient: QueryClient;
@@ -754,7 +784,7 @@ function readEntries(opts: {
         ],
       ];
     }
-    if (isPlainObject(entry) && !entryDataRefOf(entry)) {
+    if (isGroup(entry)) {
       return [
         [
           name,
@@ -763,7 +793,7 @@ function readEntries(opts: {
       ];
     }
     throw new Error(
-      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, \`skipToken\`, or an object of them, for "${key}", got ${JSON.stringify(entry)}`,
+      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, or \`skipToken\`, for "${key}", got ${JSON.stringify(entry)}`,
     );
   });
 }
@@ -803,7 +833,7 @@ interface EntryLoad {
    */
   requestData: Promise<unknown> | null;
   /**
-   * The query's options. Waits for the data its input reads with `dataOf()`.
+   * The query's options. Waits for the data its input reads with `experimental_dataOf()`.
    * For an entry per item, its handle
    */
   options: Promise<any>;
@@ -834,7 +864,7 @@ async function startEntries(opts: {
         const source = leafOfEntry.get(ref.entry);
         if (!source) {
           throw new Error(
-            `The entry for "${leaf.key}" reads the data of an entry with \`dataOf()\` that isn't in this load. Add that entry to the load`,
+            `The entry for "${leaf.key}" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load`,
           );
         }
         return source;
@@ -873,7 +903,7 @@ async function startEntries(opts: {
   function sendPipelined(pipelined: {
     state: EntryState;
     sources: Map<object, EntryLoad>;
-    /** Whether a `dataOf()` value is an item of the list an entry is loaded for */
+    /** Whether a `experimental_dataOf()` value is an item of the list an entry is loaded for */
     readsItem: (ref: EntryDataRef) => boolean;
   }) {
     const { state } = pipelined;
@@ -1026,7 +1056,7 @@ async function startEntries(opts: {
             return query.data;
           })
         : promise;
-    // Only an entry that reads it with `dataOf()` waits for it
+    // Only an entry that reads it with `experimental_dataOf()` waits for it
     data.catch(() => undefined);
     const load: EntryLoad = {
       leaf,
@@ -1040,7 +1070,7 @@ async function startEntries(opts: {
     return load;
   }
 
-  /** Loads an entry from `entryPerItem()`: a query for every item of a list */
+  /** Loads an entry from `experimental_entryPerItem()`: a query for every item of a list */
   function loadPerItem(perItem: {
     leaf: EntryLeaf;
     list: EntryDataRef;
@@ -1396,7 +1426,7 @@ function entry(opts: {
       input,
       pipeline ? { ...queryOpts, trpc: trpcOpts(pipeline) } : opts.opts,
     );
-  // Without `dataOf()` values, a bad input or option throws here, not in the load
+  // Without `experimental_dataOf()` values, a bad input or option throws here, not in the load
   const built = refs.length === 0 ? options(opts.input, null) : null;
   return createEntry({
     type: opts.type,
@@ -1438,10 +1468,10 @@ function entry(opts: {
  * It holds no data when you call it: it records which part of the data you read,
  * and the load fills that in once the entry it comes from has data. So don't
  * compute with it or branch on it. To read a part of every item of an array, use
- * `.map()`: `dataOf(posts).map((post) => post.authorId)`. Its callback runs once,
+ * `.map()`: `experimental_dataOf(posts).map((post) => post.authorId)`. Its callback runs once,
  * on a stand-in for every item, and must return the item or a part of it.
  *
- * To load a query for every item, use `entryPerItem()`.
+ * To load a query for every item, use `experimental_entryPerItem()`.
  *
  * The load waits for that data, whatever the kind of either entry, and rejects
  * with the error of the entry it comes from if that one fails. With
@@ -1451,16 +1481,17 @@ function entry(opts: {
  * const post = ensureEntry(trpc.post.bySlug, { slug });
  * const [handles] = await loadHandles(trpc, {
  *   post,
- *   author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+ *   author: prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).authorId }),
  * });
  * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#data-of
  */
-export function dataOf<TEntry extends AnyTRPCEntry>(
+export function experimental_dataOf<TEntry extends AnyTRPCEntry>(
   entry: TEntry,
 ): DataOfEntry<TEntry> {
   if (!entryStateOf(entry)) {
     throw new Error(
-      `\`dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(entry)}`,
+      `\`experimental_dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(entry)}`,
     );
   }
   return createEntryDataRef({ entry, path: [] }) as any;
@@ -1470,50 +1501,51 @@ export function dataOf<TEntry extends AnyTRPCEntry>(
  * An entry to load for every item of a list in another entry's data. The
  * callback runs once, on a stand-in for every item, and returns the entry.
  *
- * The load gives one handle for it. `handleOfItem(handle, item)` is the handle
+ * The load gives one handle for it. `experimental_handleOfItem(handle, item)` is the handle
  * of an item's query, also for an item that loaded later, such as one on a
  * later page.
  *
- * The list is a `dataOf()` value. A list of lists works too, such as the items
+ * The list is a `experimental_dataOf()` value. A list of lists works too, such as the items
  * of every page of an infinite query:
- * `dataOf(posts).pages.map((page) => page.items)`.
+ * `experimental_dataOf(posts).pages.map((page) => page.items)`.
  * @example
  * ```ts
  * const posts = ensureEntry(trpc.post.list);
  * const [handles] = await loadHandles(trpc, {
  *   posts,
- *   authors: entryPerItem(dataOf(posts), (post) =>
+ *   authors: experimental_entryPerItem(experimental_dataOf(posts), (post) =>
  *     prefetchEntry(trpc.author.byId, { id: post.authorId }),
  *   ),
  * });
  * // In a component, for one post
- * useSuspenseQuery(fromHandle(trpc, handleOfItem(handles.authors, post)));
+ * useSuspenseQuery(fromHandle(trpc, experimental_handleOfItem(handles.authors, post)));
  * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
  */
-export function entryPerItem<
+export function experimental_entryPerItem<
   TItem,
   TDef extends ResolverDef,
   TKind extends TRPCEntryKind,
 >(
   items: readonly (readonly TItem[])[],
   entry: (item: TItem) => TRPCQueryEntry<TDef, TKind>,
-): TRPCEntryPerItem<TRPCQueryEntry<TDef, TKind>, TItem>;
-export function entryPerItem<
+): experimental_TRPCEntryPerItem<TRPCQueryEntry<TDef, TKind>, TItem>;
+export function experimental_entryPerItem<
   TItem,
   TDef extends ResolverDef,
   TKind extends TRPCEntryKind,
 >(
   items: readonly TItem[],
   entry: (item: TItem) => TRPCQueryEntry<TDef, TKind>,
-): TRPCEntryPerItem<TRPCQueryEntry<TDef, TKind>, TItem>;
-export function entryPerItem(
+): experimental_TRPCEntryPerItem<TRPCQueryEntry<TDef, TKind>, TItem>;
+export function experimental_entryPerItem(
   items: unknown,
   entry: (item: any) => unknown,
 ): unknown {
   const list = entryDataRefOf(items);
   if (!list) {
     throw new Error(
-      `\`entryPerItem()\` expects a list from \`dataOf()\`, such as \`dataOf(posts).items\`, got ${JSON.stringify(items)}`,
+      `\`experimental_entryPerItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got ${JSON.stringify(items)}`,
     );
   }
   const returned = entry(
@@ -1521,7 +1553,7 @@ export function entryPerItem(
   );
   if (entryStateOf(returned)?.type !== 'query') {
     throw new Error(
-      `The callback of \`entryPerItem()\` must return an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(returned)}`,
+      `The callback of \`experimental_entryPerItem()\` must return an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(returned)}`,
     );
   }
   const state: EntryPerItemState = { entry: returned as object, list };
@@ -1547,18 +1579,19 @@ function withInputAt(input: unknown, to: readonly string[], value: unknown) {
 }
 
 /**
- * The handle of one item's query, from the handle of an `entryPerItem()` entry.
+ * The handle of one item's query, from the handle of an `experimental_entryPerItem()` entry.
  * Read it with `fromHandle(trpc, handle)`, like any handle.
  *
  * It works for any item of the list's kind, also one the load didn't have, such
  * as an item on a later page. Its query then loads when it is read.
  * @example
  * ```tsx
- * <AuthorName author={handleOfItem(handles.authors, post)} />
+ * <AuthorName author={experimental_handleOfItem(handles.authors, post)} />
  * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
  */
-export function handleOfItem<TDef extends ResolverDef, TItem>(
-  handle: TRPCQueryHandlePerItem<TDef, TItem>,
+export function experimental_handleOfItem<TDef extends ResolverDef, TItem>(
+  handle: experimental_TRPCQueryHandlePerItem<TDef, TItem>,
   item: NoInfer<TItem>,
 ): TRPCQueryHandle<TDef> {
   const perItem = handle as unknown as {
@@ -1568,7 +1601,7 @@ export function handleOfItem<TDef extends ResolverDef, TItem>(
   };
   if (!Array.isArray(perItem.queryKey) || !Array.isArray(perItem.itemInputs)) {
     throw new Error(
-      `Expected the handle of an \`entryPerItem()\` entry, got ${JSON.stringify(handle)}`,
+      `Expected the handle of an \`experimental_entryPerItem()\` entry, got ${JSON.stringify(handle)}`,
     );
   }
   const input = perItem.itemInputs.reduce(
@@ -1658,7 +1691,7 @@ export function loadHandles<
  * `results` has `{ status: 'success', data }` or `{ status: 'error', error }`,
  * with a `TRPCEntryError`, for every fetch and ensure entry.
  *
- * When an entry fails, the entries that read its data with `dataOf()` can't
+ * When an entry fails, the entries that read its data with `experimental_dataOf()` can't
  * start: they have no handle, and their result is the same error. So check the
  * results before you return the handles. If the failed entry is a prefetch entry,
  * which has no result, the load rejects with its error.

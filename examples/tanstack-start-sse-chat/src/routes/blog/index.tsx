@@ -13,16 +13,16 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
-  dataOf,
+  experimental_dataOf,
   ensureInfiniteEntry,
-  entryPerItem,
+  experimental_entryPerItem,
   fromHandle,
-  handleOfItem,
+  experimental_handleOfItem,
   loadHandles,
   prefetchEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type {
-  inferHandles,
+  experimental_inferHandles,
   inferQueryHandle,
   TRPCLoadEntries,
 } from '@trpc/tanstack-react-query/unstable-handles';
@@ -44,8 +44,8 @@ function postListEntries(trpc: TRPC) {
     // haven't loaded yet, so the callback runs once on a stand-in for every
     // post. The server runs `blog.authorById` for every post it found, in the
     // same request
-    authors: entryPerItem(
-      dataOf(posts).pages.map((page) => page.items),
+    authors: experimental_entryPerItem(
+      experimental_dataOf(posts).pages.map((page) => page.items),
       (post) => prefetchEntry(trpc.blog.authorById, { id: post.authorId }),
     ),
   } satisfies TRPCLoadEntries;
@@ -86,7 +86,9 @@ function BlogIndex() {
 }
 
 function PostList(
-  props: Readonly<{ handles: inferHandles<typeof postListEntries> }>,
+  props: Readonly<{
+    handles: experimental_inferHandles<typeof postListEntries>;
+  }>,
 ) {
   const trpc = useTRPC();
   const postsQuery = useSuspenseInfiniteQuery(
@@ -129,7 +131,10 @@ function PostList(
                   {/* The post gives the handle of its author's query, also for
                       a post on a page that loaded after the loader ran */}
                   <AuthorName
-                    author={handleOfItem(props.handles.authors, post)}
+                    author={experimental_handleOfItem(
+                      props.handles.authors,
+                      post,
+                    )}
                   />
                 </Suspense>
                 {' · '}

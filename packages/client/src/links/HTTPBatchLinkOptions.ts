@@ -38,11 +38,15 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
     /**
      * Lets a query read parts of its input from the data of another query in
      * the same batch, so a query that depends on another costs no extra round
-     * trip. `loadHandles()` uses it for entries built with `dataOf()`. The
-     * server must set `allowPipelining: true`.
+     * trip. `loadHandles()` uses it for entries built with
+     * `experimental_dataOf()`. The server must set
+     * `experimental_allowPipelining: true`, or such a batch fails.
+     *
+     * Batches without such a query are sent as they are without this option.
      *
      * Experimental: it may change in a minor release.
+     * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request
      * @default false
      */
-    pipelining?: boolean;
+    experimental_pipelining?: boolean;
   };

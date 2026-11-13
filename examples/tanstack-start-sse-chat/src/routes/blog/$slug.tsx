@@ -3,7 +3,7 @@ import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import {
-  dataOf,
+  experimental_dataOf,
   ensureEntry,
   fromHandle,
   loadHandlesSettled,
@@ -23,10 +23,10 @@ function postPageEntries(trpc: TRPC, opts: { slug: string }) {
   const post = ensureEntry(trpc.blog.postBySlug, { slug: opts.slug });
   return {
     post,
-    // The author's id is in the post, which hasn't loaded yet. `dataOf()` stands
+    // The author's id is in the post, which hasn't loaded yet. `experimental_dataOf()` stands
     // in for it, and the server reads it from the post in the same request
     authorCard: authorCardEntries(trpc, {
-      authorId: dataOf(post).authorId,
+      authorId: experimental_dataOf(post).authorId,
       exceptSlug: opts.slug,
     }),
   } satisfies TRPCLoadEntries;

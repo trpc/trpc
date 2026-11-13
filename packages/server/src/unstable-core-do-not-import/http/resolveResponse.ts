@@ -311,7 +311,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           headers: opts.req.headers,
           url,
           maxBatchSize: opts.maxBatchSize,
-          allowPipelining: opts.allowPipelining ?? false,
+          allowPipelining: opts.experimental_allowPipelining ?? false,
         }),
       ];
     } catch (cause) {
@@ -388,33 +388,28 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
     await ctxManager.create(info);
 
-    const pipeline = await run(async () => {
-      // A GET has it in the URL. A POST has it in its body, which is only read
-      // before the calls run where pipelining is on
-      const pipe: unknown =
-        url.searchParams.get('pipe') ??
-        (opts.allowPipelining ? await info.getPipe?.() : undefined);
-      if (pipe === undefined) {
-        return null;
-      }
-      if (!opts.allowPipelining) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Pipelining is not enabled on the server`,
-        });
-      }
-      if (!info.isBatchCall || info.type === 'mutation') {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Only a batch of queries can be pipelined`,
-        });
-      }
-      return pipelineCalls({
-        calls: info.calls,
-        reads: parsePipelineReads({ pipe, calls: info.calls.length }),
-        transformer: config.transformer,
-      });
-    });
+    // Only a pipelined batch has this, which the server only accepts with
+    // `experimental_allowPipelining`
+    const getPipe = info.experimental_getPipe;
+    const pipeline = getPipe
+      ? await run(async () => {
+          const pipe = await getPipe();
+          if (pipe === undefined) {
+            return null;
+          }
+          if (info.type === 'mutation') {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Only a batch of queries can be pipelined`,
+            });
+          }
+          return pipelineCalls({
+            calls: info.calls,
+            reads: parsePipelineReads({ pipe, calls: info.calls.length }),
+            transformer: config.transformer,
+          });
+        })
+      : null;
     if (pipeline) {
       // After `createContext`, which can't wait for an input that a call fills in
       info.calls = pipeline.calls;

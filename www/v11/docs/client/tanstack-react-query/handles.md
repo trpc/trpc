@@ -772,6 +772,10 @@ data.comments.pages;
 
 A query whose input comes from another query's result is a waterfall. Each step costs a round trip. First try to [reshape the procedure](#reshape-procedures). If you can't, there are two ways, and both pay the round trip.
 
+:::tip
+Experimental: [`experimental_dataOf()`](/docs/client/tanstack-react-query/dependent-queries) puts such a query in the same load, and with pipelining in the same request.
+:::
+
 #### In a loader {#waterfall-in-a-loader}
 
 Load the first query, then build the second load from its `data`:

@@ -87,6 +87,13 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
    * @default Infinity
    */
   maxItems?: number;
+  /**
+   * Lets a query read parts of its input from the data of another query in
+   * the same batch. The server must set `experimental_allowPipelining: true`
+   * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request
+   * @default false
+   */
+  experimental_pipelining?: boolean;
 }
 
 export interface HTTPLinkOptions {
@@ -211,6 +218,15 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 ```
+
+## Pipelining (experimental) {#pipelining}
+
+With `experimental_pipelining: true`, a query in a batch can read parts of its input from the data of another query in the same batch. The server fills them in between the calls, so a query that depends on another costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
+
+- The server must set `experimental_allowPipelining: true`. Without it, the server runs nothing of such a batch.
+- Batches without such a query are sent as they are without the option.
+
+See [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries#one-request).
 
 ## Disabling request batching
 

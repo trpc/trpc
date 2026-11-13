@@ -74,7 +74,7 @@ describe.each([
     const { appRouter, calls } = createRouter(scenario.transformer);
     const ctx = testServerAndClientResource(appRouter, {
       server: {
-        allowPipelining: opts.allowPipelining,
+        experimental_allowPipelining: opts.allowPipelining,
         allowMethodOverride: opts.methodOverride === 'POST',
       },
       client: (clientOpts) => ({
@@ -82,7 +82,7 @@ describe.each([
           scenario.link({
             url: clientOpts.httpUrl,
             transformer: clientOpts.transformer as any,
-            pipelining: opts.pipelining,
+            experimental_pipelining: opts.pipelining,
             methodOverride: opts.methodOverride,
           }),
         ],
@@ -143,6 +143,8 @@ describe.each([
       },
     ]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    // A pipelined batch is a request of its own kind
+    expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('batch=2');
     expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('pipe=');
   });
 
@@ -178,40 +180,43 @@ describe.each([
     expect(req.url).not.toContain('input=');
   });
 
-  test('a POST to a server without `allowPipelining` fails, and no call runs with a hole in its input', async () => {
-    await using ctx = setup({
-      allowPipelining: false,
-      pipelining: true,
-      methodOverride: 'POST',
-    });
+  test.each([undefined, 'POST'] as const)(
+    'a server without `experimental_allowPipelining` runs nothing of a pipelined batch (methodOverride: %s)',
+    async (methodOverride) => {
+      await using ctx = setup({
+        allowPipelining: false,
+        pipelining: true,
+        methodOverride,
+      });
 
-    const post = createOperationPipeline([]);
-    const tags = createOperationPipeline([
-      { to: ['ids'], from: post, path: ['tags', null, 'id'] },
-    ]);
-    const results = await Promise.allSettled([
-      ctx.untyped.query(
-        'post',
-        { slug: 'hello' },
-        { context: pipelineContext(post) },
-      ),
-      ctx.untyped.query(
-        'tags',
-        { ids: undefined },
-        { context: pipelineContext(tags) },
-      ),
-    ]);
-    expect(results).toMatchObject([
-      {
-        status: 'rejected',
-        reason: { message: 'Pipelining is not enabled on the server' },
-      },
-      {
-        status: 'rejected',
-        reason: { message: 'Pipelining is not enabled on the server' },
-      },
-    ]);
-  });
+      const post = createOperationPipeline([]);
+      const author = createOperationPipeline([
+        { to: ['id'], from: post, path: ['authorId'] },
+      ]);
+      const results = await Promise.allSettled([
+        ctx.untyped.query(
+          'post',
+          { slug: 'hello' },
+          { context: pipelineContext(post) },
+        ),
+        ctx.untyped.query(
+          'author',
+          { id: undefined },
+          { context: pipelineContext(author) },
+        ),
+      ]);
+      const reason = {
+        message:
+          'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link',
+      };
+      expect(results).toMatchObject([
+        { status: 'rejected', reason },
+        { status: 'rejected', reason },
+      ]);
+      // No call ran with a hole in its input
+      expect(ctx.calls).not.toHaveBeenCalled();
+    },
+  );
 
   test('a query whose source failed did not run, and is marked unresolved', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
@@ -265,19 +270,8 @@ describe.each([
     expect(ctx.calls.mock.calls).toEqual([['team', 'team1']]);
   });
 
-  test('the link only takes part when `pipelining` is on', async () => {
+  test('without `experimental_pipelining`, the link sends every operation as it is', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: false });
-    const post = createOperationPipeline([]);
-    await ctx.untyped.query(
-      'post',
-      { slug: 'hello' },
-      { context: pipelineContext(post) },
-    );
-    expect(post.accepted).toBe(false);
-  });
-
-  test('the server rejects a pipelined batch unless `allowPipelining` is on', async () => {
-    await using ctx = setup({ allowPipelining: false, pipelining: true });
     const post = createOperationPipeline([]);
     const author = createOperationPipeline([
       { to: ['id'], from: post, path: ['authorId'] },
@@ -290,18 +284,99 @@ describe.each([
       ),
       ctx.untyped.query(
         'author',
-        { id: undefined },
+        { id: 'u9' },
         { context: pipelineContext(author) },
       ),
     ]);
-    expect(results).toMatchObject([
-      {
-        status: 'rejected',
-        reason: { message: 'Pipelining is not enabled on the server' },
-      },
-      { status: 'rejected' },
+    expect(post.accepted).toBe(false);
+    expect(results[1]).toMatchObject({
+      status: 'fulfilled',
+      value: { id: 'u9' },
+    });
+    const { url } = ctx.onRequestSpy.mock.calls[0]![0];
+    expect(url).toContain('batch=1');
+    expect(url).not.toContain('pipe=');
+  });
+
+  test('with `experimental_pipelining`, a batch where nothing reads anything is an ordinary batch', async () => {
+    await using ctx = setup({ allowPipelining: false, pipelining: true });
+    const post = createOperationPipeline([]);
+    const results = await Promise.all([
+      ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      ),
+      ctx.untyped.query('team', 'team1'),
     ]);
-    expect(ctx.calls).not.toHaveBeenCalled();
+    // Another operation could have read from it
+    expect(post.accepted).toBe(true);
+    expect(results[1]).toEqual({ id: 'team1' });
+    const { url } = ctx.onRequestSpy.mock.calls[0]![0];
+    expect(url).toContain('batch=1');
+    expect(url).not.toContain('pipe=');
+  });
+});
+
+describe('a server without `experimental_allowPipelining`', () => {
+  test('answers as it did before: `pipe` means nothing, and `batch=2` is no batch', async () => {
+    const { appRouter, calls } = createRouter('none');
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { allowMethodOverride: true },
+    });
+    const input = encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u9' } }),
+    );
+    const pipe = encodeURIComponent(
+      JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+    );
+
+    // An ordinary batch that happens to have a `pipe`: it is not read
+    const ordinary = await fetch(
+      `${ctx.httpUrl}/post,author?batch=1&input=${input}&pipe=${pipe}`,
+    );
+    expect((await ordinary.json())[1]).toEqual({
+      result: { data: { id: 'u9', teamId: 'team-of-u9' } },
+    });
+    const ordinaryPost = await fetch(`${ctx.httpUrl}/post,author?batch=1`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u9' }, pipe: {} }),
+    });
+    expect((await ordinaryPost.json())[1].result.data.id).toBe('u9');
+
+    // A pipelined batch: one call to a procedure that doesn't exist
+    calls.mockClear();
+    const pipelined = await fetch(
+      `${ctx.httpUrl}/post,author?batch=2&input=${input}&pipe=${pipe}`,
+    );
+    expect(pipelined.status).toBe(404);
+    expect((await pipelined.json()).error.message).toBe(
+      'No procedure found on path "post,author"',
+    );
+    expect(calls).not.toHaveBeenCalled();
+  });
+
+  test('gives `createContext` the same request info', async () => {
+    const { appRouter } = createRouter('none');
+    const infos: unknown[] = [];
+    const serve = async (experimental_allowPipelining: boolean) => {
+      await using ctx = testServerAndClientResource(appRouter, {
+        server: {
+          experimental_allowPipelining,
+          createContext: (opts) => {
+            infos.push(Object.keys(opts.info).sort());
+            return {};
+          },
+        },
+      });
+      await ctx.client.team.query('team1');
+    };
+    await serve(false);
+    await serve(true);
+    // An ordinary request is the same request either way
+    expect(infos[1]).toEqual(infos[0]);
+    expect(infos[0]).not.toContain('experimental_getPipe');
   });
 });
 
@@ -309,9 +384,9 @@ describe('the `pipe` search param', () => {
   async function get(search: string, opts: { path: string }) {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
-      server: { allowPipelining: true },
+      server: { experimental_allowPipelining: true },
     });
-    const res = await fetch(`${ctx.httpUrl}/${opts.path}?batch=1&${search}`);
+    const res = await fetch(`${ctx.httpUrl}/${opts.path}?batch=2&${search}`);
     return { status: res.status, json: await res.json(), calls };
   }
   const input = encodeURIComponent(
@@ -437,10 +512,10 @@ describe('the `pipe` search param', () => {
   test('a POST has it in its body, beside the inputs', async () => {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
-      server: { allowPipelining: true, allowMethodOverride: true },
+      server: { experimental_allowPipelining: true, allowMethodOverride: true },
     });
     const post = (body: unknown) =>
-      fetch(`${ctx.httpUrl}/post,author?batch=1`, {
+      fetch(`${ctx.httpUrl}/post,author?batch=2`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
@@ -469,9 +544,9 @@ describe('the `pipe` search param', () => {
   test('rejects a batch of mutations', async () => {
     const { appRouter } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
-      server: { allowPipelining: true },
+      server: { experimental_allowPipelining: true },
     });
-    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=1`, {
+    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=2`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ 0: { id: 'a' }, 1: { id: 'b' }, pipe: {} }),

@@ -3,8 +3,8 @@ import type {
   PipelineReads,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { Operation, OperationContext } from '../types';
-import type { ResolvedHTTPLinkOptions } from './httpUtils';
-import { getBody } from './httpUtils';
+import type { ContentOptions } from './httpUtils';
+import { getBody, getUrl } from './httpUtils';
 
 /**
  * Lets an operation read parts of its input from the data of operations sent
@@ -62,8 +62,12 @@ export function pipelineOf(
 }
 
 /**
- * Decides which operations of a batch to send. One that reads from an operation
- * outside the batch can't run, so it isn't sent.
+ * For a batch with an operation that reads from another: which operations to
+ * send, and what the server fills in. `null` for any other batch, which is
+ * sent as it is.
+ *
+ * An operation that reads from one outside the batch can't run, so it isn't
+ * sent.
  */
 export function planPipelinedBatch<TOp extends Pick<Operation, 'context'>>(
   batchOps: readonly TOp[],
@@ -71,11 +75,13 @@ export function planPipelinedBatch<TOp extends Pick<Operation, 'context'>>(
   const sent: TOp[] = [];
   const reads: PipelineReads = {};
   const sentIndexes = new Map<OperationPipeline, number>();
+  let pipelined = false;
   /** The index in `sent` of each operation, or `null` if it isn't sent */
   const positions = batchOps.map((op) => {
     const pipeline = pipelineOf(op);
     const opReads = [];
     for (const read of pipeline?.reads ?? []) {
+      pipelined = true;
       const from = sentIndexes.get(read.from);
       if (from === undefined) {
         return null;
@@ -96,44 +102,65 @@ export function planPipelinedBatch<TOp extends Pick<Operation, 'context'>>(
     }
     return index;
   });
+  return pipelined ? { sent, positions, reads } : null;
+}
+
+export type PipelinedBatchPlan<TOp extends Pick<Operation, 'context'>> =
+  NonNullable<ReturnType<typeof planPipelinedBatch<TOp>>>;
+
+/**
+ * The URL and body of a pipelined batch: `?batch=2`, with its `pipe` in the
+ * body of a POST, beside the inputs, and in a search param of a GET, which
+ * has no body. A server that doesn't accept pipelined batches runs none of it.
+ */
+export function pipelinedRequest(
+  reads: PipelineReads,
+): Pick<ContentOptions, 'getUrl' | 'getBody'> {
   return {
-    sent,
-    positions,
-    /** The batch's `pipe`, if any operation reads from another */
-    reads: Object.keys(reads).length > 0 ? reads : null,
+    getUrl: (opts) => {
+      const url = getUrl(opts).replace(/([?&])batch=1(?=&|$)/, '$1batch=2');
+      return opts.methodOverride === 'POST'
+        ? url
+        : `${url}&pipe=${encodeURIComponent(JSON.stringify(reads))}`;
+    },
+    getBody: (opts) => {
+      const body = getBody(opts);
+      return typeof body === 'string' && opts.methodOverride === 'POST'
+        ? JSON.stringify({ ...JSON.parse(body), pipe: reads })
+        : body;
+    },
   };
 }
 
 /**
- * The URL and body of a pipelined batch. Its `pipe` goes in the body of a POST,
- * beside the inputs, and in a search param of a GET, which has no body.
+ * What a server that doesn't accept pipelined batches answers one with. It
+ * takes the batch for a call to one procedure, and finds none.
  */
-export function pipelinedRequest(opts: {
-  link: Pick<ResolvedHTTPLinkOptions, 'url' | 'methodOverride'>;
-  reads: PipelineReads | null;
-}): { url: string; getBody: typeof getBody } {
-  const { reads } = opts;
-  const { url } = opts.link;
-  if (reads === null) {
-    return { url, getBody };
+export function assertPipelinedBatchAccepted(opts: {
+  json: unknown;
+  /** The link's transformer for what the server sends */
+  deserialize: (error: unknown) => unknown;
+}) {
+  const { json } = opts;
+  const shape = Array.isArray(json)
+    ? undefined
+    : (json as { error?: unknown } | null)?.error;
+  const error =
+    shape === undefined
+      ? undefined
+      : (opts.deserialize(shape) as {
+          message?: unknown;
+          data?: { code?: unknown };
+        } | null);
+  if (
+    error &&
+    (error.data?.code === 'NOT_FOUND' ||
+      String(error.message).includes('Streaming requests must be batched'))
+  ) {
+    throw new Error(
+      'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link',
+    );
   }
-  if (opts.link.methodOverride === 'POST') {
-    return {
-      url,
-      getBody: (bodyOpts) => {
-        const body = getBody(bodyOpts);
-        return JSON.stringify({
-          ...(typeof body === 'string' ? JSON.parse(body) : undefined),
-          pipe: reads,
-        });
-      },
-    };
-  }
-  const pipe = encodeURIComponent(JSON.stringify(reads));
-  return {
-    url: `${url}${url.includes('?') ? '&' : '?'}pipe=${pipe}`,
-    getBody,
-  };
 }
 
 /**
@@ -145,7 +172,7 @@ export function resultsOfPipelinedBatch<
   TResult extends { json: object },
 >(opts: {
   batchOps: readonly TOp[];
-  plan: ReturnType<typeof planPipelinedBatch<TOp>>;
+  plan: PipelinedBatchPlan<TOp>;
   /** The result of each sent operation */
   results: readonly (TResult | Promise<TResult>)[];
 }): Promise<TResult>[] {
