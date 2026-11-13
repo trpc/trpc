@@ -247,13 +247,11 @@ export function pipelineCalls(opts: {
     return promise;
   }
   /**
-   * The value at `path` in a call's data, as the call that reads it gets it
-   * when a client sends it: through the transformer of inputs. It is a value
-   * of its own too, so a call that changes its input in place changes nothing
-   * that another call reads.
+   * A value as a call gets it when a client sends it: through the transformer
+   * of inputs. It is a value of its own too, so a call that changes its input
+   * in place changes nothing that another call, or another run, reads.
    */
-  function valueAt(data: unknown, path: PipelinePath) {
-    const value = readPipelinePath(data, path);
+  function asSent(value: unknown) {
     const json =
       value === undefined
         ? undefined
@@ -261,6 +259,10 @@ export function pipelineCalls(opts: {
     return json === undefined
       ? undefined
       : opts.transformer.input.deserialize(JSON.parse(json));
+  }
+  /** The value at `path` in a call's data, for the input of a call that reads it */
+  function valueAt(data: unknown, path: PipelinePath) {
+    return asSent(readPipelinePath(data, path));
   }
 
   /** The inputs of a call that runs once per item of a list */
@@ -288,7 +290,8 @@ export function pipelineCalls(opts: {
       opts.takeRuns(items.length);
     }
     for (const item of Array.isArray(items) ? items.keys() : []) {
-      let input = base;
+      // Every run has an input of its own, as calls the client sends do
+      let input = asSent(base);
       for (const read of reads) {
         input = writePipelinePath({
           input,

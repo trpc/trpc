@@ -753,6 +753,24 @@ describe('the `pipe` search param', () => {
     expect(res.json[2].result.data).toEqual(['t1', 't2']);
   });
 
+  test('a run for an item that changes the input the client sent does not change it for other runs', async () => {
+    const res = await get(
+      `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' }, 1: { tags: [] } }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
+        }),
+      )}`,
+      { path: 'post,stamp' },
+    );
+    // Every run adds a tag to its own list
+    expect(res.json[1].result.data).toEqual([
+      { result: { data: 1 } },
+      { result: { data: 1 } },
+    ]);
+  });
+
   test('filling in an input keeps what the transformer made of it', async () => {
     class Range {
       constructor(
