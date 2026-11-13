@@ -188,6 +188,7 @@ export function DemoFrame<TValue extends string>(props: {
         network={run.session?.network ?? idleNetwork}
         playing={onScreen}
         summary={props.summary ?? true}
+        wire={transport === 'http'}
       />
     </figure>
   );

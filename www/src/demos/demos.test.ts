@@ -21,6 +21,7 @@ import {
   chainLength,
   createNetwork,
   type NetworkRequest,
+  serverWork,
 } from './kit/network.ts';
 import { demoMarker, demoNames } from './names.ts';
 import { loadPageDemos, PageDemo } from './page-demos.tsx';
@@ -133,9 +134,12 @@ describe('network', () => {
     endedAt: number,
   ): NetworkRequest => ({
     endedAt,
+    http: undefined,
     id,
     label: `request ${id}`,
     origin: undefined,
+    servedAt: undefined,
+    servingAt: undefined,
     startedAt,
     status: 'done',
   });
@@ -291,6 +295,11 @@ describe('backend over HTTP', () => {
       weights.push(weight);
       return 0;
     };
+    let worked = 0;
+    network.work = () => {
+      worked++;
+      return 0;
+    };
     const client = createHttpDemoClient(network, undefined);
     const queryClient = new QueryClient();
     const trpc = createTRPCOptionsProxy<AppRouter>({ client, queryClient });
@@ -309,21 +318,52 @@ describe('backend over HTTP', () => {
           true,
         );
       });
-    return { labels, network, queryClient, settled, trpc, weights };
+    return {
+      labels,
+      network,
+      queryClient,
+      settled,
+      trpc,
+      weights,
+      worked: () => worked,
+    };
   };
 
-  it('pays for the trip once a request, and for the work of each call', async () => {
-    const { network, queryClient, settled, trpc, weights } = session();
+  it("takes one trip a request, and the server's own time for each call", async () => {
+    const { network, queryClient, settled, trpc, weights, worked } = session();
     await Promise.all([
       queryClient.fetchQuery(trpc.post.byId.queryOptions({ id: 1 })),
       queryClient.fetchQuery(trpc.post.feed.queryOptions({ page: 1 })),
     ]);
     await settled();
-    // One trip, then a quarter of each procedure's weight
-    expect(weights).toEqual([0.75, 0.25, 0.2]);
-    expect(network.getTrace().requests.map((request) => request.label)).toEqual(
-      ['post.byId({ id: 1 })', 'post.feed({ page: 1 })'],
-    );
+    // One round trip for the two calls, and the server ran each
+    expect(weights).toEqual([1]);
+    expect(worked()).toBe(2);
+    const { requests } = network.getTrace();
+    expect(requests.map((request) => request.label)).toEqual([
+      'post.byId({ id: 1 })',
+      'post.feed({ page: 1 })',
+    ]);
+    // Both went in the first HTTP request
+    expect(requests.map((request) => request.http)).toEqual([1, 1]);
+  });
+
+  it("keeps the server's time the same on any connection", () => {
+    const network = createNetwork(createRandom(1));
+    const trips = (latency: number) => {
+      network.latency = latency;
+      return Array.from({ length: 20 }, () => network.delay(1));
+    };
+    const work = () => Array.from({ length: 20 }, () => network.work());
+    const fast = Math.max(...trips(300));
+    const slow = Math.min(...trips(2000));
+    // The trip grows with the connection, and the server's time doesn't
+    expect(slow).toBeGreaterThan(fast);
+    for (const ms of [...work(), ...work()]) {
+      expect(ms).toBeGreaterThanOrEqual(serverWork.min);
+      expect(ms).toBeLessThanOrEqual(serverWork.max);
+    }
+    expect(serverWork.max).toBeLessThan(fast);
   });
 
   it('runs a query that needs another in its request, and shows where its input comes from', async () => {
@@ -348,6 +388,11 @@ describe('backend over HTTP', () => {
     const { requests } = network.getTrace();
     // All three left together: one round trip
     expect(chainLength(requests)).toBe(1);
+    expect(requests.map((request) => request.http)).toEqual([1, 1, 1]);
+    // The server ran each when the one before it was done
+    const [first, second, third] = requests;
+    expect(first?.servedAt).toBeLessThanOrEqual(second?.servingAt ?? -1);
+    expect(second?.servedAt).toBeLessThanOrEqual(third?.servingAt ?? -1);
     expect(requests.map((request) => request.label)).toEqual([
       'post.byId({ id: 1 })',
       'author.byId({ id: 1 })',
@@ -414,7 +459,11 @@ describe('backend over HTTP', () => {
       trpc.post.byAuthor.queryOptions({ authorId: author.id }),
     );
     await settled();
-    expect(network.getTrace().requests).toHaveLength(3);
+    const { requests } = network.getTrace();
+    expect(requests).toHaveLength(3);
+    // Each is an HTTP request of its own, sent when the last one was back
+    expect(requests.map((request) => request.http)).toEqual([1, 2, 3]);
+    expect(chainLength(requests)).toBe(3);
   });
 });
 

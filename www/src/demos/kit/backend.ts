@@ -260,14 +260,9 @@ interface HttpCall {
 interface ServerContext {
   /** The calls of the HTTP request, by index. `null` for a call with no request. */
   readonly calls: ReadonlyArray<HttpCall> | null;
+  /** How long a result takes from the server to the browser, in ms. */
+  readonly tripBack: number;
 }
-
-/**
- * How an HTTP request's time splits, in typical round trips: the trip
- * itself, which every request pays once, and the work of each procedure,
- * times its weight.
- */
-const httpShares = { travel: 0.75, work: 0.25 } as const;
 
 /**
  * A blog's tRPC router, run in the page. Each post response says when it
@@ -281,36 +276,40 @@ function createAppRouter(network: Network) {
     .create({ allowOutsideOfServer: true });
   const servedAt = () => Math.round(network.now() / 100) / 10;
   /**
-   * In an HTTP request, each call takes the procedure's own time, and its
-   * row in the network panel gets the input the server ran it with.
+   * In an HTTP request, each call takes the server a moment of its own,
+   * however slow the connection is. Its row in the network panel gets the
+   * input the server ran it with, and ends when its result is back in the
+   * browser.
    */
   const procedure = t.procedure.use(async (opts) => {
     const call = opts.ctx.calls?.[opts.batchIndex];
     if (!call) {
       return opts.next();
     }
+    const arrives = (status: 'done' | 'error') => {
+      network.after(opts.ctx.tripBack, () => network.end(call.id, status));
+    };
     // A call that reads a failed one has no input, and doesn't run
     const input = await opts.getRawInput().catch((cause: unknown) => {
-      network.end(call.id, 'error');
+      arrives('error');
       throw cause;
     });
     const label = formatCall(opts.path, input);
     call.first ??= label;
     call.runs++;
+    network.served(call.id, 'start');
     network.relabel(
       call.id,
       call.runs === 1 ? label : `${call.first} + ${call.runs - 1} more`,
     );
     await new Promise<void>((resolve) => {
-      network.after(
-        network.delay(httpShares.work * (procedureWeights[opts.path] ?? 1)),
-        resolve,
-      );
+      network.after(network.work(), resolve);
     });
     const result = await opts.next();
     call.finished++;
     if (call.finished === call.runs) {
-      network.end(call.id, result.ok ? 'done' : 'error');
+      network.served(call.id, 'end');
+      arrives(result.ok ? 'done' : 'error');
     }
     return result;
   });
@@ -405,7 +404,10 @@ export function createDemoClient(network: Network, origin?: string) {
   return createTRPCClient<AppRouter>({
     links: [
       networkLink(network, origin),
-      localLink({ createContext: async () => ({ calls: null }), router }),
+      localLink({
+        createContext: async () => ({ calls: null, tripBack: 0 }),
+        router,
+      }),
     ],
   });
 }
@@ -473,24 +475,36 @@ type FetchEsque = NonNullable<
  * A tRPC client that talks HTTP to a server in the page, behind `network`,
  * with `httpBatchStreamLink`: calls made together share a request, and each
  * result comes back when it is ready. Both ends pipeline, so a request can
- * hold calls whose input the server reads from another call's data. A
- * request pays for the trip once, and then for the work of each call.
+ * hold calls whose input the server reads from another call's data.
+ *
+ * A request takes a round trip of the network, half there and half back,
+ * and each call takes the server a moment in between.
  */
 export function createHttpDemoClient(
   network: Network,
   origin: string | undefined,
 ) {
   const router = createAppRouter(network);
+  let sent = 0;
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => {
+      network.after(ms, resolve);
+    });
   const fetch: FetchEsque = async (input, init) => {
     // Queries are GET requests: no body to carry over.
     const req = new Request(input, {
       ...(init?.headers ? { headers: init.headers } : {}),
       signal: init?.signal ?? null,
     });
+    sent++;
+    const http = sent;
+    const trip = network.delay(1);
+    const tripThere = Math.round(trip / 2);
+    const tripBack = trip - tripThere;
     const calls = labelsOf(new URL(req.url)).map((label): HttpCall => ({
       finished: 0,
       first: undefined,
-      id: network.request(label, origin),
+      id: network.request(label, origin, http),
       runs: 0,
     }));
     const endAll = (status: 'aborted' | 'done') => {
@@ -499,24 +513,41 @@ export function createHttpDemoClient(
       }
     };
     req.signal.addEventListener('abort', () => endAll('aborted'));
-    await new Promise<void>((resolve) => {
-      network.after(network.delay(httpShares.travel), resolve);
-    });
+    await wait(tripThere);
     const response = await fetchRequestHandler({
-      createContext: () => ({ calls }),
+      createContext: () => ({ calls, tripBack }),
       endpoint: '/trpc',
       experimental_allowPipelining: true,
       req,
       router,
     });
     if (!response.body) {
+      await wait(tripBack);
       endAll('done');
       return response;
     }
-    // A call that ran for no item never finished: the response's end is its end.
+    // Each part of the response is in the browser a trip back after the
+    // server sent it, in the order it was sent
+    let delivered = Promise.resolve();
     const body = response.body.pipeThrough(
       new TransformStream<Uint8Array, Uint8Array>({
-        flush: () => endAll('done'),
+        // A call that ran for no item never finished: the response's end is its end.
+        flush: () => {
+          const arrived = wait(tripBack);
+          return delivered.then(() => arrived).then(() => endAll('done'));
+        },
+        transform: (chunk, controller) => {
+          const arrived = wait(tripBack);
+          delivered = delivered
+            .then(() => arrived)
+            .then(() => {
+              try {
+                controller.enqueue(chunk);
+              } catch {
+                // The request was cancelled on the way
+              }
+            });
+        },
       }),
     );
     return new Response(body, response);

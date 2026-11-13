@@ -16,6 +16,8 @@ A page often needs one answer before it can ask the next question.
 
 Each query waits for the one before it. That is three round trips, one after another. This is a waterfall, and it makes pages slow.
 
+The trips are what cost. The server's work takes the same time on any connection. The trip there and back does not: on a slow connection it is most of the wait, and this page makes three.
+
 With [handles](/docs/client/tanstack-react-query/handles) and the functions on this page, the same page loads in **one request**.
 
 - **A component says what data it needs, ahead of time.** It says so in a plain function. The data can depend on other data.
@@ -310,7 +312,7 @@ The server does the rest.
 3. It runs the second call, and so on.
 4. It sends each result back as soon as it is ready.
 
-No result has to travel to the browser and back before the next call can start. This is called **pipelining**, and the two options below turn it on.
+No result has to travel to the browser and back before the next call can start. The server still does the same work. The page just stops paying for a trip between each step. This is called **pipelining**, and the two options below turn it on.
 
 ### Turn it on {#turn-on}
 

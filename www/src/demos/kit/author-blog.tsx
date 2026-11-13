@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   createRoute,
@@ -39,12 +39,12 @@ import type {
  * author's other posts need the author. The list shows each post's author,
  * by the id in each row.
  *
- * - `reader`: each component fetches what it shows, so each query waits
- *   for the one before it.
- * - `entries`: the loader names every query up front, and the server fills
+ * - `waterfall`: the page fetches as it renders in the browser. Each query
+ *   starts when the one before it has data, so each one is a round trip.
+ * - `pipelined`: the loader names every query up front, and the server fills
  *   in the ids. One request.
  */
-export type AuthorBlogStrategy = 'entries' | 'reader';
+export type AuthorBlogStrategy = 'pipelined' | 'waterfall';
 
 // What the pages load, from the URL alone
 
@@ -303,75 +303,49 @@ function ArticleFromHandles(props: { readonly handles: PostPageHandles }) {
   );
 }
 
-// The article page, with each component fetching what it shows
+// The article page as a waterfall: each query starts with the last one's data
 
-function MoreByAuthorId(props: {
-  readonly author: string;
-  readonly authorId: number;
-  readonly postId: number;
-}) {
+function WaterfallArticle(): ReactNode {
+  const id = usePostId();
   const trpc = useTRPC();
-  const moreQuery = useSuspenseQuery(
-    trpc.post.byAuthor.queryOptions({ authorId: props.authorId }),
+  const postQuery = useQuery({
+    ...trpc.post.byId.queryOptions({ id }),
+    // An article that doesn't exist shows the router's error page
+    throwOnError: true,
+  });
+  const post = postQuery.data;
+  // Nothing to ask for until the post is in
+  const authorQuery = useQuery(
+    trpc.author.byId.queryOptions(post ? { id: post.authorId } : skipToken),
   );
-  return (
-    <MoreList
-      author={props.author}
-      posts={otherPosts(moreQuery.data.posts, props.postId)}
-    />
-  );
-}
-
-/** The author, then the list that needs the author. */
-function AuthorThenMore(props: {
-  readonly authorId: number;
-  readonly postId: number;
-}) {
-  const trpc = useTRPC();
-  const authorQuery = useSuspenseQuery(
-    trpc.author.byId.queryOptions({ id: props.authorId }),
-  );
-  return (
-    <>
-      <AuthorCard author={authorQuery.data} />
-      <Suspense fallback={<MoreSkeleton postId={props.postId} />}>
-        <MoreByAuthorId
-          author={authorQuery.data.name}
-          authorId={authorQuery.data.id}
-          postId={props.postId}
-        />
-      </Suspense>
-    </>
-  );
-}
-
-/** The post, then the author that needs the post. */
-function PostThenAuthor(props: { readonly id: number }) {
-  const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(
-    trpc.post.byId.queryOptions({ id: props.id }),
+  const author = authorQuery.data;
+  // And nothing to ask for until the author is in
+  const moreQuery = useQuery(
+    trpc.post.byAuthor.queryOptions(
+      author ? { authorId: author.id } : skipToken,
+    ),
   );
   return (
     <ArticleLayout
       author={
-        <Suspense fallback={<AuthorAndMoreSkeleton postId={props.id} />}>
-          <AuthorThenMore
-            authorId={postQuery.data.authorId}
-            postId={props.id}
-          />
-        </Suspense>
+        <>
+          {author ? (
+            <AuthorCard author={author} />
+          ) : (
+            <AuthorSkeleton postId={id} />
+          )}
+          {author && moreQuery.data ? (
+            <MoreList
+              author={author.name}
+              posts={otherPosts(moreQuery.data.posts, id)}
+            />
+          ) : (
+            <MoreSkeleton postId={id} />
+          )}
+        </>
       }
-      post={<ArticleBody post={postQuery.data} />}
+      post={post ? <ArticleBody post={post} /> : <ArticleSkeleton id={id} />}
     />
-  );
-}
-
-function ReaderArticle(): ReactNode {
-  const id = usePostId();
-  return (
-    <Suspense fallback={<ArticlePageSkeleton id={id} />}>
-      <PostThenAuthor id={id} />
-    </Suspense>
   );
 }
 
@@ -484,40 +458,33 @@ function FeedOf(props: { readonly handles: FeedHandles }) {
   );
 }
 
+/** A row's author, which the row can only ask for once the list is in. */
 function AuthorNameById(props: { readonly id: number }) {
   const trpc = useTRPC();
-  const authorQuery = useSuspenseQuery(
-    trpc.author.byId.queryOptions({ id: props.id }),
-  );
-  return <span>{authorQuery.data.name}</span>;
-}
-
-/** The list, then an author for each row, which needs the list. */
-function FeedThenAuthors(props: { readonly page: number }) {
-  const trpc = useTRPC();
-  const feedQuery = useSuspenseQuery(
-    trpc.post.feed.queryOptions({ page: props.page }),
-  );
-  return (
-    <FeedList
-      author={(post) => (
-        <Suspense fallback={authorNameSkeleton}>
-          <AuthorNameById id={post.authorId} />
-        </Suspense>
-      )}
-      feed={feedQuery.data}
-      page={props.page}
-    />
+  const authorQuery = useQuery(trpc.author.byId.queryOptions({ id: props.id }));
+  return authorQuery.data ? (
+    <span>{authorQuery.data.name}</span>
+  ) : (
+    authorNameSkeleton
   );
 }
 
-function ReaderFeed(): ReactNode {
+/** The list as a waterfall: the list, then an author for each of its rows. */
+function WaterfallFeed(): ReactNode {
   const page = usePage();
+  const trpc = useTRPC();
+  const feedQuery = useQuery(trpc.post.feed.queryOptions({ page }));
   return (
     <FeedLayout>
-      <Suspense fallback={<FeedSkeleton page={page} />}>
-        <FeedThenAuthors page={page} />
-      </Suspense>
+      {feedQuery.data ? (
+        <FeedList
+          author={(post) => <AuthorNameById id={post.authorId} />}
+          feed={feedQuery.data}
+          page={page}
+        />
+      ) : (
+        <FeedSkeleton page={page} />
+      )}
     </FeedLayout>
   );
 }
@@ -539,7 +506,7 @@ export function AuthorBlogSkeleton(props: { readonly href: string }) {
   return null;
 }
 
-function createEntryRoutes() {
+function createPipelinedRoutes() {
   const root = createRootRouteWithContext<DemoContext>()({
     // An article that doesn't exist fails where its query is read
     errorComponent: NotFound,
@@ -603,7 +570,7 @@ function createEntryRoutes() {
   ]);
 }
 
-function createReaderRoutes() {
+function createWaterfallRoutes() {
   const root = createRootRouteWithContext<DemoContext>()({
     // An article that doesn't exist fails where its query is read
     errorComponent: NotFound,
@@ -611,13 +578,13 @@ function createReaderRoutes() {
   });
   return root.addChildren([
     createRoute({
-      component: ReaderFeed,
+      component: WaterfallFeed,
       getParentRoute: () => root,
       path: '/posts',
       validateSearch: (search) => ({ page: pageFrom(search) }),
     }),
     createRoute({
-      component: ReaderArticle,
+      component: WaterfallArticle,
       getParentRoute: () => root,
       path: '/posts/$id',
     }),
@@ -629,5 +596,7 @@ function createReaderRoutes() {
  * and articles with an author card and the author's other posts, `/posts/1`.
  */
 export function createAuthorBlogRoutes(strategy: AuthorBlogStrategy) {
-  return strategy === 'entries' ? createEntryRoutes() : createReaderRoutes();
+  return strategy === 'pipelined'
+    ? createPipelinedRoutes()
+    : createWaterfallRoutes();
 }

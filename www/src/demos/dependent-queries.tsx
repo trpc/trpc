@@ -7,26 +7,29 @@ import { DemoFrame } from './kit/frame.tsx';
 import type { DemoProps } from './names.ts';
 
 const blogs = {
-  entries: createAuthorBlogRoutes('entries'),
-  reader: createAuthorBlogRoutes('reader'),
+  pipelined: createAuthorBlogRoutes('pipelined'),
+  waterfall: createAuthorBlogRoutes('waterfall'),
 };
 
 const code = (text: string) => <span className="font-mono">{text}</span>;
 
 /**
- * A page where each query needs the one before it, loaded two ways: by the
- * components, one round trip at a time, and by a loader that names every
- * query up front, in one request. `start=list` opens the list, where every
- * row has a query of its own.
+ * A page where each query needs the one before it, loaded two ways: as a
+ * waterfall, where the browser asks again each time it learns an id, and in
+ * one request, where the server fills in the ids. `start=list` opens the
+ * list, where every row has a query of its own.
  */
 export function DependentQueries(props: DemoProps) {
   const list = props.options['start'] === 'list';
   return (
     <DemoFrame
       hint={
-        list
-          ? 'Each row shows its author, who is another query. Reload, or open another page of the list, and watch the network. Slow latency makes the difference plain.'
-          : 'The author card needs the post, and the list under it needs the author. Reload, or open another article, and watch the network. Slow latency makes the difference plain.'
+        <>
+          Reload, or open another {list ? 'page of the list' : 'article'}, and
+          watch the network. Each number is a request the browser sends. The
+          dark sliver in a bar is the server&apos;s work, and the rest is the
+          trip there and back. Try a slow connection: only the trips grow.
+        </>
       }
       initial={props.options['variant']}
       only={props.options['variants']}
@@ -38,30 +41,39 @@ export function DependentQueries(props: DemoProps) {
         {
           description: list ? (
             <>
-              The loader names the list and an author for every row. The server
-              reads each {code('authorId')} from the list. One round trip, and
-              each part shows when it arrives.
+              The browser asks for the list. When it has the list, it asks for
+              the author of each row. Two round trips, one after the other.
             </>
           ) : (
             <>
-              The loader names all three queries. The server reads{' '}
-              {code('authorId')} from the post, and the author&apos;s{' '}
-              {code('id')} for the list. One round trip, and each part shows
-              when it arrives.
+              The browser asks for the post. When it has the post, it asks for
+              the author. When it has the author, it asks for the author&apos;s
+              posts. Three round trips, one after the other.
             </>
           ),
-          label: 'the loader',
-          value: 'entries',
+          label: 'a waterfall',
+          value: 'waterfall',
         },
         {
-          description: list
-            ? 'Each component fetches what it shows. The rows only know their authors once the list is in. Two round trips.'
-            : 'Each component fetches what it shows. The author waits for the post, and the list waits for the author. Three round trips.',
-          label: 'each component',
-          value: 'reader',
+          description: list ? (
+            <>
+              The browser asks for the list and an author for every row at once.
+              The server reads each {code('authorId')} from the list. One round
+              trip, and each part shows when it arrives.
+            </>
+          ) : (
+            <>
+              The browser asks for all three at once, with a blank where each id
+              goes. The server fills in {code('authorId')} from the post, and
+              the author&apos;s {code('id')} for the list. One round trip, and
+              each part shows when it arrives.
+            </>
+          ),
+          label: 'one request',
+          value: 'pipelined',
         },
       ]}
-      variantsLabel="Start the queries in"
+      variantsLabel="Load the page with"
     >
       {(run) => (
         <DemoBrowser
