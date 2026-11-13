@@ -109,7 +109,7 @@ export type PipelinedBatchPlan<TOp extends Pick<Operation, 'context'>> =
   NonNullable<ReturnType<typeof planPipelinedBatch<TOp>>>;
 
 /**
- * The URL and body of a pipelined batch: `?batch=2`, with its `pipe` in the
+ * The URL and body of a pipelined batch: `?batch=pipeline`, with its `pipe` in the
  * body of a POST, beside the inputs, and in a search param of a GET, which
  * has no body. A server that doesn't accept pipelined batches runs none of it.
  */
@@ -118,7 +118,10 @@ export function pipelinedRequest(
 ): Pick<ContentOptions, 'getUrl' | 'getBody'> {
   return {
     getUrl: (opts) => {
-      const url = getUrl(opts).replace(/([?&])batch=1(?=&|$)/, '$1batch=2');
+      const url = getUrl(opts).replace(
+        /([?&])batch=1(?=&|$)/,
+        '$1batch=pipeline',
+      );
       return opts.methodOverride === 'POST'
         ? url
         : `${url}&pipe=${encodeURIComponent(JSON.stringify(reads))}`;

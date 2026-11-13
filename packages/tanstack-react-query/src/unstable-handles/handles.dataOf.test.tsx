@@ -1296,7 +1296,7 @@ describe.each([
 
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
     expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain(
-      '/post.bySlug,author.byId,post.byAuthor?batch=2',
+      '/post.bySlug,author.byId,post.byAuthor?batch=pipeline',
     );
     expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
       'author.byId',
@@ -1379,7 +1379,7 @@ describe.each([
     // One request for every page, with its author in it
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
     for (const [req] of resource.onRequestSpy.mock.calls) {
-      expect(req.url).toContain('/post.paged,author.byId?batch=2');
+      expect(req.url).toContain('/post.paged,author.byId?batch=pipeline');
     }
     // A row reads its author from the cache
     const lastPost = data.data!.pages[2]!.items[0]!;

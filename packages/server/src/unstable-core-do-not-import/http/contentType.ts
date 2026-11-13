@@ -36,7 +36,7 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
-  /** Whether to accept a pipelined batch, `?batch=2`. Without it, that is no batch */
+  /** Whether to accept a pipelined batch, `?batch=pipeline`. Without it, that is no batch */
   allowPipelining: boolean;
 };
 
@@ -105,7 +105,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const { req } = opts;
     const batch = opts.searchParams.get('batch');
     // A batch whose calls read their inputs from each other's data
-    const isPipelined = opts.allowPipelining && batch === '2';
+    const isPipelined = opts.allowPipelining && batch === 'pipeline';
     const isBatchCall = batch === '1' || isPipelined;
     const maxBatchSize = opts.maxBatchSize;
 

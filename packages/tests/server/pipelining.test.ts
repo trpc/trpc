@@ -144,7 +144,7 @@ describe.each([
     ]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
     // A pipelined batch is a request of its own kind
-    expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('batch=2');
+    expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('batch=pipeline');
     expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('pipe=');
   });
 
@@ -319,7 +319,7 @@ describe.each([
 });
 
 describe('a server without `experimental_allowPipelining`', () => {
-  test('answers as it did before: `pipe` means nothing, and `batch=2` is no batch', async () => {
+  test('answers as it did before: `pipe` means nothing, and `batch=pipeline` is no batch', async () => {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
       server: { allowMethodOverride: true },
@@ -348,7 +348,7 @@ describe('a server without `experimental_allowPipelining`', () => {
     // A pipelined batch: one call to a procedure that doesn't exist
     calls.mockClear();
     const pipelined = await fetch(
-      `${ctx.httpUrl}/post,author?batch=2&input=${input}&pipe=${pipe}`,
+      `${ctx.httpUrl}/post,author?batch=pipeline&input=${input}&pipe=${pipe}`,
     );
     expect(pipelined.status).toBe(404);
     expect((await pipelined.json()).error.message).toBe(
@@ -386,7 +386,9 @@ describe('the `pipe` search param', () => {
     await using ctx = testServerAndClientResource(appRouter, {
       server: { experimental_allowPipelining: true },
     });
-    const res = await fetch(`${ctx.httpUrl}/${opts.path}?batch=2&${search}`);
+    const res = await fetch(
+      `${ctx.httpUrl}/${opts.path}?batch=pipeline&${search}`,
+    );
     return { status: res.status, json: await res.json(), calls };
   }
   const input = encodeURIComponent(
@@ -515,7 +517,7 @@ describe('the `pipe` search param', () => {
       server: { experimental_allowPipelining: true, allowMethodOverride: true },
     });
     const post = (body: unknown) =>
-      fetch(`${ctx.httpUrl}/post,author?batch=2`, {
+      fetch(`${ctx.httpUrl}/post,author?batch=pipeline`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
@@ -546,7 +548,7 @@ describe('the `pipe` search param', () => {
     await using ctx = testServerAndClientResource(appRouter, {
       server: { experimental_allowPipelining: true },
     });
-    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=2`, {
+    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=pipeline`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ 0: { id: 'a' }, 1: { id: 'b' }, pipe: {} }),

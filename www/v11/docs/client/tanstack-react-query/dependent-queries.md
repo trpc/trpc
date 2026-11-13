@@ -340,7 +340,7 @@ export const client = createTRPCClient<AppRouter>({
 The loader doesn't change. The load in [In short](#gist) now makes this request:
 
 ```
-GET /post.bySlug,author.byId?batch=2
+GET /post.bySlug,author.byId?batch=pipeline
   &input={"0":{"slug":"hello"},"1":{}}
   &pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}]}
 ```
@@ -351,7 +351,7 @@ GET /post.bySlug,author.byId?batch=2
 - **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the first call's data, as the server did.
 - **Use `httpBatchStreamLink`.** With `httpBatchLink`, the response waits for the slowest call, so the post arrives with the author.
 
-Only a batch with such a read is a pipelined batch, `batch=2`. Every other batch is sent as it always was, also with the options on.
+Only a batch with such a read is a pipelined batch, `batch=pipeline`. Every other batch is sent as it always was, also with the options on.
 
 ### When it isn't one request {#fallback}
 
@@ -506,7 +506,7 @@ For a fetch or ensure entry, `data` has a list with every item's data.
 The list's handle knows what its items load. So the options that `fromHandle(trpc, handles.posts)` gives load the items' queries with every fetch of the list: the next page, or a refetch after an invalidation.
 
 ```
-POST /post.list,author.byId?batch=2
+POST /post.list,author.byId?batch=pipeline
 
 {
   "0": { "cursor": 10, "direction": "forward" },
