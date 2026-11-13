@@ -50,7 +50,7 @@ export function PostArticle(props: {
  * when the data comes in. The demo's data never changes, so a skeleton can
  * know it.
  */
-function Shaped(props: {
+export function Shaped(props: {
   readonly children: ReactNode;
   readonly shape: ReactNode;
 }) {
@@ -196,7 +196,9 @@ function PostCard(props: { readonly post: PostSummary }) {
   );
 }
 
-function PostCards(props: { readonly posts: ReadonlyArray<PostSummary> }) {
+export function PostCards(props: {
+  readonly posts: ReadonlyArray<PostSummary>;
+}) {
   return (
     <ul className="grid gap-2">
       {props.posts.map((post) => (
@@ -246,7 +248,7 @@ export function PostList(props: {
   return <PostListPage list={listQuery.data} page={props.page} />;
 }
 
-function PostCardSkeletons(props: { readonly count: number }) {
+export function PostCardSkeletons(props: { readonly count: number }) {
   return (
     <div className="grid gap-2">
       {Array.from({ length: props.count }, (_, row) => (
@@ -269,7 +271,10 @@ export function PostListSkeleton(props: { readonly page: number }) {
 }
 
 /** Links to each page of the list, so the page is in the URL. */
-function Pager(props: { readonly page: number; readonly pageCount: number }) {
+export function Pager(props: {
+  readonly page: number;
+  readonly pageCount: number;
+}) {
   return (
     <nav aria-label="Pages" className="flex items-center gap-1 text-xs">
       <span className="mr-1 text-muted-foreground">Page</span>

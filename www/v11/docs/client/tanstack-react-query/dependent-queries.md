@@ -8,12 +8,24 @@ parent: "client/tanstack-react-query"
 order: 54
 ---
 
-A query whose input comes from another query's data is a waterfall: the browser waits for the first before it can ask for the second. With [handles](/docs/client/tanstack-react-query/handles), a loader can describe both in one load, and the server can run both in one request.
+A page often needs one answer before it can ask the next question.
 
-- **`experimental_dataOf(entry)`** stands in for the data of another entry, so an entry's input can use it before it has loaded.
-- **`experimental_dataOf(entry, (data) => entry)`** does the same [without making the load wait](#without-waiting) for that data.
-- **Pipelining** sends such entries in the same batch. The server fills in their inputs between the calls.
-- **`experimental_entryPerItem()`** loads a query for every item of a list, such as the author of every post.
+- The post page has a slug. It needs the **post**.
+- The post has an `authorId`. The page needs the **author**.
+- The author has an `id`. The page needs the author's **other posts**.
+
+Each query waits for the one before it. That is three round trips, one after another. This is a waterfall, and it makes pages slow.
+
+With [handles](/docs/client/tanstack-react-query/handles) and the functions on this page, the same page loads in **one request**.
+
+- **A component says what data it needs, ahead of time.** It says so in a plain function. The data can depend on other data.
+- **The page makes one request for all of it.** The server fills in each id as it goes.
+- **Nothing blocks the page.** It shows at once, and each part streams in when its data is ready.
+
+An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment. It sits next to its component. A page puts several together. All of it loads in one request. But it is plain TypeScript and plain tRPC procedures: there is no schema, no resolver and no build step.
+
+```demo dependent-queries
+```
 
 :::info
 Everything on this page is experimental, and may change in a minor release. The names start with `experimental_` so that you can tell.
@@ -96,87 +108,65 @@ export const trpc = createTRPCOptionsProxy({
 });
 ```
 
-## In short {#gist}
-
-The post has its author's id. Build the author's entry with `experimental_dataOf(post).authorId`, and load both:
-
-```ts twoslash
-// @include: dq-router
-// @include: dq-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-declare const slug: string;
-// ---cut---
+```twoslash include dq-post-entries
+// @filename: post-page.entries.ts
 import {
-  ensureEntry,
-  experimental_dataOf,
-  loadHandles,
-  prefetchEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-
-const post = ensureEntry(trpc.post.bySlug, { slug });
-const [handles] = await loadHandles(trpc, {
-  post,
-  // The author's id is in the post, which hasn't loaded yet
-  author: prefetchEntry(trpc.author.byId, {
-    id: experimental_dataOf(post).authorId,
-  }),
-});
-handles.author.input;
-//             ^?
-```
-
-- The author's handle is an ordinary handle. Its input is `{ id: 'u1' }`, and it reads the cache entry `trpc.author.byId.queryOptions({ id: 'u1' })` would.
-- Without pipelining, the load asks for the post, then for the author: two requests.
-- With [pipelining](#one-request), it is one request.
-
-## Reading another entry's data {#data-of}
-
-`experimental_dataOf(entry)` is typed as the entry's data, so the input you build with it is checked. It holds no data: it records which part you read, and the load fills that in once the entry has data.
-
-```ts twoslash
-// @include: dq-router
-// @include: dq-trpc
-// @filename: snippet.ts
-// @errors: 2322
-import { trpc } from '~/trpc/server';
-declare const slug: string;
-// ---cut---
-import {
-  ensureEntry,
   experimental_dataOf,
   prefetchEntry,
   prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
 
-const post = ensureEntry(trpc.post.bySlug, { slug });
-const author = prefetchEntry(trpc.author.byId, {
-  id: experimental_dataOf(post).authorId,
-});
-
-// An entry can read an entry that reads another
-const moreByAuthor = prefetchInfiniteEntry(trpc.post.list, {
-  authorId: experimental_dataOf(author).id,
-});
-
-// A part of every item of a list
-const tags = prefetchEntry(trpc.tag.byIds, {
-  ids: experimental_dataOf(post).tags.map((tag) => tag.id),
-});
-
-// The input is checked against the data's type
-prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
+export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
+  const post = prefetchEntry(trpc.post.bySlug, { slug: opts.slug });
+  const author = experimental_dataOf(post, (it) =>
+    prefetchEntry(trpc.author.byId, { id: it.authorId }),
+  );
+  return {
+    post,
+    author,
+    moreByAuthor: experimental_dataOf(author, (it) =>
+      prefetchInfiniteEntry(trpc.post.list, { authorId: it.id }),
+    ),
+  } satisfies TRPCLoadEntries;
+}
 ```
 
-- **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
-- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it.
-- **Put every entry it reads in the same load.** The order of the entries doesn't matter.
-- **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. A prefetch entry that reads a post makes the load wait for the post, not for itself. To not wait, [use the callback form](#without-waiting).
-- **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input and fails its validation. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
+```twoslash include dq-list-entries
+// @filename: post-list.entries.ts
+import {
+  ensureInfiniteEntry,
+  experimental_dataOf,
+  experimental_entryPerItem,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
 
-## Without waiting for the data {#without-waiting}
+export function postListEntries(trpc: TRPC) {
+  const posts = ensureInfiniteEntry(
+    trpc.post.list,
+    {},
+    { getNextPageParam: (last) => last.nextCursor },
+  );
+  return {
+    posts,
+    authors: experimental_entryPerItem(
+      experimental_dataOf(posts).pages.map((page) => page.items),
+      (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+    ),
+  } satisfies TRPCLoadEntries;
+}
+```
 
-With a callback, `experimental_dataOf(entry, (data) => entry)` builds an entry that the load doesn't wait for the data for. The callback runs once, on a stand-in for the data, and returns the entry.
+## In short {#gist}
+
+Three steps: say what the page needs, load it, read it.
+
+#### 1. Say what the page needs {#gist-entries}
+
+An entry names a query. `experimental_dataOf(post, (it) => …)` builds an entry from the post's data, before the post has loaded.
 
 ```ts twoslash title='post-page.entries.ts'
 // @include: dq-router
@@ -193,6 +183,7 @@ import type { TRPC } from '~/trpc/client';
 
 export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
   const post = prefetchEntry(trpc.post.bySlug, { slug: opts.slug });
+  // The author's id is in the post, which hasn't loaded yet
   const author = experimental_dataOf(post, (it) =>
     prefetchEntry(trpc.author.byId, { id: it.authorId }),
   );
@@ -207,33 +198,39 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 }
 ```
 
-With only prefetch entries, `loadHandles()` starts the queries and returns. The author's handle can't have its input yet, so it is unfinished. The component that has the post finishes it with `experimental_handleOfItem(handle, data)`:
+- **`it` is typed as the post**, so `it.authorId` is checked. It holds no data: it records which part you read.
+- **The callback runs once**, before any request. Pass `it.authorId` on as it is. Don't compute with it or branch on it.
+
+#### 2. Load it {#gist-load}
+
+The loader, or server component, starts every query from the URL.
+
+```ts twoslash
+// @include: dq-router
+// @include: dq-trpc
+// @include: dq-post-entries
+// @filename: snippet.ts
+import { trpc } from '~/trpc/server';
+declare const slug: string;
+// ---cut---
+import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { postPageEntries } from './post-page.entries';
+
+// Only prefetch entries: this starts the queries and returns
+const [handles] = await loadHandles(trpc, postPageEntries(trpc, { slug }));
+```
+
+- **It doesn't wait for any data.** The page can render at once.
+- **Pass `handles` to the components**, as props.
+
+#### 3. Read it {#gist-read}
+
+The author's handle needs the post's data to be complete. The component that has the post finishes it with `experimental_handleOfItem(handle, data)`.
 
 ```tsx twoslash title='author-card.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: post-page.entries.ts
-import {
-  experimental_dataOf,
-  prefetchEntry,
-  prefetchInfiniteEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
-
-export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
-  const post = prefetchEntry(trpc.post.bySlug, { slug: opts.slug });
-  const author = experimental_dataOf(post, (it) =>
-    prefetchEntry(trpc.author.byId, { id: it.authorId }),
-  );
-  return {
-    post,
-    author,
-    moreByAuthor: experimental_dataOf(author, (it) =>
-      prefetchInfiniteEntry(trpc.post.list, { authorId: it.id }),
-    ),
-  } satisfies TRPCLoadEntries;
-}
+// @include: dq-post-entries
 // @filename: author-card.tsx
 // ---cut---
 import {
@@ -290,20 +287,34 @@ function MoreByAuthor(props: {
 }
 ```
 
-- **Each part shows when its query has loaded**: the post, then the author, then the list, each behind its own Suspense boundary.
-- **It is still [one request](#one-request)** with pipelining. Use `httpBatchStreamLink`, which sends each result when it is ready.
-- **A query has no cache entry until its key is known.** The author's request is on its way from the start, but its query is created when the post arrives, under the key of its real input. Keys don't change.
-- **The query is there before the component asks.** It is created in the step that gives the cache the post, so the author card finds it loading, and makes no request of its own.
-- **`fromHandle()` doesn't take an unfinished handle**: it is a type error, and it throws.
-- **A failed entry fails where it is read.** If the post fails, the load still resolves, the author never starts, and the error is thrown by the component that reads the post.
-- **A fetch or ensure entry in the callback** is waited for, as always. Its handle is unfinished too.
-- **`experimental_dataOf(author)` without a callback**, in another entry's input, still makes the load wait for the author.
+- **Each part shows when its query has loaded**: the post, then the author, then the list. Give each its own Suspense boundary.
+- **The components make no request of their own.** Each query is already on its way when its component asks for it.
+- **A finished handle is an ordinary handle.** It reads the cache entry `trpc.author.byId.queryOptions({ id: 'u1' })` would.
+
+Then [turn on one request](#turn-on). Without it, the same code works, with one round trip per step.
 
 ## One request {#one-request}
 
-Pipelining sends the entries of a load that read each other in one request. The server runs the first call, copies what the second reads into its input, runs the second, and so on.
+The browser can't ask for the author before it has the post. It doesn't know the id.
 
-Turn it on in two places. On the server, in the options of any HTTP adapter:
+With pipelining, it doesn't have to. It sends every call at once, and leaves a blank where each id goes:
+
+- "Get the post with this slug."
+- "Get the author. Take the `id` from the post's `authorId`."
+- "Get the posts. Take the `authorId` from the author's `id`."
+
+The server does the rest.
+
+1. It runs the first call.
+2. It fills in the blank of the second call from the first call's result.
+3. It runs the second call, and so on.
+4. It sends each result back as soon as it is ready.
+
+No result has to travel to the browser and back before the next call can start.
+
+### Turn it on {#turn-on}
+
+Two options. First on the server, in the options of any HTTP adapter:
 
 ```ts twoslash title='server.ts'
 // @include: dq-router
@@ -318,7 +329,7 @@ createHTTPServer({
 }).listen(3000);
 ```
 
-And on the client's batch link, `httpBatchLink` or `httpBatchStreamLink`:
+Then on the client's batch link:
 
 ```ts twoslash title='client.ts'
 // @include: dq-router
@@ -337,29 +348,34 @@ export const client = createTRPCClient<AppRouter>({
 });
 ```
 
-The loader doesn't change. The load in [In short](#gist) now makes this request:
+- **Use `httpBatchStreamLink`.** It sends each result when it is ready. `httpBatchLink` works too, but its response waits for the slowest call, so the post arrives with the author.
+- **The loader and the components don't change.**
+- **Turn it on the server first.** A server without the option [runs nothing](#not-allowed) of such a request.
+
+### What goes over the wire {#wire}
+
+The post page above makes this request:
 
 ```
-GET /post.bySlug,author.byId?batch=pipeline
-  &input={"0":{"slug":"hello"},"1":{}}
-  &pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}]}
+GET /post.bySlug,author.byId,post.list?batch=pipeline
+  &input={"0":{"slug":"hello"},"1":{},"2":{"direction":"forward"}}
+  &pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}],
+         "2":[{"to":["authorId"],"from":1,"path":["id"]}]}
 ```
 
-- **`pipe`** says what the server fills in: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), it is in the body, beside the inputs.
+- **`pipe`** lists the blanks: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), it is in the body, beside the inputs.
 - **Every call still validates its input** and runs its middleware, as if the browser had sent it.
 - **The server only reads what it sends back anyway**: the data of a call in the same request, as the client gets it.
 - **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the first call's data, as the server did.
-- **Use `httpBatchStreamLink`.** With `httpBatchLink`, the response waits for the slowest call, so the post arrives with the author.
-
-Only a batch with such a read is a pipelined batch, `batch=pipeline`. Every other batch is sent as it always was, also with the options on.
+- **Only a request with a blank is sent this way**, as `batch=pipeline`. Every other request is sent as it always was, also with the options on.
 
 ### What your links see {#links}
 
 Your links see the post's query, and nothing else. The author's query isn't an operation of its own: the server runs it in the post's request, and its result goes to the cache when the post has arrived.
 
-- **No link gets a query with a hole in its input.** A link that shares the requests of identical queries, or one that reads `op.input`, works as before.
+- **No link gets a query with a blank in its input.** A link that shares the requests of identical queries, or one that reads `op.input`, works as before.
 - **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each. [`loggerLink`](/docs/client/links/loggerLink) shows it when it logs the context.
-- **The author's first load isn't logged, and a failure of it doesn't pass through your links.** The query still gets the error, and a retry or a later refetch is an ordinary request, which they see.
+- **The author's first load isn't logged, and a failure of it doesn't pass through your links.** The query still gets the error. A retry or a later refetch is an ordinary request, which they see.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
 - **The server that gets the post runs the author's query too**, whatever your links would do with it. If a `splitLink` sends the two procedures to different servers, don't build one entry from the other's data.
 
@@ -374,21 +390,110 @@ The load then fills in the input in the browser, and asks again. It gives the sa
 - **It reads an infinite entry's later pages.** The first page is one request's result, which the server can read: `experimental_dataOf(posts).pages[0]`.
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
 
-A pipelined entry always asks the server, also when the cache has its query: its key isn't known until the entry it reads has loaded.
+An entry that is sent this way always asks the server, also when the cache has its query: its key isn't known until the entry it reads has loaded.
 
 ### If the server doesn't allow it {#not-allowed}
 
-A server without `experimental_allowPipelining` runs nothing of a pipelined batch, and the load rejects:
+A server without `experimental_allowPipelining` runs nothing of such a request, and the load rejects:
 
 ```
 The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link
 ```
 
-So turn the option on the server first, then on the link.
+## The load doesn't wait {#without-waiting}
+
+`experimental_dataOf(entry, (data) => entry)` builds an entry that the load doesn't wait for the data of. This is the form [In short](#gist) uses.
+
+- **The handle is unfinished.** The load can't know its input yet. `experimental_handleOfItem(handle, data)` finishes it, in the component that has the data.
+- **`fromHandle()` doesn't take an unfinished handle**: it is a type error, and it throws.
+- **A query has no cache entry until its key is known.** The author's call is on its way from the start. Its query is created when the post arrives, under the key of its real input. Keys don't change.
+- **The query is there before the component asks.** It is created in the step that gives the cache the post. So the author card finds it loading, and makes no request of its own.
+- **A failed entry fails where it is read.** If the post fails, the load still resolves, the author never starts, and the component that reads the post throws the error.
+- **A fetch or ensure entry in the callback** is waited for, as always. Its handle is unfinished too.
+
+## When the loader needs the data {#data-of}
+
+Sometimes the loader must have the post before the page renders: to answer with a 404, or to set the title. Then wait for the post with `ensureEntry` or `fetchEntry`, and read its data in another entry's input with `experimental_dataOf(entry)`, without a callback.
+
+```ts twoslash
+// @include: dq-router
+// @include: dq-trpc
+// @filename: snippet.ts
+import { trpc } from '~/trpc/server';
+declare const slug: string;
+// ---cut---
+import {
+  ensureEntry,
+  experimental_dataOf,
+  loadHandles,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+
+const post = ensureEntry(trpc.post.bySlug, { slug });
+const [handles] = await loadHandles(trpc, {
+  post,
+  // The author's id is in the post, which hasn't loaded yet
+  author: prefetchEntry(trpc.author.byId, {
+    id: experimental_dataOf(post).authorId,
+  }),
+});
+handles.author.input;
+//             ^?
+```
+
+- **The load waits for the post**, so the author's handle is finished: its input is `{ id: 'u1' }`.
+- **It is still [one request](#one-request)** with pipelining. The load doesn't wait for the author.
+
+`experimental_dataOf(entry)` is typed as the entry's data, so the input you build with it is checked:
+
+```ts twoslash
+// @include: dq-router
+// @include: dq-trpc
+// @filename: snippet.ts
+// @errors: 2322
+import { trpc } from '~/trpc/server';
+declare const slug: string;
+// ---cut---
+import {
+  ensureEntry,
+  experimental_dataOf,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+
+const post = ensureEntry(trpc.post.bySlug, { slug });
+const author = prefetchEntry(trpc.author.byId, {
+  id: experimental_dataOf(post).authorId,
+});
+
+// An entry can read an entry that reads another
+const moreByAuthor = prefetchInfiniteEntry(trpc.post.list, {
+  authorId: experimental_dataOf(author).id,
+});
+
+// A part of every item of a list
+const tags = prefetchEntry(trpc.tag.byIds, {
+  ids: experimental_dataOf(post).tags.map((tag) => tag.id),
+});
+
+// The input is checked against the data's type
+prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
+```
+
+- **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
+- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it.
+- **Put every entry it reads in the same load.** The order of the entries doesn't matter.
+- **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
+- **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input and fails its validation. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
 
 ## A query for every item {#entry-per-item}
 
-`experimental_entryPerItem(list, (item) => entry)` loads an entry for every item of a list in another entry's data. Its callback runs once, on a stand-in for every item.
+A list often needs a query for every row: the author of every post. Without help, that is one round trip for the list, and one more for the rows.
+
+`experimental_entryPerItem(list, (item) => entry)` loads an entry for every item of a list in another entry's data. With [one request](#one-request), the server runs it for every item it finds.
+
+```demo dependent-queries start=list
+```
 
 ```ts twoslash title='post-list.entries.ts'
 // @include: dq-router
@@ -426,30 +531,7 @@ The load gives one handle for it. A row turns it into the handle of its own auth
 ```tsx twoslash title='post-list.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: post-list.entries.ts
-import {
-  ensureInfiniteEntry,
-  experimental_dataOf,
-  experimental_entryPerItem,
-  prefetchEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
-
-export function postListEntries(trpc: TRPC) {
-  const posts = ensureInfiniteEntry(
-    trpc.post.list,
-    {},
-    { getNextPageParam: (last) => last.nextCursor },
-  );
-  return {
-    posts,
-    authors: experimental_entryPerItem(
-      experimental_dataOf(posts).pages.map((page) => page.items),
-      (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
-    ),
-  } satisfies TRPCLoadEntries;
-}
+// @include: dq-list-entries
 // @filename: post-list.tsx
 // ---cut---
 import {
@@ -507,7 +589,7 @@ function AuthorName(props: {
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
-- **With [pipelining](#one-request), it is one call** in the batch, which the server runs once for every item it found. Every run validates its input, and has its own result or error. `maxBatchSize`, if you set it, also limits the items.
+- **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error. `maxBatchSize`, if you set it, also limits the items.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 
@@ -527,11 +609,11 @@ POST /post.list,author.byId?batch=pipeline
 
 - **The component doesn't change.** `fetchNextPage()` of the query above makes this request, and each new row finds its author in the cache.
 - **Read the list through its handle.** A query from `trpc.post.list.infiniteQueryOptions()` fetches the list alone.
-- **Without pipelining, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
+- **Without one request, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
 
 ## Entries next to components {#groups}
 
-A component can say which queries it needs in a function next to it, and a page can put them together. An object of entries is a group: its handles and data are under its key.
+A component can say which queries it needs in a function next to it. A page puts those functions together, as a GraphQL query does with fragments. An object of entries is a group: its handles and data are under its key.
 
 ```tsx twoslash title='author-card.tsx'
 // @include: dq-router
@@ -607,7 +689,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 ## Errors {#errors}
 
-When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [Without waiting for the data](#without-waiting).
+When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [The load doesn't wait](#without-waiting).
 
 - **`loadHandles()` rejects** with the error of the entry that failed, also when that one is a prefetch entry.
 - **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. Those have no handle, so check the results before you return the handles.
@@ -646,15 +728,30 @@ If the failed entry is a prefetch entry, which has no result, `loadHandlesSettle
 
 ## FAQ {#faq}
 
-#### Is pipelining safe to turn on? {#safe}
+#### Why not reshape the procedure? {#why-not-reshape}
 
-A pipelined batch does what the browser could do in two requests. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
+You can, and it is [often the simplest fix](/docs/client/tanstack-react-query/handles#reshape-procedures): return the post with its author, and the page needs one query.
+
+Use this page's way when you'd rather keep the procedures small.
+
+- **A component owns its data.** The author card asks for an author. Any page can use it, and no procedure has to know about the page.
+- **One procedure serves many pages.** `author.byId` stays `author.byId`, with one cache entry per author.
+- **Slow parts don't hold back fast ones.** A joined procedure answers when its slowest part is done. Here each part arrives by itself.
+
+#### How is this like GraphQL? How is it not? {#graphql}
+
+- **Like it**: a component says what data it needs, next to the component. A page puts those together. It all loads in one request.
+- **Unlike it**: there is no schema, no resolver, no query language and no build step. An entries function is TypeScript, and each query is a tRPC procedure with its own cache entry.
+
+#### Is it safe to turn on? {#safe}
+
+Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
 A call for every item runs a procedure once for every item of a list the server returned. Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) to limit it.
 
 #### Does it work with mutations and subscriptions? {#mutations}
 
-No. Only queries can be pipelined, and a pipelined batch of mutations is rejected.
+No. Only queries can be sent this way, and such a batch of mutations is rejected.
 
 #### Can a later page of an infinite list load its authors in the same request? {#later-pages}
 

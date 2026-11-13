@@ -18,6 +18,8 @@ import { isChunkLoadError, reloadOnce, reloadPage } from '~/reload-once.ts';
 type Demo = ComponentType<DemoProps>;
 
 const imports: Record<DemoName, () => Promise<Demo>> = {
+  'dependent-queries': async () =>
+    (await import('./dependent-queries.tsx')).DependentQueries,
   'loader-handles': async () =>
     (await import('./loader-handles.tsx')).LoaderHandles,
   'request-timeline': async () =>

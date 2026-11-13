@@ -54,8 +54,22 @@ export const latencies = [
   { label: 'Slow', ms: 2000 },
 ] as const;
 
+/**
+ * A part of an input that isn't known yet, shown as `code` rather than as a
+ * value: `‹post›.authorId`.
+ */
+export class Unfilled {
+  readonly code: string;
+  constructor(code: string) {
+    this.code = code;
+  }
+}
+
 /** A value as code: `{ id: 1 }`. */
 function formatValue(value: unknown): string {
+  if (value instanceof Unfilled) {
+    return value.code;
+  }
   if (typeof value === 'string') {
     return `'${value}'`;
   }
@@ -196,12 +210,22 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
         schedule(timer);
       }
     },
+    /** Gives a request in flight another label, once more is known of it. */
+    relabel(id: number, label: string) {
+      update({
+        ...trace,
+        requests: trace.requests.map((request) =>
+          request.id === id ? { ...request, label } : request,
+        ),
+      });
+    },
     shown() {
       if (trace.shownAt === undefined) {
         update({ ...trace, shownAt: now() });
       }
     },
-    start(path: string, input: unknown, origin?: string) {
+    /** Starts a request that shows as `label`; returns its id. */
+    request(label: string, origin: string | undefined) {
       const id = nextId++;
       update({
         ...trace,
@@ -210,7 +234,7 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
           {
             endedAt: undefined,
             id,
-            label: formatCall(path, input),
+            label,
             origin,
             startedAt: now(),
             status: 'pending',
@@ -218,6 +242,9 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
         ],
       });
       return id;
+    },
+    start(path: string, input: unknown, origin?: string) {
+      return network.request(formatCall(path, input), origin);
     },
     subscribe: (listener: () => void) => {
       listeners.add(listener);

@@ -1,8 +1,21 @@
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  experimental_dataOf,
+  experimental_entryPerItem,
+  loadHandles,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createDemoClient } from './kit/backend.ts';
+import { AuthorBlogSkeleton } from './kit/author-blog.tsx';
+import {
+  type AppRouter,
+  createDemoClient,
+  createHttpDemoClient,
+} from './kit/backend.ts';
 import { PageSkeleton } from './kit/blog-routes.tsx';
 import {
   chainLength,
@@ -270,6 +283,125 @@ describe('backend', () => {
   });
 });
 
+describe('backend over HTTP', () => {
+  const session = () => {
+    const network = createNetwork(createRandom(1));
+    const weights: number[] = [];
+    network.delay = (weight) => {
+      weights.push(weight);
+      return 0;
+    };
+    const client = createHttpDemoClient(network, undefined);
+    const queryClient = new QueryClient();
+    const trpc = createTRPCOptionsProxy<AppRouter>({ client, queryClient });
+    /** Every label a request has had. */
+    const labels = new Set<string>();
+    network.subscribe(() => {
+      for (const request of network.getTrace().requests) {
+        labels.add(request.label);
+      }
+    });
+    const settled = () =>
+      vi.waitFor(() => {
+        const { requests } = network.getTrace();
+        expect(requests.length).toBeGreaterThan(0);
+        expect(requests.every((request) => request.status === 'done')).toBe(
+          true,
+        );
+      });
+    return { labels, network, queryClient, settled, trpc, weights };
+  };
+
+  it('pays for the trip once a request, and for the work of each call', async () => {
+    const { network, queryClient, settled, trpc, weights } = session();
+    await Promise.all([
+      queryClient.fetchQuery(trpc.post.byId.queryOptions({ id: 1 })),
+      queryClient.fetchQuery(trpc.post.feed.queryOptions({ page: 1 })),
+    ]);
+    await settled();
+    // One trip, then a quarter of each procedure's weight
+    expect(weights).toEqual([0.75, 0.25, 0.2]);
+    expect(network.getTrace().requests.map((request) => request.label)).toEqual(
+      ['post.byId({ id: 1 })', 'post.feed({ page: 1 })'],
+    );
+  });
+
+  it('runs a query that needs another in its request, and shows where its input comes from', async () => {
+    const { labels, network, queryClient, settled, trpc } = session();
+    const post = prefetchEntry(trpc.post.byId, { id: 1 });
+    const author = experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    );
+    await loadHandles(trpc, {
+      author,
+      more: experimental_dataOf(author, (it) =>
+        prefetchEntry(trpc.post.byAuthor, { authorId: it.id }),
+      ),
+      post,
+    });
+    await settled();
+    await vi.waitFor(() => {
+      expect(
+        queryClient.getQueryData(trpc.post.byAuthor.queryKey({ authorId: 1 })),
+      ).toBeDefined();
+    });
+    const { requests } = network.getTrace();
+    // All three left together: one round trip
+    expect(chainLength(requests)).toBe(1);
+    expect(requests.map((request) => request.label)).toEqual([
+      'post.byId({ id: 1 })',
+      'author.byId({ id: 1 })',
+      'post.byAuthor({ authorId: 1 })',
+    ]);
+    // Until the server had run them, they showed what it would fill in
+    expect(labels).toContain('author.byId({ id: ‹post›.authorId })');
+    expect(labels).toContain('post.byAuthor({ authorId: ‹author›.id })');
+    expect(
+      queryClient.getQueryData(trpc.author.byId.queryKey({ id: 1 })),
+    ).toMatchObject({ name: 'Ada' });
+  });
+
+  it("runs a query for every row of a list in the list's request", async () => {
+    const { labels, network, queryClient, settled, trpc } = session();
+    const feed = prefetchEntry(trpc.post.feed, { page: 1 });
+    await loadHandles(trpc, {
+      authors: experimental_entryPerItem(
+        experimental_dataOf(feed).posts,
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+      feed,
+    });
+    await settled();
+    await vi.waitFor(() => {
+      expect(
+        queryClient.getQueryData(trpc.author.byId.queryKey({ id: 3 })),
+      ).toMatchObject({ name: 'Linus' });
+    });
+    const { requests } = network.getTrace();
+    expect(chainLength(requests)).toBe(1);
+    expect(requests.map((request) => request.label)).toEqual([
+      'post.feed({ page: 1 })',
+      'author.byId({ id: 1 }) + 2 more',
+    ]);
+    expect(labels).toContain('author.byId({ id: ‹post›.posts[].authorId })');
+  });
+
+  it('takes a round trip for each step when each query waits for the last', async () => {
+    const { network, queryClient, settled, trpc } = session();
+    const post = await queryClient.fetchQuery(
+      trpc.post.byId.queryOptions({ id: 1 }),
+    );
+    const author = await queryClient.fetchQuery(
+      trpc.author.byId.queryOptions({ id: post.authorId }),
+    );
+    await queryClient.fetchQuery(
+      trpc.post.byAuthor.queryOptions({ authorId: author.id }),
+    );
+    await settled();
+    expect(network.getTrace().requests).toHaveLength(3);
+  });
+});
+
 describe('url state', () => {
   it('reads the sort and page from the URL', () => {
     expect(parseListUrl('/posts?sort=top&page=3')).toEqual({
@@ -322,6 +454,17 @@ describe('first frame', () => {
       'Loaders start, components wait',
     );
     expect(skeleton('/posts?page=2')).not.toContain('Render as you fetch');
+    expect(skeleton('/nowhere')).toBe('');
+  });
+
+  it("shapes the author blog's skeleton like its page, with the author", () => {
+    const skeleton = (href: string) =>
+      renderToString(createElement(AuthorBlogSkeleton, { href }));
+    expect(skeleton('/posts/2')).toContain('Handles, explained');
+    expect(skeleton('/posts/2')).toContain('Grace');
+    expect(skeleton('/posts?page=2')).toContain(
+      'Loaders start, components wait',
+    );
     expect(skeleton('/nowhere')).toBe('');
   });
 

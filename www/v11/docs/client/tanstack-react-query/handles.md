@@ -665,6 +665,16 @@ post.bySlug     |-------|
 post.comments   |-------|
 ```
 
+#### Or keep the procedures, and let the server fill in the id {#or-one-request}
+
+Reshaping changes the procedures to fit one page. The other way is to leave them as they are:
+
+- **The loader names both queries up front.** The author's entry says "take the id from the post".
+- **The server fills in the id**, and runs both in one request. Each result streams back when it is ready.
+- **`author.byId` stays `author.byId`.** Any page can use it, and a component can say what it needs by itself.
+
+This is experimental. See [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries).
+
 ## Reading a handle {#reading-a-handle}
 
 `fromHandle(trpc, handle, opts?)` returns `trpc.<path>.queryOptions(handle.input, opts)`, or `infiniteQueryOptions` for an infinite handle. Pass it to any TanStack Query hook:
@@ -770,11 +780,11 @@ data.comments.pages;
 
 ## Dependent queries {#dependent-queries}
 
-A query whose input comes from another query's result is a waterfall. Each step costs a round trip. First try to [reshape the procedure](#reshape-procedures). If you can't, there are two ways, and both pay the round trip.
+A query whose input comes from another query's result is a waterfall. Each step costs a round trip. There are three ways to deal with it.
 
-:::tip
-Experimental: [`experimental_dataOf()`](/docs/client/tanstack-react-query/dependent-queries) puts such a query in the same load, and with pipelining in the same request.
-:::
+- **[Reshape the procedure](#reshape-procedures)**, so that it takes what the URL has, or returns the joined data. No extra round trip.
+- **Load both in [one request](/docs/client/tanstack-react-query/dependent-queries)**, with `experimental_dataOf()`. The procedures stay as they are, and the server fills in the input. No extra round trip. Experimental.
+- **Pay the round trip**, in a loader or in a component, as below.
 
 #### In a loader {#waterfall-in-a-loader}
 
