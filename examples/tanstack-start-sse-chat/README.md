@@ -25,7 +25,7 @@ This project includes 2 examples of the subscription pattern:
 
 Route loaders start the queries a page needs with `loadHandles` and prefetch entries from `@trpc/tanstack-react-query/unstable-handles`, and return the handles. Components read them with `useSuspenseQuery(fromHandle(trpc, handle))`. During SSR, procedures are called in-process with `localLink`; the browser talks to `/api/trpc` over HTTP.
 
-The [`/blog`](./src/routes/blog/$slug.tsx) pages are a blog whose loaders start queries that depend on each other, in one request. The post page's author is loaded with `experimental_dataOf(post).authorId`, and its "More by" list is an infinite list filtered by that author's id. The post list is infinite too, and loads an author for every post with `experimental_entryPerItem()`. A row gets its author's handle from its post, with `experimental_handleOfItem(handles.authors, post)`. This needs `experimental_pipelining` on the link and `experimental_allowPipelining` on the handler.
+The [`/blog`](./src/routes/blog/$slug.tsx) pages are a blog whose loaders start queries that depend on each other, in one request. The post page's author is loaded with `experimental_dataOf(post).authorId`, and its "More by" list is an infinite list filtered by that author's id. The post list is infinite too, and loads an author for every post with `experimental_entryPerItem()`. A row gets its author's handle from its post, with `experimental_handleOfItem(handles.authors, post)`. Scrolling loads the next page and its authors in one request as well. This needs `experimental_pipelining` on the link and `experimental_allowPipelining` on the handler.
 
 ## Setup
 

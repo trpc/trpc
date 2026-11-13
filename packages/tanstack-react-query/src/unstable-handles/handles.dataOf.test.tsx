@@ -593,6 +593,64 @@ describe('without the options', () => {
     expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain('batch=1');
   });
 
+  test('a batch that is split: a later page still loads its items, in a request of their own', async () => {
+    const { appRouter, calls } = createAppRouter();
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            experimental_pipelining: true,
+            maxItems: 1,
+          }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    calls.mockClear();
+
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    const data = await observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    const lastPost = data.data!.pages[1]!.items[0]!;
+    expect(
+      resource.queryClient.getQueryData(
+        fromHandle(trpc, experimental_handleOfItem(handles.authors, lastPost))
+          .queryKey,
+      ),
+    ).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
+    expect(calls.mock.calls).toEqual([
+      ['post.paged', { cursor: 1 }],
+      ['author.byId', { id: 'u1' }],
+    ]);
+  });
+
   test('a link that does not pipeline: the input is filled in on the client, in ordinary batches', async () => {
     const { appRouter } = createAppRouter();
     await using resource = testReactResource(appRouter, {

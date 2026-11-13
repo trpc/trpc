@@ -43,7 +43,7 @@ function postListEntries(trpc: TRPC) {
     // An author for every post. The authors' ids are in the posts, which
     // haven't loaded yet, so the callback runs once on a stand-in for every
     // post. The server runs `blog.authorById` for every post it found, in the
-    // same request
+    // same request: for this first page, and for each page the list loads later
     authors: experimental_entryPerItem(
       experimental_dataOf(posts).pages.map((page) => page.items),
       (post) => prefetchEntry(trpc.blog.authorById, { id: post.authorId }),
