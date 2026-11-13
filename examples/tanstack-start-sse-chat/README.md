@@ -25,6 +25,8 @@ This project includes 2 examples of the subscription pattern:
 
 Route loaders start the queries a page needs with `loadHandles` and prefetch entries from `@trpc/tanstack-react-query/unstable-handles`, and return the handles. Components read them with `useSuspenseQuery(fromHandle(trpc, handle))`. During SSR, procedures are called in-process with `localLink`; the browser talks to `/api/trpc` over HTTP.
 
+The [`/blog`](./src/routes/blog/$slug.tsx) pages are a fake blog that loads a post and its author in one request. The author's id is in the post, so the loader passes `dataOf(post).authorId` and, with `pipelining` on the link and `allowPipelining` on the handler, the server fills it in. The page has a switch for pipelining and shows the requests it made.
+
 ## Setup
 
 ```sh

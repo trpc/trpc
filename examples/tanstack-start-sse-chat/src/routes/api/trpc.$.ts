@@ -12,6 +12,11 @@ const handler = (opts: { request: Request }) =>
     req: opts.request,
     endpoint: '/api/trpc',
     /**
+     * Lets a query in a batch read its input from an earlier query's data.
+     * The blog pages use it to load a post and its author in one request
+     */
+    allowPipelining: true,
+    /**
      * @see https://trpc.io/docs/v11/context
      */
     createContext,
