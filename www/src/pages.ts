@@ -30,7 +30,9 @@ export interface QuerySearch {
 
 /**
  * `?q=`, if it's there and not empty. The router parses `?q=404` as a
- * number; it's still what was searched for.
+ * number; it's still what was searched for. Anything else (`?q=null`,
+ * `?q=[1]`) is `undefined`, said out loud: the router lays what this returns
+ * over what the URL said, so a key left out keeps the URL's value.
  */
 export function validateQuerySearch(
   search: Record<string, unknown>,
@@ -40,5 +42,5 @@ export function validateQuerySearch(
     typeof query === 'number' || typeof query === 'boolean'
       ? String(query)
       : query;
-  return typeof text === 'string' && text !== '' ? { q: text } : {};
+  return { q: typeof text === 'string' && text !== '' ? text : undefined };
 }
