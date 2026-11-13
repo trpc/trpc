@@ -1,5 +1,6 @@
 import { testReactResource } from '../../test/__helpers';
 import {
+  hashKey,
   InfiniteQueryObserver,
   skipToken,
   useSuspenseQuery,
@@ -524,6 +525,221 @@ describe('entryPerItem', () => {
   });
 });
 
+describe('experimental_dataOf(entry, (data) => entry)', () => {
+  test('the load does not wait for the data, and the handle is finished with it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [loaded, data] = await loadHandles(trpc, {
+      post,
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+    });
+    // Nothing has arrived
+    expect(
+      resource.queryClient.getQueryData(fromHandle(trpc, loaded.post).queryKey),
+    ).toBeUndefined();
+    expect(data).toEqual({});
+    expectTypeOf(data).toEqualTypeOf<{}>();
+
+    // The handle has the input without the post's part, and where it goes
+    expect(loaded.author).toEqual({
+      queryKey: trpc.author.byId.queryKey({} as any),
+      input: {},
+      itemInputs: [{ to: ['id'], path: ['authorId'] }],
+    });
+    expect(() =>
+      // @ts-expect-error -- it isn't finished
+      fromHandle(trpc, loaded.author),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`fromHandle()\` got a handle that isn't finished: its input needs an item or another entry's data. Pass it through \`experimental_handleOfItem(handle, item)\` first]`,
+    );
+
+    // The handles cross to the browser as JSON
+    const handles: typeof loaded = JSON.parse(JSON.stringify(loaded));
+    const postData = await resource.queryClient.ensureQueryData(
+      fromHandle(trpc, handles.post),
+    );
+    const author = experimental_handleOfItem(handles.author, postData);
+    expectTypeOf(author).toEqualTypeOf<
+      inferQueryHandle<typeof trpc.author.byId>
+    >();
+    expect(author).toEqual({
+      queryKey: trpc.author.byId.queryKey({ id: 'u1' }),
+      input: { id: 'u1' },
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.queryClient.getQueryData(fromHandle(trpc, author).queryKey),
+    ).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
+    // Every procedure ran once
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
+  });
+
+  test('an entry can be built from the data of an entry that is built from another, also an infinite one', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    );
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author,
+      more: experimental_dataOf(author, (it) =>
+        prefetchInfiniteEntry(trpc.post.byAuthor, { authorId: it.id }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.calls).toHaveBeenCalledTimes(3);
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    const more = experimental_handleOfItem(handles.more, {
+      id: 'u1',
+      name: 'KATT',
+      teamId: 'team1',
+    });
+    expectTypeOf(more).toEqualTypeOf<
+      inferInfiniteQueryHandle<typeof trpc.post.byAuthor>
+    >();
+    expect(
+      resource.queryClient.getQueryData(
+        fromHandle(trpc, more, {
+          getNextPageParam: (last) => last.nextCursor,
+        }).queryKey,
+      ),
+    ).toMatchObject({ pages: [{ items: ['u1'], nextCursor: null }] });
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.bySlug',
+      'author.byId',
+      'post.byAuthor',
+    ]);
+  });
+
+  test('a fetch or ensure entry is waited for, and its handle is unfinished too', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      author: experimental_dataOf(post, (it) =>
+        ensureEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+    });
+
+    expect(data).toEqual({
+      author: { id: 'u1', name: 'KATT', teamId: 'team1' },
+    });
+    expectTypeOf(data.author).toEqualTypeOf<{
+      id: string;
+      name: string;
+      teamId: string;
+    }>();
+    expect(handles.author).toMatchObject({
+      itemInputs: [{ to: ['id'], path: ['authorId'] }],
+    });
+  });
+
+  test('an entry that reads it in its input waits for it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    );
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author,
+      team: prefetchEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
+    });
+
+    expect(handles.team.input).toEqual({ id: 'team1' });
+  });
+
+  test('when the entry it is built from fails, the load still resolves and it does not start', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'missing' });
+    const [handles, results] = await loadHandlesSettled(trpc, {
+      post,
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+    });
+    const postKey = fromHandle(trpc, handles.post).queryKey;
+    await vi.waitFor(() => {
+      // The error is where the post is read
+      expect(resource.queryClient.getQueryState(postKey)?.status).toBe('error');
+    });
+
+    expect(results).toEqual({});
+    expect(Object.keys(handles)).toEqual(['post', 'author']);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([]);
+  });
+
+  test('the callback must return an entry', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+
+    expect(() =>
+      // @ts-expect-error -- not an entry
+      experimental_dataOf(post, (it) => it.authorId),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: The callback of \`experimental_dataOf()\` must return an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got "[a experimental_dataOf() value]"]`,
+    );
+  });
+
+  test('an entry per item does not wait for a list from a prefetch entry', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      ),
+    });
+    expect(
+      resource.queryClient.getQueryData(
+        fromHandle(trpc, handles.post).queryKey,
+      ),
+    ).toBeUndefined();
+
+    await vi.waitFor(() => {
+      expect(resource.calls).toHaveBeenCalledTimes(3);
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.queryClient.getQueryData(
+        fromHandle(trpc, experimental_handleOfItem(handles.tags, { id: 't2' }))
+          .queryKey,
+      ),
+    ).toEqual([{ id: 't2' }]);
+  });
+});
+
 describe('without the options', () => {
   test('a link that pipelines and a server that does not: the load fails, and no query runs with a hole in its input', async () => {
     const { appRouter, calls } = createAppRouter();
@@ -1023,6 +1239,102 @@ describe.each([
     });
     expect(handles.team.input).toEqual({ id: 'team1' });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("entries built from each other's data load in one request, which the load does not wait for", async () => {
+    await using resource = pipeliningCtx(scenario.link, 20);
+    const trpc = resource.optionsProxyClient;
+    const { queryClient } = resource;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    );
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author,
+      more: experimental_dataOf(author, (it) =>
+        prefetchInfiniteEntry(trpc.post.byAuthor, { authorId: it.id }),
+      ),
+    });
+    // The request hasn't left yet
+    expect(resource.calls).not.toHaveBeenCalled();
+    const postKey = fromHandle(trpc, handles.post).queryKey;
+    const authorKey = trpc.author.byId.queryKey({ id: 'u1' });
+    const moreKey = trpc.post.byAuthor.infiniteQueryKey({ authorId: 'u1' });
+    // A query has no cache entry until its key is known
+    expect(queryClient.getQueryState(authorKey)).toBeUndefined();
+
+    // In the step that gives the cache a query's data, the query that is
+    // built from it is there: a component that reads the data finds it
+    const whenPublished: Record<string, unknown> = {};
+    using _unsubscribe = makeResource(
+      {},
+      queryClient.getQueryCache().subscribe((event) => {
+        if (event.type !== 'updated' || event.action.type !== 'success') {
+          return;
+        }
+        if (event.query.queryHash === hashKey(postKey)) {
+          whenPublished['author'] = queryClient.getQueryState(authorKey);
+        }
+        if (event.query.queryHash === hashKey(authorKey)) {
+          whenPublished['more'] = queryClient.getQueryState(moreKey);
+        }
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(queryClient.getQueryData(moreKey)).toBeDefined();
+    });
+    await vi.waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+    });
+    expect(whenPublished).toMatchObject({
+      author: { fetchStatus: 'fetching' },
+      more: { fetchStatus: 'fetching' },
+    });
+
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain(
+      '/post.bySlug,author.byId,post.byAuthor?batch=2',
+    );
+    expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
+      'author.byId',
+      'post.byAuthor',
+      'post.bySlug',
+    ]);
+    expect(queryClient.getQueryData(authorKey)).toEqual({
+      id: 'u1',
+      name: 'KATT',
+      teamId: 'team1',
+    });
+  });
+
+  test("an entry per item of a prefetch entry's list loads in one request, which the load does not wait for", async () => {
+    await using resource = pipeliningCtx(scenario.link, 20);
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      ),
+    });
+    expect(resource.calls).not.toHaveBeenCalled();
+
+    const tagKey = fromHandle(
+      trpc,
+      experimental_handleOfItem(handles.tags, { id: 't1' }),
+    ).queryKey;
+    await vi.waitFor(() => {
+      expect(resource.queryClient.getQueryData(tagKey)).toEqual([{ id: 't1' }]);
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls).toHaveBeenCalledTimes(3);
   });
 
   test("a later page loads its items' queries in the same request", async () => {

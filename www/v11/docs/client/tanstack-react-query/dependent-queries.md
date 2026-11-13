@@ -11,6 +11,7 @@ order: 54
 A query whose input comes from another query's data is a waterfall: the browser waits for the first before it can ask for the second. With [handles](/docs/client/tanstack-react-query/handles), a loader can describe both in one load, and the server can run both in one request.
 
 - **`experimental_dataOf(entry)`** stands in for the data of another entry, so an entry's input can use it before it has loaded.
+- **`experimental_dataOf(entry, (data) => entry)`** does the same [without making the load wait](#without-waiting) for that data.
 - **Pipelining** sends such entries in the same batch. The server fills in their inputs between the calls.
 - **`experimental_entryPerItem()`** loads a query for every item of a list, such as the author of every post.
 
@@ -170,8 +171,133 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 - **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
 - **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it.
 - **Put every entry it reads in the same load.** The order of the entries doesn't matter.
-- **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. A prefetch entry that reads a post makes the load wait for the post, not for itself.
+- **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. A prefetch entry that reads a post makes the load wait for the post, not for itself. To not wait, [use the callback form](#without-waiting).
 - **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input and fails its validation. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
+
+## Without waiting for the data {#without-waiting}
+
+With a callback, `experimental_dataOf(entry, (data) => entry)` builds an entry that the load doesn't wait for the data for. The callback runs once, on a stand-in for the data, and returns the entry.
+
+```ts twoslash title='post-page.entries.ts'
+// @include: dq-router
+// @include: dq-trpc
+// @filename: post-page.entries.ts
+// ---cut---
+import {
+  experimental_dataOf,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
+
+export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
+  const post = prefetchEntry(trpc.post.bySlug, { slug: opts.slug });
+  const author = experimental_dataOf(post, (it) =>
+    prefetchEntry(trpc.author.byId, { id: it.authorId }),
+  );
+  return {
+    post,
+    author,
+    // An entry can be built from one that is built from another
+    moreByAuthor: experimental_dataOf(author, (it) =>
+      prefetchInfiniteEntry(trpc.post.list, { authorId: it.id }),
+    ),
+  } satisfies TRPCLoadEntries;
+}
+```
+
+With only prefetch entries, `loadHandles()` starts the queries and returns. The author's handle can't have its input yet, so it is unfinished. The component that has the post finishes it with `experimental_handleOfItem(handle, data)`:
+
+```tsx twoslash title='author-card.tsx'
+// @include: dq-router
+// @include: dq-trpc
+// @filename: post-page.entries.ts
+import {
+  experimental_dataOf,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
+
+export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
+  const post = prefetchEntry(trpc.post.bySlug, { slug: opts.slug });
+  const author = experimental_dataOf(post, (it) =>
+    prefetchEntry(trpc.author.byId, { id: it.authorId }),
+  );
+  return {
+    post,
+    author,
+    moreByAuthor: experimental_dataOf(author, (it) =>
+      prefetchInfiniteEntry(trpc.post.list, { authorId: it.id }),
+    ),
+  } satisfies TRPCLoadEntries;
+}
+// @filename: author-card.tsx
+// ---cut---
+import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import {
+  experimental_handleOfItem,
+  fromHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  experimental_inferHandles,
+  inferInfiniteQueryHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { useTRPC, type TRPC } from '~/trpc/client';
+import type { postPageEntries } from './post-page.entries';
+
+export function AuthorCard(props: {
+  handles: experimental_inferHandles<typeof postPageEntries>;
+}) {
+  const trpc = useTRPC();
+  const { handles } = props;
+  // The author's id is in the post
+  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
+  const authorQuery = useSuspenseQuery(
+    fromHandle(trpc, experimental_handleOfItem(handles.author, postQuery.data)),
+  );
+  return (
+    <address>
+      {authorQuery.data.name}
+      <Suspense fallback="Loading…">
+        <MoreByAuthor
+          posts={experimental_handleOfItem(
+            handles.moreByAuthor,
+            authorQuery.data,
+          )}
+        />
+      </Suspense>
+    </address>
+  );
+}
+
+function MoreByAuthor(props: {
+  posts: inferInfiniteQueryHandle<TRPC['post']['list']>;
+}) {
+  const trpc = useTRPC();
+  const postsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.posts, {
+      getNextPageParam: (last) => last.nextCursor,
+    }),
+  );
+  return <p>{postsQuery.data.pages[0]?.items.length} more</p>;
+}
+```
+
+- **Each part shows when its query has loaded**: the post, then the author, then the list, each behind its own Suspense boundary.
+- **It is still [one request](#one-request)** with pipelining. Use `httpBatchStreamLink`, which sends each result when it is ready.
+- **A query has no cache entry until its key is known.** The author's request is on its way from the start, but its query is created when the post arrives, under the key of its real input. Keys don't change.
+- **The query is there before the component asks.** It is created in the step that gives the cache the post, so the author card finds it loading, and makes no request of its own.
+- **`fromHandle()` doesn't take an unfinished handle**: it is a type error, and it throws.
+- **A failed entry fails where it is read.** If the post fails, the load still resolves, the author never starts, and the error is thrown by the component that reads the post.
+- **A fetch or ensure entry in the callback** is waited for, as always. Its handle is unfinished too.
+- **`experimental_dataOf(author)` without a callback**, in another entry's input, still makes the load wait for the author.
 
 ## One request {#one-request}
 
@@ -367,6 +493,7 @@ function AuthorName(props: {
 
 - **The item gives the handle**, so there is no index to keep in step. Passing something that isn't one of the list's items is a type error.
 - **It works for an item the load never had**, such as a post on a later page.
+- **The load doesn't wait for a list from a prefetch entry.** The items' queries start when the list arrives.
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
@@ -470,7 +597,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 ## Errors {#errors}
 
-When an entry fails, the entries that read its data can't start.
+When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [Without waiting for the data](#without-waiting).
 
 - **`loadHandles()` rejects** with the error of the entry that failed, also when that one is a prefetch entry.
 - **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. Those have no handle, so check the results before you return the handles.
