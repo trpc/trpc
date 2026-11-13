@@ -675,10 +675,16 @@ describe('loading', () => {
   test('throws a readable error for a value that is not an entry', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
+    // An object is a group of entries, so the error names the value inside it
     await expect(
       loadHandles(trpc, { post: { id: '1' } as any }),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, or \`skipToken\`, for "post", got {"id":"1"}]`,
+      `[Error: Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, \`skipToken\`, or an object of them, for "post.id", got "1"]`,
+    );
+    await expect(
+      loadHandles(trpc, { post: null as any }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[Error: Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, \`skipToken\`, or an object of them, for "post", got null]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });

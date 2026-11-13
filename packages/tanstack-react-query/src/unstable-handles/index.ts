@@ -8,6 +8,7 @@ export {
   fetchInfiniteEntry,
   ensureInfiniteEntry,
   fromHandle,
+  dataOf,
   isTRPCEntryError,
 } from './handles';
 export { TRPCEntryError } from './entryError';
@@ -27,4 +28,5 @@ export type {
   TRPCInfiniteEntryOptions,
   inferQueryHandle,
   inferInfiniteQueryHandle,
+  inferHandles,
 } from './handles';

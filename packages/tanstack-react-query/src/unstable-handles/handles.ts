@@ -127,11 +127,14 @@ export type AnyTRPCEntry =
   | TRPCInfiniteQueryEntry<any, any>;
 
 /**
- * What `loadHandles()` takes per key: an entry, or TanStack Query's
- * `skipToken` to start nothing for that key.
+ * What `loadHandles()` takes per key: an entry, TanStack Query's `skipToken`
+ * to start nothing for that key, or a group: an object of the same, which gets
+ * its handles and data under that key.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#conditional-queries
  */
-export type TRPCLoadEntries = Record<string, AnyTRPCEntry | typeof skipToken>;
+export interface TRPCLoadEntries {
+  [key: string]: AnyTRPCEntry | typeof skipToken | TRPCLoadEntries;
+}
 
 type HandleOfEntry<TEntry> =
   TEntry extends TRPCQueryEntry<infer TDef, any>
@@ -140,7 +143,9 @@ type HandleOfEntry<TEntry> =
       ? TRPCInfiniteQueryHandle<TDef>
       : TEntry extends typeof skipToken
         ? undefined
-        : never;
+        : TEntry extends TRPCLoadEntries
+          ? HandlesOf<TEntry>
+          : never;
 
 type DataOfEntry<TEntry> =
   TEntry extends TRPCQueryEntry<infer TDef, any>
@@ -149,7 +154,7 @@ type DataOfEntry<TEntry> =
       ? TRPCInfiniteData<TDef['input'], TDef['output']>
       : never;
 
-type HandlesOf<TEntries extends TRPCLoadEntries> = {
+type HandlesOf<TEntries> = {
   [TKey in keyof TEntries]: HandleOfEntry<TEntries[TKey]>;
 };
 
@@ -159,24 +164,36 @@ type DefOfEntry<TEntry> = TEntry extends {
   ? TDef
   : never;
 
-/** Only fetch and ensure entries are waited for, so only they have data */
+/**
+ * Only fetch and ensure entries are waited for, so only they have data. A
+ * group keeps its key, with the data of the entries in it.
+ */
 type WaitedKey<TEntries, TKey extends keyof TEntries> = TEntries[TKey] extends {
   readonly [entryDef]: { kind: 'fetch' | 'ensure' };
 }
   ? TKey
-  : never;
+  : TEntries[TKey] extends AnyTRPCEntry | typeof skipToken
+    ? never
+    : TKey;
 
 type DataOf<TEntries extends TRPCLoadEntries> = {
-  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: DataOfEntry<
-    TEntries[TKey]
-  >;
+  [
+    TKey in keyof TEntries as WaitedKey<TEntries, TKey>
+  ]: TEntries[TKey] extends AnyTRPCEntry
+    ? DataOfEntry<TEntries[TKey]>
+    : TEntries[TKey] extends TRPCLoadEntries
+      ? DataOf<TEntries[TKey]>
+      : never;
 };
 
 type ResultsOf<TEntries extends TRPCLoadEntries> = {
-  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: TRPCEntryResult<
-    DefOfEntry<TEntries[TKey]>,
-    DataOfEntry<TEntries[TKey]>
-  >;
+  [
+    TKey in keyof TEntries as WaitedKey<TEntries, TKey>
+  ]: TEntries[TKey] extends AnyTRPCEntry
+    ? TRPCEntryResult<DefOfEntry<TEntries[TKey]>, DataOfEntry<TEntries[TKey]>>
+    : TEntries[TKey] extends TRPCLoadEntries
+      ? ResultsOf<TEntries[TKey]>
+      : never;
 };
 
 /**
@@ -276,6 +293,23 @@ export type inferInfiniteQueryHandle<
     ? TRPCInfiniteQueryHandle<TDef>
     : never;
 
+/**
+ * The handles of a component's entries, for typing its props. Takes the entries,
+ * or the function that builds them.
+ * @example
+ * ```ts
+ * export const postEntries = (trpc: TRPC, id: string) => ({
+ *   post: ensureEntry(trpc.post.byId, { id }),
+ * });
+ * function Post(props: { handles: inferHandles<typeof postEntries> }) {}
+ * ```
+ */
+export type inferHandles<
+  TEntries extends TRPCLoadEntries | ((...args: any[]) => TRPCLoadEntries),
+> = HandlesOf<
+  TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries
+>;
+
 const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
 function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
@@ -319,11 +353,24 @@ function toHandle(options: any, type: HandleType) {
 }
 
 const entryState = Symbol('trpc.handleEntry');
+const entryDataRef = Symbol('trpc.entryData');
+
+/** A `dataOf()` value: a path into the data of another entry */
+interface EntryDataRef {
+  /** The entry `dataOf()` was called with */
+  entry: object;
+  path: string[];
+}
 
 interface EntryState {
   kind: TRPCEntryKind;
   type: HandleType;
-  options: any;
+  /** The procedure's path */
+  path: string[];
+  /** The `dataOf()` values in the entry's input */
+  refs: EntryDataRef[];
+  /** The query's options, with every `dataOf()` value in the input replaced */
+  options: (dataOfRef: (ref: EntryDataRef) => unknown) => any;
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -332,20 +379,80 @@ function createEntry(state: EntryState) {
   return { [entryState]: state };
 }
 
-function readEntry(key: string, entry: unknown): EntryState {
-  const state = (entry as { [entryState]?: EntryState } | null)?.[entryState];
-  if (!state) {
-    throw new Error(
-      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, or \`skipToken\`, for "${key}", got ${JSON.stringify(entry)}`,
-    );
-  }
-  return state;
+function entryStateOf(entry: unknown): EntryState | undefined {
+  return (entry as { [entryState]?: EntryState } | null)?.[entryState];
 }
 
-function startEntry(queryClient: QueryClient, state: EntryState) {
-  const { options } = state;
-  if (state.type === 'infinite') {
-    switch (state.kind) {
+function createEntryDataRef(ref: EntryDataRef): unknown {
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        if (key === entryDataRef) {
+          return ref;
+        }
+        if (key === Symbol.toPrimitive) {
+          throw new Error(
+            `A \`dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it`,
+          );
+        }
+        if (typeof key === 'symbol') {
+          return undefined;
+        }
+        return createEntryDataRef({
+          entry: ref.entry,
+          path: [...ref.path, key],
+        });
+      },
+    },
+  );
+}
+
+function entryDataRefOf(value: unknown): EntryDataRef | undefined {
+  return typeof value === 'object' && value !== null
+    ? (value as { [entryDataRef]?: EntryDataRef })[entryDataRef]
+    : undefined;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+/** Replaces every `dataOf()` value in an input */
+function replaceEntryDataRefs(
+  value: unknown,
+  replace: (ref: EntryDataRef) => unknown,
+): unknown {
+  const ref = entryDataRefOf(value);
+  if (ref) {
+    return replace(ref);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => replaceEntryDataRefs(item, replace));
+  }
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        replaceEntryDataRefs(item, replace),
+      ]),
+    );
+  }
+  return value;
+}
+
+function startEntry(opts: {
+  queryClient: QueryClient;
+  state: EntryState;
+  options: any;
+}) {
+  const { queryClient, options } = opts;
+  if (opts.state.type === 'infinite') {
+    switch (opts.state.kind) {
       case 'prefetch':
         return queryClient.prefetchInfiniteQuery(options);
       case 'ensure':
@@ -357,7 +464,7 @@ function startEntry(queryClient: QueryClient, state: EntryState) {
         return queryClient.fetchInfiniteQuery(options);
     }
   }
-  switch (state.kind) {
+  switch (opts.state.kind) {
     case 'prefetch':
       return queryClient.prefetchQuery(options);
     case 'ensure':
@@ -376,7 +483,7 @@ function toEntryError(key: string, state: EntryState, error: unknown) {
   }
   return new TRPCEntryError({
     key,
-    path: readQueryKey(state.options.queryKey).path.join('.'),
+    path: state.path.join('.'),
     ...entryCause(error),
   });
 }
@@ -393,48 +500,192 @@ function settleLoad(promise: Promise<unknown>) {
   );
 }
 
+/** An entry to load, by its place in what `loadHandles()` was given */
+interface EntryLeaf {
+  /** The keys down to the entry, joined by dots */
+  key: string;
+  entry: object;
+  state: EntryState;
+}
+
+/** What `loadHandles()` was given, with `skipToken` keys left out */
+type EntryTree = [name: string, node: EntryLeaf | EntryTree][];
+
+function readEntries(opts: {
+  queryClient: QueryClient;
+  entries: Record<string, unknown>;
+  /** The keys down to `entries` */
+  keys: string[];
+}): EntryTree {
+  return Object.entries(opts.entries).flatMap(([name, entry]): EntryTree => {
+    if (entry === skipToken) {
+      return [];
+    }
+    const keys = [...opts.keys, name];
+    const key = keys.join('.');
+    const state = entryStateOf(entry);
+    if (state) {
+      if (state.queryClient !== opts.queryClient) {
+        throw new Error(
+          `The entry for "${key}" was built with a proxy for another QueryClient than the root proxy that loads it`,
+        );
+      }
+      return [[name, { key, entry: entry as object, state }]];
+    }
+    if (isPlainObject(entry) && !entryDataRefOf(entry)) {
+      return [
+        [
+          name,
+          readEntries({ queryClient: opts.queryClient, entries: entry, keys }),
+        ],
+      ];
+    }
+    throw new Error(
+      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, \`skipToken\`, or an object of them, for "${key}", got ${JSON.stringify(entry)}`,
+    );
+  });
+}
+
+function leavesOf(tree: EntryTree): EntryLeaf[] {
+  return tree.flatMap(([, node]) =>
+    Array.isArray(node) ? leavesOf(node) : [node],
+  );
+}
+
+function mapEntryTree(
+  tree: EntryTree,
+  map: (leaf: EntryLeaf) => [value: unknown] | [],
+): Record<string, unknown> {
+  // A skipped key is absent rather than `undefined`: Next.js rejects `undefined` in props
+  return Object.fromEntries(
+    tree.flatMap(([name, node]) => {
+      if (Array.isArray(node)) {
+        return [[name, mapEntryTree(node, map)]];
+      }
+      return map(node).map((value) => [name, value]);
+    }),
+  );
+}
+
+interface EntryLoad {
+  leaf: EntryLeaf;
+  /** The query's options. Waits for the data its input reads with `dataOf()` */
+  options: Promise<any>;
+  /** Settles like the `QueryClient` method the entry is named after */
+  promise: Promise<unknown>;
+  /** The query's data, also for a prefetch entry */
+  data: Promise<unknown>;
+}
+
 async function startEntries(opts: {
   queryClient: QueryClient;
   entries: Record<string, unknown>;
   /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
   settle: boolean;
 }) {
-  const { queryClient, entries } = opts;
-  const states = Object.entries(entries).flatMap(([key, entry]) => {
-    if (entry === skipToken) {
-      return [];
-    }
-    const state = readEntry(key, entry);
-    if (state.queryClient !== queryClient) {
-      throw new Error(
-        `The entry for "${key}" was built with a proxy for another QueryClient than the root proxy that loads it`,
-      );
-    }
-    return [[key, state] as const];
-  });
-  const loads = states.map(([key, state]) => ({
-    key,
-    state,
-    promise: startEntry(queryClient, state).catch((error: unknown) => {
-      throw toEntryError(key, state, error);
-    }),
-  }));
-  const waited = loads.filter((load) => load.state.kind !== 'prefetch');
-  const results = await Promise.all(
-    waited.map((load) =>
-      opts.settle ? settleLoad(load.promise) : load.promise,
-    ),
-  );
-
-  // A skipped key is absent rather than `undefined`: Next.js rejects `undefined` in props
-  const handles = Object.fromEntries(
-    loads.map((load) => [
-      load.key,
-      toHandle(load.state.options, load.state.type),
+  const { queryClient } = opts;
+  const tree = readEntries({ queryClient, entries: opts.entries, keys: [] });
+  const leaves = leavesOf(tree);
+  const leafOfEntry = new Map(leaves.map((leaf) => [leaf.entry, leaf]));
+  // Checked for every entry before any query starts
+  const sourcesOfLeaf = new Map(
+    leaves.map((leaf) => [
+      leaf,
+      leaf.state.refs.map((ref) => {
+        const source = leafOfEntry.get(ref.entry);
+        if (!source) {
+          throw new Error(
+            `The entry for "${leaf.key}" reads the data of an entry with \`dataOf()\` that isn't in this load. Add that entry to the load`,
+          );
+        }
+        return source;
+      }),
     ]),
   );
-  const data = Object.fromEntries(
-    waited.map((load, index) => [load.key, results[index]]),
+  const loads = new Map<EntryLeaf, EntryLoad>();
+  // An entry only reads entries built before it, so this can't loop
+  function loadOf(leaf: EntryLeaf): EntryLoad {
+    const existing = loads.get(leaf);
+    if (existing) {
+      return existing;
+    }
+    const { state } = leaf;
+    const sources = new Map(
+      (sourcesOfLeaf.get(leaf) ?? []).map((source) => [
+        source.entry,
+        loadOf(source),
+      ]),
+    );
+
+    const start = (options: any) =>
+      startEntry({ queryClient, state, options }).catch((error: unknown) => {
+        throw toEntryError(leaf.key, state, error);
+      });
+    let options: Promise<any>;
+    let promise: Promise<unknown>;
+    if (sources.size === 0) {
+      // The query starts now, not a tick later
+      const built = state.options(() => undefined);
+      options = Promise.resolve(built);
+      promise = start(built);
+    } else {
+      options = Promise.all(
+        [...sources].map(async ([entry, source]) => {
+          return [entry, await source.data] as const;
+        }),
+      ).then((resolved) => {
+        const dataOfEntry = new Map(resolved);
+        return state.options((ref) =>
+          ref.path.reduce<any>(
+            (value, segment) => value?.[segment],
+            dataOfEntry.get(ref.entry),
+          ),
+        );
+      });
+      // When a source fails, its error is this entry's too: it never started
+      promise = options.then(start);
+    }
+    const data =
+      state.kind === 'prefetch'
+        ? promise.then(async () => {
+            // A prefetch resolves to nothing and never rejects
+            const query = queryClient.getQueryState((await options).queryKey);
+            if (query?.data === undefined) {
+              throw toEntryError(leaf.key, state, query?.error);
+            }
+            return query.data;
+          })
+        : promise;
+    // Only an entry that reads it with `dataOf()` waits for it
+    data.catch(() => undefined);
+    const load: EntryLoad = { leaf, options, promise, data };
+    loads.set(leaf, load);
+    return load;
+  }
+
+  const allLoads = leaves.map(loadOf);
+  const waited = allLoads.filter((load) => load.leaf.state.kind !== 'prefetch');
+  const [results, options] = await Promise.all([
+    Promise.all(
+      waited.map((load) =>
+        opts.settle ? settleLoad(load.promise) : load.promise,
+      ),
+    ),
+    // Every handle needs its input, so also wait for the data that prefetch entries read
+    Promise.all(allLoads.map((load) => load.options)),
+  ]);
+
+  const optionsOfLeaf = new Map(
+    allLoads.map((load, index) => [load.leaf, options[index]]),
+  );
+  const resultOfLeaf = new Map(
+    waited.map((load, index) => [load.leaf, results[index]]),
+  );
+  const handles = mapEntryTree(tree, (leaf) => [
+    toHandle(optionsOfLeaf.get(leaf), leaf.state.type),
+  ]);
+  const data = mapEntryTree(tree, (leaf) =>
+    resultOfLeaf.has(leaf) ? [resultOfLeaf.get(leaf)] : [],
   );
   return [handles, data] as const;
 }
@@ -605,12 +856,51 @@ function entry(opts: {
   opts: unknown;
 }) {
   const ctx = readProxy(opts.procedure, opts.fn);
+  const refs: EntryDataRef[] = [];
+  replaceEntryDataRefs(opts.input, (ref) => refs.push(ref));
+  const options = (input: unknown) =>
+    optionsOf(ctx.proxy, opts.type)(input, opts.opts);
+  // Without `dataOf()` values, a bad input or option throws here, not in the load
+  const built = refs.length === 0 ? options(opts.input) : null;
   return createEntry({
     type: opts.type,
     kind: opts.kind,
-    options: optionsOf(ctx.proxy, opts.type)(opts.input, opts.opts),
+    path: ctx.path,
+    refs,
+    options: (dataOfRef) =>
+      built ?? options(replaceEntryDataRefs(opts.input, dataOfRef)),
     queryClient: queryClientOf(ctx),
   });
+}
+
+/**
+ * The data of another entry in the same load, to build an entry's input from.
+ * Use it, or anything in it, as an input or as a value inside one.
+ *
+ * It holds no data when you call it: it records which part of the data you read,
+ * and the load fills that in once the entry it comes from has data. So don't
+ * compute with it or branch on it.
+ *
+ * The load waits for that data, whatever the kind of either entry, and rejects
+ * with the error of the entry it comes from if that one fails.
+ * @example
+ * ```ts
+ * const post = ensureEntry(trpc.post.bySlug, { slug });
+ * const [handles] = await loadHandles(trpc, {
+ *   post,
+ *   author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+ * });
+ * ```
+ */
+export function dataOf<TEntry extends AnyTRPCEntry>(
+  entry: TEntry,
+): DataOfEntry<TEntry> {
+  if (!entryStateOf(entry)) {
+    throw new Error(
+      `\`dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(entry)}`,
+    );
+  }
+  return createEntryDataRef({ entry, path: [] }) as any;
 }
 
 /**
