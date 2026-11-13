@@ -36,13 +36,15 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
      */
     maxItems?: number;
     /**
-     * Lets a query read parts of its input from the data of another query in
-     * the same batch, so a query that depends on another costs no extra round
-     * trip. `loadHandles()` uses it for entries built with
-     * `experimental_dataOf()`. The server must set
-     * `experimental_allowPipelining: true`, or such a batch fails.
+     * Lets the server run more queries in a query's request, with parts of
+     * their inputs read from its data, so a query that depends on another
+     * costs no extra round trip. `loadHandles()` uses it for entries built
+     * with `experimental_dataOf()`. The server must set
+     * `experimental_allowPipelining: true`, or such a request fails.
      *
-     * Batches without such a query are sent as they are without this option.
+     * Such a query is no operation of its own, so the links before this one
+     * don't see it. Batches without one are sent as they are without this
+     * option.
      *
      * Experimental: it may change in a minor release.
      * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request

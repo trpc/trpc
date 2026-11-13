@@ -301,7 +301,7 @@ function MoreByAuthor(props: {
 
 ## One request {#one-request}
 
-Pipelining sends the entries of a load that read each other in one batch. The server runs the first call, copies what the second reads into its input, runs the second, and so on.
+Pipelining sends the entries of a load that read each other in one request. The server runs the first call, copies what the second reads into its input, runs the second, and so on.
 
 Turn it on in two places. On the server, in the options of any HTTP adapter:
 
@@ -353,14 +353,24 @@ GET /post.bySlug,author.byId?batch=pipeline
 
 Only a batch with such a read is a pipelined batch, `batch=pipeline`. Every other batch is sent as it always was, also with the options on.
 
+### What your links see {#links}
+
+Your links see the post's query, and nothing else. The author's query isn't an operation of its own: the server runs it in the post's request, and its result goes to the cache when the post has arrived.
+
+- **No link gets a query with a hole in its input.** A link that shares the requests of identical queries, or one that reads `op.input`, works as before.
+- **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each. [`loggerLink`](/docs/client/links/loggerLink) shows it when it logs the context.
+- **The author's first load isn't logged, and a failure of it doesn't pass through your links.** The query still gets the error, and a retry or a later refetch is an ordinary request, which they see.
+- **`headers()` gets the queries of the request**, not what the server runs in it.
+- **The server that gets the post runs the author's query too**, whatever your links would do with it. If a `splitLink` sends the two procedures to different servers, don't build one entry from the other's data.
+
 ### When it isn't one request {#fallback}
 
 The load then fills in the input in the browser, and asks again. It gives the same handles and the same data.
 
 - **The entry it reads needed no request**, because the cache had its data. The entries that read it start at once, together.
-- **The request doesn't go through a batch link with `experimental_pipelining`**: `httpLink`, `wsLink`, or a `splitLink` that sends the two entries to different links.
+- **The entry it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **The proxy calls the router directly**, as in a server component. There is no request to save.
-- **The batch was split** by `maxURLLength` or `maxItems`, and the two calls are in different requests.
+- **It doesn't fit in the request** of the entry it reads, within `maxURLLength` and `maxItems`.
 - **It reads an infinite entry's later pages.** The first page is one request's result, which the server can read: `experimental_dataOf(posts).pages[0]`.
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
 

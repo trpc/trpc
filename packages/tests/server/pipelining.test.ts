@@ -1,14 +1,16 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import type { Operation, TRPCLink } from '@trpc/client';
 import {
   getUntypedClient,
   httpBatchLink,
   httpBatchStreamLink,
-  TRPCClientError,
 } from '@trpc/client';
 import {
   createOperationPipeline,
+  pipeCall,
   pipelineContext,
 } from '@trpc/client/unstable-internals';
+import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -45,6 +47,13 @@ const createRouter = (transformer: 'none' | 'superjson') => {
     tags: t.procedure
       .input(z.object({ ids: z.array(z.string()) }))
       .query((opts) => opts.input.ids),
+    tag: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+      calls('tag', opts.input);
+      if (opts.input.id === 't2') {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+      return { id: opts.input.id, at: new Date('2026-02-02T00:00:00Z') };
+    }),
     rename: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) => opts.input.id),
@@ -70,8 +79,15 @@ describe.each([
     allowPipelining: boolean;
     pipelining: boolean;
     methodOverride?: 'POST';
+    maxItems?: number;
   }) {
     const { appRouter, calls } = createRouter(scenario.transformer);
+    /** What the links before the batch link see */
+    const ops: Pick<Operation, 'path' | 'input'>[] = [];
+    const recordLink: TRPCLink<AnyRouter> = () => (linkOpts) => {
+      ops.push({ path: linkOpts.op.path, input: linkOpts.op.input });
+      return linkOpts.next(linkOpts.op);
+    };
     const ctx = testServerAndClientResource(appRouter, {
       server: {
         experimental_allowPipelining: opts.allowPipelining,
@@ -79,73 +95,100 @@ describe.each([
       },
       client: (clientOpts) => ({
         links: [
+          recordLink,
           scenario.link({
             url: clientOpts.httpUrl,
             transformer: clientOpts.transformer as any,
             experimental_pipelining: opts.pipelining,
             methodOverride: opts.methodOverride,
+            maxItems: opts.maxItems,
           }),
         ],
       }),
     });
-    return Object.assign(ctx, { calls, untyped: getUntypedClient(ctx.client) });
+    return Object.assign(ctx, {
+      calls,
+      ops,
+      untyped: getUntypedClient(ctx.client),
+    });
   }
+  const publishedAt =
+    scenario.transformer === 'superjson'
+      ? new Date('2026-01-01T00:00:00Z')
+      : '2026-01-01T00:00:00.000Z';
 
-  test('a query reads its input from an earlier query in one request', async () => {
+  test("the server makes calls in an operation's request, and each has its own result", async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
 
-    const post = createOperationPipeline([]);
-    const author = createOperationPipeline([
-      { to: ['id'], from: post, path: ['authorId'] },
-      { to: ['since'], from: post, path: ['publishedAt'] },
-    ]);
-    const team = createOperationPipeline([
-      { to: [], from: author, path: ['teamId'] },
-    ]);
-    const tags = createOperationPipeline([
-      { to: ['ids', '0'], from: post, path: ['tags', '1', 'id'] },
-    ]);
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    expect(post.open).toBe(true);
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined, since: undefined },
+      reads: [
+        { to: ['id'], from: post, path: ['authorId'], each: false },
+        { to: ['since'], from: post, path: ['publishedAt'], each: false },
+      ],
+    });
+    assert(author);
+    // A call reads another call
+    const team = pipeCall({
+      path: 'team',
+      input: undefined,
+      reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+    });
+    const tags = pipeCall({
+      path: 'tags',
+      input: { ids: [undefined, 'extra'] },
+      reads: [
+        {
+          to: ['ids', '0'],
+          from: post,
+          path: ['tags', '1', 'id'],
+          each: false,
+        },
+      ],
+    });
+    assert(team);
+    assert(tags);
 
-    const results = await Promise.all([
-      ctx.untyped.query(
-        'post',
-        { slug: 'hello' },
-        { context: pipelineContext(post) },
-      ),
-      ctx.untyped.query(
-        'author',
-        { id: undefined, since: undefined },
-        { context: pipelineContext(author) },
-      ),
-      ctx.untyped.query('team', undefined, { context: pipelineContext(team) }),
-      ctx.untyped.query(
-        'tags',
-        { ids: [undefined, 'extra'] },
-        { context: pipelineContext(tags) },
-      ),
-    ]);
-
-    expect(post.accepted).toBe(true);
-    expect(results.slice(1)).toEqual([
-      { id: 'u1', teamId: 'team-of-u1' },
-      { id: 'team-of-u1' },
-      ['t2', 'extra'],
+    await postResult;
+    expect(post.open).toBe(false);
+    expect(
+      await Promise.all([author.result, team.result, tags.result]),
+    ).toEqual([
+      { data: { id: 'u1', teamId: 'team-of-u1' } },
+      { data: { id: 'team-of-u1' } },
+      { data: ['t2', 'extra'] },
     ]);
     // The server reads the data as the client gets it
     expect(ctx.calls.mock.calls[0]).toEqual([
       'author',
-      {
-        id: 'u1',
-        since:
-          scenario.transformer === 'superjson'
-            ? new Date('2026-01-01T00:00:00Z')
-            : '2026-01-01T00:00:00.000Z',
-      },
+      { id: 'u1', since: publishedAt },
     ]);
+
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
     // A pipelined batch is a request of its own kind
-    expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('batch=pipeline');
-    expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('pipe=');
+    const { url } = ctx.onRequestSpy.mock.calls[0]![0];
+    expect(url).toContain('/post,author,team,tags?batch=pipeline');
+    expect(url).toContain('pipe=');
+    // A call is no operation: the links before saw one, with its whole input
+    expect(ctx.ops).toEqual([{ path: 'post', input: { slug: 'hello' } }]);
+    // A link can serialize the context, which says what went with the request
+    expect(JSON.parse(JSON.stringify(pipelineContext(post)))).toEqual({
+      '~pipeline': {
+        calls: [
+          { path: 'author', status: 'sent' },
+          { path: 'team', status: 'sent' },
+          { path: 'tags', status: 'sent' },
+        ],
+      },
+    });
   });
 
   test('works for queries sent as POST', async () => {
@@ -155,29 +198,58 @@ describe.each([
       methodOverride: 'POST',
     });
 
-    const post = createOperationPipeline([]);
-    const tags = createOperationPipeline([
-      { to: ['ids'], from: post, path: ['tags', null, 'id'] },
-    ]);
-    const results = await Promise.all([
-      ctx.untyped.query(
-        'post',
-        { slug: 'hello' },
-        { context: pipelineContext(post) },
-      ),
-      ctx.untyped.query(
-        'tags',
-        { ids: undefined },
-        { context: pipelineContext(tags) },
-      ),
-    ]);
-    expect(results[1]).toEqual(['t1', 't2']);
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const tags = pipeCall({
+      path: 'tags',
+      input: { ids: undefined },
+      reads: [
+        { to: ['ids'], from: post, path: ['tags', null, 'id'], each: false },
+      ],
+    });
+    assert(tags);
+    await postResult;
+    expect((await tags.result).data).toEqual(['t1', 't2']);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
     const req = ctx.onRequestSpy.mock.calls[0]![0];
     expect(req.method).toBe('POST');
     // The inputs and what to fill in are both in the body
     expect(req.url).not.toContain('pipe=');
     expect(req.url).not.toContain('input=');
+  });
+
+  test('a call for every item of a list has a result or an error for each', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const tag = pipeCall({
+      path: 'tag',
+      input: { id: undefined },
+      reads: [
+        { to: ['id'], from: post, path: ['tags', null, 'id'], each: true },
+      ],
+    });
+    assert(tag);
+    await postResult;
+
+    const at =
+      scenario.transformer === 'superjson'
+        ? new Date('2026-02-02T00:00:00Z')
+        : '2026-02-02T00:00:00.000Z';
+    expect((await tag.result).data).toMatchObject([
+      { result: { data: { id: 't1', at } } },
+      { error: { data: { code: 'FORBIDDEN' } } },
+    ]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test.each([undefined, 'POST'] as const)(
@@ -189,27 +261,25 @@ describe.each([
         methodOverride,
       });
 
-      const post = createOperationPipeline([]);
-      const author = createOperationPipeline([
-        { to: ['id'], from: post, path: ['authorId'] },
-      ]);
-      const results = await Promise.allSettled([
-        ctx.untyped.query(
-          'post',
-          { slug: 'hello' },
-          { context: pipelineContext(post) },
-        ),
-        ctx.untyped.query(
-          'author',
-          { id: undefined },
-          { context: pipelineContext(author) },
-        ),
-      ]);
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      });
+      assert(author);
       const reason = {
         message:
           'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link',
       };
-      expect(results).toMatchObject([
+      expect(
+        await Promise.allSettled([postResult, author.result]),
+      ).toMatchObject([
         { status: 'rejected', reason },
         { status: 'rejected', reason },
       ]);
@@ -218,89 +288,127 @@ describe.each([
     },
   );
 
-  test('a query whose source failed did not run, and is marked unresolved', async () => {
+  test('a call that reads a failed one did not run, and is marked unresolved', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
 
-    const post = createOperationPipeline([]);
-    const author = createOperationPipeline([
-      { to: ['id'], from: post, path: ['authorId'] },
-    ]);
-    const results = await Promise.allSettled([
-      ctx.untyped.query(
-        'post',
-        { slug: 'missing' },
-        { context: pipelineContext(post) },
-      ),
-      ctx.untyped.query(
-        'author',
-        { id: undefined },
-        { context: pipelineContext(author) },
-      ),
-    ]);
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'missing' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    const team = pipeCall({
+      path: 'team',
+      input: undefined,
+      reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+    });
+    assert(team);
 
-    expect(results).toMatchObject([
+    expect(
+      await Promise.allSettled([postResult, author.result, team.result]),
+    ).toMatchObject([
       { status: 'rejected', reason: { data: { code: 'NOT_FOUND' } } },
       { status: 'rejected', reason: { data: { code: 'PRECONDITION_FAILED' } } },
+      { status: 'rejected', reason: { data: { code: 'PRECONDITION_FAILED' } } },
     ]);
-    expect(post.unresolved).toBe(false);
-    expect(author.unresolved).toBe(true);
+    expect(author.status).toBe('unresolved');
+    expect(team.status).toBe('unresolved');
     expect(ctx.calls).not.toHaveBeenCalled();
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('a query whose source is not in its batch is not sent', async () => {
-    await using ctx = setup({ allowPipelining: true, pipelining: true });
+  test('a call that does not fit in the request is not made', async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      maxItems: 2,
+    });
 
-    const author = createOperationPipeline([
-      { to: ['id'], from: createOperationPipeline([]), path: ['authorId'] },
-    ]);
-    const results = await Promise.allSettled([
-      ctx.untyped.query(
-        'author',
-        { id: undefined },
-        { context: pipelineContext(author) },
-      ),
-      ctx.untyped.query('team', 'team1'),
-    ]);
-    expect(results).toMatchObject([
-      { status: 'rejected', reason: expect.any(TRPCClientError) },
-      { status: 'fulfilled', value: { id: 'team1' } },
-    ]);
-    expect(author.unresolved).toBe(true);
-    expect(ctx.calls.mock.calls).toEqual([['team', 'team1']]);
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    const team = pipeCall({
+      path: 'team',
+      input: undefined,
+      reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+    });
+    assert(team);
+    // Sent in the same tick: it waits for the next request
+    const other = ctx.untyped.query('team', 'team1');
+
+    await Promise.all([postResult, other]);
+    expect(await author.result).toEqual({
+      data: { id: 'u1', teamId: 'team-of-u1' },
+    });
+    await expect(team.result).rejects.toThrow(
+      'The call did not fit in the request of what it reads',
+    );
+    expect(team.status).toBe('unresolved');
+    // Two requests, which reach the server in either order
+    expect(
+      ctx.onRequestSpy.mock.calls.map(([req]) => req.url?.split('?')[0]).sort(),
+    ).toEqual(['/post,author', '/team']);
   });
 
-  test('without `experimental_pipelining`, the link sends every operation as it is', async () => {
+  test('a call can not be added once the request has gone', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+
+    const post = createOperationPipeline();
+    await ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    expect(post.open).toBe(false);
+    expect(
+      pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      }),
+    ).toBeNull();
+  });
+
+  test('without `experimental_pipelining`, the link takes no calls', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: false });
-    const post = createOperationPipeline([]);
-    const author = createOperationPipeline([
-      { to: ['id'], from: post, path: ['authorId'] },
-    ]);
-    const results = await Promise.allSettled([
-      ctx.untyped.query(
-        'post',
-        { slug: 'hello' },
-        { context: pipelineContext(post) },
-      ),
-      ctx.untyped.query(
-        'author',
-        { id: 'u9' },
-        { context: pipelineContext(author) },
-      ),
-    ]);
-    expect(post.accepted).toBe(false);
-    expect(results[1]).toMatchObject({
-      status: 'fulfilled',
-      value: { id: 'u9' },
-    });
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    expect(post.open).toBe(false);
+    expect(
+      pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      }),
+    ).toBeNull();
+    await postResult;
     const { url } = ctx.onRequestSpy.mock.calls[0]![0];
     expect(url).toContain('batch=1');
     expect(url).not.toContain('pipe=');
   });
 
-  test('with `experimental_pipelining`, a batch where nothing reads anything is an ordinary batch', async () => {
+  test('with `experimental_pipelining`, a batch without calls is an ordinary batch', async () => {
     await using ctx = setup({ allowPipelining: false, pipelining: true });
-    const post = createOperationPipeline([]);
+    const post = createOperationPipeline();
     const results = await Promise.all([
       ctx.untyped.query(
         'post',
@@ -309,8 +417,6 @@ describe.each([
       ),
       ctx.untyped.query('team', 'team1'),
     ]);
-    // Another operation could have read from it
-    expect(post.accepted).toBe(true);
     expect(results[1]).toEqual({ id: 'team1' });
     const { url } = ctx.onRequestSpy.mock.calls[0]![0];
     expect(url).toContain('batch=1');

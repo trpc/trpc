@@ -7,9 +7,13 @@ import type {
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
 import { isTRPCClientError, TRPCClientError } from '@trpc/client';
-import type { OperationPipeline } from '@trpc/client/unstable-internals';
+import type {
+  OperationPipeline,
+  PipelinedCall,
+} from '@trpc/client/unstable-internals';
 import {
   createOperationPipeline,
+  pipeCall,
   pipelineContext,
 } from '@trpc/client/unstable-internals';
 import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
@@ -545,11 +549,11 @@ interface EntryState {
     pipeline: OperationPipeline | null;
   }) => any;
   /**
-   * Calls the procedure outside the `QueryClient`, with `undefined` for every
-   * `experimental_dataOf()` value in the input: the server fills them in. For an infinite
-   * query, it asks for the first page.
+   * The query's request, with `undefined` for every `experimental_dataOf()`
+   * value in the input: the server fills them in. For an infinite query, it is
+   * the request of the first page.
    */
-  query: (pipeline: OperationPipeline) => Promise<unknown>;
+  request: () => { path: string; input: unknown };
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -692,17 +696,17 @@ function replaceEntryDataRefs(
 }
 
 /**
- * Makes the first fetch of a query use the result of a pipelined request that
- * is already on its way, which was sent before the query's key was known.
+ * Makes the first fetch of a query use the result of a call that the server
+ * made in an earlier request, before the query's key was known.
  */
 function withPipelinedResult(opts: {
   options: any;
   result: Promise<unknown>;
-  /** Whether the request failed without running, so it has to be made again */
+  /** Whether the call didn't run, so the request has to be made */
   unresolved: () => boolean;
   /**
-   * Whether the pipelined request is the one this fetch would make: the server
-   * filled in the same input as this client did
+   * Whether the call is the request this fetch would make: the server filled
+   * in the same input as this client did
    */
   sameInput: (context: QueryFunctionContext<any, any>) => Promise<boolean>;
 }) {
@@ -723,7 +727,7 @@ function withPipelinedResult(opts: {
       try {
         return await pipelined;
       } catch (error) {
-        // The request never ran, such as when the entry it reads failed and was retried
+        // Such as when the entry it reads failed and was retried
         if (opts.unresolved()) {
           return queryFn(context);
         }
@@ -733,9 +737,17 @@ function withPipelinedResult(opts: {
   };
 }
 
+/** The data of a call the server made in another's request */
+function dataOfCall(call: PipelinedCall) {
+  const data = call.result.then((result) => result.data);
+  // Used only if the query fetches
+  data.catch(() => undefined);
+  return data;
+}
+
 /**
- * One item's result of a pipelined call that the server ran for every item.
- * The call's result is a `{ result }` or an `{ error }` for every item.
+ * One item's result of a call that the server ran for every item. The call's
+ * data is a `{ result }` or an `{ error }` for every item.
  */
 function resultOfItem(results: Promise<unknown>, index: number) {
   let missing = false;
@@ -969,14 +981,14 @@ function mapEntryTree(
 interface EntryLoad {
   leaf: EntryLeaf;
   /**
-   * Goes with the query's request when another entry reads its data, or it reads
-   * another's. A link that pipelines marks it, and then the entries that read
-   * this one are sent in the same batch.
+   * What the entries that read this one's data have the server read: the
+   * pipeline that goes with the query's request, which a link that pipelines
+   * opens, or the call the server makes for this entry in another's request.
    */
-  pipeline: OperationPipeline | null;
+  pipeline: OperationPipeline | PipelinedCall | null;
   /**
-   * The result of the request `pipeline` went with, in the shape of the
-   * query's data. It is what the server read for the entries that read this one
+   * The result of that request or call, in the shape of the query's data. It
+   * is what the server read for the entries that read this one
    */
   requestData: Promise<unknown> | null;
   /**
@@ -1111,8 +1123,9 @@ async function startEntries(opts: {
     ).then((resolved) => new Map(resolved));
 
   /**
-   * Sends an entry's request in the batch of the entries it reads, if their
-   * requests just went to a link that pipelines. The server fills in its input
+   * Has the server make an entry's request in the request of the entries it
+   * reads, if those just went to a link that pipelines. The server fills in
+   * its input
    */
   function sendPipelined(pipelined: {
     state: EntryState;
@@ -1131,7 +1144,7 @@ async function startEntries(opts: {
             item: each,
           })
         : null;
-      return source?.pipeline?.accepted && path
+      return source?.pipeline && path
         ? [{ to: ref.to, from: source.pipeline, path, each }]
         : [];
     });
@@ -1143,16 +1156,7 @@ async function startEntries(opts: {
     ) {
       return null;
     }
-    const pipeline = createOperationPipeline(reads);
-    // For an infinite query, this is the request of its first page
-    const result = state.query(pipeline);
-    // Used only if the query fetches once its key is known
-    result.catch(() => undefined);
-    if (!pipeline.accepted) {
-      // It went to another link than the entries it reads
-      pipeline.unresolved = true;
-    }
-    return { pipeline, result };
+    return pipeCall({ ...state.request(), reads });
   }
 
   /** The prefetch entries whose data another entry reads, by their query's hash */
@@ -1206,7 +1210,7 @@ async function startEntries(opts: {
         },
       );
     };
-    let pipeline: OperationPipeline | null = null;
+    let pipeline: OperationPipeline | PipelinedCall | null = null;
     let requestData: Promise<unknown> | null = null;
     let options: Promise<any>;
     let promise: Promise<unknown>;
@@ -1214,7 +1218,7 @@ async function startEntries(opts: {
       let built = state.options({ dataOfRef: () => undefined, pipeline: null });
       if (readLeaves.has(leaf) && typeof built.queryFn === 'function') {
         // Another entry reads this one: its request can take part in pipelining
-        const sent = createOperationPipeline([]);
+        const sent = createOperationPipeline();
         pipeline = sent;
         built = state.options({ dataOfRef: () => undefined, pipeline: sent });
         const queryFn: QueryFunction<any, any, any> = built.queryFn;
@@ -1248,12 +1252,12 @@ async function startEntries(opts: {
       // The query starts now, not a tick later
       promise = start(built);
     } else {
-      const request = sendPipelined({ state, sources, readsItem: () => false });
-      if (request && state.type === 'query') {
+      const call = sendPipelined({ state, sources, readsItem: () => false });
+      if (call && state.type === 'query') {
         // An infinite query's data is its pages, which no one request returns,
         // so the server can't read it for the entries that read this one
-        pipeline = request.pipeline;
-        requestData = request.result;
+        pipeline = call;
+        requestData = dataOfCall(call);
       }
       const fill = (dataOfEntry: Map<object, unknown>) =>
         state.options({
@@ -1273,13 +1277,13 @@ async function startEntries(opts: {
             }
             try {
               const filled = fill(result.data);
-              const built = request
+              const built = call
                 ? withPipelinedResult({
                     options: filled,
-                    result: request.result,
-                    unresolved: () => request.pipeline.unresolved,
+                    result: dataOfCall(call),
+                    unresolved: () => call.status === 'unresolved',
                     sameInput: async (context) =>
-                      // The pipelined request was for the first page
+                      // The call was for the first page
                       (state.type !== 'infinite' ||
                         (context.direction === 'forward' &&
                           Object.is(
@@ -1394,9 +1398,9 @@ async function startEntries(opts: {
         pipeline: null,
       });
 
-    // One request, which the server runs once for every item. Its result is a
+    // One call, which the server runs once for every item. Its result is a
     // `{ result }` or an `{ error }` for every item
-    const request = sendPipelined({ state, sources, readsItem });
+    const call = sendPipelined({ state, sources, readsItem });
 
     // The handle has the input without the item's parts, and where they go. It
     // waits for the list if the load does, or if the input has another part
@@ -1436,7 +1440,7 @@ async function startEntries(opts: {
         try {
           const { data } = result;
           /** The key of every item's query, with the input the server filled in */
-          const serverKeys = request
+          const serverKeys = call
             ? dataOfSources(sources, (source) => source.requestData).then(
                 (serverData) =>
                   itemsOf(serverData).map((indexes) =>
@@ -1449,14 +1453,14 @@ async function startEntries(opts: {
           resolve(
             itemsOf(data).map((indexes, index) => {
               let options = optionsOfItem(data, indexes);
-              if (request && serverKeys) {
+              if (call && serverKeys) {
                 const key = hashKey(options.queryKey);
-                const item = resultOfItem(request.result, index);
+                const item = resultOfItem(dataOfCall(call), index);
                 options = withPipelinedResult({
                   options,
                   result: item.result,
                   unresolved: () =>
-                    request.pipeline.unresolved || item.missing(),
+                    call.status === 'unresolved' || item.missing(),
                   sameInput: async () => (await serverKeys)[index] === key,
                 });
               }
@@ -1769,7 +1773,7 @@ function entry(opts: {
             replaceEntryDataRefs(opts.input, [], optionsOpts.dataOfRef),
             optionsOpts.pipeline,
           ),
-    query: (pipeline) => {
+    request: () => {
       let input = replaceEntryDataRefs(opts.input, [], () => undefined);
       if (opts.type === 'infinite') {
         // The first page's request, as `infiniteQueryOptions()` makes it
@@ -1782,9 +1786,7 @@ function entry(opts: {
           direction: 'forward',
         };
       }
-      return ctx.proxy['~query'](input, {
-        context: trpcOpts(pipeline).context,
-      });
+      return { path: ctx.path.join('.'), input };
     },
     queryClient: queryClientOf(ctx),
   });
@@ -2358,14 +2360,10 @@ function withItemQueries(opts: {
   return {
     ...opts.options,
     queryFn: (context: QueryFunctionContext<any, any>) => {
-      const pipeline = createOperationPipeline([]);
+      const pipeline = createOperationPipeline();
       const list: Promise<unknown> = Promise.resolve(
         opts.optionsWith(pipeline).queryFn(context),
       );
-      if (!pipeline.accepted) {
-        // No link took it into a batch: the items load when they are read
-        return list;
-      }
       for (const queries of opts.perItem) {
         const { path } = readQueryKey(queries.queryKey);
         if (!ctx.path.every((segment, index) => path[index] === segment)) {
@@ -2375,19 +2373,22 @@ function withItemQueries(opts: {
         const procedure = path
           .slice(ctx.path.length)
           .reduce((level, segment) => level[segment], ctx.proxy);
-        // One call, which the server runs for every item of the list
-        const items = createOperationPipeline(
-          queries.itemInputs.map((itemInput) => ({
+        // One call, which the server runs for every item of the list. Without
+        // a link that took the list into a batch, the items load when they
+        // are read
+        const call = pipeCall({
+          path: path.join('.'),
+          input: queries.input,
+          reads: queries.itemInputs.map((itemInput) => ({
             to: itemInput.to,
             from: pipeline,
             path: [...queries.list, null, ...itemInput.path],
             each: true,
           })),
-        );
-        const results: Promise<unknown> = procedure['~query'](queries.input, {
-          context: pipelineContext(items),
         });
-        results.catch(() => undefined);
+        if (!call) {
+          continue;
+        }
         // Before the list's data reaches the components that read the items
         void list.then(
           (data) => {
@@ -2395,14 +2396,15 @@ function withItemQueries(opts: {
             for (const [index, item] of Array.isArray(listData)
               ? listData.entries()
               : []) {
-              const itemResult = resultOfItem(results, index);
+              const itemResult = resultOfItem(dataOfCall(call), index);
               void queryClient.prefetchQuery(
                 withPipelinedResult({
                   options: procedure.queryOptions(
                     experimental_handleOfItem(queries, item).input,
                   ),
                   result: itemResult.result,
-                  unresolved: () => items.unresolved || itemResult.missing(),
+                  unresolved: () =>
+                    call.status === 'unresolved' || itemResult.missing(),
                   // The server filled in the inputs from the same list
                   sameInput: () => Promise.resolve(true),
                 }),

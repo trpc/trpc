@@ -6,7 +6,11 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { httpBatchLink, httpBatchStreamLink } from '@trpc/client';
+import type { Operation, TRPCLink } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { Observable } from '@trpc/server/observable';
+import { observable, share } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -100,21 +104,26 @@ const ctx = () => {
 };
 
 /** A server and a batch link that both pipeline */
-const pipeliningCtx = (
-  link: typeof httpBatchLink | typeof httpBatchStreamLink,
+const pipeliningCtx = (ctxOpts: {
+  link: typeof httpBatchLink | typeof httpBatchStreamLink;
   /** How long every request takes to leave, in milliseconds */
-  latency = 0,
-) => {
+  latency: number;
+  /** The links before the batch link */
+  before: TRPCLink<AnyRouter>[];
+}) => {
   const { appRouter, calls } = createAppRouter();
   const resource = testReactResource(appRouter, {
     server: { experimental_allowPipelining: true },
     client: (opts) => ({
       links: [
-        link({
+        ...ctxOpts.before,
+        ctxOpts.link({
           url: opts.httpUrl,
           experimental_pipelining: true,
           fetch: async (input, init) => {
-            await new Promise((resolve) => setTimeout(resolve, latency));
+            await new Promise((resolve) =>
+              setTimeout(resolve, ctxOpts.latency),
+            );
             return fetch(input, init);
           },
         }),
@@ -122,6 +131,31 @@ const pipeliningCtx = (
     }),
   });
   return { ...resource, calls, appRouter };
+};
+
+/** Shares the request of queries with the same path and input, like a dedupe link */
+const dedupeLink = (): TRPCLink<AnyRouter> => () => {
+  const pending = new Map<string, Observable<any, any>>();
+  return ({ op, next }) => {
+    const key = JSON.stringify([op.path, op.input]);
+    const shared =
+      pending.get(key) ??
+      observable((observer) =>
+        next(op).subscribe({
+          next: (value) => observer.next(value),
+          error(error) {
+            pending.delete(key);
+            observer.error(error);
+          },
+          complete() {
+            pending.delete(key);
+            observer.complete();
+          },
+        }),
+      ).pipe(share());
+    pending.set(key, shared);
+    return shared;
+  };
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
@@ -1090,7 +1124,11 @@ describe.each([
   { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
 ])('pipelining with $name', (scenario) => {
   test('entries that read each other load in one request', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
 
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
@@ -1137,7 +1175,11 @@ describe.each([
   });
 
   test('a list read with .map() loads in one request', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
 
     const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
@@ -1155,7 +1197,11 @@ describe.each([
   });
 
   test('an entry per item is one call that the server runs for every item', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     resource.calls.mockImplementation((path: string, input: any) => {
       if (path === 'tag.byIds' && input.ids[0] === 't2') {
@@ -1189,7 +1235,11 @@ describe.each([
   });
 
   test("an entry per item of an infinite entry's pages loads with its first page", async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
 
     const posts = ensureInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' });
@@ -1213,7 +1263,11 @@ describe.each([
   });
 
   test('a cached entry in the middle keeps the request of the entries that read it, if the server filled in what the client did', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     // As after a page that showed the author: cached, and still fresh
     resource.queryClient.setQueryDefaults(trpc.author.byId.pathKey(), {
@@ -1242,7 +1296,11 @@ describe.each([
   });
 
   test("entries built from each other's data load in one request, which the load does not wait for", async () => {
-    await using resource = pipeliningCtx(scenario.link, 20);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 20,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     const { queryClient } = resource;
 
@@ -1310,8 +1368,93 @@ describe.each([
     });
   });
 
+  test('the links see only the query whose request it is, with its whole input', async () => {
+    const ops: Pick<Operation, 'path' | 'input'>[] = [];
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [
+        () => (linkOpts) => {
+          ops.push({ path: linkOpts.op.path, input: linkOpts.op.input });
+          return linkOpts.next(linkOpts.op);
+        },
+      ],
+    });
+    const trpc = resource.optionsProxyClient;
+    const { queryClient } = resource;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    );
+    await loadHandles(trpc, {
+      post,
+      author,
+      more: experimental_dataOf(author, (it) =>
+        prefetchInfiniteEntry(trpc.post.byAuthor, { authorId: it.id }),
+      ),
+    });
+
+    await vi.waitFor(() => {
+      expect(
+        queryClient.getQueryData(
+          trpc.post.byAuthor.infiniteQueryKey({ authorId: 'u1' }),
+        ),
+      ).toBeDefined();
+    });
+    // The others came back with its request. They were no operations, so no
+    // link saw one with a hole in its input
+    expect(ops).toEqual([{ path: 'post.bySlug', input: { slug: 'hello' } }]);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls).toHaveBeenCalledTimes(3);
+  });
+
+  test('a link that shares the requests of identical queries does not mix up entries built from different data', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [dedupeLink()],
+    });
+    const trpc = resource.optionsProxyClient;
+    const { queryClient } = resource;
+
+    // Two pages, whose posts have different authors
+    const first = prefetchEntry(trpc.post.paged, { cursor: 0 });
+    const second = prefetchEntry(trpc.post.paged, { cursor: 1 });
+    await loadHandles(trpc, {
+      first,
+      second,
+      firstAuthor: experimental_dataOf(first, (page) =>
+        prefetchEntry(trpc.author.byId, { id: page.items[0]!.authorId }),
+      ),
+      secondAuthor: experimental_dataOf(second, (page) =>
+        prefetchEntry(trpc.author.byId, { id: page.items[0]!.authorId }),
+      ),
+    });
+
+    await vi.waitFor(() => {
+      expect(
+        queryClient.getQueryData(trpc.author.byId.queryKey({ id: 'u0' })),
+      ).toMatchObject({ id: 'u0' });
+      expect(
+        queryClient.getQueryData(trpc.author.byId.queryKey({ id: 'u1' })),
+      ).toMatchObject({ id: 'u1' });
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([
+      ['author.byId', { id: 'u0' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
+  });
+
   test("an entry per item of a prefetch entry's list loads in one request, which the load does not wait for", async () => {
-    await using resource = pipeliningCtx(scenario.link, 20);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 20,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
 
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
@@ -1338,7 +1481,11 @@ describe.each([
   });
 
   test("a later page loads its items' queries in the same request", async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     const getNextPageParam = (last: { nextCursor: number | null }) =>
       last.nextCursor;
@@ -1395,7 +1542,11 @@ describe.each([
   });
 
   test("a query that is fetched again loads its items' queries in the same request", async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
 
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
@@ -1428,7 +1579,11 @@ describe.each([
   });
 
   test('a second load of the same entries, as a hover and then a click make, adds no request', async () => {
-    await using resource = pipeliningCtx(scenario.link, 50);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 50,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     const entries = () => {
       const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
@@ -1459,7 +1614,11 @@ describe.each([
   });
 
   test('a cached source needs no pipelining', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     await loadHandles(trpc, {
       post: ensureEntry(trpc.post.bySlug, { slug: 'hello' }),
@@ -1483,7 +1642,11 @@ describe.each([
   });
 
   test('a stale ensure entry is read from the cache, and what the server filled in from its refetch is not used', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     // The cache has the post with another author than the server
     resource.queryClient.setQueryData(
@@ -1510,7 +1673,11 @@ describe.each([
   });
 
   test('an entry that keeps its cached data makes the entry that reads it fetch with the input the client filled in', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     // The cache has the author with another team than the server
     resource.queryClient.setQueryData(trpc.author.byId.queryKey({ id: 'u1' }), {
@@ -1535,7 +1702,11 @@ describe.each([
   });
 
   test('a failed source rejects the load, and the entry that reads it starts no query', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
 
     const post = ensureEntry(trpc.post.bySlug, { slug: 'missing' });
@@ -1559,7 +1730,11 @@ describe.each([
   });
 
   test('a source that is retried fetches the entry that reads it again', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     let failed = false;
     resource.calls.mockImplementation((path: string) => {
@@ -1586,7 +1761,11 @@ describe.each([
   });
 
   test("an entry's own error is not fetched twice", async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     resource.calls.mockImplementation((path: string) => {
       if (path === 'author.byId') {
@@ -1607,7 +1786,11 @@ describe.each([
   });
 
   test('an infinite entry loads its first page in the same request', async () => {
-    await using resource = pipeliningCtx(scenario.link);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      before: [],
+    });
     const trpc = resource.optionsProxyClient;
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {

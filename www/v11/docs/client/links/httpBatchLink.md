@@ -221,10 +221,11 @@ const client = createTRPCClient<AppRouter>({
 
 ## Pipelining (experimental) {#pipelining}
 
-With `experimental_pipelining: true`, a query in a batch can read parts of its input from the data of another query in the same batch. The server fills them in between the calls, so a query that depends on another costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
+With `experimental_pipelining: true`, the server can run more queries in a query's request, with parts of their inputs read from its data. A query that depends on another then costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
 
 - The server must set `experimental_allowPipelining: true`. Without it, the server runs nothing of such a batch.
 - Batches without such a query are sent as they are without the option.
+- Such a query is no operation of its own, so the links before this one don't see it. See [What your links see](/docs/client/tanstack-react-query/dependent-queries#links).
 
 See [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries#one-request).
 
