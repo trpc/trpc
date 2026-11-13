@@ -16,24 +16,17 @@ import {
   experimental_handleOfItem,
   fromHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import type {
-  experimental_inferHandles,
-  inferInfiniteQueryHandle,
-} from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense, useEffect, useRef } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
-import type { postPageEntries } from './post-entries';
+import type { PostPageHandles } from '../$slug';
 
 /**
  * The author of a post, and what else they wrote. The author's id is in the
  * post, so the card reads the post first: the handles of its own queries are
  * finished with the data they are built from.
  */
-export function AuthorCard(
-  props: Readonly<{
-    handles: experimental_inferHandles<typeof postPageEntries>;
-  }>,
-) {
+export function AuthorCard(props: Readonly<{ handles: PostPageHandles }>) {
   const trpc = useTRPC();
   const { handles } = props;
   const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
