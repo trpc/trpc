@@ -16,6 +16,12 @@ import {
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
+import {
+  pipelineOf,
+  planPipelinedBatch,
+  resultsOfPipelinedBatch,
+  withPipeParam,
+} from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
 /**
@@ -44,11 +50,13 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           if (batchOps.length > maxItems) {
             return false;
           }
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
+          const plan = planPipelinedBatch(batchOps);
+          const path = plan.sent.map((op) => op.path).join(',');
+          const inputs = plan.sent.map((op) => op.input);
 
           const url = getUrl({
             ...resolvedOpts,
+            url: withPipeParam(resolvedOpts.url, plan.pipe),
             type,
             path,
             inputs,
@@ -58,12 +66,17 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           return url.length <= maxURLLength;
         },
         async fetch(batchOps) {
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
-          const signal = allAbortSignals(...batchOps.map((op) => op.signal));
+          const plan = planPipelinedBatch(batchOps);
+          if (plan.sent.length === 0) {
+            return resultsOfPipelinedBatch({ batchOps, plan, results: [] });
+          }
+          const path = plan.sent.map((op) => op.path).join(',');
+          const inputs = plan.sent.map((op) => op.input);
+          const signal = allAbortSignals(...plan.sent.map((op) => op.signal));
 
           const res = await jsonHttpRequester({
             ...resolvedOpts,
+            url: withPipeParam(resolvedOpts.url, plan.pipe),
             path,
             inputs,
             type,
@@ -73,7 +86,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               }
               if (typeof opts.headers === 'function') {
                 return opts.headers({
-                  opList: batchOps as NonEmptyArray<Operation>,
+                  opList: plan.sent as NonEmptyArray<Operation>,
                 });
               }
               return opts.headers;
@@ -82,12 +95,12 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           });
           const resJSON = Array.isArray(res.json)
             ? res.json
-            : batchOps.map(() => res.json);
-          const result = resJSON.map((item) => ({
+            : plan.sent.map(() => res.json);
+          const results = resJSON.map((item) => ({
             meta: res.meta,
             json: item,
           }));
-          return result;
+          return resultsOfPipelinedBatch({ batchOps, plan, results });
         },
       };
     };
@@ -110,6 +123,10 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           ac.signal,
         );
         const loader = loaders[op.type];
+        const pipeline = pipelineOf(op);
+        if (pipeline && opts.pipelining && op.type === 'query') {
+          pipeline.accepted = true;
+        }
         const promise = loader.load({
           ...op,
           signal,

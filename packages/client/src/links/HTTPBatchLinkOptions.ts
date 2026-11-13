@@ -35,4 +35,14 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
      * @default Infinity
      */
     maxItems?: number;
+    /**
+     * Lets a query read parts of its input from the data of another query in
+     * the same batch, so a query that depends on another costs no extra round
+     * trip. `loadHandles()` uses it for entries built with `dataOf()`. The
+     * server must set `allowPipelining: true`.
+     *
+     * Experimental: it may change in a minor release.
+     * @default false
+     */
+    pipelining?: boolean;
   };

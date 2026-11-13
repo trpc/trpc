@@ -16,6 +16,12 @@ import {
   getUrl,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
+import {
+  pipelineOf,
+  planPipelinedBatch,
+  resultsOfPipelinedBatch,
+  withPipeParam,
+} from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
 /**
@@ -61,11 +67,13 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           if (batchOps.length > maxItems) {
             return false;
           }
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
+          const plan = planPipelinedBatch(batchOps);
+          const path = plan.sent.map((op) => op.path).join(',');
+          const inputs = plan.sent.map((op) => op.input);
 
           const url = getUrl({
             ...resolvedOpts,
+            url: withPipeParam(resolvedOpts.url, plan.pipe),
             type,
             path,
             inputs,
@@ -75,16 +83,21 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           return url.length <= maxURLLength;
         },
         async fetch(batchOps) {
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
+          const plan = planPipelinedBatch(batchOps);
+          if (plan.sent.length === 0) {
+            return resultsOfPipelinedBatch({ batchOps, plan, results: [] });
+          }
+          const path = plan.sent.map((op) => op.path).join(',');
+          const inputs = plan.sent.map((op) => op.input);
 
           const batchSignals = allAbortSignals(
-            ...batchOps.map((op) => op.signal),
+            ...plan.sent.map((op) => op.signal),
           );
           const abortController = new AbortController();
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
+            url: withPipeParam(resolvedOpts.url, plan.pipe),
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
@@ -100,7 +113,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               }
               if (typeof opts.headers === 'function') {
                 return opts.headers({
-                  opList: batchOps as NonEmptyArray<Operation>,
+                  opList: plan.sent as NonEmptyArray<Operation>,
                 });
               }
               return opts.headers;
@@ -120,14 +133,16 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               );
             }
 
-            return batchOps.map((): Promise<HTTPResult> =>
-              Promise.resolve({
+            return resultsOfPipelinedBatch({
+              batchOps,
+              plan,
+              results: plan.sent.map((): HTTPResult => ({
                 json,
                 meta: {
                   response: res,
                 },
-              }),
-            );
+              })),
+            });
           }
 
           const [head] = await jsonlStreamConsumer<
@@ -146,7 +161,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             },
             abortController,
           });
-          const promises = Object.keys(batchOps).map(
+          const promises = Object.keys(plan.sent).map(
             async (key): Promise<HTTPResult> => {
               let json: TRPCResponse = await Promise.resolve(head[key]);
 
@@ -171,7 +186,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               };
             },
           );
-          return promises;
+          return resultsOfPipelinedBatch({ batchOps, plan, results: promises });
         },
       };
     };
@@ -190,6 +205,10 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
         }
         const ac = new AbortController();
         const loader = loaders[op.type];
+        const pipeline = pipelineOf(op);
+        if (pipeline && opts.pipelining && op.type === 'query') {
+          pipeline.accepted = true;
+        }
         const promise = loader.load({
           ...op,
           signal: raceAbortSignals(op.signal, ac.signal),

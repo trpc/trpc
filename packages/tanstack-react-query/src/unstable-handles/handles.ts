@@ -3,9 +3,16 @@ import type {
   GetNextPageParamFunction,
   QueryClient,
   QueryFunction,
+  QueryFunctionContext,
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
 import { isTRPCClientError } from '@trpc/client';
+import type { OperationPipeline } from '@trpc/client/unstable-internals';
+import {
+  createOperationPipeline,
+  pipelineContext,
+} from '@trpc/client/unstable-internals';
+import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
@@ -362,15 +369,32 @@ interface EntryDataRef {
   path: string[];
 }
 
+/** A `dataOf()` value in an entry's input */
+interface EntryInputRef extends EntryDataRef {
+  /** Where it is in the input */
+  to: string[];
+}
+
 interface EntryState {
   kind: TRPCEntryKind;
   type: HandleType;
   /** The procedure's path */
   path: string[];
   /** The `dataOf()` values in the entry's input */
-  refs: EntryDataRef[];
-  /** The query's options, with every `dataOf()` value in the input replaced */
-  options: (dataOfRef: (ref: EntryDataRef) => unknown) => any;
+  refs: EntryInputRef[];
+  /**
+   * The query's options, with every `dataOf()` value in the input replaced.
+   * Its requests carry `pipeline`, for a link that pipelines.
+   */
+  options: (opts: {
+    dataOfRef: (ref: EntryDataRef) => unknown;
+    pipeline: OperationPipeline | null;
+  }) => any;
+  /**
+   * Calls the procedure outside the `QueryClient`, with `undefined` for every
+   * `dataOf()` value in the input: the server fills them in.
+   */
+  query: (pipeline: OperationPipeline) => Promise<unknown>;
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -422,27 +446,73 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-/** Replaces every `dataOf()` value in an input */
+/** Replaces every `dataOf()` value in an input. `to` is where `value` is in it */
 function replaceEntryDataRefs(
   value: unknown,
-  replace: (ref: EntryDataRef) => unknown,
+  to: string[],
+  replace: (ref: EntryInputRef) => unknown,
 ): unknown {
   const ref = entryDataRefOf(value);
   if (ref) {
-    return replace(ref);
+    return replace({ ...ref, to });
   }
   if (Array.isArray(value)) {
-    return value.map((item) => replaceEntryDataRefs(item, replace));
+    return value.map((item, index) =>
+      replaceEntryDataRefs(item, [...to, String(index)], replace),
+    );
   }
   if (isPlainObject(value)) {
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [
         key,
-        replaceEntryDataRefs(item, replace),
+        replaceEntryDataRefs(item, [...to, key], replace),
       ]),
     );
   }
   return value;
+}
+
+/**
+ * Makes the first fetch of a query use the result of a pipelined request that
+ * is already on its way, which was sent before the query's key was known.
+ */
+function withPipelinedResult(opts: {
+  options: any;
+  result: Promise<unknown>;
+  pipeline: OperationPipeline;
+  /**
+   * Whether the server filled in the input this client did: the data of every
+   * entry this one reads is the result of the request the server read
+   */
+  sameInput: () => boolean;
+  /** Called when the query takes the pipelined result as its data */
+  onUsed: () => void;
+}) {
+  const queryFn: QueryFunction<any, any, any> = opts.options.queryFn;
+  let result: Promise<unknown> | null = opts.result;
+  return {
+    ...opts.options,
+    queryFn: (context: QueryFunctionContext<any, any>) => {
+      const pipelined = result;
+      result = null;
+      if (!pipelined || !opts.sameInput()) {
+        return queryFn(context);
+      }
+      return pipelined.then(
+        (data) => {
+          opts.onUsed();
+          return data;
+        },
+        (error: unknown) => {
+          // The request never ran, such as when the entry it reads failed and was retried
+          if (opts.pipeline.unresolved) {
+            return queryFn(context);
+          }
+          throw error;
+        },
+      );
+    },
+  };
 }
 
 function startEntry(opts: {
@@ -569,6 +639,18 @@ function mapEntryTree(
 
 interface EntryLoad {
   leaf: EntryLeaf;
+  /**
+   * Goes with the query's request when another entry reads its data, or it reads
+   * another's. A link that pipelines marks it, and then the entries that read
+   * this one are sent in the same batch.
+   */
+  pipeline: OperationPipeline | null;
+  /**
+   * Whether the query's data is the result of the request `pipeline` went with,
+   * which is what the server read for the entries that read this one. It isn't
+   * when the cache had the data.
+   */
+  dataIsPipelined: () => boolean;
   /** The query's options. Waits for the data its input reads with `dataOf()` */
   options: Promise<any>;
   /** Settles like the `QueryClient` method the entry is named after */
@@ -602,6 +684,7 @@ async function startEntries(opts: {
       }),
     ]),
   );
+  const readLeaves = new Set([...sourcesOfLeaf.values()].flat());
   const loads = new Map<EntryLeaf, EntryLoad>();
   // An entry only reads entries built before it, so this can't loop
   function loadOf(leaf: EntryLeaf): EntryLoad {
@@ -621,26 +704,75 @@ async function startEntries(opts: {
       startEntry({ queryClient, state, options }).catch((error: unknown) => {
         throw toEntryError(leaf.key, state, error);
       });
+    let pipeline: OperationPipeline | null = null;
+    let dataIsPipelined = () => false;
     let options: Promise<any>;
     let promise: Promise<unknown>;
     if (sources.size === 0) {
-      // The query starts now, not a tick later
-      const built = state.options(() => undefined);
+      let built = state.options({ dataOfRef: () => undefined, pipeline: null });
+      if (
+        // Only a query's data is one request's result, which the server can read
+        state.type === 'query' &&
+        readLeaves.has(leaf) &&
+        // An ensure entry resolves to cached data, not to the result of its refetch
+        (state.kind !== 'ensure' ||
+          queryClient.getQueryData(built.queryKey) === undefined)
+      ) {
+        const sent = createOperationPipeline([]);
+        pipeline = sent;
+        built = state.options({ dataOfRef: () => undefined, pipeline: sent });
+        dataIsPipelined = () => sent.accepted;
+      }
       options = Promise.resolve(built);
+      // The query starts now, not a tick later
       promise = start(built);
     } else {
+      // If the requests of everything this entry reads just went to a link that
+      // pipelines, send this one in the same batch. The server fills in its input
+      const reads = state.refs.flatMap((ref) => {
+        const from = sources.get(ref.entry)?.pipeline;
+        return from?.accepted ? [{ to: ref.to, from, path: ref.path }] : [];
+      });
+      let result: Promise<unknown> | null = null;
+      if (state.type === 'query' && reads.length === state.refs.length) {
+        const sent = createOperationPipeline(reads);
+        pipeline = sent;
+        result = state.query(sent);
+        // Used only if the query fetches once its key is known
+        result.catch(() => undefined);
+        if (!sent.accepted) {
+          // It went to another link than the entries it reads
+          sent.unresolved = true;
+        }
+      }
+      const pipelined = pipeline && result ? { pipeline, result } : null;
       options = Promise.all(
         [...sources].map(async ([entry, source]) => {
           return [entry, await source.data] as const;
         }),
       ).then((resolved) => {
         const dataOfEntry = new Map(resolved);
-        return state.options((ref) =>
-          ref.path.reduce<any>(
-            (value, segment) => value?.[segment],
-            dataOfEntry.get(ref.entry),
-          ),
-        );
+        const filled = state.options({
+          dataOfRef: (ref) =>
+            readPipelinePath(dataOfEntry.get(ref.entry), ref.path),
+          pipeline: null,
+        });
+        if (!pipelined) {
+          return filled;
+        }
+        // An ensure entry resolves to cached data, even if it also refetches
+        const resolvesToCache =
+          state.kind === 'ensure' &&
+          queryClient.getQueryData(filled.queryKey) !== undefined;
+        return withPipelinedResult({
+          options: filled,
+          ...pipelined,
+          sameInput: () =>
+            [...sources.values()].every((source) => source.dataIsPipelined()),
+          onUsed: () => {
+            dataIsPipelined = () => !resolvesToCache;
+          },
+        });
       });
       // When a source fails, its error is this entry's too: it never started
       promise = options.then(start);
@@ -658,7 +790,14 @@ async function startEntries(opts: {
         : promise;
     // Only an entry that reads it with `dataOf()` waits for it
     data.catch(() => undefined);
-    const load: EntryLoad = { leaf, options, promise, data };
+    const load: EntryLoad = {
+      leaf,
+      pipeline,
+      dataIsPipelined: () => dataIsPipelined(),
+      options,
+      promise,
+      data,
+    };
     loads.set(leaf, load);
     return load;
   }
@@ -856,19 +995,37 @@ function entry(opts: {
   opts: unknown;
 }) {
   const ctx = readProxy(opts.procedure, opts.fn);
-  const refs: EntryDataRef[] = [];
-  replaceEntryDataRefs(opts.input, (ref) => refs.push(ref));
-  const options = (input: unknown) =>
-    optionsOf(ctx.proxy, opts.type)(input, opts.opts);
+  const refs: EntryInputRef[] = [];
+  replaceEntryDataRefs(opts.input, [], (ref) => refs.push(ref));
+  const queryOpts = opts.opts as TRPCQueryBaseOptions | undefined;
+  const trpcOpts = (pipeline: OperationPipeline) => ({
+    ...queryOpts?.trpc,
+    context: { ...queryOpts?.trpc?.context, ...pipelineContext(pipeline) },
+  });
+  const options = (input: unknown, pipeline: OperationPipeline | null) =>
+    optionsOf(ctx.proxy, opts.type)(
+      input,
+      pipeline ? { ...queryOpts, trpc: trpcOpts(pipeline) } : opts.opts,
+    );
   // Without `dataOf()` values, a bad input or option throws here, not in the load
-  const built = refs.length === 0 ? options(opts.input) : null;
+  const built = refs.length === 0 ? options(opts.input, null) : null;
   return createEntry({
     type: opts.type,
     kind: opts.kind,
     path: ctx.path,
     refs,
-    options: (dataOfRef) =>
-      built ?? options(replaceEntryDataRefs(opts.input, dataOfRef)),
+    options: (optionsOpts) =>
+      optionsOpts.pipeline === null && built
+        ? built
+        : options(
+            replaceEntryDataRefs(opts.input, [], optionsOpts.dataOfRef),
+            optionsOpts.pipeline,
+          ),
+    query: (pipeline) =>
+      ctx.proxy['~query'](
+        replaceEntryDataRefs(opts.input, [], () => undefined),
+        { context: trpcOpts(pipeline).context },
+      ),
     queryClient: queryClientOf(ctx),
   });
 }

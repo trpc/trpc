@@ -22,6 +22,7 @@ export * from './unstable-core-do-not-import/http/getHTTPStatusCode';
 export * from './unstable-core-do-not-import/http/abortError';
 export * from './unstable-core-do-not-import/http/parseConnectionParams';
 export * from './unstable-core-do-not-import/http/pathSeparator';
+export * from './unstable-core-do-not-import/http/pipeline';
 export * from './unstable-core-do-not-import/http/resolveResponse';
 export * from './unstable-core-do-not-import/http/types';
 export * from './unstable-core-do-not-import/initTRPC';

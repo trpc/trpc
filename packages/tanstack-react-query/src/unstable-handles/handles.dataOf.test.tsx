@@ -1,5 +1,6 @@
 import { testReactResource } from '../../test/__helpers';
 import { skipToken, useSuspenseQuery } from '@tanstack/react-query';
+import { httpBatchLink, httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -7,6 +8,7 @@ import { z } from 'zod';
 import {
   dataOf,
   ensureEntry,
+  ensureInfiniteEntry,
   fetchEntry,
   fromHandle,
   isTRPCEntryError,
@@ -22,7 +24,7 @@ import type {
 } from '.';
 import type { TRPCOptionsProxy } from '..';
 
-const ctx = () => {
+const createAppRouter = () => {
   const t = initTRPC.create();
   const calls = vi.fn();
   const appRouter = t.router({
@@ -69,7 +71,26 @@ const ctx = () => {
         }),
     }),
   });
+  return { appRouter, calls };
+};
+
+const ctx = () => {
+  const { appRouter, calls } = createAppRouter();
   return { ...testReactResource(appRouter), calls, appRouter };
+};
+
+/** A server and a batch link that both pipeline */
+const pipeliningCtx = (
+  link: typeof httpBatchLink | typeof httpBatchStreamLink,
+) => {
+  const { appRouter, calls } = createAppRouter();
+  const resource = testReactResource(appRouter, {
+    server: { allowPipelining: true },
+    client: (opts) => ({
+      links: [link({ url: opts.httpUrl, pipelining: true })],
+    }),
+  });
+  return { ...resource, calls, appRouter };
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
@@ -403,5 +424,204 @@ describe('groups', () => {
       error: { key: 'page.post', code: 'NOT_FOUND' },
     });
     expectTypeOf(results.page.post.status).toEqualTypeOf<'success' | 'error'>();
+  });
+});
+
+describe.each([
+  { name: 'httpBatchLink', link: httpBatchLink },
+  { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+])('pipelining with $name', (scenario) => {
+  test('entries that read each other load in one request', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = prefetchEntry(trpc.author.byId, {
+      id: dataOf(post).authorId,
+    });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      author,
+      team: ensureEntry(trpc.team.byId, { id: dataOf(author).teamId }),
+      tags: prefetchEntry(trpc.tag.byIds, {
+        ids: [dataOf(post).tags[1]!.id, 'extra'],
+      }),
+    });
+
+    expect(data.team).toEqual({ id: 'team1', name: 'tRPC' });
+    expect(handles.author.input).toEqual({ id: 'u1' });
+    expect(handles.tags.input).toEqual({ ids: ['t2', 'extra'] });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // Each entry is an ordinary cache entry under the key of its filled-in input
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 'u1' }),
+      ),
+    ).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.tag.byIds.queryKey({ ids: ['t2', 'extra'] }),
+      ),
+    ).toEqual([{ id: 't2' }, { id: 'extra' }]);
+
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    // Every procedure ran once
+    expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
+      'author.byId',
+      'post.bySlug',
+      'tag.byIds',
+      'team.byId',
+    ]);
+  });
+
+  test('a cached source needs no pipelining', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.bySlug, { slug: 'hello' }),
+    });
+    resource.onRequestSpy.mockClear();
+
+    const post = ensureEntry(
+      trpc.post.bySlug,
+      { slug: 'hello' },
+      { staleTime: Infinity },
+    );
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+    });
+    expect(handles.author.input).toEqual({ id: 'u1' });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).not.toContain('pipe=');
+  });
+
+  test('a stale ensure entry is read from the cache, so nothing is pipelined from its refetch', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    // The cache has the post with another author than the server
+    resource.queryClient.setQueryData(
+      trpc.post.bySlug.queryKey({ slug: 'hello' }),
+      { id: 'id-of-hello', title: 'Old', authorId: 'u0', tags: [] },
+      { updatedAt: 1 },
+    );
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+    });
+    // The handle's input and its data agree
+    expect(handles.author.input).toEqual({ id: 'u0' });
+    expect(data.author.id).toBe('u0');
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // The refetch and the author still share a request
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).not.toContain('pipe=');
+  });
+
+  test('an entry that keeps its cached data makes the entry that reads it fetch with the input the client filled in', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    // The cache has the author with another team than the server
+    resource.queryClient.setQueryData(trpc.author.byId.queryKey({ id: 'u1' }), {
+      id: 'u1',
+      name: 'KATT',
+      teamId: 'team0',
+    });
+
+    const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = ensureEntry(trpc.author.byId, { id: dataOf(post).authorId });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      author,
+      team: fetchEntry(trpc.team.byId, { id: dataOf(author).teamId }),
+    });
+    expect(handles.team.input).toEqual({ id: 'team0' });
+    expect(data.team.id).toBe('team0');
+  });
+
+  test('a failed source rejects the load, and the entry that reads it starts no query', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'missing' });
+    await expect(
+      loadHandles(trpc, {
+        post,
+        author: prefetchEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      }),
+    ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
+    expect(resource.calls).not.toHaveBeenCalledWith(
+      'author.byId',
+      expect.anything(),
+    );
+    expect(
+      resource.queryClient.getQueryCache().findAll({
+        queryKey: trpc.author.byId.pathKey(),
+      }),
+    ).toHaveLength(0);
+  });
+
+  test('a source that is retried fetches the entry that reads it again', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    let failed = false;
+    resource.calls.mockImplementation((path: string) => {
+      if (path === 'post.bySlug' && !failed) {
+        failed = true;
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }
+    });
+
+    const post = ensureEntry(
+      trpc.post.bySlug,
+      { slug: 'hello' },
+      { retry: 1, retryDelay: 0 },
+    );
+    const [, data] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+    });
+    expect(data.author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
+    // The pipelined batch, the retried post, then the author with its input
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
+  });
+
+  test("an entry's own error is not fetched twice", async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    resource.calls.mockImplementation((path: string) => {
+      if (path === 'author.byId') {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+    });
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    await expect(
+      loadHandles(trpc, {
+        post,
+        author: ensureEntry(trpc.author.byId, { id: dataOf(post).authorId }),
+      }),
+    ).rejects.toMatchObject({ key: 'author', code: 'FORBIDDEN' });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('an infinite entry fills in its input on the client', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      more: ensureInfiniteEntry(trpc.post.byAuthor, {
+        authorId: dataOf(post).authorId,
+      }),
+    });
+    expect(handles.more.input).toEqual({ authorId: 'u1' });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
   });
 });
