@@ -9,6 +9,7 @@ import {
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
+  dataOf,
   fromHandle,
   prefetchEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
@@ -20,17 +21,24 @@ import { useTRPC, type TRPC } from '~/lib/trpc';
  * doesn't care where it comes from: the post page passes one that the server
  * fills in.
  */
-export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
+export function authorCardEntries(
+  trpc: TRPC,
+  opts: { authorId: string; exceptSlug: string },
+) {
+  // `staleTime: 0` so every visit shows its requests in the log
+  const author = prefetchEntry(
+    trpc.blog.authorById,
+    { id: opts.authorId },
+    { staleTime: 0 },
+  );
   return {
-    // `staleTime: 0` so every visit shows its requests in the log
-    author: prefetchEntry(
-      trpc.blog.authorById,
-      { id: opts.authorId },
-      { staleTime: 0 },
-    ),
-    posts: prefetchEntry(
-      trpc.blog.postsByAuthor,
-      { authorId: opts.authorId },
+    author,
+    // A second step: the post list is filtered by the id of the author, who
+    // is loaded with an id from the post. With pipelining, post, author and
+    // list are one request. Without, they are three, one after the other
+    moreByAuthor: prefetchEntry(
+      trpc.blog.posts,
+      { authorId: dataOf(author).id, exceptSlug: opts.exceptSlug },
       { staleTime: 0 },
     ),
   };
@@ -41,7 +49,9 @@ export function AuthorCard(
 ) {
   const trpc = useTRPC();
   const authorQuery = useSuspenseQuery(fromHandle(trpc, props.handles.author));
-  const postsQuery = useSuspenseQuery(fromHandle(trpc, props.handles.posts));
+  const moreQuery = useSuspenseQuery(
+    fromHandle(trpc, props.handles.moreByAuthor),
+  );
   const author = authorQuery.data;
 
   return (
@@ -58,21 +68,25 @@ export function AuthorCard(
         </div>
       </CardHeader>
       <CardContent>
-        <p className="mb-2 text-sm font-medium">By {author.name}</p>
-        <ul className="flex flex-col gap-1 text-sm">
-          {postsQuery.data.map((post) => (
-            <li key={post.slug}>
-              <Link
-                to="/blog/$slug"
-                params={{ slug: post.slug }}
-                preload={false}
-                className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                {post.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <p className="mb-2 text-sm font-medium">More by {author.name}</p>
+        {moreQuery.data.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing else yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-1 text-sm">
+            {moreQuery.data.map((post) => (
+              <li key={post.slug}>
+                <Link
+                  to="/blog/$slug"
+                  params={{ slug: post.slug }}
+                  preload={false}
+                  className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  {post.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

@@ -273,6 +273,43 @@ describe('dataOf', () => {
   });
 });
 
+describe('dataOf().map()', () => {
+  test('reads a part of every item of an array', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const tagIds = dataOf(post).tags.map((tag) => tag.id);
+    expectTypeOf(tagIds).toEqualTypeOf<string[]>();
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      tags: ensureEntry(trpc.tag.byIds, { ids: tagIds }),
+    });
+    expect(handles.tags.input).toEqual({ ids: ['t1', 't2'] });
+    expect(data.tags).toEqual([{ id: 't1' }, { id: 't2' }]);
+  });
+
+  test('its callback must return the item or a part of it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+
+    expect(() =>
+      dataOf(post).tags.map((tag) => ({ id: tag.id })),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: A \`dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`]`,
+    );
+    expect(() => dataOf(post).tags.map(() => dataOf(post).id)).toThrow(
+      /must return the item or a part of it/,
+    );
+    expect(() =>
+      dataOf(post).tags.filter((tag) => tag.id === 't1'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: A \`dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item]`,
+    );
+  });
+});
+
 describe('groups', () => {
   /** What a component file exports next to the component */
   function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
@@ -474,6 +511,24 @@ describe.each([
       'tag.byIds',
       'team.byId',
     ]);
+  });
+
+  test('a list read with .map() loads in one request', async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+
+    const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      tags: fetchEntry(trpc.tag.byIds, {
+        ids: dataOf(post).tags.map((tag) => tag.id),
+      }),
+    });
+    expect(handles.tags.input).toEqual({ ids: ['t1', 't2'] });
+    expect(resource.calls).toHaveBeenCalledWith('tag.byIds', {
+      ids: ['t1', 't2'],
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test('a cached source needs no pipelining', async () => {

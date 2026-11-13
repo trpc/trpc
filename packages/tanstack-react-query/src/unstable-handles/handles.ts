@@ -12,6 +12,7 @@ import {
   createOperationPipeline,
   pipelineContext,
 } from '@trpc/client/unstable-internals';
+import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateInfiniteQueryProcedure,
@@ -366,7 +367,7 @@ const entryDataRef = Symbol('trpc.entryData');
 interface EntryDataRef {
   /** The entry `dataOf()` was called with */
   entry: object;
-  path: string[];
+  path: PipelinePath;
 }
 
 /** A `dataOf()` value in an entry's input */
@@ -407,33 +408,58 @@ function entryStateOf(entry: unknown): EntryState | undefined {
   return (entry as { [entryState]?: EntryState } | null)?.[entryState];
 }
 
+const notData =
+  "A `dataOf()` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it";
+
 function createEntryDataRef(ref: EntryDataRef): unknown {
-  return new Proxy(
-    {},
-    {
-      get(_target, key) {
-        if (key === entryDataRef) {
-          return ref;
-        }
-        if (key === Symbol.toPrimitive) {
-          throw new Error(
-            `A \`dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it`,
-          );
-        }
-        if (typeof key === 'symbol') {
-          return undefined;
-        }
-        return createEntryDataRef({
-          entry: ref.entry,
-          path: [...ref.path, key],
-        });
-      },
+  // A function, so that `.map()` can be called on it
+  return new Proxy(() => undefined, {
+    get(_target, key) {
+      if (key === entryDataRef) {
+        return ref;
+      }
+      if (key === Symbol.toPrimitive) {
+        throw new Error(
+          `A \`dataOf()\` value has no data until the load runs, so it can't be made into a string or a number. Pass it as it is, as an entry's input or anywhere inside it`,
+        );
+      }
+      if (typeof key === 'symbol') {
+        return undefined;
+      }
+      return createEntryDataRef({
+        entry: ref.entry,
+        path: [...ref.path, key],
+      });
     },
-  );
+    apply(_target, _thisArg, args: unknown[]) {
+      const method = ref.path[ref.path.length - 1];
+      const callback = args[0];
+      if (method !== 'map' || typeof callback !== 'function') {
+        throw new Error(
+          `${notData}. Of an array's methods, only \`.map()\` works, to read a part of every item`,
+        );
+      }
+      // The callback runs once, on a stand-in for every item
+      const item = [...ref.path.slice(0, -1), null];
+      const mapped = entryDataRefOf(
+        callback(createEntryDataRef({ entry: ref.entry, path: item })),
+      );
+      if (
+        mapped?.entry !== ref.entry ||
+        !item.every((segment, index) => mapped.path[index] === segment)
+      ) {
+        throw new Error(
+          `${notData}. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\``,
+        );
+      }
+      return createEntryDataRef(mapped);
+    },
+  });
 }
 
 function entryDataRefOf(value: unknown): EntryDataRef | undefined {
-  return typeof value === 'object' && value !== null
+  return (typeof value === 'object' && value !== null) ||
+    typeof value === 'function'
     ? (value as { [entryDataRef]?: EntryDataRef })[entryDataRef]
     : undefined;
 }
@@ -1036,7 +1062,9 @@ function entry(opts: {
  *
  * It holds no data when you call it: it records which part of the data you read,
  * and the load fills that in once the entry it comes from has data. So don't
- * compute with it or branch on it.
+ * compute with it or branch on it. To read a part of every item of an array, use
+ * `.map()`: `dataOf(posts).map((post) => post.authorId)`. Its callback runs once,
+ * on a stand-in for every item, and must return the item or a part of it.
  *
  * The load waits for that data, whatever the kind of either entry, and rejects
  * with the error of the entry it comes from if that one fails.

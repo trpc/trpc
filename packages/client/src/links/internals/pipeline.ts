@@ -1,4 +1,7 @@
-import type { PipelineReads } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  PipelinePath,
+  PipelineReads,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { Operation, OperationContext } from '../types';
 
 /**
@@ -28,7 +31,7 @@ export interface OperationPipelineRead {
   /** The pipeline of the operation whose data it comes from */
   from: OperationPipeline;
   /** Where the value is in that data. Empty for all of it */
-  path: string[];
+  path: PipelinePath;
 }
 
 const contextKey = '~pipeline';

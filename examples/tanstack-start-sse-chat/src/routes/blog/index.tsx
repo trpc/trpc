@@ -11,24 +11,44 @@ import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
+  dataOf,
+  fetchEntry,
   fromHandle,
   loadHandles,
   prefetchEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  inferHandles,
+  inferQueryHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { format } from 'date-fns';
 import { ChevronRightIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { startRequestLog } from '~/lib/blog-demo';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
+/** Every query the list needs */
+function postListEntries(trpc: TRPC) {
+  // `staleTime: 0` so every visit shows its requests in the log
+  const posts = fetchEntry(trpc.blog.posts, undefined, { staleTime: 0 });
+  return {
+    posts,
+    // The authors' ids are in the posts, which haven't loaded yet. `.map()` reads
+    // one from every post. With pipelining, the server collects them from the
+    // posts and runs this query in the same request
+    authors: prefetchEntry(
+      trpc.blog.authorsByIds,
+      { ids: dataOf(posts).map((post) => post.authorId) },
+      { staleTime: 0 },
+    ),
+  };
+}
+
 export const Route = createFileRoute('/blog/')({
   loader: async (opts) => {
     const { trpc } = opts.context;
     startRequestLog();
-    const [handles] = await loadHandles(trpc, {
-      posts: prefetchEntry(trpc.blog.posts),
-    });
+    const [handles] = await loadHandles(trpc, postListEntries(trpc));
     return handles;
   },
   component: BlogIndex,
@@ -42,8 +62,8 @@ function BlogIndex() {
         <Badge variant="secondary">Pipelining</Badge>
         <h1 className="text-4xl font-bold tracking-tight">A fake blog</h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          A post page needs the post and its author, and the author&apos;s id is
-          in the post. With pipelining, both load in one request.
+          Every page here needs posts and their authors, and the authors&apos;
+          ids are in the posts. With pipelining, both load in one request.
         </p>
       </section>
       <Suspense
@@ -55,17 +75,17 @@ function BlogIndex() {
           </div>
         }
       >
-        <PostList posts={loaderData.posts} />
+        <PostList handles={loaderData} />
       </Suspense>
     </>
   );
 }
 
 function PostList(
-  props: Readonly<{ posts: inferQueryHandle<TRPC['blog']['posts']> }>,
+  props: Readonly<{ handles: inferHandles<typeof postListEntries> }>,
 ) {
   const trpc = useTRPC();
-  const postsQuery = useSuspenseQuery(fromHandle(trpc, props.posts));
+  const postsQuery = useSuspenseQuery(fromHandle(trpc, props.handles.posts));
   return (
     <ItemGroup>
       {postsQuery.data.map((post) => (
@@ -84,6 +104,13 @@ function PostList(
           <ItemContent>
             <ItemTitle>{post.title}</ItemTitle>
             <ItemDescription>
+              <Suspense fallback="…">
+                <AuthorName
+                  authors={props.handles.authors}
+                  authorId={post.authorId}
+                />
+              </Suspense>
+              {' · '}
               {format(post.publishedAt, 'd MMMM yyyy')}
             </ItemDescription>
           </ItemContent>
@@ -94,4 +121,16 @@ function PostList(
       ))}
     </ItemGroup>
   );
+}
+
+function AuthorName(
+  props: Readonly<{
+    authors: inferQueryHandle<TRPC['blog']['authorsByIds']>;
+    authorId: string;
+  }>,
+) {
+  const trpc = useTRPC();
+  const authorsQuery = useSuspenseQuery(fromHandle(trpc, props.authors));
+  const author = authorsQuery.data.find((it) => it.id === props.authorId);
+  return author?.name ?? 'Unknown author';
 }

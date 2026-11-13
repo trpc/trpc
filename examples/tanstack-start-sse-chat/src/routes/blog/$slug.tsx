@@ -30,7 +30,10 @@ function postPageEntries(trpc: TRPC, opts: { slug: string }) {
     // The author's id is in the post, which hasn't loaded yet. `dataOf()` stands
     // in for it. With pipelining, the server reads it from the post and runs
     // these queries in the same request. Without, the browser waits for the post
-    authorCard: authorCardEntries(trpc, { authorId: dataOf(post).authorId }),
+    authorCard: authorCardEntries(trpc, {
+      authorId: dataOf(post).authorId,
+      exceptSlug: opts.slug,
+    }),
   };
 }
 

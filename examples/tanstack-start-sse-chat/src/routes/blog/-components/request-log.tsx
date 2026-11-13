@@ -40,8 +40,8 @@ export function RequestLog() {
         </label>
         <p className="text-sm text-muted-foreground">
           {pipelining
-            ? 'The author’s id is in the post. The server reads it there and loads the author in the same request.'
-            : 'The author’s id is in the post, so the browser waits for the post before it can ask for the author.'}
+            ? 'The authors’ ids are in the posts. The server reads them there and loads the authors in the same request.'
+            : 'The authors’ ids are in the posts, so the browser waits for the posts before it can ask for the authors.'}
         </p>
 
         {requests.length === 0 ? (

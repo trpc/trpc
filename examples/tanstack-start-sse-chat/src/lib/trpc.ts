@@ -60,6 +60,8 @@ const getLinks = createIsomorphicFn()
             url,
             transformer: SuperJSON,
             pipelining: true,
+            // Queries go as POST, so the Network tab shows their inputs as JSON
+            methodOverride: 'POST',
             fetch: blogDemoFetch,
           }),
           false: httpBatchStreamLink({
@@ -68,6 +70,7 @@ const getLinks = createIsomorphicFn()
              * @see https://trpc.io/docs/v11/data-transformers
              */
             transformer: SuperJSON,
+            methodOverride: 'POST',
             fetch: blogDemoFetch,
           }),
         }),

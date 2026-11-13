@@ -17,6 +17,11 @@ const handler = (opts: { request: Request }) =>
      */
     allowPipelining: true,
     /**
+     * The client sends queries as POST, so the Network tab shows their inputs as JSON
+     * @see https://trpc.io/docs/rpc#overriding-the-default-http-method
+     */
+    allowMethodOverride: true,
+    /**
      * @see https://trpc.io/docs/v11/context
      */
     createContext,

@@ -5,6 +5,12 @@ import { isObject } from '../utils';
 import type { TRPCRequestInfoProcedureCall } from './types';
 
 /**
+ * Where a value is in a call's data: the keys to follow. `null` stands for every
+ * item of an array, so `['items', null, 'id']` is the list of the items' ids.
+ */
+export type PipelinePath = (string | null)[];
+
+/**
  * A part of a call's input that the server fills in with the data of an
  * earlier call in the same batch.
  */
@@ -14,7 +20,7 @@ export interface PipelineRead {
   /** The index of the call whose data it comes from */
   from: number;
   /** Where the value is in that call's data. Empty for all of it */
-  path: string[];
+  path: PipelinePath;
 }
 
 /**
@@ -29,10 +35,16 @@ export type PipelineReads = Record<number, PipelineRead[]>;
  */
 export function readPipelinePath(
   value: unknown,
-  path: readonly string[],
+  path: readonly (string | null)[],
 ): unknown {
   let current = value;
-  for (const segment of path) {
+  for (const [index, segment] of path.entries()) {
+    if (segment === null) {
+      const rest = path.slice(index + 1);
+      return Array.isArray(current)
+        ? current.map((item) => readPipelinePath(item, rest))
+        : undefined;
+    }
     if (
       typeof current !== 'object' ||
       current === null ||
@@ -52,10 +64,17 @@ function invalidPipe(message: string) {
   });
 }
 
-function isPath(value: unknown): value is string[] {
+function isKeys(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
     value.every((segment) => typeof segment === 'string')
+  );
+}
+
+function isPath(value: unknown): value is PipelinePath {
+  return (
+    Array.isArray(value) &&
+    value.every((segment) => segment === null || typeof segment === 'string')
   );
 }
 
@@ -86,7 +105,7 @@ export function parsePipelineReads(opts: {
       return [
         index,
         reads.map((read: unknown): PipelineRead => {
-          if (!isObject(read) || !isPath(read['to']) || !isPath(read['path'])) {
+          if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
             throw invalidPipe(`expected "to" and "path" at ${key}`);
           }
           const from = read['from'];

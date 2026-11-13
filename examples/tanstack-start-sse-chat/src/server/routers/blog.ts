@@ -71,13 +71,32 @@ const blogProcedure = baseProcedure.use(async (opts) => {
 });
 
 export const blogRouter = router({
-  posts: blogProcedure.query(() =>
-    posts.map((post) => ({
-      slug: post.slug,
-      title: post.title,
-      publishedAt: post.publishedAt,
-    })),
-  ),
+  posts: blogProcedure
+    .input(
+      z
+        .object({
+          /** Only posts by this author */
+          authorId: z.string().optional(),
+          /** Leave this post out */
+          exceptSlug: z.string().optional(),
+        })
+        .optional(),
+    )
+    .query((opts) =>
+      posts
+        .filter(
+          (post) =>
+            (opts.input?.authorId === undefined ||
+              post.authorId === opts.input.authorId) &&
+            post.slug !== opts.input?.exceptSlug,
+        )
+        .map((post) => ({
+          slug: post.slug,
+          title: post.title,
+          authorId: post.authorId,
+          publishedAt: post.publishedAt,
+        })),
+    ),
   postBySlug: blogProcedure
     .input(z.object({ slug: z.string() }))
     .query((opts) => {
@@ -96,11 +115,11 @@ export const blogRouter = router({
       }
       return author;
     }),
-  postsByAuthor: blogProcedure
-    .input(z.object({ authorId: z.string() }))
+  authorsByIds: blogProcedure
+    .input(z.object({ ids: z.array(z.string()) }))
     .query((opts) =>
-      posts
-        .filter((post) => post.authorId === opts.input.authorId)
-        .map((post) => ({ slug: post.slug, title: post.title })),
+      authors
+        .filter((author) => opts.input.ids.includes(author.id))
+        .map((author) => ({ id: author.id, name: author.name })),
     ),
 });

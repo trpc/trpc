@@ -66,16 +66,24 @@ describe.each([
     transformer: 'superjson',
   },
 ] as const)('$name with $transformer transformer', (scenario) => {
-  function setup(opts: { allowPipelining: boolean; pipelining: boolean }) {
+  function setup(opts: {
+    allowPipelining: boolean;
+    pipelining: boolean;
+    methodOverride?: 'POST';
+  }) {
     const { appRouter, calls } = createRouter(scenario.transformer);
     const ctx = testServerAndClientResource(appRouter, {
-      server: { allowPipelining: opts.allowPipelining },
+      server: {
+        allowPipelining: opts.allowPipelining,
+        allowMethodOverride: opts.methodOverride === 'POST',
+      },
       client: (clientOpts) => ({
         links: [
           scenario.link({
             url: clientOpts.httpUrl,
             transformer: clientOpts.transformer as any,
             pipelining: opts.pipelining,
+            methodOverride: opts.methodOverride,
           }),
         ],
       }),
@@ -136,6 +144,38 @@ describe.each([
     ]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
     expect(ctx.onRequestSpy.mock.calls[0]![0].url).toContain('pipe=');
+  });
+
+  test('works for queries sent as POST', async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      methodOverride: 'POST',
+    });
+
+    const post = createOperationPipeline([]);
+    const tags = createOperationPipeline([
+      { to: ['ids'], from: post, path: ['tags', null, 'id'] },
+    ]);
+    const results = await Promise.all([
+      ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      ),
+      ctx.untyped.query(
+        'tags',
+        { ids: undefined },
+        { context: pipelineContext(tags) },
+      ),
+    ]);
+    expect(results[1]).toEqual(['t1', 't2']);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    const req = ctx.onRequestSpy.mock.calls[0]![0];
+    expect(req.method).toBe('POST');
+    // The inputs are in the body, and what to fill in is in the URL
+    expect(req.url).toContain('pipe=');
+    expect(req.url).not.toContain('input=');
   });
 
   test('a query whose source failed did not run, and is marked unresolved', async () => {
@@ -253,6 +293,32 @@ describe('the `pipe` search param', () => {
     expect(res.json[1]).toEqual({
       result: { data: { id: 'u1', teamId: 'team-of-u1' } },
     });
+  });
+
+  test('`null` in a path reads every item of an array', async () => {
+    const tagsInput = encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
+    );
+    const res = await get(
+      `input=${tagsInput}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['ids'], from: 0, path: ['tags', null, 'id'] }],
+        }),
+      )}`,
+      { path: 'post,tags' },
+    );
+    expect(res.json[1]).toEqual({ result: { data: ['t1', 't2'] } });
+
+    // Not an array: nothing to read
+    const notAnArray = await get(
+      `input=${tagsInput}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['ids'], from: 0, path: ['slug', null, 'id'] }],
+        }),
+      )}`,
+      { path: 'post,tags' },
+    );
+    expect(notAnArray.json[1].error.data.code).toBe('BAD_REQUEST');
   });
 
   test('a call still validates its input', async () => {
