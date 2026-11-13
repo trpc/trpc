@@ -177,7 +177,7 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 
 Pipelining sends the entries of a load that read each other in one batch. The server runs the first call, copies what the second reads into its input, runs the second, and so on.
 
-Turn it on in two places. On the server, in any adapter's options:
+Turn it on in two places. On the server, in the options of any HTTP adapter:
 
 ```ts twoslash title='server.ts'
 // @include: dq-router
