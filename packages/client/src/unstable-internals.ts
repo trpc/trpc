@@ -4,7 +4,4 @@ export {
   createOperationPipeline,
   pipelineContext,
 } from './links/internals/pipeline';
-export type {
-  OperationPipeline,
-  OperationPipelineRead,
-} from './links/internals/pipeline';
+export type { OperationPipeline } from './links/internals/pipeline';
