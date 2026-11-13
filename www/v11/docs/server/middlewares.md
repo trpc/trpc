@@ -382,6 +382,62 @@ fooMiddleware.unstable_pipe(barMiddleware);
 barMiddleware.unstable_pipe(fooMiddleware);
 ```
 
+## Running identical queries once (experimental) {#dedupe-queries}
+
+A [batch](/docs/client/links/httpBatchLink) can have the same query twice, such as two posts' calls for one author. Each call runs the procedure. The `experimental_dedupeQueries()` middleware runs a query once for the calls that are in flight at the same time with the same context, path and input.
+
+```ts twoslash
+// @target: esnext
+import { experimental_dedupeQueries, initTRPC } from '@trpc/server';
+
+type Context = { user?: { id: string } };
+
+const t = initTRPC.context<Context>().create();
+
+// Use it before any middleware that changes the context
+export const publicProcedure = t.procedure.use(experimental_dedupeQueries());
+```
+
+- **Every call still has its own result**, with the data or the error of the one run. The client doesn't change, and `onError` is called for every call that failed.
+- **Only queries.** A mutation or a subscription runs for every call.
+- **Only while the run is in flight.** It isn't a cache: a later request runs the query again. The calls of one HTTP request share a context object, which is how the middleware knows they belong together.
+- **Use it before any middleware that changes the context.** `opts.next({ ctx })` gives each call a context object of its own, and after that no two calls share one.
+- **What comes after it in the chain runs once**, and what comes before it runs for every call. Leave it off a query whose result should differ between two calls, such as a new random id.
+- **Inputs are compared as TanStack Query compares query keys**: as JSON, whatever the order of their keys. An input that JSON can't carry, such as a `Map` or a `bigint` sent through a [transformer](/docs/server/data-transformers), runs for itself.
+- **A query that returns a stream or a promise runs for every call**, since a stream can only be read once.
+
+### Choosing which inputs are the same {#input-hash-fn}
+
+Pass `inputHashFn` to hash a call's input yourself. Calls with the same path and hash share a run.
+
+```ts twoslash
+// @target: esnext
+import { experimental_dedupeQueries, initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+// ---cut---
+export const publicProcedure = t.procedure.use(
+  experimental_dedupeQueries({
+    inputHashFn(call) {
+      if (call.path === 'session.token') {
+        // This query runs for every call
+        return null;
+      }
+      // Compare the search by its text, whatever its case
+      if (call.path === 'post.search' && typeof call.input === 'string') {
+        return call.input.toLowerCase();
+      }
+      return JSON.stringify([call.input]);
+    },
+  }),
+);
+```
+
+- **`input` is the input before it is validated**, after the transformer. Check its type before you read it.
+- **Return `null`** for a call that should run for itself.
+- **Two inputs with one hash get one result**, so hash everything the procedure reads.
+- **If it throws**, the call fails with an `INTERNAL_SERVER_ERROR`.
+
 ## Common mistakes
 
 - **Not returning `opts.next()`.** Every middleware must call `opts.next()` and return its result. Otherwise TypeScript reports an error, and at runtime the call fails with an `INTERNAL_SERVER_ERROR` ("No result from middlewares - did you forget to `return next()`?").
