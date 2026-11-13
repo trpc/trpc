@@ -1,78 +1,88 @@
 import { buttonVariants } from '@shared/ui/components/button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '@shared/ui/components/empty';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import type { ErrorComponentProps } from '@tanstack/react-router';
+import { isTRPCClientError } from '@trpc/client';
 import {
-  experimental_dataOf,
-  ensureEntry,
   fromHandle,
-  loadHandlesSettled,
+  loadHandles,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import type {
-  inferQueryHandle,
-  TRPCLoadEntries,
-} from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { format } from 'date-fns';
 import { ArrowLeftIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
-import { AuthorCard, authorCardEntries } from './-components/author-card';
-
-/** Every query the post page needs, from the URL alone */
-function postPageEntries(trpc: TRPC, opts: { slug: string }) {
-  const post = ensureEntry(trpc.blog.postBySlug, { slug: opts.slug });
-  return {
-    post,
-    // The author's id is in the post, which hasn't loaded yet. `experimental_dataOf()` stands
-    // in for it, and the server reads it from the post in the same request
-    authorCard: authorCardEntries(trpc, {
-      authorId: experimental_dataOf(post).authorId,
-      exceptSlug: opts.slug,
-    }),
-  } satisfies TRPCLoadEntries;
-}
+import { AuthorCard } from './-components/author-card';
+import { postPageEntries } from './-components/post-entries';
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: async (opts) => {
     const { trpc } = opts.context;
-    const [handles, results] = await loadHandlesSettled(
+    // Every entry is a prefetch entry, so this starts the queries and returns
+    const [handles] = await loadHandles(
       trpc,
       postPageEntries(trpc, { slug: opts.params.slug }),
     );
-    if (results.post.status === 'error') {
-      if (results.post.error.code === 'NOT_FOUND') {
-        // oxlint-disable-next-line typescript/only-throw-error -- the router's not-found signal
-        throw notFound();
-      }
-      throw results.post.error;
-    }
     return handles;
   },
   component: PostPage,
+  errorComponent: PostError,
 });
 
 function PostPage() {
-  const loaderData = Route.useLoaderData();
+  const handles = Route.useLoaderData();
   return (
     <>
-      <Link
-        to="/blog"
-        className={buttonVariants({
-          variant: 'ghost',
-          size: 'sm',
-          className: 'self-start',
-        })}
-      >
-        <ArrowLeftIcon />
-        All posts
-      </Link>
+      <AllPostsLink />
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-        <Post post={loaderData.post} />
+        <Post post={handles.post} />
       </Suspense>
       <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-        <AuthorCard handles={loaderData.authorCard} />
+        <AuthorCard handles={handles} />
       </Suspense>
     </>
+  );
+}
+
+/** A post that isn't there fails where it is read, and ends up here */
+function PostError(props: ErrorComponentProps) {
+  const { error } = props;
+  if (!isTRPCClientError(error) || error.data?.code !== 'NOT_FOUND') {
+    throw error;
+  }
+  return (
+    <>
+      <AllPostsLink />
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>Nothing here</EmptyTitle>
+          <EmptyDescription>There is no post at this address.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    </>
+  );
+}
+
+function AllPostsLink() {
+  return (
+    <Link
+      to="/blog"
+      className={buttonVariants({
+        variant: 'ghost',
+        size: 'sm',
+        className: 'self-start',
+      })}
+    >
+      <ArrowLeftIcon />
+      All posts
+    </Link>
   );
 }
 

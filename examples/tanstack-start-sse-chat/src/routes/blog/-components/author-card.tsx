@@ -13,53 +13,33 @@ import {
 } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
-  experimental_dataOf,
+  experimental_handleOfItem,
   fromHandle,
-  prefetchEntry,
-  prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type {
   experimental_inferHandles,
   inferInfiniteQueryHandle,
-  TRPCLoadEntries,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense, useEffect, useRef } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
+import type { postPageEntries } from './post-entries';
 
 /**
- * The queries this card needs. It takes an author's id as a string and
- * doesn't care where it comes from: the post page passes one that the server
- * fills in.
+ * The author of a post, and what else they wrote. The author's id is in the
+ * post, so the card reads the post first: the handles of its own queries are
+ * finished with the data they are built from.
  */
-export function authorCardEntries(
-  trpc: TRPC,
-  opts: { authorId: string; exceptSlug: string },
-) {
-  const author = prefetchEntry(trpc.blog.authorById, { id: opts.authorId });
-  return {
-    author,
-    // A second step: the post list is filtered by the id of the author, who
-    // is loaded with an id from the post. Post, author and the list's first
-    // page are one request. Later pages are requests of their own
-    moreByAuthor: prefetchInfiniteEntry(
-      trpc.blog.posts,
-      {
-        authorId: experimental_dataOf(author).id,
-        exceptSlug: opts.exceptSlug,
-        limit: 5,
-      },
-      { getNextPageParam: (lastPage) => lastPage.nextCursor },
-    ),
-  } satisfies TRPCLoadEntries;
-}
-
 export function AuthorCard(
   props: Readonly<{
-    handles: experimental_inferHandles<typeof authorCardEntries>;
+    handles: experimental_inferHandles<typeof postPageEntries>;
   }>,
 ) {
   const trpc = useTRPC();
-  const authorQuery = useSuspenseQuery(fromHandle(trpc, props.handles.author));
+  const { handles } = props;
+  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
+  const authorQuery = useSuspenseQuery(
+    fromHandle(trpc, experimental_handleOfItem(handles.author, postQuery.data)),
+  );
   const author = authorQuery.data;
 
   return (
@@ -80,7 +60,9 @@ export function AuthorCard(
         {/* The list loads after the author, whose id it needs, so it has a
             boundary of its own: the card shows without it */}
         <Suspense fallback={<Skeleton className="h-28 w-full" />}>
-          <MoreByAuthor posts={props.handles.moreByAuthor} />
+          <MoreByAuthor
+            posts={experimental_handleOfItem(handles.moreByAuthor, author)}
+          />
         </Suspense>
       </CardContent>
     </Card>

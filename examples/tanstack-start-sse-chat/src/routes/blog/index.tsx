@@ -17,12 +17,12 @@ import {
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   experimental_dataOf,
-  ensureInfiniteEntry,
   experimental_entryPerItem,
   fromHandle,
   experimental_handleOfItem,
   loadHandles,
   prefetchEntry,
+  prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type {
   experimental_inferHandles,
@@ -35,9 +35,9 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { readSlowQueries, writeSlowQueries } from '~/lib/slow-queries';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
-/** Every query the list needs */
+/** Every query the list needs. The loader waits for none of them */
 function postListEntries(trpc: TRPC) {
-  const posts = ensureInfiniteEntry(
+  const posts = prefetchInfiniteEntry(
     trpc.blog.posts,
     { limit: 10 },
     { getNextPageParam: (lastPage) => lastPage.nextCursor },
