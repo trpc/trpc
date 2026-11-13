@@ -225,20 +225,33 @@ export function pipelineCalls(opts: {
     deferred.promise.catch(() => undefined);
     return deferred;
   });
+  /** A copy of data, as the client gets it: sent and read back */
+  function clientCopy(data: unknown): unknown {
+    const json = JSON.stringify(opts.transformer.output.serialize(data));
+    return json === undefined
+      ? undefined
+      : opts.transformer.output.deserialize(JSON.parse(json));
+  }
   /** Each call's data as the client gets it, which is what its paths refer to */
   const clientData = new Map<number, Promise<unknown>>();
   function clientDataOf(index: number) {
     let promise = clientData.get(index);
     if (!promise) {
-      promise = Promise.resolve(outputs[index]?.promise).then((data) => {
-        const json = JSON.stringify(opts.transformer.output.serialize(data));
-        return json === undefined
-          ? undefined
-          : opts.transformer.output.deserialize(JSON.parse(json));
-      });
+      promise = Promise.resolve(outputs[index]?.promise).then(clientCopy);
       clientData.set(index, promise);
     }
     return promise;
+  }
+  /**
+   * The value at `path` in a call's data, for one input. An object is a copy:
+   * a middleware can change its input in place, and other inputs read the
+   * same data.
+   */
+  function valueAt(data: unknown, path: PipelinePath) {
+    const value = readPipelinePath(data, path);
+    return typeof value === 'object' && value !== null
+      ? clientCopy(value)
+      : value;
   }
 
   /** The inputs of a call that runs once per item of a list */
@@ -271,7 +284,7 @@ export function pipelineCalls(opts: {
         input = writePipelinePath({
           input,
           to: read.to,
-          value: readPipelinePath(
+          value: valueAt(
             await readData(read),
             read.each ? bindPipelinePath(read.path, item) : read.path,
           ),
@@ -301,7 +314,7 @@ export function pipelineCalls(opts: {
         input = writePipelinePath({
           input,
           to: read.to,
-          value: readPipelinePath(data, read.path),
+          value: valueAt(data, read.path),
         });
       }
       result = [input];

@@ -12,6 +12,7 @@ import {
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { isObject } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
 
@@ -62,6 +63,17 @@ const createRouter = (transformer: 'none' | 'superjson') => {
     rename: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) => opts.input.id),
+    // Its middleware changes the input it is given, in place
+    stamp: t.procedure
+      .use(async (opts) => {
+        const raw = await opts.getRawInput();
+        if (isObject(raw) && Array.isArray(raw['tags'])) {
+          raw['tags'].push({ id: 'stamp' });
+        }
+        return opts.next();
+      })
+      .input(z.object({ tags: z.array(z.unknown()) }))
+      .query((opts) => opts.input.tags.length),
   });
   return { appRouter, calls };
 };
@@ -693,6 +705,52 @@ describe('the `pipe` search param', () => {
     expect(res.json[1].result.data.slug).toBe('u1');
     // Not `u1`: the first call's data is as it was sent
     expect(res.json[2].result.data.slug).toBe('hello');
+  });
+
+  test('a call that changes its input does not change what a later call reads', async () => {
+    const res = await get(
+      `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['tags'], from: 0, path: ['tags'] }],
+          // Reads the tags once the call above has run
+          2: [
+            { to: ['after'], from: 1, path: [] },
+            { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
+          ],
+        }),
+      )}`,
+      { path: 'post,stamp,tags' },
+    );
+    expect(res.json[1].result.data).toBe(3);
+    expect(res.json[2].result.data).toEqual(['t1', 't2']);
+  });
+
+  test('a run for an item that changes its input does not change what other runs and calls read', async () => {
+    const res = await get(
+      `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          // Every run gets the whole list too
+          1: [
+            { to: ['id'], from: 0, path: ['tags', null, 'id'], each: true },
+            { to: ['tags'], from: 0, path: ['tags'] },
+          ],
+          2: [
+            { to: ['after'], from: 1, path: [] },
+            { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
+          ],
+        }),
+      )}`,
+      { path: 'post,stamp,tags' },
+    );
+    expect(res.json[1].result.data).toEqual([
+      { result: { data: 3 } },
+      { result: { data: 3 } },
+    ]);
+    expect(res.json[2].result.data).toEqual(['t1', 't2']);
   });
 
   test('a call still validates its input', async () => {
