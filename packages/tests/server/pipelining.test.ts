@@ -370,6 +370,45 @@ describe.each([
     ).toEqual(['/post,author', '/team']);
   });
 
+  test('a call that reads two operations goes in the request of both', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+
+    const first = createOperationPipeline();
+    const second = createOperationPipeline();
+    const results = Promise.all([
+      ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(first) },
+      ),
+      // Between the two: the call's other operation comes after it
+      ctx.untyped.query('team', 'team1'),
+      ctx.untyped.query(
+        'post',
+        { slug: 'other' },
+        { context: pipelineContext(second) },
+      ),
+    ]);
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined, since: undefined },
+      reads: [
+        { to: ['id'], from: first, path: ['authorId'], each: false },
+        { to: ['since'], from: second, path: ['slug'], each: false },
+      ],
+    });
+    assert(author);
+    await results;
+    expect(await author.result).toEqual({
+      data: { id: 'u1', teamId: 'team-of-u1' },
+    });
+    expect(ctx.calls.mock.calls).toContainEqual([
+      'author',
+      { id: 'u1', since: 'other' },
+    ]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
   test('a call can not be added once the request has gone', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
 
@@ -631,6 +670,29 @@ describe('the `pipe` search param', () => {
     });
     // It ran for no item
     expect(over.calls).not.toHaveBeenCalled();
+  });
+
+  test('filling in an input does not change the data that another call reads', async () => {
+    const search = `input=${encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
+    )}&pipe=${encodeURIComponent(
+      JSON.stringify({
+        // The whole post as the input, and then its slug replaced
+        1: [
+          { to: [], from: 0, path: [] },
+          { to: ['slug'], from: 0, path: ['authorId'] },
+        ],
+        // Reads the slug after the call above has replaced its own
+        2: [
+          { to: ['other'], from: 0, path: ['authorId'] },
+          { to: ['slug'], from: 0, path: ['slug'] },
+        ],
+      }),
+    )}`;
+    const res = await get(search, { path: 'post,post,post' });
+    expect(res.json[1].result.data.slug).toBe('u1');
+    // Not `u1`: the first call's data is as it was sent
+    expect(res.json[2].result.data.slug).toBe('hello');
   });
 
   test('a call still validates its input', async () => {

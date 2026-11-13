@@ -174,6 +174,8 @@ export interface PipelinedBatchPlan {
   reads: PipelineReads;
   /** The calls that don't go: they don't fit, or read what isn't in the batch */
   left: PipelinedCall[];
+  /** Whether a call was left out because the request would be over the limits */
+  overLimit: boolean;
 }
 
 /**
@@ -192,7 +194,12 @@ export function planPipelinedBatch(opts: {
       indexes.set(pipeline, index);
     }
   }
-  const plan: PipelinedBatchPlan = { calls: [], reads: {}, left: [] };
+  const plan: PipelinedBatchPlan = {
+    calls: [],
+    reads: {},
+    left: [],
+    overLimit: false,
+  };
   let waiting = opts.ops
     .flatMap((op) => pipelineOf(op)?.calls ?? [])
     .filter((call) => call.status === 'waiting');
@@ -226,6 +233,7 @@ export function planPipelinedBatch(opts: {
       };
       if (!opts.fits(next)) {
         plan.left.push(call);
+        plan.overLimit = true;
         continue;
       }
       plan.calls = next.calls;

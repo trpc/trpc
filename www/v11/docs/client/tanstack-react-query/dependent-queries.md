@@ -394,11 +394,14 @@ An entry that is sent this way always asks the server, also when the cache has i
 
 ### If the server doesn't allow it {#not-allowed}
 
-A server without `experimental_allowPipelining` runs nothing of such a request, and the load rejects:
+A server without `experimental_allowPipelining` runs nothing of such a request. Every query in it fails with this error:
 
 ```
 The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link
 ```
+
+- **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
+- **A prefetch entry never makes the load reject.** Its error shows where the component reads the query.
 
 ## The load doesn't wait {#without-waiting}
 

@@ -69,9 +69,10 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           if (
             pipelines(type) &&
             batchOps.length > 1 &&
-            planPipelined(batchOps).left.length > 0
+            planPipelined(batchOps).overLimit
           ) {
-            // An operation's calls go in its request before more operations do
+            // An operation's calls go in its request before more operations
+            // do. A call that reads an operation that comes later can wait
             return false;
           }
           if (maxURLLength === Infinity && maxItems === Infinity) {

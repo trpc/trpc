@@ -165,32 +165,44 @@ export function parsePipelineReads(opts: {
   );
 }
 
+/**
+ * `input` with `value` at `to`. It copies what is on the way there and
+ * changes nothing in place: an input can be data that another call reads too.
+ */
 function writePipelinePath(opts: {
   input: unknown;
   to: readonly string[];
   value: unknown;
 }): unknown {
-  const last = opts.to[opts.to.length - 1];
-  if (last === undefined) {
-    return opts.value;
-  }
-  const parent = readPipelinePath(opts.input, opts.to.slice(0, -1));
-  if (
-    typeof parent !== 'object' ||
-    parent === null ||
-    (Array.isArray(parent) &&
-      !Object.prototype.hasOwnProperty.call(parent, last))
-  ) {
-    throw invalidPipe(`the input has nothing at "${opts.to.join('.')}"`);
-  }
-  // Not an assignment, which would set the prototype for a `__proto__` key
-  Object.defineProperty(parent, last, {
-    value: opts.value,
-    writable: true,
-    enumerable: true,
-    configurable: true,
-  });
-  return opts.input;
+  const write = (target: unknown, depth: number): unknown => {
+    const key = opts.to[depth];
+    if (key === undefined) {
+      return opts.value;
+    }
+    if (
+      typeof target !== 'object' ||
+      target === null ||
+      (Array.isArray(target) &&
+        !Object.prototype.hasOwnProperty.call(target, key))
+    ) {
+      throw invalidPipe(`the input has nothing at "${opts.to.join('.')}"`);
+    }
+    const copy: object = Array.isArray(target) ? [...target] : { ...target };
+    // Not an assignment, which would set the prototype for a `__proto__` key
+    Object.defineProperty(copy, key, {
+      value: write(
+        Object.prototype.hasOwnProperty.call(target, key)
+          ? (target as Record<string, unknown>)[key]
+          : undefined,
+        depth + 1,
+      ),
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+    return copy;
+  };
+  return write(opts.input, 0);
 }
 
 /**
@@ -254,7 +266,7 @@ export function pipelineCalls(opts: {
       opts.takeRuns(items.length);
     }
     for (const item of Array.isArray(items) ? items.keys() : []) {
-      let input = structuredClone(base);
+      let input = base;
       for (const read of reads) {
         input = writePipelinePath({
           input,
