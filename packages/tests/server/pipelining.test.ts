@@ -753,6 +753,46 @@ describe('the `pipe` search param', () => {
     expect(res.json[2].result.data).toEqual(['t1', 't2']);
   });
 
+  test('filling in an input keeps what the transformer made of it', async () => {
+    class Range {
+      constructor(
+        public from: unknown,
+        public to: number,
+      ) {}
+    }
+    const t = initTRPC.create({
+      transformer: {
+        serialize: (value: unknown) => value,
+        deserialize: (value: unknown) =>
+          isObject(value) && typeof value['to'] === 'number'
+            ? new Range(value['from'], value['to'])
+            : value,
+      },
+    });
+    const appRouter = t.router({
+      start: t.procedure.query(() => ({ at: 1 })),
+      span: t.procedure
+        .input((value) => {
+          if (!(value instanceof Range)) {
+            throw new Error('Not a range');
+          }
+          return value;
+        })
+        .query((opts) => [opts.input.from, opts.input.to]),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+    });
+    const res = await fetch(
+      `${ctx.httpUrl}/start,span?batch=pipeline&input=${encodeURIComponent(
+        JSON.stringify({ 1: { from: null, to: 5 } }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({ 1: [{ to: ['from'], from: 0, path: ['at'] }] }),
+      )}`,
+    );
+    expect((await res.json())[1]).toEqual({ result: { data: [1, 5] } });
+  });
+
   test('a call still validates its input', async () => {
     const res = await get(
       pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),

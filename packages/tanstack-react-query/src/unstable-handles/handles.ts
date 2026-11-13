@@ -702,8 +702,27 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-/** Replaces every `experimental_dataOf()` value in an input. `to` is where `value` is in it */
+/**
+ * What stands for a value that isn't known yet, in the input of an unfinished
+ * handle. It leaves no `undefined` there, which Next.js rejects in props: a key
+ * is absent, and an item of an array is `null`.
+ */
+const blankInput = Symbol('trpc.blankInput');
+
+/**
+ * Replaces every `experimental_dataOf()` value in an input. `to` is where
+ * `value` is in it. `replace` returns the value, or `blankInput`.
+ */
 function replaceEntryDataRefs(
+  value: unknown,
+  to: string[],
+  replace: (ref: EntryInputRef) => unknown,
+): unknown {
+  const replaced = replaceRefs(value, to, replace);
+  return replaced === blankInput ? undefined : replaced;
+}
+
+function replaceRefs(
   value: unknown,
   to: string[],
   replace: (ref: EntryInputRef) => unknown,
@@ -713,16 +732,17 @@ function replaceEntryDataRefs(
     return replace({ ...ref, to });
   }
   if (Array.isArray(value)) {
-    return value.map((item, index) =>
-      replaceEntryDataRefs(item, [...to, String(index)], replace),
-    );
+    return value.map((item, index) => {
+      const replaced = replaceRefs(item, [...to, String(index)], replace);
+      return replaced === blankInput ? null : replaced;
+    });
   }
   if (isPlainObject(value)) {
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        replaceEntryDataRefs(item, [...to, key], replace),
-      ]),
+      Object.entries(value).flatMap(([key, item]) => {
+        const replaced = replaceRefs(item, [...to, key], replace);
+        return replaced === blankInput ? [] : [[key, replaced]];
+      }),
     );
   }
   return value;
@@ -1346,23 +1366,30 @@ async function startEntries(opts: {
                     options: filled,
                     result: dataOfCall(call),
                     unresolved: () => call.status === 'unresolved',
-                    sameInput: async (context) =>
-                      // The call was for the first page
-                      (state.type !== 'infinite' ||
-                        (context.direction === 'forward' &&
-                          Object.is(
-                            context.pageParam,
-                            filled.initialPageParam,
-                          ))) &&
-                      hashKey(filled.queryKey) ===
-                        hashKey(
-                          fill(
-                            await dataOfSources(
-                              sources,
-                              (source) => source.requestData,
-                            ),
-                          ).queryKey,
+                    sameInput: async (context) => {
+                      if (
+                        state.type === 'infinite' &&
+                        // The call was for the first page
+                        !(
+                          context.direction === 'forward' &&
+                          Object.is(context.pageParam, filled.initialPageParam)
+                        )
+                      ) {
+                        return false;
+                      }
+                      const sent = fill(
+                        await dataOfSources(
+                          sources,
+                          (source) => source.requestData,
                         ),
+                      );
+                      return (
+                        hashKey(filled.queryKey) === hashKey(sent.queryKey) &&
+                        // An infinite query's cursor isn't in its key
+                        hashKey([filled.initialPageParam]) ===
+                          hashKey([sent.initialPageParam])
+                      );
+                    },
                   })
                 : filled;
               resolve({ options: built, promise: start(built) });
@@ -1410,7 +1437,7 @@ async function startEntries(opts: {
                 state.options({
                   dataOfRef: (ref) =>
                     ref.entry === from
-                      ? undefined
+                      ? blankInput
                       : readPipelinePath(data.get(ref.entry), ref.path),
                   pipeline: null,
                 }),
@@ -1491,7 +1518,7 @@ async function startEntries(opts: {
         state.options({
           dataOfRef: (ref) =>
             readsItem(ref)
-              ? undefined
+              ? blankInput
               : readPipelinePath(data.get(ref.entry), ref.path),
           pipeline: null,
         }),
@@ -2076,18 +2103,28 @@ export function experimental_handleOfItem(
       `Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got ${JSON.stringify(handle)}`,
     );
   }
-  const input = perItem.itemInputs.reduce(
-    (filled, itemInput) =>
-      withInputAt(filled, itemInput.to, readPipelinePath(item, itemInput.path)),
+  const filled = perItem.itemInputs.reduce(
+    (input, itemInput) =>
+      withInputAt(input, itemInput.to, readPipelinePath(item, itemInput.path)),
     perItem.input,
   );
-  const args = perItem.queryKey[perItem.queryKey.length - 1] as object;
+  const args = perItem.queryKey[perItem.queryKey.length - 1] as {
+    type?: unknown;
+  };
+  // An infinite query's key has no cursor: it is the handle's `initialCursor`,
+  // as `infiniteQueryOptions()` takes it from the input
+  const infinite = args.type === 'infinite' && isPlainObject(filled);
+  const {
+    cursor,
+    direction: _,
+    ...withoutCursor
+  }: Record<string, unknown> = infinite ? filled : {};
+  const input = infinite ? withoutCursor : filled;
+  const initialCursor = perItem.initialCursor ?? cursor;
   return {
     queryKey: [...perItem.queryKey.slice(0, -1), { ...args, input }],
     ...(input !== undefined && { input }),
-    ...(perItem.initialCursor != null && {
-      initialCursor: perItem.initialCursor,
-    }),
+    ...(initialCursor != null && { initialCursor }),
     // What the items of its own list load, if it is a list
     ...(perItem.experimental_perItem !== undefined && {
       experimental_perItem: perItem.experimental_perItem,

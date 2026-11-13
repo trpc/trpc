@@ -187,7 +187,13 @@ function writePipelinePath(opts: {
     ) {
       throw invalidPipe(`the input has nothing at "${opts.to.join('.')}"`);
     }
-    const copy: object = Array.isArray(target) ? [...target] : { ...target };
+    // With its prototype: an input's transformer can make it a class instance
+    const copy: object = Array.isArray(target)
+      ? [...target]
+      : Object.create(
+          Object.getPrototypeOf(target),
+          Object.getOwnPropertyDescriptors(target),
+        );
     // Not an assignment, which would set the prototype for a `__proto__` key
     Object.defineProperty(copy, key, {
       value: write(

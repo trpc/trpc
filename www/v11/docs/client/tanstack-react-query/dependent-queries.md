@@ -350,6 +350,7 @@ export const client = createTRPCClient<AppRouter>({
 
 - **Use `httpBatchStreamLink`.** It sends each result when it is ready. `httpBatchLink` works too, but its response waits for the slowest call, so the post arrives with the author.
 - **The loader and the components don't change.**
+- **It saves round trips where there are any**: in a load that goes over HTTP, such as a loader that runs in the browser. A proxy that [calls the router directly](#fallback), on the server, makes no request.
 - **Turn it on the server first.** A server without the option [runs nothing](#not-allowed) of such a request.
 
 ### What goes over the wire {#wire}
@@ -401,7 +402,8 @@ The server did not accept a pipelined batch. Set `experimental_allowPipelining: 
 ```
 
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
-- **A prefetch entry never makes the load reject.** Its error shows where the component reads the query.
+- **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
+- **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.
 
 ## The load doesn't wait {#without-waiting}
 

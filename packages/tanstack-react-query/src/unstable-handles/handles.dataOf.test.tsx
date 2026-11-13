@@ -553,6 +553,59 @@ describe('review regressions', () => {
       handles.posts.experimental_perItem,
     );
   });
+
+  test('an unfinished handle has no undefined in it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, { ids: [tag.id], first: tag.id }),
+      ),
+    });
+    // Next.js rejects `undefined` in the props of a page
+    expect(handles.author).toStrictEqual({
+      queryKey: [['author', 'byId'], { input: {}, type: 'query' }],
+      input: {},
+      itemInputs: [{ to: ['id'], path: ['authorId'] }],
+    });
+    expect(handles.tags).toStrictEqual({
+      queryKey: [['tag', 'byIds'], { input: { ids: [null] }, type: 'query' }],
+      input: { ids: [null] },
+      itemInputs: [
+        { to: ['ids', '0'], path: ['id'] },
+        { to: ['first'], path: ['id'] },
+      ],
+    });
+    // It is finished as before
+    expect(experimental_handleOfItem(handles.tags, { id: 't1' })).toEqual({
+      queryKey: trpc.tag.byIds.queryKey({ ids: ['t1'], first: 't1' }),
+      input: { ids: ['t1'], first: 't1' },
+    });
+  });
+
+  test('a finished infinite handle has the cursor as its initialCursor, not in its key', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const first = ensureEntry(trpc.post.paged, { cursor: 0 });
+    const [handles, data] = await loadHandles(trpc, {
+      first,
+      rest: experimental_dataOf(first, (it) =>
+        ensureInfiniteEntry(trpc.post.paged, { cursor: it.nextCursor }),
+      ),
+      // The same query, with a cursor that is known
+      direct: prefetchInfiniteEntry(trpc.post.paged, { cursor: 1 }),
+    });
+    const rest = experimental_handleOfItem(handles.rest, data.first);
+    expect(rest).toEqual(handles.direct);
+    expect(resource.queryClient.getQueryData(rest.queryKey)).toEqual(data.rest);
+  });
 });
 
 describe('entryPerItem', () => {
@@ -1908,6 +1961,36 @@ describe.each([
     });
     // The server filled in the new author, so the old one is fetched
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test("a stale ensure entry's cached cursor is the one an infinite entry's first page is for", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cache has the first page with another next cursor than the server
+    resource.queryClient.setQueryData(
+      trpc.post.paged.queryKey({ cursor: 0 }),
+      { items: [{ id: 'p0', authorId: 'u0' }], nextCursor: 2 },
+      { updatedAt: 1 },
+    );
+
+    const first = ensureEntry(trpc.post.paged, { cursor: 0 });
+    const [, data] = await loadHandles(trpc, {
+      first,
+      rest: ensureInfiniteEntry(trpc.post.paged, {
+        cursor: experimental_dataOf(first).nextCursor,
+      }),
+    });
+    // The page and its param agree. The server filled in cursor 1, from the
+    // refetch, and the keys of the two are the same
+    expect(data.rest).toEqual({
+      pages: [{ items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null }],
+      pageParams: [2],
+    });
   });
 
   test('an entry that keeps its cached data makes the entry that reads it fetch with the input the client filled in', async () => {
