@@ -111,6 +111,18 @@ const posts: Post[] = Array.from({ length: 13 }, (_, round) =>
     body: bodies[index % bodies.length] ?? '',
   }));
 
+/**
+ * With the blog's "Slow queries" switch on, waits 1 to 3 seconds, so that you
+ * can watch a query load after the ones before it
+ */
+async function slowDown(ctx: { slowQueries: boolean }) {
+  if (ctx.slowQueries) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, 1_000 + Math.random() * 2_000),
+    );
+  }
+}
+
 export const blogRouter = router({
   /**
    * A page of posts, newest first. Used as a plain query by the post list and
@@ -128,8 +140,12 @@ export const blogRouter = router({
         cursor: z.number().nullish(),
       }),
     )
-    .query((opts) => {
+    .query(async (opts) => {
       const { input } = opts;
+      if (input.authorId !== undefined) {
+        // A post's "More by" list
+        await slowDown(opts.ctx);
+      }
       const matching = posts.filter(
         (post) =>
           (input.authorId === undefined || post.authorId === input.authorId) &&
@@ -158,7 +174,8 @@ export const blogRouter = router({
     }),
   authorById: publicProcedure
     .input(z.object({ id: z.string() }))
-    .query((opts) => {
+    .query(async (opts) => {
+      await slowDown(opts.ctx);
       const author = authors.find((it) => it.id === opts.input.id);
       if (!author) {
         throw new TRPCError({ code: 'NOT_FOUND' });

@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@shared/ui/components/card';
+import { Skeleton } from '@shared/ui/components/skeleton';
 import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
@@ -19,9 +20,10 @@ import {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type {
   experimental_inferHandles,
+  inferInfiniteQueryHandle,
   TRPCLoadEntries,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
 /**
@@ -58,8 +60,41 @@ export function AuthorCard(
 ) {
   const trpc = useTRPC();
   const authorQuery = useSuspenseQuery(fromHandle(trpc, props.handles.author));
+  const author = authorQuery.data;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarFallback>{author.name.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-1">
+            <CardTitle>{author.name}</CardTitle>
+            <CardDescription>{author.bio}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="mb-2 text-sm font-medium">More by {author.name}</p>
+        {/* The list loads after the author, whose id it needs, so it has a
+            boundary of its own: the card shows without it */}
+        <Suspense fallback={<Skeleton className="h-28 w-full" />}>
+          <MoreByAuthor posts={props.handles.moreByAuthor} />
+        </Suspense>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MoreByAuthor(
+  props: Readonly<{
+    posts: inferInfiniteQueryHandle<TRPC['blog']['posts']>;
+  }>,
+) {
+  const trpc = useTRPC();
   const moreQuery = useSuspenseInfiniteQuery(
-    fromHandle(trpc, props.handles.moreByAuthor, {
+    fromHandle(trpc, props.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }),
   );
@@ -85,50 +120,32 @@ export function AuthorCard(
     observer.observe(end);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-  const author = authorQuery.data;
 
+  if (morePosts.length === 0) {
+    return <p className="text-sm text-muted-foreground">Nothing else yet.</p>;
+  }
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarFallback>{author.name.slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col gap-1">
-            <CardTitle>{author.name}</CardTitle>
-            <CardDescription>{author.bio}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="mb-2 text-sm font-medium">More by {author.name}</p>
-        {morePosts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing else yet.</p>
-        ) : (
-          // Shorter than a page of posts, so the next page loads on scroll
-          <div
-            ref={listRef}
-            className="h-28 overflow-y-auto rounded-md border px-3 py-2"
-          >
-            <ul className="flex flex-col gap-2 text-sm">
-              {morePosts.map((post) => (
-                <li key={post.slug}>
-                  <Link
-                    to="/blog/$slug"
-                    params={{ slug: post.slug }}
-                    className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                  >
-                    {post.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div ref={endRef} className="pt-2 text-xs text-muted-foreground">
-              {hasNextPage ? 'Loading more…' : 'That’s all of them.'}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    // Shorter than a page of posts, so the next page loads on scroll
+    <div
+      ref={listRef}
+      className="h-28 overflow-y-auto rounded-md border px-3 py-2"
+    >
+      <ul className="flex flex-col gap-2 text-sm">
+        {morePosts.map((post) => (
+          <li key={post.slug}>
+            <Link
+              to="/blog/$slug"
+              params={{ slug: post.slug }}
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {post.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div ref={endRef} className="pt-2 text-xs text-muted-foreground">
+        {hasNextPage ? 'Loading more…' : 'That’s all of them.'}
+      </div>
+    </div>
   );
 }

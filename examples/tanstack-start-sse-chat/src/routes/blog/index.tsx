@@ -6,8 +6,11 @@ import {
   ItemGroup,
   ItemTitle,
 } from '@shared/ui/components/item';
+import { Label } from '@shared/ui/components/label';
 import { Skeleton } from '@shared/ui/components/skeleton';
+import { Switch } from '@shared/ui/components/switch';
 import {
+  useQueryClient,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
@@ -28,7 +31,8 @@ import type {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { format } from 'date-fns';
 import { ChevronRightIcon } from 'lucide-react';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { readSlowQueries, writeSlowQueries } from '~/lib/slow-queries';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
 /** Every query the list needs */
@@ -55,7 +59,7 @@ export const Route = createFileRoute('/blog/')({
   loader: async (opts) => {
     const { trpc } = opts.context;
     const [handles] = await loadHandles(trpc, postListEntries(trpc));
-    return handles;
+    return { handles, slowQueries: readSlowQueries() };
   },
   component: BlogIndex,
 });
@@ -69,6 +73,7 @@ function BlogIndex() {
         <p className="max-w-2xl text-lg text-muted-foreground">
           Notes on databases, frontends and keeping things running.
         </p>
+        <SlowQueriesSwitch initial={loaderData.slowQueries} />
       </section>
       <Suspense
         fallback={
@@ -79,9 +84,44 @@ function BlogIndex() {
           </div>
         }
       >
-        <PostList handles={loaderData} />
+        <PostList handles={loaderData.handles} />
       </Suspense>
     </>
+  );
+}
+
+/**
+ * Makes the server wait 1 to 3 seconds in the author and "More by" queries,
+ * so that you can watch them load after the posts
+ */
+function SlowQueriesSwitch(props: Readonly<{ initial: boolean }>) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const [on, setOn] = useState(props.initial);
+  return (
+    <div className="flex items-center gap-3">
+      <Switch
+        id="slow-queries"
+        checked={on}
+        onCheckedChange={(checked) => {
+          setOn(checked);
+          writeSlowQueries(checked);
+          // Load the authors again at the new speed, and forget the "More by"
+          // lists of the posts that were opened
+          void queryClient.resetQueries(trpc.blog.authorById.pathFilter());
+          queryClient.removeQueries({
+            ...trpc.blog.posts.pathFilter(),
+            type: 'inactive',
+          });
+        }}
+      />
+      <Label htmlFor="slow-queries" className="flex flex-col items-start gap-1">
+        Slow queries
+        <span className="font-normal text-muted-foreground">
+          Authors and “More by” lists take 1 to 3 seconds
+        </span>
+      </Label>
+    </div>
   );
 }
 
