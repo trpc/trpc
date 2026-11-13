@@ -214,7 +214,7 @@ const client = createTRPCClient<AppRouter>({
 
 ## Running identical queries once
 
-A batch can have the same query twice. To run its procedure once, use the [`experimental_dedupeQueries()` middleware](/docs/server/middlewares#dedupe-queries) on the server.
+A batch can have the same query twice. To run its procedure once, use the [`unstable_dedupeQueries()` middleware](/docs/server/middlewares#dedupe-queries) on the server.
 
 ## Disabling request batching
 

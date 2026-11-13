@@ -11,7 +11,9 @@ import {
   createErrorFormatterMiddleware,
   createInputMiddleware,
   createOutputMiddleware,
+  dedupeQueriesMiddlewareType,
   middlewareMarker,
+  setMiddlewareTransformer,
 } from './middleware';
 import type { inferParser, Parser } from './parser';
 import { getParseFn } from './parser';
@@ -29,6 +31,7 @@ import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { isDevDefault } from './rootConfig';
 import type { TRPCErrorShape } from './rpc';
 import type { inferTrackedOutput } from './stream/tracked';
+import { defaultTransformer } from './transformer';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -727,7 +730,7 @@ async function callRecursive(
   try {
     // oxlint-disable-next-line typescript/no-non-null-assertion
     const middleware = _def.middlewares[index]!;
-    const result = await middleware({
+    const middlewareOpts: Parameters<AnyMiddlewareFunction>[0] = {
       ...opts,
       meta: _def.meta,
       input: opts.input,
@@ -747,7 +750,15 @@ async function callRecursive(
           getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
         });
       },
-    });
+    };
+    if (middleware._type === dedupeQueriesMiddlewareType) {
+      setMiddlewareTransformer(
+        middlewareOpts,
+        // A builder that isn't from `initTRPC.create()` has no config
+        _def.config?.transformer ?? defaultTransformer,
+      );
+    }
+    const result = await middleware(middlewareOpts);
 
     return result;
   } catch (cause) {

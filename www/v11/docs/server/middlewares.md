@@ -382,20 +382,20 @@ fooMiddleware.unstable_pipe(barMiddleware);
 barMiddleware.unstable_pipe(fooMiddleware);
 ```
 
-## Running identical queries once (experimental) {#dedupe-queries}
+## Running identical queries once (unstable) {#dedupe-queries}
 
-A [batch](/docs/client/links/httpBatchLink) can have the same query twice, such as two posts' calls for one author. Each call runs the procedure. The `experimental_dedupeQueries()` middleware runs a query once for the calls that are in flight at the same time with the same context, path and input.
+A [batch](/docs/client/links/httpBatchLink) can have the same query twice, such as two posts' calls for one author. Each call runs the procedure. The `unstable_dedupeQueries()` middleware runs a query once for the calls that are in flight at the same time with the same context, path and input.
 
 ```ts twoslash
 // @target: esnext
-import { experimental_dedupeQueries, initTRPC } from '@trpc/server';
+import { initTRPC, unstable_dedupeQueries } from '@trpc/server';
 
 type Context = { user?: { id: string } };
 
 const t = initTRPC.context<Context>().create();
 
 // Use it before any middleware that changes the context
-export const publicProcedure = t.procedure.use(experimental_dedupeQueries());
+export const publicProcedure = t.procedure.use(unstable_dedupeQueries());
 ```
 
 - **Every call still has its own result**, with the data or the error of the one run. The client doesn't change, and `onError` is called for every call that failed.
@@ -403,8 +403,8 @@ export const publicProcedure = t.procedure.use(experimental_dedupeQueries());
 - **Only while the run is in flight.** It isn't a cache: a later request runs the query again. The calls of one HTTP request share a context object, which is how the middleware knows they belong together.
 - **Use it before any middleware that changes the context.** `opts.next({ ctx })` gives each call a context object of its own, and after that no two calls share one.
 - **What comes after it in the chain runs once**, and what comes before it runs for every call. Leave it off a query whose result should differ between two calls, such as a new random id.
-- **Inputs are compared as TanStack Query compares query keys**: as JSON, whatever the order of their keys. An input that JSON can't carry, such as a `Map` or a `bigint` sent through a [transformer](/docs/server/data-transformers), runs for itself.
-- **A query that returns a stream or a promise runs for every call**, since a stream can only be read once.
+- **Inputs are compared as the client sends them**: encoded by your [transformer](/docs/server/data-transformers), then as TanStack Query compares query keys, which is as JSON, whatever the order of their keys. With `superjson`, two equal `Map` inputs share a run. An input that still isn't JSON, such as a `Map` in a [server-side call](/docs/server/server-side-calls) without a transformer, runs for itself.
+- **A stream or a promise in the data is shared too.** The query runs once and the stream is read once. Every call gets its own copy, which is an async iterable, and the stream is returned when every call has stopped reading it.
 
 ### Choosing which inputs are the same {#input-hash-fn}
 
@@ -412,12 +412,12 @@ Pass `inputHashFn` to hash a call's input yourself. Calls with the same path and
 
 ```ts twoslash
 // @target: esnext
-import { experimental_dedupeQueries, initTRPC } from '@trpc/server';
+import { initTRPC, unstable_dedupeQueries } from '@trpc/server';
 
 const t = initTRPC.create();
 // ---cut---
 export const publicProcedure = t.procedure.use(
-  experimental_dedupeQueries({
+  unstable_dedupeQueries({
     inputHashFn(call) {
       if (call.path === 'session.token') {
         // This query runs for every call
@@ -427,13 +427,16 @@ export const publicProcedure = t.procedure.use(
       if (call.path === 'post.search' && typeof call.input === 'string') {
         return call.input.toLowerCase();
       }
-      return JSON.stringify([call.input]);
+      // The input as the client sent it, which is JSON
+      const encoded: unknown = call.transformer.input.serialize(call.input);
+      return JSON.stringify([encoded]);
     },
   }),
 );
 ```
 
-- **`input` is the input before it is validated**, after the transformer. Check its type before you read it.
+- **`input` is the input before it is validated**, after the transformer decoded it. Check its type before you read it.
+- **`transformer` is the one you gave `initTRPC.create()`**, or one that changes nothing. `transformer.input.serialize(input)` encodes the input as the client does, so that `JSON.stringify()` can tell a `Map` or a `Date` from another.
 - **Return `null`** for a call that should run for itself.
 - **Two inputs with one hash get one result**, so hash everything the procedure reads.
 - **If it throws**, the call fails with an `INTERNAL_SERVER_ERROR`.
