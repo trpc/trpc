@@ -9,6 +9,8 @@ export {
   ensureInfiniteEntry,
   fromHandle,
   dataOf,
+  entryPerItem,
+  handleOfItem,
   isTRPCEntryError,
 } from './handles';
 export { TRPCEntryError } from './entryError';
@@ -18,6 +20,8 @@ export type {
   AnyTRPCHandle,
   TRPCQueryEntry,
   TRPCInfiniteQueryEntry,
+  TRPCEntryPerItem,
+  TRPCQueryHandlePerItem,
   AnyTRPCEntry,
   TRPCEntryKind,
   TRPCLoadEntries,

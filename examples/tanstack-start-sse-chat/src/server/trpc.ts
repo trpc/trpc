@@ -44,11 +44,6 @@ export const createCallerFactory = t.createCallerFactory;
 export const router = t.router;
 
 /**
- * A procedure without the artificial delay below, for pages that time their own requests
- */
-export const baseProcedure = t.procedure;
-
-/**
  * Create an unprotected procedure
  * @see https://trpc.io/docs/v11/procedures
  **/

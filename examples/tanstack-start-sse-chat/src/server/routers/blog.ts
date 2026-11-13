@@ -1,10 +1,10 @@
 /**
- * A fake blog, kept in memory. Its pages load a post and its author in one
+ * A blog, kept in memory. Its pages load a post and its author in one
  * request: see `/src/routes/blog/$slug.tsx`
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { baseProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
 const authors = [
   {
@@ -111,20 +111,12 @@ const posts: Post[] = Array.from({ length: 13 }, (_, round) =>
     body: bodies[index % bodies.length] ?? '',
   }));
 
-/** How long each procedure takes, so the timeline on the page has something to show */
-const WORK_MS = 150;
-
-const blogProcedure = baseProcedure.use(async (opts) => {
-  await new Promise((resolve) => setTimeout(resolve, WORK_MS));
-  return opts.next();
-});
-
 export const blogRouter = router({
   /**
    * A page of posts, newest first. Used as a plain query by the post list and
    * as an infinite query by a post's "More by" list
    */
-  posts: blogProcedure
+  posts: publicProcedure
     .input(
       z.object({
         /** Only posts by this author */
@@ -155,7 +147,7 @@ export const blogRouter = router({
         nextCursor: end < matching.length ? end : null,
       };
     }),
-  postBySlug: blogProcedure
+  postBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query((opts) => {
       const post = posts.find((it) => it.slug === opts.input.slug);
@@ -164,7 +156,7 @@ export const blogRouter = router({
       }
       return post;
     }),
-  authorById: blogProcedure
+  authorById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query((opts) => {
       const author = authors.find((it) => it.id === opts.input.id);

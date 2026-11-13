@@ -17,7 +17,10 @@ import {
   prefetchEntry,
   prefetchInfiniteEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  inferHandles,
+  TRPCLoadEntries,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { useEffect, useRef } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
@@ -30,24 +33,18 @@ export function authorCardEntries(
   trpc: TRPC,
   opts: { authorId: string; exceptSlug: string },
 ) {
-  // `staleTime: 0` so every visit shows its requests in the log
-  const author = prefetchEntry(
-    trpc.blog.authorById,
-    { id: opts.authorId },
-    { staleTime: 0 },
-  );
+  const author = prefetchEntry(trpc.blog.authorById, { id: opts.authorId });
   return {
     author,
     // A second step: the post list is filtered by the id of the author, who
-    // is loaded with an id from the post. With pipelining, post, author and
-    // the list's first page are one request. Without, they are three, one
-    // after the other. Later pages are requests of their own
+    // is loaded with an id from the post. Post, author and the list's first
+    // page are one request. Later pages are requests of their own
     moreByAuthor: prefetchInfiniteEntry(
       trpc.blog.posts,
       { authorId: dataOf(author).id, exceptSlug: opts.exceptSlug, limit: 5 },
-      { staleTime: 0, getNextPageParam: (lastPage) => lastPage.nextCursor },
+      { getNextPageParam: (lastPage) => lastPage.nextCursor },
     ),
-  };
+  } satisfies TRPCLoadEntries;
 }
 
 export function AuthorCard(
@@ -113,7 +110,6 @@ export function AuthorCard(
                   <Link
                     to="/blog/$slug"
                     params={{ slug: post.slug }}
-                    preload={false}
                     className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                   >
                     {post.title}

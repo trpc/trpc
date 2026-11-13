@@ -14,7 +14,6 @@ import {
   type TRPCOptionsProxy,
 } from '@trpc/tanstack-react-query';
 import SuperJSON from 'superjson';
-import { blogDemoFetch, isPipeliningOn } from '~/lib/blog-demo';
 import { createContext } from '~/server/context';
 import type { AppRouter } from '~/server/routers/_app';
 import { appRouter } from '~/server/routers/_app';
@@ -52,27 +51,17 @@ const getLinks = createIsomorphicFn()
            */
           transformer: SuperJSON,
         }),
-        // The blog pages have a switch for pipelining, so there is a link for
-        // each setting. An app would set `pipelining: true` on its one link
-        false: splitLink({
-          condition: () => isPipeliningOn(),
-          true: httpBatchStreamLink({
-            url,
-            transformer: SuperJSON,
-            pipelining: true,
-            // Queries go as POST, so the Network tab shows their inputs as JSON
-            methodOverride: 'POST',
-            fetch: blogDemoFetch,
-          }),
-          false: httpBatchStreamLink({
-            url,
-            /**
-             * @see https://trpc.io/docs/v11/data-transformers
-             */
-            transformer: SuperJSON,
-            methodOverride: 'POST',
-            fetch: blogDemoFetch,
-          }),
+        false: httpBatchStreamLink({
+          url,
+          /**
+           * @see https://trpc.io/docs/v11/data-transformers
+           */
+          transformer: SuperJSON,
+          // Lets a query read its input from another query's data, in one
+          // request. The blog pages load a post and its author this way
+          pipelining: true,
+          // Queries go as POST, so the Network tab shows their inputs as JSON
+          methodOverride: 'POST',
         }),
       }),
     ];

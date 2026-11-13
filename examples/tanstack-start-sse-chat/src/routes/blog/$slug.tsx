@@ -4,56 +4,48 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import {
   dataOf,
-  fetchEntry,
+  ensureEntry,
   fromHandle,
-  isTRPCEntryError,
-  loadHandles,
+  loadHandlesSettled,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  inferQueryHandle,
+  TRPCLoadEntries,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { format } from 'date-fns';
 import { ArrowLeftIcon } from 'lucide-react';
 import { Suspense } from 'react';
-import { startRequestLog } from '~/lib/blog-demo';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import { AuthorCard, authorCardEntries } from './-components/author-card';
 
 /** Every query the post page needs, from the URL alone */
 function postPageEntries(trpc: TRPC, opts: { slug: string }) {
-  // `staleTime: 0` so every visit shows its requests in the log
-  const post = fetchEntry(
-    trpc.blog.postBySlug,
-    { slug: opts.slug },
-    { staleTime: 0 },
-  );
+  const post = ensureEntry(trpc.blog.postBySlug, { slug: opts.slug });
   return {
     post,
     // The author's id is in the post, which hasn't loaded yet. `dataOf()` stands
-    // in for it. With pipelining, the server reads it from the post and runs
-    // these queries in the same request. Without, the browser waits for the post
+    // in for it, and the server reads it from the post in the same request
     authorCard: authorCardEntries(trpc, {
       authorId: dataOf(post).authorId,
       exceptSlug: opts.slug,
     }),
-  };
+  } satisfies TRPCLoadEntries;
 }
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: async (opts) => {
     const { trpc } = opts.context;
-    startRequestLog();
-    const [handles] = await loadHandles(
+    const [handles, results] = await loadHandlesSettled(
       trpc,
       postPageEntries(trpc, { slug: opts.params.slug }),
-    ).catch((error: unknown) => {
-      if (
-        isTRPCEntryError(error, trpc.blog.postBySlug) &&
-        error.code === 'NOT_FOUND'
-      ) {
+    );
+    if (results.post.status === 'error') {
+      if (results.post.error.code === 'NOT_FOUND') {
         // oxlint-disable-next-line typescript/only-throw-error -- the router's not-found signal
         throw notFound();
       }
-      throw error;
-    });
+      throw results.post.error;
+    }
     return handles;
   },
   component: PostPage,
