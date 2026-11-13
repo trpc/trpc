@@ -13,14 +13,14 @@ import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
   getUrl,
-  jsonHttpRequester,
+  httpRequest,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import {
   pipelineOf,
   planPipelinedBatch,
   resultsOfPipelinedBatch,
-  withPipeParam,
+  pipelinedRequest,
 } from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
@@ -56,7 +56,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
           const url = getUrl({
             ...resolvedOpts,
-            url: withPipeParam(resolvedOpts.url, plan.pipe),
+            url: pipelinedRequest({ link: resolvedOpts, reads: plan.reads })
+              .url,
             type,
             path,
             inputs,
@@ -74,9 +75,11 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           const inputs = plan.sent.map((op) => op.input);
           const signal = allAbortSignals(...plan.sent.map((op) => op.signal));
 
-          const res = await jsonHttpRequester({
+          const res = await httpRequest({
             ...resolvedOpts,
-            url: withPipeParam(resolvedOpts.url, plan.pipe),
+            contentTypeHeader: 'application/json',
+            getUrl,
+            ...pipelinedRequest({ link: resolvedOpts, reads: plan.reads }),
             path,
             inputs,
             type,

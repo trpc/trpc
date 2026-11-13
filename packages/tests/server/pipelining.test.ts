@@ -173,9 +173,44 @@ describe.each([
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
     const req = ctx.onRequestSpy.mock.calls[0]![0];
     expect(req.method).toBe('POST');
-    // The inputs are in the body, and what to fill in is in the URL
-    expect(req.url).toContain('pipe=');
+    // The inputs and what to fill in are both in the body
+    expect(req.url).not.toContain('pipe=');
     expect(req.url).not.toContain('input=');
+  });
+
+  test('a POST to a server without `allowPipelining` fails, and no call runs with a hole in its input', async () => {
+    await using ctx = setup({
+      allowPipelining: false,
+      pipelining: true,
+      methodOverride: 'POST',
+    });
+
+    const post = createOperationPipeline([]);
+    const tags = createOperationPipeline([
+      { to: ['ids'], from: post, path: ['tags', null, 'id'] },
+    ]);
+    const results = await Promise.allSettled([
+      ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      ),
+      ctx.untyped.query(
+        'tags',
+        { ids: undefined },
+        { context: pipelineContext(tags) },
+      ),
+    ]);
+    expect(results).toMatchObject([
+      {
+        status: 'rejected',
+        reason: { message: 'Pipelining is not enabled on the server' },
+      },
+      {
+        status: 'rejected',
+        reason: { message: 'Pipelining is not enabled on the server' },
+      },
+    ]);
   });
 
   test('a query whose source failed did not run, and is marked unresolved', async () => {
@@ -321,6 +356,44 @@ describe('the `pipe` search param', () => {
     expect(notAnArray.json[1].error.data.code).toBe('BAD_REQUEST');
   });
 
+  test('`each` runs a call for every item of a list', async () => {
+    const eachInput = encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: { ids: [null, 'extra'] } }),
+    );
+    const each = (reads: unknown) =>
+      get(
+        `input=${eachInput}&pipe=${encodeURIComponent(JSON.stringify({ 1: reads }))}`,
+        { path: 'post,tags' },
+      );
+
+    const res = await each([
+      { to: ['ids', '0'], from: 0, path: ['tags', null, 'id'], each: true },
+    ]);
+    expect(res.json[1]).toEqual({
+      result: {
+        data: [
+          { result: { data: ['t1', 'extra'] } },
+          { result: { data: ['t2', 'extra'] } },
+        ],
+      },
+    });
+
+    // Every run validates its own input
+    const invalid = await each([
+      { to: ['ids', '0'], from: 0, path: ['tags', null], each: true },
+    ]);
+    expect(
+      invalid.json[1].result.data.map((item: any) => item.error.data.code),
+    ).toEqual(['BAD_REQUEST', 'BAD_REQUEST']);
+
+    const noList = await each([
+      { to: ['ids', '0'], from: 0, path: ['slug'], each: true },
+    ]);
+    expect(noList.json.error.message).toBe(
+      'Invalid "pipe": "each" at 1 needs a list in its path',
+    );
+  });
+
   test('a call still validates its input', async () => {
     const res = await get(
       pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),
@@ -361,19 +434,48 @@ describe('the `pipe` search param', () => {
     expect(res.calls).not.toHaveBeenCalled();
   });
 
+  test('a POST has it in its body, beside the inputs', async () => {
+    const { appRouter, calls } = createRouter('none');
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { allowPipelining: true, allowMethodOverride: true },
+    });
+    const post = (body: unknown) =>
+      fetch(`${ctx.httpUrl}/post,author?batch=1`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+    const res = await post({
+      0: { slug: 'hello' },
+      1: {},
+      pipe: { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+    });
+    expect((await res.json())[1]).toEqual({
+      result: { data: { id: 'u1', teamId: 'team-of-u1' } },
+    });
+
+    calls.mockClear();
+    const invalid = await post({
+      0: { slug: 'hello' },
+      1: {},
+      pipe: { 1: [{ to: ['id'], from: 1, path: [] }] },
+    });
+    expect(invalid.status).toBe(400);
+    expect((await invalid.json()).error.message).toMatch(/^Invalid "pipe"/);
+    expect(calls).not.toHaveBeenCalled();
+  });
+
   test('rejects a batch of mutations', async () => {
     const { appRouter } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
       server: { allowPipelining: true },
     });
-    const res = await fetch(
-      `${ctx.httpUrl}/rename,rename?batch=1&pipe=${encodeURIComponent('{}')}`,
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ 0: { id: 'a' }, 1: { id: 'b' } }),
-      },
-    );
+    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=1`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ 0: { id: 'a' }, 1: { id: 'b' }, pipe: {} }),
+    });
     expect(res.status).toBe(400);
     expect((await res.json()).error.message).toBe(
       'Only a batch of queries can be pipelined',

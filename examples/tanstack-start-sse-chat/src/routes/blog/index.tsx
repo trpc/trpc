@@ -30,16 +30,19 @@ import { useTRPC, type TRPC } from '~/lib/trpc';
 /** Every query the list needs */
 function postListEntries(trpc: TRPC) {
   // `staleTime: 0` so every visit shows its requests in the log
-  const posts = fetchEntry(trpc.blog.posts, undefined, { staleTime: 0 });
+  const posts = fetchEntry(trpc.blog.posts, { limit: 10 }, { staleTime: 0 });
   return {
     posts,
-    // The authors' ids are in the posts, which haven't loaded yet. `.map()` reads
-    // one from every post. With pipelining, the server collects them from the
-    // posts and runs this query in the same request
-    authors: prefetchEntry(
-      trpc.blog.authorsByIds,
-      { ids: dataOf(posts).map((post) => post.authorId) },
-      { staleTime: 0 },
+    // An author for every post. The authors' ids are in the posts, which
+    // haven't loaded yet, so `.map()` runs once on a stand-in for every post.
+    // With pipelining, the server runs `blog.authorById` for every post it
+    // found, in the same request
+    authors: dataOf(posts).items.map((post) =>
+      prefetchEntry(
+        trpc.blog.authorById,
+        { id: post.authorId },
+        { staleTime: 0 },
+      ),
     ),
   };
 }
@@ -69,7 +72,7 @@ function BlogIndex() {
       <Suspense
         fallback={
           <div className="flex flex-col gap-2">
-            {Array.from({ length: 5 }, (_, index) => (
+            {Array.from({ length: 10 }, (_, index) => (
               <Skeleton key={index} className="h-14 w-full" />
             ))}
           </div>
@@ -88,7 +91,7 @@ function PostList(
   const postsQuery = useSuspenseQuery(fromHandle(trpc, props.handles.posts));
   return (
     <ItemGroup>
-      {postsQuery.data.map((post) => (
+      {postsQuery.data.items.map((post, index) => (
         <Item
           key={post.slug}
           variant="outline"
@@ -105,10 +108,7 @@ function PostList(
             <ItemTitle>{post.title}</ItemTitle>
             <ItemDescription>
               <Suspense fallback="…">
-                <AuthorName
-                  authors={props.handles.authors}
-                  authorId={post.authorId}
-                />
+                <AuthorName author={props.handles.authors[index]} />
               </Suspense>
               {' · '}
               {format(post.publishedAt, 'd MMMM yyyy')}
@@ -125,12 +125,20 @@ function PostList(
 
 function AuthorName(
   props: Readonly<{
-    authors: inferQueryHandle<TRPC['blog']['authorsByIds']>;
-    authorId: string;
+    /** Missing for a post that arrived after the page's loader ran */
+    author: inferQueryHandle<TRPC['blog']['authorById']> | undefined;
   }>,
 ) {
+  if (!props.author) {
+    return 'Unknown author';
+  }
+  return <AuthorNameOf author={props.author} />;
+}
+
+function AuthorNameOf(
+  props: Readonly<{ author: inferQueryHandle<TRPC['blog']['authorById']> }>,
+) {
   const trpc = useTRPC();
-  const authorsQuery = useSuspenseQuery(fromHandle(trpc, props.authors));
-  const author = authorsQuery.data.find((it) => it.id === props.authorId);
-  return author?.name ?? 'Unknown author';
+  const authorQuery = useSuspenseQuery(fromHandle(trpc, props.author));
+  return authorQuery.data.name;
 }

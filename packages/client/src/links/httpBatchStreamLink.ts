@@ -12,7 +12,6 @@ import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
   fetchHTTPResponse,
-  getBody,
   getUrl,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
@@ -20,7 +19,7 @@ import {
   pipelineOf,
   planPipelinedBatch,
   resultsOfPipelinedBatch,
-  withPipeParam,
+  pipelinedRequest,
 } from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
@@ -73,7 +72,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
           const url = getUrl({
             ...resolvedOpts,
-            url: withPipeParam(resolvedOpts.url, plan.pipe),
+            url: pipelinedRequest({ link: resolvedOpts, reads: plan.reads })
+              .url,
             type,
             path,
             inputs,
@@ -97,14 +97,13 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
-            url: withPipeParam(resolvedOpts.url, plan.pipe),
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
             trpcAcceptHeader: 'application/jsonl',
             trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
             getUrl,
-            getBody,
+            ...pipelinedRequest({ link: resolvedOpts, reads: plan.reads }),
             inputs,
             path,
             headers() {

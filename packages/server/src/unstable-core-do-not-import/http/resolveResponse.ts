@@ -311,6 +311,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           headers: opts.req.headers,
           url,
           maxBatchSize: opts.maxBatchSize,
+          allowPipelining: opts.allowPipelining ?? false,
         }),
       ];
     } catch (cause) {
@@ -387,9 +388,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
     await ctxManager.create(info);
 
-    const pipe = url.searchParams.get('pipe');
-    const pipeline = run(() => {
-      if (pipe === null) {
+    const pipeline = await run(async () => {
+      // A GET has it in the URL. A POST has it in its body, which is only read
+      // before the calls run where pipelining is on
+      const pipe: unknown =
+        url.searchParams.get('pipe') ??
+        (opts.allowPipelining ? await info.getPipe?.() : undefined);
+      if (pipe === undefined) {
         return null;
       }
       if (!opts.allowPipelining) {
@@ -464,14 +469,62 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-        const data: unknown = await proc({
-          path: call.path,
-          getRawInput: call.getRawInput,
-          ctx: ctxManager.value(),
-          type: proc._def.type,
-          signal: combinedAbort.signal,
-          batchIndex: call.batchIndex,
-        });
+        const callProcedure = (getRawInput: () => Promise<unknown>) =>
+          proc({
+            path: call.path,
+            getRawInput,
+            ctx: ctxManager.value(),
+            type: proc._def.type,
+            signal: combinedAbort.signal,
+            batchIndex: call.batchIndex,
+          });
+        const each = pipeline?.each(call.batchIndex) ?? null;
+        let data: unknown;
+        if (each) {
+          // Once per item of an earlier call's list. Every run validates its
+          // input and has its own result or error
+          const inputs = await each();
+          if (
+            typeof opts.maxBatchSize === 'number' &&
+            inputs.length > opts.maxBatchSize
+          ) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `A call for every item exceeds the maximum batch size`,
+            });
+          }
+          data = await Promise.all(
+            inputs.map(async (input) => {
+              try {
+                return {
+                  result: { data: await callProcedure(async () => input) },
+                };
+              } catch (cause) {
+                const error = getTRPCErrorFromUnknown(cause);
+                opts.onError?.({
+                  error,
+                  path: call.path,
+                  input,
+                  ctx: ctxManager.valueOrUndefined(),
+                  type: proc._def.type,
+                  req: opts.req,
+                });
+                return {
+                  error: getErrorShape({
+                    config,
+                    ctx: ctxManager.valueOrUndefined(),
+                    error,
+                    input,
+                    path: call.path,
+                    type: proc._def.type,
+                  }),
+                };
+              }
+            }),
+          );
+        } else {
+          data = await callProcedure(call.getRawInput);
+        }
         pipeline?.resolve(call.batchIndex, data);
         return [
           undefined,

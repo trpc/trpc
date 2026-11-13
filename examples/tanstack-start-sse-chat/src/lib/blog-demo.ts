@@ -100,7 +100,9 @@ export const blogDemoFetch: typeof fetch = async (input, init) => {
     {
       id,
       procedures,
-      pipelined: url.searchParams.has('pipe'),
+      // A POST says in its body which inputs the server fills in
+      pipelined:
+        typeof init?.body === 'string' && init.body.includes('"pipe":'),
       startedAt: performance.now() - loadStartedAt,
       endedAt: null,
     },

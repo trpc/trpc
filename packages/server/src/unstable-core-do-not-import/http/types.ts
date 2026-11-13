@@ -113,6 +113,12 @@ export interface TRPCRequestInfo {
    */
   isBatchCall: boolean;
   /**
+   * Reads the `pipe` in the body of a batch request: which parts of the
+   * calls' inputs to fill in from earlier calls' data. Not validated.
+   * @internal
+   */
+  getPipe?: () => Promise<unknown>;
+  /**
    * The procedure calls in the request.
    */
   calls: TRPCRequestInfoProcedureCall[];

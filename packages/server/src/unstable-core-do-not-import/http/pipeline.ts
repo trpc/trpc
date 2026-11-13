@@ -21,13 +21,32 @@ export interface PipelineRead {
   from: number;
   /** Where the value is in that call's data. Empty for all of it */
   path: PipelinePath;
+  /**
+   * Runs the call once for every item of the array at the first `null` in
+   * `path`, each time with that item's value. The call's data is then a list
+   * with a `{ result }` or an `{ error }` for every item.
+   */
+  each: boolean;
 }
 
 /**
- * The `pipe` search param of a batch request: the reads of each call, by the
- * call's index.
+ * The `pipe` of a batch request: the reads of each call, by the call's index.
+ * It is in the body of a POST, beside the inputs, and in the `pipe` search
+ * param of a GET, which has no body.
  */
-export type PipelineReads = Record<number, PipelineRead[]>;
+export type PipelineReads = Record<
+  number,
+  (Omit<PipelineRead, 'each'> & { each?: true })[]
+>;
+
+/** The path of one item's value: `path` with its first `null` replaced */
+export function bindPipelinePath(
+  path: readonly (string | null)[],
+  index: number,
+): PipelinePath {
+  const position = path.indexOf(null);
+  return path.map((segment, at) => (at === position ? String(index) : segment));
+}
 
 /**
  * Reads `path` in `value`, through own properties of objects and arrays only.
@@ -78,17 +97,19 @@ function isPath(value: unknown): value is PipelinePath {
   );
 }
 
-/** Parses the `pipe` search param of a batch request */
+/** Validates the `pipe` of a batch request. A string is the search param's JSON */
 export function parsePipelineReads(opts: {
-  pipe: string;
+  pipe: unknown;
   /** The number of calls in the batch */
   calls: number;
 }): Map<number, PipelineRead[]> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(opts.pipe);
-  } catch {
-    throw invalidPipe('not JSON');
+  let parsed = opts.pipe;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      throw invalidPipe('not JSON');
+    }
   }
   if (!isObject(parsed)) {
     throw invalidPipe('expected an object');
@@ -102,25 +123,41 @@ export function parsePipelineReads(opts: {
       if (!Array.isArray(reads)) {
         throw invalidPipe(`expected an array at ${key}`);
       }
-      return [
-        index,
-        reads.map((read: unknown): PipelineRead => {
-          if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
-            throw invalidPipe(`expected "to" and "path" at ${key}`);
-          }
-          const from = read['from'];
-          // Only earlier calls, so calls can't wait for each other
-          if (
-            typeof from !== 'number' ||
-            !Number.isInteger(from) ||
-            from < 0 ||
-            from >= index
-          ) {
-            throw invalidPipe(`call ${key} can only read from an earlier call`);
-          }
-          return { to: read['to'], from, path: read['path'] };
-        }),
-      ];
+      const parsedReads = reads.map((read: unknown): PipelineRead => {
+        if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
+          throw invalidPipe(`expected "to" and "path" at ${key}`);
+        }
+        const each = read['each'] === true;
+        if (each && !read['path'].includes(null)) {
+          throw invalidPipe(`"each" at ${key} needs a list in its path`);
+        }
+        const from = read['from'];
+        // Only earlier calls, so calls can't wait for each other
+        if (
+          typeof from !== 'number' ||
+          !Number.isInteger(from) ||
+          from < 0 ||
+          from >= index
+        ) {
+          throw invalidPipe(`call ${key} can only read from an earlier call`);
+        }
+        return { to: read['to'], from, path: read['path'], each };
+      });
+      // A call runs once per item of one list
+      const lists = new Set(
+        parsedReads
+          .filter((read) => read.each)
+          .map((read) =>
+            JSON.stringify([
+              read.from,
+              read.path.slice(0, read.path.indexOf(null)),
+            ]),
+          ),
+      );
+      if (lists.size > 1) {
+        throw invalidPipe(`call ${key} reads each item of more than one list`);
+      }
+      return [index, parsedReads];
     }),
   );
 }
@@ -184,9 +221,47 @@ export function pipelineCalls(opts: {
     return promise;
   }
 
+  /** The inputs of a call that runs once per item of a list */
+  async function inputsOfEach(index: number) {
+    const call = opts.calls[index];
+    const reads = opts.reads.get(index) ?? [];
+    const list = reads.find((read) => read.each);
+    if (!call || !list) {
+      return [];
+    }
+    const readData = (read: PipelineRead) =>
+      clientDataOf(read.from).catch(() => {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `The call this call reads its input from failed`,
+        });
+      });
+    const base = await call.getRawInput();
+    const items = readPipelinePath(
+      await readData(list),
+      list.path.slice(0, list.path.indexOf(null)),
+    );
+    const inputs: unknown[] = [];
+    for (const item of Array.isArray(items) ? items.keys() : []) {
+      let input = structuredClone(base);
+      for (const read of reads) {
+        input = writePipelinePath({
+          input,
+          to: read.to,
+          value: readPipelinePath(
+            await readData(read),
+            read.each ? bindPipelinePath(read.path, item) : read.path,
+          ),
+        });
+      }
+      inputs.push(input);
+    }
+    return inputs;
+  }
+
   const calls = opts.calls.map((call, index) => {
     const reads = opts.reads.get(index);
-    if (!reads) {
+    if (!reads || reads.some((read) => read.each)) {
       return call;
     }
     let filled: Promise<unknown> | null = null;
@@ -218,6 +293,14 @@ export function pipelineCalls(opts: {
 
   return {
     calls,
+    /**
+     * For a call that runs once per item of a list: reads its inputs, one per
+     * item. `null` for any other call.
+     */
+    each: (index: number) =>
+      opts.reads.get(index)?.some((read) => read.each)
+        ? () => inputsOfEach(index)
+        : null,
     resolve: (index: number, data: unknown) => {
       outputs[index]?.resolve(data);
     },

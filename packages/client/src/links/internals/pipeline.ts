@@ -3,6 +3,8 @@ import type {
   PipelineReads,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { Operation, OperationContext } from '../types';
+import type { ResolvedHTTPLinkOptions } from './httpUtils';
+import { getBody } from './httpUtils';
 
 /**
  * Lets an operation read parts of its input from the data of operations sent
@@ -32,6 +34,12 @@ export interface OperationPipelineRead {
   from: OperationPipeline;
   /** Where the value is in that data. Empty for all of it */
   path: PipelinePath;
+  /**
+   * Makes the server run the operation once for every item of the array at the
+   * first `null` in `path`. Its result is then a list with a `{ result }` or an
+   * `{ error }` for every item.
+   */
+  each?: boolean;
 }
 
 const contextKey = '~pipeline';
@@ -72,7 +80,12 @@ export function planPipelinedBatch<TOp extends Pick<Operation, 'context'>>(
       if (from === undefined) {
         return null;
       }
-      opReads.push({ to: read.to, from, path: read.path });
+      opReads.push({
+        to: read.to,
+        from,
+        path: read.path,
+        ...(read.each ? { each: true as const } : {}),
+      });
     }
     const index = sent.push(op) - 1;
     if (pipeline) {
@@ -86,17 +99,41 @@ export function planPipelinedBatch<TOp extends Pick<Operation, 'context'>>(
   return {
     sent,
     positions,
-    /** The `pipe` search param, if any operation reads from another */
-    pipe: Object.keys(reads).length > 0 ? JSON.stringify(reads) : null,
+    /** The batch's `pipe`, if any operation reads from another */
+    reads: Object.keys(reads).length > 0 ? reads : null,
   };
 }
 
-/** Adds the `pipe` search param of a pipelined batch to the link's URL */
-export function withPipeParam(url: string, pipe: string | null) {
-  if (pipe === null) {
-    return url;
+/**
+ * The URL and body of a pipelined batch. Its `pipe` goes in the body of a POST,
+ * beside the inputs, and in a search param of a GET, which has no body.
+ */
+export function pipelinedRequest(opts: {
+  link: Pick<ResolvedHTTPLinkOptions, 'url' | 'methodOverride'>;
+  reads: PipelineReads | null;
+}): { url: string; getBody: typeof getBody } {
+  const { reads } = opts;
+  const { url } = opts.link;
+  if (reads === null) {
+    return { url, getBody };
   }
-  return `${url}${url.includes('?') ? '&' : '?'}pipe=${encodeURIComponent(pipe)}`;
+  if (opts.link.methodOverride === 'POST') {
+    return {
+      url,
+      getBody: (bodyOpts) => {
+        const body = getBody(bodyOpts);
+        return JSON.stringify({
+          ...(typeof body === 'string' ? JSON.parse(body) : undefined),
+          pipe: reads,
+        });
+      },
+    };
+  }
+  const pipe = encodeURIComponent(JSON.stringify(reads));
+  return {
+    url: `${url}${url.includes('?') ? '&' : '?'}pipe=${pipe}`,
+    getBody,
+  };
 }
 
 /**

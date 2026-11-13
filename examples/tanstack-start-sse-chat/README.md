@@ -25,7 +25,7 @@ This project includes 2 examples of the subscription pattern:
 
 Route loaders start the queries a page needs with `loadHandles` and prefetch entries from `@trpc/tanstack-react-query/unstable-handles`, and return the handles. Components read them with `useSuspenseQuery(fromHandle(trpc, handle))`. During SSR, procedures are called in-process with `localLink`; the browser talks to `/api/trpc` over HTTP.
 
-The [`/blog`](./src/routes/blog/$slug.tsx) pages are a fake blog that loads a post and its author in one request. The author's id is in the post, so the loader passes `dataOf(post).authorId` and, with `pipelining` on the link and `allowPipelining` on the handler, the server fills it in. The post's "More by" list goes a step further: it is filtered by the id of the author, who is loaded with an id from the post. The post list loads its authors the same way, with `dataOf(posts).map((post) => post.authorId)`. The pages have a switch for pipelining and show the requests they made.
+The [`/blog`](./src/routes/blog/$slug.tsx) pages are a fake blog that loads a post and its author in one request. The author's id is in the post, so the loader passes `dataOf(post).authorId` and, with `pipelining` on the link and `allowPipelining` on the handler, the server fills it in. The post's "More by" list goes a step further: it is an infinite list filtered by the id of the author, who is loaded with an id from the post. The post list loads an author for every post with `dataOf(posts).items.map((post) => prefetchEntry(trpc.blog.authorById, { id: post.authorId }))`. The pages have a switch for pipelining and show the requests they made.
 
 ## Setup
 

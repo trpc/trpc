@@ -36,6 +36,8 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
+  /** Whether a batch may say which inputs to fill in from earlier calls' data */
+  allowPipelining: boolean;
 };
 
 type ContentTypeHandler = {
@@ -117,20 +119,33 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     }
 
     type InputRecord = Record<number, unknown>;
-    const getInputs = memo(async (): Promise<InputRecord> => {
-      let inputs: unknown = undefined;
+    /** The `?input=` of a GET, or the body of any other request */
+    const getPayload = memo(async (): Promise<unknown> => {
       if (req.method === 'GET') {
         const queryInput = opts.searchParams.get('input');
-        if (queryInput) {
-          inputs = JSON.parse(queryInput);
-        }
-      } else {
-        // `httpLink` sends no body when the input is `undefined`, so treat an
-        // empty body like a GET without `?input=`
-        const body = await req.text();
-        if (body) {
-          inputs = JSON.parse(body);
-        }
+        return queryInput ? JSON.parse(queryInput) : undefined;
+      }
+      // `httpLink` sends no body when the input is `undefined`, so treat an
+      // empty body like a GET without `?input=`
+      const body = await req.text();
+      return body ? JSON.parse(body) : undefined;
+    });
+    /** A batch's body can have a `pipe` beside its inputs. A GET has it in the URL */
+    const getPipe = async (): Promise<unknown> => {
+      if (!isBatchCall || req.method === 'GET') {
+        return undefined;
+      }
+      const payload = await getPayload.read();
+      return isObject(payload) ? payload['pipe'] : undefined;
+    };
+    const getInputs = memo(async (): Promise<InputRecord> => {
+      const inputs = await getPayload.read();
+      if ((await getPipe()) !== undefined && !opts.allowPipelining) {
+        // Otherwise the calls would run with the holes the client left in their inputs
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Pipelining is not enabled on the server`,
+        });
       }
       if (inputs === undefined) {
         return emptyObject();
@@ -228,6 +243,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
       url: opts.url,
+      getPipe,
     };
     return info;
   },
