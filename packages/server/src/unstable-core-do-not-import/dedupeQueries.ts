@@ -1,10 +1,6 @@
 import { isPlainObject } from '../vendor/is-plain-object';
-import type { MiddlewareFunction, MiddlewareResult } from './middleware';
-import {
-  createMiddlewareFactory,
-  dedupeQueriesMiddlewareType,
-  getMiddlewareTransformer,
-} from './middleware';
+import type { MiddlewareResult } from './middleware';
+import { createMiddlewareFactory } from './middleware';
 import { isPromise } from './stream/jsonl';
 import type { CombinedDataTransformer } from './transformer';
 import { isAsyncIterable, isObject } from './utils';
@@ -308,19 +304,17 @@ export function unstable_dedupeQueries(opts?: {
   /** The runs in flight, for each context */
   const runs = new WeakMap<object, Map<string, Run>>();
 
-  const middleware: MiddlewareFunction<
-    object,
-    object,
-    object,
-    object,
-    unknown
-  > = async (call) => {
+  return createMiddlewareFactory<object, object>()(async (call) => {
     if (call.type !== 'query' || !isObject(call.ctx)) {
       return call.next();
     }
-    const transformer = getMiddlewareTransformer(call);
     const hash = await call.getRawInput().then(
-      (input) => inputHashFn({ transformer, input, path: call.path }),
+      (input) =>
+        inputHashFn({
+          transformer: call.transformer,
+          input,
+          path: call.path,
+        }),
       // The procedure reports an input that can't be read
       () => null,
     );
@@ -357,8 +351,5 @@ export function unstable_dedupeQueries(opts?: {
     }
     const take = await run.settled;
     return take();
-  };
-  middleware._type = dedupeQueriesMiddlewareType;
-
-  return createMiddlewareFactory<object, object>()(middleware);
+  });
 }

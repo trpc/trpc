@@ -203,7 +203,7 @@ auditedProcedure
   .query((opts) => opts.input.id);
 ```
 
-Besides `ctx`, `input`, `getRawInput` and `next`, a middleware receives the procedure's `path`, `type` (`'query'`, `'mutation'` or `'subscription'`), [`meta`](metadata.md), and the request's `signal`.
+Besides `ctx`, `input`, `getRawInput` and `next`, a middleware receives the procedure's `path`, `type` (`'query'`, `'mutation'` or `'subscription'`), [`meta`](metadata.md), the request's `signal`, and the [`transformer`](/docs/server/data-transformers) you gave `initTRPC.create()`.
 
 ## Using `.concat()` to create reusable middlewares and plugins {#concat}
 

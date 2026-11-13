@@ -10,7 +10,6 @@ import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 import type { CombinedDataTransformer } from './transformer';
-import { defaultTransformer } from './transformer';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
 import { isAsyncIterable, isObject } from './utils';
 
@@ -130,6 +129,12 @@ export type MiddlewareFunction<
      */
     batchIndex: number;
     /**
+     * The transformer given to `initTRPC.create()`, or one that changes
+     * nothing. `transformer.input.serialize()` encodes an input as the client
+     * sends it.
+     */
+    transformer: CombinedDataTransformer;
+    /**
      * Runs the next middleware, or the resolver. Pass `ctx` to add to the
      * context, or `input` to replace the input.
      */
@@ -146,39 +151,6 @@ export type MiddlewareFunction<
   }): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;
 };
-
-/**
- * The `_type` of the `unstable_dedupeQueries()` middleware, which is the one
- * middleware that is handed the root config's transformer.
- * @internal
- */
-export const dedupeQueriesMiddlewareType = 'dedupeQueries';
-
-/** The transformer of each call of that middleware, by the call's options */
-const middlewareTransformers = new WeakMap<object, CombinedDataTransformer>();
-
-/**
- * Hands the root config's transformer to a middleware of ours. It is kept
- * beside the middleware's options rather than in them, so that what user
- * middlewares get, and its type, stay as they are.
- * @internal
- */
-export function setMiddlewareTransformer(
-  middlewareOpts: object,
-  transformer: CombinedDataTransformer,
-) {
-  middlewareTransformers.set(middlewareOpts, transformer);
-}
-
-/**
- * The transformer that {@link setMiddlewareTransformer} handed to a middleware
- * for the call with these options.
- * @internal
- */
-export function getMiddlewareTransformer(middlewareOpts: object) {
-  // A middleware that something else called, with options of its own
-  return middlewareTransformers.get(middlewareOpts) ?? defaultTransformer;
-}
 
 /** Any middleware function, for use in generic constraints. */
 export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
