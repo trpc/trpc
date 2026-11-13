@@ -1988,7 +1988,7 @@ export function experimental_handleOfItem(
   } | null;
   if (!Array.isArray(perItem?.queryKey) || !Array.isArray(perItem.itemInputs)) {
     throw new Error(
-      `Expected the handle of an entry from \`experimental_entryPerItem()\` or \`experimental_dataOf(entry, (data) => entry)\`, got ${JSON.stringify(handle)}`,
+      `Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got ${JSON.stringify(handle)}`,
     );
   }
   const input = perItem.itemInputs.reduce(
