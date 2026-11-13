@@ -386,6 +386,22 @@ describe('backend over HTTP', () => {
     expect(labels).toContain('author.byId({ id: ‹post›.posts[].authorId })');
   });
 
+  it('ends the rows of a failed call, and of the call that could not run after it, as failed', async () => {
+    const { network, trpc } = session();
+    const post = prefetchEntry(trpc.post.byId, { id: 99 });
+    await loadHandles(trpc, {
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+      post,
+    });
+    await vi.waitFor(() => {
+      expect(
+        network.getTrace().requests.map((request) => request.status),
+      ).toEqual(['error', 'error']);
+    });
+  });
+
   it('takes a round trip for each step when each query waits for the last', async () => {
     const { network, queryClient, settled, trpc } = session();
     const post = await queryClient.fetchQuery(

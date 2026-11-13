@@ -201,6 +201,11 @@ export function pipelineCalls(opts: {
   calls: TRPCRequestInfoProcedureCall[];
   reads: Map<number, PipelineRead[]>;
   transformer: CombinedDataTransformer;
+  /**
+   * Called with the number of items a call runs for, before it runs for any.
+   * Throws if the request may not run that many.
+   */
+  takeRuns: (count: number) => void;
 }) {
   const outputs = opts.calls.map(() => {
     const deferred = createDeferred<unknown>();
@@ -245,6 +250,9 @@ export function pipelineCalls(opts: {
       list.path.slice(0, list.path.indexOf(null)),
     );
     const inputs: unknown[] = [];
+    if (Array.isArray(items)) {
+      opts.takeRuns(items.length);
+    }
     for (const item of Array.isArray(items) ? items.keys() : []) {
       let input = structuredClone(base);
       for (const read of reads) {

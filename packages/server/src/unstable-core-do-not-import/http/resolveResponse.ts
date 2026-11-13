@@ -403,10 +403,25 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Only a batch of queries can be pipelined`,
             });
           }
+          // Every run of a procedure counts towards `maxBatchSize`: a call
+          // for every item of a list counts once for each item
+          let runs = info.calls.length;
           return pipelineCalls({
             calls: info.calls,
             reads: parsePipelineReads({ pipe, calls: info.calls.length }),
             transformer: config.transformer,
+            takeRuns: (count) => {
+              runs += count - 1;
+              if (
+                typeof opts.maxBatchSize === 'number' &&
+                runs > opts.maxBatchSize
+              ) {
+                throw new TRPCError({
+                  code: 'BAD_REQUEST',
+                  message: `A call for every item exceeds the maximum batch size`,
+                });
+              }
+            },
           });
         })
       : null;
@@ -479,21 +494,19 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           // Once per item of an earlier call's list. Every run validates its
           // input and has its own result or error
           const inputs = await each();
-          if (
-            typeof opts.maxBatchSize === 'number' &&
-            inputs.length > opts.maxBatchSize
-          ) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `A call for every item exceeds the maximum batch size`,
-            });
-          }
           data = await Promise.all(
             inputs.map(async (input) => {
               try {
-                return {
-                  result: { data: await callProcedure(async () => input) },
-                };
+                const itemData = await callProcedure(async () => input);
+                if (isDataStream(itemData)) {
+                  // It would be inside a list, where nothing streams it
+                  throw new TRPCError({
+                    code: 'UNSUPPORTED_MEDIA_TYPE',
+                    message:
+                      'A call for every item cannot return a stream-like response',
+                  });
+                }
+                return { result: { data: itemData } };
               } catch (cause) {
                 const error = getTRPCErrorFromUnknown(cause);
                 opts.onError?.({

@@ -541,6 +541,8 @@ export function AuthorBlogSkeleton(props: { readonly href: string }) {
 
 function createEntryRoutes() {
   const root = createRootRouteWithContext<DemoContext>()({
+    // An article that doesn't exist fails where its query is read
+    errorComponent: NotFound,
     notFoundComponent: NotFound,
   });
   const loadFeed = async (args: {
@@ -603,6 +605,8 @@ function createEntryRoutes() {
 
 function createReaderRoutes() {
   const root = createRootRouteWithContext<DemoContext>()({
+    // An article that doesn't exist fails where its query is read
+    errorComponent: NotFound,
     notFoundComponent: NotFound,
   });
   return root.addChildren([

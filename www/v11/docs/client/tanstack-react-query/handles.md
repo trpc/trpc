@@ -670,7 +670,7 @@ post.comments   |-------|
 Reshaping changes the procedures to fit one page. The other way is to leave them as they are:
 
 - **The loader names both queries up front.** The author's entry says "take the id from the post".
-- **The server fills in the id**, and runs both in one request. Each result streams back when it is ready.
+- **The server fills in the id**, and runs both in one request. With `httpBatchStreamLink`, each result streams back when it is ready.
 - **`author.byId` stays `author.byId`.** Any page can use it, and a component can say what it needs by itself.
 
 This is experimental. See [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries).

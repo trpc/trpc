@@ -200,8 +200,9 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * Whether to accept pipelined batches: batches where a query reads parts of
    * its input from the data of an earlier query. The server fills them in, so
    * a query that depends on another costs no extra round trip. Every call
-   * still validates its input and runs its middleware. Enable
-   * `experimental_pipelining` on the client's batch link too.
+   * still validates its input and runs its middleware, and every run counts
+   * towards `maxBatchSize`. Enable `experimental_pipelining` on the client's
+   * batch link too.
    *
    * Experimental: it may change in a minor release.
    * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request

@@ -289,7 +289,12 @@ function createAppRouter(network: Network) {
     if (!call) {
       return opts.next();
     }
-    const label = formatCall(opts.path, await opts.getRawInput());
+    // A call that reads a failed one has no input, and doesn't run
+    const input = await opts.getRawInput().catch((cause: unknown) => {
+      network.end(call.id, 'error');
+      throw cause;
+    });
+    const label = formatCall(opts.path, input);
     call.first ??= label;
     call.runs++;
     network.relabel(
@@ -504,8 +509,12 @@ export function createHttpDemoClient(
       req,
       router,
     });
+    if (!response.body) {
+      endAll('done');
+      return response;
+    }
     // A call that ran for no item never finished: the response's end is its end.
-    const body = response.body?.pipeThrough(
+    const body = response.body.pipeThrough(
       new TransformStream<Uint8Array, Uint8Array>({
         flush: () => endAll('done'),
       }),

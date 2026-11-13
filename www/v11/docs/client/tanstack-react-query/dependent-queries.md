@@ -297,7 +297,7 @@ Then [turn on one request](#turn-on). Without it, the same code works, with one 
 
 The browser can't ask for the author before it has the post. It doesn't know the id.
 
-With pipelining, it doesn't have to. It sends every call at once, and leaves a blank where each id goes:
+It doesn't have to. It can send every call at once, and leave a blank where each id goes:
 
 - "Get the post with this slug."
 - "Get the author. Take the `id` from the post's `authorId`."
@@ -310,7 +310,7 @@ The server does the rest.
 3. It runs the second call, and so on.
 4. It sends each result back as soon as it is ready.
 
-No result has to travel to the browser and back before the next call can start.
+No result has to travel to the browser and back before the next call can start. This is called **pipelining**, and the two options below turn it on.
 
 ### Turn it on {#turn-on}
 
@@ -402,11 +402,11 @@ The server did not accept a pipelined batch. Set `experimental_allowPipelining: 
 
 ## The load doesn't wait {#without-waiting}
 
-`experimental_dataOf(entry, (data) => entry)` builds an entry that the load doesn't wait for the data of. This is the form [In short](#gist) uses.
+`experimental_dataOf(entry, (data) => entry)` builds an entry from another entry's data. The load doesn't wait for that data. This is the form [In short](#gist) uses.
 
 - **The handle is unfinished.** The load can't know its input yet. `experimental_handleOfItem(handle, data)` finishes it, in the component that has the data.
 - **`fromHandle()` doesn't take an unfinished handle**: it is a type error, and it throws.
-- **A query has no cache entry until its key is known.** The author's call is on its way from the start. Its query is created when the post arrives, under the key of its real input. Keys don't change.
+- **A query has no cache entry until its key is known.** The author's call is on its way from the start. Its query is created when the post arrives, under the key of its real input. A query never changes its key.
 - **The query is there before the component asks.** It is created in the step that gives the cache the post. So the author card finds it loading, and makes no request of its own.
 - **A failed entry fails where it is read.** If the post fails, the load still resolves, the author never starts, and the component that reads the post throws the error.
 - **A fetch or ensure entry in the callback** is waited for, as always. Its handle is unfinished too.
@@ -589,7 +589,9 @@ function AuthorName(props: {
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
-- **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error. `maxBatchSize`, if you set it, also limits the items.
+- **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
+- **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server refuses the call, and each item asks by itself.
+- **One list at a time.** The server runs a call for the items of one list. The items of a list inside a list load in a second request. The pages of an infinite entry are the exception: their items load with the first page.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 
@@ -608,6 +610,7 @@ POST /post.list,author.byId?batch=pipeline
 ```
 
 - **The component doesn't change.** `fetchNextPage()` of the query above makes this request, and each new row finds its author in the cache.
+- **It is shown as a POST**, which it is with [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method). As a GET, the same is in the URL, as in [What goes over the wire](#wire).
 - **Read the list through its handle.** A query from `trpc.post.list.infiniteQueryOptions()` fetches the list alone.
 - **Without one request, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
 
@@ -691,7 +694,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [The load doesn't wait](#without-waiting).
 
-- **`loadHandles()` rejects** with the error of the entry that failed, also when that one is a prefetch entry.
+- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry reads its data with `experimental_dataOf(entry)`. A prefetch entry that nothing reads never makes a load reject.
 - **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. Those have no handle, so check the results before you return the handles.
 
 ```ts twoslash
@@ -747,7 +750,7 @@ Use this page's way when you'd rather keep the procedures small.
 
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
-A call for every item runs a procedure once for every item of a list the server returned. Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) to limit it.
+A call for every item runs a procedure once for every item of a list the server returned. Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) to limit it: it counts every run of a request.
 
 #### Does it work with mutations and subscriptions? {#mutations}
 

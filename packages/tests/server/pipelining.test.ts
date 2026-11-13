@@ -54,6 +54,11 @@ const createRouter = (transformer: 'none' | 'superjson') => {
       }
       return { id: opts.input.id, at: new Date('2026-02-02T00:00:00Z') };
     }),
+    ticks: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(async function* () {
+        yield 1;
+      }),
     rename: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) => opts.input.id),
@@ -575,6 +580,57 @@ describe('the `pipe` search param', () => {
     expect(noList.json.error.message).toBe(
       'Invalid "pipe": "each" at 1 needs a list in its path',
     );
+  });
+
+  test('a run of a call for every item that returns a stream fails by itself', async () => {
+    const eachInput = encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
+    );
+    const res = await get(
+      `input=${eachInput}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
+        }),
+      )}`,
+      { path: 'post,ticks' },
+    );
+    // Not `{}`, which is what a stream inside a list would be sent as
+    expect(
+      res.json[1].result.data.map((item: any) => item.error.data.code),
+    ).toEqual(['UNSUPPORTED_MEDIA_TYPE', 'UNSUPPORTED_MEDIA_TYPE']);
+  });
+
+  test('a call for every item counts each item towards `maxBatchSize`', async () => {
+    async function each(maxBatchSize: number) {
+      const { appRouter, calls } = createRouter('none');
+      await using ctx = testServerAndClientResource(appRouter, {
+        server: { experimental_allowPipelining: true, maxBatchSize },
+      });
+      const search = `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
+        }),
+      )}`;
+      const res = await fetch(
+        `${ctx.httpUrl}/post,tag?batch=pipeline&${search}`,
+      );
+      return { json: await res.json(), calls };
+    }
+
+    // Two calls, of which one runs for two items: three runs
+    const within = await each(3);
+    expect(within.json[1].result.data).toHaveLength(2);
+
+    const over = await each(2);
+    expect(over.json[0].result.data.slug).toBe('hello');
+    expect(over.json[1].error).toMatchObject({
+      message: 'A call for every item exceeds the maximum batch size',
+      data: { code: 'BAD_REQUEST' },
+    });
+    // It ran for no item
+    expect(over.calls).not.toHaveBeenCalled();
   });
 
   test('a call still validates its input', async () => {

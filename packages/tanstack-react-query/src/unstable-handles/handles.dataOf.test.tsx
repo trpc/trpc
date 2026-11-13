@@ -86,9 +86,17 @@ const createAppRouter = () => {
         return { id: opts.input.id, name: 'tRPC' };
       }),
     }),
+    group: t.router({
+      /** A list of lists: the members of every group */
+      list: t.procedure.query(() => ({
+        groups: [{ members: ['u1', 'u2'] }, { members: ['u3'] }],
+      })),
+    }),
     tag: t.router({
       byIds: t.procedure
-        .input(z.object({ ids: z.array(z.string()) }))
+        .input(
+          z.object({ ids: z.array(z.string()), first: z.string().optional() }),
+        )
         .query((opts) => {
           calls('tag.byIds', opts.input);
           return opts.input.ids.map((id) => ({ id }));
@@ -108,12 +116,17 @@ const pipeliningCtx = (ctxOpts: {
   link: typeof httpBatchLink | typeof httpBatchStreamLink;
   /** How long every request takes to leave, in milliseconds */
   latency: number;
+  /** The server's `maxBatchSize` */
+  maxBatchSize: number | undefined;
   /** The links before the batch link */
   before: TRPCLink<AnyRouter>[];
 }) => {
   const { appRouter, calls } = createAppRouter();
   const resource = testReactResource(appRouter, {
-    server: { experimental_allowPipelining: true },
+    server: {
+      experimental_allowPipelining: true,
+      maxBatchSize: ctxOpts.maxBatchSize,
+    },
     client: (opts) => ({
       links: [
         ...ctxOpts.before,
@@ -432,6 +445,112 @@ describe('experimental_dataOf().map()', () => {
       experimental_dataOf(post).tags.filter((tag) => tag.id === 't1'),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item]`,
+    );
+  });
+});
+
+describe('review regressions', () => {
+  test('a second .map() reads from what the first returned', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      tags: ensureEntry(trpc.tag.byIds, {
+        ids: experimental_dataOf(post)
+          .tags.map((tag) => tag)
+          .map((tag) => tag.id),
+      }),
+    });
+    expect(handles.tags.input).toEqual({ ids: ['t1', 't2'] });
+  });
+
+  test('an entry per item of a list that .map() made of plain values', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(
+        experimental_dataOf(post).tags.map((tag) => tag.id),
+        (id) => ensureEntry(trpc.tag.byIds, { ids: [id] }),
+      ),
+    });
+    expect(data.tags).toEqual([[{ id: 't1' }], [{ id: 't2' }]]);
+    expect(experimental_handleOfItem(handles.tags, 't9').input).toEqual({
+      ids: ['t9'],
+    });
+  });
+
+  test("an item's input can also have the whole list", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(trpc.tag.byIds, {
+          // Every tag's id, and this tag's: the same place in the post
+          ids: experimental_dataOf(post).tags.map((each) => each.id),
+          first: tag.id,
+        }),
+      ),
+    });
+    expect(data.tags).toEqual([
+      [{ id: 't1' }, { id: 't2' }],
+      [{ id: 't1' }, { id: 't2' }],
+    ]);
+    expect(experimental_handleOfItem(handles.tags, { id: 't2' }).input).toEqual(
+      { ids: ['t1', 't2'], first: 't2' },
+    );
+  });
+
+  test('stops watching the cache when a prefetch entry that is read starts late', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const cache = resource.queryClient.getQueryCache();
+    expect(cache.hasListeners()).toBe(false);
+
+    // The author starts once the post is in, and the team reads the author
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const author = prefetchEntry(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    });
+    await loadHandles(trpc, {
+      post,
+      author,
+      team: ensureEntry(trpc.team.byId, {
+        id: experimental_dataOf(author).teamId,
+      }),
+    });
+    await vi.waitFor(() => {
+      expect(cache.hasListeners()).toBe(false);
+    });
+  });
+
+  test('a finished handle of a list keeps what its items load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const posts = experimental_dataOf(post, (it) =>
+      ensureEntry(trpc.post.byAuthor, { authorId: it.authorId }),
+    );
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).items,
+        (id) => prefetchEntry(trpc.author.byId, { id }),
+      ),
+    });
+    const finished = experimental_handleOfItem(handles.posts, data.post);
+    expect(finished.experimental_perItem).toHaveLength(1);
+    expect(finished.experimental_perItem).toEqual(
+      handles.posts.experimental_perItem,
     );
   });
 });
@@ -1127,6 +1246,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1178,6 +1298,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1200,6 +1321,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1238,6 +1360,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1266,6 +1389,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1299,6 +1423,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 20,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1373,6 +1498,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [
         () => (linkOpts) => {
           ops.push({ path: linkOpts.op.path, input: linkOpts.op.input });
@@ -1413,6 +1539,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [dedupeLink()],
     });
     const trpc = resource.optionsProxyClient;
@@ -1449,10 +1576,116 @@ describe.each([
     ]);
   });
 
+  test('an entry per item of a list of lists gets each item its own data', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const groups = ensureEntry(trpc.group.list);
+    const [, data] = await loadHandles(trpc, {
+      groups,
+      members: experimental_entryPerItem(
+        experimental_dataOf(groups).groups.map((group) => group.members),
+        (id) => ensureEntry(trpc.author.byId, { id }),
+      ),
+    });
+    // The server runs a call for the items of one list, so these are asked
+    // for by themselves, each with its own id
+    expect(data.members.map((member) => member.id)).toEqual(['u1', 'u2', 'u3']);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([
+      ['author.byId', { id: 'u1' }],
+      ['author.byId', { id: 'u2' }],
+      ['author.byId', { id: 'u3' }],
+    ]);
+  });
+
+  test("an entry per page of an infinite entry does not break the entry's request", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const posts = ensureInfiniteEntry(trpc.post.paged, {});
+    const [, data] = await loadHandles(trpc, {
+      posts,
+      firstAuthors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages,
+        (page) =>
+          ensureEntry(trpc.author.byId, { id: page.items[0]!.authorId }),
+      ),
+    });
+    expect(data.posts.pages).toHaveLength(1);
+    expect(data.firstAuthors).toMatchObject([{ id: 'u0' }]);
+  });
+
+  test("an item's input can also have the whole list, in one request", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(trpc.tag.byIds, {
+          ids: experimental_dataOf(post).tags.map((each) => each.id),
+          first: tag.id,
+        }),
+      ),
+    });
+    expect(data.tags).toEqual([
+      [{ id: 't1' }, { id: 't2' }],
+      [{ id: 't1' }, { id: 't2' }],
+    ]);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'tag.byIds'),
+    ).toEqual([
+      ['tag.byIds', { ids: ['t1', 't2'], first: 't1' }],
+      ['tag.byIds', { ids: ['t1', 't2'], first: 't2' }],
+    ]);
+  });
+
+  test('when the server refuses a call for every item, each item asks by itself', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      // The post's call and a run for each of its two tags are three
+      maxBatchSize: 2,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      ),
+    });
+    expect(data.tags).toEqual([[{ id: 't1' }], [{ id: 't2' }]]);
+    // The refused request, and one for the two items
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+  });
+
   test("an entry per item of a prefetch entry's list loads in one request, which the load does not wait for", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 20,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1484,6 +1717,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1545,6 +1779,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1582,6 +1817,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 50,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1617,6 +1853,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1645,6 +1882,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1676,6 +1914,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1705,6 +1944,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1733,6 +1973,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1764,6 +2005,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1789,6 +2031,7 @@ describe.each([
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
+      maxBatchSize: undefined,
       before: [],
     });
     const trpc = resource.optionsProxyClient;

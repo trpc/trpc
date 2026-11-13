@@ -220,6 +220,12 @@ export interface experimental_TRPCQueryHandlePerItem<
     readonly to: string[];
     readonly path: (string | null)[];
   }[];
+  /**
+   * Only when its query's data has a list that an
+   * `experimental_entryPerItem()` entry is loaded for: what that entry loads
+   * for an item. The finished handle keeps it.
+   */
+  readonly experimental_perItem?: readonly PerItemQueries[];
 }
 
 /**
@@ -252,6 +258,12 @@ export interface experimental_TRPCInfiniteQueryHandlePerItem<
     readonly to: string[];
     readonly path: (string | null)[];
   }[];
+  /**
+   * Only when its query's pages have a list that an
+   * `experimental_entryPerItem()` entry is loaded for: what that entry loads
+   * for an item. The finished handle keeps it.
+   */
+  readonly experimental_perItem?: readonly PerItemQueries[];
 }
 
 /**
@@ -525,6 +537,14 @@ interface EntryDataRef {
   /** The entry `experimental_dataOf()` was called with */
   entry: object;
   path: PipelinePath;
+  /**
+   * For a value read from the item of an `experimental_entryPerItem()`
+   * callback: the list the item is of. A value with the same path that was
+   * read from the list itself, such as with `.map()`, has `null`.
+   */
+  itemOf: EntryDataRef | null;
+  /** Whether `.map()` returned it: it is a value for every item of a list */
+  mapped: boolean;
 }
 
 /** A `experimental_dataOf()` value in an entry's input */
@@ -622,6 +642,9 @@ function createEntryDataRef(ref: EntryDataRef): unknown {
       return createEntryDataRef({
         entry: ref.entry,
         path: [...ref.path, key],
+        itemOf: ref.itemOf,
+        // Kept for `.map`, which is called next
+        mapped: key === 'map' && ref.mapped,
       });
     },
     apply(_target, _thisArg, args: unknown[]) {
@@ -636,20 +659,30 @@ function createEntryDataRef(ref: EntryDataRef): unknown {
           `${notData}. Of an array's methods, only \`.map()\` works, to read a part of every item`,
         );
       }
-      // The callback runs once, on a stand-in for every item
-      const item = [...ref.path.slice(0, -1), null];
+      // The callback runs once, on a stand-in for every item. What an
+      // earlier `.map()` returned already stands for every item
+      const list = ref.path.slice(0, -1);
+      const item = ref.mapped ? list : [...list, null];
       const mapped = entryDataRefOf(
-        callback(createEntryDataRef({ entry: ref.entry, path: item })),
+        callback(
+          createEntryDataRef({
+            entry: ref.entry,
+            path: item,
+            itemOf: ref.itemOf,
+            mapped: false,
+          }),
+        ),
       );
       if (
         mapped?.entry !== ref.entry ||
+        mapped.itemOf !== ref.itemOf ||
         !item.every((segment, index) => mapped.path[index] === segment)
       ) {
         throw new Error(
           `${notData}. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\``,
         );
       }
-      return createEntryDataRef(mapped);
+      return createEntryDataRef({ ...mapped, mapped: true });
     },
   });
 }
@@ -751,24 +784,31 @@ function dataOfCall(call: PipelinedCall) {
  */
 function resultOfItem(results: Promise<unknown>, index: number) {
   let missing = false;
-  const result = results.then((envelopes) => {
-    const envelope: unknown = Array.isArray(envelopes)
-      ? envelopes[index]
-      : undefined;
-    if (isPlainObject(envelope) && isPlainObject(envelope['result'])) {
-      return envelope['result']['data'];
-    }
-    if (isPlainObject(envelope) && envelope['error']) {
-      throw TRPCClientError.from({ error: envelope['error'] } as any);
-    }
-    missing = true;
-    throw new Error(`The server sent no result for item ${index}`);
-  });
+  const result = results.then(
+    (envelopes) => {
+      const envelope: unknown = Array.isArray(envelopes)
+        ? envelopes[index]
+        : undefined;
+      if (isPlainObject(envelope) && isPlainObject(envelope['result'])) {
+        return envelope['result']['data'];
+      }
+      if (isPlainObject(envelope) && envelope['error']) {
+        throw TRPCClientError.from({ error: envelope['error'] } as any);
+      }
+      missing = true;
+      throw new Error(`The server sent no result for item ${index}`);
+    },
+    (error: unknown) => {
+      // The call failed as a whole, such as for too many items: it ran for none
+      missing = true;
+      throw error;
+    },
+  );
   // Used only if the item's query fetches
   result.catch(() => undefined);
   return {
     result,
-    /** Whether the server ran the call for fewer items than this */
+    /** Whether the server didn't run the call for this item */
     missing: () => missing,
   };
 }
@@ -792,19 +832,40 @@ function requestPath(opts: {
     : null;
 }
 
+/** An item of the list of an `experimental_entryPerItem()` entry */
+interface ListItem {
+  /** The indexes down to it, one for every list on the way */
+  indexes: number[];
+  /**
+   * Whether it is an element of the innermost list. A list made with
+   * `.map()` of values that are no lists has those values as its items.
+   */
+  element: boolean;
+}
+
 /**
- * The indexes of every item of a list, which is a list of lists `depth` times
+ * The items of a list whose path has `depth` wildcards, so that it is a list
+ * of lists `depth` times down to the values at its path.
  */
-function itemIndexes(list: unknown, depth: number): number[][] {
+function itemsOfList(list: unknown, depth: number): ListItem[] {
   if (!Array.isArray(list)) {
     return [];
   }
   if (depth === 0) {
-    return list.map((_, index) => [index]);
+    return list.map((_, index) => ({ indexes: [index], element: true }));
   }
-  return list.flatMap((inner: unknown, index) =>
-    itemIndexes(inner, depth - 1).map((rest) => [index, ...rest]),
-  );
+  return list.flatMap((inner: unknown, index) => {
+    const items: ListItem[] =
+      depth > 1 || Array.isArray(inner)
+        ? itemsOfList(inner, depth - 1)
+        : inner == null
+          ? []
+          : [{ indexes: [], element: false }];
+    return items.map((item) => ({
+      indexes: [index, ...item.indexes],
+      element: item.element,
+    }));
+  });
 }
 
 function startEntry(opts: {
@@ -1144,7 +1205,10 @@ async function startEntries(opts: {
             item: each,
           })
         : null;
-      return source?.pipeline && path
+      return source?.pipeline &&
+        path &&
+        // The server runs a call for the items of one list, not of lists of lists
+        (!each || path.filter((segment) => segment === null).length === 1)
         ? [{ to: ref.to, from: source.pipeline, path, each }]
         : [];
     });
@@ -1374,26 +1438,34 @@ async function startEntries(opts: {
     const { state } = leaf;
     const item = [...list.path, null];
     const depth = list.path.filter((segment) => segment === null).length;
-    const readsItem = (ref: EntryDataRef) =>
-      ref.entry === list.entry &&
-      item.every((segment, index) => ref.path[index] === segment);
-    /** The items of the list in an entry's data, as the indexes down to each */
+    // Not by its path: the whole list, read with `.map()`, has the same one
+    const readsItem = (ref: EntryDataRef) => ref.itemOf === list;
+    /** The items of the list in an entry's data */
     const itemsOf = (dataOfEntry: Map<object, unknown>) =>
-      itemIndexes(
+      itemsOfList(
         readPipelinePath(dataOfEntry.get(list.entry), list.path),
         depth,
       );
+    /** Where a value read from the item's stand-in is, for one item */
+    const pathOfItem = (path: PipelinePath, listItem: ListItem) => {
+      const bound = listItem.indexes.reduce<PipelinePath>(
+        bindPipelinePath,
+        path,
+      );
+      // An item that is no element has no place in a list of its own
+      return listItem.element
+        ? bound
+        : bound.filter((_, index) => index !== list.path.length);
+    };
     const optionsOfItem = (
       dataOfEntry: Map<object, unknown>,
-      indexes: number[],
+      listItem: ListItem,
     ) =>
       state.options({
         dataOfRef: (ref) =>
           readPipelinePath(
             dataOfEntry.get(ref.entry),
-            readsItem(ref)
-              ? indexes.reduce<PipelinePath>(bindPipelinePath, ref.path)
-              : ref.path,
+            readsItem(ref) ? pathOfItem(ref.path, listItem) : ref.path,
           ),
         pipeline: null,
       });
@@ -1443,16 +1515,16 @@ async function startEntries(opts: {
           const serverKeys = call
             ? dataOfSources(sources, (source) => source.requestData).then(
                 (serverData) =>
-                  itemsOf(serverData).map((indexes) =>
-                    hashKey(optionsOfItem(serverData, indexes).queryKey),
+                  itemsOf(serverData).map((listItem) =>
+                    hashKey(optionsOfItem(serverData, listItem).queryKey),
                   ),
               )
             : null;
           serverKeys?.catch(() => undefined);
 
           resolve(
-            itemsOf(data).map((indexes, index) => {
-              let options = optionsOfItem(data, indexes);
+            itemsOf(data).map((listItem, index) => {
+              let options = optionsOfItem(data, listItem);
               if (call && serverKeys) {
                 const key = hashKey(options.queryKey);
                 const item = resultOfItem(dataOfCall(call), index);
@@ -1507,10 +1579,10 @@ async function startEntries(opts: {
   }
 
   const allLoads = leaves.map(loadOf);
-  if (unwatch) {
-    // Until every entry has settled
-    void Promise.allSettled(allLoads.map((load) => load.promise)).then(unwatch);
-  }
+  // Until every entry has settled. An entry that starts later can watch too
+  void Promise.allSettled(allLoads.map((load) => load.promise)).then(() =>
+    unwatch?.(),
+  );
   const waited = allLoads.filter((load) => load.leaf.state.kind !== 'prefetch');
   const [results, loadedHandles] = await Promise.all([
     Promise.all(
@@ -1860,7 +1932,12 @@ export function experimental_dataOf(
     );
   }
   const source = entry as object;
-  const data = createEntryDataRef({ entry: source, path: [] });
+  const data = createEntryDataRef({
+    entry: source,
+    path: [],
+    itemOf: null,
+    mapped: false,
+  });
   if (entryFrom === undefined) {
     return data;
   }
@@ -1926,7 +2003,12 @@ export function experimental_entryPerItem(
     );
   }
   const returned = entry(
-    createEntryDataRef({ entry: list.entry, path: [...list.path, null] }),
+    createEntryDataRef({
+      entry: list.entry,
+      path: [...list.path, null],
+      itemOf: list,
+      mapped: false,
+    }),
   );
   if (entryStateOf(returned)?.type !== 'query') {
     throw new Error(
@@ -1987,6 +2069,7 @@ export function experimental_handleOfItem(
     input?: unknown;
     initialCursor?: unknown;
     itemInputs?: { to: string[]; path: PipelinePath }[];
+    experimental_perItem?: unknown;
   } | null;
   if (!Array.isArray(perItem?.queryKey) || !Array.isArray(perItem.itemInputs)) {
     throw new Error(
@@ -2004,6 +2087,10 @@ export function experimental_handleOfItem(
     ...(input !== undefined && { input }),
     ...(perItem.initialCursor != null && {
       initialCursor: perItem.initialCursor,
+    }),
+    // What the items of its own list load, if it is a list
+    ...(perItem.experimental_perItem !== undefined && {
+      experimental_perItem: perItem.experimental_perItem,
     }),
   };
 }
