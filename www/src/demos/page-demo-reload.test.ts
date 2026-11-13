@@ -37,8 +37,8 @@ async function renderFailingDemo(error: Error) {
   });
 }
 
-// Regression: `WWW-H` in Sentry. A demo whose chunk a deploy replaced was
-// hidden for good: reloading the page brings it back.
+// Regression: a demo whose chunk a deploy replaced was hidden for good:
+// reloading the page brings it back.
 test('a demo whose chunk a deploy replaced reloads the page once', async () => {
   sessionStorage.clear();
   await renderFailingDemo(

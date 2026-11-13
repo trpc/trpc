@@ -23,9 +23,9 @@ test('?q= is what was searched for, numbers included', () => {
   expect(searchedFor('/?q=404')).toBe('404');
 });
 
-// Regression: `WWW-K` in Sentry. `/search?q=null` threw `query.trim is not a
-// function` as the server rendered it: the router parses `?q=` as JSON, and
-// a value the route's validation left out kept what the URL said.
+// Regression: `/search?q=null` threw `query.trim is not a function` as the
+// server rendered it: the router parses `?q=` as JSON, and a value the
+// route's validation left out kept what the URL said.
 test("a ?q= that isn't text searches for nothing", () => {
   for (const href of ['/?q=null', '/?q=%5B1%5D', '/?q=%7B%7D']) {
     expect(searchedFor(href)).toBeUndefined();
