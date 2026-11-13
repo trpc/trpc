@@ -1,7 +1,12 @@
 import { testReactResource } from '../../test/__helpers';
-import { skipToken, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  InfiniteQueryObserver,
+  skipToken,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { httpBatchLink, httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
@@ -44,6 +49,17 @@ const createAppRouter = () => {
             title: `Post ${opts.input.slug}`,
             authorId: 'u1',
             tags: [{ id: 't1' }, { id: 't2' }],
+          };
+        }),
+      /** Three pages of one post each, by authors `u0`, `u1` and `u2` */
+      paged: t.procedure
+        .input(z.object({ cursor: z.number().nullish() }))
+        .query((opts) => {
+          calls('post.paged', opts.input);
+          const page = opts.input.cursor ?? 0;
+          return {
+            items: [{ id: `p${page}`, authorId: `u${page}` }],
+            nextCursor: page < 2 ? page + 1 : null,
           };
         }),
       byAuthor: t.procedure
@@ -539,6 +555,44 @@ describe('without the options', () => {
     expect(calls).not.toHaveBeenCalled();
   });
 
+  test('a link that does not pipeline: a later page is an ordinary request, and its items load when they are read', async () => {
+    const { appRouter, calls } = createAppRouter();
+    await using resource = testReactResource(appRouter, {
+      client: (opts) => ({ links: [httpBatchLink({ url: opts.httpUrl })] }),
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.onRequestSpy.mockClear();
+    calls.mockClear();
+
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      // The page that was loaded is fresh: mounting does not fetch it again
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await observer.fetchNextPage();
+    expect(calls.mock.calls).toEqual([['post.paged', { cursor: 1 }]]);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain('batch=1');
+  });
+
   test('a link that does not pipeline: the input is filled in on the client, in ordinary batches', async () => {
     const { appRouter } = createAppRouter();
     await using resource = testReactResource(appRouter, {
@@ -911,6 +965,96 @@ describe.each([
     });
     expect(handles.team.input).toEqual({ id: 'team1' });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("a later page loads its items' queries in the same request", async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [loaded] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    // The handles cross to the browser as JSON
+    const handles: typeof loaded = JSON.parse(JSON.stringify(loaded));
+
+    // What a component does when the list scrolls: read the handle, fetch more
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      // The page that was loaded is fresh: mounting does not fetch it again
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await observer.fetchNextPage();
+    const data = await observer.fetchNextPage();
+    expect(data.data?.pages).toHaveLength(3);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // One request for every page, with its author in it
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
+    for (const [req] of resource.onRequestSpy.mock.calls) {
+      expect(req.url).toContain('/post.paged,author.byId?batch=2');
+    }
+    // A row reads its author from the cache
+    const lastPost = data.data!.pages[2]!.items[0]!;
+    expect(
+      resource.queryClient.getQueryData(
+        fromHandle(trpc, experimental_handleOfItem(handles.authors, lastPost))
+          .queryKey,
+      ),
+    ).toEqual({ id: 'u2', name: 'KATT', teamId: 'team1' });
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toHaveLength(3);
+  });
+
+  test("a query that is fetched again loads its items' queries in the same request", async () => {
+    await using resource = pipeliningCtx(scenario.link);
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.onRequestSpy.mockClear();
+    resource.calls.mockClear();
+
+    // As after an invalidation
+    await resource.queryClient.fetchQuery({
+      ...fromHandle(trpc, handles.post),
+      staleTime: 0,
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
+      'post.bySlug',
+      'tag.byIds',
+      'tag.byIds',
+    ]);
   });
 
   test('a second load of the same entries, as a hover and then a click make, adds no request', async () => {

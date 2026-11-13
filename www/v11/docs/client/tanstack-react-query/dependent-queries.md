@@ -366,13 +366,31 @@ function AuthorName(props: {
 ```
 
 - **The item gives the handle**, so there is no index to keep in step. Passing something that isn't one of the list's items is a type error.
-- **It works for an item the load never had**, such as a post on a later page. Its query loads when the row reads it, in a batch with the other rows'.
+- **It works for an item the load never had**, such as a post on a later page.
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [pipelining](#one-request), it is one call** in the batch, which the server runs once for every item it found. Every run validates its input, and has its own result or error. `maxBatchSize`, if you set it, also limits the items.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
+
+### When the list is fetched again {#later-fetches}
+
+The list's handle knows what its items load. So the options that `fromHandle(trpc, handles.posts)` gives load the items' queries with every fetch of the list: the next page, or a refetch after an invalidation.
+
+```
+POST /post.list,author.byId?batch=2
+
+{
+  "0": { "cursor": 10, "direction": "forward" },
+  "1": {},
+  "pipe": { "1": [{ "to": ["id"], "from": 0, "path": ["items", null, "authorId"], "each": true }] }
+}
+```
+
+- **The component doesn't change.** `fetchNextPage()` of the query above makes this request, and each new row finds its author in the cache.
+- **Read the list through its handle.** A query from `trpc.post.list.infiniteQueryOptions()` fetches the list alone.
+- **Without pipelining, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
 
 ## Entries next to components {#groups}
 
@@ -503,7 +521,7 @@ No. Only queries can be pipelined, and a pipelined batch of mutations is rejecte
 
 #### Can a later page of an infinite list load its authors in the same request? {#later-pages}
 
-Not yet. The load pipelines the first page. A later page loads when you fetch it, and its rows then load their authors, in one batch.
+Yes, if the component reads the list through its handle. See [When the list is fetched again](#later-fetches).
 
 #### What does `createContext` see? {#create-context}
 

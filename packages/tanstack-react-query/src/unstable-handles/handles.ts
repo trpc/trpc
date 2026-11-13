@@ -74,6 +74,12 @@ export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
   /** The query's input. The key is absent when the input is `undefined`. */
   readonly input: TDef['input'];
+  /**
+   * Only when an `experimental_entryPerItem()` entry is loaded for the items of
+   * a list in the data: what that entry loads for an item. When the query is
+   * fetched again, it loads that for its items, in the same request.
+   */
+  readonly experimental_perItem?: readonly PerItemQueries[];
 }
 
 /**
@@ -96,6 +102,21 @@ export interface TRPCInfiniteQueryHandle<
   /** The query's input, without `cursor` and `direction` */
   readonly input: InfiniteHandleInput<TDef['input']>;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
+  /**
+   * Only when an `experimental_entryPerItem()` entry is loaded for the items of
+   * every page: what that entry loads for an item. A page that is fetched
+   * later then loads it for its items, in the same request.
+   */
+  readonly experimental_perItem?: readonly PerItemQueries[];
+}
+
+/**
+ * What an `experimental_entryPerItem()` entry loads for an item: the handle of
+ * that entry, and where the list of items is in one request's result.
+ */
+interface PerItemQueries extends experimental_TRPCQueryHandlePerItem<any, any> {
+  /** The list in a query's data, or in a page of an infinite query */
+  readonly list: readonly string[];
 }
 
 /** Any query or infinite query handle. */
@@ -629,6 +650,34 @@ function withPipelinedResult(opts: {
 }
 
 /**
+ * One item's result of a pipelined call that the server ran for every item.
+ * The call's result is a `{ result }` or an `{ error }` for every item.
+ */
+function resultOfItem(results: Promise<unknown>, index: number) {
+  let missing = false;
+  const result = results.then((envelopes) => {
+    const envelope: unknown = Array.isArray(envelopes)
+      ? envelopes[index]
+      : undefined;
+    if (isPlainObject(envelope) && isPlainObject(envelope['result'])) {
+      return envelope['result']['data'];
+    }
+    if (isPlainObject(envelope) && envelope['error']) {
+      throw TRPCClientError.from({ error: envelope['error'] } as any);
+    }
+    missing = true;
+    throw new Error(`The server sent no result for item ${index}`);
+  });
+  // Used only if the item's query fetches
+  result.catch(() => undefined);
+  return {
+    result,
+    /** Whether the server ran the call for fewer items than this */
+    missing: () => missing,
+  };
+}
+
+/**
  * A path in an entry's data as a path in the result of its request. That
  * result is the data of a query, and the first page of an infinite query.
  */
@@ -1141,28 +1190,11 @@ async function startEntries(opts: {
           let options = optionsOfItem(data, indexes);
           if (request && serverKeys) {
             const key = hashKey(options.queryKey);
-            let missing = false;
-            const result = request.result.then((results) => {
-              const envelope: unknown = Array.isArray(results)
-                ? results[index]
-                : undefined;
-              if (
-                isPlainObject(envelope) &&
-                isPlainObject(envelope['result'])
-              ) {
-                return envelope['result']['data'];
-              }
-              if (isPlainObject(envelope) && envelope['error']) {
-                throw TRPCClientError.from({ error: envelope['error'] } as any);
-              }
-              missing = true;
-              throw new Error(`The server sent no result for item ${index}`);
-            });
-            result.catch(() => undefined);
+            const item = resultOfItem(request.result, index);
             options = withPipelinedResult({
               options,
-              result,
-              unresolved: () => request.pipeline.unresolved || missing,
+              result: item.result,
+              unresolved: () => request.pipeline.unresolved || item.missing(),
               sameInput: async () => (await serverKeys)[index] === key,
             });
           }
@@ -1234,13 +1266,46 @@ async function startEntries(opts: {
   const resultOfLeaf = new Map(
     waited.map((load, index) => [load.leaf, results[index]]),
   );
-  const handles = mapEntryTree(tree, (leaf) => {
-    const loaded = optionsOfLeaf.get(leaf);
-    if (loaded === notStarted) {
-      return [];
+  const handleOfLeaf = new Map(
+    allLoads.flatMap((load) => {
+      const loaded = optionsOfLeaf.get(load.leaf);
+      if (loaded === notStarted) {
+        return [];
+      }
+      // An entry per item has its handle already
+      const handle: Record<string, unknown> = load.leaf.each
+        ? loaded
+        : toHandle(loaded, load.leaf.state.type);
+      return [[load.leaf, handle] as const];
+    }),
+  );
+  // A list's handle says what its items load, so that a later fetch of the
+  // list, such as the next page, can load that in the same request
+  for (const [leaf, handle] of handleOfLeaf) {
+    const source = leaf.each && leafOfEntry.get(leaf.each.entry);
+    const sourceHandle = source && handleOfLeaf.get(source);
+    if (!leaf.each || !source || !sourceHandle) {
+      continue;
     }
-    // An entry per item has its handle already
-    return [leaf.each ? loaded : toHandle(loaded, leaf.state.type)];
+    // The list in one request's result: a query's data, or any page
+    const [pages, page, ...inPage] = leaf.each.path;
+    const list =
+      source.state.type === 'query'
+        ? leaf.each.path
+        : pages === 'pages' && page === null
+          ? inPage
+          : null;
+    if (list?.every((segment) => segment !== null)) {
+      sourceHandle['experimental_perItem'] = [
+        ...((sourceHandle['experimental_perItem'] as unknown[] | undefined) ??
+          []),
+        { ...handle, list },
+      ];
+    }
+  }
+  const handles = mapEntryTree(tree, (leaf) => {
+    const handle = handleOfLeaf.get(leaf);
+    return handle ? [handle] : [];
   });
   const data = mapEntryTree(tree, (leaf) =>
     resultOfLeaf.has(leaf) ? [resultOfLeaf.get(leaf)] : [],
@@ -1899,7 +1964,7 @@ export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
 export function fromHandle(
   trpc: unknown,
   rawHandle: AnyTRPCHandle,
-  opts?: object,
+  opts?: TRPCQueryBaseOptions,
 ): unknown {
   const ctx = readProxy(trpc, 'fromHandle');
   const handle = readHandle(rawHandle, ctx.prefix);
@@ -1911,18 +1976,113 @@ export function fromHandle(
   const procedure = handle.path
     .slice(ctx.path.length)
     .reduce((level, segment) => level[segment], ctx.proxy);
-  const options = optionsOf(procedure, handle.type)(
-    handle.input,
+  const readOpts =
     handle.type === 'infinite'
       ? {
           initialCursor: (rawHandle as TRPCInfiniteQueryHandle).initialCursor,
           ...opts,
         }
-      : opts,
-  );
+      : opts;
+  const options = optionsOf(procedure, handle.type)(handle.input, readOpts);
+  const perItem = rawHandle.experimental_perItem;
   return prepareHandleRead({
     queryClient: queryClientOf(ctx),
     handle,
-    options,
+    options:
+      perItem && perItem.length > 0 && typeof options.queryFn === 'function'
+        ? withItemQueries({
+            ctx,
+            perItem,
+            options,
+            // The request of one fetch, which a link that pipelines marks
+            optionsWith: (pipeline) =>
+              optionsOf(procedure, handle.type)(handle.input, {
+                ...readOpts,
+                trpc: {
+                  ...readOpts?.trpc,
+                  context: {
+                    ...readOpts?.trpc?.context,
+                    ...pipelineContext(pipeline),
+                  },
+                },
+              }),
+          })
+        : options,
   });
+}
+
+/**
+ * Makes every fetch of a list also load what its items load, in the same
+ * request, when the link pipelines. Each item's query is then in the cache
+ * when the item's component reads it.
+ */
+function withItemQueries(opts: {
+  ctx: ProxyContext;
+  perItem: readonly PerItemQueries[];
+  options: any;
+  /** The list's options, with a pipeline on their requests */
+  optionsWith: (pipeline: OperationPipeline) => any;
+}) {
+  const { ctx } = opts;
+  const queryClient = queryClientOf(ctx);
+  return {
+    ...opts.options,
+    queryFn: (context: QueryFunctionContext<any, any>) => {
+      const pipeline = createOperationPipeline([]);
+      const list: Promise<unknown> = Promise.resolve(
+        opts.optionsWith(pipeline).queryFn(context),
+      );
+      if (!pipeline.accepted) {
+        // No link took it into a batch: the items load when they are read
+        return list;
+      }
+      for (const queries of opts.perItem) {
+        const { path } = readQueryKey(queries.queryKey);
+        if (!ctx.path.every((segment, index) => path[index] === segment)) {
+          // The items' procedure isn't in this part of the router
+          continue;
+        }
+        const procedure = path
+          .slice(ctx.path.length)
+          .reduce((level, segment) => level[segment], ctx.proxy);
+        // One call, which the server runs for every item of the list
+        const items = createOperationPipeline(
+          queries.itemInputs.map((itemInput) => ({
+            to: itemInput.to,
+            from: pipeline,
+            path: [...queries.list, null, ...itemInput.path],
+            each: true,
+          })),
+        );
+        const results: Promise<unknown> = procedure['~query'](queries.input, {
+          context: pipelineContext(items),
+        });
+        results.catch(() => undefined);
+        // Before the list's data reaches the components that read the items
+        void list.then(
+          (data) => {
+            const listData = readPipelinePath(data, queries.list);
+            for (const [index, item] of Array.isArray(listData)
+              ? listData.entries()
+              : []) {
+              const itemResult = resultOfItem(results, index);
+              void queryClient.prefetchQuery(
+                withPipelinedResult({
+                  options: procedure.queryOptions(
+                    experimental_handleOfItem(queries, item).input,
+                  ),
+                  result: itemResult.result,
+                  unresolved: () => items.unresolved || itemResult.missing(),
+                  // The server filled in the inputs from the same list
+                  sameInput: () => Promise.resolve(true),
+                }),
+              );
+            }
+          },
+          () => undefined,
+        );
+      }
+      return list;
+    },
+  };
 }
