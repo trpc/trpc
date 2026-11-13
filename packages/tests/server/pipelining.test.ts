@@ -793,6 +793,63 @@ describe('the `pipe` search param', () => {
     expect((await res.json())[1]).toEqual({ result: { data: [1, 5] } });
   });
 
+  test("a value goes through the input's transformer, as if the client had sent it", async () => {
+    /** Makes dates of the date strings in an input */
+    const revive = (value: unknown): unknown =>
+      typeof value === 'string' && !isNaN(Date.parse(value))
+        ? new Date(value)
+        : isObject(value)
+          ? Object.fromEntries(
+              Object.entries(value).map(([key, item]) => [key, revive(item)]),
+            )
+          : value;
+    const t = initTRPC.create({
+      transformer: {
+        // The server gets dates, and the client gets strings
+        input: { serialize: (value: unknown) => value, deserialize: revive },
+        output: {
+          serialize: (value: unknown) => value,
+          deserialize: (value: unknown) => value,
+        },
+      },
+    });
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({
+        publishedAt: new Date('2026-01-01T00:00:00Z'),
+      })),
+      since: t.procedure
+        .input(z.object({ since: z.date() }))
+        .query((opts) => opts.input.since.getUTCFullYear()),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+    });
+    const url = (search: string) => `${ctx.httpUrl}/${search}`;
+
+    // What the client would send by itself
+    const alone = await fetch(
+      url(
+        `since?input=${encodeURIComponent(
+          JSON.stringify({ since: '2026-01-01T00:00:00.000Z' }),
+        )}`,
+      ),
+    );
+    expect(await alone.json()).toEqual({ result: { data: 2026 } });
+
+    const res = await fetch(
+      url(
+        `post,since?batch=pipeline&input=${encodeURIComponent(
+          JSON.stringify({ 1: {} }),
+        )}&pipe=${encodeURIComponent(
+          JSON.stringify({
+            1: [{ to: ['since'], from: 0, path: ['publishedAt'] }],
+          }),
+        )}`,
+      ),
+    );
+    expect((await res.json())[1]).toEqual({ result: { data: 2026 } });
+  });
+
   test('a call still validates its input', async () => {
     const res = await get(
       pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),

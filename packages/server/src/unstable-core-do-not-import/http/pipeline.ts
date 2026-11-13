@@ -231,33 +231,36 @@ export function pipelineCalls(opts: {
     deferred.promise.catch(() => undefined);
     return deferred;
   });
-  /** A copy of data, as the client gets it: sent and read back */
-  function clientCopy(data: unknown): unknown {
-    const json = JSON.stringify(opts.transformer.output.serialize(data));
-    return json === undefined
-      ? undefined
-      : opts.transformer.output.deserialize(JSON.parse(json));
-  }
   /** Each call's data as the client gets it, which is what its paths refer to */
   const clientData = new Map<number, Promise<unknown>>();
   function clientDataOf(index: number) {
     let promise = clientData.get(index);
     if (!promise) {
-      promise = Promise.resolve(outputs[index]?.promise).then(clientCopy);
+      promise = Promise.resolve(outputs[index]?.promise).then((data) => {
+        const json = JSON.stringify(opts.transformer.output.serialize(data));
+        return json === undefined
+          ? undefined
+          : opts.transformer.output.deserialize(JSON.parse(json));
+      });
       clientData.set(index, promise);
     }
     return promise;
   }
   /**
-   * The value at `path` in a call's data, for one input. An object is a copy:
-   * a middleware can change its input in place, and other inputs read the
-   * same data.
+   * The value at `path` in a call's data, as the call that reads it gets it
+   * when a client sends it: through the transformer of inputs. It is a value
+   * of its own too, so a call that changes its input in place changes nothing
+   * that another call reads.
    */
   function valueAt(data: unknown, path: PipelinePath) {
     const value = readPipelinePath(data, path);
-    return typeof value === 'object' && value !== null
-      ? clientCopy(value)
-      : value;
+    const json =
+      value === undefined
+        ? undefined
+        : JSON.stringify(opts.transformer.input.serialize(value));
+    return json === undefined
+      ? undefined
+      : opts.transformer.input.deserialize(JSON.parse(json));
   }
 
   /** The inputs of a call that runs once per item of a list */
