@@ -8,5 +8,4 @@ export {
 export type {
   OperationPipeline,
   PipelinedCall,
-  PipelinedCallRead,
 } from './links/internals/pipeline';
