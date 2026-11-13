@@ -17,10 +17,17 @@ const oldPages = [
   ['/docs/reactjs/useinfinitequery', '/docs/client/react/useInfiniteQuery'],
   ['/docs/server/router', '/docs/server/routers'],
   ['/docs/v10/context', '/docs/v10/server/context'],
+  ['/docs/v10/data-transformers', '/docs/v10/server/data-transformers'],
+  ['/docs/v10/error-formatting', '/docs/v10/server/error-formatting'],
   ['/docs/v10/error-handling', '/docs/v10/server/error-handling'],
   ['/docs/v10/fetch', '/docs/v10/server/adapters/fetch'],
+  ['/docs/v10/header', '/docs/v10/client/headers'],
   ['/docs/v10/infer-types', '/docs/v10/client/vanilla/infer-types'],
   ['/docs/v10/links/loggerLink', '/docs/v10/client/links/loggerLink'],
+  ['/docs/v10/merging-routers', '/docs/v10/server/merging-routers'],
+  ['/docs/v10/metadata', '/docs/v10/server/metadata'],
+  ['/docs/v10/middlewares', '/docs/v10/server/middlewares'],
+  ['/docs/v10/procedures', '/docs/v10/server/procedures'],
   ['/docs/v10/react-queries', '/docs/v10/client/react/useQuery'],
 ] as const;
 

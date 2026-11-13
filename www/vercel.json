@@ -335,6 +335,41 @@
       "permanent": true
     },
     {
+      "source": "/docs/v10/data-transformers",
+      "destination": "/docs/v10/server/data-transformers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/error-formatting",
+      "destination": "/docs/v10/server/error-formatting",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/header",
+      "destination": "/docs/v10/client/headers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/merging-routers",
+      "destination": "/docs/v10/server/merging-routers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/metadata",
+      "destination": "/docs/v10/server/metadata",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/middlewares",
+      "destination": "/docs/v10/server/middlewares",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/procedures",
+      "destination": "/docs/v10/server/procedures",
+      "permanent": true
+    },
+    {
       "source": "/docs/react-mutations",
       "destination": "/docs/reactjs/useMutation",
       "permanent": true
