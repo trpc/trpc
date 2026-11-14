@@ -88,8 +88,10 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
-            trpcAcceptHeader: 'application/jsonl',
-            trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
+            trpcAccept: {
+              header: 'application/jsonl',
+              key: opts.streamHeader ?? 'trpc-accept',
+            },
             getUrl,
             getBody,
             inputs,
