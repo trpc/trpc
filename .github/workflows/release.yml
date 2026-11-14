@@ -39,11 +39,12 @@ on:
       - 'main'
 
 jobs:
-  # A release commit starts it too. If its release stopped after pushing the
-  # commit, this run publishes what npm is missing and tags it; otherwise the
-  # tag is there and there's nothing to release.
+  # Not on the release commits the stable releases push: there's nothing new
+  # to release. If a release stopped after pushing its commit, the next push
+  # resumes it, or tags it and releases after it (`latestRelease` in
+  # tooling/release/src/release.ts).
   build-auto:
-    if: vars.AUTO_RELEASE != 'false'
+    if: "vars.AUTO_RELEASE != 'false' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
     # Nothing here has side effects, so a newer push cancels it.
     concurrency:
       group: release-auto-build
