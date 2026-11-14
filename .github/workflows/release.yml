@@ -18,8 +18,9 @@ name: Release Packages
 # already batches pull requests, so there's no wait on top. A newer push
 # cancels an older run's build; a run whose push main has moved past skips,
 # since the run for the newer push releases everything. The workflow has no
-# `paths:` filter, so a push after a run that skipped still releases what
-# that run didn't, and a daily run retries from main's tip. Set the repo variable AUTO_RELEASE to `false` to stop stable releases;
+# `paths:` filter, so a push after a run that skipped, failed or was
+# cancelled still releases what that run didn't; so does re-running the run
+# for main's tip. Set the repo variable AUTO_RELEASE to `false` to stop stable releases;
 # canaries keep going out.
 #
 # There's no manual run: stable releases are only automatic, and the commits
@@ -36,10 +37,6 @@ on:
   push:
     branches:
       - 'main'
-  # Retries the automatic release from main's tip, in case its run failed or
-  # was cancelled; it releases nothing if there's nothing new.
-  schedule:
-    - cron: '17 4 * * *'
 
 jobs:
   # A release commit starts it too. If its release stopped after pushing the
@@ -133,7 +130,7 @@ jobs:
   build-canary:
     # Not on the release commits the stable releases push, which carry the
     # stable versions.
-    if: "github.event_name == 'push' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
+    if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
