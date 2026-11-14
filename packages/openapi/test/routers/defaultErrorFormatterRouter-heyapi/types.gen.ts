@@ -69,6 +69,28 @@ export type OptionalExtraErrorShape = DefaultErrorShape | {
     };
 };
 
+export type KeywordNamedExtraErrorShape = DefaultErrorShape | {
+    message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
+    code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
+    data: {
+        code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+        httpStatus: number;
+        /**
+         * The path of the procedure that threw.
+         */
+        path?: string;
+        /**
+         * The error's stack trace, only when `isDev` is set.
+         */
+        stack?: string;
+        description?: string;
+        $ref?: string;
+    };
+};
+
 export type PlainData = {
     body?: never;
     path?: never;
@@ -208,3 +230,38 @@ export type OptionalExtraResponses = {
 };
 
 export type OptionalExtraResponse = OptionalExtraResponses[keyof OptionalExtraResponses];
+
+export type KeywordNamedExtraData = {
+    body: {
+        id: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/keywordNamedExtra';
+};
+
+export type KeywordNamedExtraErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: KeywordNamedExtraErrorShape;
+    };
+};
+
+export type KeywordNamedExtraError = KeywordNamedExtraErrors[keyof KeywordNamedExtraErrors];
+
+export type KeywordNamedExtraResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                ok: boolean;
+            };
+        };
+    };
+};
+
+export type KeywordNamedExtraResponse = KeywordNamedExtraResponses[keyof KeywordNamedExtraResponses];

@@ -379,6 +379,15 @@ describe('with the default error formatter', () => {
     ).toContainEqual(['retryAfterMs']);
   });
 
+  it('keeps added fields named like JSON Schema keywords', () => {
+    const variants = getErrorVariants(defaultDoc, 'keywordNamedExtra', 'post');
+    expect(
+      variants.map((variant) =>
+        getExtraDataKeys(defaultDoc, variant).toSorted(),
+      ),
+    ).toContainEqual(['$ref', 'description']);
+  });
+
   it('generates a valid document', async () => {
     const problems = await validateOpenApi(JSON.stringify(defaultDoc, null, 2));
     expect(problems).toEqual([]);
