@@ -371,6 +371,14 @@ describe('with the default error formatter', () => {
     });
   });
 
+  it('keeps a handler shape that only adds an optional field', () => {
+    // the shapes are assignable both ways, but the field must reach the spec
+    const variants = getErrorVariants(defaultDoc, 'optionalExtra', 'post');
+    expect(
+      variants.map((variant) => getExtraDataKeys(defaultDoc, variant)),
+    ).toContainEqual(['retryAfterMs']);
+  });
+
   it('generates a valid document', async () => {
     const problems = await validateOpenApi(JSON.stringify(defaultDoc, null, 2));
     expect(problems).toEqual([]);

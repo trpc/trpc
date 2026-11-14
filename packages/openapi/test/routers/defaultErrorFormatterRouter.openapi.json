@@ -205,6 +205,74 @@
           }
         }
       }
+    },
+    "/optionalExtra": {
+      "post": {
+        "operationId": "optionalExtra",
+        "description": "Its handler's shape adds an optional `retryAfterMs`",
+        "tags": [
+          "optionalExtra"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/OptionalExtraError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -395,6 +463,100 @@
             "additionalProperties": false
           }
         ]
+      },
+      "OptionalExtraErrorShape": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DefaultErrorShape"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32603,
+                  -32600,
+                  -32099,
+                  -32029,
+                  -32028,
+                  -32022,
+                  -32015,
+                  -32013,
+                  -32012,
+                  -32009,
+                  -32008,
+                  -32005,
+                  -32004,
+                  -32003,
+                  -32002,
+                  -32001
+                ],
+                "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "BAD_GATEWAY",
+                      "BAD_REQUEST",
+                      "CLIENT_CLOSED_REQUEST",
+                      "CONFLICT",
+                      "FORBIDDEN",
+                      "GATEWAY_TIMEOUT",
+                      "INTERNAL_SERVER_ERROR",
+                      "METHOD_NOT_SUPPORTED",
+                      "NOT_FOUND",
+                      "NOT_IMPLEMENTED",
+                      "PARSE_ERROR",
+                      "PAYLOAD_TOO_LARGE",
+                      "PAYMENT_REQUIRED",
+                      "PRECONDITION_FAILED",
+                      "PRECONDITION_REQUIRED",
+                      "SERVICE_UNAVAILABLE",
+                      "TIMEOUT",
+                      "TOO_MANY_REQUESTS",
+                      "UNAUTHORIZED",
+                      "UNPROCESSABLE_CONTENT",
+                      "UNSUPPORTED_MEDIA_TYPE"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "The path of the procedure that threw."
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "The error's stack trace, only when `isDev` is set."
+                  },
+                  "retryAfterMs": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "code",
+                  "httpStatus"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "message",
+              "code",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        ]
       }
     },
     "responses": {
@@ -425,6 +587,24 @@
               "properties": {
                 "error": {
                   "$ref": "#/components/schemas/LimitedErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      "OptionalExtraError": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/OptionalExtraErrorShape"
                 }
               },
               "required": [

@@ -48,6 +48,27 @@ export type LimitedErrorShape = DefaultErrorShape | {
     };
 };
 
+export type OptionalExtraErrorShape = DefaultErrorShape | {
+    message: string;
+    /**
+     * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+     */
+    code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
+    data: {
+        code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+        httpStatus: number;
+        /**
+         * The path of the procedure that threw.
+         */
+        path?: string;
+        /**
+         * The error's stack trace, only when `isDev` is set.
+         */
+        stack?: string;
+        retryAfterMs?: number;
+    };
+};
+
 export type PlainData = {
     body?: never;
     path?: never;
@@ -152,3 +173,38 @@ export type SanitizedResponses = {
 };
 
 export type SanitizedResponse = SanitizedResponses[keyof SanitizedResponses];
+
+export type OptionalExtraData = {
+    body: {
+        id: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/optionalExtra';
+};
+
+export type OptionalExtraErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: OptionalExtraErrorShape;
+    };
+};
+
+export type OptionalExtraError = OptionalExtraErrors[keyof OptionalExtraErrors];
+
+export type OptionalExtraResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                ok: boolean;
+            };
+        };
+    };
+};
+
+export type OptionalExtraResponse = OptionalExtraResponses[keyof OptionalExtraResponses];
