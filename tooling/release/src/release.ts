@@ -62,10 +62,13 @@ export const latestTag = Effect.fn('latestTag')(function* (
 
 /**
  * The latest release: the latest tag, or a release commit after it that
- * never got its tag because its run stopped after pushing it. That release
- * may be published in part, so the next one bumps from it rather than
- * publishing its version again from other commits; `publishStable` tags it
- * first. HEAD doesn't count: its own run resumes it.
+ * never got its tag because its run stopped after pushing it, once something
+ * the packages publish changed after it. That release may be published in
+ * part, so the next one bumps from it rather than publishing its version
+ * again with other contents; `publishStable` tags it first. While nothing
+ * published changed after it, HEAD still publishes what it did, so this
+ * returns the latest tag and the run resumes that release, as the release
+ * commit's own run does.
  */
 export const latestRelease = Effect.fn('latestRelease')(function* (
   root: string,
@@ -88,7 +91,8 @@ export const latestRelease = Effect.fn('latestRelease')(function* (
     if (
       sha !== head &&
       version !== undefined &&
-      isAfter(version, tag.slice(1))
+      isAfter(version, tag.slice(1)) &&
+      (yield* publishedChanged(root, sha, 'HEAD'))
     ) {
       return { tag: `v${version}`, ref: sha, tagged: false };
     }

@@ -79,21 +79,83 @@ describe('latestTag', () => {
 });
 
 describe('latestRelease', () => {
-  it('takes a release commit that never got its tag, unless it is HEAD', () =>
+  /** Writes `content` to `file` in `root` and commits it as `subject`. */
+  const commitFile = Effect.fn('commitFile')(function* (
+    root: string,
+    opts: {
+      readonly file: string;
+      readonly content: string;
+      readonly subject: string;
+    },
+  ) {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    yield* fs.makeDirectory(path.dirname(path.join(root, opts.file)), {
+      recursive: true,
+    });
+    yield* fs.writeFileString(path.join(root, opts.file), opts.content);
+    yield* git(root, 'add', '--all');
+    yield* commit(root, opts.subject);
+    return yield* git(root, 'rev-parse', 'HEAD');
+  });
+
+  /** A repo with `@trpc/server` tagged `v11.24.0`, then a fix released as v11.24.1 that never got its tag. */
+  const stoppedRelease = Effect.fn('stoppedRelease')(function* () {
+    const root = yield* repo;
+    yield* commitFile(root, {
+      file: 'packages/server/package.json',
+      content: JSON.stringify({ name: '@trpc/server', files: ['src'] }),
+      subject: 'initial packages',
+    });
+    yield* tag(root, 'v11.24.0');
+    yield* commitFile(root, {
+      file: 'packages/server/src/a.ts',
+      content: 'export {};\n',
+      subject: 'fix(server): a (#1)',
+    });
+    const stopped = yield* commitFile(root, {
+      file: 'packages/server/package.json',
+      content: JSON.stringify({
+        name: '@trpc/server',
+        version: '11.24.1',
+        files: ['src'],
+      }),
+      subject: 'chore: release v11.24.1',
+    });
+    return { root, stopped };
+  });
+
+  it('resumes a release commit that never got its tag while nothing published changed after it', () =>
     run(
       Effect.gen(function* () {
-        const root = yield* repo;
-        yield* tag(root, 'v11.24.0');
+        const { root } = yield* stoppedRelease();
+        // HEAD is the release that stopped.
         expect(yield* latestRelease(root)).toEqual({
           tag: 'v11.24.0',
           ref: 'v11.24.0',
           tagged: true,
         });
-        yield* commit(root, 'chore: release v11.24.1');
-        const stopped = yield* git(root, 'rev-parse', 'HEAD');
-        // HEAD is the release that stopped: its own run resumes it.
+        yield* commitFile(root, {
+          file: 'www/a.md',
+          content: 'docs',
+          subject: 'docs: a (#2)',
+        });
         expect((yield* latestRelease(root)).tag).toBe('v11.24.0');
-        yield* commit(root, 'fix: merged after it (#2)');
+        expect(
+          yield* stableVersion(root, { bump: 'patch', major: 11 }),
+        ).toMatchObject({ tag: 'v11.24.1' });
+      }),
+    ));
+
+  it('bumps past a release commit that never got its tag once something published changed after it', () =>
+    run(
+      Effect.gen(function* () {
+        const { root, stopped } = yield* stoppedRelease();
+        yield* commitFile(root, {
+          file: 'packages/server/src/b.ts',
+          content: 'export {};\n',
+          subject: 'fix(server): b (#2)',
+        });
         expect(yield* latestRelease(root)).toEqual({
           tag: 'v11.24.1',
           ref: stopped,
