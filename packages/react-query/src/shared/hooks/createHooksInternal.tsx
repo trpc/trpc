@@ -565,7 +565,8 @@ export function createRootHooks<
     });
 
     // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useInfiniteQuery(
       {
@@ -623,7 +624,9 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     __usePrefetchInfiniteQuery({
       ...opts,
@@ -669,7 +672,9 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     const hook = __useSuspenseInfiniteQuery(
       {
