@@ -48,7 +48,7 @@ allowBuilds:
 catalog:
   '@types/node': ^24.19.2
   tsdown: 0.23.7
-  typescript: 7.1.0-beta
+  typescript: ^7.0.2
   oxlint: ^1.92.0
   oxlint-tsgolint: ^7.0.2006
   '@oxlint/plugins': ^1.92.0
@@ -98,6 +98,8 @@ catalog:
   yaml: 2.9.1
 
 catalogs:
+  ts-api:
+    typescript: ^6.0.3
   www:
     '@fastify/websocket': 11.3.7
     lucide-react: 1.70.0

@@ -3,7 +3,7 @@ import { basename, extname } from 'node:path';
 import { parse } from '@bomb.sh/args';
 import { intro, isCancel, log, multiselect, outro } from '@clack/prompts';
 import { version } from '../../package.json';
-import { scanProject } from '../lib/ast/scanners';
+import { findTRPCImportReferences, getProgram } from '../lib/ast/scanners';
 import { assertCleanGitTree, filterIgnored } from '../lib/git';
 import { installPackage, uninstallPackage } from '../lib/pkgmgr';
 
@@ -68,11 +68,13 @@ const sortedTransforms = transforms.sort((a) =>
   a.includes('provider') ? -1 : 1,
 );
 
-const { fileNames, references: possibleReferences } = scanProject();
+const program = getProgram();
+const sourceFiles = program.getSourceFiles();
+const possibleReferences = findTRPCImportReferences(program);
 const trpcFile = possibleReferences.mostUsed.file;
 const trpcImportName = possibleReferences.importName;
 
-const committedFiles = await filterIgnored(fileNames);
+const committedFiles = await filterIgnored(sourceFiles);
 
 for (const transform of sortedTransforms) {
   log.step(`Running transform: ${basename(transform, extname(transform))}`);

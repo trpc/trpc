@@ -42,13 +42,12 @@ export type HelloErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -58,11 +57,12 @@ export type HelloErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -105,7 +105,7 @@ export type SubrouterHelloData = {
                 /**
                  * Child gender
                  */
-                gender: 'female' | 'male' | 'other';
+                gender: 'male' | 'female' | 'other';
             }>;
         };
     };
@@ -118,13 +118,12 @@ export type SubrouterHelloErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -134,11 +133,12 @@ export type SubrouterHelloErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -174,13 +174,12 @@ export type DirectArrayErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -190,11 +189,12 @@ export type DirectArrayErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -242,13 +242,12 @@ export type ReferencedChildrenErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -258,11 +257,12 @@ export type ReferencedChildrenErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -299,13 +299,12 @@ export type ReferencedChildLeafOutputErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -315,11 +314,12 @@ export type ReferencedChildLeafOutputErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -364,13 +364,12 @@ export type HelloInlineErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -380,11 +379,12 @@ export type HelloInlineErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -424,7 +424,7 @@ export type SubrouterInlineHelloData = {
                 /**
                  * Child gender
                  */
-                gender: 'female' | 'male' | 'other';
+                gender: 'male' | 'female' | 'other';
             }>;
         };
     };
@@ -437,13 +437,12 @@ export type SubrouterInlineHelloErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -453,11 +452,12 @@ export type SubrouterInlineHelloErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };
@@ -493,13 +493,12 @@ export type DirectArrayInlineErrors = {
      */
     default: {
         error: {
-            message: string;
-            /**
-             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
-             */
-            code: -32700 | -32603 | -32600 | -32099 | -32029 | -32028 | -32022 | -32015 | -32013 | -32012 | -32009 | -32008 | -32005 | -32004 | -32003 | -32002 | -32001;
             data: {
-                code: 'BAD_GATEWAY' | 'BAD_REQUEST' | 'CLIENT_CLOSED_REQUEST' | 'CONFLICT' | 'FORBIDDEN' | 'GATEWAY_TIMEOUT' | 'INTERNAL_SERVER_ERROR' | 'METHOD_NOT_SUPPORTED' | 'NOT_FOUND' | 'NOT_IMPLEMENTED' | 'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE' | 'PAYMENT_REQUIRED' | 'PRECONDITION_FAILED' | 'PRECONDITION_REQUIRED' | 'SERVICE_UNAVAILABLE' | 'TIMEOUT' | 'TOO_MANY_REQUESTS' | 'UNAUTHORIZED' | 'UNPROCESSABLE_CONTENT' | 'UNSUPPORTED_MEDIA_TYPE';
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
                 /**
                  * The path of the procedure that threw.
@@ -509,11 +508,12 @@ export type DirectArrayInlineErrors = {
                  * The error's stack trace, only when `isDev` is set.
                  */
                 stack?: string;
-                zodError: Array<{
-                    message: string;
-                    path: Array<string | number>;
-                }> | null;
             };
+            message: string;
+            /**
+             * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+             */
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
         };
     };
 };

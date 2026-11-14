@@ -78,7 +78,7 @@
     "oxlint-tsgolint": "catalog:",
     "superjson": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:",
+    "typescript": "catalog:ts-api",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
     "zod": "catalog:"
@@ -86,7 +86,7 @@
   "peerDependencies": {
     "@hey-api/openapi-ts": ">=0.94.5",
     "@trpc/server": "11.28.0",
-    "typescript": ">=7.1.0-beta",
+    "typescript": ">=5.8.2 <7",
     "zod": ">=4.0.0"
   },
   "peerDependenciesMeta": {

@@ -35,8 +35,6 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 pnpm add @trpc/openapi
 ```
 
-The generator reads your types through TypeScript's compiler API, so it needs TypeScript 7.1 or later as a peer dependency. TypeScript 7.0 has no compiler API, and older versions of `@trpc/openapi` support TypeScript 5.8–6.
-
 :::note
 `@trpc/openapi` is currently versioned like 11.x.x-alpha, and should work with any recent tRPC v11 version, but as always we recommend aligning the version numbers
 :::
