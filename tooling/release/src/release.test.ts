@@ -10,6 +10,7 @@ import {
   latestTag,
   packCanary,
   publishStable,
+  pushReleaseCommit,
   tarballUrl,
   waitForVersions,
 } from './release.ts';
@@ -97,6 +98,91 @@ const failure = <TValue, TError, TRequirements>(
     Effect.exit,
     Effect.map((exit) => (Exit.isFailure(exit) ? String(exit.cause) : 'ok')),
   );
+
+/** A clone of `remote`, which takes pushes to its checked-out branch. */
+const cloneOf = Effect.fn('cloneOf')(function* (remote: string) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* git(remote, 'config', 'receive.denyCurrentBranch', 'updateInstead');
+  const clone = yield* fs.makeTempDirectoryScoped();
+  yield* git(clone, 'clone', '--quiet', remote, '.');
+  yield* git(clone, 'config', 'user.name', 'Test');
+  yield* git(clone, 'config', 'user.email', 'test@example.com');
+  yield* git(clone, 'config', 'commit.gpgsign', 'false');
+  return clone;
+});
+
+/** Commits `content` as `file` in `root`. */
+const commitFile = Effect.fn('commitFile')(function* (
+  root: string,
+  file: string,
+  content: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  yield* fs.writeFileString(path.join(root, file), content);
+  yield* git(root, 'add', '--', file);
+  yield* commit(root, `chore: edit ${file}`);
+});
+
+describe('pushReleaseCommit', () => {
+  it('merges what landed on the branch meanwhile and pushes', () =>
+    run(
+      Effect.gen(function* () {
+        const remote = yield* repo;
+        const clone = yield* cloneOf(remote);
+        yield* commitFile(clone, 'version.txt', '11.23.1');
+        const release = yield* git(clone, 'rev-parse', 'HEAD');
+        yield* commitFile(remote, 'docs.md', 'merged meanwhile');
+
+        const pushed = yield* pushReleaseCommit(clone, {
+          remote: 'origin',
+          branch: 'main',
+          tag: 'v11.23.1',
+        });
+
+        expect(pushed).toBe(release);
+        const tip = yield* git(remote, 'rev-parse', 'main');
+        expect(yield* git(remote, 'rev-parse', `${tip}^1`)).toBe(release);
+        expect(yield* git(remote, 'log', '-1', '--format=%s', tip)).toBe(
+          'chore: release v11.23.1 (merge main)',
+        );
+        expect(yield* git(remote, 'show', `${tip}:version.txt`)).toBe(
+          '11.23.1',
+        );
+        expect(yield* git(remote, 'show', `${tip}:docs.md`)).toBe(
+          'merged meanwhile',
+        );
+        yield* git(remote, 'tag', '--no-sign', 'v11.23.1', pushed);
+        yield* commitFile(remote, 'next.md', 'landed after the release');
+        expect(yield* latestTag(remote, 'main')).toBe('v11.23.1');
+      }),
+    ));
+
+  it('fails, publishing nothing, when what landed conflicts', () =>
+    run(
+      Effect.gen(function* () {
+        const remote = yield* repo;
+        const clone = yield* cloneOf(remote);
+        yield* commitFile(clone, 'version.txt', '11.23.1');
+        const release = yield* git(clone, 'rev-parse', 'HEAD');
+        yield* commitFile(remote, 'version.txt', '11.24.0');
+        const before = yield* git(remote, 'rev-parse', 'main');
+
+        const push = pushReleaseCommit(clone, {
+          remote: 'origin',
+          branch: 'main',
+          tag: 'v11.23.1',
+        });
+
+        expect(yield* failure(push)).toContain(
+          "main moved since this run checked it out and doesn't merge into the release commit; release again from the new main. Nothing was published.",
+        );
+        expect(yield* git(remote, 'rev-parse', 'main')).toBe(before);
+        expect(yield* git(clone, 'rev-parse', 'HEAD')).toBe(release);
+        expect(yield* git(clone, 'status', '--porcelain')).toBe('');
+      }),
+    ));
+});
 
 describe('the release guards', () => {
   it('publishes a stable release only from the branch', () =>

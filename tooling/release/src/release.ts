@@ -317,6 +317,78 @@ export const packStable = Effect.fn('packStable')(function* (
   return { tag, files };
 });
 
+/** How many times `pushReleaseCommit` pushes before giving up. */
+const pushAttempts = 3;
+
+/**
+ * Pushes HEAD, the release commit, to `branch` and returns its sha. If
+ * `branch` moved, which the merge queue does whenever a pull request lands
+ * during a release, it merges `branch` into the release commit and pushes
+ * that. The tarballs come from the release commit, so the tag goes on it,
+ * not on the merge. The release commit is the merge's first parent, so
+ * `latestTag` still finds the tag, and the merge's message starts with the
+ * release commit's, so CI runs on it.
+ */
+export const pushReleaseCommit = Effect.fn('pushReleaseCommit')(function* (
+  root: string,
+  opts: {
+    readonly remote: string;
+    readonly branch: string;
+    readonly tag: string;
+  },
+) {
+  const released = yield* git(root, 'rev-parse', 'HEAD');
+  for (let attempt = 1; ; attempt++) {
+    const pushed = yield* git(
+      root,
+      'push',
+      '--quiet',
+      opts.remote,
+      `HEAD:refs/heads/${opts.branch}`,
+    ).pipe(
+      Effect.as(true),
+      Effect.orElseSucceed(() => false),
+    );
+    if (pushed) {
+      return released;
+    }
+    // branchMoved fetches `branch` into FETCH_HEAD, which the merge takes.
+    if (!(yield* branchMoved(root, opts.remote, opts.branch))) {
+      return yield* new ReleaseError({
+        message: `Pushing the release commit to ${opts.remote} ${opts.branch} failed. Nothing was published.`,
+      });
+    }
+    if (attempt === pushAttempts) {
+      return yield* new ReleaseError({
+        message: `${opts.branch} kept moving while this run pushed the release commit; release again from the new ${opts.branch}. Nothing was published.`,
+      });
+    }
+    yield* Console.log(
+      `${opts.branch} moved since this run checked it out; merging it into the release commit`,
+    );
+    yield* git(
+      root,
+      'merge',
+      '--quiet',
+      '--no-ff',
+      '--message',
+      `${releaseCommitMessage(opts.tag)} (merge ${opts.branch})`,
+      'FETCH_HEAD',
+    ).pipe(
+      Effect.catchTag('CommandError', () =>
+        git(root, 'merge', '--abort').pipe(
+          Effect.ignore,
+          Effect.andThen(
+            new ReleaseError({
+              message: `${opts.branch} moved since this run checked it out and doesn't merge into the release commit; release again from the new ${opts.branch}. Nothing was published.`,
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+});
+
 /**
  * The half of a stable release that publishes: bumps every package from the
  * latest tag again and checks `dir` holds exactly their tarballs, which
@@ -325,8 +397,8 @@ export const packStable = Effect.fn('packStable')(function* (
  * release. It runs nothing from the packages.
  *
  * HEAD must be on `branch`. The commit goes out before the packages and the
- * tag after them. If `branch` moved, the push is rejected and nothing is
- * published. If publishing fails, running the release again finds the
+ * tag after them. If `branch` moved, `pushReleaseCommit` merges it in, or
+ * fails and nothing is published. If publishing fails, running the release again finds the
  * versions already on `branch`, publishes what npm doesn't have yet and tags
  * it; it fails instead if npm has a version with other files than it packed.
  */
@@ -358,6 +430,8 @@ export const publishStable = Effect.fn('publishStable')(function* (
     return tag;
   }
 
+  // The commit the tarballs were packed from, which the tag goes on.
+  let released = 'HEAD';
   if (bumped) {
     yield* git(root, 'add', '--', ...files);
     yield* git(
@@ -367,24 +441,7 @@ export const publishStable = Effect.fn('publishStable')(function* (
       '--message',
       releaseCommitMessage(tag),
     );
-    const pushed = yield* git(
-      root,
-      'push',
-      '--quiet',
-      opts.remote,
-      `HEAD:refs/heads/${opts.branch}`,
-    ).pipe(
-      Effect.as(true),
-      Effect.orElseSucceed(() => false),
-    );
-    if (!pushed) {
-      const reason = (yield* branchMoved(root, opts.remote, opts.branch))
-        ? `${opts.branch} moved since this run checked it out; release again from the new ${opts.branch}`
-        : `Pushing the release commit to ${opts.remote} ${opts.branch} failed`;
-      return yield* new ReleaseError({
-        message: `${reason}. Nothing was published.`,
-      });
-    }
+    released = yield* pushReleaseCommit(root, { ...opts, tag });
   } else {
     yield* Console.log(
       `HEAD already has the ${tag} versions: an earlier run pushed them and stopped. Publishing what npm doesn't have yet.`,
@@ -392,7 +449,7 @@ export const publishStable = Effect.fn('publishStable')(function* (
   }
 
   yield* publishTarballs(root, tarballs, { ...opts, registry });
-  yield* git(root, 'tag', '--annotate', tag, '--message', tag);
+  yield* git(root, 'tag', '--annotate', tag, '--message', tag, released);
   yield* git(root, 'push', '--quiet', opts.remote, `refs/tags/${tag}`);
 
   yield* waitForVersions(published, registry, opts.wait).pipe(
