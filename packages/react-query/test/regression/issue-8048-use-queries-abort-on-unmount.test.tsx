@@ -19,10 +19,11 @@ function createRecordingClient(proxy: Proxy) {
   const signals: (AbortSignal | null | undefined)[] = [];
   const client = proxy.createClient({
     links: [
-      () => ({ op }) => {
-        signals.push(op.signal);
-        return observable(() => () => {});
-      },
+      () =>
+        ({ op }) => {
+          signals.push(op.signal);
+          return observable(() => () => {});
+        },
     ],
   });
   return { client, signals };

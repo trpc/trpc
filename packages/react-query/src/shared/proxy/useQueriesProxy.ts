@@ -111,8 +111,7 @@ export function createUseQueries<TRouter extends AnyRouter>(
     ];
 
     // request option should take priority over global
-    const shouldAbortOnUnmount =
-      _opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount = _opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const options: QueryOptions = {
       queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
