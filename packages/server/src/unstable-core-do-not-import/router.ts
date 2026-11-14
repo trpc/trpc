@@ -356,7 +356,10 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           const lazyPath = [...opts.path, opts.key];
           const lazyKey = lazyPath.join('.');
 
-          opts.aggregate[opts.key] = step(getRouterInput(router), lazyPath);
+          opts.aggregate[opts.key] = step({
+            from: getRouterInput(router),
+            path: lazyPath,
+          });
 
           delete lazy[lazyKey];
         }),
@@ -365,9 +368,13 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
     const separator = config.pathSeparator;
 
-    function step(from: CreateRouterOptions, path: readonly string[] = []) {
+    function step(opts: {
+      from: CreateRouterOptions;
+      path: readonly string[];
+    }) {
+      const { path } = opts;
       const aggregate: RouterRecord = emptyObject();
-      for (const [key, item] of Object.entries(from ?? {})) {
+      for (const [key, item] of Object.entries(opts.from ?? {})) {
         if (separator !== '.' && key.includes(separator)) {
           // The URL `a_b_c` couldn't say which `_` splits a segment
           throw new Error(
@@ -384,12 +391,15 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           continue;
         }
         if (isRouter(item)) {
-          aggregate[key] = step(getRouterInput(item), [...path, key]);
+          aggregate[key] = step({
+            from: getRouterInput(item),
+            path: [...path, key],
+          });
           continue;
         }
         if (!isProcedure(item)) {
           // RouterRecord
-          aggregate[key] = step(item, [...path, key]);
+          aggregate[key] = step({ from: item, path: [...path, key] });
           continue;
         }
 
@@ -405,7 +415,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
       return aggregate;
     }
-    const record = step(input);
+    const record = step({ from: input, path: [] });
 
     const _def: AnyRouter['_def'] = {
       _config: config,
