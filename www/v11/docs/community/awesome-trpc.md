@@ -28,7 +28,7 @@ A collection of resources on tRPC.
 | trpc-cli - Turn a tRPC router into a type-safe, fully documented CLI                                     | https://github.com/mmkal/trpc-cli                            |
 | trpc-live - Live query solution for tRPC                                                                 | https://github.com/strblr/trpc-live                          |
 | trpc-navigation-plugin - Fix goto-definition with emit declarations                                      | https://github.com/ebg1223/trpc-navigation-plugin            |
-| oRPC - OpenAPI support for your tRPC routers                                                             | https://orpc.unnoq.com/docs/openapi/integrations/trpc        |
+| oRPC - OpenAPI support for your tRPC routers                                                             | https://orpc.dev/docs/openapi/integrations/trpc              |
 | Prisma tRPC Generator - Automatically generate tRPC routers from Prisma schemas                          | https://github.com/omar-dulaimi/prisma-trpc-generator        |
 | tRPC Shield - Permission system for tRPC                                                                 | https://github.com/omar-dulaimi/trpc-shield                  |
 | Prisma tRPC Shield Generator - Generate tRPC Shield permissions from Prisma schema                       | https://github.com/omar-dulaimi/prisma-trpc-shield-generator |
@@ -110,6 +110,7 @@ A collection of resources on tRPC.
 | Build a Public tRPC API: trpc-openapi vs ts-rest                                                    | https://catalins.tech/public-api-trpc/                                                      |
 | Next.js + Expo + tRPC Monorepo Boilerplate                                                          | https://github.com/monsieursam/boilerplate-next-expo-trpc                                   |
 | Next.js + Express + BetterAuth + Prisma + bun + shadcn + tRPC Monorepo Boilerplate                  | https://github.com/KitsuneKode/template-nextjs-express-trpc-better-auth-monorepo            |
+| Electron AppStack - Electron starter with type-safe tRPC IPC, React, SQLite, auto update, signing   | https://electron-appstack.com                                                               |
 
 ## 🏁 Open-source projects using tRPC
 

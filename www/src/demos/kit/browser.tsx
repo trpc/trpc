@@ -214,7 +214,7 @@ function LiveBrowser(props: {
       context: { trpc: props.session.trpc } satisfies DemoContext,
       // On a page it has visited, TanStack Router shows the kept loader
       // data and reruns the loader behind it by default, which hides what
-      // `$ensure` and `$fetch` wait for.
+      // `ensureEntry` and `fetchEntry` wait for.
       defaultStaleReloadMode: 'blocking',
       history: createMemoryHistory({ initialEntries: [props.initial] }),
       InnerWrap: Chrome,

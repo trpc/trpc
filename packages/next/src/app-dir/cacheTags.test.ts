@@ -5,7 +5,10 @@ import { vi } from 'vitest';
 import { z } from 'zod';
 import { experimental_nextCacheLink } from './links/nextCache';
 import { experimental_nextHttpLink } from './links/nextHttp';
-import { experimental_createTRPCNextAppDirServer } from './server';
+import {
+  experimental_createTRPCNextAppDirServer,
+  experimental_revalidateEndpoint,
+} from './server';
 import { generateCacheTag, generateCacheTags } from './shared';
 
 vi.mock('next/cache', () => ({
@@ -92,25 +95,28 @@ describe('app-dir server proxy revalidation', () => {
     expect(res).toEqual({ revalidated: true });
     expect(revalidateTag).toHaveBeenCalledWith(
       'page.home.header?input={"size":"medium"}',
+      { expire: 0 },
     );
   });
 
   test('revalidates leaf query without input', async () => {
     const res = await trpc.page.home.header.revalidate();
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith('page.home.header');
+    expect(revalidateTag).toHaveBeenCalledWith('page.home.header', {
+      expire: 0,
+    });
   });
 
   test('revalidates subrouter under home', async () => {
     const res = await trpc.page.home.revalidate();
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith('page.home');
+    expect(revalidateTag).toHaveBeenCalledWith('page.home', { expire: 0 });
   });
 
   test('revalidates top-level router under page', async () => {
     const res = await trpc.page.revalidate();
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith('page');
+    expect(revalidateTag).toHaveBeenCalledWith('page', { expire: 0 });
   });
 
   test('returns error when revalidation fails', async () => {
@@ -132,6 +138,25 @@ describe('app-dir server proxy revalidation', () => {
       size: 'medium',
     });
     expectTypeOf(trpc.page.home.header.revalidate).toBeCallableWith(undefined);
+  });
+});
+
+describe('experimental_revalidateEndpoint', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Next 16 warns about `revalidateTag(tag)` and wants a cache-life profile;
+  // `{ expire: 0 }` keeps the immediate expiry that one argument gave
+  test('expires the tag immediately', async () => {
+    const res = await experimental_revalidateEndpoint(
+      new Request('http://localhost/api/revalidate', {
+        method: 'POST',
+        body: JSON.stringify({ cacheTag: 'posts' }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(revalidateTag).toHaveBeenCalledWith('posts', { expire: 0 });
   });
 });
 

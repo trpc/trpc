@@ -9,15 +9,15 @@
   },
   "dependencies": {
     "@trpc/server": "npm:@trpc/server",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.13",
-    "@types/node": "^24.13.4",
-    "oxlint": "^1.90.0",
-    "oxlint-tsgolint": "^7.0.2005",
-    "tsx": "^4.19.3",
+    "@types/cors": "^2.8.19",
+    "@types/node": "^24.19.2",
+    "oxlint": "^1.92.0",
+    "oxlint-tsgolint": "^7.0.2006",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.2"
   }
 }

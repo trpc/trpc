@@ -1,6 +1,17 @@
 import { composeRewrites, createRouter } from '@tanstack/react-router';
 
 import { startAnalytics } from './analytics.ts';
+import {
+  type DehydratedCardDay,
+  dehydrateCardDay,
+  hydrateCardDay,
+} from './card-day.ts';
+import { errorOptions } from './components/error-page.tsx';
+import {
+  type DehydratedPages,
+  dehydratePages,
+  hydratePages,
+} from './content/page-html.ts';
 import { NotFound } from './components/not-found.tsx';
 import { firstDocRewrite } from './first-doc.ts';
 import {
@@ -9,6 +20,7 @@ import {
   type RenderedPath,
   renderedPathRewrite,
 } from './rendered-path.ts';
+import { reloadPage } from './reload-once.ts';
 import { routeTree } from './routeTree.gen.ts';
 import {
   type DehydratedRelease,
@@ -19,6 +31,7 @@ import {
 
 export function getRouter() {
   const router = createRouter({
+    ...errorOptions(reloadPage),
     defaultNotFoundComponent: NotFound,
     // Hovering a link loads the page's content chunk, so the click renders
     // without waiting.
@@ -27,13 +40,20 @@ export function getRouter() {
     defaultHashScrollIntoView: { behavior: 'instant', block: 'start' },
     // Content only changes with a deploy, so a loaded page never goes stale.
     defaultStaleTime: Number.POSITIVE_INFINITY,
-    dehydrate: (): DehydratedRelease & RenderedPath => ({
+    dehydrate: (): DehydratedCardDay &
+      DehydratedPages &
+      DehydratedRelease &
+      RenderedPath => ({
+      ...dehydrateCardDay(),
+      ...dehydratePages(router),
       ...dehydrateRelease(),
       ...dehydrateRenderedPath(router),
     }),
-    hydrate: (dehydrated) => {
+    hydrate: async (dehydrated) => {
+      hydrateCardDay(dehydrated);
       hydrateRelease(dehydrated);
       hydrateRenderedPath(dehydrated);
+      await hydratePages(dehydrated, reloadPage);
     },
     rewrite: composeRewrites([renderedPathRewrite, firstDocRewrite]),
     routeTree,

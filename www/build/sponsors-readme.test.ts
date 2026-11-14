@@ -1,6 +1,5 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import { sponsorCloudVersion } from '../src/og/sponsor-cloud.ts';
 import type { Sponsor } from '../src/sponsors.ts';
 import {
   endMarker,
@@ -48,11 +47,10 @@ describe('sponsorsMarkdown', () => {
       sponsor('b2', 9),
       sponsor('s1', 20, 0, { rank: 2, tier: 'silver' }),
     ];
-    const version = sponsorCloudVersion(sponsors);
     expect(sponsorsMarkdown(sponsors)).toBe(
       [
         '<p align="center">',
-        `  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=${version}" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>`,
+        `  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/_/sponsor-cloud.png" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>`,
         '</p>',
         '',
         '### Gold partners',
@@ -118,24 +116,10 @@ describe('sponsorsMarkdown', () => {
 });
 
 describe('sponsorCloudMarkdown', () => {
-  it('links the cloud to its place on /sponsor, at a version that changes with who it draws', () => {
-    const sponsors = [sponsor('a', 40), sponsor('b', 20)];
-    const src = (list: ReadonlyArray<Sponsor>) =>
-      /src="([^"]+)"/.exec(sponsorCloudMarkdown(list))?.[1];
-    expect(src(sponsors)).toMatch(
-      /^https:\/\/trpc\.io\/og\/sponsor-cloud\.png\?v=[0-9a-f]{8}$/,
+  it('links the cloud to its place on /sponsor, at a URL that never changes', () => {
+    expect(sponsorCloudMarkdown()).toContain(
+      '<a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/_/sponsor-cloud.png"',
     );
-    expect(sponsorCloudMarkdown(sponsors)).toContain(
-      '<a href="https://trpc.io/sponsor#sponsors">',
-    );
-    expect(src([...sponsors, { ...sponsor('c', 10), imageless: true }])).toBe(
-      src(sponsors),
-    );
-    expect(src([sponsor('a', 41), sponsor('b', 20)])).not.toBe(src(sponsors));
-    expect(src([sponsor('a', 40)])).not.toBe(src(sponsors));
-    expect(
-      src([sponsor('a', 40), { ...sponsor('b', 20), name: 'B Co' }]),
-    ).not.toBe(src(sponsors));
   });
 
   it('leaves the cloud out when it would draw no one', () => {

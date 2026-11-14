@@ -38,7 +38,7 @@ export type FastifyHandlerOptions<
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
-type FastifyRequestHandlerOptions<
+export type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
