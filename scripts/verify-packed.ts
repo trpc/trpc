@@ -131,7 +131,7 @@ function getPacked(name: string) {
 }
 
 const OPTIONAL_PEERS = [
-  '@hey-api/openapi-ts@^0.99.0',
+  '@hey-api/openapi-ts@0.0.0-next-20260930190945',
   '@tanstack/react-query@^5.80.3',
   '@types/aws-lambda@^8',
   '@types/express@^5',
@@ -219,7 +219,7 @@ const scenarios = [
       (dep) => dep.startsWith('@hey-api/openapi-ts@') || dep.startsWith('zod@'),
     ),
     typescript: ['7.1.0-beta'],
-    // Hey API's typescript peer (`>=6.0.0`) doesn't match a prerelease
+    // @trpc/server's typescript peer (`>=5.7.2`) doesn't match a prerelease
     legacyPeerDeps: true,
     skipEntry: (name: string, subpath: string) =>
       name === '@trpc/server' && ADAPTERS_WITH_OPTIONAL_PEERS.includes(subpath),

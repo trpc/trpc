@@ -20,7 +20,7 @@ export async function filterIgnored(files: readonly string[]) {
     stdout = result.stdout;
     stderr = result.stderr;
   } catch (error) {
-    log.error('Error executing git check-ignore:', error);
+    log.error('Error executing git check-ignore:' + String(error));
     stdout = '';
   }
 

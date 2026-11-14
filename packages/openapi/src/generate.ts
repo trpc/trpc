@@ -1797,8 +1797,6 @@ export async function generateOpenAPIDocument(
   const resolvedPath = path.resolve(routerFilePath);
   const exportName = options.exportName ?? 'AppRouter';
 
-  // TypeScript 7 runs the compiler in its own process; disposing the API
-  // stops it.
   using api = new API({ cwd: path.dirname(resolvedPath) });
   const compilerOptions = loadCompilerOptions(api, path.dirname(resolvedPath));
   const program = api.createProgram([resolvedPath], compilerOptions);
