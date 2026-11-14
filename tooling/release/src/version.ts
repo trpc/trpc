@@ -19,6 +19,17 @@ function parse(version: string) {
   return [Number(match[1]), Number(match[2]), Number(match[3])] as const;
 }
 
+/** Whether `version` comes after `than`: `11.24.1` after `11.24.0`. */
+export function isAfter(version: string, than: string) {
+  const [a, b] = [parse(version), parse(than)];
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) {
+      return (a[i] ?? 0) > (b[i] ?? 0);
+    }
+  }
+  return false;
+}
+
 /** `11.22.1` → `11.22.2` (patch), `11.23.0` (minor) or `12.0.0` (major). */
 export function bumpVersion(version: string, bump: Bump) {
   const [major, minor, patch] = parse(version);

@@ -8,8 +8,9 @@
  *   (READMEs, and the agent skills, which are generated from the docs at
  *   pack time: a docs change ships with the next release instead of starting
  *   one);
- * - its build config, `tsdown.config.ts` or `tsconfig.build.json`, or the
- *   root `tsconfig.build.json` they extend;
+ * - its build config, `tsdown.config.ts` or `tsconfig.build.json`, the root
+ *   `tsconfig.build.json` they extend, or `scripts/entrypoints.*`, which
+ *   generates their entrypoints;
  * - a field of its `package.json` other than `version`, `scripts` and
  *   `devDependencies`, with `catalog:` ranges read from `pnpm-workspace.yaml`.
  */
@@ -48,8 +49,13 @@ export function publishedPathspecs(
     include.push(`${dir}/tsdown.config.ts`, `${dir}/tsconfig.build.json`);
     markdown.push(`${dir}/**/*.md`);
   }
-  // Every package's tsconfig.build.json extends it.
-  include.push('tsconfig.build.json');
+  // Every package's tsconfig.build.json extends it, and the tsdown configs
+  // generate their entrypoints and `exports` with the script.
+  include.push(
+    'tsconfig.build.json',
+    'scripts/entrypoints.ts',
+    'scripts/entrypoints.js',
+  );
   return [
     ...include.map((path) => `:(glob)${path}`),
     ...exclude.map((path) => `:(glob,exclude)${path}`),

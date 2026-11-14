@@ -1,7 +1,7 @@
 /**
  * Releases the packages in `packages/*`, the way KATT/raf-query does: the
- * latest `vX.Y.Z` tag is the version, packages are published before anything
- * is pushed, and a stable release ends with a GitHub release whose notes
+ * latest `vX.Y.Z` tag is the version, the release commit is pushed before
+ * the packages are published and tagged, and a stable release ends with a GitHub release whose notes
  * group the pull requests since the last one by package (`notes.ts`).
  *
  * Each release has two halves (`tarballs.ts`): one builds and packs the
@@ -27,6 +27,7 @@ import {
 import {
   bumpVersion,
   canaryVersion,
+  isAfter,
   majorOf,
   type Bump,
   type PackageJson,
@@ -57,6 +58,42 @@ export const latestTag = Effect.fn('latestTag')(function* (
     'v*-*',
     ref ?? 'HEAD',
   );
+});
+
+/**
+ * The latest release: the latest tag, or a release commit after it that
+ * never got its tag because its run stopped after pushing it. That release
+ * may be published in part, so the next one bumps from it rather than
+ * publishing its version again from other commits; `publishStable` tags it
+ * first. HEAD doesn't count: its own run resumes it.
+ */
+export const latestRelease = Effect.fn('latestRelease')(function* (
+  root: string,
+) {
+  const tag = yield* latestTag(root);
+  const head = yield* git(root, 'rev-parse', 'HEAD');
+  const log = yield* git(
+    root,
+    'log',
+    '--first-parent',
+    '--format=%H %s',
+    `${tag}..HEAD`,
+  );
+  for (const line of log === '' ? [] : log.split('\n')) {
+    const space = line.indexOf(' ');
+    const sha = line.slice(0, space);
+    const version = /^chore: release v(\d+\.\d+\.\d+)$/.exec(
+      line.slice(space + 1),
+    )?.[1];
+    if (
+      sha !== head &&
+      version !== undefined &&
+      isAfter(version, tag.slice(1))
+    ) {
+      return { tag: `v${version}`, ref: sha, tagged: false };
+    }
+  }
+  return { tag, ref: tag, tagged: true };
 });
 
 const ensureClean = Effect.fn('ensureClean')(function* (root: string) {
@@ -306,11 +343,13 @@ export const stableVersion = Effect.fn('stableVersion')(function* (
   root: string,
   opts: { readonly bump: Bump; readonly major: number },
 ) {
-  const previousTag = yield* latestTag(root);
+  const previous = yield* latestRelease(root);
+  const previousTag = previous.tag;
   const latest = previousTag.slice(1);
   if (opts.major === majorOf(latest) + 1) {
     const version = `${opts.major}.0.0`;
     return {
+      previous,
       previousTag,
       version,
       tag: `v${version}`,
@@ -326,6 +365,7 @@ export const stableVersion = Effect.fn('stableVersion')(function* (
     });
   }
   return {
+    previous,
     previousTag,
     version,
     tag,
@@ -374,7 +414,7 @@ export const publishStable = Effect.fn('publishStable')(function* (
   opts: StableOptions & PackOptions,
 ) {
   yield* ensureClean(root);
-  const { previousTag, version, tag, reason } = yield* stableVersion(
+  const { previous, previousTag, version, tag, reason } = yield* stableVersion(
     root,
     opts,
   );
@@ -383,6 +423,29 @@ export const publishStable = Effect.fn('publishStable')(function* (
     return yield* new ReleaseError({
       message: `HEAD isn't on ${opts.remote} ${opts.branch}; release from ${opts.branch}. Nothing was published.`,
     });
+  }
+  if (!previous.tagged) {
+    yield* Console.log(
+      `${previousTag}'s run stopped after pushing its release commit, ${previous.ref.slice(0, 9)}, and a commit landed on top before it resumed. It may be published in part. ${opts.dryRun ? 'Would tag' : 'Tagging'} it, without a GitHub release, and releasing ${tag} after it.`,
+    );
+    if (!opts.dryRun) {
+      yield* git(
+        root,
+        'tag',
+        '--annotate',
+        previousTag,
+        '--message',
+        previousTag,
+        previous.ref,
+      );
+      yield* git(
+        root,
+        'push',
+        '--quiet',
+        opts.remote,
+        `refs/tags/${previousTag}`,
+      );
+    }
   }
 
   const { files, published } = yield* writeVersions(root, version);
@@ -393,7 +456,9 @@ export const publishStable = Effect.fn('publishStable')(function* (
 
   if (opts.dryRun) {
     yield* publishTarballs(root, tarballs, { ...opts, registry });
-    const notes = yield* releaseNotes(root, { previousTag, tag });
+    const notes = previous.tagged
+      ? yield* releaseNotes(root, { previousTag, tag })
+      : `(No notes: ${previousTag} isn't tagged yet.)`;
     yield* Console.log(
       `Dry run: would push "${releaseCommitMessage(tag)}" to ${opts.remote} ${opts.branch}, publish, then tag ${tag}, push the tag and create the GitHub release with these notes. The version bump is left in the working tree.\n\n${notes}`,
     );
@@ -499,7 +564,7 @@ export const autoBump = Effect.fn('autoBump')(function* (
     );
     return undefined;
   }
-  const previousTag = yield* latestTag(root);
+  const { tag: previousTag, ref: previousRef } = yield* latestRelease(root);
   const next = majorOf(previousTag.slice(1)) + 1;
   if (opts.major === next) {
     yield* Console.log(
@@ -507,10 +572,10 @@ export const autoBump = Effect.fn('autoBump')(function* (
     );
     return 'major';
   }
-  const commits = yield* releasableCommits(root, previousTag, 'HEAD');
+  const commits = yield* releasableCommits(root, previousRef, 'HEAD');
   if (
     commits.length === 0 ||
-    !(yield* publishedChanged(root, previousTag, 'HEAD'))
+    !(yield* publishedChanged(root, previousRef, 'HEAD'))
   ) {
     yield* Console.log(
       commits.length === 0
@@ -608,9 +673,9 @@ const canaryVersionOfHead = Effect.fn('canaryVersionOfHead')(function* (
   root: string,
   preid: string,
 ) {
-  const tag = yield* latestTag(root);
+  const { tag, ref } = yield* latestRelease(root);
   const commits = Number(
-    yield* git(root, 'rev-list', '--count', `${tag}..HEAD`),
+    yield* git(root, 'rev-list', '--count', `${ref}..HEAD`),
   );
   const sha = yield* git(root, 'rev-parse', '--short=9', 'HEAD');
   return canaryVersion({ version: tag.slice(1), commits, sha, preid });

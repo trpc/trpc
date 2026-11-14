@@ -9,6 +9,7 @@ import {
   autoBump,
   branchMoved,
   defaultWait,
+  latestRelease,
   latestTag,
   packCanary,
   publishStable,
@@ -73,6 +74,45 @@ describe('latestTag', () => {
         yield* tag(root, 'v11.23.0');
         expect(yield* latestTag(root)).toBe('v11.23.0');
         expect(yield* latestTag(root, 'v11.23.0^')).toBe('v11.22.1');
+      }),
+    ));
+});
+
+describe('latestRelease', () => {
+  it('takes a release commit that never got its tag, unless it is HEAD', () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* repo;
+        yield* tag(root, 'v11.24.0');
+        expect(yield* latestRelease(root)).toEqual({
+          tag: 'v11.24.0',
+          ref: 'v11.24.0',
+          tagged: true,
+        });
+        yield* commit(root, 'chore: release v11.24.1');
+        const stopped = yield* git(root, 'rev-parse', 'HEAD');
+        // HEAD is the release that stopped: its own run resumes it.
+        expect((yield* latestRelease(root)).tag).toBe('v11.24.0');
+        yield* commit(root, 'fix: merged after it (#2)');
+        expect(yield* latestRelease(root)).toEqual({
+          tag: 'v11.24.1',
+          ref: stopped,
+          tagged: false,
+        });
+        expect(
+          yield* stableVersion(root, { bump: 'patch', major: 11 }),
+        ).toMatchObject({ previousTag: 'v11.24.1', tag: 'v11.24.2' });
+      }),
+    ));
+
+  it("ignores a release commit that isn't after the latest tag", () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* repo;
+        yield* tag(root, 'v11.24.0');
+        yield* commit(root, 'chore: release v11.23.9');
+        yield* commit(root, 'fix: a');
+        expect((yield* latestRelease(root)).tag).toBe('v11.24.0');
       }),
     ));
 });
@@ -183,6 +223,7 @@ describe('the major guard', () => {
         yield* tag(root, 'v11.24.0');
         for (const bump of bumps) {
           expect(yield* stableVersion(root, { bump, major: 12 })).toEqual({
+            previous: { tag: 'v11.24.0', ref: 'v11.24.0', tagged: true },
             previousTag: 'v11.24.0',
             version: '12.0.0',
             tag: 'v12.0.0',

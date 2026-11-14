@@ -95,6 +95,8 @@ describe('publishedPathspecs', () => {
       ':(glob)packages/openapi/tsdown.config.ts',
       ':(glob)packages/openapi/tsconfig.build.json',
       ':(glob)tsconfig.build.json',
+      ':(glob)scripts/entrypoints.ts',
+      ':(glob)scripts/entrypoints.js',
       ':(glob,exclude)packages/server/**/*.test.*',
       ':(glob,exclude)packages/server/**/*.test.*/**',
       ':(glob,exclude)packages/openapi/**/test',

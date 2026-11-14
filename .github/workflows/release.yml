@@ -16,8 +16,9 @@ name: Release Packages
 # Once main settles, a stable release publishes what changed since the latest
 # tag, if any of it changes what the packages publish. The workflow runs on
 # every push, with no `paths:` filter, so a push after a run that skipped
-# still releases what that run didn't. Set the repo variable AUTO_RELEASE to
-# `false` to stop stable releases; canaries keep going out.
+# still releases what that run didn't, and a daily run retries from main's
+# tip. Set the repo variable AUTO_RELEASE to `false` to stop stable releases;
+# canaries keep going out.
 #
 # There's no manual run: stable releases are only automatic, and the commits
 # decide the version (tooling/release/src/config.ts). No release publishes a
@@ -33,12 +34,17 @@ on:
   push:
     branches:
       - 'main'
+  # Retries the automatic release from main's tip, in case its run failed or
+  # main didn't settle; it releases nothing if there's nothing new.
+  schedule:
+    - cron: '17 4 * * *'
 
 jobs:
-  # Holds the automatic release until main settles: 10 minutes after the last
-  # push (about one merge queue run, so a PR enqueued just after a merge gets
-  # in), then until the merge queue is empty. A newer push cancels the wait, so
-  # a burst of merges releases once, from the last of them.
+  # Holds the automatic release until main settles: 10 minutes after the push
+  # (about one merge queue run, so a PR enqueued just after a merge gets in),
+  # then until the merge queue is empty. Only the run for main's tip goes on,
+  # so a burst of merges releases once, from the last of them, whatever order
+  # GitHub starts the runs in.
   #
   # A release commit starts it too. If its release stopped after pushing the
   # commit, this run publishes what npm is missing and tags it; otherwise the
@@ -46,8 +52,7 @@ jobs:
   wait-for-merge-queue:
     if: vars.AUTO_RELEASE != 'false'
     concurrency:
-      group: release-auto-wait
-      cancel-in-progress: true
+      group: release-auto-wait-${{ github.sha }}
     timeout-minutes: 75
     runs-on: ubuntu-latest
     permissions:
@@ -63,19 +68,33 @@ jobs:
           DEBOUNCE_SECONDS: 600
         run: |
           sleep "$DEBOUNCE_SECONDS"
+          answered=false
           for _ in $(seq 60); do
+            tip=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha) || tip=''
+            if [ -n "$tip" ] && [ "$tip" != "$GITHUB_SHA" ]; then
+              echo "main moved to ${tip}; the run for it releases"
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             queued=$(gh api graphql \
               -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { mergeQueue(branch: "main") { entries { totalCount } } } }' \
               -f owner="${GITHUB_REPOSITORY_OWNER}" -f repo="${GITHUB_REPOSITORY#*/}" \
               --jq '.data.repository.mergeQueue.entries.totalCount // 0') || queued=''
-            if [ "$queued" = 0 ]; then
+            if [ -n "$queued" ]; then
+              answered=true
+            fi
+            if [ "$queued" = 0 ] && [ -n "$tip" ]; then
               echo "ready=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "${queued:-An unknown number of} pull requests in the merge queue; waiting"
             sleep 60
           done
-          echo "::warning::The merge queue didn't empty for an hour, so there's no release; the next push to main releases what this one would have"
+          if [ "$answered" = false ]; then
+            echo "::error::GitHub never answered which pull requests are in the merge queue, so there's no release"
+            exit 1
+          fi
+          echo "::warning::The merge queue didn't empty for an hour, so there's no release; the next push to main, or tomorrow's scheduled run, releases what this one would have"
           echo "ready=false" >> "$GITHUB_OUTPUT"
 
   build-auto:
@@ -163,7 +182,7 @@ jobs:
   build-canary:
     # Not on the release commits the stable releases push, which carry the
     # stable versions.
-    if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
+    if: "github.event_name == 'push' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
