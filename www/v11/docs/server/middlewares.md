@@ -203,7 +203,7 @@ auditedProcedure
   .query((opts) => opts.input.id);
 ```
 
-Besides `ctx`, `input`, `getRawInput` and `next`, a middleware receives the procedure's `path`, `type` (`'query'`, `'mutation'` or `'subscription'`), [`meta`](metadata.md), and the request's `signal`.
+Besides `ctx`, `input`, `getRawInput` and `next`, a middleware receives the procedure's `path`, `type` (`'query'`, `'mutation'` or `'subscription'`), [`meta`](metadata.md), the request's `signal`, and the [`transformer`](/docs/server/data-transformers) you gave `initTRPC.create()`.
 
 ## Using `.concat()` to create reusable middlewares and plugins {#concat}
 
@@ -381,6 +381,68 @@ fooMiddleware.unstable_pipe(barMiddleware);
 // ✅ `ctx.a` overlaps from `barMiddleware` and `fooMiddleware`
 barMiddleware.unstable_pipe(fooMiddleware);
 ```
+
+## Running identical queries once (unstable) {#dedupe-queries}
+
+A [batch](/docs/client/links/httpBatchLink) can have the same query twice, such as two posts' calls for one author. Each call runs the procedure. The `unstable_dedupeQueries()` middleware runs a query once for the calls that start at the same time with the same context, path and input.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC, unstable_dedupeQueries } from '@trpc/server';
+
+type Context = { user?: { id: string } };
+
+const t = initTRPC.context<Context>().create();
+
+// Use it before any middleware that changes the context or waits
+export const publicProcedure = t.procedure.use(unstable_dedupeQueries());
+```
+
+- **Every call still has its own result**, with the data or the error of the one run. The client doesn't change, and `onError` is called for every call that failed.
+- **Only queries.** A mutation or a subscription runs for every call.
+- **Only calls that start together.** It isn't a cache: a call that starts later runs the query again, even while the first run is in flight.
+- **A query that follows a mutation runs again.** Use the middleware on a base procedure that your mutations use too: once one of them has finished, no query on that context joins a run from before it, however soon the query starts.
+- **The calls need a context object.** The calls of one HTTP request share the object that `createContext` returns, which is how the middleware knows they belong together. Without a `createContext`, or with one that returns nothing, every call runs: return an object, such as `createContext: () => ({})`.
+- **Use it before any middleware that changes the context or waits.** `opts.next({ ctx })` gives each call a context object of its own, and after that no two calls share one. A middleware that waits, such as one that reads a session from a database, can let the calls through at different times, and then they don't start together.
+- **What comes after it in the chain runs once**, and what comes before it runs for every call. Leave it off a query whose result should differ between two calls, such as a new random id.
+- **Inputs are compared as the client sends them**: encoded by your [transformer](/docs/server/data-transformers), then as TanStack Query compares query keys, which is as JSON, whatever the order of their keys. With `superjson`, two equal `Map` inputs share a run. An input that still isn't JSON, such as a `Map` in a [server-side call](/docs/server/server-side-calls) without a transformer, runs for itself.
+- **A stream or a promise in the data is shared too.** The query runs once and the stream is read once. Every call gets its own copy, which is an async iterable, and the stream is returned when every call has stopped reading it.
+
+### Choosing which inputs are the same {#input-hash-fn}
+
+Pass `inputHashFn` to hash a call's input yourself. Calls with the same path and hash share a run.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC, unstable_dedupeQueries } from '@trpc/server';
+
+const t = initTRPC.create();
+// ---cut---
+export const publicProcedure = t.procedure.use(
+  unstable_dedupeQueries({
+    inputHashFn(call) {
+      if (call.path === 'session.token') {
+        // This query runs for every call
+        return null;
+      }
+      // Compare the search by its text, whatever its case
+      if (call.path === 'post.search' && typeof call.input === 'string') {
+        return call.input.toLowerCase();
+      }
+      // The input as the client sent it, which is JSON. In an object, so
+      // that an input of `undefined` isn't hashed as `null` is
+      const encoded: unknown = call.transformer.input.serialize(call.input);
+      return JSON.stringify({ encoded });
+    },
+  }),
+);
+```
+
+- **`input` is the input before it is validated**, after the transformer decoded it. Check its type before you read it.
+- **`transformer` is the one you gave `initTRPC.create()`**, or one that changes nothing. `transformer.input.serialize(input)` encodes the input as the client does, so that `JSON.stringify()` can tell a `Map` or a `Date` from another.
+- **Return `null`** for a call that should run for itself.
+- **Two inputs with one hash get one result**, so hash everything the procedure reads.
+- **If it throws**, the call fails with an `INTERNAL_SERVER_ERROR`.
 
 ## Common mistakes
 

@@ -29,6 +29,7 @@ import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { isDevDefault } from './rootConfig';
 import type { TRPCErrorShape } from './rpc';
 import type { inferTrackedOutput } from './stream/tracked';
+import { defaultTransformer } from './transformer';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -731,6 +732,8 @@ async function callRecursive(
       ...opts,
       meta: _def.meta,
       input: opts.input,
+      // A builder that isn't from `initTRPC.create()` has no config
+      transformer: _def.config?.transformer ?? defaultTransformer,
       next(_nextOpts?: any) {
         const nextOpts = _nextOpts as
           | {
