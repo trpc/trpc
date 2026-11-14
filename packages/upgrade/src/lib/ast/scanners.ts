@@ -1,10 +1,40 @@
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import * as p from '@clack/prompts';
-import * as ts from 'typescript';
+import {
+  isCallExpression,
+  isIdentifier,
+  isImportDeclaration,
+  isStringLiteral,
+  isVariableDeclaration,
+  isVariableStatement,
+  type SourceFile,
+} from 'typescript/ast';
+import { API, type Program } from 'typescript/sync';
 
-export function getProgram() {
-  const configFile = ts.findConfigFile(process.cwd(), (filepath) =>
-    ts.sys.fileExists(filepath),
-  );
+function findConfigFile(startDir: string): string | null {
+  let dir = startDir;
+  for (;;) {
+    const candidate = join(dir, 'tsconfig.json');
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
+    dir = parent;
+  }
+}
+
+const DECLARATION_FILE = /\.d\.[cm]?ts$/;
+
+/**
+ * Reads the project around the current directory, then stops the TypeScript
+ * compiler process it started.
+ */
+export function scanProject() {
+  const configFile = findConfigFile(process.cwd());
   if (!configFile) {
     p.log.error('No tsconfig found');
     process.exit(1);
@@ -14,54 +44,51 @@ export function getProgram() {
     p.log.info(`Using tsconfig: ${configFile}`);
   }
 
-  const { config } = ts.readConfigFile(configFile, (filepath) =>
-    ts.sys.readFile(filepath),
+  using api = new API({ cwd: process.cwd() });
+  const parsedConfig = api.parseConfigFile(configFile);
+  const program = api.createProgram(
+    parsedConfig.fileNames,
+    parsedConfig.options,
   );
-  const parsedConfig = ts.parseJsonConfigFileContent(
-    config,
-    ts.sys,
-    process.cwd(),
-  );
-  const program = ts.createProgram({
-    options: parsedConfig.options,
-    rootNames: parsedConfig.fileNames,
-    configFileParsingDiagnostics: parsedConfig.errors,
-  });
 
-  return program;
+  const fileNames = program.getSourceFileNames();
+  const sourceFiles = fileNames
+    .filter((fileName) => !DECLARATION_FILE.test(fileName))
+    .map((fileName) => program.getSourceFile(fileName))
+    .filter(
+      (sourceFile): sourceFile is SourceFile =>
+        !!sourceFile && !sourceFile.isDeclarationFile,
+    );
+
+  return {
+    fileNames,
+    references: findTRPCImportReferences(program, sourceFiles),
+  };
 }
 
-export function findSourceAndImportName(program: ts.Program) {
-  const files = program.getSourceFiles().filter((sourceFile) => {
-    if (sourceFile.isDeclarationFile) return false;
-    let found = false;
-    ts.forEachChild(sourceFile, (node) => {
-      if (!found && ts.isImportDeclaration(node)) {
-        const { moduleSpecifier } = node;
-        if (
-          ts.isStringLiteral(moduleSpecifier) &&
-          moduleSpecifier.text.includes('@trpc/react-query')
-        ) {
-          found = true;
-        }
-      }
-    });
-    return found;
-  });
+function findSourceAndImportName(sourceFiles: SourceFile[]) {
+  const files = sourceFiles.filter((sourceFile) =>
+    sourceFile.statements.some(
+      (node) =>
+        isImportDeclaration(node) &&
+        isStringLiteral(node.moduleSpecifier) &&
+        node.moduleSpecifier.text.includes('@trpc/react-query'),
+    ),
+  );
 
   let importName = 'trpc';
   files.forEach((sourceFile) => {
-    ts.forEachChild(sourceFile, (node) => {
+    sourceFile.statements.forEach((node) => {
       if (
-        ts.isVariableStatement(node) &&
+        isVariableStatement(node) &&
         node.modifiers?.some((mod) => mod.getText(sourceFile) === 'export')
       ) {
         node.declarationList.declarations.forEach((declaration) => {
           if (
-            ts.isVariableDeclaration(declaration) &&
+            isVariableDeclaration(declaration) &&
             declaration.initializer &&
-            ts.isCallExpression(declaration.initializer) &&
-            ts.isIdentifier(declaration.initializer.expression) &&
+            isCallExpression(declaration.initializer) &&
+            isIdentifier(declaration.initializer.expression) &&
             declaration.initializer.expression.getText(sourceFile) ===
               'createTRPCReact'
           ) {
@@ -73,35 +100,29 @@ export function findSourceAndImportName(program: ts.Program) {
   });
 
   return {
-    files: files.map((d) => d.fileName),
+    files: files.map((d) => d.fileName as string),
     importName,
   };
 }
 
-export function findTRPCImportReferences(program: ts.Program) {
+function findTRPCImportReferences(program: Program, sourceFiles: SourceFile[]) {
   const { files: filesImportingTRPC, importName } =
-    findSourceAndImportName(program);
+    findSourceAndImportName(sourceFiles);
   const trpcReferenceSpecifiers = new Map<string, string>();
 
-  program.getSourceFiles().forEach((sourceFile) => {
-    if (sourceFile.isDeclarationFile) return;
-    ts.forEachChild(sourceFile, (node) => {
-      if (
-        ts.isImportDeclaration(node) &&
-        ts.isStringLiteral(node.moduleSpecifier)
-      ) {
-        const resolved = ts.resolveModuleName(
-          node.moduleSpecifier.text,
+  sourceFiles.forEach((sourceFile) => {
+    sourceFile.statements.forEach((node) => {
+      if (isImportDeclaration(node) && isStringLiteral(node.moduleSpecifier)) {
+        const resolved = program.getResolvedModuleFromModuleSpecifier(
+          node.moduleSpecifier,
           sourceFile.fileName,
-          program.getCompilerOptions(),
-          ts.sys,
         );
         if (
-          resolved.resolvedModule &&
-          filesImportingTRPC.includes(resolved.resolvedModule.resolvedFileName)
+          resolved &&
+          filesImportingTRPC.includes(resolved.resolvedFileName)
         ) {
           trpcReferenceSpecifiers.set(
-            resolved.resolvedModule.resolvedFileName,
+            resolved.resolvedFileName,
             node.moduleSpecifier.text,
           );
         }
