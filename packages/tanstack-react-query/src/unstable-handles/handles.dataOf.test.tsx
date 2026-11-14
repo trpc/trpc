@@ -2753,8 +2753,7 @@ describe.each([
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('Post other by KATT');
     });
-    // The other post, in one request. Its author's call ran with it: an
-    // entry that is sent this way always asks the server
+    // The other post, in one request, and its author's call with it
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
     expect(resource.calls.mock.calls.slice(2)).toEqual([
       ['post.bySlug', { slug: 'other' }],

@@ -2416,8 +2416,9 @@ export function loadHandlesSettled<
  *
  * It starts the entries again when they change, such as with another id, and
  * when the component comes back to the page. Rendering again starts nothing.
- * Entries are compared as query keys are, by procedure, input and options: build them
- * from values that stay the same from render to render, such as props.
+ * Entries are compared by value, as query keys are: the procedure, the input
+ * and the options, but for options that are functions. Build them from values
+ * that stay the same from render to render, such as props.
  *
  * Experimental: it may change in a minor release.
  * @example
