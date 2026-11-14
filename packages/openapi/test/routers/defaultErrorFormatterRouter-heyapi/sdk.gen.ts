@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { LimitedData, LimitedErrors, LimitedResponses, PlainData, PlainErrors, PlainResponses, SanitizedData, SanitizedErrors, SanitizedResponses } from './types.gen';
+import type { KeywordNamedExtraData, KeywordNamedExtraErrors, KeywordNamedExtraResponses, LimitedData, LimitedErrors, LimitedResponses, OptionalExtraData, OptionalExtraErrors, OptionalExtraResponses, PlainData, PlainErrors, PlainResponses, SanitizedData, SanitizedErrors, SanitizedResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -84,6 +84,34 @@ export class Sdk extends HeyApiClient {
     public sanitized<ThrowOnError extends boolean = false>(options: Options<SanitizedData, ThrowOnError>): RequestResult<SanitizedResponses, SanitizedErrors, ThrowOnError> {
         return (options.client ?? this.client).post<SanitizedResponses, SanitizedErrors, ThrowOnError>({
             url: '/sanitized',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Its handler's shape adds an optional `retryAfterMs`
+     */
+    public optionalExtra<ThrowOnError extends boolean = false>(options: Options<OptionalExtraData, ThrowOnError>): RequestResult<OptionalExtraResponses, OptionalExtraErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<OptionalExtraResponses, OptionalExtraErrors, ThrowOnError>({
+            url: '/optionalExtra',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Its handler's shape adds optional `description` and `$ref` fields
+     */
+    public keywordNamedExtra<ThrowOnError extends boolean = false>(options: Options<KeywordNamedExtraData, ThrowOnError>): RequestResult<KeywordNamedExtraResponses, KeywordNamedExtraErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<KeywordNamedExtraResponses, KeywordNamedExtraErrors, ThrowOnError>({
+            url: '/keywordNamedExtra',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

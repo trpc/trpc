@@ -35,6 +35,8 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 pnpm add @trpc/openapi
 ```
 
+The generator reads your types through TypeScript's compiler API, so it needs TypeScript 7.1 or later as a peer dependency. TypeScript 7.0 has no compiler API, and older versions of `@trpc/openapi` support TypeScript 5.8–6.
+
 :::note
 `@trpc/openapi` is currently versioned like 11.x.x-alpha, and should work with any recent tRPC v11 version, but as always we recommend aligning the version numbers
 :::
@@ -100,6 +102,26 @@ A generated client will produce typed SDK functions matching your tRPC procedure
 ```bash
 pnpm add @trpc/openapi @hey-api/openapi-ts
 ```
+
+:::caution
+Hey API's generator still uses TypeScript 6's compiler API, while `@trpc/openapi` needs TypeScript 7.1. With pnpm, give Hey API its own TypeScript 6 from a `.pnpmfile.cjs` at your workspace root, then run `pnpm install`:
+
+```js title='.pnpmfile.cjs'
+module.exports = {
+  hooks: {
+    readPackage(pkg) {
+      if (pkg.name === '@hey-api/openapi-ts') {
+        delete pkg.peerDependencies?.typescript;
+        pkg.dependencies = { ...pkg.dependencies, typescript: '^6.0.3' };
+      }
+      return pkg;
+    },
+  },
+};
+```
+
+npm refuses the equivalent `overrides`, so with npm, generate the client from a separate project on TypeScript 6.
+:::
 
 Out of the box, an OpenAPI-generated client won't know about your transformer setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `configureTRPCHeyApiClient` helper that bridges this gap — it configures request serialisation, response parsing, and error deserialization so the generated SDK works correctly with tRPC endpoints.
 
