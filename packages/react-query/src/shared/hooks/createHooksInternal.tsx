@@ -726,9 +726,13 @@ export function createRootHooks<
       ) => unknown;
     },
   ) => {
-    const { ssrState, queryClient, prefetchQuery, client } = useContext();
+    const { ssrState, queryClient, prefetchQuery, client, abortOnUnmount } =
+      useContext();
 
-    const proxy = createUseQueries(client);
+    const proxy = createUseQueries(
+      client,
+      config?.abortOnUnmount ?? abortOnUnmount,
+    );
 
     const queries = queriesCallback(proxy);
 
@@ -764,9 +768,12 @@ export function createRootHooks<
       >,
     ) => readonly UseQueryOptionsForUseSuspenseQueries<any, any, any, any>[],
   ) => {
-    const { queryClient, client } = useContext();
+    const { queryClient, client, abortOnUnmount } = useContext();
 
-    const proxy = createUseQueries(client);
+    const proxy = createUseQueries(
+      client,
+      config?.abortOnUnmount ?? abortOnUnmount,
+    );
 
     const queries = queriesCallback(proxy);
 

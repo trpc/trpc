@@ -92,6 +92,7 @@ export type UseSuspenseQueriesProcedureRecord<
  */
 export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,
+  abortOnUnmount: boolean | undefined,
 ) {
   const untypedClient: TRPCUntypedClient<TRouter> =
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
@@ -109,10 +110,18 @@ export function createUseQueries<TRouter extends AnyRouter>(
       Partial<QueryOptions> & TRPCUseQueryBaseOptions,
     ];
 
+    // request option should take priority over global
+    const shouldAbortOnUnmount = _opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+
     const options: QueryOptions = {
       queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
-      queryFn: () => {
-        return untypedClient.query(dotPath, input, _opts?.trpc);
+      queryFn: (queryFunctionContext) => {
+        return untypedClient.query(dotPath, input, {
+          ..._opts?.trpc,
+          ...(shouldAbortOnUnmount
+            ? { signal: queryFunctionContext.signal }
+            : {}),
+        });
       },
       ..._opts,
     };
