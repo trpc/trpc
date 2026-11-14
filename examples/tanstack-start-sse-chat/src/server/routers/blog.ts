@@ -112,23 +112,24 @@ const posts: Post[] = Array.from({ length: 13 }, (_, round) =>
   }));
 
 /**
- * With the blog's "Slow queries" switch on, waits 1 to 3 seconds, so that you
- * can watch a query load after the ones before it
+ * With the blog's "Slow queries" switch on, every query of the blog waits 1 to
+ * 3 seconds, so that you can watch each one load
  */
-async function slowDown(ctx: { slowQueries: boolean }) {
-  if (ctx.slowQueries) {
+const blogProcedure = publicProcedure.use(async (opts) => {
+  if (opts.ctx.slowQueries) {
     await new Promise((resolve) =>
       setTimeout(resolve, 1_000 + Math.random() * 2_000),
     );
   }
-}
+  return opts.next();
+});
 
 export const blogRouter = router({
   /**
    * A page of posts, newest first. Used as a plain query by the post list and
    * as an infinite query by a post's "More by" list
    */
-  posts: publicProcedure
+  posts: blogProcedure
     .input(
       z.object({
         /** Only posts by this author */
@@ -138,12 +139,8 @@ export const blogRouter = router({
         cursor: z.number().nullish(),
       }),
     )
-    .query(async (opts) => {
+    .query((opts) => {
       const { input } = opts;
-      if (input.authorId !== undefined) {
-        // A post's "More by" list
-        await slowDown(opts.ctx);
-      }
       const matching = posts.filter(
         (post) =>
           input.authorId === undefined || post.authorId === input.authorId,
@@ -160,7 +157,7 @@ export const blogRouter = router({
         nextCursor: end < matching.length ? end : null,
       };
     }),
-  postBySlug: publicProcedure
+  postBySlug: blogProcedure
     .input(z.object({ slug: z.string() }))
     .query((opts) => {
       const post = posts.find((it) => it.slug === opts.input.slug);
@@ -169,10 +166,9 @@ export const blogRouter = router({
       }
       return post;
     }),
-  authorById: publicProcedure
+  authorById: blogProcedure
     .input(z.object({ id: z.string() }))
-    .query(async (opts) => {
-      await slowDown(opts.ctx);
+    .query((opts) => {
       const author = authors.find((it) => it.id === opts.input.id);
       if (!author) {
         throw new TRPCError({ code: 'NOT_FOUND' });

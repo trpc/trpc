@@ -404,7 +404,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
           // Every run of a procedure counts towards `maxBatchSize`: a call
-          // for every item of a list counts once for each item
+          // for every item of a list counts once for each item. Of two such
+          // calls that are over it together, the one whose list is ready
+          // first runs
           let runs = info.calls.length;
           return pipelineCalls({
             calls: info.calls,

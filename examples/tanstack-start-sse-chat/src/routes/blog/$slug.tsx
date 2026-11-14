@@ -27,6 +27,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import { AuthorCard } from './-components/author-card';
+import { OneRequestHint } from './-components/one-request-hint';
 
 /**
  * Every query the post page needs, from the URL alone. The loader waits for
@@ -88,6 +89,11 @@ function PostPage() {
       <Suspense fallback={<Skeleton className="h-48 w-full" />}>
         <AuthorCard handles={handles} />
       </Suspense>
+      <OneRequestHint>
+        With the Network tab open, go to another post. Its author’s id is in the
+        post, and the list is filtered by the author. All three are one request:{' '}
+        <code>blog.postBySlug,blog.authorById,blog.posts</code>.
+      </OneRequestHint>
     </>
   );
 }

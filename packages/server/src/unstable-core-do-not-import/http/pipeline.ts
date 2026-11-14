@@ -227,6 +227,17 @@ function writePipelinePath(opts: {
   return write(opts.input, 0);
 }
 
+/** A value as it is after a trip over the wire. What JSON can't carry is left out */
+function overTheWire(
+  transformer: CombinedDataTransformer['input' | 'output'],
+  value: unknown,
+) {
+  const json = JSON.stringify(transformer.serialize(value));
+  return json === undefined
+    ? undefined
+    : transformer.deserialize(JSON.parse(json));
+}
+
 /**
  * Makes the calls of a batch read parts of their input from the data of
  * earlier calls. Report every call's outcome with `resolve` or `reject`.
@@ -252,12 +263,9 @@ export function pipelineCalls(opts: {
   function clientDataOf(index: number) {
     let promise = clientData.get(index);
     if (!promise) {
-      promise = Promise.resolve(outputs[index]?.promise).then((data) => {
-        const json = JSON.stringify(opts.transformer.output.serialize(data));
-        return json === undefined
-          ? undefined
-          : opts.transformer.output.deserialize(JSON.parse(json));
-      });
+      promise = Promise.resolve(outputs[index]?.promise).then((data) =>
+        overTheWire(opts.transformer.output, data),
+      );
       clientData.set(index, promise);
     }
     return promise;
@@ -268,13 +276,7 @@ export function pipelineCalls(opts: {
    * in place changes nothing that another call, or another run, reads.
    */
   function asSent(value: unknown) {
-    const json =
-      value === undefined
-        ? undefined
-        : JSON.stringify(opts.transformer.input.serialize(value));
-    return json === undefined
-      ? undefined
-      : opts.transformer.input.deserialize(JSON.parse(json));
+    return overTheWire(opts.transformer.input, value);
   }
   /** The value at `path` in a call's data, for the input of a call that reads it */
   function valueAt(data: unknown, path: PipelinePath) {
@@ -282,13 +284,13 @@ export function pipelineCalls(opts: {
   }
 
   /** The inputs of a call that runs once per item of a list */
-  async function inputsOfEach(index: number) {
-    const call = opts.calls[index];
-    const reads = opts.reads.get(index) ?? [];
-    const list = reads.find((read) => read.each);
-    if (!call || !list) {
-      return [];
-    }
+  async function inputsOfEach(each: {
+    call: TRPCRequestInfoProcedureCall;
+    reads: PipelineRead[];
+    /** The read of the list it runs for the items of */
+    list: PipelineRead;
+  }) {
+    const { call, reads, list } = each;
     const readData = (read: PipelineRead) =>
       clientDataOf(read.from).catch(() => {
         throw new TRPCError({
@@ -297,15 +299,15 @@ export function pipelineCalls(opts: {
         });
       });
     const base = await call.getRawInput();
-    const items = readPipelinePath(
+    const found = readPipelinePath(
       await readData(list),
       list.path.slice(0, list.path.indexOf(null)),
     );
+    // What is no list has no items
+    const items = Array.isArray(found) ? found : [];
+    opts.takeRuns(items.length);
     const inputs: unknown[] = [];
-    if (Array.isArray(items)) {
-      opts.takeRuns(items.length);
-    }
-    for (const item of Array.isArray(items) ? items.keys() : []) {
+    for (const item of items.keys()) {
       // Every run has an input of its own, as calls the client sends do
       let input = asSent(base);
       for (const read of reads) {
@@ -323,16 +325,23 @@ export function pipelineCalls(opts: {
     return inputs;
   }
 
+  /** The calls that run once per item of a list, by index */
+  const eachOf = new Map<number, () => Promise<unknown[]>>();
   const calls = opts.calls.map((call, index) => {
     const reads = opts.reads.get(index);
-    if (!reads || reads.some((read) => read.each)) {
+    if (!reads) {
+      return call;
+    }
+    const list = reads.find((read) => read.each);
+    if (list) {
+      eachOf.set(index, () => inputsOfEach({ call, reads, list }));
       return call;
     }
     let filled: Promise<unknown> | null = null;
     let result: [input: unknown] | null = null;
-    async function fill() {
+    const fill = async () => {
       let input = await call.getRawInput();
-      for (const read of reads ?? []) {
+      for (const read of reads) {
         const data = await clientDataOf(read.from).catch(() => {
           throw new TRPCError({
             code: 'PRECONDITION_FAILED',
@@ -347,7 +356,7 @@ export function pipelineCalls(opts: {
       }
       result = [input];
       return input;
-    }
+    };
     return {
       ...call,
       getRawInput: () => (filled ??= fill()),
@@ -361,10 +370,7 @@ export function pipelineCalls(opts: {
      * For a call that runs once per item of a list: reads its inputs, one per
      * item. `null` for any other call.
      */
-    each: (index: number) =>
-      opts.reads.get(index)?.some((read) => read.each)
-        ? () => inputsOfEach(index)
-        : null,
+    each: (index: number) => eachOf.get(index) ?? null,
     resolve: (index: number, data: unknown) => {
       outputs[index]?.resolve(data);
     },

@@ -71,6 +71,8 @@ const createRouter = (transformer: 'none' | 'superjson') => {
         yield 1;
       })(),
     })),
+    // Data that JSON has no word for
+    nothing: t.procedure.query(() => undefined),
     rename: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) => opts.input.id),
@@ -136,6 +138,7 @@ describe.each([
             maxItems: opts.maxItems,
             maxURLLength: opts.maxURLLength,
             fetch: opts.fetch,
+            headers: () => ({ 'x-sent-by': 'test' }),
           }),
         ],
       }),
@@ -477,6 +480,168 @@ describe.each([
     // The team is in the post's request: leaving it out would fit no more
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
+
+  test('an operation that is never sent leaves its call unresolved', async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      // No request fits
+      maxURLLength: 10,
+    });
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    await expect(postResult).rejects.toThrow(
+      'Input is too big for a single dispatch',
+    );
+    await expect(author.result).rejects.toThrow(
+      'The operation this call reads was not sent',
+    );
+    expect(author.status).toBe('unresolved');
+    expect(post.open).toBe(false);
+    expect(ctx.onRequestSpy).not.toHaveBeenCalled();
+  });
+
+  test('a call that reads more values than a server takes is not added', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const reads = (count: number) =>
+      Array.from({ length: count }, () => ({
+        to: ['id'],
+        from: post,
+        path: ['authorId'],
+        each: false,
+      }));
+    expect(
+      pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: reads(pipelineReadsLimit + 1),
+      }),
+    ).toBeNull();
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: reads(pipelineReadsLimit),
+    });
+    assert(author);
+    await postResult;
+    expect(await author.result).toEqual({
+      data: { id: 'u1', teamId: 'team-of-u1' },
+    });
+    // What a link that logs an operation's context gets of it
+    expect(JSON.parse(JSON.stringify(pipelineContext(post)))).toEqual({
+      '~pipeline': { calls: [{ path: 'author', status: 'sent' }] },
+    });
+  });
+
+  test.runIf(scenario.link === httpBatchLink)(
+    'an answer with no result for a call fails that call',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        // Such as a proxy that drops what it doesn't expect
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const results: unknown[] = await res.json();
+          return Response.json(results.slice(0, 1), res);
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      });
+      assert(author);
+      expect(await postResult).toMatchObject({ slug: 'hello' });
+      await expect(author.result).rejects.toThrow(
+        'The server sent no result for a pipelined call',
+      );
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchStreamLink)(
+    'a response that breaks off fails what it had no result for, and such calls did not run for sure',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const text = await res.text();
+          // Its first line says what is to come. Nothing comes
+          const head = new TextEncoder().encode(
+            text.slice(0, text.indexOf('\n') + 1),
+          );
+          return new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(head);
+              },
+              pull(controller) {
+                controller.error(new Error('The connection broke'));
+              },
+            }),
+            res,
+          );
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      });
+      assert(author);
+      await expect(postResult).rejects.toThrow();
+      await expect(author.result).rejects.toThrow();
+      expect(author.status).toBe('unresolved');
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchStreamLink)(
+    'a not-OK answer that is no error is the result of every operation, as without pipelining',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async () =>
+          Response.json({ result: { data: 'maintenance' } }, { status: 503 }),
+      });
+      expect(
+        await Promise.all([
+          ctx.untyped.query('post', { slug: 'hello' }),
+          ctx.untyped.query('team', 'team1'),
+        ]),
+      ).toEqual(['maintenance', 'maintenance']);
+    },
+  );
 
   test('a call that reads two operations goes in the request of both', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
@@ -1017,6 +1182,51 @@ describe('the `pipe` search param', () => {
     expect((await res.json())[1]).toEqual({ result: { data: 2026 } });
   });
 
+  test('`batch=pipeline` without a `pipe` is an ordinary batch', async () => {
+    const res = await get(
+      `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u2' } }),
+      )}`,
+      { path: 'post,author' },
+    );
+    expect(res.json[0].result.data.slug).toBe('hello');
+    expect(res.json[1].result.data.id).toBe('u2');
+  });
+
+  test('a call for every item of a failed call, or of what is no list, runs for none', async () => {
+    const eachOf = (path: string, source: object, list: string) =>
+      get(
+        `input=${encodeURIComponent(
+          JSON.stringify({ 0: source, 1: {} }),
+        )}&pipe=${encodeURIComponent(
+          JSON.stringify({
+            1: [{ to: ['id'], from: 0, path: [list, null, 'id'], each: true }],
+          }),
+        )}`,
+        { path },
+      );
+    const failed = await eachOf('post,tag', { slug: 'missing' }, 'tags');
+    expect(failed.json[0].error.data.code).toBe('NOT_FOUND');
+    expect(failed.json[1].error.data.code).toBe('PRECONDITION_FAILED');
+    expect(failed.calls).not.toHaveBeenCalled();
+
+    const noList = await eachOf('post,tag', { slug: 'hello' }, 'slug');
+    expect(noList.json[1]).toEqual({ result: { data: [] } });
+    expect(noList.calls).not.toHaveBeenCalled();
+  });
+
+  test('a call whose data is `undefined` gives the calls that read it nothing', async () => {
+    const res = await get(
+      `input=${encodeURIComponent(JSON.stringify({ 1: {} }))}&pipe=${encodeURIComponent(
+        JSON.stringify({ 1: [{ to: ['id'], from: 0, path: [] }] }),
+      )}`,
+      { path: 'nothing,author' },
+    );
+    // The author's input has no id, and fails to validate
+    expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
+    expect(res.calls).not.toHaveBeenCalled();
+  });
+
   test('a call still validates its input', async () => {
     const res = await get(
       pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),
@@ -1049,11 +1259,30 @@ describe('the `pipe` search param', () => {
     ],
     ['a call that is not in the batch', { 2: [{ to: [], from: 0, path: [] }] }],
     ['paths that are not strings', { 1: [{ to: [1], from: 0, path: [] }] }],
+    ['reads that are no list', { 1: { to: [], from: 0, path: [] } }],
+    [
+      'a call for every item of two lists',
+      {
+        1: [
+          { to: ['id'], from: 0, path: ['tags', null, 'id'], each: true },
+          { to: ['since'], from: 0, path: ['others', null], each: true },
+        ],
+      },
+    ],
     ['something that is not an object', 'nope'],
   ])('rejects %s', async (_name, value) => {
     const res = await get(pipe(value), { path: 'post,author' });
     expect(res.status).toBe(400);
     expect(res.json.error.message).toMatch(/^Invalid "pipe"/);
+    expect(res.calls).not.toHaveBeenCalled();
+  });
+
+  test('rejects a `pipe` that is not JSON', async () => {
+    const res = await get(`input=${input}&pipe=%7Bnope`, {
+      path: 'post,author',
+    });
+    expect(res.status).toBe(400);
+    expect(res.json.error.message).toBe('Invalid "pipe": not JSON');
     expect(res.calls).not.toHaveBeenCalled();
   });
 

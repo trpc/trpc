@@ -75,6 +75,7 @@ type DataTransformerOptions = any;
 type HTTPHeaders = Record<string, string | string[]>;
 type Operation = { id: number; type: 'query' | 'mutation' | 'subscription'; path: string; input: unknown };
 type NonEmptyArray<T> = [T, ...T[]];
+import type { experimental_Pipelining } from '@trpc/client';
 // ---cut---
 export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   /**

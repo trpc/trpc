@@ -342,7 +342,7 @@ data.comments;
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
 - `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
-- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
+- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component on a page without a loader calls [`experimental_useHandles(trpc, entries)`](/docs/client/tanstack-react-query/dependent-queries#use-handles), which starts them once.
 
 #### Using the data in a loader {#loader-data}
 

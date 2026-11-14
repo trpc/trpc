@@ -29,6 +29,10 @@ An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment.
 ```demo dependent-queries
 ```
 
+:::tip See it in an app
+The [SSE chat example](https://sse.trpc.io/blog) has a blog that loads this way. Open your browser's Network tab and go from post to post: each page is one request, for the post, its author and the author's other posts. Its [source](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat/src/routes/blog) is two route files.
+:::
+
 :::info
 Everything on this page is experimental, and may change in a minor release. The names start with `experimental_` so that you can tell.
 
@@ -205,7 +209,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 #### 2. Load it {#gist-load}
 
-The loader, or server component, starts every query from the URL.
+The loader, or server component, starts every query from the URL. A page that has neither loads [from a component](#without-a-loader).
 
 ```ts twoslash
 // @include: dq-router
@@ -395,6 +399,8 @@ The load then fills in the input in the browser, and asks again. It gives the sa
 - **The entry it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **The proxy calls the router directly**, as in a server component. There is no request to save.
 - **It doesn't fit in the request** of the entry it reads, within `maxURLLength` and `maxItems`.
+- **Its input reads more than 64 values.** The server takes no more for one call.
+- **The request failed as a whole**, such as on a network error. If a link sends it again, the entry asks by itself.
 - **It reads an infinite entry's later pages.** The first page is one request's result, which the server can read: `experimental_dataOf(posts).pages[0]`.
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
 
@@ -702,6 +708,159 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 - **In Next.js**, keep an entries function out of a `'use client'` file. A server component calls it.
 - **A failed entry is named by its keys**: `authorCard.author`.
 
+## Without a loader {#without-a-loader}
+
+Some pages have no loader. The same entries load from a component.
+
+### In a client component {#use-handles}
+
+`experimental_useHandles(trpc, entries)` is `loadHandles()` for a client component. Call it at the top of the page's component.
+
+```tsx twoslash title='post-page.tsx'
+// @include: dq-router
+// @include: dq-trpc
+// @include: dq-post-entries
+// @filename: author-card.tsx
+import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import type { postPageEntries } from './post-page.entries';
+export declare function AuthorCard(props: {
+  handles: experimental_inferHandles<typeof postPageEntries>;
+}): React.ReactNode;
+// @filename: post-page.tsx
+// ---cut---
+'use client';
+
+import { experimental_useHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { useTRPC } from '~/trpc/client';
+import { AuthorCard } from './author-card';
+import { postPageEntries } from './post-page.entries';
+
+export function PostPage(props: { slug: string }) {
+  const trpc = useTRPC();
+  // Starts every query, once, and waits for none
+  const handles = experimental_useHandles(
+    trpc,
+    postPageEntries(trpc, { slug: props.slug }),
+  );
+  return (
+    <Suspense fallback="Loading…">
+      <AuthorCard handles={handles} />
+    </Suspense>
+  );
+}
+```
+
+- **It starts the entries once.** Rendering again starts nothing, also when a Suspense boundary above the page shows it again.
+- **It starts them again when they change**, such as for another slug, and when the component comes back to the page.
+- **It returns the handles at once.** It waits for no data: the component that reads a handle does, in its Suspense boundary.
+- **With a link that [pipelines](#turn-on), it is one request**, as from a loader.
+- **No handle can have another entry's data in its input.** Build such an entry with [`experimental_dataOf(entry, (data) => entry)`](#without-waiting), as above. The form `experimental_dataOf(post).authorId` throws here: its handle would need the post.
+- **A [query for every item](#entry-per-item)** needs its list from a prefetch entry.
+- **A fetch or ensure entry starts and isn't waited for.** Its error shows where its handle is read.
+
+### In a server component {#server-components}
+
+A server component calls `loadHandles()`, as a loader does. [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client) sends the queries that exist when it renders. A query that is built from another's data exists only once that data is there.
+
+So wait for the data that the next query needs:
+
+```tsx twoslash title='app/posts/[slug]/page.tsx'
+// @include: dq-router
+// @include: dq-trpc
+// @filename: components.tsx
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
+export declare function Post(props: {
+  post: inferQueryHandle<TRPC['post']['bySlug']>;
+}): React.ReactNode;
+export declare function Author(props: {
+  author: inferQueryHandle<TRPC['author']['byId']>;
+}): React.ReactNode;
+export declare function HydrateClient(props: {
+  children: React.ReactNode;
+}): React.ReactNode;
+// @filename: page.tsx
+// ---cut---
+import {
+  ensureEntry,
+  experimental_dataOf,
+  loadHandles,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { trpc } from '~/trpc/server';
+import { Author, HydrateClient, Post } from './components';
+
+export default async function PostPage(props: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await props.params;
+  const post = ensureEntry(trpc.post.bySlug, { slug });
+  // Waits for the post, and not for the author
+  const [handles] = await loadHandles(trpc, {
+    post,
+    author: prefetchEntry(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    }),
+  });
+  return (
+    <HydrateClient>
+      <Post post={handles.post} />
+      <Suspense fallback="Loading…">
+        <Author author={handles.author} />
+      </Suspense>
+    </HydrateClient>
+  );
+}
+```
+
+- **The author's query is on its way when `HydrateClient` renders**, so it crosses to the browser and streams in.
+- **To not hold the page back, put the load in a server component of its own**, in a Suspense boundary. The rest of the page shows first.
+- **There is no request to save.** The proxy calls the router directly, so nothing is pipelined on the server.
+- **A load of only prefetch entries waits for nothing**, so the page's `HydrateClient` has the first query only. Then the browser asks for the author by itself. To send it, wait for the post in a server component further down, and render a `HydrateClient` there too:
+
+```tsx twoslash title='app/posts/[slug]/author-section.tsx'
+// @include: dq-router
+// @include: dq-trpc
+// @include: dq-post-entries
+// @filename: components.tsx
+import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import type { postPageEntries } from './post-page.entries';
+export declare function AuthorCard(props: {
+  handles: experimental_inferHandles<typeof postPageEntries>;
+}): React.ReactNode;
+export declare function HydrateClient(props: {
+  children: React.ReactNode;
+}): React.ReactNode;
+// @filename: trpc/query-client.ts
+import type { QueryClient } from '@tanstack/react-query';
+export declare function getQueryClient(): QueryClient;
+// @filename: author-section.tsx
+// ---cut---
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { getQueryClient } from '~/trpc/query-client';
+import { trpc } from '~/trpc/server';
+import { AuthorCard, HydrateClient } from './components';
+import type { postPageEntries } from './post-page.entries';
+
+// A server component, rendered in a Suspense boundary
+export async function AuthorSection(props: {
+  handles: experimental_inferHandles<typeof postPageEntries>;
+}) {
+  // The author's query is created in the step that the post arrives in
+  await getQueryClient().ensureQueryData(
+    fromHandle(trpc, props.handles.post),
+  );
+  return (
+    <HydrateClient>
+      <AuthorCard handles={props.handles} />
+    </HydrateClient>
+  );
+}
+```
+
 ## Errors {#errors}
 
 When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [The load doesn't wait](#without-waiting).
@@ -762,7 +921,11 @@ Use this page's way when you'd rather keep the procedures small.
 
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
-A call for every item runs a procedure once for every item of a list the server returned. Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) to limit it: it counts every run of a request.
+- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
+- **Set the link's `maxItems` to it, or lower.** The calls the server makes count too. A request with more than `maxBatchSize` fails as a whole, the query it belongs to included.
+- **A call reads 64 values at most.** Each value is copied for the call, so this keeps the work in step with the size of the request.
+- **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place, and its input fails to validate.
+- **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
 #### Does it work with mutations and subscriptions? {#mutations}
 

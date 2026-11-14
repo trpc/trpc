@@ -14,7 +14,7 @@ import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
   experimental_dataOf,
   experimental_entryPerItem,
@@ -34,6 +34,7 @@ import { ChevronRightIcon } from 'lucide-react';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { readSlowQueries, writeSlowQueries } from '~/lib/slow-queries';
 import { useTRPC, type TRPC } from '~/lib/trpc';
+import { OneRequestHint } from './-components/one-request-hint';
 
 /** Every query the list needs. The loader waits for none of them */
 function postListEntries(trpc: TRPC) {
@@ -74,6 +75,13 @@ function BlogIndex() {
           Notes on databases, frontends and keeping things running.
         </p>
         <SlowQueriesSwitch initial={loaderData.slowQueries} />
+        <OneRequestHint>
+          Open your browser’s Network tab, then open a post. The post, its
+          author and the author’s other posts each need the one before. They
+          still load in one request:{' '}
+          <code>blog.postBySlug,blog.authorById,blog.posts</code>. So does this
+          list, with an author for every post.
+        </OneRequestHint>
       </section>
       <Suspense
         fallback={
@@ -91,12 +99,13 @@ function BlogIndex() {
 }
 
 /**
- * Makes the server wait 1 to 3 seconds in the author and "More by" queries,
- * so that you can watch them load after the posts
+ * Makes the server wait 1 to 3 seconds in every query of the blog, so that you
+ * can watch each one load
  */
 function SlowQueriesSwitch(props: Readonly<{ initial: boolean }>) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [on, setOn] = useState(props.initial);
   return (
     <div className="flex items-center gap-3">
@@ -106,19 +115,17 @@ function SlowQueriesSwitch(props: Readonly<{ initial: boolean }>) {
         onCheckedChange={(checked) => {
           setOn(checked);
           writeSlowQueries(checked);
-          // Load the authors again at the new speed, and forget the "More by"
-          // lists of the posts that were opened
-          void queryClient.resetQueries(trpc.blog.authorById.pathFilter());
-          queryClient.removeQueries({
-            ...trpc.blog.posts.pathFilter(),
-            type: 'inactive',
-          });
+          // Forget what the blog has loaded, and load the page again at the
+          // new speed: its loader starts the list and its authors, in one
+          // request
+          queryClient.removeQueries(trpc.blog.pathFilter());
+          void router.invalidate();
         }}
       />
       <Label htmlFor="slow-queries" className="flex flex-col items-start gap-1">
         Slow queries
         <span className="font-normal text-muted-foreground">
-          Authors and “More by” lists take 1 to 3 seconds
+          Every query of the blog takes 1 to 3 seconds
         </span>
       </Label>
     </div>

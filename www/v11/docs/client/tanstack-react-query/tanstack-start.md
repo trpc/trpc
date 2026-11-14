@@ -16,7 +16,7 @@ We have prefixed the handle APIs with `unstable_` as they're new, but you're saf
 
 tRPC adds no router integration of its own. Data crosses from the server to the browser through TanStack's [SSR query integration](https://tanstack.com/router/latest/docs/integrations/query), with your tRPC data transformer.
 
-The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat) is a complete TanStack Start app that uses handles in its loaders.
+The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat) is a complete TanStack Start app that uses handles in its loaders. Its [blog pages](https://sse.trpc.io/blog) load [dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries).
 
 ## 1. Install deps
 

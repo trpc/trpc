@@ -3,6 +3,7 @@ import {
   hashKey,
   InfiniteQueryObserver,
   skipToken,
+  useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import {
@@ -28,6 +29,7 @@ import {
   fetchEntry,
   fromHandle,
   experimental_handleOfItem,
+  experimental_useHandles,
   isTRPCEntryError,
   loadHandles,
   loadHandlesSettled,
@@ -72,6 +74,32 @@ const createAppRouter = () => {
             nextCursor: page < 2 ? page + 1 : null,
           };
         }),
+      /** Its author comes later, as a stream sends it */
+      withAuthorLater: t.procedure
+        .input(z.object({ slug: z.string() }))
+        .query(() => ({ author: Promise.resolve({ id: 'u1' }) })),
+      /**
+       * Three pages by one author. A page has one post more than the page
+       * before it. The author `sparse` has no list after the first page
+       */
+      pagedByAuthor: t.procedure
+        .input(z.object({ authorId: z.string(), cursor: z.number().nullish() }))
+        .query((opts) => {
+          calls('post.pagedByAuthor', opts.input);
+          const page = opts.input.cursor ?? 0;
+          const items = Array.from({ length: page + 1 }, (_, index) => ({
+            id: `${opts.input.authorId}-p${page}-${index}`,
+            authorId: `u${index}`,
+          }));
+          return {
+            // Against its type, as a server that is a version ahead can send
+            items:
+              opts.input.authorId === 'sparse' && page > 0
+                ? (null as unknown as typeof items)
+                : items,
+            nextCursor: page < 2 ? page + 1 : null,
+          };
+        }),
       byAuthor: t.procedure
         .input(z.object({ authorId: z.string(), cursor: z.number().nullish() }))
         .query((opts) => {
@@ -96,6 +124,18 @@ const createAppRouter = () => {
       list: t.procedure.query(() => ({
         groups: [{ members: ['u1', 'u2'] }, { members: ['u3'] }],
       })),
+      /** Lists that aren't there, against their types */
+      sparse: t.procedure.query(() => ({
+        groups: [{ members: ['u1'] }, { members: null as unknown as string[] }],
+        owners: null as unknown as string[],
+      })),
+    }),
+    big: t.router({
+      /** Ids that no query key can hold */
+      ids: t.procedure.query(() => ({ first: 1n, all: [1n, 2n] })),
+      byId: t.procedure
+        .input(z.object({ id: z.bigint() }))
+        .query((opts) => opts.input.id),
     }),
     tag: t.router({
       byIds: t.procedure
@@ -222,6 +262,9 @@ describe('dataOf', () => {
     >();
     // @ts-expect-error the input is checked against the data's type
     ensureEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
+    const later = prefetchEntry(trpc.post.withAuthorLater, { slug: 'hello' });
+    // @ts-expect-error a value inside a promise has no path: nothing can read it
+    void experimental_dataOf(later).author.id;
 
     expect(
       () => `${experimental_dataOf(post).authorId}`,
@@ -610,6 +653,176 @@ describe('review regressions', () => {
     const rest = experimental_handleOfItem(handles.rest, data.first);
     expect(rest).toEqual(handles.direct);
     expect(resource.queryClient.getQueryData(rest.queryKey)).toEqual(data.rest);
+  });
+});
+
+describe('edges of a load', () => {
+  test('a whole input can come from the data an entry is built from', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, it.tags[0]!),
+      ),
+    });
+    // The handle has no input yet
+    expect(handles.author).toEqual({
+      queryKey: [['author', 'byId'], { type: 'query' }],
+      itemInputs: [{ to: [], path: ['tags', '0'] }],
+    });
+    expect(experimental_handleOfItem(handles.author, data.post).input).toEqual({
+      id: 't1',
+    });
+  });
+
+  test('an entry built from data can read another entry too, which its handle waits for', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const group = prefetchEntry(trpc.group.list);
+    const [handles] = await loadHandles(trpc, {
+      post,
+      group,
+      tags: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.tag.byIds, {
+          ids: [it.authorId],
+          first: experimental_dataOf(group).groups[0]!.members[0]!,
+        }),
+      ),
+    });
+    // With the group's part, and without the post's
+    expect(handles.tags).toMatchObject({
+      input: { ids: [null], first: 'u1' },
+      itemInputs: [{ to: ['ids', '0'], path: ['authorId'] }],
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.calls.mock.calls).toContainEqual([
+      'tag.byIds',
+      { ids: ['u1'], first: 'u1' },
+    ]);
+  });
+
+  test('an entry that reads two entries has the error of the one that fails, also when the other is still loading', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const missing = prefetchEntry(trpc.post.bySlug, { slug: 'missing' });
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    // It settles after the missing post has failed
+    const author = prefetchEntry(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    });
+    await expect(
+      loadHandles(trpc, {
+        missing,
+        post,
+        author,
+        tags: prefetchEntry(trpc.tag.byIds, {
+          ids: [
+            experimental_dataOf(missing).authorId,
+            experimental_dataOf(author).id,
+          ],
+        }),
+      }),
+    ).rejects.toMatchObject({ key: 'missing', code: 'NOT_FOUND' });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // The two posts and the author. The tags never ran
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.bySlug',
+      'post.bySlug',
+      'author.byId',
+    ]);
+  });
+
+  test('lists that are not there have no items', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const sparse = ensureEntry(trpc.group.sparse);
+    const byId = (id: string) => ensureEntry(trpc.author.byId, { id });
+    const [, data] = await loadHandles(trpc, {
+      sparse,
+      // A list of lists, of which one is missing
+      members: experimental_entryPerItem(
+        experimental_dataOf(sparse).groups.map((group) => group.members),
+        byId,
+      ),
+      // No list at all
+      owners: experimental_entryPerItem(
+        experimental_dataOf(sparse).owners,
+        byId,
+      ),
+    });
+    expect(data.members).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
+    expect(data.owners).toEqual([]);
+  });
+
+  test('a query for every item rejects the load when its list fails', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'missing' });
+    await expect(
+      loadHandles(trpc, {
+        post,
+        teams: experimental_entryPerItem(
+          experimental_dataOf(post).tags,
+          (tag) => ensureEntry(trpc.team.byId, { id: tag.id }),
+        ),
+      }),
+    ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.bySlug',
+    ]);
+  });
+
+  test('data that no query key can hold fails the entry that reads it, and nothing else', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const ids = prefetchEntry(trpc.big.ids);
+    await expect(
+      loadHandles(trpc, {
+        ids,
+        one: ensureEntry(trpc.big.byId, {
+          id: experimental_dataOf(ids).first,
+        }),
+      }),
+    ).rejects.toThrow('BigInt');
+    await expect(
+      loadHandles(trpc, {
+        ids,
+        all: experimental_entryPerItem(experimental_dataOf(ids).all, (id) =>
+          ensureEntry(trpc.big.byId, { id }),
+        ),
+      }),
+    ).rejects.toThrow('BigInt');
+    // The entry it reads loaded
+    expect(resource.queryClient.getQueryData(trpc.big.ids.queryKey())).toEqual({
+      first: 1n,
+      all: [1n, 2n],
+    });
+  });
+
+  test('experimental_handleOfItem() throws for a handle that has nothing to fill in', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.bySlug, { slug: 'hello' }),
+    });
+    expect(() =>
+      // @ts-expect-error -- it is finished
+      experimental_handleOfItem(handles.post, {}),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got {"queryKey":[["post","bySlug"],{"input":{"slug":"hello"},"type":"query"}],"input":{"slug":"hello"}}]`,
+    );
+    expect(() =>
+      experimental_handleOfItem(null as any, {}),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got null]`,
+    );
   });
 });
 
@@ -2131,6 +2344,257 @@ describe.each([
     ]);
   });
 
+  test('a cached list with more items than the server has: the item the server ran for none of asks by itself', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cache has a tag that the server's post has no more
+    resource.queryClient.setQueryData(
+      trpc.post.bySlug.queryKey({ slug: 'hello' }),
+      {
+        id: 'id-of-hello',
+        title: 'Old',
+        authorId: 'u1',
+        tags: [{ id: 't1' }, { id: 't2' }, { id: 't3' }],
+      },
+      { updatedAt: 1 },
+    );
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      teams: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(trpc.team.byId, { id: tag.id }),
+      ),
+    });
+    expect(data.teams.map((team) => team.id)).toEqual(['t1', 't2', 't3']);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // The post's refetch with the two teams the server found, then the third
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'team.byId'),
+    ).toEqual([
+      ['team.byId', { id: 't1' }],
+      ['team.byId', { id: 't2' }],
+      ['team.byId', { id: 't3' }],
+    ]);
+  });
+
+  test("an infinite entry's later page is not in its first request, so an entry that reads it asks afterwards", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam: (last) => last.nextCursor, pages: 2 },
+    );
+    const [, data] = await loadHandles(trpc, {
+      posts,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(posts).pages[1]!.items[0]!.authorId,
+      }),
+    });
+    expect(data.author.id).toBe('u1');
+    // Two pages, then the author
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
+  });
+
+  test('an infinite entry with a first cursor of its own loads that page in the same request', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      more: experimental_dataOf(post, (it) =>
+        prefetchInfiniteEntry(
+          trpc.post.pagedByAuthor,
+          { authorId: it.authorId },
+          { initialCursor: 1 },
+        ),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+      ['post.pagedByAuthor', { authorId: 'u1', cursor: 1 }],
+    ]);
+    const more = experimental_handleOfItem(handles.more, {
+      id: 'id-of-hello',
+      title: 'Post hello',
+      authorId: 'u1',
+      tags: [],
+    });
+    expect(
+      resource.queryClient
+        .getQueryData(
+          fromHandle(trpc, more, {
+            getNextPageParam: (last) => last.nextCursor,
+          }).queryKey,
+        )
+        ?.pages[0]?.items.map((item) => item.id),
+    ).toEqual(['u1-p1-0', 'u1-p1-1']);
+  });
+
+  test('a cached infinite entry that starts at another page is fetched from that page, not from what the server ran', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+    // The cache has the author's list from its second page on, and it is stale
+    resource.queryClient.setQueryData(
+      trpc.post.pagedByAuthor.infiniteQueryKey({ authorId: 'u1' }),
+      {
+        pages: [{ items: [{ id: 'old', authorId: 'u0' }], nextCursor: 2 }],
+        pageParams: [1],
+      },
+      { updatedAt: 1 },
+    );
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    await loadHandles(trpc, {
+      post,
+      more: ensureInfiniteEntry(
+        trpc.post.pagedByAuthor,
+        { authorId: experimental_dataOf(post).authorId },
+        { getNextPageParam },
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // The server ran the first page in the post's request. The cache's list
+    // starts at the second, which its refetch asks for
+    expect(
+      resource.calls.mock.calls.filter(
+        ([path]) => path === 'post.pagedByAuthor',
+      ),
+    ).toEqual([
+      ['post.pagedByAuthor', { authorId: 'u1' }],
+      ['post.pagedByAuthor', { authorId: 'u1', cursor: 1 }],
+    ]);
+    expect(
+      resource.queryClient
+        .getQueryData(
+          trpc.post.pagedByAuthor.infiniteQueryKey({ authorId: 'u1' }),
+        )
+        ?.pages[0]?.items.map((item) => item.id),
+    ).toEqual(['u1-p1-0', 'u1-p1-1']);
+  });
+
+  /** A list by one author, with an author for every post, and a later page */
+  const laterPage = async (
+    resource: ReturnType<typeof pipeliningCtx>,
+    listOpts: { authorId: string; proxy: 'root' | 'post' },
+  ) => {
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+    const posts = ensureInfiniteEntry(
+      trpc.post.pagedByAuthor,
+      { authorId: listOpts.authorId },
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.onRequestSpy.mockClear();
+    resource.calls.mockClear();
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...(listOpts.proxy === 'root'
+        ? fromHandle(trpc, handles.posts, { getNextPageParam })
+        : fromHandle(trpc.post, handles.posts, { getNextPageParam })),
+      staleTime: Infinity,
+    });
+    const unsubscribe = observer.subscribe(vi.fn());
+    await observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    unsubscribe();
+    return resource.calls.mock.calls;
+  };
+
+  test('a later page whose items the server refuses to run for: each item asks by itself', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      // The first page and its one item fit. The second page has two
+      maxBatchSize: 2,
+      before: [],
+    });
+    const calls = await laterPage(resource, { authorId: 'a', proxy: 'root' });
+    expect(calls).toEqual([
+      ['post.pagedByAuthor', { authorId: 'a', cursor: 1 }],
+      ['author.byId', { id: 'u0' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
+    // The page, then its items
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test('a later page that has no list loads no items', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const calls = await laterPage(resource, {
+      authorId: 'sparse',
+      proxy: 'root',
+    });
+    expect(calls).toEqual([
+      ['post.pagedByAuthor', { authorId: 'sparse', cursor: 1 }],
+    ]);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("a later page read through a part of the router that its items' procedure is not in is an ordinary request", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const calls = await laterPage(resource, { authorId: 'a', proxy: 'post' });
+    // `trpc.post` has no `author.byId` to make queries of
+    expect(calls).toEqual([
+      ['post.pagedByAuthor', { authorId: 'a', cursor: 1 }],
+    ]);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain('batch=1');
+  });
+
   test("an entry's own error is not fetched twice", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
@@ -2188,5 +2652,460 @@ describe.each([
         trpc.post.byAuthor.infiniteQueryKey({ authorId: 'u1' }),
       ),
     ).toEqual(data.more);
+  });
+});
+
+describe.each([
+  { name: 'httpBatchLink', link: httpBatchLink },
+  { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+])('experimental_useHandles with $name', (scenario) => {
+  /** A page without a loader: its component says what it loads */
+  const postPage = (resource: ReturnType<typeof pipeliningCtx>) => {
+    function pageEntries(trpc: TRPC, slug: string) {
+      const post = prefetchEntry(trpc.post.bySlug, { slug });
+      return {
+        post,
+        author: experimental_dataOf(post, (it) =>
+          prefetchEntry(trpc.author.byId, { id: it.authorId }),
+        ),
+      };
+    }
+    function Post(props: {
+      handles: experimental_inferHandles<typeof pageEntries>;
+    }) {
+      const trpc = resource.useTRPC();
+      const post = useSuspenseQuery(fromHandle(trpc, props.handles.post));
+      const author = useSuspenseQuery(
+        fromHandle(
+          trpc,
+          experimental_handleOfItem(props.handles.author, post.data),
+        ),
+      );
+      return <p>{`${post.data.title} by ${author.data.name}`}</p>;
+    }
+    const renders = vi.fn();
+    function Page(props: { slug: string }) {
+      const trpc = resource.useTRPC();
+      const handles = experimental_useHandles(
+        trpc,
+        pageEntries(trpc, props.slug),
+      );
+      renders(handles);
+      return <Post handles={handles} />;
+    }
+    return { Page, renders };
+  };
+  const ctxOpts = {
+    link: scenario.link,
+    latency: 0,
+    maxBatchSize: undefined,
+    before: [],
+  };
+
+  test('a component starts its entries in one request, and its Suspense boundary above it starts nothing again', async () => {
+    await using resource = pipeliningCtx(ctxOpts);
+    const { Page, renders } = postPage(resource);
+
+    // The boundary is above the page, so the page renders again from nothing
+    // when its queries have data
+    const utils = resource.renderApp(
+      <React.Suspense fallback="loading">
+        <Page slug="hello" />
+      </React.Suspense>,
+    );
+    expect(utils.container).toHaveTextContent('loading');
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post hello by KATT');
+    });
+    expect(renders.mock.calls.length).toBeGreaterThan(1);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
+
+    // Rendering again gives the same handles, and starts nothing
+    resource.rerenderApp(
+      utils,
+      <React.Suspense fallback="loading">
+        <Page slug="hello" />
+      </React.Suspense>,
+    );
+    expect(renders.mock.lastCall![0]).toBe(renders.mock.calls[0]![0]);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('other entries are another load, and so is the component coming back to the page', async () => {
+    await using resource = pipeliningCtx(ctxOpts);
+    const { Page } = postPage(resource);
+    const page = (slug: string | null) => (
+      <React.Suspense fallback="loading">
+        {slug === null ? 'gone' : <Page slug={slug} />}
+      </React.Suspense>
+    );
+
+    const utils = resource.renderApp(page('hello'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post hello by KATT');
+    });
+
+    resource.rerenderApp(utils, page('other'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post other by KATT');
+    });
+    // The other post, in one request. Its author is in the cache
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+
+    resource.rerenderApp(utils, page(null));
+    expect(utils.container).toHaveTextContent('gone');
+    resource.calls.mockClear();
+    resource.rerenderApp(utils, page('other'));
+    // What the cache has shows at once, and the visit loads it again
+    expect(utils.container).toHaveTextContent('Post other by KATT');
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'other' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
+  });
+
+  test('strict mode starts the entries once', async () => {
+    await using resource = pipeliningCtx(ctxOpts);
+    const { Page } = postPage(resource);
+    const page = (
+      <React.StrictMode>
+        <React.Suspense fallback="loading">
+          <Page slug="hello" />
+        </React.Suspense>
+      </React.StrictMode>
+    );
+    const utils = resource.renderApp(page);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post hello by KATT');
+    });
+    resource.rerenderApp(utils, page);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+  });
+
+  test('a query for every item of a list, a group, and a skipToken', async () => {
+    await using resource = pipeliningCtx(ctxOpts);
+    function listEntries(trpc: TRPC, draft: boolean) {
+      const posts = prefetchInfiniteEntry(
+        trpc.post.paged,
+        {},
+        { getNextPageParam: (last) => last.nextCursor },
+      );
+      return {
+        posts,
+        rows: {
+          authors: experimental_entryPerItem(
+            experimental_dataOf(posts).pages.map((page) => page.items),
+            (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+          ),
+        },
+        draft: draft
+          ? prefetchEntry(trpc.post.bySlug, { slug: 'draft' })
+          : skipToken,
+      } satisfies TRPCLoadEntries;
+    }
+    function Row(props: {
+      authors: experimental_inferHandles<typeof listEntries>['rows']['authors'];
+      post: { id: string; authorId: string };
+    }) {
+      const trpc = resource.useTRPC();
+      const author = useSuspenseQuery(
+        fromHandle(trpc, experimental_handleOfItem(props.authors, props.post)),
+      );
+      return <li>{`${props.post.id} by ${author.data.id}`}</li>;
+    }
+    function List() {
+      const trpc = resource.useTRPC();
+      const handles = experimental_useHandles(trpc, listEntries(trpc, false));
+      expect(handles.draft).toBeUndefined();
+      const posts = useSuspenseInfiniteQuery(
+        fromHandle(trpc, handles.posts, {
+          getNextPageParam: (last) => last.nextCursor,
+        }),
+      );
+      return (
+        <ul>
+          {posts.data.pages
+            .flatMap((page) => page.items)
+            .map((post) => (
+              <Row key={post.id} authors={handles.rows.authors} post={post} />
+            ))}
+        </ul>
+      );
+    }
+    const utils = resource.renderApp(
+      <React.Suspense fallback="loading">
+        <List />
+      </React.Suspense>,
+    );
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('p0 by u0');
+    });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.paged', {}],
+      ['author.byId', { id: 'u0' }],
+    ]);
+  });
+
+  test('a fetch or ensure entry starts and is not waited for: its error shows where it is read', async () => {
+    await using resource = pipeliningCtx(ctxOpts);
+    const errors = vi.fn();
+    class Boundary extends React.Component<
+      { children: React.ReactNode },
+      { failed: boolean }
+    > {
+      override state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      override componentDidCatch(error: unknown) {
+        errors(error);
+      }
+      override render() {
+        return this.state.failed ? 'failed' : this.props.children;
+      }
+    }
+    function Post(props: { post: inferQueryHandle<TRPC['post']['bySlug']> }) {
+      const trpc = resource.useTRPC();
+      const post = useSuspenseQuery({
+        ...fromHandle(trpc, props.post),
+        retry: false,
+      });
+      return <p>{post.data.title}</p>;
+    }
+    function Page() {
+      const trpc = resource.useTRPC();
+      const post = ensureEntry(
+        trpc.post.bySlug,
+        { slug: 'missing' },
+        { retry: false },
+      );
+      const handles = experimental_useHandles(trpc, {
+        post,
+        fresh: fetchEntry(trpc.team.byId, { id: 'team1' }),
+        author: experimental_dataOf(post, (it) =>
+          prefetchEntry(trpc.author.byId, { id: it.authorId }),
+        ),
+      });
+      expect(handles.fresh.input).toEqual({ id: 'team1' });
+      return <Post post={handles.post} />;
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const utils = resource.renderApp(
+      <Boundary>
+        <React.Suspense fallback="loading">
+          <Page />
+        </React.Suspense>
+      </Boundary>,
+    );
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('failed');
+    });
+    vi.restoreAllMocks();
+    expect(errors.mock.calls[0]![0]).toMatchObject({
+      data: { code: 'NOT_FOUND' },
+    });
+    // The author's entry never started
+    expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
+      'post.bySlug',
+      'team.byId',
+    ]);
+  });
+});
+
+describe('experimental_useHandles', () => {
+  test('throws for a handle that needs data, before anything starts', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const errors = vi.fn();
+    function Page(props: { entries: () => TRPCLoadEntries }) {
+      try {
+        experimental_useHandles(trpc, props.entries());
+      } catch (error) {
+        errors((error as Error).message);
+      }
+      return null;
+    }
+
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    resource.renderApp(
+      <Page
+        entries={() => ({
+          post,
+          author: prefetchEntry(trpc.author.byId, {
+            id: experimental_dataOf(post).authorId,
+          }),
+        })}
+      />,
+    );
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam: (last) => last.nextCursor },
+    );
+    resource.renderApp(
+      <Page
+        entries={() => ({
+          posts,
+          authors: experimental_entryPerItem(
+            experimental_dataOf(posts).pages.map((page) => page.items),
+            (item) => prefetchEntry(trpc.author.byId, { id: item.authorId }),
+          ),
+        })}
+      />,
+    );
+    // Entries that read an entry that isn't in the load
+    const elsewhere = prefetchEntry(trpc.post.bySlug, { slug: 'elsewhere' });
+    resource.renderApp(
+      <Page
+        entries={() => ({
+          author: prefetchEntry(trpc.author.byId, {
+            id: experimental_dataOf(elsewhere).authorId,
+          }),
+        })}
+      />,
+    );
+    resource.renderApp(
+      <Page
+        entries={() => ({
+          author: experimental_dataOf(elsewhere, (it) =>
+            prefetchEntry(trpc.author.byId, { id: it.authorId }),
+          ),
+        })}
+      />,
+    );
+    expect(errors.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          "The handle of the entry for "author" has another entry's data in its input, and \`experimental_useHandles()\` doesn't wait for data. Build the entry from that data, with \`experimental_dataOf(entry, (data) => entry)\`, or wait in a loader with \`loadHandles()\`",
+        ],
+        Array [
+          "The handle of the entry for "authors" has another entry's data in its input, and \`experimental_useHandles()\` doesn't wait for data. Make the entry of its list a prefetch entry, and read nothing else of the list in its input, or wait in a loader with \`loadHandles()\`",
+        ],
+        Array [
+          "The entry for "author" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load",
+        ],
+        Array [
+          "The entry for "author" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load",
+        ],
+      ]
+    `);
+    expect(resource.calls).not.toHaveBeenCalled();
+    expect(() =>
+      experimental_useHandles(trpc.post as any, {}),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: \`experimental_useHandles()\` takes the root proxy, \`trpc\`, got \`trpc.post\`]`,
+    );
+  });
+
+  test('two components with the same entries share one load, until the last of them leaves', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card() {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
+        }),
+      );
+      return null;
+    }
+    const page = (cards: number) =>
+      Array.from({ length: cards }, (_, index) => <Card key={index} />);
+    const utils = resource.renderApp(page(2));
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    // One leaves. The other keeps the load
+    resource.rerenderApp(utils, page(1));
+    expect(new Set(seen).size).toBe(1);
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    // Both gone, and one comes back: it loads again
+    resource.rerenderApp(utils, page(0));
+    resource.rerenderApp(utils, page(1));
+    expect(new Set(seen).size).toBe(2);
+    await vi.waitFor(() => {
+      expect(resource.calls).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  test('a component that never got on the page keeps its handles for a while, then loads again', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const seen: unknown[] = [];
+    function Page(props: { fail: boolean }) {
+      const handles = experimental_useHandles(trpc, {
+        post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
+      });
+      seen.push(handles);
+      if (props.fail) {
+        throw new Error('It never mounts');
+      }
+      return null;
+    }
+    class Boundary extends React.Component<{ children: React.ReactNode }> {
+      override state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      override render() {
+        return this.state.failed ? null : this.props.children;
+      }
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    resource.renderApp(
+      <Boundary>
+        <Page fail />
+      </Boundary>,
+    );
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    // Soon after, as when a Suspense boundary above it shows it again
+    const first = seen[0];
+    seen.length = 0;
+    const soon = resource.renderApp(<Page fail={false} />);
+    expect(seen[0]).toBe(first);
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+    // On the page, it keeps them however long it is there
+    await vi.advanceTimersByTimeAsync(60_000);
+    resource.rerenderApp(soon, <Page fail={false} />);
+    expect(seen.at(-1)).toBe(first);
+    soon.unmount();
+
+    // Never on the page, and long after: nothing is kept
+    seen.length = 0;
+    resource.renderApp(
+      <Boundary>
+        <Page fail />
+      </Boundary>,
+    );
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    await vi.advanceTimersByTimeAsync(60_000);
+    const before = resource.calls.mock.calls.length;
+    resource.renderApp(<Page fail={false} />);
+    expect(seen.at(-1)).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.calls).toHaveBeenCalledTimes(before + 1);
+    });
+    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 });

@@ -2,7 +2,10 @@ import type {
   PipelinePath,
   PipelineReads,
 } from '@trpc/server/unstable-core-do-not-import';
-import { pipelineReadsLimit } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  pipelineReadsLimit,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { Operation, OperationContext } from '../types';
 import type {
   ContentOptions,
@@ -135,10 +138,10 @@ export function pipeCall(
   ) {
     return null;
   }
-  let settle: PipelinedCall['settle'] = () => undefined;
-  const result = new Promise<PipelinedCallResult>((resolve) => {
-    settle = resolve;
-  });
+  const settled = createDeferred<
+    PipelinedCallResult | Promise<PipelinedCallResult>
+  >();
+  const result: Promise<PipelinedCallResult> = settled.promise.then((it) => it);
   // Read only by what wants the call's result
   result.catch(() => undefined);
   const call: PipelinedCall = {
@@ -146,7 +149,7 @@ export function pipeCall(
     status: 'waiting',
     result,
     owner,
-    settle,
+    settle: settled.resolve,
   };
   owner.calls.push(call);
   return call;
@@ -309,7 +312,8 @@ function settlePipelinedBatch(opts: {
     );
     own.catch(() => undefined);
     const settled = Promise.all(
-      call.reads.map((read) => ok.get(read.from) ?? Promise.resolve(false)),
+      // Every call in a plan reads what is in its request
+      call.reads.map(async (read) => (await ok.get(read.from)) === true),
     ).then((sources) => {
       if (!sources.every(Boolean)) {
         call.status = 'unresolved';
