@@ -2,6 +2,7 @@ import { isPlainObject } from '../vendor/is-plain-object';
 import type { MiddlewareResult } from './middleware';
 import { createMiddlewareFactory } from './middleware';
 import { isPromise } from './stream/jsonl';
+import { iteratorResource } from './stream/utils/asyncIterable';
 import type { CombinedDataTransformer } from './transformer';
 import { isAsyncIterable, isObject } from './utils';
 
@@ -92,27 +93,41 @@ type Queued =
  * Splits a stream into `count` branches that each yield what the stream
  * yields, with their own copy of every value. The stream is read once, when
  * the first branch asks for a value, and what the other branches haven't read
- * yet is kept for them. It is returned when every branch has been.
+ * yet is kept for them. It is returned once: when it has ended or failed, as
+ * the JSONL encoder returns a stream it has read, or when every branch has
+ * been returned.
  */
 function splitAsyncIterable(
   source: AsyncIterable<unknown>,
   count: number,
 ): Copies {
-  let iterator: AsyncIterator<unknown> | null = null;
+  let iterator: (AsyncIterator<unknown> & AsyncDisposable) | null = null;
   /** `null` for a branch that has finished or been returned */
   const queues: (Queued[] | null)[] = Array.from({ length: count }, () => []);
   /** The read of the stream in flight, for every branch that waits for it */
   let reading: Promise<void> | null = null;
+  /** The stream has nothing more to give, and has been returned */
   let ended = false;
   let branches = 0;
+
+  async function end() {
+    if (ended) {
+      return;
+    }
+    ended = true;
+    // Calls its `return()`, or the disposer of an iterator that has one
+    await using _source = iterator;
+  }
 
   async function read() {
     let queued: (live: number) => Queued;
     try {
-      iterator ??= source[Symbol.asyncIterator]();
+      iterator ??= iteratorResource(source);
       const step = await iterator.next();
       const done = step.done === true;
-      ended ||= done;
+      if (done) {
+        await end();
+      }
       queued = (live) => ({
         type: 'value',
         done,
@@ -120,7 +135,9 @@ function splitAsyncIterable(
         copies: shareAmong(step.value, live),
       });
     } catch (error) {
-      ended = true;
+      await end().catch(() => {
+        // The calls get the failure of the stream, not of returning it
+      });
       queued = () => ({ type: 'error', error });
     }
     // The branches that were returned meanwhile get nothing
@@ -144,9 +161,8 @@ function splitAsyncIterable(
         item.copies.drop();
       }
     }
-    if (!ended && queues.every((other) => other === null)) {
-      ended = true;
-      await iterator?.return?.();
+    if (queues.every((other) => other === null)) {
+      await end();
     }
   }
 
@@ -269,21 +285,23 @@ function shareAmong(value: unknown, count: number): Copies {
 
 /** A run of a query, in flight */
 interface Run {
-  /** How many calls get its result. Calls join it until it settles. */
+  /** How many calls get its result. Calls join it while it is in the map. */
   calls: number;
   /** Resolves when the run settles, to what gives each call its result */
   settled: Promise<() => MiddlewareResult<object>>;
 }
 
 /**
- * A middleware that runs a query once for the calls that are in flight at the
- * same time with the same context, path and input, such as two calls for one
+ * A middleware that runs a query once for the calls that start at the same
+ * time with the same context, path and input, such as two calls for one
  * author in a batch. Every call gets the data or the error of that run, and
  * its own copy of what the data streams.
- * Mutations and subscriptions run for every call.
+ * Mutations and subscriptions run for every call, and so does a query that
+ * starts later, which may follow a mutation.
  *
- * Use it before any middleware that changes the context: an HTTP request's
- * calls share one context object, until a middleware gives each its own.
+ * Use it before any middleware that changes the context or waits: an HTTP
+ * request's calls share one context object and reach the middleware together,
+ * until a middleware gives each its own context or holds one back.
  *
  * Unstable: it may change in a minor release.
  * @see https://trpc.io/docs/server/middlewares#dedupe-queries
@@ -301,7 +319,7 @@ export function unstable_dedupeQueries(opts?: {
   inputHashFn?: InputHashFn;
 }) {
   const inputHashFn = opts?.inputHashFn ?? defaultInputHashFn;
-  /** The runs in flight, for each context */
+  /** The runs that calls can still join, for each context */
   const runs = new WeakMap<object, Map<string, Run>>();
 
   return createMiddlewareFactory<object, object>()(async (call) => {
@@ -329,13 +347,24 @@ export function unstable_dedupeQueries(opts?: {
     if (run) {
       run.calls++;
     } else {
+      const forget = () => {
+        // A later run may have taken its place
+        if (ofContext.get(key) === started) {
+          ofContext.delete(key);
+        }
+      };
+      // The calls of a batch get here in one macrotask. A call that comes
+      // after it runs for itself: a context can outlive a request, as a
+      // WebSocket connection's does, and that call may follow a mutation
+      const joining = setTimeout(forget, 0);
       const started: Run = {
         calls: 1,
         settled: call
           .next()
-          // Only while it is in flight: a context can outlive a request, as a
-          // WebSocket connection's does
-          .finally(() => ofContext.delete(key))
+          .finally(() => {
+            clearTimeout(joining);
+            forget();
+          })
           .then((result) => {
             // No call can join a run that isn't in the map, so this is every
             // call that gets the result

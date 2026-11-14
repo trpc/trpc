@@ -5,7 +5,13 @@ import {
   httpBatchStreamLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError, unstable_dedupeQueries } from '@trpc/server';
-import { createBuilder } from '@trpc/server/unstable-core-do-not-import';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import {
+  createBuilder,
+  createDeferred,
+  makeAsyncResource,
+  makeResource,
+} from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
 
@@ -35,6 +41,28 @@ async function readAll<TValue>(stream: AsyncIterable<TValue>) {
     values.push(value);
   }
   return values;
+}
+
+/** A macrotask, in which everything that only waits for promises has run */
+const macrotask = () => later(() => undefined);
+
+/**
+ * Fakes `setTimeout` alone, so that a test says when the calls that started
+ * together are all there. Promises and `setImmediate` run as they do.
+ */
+function fakeTimeouts() {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  return makeResource(
+    {
+      /** No call that starts from here started with the ones before */
+      pass: () => {
+        vi.advanceTimersByTime(1);
+      },
+    },
+    () => {
+      vi.useRealTimers();
+    },
+  );
 }
 
 /** Stops reading a stream, as leaving a `for await` does */
@@ -839,6 +867,164 @@ describe('server-side calls, whose inputs and data never are JSON', () => {
       expect(closed).toHaveBeenCalledTimes(1);
     },
   );
+
+  test('a stream that fails is returned once, as the JSONL encoder returns a stream it has read', async () => {
+    const returned = vi.fn();
+    const caller = createCaller({
+      lossy: procedure.query(() => ({
+        [Symbol.asyncIterator]() {
+          let read = 0;
+          return {
+            async next() {
+              if (read++ > 0) {
+                throw new Error('Lost the cursor');
+              }
+              return { done: false as const, value: read };
+            },
+            // An iterator that isn't a generator cleans up here
+            async return() {
+              returned();
+              return { done: true as const, value: undefined };
+            },
+          };
+        },
+      })),
+    });
+
+    const [first, second] = await Promise.all([caller.lossy(), caller.lossy()]);
+    const results = await Promise.all([
+      readUntilError(first),
+      readUntilError(second),
+    ]);
+
+    expect(results).toMatchObject([
+      { values: [1], error: { message: 'Lost the cursor' } },
+      { values: [1], error: { message: 'Lost the cursor' } },
+    ]);
+    expect(returned).toHaveBeenCalledTimes(1);
+  });
+
+  test('a stream whose iterator has a disposer and no `return()` is disposed when every call has stopped', async () => {
+    const disposed = vi.fn();
+    const caller = createCaller({
+      ones: procedure.query(() => ({
+        [Symbol.asyncIterator]: () =>
+          makeAsyncResource(
+            { next: async () => ({ done: false as const, value: 1 }) },
+            async () => {
+              disposed();
+            },
+          ),
+      })),
+    });
+
+    const [first, second] = await Promise.all([caller.ones(), caller.ones()]);
+    const a = first[Symbol.asyncIterator]();
+    const b = second[Symbol.asyncIterator]();
+    expect(await a.next()).toEqual({ done: false, value: 1 });
+    await stop(a);
+    expect(disposed).not.toHaveBeenCalled();
+    await stop(b);
+
+    expect(disposed).toHaveBeenCalledTimes(1);
+  });
+
+  test('a call that starts later runs for itself, even while the same query is in flight', async () => {
+    using timeouts = fakeTimeouts();
+    let name = 'old';
+    const runs = vi.fn();
+    const released = createDeferred();
+    const caller = createCaller({
+      name: procedure.query(async () => {
+        runs();
+        const read = name;
+        await released.promise;
+        return read;
+      }),
+      rename: procedure.mutation(() => {
+        name = 'new';
+      }),
+    });
+
+    const together = [caller.name(), caller.name()];
+    await macrotask();
+    expect(runs).toHaveBeenCalledTimes(1);
+
+    timeouts.pass();
+    await caller.rename();
+    // As a refetch after a mutation is, on a WebSocket connection
+    const afterRename = [caller.name(), caller.name()];
+    await macrotask();
+    expect(runs).toHaveBeenCalledTimes(2);
+
+    released.resolve();
+    expect(await Promise.all([...together, ...afterRename])).toEqual([
+      'old',
+      'old',
+      'new',
+      'new',
+    ]);
+  });
+
+  test('a run that settles leaves a later run of the same query to the calls that start with it', async () => {
+    using timeouts = fakeTimeouts();
+    const gates = [createDeferred(), createDeferred()];
+    const runs = vi.fn();
+    const caller = createCaller({
+      run: procedure.query(async () => {
+        const run = runs.mock.calls.length;
+        runs();
+        await gates[run]?.promise;
+        return run;
+      }),
+    });
+
+    const first = caller.run();
+    await macrotask();
+    timeouts.pass();
+    const second = caller.run();
+    await macrotask();
+    expect(runs).toHaveBeenCalledTimes(2);
+
+    gates[0]?.resolve();
+    expect(await first).toBe(0);
+    await macrotask();
+    // No timeout has passed since `second` started
+    const third = caller.run();
+    await macrotask();
+    expect(runs).toHaveBeenCalledTimes(2);
+
+    gates[1]?.resolve();
+    expect(await Promise.all([second, third])).toEqual([1, 1]);
+  });
+});
+
+test('without a context object nothing tells the calls of one request from another, and every call runs', async () => {
+  const t = initTRPC.create();
+  const runs = vi.fn();
+  const appRouter = t.router({
+    now: t.procedure.use(unstable_dedupeQueries()).query(() => {
+      runs();
+      return runs.mock.calls.length;
+    }),
+  });
+
+  const batch = (createContext: (() => object) | undefined) =>
+    fetchRequestHandler({
+      endpoint: '',
+      req: new Request('http://localhost/now,now?batch=1&input=%7B%7D'),
+      router: appRouter,
+      createContext,
+    }).then((response) => response.json());
+
+  expect(await batch(undefined)).toEqual([
+    { result: { data: 1 } },
+    { result: { data: 2 } },
+  ]);
+  expect(await batch(() => ({}))).toEqual([
+    { result: { data: 3 } },
+    { result: { data: 3 } },
+  ]);
 });
 
 test('a procedure builder without a root config gets a transformer that changes nothing', async () => {

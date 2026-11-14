@@ -384,7 +384,7 @@ barMiddleware.unstable_pipe(fooMiddleware);
 
 ## Running identical queries once (unstable) {#dedupe-queries}
 
-A [batch](/docs/client/links/httpBatchLink) can have the same query twice, such as two posts' calls for one author. Each call runs the procedure. The `unstable_dedupeQueries()` middleware runs a query once for the calls that are in flight at the same time with the same context, path and input.
+A [batch](/docs/client/links/httpBatchLink) can have the same query twice, such as two posts' calls for one author. Each call runs the procedure. The `unstable_dedupeQueries()` middleware runs a query once for the calls that start at the same time with the same context, path and input.
 
 ```ts twoslash
 // @target: esnext
@@ -394,14 +394,15 @@ type Context = { user?: { id: string } };
 
 const t = initTRPC.context<Context>().create();
 
-// Use it before any middleware that changes the context
+// Use it before any middleware that changes the context or waits
 export const publicProcedure = t.procedure.use(unstable_dedupeQueries());
 ```
 
 - **Every call still has its own result**, with the data or the error of the one run. The client doesn't change, and `onError` is called for every call that failed.
 - **Only queries.** A mutation or a subscription runs for every call.
-- **Only while the run is in flight.** It isn't a cache: a later request runs the query again. The calls of one HTTP request share a context object, which is how the middleware knows they belong together.
-- **Use it before any middleware that changes the context.** `opts.next({ ctx })` gives each call a context object of its own, and after that no two calls share one.
+- **Only calls that start together.** It isn't a cache: a call that starts later runs the query again, even while the first run is in flight, so a query sent after a mutation never gets data from before it.
+- **The calls need a context object.** The calls of one HTTP request share the object that `createContext` returns, which is how the middleware knows they belong together. Without a `createContext`, or with one that returns nothing, every call runs: return an object, such as `createContext: () => ({})`.
+- **Use it before any middleware that changes the context or waits.** `opts.next({ ctx })` gives each call a context object of its own, and after that no two calls share one. A middleware that waits, such as one that reads a session from a database, can let the calls through at different times, and then they don't start together.
 - **What comes after it in the chain runs once**, and what comes before it runs for every call. Leave it off a query whose result should differ between two calls, such as a new random id.
 - **Inputs are compared as the client sends them**: encoded by your [transformer](/docs/server/data-transformers), then as TanStack Query compares query keys, which is as JSON, whatever the order of their keys. With `superjson`, two equal `Map` inputs share a run. An input that still isn't JSON, such as a `Map` in a [server-side call](/docs/server/server-side-calls) without a transformer, runs for itself.
 - **A stream or a promise in the data is shared too.** The query runs once and the stream is read once. Every call gets its own copy, which is an async iterable, and the stream is returned when every call has stopped reading it.
@@ -427,9 +428,10 @@ export const publicProcedure = t.procedure.use(
       if (call.path === 'post.search' && typeof call.input === 'string') {
         return call.input.toLowerCase();
       }
-      // The input as the client sent it, which is JSON
+      // The input as the client sent it, which is JSON. In an object, so
+      // that an input of `undefined` isn't hashed as `null` is
       const encoded: unknown = call.transformer.input.serialize(call.input);
-      return JSON.stringify([encoded]);
+      return JSON.stringify({ encoded });
     },
   }),
 );
