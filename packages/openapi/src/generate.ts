@@ -1310,14 +1310,14 @@ function getShapeKey(type: Type, checker: Checker): string {
     schemas: {},
     typeToRef: new Map(),
   };
-  const inline = (value: unknown, seen: ReadonlySet<string>): unknown => {
-    if (Array.isArray(value)) {
-      return value.map((item) => inline(item, seen));
+  const inline = (
+    schema: SchemaObject | boolean,
+    seen: ReadonlySet<string>,
+  ): unknown => {
+    if (typeof schema === 'boolean') {
+      return schema;
     }
-    if (!value || typeof value !== 'object') {
-      return value;
-    }
-    const { $ref, description: _description, ...rest } = value as SchemaObject;
+    const { $ref, description: _description, ...rest } = schema;
     const name = $ref?.startsWith('#/components/schemas/')
       ? $ref.slice('#/components/schemas/'.length)
       : null;
@@ -1325,15 +1325,33 @@ function getShapeKey(type: Type, checker: Checker): string {
     if (name && target) {
       return inline({ ...target, ...rest }, new Set(seen).add(name));
     }
-    return Object.fromEntries(
-      Object.entries($ref ? { $ref, ...rest } : rest).map(([key, item]) => [
-        key,
-        // `required` is a set, so its order says nothing about the shape
-        key === 'required' && Array.isArray(item)
-          ? [...item].sort()
-          : inline(item, seen),
-      ]),
-    );
+    // Only schema-valued keywords hold schemas; `properties` maps field names
+    // to schemas, so a field may be called `description` or `$ref`.
+    const inlineAll = (schemas: (SchemaObject | boolean)[] | undefined) =>
+      schemas?.map((item) => inline(item, seen));
+    const inlineOne = (item: SchemaObject | boolean | undefined) =>
+      item === undefined ? undefined : inline(item, seen);
+    return {
+      ...rest,
+      $ref,
+      properties: rest.properties
+        ? Object.fromEntries(
+            Object.entries(rest.properties).map(([key, item]) => [
+              key,
+              inline(item, seen),
+            ]),
+          )
+        : undefined,
+      items: inlineOne(rest.items),
+      additionalProperties: inlineOne(rest.additionalProperties),
+      not: inlineOne(rest.not),
+      prefixItems: inlineAll(rest.prefixItems),
+      oneOf: inlineAll(rest.oneOf),
+      anyOf: inlineAll(rest.anyOf),
+      allOf: inlineAll(rest.allOf),
+      // `required` is a set, so its order says nothing about the shape
+      required: rest.required ? [...rest.required].sort() : undefined,
+    };
   };
   return canonicalize(inline(typeToJsonSchema(type, scratch), new Set()));
 }
