@@ -394,9 +394,9 @@ function assertPipelinedBatchAccepted(opts: {
         } | null);
   if (
     error &&
-    ((error.data?.code === 'NOT_FOUND' &&
-      // An error formatter can leave the path out
-      (error.data.path === undefined || error.data.path === opts.path)) ||
+    // Not any "not found": one for the whole request, such as from
+    // `createContext`, has no path
+    ((error.data?.code === 'NOT_FOUND' && error.data.path === opts.path) ||
       String(error.message).includes('Streaming requests must be batched'))
   ) {
     throw new Error(
@@ -433,8 +433,8 @@ export interface BatchPipelining {
   /** Ends what an operation's calls wait for, once it has a result */
   close: (op: Pick<Operation, 'context'>) => void;
   /**
-   * Whether the last operation of a batch has to go in the next request: with
-   * it, a call doesn't fit that fits without it, or with it alone
+   * Whether the last operation of a batch has to go in the next request: more
+   * calls fit in the two requests than in one with it
    */
   splits: (ops: readonly BatchOp[]) => boolean;
   /**
@@ -501,13 +501,14 @@ export function experimental_pipelining(): experimental_Pipelining {
         if (ops.length < 2) {
           return false;
         }
-        // An operation's calls go in its request before more operations do.
-        // A call that fits in neither request, or reads both, splits nothing
-        const together = plan(ops).calls;
-        return [
-          ...plan(ops.slice(0, -1)).calls,
-          ...plan(ops.slice(-1)).calls,
-        ].some((call) => !together.includes(call));
+        // An operation's calls go in its request before more operations do,
+        // if that lets more calls go. A call that fits in neither request, or
+        // reads operations of both, goes in neither
+        return (
+          plan(ops.slice(0, -1)).calls.length +
+            plan(ops.slice(-1)).calls.length >
+          plan(ops).calls.length
+        );
       },
       take(ops) {
         const planned = plan(ops);

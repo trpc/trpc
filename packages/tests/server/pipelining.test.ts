@@ -331,47 +331,55 @@ describe.each([
     },
   );
 
-  test('a "not found" that is not about pipelining stays the error it is', async () => {
-    const shape = {
-      message: 'No such tenant',
-      code: -32004,
-      data: { code: 'NOT_FOUND', httpStatus: 404, path: 'tenant' },
-    };
-    await using ctx = setup({
-      allowPipelining: true,
-      pipelining: true,
-      // Such as a proxy before the handler, which answers for the whole request
-      fetch: async () =>
-        Response.json(
-          {
-            error:
-              scenario.transformer === 'superjson'
-                ? superjson.serialize(shape)
-                : shape,
-          },
-          { status: 404 },
-        ),
-    });
-    const post = createOperationPipeline();
-    const postResult = ctx.untyped.query(
-      'post',
-      { slug: 'hello' },
-      { context: pipelineContext(post) },
-    );
-    const author = pipeCall({
-      path: 'author',
-      input: { id: undefined },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
-    });
-    assert(author);
-    await expect(postResult).rejects.toMatchObject({
-      message: 'No such tenant',
-      data: { code: 'NOT_FOUND', path: 'tenant' },
-    });
-    await expect(author.result).rejects.toMatchObject({
-      message: 'No such tenant',
-    });
-  });
+  test.each([
+    // Such as a proxy before the handler
+    { name: 'for another path', data: { path: 'tenant' } },
+    // Such as a `createContext` that finds no tenant
+    { name: 'for no path', data: {} },
+  ])(
+    'a "not found" $name is not about pipelining, and stays the error it is',
+    async (notFound) => {
+      const shape = {
+        message: 'No such tenant',
+        code: -32004,
+        data: { code: 'NOT_FOUND', httpStatus: 404, ...notFound.data },
+      };
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        // It answers for the whole request
+        fetch: async () =>
+          Response.json(
+            {
+              error:
+                scenario.transformer === 'superjson'
+                  ? superjson.serialize(shape)
+                  : shape,
+            },
+            { status: 404 },
+          ),
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      });
+      assert(author);
+      await expect(postResult).rejects.toMatchObject({
+        message: 'No such tenant',
+        data: { code: 'NOT_FOUND', ...notFound.data },
+      });
+      await expect(author.result).rejects.toMatchObject({
+        message: 'No such tenant',
+      });
+    },
+  );
 
   test('a call that reads a failed one did not run, and is marked unresolved', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
@@ -642,6 +650,54 @@ describe.each([
       ).toEqual(['maintenance', 'maintenance']);
     },
   );
+
+  test('a batch is not split when that lets no more calls go', async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      maxItems: 3,
+    });
+    const first = createOperationPipeline();
+    const second = createOperationPipeline();
+    const results = Promise.all([
+      ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(first) },
+      ),
+      ctx.untyped.query(
+        'post',
+        { slug: 'other' },
+        { context: pipelineContext(second) },
+      ),
+    ]);
+    // Reads both posts: it can only go in a request with both
+    const both = pipeCall({
+      path: 'author',
+      input: { id: undefined, since: undefined },
+      reads: [
+        { to: ['id'], from: first, path: ['authorId'], each: false },
+        { to: ['since'], from: second, path: ['slug'], each: false },
+      ],
+    });
+    // Reads the first post. Two requests would have room for it, and none
+    // for the call above: one call either way
+    const one = pipeCall({
+      path: 'team',
+      input: undefined,
+      reads: [{ to: [], from: first, path: ['authorId'], each: false }],
+    });
+    assert(both);
+    assert(one);
+    await results;
+    expect(await both.result).toEqual({
+      data: { id: 'u1', teamId: 'team-of-u1' },
+    });
+    await expect(one.result).rejects.toThrow(
+      'The call did not fit in the request of what it reads',
+    );
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
 
   test('a call that reads two operations goes in the request of both', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });

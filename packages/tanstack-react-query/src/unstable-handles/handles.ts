@@ -1797,9 +1797,10 @@ function usedLoadsOf(queryClient: QueryClient) {
 const USED_LOAD_KEPT_MS = 30_000;
 
 /**
- * What the entries of a load are: the procedure, input and kind of each, and
- * where each reads another's data. Two loads with the same description start
- * the same queries.
+ * What the entries of a load are: the procedure, input, kind and options of
+ * each, and where each reads another's data. Two loads with the same
+ * description start the same queries. Options that are functions aren't in
+ * it.
  */
 function describeEntries(opts: {
   queryClient: QueryClient;
@@ -1807,12 +1808,17 @@ function describeEntries(opts: {
 }) {
   const leaves = leavesOf(readEntries({ ...opts, keys: [] }));
   const keyOfEntry = new Map(leaves.map((leaf) => [leaf.entry, leaf.key]));
-  const describeRef = (ref: EntryDataRef) => ({
-    '~dataOf': [keyOfEntry.get(ref.entry) ?? null, ref.path, !!ref.itemOf],
+  const describeRef = (ref: EntryDataRef): unknown => ({
+    '~dataOf': [
+      keyOfEntry.get(ref.entry) ?? null,
+      ref.path,
+      // The list it is an item of
+      ref.itemOf ? describeRef(ref.itemOf) : null,
+    ],
   });
   return hashKey(
     leaves.map((leaf) => {
-      const options = leaf.state.options({
+      const { queryFn: _, ...options } = leaf.state.options({
         dataOfRef: describeRef,
         pipeline: null,
       });
@@ -1820,8 +1826,8 @@ function describeEntries(opts: {
         leaf.key,
         leaf.state.kind,
         leaf.state.type,
-        options.queryKey,
-        options.initialPageParam ?? null,
+        // With its key, its first cursor, and such options as its stale time
+        options,
         leaf.each ? describeRef(leaf.each) : null,
         leaf.from ? (keyOfEntry.get(leaf.from) ?? null) : null,
       ];
@@ -2403,7 +2409,7 @@ export function loadHandlesSettled<
  *
  * It starts the entries again when they change, such as with another id, and
  * when the component comes back to the page. Rendering again starts nothing.
- * Entries are compared as query keys are, by procedure and input: build them
+ * Entries are compared as query keys are, by procedure, input and options: build them
  * from values that stay the same from render to render, such as props.
  *
  * Experimental: it may change in a minor release.

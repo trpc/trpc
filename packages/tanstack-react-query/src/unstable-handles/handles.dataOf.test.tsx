@@ -3056,6 +3056,38 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('the same query with other options is another load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { staleTime: number | undefined }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { staleTime: props.staleTime },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card staleTime={undefined} />
+        <Card staleTime={undefined} />
+        <Card staleTime={60_000} />
+      </>,
+    );
+    // The first two share a load. The third started its own entries
+    expect(seen[1]).toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[0]);
+    expect(seen[2]).toEqual(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('a component that never got on the page keeps its handles for 30 seconds, then loads again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
