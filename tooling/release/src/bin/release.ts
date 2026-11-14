@@ -1,36 +1,41 @@
 #!/usr/bin/env node
 /**
- * Releases the packages in `packages/*`. `.github/workflows/release.yml` runs
- * each release in two jobs: `--pack <dir>` builds and packs without
+ * Releases the packages in `packages/*`. Stable releases are only automatic:
+ * `auto` works out whether there's one and which version it is (see
+ * `releaseMajor` and `notBreaking` in `config.ts`), so there's no command to
+ * pick a version. `.github/workflows/release.yml` runs each release in two
+ * jobs: `--pack <dir>` builds and packs without
  * credentials, and `--from <dir>` publishes those tarballs. Without either,
  * one run does both; locally, try a release without publishing anything with
  * `--dry-run`:
  *
- *   pnpm release stable <patch|minor|major> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
- *   pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+ *   pnpm release auto [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+ *   pnpm release canary [--since <sha>] [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release github-release <tag>
  *   pnpm release notes [<tag>] [--to <ref>]
+ *
+ * `--since` applies when packing.
  */
 import { parseArgs } from 'node:util';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Effect, Path } from 'effect';
+import { notBreaking, releaseMajor } from '../config.ts';
 import {
+  auto,
   canary,
   defaultWait,
   githubReleaseForTag,
+  packAuto,
   packCanary,
   printNotes,
-  packStable,
+  publishAuto,
   publishCanary,
-  publishStable,
   ReleaseError,
-  stable,
 } from '../release.ts';
-import { bumps, isBump } from '../version.ts';
 
 const usage = `Usage:
-  pnpm release stable <${bumps.join('|')}> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
-  pnpm release canary [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+  pnpm release auto [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
+  pnpm release canary [--since <sha>] [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
   pnpm release github-release <tag>
   pnpm release notes [<tag>] [--to <ref>]`;
 
@@ -43,6 +48,7 @@ const { positionals, values } = parseArgs({
     pack: { type: 'string' },
     preid: { type: 'string', default: 'canary' },
     provenance: { type: 'boolean', default: false },
+    since: { type: 'string' },
     to: { type: 'string' },
   },
 });
@@ -62,29 +68,30 @@ Effect.gen(function* () {
   if (
     (pack !== undefined && from !== undefined) ||
     (values.to !== undefined && command !== 'notes') ||
+    (values['dist-tag'] !== undefined && command !== 'canary') ||
     (command === 'notes' && (pack !== undefined || from !== undefined))
   ) {
     return yield* new ReleaseError({ message: usage });
   }
+  const repo = {
+    remote: 'origin',
+    branch: 'main',
+    wait: defaultWait,
+    major: releaseMajor,
+    notBreaking,
+  };
   switch (command) {
-    case 'stable': {
-      if (arg === undefined || !isBump(arg)) {
+    case 'auto': {
+      if (arg !== undefined) {
         break;
       }
-      const opts = {
-        ...publish,
-        bump: arg,
-        distTag: values['dist-tag'] ?? 'latest',
-        remote: 'origin',
-        branch: 'main',
-        wait: defaultWait,
-      };
+      const opts = { ...publish, ...repo };
       if (pack !== undefined) {
-        yield* packStable(root, { bump: arg, dir: pack });
+        yield* packAuto(root, { ...opts, dir: pack });
       } else if (from !== undefined) {
-        yield* publishStable(root, { ...opts, dir: from });
+        yield* publishAuto(root, { ...opts, dir: from });
       } else {
-        yield* stable(root, opts);
+        yield* auto(root, opts);
       }
       return;
     }
@@ -98,11 +105,11 @@ Effect.gen(function* () {
         distTag: values['dist-tag'] ?? 'canary',
       };
       if (pack !== undefined) {
-        yield* packCanary(root, { preid: values.preid, dir: pack });
+        yield* packCanary(root, { ...opts, since: values.since, dir: pack });
       } else if (from !== undefined) {
         yield* publishCanary(root, { ...opts, dir: from });
       } else {
-        yield* canary(root, opts);
+        yield* canary(root, { ...opts, since: values.since });
       }
       return;
     }

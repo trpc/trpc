@@ -3,10 +3,12 @@
  * previous tag, under each public package their conventional-commit scope
  * names, then by their type.
  *
- * A pull request changes a package when its commit changes a file in the
- * package's directory other than Markdown: READMEs change with every
- * sponsor update. Pull requests that change no public package, like the
- * website, tooling or examples, aren't listed. A listed pull request goes
+ * A pull request is listed when its commit changes a public package's
+ * published contents, by the rule that decides whether there's a release at
+ * all (`releasableCommits` in `changes.ts`): every commit that starts a
+ * release is listed, and every listed one would start one. Pull requests
+ * that change no public package's tarball, like the website, tests, tooling,
+ * examples or READMEs, aren't. A listed pull request goes
  * under the packages its scope names, like `client` in `feat(client): a` or
  * both in `fix(server, client): a`, so a client feature that also touches
  * the server's types is only a client feature. Without a scope, or with one
@@ -16,15 +18,18 @@
  * GitHub works out who contributed for the first time.
  */
 import { Effect } from 'effect';
+import { packagesAt, releasableCommits } from './changes.ts';
 import { git, output } from './command.ts';
-import type { PackageJson } from './version.ts';
-import { publishedVersions, type WorkspacePackage } from './workspace.ts';
+import { publishedVersions } from './workspace.ts';
 
-/** A commit on the released branch's first-parent history. */
+/**
+ * A commit on the released branch's first-parent history, with the public
+ * packages whose published contents it changes.
+ */
 export interface Change {
   readonly sha: string;
   readonly subject: string;
-  readonly files: ReadonlyArray<string>;
+  readonly packages: ReadonlyArray<string>;
 }
 
 /** A public package, in the order its section appears. */
@@ -85,21 +90,6 @@ export function pullRequestNumber(subject: string): number | undefined {
  */
 export function isReleaseCommit(subject: string) {
   return /^(chore: release )?v\d+\.\d+\.\d+(-\S+)?$/.test(subject.trim());
-}
-
-/** The names of the packages `files` change, in `packages` order. */
-export function changedPackages(
-  files: ReadonlyArray<string>,
-  packages: ReadonlyArray<NotesPackage>,
-): ReadonlyArray<string> {
-  return packages
-    .filter(({ dir }) =>
-      files.some(
-        (file) =>
-          file.startsWith(`${dir}/`) && !file.toLowerCase().endsWith('.md'),
-      ),
-    )
-    .map(({ name }) => name);
 }
 
 /**
@@ -192,7 +182,9 @@ export function notesEntries(opts: {
 }): ReadonlyArray<NotesEntry> {
   const entries = new Map<string, NotesEntry>();
   for (const change of opts.changes) {
-    const changed = changedPackages(change.files, opts.packages);
+    const changed = opts.packages
+      .map(({ name }) => name)
+      .filter((name) => change.packages.includes(name));
     if (changed.length === 0 || isReleaseCommit(change.subject)) {
       continue;
     }
@@ -317,73 +309,12 @@ export function renderNotes(opts: {
   return `${blocks.join('\n\n')}\n`;
 }
 
-/** The commits in `from..to` on `to`'s first-parent history, oldest first. */
-export const changesBetween = Effect.fn('changesBetween')(function* (
-  root: string,
-  from: string,
-  to: string,
-) {
-  const log = yield* git(
-    root,
-    'log',
-    '--first-parent',
-    '--diff-merges=first-parent',
-    '--no-renames',
-    '--name-only',
-    '--reverse',
-    '-z',
-    '--format=%x00%H%x00%s',
-    `${from}..${to}`,
-  );
-  // With -z, every field ends with a NUL and paths aren't quoted. Each commit
-  // starts with an empty field, which no path is, then its sha and subject; a
-  // newline comes before its first path.
-  const fields = log.split('\0');
-  const changes: Array<Change & { files: Array<string> }> = [];
-  for (let i = 0; i < fields.length; i++) {
-    const field = fields[i] ?? '';
-    const current = changes.at(-1);
-    if (field === '' && i + 2 < fields.length) {
-      changes.push({
-        sha: fields[i + 1] ?? '',
-        subject: fields[i + 2] ?? '',
-        files: [],
-      });
-      i += 2;
-    } else if (field !== '' && current !== undefined) {
-      current.files.push(
-        current.files.length === 0 ? field.replace(/^\n/, '') : field,
-      );
-    }
-  }
-  return changes;
-});
-
 /** The public packages at `rev`, each after the packages it depends on. */
 export const notesPackages = Effect.fn('notesPackages')(function* (
   root: string,
   rev: string,
 ) {
-  const packages: Array<WorkspacePackage> = [];
-  // Lists nothing when `rev` has no packages/ directory.
-  const listed = yield* git(
-    root,
-    'ls-tree',
-    '-z',
-    '--name-only',
-    rev,
-    'packages/',
-  );
-  for (const dir of listed.split('\0').filter((entry) => entry !== '')) {
-    const raw = yield* git(root, 'show', `${rev}:${dir}/package.json`).pipe(
-      Effect.orElseSucceed(() => undefined),
-    );
-    const pkg =
-      raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
-    if (pkg?.name !== undefined) {
-      packages.push({ dir, name: pkg.name, pkg });
-    }
-  }
+  const packages = yield* packagesAt(root, rev);
   const dirs = new Map(packages.map(({ name, dir }) => [name, dir]));
   return [...publishedVersions(packages, '0.0.0').keys()].map(
     (name): NotesPackage => ({ name, dir: dirs.get(name) ?? '' }),
@@ -525,7 +456,13 @@ export const releaseNotes = Effect.fn('releaseNotes')(function* (
     readonly repo?: string;
   },
 ) {
-  const to = opts.to ?? 'HEAD';
+  // One commit, so the packages and the commits are read from the same tree.
+  const to = yield* git(
+    root,
+    'rev-parse',
+    '--verify',
+    `${opts.to ?? 'HEAD'}^{commit}`,
+  );
   const repo =
     opts.repo ??
     (yield* output(root, 'gh', [
@@ -537,10 +474,9 @@ export const releaseNotes = Effect.fn('releaseNotes')(function* (
       '.nameWithOwner',
     ]));
   const packages = yield* notesPackages(root, to);
-  const changes = (yield* changesBetween(root, opts.previousTag, to)).filter(
-    ({ subject, files }) =>
-      !isReleaseCommit(subject) && changedPackages(files, packages).length > 0,
-  );
+  const changes = (yield* releasableCommits(root, opts.previousTag, to))
+    .filter(({ subject }) => !isReleaseCommit(subject))
+    .reverse();
   const github = yield* gitHubInfo(root, repo, changes);
   return renderNotes({
     entries: notesEntries({ changes, packages, github, repo }),
