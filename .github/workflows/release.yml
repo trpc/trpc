@@ -20,8 +20,8 @@ name: Release Packages
 # since the run for the newer push releases everything. The workflow has no
 # `paths:` filter, so a push after a run that skipped, failed or was
 # cancelled still releases what that run didn't; so does re-running the run
-# for main's tip. Set the repo variable AUTO_RELEASE to `false` to stop stable releases;
-# canaries keep going out.
+# for main's tip. Set the repo variable AUTO_RELEASE to `false` to stop
+# stable releases; canaries keep going out.
 #
 # There's no manual run: stable releases are only automatic, and the commits
 # decide the version (tooling/release/src/config.ts). No release publishes a
