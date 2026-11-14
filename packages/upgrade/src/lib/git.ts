@@ -1,6 +1,5 @@
 import { resolve } from 'path';
 import { cancel, log } from '@clack/prompts';
-import type { SourceFile } from 'typescript';
 import { execa } from './execa';
 
 export async function assertCleanGitTree() {
@@ -13,7 +12,7 @@ export async function assertCleanGitTree() {
   }
 }
 
-export async function filterIgnored(files: readonly SourceFile[]) {
+export async function filterIgnored(files: readonly string[]) {
   let stdout = '';
   let stderr = '';
   try {
@@ -29,22 +28,18 @@ export async function filterIgnored(files: readonly SourceFile[]) {
 
   if (process.env['VERBOSE']) {
     log.info(`cwd: ${process.cwd()}`);
-    log.info(
-      `All files in program: ${files.map((file) => file.fileName).join(', ')}`,
-    );
+    log.info(`All files in program: ${files.join(', ')}`);
     log.info(`Ignored files: ${ignores.join(', ')}`);
   }
 
   // Ignore "common files"
-  const filteredSourcePaths = files
-    .filter(
-      (source) =>
-        source.fileName.startsWith(resolve()) && // only look ahead of current directory
-        !source.fileName.includes('/trpc/packages/') && // relative paths when running codemod locally
-        !source.fileName.includes('/node_modules/') && // always ignore node_modules
-        !ignores.includes(source.fileName), // ignored files
-    )
-    .map((source) => source.fileName);
+  const filteredSourcePaths = files.filter(
+    (fileName) =>
+      fileName.startsWith(resolve()) && // only look ahead of current directory
+      !fileName.includes('/trpc/packages/') && // relative paths when running codemod locally
+      !fileName.includes('/node_modules/') && // always ignore node_modules
+      !ignores.includes(fileName), // ignored files
+  );
 
   if (process.env['VERBOSE']) {
     log.info(`Filtered files: ${filteredSourcePaths.join(', ')}`);

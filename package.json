@@ -69,7 +69,7 @@
     "ts-prune": "^0.10.3",
     "tsx": "catalog:",
     "turbo": "catalog:",
-    "typescript": "catalog:ts-api",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
