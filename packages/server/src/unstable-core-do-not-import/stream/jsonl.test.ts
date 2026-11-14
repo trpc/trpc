@@ -985,3 +985,48 @@ test('regression: stream closing before head rejects headDeferred with descripti
     'Stream closed before head was received',
   );
 });
+
+test('regression: a value that cannot be serialized fails only its own promise or iterable', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  let iterableEnded = false;
+  const data = {
+    0: Promise.resolve(1n),
+    1: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        try {
+          yield 'a';
+          yield 2n;
+        } finally {
+          iterableEnded = true;
+        }
+      },
+    }),
+    2: Promise.resolve('ok'),
+  };
+  const stream = jsonlStreamProducer({
+    data,
+    onError,
+    formatError: ({ error }) => (error as Error).message,
+  });
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: stream,
+    abortController: new AbortController(),
+  });
+
+  await expect(head[0]).rejects.toMatchObject({
+    data: expect.stringContaining('BigInt'),
+  });
+  const values: unknown[] = [];
+  await expect(
+    run(async () => {
+      for await (const value of await head[1]) {
+        values.push(value);
+      }
+    }),
+  ).rejects.toMatchObject({ data: expect.stringContaining('BigInt') });
+  expect(values).toEqual(['a']);
+  expect(iterableEnded).toBe(true);
+  await expect(head[2]).resolves.toBe('ok');
+  expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([['0'], ['1']]);
+});
