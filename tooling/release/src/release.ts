@@ -9,7 +9,7 @@
  * The publishing half publishes each package once, after the packages it
  * depends on, skipping versions the registry has already.
  */
-import { Console, Data, Duration, Effect, FileSystem } from 'effect';
+import { Console, Data, Effect, FileSystem } from 'effect';
 import {
   commitBump,
   publishedChanged,
@@ -30,7 +30,6 @@ import {
   isAfter,
   majorOf,
   type Bump,
-  type PackageJson,
 } from './version.ts';
 import { publishedVersions, readPackages, writeVersions } from './workspace.ts';
 
@@ -62,13 +61,12 @@ export const latestTag = Effect.fn('latestTag')(function* (
 
 /**
  * The latest release: the latest tag, or a release commit after it that
- * never got its tag because its run stopped after pushing it, once something
- * the packages publish changed after it. That release may be published in
- * part, so the next one bumps from it rather than publishing its version
- * again with other contents; `publishStable` tags it first. While nothing
- * published changed after it, HEAD still publishes what it did, so this
- * returns the latest tag and the run resumes that release, as the release
- * commit's own run does.
+ * never got its tag because its run stopped after pushing it. That release
+ * may be published in part, so the next one bumps from it rather than
+ * publishing its version again from another commit, whose tarballs can
+ * differ even when nothing in `packages/` did (packed READMEs, skills
+ * generated from the docs); `publishStable` tags it first. HEAD doesn't
+ * count: running the release on it resumes it from the same tree.
  */
 export const latestRelease = Effect.fn('latestRelease')(function* (
   root: string,
@@ -91,8 +89,7 @@ export const latestRelease = Effect.fn('latestRelease')(function* (
     if (
       sha !== head &&
       version !== undefined &&
-      isAfter(version, tag.slice(1)) &&
-      (yield* publishedChanged(root, sha, 'HEAD'))
+      isAfter(version, tag.slice(1))
     ) {
       return { tag: `v${version}`, ref: sha, tagged: false };
     }
@@ -246,61 +243,9 @@ const publishTarballs = Effect.fn('publishTarballs')(function* (
   }
 });
 
-export interface WaitOptions {
-  readonly timeout: Duration.Duration;
-  readonly interval: Duration.Duration;
-}
-
-export const defaultWait: WaitOptions = {
-  timeout: Duration.minutes(30),
-  interval: Duration.seconds(15),
-};
-
-/** `@trpc/server`, `11.23.0` → its tarball's URL on `registry`. */
-export function tarballUrl(registry: string, name: string, version: string) {
-  const basename = name.slice(name.lastIndexOf('/') + 1);
-  return `${registry.replace(/\/$/, '')}/${name}/-/${basename}-${version}.tgz`;
-}
-
 /** The registry pnpm publishes to. */
 const publishRegistry = (root: string) =>
   output(root, 'pnpm', ['config', 'get', 'registry']);
-
-/**
- * Waits until `registry` serves every version in `versions`. A successful
- * publish only means npm accepted it: npm scans each version before anyone
- * can install it, which takes minutes and sometimes hours, and it can hold or
- * block a version instead.
- */
-export const waitForVersions = Effect.fn('waitForVersions')(function* (
-  versions: ReadonlyMap<string, string>,
-  registry: string,
-  opts: WaitOptions,
-) {
-  const pending = new Map(versions);
-  const deadline = Date.now() + Duration.toMillis(opts.timeout);
-  while (pending.size > 0) {
-    for (const [name, version] of pending) {
-      const response = yield* Effect.tryPromise(() =>
-        fetch(tarballUrl(registry, name, version), { method: 'HEAD' }),
-      ).pipe(Effect.orElseSucceed(() => undefined));
-      if (response?.ok) {
-        pending.delete(name);
-        yield* Console.log(`${name}@${version} is on npm`);
-      }
-    }
-    if (pending.size === 0) {
-      break;
-    }
-    if (Date.now() >= deadline) {
-      const list = [...pending].map(([name, version]) => `${name}@${version}`);
-      return yield* new ReleaseError({
-        message: `npm accepted these but doesn't serve them yet: ${list.join(', ')}`,
-      });
-    }
-    yield* Effect.sleep(opts.interval);
-  }
-});
 
 /**
  * Creates the GitHub release for `tag`, with the notes `releaseNotes` makes
@@ -332,7 +277,6 @@ export interface StableOptions extends PublishOptions {
   readonly bump: Bump;
   readonly remote: string;
   readonly branch: string;
-  readonly wait: WaitOptions;
   /** The only major it publishes, `releaseMajor` in `config.ts`. */
   readonly major: number;
 }
@@ -509,14 +453,6 @@ export const publishStable = Effect.fn('publishStable')(function* (
   yield* git(root, 'tag', '--annotate', tag, '--message', tag);
   yield* git(root, 'push', '--quiet', opts.remote, `refs/tags/${tag}`);
 
-  yield* waitForVersions(published, registry, opts.wait).pipe(
-    Effect.mapError(
-      (error) =>
-        new ReleaseError({
-          message: `${error.message}. ${tag} is pushed. Once npm serves them, create the GitHub release: pnpm release github-release ${tag}`,
-        }),
-    ),
-  );
   yield* githubRelease(root, { tag, previousTag }).pipe(
     Effect.mapError(
       (error) =>
@@ -553,8 +489,9 @@ export interface AutoOptions extends Omit<StableOptions, 'bump' | 'distTag'> {
  * What the automatic release publishes, or `undefined` if there's nothing to
  * release. Once `releaseMajor` in `config.ts` is the next major, it's that
  * major's .0.0. Otherwise it's the largest bump the commits since the latest
- * tag that change what the packages publish ask for (see `changes.ts`); a
- * breaking commit (`feat!:`) fails it, unless it's in `notBreaking`. If
+ * tag that change what the packages publish ask for (see `changes.ts`), or a
+ * patch after a release that stopped before it was tagged (`latestRelease`);
+ * a breaking commit (`feat!:`) fails it, unless it's in `notBreaking`. If
  * `branch` moved, it skips, because the run for the newer commit releases
  * everything.
  */
@@ -568,7 +505,11 @@ export const autoBump = Effect.fn('autoBump')(function* (
     );
     return undefined;
   }
-  const { tag: previousTag, ref: previousRef } = yield* latestRelease(root);
+  const {
+    tag: previousTag,
+    ref: previousRef,
+    tagged,
+  } = yield* latestRelease(root);
   const next = majorOf(previousTag.slice(1)) + 1;
   if (opts.major === next) {
     yield* Console.log(
@@ -581,6 +522,13 @@ export const autoBump = Effect.fn('autoBump')(function* (
     commits.length === 0 ||
     !(yield* publishedChanged(root, previousRef, 'HEAD'))
   ) {
+    if (!tagged) {
+      // Its packages may be published in part; the next version publishes all.
+      yield* Console.log(
+        `${previousTag} stopped before it was tagged and may be published in part: releasing the patch after it.`,
+      );
+      return 'patch';
+    }
     yield* Console.log(
       commits.length === 0
         ? `Nothing the packages publish changed since ${previousTag}; not releasing.`
@@ -789,28 +737,12 @@ export const printNotes = Effect.fn('printNotes')(function* (
 
 /**
  * `pnpm release github-release v11.23.0`, for a stable release whose GitHub
- * release wasn't created: waits for its packages, then creates it.
+ * release wasn't created.
  */
 export const githubReleaseForTag = Effect.fn('githubReleaseForTag')(function* (
   root: string,
   tag: string,
-  wait: WaitOptions,
 ) {
   const previousTag = yield* latestTag(root, `${tag}^`);
-  const dirs = yield* git(root, 'ls-tree', '--name-only', `${tag}:packages`);
-  const versions = new Map<string, string>();
-  for (const dir of dirs.split('\n')) {
-    const raw = yield* git(
-      root,
-      'show',
-      `${tag}:packages/${dir}/package.json`,
-    ).pipe(Effect.orElseSucceed(() => undefined));
-    const pkg =
-      raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
-    if (pkg?.name !== undefined && pkg.version !== undefined && !pkg.private) {
-      versions.set(pkg.name, pkg.version);
-    }
-  }
-  yield* waitForVersions(versions, yield* publishRegistry(root), wait);
   yield* githubRelease(root, { tag, previousTag });
 });

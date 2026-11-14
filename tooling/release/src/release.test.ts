@@ -1,6 +1,5 @@
-import { createServer, type Server } from 'node:http';
 import { NodeServices } from '@effect/platform-node';
-import { Duration, Effect, Exit, FileSystem, Path, type Scope } from 'effect';
+import { Effect, Exit, FileSystem, Path, type Scope } from 'effect';
 import type { ChildProcessSpawner } from 'effect/process';
 import { describe, expect, it } from 'vitest';
 import { git } from './command.ts';
@@ -8,14 +7,11 @@ import {
   auto,
   autoBump,
   branchMoved,
-  defaultWait,
   latestRelease,
   latestTag,
   packCanary,
   publishStable,
   stableVersion,
-  tarballUrl,
-  waitForVersions,
 } from './release.ts';
 import { bumps, type Bump } from './version.ts';
 import { writeVersions } from './workspace.ts';
@@ -125,25 +121,42 @@ describe('latestRelease', () => {
     return { root, stopped };
   });
 
-  it('resumes a release commit that never got its tag while nothing published changed after it', () =>
+  it("doesn't count a release commit that never got its tag while it's HEAD", () =>
     run(
       Effect.gen(function* () {
         const { root } = yield* stoppedRelease();
-        // HEAD is the release that stopped.
         expect(yield* latestRelease(root)).toEqual({
           tag: 'v11.24.0',
           ref: 'v11.24.0',
           tagged: true,
         });
+      }),
+    ));
+
+  it('releases after a release commit that never got its tag, even if only docs landed on top', () =>
+    run(
+      Effect.gen(function* () {
+        const { root, stopped } = yield* stoppedRelease();
         yield* commitFile(root, {
           file: 'www/a.md',
           content: 'docs',
           subject: 'docs: a (#2)',
         });
-        expect((yield* latestRelease(root)).tag).toBe('v11.24.0');
+        expect(yield* latestRelease(root)).toEqual({
+          tag: 'v11.24.1',
+          ref: stopped,
+          tagged: false,
+        });
         expect(
-          yield* stableVersion(root, { bump: 'patch', major: 11 }),
-        ).toMatchObject({ tag: 'v11.24.1' });
+          yield* autoBump(root, {
+            dryRun: true,
+            provenance: false,
+            remote: 'origin',
+            branch: 'main',
+            major: 11,
+            notBreaking: [],
+          }),
+        ).toBe('patch');
       }),
     ));
 
@@ -221,7 +234,6 @@ describe('the release guards', () => {
           provenance: false,
           remote: 'origin',
           branch: 'main',
-          wait: defaultWait,
           major: 11,
           dir: yield* fs.makeTempDirectoryScoped(),
         });
@@ -258,7 +270,6 @@ describe('the major guard', () => {
     provenance: false,
     remote: 'origin',
     branch: 'main',
-    wait: defaultWait,
   };
   it('publishes only the major the config sets', () =>
     run(
@@ -453,82 +464,6 @@ describe('writeVersions', () => {
           peerDependencies: { '@trpc/server': '11.23.0' },
           devDependencies: { '@trpc/server': 'workspace:*' },
         });
-      }),
-    ));
-});
-
-describe('tarballUrl', () => {
-  it('points at the scoped tarball', () => {
-    expect(
-      tarballUrl('https://registry.npmjs.org/', '@trpc/server', '11.23.0'),
-    ).toBe('https://registry.npmjs.org/@trpc/server/-/server-11.23.0.tgz');
-  });
-});
-
-/** A registry that serves a tarball once it has been asked for it `after` times. */
-const registry = (after: number) =>
-  Effect.acquireRelease(
-    Effect.callback<{
-      server: Server;
-      url: string;
-      requests: () => number;
-    }>((resume) => {
-      let requests = 0;
-      const server = createServer((_req, res) => {
-        requests++;
-        res.statusCode = requests > after ? 200 : 404;
-        res.end();
-      });
-      server.listen(0, '127.0.0.1', () => {
-        const address = server.address();
-        const port = typeof address === 'object' ? address?.port : undefined;
-        resume(
-          Effect.succeed({
-            server,
-            url: `http://127.0.0.1:${port}`,
-            requests: () => requests,
-          }),
-        );
-      });
-    }),
-    ({ server }) =>
-      Effect.callback<void>((resume) => {
-        server.close(() => resume(Effect.void));
-      }),
-  );
-
-describe('waitForVersions', () => {
-  it('waits until npm serves the version', () =>
-    run(
-      Effect.gen(function* () {
-        const npm = yield* registry(2);
-        yield* waitForVersions(
-          new Map([['@trpc/server', '11.23.0']]),
-          npm.url,
-          {
-            timeout: Duration.seconds(5),
-            interval: Duration.millis(10),
-          },
-        );
-        expect(npm.requests()).toBe(3);
-      }),
-    ));
-
-  it('fails, naming what npm still holds back, after the timeout', () =>
-    run(
-      Effect.gen(function* () {
-        const npm = yield* registry(Infinity);
-        const exit = yield* waitForVersions(
-          new Map([['@trpc/server', '11.23.0']]),
-          npm.url,
-          {
-            timeout: Duration.millis(50),
-            interval: Duration.millis(10),
-          },
-        ).pipe(Effect.exit);
-        expect(Exit.isFailure(exit) && String(exit.cause)).toContain(
-          "npm accepted these but doesn't serve them yet: @trpc/server@11.23.0",
-        );
       }),
     ));
 });

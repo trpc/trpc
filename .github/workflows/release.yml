@@ -15,13 +15,14 @@ name: Release Packages
 # publish (tooling/release/src/changes.ts), and never for a release commit.
 # Every push to main releases what changed since the latest tag, if any of it
 # changes what the packages publish, like KATT/raf-query. The merge queue
-# already batches pull requests, so there's no wait on top. A newer push
-# cancels an older run's build; a run whose push main has moved past skips,
-# since the run for the newer push releases everything. The workflow has no
-# `paths:` filter, so a push after a run that skipped, failed or was
-# cancelled still releases what that run didn't; so does re-running the run
-# for main's tip. Set the repo variable AUTO_RELEASE to `false` to stop
-# stable releases; canaries keep going out.
+# already batches pull requests, so there's no wait on top. A run whose push
+# main has moved past skips before it builds, since the run for the newer
+# push releases everything. No run cancels another, so neither GitHub
+# starting runs out of order nor re-running an old run can stop the run for
+# main's tip. The workflow has no `paths:` filter, so a push after a run that
+# skipped, failed or was cancelled still releases what that run didn't; so
+# does re-running the run for main's tip. Set the repo variable AUTO_RELEASE
+# to `false` to stop stable releases; canaries keep going out.
 #
 # There's no manual run: stable releases are only automatic, and the commits
 # decide the version (tooling/release/src/config.ts). No release publishes a
@@ -45,10 +46,6 @@ jobs:
   # tooling/release/src/release.ts).
   build-auto:
     if: "vars.AUTO_RELEASE != 'false' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
-    # Nothing here has side effects, so a newer push cancels it.
-    concurrency:
-      group: release-auto-build
-      cancel-in-progress: true
     timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
@@ -90,7 +87,7 @@ jobs:
     # is pushed, the push is rejected and nothing is published.
     concurrency:
       group: release-stable # A newer run's release waits for this one's tag
-    timeout-minutes: 45 # npm can take a while to serve what it accepted
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: npm-publish # npm trusted publishing is bound to this environment
     permissions:
