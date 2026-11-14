@@ -84,8 +84,8 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "@trpc/server": "11.28.2",
     "@hey-api/openapi-ts": ">=0.94.5 || >=0.0.0-next",
+    "@trpc/server": "11.28.2",
     "typescript": ">=7.1.0-beta",
     "zod": ">=4.0.0"
   },
