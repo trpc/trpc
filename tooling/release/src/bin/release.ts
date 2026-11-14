@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
- * Releases the packages in `packages/*`. `.github/workflows/release.yml` runs
- * each release in two jobs: `--pack <dir>` builds and packs without
+ * Releases the packages in `packages/*`. Stable releases are only automatic:
+ * `auto` works out whether there's one and which version it is (see
+ * `releaseMajor` and `notBreaking` in `config.ts`), so there's no command to
+ * pick a version. `.github/workflows/release.yml` runs each release in two
+ * jobs: `--pack <dir>` builds and packs without
  * credentials, and `--from <dir>` publishes those tarballs. Without either,
  * one run does both; locally, try a release without publishing anything with
  * `--dry-run`:
  *
  *   pnpm release auto [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
- *   pnpm release stable <patch|minor|major> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release canary [--since <sha>] [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
  *   pnpm release github-release <tag>
  *   pnpm release notes [<tag>] [--to <ref>]
@@ -17,7 +19,7 @@
 import { parseArgs } from 'node:util';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Effect, Path } from 'effect';
-import { releaseMajor } from '../config.ts';
+import { notBreaking, releaseMajor } from '../config.ts';
 import {
   auto,
   canary,
@@ -26,18 +28,13 @@ import {
   packAuto,
   packCanary,
   printNotes,
-  packStable,
   publishAuto,
   publishCanary,
-  publishStable,
   ReleaseError,
-  stable,
 } from '../release.ts';
-import { bumps, isBump } from '../version.ts';
 
 const usage = `Usage:
   pnpm release auto [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
-  pnpm release stable <${bumps.join('|')}> [--dist-tag latest] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
   pnpm release canary [--since <sha>] [--preid canary] [--dist-tag canary] [--provenance] [--dry-run] [--pack <dir> | --from <dir>]
   pnpm release github-release <tag>
   pnpm release notes [<tag>] [--to <ref>]`;
@@ -71,6 +68,7 @@ Effect.gen(function* () {
   if (
     (pack !== undefined && from !== undefined) ||
     (values.to !== undefined && command !== 'notes') ||
+    (values['dist-tag'] !== undefined && command !== 'canary') ||
     (command === 'notes' && (pack !== undefined || from !== undefined))
   ) {
     return yield* new ReleaseError({ message: usage });
@@ -80,9 +78,13 @@ Effect.gen(function* () {
     branch: 'main',
     wait: defaultWait,
     major: releaseMajor,
+    notBreaking,
   };
   switch (command) {
     case 'auto': {
+      if (arg !== undefined) {
+        break;
+      }
       const opts = { ...publish, ...repo };
       if (pack !== undefined) {
         yield* packAuto(root, { ...opts, dir: pack });
@@ -90,25 +92,6 @@ Effect.gen(function* () {
         yield* publishAuto(root, { ...opts, dir: from });
       } else {
         yield* auto(root, opts);
-      }
-      return;
-    }
-    case 'stable': {
-      if (arg === undefined || !isBump(arg)) {
-        break;
-      }
-      const opts = {
-        ...publish,
-        ...repo,
-        bump: arg,
-        distTag: values['dist-tag'] ?? 'latest',
-      };
-      if (pack !== undefined) {
-        yield* packStable(root, { ...opts, dir: pack });
-      } else if (from !== undefined) {
-        yield* publishStable(root, { ...opts, dir: from });
-      } else {
-        yield* stable(root, opts);
       }
       return;
     }

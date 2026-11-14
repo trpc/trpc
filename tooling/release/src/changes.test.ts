@@ -40,9 +40,22 @@ describe('commitBump', () => {
   it('takes the largest bump', () => {
     const commits = (...subjects: Array<string>) =>
       subjects.map((subject) => ({ sha: '0', subject, packages: [] }));
-    expect(releaseBump(commits('fix: a', 'chore: b'))).toBe('patch');
-    expect(releaseBump(commits('fix: a', 'feat: b'))).toBe('minor');
-    expect(releaseBump(commits('feat: a', 'feat!: b'))).toBe('major');
+    expect(releaseBump(commits('fix: a', 'chore: b'), [])).toBe('patch');
+    expect(releaseBump(commits('fix: a', 'feat: b'), [])).toBe('minor');
+    expect(releaseBump(commits('feat: a', 'feat!: b'), [])).toBe('major');
+  });
+
+  it('reads past the breaking mark of the commits in notBreaking', () => {
+    const commit = (sha: string, subject: string) => ({
+      sha,
+      subject,
+      packages: [],
+    });
+    expect(releaseBump([commit('a', 'feat!: a')], ['a'])).toBe('minor');
+    expect(releaseBump([commit('a', 'fix(server)!: a')], ['a'])).toBe('patch');
+    expect(
+      releaseBump([commit('a', 'fix!: a'), commit('b', 'fix!: b')], ['a']),
+    ).toBe('major');
   });
 });
 
@@ -207,7 +220,7 @@ describe('releasableCommits', () => {
         yield* git(root, 'tag', '--no-sign', 'v11.23.0');
 
         const changes = () =>
-          releasableCommits(root, 'v11.23.0').pipe(
+          releasableCommits(root, 'v11.23.0', 'HEAD').pipe(
             Effect.map((commits) => commits.map(({ subject }) => subject)),
           );
 
@@ -261,7 +274,9 @@ describe('releasableCommits', () => {
         yield* write('packages/server/src/index.ts', 'export const a = 1;\n');
         yield* commit('revert: feat(server): b');
         expect(
-          (yield* releasableCommits(root, beforeRevert)).map((c) => c.subject),
+          (yield* releasableCommits(root, beforeRevert, 'HEAD')).map(
+            (c) => c.subject,
+          ),
         ).toEqual(['revert: feat(server): b', 'feat(server): b']);
         expect(yield* publishedChanged(root, beforeRevert, 'HEAD')).toBe(false);
         // A rewind: no commits from HEAD to the tag, but what they publish differs.
@@ -309,7 +324,7 @@ describe('releasableCommits', () => {
           'feature',
         );
         expect(
-          (yield* releasableCommits(root, beforeClient)).map(
+          (yield* releasableCommits(root, beforeClient, 'HEAD')).map(
             ({ subject, packages }) => [subject, packages],
           ),
         ).toEqual([

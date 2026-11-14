@@ -203,10 +203,10 @@ export interface ReleasableCommit {
 export const releasableCommits = Effect.fn('releasableCommits')(function* (
   root: string,
   from: string,
-  to?: string,
+  to: string,
 ) {
-  const range = `${from}..${to ?? 'HEAD'}`;
-  const packages = (yield* packagesAt(root, to ?? 'HEAD')).filter(
+  const range = `${from}..${to}`;
+  const packages = (yield* packagesAt(root, to)).filter(
     ({ pkg }) => pkg.private !== true,
   );
   const changed = new Map<string, Set<string>>();
@@ -300,15 +300,26 @@ export const publishedChanged = Effect.fn('publishedChanged')(function* (
  * so they're not read.
  */
 export function commitBump(subject: string): Bump {
-  const match = /^(\w+)(?:\([^)]*\))?(!)?:/.exec(subject);
-  if (match?.[2] === '!') {
-    return 'major';
-  }
-  return match?.[1] === 'feat' ? 'minor' : 'patch';
+  return /^\w+(?:\([^)]*\))?!:/.test(subject) ? 'major' : typeBump(subject);
 }
 
-/** The largest bump `commits` ask for. */
-export function releaseBump(commits: ReadonlyArray<ReleasableCommit>): Bump {
-  const asked = new Set(commits.map(({ subject }) => commitBump(subject)));
+/** `commitBump` without the breaking mark: `feat` is a minor, the rest patches. */
+function typeBump(subject: string): Bump {
+  return /^feat(?:\([^)]*\))?!?:/.test(subject) ? 'minor' : 'patch';
+}
+
+/**
+ * The largest bump `commits` ask for. The commits in `notBreaking`, by full
+ * sha, were marked breaking by mistake, so only their type counts.
+ */
+export function releaseBump(
+  commits: ReadonlyArray<ReleasableCommit>,
+  notBreaking: ReadonlyArray<string>,
+): Bump {
+  const asked = new Set(
+    commits.map(({ sha, subject }) =>
+      notBreaking.includes(sha) ? typeBump(subject) : commitBump(subject),
+    ),
+  );
   return asked.has('major') ? 'major' : asked.has('minor') ? 'minor' : 'patch';
 }

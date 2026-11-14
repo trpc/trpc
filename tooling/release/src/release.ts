@@ -292,8 +292,6 @@ export interface StableOptions extends PublishOptions {
   readonly remote: string;
   readonly branch: string;
   readonly wait: WaitOptions;
-  /** Whether a run whose `branch` moved fails, or skips because a newer run releases it. */
-  readonly ifBranchMoved?: 'fail' | 'skip';
   /** The only major it publishes, `releaseMajor` in `config.ts`. */
   readonly major: number;
 }
@@ -364,8 +362,9 @@ export const packStable = Effect.fn('packStable')(function* (
  * release. It runs nothing from the packages.
  *
  * HEAD must be on `branch`. The commit goes out before the packages and the
- * tag after them. If `branch` moved, the push is rejected and nothing is
- * published. If publishing fails, running the release again finds the
+ * tag after them. If `branch` moved, the push is rejected, nothing is
+ * published and it skips: the run for the newer commit releases everything.
+ * Any other rejected push fails. If publishing fails, running the release again finds the
  * versions already on `branch`, publishes what npm doesn't have yet and tags
  * it; it fails instead if npm has a version with other files than it packed.
  * Returns the tag, or `undefined` if it skipped.
@@ -421,18 +420,14 @@ export const publishStable = Effect.fn('publishStable')(function* (
       Effect.orElseSucceed(() => false),
     );
     if (!pushed) {
-      const moved = yield* branchMoved(root, opts.remote, opts.branch);
-      if (moved && opts.ifBranchMoved === 'skip') {
+      if (yield* branchMoved(root, opts.remote, opts.branch)) {
         yield* Console.log(
           `${opts.branch} moved since this run checked it out. Nothing was published. Skipping: the run for the newer commit releases it.`,
         );
         return undefined;
       }
-      const failure = moved
-        ? `${opts.branch} moved since this run checked it out; release again from the new ${opts.branch}`
-        : `Pushing the release commit to ${opts.remote} ${opts.branch} failed`;
       return yield* new ReleaseError({
-        message: `${failure}. Nothing was published.`,
+        message: `Pushing the release commit to ${opts.remote} ${opts.branch} failed. Nothing was published.`,
       });
     }
   } else {
@@ -480,21 +475,21 @@ export const stable = Effect.fn('stable')(function* (
   return yield* publishStable(root, { ...opts, dir });
 }, Effect.scoped);
 
-export type AutoOptions = Omit<
-  StableOptions,
-  'bump' | 'distTag' | 'ifBranchMoved'
->;
+export interface AutoOptions extends Omit<StableOptions, 'bump' | 'distTag'> {
+  /** `notBreaking` in `config.ts`. */
+  readonly notBreaking: ReadonlyArray<string>;
+}
 
 /**
- * What the automatic release publishes: the largest bump the commits since
- * the latest tag that change what the packages publish ask for (see
- * `changes.ts`), or `undefined` if there's nothing to release. It never
- * publishes a major: a breaking commit (`feat!:`) fails it, and once
- * `releaseMajor` in `config.ts` is ahead of the latest tag, it skips until
- * that major is released by hand. If `branch` moved, it skips, because the
- * run for the newer commit releases everything.
+ * What the automatic release publishes, or `undefined` if there's nothing to
+ * release. Once `releaseMajor` in `config.ts` is the next major, it's that
+ * major's .0.0. Otherwise it's the largest bump the commits since the latest
+ * tag that change what the packages publish ask for (see `changes.ts`); a
+ * breaking commit (`feat!:`) fails it, unless it's in `notBreaking`. If
+ * `branch` moved, it skips, because the run for the newer commit releases
+ * everything.
  */
-const autoBump = Effect.fn('autoBump')(function* (
+export const autoBump = Effect.fn('autoBump')(function* (
   root: string,
   opts: AutoOptions,
 ) {
@@ -505,13 +500,14 @@ const autoBump = Effect.fn('autoBump')(function* (
     return undefined;
   }
   const previousTag = yield* latestTag(root);
-  if (opts.major > majorOf(previousTag.slice(1))) {
+  const next = majorOf(previousTag.slice(1)) + 1;
+  if (opts.major === next) {
     yield* Console.log(
-      `${majorSetting} is ${opts.major} and the latest tag is ${previousTag}. Skipping: run the Release Packages workflow by hand (latest, either bump) to release v${opts.major}.0.0.`,
+      `${majorSetting} is ${opts.major} and the latest tag is ${previousTag}: releasing v${next}.0.0.`,
     );
-    return undefined;
+    return 'major';
   }
-  const commits = yield* releasableCommits(root, previousTag);
+  const commits = yield* releasableCommits(root, previousTag, 'HEAD');
   if (
     commits.length === 0 ||
     !(yield* publishedChanged(root, previousTag, 'HEAD'))
@@ -528,14 +524,16 @@ const autoBump = Effect.fn('autoBump')(function* (
       .map(({ sha, subject }) => `  ${sha.slice(0, 9)} ${subject}`)
       .join('\n')}`,
   );
-  const bump = releaseBump(commits);
+  const bump = releaseBump(commits, opts.notBreaking);
   if (bump === 'major') {
     const breaking = commits
-      .filter(({ subject }) => commitBump(subject) === 'major')
-      .map(({ subject }) => subject);
-    const next = majorOf(previousTag.slice(1)) + 1;
+      .filter(
+        ({ sha, subject }) =>
+          commitBump(subject) === 'major' && !opts.notBreaking.includes(sha),
+      )
+      .map(({ sha, subject }) => `${sha} ${subject}`);
     return yield* new ReleaseError({
-      message: `These commits are marked breaking, so they need v${next}, which the automatic release never publishes: ${breaking.join('; ')}. To release v${next}, merge a pull request that sets ${majorSetting} to ${next}, then run the Release Packages workflow by hand, which then releases v${next}.0.0. If they aren't breaking, run it with patch or minor instead.`,
+      message: `These commits are marked breaking, so they need v${next}: ${breaking.join('; ')}. To release v${next}, merge a pull request that sets ${majorSetting} to ${next}. If they aren't breaking, add their shas to notBreaking there.`,
     });
   }
   return bump;
@@ -569,7 +567,6 @@ export const publishAuto = Effect.fn('publishAuto')(function* (
     ...opts,
     bump,
     distTag: 'latest',
-    ifBranchMoved: 'skip',
   });
 });
 
@@ -586,7 +583,6 @@ export const auto = Effect.fn('auto')(function* (
     ...opts,
     bump,
     distTag: 'latest',
-    ifBranchMoved: 'skip',
   });
 });
 
@@ -599,9 +595,9 @@ export interface CanaryPackOptions extends PackOptions {
   /**
    * Pack only if what the packages publish changed since this commit, the
    * one before the push. Unknown commits, such as a new branch's all-zero
-   * sha, pack.
+   * sha, pack. `undefined` always packs.
    */
-  readonly since?: string;
+  readonly since: string | undefined;
 }
 
 /**

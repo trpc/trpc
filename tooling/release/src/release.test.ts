@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { git } from './command.ts';
 import {
   auto,
+  autoBump,
   branchMoved,
   defaultWait,
   latestTag,
@@ -138,6 +139,7 @@ describe('the release guards', () => {
         yield* fs.writeFileString(path.join(root, 'edit.ts'), '');
         const canary = packCanary(root, {
           preid: 'canary',
+          since: undefined,
           dir: yield* fs.makeTempDirectoryScoped(),
         });
         expect(yield* failure(canary)).toContain(
@@ -216,14 +218,46 @@ describe('the major guard', () => {
     return root;
   });
 
-  it('never releases a major automatically', () =>
+  it('fails on a breaking commit until the config sets the next major', () =>
     run(
       Effect.gen(function* () {
         const root = yield* serverChange('feat(server)!: a');
-        expect(yield* failure(auto(root, { ...opts, major: 11 }))).toContain(
-          'These commits are marked breaking, so they need v12, which the automatic release never publishes: feat(server)!: a',
+        const sha = yield* git(root, 'rev-parse', 'HEAD');
+        expect(
+          yield* failure(
+            autoBump(root, { ...opts, major: 11, notBreaking: [] }),
+          ),
+        ).toContain(
+          `These commits are marked breaking, so they need v12: ${sha} feat(server)!: a. To release v12, merge a pull request that sets releaseMajor in tooling/release/src/config.ts to 12. If they aren't breaking, add their shas to notBreaking there.`,
         );
-        expect(yield* auto(root, { ...opts, major: 12 })).toBeUndefined();
+        expect(
+          yield* autoBump(root, { ...opts, major: 12, notBreaking: [] }),
+        ).toBe('major');
+      }),
+    ));
+
+  it("releases a commit marked breaking by mistake by its type once it's in notBreaking", () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* serverChange('feat(server)!: a');
+        const sha = yield* git(root, 'rev-parse', 'HEAD');
+        expect(
+          yield* autoBump(root, { ...opts, major: 11, notBreaking: [sha] }),
+        ).toBe('minor');
+      }),
+    ));
+
+  it('releases the next major once the config sets it, even with nothing else to release', () =>
+    run(
+      Effect.gen(function* () {
+        const root = yield* repo;
+        yield* tag(root, 'v11.24.0');
+        expect(
+          yield* autoBump(root, { ...opts, major: 12, notBreaking: [] }),
+        ).toBe('major');
+        expect(
+          yield* autoBump(root, { ...opts, major: 11, notBreaking: [] }),
+        ).toBeUndefined();
       }),
     ));
 
@@ -232,13 +266,13 @@ describe('the major guard', () => {
     run(
       Effect.gen(function* () {
         const fix = yield* serverChange('fix(server): a');
-        expect(yield* failure(auto(fix, { ...opts, major: 10 }))).toContain(
-          'patch after v11.24.0 is v11.24.1',
-        );
+        expect(
+          yield* failure(auto(fix, { ...opts, major: 10, notBreaking: [] })),
+        ).toContain('patch after v11.24.0 is v11.24.1');
         const feat = yield* serverChange('feat(server): a');
-        expect(yield* failure(auto(feat, { ...opts, major: 10 }))).toContain(
-          'minor after v11.24.0 is v11.25.0',
-        );
+        expect(
+          yield* failure(auto(feat, { ...opts, major: 10, notBreaking: [] })),
+        ).toContain('minor after v11.24.0 is v11.25.0');
       }),
     ));
 
@@ -251,7 +285,9 @@ describe('the major guard', () => {
         yield* fs.remove(path.join(root, 'packages/server/src/index.ts'));
         yield* git(root, 'add', '--all');
         yield* commit(root, 'revert: feat(server): a');
-        expect(yield* auto(root, { ...opts, major: 10 })).toBeUndefined();
+        expect(
+          yield* auto(root, { ...opts, major: 10, notBreaking: [] }),
+        ).toBeUndefined();
         const dir = yield* fs.makeTempDirectoryScoped();
         expect(
           yield* packCanary(root, { preid: 'canary', dir, since: 'v11.24.0' }),

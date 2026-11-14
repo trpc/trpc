@@ -17,35 +17,19 @@ name: Release Packages
 # tag, if any of it changes what the packages publish. The workflow runs on
 # every push, with no `paths:` filter, so a push after a run that skipped
 # still releases what that run didn't. Set the repo variable AUTO_RELEASE to
-# `false` to stop automatic stable releases; the manual run below still works.
+# `false` to stop stable releases; canaries keep going out.
 #
-# No release publishes a major other than `releaseMajor` in
-# tooling/release/src/config.ts, and the automatic release never publishes a
-# major. A new major takes a pull request that sets it to the next major.
-# Once that's merged, the automatic release skips, and the next manual run
-# (latest, either bump) releases the new major's .0.0.
+# There's no manual run: stable releases are only automatic, and the commits
+# decide the version (tooling/release/src/config.ts). No release publishes a
+# major other than `releaseMajor` there. A new major takes a pull request that
+# sets it to the next major; once that's merged, the automatic release
+# publishes the new major's .0.0. A commit marked breaking (`feat!:`) fails
+# the automatic release until then, unless its sha is in `notBreaking`.
 
 permissions:
   contents: read
 
 on:
-  workflow_dispatch:
-    inputs:
-      dist_tag:
-        description: 'NPM distribution tag'
-        required: true
-        type: choice
-        default: 'latest'
-        options:
-          - 'latest'
-          - 'canary'
-      version_bump:
-        description: 'Version bump type (either releases vN.0.0 once releaseMajor in tooling/release/src/config.ts is the next major N)'
-        required: true
-        type: choice
-        options:
-          - 'patch'
-          - 'minor'
   push:
     branches:
       - 'main'
@@ -60,7 +44,7 @@ jobs:
   # commit, this run publishes what npm is missing and tags it; otherwise the
   # tag is there and there's nothing to release.
   wait-for-merge-queue:
-    if: github.event_name == 'push' && vars.AUTO_RELEASE != 'false'
+    if: vars.AUTO_RELEASE != 'false'
     concurrency:
       group: release-auto-wait
       cancel-in-progress: true
@@ -79,7 +63,7 @@ jobs:
           DEBOUNCE_SECONDS: 600
         run: |
           sleep "$DEBOUNCE_SECONDS"
-          for attempt in $(seq 60); do
+          for _ in $(seq 60); do
             queued=$(gh api graphql \
               -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { mergeQueue(branch: "main") { entries { totalCount } } } }' \
               -f owner="${GITHUB_REPOSITORY_OWNER}" -f repo="${GITHUB_REPOSITORY#*/}" \
@@ -137,7 +121,7 @@ jobs:
     # Never cancelled by a newer push: if main moves before the release commit
     # is pushed, the push is rejected and nothing is published.
     concurrency:
-      group: release-stable # Shared with the manual run, so releases never overlap
+      group: release-stable # A newer run's release waits for this one's tag
     timeout-minutes: 45 # npm can take a while to serve what it accepted
     runs-on: ubuntu-latest
     environment: npm-publish # npm trusted publishing is bound to this environment
@@ -176,91 +160,10 @@ jobs:
           git remote set-url --push origin "https://x-access-token:${ACCESS_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           node tooling/release/src/bin/release.ts auto --provenance --from "$RUNNER_TEMP/release"
 
-  build:
-    if: github.event_name == 'workflow_dispatch' && inputs.dist_tag == 'latest'
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
-    env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: ./.github/setup
-
-      - run: pnpm release stable ${{ inputs.version_bump }} --pack "$RUNNER_TEMP/release"
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: release
-          path: ${{ runner.temp }}/release
-          if-no-files-found: error
-          overwrite: true # Re-running the job uploads again
-          retention-days: 7
-
-  publish:
-    needs: build
-    concurrency:
-      group: release-stable
-    timeout-minutes: 45 # npm can take a while to serve what it accepted
-    runs-on: ubuntu-latest
-    environment: npm-publish # npm trusted publishing is bound to this environment
-    permissions:
-      contents: write # For the GitHub release
-      id-token: write # For OIDC publishing and provenance
-
-    steps:
-      # Here rather than in build: re-running this job alone checks whoever re-runs it.
-      - name: Require a repo admin
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ACTOR: ${{ github.triggering_actor }}
-        run: |
-          permission=$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${ACTOR}/permission" --jq .permission)
-          if [ "$permission" != "admin" ]; then
-            echo "::error::Only repo admins can publish stable releases (${ACTOR} has '${permission}')"
-            exit 1
-          fi
-
-      - name: Checkout repo
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Configure git
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
-      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @tooling/release
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: release
-          path: ${{ runner.temp }}/release
-
-      - name: Publish packages
-        env:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git remote set-url --push origin "https://x-access-token:${ACCESS_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          node tooling/release/src/bin/release.ts stable ${{ inputs.version_bump }} --dist-tag ${{ inputs.dist_tag }} --provenance --from "$RUNNER_TEMP/release"
-
   build-canary:
     # Not on the release commits the stable releases push, which carry the
     # stable versions.
-    if: "(github.event_name == 'push' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')) || inputs.dist_tag == 'canary'"
+    if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:
@@ -278,13 +181,13 @@ jobs:
 
       - uses: ./.github/setup
 
-      # On push, only if the push changed what the packages publish.
+      # Only if the push changed what the packages publish.
       - name: Pack a canary
         id: pack
         env:
-          SINCE: ${{ github.event_name == 'push' && github.event.before || '' }}
+          SINCE: ${{ github.event.before }}
         run: |
-          pnpm release canary --pack "$RUNNER_TEMP/release" ${SINCE:+--since "$SINCE"}
+          pnpm release canary --pack "$RUNNER_TEMP/release" --since "$SINCE"
           if [ -f "$RUNNER_TEMP/release/commit" ]; then
             echo "packed=true" >> "$GITHUB_OUTPUT"
           fi
