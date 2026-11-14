@@ -3055,17 +3055,23 @@ describe('experimental_useHandles', () => {
     });
   });
 
-  test('the same query with other options is another load', async () => {
+  test('the same query with another option for how it starts is another load. Its `meta` is not compared', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const seen: unknown[] = [];
-    function Card(props: { staleTime: number | undefined }) {
+    // Anything can be in `meta`: what has no JSON, or is new on every render
+    const circular: Record<string, unknown> = { big: 1n, at: Date.now() };
+    circular['self'] = circular;
+    function Card(props: {
+      staleTime: number | undefined;
+      meta: Record<string, unknown> | undefined;
+    }) {
       seen.push(
         experimental_useHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
-            { staleTime: props.staleTime },
+            { staleTime: props.staleTime, meta: props.meta },
           ),
         }),
       );
@@ -3073,15 +3079,41 @@ describe('experimental_useHandles', () => {
     }
     resource.renderApp(
       <>
-        <Card staleTime={undefined} />
-        <Card staleTime={undefined} />
-        <Card staleTime={60_000} />
+        <Card staleTime={undefined} meta={undefined} />
+        <Card staleTime={undefined} meta={circular} />
+        <Card staleTime={60_000} meta={undefined} />
       </>,
     );
     // The first two share a load. The third started its own entries
     expect(seen[1]).toBe(seen[0]);
     expect(seen[2]).not.toBe(seen[0]);
     expect(seen[2]).toEqual(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('a first cursor that has no JSON does not stop the component from rendering', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: Record<string, any>[] = [];
+    function List() {
+      seen.push(
+        experimental_useHandles(trpc, {
+          posts: prefetchInfiniteEntry(
+            trpc.post.paged,
+            {},
+            // Against its type, as an app with a transformer for it can have
+            { initialCursor: 5n as unknown as number },
+          ),
+        }),
+      );
+      return null;
+    }
+    const utils = resource.renderApp(<List />);
+    resource.rerenderApp(utils, <List />);
+    expect(seen[0]!['posts'].initialCursor).toBe(5n);
+    expect(seen[1]).toBe(seen[0]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });

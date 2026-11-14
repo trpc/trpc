@@ -418,7 +418,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 typeof opts.maxBatchSize === 'number' &&
                 taken > opts.maxBatchSize
               ) {
-                // A call that is refused runs for no item, and takes none
+                // A call that is refused runs for no item: it takes none of
+                // the limit, not its own place either
+                runs -= 1;
                 throw new TRPCError({
                   code: 'BAD_REQUEST',
                   message: `A call for every item exceeds the maximum batch size`,

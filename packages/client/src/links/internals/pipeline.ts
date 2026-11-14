@@ -392,11 +392,17 @@ function assertPipelinedBatchAccepted(opts: {
           message?: unknown;
           data?: { code?: unknown; path?: unknown };
         } | null);
+  // Not any "not found": one for the whole request, such as from a proxy,
+  // isn't for these paths. An error formatter can leave the path out of
+  // `data`: the server's message has it then
+  const forBatch =
+    error?.data?.code === 'NOT_FOUND' &&
+    (error.data.path === opts.path ||
+      (error.data.path === undefined &&
+        String(error.message).includes(`"${opts.path}"`)));
   if (
     error &&
-    // Not any "not found": one for the whole request, such as from
-    // `createContext`, has no path
-    ((error.data?.code === 'NOT_FOUND' && error.data.path === opts.path) ||
+    (forBatch ||
       String(error.message).includes('Streaming requests must be batched'))
   ) {
     throw new Error(

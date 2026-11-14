@@ -339,7 +339,7 @@ describe.each([
   test.each([
     // Such as a proxy before the handler
     { name: 'for another path', data: { path: 'tenant' } },
-    // Such as a `createContext` that finds no tenant
+    // Such as a proxy that answers in tRPC's shape, without a path
     { name: 'for no path', data: {} },
   ])(
     'a "not found" $name is not about pipelining, and stays the error it is',
@@ -799,6 +799,49 @@ describe.each([
     const { url } = ctx.onRequestSpy.mock.calls[0]![0];
     expect(url).toContain('batch=1');
     expect(url).not.toContain('pipe=');
+  });
+});
+
+describe('a server without `experimental_allowPipelining`, whose error formatter leaves the path out', () => {
+  test.each([
+    { name: 'httpBatchLink', link: httpBatchLink },
+    { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+  ])('$name still says what to set', async (scenario) => {
+    const t = initTRPC.create({
+      errorFormatter: (opts) => ({
+        ...opts.shape,
+        data: { code: opts.shape.data.code },
+      }),
+    });
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'u1' })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => opts.input.id),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const post = createOperationPipeline();
+    const postResult = getUntypedClient(ctx.client).query('post', undefined, {
+      context: pipelineContext(post),
+    });
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    await expect(postResult).rejects.toThrow(
+      'The server did not accept a pipelined batch',
+    );
   });
 });
 

@@ -1796,11 +1796,19 @@ function usedLoadsOf(queryClient: QueryClient) {
  */
 const USED_LOAD_KEPT_MS = 30_000;
 
+/** The options of an entry that say how a load starts its query */
+const startOptions = [
+  'staleTime',
+  'retry',
+  'retryDelay',
+  'gcTime',
+  'pages',
+] as const;
+
 /**
- * What the entries of a load are: the procedure, input, kind and options of
- * each, and where each reads another's data. Two loads with the same
- * description start the same queries. Options that are functions aren't in
- * it.
+ * What the entries of a load are: the procedure, input and kind of each, how
+ * its query starts, and where it reads another's data. Two loads with the same
+ * description start the same queries.
  */
 function describeEntries(opts: {
   queryClient: QueryClient;
@@ -1819,15 +1827,21 @@ function describeEntries(opts: {
     ],
   });
   const describeLeaf = (leaf: EntryLeaf) => {
-    const { queryFn: _, ...options } = leaf.state.options({
+    const options = leaf.state.options({
       dataOfRef: describeRef,
       pipeline: null,
     });
+    const firstCursor: unknown = options.initialPageParam;
     return {
       kind: leaf.state.kind,
       type: leaf.state.type,
-      // With its key, its first cursor, and such options as its stale time
-      options,
+      queryKey: options.queryKey,
+      // Not all of the options: `meta` can hold what has no JSON, or what is
+      // new on every render. An option that is a function isn't compared
+      options: startOptions.map((name) => options[name]),
+      // A cursor can be a bigint, which has no JSON
+      firstCursor:
+        typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,
       each: leaf.each ? describeRef(leaf.each) : null,
       from: leaf.from ? (keyOfEntry.get(leaf.from) ?? null) : null,
     };
@@ -2416,9 +2430,9 @@ export function loadHandlesSettled<
  *
  * It starts the entries again when they change, such as with another id, and
  * when the component comes back to the page. Rendering again starts nothing.
- * Entries are compared by value, as query keys are: the procedure, the input
- * and the options, but for options that are functions. Build them from values
- * that stay the same from render to render, such as props.
+ * Entries are compared by value, as query keys are: the procedure, the input,
+ * and the options that say how a query starts, such as `staleTime`. Build them
+ * from values that stay the same from render to render, such as props.
  *
  * Experimental: it may change in a minor release.
  * @example
