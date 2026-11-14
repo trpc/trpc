@@ -47,6 +47,33 @@ function decodePath(path: string) {
   }
 }
 
+/**
+ * Ends a body that fails once its headers are out, reporting the failure,
+ * since an adapter can no longer send an error response by then
+ */
+function endOnError(
+  stream: ReadableStream<Uint8Array>,
+  onError: (cause: unknown) => void,
+): ReadableStream<Uint8Array> {
+  const reader = stream.getReader();
+  return new ReadableStream({
+    async pull(controller) {
+      const chunk = await reader.read().catch((cause: unknown) => {
+        onError(cause);
+        return { done: true, value: undefined } as const;
+      });
+      if (chunk.done) {
+        controller.close();
+      } else {
+        controller.enqueue(chunk.value);
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+}
+
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   return run(async function* () {
     throw err;
@@ -597,11 +624,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           });
 
           const abort = result?.abort;
-          let responseBody: ReadableStream<Uint8Array> = stream;
+          let responseBody = endOnError(stream, (cause) => {
+            opts.onError?.({
+              error: getTRPCErrorFromUnknown(cause),
+              path: call?.path,
+              input: call?.result(),
+              ctx: ctxManager.valueOrUndefined(),
+              req: opts.req,
+              type: call?.procedure?._def.type ?? 'unknown',
+            });
+          });
 
           // Fixes: https://github.com/trpc/trpc/issues/7094
           if (abort) {
-            const reader = stream.getReader();
+            const reader = responseBody.getReader();
             const maxDurationTimer = config.sse?.maxDurationMs
               ? setTimeout(
                   () => abort.controller.abort(),
