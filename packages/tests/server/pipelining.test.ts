@@ -1,6 +1,7 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { Operation, TRPCLink } from '@trpc/client';
 import {
+  experimental_pipelining,
   getUntypedClient,
   httpBatchLink,
   httpBatchStreamLink,
@@ -12,7 +13,10 @@ import {
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { isObject } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isObject,
+  pipelineReadsLimit,
+} from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
 
@@ -60,6 +64,13 @@ const createRouter = (transformer: 'none' | 'superjson') => {
       .query(async function* () {
         yield 1;
       }),
+    // Data that only a streaming response can carry, beside a plain value
+    feed: t.procedure.query(() => ({
+      authorId: 'u1',
+      items: (async function* () {
+        yield 1;
+      })(),
+    })),
     rename: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) => opts.input.id),
@@ -97,6 +108,8 @@ describe.each([
     pipelining: boolean;
     methodOverride?: 'POST';
     maxItems?: number;
+    maxURLLength?: number;
+    fetch?: typeof fetch;
   }) {
     const { appRouter, calls } = createRouter(scenario.transformer);
     /** What the links before the batch link see */
@@ -116,9 +129,13 @@ describe.each([
           scenario.link({
             url: clientOpts.httpUrl,
             transformer: clientOpts.transformer as any,
-            experimental_pipelining: opts.pipelining,
+            experimental_pipelining: opts.pipelining
+              ? experimental_pipelining()
+              : undefined,
             methodOverride: opts.methodOverride,
             maxItems: opts.maxItems,
+            maxURLLength: opts.maxURLLength,
+            fetch: opts.fetch,
           }),
         ],
       }),
@@ -292,18 +309,66 @@ describe.each([
       assert(author);
       const reason = {
         message:
-          'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link',
+          'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
       };
-      expect(
-        await Promise.allSettled([postResult, author.result]),
-      ).toMatchObject([
+      const results = await Promise.allSettled([postResult, author.result]);
+      expect(results).toMatchObject([
         { status: 'rejected', reason },
         { status: 'rejected', reason },
       ]);
+      // What the server answered is its cause
+      assert(results[1].status === 'rejected');
+      expect((results[1].reason as Error).cause).toMatchObject(
+        scenario.link === httpBatchLink
+          ? { data: { code: 'NOT_FOUND', path: 'post,author' } }
+          : { data: { code: 'BAD_REQUEST' } },
+      );
       // No call ran with a hole in its input
       expect(ctx.calls).not.toHaveBeenCalled();
     },
   );
+
+  test('a "not found" that is not about pipelining stays the error it is', async () => {
+    const shape = {
+      message: 'No such tenant',
+      code: -32004,
+      data: { code: 'NOT_FOUND', httpStatus: 404, path: 'tenant' },
+    };
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      // Such as a proxy before the handler, which answers for the whole request
+      fetch: async () =>
+        Response.json(
+          {
+            error:
+              scenario.transformer === 'superjson'
+                ? superjson.serialize(shape)
+                : shape,
+          },
+          { status: 404 },
+        ),
+    });
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    await expect(postResult).rejects.toMatchObject({
+      message: 'No such tenant',
+      data: { code: 'NOT_FOUND', path: 'tenant' },
+    });
+    await expect(author.result).rejects.toMatchObject({
+      message: 'No such tenant',
+    });
+  });
 
   test('a call that reads a failed one did not run, and is marked unresolved', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
@@ -380,6 +445,37 @@ describe.each([
     expect(
       ctx.onRequestSpy.mock.calls.map(([req]) => req.url?.split('?')[0]).sort(),
     ).toEqual(['/post,author', '/team']);
+  });
+
+  test('a call that fits in no request does not split the batch', async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      maxURLLength: 300,
+    });
+    const post = createOperationPipeline();
+    const results = Promise.all([
+      ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      ),
+      ctx.untyped.query('team', 'team1'),
+    ]);
+    const author = pipeCall({
+      path: 'author',
+      // Too long for a URL, also with the post alone
+      input: { id: undefined, since: 'x'.repeat(500) },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    await results;
+    await expect(author.result).rejects.toThrow(
+      'The call did not fit in the request of what it reads',
+    );
+    expect(author.status).toBe('unresolved');
+    // The team is in the post's request: leaving it out would fit no more
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test('a call that reads two operations goes in the request of both', async () => {
@@ -649,6 +745,59 @@ describe('the `pipe` search param', () => {
     expect(
       res.json[1].result.data.map((item: any) => item.error.data.code),
     ).toEqual(['UNSUPPORTED_MEDIA_TYPE', 'UNSUPPORTED_MEDIA_TYPE']);
+  });
+
+  test('a call whose data the response can not carry is not read: the call that reads it does not run', async () => {
+    const search = `input=${encodeURIComponent(
+      JSON.stringify({ 1: {} }),
+    )}&pipe=${encodeURIComponent(
+      JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+    )}`;
+    const res = await get(search, { path: 'feed,author' });
+    expect(res.json[0].error.data.code).toBe('UNSUPPORTED_MEDIA_TYPE');
+    expect(res.json[1].error.data.code).toBe('PRECONDITION_FAILED');
+    expect(res.calls).not.toHaveBeenCalled();
+  });
+
+  test('a place in an input that can not be written is an invalid `pipe`, not a server error', async () => {
+    const res = await get(
+      `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' }, 1: { ids: ['a'] } }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({
+          1: [{ to: ['ids', 'length'], from: 0, path: ['authorId'] }],
+        }),
+      )}`,
+      { path: 'post,tags' },
+    );
+    expect(res.json[1].error).toMatchObject({
+      message: 'Invalid "pipe": the input has nothing at "ids.length"',
+      data: { code: 'BAD_REQUEST' },
+    });
+  });
+
+  test('a call can read so many values, and no more', async () => {
+    const reads = (count: number) =>
+      pipe({
+        1: Array.from({ length: count }, () => ({
+          to: ['id'],
+          from: 0,
+          path: ['authorId'],
+        })),
+      });
+    const within = await get(reads(pipelineReadsLimit), {
+      path: 'post,author',
+    });
+    expect(within.json[1].result.data.id).toBe('u1');
+
+    const over = await get(reads(pipelineReadsLimit + 1), {
+      path: 'post,author',
+    });
+    expect(over.status).toBe(400);
+    expect(over.json.error.message).toBe(
+      `Invalid "pipe": call 1 reads more than ${pipelineReadsLimit} values`,
+    );
+    expect(over.calls).not.toHaveBeenCalled();
   });
 
   test('a call for every item counts each item towards `maxBatchSize`', async () => {

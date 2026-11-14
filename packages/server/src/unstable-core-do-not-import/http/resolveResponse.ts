@@ -533,7 +533,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         } else {
           data = await callProcedure(call.getRawInput);
         }
-        pipeline?.resolve(call.batchIndex, data);
+        if (isStreamCall || !isDataStream(data)) {
+          pipeline?.resolve(call.batchIndex, data);
+        } else {
+          // The response can't carry it, so the client gets an error for this
+          // call. A call that reads it then doesn't run, as for any failed call
+          pipeline?.reject(call.batchIndex, null);
+        }
         return [
           undefined,
           {

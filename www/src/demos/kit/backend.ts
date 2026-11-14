@@ -1,5 +1,6 @@
 import {
   createTRPCClient,
+  experimental_pipelining,
   httpBatchStreamLink,
   localLink,
   type TRPCLink,
@@ -514,6 +515,8 @@ export function createHttpDemoClient(
     };
     req.signal.addEventListener('abort', () => endAll('aborted'));
     await wait(tripThere);
+    // Cancelled on its way there: the server never gets it
+    req.signal.throwIfAborted();
     const response = await fetchRequestHandler({
       createContext: () => ({ calls, tripBack }),
       endpoint: '/trpc',
@@ -555,7 +558,7 @@ export function createHttpDemoClient(
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchStreamLink({
-        experimental_pipelining: true,
+        experimental_pipelining: experimental_pipelining(),
         fetch,
         url: 'https://blog.example/trpc',
       }),

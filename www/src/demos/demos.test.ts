@@ -348,6 +348,29 @@ describe('backend over HTTP', () => {
     expect(requests.map((request) => request.http)).toEqual([1, 1]);
   });
 
+  it('does no work on the server for a request that was cancelled on its way there', async () => {
+    const { network, queryClient, trpc, worked } = session();
+    network.delay = () => 400;
+    const result = queryClient.fetchQuery(
+      trpc.post.byId.queryOptions(
+        { id: 1 },
+        { trpc: { abortOnUnmount: true } },
+      ),
+    );
+    await vi.waitFor(() => {
+      expect(network.getTrace().requests).toHaveLength(1);
+    });
+    await queryClient.cancelQueries();
+    await expect(result).rejects.toThrow();
+    // Long enough for the request to have arrived, had it not been cancelled
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(worked()).toBe(0);
+    expect(network.getTrace().requests[0]).toMatchObject({
+      servingAt: undefined,
+      status: 'aborted',
+    });
+  });
+
   it("keeps the server's time the same on any connection", () => {
     const network = createNetwork(createRandom(1));
     const trips = (latency: number) => {

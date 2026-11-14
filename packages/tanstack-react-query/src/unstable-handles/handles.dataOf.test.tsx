@@ -5,7 +5,12 @@ import {
   skipToken,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { httpBatchLink, httpBatchStreamLink } from '@trpc/client';
+import {
+  experimental_pipelining,
+  httpBatchLink,
+  httpBatchStreamLink,
+  retryLink,
+} from '@trpc/client';
 import type { Operation, TRPCLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -132,7 +137,7 @@ const pipeliningCtx = (ctxOpts: {
         ...ctxOpts.before,
         ctxOpts.link({
           url: opts.httpUrl,
-          experimental_pipelining: true,
+          experimental_pipelining: experimental_pipelining(),
           fetch: async (input, init) => {
             await new Promise((resolve) =>
               setTimeout(resolve, ctxOpts.latency),
@@ -952,7 +957,10 @@ describe('without the options', () => {
     await using resource = testReactResource(appRouter, {
       client: (opts) => ({
         links: [
-          httpBatchLink({ url: opts.httpUrl, experimental_pipelining: true }),
+          httpBatchLink({
+            url: opts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
         ],
       }),
     });
@@ -1023,7 +1031,7 @@ describe('without the options', () => {
         links: [
           httpBatchLink({
             url: opts.httpUrl,
-            experimental_pipelining: true,
+            experimental_pipelining: experimental_pipelining(),
             maxItems: 1,
           }),
         ],
@@ -2082,6 +2090,45 @@ describe.each([
     expect(data.author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
     // The pipelined batch, the retried post, then the author with its input
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
+  });
+
+  test('a request that fails as a whole and that a link retries: the entry that reads it asks again', async () => {
+    const { appRouter, calls } = createAppRouter();
+    let failed = false;
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          retryLink({ retry: (retryOpts) => retryOpts.attempts < 2 }),
+          scenario.link({
+            url: opts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+            fetch: async (input, init) => {
+              if (!failed) {
+                failed = true;
+                throw new TypeError('fetch failed');
+              }
+              return fetch(input, init);
+            },
+          }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    // Its call was in the request that failed, and never ran
+    expect(data.author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
+    expect(calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
   });
 
   test("an entry's own error is not fetched twice", async () => {

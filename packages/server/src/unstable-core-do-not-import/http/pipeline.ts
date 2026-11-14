@@ -42,6 +42,13 @@ export type PipelineReads = Record<
   (Omit<PipelineRead, 'each'> & { each?: true })[]
 >;
 
+/**
+ * The most values one call can read. Each is copied for the call, so this
+ * keeps what a small request can make the server do in proportion to it. The
+ * client fills in the input of a call that would read more.
+ */
+export const pipelineReadsLimit = 64;
+
 /** The path of one item's value: `path` with its first `null` replaced */
 export function bindPipelinePath(
   path: readonly (string | null)[],
@@ -126,6 +133,11 @@ export function parsePipelineReads(opts: {
       if (!Array.isArray(reads)) {
         throw invalidPipe(`expected an array at ${key}`);
       }
+      if (reads.length > pipelineReadsLimit) {
+        throw invalidPipe(
+          `call ${key} reads more than ${pipelineReadsLimit} values`,
+        );
+      }
       const parsedReads = reads.map((read: unknown): PipelineRead => {
         if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
           throw invalidPipe(`expected "to" and "path" at ${key}`);
@@ -182,8 +194,12 @@ function writePipelinePath(opts: {
     if (
       typeof target !== 'object' ||
       target === null ||
+      // In an array, only an item it has: not its `length`
       (Array.isArray(target) &&
-        !Object.prototype.hasOwnProperty.call(target, key))
+        !(
+          /^(0|[1-9]\d*)$/.test(key) &&
+          Object.prototype.hasOwnProperty.call(target, key)
+        ))
     ) {
       throw invalidPipe(`the input has nothing at "${opts.to.join('.')}"`);
     }

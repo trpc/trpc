@@ -12,23 +12,12 @@ import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
+  getBody,
   getUrl,
   httpRequest,
-  jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import {
-  assertPipelinedBatchAccepted,
-  closePipeline,
-  failPipelinedBatch,
-  hasPipelinedCalls,
-  pipelinedRequest,
-  pipelineOf,
-  planPipelinedBatch,
-  sendPipelinedBatch,
-  settlePipelinedBatch,
-} from './internals/pipeline';
-import type { PipelinedBatchPlan } from './internals/pipeline';
+import type { BatchPipelining } from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
 /**
@@ -45,18 +34,32 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   const maxItems = opts.maxItems ?? Infinity;
 
   return () => {
+    /** Calls that read the data of others, in the requests of what they read */
+    const pipelining =
+      opts.experimental_pipelining?.({
+        ...resolvedOpts,
+        maxItems,
+        maxURLLength,
+        read(result) {
+          const transformed = transformResult(
+            result.json,
+            resolvedOpts.transformer.output,
+          );
+          if (!transformed.ok) {
+            throw TRPCClientError.from(transformed.error, {
+              meta: result.meta,
+            });
+          }
+          return { data: transformed.result.data };
+        },
+      }) ?? null;
+
     const batchLoader = (
       type: ProcedureType,
     ): BatchLoader<Operation, HTTPResult> => {
       return {
         validate(batchOps) {
-          if (
-            pipelines(type) &&
-            batchOps.length > 1 &&
-            planPipelined(batchOps).overLimit
-          ) {
-            // An operation's calls go in its request before more operations
-            // do. A call that reads an operation that comes later can wait
+          if (pipelining?.splits(batchOps)) {
             return false;
           }
           if (maxURLLength === Infinity && maxItems === Infinity) {
@@ -80,129 +83,58 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           return url.length <= maxURLLength;
         },
         async fetch(batchOps) {
-          if (pipelines(type)) {
-            const plan = planPipelined(batchOps);
-            sendPipelinedBatch({ ops: batchOps, plan });
-            if (plan.calls.length > 0) {
-              const results = fetchPipelined({ batchOps, plan });
-              results.catch((error: unknown) =>
-                failPipelinedBatch(plan, error),
-              );
-              return results;
-            }
-          }
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
-          const signal = allAbortSignals(...batchOps.map((op) => op.signal));
-
-          const res = await jsonHttpRequester({
-            ...resolvedOpts,
-            path,
-            inputs,
-            type,
-            headers() {
-              if (!opts.headers) {
-                return {};
-              }
-              if (typeof opts.headers === 'function') {
-                return opts.headers({
-                  opList: batchOps as NonEmptyArray<Operation>,
-                });
-              }
-              return opts.headers;
-            },
-            signal,
-          });
-          const resJSON = Array.isArray(res.json)
-            ? res.json
-            : batchOps.map(() => res.json);
-          const result = resJSON.map((item) => ({
-            meta: res.meta,
-            json: item,
-          }));
-          return result;
+          const pipelined = pipelining?.take(batchOps) ?? null;
+          const results = fetchBatch(batchOps, pipelined);
+          pipelined?.settle(results);
+          return pipelined
+            ? (await results).slice(0, batchOps.length)
+            : results;
         },
       };
+
+      async function fetchBatch(
+        batchOps: Operation[],
+        /** The calls the server makes after the operations, in the same request */
+        pipelined: ReturnType<BatchPipelining['take']>,
+      ) {
+        const sent = pipelined ? [...batchOps, ...pipelined.calls] : batchOps;
+        const path = sent.map((it) => it.path).join(',');
+        const inputs = sent.map((it) => it.input);
+        const signal = allAbortSignals(...batchOps.map((op) => op.signal));
+
+        const res = await httpRequest({
+          ...resolvedOpts,
+          contentTypeHeader: 'application/json',
+          getUrl,
+          getBody,
+          ...pipelined?.request,
+          path,
+          inputs,
+          type,
+          headers() {
+            if (!opts.headers) {
+              return {};
+            }
+            if (typeof opts.headers === 'function') {
+              return opts.headers({
+                opList: batchOps as NonEmptyArray<Operation>,
+              });
+            }
+            return opts.headers;
+          },
+          signal,
+        });
+        pipelined?.accepted(res.json);
+        const resJSON = Array.isArray(res.json)
+          ? res.json
+          : sent.map(() => res.json);
+        const result = resJSON.map((item) => ({
+          meta: res.meta,
+          json: item,
+        }));
+        return result;
+      }
     };
-
-    /** Whether the server can make more calls in the requests of a type */
-    const pipelines = (type: ProcedureType) =>
-      !!opts.experimental_pipelining && type === 'query';
-
-    /** The calls that go in the request of a batch of queries, within the limits */
-    const planPipelined = (batchOps: Operation[]) =>
-      planPipelinedBatch({
-        ops: batchOps,
-        fits: (plan) =>
-          hasPipelinedCalls(batchOps) &&
-          batchOps.length + plan.calls.length <= maxItems &&
-          (maxURLLength === Infinity ||
-            pipelinedRequest(plan.reads).getUrl({
-              ...resolvedOpts,
-              type: 'query',
-              path: [...batchOps, ...plan.calls]
-                .map((sent) => sent.path)
-                .join(','),
-              inputs: [...batchOps, ...plan.calls].map((sent) => sent.input),
-              signal: null,
-            }).length <= maxURLLength),
-      });
-
-    /** A batch with calls that read their inputs from the data of others */
-    async function fetchPipelined(pipelined: {
-      batchOps: Operation[];
-      plan: PipelinedBatchPlan;
-    }) {
-      const { batchOps, plan } = pipelined;
-      const sent = [...batchOps, ...plan.calls];
-      const res = await httpRequest({
-        ...resolvedOpts,
-        contentTypeHeader: 'application/json',
-        ...pipelinedRequest(plan.reads),
-        path: sent.map((it) => it.path).join(','),
-        inputs: sent.map((it) => it.input),
-        type: 'query',
-        headers() {
-          if (!opts.headers) {
-            return {};
-          }
-          if (typeof opts.headers === 'function') {
-            return opts.headers({
-              opList: batchOps as NonEmptyArray<Operation>,
-            });
-          }
-          return opts.headers;
-        },
-        signal: allAbortSignals(...batchOps.map((op) => op.signal)),
-      });
-      assertPipelinedBatchAccepted({
-        json: res.json,
-        deserialize: (error) =>
-          resolvedOpts.transformer.output.deserialize(error),
-      });
-      const resJSON = Array.isArray(res.json)
-        ? res.json
-        : sent.map(() => res.json);
-      const results = resJSON.map((item) => ({ meta: res.meta, json: item }));
-      settlePipelinedBatch({
-        ops: batchOps,
-        plan,
-        results,
-        read: (result) => {
-          const transformed = transformResult(
-            result.json,
-            resolvedOpts.transformer.output,
-          );
-          if (!transformed.ok) {
-            throw TRPCClientError.from(transformed.error, {
-              meta: result.meta,
-            });
-          }
-          return { data: transformed.result.data };
-        },
-      });
-      return results.slice(0, batchOps.length);
-    }
 
     const query = dataLoader(batchLoader('query'));
     const mutation = dataLoader(batchLoader('mutation'));
@@ -222,13 +154,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           ac.signal,
         );
         const loader = loaders[op.type];
-        if (pipelines(op.type)) {
-          // Calls can go in its request, until the request goes
-          const pipeline = pipelineOf(op);
-          if (pipeline) {
-            pipeline.open = true;
-          }
-        }
+        pipelining?.open(op);
         const promise = loader.load({
           ...op,
           signal,
@@ -267,7 +193,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               }),
             );
           })
-          .then(() => closePipeline(op));
+          .then(() => pipelining?.close(op));
 
         return () => {
           if (!isDone) {

@@ -337,19 +337,24 @@ Then on the client's batch link:
 // @include: dq-router
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchStreamLink,
+} from '@trpc/client';
 import type { AppRouter } from '~/server/router';
 
 export const client = createTRPCClient<AppRouter>({
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',
-      experimental_pipelining: true,
+      experimental_pipelining: experimental_pipelining(),
     }),
   ],
 });
 ```
 
+- **You pass it in, so only an app that uses it has its code.** A link without the option is about 0.2 kB bigger than before, gzipped. The option adds about 1.2 kB.
 - **Use `httpBatchStreamLink`.** It sends each result when it is ready. `httpBatchLink` works too, but its response waits for the slowest call, so the post arrives with the author.
 - **The loader and the components don't change.**
 - **It saves round trips where there are any**: in a load that goes over HTTP, such as a loader that runs in the browser. A proxy that [calls the router directly](#fallback), on the server, makes no request.
@@ -400,7 +405,7 @@ An entry that is sent this way always asks the server, also when the cache has i
 A server without `experimental_allowPipelining` runs nothing of such a request. Every query in it fails with this error:
 
 ```
-The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or turn off `experimental_pipelining` on the link
+The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
 ```
 
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.

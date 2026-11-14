@@ -89,11 +89,11 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   maxItems?: number;
   /**
    * Lets a query read parts of its input from the data of another query in
-   * the same batch. The server must set `experimental_allowPipelining: true`
+   * the same batch. Pass `experimental_pipelining()` from `@trpc/client`.
+   * The server must set `experimental_allowPipelining: true`
    * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request
-   * @default false
    */
-  experimental_pipelining?: boolean;
+  experimental_pipelining?: experimental_Pipelining;
 }
 
 export interface HTTPLinkOptions {
@@ -221,7 +221,35 @@ const client = createTRPCClient<AppRouter>({
 
 ## Pipelining (experimental) {#pipelining}
 
-Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining: true`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
+Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
+
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      experimental_pipelining: experimental_pipelining(),
+    }),
+  ],
+});
+```
+
+- You pass it in, so only an app that uses it has its code in its bundle.
 
 - The server must set `experimental_allowPipelining: true`. Without it, the server runs nothing of such a request.
 - Other requests are sent as they are without the option.

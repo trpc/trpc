@@ -2,6 +2,7 @@ import { createIsomorphicFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
   createTRPCClient,
+  experimental_pipelining,
   httpBatchStreamLink,
   httpSubscriptionLink,
   localLink,
@@ -59,7 +60,7 @@ const getLinks = createIsomorphicFn()
           transformer: SuperJSON,
           // Lets a query read its input from another query's data, in one
           // request. The blog pages load a post and its author this way
-          experimental_pipelining: true,
+          experimental_pipelining: experimental_pipelining(),
           // Queries go as POST, so the Network tab shows their inputs as JSON
           methodOverride: 'POST',
         }),

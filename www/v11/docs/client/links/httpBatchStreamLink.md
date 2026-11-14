@@ -165,7 +165,7 @@ for await (const value of iterable) {
 
 ## Pipelining (experimental) {#pipelining}
 
-With `experimental_pipelining: true`, a query that needs another query's data for its input goes in the same request, and the server fills in the input. Each result still comes back when it is ready. See [`httpBatchLink`'s option](/docs/client/links/httpBatchLink#pipelining) and [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries#one-request).
+With `experimental_pipelining: experimental_pipelining()`, a query that needs another query's data for its input goes in the same request, and the server fills in the input. Each result still comes back when it is ready. See [`httpBatchLink`'s option](/docs/client/links/httpBatchLink#pipelining) and [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries#one-request).
 
 ## Compatibility (client-side)
 
