@@ -941,7 +941,8 @@ describe('server-side calls, whose inputs and data never are JSON', () => {
         await released.promise;
         return read;
       }),
-      rename: procedure.mutation(() => {
+      // Not through the middleware, which then can't tell that it ran
+      rename: t.procedure.mutation(() => {
         name = 'new';
       }),
     });
@@ -959,6 +960,49 @@ describe('server-side calls, whose inputs and data never are JSON', () => {
 
     released.resolve();
     expect(await Promise.all([...together, ...afterRename])).toEqual([
+      'old',
+      'old',
+      'new',
+      'new',
+    ]);
+  });
+
+  test('a query that starts after a mutation has finished runs for itself, however soon it starts', async () => {
+    // No timeout passes: every call starts as early as it can
+    using _timeouts = fakeTimeouts();
+    let name = 'old';
+    const runs = vi.fn();
+    const released = createDeferred();
+    const renaming = createDeferred();
+    const caller = createCaller({
+      name: procedure.query(async () => {
+        runs();
+        const read = name;
+        await released.promise;
+        return read;
+      }),
+      rename: procedure.mutation(async () => {
+        await renaming.promise;
+        name = 'new';
+      }),
+    });
+
+    const before = caller.name();
+    const rename = caller.rename();
+    await macrotask();
+    // While the mutation runs, nothing says which of the two comes first
+    const meanwhile = caller.name();
+    await macrotask();
+    expect(runs).toHaveBeenCalledTimes(1);
+
+    renaming.resolve();
+    await rename;
+    const after = [caller.name(), caller.name()];
+    await macrotask();
+    expect(runs).toHaveBeenCalledTimes(2);
+
+    released.resolve();
+    expect(await Promise.all([before, meanwhile, ...after])).toEqual([
       'old',
       'old',
       'new',

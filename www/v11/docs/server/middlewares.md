@@ -400,7 +400,8 @@ export const publicProcedure = t.procedure.use(unstable_dedupeQueries());
 
 - **Every call still has its own result**, with the data or the error of the one run. The client doesn't change, and `onError` is called for every call that failed.
 - **Only queries.** A mutation or a subscription runs for every call.
-- **Only calls that start together.** It isn't a cache: a call that starts later runs the query again, even while the first run is in flight, so a query sent after a mutation never gets data from before it.
+- **Only calls that start together.** It isn't a cache: a call that starts later runs the query again, even while the first run is in flight.
+- **A query that follows a mutation runs again.** Use the middleware on a base procedure that your mutations use too: once one of them has finished, no query on that context joins a run from before it, however soon the query starts.
 - **The calls need a context object.** The calls of one HTTP request share the object that `createContext` returns, which is how the middleware knows they belong together. Without a `createContext`, or with one that returns nothing, every call runs: return an object, such as `createContext: () => ({})`.
 - **Use it before any middleware that changes the context or waits.** `opts.next({ ctx })` gives each call a context object of its own, and after that no two calls share one. A middleware that waits, such as one that reads a session from a database, can let the calls through at different times, and then they don't start together.
 - **What comes after it in the chain runs once**, and what comes before it runs for every call. Leave it off a query whose result should differ between two calls, such as a new random id.

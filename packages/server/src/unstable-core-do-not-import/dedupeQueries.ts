@@ -297,7 +297,7 @@ interface Run {
  * author in a batch. Every call gets the data or the error of that run, and
  * its own copy of what the data streams.
  * Mutations and subscriptions run for every call, and so does a query that
- * starts later, which may follow a mutation.
+ * starts later or after a mutation that used the middleware has finished.
  *
  * Use it before any middleware that changes the context or waits: an HTTP
  * request's calls share one context object and reach the middleware together,
@@ -323,7 +323,17 @@ export function unstable_dedupeQueries(opts?: {
   const runs = new WeakMap<object, Map<string, Run>>();
 
   return createMiddlewareFactory<object, object>()(async (call) => {
-    if (call.type !== 'query' || !isObject(call.ctx)) {
+    if (!isObject(call.ctx)) {
+      return call.next();
+    }
+    if (call.type === 'mutation') {
+      const result = await call.next();
+      // A query that starts now gets what the mutation left, however soon
+      // it starts, so it joins no run from before
+      runs.get(call.ctx)?.clear();
+      return result;
+    }
+    if (call.type !== 'query') {
       return call.next();
     }
     const hash = await call.getRawInput().then(
@@ -356,6 +366,7 @@ export function unstable_dedupeQueries(opts?: {
       // The calls of a batch get here in one macrotask. A call that comes
       // after it runs for itself: a context can outlive a request, as a
       // WebSocket connection's does, and that call may follow a mutation
+      // that didn't use this middleware
       const joining = setTimeout(forget, 0);
       const started: Run = {
         calls: 1,
