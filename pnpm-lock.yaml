@@ -2250,7 +2250,7 @@ importers:
         specifier: ^4.23.15
         version: 4.23.15
       typescript:
-        specifier: 7.1.0-beta
+        specifier: 'catalog:'
         version: 7.1.0-beta
       wait-port:
         specifier: ^1.1.0

@@ -26,7 +26,7 @@
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.2",
+    "typescript": "catalog:",
     "wait-port": "^1.1.0"
   }
 }
