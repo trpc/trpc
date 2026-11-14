@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from '@shared/ui/components/avatar';
+import { Button } from '@shared/ui/components/button';
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ import {
   fromHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import type { PostPageHandles } from '../$slug';
 
@@ -55,6 +56,7 @@ export function AuthorCard(props: Readonly<{ handles: PostPageHandles }>) {
         <Suspense fallback={<Skeleton className="h-28 w-full" />}>
           <MoreByAuthor
             posts={experimental_handleOfItem(handles.moreByAuthor, author)}
+            exceptSlug={postQuery.data.slug}
           />
         </Suspense>
       </CardContent>
@@ -65,46 +67,33 @@ export function AuthorCard(props: Readonly<{ handles: PostPageHandles }>) {
 function MoreByAuthor(
   props: Readonly<{
     posts: inferInfiniteQueryHandle<TRPC['blog']['posts']>;
+    /** The post the page shows, which the list leaves out */
+    exceptSlug: string;
   }>,
 ) {
   const trpc = useTRPC();
   const moreQuery = useSuspenseInfiniteQuery(
     fromHandle(trpc, props.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      // The query is every post by the author, so all of the author's posts
+      // read the same cache entry. Only what is shown leaves this post out
+      select: (data) => ({
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          items: page.items.filter((post) => post.slug !== props.exceptSlug),
+        })),
+      }),
     }),
   );
   const morePosts = moreQuery.data.pages.flatMap((page) => page.items);
-
-  // Loads the next page when the end of the list scrolls into view
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = moreQuery;
-  const listRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const end = endRef.current;
-    if (!end || !hasNextPage || isFetchingNextPage) {
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void fetchNextPage();
-        }
-      },
-      { root: listRef.current },
-    );
-    observer.observe(end);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (morePosts.length === 0) {
+  if (morePosts.length === 0 && !hasNextPage) {
     return <p className="text-sm text-muted-foreground">Nothing else yet.</p>;
   }
   return (
-    // Shorter than a page of posts, so the next page loads on scroll
-    <div
-      ref={listRef}
-      className="h-28 overflow-y-auto rounded-md border px-3 py-2"
-    >
+    <div className="flex flex-col items-start gap-2">
       <ul className="flex flex-col gap-2 text-sm">
         {morePosts.map((post) => (
           <li key={post.slug}>
@@ -118,9 +107,17 @@ function MoreByAuthor(
           </li>
         ))}
       </ul>
-      <div ref={endRef} className="pt-2 text-xs text-muted-foreground">
-        {hasNextPage ? 'Loading more…' : 'That’s all of them.'}
-      </div>
+      {/* A later page is a request of its own */}
+      {hasNextPage ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isFetchingNextPage}
+          onClick={() => void fetchNextPage()}
+        >
+          {isFetchingNextPage ? 'Loading more…' : 'Show more'}
+        </Button>
+      ) : null}
     </div>
   );
 }

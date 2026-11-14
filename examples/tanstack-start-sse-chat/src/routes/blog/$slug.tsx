@@ -45,11 +45,15 @@ function postPageEntries(trpc: TRPC, opts: { slug: string }) {
     author,
     // A second step: the list is filtered by the id of the author, who is
     // loaded with an id from the post. Post, author and the list's first
-    // page are one request. Later pages are requests of their own
+    // page are one request. Later pages are requests of their own.
+    //
+    // The input has nothing of this post in it, so the list is one query for
+    // all of the author's posts: going from one to the next finds it in the
+    // cache. The card leaves the open post out when it reads the list
     moreByAuthor: experimental_dataOf(author, (it) =>
       prefetchInfiniteEntry(
         trpc.blog.posts,
-        { authorId: it.id, exceptSlug: opts.slug, limit: 5 },
+        { authorId: it.id, limit: 5 },
         { getNextPageParam: (lastPage) => lastPage.nextCursor },
       ),
     ),

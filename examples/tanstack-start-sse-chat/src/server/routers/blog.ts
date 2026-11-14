@@ -133,8 +133,6 @@ export const blogRouter = router({
       z.object({
         /** Only posts by this author */
         authorId: z.string().optional(),
-        /** Leave this post out */
-        exceptSlug: z.string().optional(),
         limit: z.number().min(1).max(50).default(10),
         /** How many posts to skip */
         cursor: z.number().nullish(),
@@ -148,8 +146,7 @@ export const blogRouter = router({
       }
       const matching = posts.filter(
         (post) =>
-          (input.authorId === undefined || post.authorId === input.authorId) &&
-          post.slug !== input.exceptSlug,
+          input.authorId === undefined || post.authorId === input.authorId,
       );
       const start = input.cursor ?? 0;
       const end = start + input.limit;
