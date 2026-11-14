@@ -1806,6 +1806,17 @@ const startOptions = [
 ] as const;
 
 /**
+ * A start option as a string. `undefined` and `Infinity` have no JSON, and
+ * would read the same as `null`. Which function an option is isn't compared: an
+ * inline one is new on every render
+ */
+function describeOption(value: unknown) {
+  return typeof value === 'function'
+    ? 'function'
+    : `${typeof value}:${String(value)}`;
+}
+
+/**
  * What the entries of a load are: the procedure, input and kind of each, how
  * its query starts, and where it reads another's data. Two loads with the same
  * description start the same queries.
@@ -1837,8 +1848,8 @@ function describeEntries(opts: {
       type: leaf.state.type,
       queryKey: options.queryKey,
       // Not all of the options: `meta` can hold what has no JSON, or what is
-      // new on every render. An option that is a function isn't compared
-      options: startOptions.map((name) => options[name]),
+      // new on every render
+      options: startOptions.map((name) => describeOption(options[name])),
       // A cursor can be a bigint, which has no JSON
       firstCursor:
         typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,

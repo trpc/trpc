@@ -754,7 +754,7 @@ export function PostPage(props: { slug: string }) {
 
 - **It starts the entries once, for as long as the component is on the page.** Rendering again starts nothing. A page that a Suspense boundary above it hasn't shown yet keeps its load until 30 seconds after its queries settle.
 - **It starts them again when they change**, such as for another slug, and when the component comes back to the page. As in a loader, a prefetch entry whose data is fresh asks for nothing.
-- **Build the entries from values that stay the same from render to render**: props, the URL. They are compared by value, as query keys are: the procedure, the input, and the options that say how a query starts, such as `staleTime`. An input that is new on every render, such as `new Date()`, starts the queries on every render.
+- **Build the entries from values that stay the same from render to render**: props, the URL. They are compared by value, as query keys are: the procedure, the input, and the options that say how a query starts, such as `staleTime`. Which function an option is isn't compared. An input that is new on every render, such as `new Date()`, starts the queries on every render.
 - **It is for a page without a loader.** Entries that a loader has started already get no second request, so the queries that depend on them have no request to go in.
 - **It returns the handles at once.** It waits for no data: the component that reads a handle does, in its Suspense boundary.
 - **With a link that [pipelines](#turn-on), it is one request**, as from a loader.

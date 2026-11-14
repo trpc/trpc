@@ -3093,6 +3093,43 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('an option that has no JSON is not read as one that is left out', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: {
+      staleTime: number | undefined;
+      retry: ((count: number) => boolean) | undefined;
+    }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { staleTime: props.staleTime, retry: props.retry },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card staleTime={undefined} retry={undefined} />
+        <Card staleTime={Infinity} retry={undefined} />
+        <Card staleTime={undefined} retry={() => false} />
+        {/* Which function it is isn't compared: an inline one is new on every render */}
+        <Card staleTime={undefined} retry={() => false} />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[1]);
+    expect(seen[3]).toBe(seen[2]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('a first cursor that has no JSON does not stop the component from rendering', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
