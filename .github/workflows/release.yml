@@ -13,12 +13,16 @@ name: Release Packages
 #
 # A push to main publishes a canary only if it changes what the packages
 # publish (tooling/release/src/changes.ts), and never for a release commit.
-# Once main settles, a stable release publishes what changed since the latest
-# tag, if any of it changes what the packages publish. The workflow runs on
-# every push, with no `paths:` filter, so a push after a run that skipped
-# still releases what that run didn't, and a daily run retries from main's
-# tip. Set the repo variable AUTO_RELEASE to `false` to stop stable releases;
-# canaries keep going out.
+# Every push to main releases what changed since the latest tag, if any of it
+# changes what the packages publish, like KATT/raf-query. The merge queue
+# already batches pull requests, so there's no wait on top. A run whose push
+# main has moved past skips before it builds, since the run for the newer
+# push releases everything. No run cancels another, so neither GitHub
+# starting runs out of order nor re-running an old run can stop the run for
+# main's tip. The workflow has no `paths:` filter, so a push after a run that
+# skipped, failed or was cancelled still releases what that run didn't; so
+# does re-running the run for main's tip. Set the repo variable AUTO_RELEASE
+# to `false` to stop stable releases; canaries keep going out.
 #
 # There's no manual run: stable releases are only automatic, and the commits
 # decide the version (tooling/release/src/config.ts). No release publishes a
@@ -34,72 +38,14 @@ on:
   push:
     branches:
       - 'main'
-  # Retries the automatic release from main's tip, in case its run failed or
-  # main didn't settle; it releases nothing if there's nothing new.
-  schedule:
-    - cron: '17 4 * * *'
 
 jobs:
-  # Holds the automatic release until main settles: 10 minutes after the push
-  # (about one merge queue run, so a PR enqueued just after a merge gets in),
-  # then until the merge queue is empty. Only the run for main's tip goes on,
-  # so a burst of merges releases once, from the last of them, whatever order
-  # GitHub starts the runs in.
-  #
-  # A release commit starts it too. If its release stopped after pushing the
-  # commit, this run publishes what npm is missing and tags it; otherwise the
-  # tag is there and there's nothing to release.
-  wait-for-merge-queue:
-    if: vars.AUTO_RELEASE != 'false'
-    concurrency:
-      group: release-auto-wait-${{ github.sha }}
-    timeout-minutes: 75
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      ready: ${{ steps.queue.outputs.ready }}
-
-    steps:
-      - name: Wait for the merge queue to empty
-        id: queue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEBOUNCE_SECONDS: 600
-        run: |
-          sleep "$DEBOUNCE_SECONDS"
-          answered=false
-          for _ in $(seq 60); do
-            tip=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha) || tip=''
-            if [ -n "$tip" ] && [ "$tip" != "$GITHUB_SHA" ]; then
-              echo "main moved to ${tip}; the run for it releases"
-              echo "ready=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            queued=$(gh api graphql \
-              -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { mergeQueue(branch: "main") { entries { totalCount } } } }' \
-              -f owner="${GITHUB_REPOSITORY_OWNER}" -f repo="${GITHUB_REPOSITORY#*/}" \
-              --jq '.data.repository.mergeQueue.entries.totalCount // 0') || queued=''
-            if [ -n "$queued" ]; then
-              answered=true
-            fi
-            if [ "$queued" = 0 ] && [ -n "$tip" ]; then
-              echo "ready=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            echo "${queued:-An unknown number of} pull requests in the merge queue; waiting"
-            sleep 60
-          done
-          if [ "$answered" = false ]; then
-            echo "::error::GitHub never answered which pull requests are in the merge queue, so there's no release"
-            exit 1
-          fi
-          echo "::warning::The merge queue didn't empty for an hour, so there's no release; the next push to main, or tomorrow's scheduled run, releases what this one would have"
-          echo "ready=false" >> "$GITHUB_OUTPUT"
-
+  # Not on the release commits the stable releases push: there's nothing new
+  # to release. If a release stopped after pushing its commit, the next push
+  # resumes it, or tags it and releases after it (`latestRelease` in
+  # tooling/release/src/release.ts).
   build-auto:
-    needs: wait-for-merge-queue
-    if: needs.wait-for-merge-queue.outputs.ready == 'true'
+    if: "vars.AUTO_RELEASE != 'false' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
     timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
@@ -141,7 +87,7 @@ jobs:
     # is pushed, the push is rejected and nothing is published.
     concurrency:
       group: release-stable # A newer run's release waits for this one's tag
-    timeout-minutes: 45 # npm can take a while to serve what it accepted
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: npm-publish # npm trusted publishing is bound to this environment
     permissions:
@@ -182,7 +128,7 @@ jobs:
   build-canary:
     # Not on the release commits the stable releases push, which carry the
     # stable versions.
-    if: "github.event_name == 'push' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
+    if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     env:

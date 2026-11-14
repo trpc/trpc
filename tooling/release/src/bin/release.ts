@@ -23,7 +23,6 @@ import { notBreaking, releaseMajor } from '../config.ts';
 import {
   auto,
   canary,
-  defaultWait,
   githubReleaseForTag,
   packAuto,
   packCanary,
@@ -76,7 +75,6 @@ Effect.gen(function* () {
   const repo = {
     remote: 'origin',
     branch: 'main',
-    wait: defaultWait,
     major: releaseMajor,
     notBreaking,
   };
@@ -117,7 +115,7 @@ Effect.gen(function* () {
       if (arg === undefined) {
         break;
       }
-      yield* githubReleaseForTag(root, arg, defaultWait);
+      yield* githubReleaseForTag(root, arg);
       return;
     case 'notes':
       yield* printNotes(root, { tag: arg, to: values.to });
