@@ -3,12 +3,14 @@
  */
 import { observable } from '@trpc/server/observable';
 import { publicProcedure, router } from '../trpc';
+import { blogRouter } from './blog';
 import { channelRouter } from './channel';
 import { postRouter } from './post';
 
 export const appRouter = router({
   healthcheck: publicProcedure.query(() => 'yay!'),
 
+  blog: blogRouter,
   channel: channelRouter,
   post: postRouter,
 

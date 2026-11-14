@@ -1,13 +1,27 @@
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  experimental_dataOf,
+  experimental_entryPerItem,
+  loadHandles,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createDemoClient } from './kit/backend.ts';
+import { AuthorBlogSkeleton } from './kit/author-blog.tsx';
+import {
+  type AppRouter,
+  createDemoClient,
+  createHttpDemoClient,
+} from './kit/backend.ts';
 import { PageSkeleton } from './kit/blog-routes.tsx';
 import {
   chainLength,
   createNetwork,
   type NetworkRequest,
+  serverWork,
 } from './kit/network.ts';
 import { demoMarker, demoNames } from './names.ts';
 import { loadPageDemos, PageDemo } from './page-demos.tsx';
@@ -120,9 +134,12 @@ describe('network', () => {
     endedAt: number,
   ): NetworkRequest => ({
     endedAt,
+    http: undefined,
     id,
     label: `request ${id}`,
     origin: undefined,
+    servedAt: undefined,
+    servingAt: undefined,
     startedAt,
     status: 'done',
   });
@@ -270,6 +287,210 @@ describe('backend', () => {
   });
 });
 
+describe('backend over HTTP', () => {
+  const session = () => {
+    const network = createNetwork(createRandom(1));
+    const weights: number[] = [];
+    network.delay = (weight) => {
+      weights.push(weight);
+      return 0;
+    };
+    let worked = 0;
+    network.work = () => {
+      worked++;
+      return 0;
+    };
+    const client = createHttpDemoClient(network, undefined);
+    const queryClient = new QueryClient();
+    const trpc = createTRPCOptionsProxy<AppRouter>({ client, queryClient });
+    /** Every label a request has had. */
+    const labels = new Set<string>();
+    network.subscribe(() => {
+      for (const request of network.getTrace().requests) {
+        labels.add(request.label);
+      }
+    });
+    const settled = () =>
+      vi.waitFor(() => {
+        const { requests } = network.getTrace();
+        expect(requests.length).toBeGreaterThan(0);
+        expect(requests.every((request) => request.status === 'done')).toBe(
+          true,
+        );
+      });
+    return {
+      labels,
+      network,
+      queryClient,
+      settled,
+      trpc,
+      weights,
+      worked: () => worked,
+    };
+  };
+
+  it("takes one trip a request, and the server's own time for each call", async () => {
+    const { network, queryClient, settled, trpc, weights, worked } = session();
+    await Promise.all([
+      queryClient.fetchQuery(trpc.post.byId.queryOptions({ id: 1 })),
+      queryClient.fetchQuery(trpc.post.feed.queryOptions({ page: 1 })),
+    ]);
+    await settled();
+    // One round trip for the two calls, and the server ran each
+    expect(weights).toEqual([1]);
+    expect(worked()).toBe(2);
+    const { requests } = network.getTrace();
+    expect(requests.map((request) => request.label)).toEqual([
+      'post.byId({ id: 1 })',
+      'post.feed({ page: 1 })',
+    ]);
+    // Both went in the first HTTP request
+    expect(requests.map((request) => request.http)).toEqual([1, 1]);
+  });
+
+  it('does no work on the server for a request that was cancelled on its way there', async () => {
+    const { network, queryClient, trpc, worked } = session();
+    // A second there and back: the cancel is well before it arrives
+    network.delay = () => 2_000;
+    const result = queryClient.fetchQuery(
+      trpc.post.byId.queryOptions(
+        { id: 1 },
+        { trpc: { abortOnUnmount: true } },
+      ),
+    );
+    await vi.waitFor(() => {
+      expect(network.getTrace().requests).toHaveLength(1);
+    });
+    await queryClient.cancelQueries();
+    await expect(result).rejects.toThrow();
+    // Long enough for the request to have arrived, had it not been cancelled
+    await new Promise((resolve) => setTimeout(resolve, 1_300));
+    expect(worked()).toBe(0);
+    expect(network.getTrace().requests[0]).toMatchObject({
+      servingAt: undefined,
+      status: 'aborted',
+    });
+  });
+
+  it("keeps the server's time the same on any connection", () => {
+    const network = createNetwork(createRandom(1));
+    const trips = (latency: number) => {
+      network.latency = latency;
+      return Array.from({ length: 20 }, () => network.delay(1));
+    };
+    const work = () => Array.from({ length: 20 }, () => network.work());
+    const fast = Math.max(...trips(300));
+    const slow = Math.min(...trips(2000));
+    // The trip grows with the connection, and the server's time doesn't
+    expect(slow).toBeGreaterThan(fast);
+    for (const ms of [...work(), ...work()]) {
+      expect(ms).toBeGreaterThanOrEqual(serverWork.min);
+      expect(ms).toBeLessThanOrEqual(serverWork.max);
+    }
+    expect(serverWork.max).toBeLessThan(fast);
+  });
+
+  it('runs a query that needs another in its request, and shows where its input comes from', async () => {
+    const { labels, network, queryClient, settled, trpc } = session();
+    const post = prefetchEntry(trpc.post.byId, { id: 1 });
+    const author = experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    );
+    await loadHandles(trpc, {
+      author,
+      more: experimental_dataOf(author, (it) =>
+        prefetchEntry(trpc.post.byTeam, { teamId: it.teamId }),
+      ),
+      post,
+    });
+    await settled();
+    await vi.waitFor(() => {
+      expect(
+        queryClient.getQueryData(trpc.post.byTeam.queryKey({ teamId: 1 })),
+      ).toBeDefined();
+    });
+    const { requests } = network.getTrace();
+    // All three left together: one round trip
+    expect(chainLength(requests)).toBe(1);
+    expect(requests.map((request) => request.http)).toEqual([1, 1, 1]);
+    // The server ran each when the one before it was done
+    const [first, second, third] = requests;
+    expect(first?.servedAt).toBeLessThanOrEqual(second?.servingAt ?? -1);
+    expect(second?.servedAt).toBeLessThanOrEqual(third?.servingAt ?? -1);
+    expect(requests.map((request) => request.label)).toEqual([
+      'post.byId({ id: 1 })',
+      'author.byId({ id: 1 })',
+      'post.byTeam({ teamId: 1 })',
+    ]);
+    // Until the server had run them, they showed what it would fill in
+    expect(labels).toContain('author.byId({ id: ‹post›.authorId })');
+    expect(labels).toContain('post.byTeam({ teamId: ‹author›.teamId })');
+    expect(
+      queryClient.getQueryData(trpc.author.byId.queryKey({ id: 1 })),
+    ).toMatchObject({ name: 'Ada' });
+  });
+
+  it("runs a query for every row of a list in the list's request", async () => {
+    const { labels, network, queryClient, settled, trpc } = session();
+    const feed = prefetchEntry(trpc.post.feed, { page: 1 });
+    await loadHandles(trpc, {
+      authors: experimental_entryPerItem(
+        experimental_dataOf(feed).posts,
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+      feed,
+    });
+    await settled();
+    await vi.waitFor(() => {
+      expect(
+        queryClient.getQueryData(trpc.author.byId.queryKey({ id: 3 })),
+      ).toMatchObject({ name: 'Linus' });
+    });
+    const { requests } = network.getTrace();
+    expect(chainLength(requests)).toBe(1);
+    expect(requests.map((request) => request.label)).toEqual([
+      'post.feed({ page: 1 })',
+      'author.byId({ id: 1 }) + 2 more',
+    ]);
+    expect(labels).toContain('author.byId({ id: ‹post›.posts[].authorId })');
+  });
+
+  it('ends the rows of a failed call, and of the call that could not run after it, as failed', async () => {
+    const { network, trpc } = session();
+    const post = prefetchEntry(trpc.post.byId, { id: 99 });
+    await loadHandles(trpc, {
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+      post,
+    });
+    await vi.waitFor(() => {
+      expect(
+        network.getTrace().requests.map((request) => request.status),
+      ).toEqual(['error', 'error']);
+    });
+  });
+
+  it('takes a round trip for each step when each query waits for the last', async () => {
+    const { network, queryClient, settled, trpc } = session();
+    const post = await queryClient.fetchQuery(
+      trpc.post.byId.queryOptions({ id: 1 }),
+    );
+    const author = await queryClient.fetchQuery(
+      trpc.author.byId.queryOptions({ id: post.authorId }),
+    );
+    await queryClient.fetchQuery(
+      trpc.post.byTeam.queryOptions({ teamId: author.teamId }),
+    );
+    await settled();
+    const { requests } = network.getTrace();
+    expect(requests).toHaveLength(3);
+    // Each is an HTTP request of its own, sent when the last one was back
+    expect(requests.map((request) => request.http)).toEqual([1, 2, 3]);
+    expect(chainLength(requests)).toBe(3);
+  });
+});
+
 describe('url state', () => {
   it('reads the sort and page from the URL', () => {
     expect(parseListUrl('/posts?sort=top&page=3')).toEqual({
@@ -322,6 +543,17 @@ describe('first frame', () => {
       'Loaders start, components wait',
     );
     expect(skeleton('/posts?page=2')).not.toContain('Render as you fetch');
+    expect(skeleton('/nowhere')).toBe('');
+  });
+
+  it("shapes the author blog's skeleton like its page, with the author", () => {
+    const skeleton = (href: string) =>
+      renderToString(createElement(AuthorBlogSkeleton, { href }));
+    expect(skeleton('/posts/2')).toContain('Handles, explained');
+    expect(skeleton('/posts/2')).toContain('Grace');
+    expect(skeleton('/posts?page=2')).toContain(
+      'Loaders start, components wait',
+    );
     expect(skeleton('/nowhere')).toBe('');
   });
 

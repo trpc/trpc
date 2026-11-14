@@ -12,10 +12,12 @@ import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
+  getBody,
   getUrl,
-  jsonHttpRequester,
+  httpRequest,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
+import type { BatchPipelining } from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
 /**
@@ -32,11 +34,34 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   const maxItems = opts.maxItems ?? Infinity;
 
   return () => {
+    /** Calls that read the data of others, in the requests of what they read */
+    const pipelining =
+      opts.experimental_pipelining?.({
+        ...resolvedOpts,
+        maxItems,
+        maxURLLength,
+        read(result) {
+          const transformed = transformResult(
+            result.json,
+            resolvedOpts.transformer.output,
+          );
+          if (!transformed.ok) {
+            throw TRPCClientError.from(transformed.error, {
+              meta: result.meta,
+            });
+          }
+          return { data: transformed.result.data };
+        },
+      }) ?? null;
+
     const batchLoader = (
       type: ProcedureType,
     ): BatchLoader<Operation, HTTPResult> => {
       return {
         validate(batchOps) {
+          if (pipelining?.splits(batchOps)) {
+            return false;
+          }
           if (maxURLLength === Infinity && maxItems === Infinity) {
             // escape hatch for quick calcs
             return true;
@@ -58,38 +83,57 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           return url.length <= maxURLLength;
         },
         async fetch(batchOps) {
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
-          const signal = allAbortSignals(...batchOps.map((op) => op.signal));
-
-          const res = await jsonHttpRequester({
-            ...resolvedOpts,
-            path,
-            inputs,
-            type,
-            headers() {
-              if (!opts.headers) {
-                return {};
-              }
-              if (typeof opts.headers === 'function') {
-                return opts.headers({
-                  opList: batchOps as NonEmptyArray<Operation>,
-                });
-              }
-              return opts.headers;
-            },
-            signal,
-          });
-          const resJSON = Array.isArray(res.json)
-            ? res.json
-            : batchOps.map(() => res.json);
-          const result = resJSON.map((item) => ({
-            meta: res.meta,
-            json: item,
-          }));
-          return result;
+          const pipelined = pipelining?.take(batchOps) ?? null;
+          const results = fetchBatch(batchOps, pipelined);
+          pipelined?.settle(results);
+          return pipelined
+            ? (await results).slice(0, batchOps.length)
+            : results;
         },
       };
+
+      async function fetchBatch(
+        batchOps: Operation[],
+        /** The calls the server makes after the operations, in the same request */
+        pipelined: ReturnType<BatchPipelining['take']>,
+      ) {
+        const sent = pipelined ? [...batchOps, ...pipelined.calls] : batchOps;
+        const path = sent.map((it) => it.path).join(',');
+        const inputs = sent.map((it) => it.input);
+        const signal = allAbortSignals(...batchOps.map((op) => op.signal));
+
+        const res = await httpRequest({
+          ...resolvedOpts,
+          contentTypeHeader: 'application/json',
+          getUrl,
+          getBody,
+          ...pipelined?.request,
+          path,
+          inputs,
+          type,
+          headers() {
+            if (!opts.headers) {
+              return {};
+            }
+            if (typeof opts.headers === 'function') {
+              return opts.headers({
+                opList: batchOps as NonEmptyArray<Operation>,
+              });
+            }
+            return opts.headers;
+          },
+          signal,
+        });
+        pipelined?.accepted(res.json);
+        const resJSON = Array.isArray(res.json)
+          ? res.json
+          : sent.map(() => res.json);
+        const result = resJSON.map((item) => ({
+          meta: res.meta,
+          json: item,
+        }));
+        return result;
+      }
     };
 
     const query = dataLoader(batchLoader('query'));
@@ -110,6 +154,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           ac.signal,
         );
         const loader = loaders[op.type];
+        pipelining?.open(op);
         const promise = loader.load({
           ...op,
           signal,
@@ -117,7 +162,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
         let isDone = false;
         let _res = undefined as HTTPResult | undefined;
-        promise
+        void promise
           .then((res) => {
             isDone = true;
             _res = res;
@@ -147,7 +192,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
                 meta: _res?.meta,
               }),
             );
-          });
+          })
+          .then(() => pipelining?.close(op));
 
         return () => {
           if (!isDone) {

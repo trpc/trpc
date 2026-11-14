@@ -18,7 +18,7 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import { CodeXmlIcon, SearchXIcon } from 'lucide-react';
+import { CodeXmlIcon, NewspaperIcon, SearchXIcon } from 'lucide-react';
 import { sessionQuery } from '~/queries';
 import type { AppRouter } from '~/server/routers/_app';
 import appCss from '~/styles.css?url';
@@ -87,6 +87,17 @@ function RootDocument(props: Readonly<{ children: React.ReactNode }>) {
               <span className="font-semibold tracking-tight">
                 tRPC SSE Chat
               </span>
+            </Link>
+            <Link
+              className={buttonVariants({
+                variant: 'ghost',
+                size: 'sm',
+                className: 'ml-auto',
+              })}
+              to="/blog"
+            >
+              <NewspaperIcon />
+              Blog
             </Link>
             <a
               className={buttonVariants({ variant: 'ghost', size: 'sm' })}

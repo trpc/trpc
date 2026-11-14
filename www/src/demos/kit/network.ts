@@ -4,11 +4,20 @@ export type RequestStatus = 'aborted' | 'done' | 'error' | 'pending';
 
 export interface NetworkRequest {
   readonly endedAt: number | undefined;
+  /**
+   * The HTTP request it went in, counted from 1, when the demo's calls share
+   * requests. Calls with the same number left the browser together.
+   */
+  readonly http: number | undefined;
   readonly id: number;
   /** The call: `post.byId({ id: 1 })`. */
   readonly label: string;
   /** Who sent it, when a demo has more than one client: `loader`. */
   readonly origin: string | undefined;
+  /** When the server finished it, once it has. */
+  readonly servedAt: number | undefined;
+  /** When the server started it, if the demo shows the trip apart from it. */
+  readonly servingAt: number | undefined;
   readonly startedAt: number;
   readonly status: RequestStatus;
 }
@@ -47,6 +56,12 @@ export function chainLength(requests: ReadonlyArray<NetworkRequest>) {
   return Math.max(0, ...lengths.values());
 }
 
+/**
+ * How long a call takes on the server, in ms. It is the same on any
+ * connection: only the trip there and back gets longer on a slow one.
+ */
+export const serverWork = { max: 50, min: 15 } as const;
+
 /** A typical round trip for each choice a demo offers. */
 export const latencies = [
   { label: 'Fast', ms: 300 },
@@ -54,8 +69,22 @@ export const latencies = [
   { label: 'Slow', ms: 2000 },
 ] as const;
 
+/**
+ * A part of an input that isn't known yet, shown as `code` rather than as a
+ * value: `‹post›.authorId`.
+ */
+export class Unfilled {
+  readonly code: string;
+  constructor(code: string) {
+    this.code = code;
+  }
+}
+
 /** A value as code: `{ id: 1 }`. */
 function formatValue(value: unknown): string {
+  if (value instanceof Unfilled) {
+    return value.code;
+  }
   if (typeof value === 'string') {
     return `'${value}'`;
   }
@@ -162,6 +191,10 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
         network.latency * weight * random.between(jitter.min, jitter.max),
       );
     },
+    /** How long a call takes on the server this time, in ms. */
+    work() {
+      return Math.round(random.between(serverWork.min, serverWork.max));
+    },
     /** Calls `run` after `ms` on the network's clock; returns a cancel. */
     after(ms: number, run: () => void) {
       const timer: Timer = { at: now() + ms, handle: undefined, run };
@@ -196,12 +229,42 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
         schedule(timer);
       }
     },
+    /** Gives a request in flight another label, once more is known of it. */
+    relabel(id: number, label: string) {
+      update({
+        ...trace,
+        requests: trace.requests.map((request) =>
+          request.id === id ? { ...request, label } : request,
+        ),
+      });
+    },
+    /** Marks when the server started a request, or finished it. */
+    served(id: number, step: 'end' | 'start') {
+      update({
+        ...trace,
+        requests: trace.requests.map((request) =>
+          request.id !== id
+            ? request
+            : step === 'start'
+              ? { ...request, servingAt: request.servingAt ?? now() }
+              : { ...request, servedAt: now() },
+        ),
+      });
+    },
     shown() {
       if (trace.shownAt === undefined) {
         update({ ...trace, shownAt: now() });
       }
     },
-    start(path: string, input: unknown, origin?: string) {
+    /**
+     * Starts a request that shows as `label`; returns its id. `http` is the
+     * HTTP request it goes in, for calls that share one.
+     */
+    request(
+      label: string,
+      origin: string | undefined,
+      http: number | undefined,
+    ) {
       const id = nextId++;
       update({
         ...trace,
@@ -209,15 +272,21 @@ export function createNetwork(random: Random = createRandom(Date.now())) {
           ...trace.requests,
           {
             endedAt: undefined,
+            http,
             id,
-            label: formatCall(path, input),
+            label,
             origin,
+            servedAt: undefined,
+            servingAt: undefined,
             startedAt: now(),
             status: 'pending',
           },
         ],
       });
       return id;
+    },
+    start(path: string, input: unknown, origin?: string) {
+      return network.request(formatCall(path, input), origin, undefined);
     },
     subscribe: (listener: () => void) => {
       listeners.add(listener);

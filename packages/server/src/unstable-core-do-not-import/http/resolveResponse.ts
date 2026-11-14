@@ -24,6 +24,7 @@ import {
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
+import { parsePipelineReads, pipelineCalls } from './pipeline';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -310,6 +311,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           headers: opts.req.headers,
           url,
           maxBatchSize: opts.maxBatchSize,
+          allowPipelining: opts.experimental_allowPipelining ?? false,
         }),
       ];
     } catch (cause) {
@@ -386,6 +388,54 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
     await ctxManager.create(info);
 
+    // Only a pipelined batch has this, which the server only accepts with
+    // `experimental_allowPipelining`
+    const getPipe = info.experimental_getPipe;
+    const pipeline = getPipe
+      ? await run(async () => {
+          const pipe = await getPipe();
+          if (pipe === undefined) {
+            return null;
+          }
+          if (info.type === 'mutation') {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Only a batch of queries can be pipelined`,
+            });
+          }
+          // Every run of a procedure counts towards `maxBatchSize`: a call
+          // for every item of a list counts once for each item. Of two such
+          // calls that are over it together, the one whose list is ready
+          // first runs
+          let runs = info.calls.length;
+          return pipelineCalls({
+            calls: info.calls,
+            reads: parsePipelineReads({ pipe, calls: info.calls.length }),
+            transformer: config.transformer,
+            takeRuns: (count) => {
+              const taken = runs + count - 1;
+              if (
+                typeof opts.maxBatchSize === 'number' &&
+                taken > opts.maxBatchSize
+              ) {
+                // A call that is refused runs for no item: it takes none of
+                // the limit, not its own place either
+                runs -= 1;
+                throw new TRPCError({
+                  code: 'BAD_REQUEST',
+                  message: `A call for every item exceeds the maximum batch size`,
+                });
+              }
+              runs = taken;
+            },
+          });
+        })
+      : null;
+    if (pipeline) {
+      // After `createContext`, which can't wait for an input that a call fills in
+      info.calls = pipeline.calls;
+    }
+
     interface RPCResultOk {
       data: unknown;
       /**
@@ -435,14 +485,67 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-        const data: unknown = await proc({
-          path: call.path,
-          getRawInput: call.getRawInput,
-          ctx: ctxManager.value(),
-          type: proc._def.type,
-          signal: combinedAbort.signal,
-          batchIndex: call.batchIndex,
-        });
+        const callProcedure = (getRawInput: () => Promise<unknown>) =>
+          proc({
+            path: call.path,
+            getRawInput,
+            ctx: ctxManager.value(),
+            type: proc._def.type,
+            signal: combinedAbort.signal,
+            batchIndex: call.batchIndex,
+          });
+        const each = pipeline?.each(call.batchIndex) ?? null;
+        let data: unknown;
+        if (each) {
+          // Once per item of an earlier call's list. Every run validates its
+          // input and has its own result or error
+          const inputs = await each();
+          data = await Promise.all(
+            inputs.map(async (input) => {
+              try {
+                const itemData = await callProcedure(async () => input);
+                if (isDataStream(itemData)) {
+                  // It would be inside a list, where nothing streams it
+                  throw new TRPCError({
+                    code: 'UNSUPPORTED_MEDIA_TYPE',
+                    message:
+                      'A call for every item cannot return a stream-like response',
+                  });
+                }
+                return { result: { data: itemData } };
+              } catch (cause) {
+                const error = getTRPCErrorFromUnknown(cause);
+                opts.onError?.({
+                  error,
+                  path: call.path,
+                  input,
+                  ctx: ctxManager.valueOrUndefined(),
+                  type: proc._def.type,
+                  req: opts.req,
+                });
+                return {
+                  error: getErrorShape({
+                    config,
+                    ctx: ctxManager.valueOrUndefined(),
+                    error,
+                    input,
+                    path: call.path,
+                    type: proc._def.type,
+                  }),
+                };
+              }
+            }),
+          );
+        } else {
+          data = await callProcedure(call.getRawInput);
+        }
+        if (isStreamCall || !isDataStream(data)) {
+          pipeline?.resolve(call.batchIndex, data);
+        } else {
+          // The response can't carry it, so the client gets an error for this
+          // call. A call that reads it then doesn't run, as for any failed call
+          pipeline?.reject(call.batchIndex, null);
+        }
         return [
           undefined,
           {
@@ -454,6 +557,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
+        pipeline?.reject(call.batchIndex, error);
 
         opts.onError?.({
           error,

@@ -1,8 +1,15 @@
-import { createTRPCClient, localLink, type TRPCLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchStreamLink,
+  localLink,
+  type TRPCLink,
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable } from '@trpc/server/observable';
 
-import type { Network } from './network.ts';
+import { formatCall, type Network, Unfilled } from './network.ts';
 
 export interface Post {
   readonly authorId: number;
@@ -13,6 +20,19 @@ export interface Post {
 }
 
 const authors = ['Ada', 'Grace', 'Linus', 'Margaret'] as const;
+
+/**
+ * The team of each author, by id. Ada and Grace are one team, Linus and
+ * Margaret the other.
+ */
+const teamIds = [1, 1, 2, 2] as const;
+
+const bios = [
+  'Writes about loaders and round trips.',
+  'Writes about handles and types.',
+  'Writes about URLs and waterfalls.',
+  'Reads every post, and comments on most.',
+] as const;
 
 /** Ada, Grace and Linus write three posts each, three to a page of the list. */
 const posts: ReadonlyArray<Post> = [
@@ -105,7 +125,10 @@ const comments = [
  * request are easy to tell apart.
  */
 export const procedureWeights: Readonly<Record<string, number>> = {
+  'author.byId': 1,
   'post.byId': 1,
+  'post.byTeam': 1.2,
+  'post.feed': 0.8,
   'post.comments': 1.5,
   'post.list': 0.8,
   'post.moreByAuthor': 1.2,
@@ -148,7 +171,38 @@ function summaryOf(post: Post) {
  * take the shape of what it stands in for.
  */
 export const blogData = {
+  /** An author, by the id a post has. */
+  author: (id: number) => {
+    const name = authors[id - 1];
+    return (
+      name && {
+        bio: bios[id - 1] ?? '',
+        id,
+        name,
+        teamId: teamIds[id - 1] ?? 1,
+      }
+    );
+  },
+  /** Every post by the authors of a team. */
+  byTeam: (teamId: number) =>
+    posts
+      .filter((post) => teamIds[post.authorId - 1] === teamId)
+      .map(summaryOf),
   comments: commentsOf,
+  /**
+   * One page of the list, with each post's author as an id: the name is
+   * another query.
+   */
+  feed: (page: number) => ({
+    pageCount,
+    posts: pageOf(page).map((post) => ({
+      authorId: post.authorId,
+      excerpt: post.body,
+      id: post.id,
+      minutes: post.minutes,
+      title: post.title,
+    })),
+  }),
   /** One page of the list, with what the page shows in one response. */
   list: (page: number) => ({
     pageCount,
@@ -208,32 +262,109 @@ function cursorInput<TKey extends string>(key: TKey) {
 const lastPage = { nextCursor: null as number | null };
 
 /**
+ * A call in an HTTP request to the demo's server, as the network panel shows
+ * it. A call the server runs for every item of a list runs more than once.
+ */
+interface HttpCall {
+  finished: number;
+  /** Its first run, as code. */
+  first: string | undefined;
+  readonly id: number;
+  runs: number;
+}
+
+interface ServerContext {
+  /** The calls of the HTTP request, by index. `null` for a call with no request. */
+  readonly calls: ReadonlyArray<HttpCall> | null;
+  /** How long a result takes from the server to the browser, in ms. */
+  readonly tripBack: number;
+}
+
+/**
  * A blog's tRPC router, run in the page. Each post response says when it
  * was served, in seconds since the demo started, so a demo can show which
  * copy of the data it renders.
  */
 function createAppRouter(network: Network) {
   // The demo's server runs in the browser, on purpose.
-  const t = initTRPC.create({ allowOutsideOfServer: true });
+  const t = initTRPC
+    .context<ServerContext>()
+    .create({ allowOutsideOfServer: true });
   const servedAt = () => Math.round(network.now() / 100) / 10;
+  /**
+   * In an HTTP request, each call takes the server a moment of its own,
+   * however slow the connection is. Its row in the network panel gets the
+   * input the server ran it with, and ends when its result is back in the
+   * browser.
+   */
+  const procedure = t.procedure.use(async (opts) => {
+    const call = opts.ctx.calls?.[opts.batchIndex];
+    if (!call) {
+      return opts.next();
+    }
+    const arrives = (status: 'done' | 'error') => {
+      network.after(opts.ctx.tripBack, () => network.end(call.id, status));
+    };
+    // A call that reads a failed one has no input, and doesn't run
+    const input = await opts.getRawInput().catch((cause: unknown) => {
+      arrives('error');
+      throw cause;
+    });
+    const label = formatCall(opts.path, input);
+    call.first ??= label;
+    call.runs++;
+    network.served(call.id, 'start');
+    network.relabel(
+      call.id,
+      call.runs === 1 ? label : `${call.first} + ${call.runs - 1} more`,
+    );
+    await new Promise<void>((resolve) => {
+      network.after(network.work(), resolve);
+    });
+    const result = await opts.next();
+    call.finished++;
+    if (call.finished === call.runs) {
+      network.served(call.id, 'end');
+      arrives(result.ok ? 'done' : 'error');
+    }
+    return result;
+  });
   return t.router({
+    author: t.router({
+      /** An author, by id. A post has the id, so a page needs the post first. */
+      byId: procedure
+        .input(numbersInput('id'))
+        .query(({ input }) => blogData.author(input.id) ?? notFound(input.id)),
+    }),
     post: t.router({
-      byId: t.procedure.input(numbersInput('id')).query(({ input }) => ({
+      byId: procedure.input(numbersInput('id')).query(({ input }) => ({
         ...(blogData.post(input.id) ?? notFound(input.id)),
         servedAt: servedAt(),
       })),
-      comments: t.procedure.input(cursorInput('postId')).query(({ input }) => ({
+      /**
+       * Every post by a team, by the team's id. An author has the id, so a
+       * page that starts from a post needs the post, then its author.
+       */
+      byTeam: procedure.input(cursorInput('teamId')).query(({ input }) => ({
+        posts: blogData.byTeam(input.teamId),
+        ...lastPage,
+      })),
+      comments: procedure.input(cursorInput('postId')).query(({ input }) => ({
         items: blogData.comments(input.postId),
         ...lastPage,
       })),
-      list: t.procedure
+      /** A page of the list, without the authors' names. */
+      feed: procedure
+        .input(numbersInput('page'))
+        .query(({ input }) => blogData.feed(input.page)),
+      list: procedure
         .input(numbersInput('page'))
         .query(({ input }) => blogData.list(input.page)),
       /**
        * The other posts by a post's author. It takes the post's id, which is
        * in the URL, so a loader can start it with the post.
        */
-      moreByAuthor: t.procedure
+      moreByAuthor: procedure
         .input(cursorInput('postId'))
         .query(({ input }) => ({
           ...(blogData.moreByAuthor(input.postId) ?? notFound(input.postId)),
@@ -292,7 +423,163 @@ export function createDemoClient(network: Network, origin?: string) {
   return createTRPCClient<AppRouter>({
     links: [
       networkLink(network, origin),
-      localLink({ createContext: async () => ({}), router }),
+      localLink({
+        createContext: async () => ({ calls: null, tripBack: 0 }),
+        router,
+      }),
+    ],
+  });
+}
+
+interface PipeRead {
+  readonly from: number;
+  readonly path: ReadonlyArray<string | null>;
+  readonly to: ReadonlyArray<string>;
+}
+
+/** `input` with `value` at `to`, on copies of what is on the way there. */
+function withValueAt(
+  input: unknown,
+  to: ReadonlyArray<string>,
+  value: unknown,
+): unknown {
+  const [key, ...rest] = to;
+  if (key === undefined) {
+    return value;
+  }
+  const record =
+    typeof input === 'object' && input !== null
+      ? (input as Record<string, unknown>)
+      : {};
+  return { ...record, [key]: withValueAt(record[key], rest, value) };
+}
+
+function parseParam(value: string | null): unknown {
+  return value === null ? undefined : JSON.parse(value);
+}
+
+/**
+ * The calls of a batch request's URL, as code. What the server fills in from
+ * another call's data shows as where it comes from, such as
+ * `‹post›.authorId`, until the server has run the call.
+ */
+function labelsOf(url: URL) {
+  const paths = url.pathname.slice('/trpc/'.length).split(',');
+  const inputs = (parseParam(url.searchParams.get('input')) ?? {}) as Record<
+    number,
+    unknown
+  >;
+  const pipe = (parseParam(url.searchParams.get('pipe')) ?? {}) as Record<
+    number,
+    ReadonlyArray<PipeRead> | undefined
+  >;
+  return paths.map((path, index) => {
+    const input = (pipe[index] ?? []).reduce((filled, read) => {
+      // The router the call is in names what it returns: `post`, `author`.
+      const source = (paths[read.from] ?? '').split('.').slice(0, -1).join('.');
+      const where = read.path
+        .map((segment) => (segment === null ? '[]' : `.${segment}`))
+        .join('');
+      return withValueAt(filled, read.to, new Unfilled(`‹${source}›${where}`));
+    }, inputs[index]);
+    return formatCall(path, input);
+  });
+}
+
+type FetchEsque = NonNullable<
+  Parameters<typeof httpBatchStreamLink>[0]['fetch']
+>;
+
+/**
+ * A tRPC client that talks HTTP to a server in the page, behind `network`,
+ * with `httpBatchStreamLink`: calls made together share a request, and each
+ * result comes back when it is ready. Both ends pipeline, so a request can
+ * hold calls whose input the server reads from another call's data.
+ *
+ * A request takes a round trip of the network, half there and half back,
+ * and each call takes the server a moment in between.
+ */
+export function createHttpDemoClient(
+  network: Network,
+  origin: string | undefined,
+) {
+  const router = createAppRouter(network);
+  let sent = 0;
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => {
+      network.after(ms, resolve);
+    });
+  const fetch: FetchEsque = async (input, init) => {
+    // Queries are GET requests: no body to carry over.
+    const req = new Request(input, {
+      ...(init?.headers ? { headers: init.headers } : {}),
+      signal: init?.signal ?? null,
+    });
+    sent++;
+    const http = sent;
+    const trip = network.delay(1);
+    const tripThere = Math.round(trip / 2);
+    const tripBack = trip - tripThere;
+    const calls = labelsOf(new URL(req.url)).map((label): HttpCall => ({
+      finished: 0,
+      first: undefined,
+      id: network.request(label, origin, http),
+      runs: 0,
+    }));
+    const endAll = (status: 'aborted' | 'done') => {
+      for (const call of calls) {
+        network.end(call.id, status);
+      }
+    };
+    req.signal.addEventListener('abort', () => endAll('aborted'));
+    await wait(tripThere);
+    // Cancelled on its way there: the server never gets it
+    req.signal.throwIfAborted();
+    const response = await fetchRequestHandler({
+      createContext: () => ({ calls, tripBack }),
+      endpoint: '/trpc',
+      experimental_allowPipelining: true,
+      req,
+      router,
+    });
+    if (!response.body) {
+      await wait(tripBack);
+      endAll('done');
+      return response;
+    }
+    // Each part of the response is in the browser a trip back after the
+    // server sent it, in the order it was sent
+    let delivered = Promise.resolve();
+    const body = response.body.pipeThrough(
+      new TransformStream<Uint8Array, Uint8Array>({
+        // A call that ran for no item never finished: the response's end is its end.
+        flush: () => {
+          const arrived = wait(tripBack);
+          return delivered.then(() => arrived).then(() => endAll('done'));
+        },
+        transform: (chunk, controller) => {
+          const arrived = wait(tripBack);
+          delivered = delivered
+            .then(() => arrived)
+            .then(() => {
+              try {
+                controller.enqueue(chunk);
+              } catch {
+                // The request was cancelled on the way
+              }
+            });
+        },
+      }),
+    );
+    return new Response(body, response);
+  };
+  return createTRPCClient<AppRouter>({
+    links: [
+      httpBatchStreamLink({
+        experimental_pipelining: experimental_pipelining(),
+        fetch,
+        url: 'https://blog.example/trpc',
+      }),
     ],
   });
 }

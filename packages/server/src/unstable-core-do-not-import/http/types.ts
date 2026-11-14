@@ -113,6 +113,12 @@ export interface TRPCRequestInfo {
    */
   isBatchCall: boolean;
   /**
+   * Only on a pipelined batch: reads its `pipe`, which says which parts of the
+   * calls' inputs to fill in from earlier calls' data. Not validated.
+   * @internal
+   */
+  experimental_getPipe?: () => Promise<unknown>;
+  /**
    * The procedure calls in the request.
    */
   calls: TRPCRequestInfoProcedureCall[];
@@ -190,6 +196,19 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * @default true
    */
   allowBatching?: boolean;
+  /**
+   * Whether to accept pipelined batches: batches where a query reads parts of
+   * its input from the data of an earlier query. The server fills them in, so
+   * a query that depends on another costs no extra round trip. Every call
+   * still validates its input and runs its middleware, and every run counts
+   * towards `maxBatchSize`. Set `experimental_pipelining` on the client's
+   * batch link too.
+   *
+   * Experimental: it may change in a minor release.
+   * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request
+   * @default false
+   */
+  experimental_allowPipelining?: boolean;
   /**
    * The most calls a batch can have. Larger batches get a 400 error. Set
    * the client's `maxItems` to the same or a lower number.

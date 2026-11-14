@@ -36,6 +36,8 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
+  /** Whether to accept a pipelined batch, `?batch=pipeline`. Without it, that is no batch */
+  allowPipelining: boolean;
 };
 
 type ContentTypeHandler = {
@@ -101,7 +103,10 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   },
   async parse(opts) {
     const { req } = opts;
-    const isBatchCall = opts.searchParams.get('batch') === '1';
+    const batch = opts.searchParams.get('batch');
+    // A batch whose calls read their inputs from each other's data
+    const isPipelined = opts.allowPipelining && batch === 'pipeline';
+    const isBatchCall = batch === '1' || isPipelined;
     const maxBatchSize = opts.maxBatchSize;
 
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
@@ -117,6 +122,8 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     }
 
     type InputRecord = Record<number, unknown>;
+    /** The `pipe` in the body of a pipelined batch, once the body is read */
+    let bodyPipe: unknown = undefined;
     const getInputs = memo(async (): Promise<InputRecord> => {
       let inputs: unknown = undefined;
       if (req.method === 'GET') {
@@ -130,6 +137,9 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         const body = await req.text();
         if (body) {
           inputs = JSON.parse(body);
+        }
+        if (isPipelined && isObject(inputs)) {
+          bodyPipe = inputs['pipe'];
         }
       }
       if (inputs === undefined) {
@@ -228,6 +238,17 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
       url: opts.url,
+      ...(isPipelined && {
+        experimental_getPipe: async () => {
+          // A GET has it in the URL. Any other request has it in its body,
+          // beside the inputs
+          if (req.method === 'GET') {
+            return opts.searchParams.get('pipe') ?? undefined;
+          }
+          await getInputs.read();
+          return bodyPipe;
+        },
+      }),
     };
     return info;
   },

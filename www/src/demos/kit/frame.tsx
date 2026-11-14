@@ -4,7 +4,12 @@ import { Segmented } from '../segmented.tsx';
 import { useOnScreen } from '../use-playback.ts';
 import { idleNetwork, latencies } from './network.ts';
 import { NetworkPanel } from './network-panel.tsx';
-import { createSession, type Session, SessionProvider } from './session.tsx';
+import {
+  createSession,
+  type Session,
+  SessionProvider,
+  type Transport,
+} from './session.tsx';
 
 export interface DemoVariant<TValue extends string> {
   /** One sentence on what this variant does. */
@@ -25,13 +30,18 @@ const initialLatency: number = latencies[1].ms;
 
 let runs = 0;
 
-function newRun(
-  latency: number,
-  origin: string | undefined,
-  location?: string,
-): Run {
+function newRun(opts: {
+  readonly latency: number;
+  readonly location: string | undefined;
+  readonly origin: string | undefined;
+  readonly transport: Transport;
+}): Run {
   runs++;
-  return { id: runs, location, session: createSession(latency, origin) };
+  return {
+    id: runs,
+    location: opts.location,
+    session: createSession(opts),
+  };
 }
 
 export interface DemoRun<TValue extends string> {
@@ -64,6 +74,8 @@ export function DemoFrame<TValue extends string>(props: {
   /** Whether the network panel sums up each navigation. */
   readonly summary?: boolean;
   readonly title: ReactNode;
+  /** How the session's calls reach its server. One by one, by default. */
+  readonly transport?: Transport;
   readonly variants: ReadonlyArray<DemoVariant<TValue>>;
   /** What the variant switch picks, as a label. */
   readonly variantsLabel: string;
@@ -91,14 +103,15 @@ export function DemoFrame<TValue extends string>(props: {
   const current =
     variants.find((candidate) => candidate.value === variant) ?? first;
   const origin = props.origin;
+  const transport = props.transport ?? 'call';
   const [onScreen, onScreenRef] = useOnScreen();
   const started = run.session !== undefined;
 
   useEffect(() => {
     if (onScreen && !started) {
-      setRun(newRun(latency, origin));
+      setRun(newRun({ latency, location: undefined, origin, transport }));
     }
-  }, [latency, onScreen, origin, started]);
+  }, [latency, onScreen, origin, started, transport]);
 
   useEffect(() => {
     const network = run.session?.network;
@@ -114,7 +127,8 @@ export function DemoFrame<TValue extends string>(props: {
 
   const demoRun: DemoRun<TValue> = {
     location: run.location,
-    reload: (location) => setRun(newRun(latency, props.origin, location)),
+    reload: (location) =>
+      setRun(newRun({ latency, location, origin, transport })),
     session: run.session,
     variant,
   };
@@ -135,7 +149,9 @@ export function DemoFrame<TValue extends string>(props: {
               aria-labelledby={variantsLabel}
               onChange={(next) => {
                 setVariant(next);
-                setRun(newRun(latency, props.origin));
+                setRun(
+                  newRun({ latency, location: undefined, origin, transport }),
+                );
               }}
               options={variants}
               value={variant}
@@ -172,6 +188,7 @@ export function DemoFrame<TValue extends string>(props: {
         network={run.session?.network ?? idleNetwork}
         playing={onScreen}
         summary={props.summary ?? true}
+        wire={transport === 'http'}
       />
     </figure>
   );

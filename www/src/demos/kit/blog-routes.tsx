@@ -48,19 +48,19 @@ export type Strategy = 'ensure' | 'fetch' | 'prefetch' | 'reader';
 
 type LoaderVerb = Extract<Strategy, 'ensure' | 'fetch' | 'prefetch'>;
 
-function pageFrom(search: Record<string, unknown>) {
+export function pageFrom(search: Record<string, unknown>) {
   const page = Number(search['page']);
   return Number.isInteger(page) && page >= 1 ? page : 1;
 }
 
 // The site's registered router doesn't know the demo's routes, so these read
 // them loosely.
-function usePage() {
+export function usePage() {
   const search: Record<string, unknown> = useSearch({ strict: false });
   return pageFrom(search);
 }
 
-function usePostId() {
+export function usePostId() {
   const params: { readonly id?: string } = useParams({ strict: false });
   return Number(params.id);
 }
