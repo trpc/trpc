@@ -15,6 +15,7 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import type { Mock } from 'vitest';
 import { z } from 'zod';
 
@@ -676,6 +677,44 @@ describe('loggerLink', () => {
     expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
       `"%c << query #1 %cn/a%c %O"`,
     );
+  });
+
+  test('explicit null console is not replaced by the global console', () => {
+    using consoleLog = vi
+      .spyOn(console, 'log')
+      .mockImplementation(() => undefined);
+    const link = loggerLink({
+      // @ts-expect-error - JS callers can pass null
+      console: null,
+    })(mockRuntime);
+
+    expect(() =>
+      createChain({
+        links: [link, okLink],
+        op: {
+          id: 1,
+          type: 'query',
+          input: null,
+          path: 'n/a',
+          context: {},
+          signal: null,
+        },
+      })
+        .subscribe({})
+        .unsubscribe(),
+    ).toThrow(TypeError);
+    expect(consoleLog).not.toHaveBeenCalled();
+  });
+
+  test('custom logger does not read the global console', () => {
+    const originalConsole = globalThis.console;
+    using _restoreConsole = makeResource({}, () => {
+      globalThis.console = originalConsole;
+    });
+    // @ts-expect-error - simulate a runtime without a global console
+    delete globalThis.console;
+
+    expect(() => loggerLink({ logger: vi.fn() })).not.toThrow();
   });
 
   test('custom logger', () => {
