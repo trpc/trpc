@@ -18,7 +18,7 @@ import type { SchemaObject } from './types';
 /** Description strings extracted from Zod `.describe()` calls, keyed by dot-delimited property path. */
 export interface DescriptionMap {
   /** Top-level description on the schema itself (empty-string key). */
-  self?: string;
+  self: string | null;
   /** Property-path → description, e.g. `"name"` or `"address.street"`. */
   properties: Map<string, string>;
 }
@@ -117,7 +117,7 @@ export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
   const registry = getZodGlobalRegistry();
   if (!registry) return null;
 
-  const map: DescriptionMap = { properties: new Map() };
+  const map: DescriptionMap = { self: null, properties: new Map() };
   let hasAny = false;
 
   // Check top-level description
@@ -299,7 +299,7 @@ export function collectRuntimeDescriptions(
         const descs = extractZodDescriptions(input);
         if (descs) {
           // Merge multiple .input() descriptions (last wins for conflicts)
-          inputDescs ??= { properties: new Map() };
+          inputDescs ??= { self: null, properties: new Map() };
           inputDescs.self = descs.self ?? inputDescs.self;
           for (const [p, d] of descs.properties) {
             inputDescs.properties.set(p, d);
@@ -340,39 +340,39 @@ function isProcedure(
  * Overlay description strings from a `DescriptionMap` onto an existing
  * JSON schema produced by the TypeScript type checker.  Mutates in place.
  */
-export function applyDescriptions(
-  schema: SchemaObject,
-  descs: DescriptionMap,
-  schemas?: Record<string, SchemaObject>,
-): void {
-  if (descs.self) {
-    schema.description = descs.self;
+export function applyDescriptions(opts: {
+  schema: SchemaObject;
+  descs: DescriptionMap;
+  schemas: Record<string, SchemaObject>;
+}): void {
+  if (opts.descs.self) {
+    opts.schema.description = opts.descs.self;
   }
 
-  for (const [propPath, description] of descs.properties) {
+  for (const [propPath, description] of opts.descs.properties) {
     setNestedDescription({
-      schema,
+      schema: opts.schema,
       pathParts: propPath.split('.'),
       description,
-      schemas,
+      schemas: opts.schemas,
     });
   }
 }
 
-function resolveSchemaRef(
-  schema: SchemaObject,
-  schemas?: Record<string, SchemaObject>,
-): SchemaObject | null {
-  const ref = schema.$ref;
+function resolveSchemaRef(opts: {
+  schema: SchemaObject;
+  schemas: Record<string, SchemaObject>;
+}): SchemaObject | null {
+  const ref = opts.schema.$ref;
   if (!ref) {
-    return schema;
+    return opts.schema;
   }
-  if (!schemas || !ref.startsWith('#/components/schemas/')) {
+  if (!ref.startsWith('#/components/schemas/')) {
     return null;
   }
 
   const refName = ref.slice('#/components/schemas/'.length);
-  return refName ? (schemas[refName] ?? null) : null;
+  return refName ? (opts.schemas[refName] ?? null) : null;
 }
 
 function getArrayItemsSchema(schema: SchemaObject): SchemaObject | null {
@@ -408,7 +408,7 @@ function setNestedDescription({
   schema: SchemaObject;
   pathParts: string[];
   description: string;
-  schemas?: Record<string, SchemaObject>;
+  schemas: Record<string, SchemaObject>;
 }): void {
   if (pathParts.length === 0) return;
 
@@ -422,7 +422,7 @@ function setNestedDescription({
     if (rest.length === 0) {
       setLeafDescription(items, description);
     } else {
-      const target = resolveSchemaRef(items, schemas) ?? items;
+      const target = resolveSchemaRef({ schema: items, schemas }) ?? items;
       setNestedDescription({
         schema: target,
         pathParts: rest,
@@ -442,7 +442,8 @@ function setNestedDescription({
   } else {
     // For arrays, step through `items` transparently
     const target = getArrayItemsSchema(propSchema) ?? propSchema;
-    const resolvedTarget = resolveSchemaRef(target, schemas) ?? target;
+    const resolvedTarget =
+      resolveSchemaRef({ schema: target, schemas }) ?? target;
     setNestedDescription({
       schema: resolvedTarget,
       pathParts: rest,
