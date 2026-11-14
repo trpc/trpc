@@ -350,7 +350,8 @@ describe('backend over HTTP', () => {
 
   it('does no work on the server for a request that was cancelled on its way there', async () => {
     const { network, queryClient, trpc, worked } = session();
-    network.delay = () => 400;
+    // A second there and back: the cancel is well before it arrives
+    network.delay = () => 2_000;
     const result = queryClient.fetchQuery(
       trpc.post.byId.queryOptions(
         { id: 1 },
@@ -363,7 +364,7 @@ describe('backend over HTTP', () => {
     await queryClient.cancelQueries();
     await expect(result).rejects.toThrow();
     // Long enough for the request to have arrived, had it not been cancelled
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 1_300));
     expect(worked()).toBe(0);
     expect(network.getTrace().requests[0]).toMatchObject({
       servingAt: undefined,

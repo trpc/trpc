@@ -90,8 +90,9 @@ function PostPage() {
         <AuthorCard handles={handles} />
       </Suspense>
       <OneRequestHint>
-        With the Network tab open, go to another post. Its author’s id is in the
-        post, and the list is filtered by the author. All three are one request:{' '}
+        With the Network tab open, go to a post you haven’t opened yet. Its
+        author’s id is in the post, and the list is filtered by the author. All
+        three are one request:{' '}
         <code>blog.postBySlug,blog.authorById,blog.posts</code>.
       </OneRequestHint>
     </>

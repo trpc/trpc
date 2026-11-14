@@ -2753,8 +2753,13 @@ describe.each([
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('Post other by KATT');
     });
-    // The other post, in one request. Its author is in the cache
+    // The other post, in one request. Its author's call ran with it: an
+    // entry that is sent this way always asks the server
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+    expect(resource.calls.mock.calls.slice(2)).toEqual([
+      ['post.bySlug', { slug: 'other' }],
+      ['author.byId', { id: 'u1' }],
+    ]);
 
     resource.rerenderApp(utils, page(null));
     expect(utils.container).toHaveTextContent('gone');
@@ -2774,21 +2779,29 @@ describe.each([
 
   test('strict mode starts the entries once', async () => {
     await using resource = pipeliningCtx(ctxOpts);
-    const { Page } = postPage(resource);
-    const page = (
+    const { Page, renders } = postPage(resource);
+    const page = () => (
       <React.StrictMode>
         <React.Suspense fallback="loading">
           <Page slug="hello" />
         </React.Suspense>
       </React.StrictMode>
     );
-    const utils = resource.renderApp(page);
+    const utils = resource.renderApp(page());
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('Post hello by KATT');
     });
-    resource.rerenderApp(utils, page);
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
     expect(resource.calls).toHaveBeenCalledTimes(2);
+
+    // Its effects ran, were undone and ran again. The load is still its own
+    const rendered = renders.mock.calls.length;
+    resource.rerenderApp(utils, page());
+    expect(renders.mock.calls.length).toBeGreaterThan(rendered);
+    expect(new Set(renders.mock.calls.map(([handles]) => handles)).size).toBe(
+      1,
+    );
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test('a query for every item of a list, a group, and a skipToken', async () => {
@@ -2999,6 +3012,8 @@ describe('experimental_useHandles', () => {
         ],
       ]
     `);
+    // Nothing started: no query was made, also none that would have loaded
+    expect(resource.queryClient.getQueryCache().getAll()).toEqual([]);
     expect(resource.calls).not.toHaveBeenCalled();
     expect(() =>
       experimental_useHandles(trpc.post as any, {}),
@@ -3041,10 +3056,12 @@ describe('experimental_useHandles', () => {
     });
   });
 
-  test('a component that never got on the page keeps its handles for a while, then loads again', async () => {
+  test('a component that never got on the page keeps its handles for 30 seconds, then loads again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     vi.useFakeTimers({ toFake: ['setTimeout'] });
+    using _timers = makeResource({}, () => vi.useRealTimers());
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const seen: unknown[] = [];
     function Page(props: { fail: boolean }) {
       const handles = experimental_useHandles(trpc, {
@@ -3065,47 +3082,45 @@ describe('experimental_useHandles', () => {
         return this.state.failed ? null : this.props.children;
       }
     }
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    resource.renderApp(
-      <Boundary>
-        <Page fail />
-      </Boundary>,
-    );
+    /** Renders the page, which throws before it gets on the page */
+    const renderOffPage = () => {
+      seen.length = 0;
+      resource.renderApp(
+        <Boundary>
+          <Page fail />
+        </Boundary>,
+      );
+      return seen[0];
+    };
+
+    const first = renderOffPage();
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
     expect(resource.calls).toHaveBeenCalledTimes(1);
 
-    // Soon after, as when a Suspense boundary above it shows it again
-    const first = seen[0];
-    seen.length = 0;
-    const soon = resource.renderApp(<Page fail={false} />);
-    expect(seen[0]).toBe(first);
+    // Until 30 seconds after its queries settled, it has the same load, as
+    // when a Suspense boundary above it shows it again. `vi.waitFor()` moved
+    // the clock by one of its 50 ms steps at most
+    await vi.advanceTimersByTimeAsync(29_900);
+    expect(renderOffPage()).toBe(first);
     expect(resource.calls).toHaveBeenCalledTimes(1);
-    // On the page, it keeps them however long it is there
-    await vi.advanceTimersByTimeAsync(60_000);
-    resource.rerenderApp(soon, <Page fail={false} />);
-    expect(seen.at(-1)).toBe(first);
-    soon.unmount();
 
-    // Never on the page, and long after: nothing is kept
+    // Then nothing is kept: it loads again
+    await vi.advanceTimersByTimeAsync(200);
+    const second = renderOffPage();
+    expect(second).not.toBe(first);
+    await vi.waitFor(() => {
+      expect(resource.calls).toHaveBeenCalledTimes(2);
+    });
+
+    // On the page, it keeps its load however long it is there
     seen.length = 0;
-    resource.renderApp(
-      <Boundary>
-        <Page fail />
-      </Boundary>,
-    );
-    await vi.waitFor(() => {
-      expect(resource.queryClient.isFetching()).toBe(0);
-    });
-    await vi.advanceTimersByTimeAsync(60_000);
-    const before = resource.calls.mock.calls.length;
-    resource.renderApp(<Page fail={false} />);
-    expect(seen.at(-1)).not.toBe(seen[0]);
-    await vi.waitFor(() => {
-      expect(resource.calls).toHaveBeenCalledTimes(before + 1);
-    });
-    vi.restoreAllMocks();
-    vi.useRealTimers();
+    const onPage = resource.renderApp(<Page fail={false} />);
+    expect(seen[0]).toBe(second);
+    await vi.advanceTimersByTimeAsync(120_000);
+    resource.rerenderApp(onPage, <Page fail={false} />);
+    expect(seen.at(-1)).toBe(second);
+    expect(resource.calls).toHaveBeenCalledTimes(2);
   });
 });

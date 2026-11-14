@@ -619,8 +619,8 @@ describe.each([
         reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
       });
       assert(author);
-      await expect(postResult).rejects.toThrow();
-      await expect(author.result).rejects.toThrow();
+      await expect(postResult).rejects.toThrow('The connection broke');
+      await expect(author.result).rejects.toThrow('The connection broke');
       expect(author.status).toBe('unresolved');
     },
   );
