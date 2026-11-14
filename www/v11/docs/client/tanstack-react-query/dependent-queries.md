@@ -502,7 +502,7 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 - **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it.
 - **Put every entry it reads in the same load.** The order of the entries doesn't matter.
 - **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
-- **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input and fails its validation. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
+- **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input. That fails its validation, unless the procedure takes a missing one. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
 
 ## A query for every item {#entry-per-item}
 
