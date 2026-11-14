@@ -716,10 +716,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }),
         serialize: (data) => config.transformer.output.serialize(data),
         onError: (cause) => {
+          const call = info.calls[cause.path[0] as any];
           opts.onError?.({
             error: getTRPCErrorFromUnknown(cause.error),
-            path: undefined,
-            input: undefined,
+            path: call?.path,
+            input: call?.result(),
             ctx: ctxManager.valueOrUndefined(),
             req: opts.req,
             type: info?.type ?? 'unknown',
