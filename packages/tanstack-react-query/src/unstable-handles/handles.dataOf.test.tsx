@@ -3088,6 +3088,33 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('entries under other keys are another load, also when the keys read the same joined with dots', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const author = () => prefetchEntry(trpc.author.byId, { id: 'u1' });
+    const seen: Record<string, unknown>[] = [];
+    function Card(props: { entries: TRPCLoadEntries }) {
+      seen.push(experimental_useHandles(trpc, props.entries));
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card entries={{ card: { author: author() } }} />
+        <Card entries={{ 'card.author': author() }} />
+        <Card entries={{ card: { author: author() }, empty: {} }} />
+      </>,
+    );
+    // Each has handles in the shape of its own entries
+    expect(seen.map((handles) => Object.keys(handles))).toEqual([
+      ['card'],
+      ['card.author'],
+      ['card', 'empty'],
+    ]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('a component that never got on the page keeps its handles for 30 seconds, then loads again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

@@ -926,7 +926,7 @@ Such a request does what the browser could do in two. Each call validates its in
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
 - **Set the link's `maxItems` to it, or lower.** The calls the server makes count too. A request with more than `maxBatchSize` fails as a whole, the query it belongs to included.
 - **A call reads 64 values at most.** Each value is copied for every run of the call, so `maxBatchSize` bounds that work too.
-- **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional.
+- **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
 #### Does it work with mutations and subscriptions? {#mutations}

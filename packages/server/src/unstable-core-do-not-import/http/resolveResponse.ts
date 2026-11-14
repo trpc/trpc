@@ -413,16 +413,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             reads: parsePipelineReads({ pipe, calls: info.calls.length }),
             transformer: config.transformer,
             takeRuns: (count) => {
-              runs += count - 1;
+              const taken = runs + count - 1;
               if (
                 typeof opts.maxBatchSize === 'number' &&
-                runs > opts.maxBatchSize
+                taken > opts.maxBatchSize
               ) {
+                // A call that is refused runs for no item, and takes none
                 throw new TRPCError({
                   code: 'BAD_REQUEST',
                   message: `A call for every item exceeds the maximum batch size`,
                 });
               }
+              runs = taken;
             },
           });
         })

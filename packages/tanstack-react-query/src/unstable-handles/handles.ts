@@ -1806,8 +1806,10 @@ function describeEntries(opts: {
   queryClient: QueryClient;
   entries: Record<string, unknown>;
 }) {
-  const leaves = leavesOf(readEntries({ ...opts, keys: [] }));
-  const keyOfEntry = new Map(leaves.map((leaf) => [leaf.entry, leaf.key]));
+  const tree = readEntries({ ...opts, keys: [] });
+  const keyOfEntry = new Map(
+    leavesOf(tree).map((leaf) => [leaf.entry, leaf.key]),
+  );
   const describeRef = (ref: EntryDataRef): unknown => ({
     '~dataOf': [
       keyOfEntry.get(ref.entry) ?? null,
@@ -1816,23 +1818,28 @@ function describeEntries(opts: {
       ref.itemOf ? describeRef(ref.itemOf) : null,
     ],
   });
-  return hashKey(
-    leaves.map((leaf) => {
-      const { queryFn: _, ...options } = leaf.state.options({
-        dataOfRef: describeRef,
-        pipeline: null,
-      });
-      return [
-        leaf.key,
-        leaf.state.kind,
-        leaf.state.type,
-        // With its key, its first cursor, and such options as its stale time
-        options,
-        leaf.each ? describeRef(leaf.each) : null,
-        leaf.from ? (keyOfEntry.get(leaf.from) ?? null) : null,
-      ];
-    }),
-  );
+  const describeLeaf = (leaf: EntryLeaf) => {
+    const { queryFn: _, ...options } = leaf.state.options({
+      dataOfRef: describeRef,
+      pipeline: null,
+    });
+    return {
+      kind: leaf.state.kind,
+      type: leaf.state.type,
+      // With its key, its first cursor, and such options as its stale time
+      options,
+      each: leaf.each ? describeRef(leaf.each) : null,
+      from: leaf.from ? (keyOfEntry.get(leaf.from) ?? null) : null,
+    };
+  };
+  // In the shape of the entries, which is the shape of their handles: a group
+  // is a list, also an empty one, and an entry is not
+  const describeTree = (nodes: EntryTree): unknown[] =>
+    nodes.map(([name, node]) => [
+      name,
+      Array.isArray(node) ? describeTree(node) : describeLeaf(node),
+    ]);
+  return hashKey(describeTree(tree));
 }
 
 function isServerEnvironment() {

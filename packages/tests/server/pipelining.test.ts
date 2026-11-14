@@ -73,6 +73,11 @@ const createRouter = (transformer: 'none' | 'superjson') => {
     })),
     // Data that JSON has no word for
     nothing: t.procedure.query(() => undefined),
+    // Two lists in one call's data
+    lists: t.procedure.query(() => ({
+      long: [{ id: 't1' }, { id: 't1' }, { id: 't1' }, { id: 't1' }],
+      short: [{ id: 't1' }, { id: 't1' }],
+    })),
     rename: t.procedure
       .input(z.object({ id: z.string() }))
       .mutation((opts) => opts.input.id),
@@ -1052,6 +1057,30 @@ describe('the `pipe` search param', () => {
     });
     // It ran for no item
     expect(over.calls).not.toHaveBeenCalled();
+  });
+
+  test('a call for every item that is refused takes none of `maxBatchSize` from the next', async () => {
+    const { appRouter, calls } = createRouter('none');
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true, maxBatchSize: 4 },
+    });
+    const each = (list: string) => [
+      { to: ['id'], from: 0, path: [list, null, 'id'], each: true },
+    ];
+    const res = await fetch(
+      `${ctx.httpUrl}/lists,tag,tag?batch=pipeline&input=${encodeURIComponent(
+        JSON.stringify({ 1: {}, 2: {} }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({ 1: each('long'), 2: each('short') }),
+      )}`,
+    );
+    const json = await res.json();
+    // Three calls and four items are over the limit. Three calls and two are not
+    expect(json[1].error.message).toBe(
+      'A call for every item exceeds the maximum batch size',
+    );
+    expect(json[2].result.data).toHaveLength(2);
+    expect(calls).toHaveBeenCalledTimes(2);
   });
 
   test('filling in an input does not change the data that another call reads', async () => {
