@@ -44,17 +44,18 @@ function postPageEntries(trpc: TRPC, opts: { slug: string }) {
   return {
     post,
     author,
-    // A second step: the list is filtered by the id of the author, who is
-    // loaded with an id from the post. Post, author and the list's first
-    // page are one request. Later pages are requests of their own.
+    // A second step: the list is filtered by the author's team, and only the
+    // author has its id. The author is loaded with an id from the post. Post,
+    // author and the list's first page are one request. Later pages are
+    // requests of their own.
     //
     // The input has nothing of this post in it, so the list is one query for
-    // all of the author's posts: going from one to the next finds it in the
+    // all of the team's posts: going from one to the next finds it in the
     // cache. The card leaves the open post out when it reads the list
-    moreByAuthor: experimental_dataOf(author, (it) =>
+    moreFromTeam: experimental_dataOf(author, (it) =>
       prefetchInfiniteEntry(
         trpc.blog.posts,
-        { authorId: it.id, limit: 5 },
+        { teamId: it.teamId, limit: 5 },
         { getNextPageParam: (lastPage) => lastPage.nextCursor },
       ),
     ),
@@ -91,8 +92,8 @@ function PostPage() {
       </Suspense>
       <OneRequestHint>
         With the Network tab open, go to a post you haven’t opened yet. Its
-        author’s id is in the post, and the list is filtered by the author. All
-        three are one request:{' '}
+        author’s id is in the post, and the id of the author’s team is in the
+        author. All three are one request:{' '}
         <code>blog.postBySlug,blog.authorById,blog.posts</code>.
       </OneRequestHint>
     </>

@@ -399,14 +399,14 @@ describe('backend over HTTP', () => {
     await loadHandles(trpc, {
       author,
       more: experimental_dataOf(author, (it) =>
-        prefetchEntry(trpc.post.byAuthor, { authorId: it.id }),
+        prefetchEntry(trpc.post.byTeam, { teamId: it.teamId }),
       ),
       post,
     });
     await settled();
     await vi.waitFor(() => {
       expect(
-        queryClient.getQueryData(trpc.post.byAuthor.queryKey({ authorId: 1 })),
+        queryClient.getQueryData(trpc.post.byTeam.queryKey({ teamId: 1 })),
       ).toBeDefined();
     });
     const { requests } = network.getTrace();
@@ -420,11 +420,11 @@ describe('backend over HTTP', () => {
     expect(requests.map((request) => request.label)).toEqual([
       'post.byId({ id: 1 })',
       'author.byId({ id: 1 })',
-      'post.byAuthor({ authorId: 1 })',
+      'post.byTeam({ teamId: 1 })',
     ]);
     // Until the server had run them, they showed what it would fill in
     expect(labels).toContain('author.byId({ id: ‹post›.authorId })');
-    expect(labels).toContain('post.byAuthor({ authorId: ‹author›.id })');
+    expect(labels).toContain('post.byTeam({ teamId: ‹author›.teamId })');
     expect(
       queryClient.getQueryData(trpc.author.byId.queryKey({ id: 1 })),
     ).toMatchObject({ name: 'Ada' });
@@ -480,7 +480,7 @@ describe('backend over HTTP', () => {
       trpc.author.byId.queryOptions({ id: post.authorId }),
     );
     await queryClient.fetchQuery(
-      trpc.post.byAuthor.queryOptions({ authorId: author.id }),
+      trpc.post.byTeam.queryOptions({ teamId: author.teamId }),
     );
     await settled();
     const { requests } = network.getTrace();

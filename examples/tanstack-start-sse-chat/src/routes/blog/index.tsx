@@ -77,8 +77,8 @@ function BlogIndex() {
         <SlowQueriesSwitch initial={loaderData.slowQueries} />
         <OneRequestHint>
           Open your browser’s Network tab, then open a post you haven’t opened
-          yet. The post, its author and the author’s other posts each need the
-          one before. They still load in one request:{' '}
+          yet. The post, its author and the posts of the author’s team each need
+          the one before. They still load in one request:{' '}
           <code>blog.postBySlug,blog.authorById,blog.posts</code>. So does this
           list, with an author for every post.
         </OneRequestHint>

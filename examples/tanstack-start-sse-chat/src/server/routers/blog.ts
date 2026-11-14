@@ -1,6 +1,6 @@
 /**
- * A blog, kept in memory. Its pages load a post and its author in one
- * request: see `/src/routes/blog/$slug.tsx`
+ * A blog, kept in memory. Its pages load a post, its author and the posts of
+ * the author's team in one request: see `/src/routes/blog/$slug.tsx`
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -11,16 +11,25 @@ const authors = [
     id: 'ada',
     name: 'Ada Brandt',
     bio: 'Writes about databases and the people who page them at night.',
+    teamId: 'infrastructure',
   },
   {
     id: 'lin',
     name: 'Lin Okafor',
     bio: 'Frontend engineer. Has opinions about loading spinners.',
+    teamId: 'web',
   },
   {
     id: 'sam',
     name: 'Sam Veldkamp',
-    bio: 'Runs the platform team and a small sourdough operation.',
+    bio: 'Keeps the platform running, and a small sourdough operation.',
+    teamId: 'infrastructure',
+  },
+  {
+    id: 'noor',
+    name: 'Noor Haddad',
+    bio: 'Designs the components everyone else copies.',
+    teamId: 'web',
   },
 ];
 
@@ -32,7 +41,7 @@ interface Post {
   body: string;
 }
 
-/** Enough titles for each author's "More by" list to need a few pages */
+/** Enough titles for each team's "More from" list to need a few pages */
 const titlesByAuthor: Record<string, string[]> = {
   lin: [
     'The cheapest request is the one you never send',
@@ -79,10 +88,18 @@ const titlesByAuthor: Record<string, string[]> = {
     'Every cron job is a tiny employee',
     'Sourdough, and other long-running processes',
   ],
+  noor: [
+    'Design tokens are an API',
+    'The empty state is the first impression',
+    'A button has six states',
+    'Focus rings are not optional',
+    'Dark mode is a second product',
+    'Spacing is the cheapest polish',
+  ],
 };
 
 const bodies = [
-  'A page that loads a post, then its author, then the author’s other posts pays for the network three times. Most of that wait is the trip, not the work.',
+  'A page that loads a post, then its author, then the posts of the author’s team pays for the network three times. Most of that wait is the trip, not the work.',
   'Every shortcut speeds up the case you expected and slows down the one you forgot about. Pick the cases you can name.',
   'It is an apology in advance. It is still better than a layout that jumps when the data lands.',
   'If a system needs a person awake to keep it running, the system is not finished yet.',
@@ -127,13 +144,13 @@ const blogProcedure = publicProcedure.use(async (opts) => {
 export const blogRouter = router({
   /**
    * A page of posts, newest first. Used as a plain query by the post list and
-   * as an infinite query by a post's "More by" list
+   * as an infinite query by a post's "More from the team" list
    */
   posts: blogProcedure
     .input(
       z.object({
-        /** Only posts by this author */
-        authorId: z.string().optional(),
+        /** Only posts by the authors of this team */
+        teamId: z.string().optional(),
         limit: z.number().min(1).max(50).default(10),
         /** How many posts to skip */
         cursor: z.number().nullish(),
@@ -141,9 +158,13 @@ export const blogRouter = router({
     )
     .query((opts) => {
       const { input } = opts;
+      const { teamId } = input;
+      const teamAuthorIds =
+        teamId === undefined
+          ? null
+          : authors.filter((it) => it.teamId === teamId).map((it) => it.id);
       const matching = posts.filter(
-        (post) =>
-          input.authorId === undefined || post.authorId === input.authorId,
+        (post) => !teamAuthorIds || teamAuthorIds.includes(post.authorId),
       );
       const start = input.cursor ?? 0;
       const end = start + input.limit;

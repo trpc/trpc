@@ -21,6 +21,12 @@ export interface Post {
 
 const authors = ['Ada', 'Grace', 'Linus', 'Margaret'] as const;
 
+/**
+ * The team of each author, by id. Ada and Grace are one team, Linus and
+ * Margaret the other.
+ */
+const teamIds = [1, 1, 2, 2] as const;
+
 const bios = [
   'Writes about loaders and round trips.',
   'Writes about handles and types.',
@@ -120,8 +126,8 @@ const comments = [
  */
 export const procedureWeights: Readonly<Record<string, number>> = {
   'author.byId': 1,
-  'post.byAuthor': 1.2,
   'post.byId': 1,
+  'post.byTeam': 1.2,
   'post.feed': 0.8,
   'post.comments': 1.5,
   'post.list': 0.8,
@@ -168,11 +174,20 @@ export const blogData = {
   /** An author, by the id a post has. */
   author: (id: number) => {
     const name = authors[id - 1];
-    return name && { bio: bios[id - 1] ?? '', id, name };
+    return (
+      name && {
+        bio: bios[id - 1] ?? '',
+        id,
+        name,
+        teamId: teamIds[id - 1] ?? 1,
+      }
+    );
   },
-  /** Every post by an author. */
-  byAuthor: (authorId: number) =>
-    posts.filter((post) => post.authorId === authorId).map(summaryOf),
+  /** Every post by the authors of a team. */
+  byTeam: (teamId: number) =>
+    posts
+      .filter((post) => teamIds[post.authorId - 1] === teamId)
+      .map(summaryOf),
   comments: commentsOf,
   /**
    * One page of the list, with each post's author as an id: the name is
@@ -322,14 +337,17 @@ function createAppRouter(network: Network) {
         .query(({ input }) => blogData.author(input.id) ?? notFound(input.id)),
     }),
     post: t.router({
-      /** Every post by an author, by the author's id. */
-      byAuthor: procedure.input(cursorInput('authorId')).query(({ input }) => ({
-        posts: blogData.byAuthor(input.authorId),
-        ...lastPage,
-      })),
       byId: procedure.input(numbersInput('id')).query(({ input }) => ({
         ...(blogData.post(input.id) ?? notFound(input.id)),
         servedAt: servedAt(),
+      })),
+      /**
+       * Every post by a team, by the team's id. An author has the id, so a
+       * page that starts from a post needs the post, then its author.
+       */
+      byTeam: procedure.input(cursorInput('teamId')).query(({ input }) => ({
+        posts: blogData.byTeam(input.teamId),
+        ...lastPage,
       })),
       comments: procedure.input(cursorInput('postId')).query(({ input }) => ({
         items: blogData.comments(input.postId),

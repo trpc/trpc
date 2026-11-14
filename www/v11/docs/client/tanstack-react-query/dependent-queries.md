@@ -12,7 +12,7 @@ A page often needs one answer before it can ask the next question.
 
 - The post page has a slug. It needs the **post**.
 - The post has an `authorId`. The page needs the **author**.
-- The author has an `id`. The page needs the author's **other posts**.
+- The author has a `teamId`. The page needs **more posts from the author's team**.
 
 Each query waits for the one before it. That is three round trips, one after another. This is a waterfall, and it makes pages slow.
 
@@ -30,7 +30,7 @@ An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment.
 ```
 
 :::tip See it in an app
-The [SSE chat example](https://sse.trpc.io/blog) has a blog that loads this way. Open your browser's Network tab and go from post to post: each page is one request, for the post, its author and the author's other posts. Its [source](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat/src/routes/blog) is two routes.
+The [SSE chat example](https://sse.trpc.io/blog) has a blog that loads this way. Open your browser's Network tab and go from post to post: each page is one request, for the post, its author and more posts from the author's team. Its [source](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat/src/routes/blog) is two routes.
 :::
 
 :::info
@@ -56,7 +56,7 @@ export type Post = {
   authorId: string;
   tags: { id: string }[];
 };
-export type Author = { id: string; name: string };
+export type Author = { id: string; name: string; teamId: string };
 
 export const appRouter = t.router({
   post: t.router({
@@ -71,7 +71,7 @@ export const appRouter = t.router({
     list: t.procedure
       .input(
         z.object({
-          authorId: z.string().optional(),
+          teamId: z.string().optional(),
           cursor: z.number().nullish(),
         }),
       )
@@ -83,7 +83,9 @@ export const appRouter = t.router({
   author: t.router({
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(({ input }): Author => ({ id: input.id, name: 'Alex' })),
+      .query(
+        ({ input }): Author => ({ id: input.id, name: 'Alex', teamId: 't1' }),
+      ),
   }),
   tag: t.router({
     byIds: t.procedure
@@ -132,8 +134,8 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
   return {
     post,
     author,
-    moreByAuthor: experimental_dataOf(author, (it) =>
-      prefetchInfiniteEntry(trpc.post.list, { authorId: it.id }),
+    moreFromTeam: experimental_dataOf(author, (it) =>
+      prefetchInfiniteEntry(trpc.post.list, { teamId: it.teamId }),
     ),
   } satisfies TRPCLoadEntries;
 }
@@ -197,8 +199,8 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
     post,
     author,
     // An entry can be built from one that is built from another
-    moreByAuthor: experimental_dataOf(author, (it) =>
-      prefetchInfiniteEntry(trpc.post.list, { authorId: it.id }),
+    moreFromTeam: experimental_dataOf(author, (it) =>
+      prefetchInfiniteEntry(trpc.post.list, { teamId: it.teamId }),
     ),
   } satisfies TRPCLoadEntries;
 }
@@ -269,9 +271,9 @@ export function AuthorCard(props: {
     <address>
       {authorQuery.data.name}
       <Suspense fallback="Loading…">
-        <MoreByAuthor
+        <MoreFromTeam
           posts={experimental_handleOfItem(
-            handles.moreByAuthor,
+            handles.moreFromTeam,
             authorQuery.data,
           )}
         />
@@ -280,7 +282,7 @@ export function AuthorCard(props: {
   );
 }
 
-function MoreByAuthor(props: {
+function MoreFromTeam(props: {
   posts: inferInfiniteQueryHandle<TRPC['post']['list']>;
 }) {
   const trpc = useTRPC();
@@ -293,7 +295,7 @@ function MoreByAuthor(props: {
 }
 ```
 
-- **Each part shows when its query has loaded**: the post, then the author, then the list. Give each its own Suspense boundary.
+- **Each part shows when its query has loaded**: the post, then the author, then the team's posts. Give each its own Suspense boundary.
 - **The components make no request of their own.** Each query is already on its way when its component asks for it.
 - **A finished handle is an ordinary handle.** It reads the cache entry `trpc.author.byId.queryOptions({ id: 'u1' })` would.
 
@@ -307,7 +309,7 @@ It doesn't have to. It can send every call at once, and leave a blank where each
 
 - "Get the post with this slug."
 - "Get the author. Take the `id` from the post's `authorId`."
-- "Get the posts. Take the `authorId` from the author's `id`."
+- "Get the team's posts. Take the `teamId` from the author."
 
 The server does the rest.
 
@@ -372,7 +374,7 @@ The post page above makes this request:
 GET /post.bySlug,author.byId,post.list?batch=pipeline
   &input={"0":{"slug":"hello"},"1":{},"2":{"direction":"forward"}}
   &pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}],
-         "2":[{"to":["authorId"],"from":1,"path":["id"]}]}
+         "2":[{"to":["teamId"],"from":1,"path":["teamId"]}]}
 ```
 
 - **`pipe`** lists the blanks: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), it is in the body, beside the inputs.
@@ -486,8 +488,8 @@ const author = prefetchEntry(trpc.author.byId, {
 });
 
 // An entry can read an entry that reads another
-const moreByAuthor = prefetchInfiniteEntry(trpc.post.list, {
-  authorId: experimental_dataOf(author).id,
+const moreFromTeam = prefetchInfiniteEntry(trpc.post.list, {
+  teamId: experimental_dataOf(author).teamId,
 });
 
 // A part of every item of a list

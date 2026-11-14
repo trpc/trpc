@@ -47,8 +47,8 @@ export function DependentQueries(props: DemoProps) {
           ) : (
             <>
               The browser asks for the post. When it has the post, it asks for
-              the author. When it has the author, it asks for the author&apos;s
-              posts. Three round trips, one after the other.
+              the author. When it has the author, it asks for the posts of the
+              author&apos;s team. Three round trips, one after the other.
             </>
           ),
           label: 'a waterfall',
@@ -64,9 +64,9 @@ export function DependentQueries(props: DemoProps) {
           ) : (
             <>
               The browser asks for all three at once, with a blank where each id
-              goes. The server fills in {code('authorId')} from the post, and
-              the author&apos;s {code('id')} for the list. One round trip, and
-              each part shows when it arrives.
+              goes. The server fills in {code('authorId')} from the post, and{' '}
+              {code('teamId')} from the author. One round trip, and each part
+              shows when it arrives.
             </>
           ),
           label: 'one request',

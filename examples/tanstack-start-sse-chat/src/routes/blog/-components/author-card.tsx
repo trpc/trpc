@@ -23,9 +23,10 @@ import { useTRPC, type TRPC } from '~/lib/trpc';
 import type { PostPageHandles } from '../$slug';
 
 /**
- * The author of a post, and what else they wrote. The author's id is in the
- * post, so the card reads the post first: the handles of its own queries are
- * finished with the data they are built from.
+ * The author of a post, and what else their team wrote. The author's id is in
+ * the post, and the team's id is in the author, so the card reads the post
+ * first: the handles of its own queries are finished with the data they are
+ * built from.
  */
 export function AuthorCard(props: Readonly<{ handles: PostPageHandles }>) {
   const trpc = useTRPC();
@@ -50,12 +51,14 @@ export function AuthorCard(props: Readonly<{ handles: PostPageHandles }>) {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="mb-2 text-sm font-medium">More by {author.name}</p>
-        {/* The list loads after the author, whose id it needs, so it has a
+        <p className="mb-2 text-sm font-medium">
+          More from the {author.teamId} team
+        </p>
+        {/* The list loads after the author, whose team it needs, so it has a
             boundary of its own: the card shows without it */}
         <Suspense fallback={<Skeleton className="h-28 w-full" />}>
-          <MoreByAuthor
-            posts={experimental_handleOfItem(handles.moreByAuthor, author)}
+          <MoreFromTeam
+            posts={experimental_handleOfItem(handles.moreFromTeam, author)}
             exceptSlug={postQuery.data.slug}
           />
         </Suspense>
@@ -64,7 +67,7 @@ export function AuthorCard(props: Readonly<{ handles: PostPageHandles }>) {
   );
 }
 
-function MoreByAuthor(
+function MoreFromTeam(
   props: Readonly<{
     posts: inferInfiniteQueryHandle<TRPC['blog']['posts']>;
     /** The post the page shows, which the list leaves out */
@@ -75,8 +78,8 @@ function MoreByAuthor(
   const moreQuery = useSuspenseInfiniteQuery(
     fromHandle(trpc, props.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-      // The query is every post by the author, so all of the author's posts
-      // read the same cache entry. Only what is shown leaves this post out
+      // The query is every post by the team, so all of the team's posts read
+      // the same cache entry. Only what is shown leaves this post out
       select: (data) => ({
         ...data,
         pages: data.pages.map((page) => ({

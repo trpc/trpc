@@ -3,7 +3,7 @@ import {
   createRootRouteWithContext,
   createRoute,
 } from '@tanstack/react-router';
-import { ChevronRight, UserRound } from 'lucide-react';
+import { ChevronRight, UsersRound } from 'lucide-react';
 import { type ReactNode, Suspense, useId } from 'react';
 
 import { Skeleton } from '@shared/ui/components/skeleton';
@@ -36,8 +36,8 @@ import type {
 /**
  * A blog whose pages need a query's data to start the next one: an
  * article's author card needs the author's id, which is in the post, and the
- * author's other posts need the author. The list shows each post's author,
- * by the id in each row.
+ * posts of the author's team need the team's id, which is in the author. The
+ * list shows each post's author, by the id in each row.
  *
  * - `waterfall`: the page fetches as it renders in the browser. Each query
  *   starts when the one before it has data, so each one is a round trip.
@@ -56,7 +56,7 @@ function postPageEntries(trpc: TRPC, id: number) {
   return {
     author,
     more: experimental_dataOf(author, (it) =>
-      prefetchEntry(trpc.post.byAuthor, { authorId: it.id }),
+      prefetchEntry(trpc.post.byTeam, { teamId: it.teamId }),
     ),
     post,
   } satisfies TRPCLoadEntries;
@@ -156,10 +156,11 @@ function AuthorSkeleton(props: { readonly postId: number }) {
   );
 }
 
-type Summaries = ReturnType<typeof blogData.byAuthor>;
+type Summaries = ReturnType<typeof blogData.byTeam>;
 
+/** The first few posts of the team, but for the one the page shows. */
 function otherPosts(posts: Summaries, postId: number) {
-  return posts.filter((post) => post.id !== postId);
+  return posts.filter((post) => post.id !== postId).slice(0, 3);
 }
 
 function MoreList(props: {
@@ -173,7 +174,7 @@ function MoreList(props: {
         className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
         id={heading}
       >
-        <UserRound className="size-3.5" /> More by {props.author}
+        <UsersRound className="size-3.5" /> More from {props.author}&apos;s team
       </h4>
       <PostCards posts={props.posts} />
     </section>
@@ -188,14 +189,14 @@ function MoreSkeleton(props: { readonly postId: number }) {
         author ? (
           <MoreList
             author={author.name}
-            posts={otherPosts(blogData.byAuthor(author.id), props.postId)}
+            posts={otherPosts(blogData.byTeam(author.teamId), props.postId)}
           />
         ) : null
       }
     >
       <div className="grid gap-2 border-t pt-3">
         <Skeleton className="h-4 w-28" />
-        <PostCardSkeletons count={2} />
+        <PostCardSkeletons count={3} />
       </div>
     </Shaped>
   );
@@ -214,7 +215,7 @@ function ArticleLayout(props: {
   );
 }
 
-/** The author card and the author's other posts, with nothing loaded. */
+/** The author card and the posts of the author's team, with nothing loaded. */
 function AuthorAndMoreSkeleton(props: { readonly postId: number }) {
   return (
     <>
@@ -246,7 +247,7 @@ function ArticleOf(props: {
 
 function MoreOf(props: {
   readonly author: string;
-  readonly more: inferQueryHandle<TRPC['post']['byAuthor']>;
+  readonly more: inferQueryHandle<TRPC['post']['byTeam']>;
   readonly postId: number;
 }) {
   const trpc = useTRPC();
@@ -260,8 +261,8 @@ function MoreOf(props: {
 }
 
 /**
- * The author's handle needs the post's data, and the list's handle needs
- * the author's. Both queries are in the cache, or on their way, by the time
+ * The author's handle needs the post's data, and the team's posts' handle
+ * needs the author's. Both queries are in the cache, or on their way, by the time
  * their data is read here.
  */
 function AuthorOf(props: { readonly handles: PostPageHandles }) {
@@ -321,8 +322,8 @@ function WaterfallArticle(): ReactNode {
   const author = authorQuery.data;
   // And nothing to ask for until the author is in
   const moreQuery = useQuery(
-    trpc.post.byAuthor.queryOptions(
-      author ? { authorId: author.id } : skipToken,
+    trpc.post.byTeam.queryOptions(
+      author ? { teamId: author.teamId } : skipToken,
     ),
   );
   return (
@@ -593,7 +594,8 @@ function createWaterfallRoutes() {
 
 /**
  * The blog's routes: a paged list with each post's author, `/posts?page=2`,
- * and articles with an author card and the author's other posts, `/posts/1`.
+ * and articles with an author card and more posts from the author's team,
+ * `/posts/1`.
  */
 export function createAuthorBlogRoutes(strategy: AuthorBlogStrategy) {
   return strategy === 'pipelined'
