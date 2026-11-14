@@ -32,6 +32,20 @@ const sanitized = t.procedure.errors((opts) => {
   return undefined;
 });
 
+/** Adds an optional field, which the router-wide shape doesn't have */
+const optionalExtra = t.procedure.errors((opts) => {
+  const { cause } = opts.error;
+  return {
+    ...opts.shape,
+    data: {
+      ...opts.shape.data,
+      ...(cause instanceof RateLimitError
+        ? { retryAfterMs: cause.retryAfterMs }
+        : {}),
+    },
+  };
+});
+
 export const DefaultErrorFormatterRouter = t.router({
   /** Uses the router-wide error shape only */
   plain: t.procedure
@@ -43,6 +57,10 @@ export const DefaultErrorFormatterRouter = t.router({
     .mutation(() => ({ ok: true })),
   /** Its handler's shape is the router-wide one with a different message */
   sanitized: sanitized
+    .input(z.object({ id: z.string() }))
+    .mutation(() => ({ ok: true })),
+  /** Its handler's shape adds an optional `retryAfterMs` */
+  optionalExtra: optionalExtra
     .input(z.object({ id: z.string() }))
     .mutation(() => ({ ok: true })),
 });

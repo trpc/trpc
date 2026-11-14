@@ -1287,15 +1287,55 @@ function addsNothingToRouterErrorType(
   const routerMembers = unionMembers(routerErrorType);
   const routerDescriptions = new Set(routerMembers.map(describe));
   // `{ ...shape, message: '…' }` prints as an object literal rather than as
-  // the shape's name, so fall back to comparing the types structurally.
+  // the shape's name, so fall back to comparing the schemas they generate.
+  // Assignability isn't enough: an added optional field passes both ways.
   const isSameType = (a: Type, b: Type) =>
-    checker.isTypeAssignableTo(a, b) && checker.isTypeAssignableTo(b, a);
+    getShapeKey(a, checker) === getShapeKey(b, checker);
 
   return unionMembers(errorType).every(
     (member) =>
       routerDescriptions.has(describe(member)) ||
       routerMembers.some((routerMember) => isSameType(member, routerMember)),
   );
+}
+
+/**
+ * A key for the schema a type generates, with components inlined and
+ * descriptions left out, so two types that describe the same payload match.
+ */
+function getShapeKey(type: Type, checker: Checker): string {
+  const scratch: SchemaCtx = {
+    checker,
+    visited: new Set(),
+    schemas: {},
+    typeToRef: new Map(),
+  };
+  const inline = (value: unknown, seen: ReadonlySet<string>): unknown => {
+    if (Array.isArray(value)) {
+      return value.map((item) => inline(item, seen));
+    }
+    if (!value || typeof value !== 'object') {
+      return value;
+    }
+    const { $ref, description: _description, ...rest } = value as SchemaObject;
+    const name = $ref?.startsWith('#/components/schemas/')
+      ? $ref.slice('#/components/schemas/'.length)
+      : null;
+    const target = name && !seen.has(name) ? scratch.schemas[name] : undefined;
+    if (name && target) {
+      return inline({ ...target, ...rest }, new Set(seen).add(name));
+    }
+    return Object.fromEntries(
+      Object.entries($ref ? { $ref, ...rest } : rest).map(([key, item]) => [
+        key,
+        // `required` is a set, so its order says nothing about the shape
+        key === 'required' && Array.isArray(item)
+          ? [...item].sort()
+          : inline(item, seen),
+      ]),
+    );
+  };
+  return canonicalize(inline(typeToJsonSchema(type, scratch), new Set()));
 }
 
 /** Extract the JSDoc comment text from a symbol, if any. */
