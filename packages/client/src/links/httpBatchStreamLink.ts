@@ -154,7 +154,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             from: res.body!,
             deserialize: (data) =>
               resolvedOpts.transformer.output.deserialize(data),
-            // onError: console.error,
+            onError: () => abortController.abort(),
             formatError(opts) {
               const error = opts.error as TRPCErrorShape;
               return TRPCClientError.from({
@@ -224,7 +224,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             isDone = true;
             _res = res;
             if ('error' in res.json) {
-              cleanup();
+              // A failed op has nothing left to stream, so it must not hold the batch open.
+              ac.abort();
               observer.error(
                 TRPCClientError.from(res.json, {
                   meta: res.meta,
@@ -244,7 +245,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           })
           .catch((err) => {
             isDone = true;
-            cleanup();
+            ac.abort();
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
