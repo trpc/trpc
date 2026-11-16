@@ -20,7 +20,6 @@ import {
 } from '@trpc/client';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
@@ -30,11 +29,7 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import {
-  buildQueryFromAsyncIterable,
-  trackQueryFetch,
-  useHookResult,
-} from '../../internals/trpcResult';
+import { fetchQueryData, useHookResult } from '../../internals/trpcResult';
 import type {
   QueriesResults,
   TRPCUseQueries,
@@ -223,19 +218,12 @@ export function createRootHooks<
                     : { signal: null }),
                 },
               };
-              const queryFetch = trackQueryFetch({
+              return fetchQueryData({
                 context: queryFunctionContext,
                 fallback: { client: queryClient, queryKey },
+                request: () =>
+                  client.query(...getClientArgs(queryKey, actualOpts)),
               });
-
-              const result = await client.query(
-                ...getClientArgs(queryKey, actualOpts),
-              );
-
-              if (isAsyncIterable(result)) {
-                return buildQueryFromAsyncIterable(result, queryFetch);
-              }
-              return result;
             },
       },
       queryClient,
@@ -279,7 +267,12 @@ export function createRootHooks<
               },
             };
 
-            return context.client.query(...getClientArgs(queryKey, actualOpts));
+            return fetchQueryData({
+              context: queryFunctionContext,
+              fallback: { client: context.queryClient, queryKey },
+              request: () =>
+                context.client.query(...getClientArgs(queryKey, actualOpts)),
+            });
           },
     });
   }
@@ -312,7 +305,12 @@ export function createRootHooks<
             },
           };
 
-          return context.client.query(...getClientArgs(queryKey, actualOpts));
+          return fetchQueryData({
+            context: queryFunctionContext,
+            fallback: { client: context.queryClient, queryKey },
+            request: () =>
+              context.client.query(...getClientArgs(queryKey, actualOpts)),
+          });
         },
       },
       context.queryClient,
@@ -732,6 +730,7 @@ export function createRootHooks<
     const proxy = createUseQueries(
       client,
       config?.abortOnUnmount ?? abortOnUnmount,
+      queryClient,
     );
 
     const queries = queriesCallback(proxy);
@@ -773,6 +772,7 @@ export function createRootHooks<
     const proxy = createUseQueries(
       client,
       config?.abortOnUnmount ?? abortOnUnmount,
+      queryClient,
     );
 
     const queries = queriesCallback(proxy);

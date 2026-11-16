@@ -96,6 +96,22 @@ function testContext() {
   const trpc = createTRPCReact<typeof appRouter>();
   const queryKey = utils.stream.queryOptions().queryKey;
 
+  function renderHook(useHook: () => unknown) {
+    function App() {
+      useHook();
+      return null;
+    }
+    render(
+      <trpc.Provider client={ctx.client} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <React.Suspense fallback={null}>
+            <App />
+          </React.Suspense>
+        </QueryClientProvider>
+      </trpc.Provider>,
+    );
+  }
+
   return {
     ...ctx,
     calls,
@@ -103,7 +119,10 @@ function testContext() {
     queryKey,
     utils,
     data: () => queryClient.getQueryData(queryKey),
-    /** Starts the query the way each entry point does. */
+    /**
+     * Starts the query the way each entry point does. A helper that fetches
+     * returns its promise.
+     */
     entryPoints: {
       useQuery() {
         function App() {
@@ -118,12 +137,29 @@ function testContext() {
           </trpc.Provider>,
         );
       },
+      useSuspenseQuery() {
+        renderHook(() => trpc.stream.useSuspenseQuery());
+      },
+      usePrefetchQuery() {
+        renderHook(() => trpc.stream.usePrefetchQuery());
+      },
+      useQueries() {
+        renderHook(() => trpc.useQueries((t) => [t.stream()]));
+      },
+      useSuspenseQueries() {
+        renderHook(() => trpc.useSuspenseQueries((t) => [t.stream()]));
+      },
       queryOptions() {
         new QueryObserver(
           queryClient,
           utils.stream.queryOptions() as never,
         ).subscribe(() => undefined);
       },
+      fetch: () => utils.stream.fetch(),
+      prefetch() {
+        void utils.stream.prefetch();
+      },
+      ensureData: () => utils.stream.ensureData(),
     },
     /** Sends a chunk and waits for the client to have received it. */
     async sendChunk(call: ReturnType<typeof createCall>, chunk: string) {
@@ -138,6 +174,40 @@ function testContext() {
     },
   };
 }
+
+describe.each([
+  'useQuery',
+  'useSuspenseQuery',
+  'usePrefetchQuery',
+  'useQueries',
+  'useSuspenseQueries',
+  'queryOptions',
+  'fetch',
+  'prefetch',
+  'ensureData',
+] as const)('the data of a query that streams, through %s', (entryPoint) => {
+  test('is the array of its chunks, written as they arrive', async () => {
+    await using t = testContext();
+    const fetching: unknown = t.entryPoints[entryPoint]();
+    await vi.waitFor(() => expect(t.calls).toHaveLength(1));
+    const [call] = t.calls;
+    call!.answer();
+
+    await t.sendChunk(call!, 'a1');
+    await vi.waitFor(() => expect(t.data()).toEqual(['a1']));
+    await t.sendChunk(call!, 'a2');
+    await vi.waitFor(() => expect(t.data()).toEqual(['a1', 'a2']));
+
+    call!.next('end');
+    await vi.waitFor(() =>
+      expect(t.queryClient.getQueryState(t.queryKey)?.fetchStatus).toBe('idle'),
+    );
+    expect(t.data()).toEqual(['a1', 'a2']);
+    if (fetching) {
+      await expect(fetching).resolves.toEqual(['a1', 'a2']);
+    }
+  });
+});
 
 describe.each(['useQuery', 'queryOptions'] as const)(
   'a query that streams, through %s',
