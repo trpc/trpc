@@ -48,7 +48,7 @@ allowBuilds:
 catalog:
   '@types/node': ^24.19.2
   tsdown: 0.23.7
-  typescript: 7.1.0-beta
+  typescript: 7.1.0-dev.20261108.1
   oxlint: ^1.92.0
   oxlint-tsgolint: ^7.0.2006
   '@oxlint/plugins': ^1.92.0
@@ -64,7 +64,7 @@ catalog:
   devalue: ^6.0.3
   valibot: ^1.5.0
   fastify: ^5.12.6
-  '@hey-api/openapi-ts': 0.0.0-next-20260930190945
+  '@hey-api/openapi-ts': 0.99.0
   '@fastify/websocket': ^11.3.7
   fastify-plugin: ^6.0.1
   next: ^16.4.5
@@ -132,6 +132,6 @@ catalogs:
     superstruct: 2.0.2
     tailwindcss: 4.3.5
     typescript: 5.9.3
-    ws: 8.22.1
+    ws: 8.22.2
     yup: 1.7.1
     zod: 4.6.7
