@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import type { RawData } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -97,6 +97,40 @@ function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
 }
 
 /**
+ * The members of a connected client that the WebSocket adapter reads, so a
+ * server that is not `ws` can be served without a cast. A `ws` `WebSocket`
+ * satisfies them.
+ * @public
+ */
+export interface WSClient {
+  /** The ready state, compared against `OPEN` (1). */
+  readyState: number;
+  on(
+    event: 'message',
+    listener: (data: RawData, isBinary: boolean) => void,
+  ): unknown;
+  on(event: 'close' | 'error', listener: (cause?: unknown) => void): unknown;
+  once(event: 'close', listener: () => void): unknown;
+  send(data: string | Uint8Array): void;
+  close(): void;
+  terminate(): void;
+}
+
+/**
+ * The members of a server that the WebSocket adapter reads: connection
+ * listeners and the connected clients. A `ws` `WebSocketServer` satisfies
+ * them.
+ * @public
+ */
+export interface WSServer {
+  clients: ReadonlySet<WSClient>;
+  on(
+    event: 'connection',
+    listener: (client: WSClient, request: IncomingMessage) => void,
+  ): unknown;
+}
+
+/**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
  * as `req`, the socket as `res`, and `info`. It's called once per
  * connection.
@@ -105,7 +139,7 @@ function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
  */
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
-  WsWebSocket
+  WSClient
 >;
 
 /**
@@ -130,8 +164,8 @@ export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
-    /** The `ws` server to serve the router on. */
-    wss: WebSocketServer;
+    /** The WebSocket server to serve the router on. */
+    wss: WSServer;
     /** Only connections whose URL starts with this are served. */
     prefix?: string;
     /**
@@ -206,7 +240,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: WsWebSocket, req: IncomingMessage) => {
+  return (client: WSClient, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
@@ -880,7 +914,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
  * message comes within `pongWaitMs`.
  */
 export function handleKeepAlive(
-  client: WsWebSocket,
+  client: WSClient,
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {
