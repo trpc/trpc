@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import * as http from 'http';
+import net from 'net';
 import { expect, vi } from 'vitest';
+import { TRPCError } from '../../@trpc/server';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 
 function createServer(opts: Parameters<typeof incomingMessageToRequest>[2]) {
@@ -366,6 +368,73 @@ test('does not abort request after a response that finished normally', async () 
 
     expect(abortedOnClose).toEqual([false]);
     expect(requests.map((request) => request.signal.aborted)).toEqual([false]);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('rejects the body when the client disconnects mid-body', async () => {
+  const result: {
+    outcome?:
+      | { status: 'fulfilled'; value: string }
+      | { status: 'rejected'; reason: unknown };
+  } = {};
+  const server = http.createServer((req, res) => {
+    const request = incomingMessageToRequest(req, res, {
+      maxBodySize: null,
+    });
+    // hold the response open while the body is being read, like the
+    // adapters do
+    request
+      .text()
+      .then(
+        (value) => {
+          result.outcome = { status: 'fulfilled', value };
+        },
+        (reason) => {
+          result.outcome = { status: 'rejected', reason };
+        },
+      )
+      .finally(() => res.end());
+  });
+  server.listen(0);
+  try {
+    const address = server.address();
+    assert(address && typeof address === 'object');
+
+    const socket = net.connect(address.port, '127.0.0.1');
+    await new Promise<void>((resolve) => socket.once('connect', resolve));
+
+    const body = 'x'.repeat(128);
+    socket.write(
+      [
+        'POST /test HTTP/1.1',
+        `Host: localhost:${address.port}`,
+        // claim more bytes than are sent, so the body can never end cleanly
+        `content-length: ${body.length + 1024}`,
+        '',
+        '',
+        body,
+      ].join('\r\n'),
+    );
+
+    // let the server receive the request head and the partial body
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    socket.destroy();
+
+    await vi.waitFor(() => expect(result.outcome).toBeDefined());
+    const outcome = result.outcome;
+    if (!outcome || outcome.status !== 'rejected') {
+      throw new Error(`expected the body read to reject, got ${outcome}`);
+    }
+
+    const error = outcome.reason as TRPCError;
+    expect(error).toBeInstanceOf(TRPCError);
+    expect(error.code).toBe('CLIENT_CLOSED_REQUEST');
+    expect(error.message).toBe(
+      'The client disconnected while sending the request body',
+    );
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

@@ -1,4 +1,4 @@
-import type { AddressInfo } from 'net';
+import net, { type AddressInfo } from 'net';
 import { networkInterfaces } from 'os';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import { TRPCError } from '@trpc/server';
@@ -367,4 +367,62 @@ test('recipe: max batch size on the server', async () => {
   ).toBe(true);
 
   server.close();
+});
+
+// Regression check: without ending the body stream when the client
+// disconnects, this test hangs — the procedure never runs and onError never
+// fires
+test('calls onError when the client disconnects mid-body', async () => {
+  const onError = vi.fn();
+  let procedureRan = false;
+
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    longInput: t.procedure.input(z.string()).mutation(({ input }) => {
+      procedureRan = true;
+      return input;
+    }),
+  });
+
+  const server = createHTTPServer({
+    router: appRouter,
+    onError,
+  });
+
+  server.listen(0);
+  const port = (server.address() as AddressInfo).port;
+
+  // a raw socket that sends half of a JSON body and then disconnects
+  const socket = net.connect(port, '127.0.0.1');
+  await new Promise<void>((resolve) => socket.once('connect', resolve));
+
+  const body = 'x'.repeat(128);
+  socket.write(
+    [
+      'POST /longInput HTTP/1.1',
+      `Host: localhost:${port}`,
+      'content-type: application/json',
+      // claim more bytes than are sent, so the body can never end cleanly
+      `content-length: ${body.length + 1024}`,
+      '',
+      '',
+      body,
+    ].join('\r\n'),
+  );
+
+  // let the server receive the request head and the partial body
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  socket.destroy();
+
+  await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1), {
+    timeout: 1500,
+  });
+
+  // the procedure must not have run with a partial body
+  expect(procedureRan).toBe(false);
+
+  await new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
 });
