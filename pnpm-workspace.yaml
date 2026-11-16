@@ -23,9 +23,13 @@ preferWorkspacePackages: true
 linkWorkspacePackages: true
 nodeOptions: --no-warnings
 
-# Install only versions published at least 7 days ago (in minutes). Renovate's
+# Resolve only versions published at least 7 days ago (in minutes). Renovate's
 # minimumReleaseAge in .github/renovate.json matches it.
 minimumReleaseAge: 10080
+# Non-strict: in-range resolution still prefers mature versions, but a version
+# you pin explicitly (e.g. an urgent security fix) installs even if it is newer,
+# and Renovate's `pnpm update --no-save` works (pnpm/pnpm#14835).
+minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
