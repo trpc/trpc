@@ -394,35 +394,38 @@ test('calls onError when the client disconnects mid-body', async () => {
 
   // a raw socket that sends half of a JSON body and then disconnects
   const socket = net.connect(port, '127.0.0.1');
-  await new Promise<void>((resolve) => socket.once('connect', resolve));
+  try {
+    await new Promise<void>((resolve) => socket.once('connect', resolve));
 
-  const body = 'x'.repeat(128);
-  socket.write(
-    [
-      'POST /longInput HTTP/1.1',
-      `Host: localhost:${port}`,
-      'content-type: application/json',
-      // claim more bytes than are sent, so the body can never end cleanly
-      `content-length: ${body.length + 1024}`,
-      '',
-      '',
-      body,
-    ].join('\r\n'),
-  );
+    const body = 'x'.repeat(128);
+    socket.write(
+      [
+        'POST /longInput HTTP/1.1',
+        `Host: localhost:${port}`,
+        'content-type: application/json',
+        // claim more bytes than are sent, so the body can never end cleanly
+        `content-length: ${body.length + 1024}`,
+        '',
+        '',
+        body,
+      ].join('\r\n'),
+    );
 
-  // let the server receive the request head and the partial body
-  await new Promise((resolve) => setTimeout(resolve, 100));
+    // let the server receive the request head and the partial body
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-  socket.destroy();
+    socket.destroy();
 
-  await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1), {
-    timeout: 1500,
-  });
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1), {
+      timeout: 1500,
+    });
 
-  // the procedure must not have run with a partial body
-  expect(procedureRan).toBe(false);
-
-  await new Promise<void>((resolve) => {
-    server.close(() => resolve());
-  });
+    // the procedure must not have run with a partial body
+    expect(procedureRan).toBe(false);
+  } finally {
+    socket.destroy();
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
+  }
 });

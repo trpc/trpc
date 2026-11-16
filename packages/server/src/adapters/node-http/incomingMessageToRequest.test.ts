@@ -427,7 +427,7 @@ test('rejects the body when the client disconnects mid-body', async () => {
     const outcome = result.outcome;
     if (outcome?.status !== 'rejected') {
       throw new Error(
-        `expected the body read to reject, got ${JSON.stringify(outcome)}`,
+        `expected the body read to reject, got ${outcome?.status}`,
       );
     }
 
