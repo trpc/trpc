@@ -23,6 +23,9 @@ preferWorkspacePackages: true
 linkWorkspacePackages: true
 nodeOptions: --no-warnings
 
+# Install only versions published at least 7 days ago (in minutes). Renovate's
+# minimumReleaseAge in .github/renovate.json matches it.
+minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
