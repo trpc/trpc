@@ -426,7 +426,9 @@ test('rejects the body when the client disconnects mid-body', async () => {
     await vi.waitFor(() => expect(result.outcome).toBeDefined());
     const outcome = result.outcome;
     if (outcome?.status !== 'rejected') {
-      throw new Error(`expected the body read to reject, got ${outcome}`);
+      throw new Error(
+        `expected the body read to reject, got ${JSON.stringify(outcome)}`,
+      );
     }
 
     const error = outcome.reason as TRPCError;
