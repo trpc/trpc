@@ -18,7 +18,7 @@ skill:
     CreateExpressContextOptions. Mount at a path prefix like
     app.use('/trpc', ...). Adapter options: onError, maxBatchSize,
     maxBodySize, middleware. Body parsers registered before tRPC (Express 4's
-    express.json(), or express.raw()) break FormData and binary inputs, so
+    express.json(), or express.text()) break FormData and binary inputs, so
     scope them to non-tRPC routes.
   include:
     - server/adapters#common-options
@@ -134,7 +134,7 @@ tRPC parses request bodies itself, so tRPC routes don't need `express.json()`. I
 
 - **Express 5**: `express.json()` and `express.urlencoded()` leave other content types unread, so tRPC still reads them.
 - **Express 4**: the parsers set `req.body` to `{}` on content types they skip, so tRPC receives `{}` instead of the form data or file.
-- In both versions, a parser that reads the body you upload, like `express.raw()` for `application/octet-stream`, breaks binary inputs.
+- In both versions, a parser that reads the body you upload as text, like `express.text()`, breaks binary inputs. `express.raw()` keeps the bytes it read, so tRPC uses them as sent.
 
 To be safe, register body parsers only on the routes that need them:
 
