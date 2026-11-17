@@ -17,14 +17,19 @@ import {
 } from '@shared/ui/components/card';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { Spinner } from '@shared/ui/components/spinner';
+import { useQuery } from '@tanstack/react-query';
+import { useSubscription } from '@trpc/tanstack-react-query';
 import { CircleAlertIcon } from 'lucide-react';
 import Head from 'next/head';
 import React from 'react';
-import { trpc } from '../utils/trpc';
+import { trpc, useTRPC } from '../utils/trpc';
 
 function QueryExample() {
+  const trpc = useTRPC();
   // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
-  const greetingQuery = trpc.greeting.useQuery({ name: 'client' });
+  const greetingQuery = useQuery(
+    trpc.greeting.queryOptions({ name: 'client' }),
+  );
 
   switch (greetingQuery.status) {
     case 'pending':
@@ -51,6 +56,7 @@ function QueryExample() {
 }
 
 function SubscriptionStatus(props: {
+  // TODO(@trpc/upgrade): `trpc` is now `const trpc = useTRPC()` inside components and hooks, see https://trpc.io/docs/client/tanstack-react-query/migrating
   subscription: ReturnType<typeof trpc.loopData.useSubscription>;
 }) {
   const { subscription } = props;
@@ -82,7 +88,8 @@ function SubscriptionStatus(props: {
 }
 
 function SubscriptionExample() {
-  const subscription = trpc.loopData.useSubscription();
+  const trpc = useTRPC();
+  const subscription = useSubscription(trpc.loopData.subscriptionOptions());
   return (
     <dl className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-3 text-sm">
       <dt className="text-muted-foreground">Last data</dt>
