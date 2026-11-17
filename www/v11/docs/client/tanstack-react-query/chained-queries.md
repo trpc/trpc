@@ -932,7 +932,7 @@ Use this page's way when you'd rather keep the procedures small.
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
-- **Set the link's `maxItems` to it, or lower.** The calls the server makes count too. A request with more than `maxBatchSize` fails as a whole, the query it belongs to included.
+- **Set the link's `maxItems` to it, or lower.** A request with more calls than `maxBatchSize` fails as a whole, the query it belongs to included. A call whose runs for items would go over it is refused by itself: the list loads, and its items each ask by themselves.
 - **A call reads 64 values at most, and a request fills in about a million characters of JSON.** Each value is copied into every input it goes in. The server estimates how long every copy is in JSON, escapes included, and counts the whole input of every run of a call for every item. A call that would go over that is refused: it fails, or its items each ask by themselves. It counts characters as JavaScript does, which are up to 3 bytes each in UTF-8: an emoji is two.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
