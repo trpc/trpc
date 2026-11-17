@@ -29,6 +29,8 @@ concurrency:
   # Not `github.workflow`, which is the caller's when the release workflow
   # calls this. Every sync pushes main, so they share one group.
   group: subtree-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  # A newer pending run would otherwise cancel a release's waiting sync
+  queue: max
   cancel-in-progress: false # A sync stopped halfway leaves some examples behind
 # Downstream pushes use the deploy key, not `GITHUB_TOKEN`
 permissions:
