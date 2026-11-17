@@ -69,6 +69,7 @@ export default function transform(
   migrateCreateTRPCNext(root);
   migrateProviderUsage(root);
   migrateWithTRPCUsage(root);
+  flagServerSideHelpers(root);
 
   return changed ? printSource({ j, root }, file.source) : undefined;
 
@@ -770,6 +771,26 @@ export function withTRPC<TInitialProps extends object>(
         },
       );
     }
+  }
+
+  /**
+   * `createServerSideHelpers` comes from `@trpc/react-query/server`, which
+   * keeps the deprecated package installed. Its replacement prefetches into
+   * a QueryClient, so each use needs rewriting by hand.
+   */
+  function flagServerSideHelpers(collection: Collection) {
+    collection
+      .find(j.ImportDeclaration, {
+        source: { value: '@trpc/react-query/server' },
+      })
+      .forEach((path) => {
+        addTodo(
+          j,
+          path,
+          'prefetch with `createTRPCOptionsProxy` and `dehydrate` instead of `createServerSideHelpers` from the deprecated `@trpc/react-query`, see https://trpc.io/docs/client/nextjs/pages-router/server-side-helpers',
+        );
+        changed = true;
+      });
   }
 
   // `export default trpc.withTRPC(MyApp)` → `export default withTRPC(MyApp)`
