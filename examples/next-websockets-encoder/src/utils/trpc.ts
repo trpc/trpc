@@ -43,7 +43,6 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   return wsLink({ client });
 }
 
-// TODO(@trpc/upgrade): createTRPCNext had `ssr: true`, which has no replacement. Prefetch each page's queries in `getServerSideProps` instead, see https://trpc.io/docs/client/nextjs/pages-router/ssr
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<AppRouter>();
 

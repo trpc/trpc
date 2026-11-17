@@ -1,8 +1,32 @@
-import { useQuery } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
+import { dehydrate, useQuery } from '@tanstack/react-query';
+import {
+  createTRPCOptionsProxy,
+  useSubscription,
+} from '@trpc/tanstack-react-query';
 import Head from 'next/head';
 import { useState } from 'react';
-import { useTRPC } from '~/utils/trpc';
+import { appRouter } from '~/server/routers/_app';
+import { makeQueryClient, useTRPC } from '~/utils/trpc';
+
+/**
+ * Was `ssr: true` in `createTRPCNext`: prefetch the page's queries so they
+ * are in the first HTML.
+ */
+export async function getServerSideProps() {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: {},
+    queryClient,
+  });
+
+  await Promise.all([
+    queryClient.prefetchQuery(trpc.healthcheck.queryOptions()),
+    queryClient.prefetchQuery(trpc.greet.queryOptions({ name: 'world' })),
+  ]);
+
+  return { props: { trpcState: dehydrate(queryClient) } };
+}
 
 export default function IndexPage() {
   const trpc = useTRPC();
