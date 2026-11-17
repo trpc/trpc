@@ -32,6 +32,8 @@ name: Release Packages
 # it to the next major; once that's merged, the automatic release publishes
 # the new major's .0.0. A commit marked breaking (`feat!:`) fails the
 # automatic release until then, unless its sha is in `notBreaking`.
+#
+# After a release, it syncs the standalone examples (subtree.yml).
 
 permissions:
   contents: read
@@ -129,3 +131,11 @@ jobs:
         run: |
           git remote set-url --push origin "https://x-access-token:${ACCESS_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           node tooling/release/src/bin/release.ts auto --provenance --from "$RUNNER_TEMP/release"
+
+  # The standalone examples install `@trpc/*@latest`, so they sync once a
+  # release is out, not on every push.
+  sync-examples:
+    needs: publish-auto
+    uses: ./.github/workflows/subtree.yml
+    secrets:
+      TRPC_DEPLOY_TOKEN: ${{ secrets.TRPC_DEPLOY_TOKEN }}
