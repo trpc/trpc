@@ -1,25 +1,30 @@
+import { useQuery } from '@tanstack/react-query';
+import { useSubscription } from '@trpc/tanstack-react-query';
 import Head from 'next/head';
 import { useState } from 'react';
-import { trpc } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
 
 export default function IndexPage() {
+  const trpc = useTRPC();
   const [name, setName] = useState('world');
   const [messages, setMessages] = useState<number[]>([]);
 
-  const greetQuery = trpc.greet.useQuery({ name });
-  const healthQuery = trpc.healthcheck.useQuery();
-  const randomNumberSub = trpc.randomNumber.useSubscription(undefined, {
-    onData: (data) => {
-      console.log('onData received:', data, typeof data);
-      setMessages((prev) => [...prev.slice(-9), data]);
-    },
-    onStarted: () => {
-      console.log('Subscription started!');
-    },
-    onError: (err) => {
-      console.error('Subscription error:', err);
-    },
-  });
+  const greetQuery = useQuery(trpc.greet.queryOptions({ name }));
+  const healthQuery = useQuery(trpc.healthcheck.queryOptions());
+  const randomNumberSub = useSubscription(
+    trpc.randomNumber.subscriptionOptions(undefined, {
+      onData: (data) => {
+        console.log('onData received:', data, typeof data);
+        setMessages((prev) => [...prev.slice(-9), data]);
+      },
+      onStarted: () => {
+        console.log('Subscription started!');
+      },
+      onError: (err) => {
+        console.error('Subscription error:', err);
+      },
+    }),
+  );
 
   return (
     <>
