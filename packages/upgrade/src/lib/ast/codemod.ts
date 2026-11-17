@@ -428,14 +428,19 @@ export function isShadowed(
 ): boolean {
   const scopeBody = (opts.scope.node as { body?: unknown }).body;
   const declaresName = (statement: unknown) =>
-    j.VariableDeclaration.check(statement) &&
-    statement.declarations.some(
-      (d) =>
-        d !== opts.declarator &&
-        j.VariableDeclarator.check(d) &&
-        // Bindings, not keys: `{ utils: other }` binds `other`
-        paramBindings(j, [d.id]).has(opts.name),
-    );
+    // `function useQuery() {}` or `class X {}` in a block
+    ((j.FunctionDeclaration.check(statement) ||
+      j.ClassDeclaration.check(statement)) &&
+      j.Identifier.check(statement.id) &&
+      statement.id.name === opts.name) ||
+    (j.VariableDeclaration.check(statement) &&
+      statement.declarations.some(
+        (d) =>
+          d !== opts.declarator &&
+          j.VariableDeclarator.check(d) &&
+          // Bindings, not keys: `{ utils: other }` binds `other`
+          paramBindings(j, [d.id]).has(opts.name),
+      ));
   for (
     let current = path.parent;
     current && current.node !== opts.scope.node;

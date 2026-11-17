@@ -97,11 +97,43 @@ export default function transform(
     return j.commentLine(` TODO(@trpc/upgrade): ${message}`, true, false);
   }
 
+  /**
+   * The names the file calls `factory` by: its own, or an alias such as
+   * `import { createTRPCReact as createReact } from '@trpc/react-query'`.
+   */
+  function factoryNames(factory: string): Set<string> {
+    const names = new Set([factory]);
+    root
+      .find(j.ImportDeclaration)
+      .filter((p) =>
+        /^@trpc\/(react-query|next)$/.test(String(p.node.source.value)),
+      )
+      .forEach((p) => {
+        for (const specifier of p.node.specifiers ?? []) {
+          if (
+            j.ImportSpecifier.check(specifier) &&
+            specifier.imported.name === factory &&
+            j.Identifier.check(specifier.local)
+          ) {
+            names.add(specifier.local.name);
+          }
+        }
+      });
+    return names;
+  }
+
   function trpcDeclarations(collection: Collection, factory: string) {
+    const names = factoryNames(factory);
     return collection
       .find(j.VariableDeclarator, {
         id: { type: 'Identifier', name: trpcName },
-        init: { type: 'CallExpression', callee: { name: factory } },
+        init: {
+          type: 'CallExpression',
+          callee: {
+            type: 'Identifier',
+            name: (name: string) => names.has(name),
+          },
+        },
       })
       .paths();
   }
@@ -138,10 +170,11 @@ export default function transform(
   }
 
   function moveImport(from: string, oldName: string) {
-    // Another `createTRPCNext(…)` in the file still needs it
+    // Another `createTRPCNext(…)` in the file still needs it, by any name
+    const names = factoryNames(oldName);
     const stillUsed =
       root
-        .find(j.Identifier, { name: oldName })
+        .find(j.Identifier, { name: (name: string) => names.has(name) })
         .filter((p) => isValueReference(j, p))
         .size() > 0;
     root
@@ -430,7 +463,22 @@ export default function transform(
           queryClientConfig === 'yes'
             ? `export function makeQueryClient() {\n  return new ${value(rq, 'QueryClient')}(${configCall}.queryClientConfig);\n}`
             : queryClientConfig === 'unknown'
-              ? `export function makeQueryClient() {\n  const config = ${configCall};\n  return new ${value(rq, 'QueryClient')}(\n    'queryClientConfig' in config\n      ? (config.queryClientConfig as ${type(rq, 'QueryClientConfig')})\n      : undefined,\n  );\n}`
+              ? (() => {
+                  const queryClient = value(rq, 'QueryClient');
+                  const queryClientConfig = type(rq, 'QueryClientConfig');
+                  // Not a name the line uses, e.g. \`QueryClient as config\`
+                  // or \`config: config\`
+                  const taken = new Set([
+                    queryClient,
+                    queryClientConfig,
+                    ...(configCall.match(/[A-Za-z_$][\w$]*/g) ?? []),
+                  ]);
+                  let local = 'config';
+                  for (let i = 2; taken.has(local); i++) {
+                    local = `config${i}`;
+                  }
+                  return `export function makeQueryClient() {\n  const ${local} = ${configCall};\n  return new ${queryClient}(\n    'queryClientConfig' in ${local}\n      ? (${local}.queryClientConfig as ${queryClientConfig})\n      : undefined,\n  );\n}`;
+                })()
               : `export function makeQueryClient() {\n  return new ${value(rq, 'QueryClient')}();\n}`,
         ),
       );
