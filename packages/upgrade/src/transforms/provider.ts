@@ -512,9 +512,17 @@ export default function transform(
         );
         transformerSource = 'hydrationTransformer';
       }
+      const dehydratedState = type(rq, 'DehydratedState');
+      // A typed `const`, not a cast: superjson's `deserialize<T>` infers `T`
+      // from it, and lint flags a cast that changes nothing
       const hydrationState = transformerSource
-        ? `(pageProps?.trpcState === undefined ? undefined : ${transformerSource}.deserialize(pageProps.trpcState as Parameters<typeof ${transformerSource}.deserialize>[0])) as ${type(rq, 'DehydratedState')} | undefined`
-        : `pageProps?.trpcState as ${type(rq, 'DehydratedState')} | undefined`;
+        ? `const state: ${dehydratedState} | undefined =
+      pageProps?.trpcState === undefined
+        ? undefined
+        : ${transformerSource}.deserialize(
+            pageProps.trpcState as Parameters<typeof ${transformerSource}.deserialize>[0],
+          );`
+        : `const state = pageProps?.trpcState as ${dehydratedState} | undefined;`;
       const appTypeName = type('next/app', 'AppType');
       const useStateName = value('react', 'useState');
       const createElementName = value('react', 'createElement');
@@ -532,13 +540,14 @@ export function withTRPC<TInitialProps extends object>(
     const [queryClient] = ${useStateName}(makeQueryClient);
     const [trpcClient] = ${useStateName}(makeTRPCClient);
     const pageProps = props.pageProps as { trpcState?: unknown } | undefined;
+    ${hydrationState}
     return ${createElementName}(${value(rq, 'QueryClientProvider')}, {
       client: queryClient,
       children: ${createElementName}(TRPCProvider, {
         trpcClient,
         queryClient,
         children: ${createElementName}(${value(rq, 'HydrationBoundary')}, {
-          state: ${hydrationState},
+          state,
           children: ${createElementName}(App, props),
         }),
       }),

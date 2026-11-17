@@ -61,6 +61,15 @@ export function withTRPC<TInitialProps extends object>(
         }
       | undefined;
 
+    const state: DehydratedState | undefined =
+      pageProps?.trpcState === undefined
+        ? undefined
+        : hydrationTransformer.deserialize(
+            pageProps.trpcState as Parameters<
+              typeof hydrationTransformer.deserialize
+            >[0],
+          );
+
     return createElement(QueryClientProvider, {
       client: queryClient,
 
@@ -69,14 +78,7 @@ export function withTRPC<TInitialProps extends object>(
         queryClient,
 
         children: createElement(HydrationBoundary, {
-          state: (pageProps?.trpcState === undefined
-            ? undefined
-            : hydrationTransformer.deserialize(
-                pageProps.trpcState as Parameters<
-                  typeof hydrationTransformer.deserialize
-                >[0],
-              )) as DehydratedState | undefined,
-
+          state,
           children: createElement(App, props),
         }),
       }),

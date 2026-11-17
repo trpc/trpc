@@ -64,6 +64,8 @@ export function withTRPC<TInitialProps extends object>(
         }
       | undefined;
 
+    const state = pageProps?.trpcState as DehydratedState | undefined;
+
     return createElement(QueryClientProvider, {
       client: queryClient,
 
@@ -72,7 +74,7 @@ export function withTRPC<TInitialProps extends object>(
         queryClient,
 
         children: createElement(HydrationBoundary, {
-          state: pageProps?.trpcState as DehydratedState | undefined,
+          state,
           children: createElement(App, props),
         }),
       }),
