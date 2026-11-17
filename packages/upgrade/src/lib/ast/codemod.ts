@@ -657,3 +657,15 @@ export function addTodo(j: JSCodeshift, path: ASTPath, message: string): void {
   const comment = j.commentLine(text, true, false);
   target.comments = [...(target.comments ?? []), comment];
 }
+
+/** `a`, `'a'` or `"a"` as an object key; null for computed or other keys. */
+export function staticKeyName(
+  j: JSCodeshift,
+  property: { key: unknown; computed?: boolean | undefined },
+): string | null {
+  const { key } = property;
+  if (j.Identifier.check(key)) return property.computed ? null : key.name;
+  if (j.StringLiteral.check(key)) return key.value;
+  if (j.Literal.check(key) && typeof key.value === 'string') return key.value;
+  return null;
+}

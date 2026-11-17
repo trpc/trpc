@@ -16,6 +16,7 @@ import {
   isValueReference,
   printSource,
   replaceImportedName,
+  staticKeyName,
   type ExpressionKind,
 } from '../lib/ast/codemod';
 import type { RouterTypeSource } from '../lib/ast/scanners';
@@ -267,8 +268,7 @@ export default function transform(
             (j.ObjectProperty.check(p) ||
               j.Property.check(p) ||
               j.ObjectMethod.check(p)) &&
-            j.Identifier.check(p.key) &&
-            p.key.name === name,
+            staticKeyName(j, p) === name,
         );
       const valueOf = (name: string): ExpressionKind | null => {
         const p = option(name);
@@ -365,8 +365,7 @@ export default function transform(
                   r.properties.some(
                     (p) =>
                       (j.ObjectProperty.check(p) || j.Property.check(p)) &&
-                      j.Identifier.check(p.key) &&
-                      p.key.name === 'queryClientConfig',
+                      staticKeyName(j, p) === 'queryClientConfig',
                   ),
               )
               ? 'yes'
