@@ -6,9 +6,7 @@
     "build": "tsc",
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 3000 && tsx watch src/client",
-    "dev": "run-p dev:* --print-label",
-    "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
+    "dev": "run-p dev:* --print-label"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -18,7 +16,6 @@
   "devDependencies": {
     "@types/node": "^24.19.2",
     "npm-run-all2": "catalog:",
-    "start-server-and-test": "^1.12.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "wait-port": "^1.1.0"

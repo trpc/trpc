@@ -8,8 +8,6 @@
     "start:server": "bun run dist/index.js",
     "start:client": "wait-port 3000 && bun run dist/client.js",
     "lint": "oxlint src",
-    "test-dev": "start-server-and-test 'bun run src/index.ts' 3000 'bun run src/client.ts'",
-    "test-start": "start-server-and-test 'bun run dist/index.js' 3000 'bun run dist/client.js'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,7 +18,6 @@
     "@types/bun": "^1.1.12",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^1.12.0",
     "typescript": "^5.9.2",
     "wait-port": "^1.1.0"
   }
