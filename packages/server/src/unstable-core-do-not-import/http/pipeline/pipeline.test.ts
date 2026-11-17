@@ -702,6 +702,94 @@ describe('what a call reads', () => {
     });
   });
 
+  test('what is not there is in the input as in one a client fills in: `null` in a list, and left out of an object', async () => {
+    const seen: Record<'once' | 'whole' | 'each', unknown[]> = {
+      once: [],
+      whole: [],
+      each: [],
+    };
+    await using server = serve({
+      ...defaults,
+      fns: {
+        post: () => ({ authorId: 'ada' }),
+        list: () => ({ items: [{ id: 'a' }, {}] }),
+        once: (input) => seen.once.push(input),
+        whole: (input) => seen.whole.push(input),
+        each: (input) => seen.each.push(input),
+      },
+    });
+    const post = sent('post', undefined);
+    const list = sent('list', undefined);
+    const once = call('once', { ids: ['x', 'y'], filter: { id: 'x' } }, [
+      { to: ['ids', '0'], from: post, path: ['nope'], each: false },
+      { to: ['filter', 'id'], from: post, path: ['nope'], each: false },
+      { to: ['filter', 'author'], from: post, path: ['authorId'], each: false },
+    ]);
+    const whole = call('whole', 'replaced', [
+      { to: [], from: post, path: ['nope'], each: false },
+    ]);
+    const each = call('each', { ids: ['x'], filter: {} }, [
+      { to: ['ids', '0'], from: list, path: ['items', null, 'id'], each: true },
+      {
+        to: ['filter', 'id'],
+        from: list,
+        path: ['items', null, 'id'],
+        each: true,
+      },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post, list],
+      calls: [once, whole, each],
+    });
+
+    // Not `toEqual`, which takes a property that is `undefined` for none
+    expect(seen).toStrictEqual({
+      once: [{ ids: [null, 'y'], filter: { author: 'ada' } }],
+      whole: [undefined],
+      each: [
+        { ids: ['a'], filter: { id: 'a' } },
+        { ids: [null], filter: {} },
+      ],
+    });
+  });
+
+  test('with a transformer that carries `undefined`, what is not there is `undefined`', async () => {
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      transformer: transformers.superjson,
+      fns: {
+        post: () => ({ authorId: 'ada' }),
+        echo: (input) => {
+          seen.push(input);
+          return null;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const echo = call('echo', { ids: ['x'], filter: {} }, [
+      { to: ['ids', '0'], from: post, path: ['nope'], each: false },
+      { to: ['filter', 'id'], from: post, path: ['nope'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      transformer: transformers.superjson,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [echo],
+    });
+
+    expect(seen).toStrictEqual([
+      { ids: [undefined], filter: { id: undefined } },
+    ]);
+  });
+
   test('a copy: a function that changes its input changes nothing another reads', async () => {
     const seen: unknown[] = [];
     await using server = serve({

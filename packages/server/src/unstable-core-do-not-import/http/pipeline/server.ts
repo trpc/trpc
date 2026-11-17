@@ -277,12 +277,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     });
   }
   /**
-   * A value as a call gets it when a client sends it: through the transformer
-   * of inputs. It is a value of its own too, so a call that changes its input
-   * in place changes nothing that another call, or another run, reads.
+   * A filled-in input as a call gets it when a client fills it in and sends
+   * it: through the transformer of inputs, all of it, so what is not there
+   * is `null` in a list and left out of an object where JSON makes it so. It
+   * is a value of its own too, so a call that changes its input in place
+   * changes nothing that another call, or another run, reads.
    */
-  function asSent(value: unknown) {
-    return overTheWire(opts.transformer.input, value);
+  function asSent(input: unknown) {
+    return overTheWire(opts.transformer.input, input);
   }
   /** `input` with what `read` reads, which is at its path in `data` */
   function filled(
@@ -293,7 +295,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     return writePipelinePath({
       input,
       to: read.to,
-      value: asSent(readPipelinePath(data, read.path)),
+      value: readPipelinePath(data, read.path),
     });
   }
 
@@ -329,8 +331,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const inputs: unknown[] = [];
     // By index: a list with holes has a run for each of them too
     for (const index of items.keys()) {
-      // Every run has an input of its own, as calls the client sends do
-      let input = asSent(base);
+      let input = base;
       for (const read of reads.reads) {
         input = filled(
           input,
@@ -338,7 +339,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           read.kind === 'item' ? items[index] : await dataOf(read.from),
         );
       }
-      inputs.push(input);
+      // Every run has an input of its own, as calls the client sends do
+      inputs.push(asSent(input));
     }
     return inputs;
   }
@@ -375,6 +377,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       for (const value of reads.reads) {
         input = filled(input, value, await dataOf(value.from));
       }
+      input = asSent(input);
       read = [input];
       return input;
     };
