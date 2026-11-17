@@ -1,13 +1,13 @@
 import {
   QueryClient as QueryClientProvider,
   QueryClientProvider as RQProvider,
-  HydrationBoundary,
   type DehydratedState,
+  HydrationBoundary,
 } from '@tanstack/react-query';
 import { httpBatchLink, createTRPCClient } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppType } from 'next/app';
-import { createElement, useState } from 'react';
+import { useState, createElement } from 'react';
 import type { AppRouter } from './basic.trpc';
 
 // Each alias is used once: `QueryClient` is `QueryClientProvider` here

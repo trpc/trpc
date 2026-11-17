@@ -1,14 +1,14 @@
 import {
   QueryClient,
+  type DehydratedState,
   QueryClientProvider,
   HydrationBoundary,
-  type DehydratedState,
 } from '@tanstack/react-query';
 import { httpBatchLink, createTRPCClient } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { NextPageContext } from 'next';
 import type { AppType } from 'next/app';
-import { createElement, useState } from 'react';
+import { useState, createElement } from 'react';
 import type { AppRouter } from './basic.trpc';
 
 // A default value keeps the parameter, typed
