@@ -60,6 +60,13 @@ function createBody(
 
   return new ReadableStream({
     start(controller) {
+      const cleanup = () => {
+        source.off('data', onData);
+        source.off('end', onEnd);
+        source.off('error', onStreamError);
+        source.off('close', onClose);
+      };
+
       const onData = (chunk: Buffer) => {
         size += chunk.length;
         if (!opts.maxBodySize || size <= opts.maxBodySize) {
@@ -74,8 +81,7 @@ function createBody(
           }),
         );
         hasClosed = true;
-        source.off('data', onData);
-        source.off('end', onEnd);
+        cleanup();
       };
 
       const onEnd = () => {
@@ -83,13 +89,41 @@ function createBody(
           return;
         }
         hasClosed = true;
-        source.off('data', onData);
-        source.off('end', onEnd);
+        cleanup();
         controller.close();
+      };
+
+      // the client disconnected, or the stream failed, before the body was
+      // fully sent — end the stream with an error instead of waiting for an
+      // `end` that will never come
+      const onStreamError = (cause: Error | undefined) => {
+        if (hasClosed) {
+          return;
+        }
+        hasClosed = true;
+        cleanup();
+        controller.error(
+          new TRPCError({
+            code: 'CLIENT_CLOSED_REQUEST',
+            message: 'The client disconnected while sending the request body',
+            cause,
+          }),
+        );
+      };
+
+      // `close` also fires after a clean `end`, where `onEnd` already closed
+      // the stream
+      const onClose = () => {
+        if (source.readableEnded) {
+          return;
+        }
+        onStreamError(undefined);
       };
 
       source.on('data', onData);
       source.on('end', onEnd);
+      source.on('error', onStreamError);
+      source.on('close', onClose);
     },
     cancel() {
       source.destroy();
