@@ -1,9 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
 export function Component() {
-  const queryClient = useQueryClient();
-
   return 'ok';
 }
 

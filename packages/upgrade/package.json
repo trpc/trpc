@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "try-examples": "node scripts/try-examples.ts"
+    "try-examples": "tsx scripts/try-examples.ts"
   },
   "files": [
     "dist",

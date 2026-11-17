@@ -102,7 +102,7 @@ const ordered = (['provider', 'hooks'] as const).filter((name) =>
   selected.includes(name),
 );
 
-const { fileNames, references } = scanProject();
+const { fileNames, references, routerType } = scanProject();
 const trpcImportName = references.importName;
 if (process.env['VERBOSE']) {
   log.info(`Using \`${trpcImportName}\` as the name of the tRPC hooks`);
@@ -117,6 +117,7 @@ for (const name of ordered) {
   await run(transform, committedFiles, {
     ...args,
     trpcImportName,
+    routerType,
     silent: !args.verbose,
   });
   log.success(`Transform completed`);

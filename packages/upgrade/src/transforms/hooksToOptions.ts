@@ -18,7 +18,7 @@ import {
   isShadowed,
   isValueReference,
   paramBindings,
-  quoteOf,
+  printSource,
   replaceImportedName,
   rootIdentifierName,
   uniqueName,
@@ -198,7 +198,7 @@ export default function transform(
     );
   }
 
-  return root.toSource({ quote: quoteOf(file.source) });
+  return printSource({ j, root }, file.source);
 
   // `getQueryKey(trpc.a.b, input, type)` → `trpc.a.b.queryKey(input)`
   function migrateGetQueryKey(collection: Collection) {
@@ -297,9 +297,83 @@ export default function transform(
           migratedSuspenseCalls.add(call);
         }
         path.replace(call);
+        migrateResultTRPC(path, { scope, procedure: callee.object, fn });
         useTRPCIn(scope);
         changed = true;
       });
+  }
+
+  // `mutation.trpc.path` → `trpc.a.b.mutationOptions().trpc.path`: the
+  // `trpc` field is on the options now, not on the hook's result
+  function migrateResultTRPC(
+    path: ASTPath,
+    opts: {
+      readonly scope: ASTPath<FunctionNode>;
+      readonly procedure: unknown;
+      readonly fn: string;
+    },
+  ) {
+    const declarator = path.parent?.node;
+    if (
+      !j.VariableDeclarator.check(declarator) ||
+      !j.Identifier.check(declarator.id)
+    ) {
+      return;
+    }
+    const name = declarator.id.name;
+    j(opts.scope)
+      .find(j.MemberExpression, {
+        object: { type: 'Identifier', name },
+        property: { type: 'Identifier', name: 'trpc' },
+        computed: false,
+      })
+      .filter(
+        (p) =>
+          !isShadowed(j, p.get('object'), {
+            scope: opts.scope,
+            name,
+            declarator,
+          }),
+      )
+      .forEach((p) => {
+        if (opts.fn !== 'mutationOptions') {
+          // `queryOptions` needs the same input as the hook got
+          todo(
+            p,
+            `\`${name}.trpc\` is on the options now: \`trpc.x.${opts.fn}(input).trpc\`, see ${docs}`,
+          );
+          return;
+        }
+        p.replace(
+          j.memberExpression(
+            j.callExpression(
+              j.memberExpression(
+                copyPath(opts.procedure),
+                j.identifier('mutationOptions'),
+              ),
+              [],
+            ),
+            j.identifier('trpc'),
+          ),
+        );
+      });
+  }
+
+  /** A fresh copy of `trpc.a.b`, to use the path in a second place */
+  function copyPath(node: unknown): ExpressionKind {
+    if (j.Identifier.check(node)) {
+      return j.identifier(node.name);
+    }
+    if (j.MemberExpression.check(node)) {
+      return j.memberExpression(
+        copyPath(node.object),
+        node.computed
+          ? node.property
+          : j.identifier((node.property as Identifier).name),
+        node.computed,
+      );
+    }
+    return node as ExpressionKind;
   }
 
   // `trpc.useQueries((t) => [t.a(input)])` → `useQueries({ queries: [trpc.a.queryOptions(input)] })`
@@ -540,7 +614,9 @@ export default function transform(
           }
         }
 
-        if (reuseQueryClient) {
+        // An existing `queryClient` does the job, and an unused `utils`
+        // needs nothing
+        if (reuseQueryClient || references.length === 0) {
           // Only this declarator: `const utils = …, other = …` keeps `other`
           const declaration = path.parent.parent.node as {
             declarations: unknown[];

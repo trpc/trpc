@@ -1,3 +1,4 @@
+import { dirname, relative } from 'node:path';
 import type {
   API,
   ASTPath,
@@ -13,13 +14,16 @@ import {
   addTodo,
   ensureNamedImport,
   isValueReference,
-  quoteOf,
+  printSource,
   replaceImportedName,
   type ExpressionKind,
 } from '../lib/ast/codemod';
+import type { RouterTypeSource } from '../lib/ast/scanners';
 
 interface TransformOptions extends Options {
   trpcImportName?: string;
+  /** From the file with `createTRPCReact<AppRouter>()`, if the CLI found it */
+  routerType?: RouterTypeSource | null;
 }
 
 const nextDocs =
@@ -53,7 +57,42 @@ export default function transform(
   migrateProviderUsage(root);
   migrateWithTRPCUsage(root);
 
-  return changed ? root.toSource({ quote: quoteOf(file.source) }) : undefined;
+  return changed ? printSource({ j, root }, file.source) : undefined;
+
+  /**
+   * `<AppRouter>`, imported from where the file with `createTRPCReact`
+   * imports it, if the CLI found that.
+   */
+  function importedRouterType(): TSTypeParameterInstantiation | null {
+    const source = options.routerType;
+    if (!source) {
+      return null;
+    }
+    let specifier: string;
+    if ('specifier' in source) {
+      ({ specifier } = source);
+    } else if (source.file === file.path) {
+      return j.tsTypeParameterInstantiation([
+        j.tsTypeReference(j.identifier(source.name)),
+      ]);
+    } else {
+      specifier = relative(dirname(file.path), source.file)
+        .replaceAll('\\', '/')
+        .replace(/\.d\.[cm]?ts$|\.[cm]?tsx?$/, '');
+      if (!source.extension) {
+        // `./server` finds `./server/index.ts`, `./server.js` does not
+        specifier = specifier.replace(/\/index$/, '');
+      }
+      specifier = `${specifier.startsWith('.') ? '' : './'}${specifier}${source.extension}`;
+    }
+    const local = ensureNamedImport(
+      { j, root },
+      { source: specifier, name: source.name, typeOnly: true },
+    );
+    return j.tsTypeParameterInstantiation([
+      j.tsTypeReference(j.identifier(local)),
+    ]);
+  }
 
   function todoComment(message: string) {
     return j.commentLine(` TODO(@trpc/upgrade): ${message}`, true, false);
@@ -560,8 +599,10 @@ export function withTRPC<TInitialProps extends object>(
           ),
           path.node.arguments,
         );
-        if (routerType) {
-          (next as { typeParameters?: unknown }).typeParameters = routerType;
+        const typeParameters = routerType ?? importedRouterType();
+        if (typeParameters) {
+          (next as { typeParameters?: unknown }).typeParameters =
+            typeParameters;
         } else {
           addTodo(
             j,

@@ -44,3 +44,9 @@ export function Component4() {
   }
   return null;
 }
+
+export function Component5() {
+  // Unused: removed, not turned into an unused `useQueryClient()`
+  const utils = trpc.useUtils();
+  return trpc.post.list.useQuery().data;
+}

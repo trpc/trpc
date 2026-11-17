@@ -25,13 +25,28 @@ const formatFile = async (path: string, source: string) => {
 };
 
 type Transformer = Parameters<typeof applyTransform>[0];
+
+/** What the CLI would find in a project, for the fixtures that need it */
+const fixtureOptions: Record<string, Record<string, unknown>> = {
+  'providerRouterType.tsx': {
+    routerType: {
+      name: 'AppRouter',
+      file: join(import.meta.dirname, '__fixtures__/provider/basic.trpc.tsx'),
+      extension: '',
+    },
+  },
+};
+
 const snapshotTestTransform = async (file: string, transform: Transformer) => {
   const source = readFileSync(file, 'utf-8');
 
   const transformed = applyTransform(
     transform,
-    { trpcImportName: 'trpc' },
-    { source },
+    {
+      trpcImportName: 'trpc',
+      ...fixtureOptions[file.split('/').at(-1) ?? ''],
+    },
+    { source, path: file },
     {},
   );
   const formatted = await formatFile(file, transformed || source);
@@ -148,5 +163,41 @@ describe('provider', () => {
 
   it.each(fixtures)('provider %s', async (file) => {
     await executeTests(globDir, fixturesDir, file, providerTransform);
+  });
+});
+
+describe('printing', () => {
+  it('keeps the directive line and adds imports to the import block', () => {
+    const source = [
+      `'use client';`,
+      ``,
+      `import * as React from 'react';`,
+      `import { trpc } from './trpc';`,
+      ``,
+      `export function Component() {`,
+      `  return trpc.post.list.useQuery().data;`,
+      `}`,
+      ``,
+    ].join('\n');
+    const output = applyTransform(
+      hooksTransform,
+      { trpcImportName: 'trpc' },
+      { source, path: 'component.tsx' },
+      {},
+    );
+    expect(output).toBe(
+      [
+        `'use client';`,
+        ``,
+        `import * as React from 'react';`,
+        `import { useTRPC } from './trpc';`,
+        `import { useQuery } from '@tanstack/react-query';`,
+        ``,
+        `export function Component() {`,
+        `  const trpc = useTRPC();`,
+        `  return useQuery(trpc.post.list.queryOptions()).data;`,
+        `}`,
+      ].join('\n'),
+    );
   });
 });

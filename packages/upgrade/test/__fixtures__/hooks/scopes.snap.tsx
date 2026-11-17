@@ -1,4 +1,4 @@
-import { useQueryClient as useQC } from '@tanstack/react-query';
+import { useQueryClient as useQC, useQuery } from '@tanstack/react-query';
 import * as React from 'react';
 import { useTRPC } from './basic.trpc';
 
@@ -47,4 +47,9 @@ export function Component4() {
     void queryClient.invalidateQueries(trpc.post.list.pathFilter());
   }
   return null;
+}
+
+export function Component5() {
+  const trpc = useTRPC();
+  return useQuery(trpc.post.list.queryOptions()).data;
 }

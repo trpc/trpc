@@ -6,6 +6,7 @@ import type {
   Collection,
   FunctionDeclaration,
   FunctionExpression,
+  ImportDeclaration,
   JSCodeshift,
   Statement,
 } from 'jscodeshift';
@@ -95,10 +96,53 @@ export function ensureNamedImport(
   const imports = root.find(j.ImportDeclaration);
   if (imports.size() > 0) {
     imports.at(-1).insertAfter(declaration);
+    const added = addedImports.get(root) ?? [];
+    added.push(declaration);
+    addedImports.set(root, added);
   } else {
     root.get().node.program.body.unshift(declaration);
   }
   return name;
+}
+
+/** Imports `ensureNamedImport` added after a file's existing ones */
+const addedImports = new WeakMap<Collection, ImportDeclaration[]>();
+
+/**
+ * `root` as source code, without two things recast does to a file whose
+ * statements changed: `'use client';;`, and a blank line between the
+ * imports and the ones `ensureNamedImport` added.
+ */
+export function printSource({ j, root }: Codemod, source: string): string {
+  const quote = quoteOf(source);
+  let output = root.toSource({ quote });
+
+  const directive = /^(\s*(['"])use [\w ]+\2);?([ \t]*(?:\r?\n\s*)?)/.exec(
+    source,
+  );
+  if (directive) {
+    const [, text, , space] = directive;
+    const doubled = `${text?.trimStart()};;`;
+    if (output.startsWith(doubled)) {
+      output = `${text?.trimStart()};${space}${output
+        .slice(doubled.length)
+        .trimStart()}`;
+    }
+  }
+
+  for (const declaration of addedImports.get(root) ?? []) {
+    const text = j(declaration).toSource({ quote });
+    const at = output.indexOf(`\n\n${text}\n`);
+    if (at === -1) {
+      continue;
+    }
+    const previousLine = output.slice(output.lastIndexOf('\n', at - 1) + 1, at);
+    // The end of an import: `import 'x';` or `… from 'x';`
+    if (/^import\s|\bfrom\s*['"][^'"]+['"];?$/.test(previousLine)) {
+      output = `${output.slice(0, at)}${output.slice(at + 1)}`;
+    }
+  }
+  return output;
 }
 
 /** The identifier at the root of `a.b.c` or `a['b'].c`, if any. */
