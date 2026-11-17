@@ -1647,15 +1647,12 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next
-        version: link:../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query
+        version: link:../../packages/tanstack-react-query
       next:
         specifier: ^15.5.29
         version: 15.5.29(@babel/core@7.23.2(supports-color@10.0.0))(@opentelemetry/api@1.10.0)(@playwright/test@1.51.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
