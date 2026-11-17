@@ -78,18 +78,21 @@ export function ensureNamedImport(
     }
     return opts.typeOnly || (path.node.importKind ?? 'value') === 'value';
   });
+  // `name`, or `name2`… if the file has its own `name` already
+  const taken = topLevelBindings(j, root);
+  let local = name;
+  for (let i = 2; taken.has(local); i++) {
+    local = `${name}${i}`;
+  }
+  const specifier = j.importSpecifier(j.identifier(name), j.identifier(local));
   if (target.size() > 0) {
-    const specifier = j.importSpecifier(j.identifier(name));
     if (opts.typeOnly && target.get().node.importKind !== 'type') {
       (specifier as { importKind?: string }).importKind = 'type';
     }
     target.get().node.specifiers.push(specifier);
-    return name;
+    return local;
   }
-  const declaration = j.importDeclaration(
-    [j.importSpecifier(j.identifier(name))],
-    j.stringLiteral(source),
-  );
+  const declaration = j.importDeclaration([specifier], j.stringLiteral(source));
   if (opts.typeOnly) {
     declaration.importKind = 'type';
   }
@@ -102,7 +105,43 @@ export function ensureNamedImport(
   } else {
     root.get().node.program.body.unshift(declaration);
   }
-  return name;
+  return local;
+}
+
+/** The names a file declares or imports at its top level */
+function topLevelBindings(j: JSCodeshift, root: Collection): Set<string> {
+  const names = new Set<string>();
+  for (const statement of root.get().node.program.body as unknown[]) {
+    const node =
+      (j.ExportNamedDeclaration.check(statement) ||
+        j.ExportDefaultDeclaration.check(statement)) &&
+      statement.declaration
+        ? statement.declaration
+        : statement;
+    if (j.ImportDeclaration.check(node)) {
+      for (const specifier of node.specifiers ?? []) {
+        if (j.Identifier.check(specifier.local)) {
+          names.add(specifier.local.name);
+        }
+      }
+    } else if (j.VariableDeclaration.check(node)) {
+      for (const declarator of node.declarations) {
+        if (j.VariableDeclarator.check(declarator)) {
+          paramBindings(j, [declarator.id]).forEach((n) => names.add(n));
+        }
+      }
+    } else if (
+      (j.FunctionDeclaration.check(node) ||
+        j.ClassDeclaration.check(node) ||
+        j.TSTypeAliasDeclaration.check(node) ||
+        j.TSInterfaceDeclaration.check(node) ||
+        j.TSEnumDeclaration.check(node)) &&
+      j.Identifier.check(node.id)
+    ) {
+      names.add(node.id.name);
+    }
+  }
+  return names;
 }
 
 /** Imports `ensureNamedImport` added after a file's existing ones */

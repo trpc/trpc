@@ -78,11 +78,8 @@ export default function transform(
     } else {
       specifier = relative(dirname(file.path), source.file)
         .replaceAll('\\', '/')
+        // Keep `/index`: `./server` could find a `./server.ts` instead
         .replace(/\.d\.[cm]?ts$|\.[cm]?tsx?$/, '');
-      if (!source.extension) {
-        // `./server` finds `./server/index.ts`, `./server.js` does not
-        specifier = specifier.replace(/\/index$/, '');
-      }
       specifier = `${specifier.startsWith('.') ? '' : './'}${specifier}${source.extension}`;
     }
     const local = ensureNamedImport(

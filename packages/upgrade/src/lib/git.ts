@@ -50,12 +50,36 @@ export async function filterIgnored(files: readonly string[]) {
 }
 
 /**
+ * The environment without variables that point git at another repository,
+ * e.g. `GIT_DIR` from a hook, so `cwd` decides which repository git reads.
+ */
+export function isolatedGitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const name of [
+    'GIT_DIR',
+    'GIT_WORK_TREE',
+    'GIT_INDEX_FILE',
+    'GIT_COMMON_DIR',
+    'GIT_OBJECT_DIRECTORY',
+    'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+    'GIT_NAMESPACE',
+    'GIT_PREFIX',
+  ]) {
+    delete env[name];
+  }
+  return env;
+}
+
+/**
  * Every file git tracks under `cwd`, as absolute paths. Reads git's output
  * as a stream, so no buffer limit stops a big repository.
  */
 export function trackedFiles(cwd: string): Promise<string[]> {
   return new Promise((done, fail) => {
-    const child = spawn('git', ['ls-files', '-z'], { cwd });
+    const child = spawn('git', ['ls-files', '-z'], {
+      cwd,
+      env: isolatedGitEnv(),
+    });
     const chunks: Buffer[] = [];
     let stderr = '';
     child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));

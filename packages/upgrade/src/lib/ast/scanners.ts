@@ -89,7 +89,7 @@ export type RouterTypeSource =
       name: string;
       /** A project file, which each file imports by its own relative path */
       file: string;
-      /** `.js` if the project imports files with an extension, else `''` */
+      /** `.js`, `.mjs` or `.cjs` if the project imports files with one, else `''` */
       extension: string;
     };
 
@@ -97,6 +97,8 @@ function findRouterType(
   program: Program,
   sourceFiles: SourceFile[],
 ): RouterTypeSource | null {
+  // With more than one setup, files can't tell which one they belong to
+  const found: RouterTypeSource[] = [];
   for (const sourceFile of sourceFiles) {
     for (const node of sourceFile.statements) {
       if (!isVariableStatement(node)) {
@@ -116,14 +118,19 @@ function findRouterType(
           continue;
         }
         const local = typeArgument.typeName.text;
-        const found = findTypeSource(program, sourceFile, local);
-        if (found) {
-          return found;
+        const source = findTypeSource(program, sourceFile, local);
+        if (source) {
+          found.push(source);
         }
       }
     }
   }
-  return null;
+  const key = (source: RouterTypeSource) =>
+    'specifier' in source
+      ? `${source.name} ${source.specifier}`
+      : `${source.name} ${source.file}`;
+  const distinct = new Set(found.map(key));
+  return distinct.size === 1 ? (found[0] ?? null) : null;
 }
 
 function isTRPCFactoryCall(
@@ -180,7 +187,7 @@ function findTypeSource(
       return {
         name,
         file: resolved.resolvedFileName,
-        extension: /\.[cm]?js$/.test(specifier) ? '.js' : '',
+        extension: /\.[cm]?js$/.exec(specifier)?.[0] ?? '',
       };
     }
   }

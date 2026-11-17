@@ -303,6 +303,24 @@ export default function transform(
       });
   }
 
+  /**
+   * Where the variable `init` is assigned to can be used: `const` and `let`
+   * reach the end of their block, `var` the whole function.
+   */
+  function declaringBlockOf(init: ASTPath, scope: ASTPath<FunctionNode>) {
+    const isVar =
+      j.VariableDeclaration.check(init.parent?.parent?.node) &&
+      init.parent.parent.node.kind === 'var';
+    let block: ASTPath = init;
+    while (
+      block.node !== scope.node &&
+      (isVar || !j.BlockStatement.check(block.node))
+    ) {
+      block = block.parent;
+    }
+    return block;
+  }
+
   // `mutation.trpc.path` → `trpc.a.b.mutationOptions().trpc.path`: the
   // `trpc` field is on the options now, not on the hook's result
   function migrateResultTRPC(
@@ -314,14 +332,32 @@ export default function transform(
     },
   ) {
     const declarator = path.parent?.node;
-    if (
-      !j.VariableDeclarator.check(declarator) ||
-      !j.Identifier.check(declarator.id)
-    ) {
+    if (!j.VariableDeclarator.check(declarator)) {
+      return;
+    }
+    // `const { trpc } = useMutation(…)`
+    if (j.ObjectPattern.check(declarator.id)) {
+      const destructuresTRPC = declarator.id.properties.some(
+        (p) =>
+          (j.ObjectProperty.check(p) || j.Property.check(p)) &&
+          !p.computed &&
+          j.Identifier.check(p.key) &&
+          p.key.name === 'trpc',
+      );
+      if (destructuresTRPC) {
+        todo(
+          path,
+          `\`trpc\` is on the options now: \`trpc.x.${opts.fn}(…).trpc\`, see ${docs}`,
+        );
+      }
+      return;
+    }
+    if (!j.Identifier.check(declarator.id)) {
       return;
     }
     const name = declarator.id.name;
-    j(opts.scope)
+    const declaringBlock = declaringBlockOf(path, opts.scope);
+    j(declaringBlock)
       .find(j.MemberExpression, {
         object: { type: 'Identifier', name },
         property: { type: 'Identifier', name: 'trpc' },
@@ -330,7 +366,7 @@ export default function transform(
       .filter(
         (p) =>
           !isShadowed(j, p.get('object'), {
-            scope: opts.scope,
+            scope: declaringBlock,
             name,
             declarator,
           }),
@@ -553,18 +589,7 @@ export default function transform(
           ? uniqueName(j, scope, 'queryClient')
           : 'queryClient';
 
-        // `const` and `let` only reach the end of their block, `var` the
-        // whole function
-        const isVar =
-          j.VariableDeclaration.check(path.parent?.parent?.node) &&
-          path.parent.parent.node.kind === 'var';
-        let declaringBlock: ASTPath = path;
-        while (
-          declaringBlock.node !== scope.node &&
-          (isVar || !j.BlockStatement.check(declaringBlock.node))
-        ) {
-          declaringBlock = declaringBlock.parent;
-        }
+        const declaringBlock = declaringBlockOf(path, scope);
         const references = j(declaringBlock)
           .find(j.Identifier, { name: utilsName })
           .filter(

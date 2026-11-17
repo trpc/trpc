@@ -35,6 +35,13 @@ const fixtureOptions: Record<string, Record<string, unknown>> = {
       extension: '',
     },
   },
+  'providerRouterTypeTaken.tsx': {
+    routerType: {
+      name: 'AppRouter',
+      file: join(import.meta.dirname, '__fixtures__/provider/server/index.ts'),
+      extension: '',
+    },
+  },
 };
 
 const snapshotTestTransform = async (file: string, transform: Transformer) => {

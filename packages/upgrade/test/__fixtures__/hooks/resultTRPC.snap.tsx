@@ -9,3 +9,17 @@ export function Component() {
   // TODO(@trpc/upgrade): `query.trpc` is on the options now: `trpc.x.queryOptions(input).trpc`, see https://trpc.io/docs/client/tanstack-react-query/migrating
   return [trpc.post.create.mutationOptions().trpc.path, query.trpc.path];
 }
+
+export function Component2(flag: boolean) {
+  const trpc = useTRPC();
+  const mutation = { trpc: { path: 'outer' } };
+  if (flag) {
+    // Only this block's `mutation` is the hook's result
+    const mutation = useMutation(trpc.post.create.mutationOptions());
+    void trpc.post.create.mutationOptions().trpc.path;
+  }
+  // `trpc` destructured from the result needs a hand
+  // TODO(@trpc/upgrade): `trpc` is on the options now: `trpc.x.queryOptions(…).trpc`, see https://trpc.io/docs/client/tanstack-react-query/migrating
+  const { trpc: meta } = useQuery(trpc.post.list.queryOptions());
+  return [mutation.trpc.path, meta];
+}
