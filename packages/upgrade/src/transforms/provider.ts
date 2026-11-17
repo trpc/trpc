@@ -527,10 +527,22 @@ export default function transform(
         (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(transformerSource) ||
           wrapperLocals.includes(transformerSource.split('.')[0] ?? ''))
       ) {
-        statements.push(
-          ...exported(`const hydrationTransformer = ${transformerSource};`),
+        // `hydrationTransformer`, or `hydrationTransformer2`… if the file
+        // already uses the name
+        const used = new Set(
+          root
+            .find(j.Identifier)
+            .nodes()
+            .map((node) => node.name),
         );
-        transformerSource = 'hydrationTransformer';
+        let hoisted = 'hydrationTransformer';
+        for (let i = 2; used.has(hoisted); i++) {
+          hoisted = `hydrationTransformer${i}`;
+        }
+        statements.push(
+          ...exported(`const ${hoisted} = ${transformerSource};`),
+        );
+        transformerSource = hoisted;
       }
       const dehydratedState = type(rq, 'DehydratedState');
       // A typed `const`, not a cast: superjson's `deserialize<T>` infers `T`
