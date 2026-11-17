@@ -654,6 +654,37 @@ describe('loading', () => {
     }
   });
 
+  test("rethrows Next.js's dynamic-usage error from the context as is", async () => {
+    // `headers()` in a static render throws this; Next.js reads its `digest`
+    // to render the page on demand instead of failing the build
+    const dynamicUsage = Object.assign(
+      new Error('Dynamic server usage: Route /todos used `headers`'),
+      { digest: 'DYNAMIC_SERVER_USAGE' },
+    );
+    const t = initTRPC.create();
+    const router = t.router({
+      list: t.procedure
+        .input(z.object({ cursor: z.number().nullish() }))
+        .query(() => ({ items: [], nextCursor: null })),
+    });
+    const trpc = createTRPCOptionsProxy({
+      router,
+      ctx: () => {
+        throw dynamicUsage;
+      },
+      queryClient: makeServerClient(),
+    });
+
+    for (const load of [loadHandles, loadHandlesSettled]) {
+      await expect(
+        load(trpc, { list: ensureEntry(trpc.list, {}) }),
+      ).rejects.toBe(dynamicUsage);
+      await expect(
+        load(trpc, { list: fetchInfiniteEntry(trpc.list, {}) }),
+      ).rejects.toBe(dynamicUsage);
+    }
+  });
+
   test('JavaScript callers get a readable error for a value that is not a proxy', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

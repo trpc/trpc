@@ -20,11 +20,14 @@ skill:
     fetchRequestHandler (GET + POST exports), a per-request QueryClient that
     dehydrates pending queries, TRPCProvider and useTRPC() in client
     components, createTRPCOptionsProxy with prefetch and
-    HydrateClient/HydrationBoundary in server components, useSuspenseQuery for
-    Suspense, createCaller or fetchQuery for data on the server, and
-    tRPC-powered Server Actions.
+    HydrateClient (unstable_createHydrateClient) in server components,
+    useSuspenseQuery for Suspense, createCaller or fetchQuery for data on the
+    server, data shared between generateMetadata and the page, static and ISR
+    pages with a context that reads no request data, and tRPC-powered Server
+    Actions.
   references:
     - client/nextjs/server-actions
+    - client/nextjs/static-pages
 ---
 
 :::note
@@ -374,8 +377,10 @@ export type AppRouter = typeof appRouter;
 // ---cut---
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+} from '@trpc/tanstack-react-query';
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { headers } from 'next/headers';
 import { cache } from 'react';
@@ -401,14 +406,8 @@ export const trpc = createTRPCOptionsProxy({
 //   queryClient: getQueryClient,
 // });
 
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+// Sends the request's queries to client components, pending ones too
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
@@ -460,8 +459,11 @@ import type { AppRouter } from './routers/_app';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: trpc/server.tsx
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy, type TRPCQueryOptions } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+  type TRPCQueryOptions,
+} from '@trpc/tanstack-react-query';
 import { cache } from 'react';
 import { makeQueryClient } from './query-client';
 import { appRouter } from './routers/_app';
@@ -471,13 +473,7 @@ export const trpc = createTRPCOptionsProxy({
   router: appRouter,
   queryClient: getQueryClient,
 });
-export function HydrateClient(props: { children: React.ReactNode }) {
-  return (
-    <HydrationBoundary state={dehydrate(getQueryClient())}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
   void getQueryClient().prefetchQuery(queryOptions);
 }
@@ -650,5 +646,6 @@ export default async function Home() {
 ## Next steps
 
 - Learn about [Server Actions](/docs/client/nextjs/server-actions) for defining tRPC-powered server actions
+- Share data with `generateMetadata`, and keep pages static or ISR, in [Static pages and metadata](/docs/client/nextjs/static-pages)
 - Learn about [queries, mutations and invalidation](/docs/client/tanstack-react-query/usage) in client components
 - Explore [server-side calls](/docs/server/server-side-calls) for more advanced server-side patterns
