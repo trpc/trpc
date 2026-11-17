@@ -36,6 +36,7 @@ const pr = (number: number, title: string, author = 'KATT'): PullRequest => ({
   title,
   url: prUrl(number),
   author,
+  contributors: [],
 });
 
 const change = (
@@ -349,6 +350,50 @@ describe('renderNotes', () => {
         `* fix(client): new title by @KATT in ${prUrl(1)}`,
         `* fix(client): pushed directly by @someone in https://github.com/trpc/trpc/commit/a2`,
         `* fix(client): a ghost in ${prUrl(3)}`,
+      ].join('\n'),
+    );
+  });
+
+  it('credits the people who pushed to a pull request, but not bots or AI agents', () => {
+    // v11.28.3 credited only the author of #8047, not Nick-Lucas who pushed to it.
+    expect(
+      notes(
+        [
+          change('a1', 'fix(client): a (#1)', ['@trpc/client']),
+          change('a2', 'fix(client): b (#2)', ['@trpc/client']),
+          change('a3', 'fix(client): c (#3)', ['@trpc/client']),
+          change('a4', 'fix(client): pushed directly', ['@trpc/client']),
+        ],
+        github(
+          [
+            {
+              ...pr(1, 'fix(client): a'),
+              contributors: [
+                'KATT',
+                'autofix-ci[bot]',
+                'Nick-Lucas',
+                'Claude',
+                'cursoragent',
+                'codex',
+                'Nick-Lucas',
+                'someone',
+              ],
+            },
+            {
+              ...pr(2, 'fix(client): b', 'renovate[bot]'),
+              contributors: ['KATT'],
+            },
+            { ...pr(3, 'fix(client): c', 'claude'), contributors: [] },
+          ],
+          { a4: 'claude' },
+        ),
+      ),
+    ).toContain(
+      [
+        `* fix(client): a by @KATT, @Nick-Lucas and @someone in ${prUrl(1)}`,
+        `* fix(client): b by @KATT in ${prUrl(2)}`,
+        `* fix(client): c in ${prUrl(3)}`,
+        `* fix(client): pushed directly in https://github.com/trpc/trpc/commit/a4`,
       ].join('\n'),
     );
   });
