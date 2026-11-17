@@ -29,7 +29,7 @@ import type {
 } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import type { ErrorOf } from './entryError';
-import { entryCause, TRPCEntryError } from './entryError';
+import { digestErrorOf, entryCause, TRPCEntryError } from './entryError';
 
 declare const handleDef: unique symbol;
 declare const entryDef: unique symbol;
@@ -374,6 +374,10 @@ function toEntryError(key: string, state: EntryState, error: unknown) {
   if (isCancelledError(error)) {
     return error;
   }
+  const digestError = digestErrorOf(error);
+  if (digestError) {
+    return digestError;
+  }
   return new TRPCEntryError({
     key,
     path: readQueryKey(state.options.queryKey).path.join('.'),
@@ -649,6 +653,8 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * matter. Resolves to `[handles, data]` once every fetch and ensure entry has data:
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
  * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
+ * It rejects with a `TRPCEntryError`, except for an error with a `digest`, such as
+ * from Next.js's `notFound()` or `headers()`, which it rethrows as is.
  *
  * Put TanStack Query's `skipToken` in place of an entry to start nothing for that
  * key: its handle is `undefined`, and `data` has no key for it.
@@ -688,7 +694,8 @@ export function loadHandles<
  * `results` has `{ status: 'success', data }` or `{ status: 'error', error }`,
  * with a `TRPCEntryError`, for every fetch and ensure entry.
  *
- * A cancelled query still rejects, as it does with `loadHandles()`.
+ * A cancelled query, or an error with a `digest` such as from Next.js's
+ * `notFound()`, still rejects, as it does with `loadHandles()`.
  * @example
  * ```ts
  * const [handles, results] = await loadHandlesSettled(trpc, {

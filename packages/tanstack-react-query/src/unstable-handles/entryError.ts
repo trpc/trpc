@@ -51,6 +51,26 @@ function codeOfShape(data: unknown): TRPC_ERROR_CODE_KEY | undefined {
   return typeof code === 'string' ? (code as TRPC_ERROR_CODE_KEY) : undefined;
 }
 
+/**
+ * The first error in `error`'s `cause` chain with a string `digest`, or `null`.
+ * Next.js's `headers()` in a static render, `notFound()` and `redirect()` throw
+ * one, and Next reads `digest` off the error the page throws, so a load
+ * rethrows it as is rather than hide it in a `TRPCEntryError`.
+ */
+export function digestErrorOf(error: unknown): Error | null {
+  const seen = new Set<Error>();
+  let current = error;
+  while (current instanceof Error && !seen.has(current)) {
+    const { digest, cause } = current as { digest?: unknown; cause?: unknown };
+    if (typeof digest === 'string') {
+      return current;
+    }
+    seen.add(current);
+    current = cause;
+  }
+  return null;
+}
+
 export function entryCause(error: unknown) {
   if (isTRPCClientError(error)) {
     return { cause: error, code: codeOfShape(error.data) };
