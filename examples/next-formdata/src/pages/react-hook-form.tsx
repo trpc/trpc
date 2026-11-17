@@ -44,13 +44,12 @@ function useZodForm<TInput extends FieldValues>(
 
 export default function Page() {
   const trpc = useTRPC();
-  const mutation = useMutation(
-    trpc.room.sendMessage.mutationOptions({
-      onError(err) {
-        alert('Error from server: ' + err.message);
-      },
-    }),
-  );
+  const mutationOptions = trpc.room.sendMessage.mutationOptions({
+    onError(err) {
+      alert('Error from server: ' + err.message);
+    },
+  });
+  const mutation = useMutation(mutationOptions);
 
   const form = useZodForm({
     schema: uploadFileSchema,
@@ -64,10 +63,11 @@ export default function Page() {
   return (
     <>
       <h2 className="text-3xl font-bold">Posts</h2>
+
       <FormProvider {...form}>
         <form
           method="post"
-          action={`/api/trpc/${trpc.room.sendMessage.mutationOptions().trpc.path}`}
+          action={`/api/trpc/${mutationOptions.trpc.path}`}
           encType="multipart/form-data"
           onSubmit={(_event) => {
             if (noJs) {
