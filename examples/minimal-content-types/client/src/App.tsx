@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpLink } from '@trpc/client';
+import { httpLink, createTRPCClient } from '@trpc/client';
 import { useState } from 'react';
+import type { AppRouter } from '../../server/index';
 import { SendFileButton } from './SendFileButton';
 import { SendMultipartFormDataButton } from './SendMultipartFormDataButton';
-import { trpc } from './utils/trpc';
+import { TRPCProvider } from './utils/trpc';
 
 export function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
-    trpc.createClient({
+    createTRPCClient<AppRouter>({
       links: [
         httpLink({
           url: 'http://localhost:2022',
@@ -17,7 +18,7 @@ export function App() {
     }),
   );
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <div
           style={{
@@ -32,6 +33,6 @@ export function App() {
           <SendFileButton />
         </div>
       </QueryClientProvider>
-    </trpc.Provider>
+    </TRPCProvider>
   );
 }

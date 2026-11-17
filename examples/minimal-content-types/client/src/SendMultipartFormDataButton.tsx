@@ -1,7 +1,9 @@
-import { trpc } from './utils/trpc';
+import { useMutation } from '@tanstack/react-query';
+import { useTRPC } from './utils/trpc';
 
 export function SendMultipartFormDataButton() {
-  const mutation = trpc.formData.useMutation();
+  const trpc = useTRPC();
+  const mutation = useMutation(trpc.formData.mutationOptions());
 
   return (
     <button

@@ -1,7 +1,9 @@
-import { trpc } from './utils/trpc';
+import { useMutation } from '@tanstack/react-query';
+import { useTRPC } from './utils/trpc';
 
 export function SendFileButton() {
-  const mutation = trpc.file.useMutation();
+  const trpc = useTRPC();
+  const mutation = useMutation(trpc.file.mutationOptions());
 
   return (
     <label>
