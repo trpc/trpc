@@ -65,7 +65,7 @@
     "@types/ws": "^8.18.2",
     "cross-env": "^10.1.0",
     "npm-run-all2": "catalog:",
-    "oxfmt": "^0.75.0",
+    "oxfmt": "catalog:",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
     "postcss": "^8.5.32",

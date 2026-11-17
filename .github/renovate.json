@@ -46,6 +46,24 @@
       "platformAutomerge": true
     },
     {
+      "description": "Held at the #8047 pins until @hey-api/openapi-ts works with TypeScript 7.1 (0.99.0 crashes on it). Remove once fixed.",
+      "matchDepTypes": ["pnpm.catalog.default"],
+      "matchPackageNames": ["typescript", "@hey-api/openapi-ts"],
+      "enabled": false
+    },
+    {
+      "description": "TypeDoc 0.28 drops pages for aliased exports, so 11 live API-reference URLs would 404 (see #7996). Upgrade both by hand.",
+      "matchFileNames": ["www/api-reference/package.json"],
+      "matchPackageNames": ["typedoc"],
+      "allowedVersions": "<0.28.0"
+    },
+    {
+      "description": "typedoc-plugin-markdown 4.5 and later need TypeDoc 0.28",
+      "matchFileNames": ["www/api-reference/package.json"],
+      "matchPackageNames": ["typedoc-plugin-markdown"],
+      "allowedVersions": "<4.5.0"
+    },
+    {
       "description": "@trpc/react-query tests against zod 3 through this alias",
       "matchFileNames": ["packages/react-query/package.json"],
       "matchDepNames": ["zod"],
