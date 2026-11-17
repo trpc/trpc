@@ -1056,7 +1056,7 @@ async function loader(id: string) {
 
 - `error.key` is the entry's key, `error.path` the procedure, `error.code` the tRPC code.
 - The load rejects on the first failure, without waiting for the others.
-- An error with a `digest`, such as from Next.js's `notFound()`, `redirect()` or `headers()` in a static render, is rethrown as it is, also by `loadHandlesSettled`, so the framework still handles it. That's true when a procedure or the context throws it too.
+- An error with a `digest`, such as the one Next.js's `headers()` throws in a static render, is rethrown as it is, also by `loadHandlesSettled`, so Next.js still sees it. A procedure's errors arrive as a `TRPCError`, as with `fetchQuery`.
 
 #### Errors as values {#errors-as-values}
 

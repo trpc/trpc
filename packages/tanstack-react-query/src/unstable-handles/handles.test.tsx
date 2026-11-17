@@ -654,50 +654,34 @@ describe('loading', () => {
     }
   });
 
-  test('rethrows an error with a digest, such as Next.js dynamic usage or notFound(), as is', async () => {
-    // Next.js reads `digest` off the thrown error to tell `headers()` in a
-    // static render, `notFound()` and `redirect()` from a failure
+  test("rethrows Next.js's dynamic-usage error from the context as is", async () => {
+    // `headers()` in a static render throws this; Next.js reads its `digest`
+    // to render the page on demand instead of failing the build
     const dynamicUsage = Object.assign(
       new Error('Dynamic server usage: Route /todos used `headers`'),
       { digest: 'DYNAMIC_SERVER_USAGE' },
     );
-    const notFound = Object.assign(new Error('NEXT_HTTP_ERROR_FALLBACK;404'), {
-      digest: 'NEXT_HTTP_ERROR_FALLBACK;404',
-    });
     const t = initTRPC.create();
     const router = t.router({
       list: t.procedure
         .input(z.object({ cursor: z.number().nullish() }))
         .query(() => ({ items: [], nextCursor: null })),
-      missing: t.procedure.query((): string => {
-        throw notFound;
-      }),
     });
-    // The server caller rethrows what the context throws as is…
-    const dynamic = createTRPCOptionsProxy({
+    const trpc = createTRPCOptionsProxy({
       router,
       ctx: () => {
         throw dynamicUsage;
       },
       queryClient: makeServerClient(),
     });
-    // …and wraps what a procedure throws in a TRPCError
-    const server = createTRPCOptionsProxy({
-      router,
-      ctx: {},
-      queryClient: makeServerClient(),
-    });
 
     for (const load of [loadHandles, loadHandlesSettled]) {
       await expect(
-        load(dynamic, { list: ensureEntry(dynamic.list, {}) }),
+        load(trpc, { list: ensureEntry(trpc.list, {}) }),
       ).rejects.toBe(dynamicUsage);
       await expect(
-        load(dynamic, { list: fetchInfiniteEntry(dynamic.list, {}) }),
+        load(trpc, { list: fetchInfiniteEntry(trpc.list, {}) }),
       ).rejects.toBe(dynamicUsage);
-      await expect(
-        load(server, { missing: fetchEntry(server.missing) }),
-      ).rejects.toBe(notFound);
     }
   });
 

@@ -29,7 +29,7 @@ import type {
 } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import type { ErrorOf } from './entryError';
-import { digestErrorOf, entryCause, TRPCEntryError } from './entryError';
+import { entryCause, TRPCEntryError } from './entryError';
 
 declare const handleDef: unique symbol;
 declare const entryDef: unique symbol;
@@ -370,13 +370,21 @@ function startEntry(queryClient: QueryClient, state: EntryState) {
   }
 }
 
+/**
+ * Next.js signals control flow, such as `headers()` in a static render, by
+ * throwing an error with a `digest`, and reads it off the error the page throws.
+ */
+function hasDigest(error: unknown): error is Error & { digest: string } {
+  return (
+    error instanceof Error &&
+    typeof (error as { digest?: unknown }).digest === 'string'
+  );
+}
+
 function toEntryError(key: string, state: EntryState, error: unknown) {
-  if (isCancelledError(error)) {
+  // Not failures of the entry: pass them on as they are
+  if (isCancelledError(error) || hasDigest(error)) {
     return error;
-  }
-  const digestError = digestErrorOf(error);
-  if (digestError) {
-    return digestError;
   }
   return new TRPCEntryError({
     key,
@@ -654,7 +662,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
  * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
  * It rejects with a `TRPCEntryError`, except for an error with a `digest`, such as
- * from Next.js's `notFound()` or `headers()`, which it rethrows as is.
+ * Next.js's `headers()` in a static render throws, which it rethrows as is.
  *
  * Put TanStack Query's `skipToken` in place of an entry to start nothing for that
  * key: its handle is `undefined`, and `data` has no key for it.
@@ -694,8 +702,8 @@ export function loadHandles<
  * `results` has `{ status: 'success', data }` or `{ status: 'error', error }`,
  * with a `TRPCEntryError`, for every fetch and ensure entry.
  *
- * A cancelled query, or an error with a `digest` such as from Next.js's
- * `notFound()`, still rejects, as it does with `loadHandles()`.
+ * A cancelled query, or an error with a `digest` such as Next.js's `headers()`
+ * in a static render throws, still rejects, as it does with `loadHandles()`.
  * @example
  * ```ts
  * const [handles, results] = await loadHandlesSettled(trpc, {
