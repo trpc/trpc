@@ -5,7 +5,6 @@ import { isObject } from '../../utils';
 import type {
   PipelineCallReads,
   PipelineItemEnvelope,
-  PipelineItemRead,
   PipelinePath,
   PipelineRead,
   PipelineWholeRead,
@@ -212,6 +211,55 @@ function overTheWire(
     : transformer.deserialize(JSON.parse(json));
 }
 
+/**
+ * The most a batch fills in, in characters of JSON: every value it writes
+ * into an input, and the whole input of every run of a call for every item.
+ * A value is copied for every input it goes in, so without this a small
+ * request could make the server copy a large result many times over.
+ */
+export const pipelineFillLimit = 1_000_000;
+
+/**
+ * About how long a value is as JSON. It remembers what it measured, so a part
+ * of a call's data that many runs read is measured once.
+ */
+function createSizeOf() {
+  const sizes = new WeakMap<object, number>();
+  const sizeOf = (value: unknown): number => {
+    if (typeof value === 'string') {
+      return value.length + 2;
+    }
+    if (
+      typeof value === 'number' ||
+      typeof value === 'bigint' ||
+      typeof value === 'boolean'
+    ) {
+      return String(value).length;
+    }
+    if (typeof value !== 'object' || value === null) {
+      return 4;
+    }
+    const known = sizes.get(value);
+    if (known !== undefined) {
+      return known;
+    }
+    // A value inside itself counts once
+    sizes.set(value, 0);
+    // An array, or what a transformer makes, such as a `Map` or a `Set`
+    const parts: Iterable<unknown> =
+      Symbol.iterator in value
+        ? (value as Iterable<unknown>)
+        : Object.entries(value);
+    let size = 2;
+    for (const part of parts) {
+      size += sizeOf(part) + 1;
+    }
+    sizes.set(value, size);
+    return size;
+  };
+  return sizeOf;
+}
+
 /** What the server needs of a batch's call to fill in its input */
 export interface PipelineServerCall {
   /** The input as the client sent it */
@@ -286,19 +334,6 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   function asSent(input: unknown) {
     return overTheWire(opts.transformer.input, input);
   }
-  /** `input` with what `read` reads, which is at its path in `data` */
-  function filled(
-    input: unknown,
-    read: PipelineWholeRead<Source> | PipelineItemRead,
-    data: unknown,
-  ) {
-    return writePipelinePath({
-      input,
-      to: read.to,
-      value: readPipelinePath(data, read.path),
-    });
-  }
-
   let runs = opts.calls.length;
   /** Counts the runs of a call for `count` items. Throws if they are too many */
   function takeRuns(count: number) {
@@ -315,6 +350,32 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     runs = taken;
   }
 
+  const sizeOf = createSizeOf();
+  let filledSize = 0;
+  /**
+   * Counts what a call fills in. It takes it from what the batch may fill in
+   * only if all of it fits: a call that is refused takes none.
+   */
+  function fillCounter() {
+    let size = 0;
+    return {
+      /** Counts a value. Throws if the call fills in more than is left */
+      add: (value: unknown) => {
+        size += sizeOf(value);
+        if (filledSize + size > pipelineFillLimit) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'The values a call fills in exceed the most a batch may fill in',
+          });
+        }
+      },
+      take: () => {
+        filledSize += size;
+      },
+    };
+  }
+
   /** The inputs of a call that runs once per item of a list */
   async function inputsOfEach(
     call: TCall,
@@ -328,21 +389,47 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     // What is no list has no items
     const items: unknown[] = Array.isArray(found) ? found : [];
     takeRuns(items.length);
-    const inputs: unknown[] = [];
-    // By index: a list with holes has a run for each of them too
-    for (const index of items.keys()) {
-      let input = base;
-      for (const read of reads.reads) {
-        input = filled(
-          input,
-          read,
-          read.kind === 'item' ? items[index] : await dataOf(read.from),
-        );
+    /** What a value that is the same for every run is */
+    const wholes = new Map<PipelineWholeRead<Source>, unknown>();
+    const counter = fillCounter();
+    const valuesOfRuns: unknown[][] = [];
+    try {
+      // By index: a list with holes has a run for each of them too
+      for (const index of items.keys()) {
+        counter.add(base);
+        const values: unknown[] = [];
+        for (const read of reads.reads) {
+          if (read.kind === 'whole' && !wholes.has(read)) {
+            wholes.set(
+              read,
+              readPipelinePath(await dataOf(read.from), read.path),
+            );
+          }
+          const value =
+            read.kind === 'item'
+              ? readPipelinePath(items[index], read.path)
+              : wholes.get(read);
+          counter.add(value);
+          values.push(value);
+        }
+        valuesOfRuns.push(values);
       }
-      // Every run has an input of its own, as calls the client sends do
-      inputs.push(asSent(input));
+    } catch (cause) {
+      // It runs for no item: it takes none of the runs, not its place either
+      runs -= items.length;
+      throw cause;
     }
-    return inputs;
+    counter.take();
+    // Every run has an input of its own, as calls the client sends do
+    return valuesOfRuns.map((values) =>
+      asSent(
+        reads.reads.reduce(
+          (input, read, at) =>
+            writePipelinePath({ input, to: read.to, value: values[at] }),
+          base,
+        ),
+      ),
+    );
   }
 
   /** A call with its input filled in when it is read, or its runs per item */
@@ -374,8 +461,22 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     let read: [input: unknown] | null = null;
     const fill = async () => {
       let input = await call.getRawInput();
-      for (const value of reads.reads) {
-        input = filled(input, value, await dataOf(value.from));
+      const counter = fillCounter();
+      const values: unknown[] = [];
+      for (const read of reads.reads) {
+        const value = readPipelinePath(await dataOf(read.from), read.path);
+        try {
+          counter.add(value);
+        } catch (cause) {
+          // It doesn't run: it takes no place among the runs
+          runs -= 1;
+          throw cause;
+        }
+        values.push(value);
+      }
+      counter.take();
+      for (const [at, read] of reads.reads.entries()) {
+        input = writePipelinePath({ input, to: read.to, value: values[at] });
       }
       input = asSent(input);
       read = [input];

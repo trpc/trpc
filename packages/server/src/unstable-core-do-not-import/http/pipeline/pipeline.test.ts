@@ -22,6 +22,7 @@ import {
   parsePipelineReads,
   pipelineCalls,
   pipeOfBody,
+  pipelineFillLimit,
   pipeOfSearchParams,
 } from './server';
 import type { PipelineCallReads, PipelineRead, PipeRead } from './wire';
@@ -1091,6 +1092,105 @@ describe('a call for every item', () => {
   });
 });
 
+describe('what a request fills in', () => {
+  // A value is copied into every input it goes in. Without a limit, a small
+  // request could make the server copy a large result many times over
+  const big = 'x'.repeat(Math.ceil(pipelineFillLimit * 0.4));
+
+  test(`its values are ${pipelineFillLimit} characters at most: a call that would go over is refused, and takes none of it`, async () => {
+    const echo = vi.fn((input: unknown) =>
+      isObject(input) ? input['n'] : null,
+    );
+    await using server = serve({
+      ...defaults,
+      fns: { post: () => ({ big, id: 'ada' }), echo },
+    });
+    const post = sent('post', undefined);
+    const fits = call('echo', { n: 1 }, [
+      { to: ['big'], from: post, path: ['big'], each: false },
+    ]);
+    const tooMuch = call('echo', { n: 2 }, [
+      { to: ['big'], from: post, path: ['big'], each: false },
+      { to: ['again'], from: post, path: ['big'], each: false },
+    ]);
+    const small = call('echo', { n: 3 }, [
+      { to: ['id'], from: post, path: ['id'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [fits, tooMuch, small],
+    });
+
+    expect(res.of(fits)).toEqual({ data: 1 });
+    expect(res.of(tooMuch)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'The values a call fills in exceed the most a batch may fill in',
+      },
+    });
+    expect(res.of(small)).toEqual({ data: 3 });
+    expect(
+      echo.mock.calls.map(([input]) => (input as { n: number }).n),
+    ).toEqual([1, 3]);
+  });
+
+  test('every run of a call for every item counts, with its whole input', async () => {
+    const echo = vi.fn((input: unknown) =>
+      isObject(input) ? input['n'] : null,
+    );
+    await using server = serve({
+      ...defaults,
+      // A refused call takes none of the runs either
+      maxRuns: 6,
+      fns: {
+        three: () => ({ big, items: [1, 2, 3] }),
+        // Ready after the first is refused
+        two: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return { big, items: [1, 2] };
+        },
+        echo,
+      },
+    });
+    const three = sent('three', undefined);
+    const two = sent('two', undefined);
+    // Three runs, each with the big value: too much together
+    const ofThree = call('echo', {}, [
+      { to: ['n'], from: three, path: ['items', null], each: true },
+      { to: ['big'], from: three, path: ['big'], each: false },
+    ]);
+    // Two runs, each with an input that is the big value
+    const ofTwo = call('echo', { big }, [
+      { to: ['n'], from: two, path: ['items', null], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [three, two],
+      calls: [ofThree, ofTwo],
+    });
+
+    expect(res.of(ofThree)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'The values a call fills in exceed the most a batch may fill in',
+      },
+    });
+    expect(res.of(ofTwo)).toEqual({
+      data: [{ result: { data: 1 } }, { result: { data: 2 } }],
+    });
+    expect(echo).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('a call that failed', () => {
   test('is reported with the input it ran with: filled in, if it got that far', async () => {
     const { fns } = blog();
@@ -1683,6 +1783,78 @@ describe('a place in an input that a read cannot write to', () => {
     });
     expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
   });
+
+  test('a `__proto__` on the way is a property of the input too, and changes no prototype', async () => {
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      fns: {
+        post: () => ({ yes: true }),
+        echo: (input) => {
+          seen.push(input);
+          return null;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    // An input that has one: JSON makes `"__proto__"` a property
+    const reader = call('echo', JSON.parse('{"__proto__":{"a":1}}'), [
+      { to: ['__proto__', 'polluted'], from: post, path: ['yes'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    const [input] = seen;
+    assert(isObject(input));
+    expect(Object.getPrototypeOf(input)).toBe(Object.prototype);
+    expect(Object.getOwnPropertyDescriptor(input, '__proto__')?.value).toEqual({
+      a: 1,
+      polluted: true,
+    });
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+  });
+
+  test.each<{ name: string; to: string[] }>([
+    { name: '`__proto__`', to: ['__proto__', 'polluted'] },
+    { name: '`constructor`', to: ['constructor', 'prototype', 'polluted'] },
+  ])(
+    'what an input has from its prototype, such as $name, is nothing to write to',
+    async ({ to }) => {
+      const echo = vi.fn(() => null);
+      await using server = serve({
+        ...defaults,
+        fns: { post: () => ({ yes: true }), echo },
+      });
+      const post = sent('post', undefined);
+      const reader = call('echo', {}, [
+        { to, from: post, path: ['yes'], each: false },
+      ]);
+
+      const res = await send({
+        ...defaults,
+        url: server.url,
+        method: 'POST',
+        sent: [post],
+        calls: [reader],
+      });
+
+      expect(res.of(reader)).toEqual({
+        error: {
+          code: 'BAD_REQUEST',
+          message: `Invalid "pipe": the input has nothing at "${to.join('.')}"`,
+        },
+      });
+      expect(echo).not.toHaveBeenCalled();
+      expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+      expect(Object.prototype).not.toHaveProperty('polluted');
+    },
+  );
 
   test('an instance of a class keeps its class', async () => {
     class Range {

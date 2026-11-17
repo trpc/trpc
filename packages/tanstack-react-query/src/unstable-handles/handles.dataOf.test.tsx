@@ -895,6 +895,38 @@ describe('entryPerItem', () => {
     ).toEqual(handle);
   });
 
+  test.each<{ name: string; to: string[] }>([
+    { name: '`__proto__`', to: ['__proto__', 'polluted'] },
+    { name: '`constructor`', to: ['constructor', 'prototype', 'polluted'] },
+  ])(
+    'a handle that writes an item to $name changes no prototype',
+    async ({ to }) => {
+      await using resource = ctx();
+      const trpc = resource.optionsProxyServer;
+      const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+      const [handles] = await loadHandles(trpc, {
+        post,
+        tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+          ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
+        ),
+      });
+      // A handle is JSON from the server, so anything can be in it
+      const handle = {
+        ...JSON.parse(JSON.stringify(handles.tags)),
+        itemInputs: [{ to, path: ['id'] }],
+      };
+
+      const input: unknown = experimental_handleOfItem(handle, {
+        id: 'yes',
+      }).input;
+
+      expect(({} as { polluted?: unknown }).polluted).toBeUndefined();
+      expect(Object.prototype).not.toHaveProperty('polluted');
+      expect(Object.getPrototypeOf(input)).toBe(Object.prototype);
+      expect(Object.hasOwn(input as object, to[0]!)).toBe(true);
+    },
+  );
+
   test('takes a list of lists, such as the pages of an infinite entry', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
