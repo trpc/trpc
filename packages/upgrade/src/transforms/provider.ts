@@ -286,7 +286,7 @@ export default function transform(
       };
 
       const config = valueOf('config');
-      const transformer = valueOf('transformer');
+      const transformer = inputTransformer(valueOf('transformer'));
       const ssr = valueOf('ssr');
       const usesSSR = !(
         !ssr ||
@@ -578,6 +578,46 @@ export function withTRPC<TInitialProps extends object>(
 
   // `<trpc.Provider client={c}>` → `<TRPCProvider trpcClient={c}>`,
   // `trpc.createClient(opts)` → `createTRPCClient<AppRouter>(opts)`
+  /**
+   * A transformer may be `{ input, output }`. Classic `withTRPC` read
+   * `trpcState` with `input`, so hydration needs that half: from an object
+   * literal, or a top-level `const` holding one.
+   */
+  function inputTransformer(
+    transformer: ExpressionKind | null,
+  ): ExpressionKind | null {
+    const inputOf = (object: unknown) => {
+      if (!j.ObjectExpression.check(object)) return null;
+      const input = object.properties.find(
+        (p) =>
+          (j.ObjectProperty.check(p) || j.Property.check(p)) &&
+          staticKeyName(j, p) === 'input',
+      );
+      return input ? (input as { value: ExpressionKind }).value : null;
+    };
+    if (j.Identifier.check(transformer)) {
+      const declared = root
+        .find(j.VariableDeclarator, { id: { name: transformer.name } })
+        .filter((p) => {
+          const statement = p.parent?.parent;
+          return (
+            p.parent?.node.kind === 'const' &&
+            (j.Program.check(statement?.node) ||
+              (j.ExportNamedDeclaration.check(statement?.node) &&
+                j.Program.check(statement.parent?.node)))
+          );
+        })
+        .paths()[0];
+      return inputOf(declared?.node.init)
+        ? j.memberExpression(
+            j.identifier(transformer.name),
+            j.identifier('input'),
+          )
+        : transformer;
+    }
+    return inputOf(transformer) ?? transformer;
+  }
+
   function migrateProviderUsage(collection: Collection) {
     let used = false;
     collection
