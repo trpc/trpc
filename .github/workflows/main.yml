@@ -119,14 +119,14 @@ jobs:
       - run: pnpm turbo --filter 'www^...' build
       - run: pnpm --filter www test
 
-  # One job per group of examples, not per example: a job spends most of its
-  # time setting up and waiting for a runner.
+  # One example per adapter or runtime; the other examples aren't run here.
   e2e:
-    name: 'E2E-tests (${{ matrix.group }})'
+    name: 'E2E-tests (${{ matrix.dir }})'
     needs: [build]
     services:
       postgres:
-        image: postgres
+        # Only the Prisma examples need a database. An empty image skips the service.
+        image: ${{ contains(matrix.dir, 'prisma') && 'postgres' || '' }}
         env:
           POSTGRES_DATABASE: trpcdb
           POSTGRES_USER: postgres
@@ -141,59 +141,39 @@ jobs:
     timeout-minutes: 20
     continue-on-error: true
     strategy:
-      fail-fast: false
       matrix:
-        include:
-          - group: next
-            dirs: .experimental/next-app-dir .test/ssg next-formdata next-minimal-starter
-          - group: next-prisma
-            dirs: next-prisma-starter next-prisma-todomvc next-prisma-websockets-starter
-          - group: servers
-            dirs: .test/internal-types-export express-minimal express-server fastify-server minimal-per-procedure-errors openapi-codegen soa standalone-server
-          # tanstack-start-sse-chat is left out
-          - group: runtimes
-            dirs: bun cloudflare-workers deno-deploy minimal-react nuxt vercel-edge-runtime
+        dir: [
+            .experimental/next-app-dir,
+            .test/internal-types-export,
+            bun,
+            cloudflare-workers,
+            express-server,
+            fastify-server,
+            minimal-react,
+            next-prisma-starter,
+            next-prisma-websockets-starter,
+            openapi-codegen,
+            standalone-server,
+          ]
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
       - uses: ./.github/setup
+        with:
+          example: ${{ matrix.dir }}
 
-      - run: pnpm build
-
-      - if: matrix.group == 'runtimes'
+      - if: matrix.dir == 'bun'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
-      - if: matrix.group == 'runtimes'
-        uses: denoland/setup-deno@v2.0.5
-        with:
-          deno-version: 2.x
 
-      # Runs every example, then fails if any did
-      - env:
-          DIRS: ${{ matrix.dirs }}
-        run: |
-          e2e() {
-            if [ "$1" = deno-deploy ]; then
-              cd "examples/$1" &&
-                pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
-              return
-            fi
-            cp "examples/$1/.env.example" "examples/$1/.env" 2>/dev/null
-            pnpm turbo --filter "./examples/$1" test-dev &&
-              pnpm turbo --filter "./examples/$1" build &&
-              pnpm turbo --filter "./examples/$1" typecheck &&
-              pnpm turbo --filter "./examples/$1" test-start
-          }
-          failed=()
-          for dir in $DIRS; do
-            echo "::group::$dir"
-            (e2e "$dir") || failed+=("$dir")
-            echo "::endgroup::"
-          done
-          for dir in "${failed[@]}"; do echo "::error title=E2E failed::$dir"; done
-          [ ${#failed[@]} -eq 0 ]
+      # The build job filled turbo's cache, so this restores the packages' builds
+      - run: pnpm build
+
+      - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   # https://pkg.pr.new
   release-tmp:
