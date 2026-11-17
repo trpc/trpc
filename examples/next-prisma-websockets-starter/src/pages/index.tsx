@@ -32,8 +32,15 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { trpc } from '~/utils/trpc';
+import { trpc, useTRPC } from '~/utils/trpc';
+import {
+  useQueryClient,
+  useMutation,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
+import { useSubscription } from '@trpc/tanstack-react-query';
 
+// TODO(@trpc/upgrade): `trpc` is now `const trpc = useTRPC()` inside components and hooks, see https://trpc.io/docs/client/tanstack-react-query/migrating
 type SubscriptionStatus = ReturnType<
   typeof trpc.post.onAdd.useSubscription
 >['status'];
@@ -72,7 +79,8 @@ function UserAvatar(props: { name: string }) {
 }
 
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
-  const addPost = trpc.post.add.useMutation();
+  const trpc = useTRPC();
+  const addPost = useMutation(trpc.post.add.mutationOptions());
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
   const [enterToPostMessage, setEnterToPostMessage] = useState(true);
@@ -87,7 +95,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
     } catch {}
   }
 
-  const isTyping = trpc.post.isTyping.useMutation();
+  const isTyping = useMutation(trpc.post.isTyping.mutationOptions());
 
   const userName = session?.user?.name;
   if (!userName) {
@@ -165,13 +173,16 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
 const subscribeToNothing = () => () => undefined;
 
 export default function IndexPage() {
-  const postsQuery = trpc.post.infinite.useInfiniteQuery(
-    {},
-    {
-      getNextPageParam: (d) => d.nextCursor,
-    },
+  const trpc = useTRPC();
+  const postsQuery = useInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      {},
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
   );
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -228,18 +239,22 @@ export default function IndexPage() {
     // oxlint-disable-next-line react/exhaustive-deps
   }, []);
   // subscribe to new posts and add
-  const onAdd = trpc.post.onAdd.useSubscription(undefined, {
-    onData(post) {
-      addMessages([post]);
-    },
-    onError(err) {
-      console.error('Subscription error:', err);
-      // we might have missed a message - invalidate cache
-      utils.post.infinite.invalidate();
-    },
-  });
+  const onAdd = useSubscription(
+    trpc.post.onAdd.subscriptionOptions(undefined, {
+      onData(post) {
+        addMessages([post]);
+      },
+      onError(err) {
+        console.error('Subscription error:', err);
+        // we might have missed a message - invalidate cache
+        queryClient.invalidateQueries(trpc.post.infinite.pathFilter());
+      },
+    }),
+  );
 
-  const whoIsTyping = trpc.post.whoIsTyping.useSubscription();
+  const whoIsTyping = useSubscription(
+    trpc.post.whoIsTyping.subscriptionOptions(),
+  );
 
   return (
     <>
