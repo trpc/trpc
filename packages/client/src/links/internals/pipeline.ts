@@ -273,8 +273,9 @@ export interface BatchPipelining {
 export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
 
 /**
- * The URL and body of a pipelined batch: its `pipe` is in the body of a
- * request that has one, and in the URL of one that has none.
+ * The URL and body of a pipelined batch. Its `pipe` is in its body if it has
+ * one to put it in, and in its URL if not: both ask the same question, so it
+ * is always in one of the two.
  */
 function pipelinedRequest(
   pipe: PipelinedBatchPlan<PipelinedCall>['reads'],
@@ -283,7 +284,7 @@ function pipelinedRequest(
     getUrl: (opts) =>
       pipelinedBatchUrl({
         url: getUrl(opts),
-        pipe: opts.methodOverride === 'POST' ? null : pipe,
+        pipe: typeof getBody(opts) === 'string' ? null : pipe,
       }),
     getBody: (opts) => {
       const body = getBody(opts);

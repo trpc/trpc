@@ -49,8 +49,8 @@ function isPath(value: unknown): value is PipelinePath {
 
 /**
  * Validates the `pipe` of a batch request: what each call reads, by the
- * call's index. A string is the search param's JSON. Nothing after this
- * checks it again.
+ * call's index. A string is the search param's JSON. A request without one
+ * has nothing to fill in. Nothing after this checks it again.
  *
  * A read names its source by index. It comes back as what `sources` has for
  * that call, so a read from a call that isn't there, or isn't earlier, can't
@@ -62,6 +62,9 @@ export function parsePipelineReads<TSource extends object | number>(opts: {
   sources: readonly TSource[];
 }): Map<number, PipelineCallReads<TSource>> {
   let parsed = opts.pipe;
+  if (parsed === undefined) {
+    return new Map();
+  }
   if (typeof parsed === 'string') {
     try {
       parsed = JSON.parse(parsed);
@@ -232,7 +235,7 @@ export type PipelineEach = <TError>(run: {
  */
 export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   calls: readonly TCall[];
-  /** The request's `pipe`, not yet checked */
+  /** The request's `pipe`, not yet checked. `undefined` if it has none */
   pipe: unknown;
   transformer: CombinedDataTransformer;
   /**

@@ -394,10 +394,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const getPipe = info.experimental_getPipe;
     const pipeline = getPipe
       ? await run(async () => {
-          const pipe = await getPipe();
-          if (pipe === undefined) {
-            return null;
-          }
           if (info.type === 'mutation') {
             throw new TRPCError({
               code: 'BAD_REQUEST',
@@ -406,7 +402,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
           return pipelineCalls({
             calls: info.calls,
-            pipe,
+            pipe: await getPipe(),
             transformer: config.transformer,
             // Every run of a procedure counts towards `maxBatchSize`
             maxRuns:

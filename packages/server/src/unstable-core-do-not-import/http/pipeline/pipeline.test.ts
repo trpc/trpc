@@ -104,33 +104,47 @@ function serve(opts: {
     } catch (cause) {
       return Response.json({ error: wireError(cause) }, { status: 400 });
     }
+    // As a request handler does: a call gives how it went, and never rejects
     const results = pipeline.run({
-      call: async (call, each) => {
+      call: async (call, each): Promise<[cause: unknown, data: unknown]> => {
         try {
           const fn = opts.fns[call.path];
           if (!fn) {
             throw new TRPCError({ code: 'NOT_FOUND' });
           }
-          return await (each
-            ? each({ item: async (input) => fn(input), error: wireError })
-            : fn(await call.getRawInput()));
+          return [
+            undefined,
+            await (each
+              ? each({ item: async (input) => fn(input), error: wireError })
+              : fn(await call.getRawInput())),
+          ];
         } catch (cause) {
           opts.onError(call.path, call.result());
-          throw cause;
+          return [cause ?? new Error('failed'), undefined];
         }
       },
-      data: (data) => data,
+      // A failed call has no data for the calls that read it
+      data: ([cause, data]) => {
+        if (cause !== undefined) {
+          throw cause;
+        }
+        return data;
+      },
     });
-    const answers = results.map((result) =>
-      result
-        .then((data) => {
-          const serialized = opts.transformer.output.serialize(data);
-          // What can't go in the response is that call's error
-          JSON.stringify(serialized);
-          return { result: { data: serialized } };
-        })
-        .catch((cause: unknown) => ({ error: wireError(cause) })),
-    );
+    const answers = results.map(async (result) => {
+      const [cause, data] = await result;
+      if (cause !== undefined) {
+        return { error: wireError(cause) };
+      }
+      try {
+        const serialized = opts.transformer.output.serialize(data);
+        // What can't go in the response is that call's error
+        JSON.stringify(serialized);
+        return { result: { data: serialized } };
+      } catch (unserializable) {
+        return { error: wireError(unserializable) };
+      }
+    });
     if (!opts.stream) {
       return Response.json(await Promise.all(answers));
     }
@@ -1304,6 +1318,26 @@ describe('what a client puts in a request', () => {
   });
 });
 
+test('a pipelined batch without a `pipe` has nothing to fill in: its calls run as they were sent', async () => {
+  const { fns, ran } = blog();
+  await using server = serve({ ...defaults, fns });
+
+  const response = await fetch(
+    `${server.url}/post,author?batch=${pipelineBatch}&input=${encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'lin' } }),
+    )}`,
+  );
+
+  expect(await response.json()).toEqual([
+    { result: { data: posts[0] } },
+    { result: { data: authors[1] } },
+  ]);
+  expect(ran).toEqual([
+    ['post', { slug: 'hello' }],
+    ['author', { id: 'lin' }],
+  ]);
+});
+
 describe('a request the server refuses, before anything of it runs', () => {
   const read: PipeRead = { to: ['id'], from: 0, path: ['authorId'] };
 
@@ -1413,23 +1447,6 @@ describe('a request the server refuses, before anything of it runs', () => {
       error: {
         code: 'BAD_REQUEST',
         message: `Invalid "pipe": ${scenario.message}`,
-      },
-    });
-    expect(ran).toEqual([]);
-  });
-
-  test('a pipelined batch that has no `pipe`', async () => {
-    const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
-
-    const response = await fetch(
-      `${server.url}/post,author?batch=${pipelineBatch}`,
-    );
-
-    expect(await response.json()).toEqual({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'Invalid "pipe": expected an object',
       },
     });
     expect(ran).toEqual([]);
