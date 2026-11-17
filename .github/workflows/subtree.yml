@@ -1,12 +1,23 @@
 name: subtree-matrix
 # Syncs the standalone examples to `trpc/examples-<name>`. They install
-# `@trpc/*@latest`, so the release workflow calls this once a release is out.
+# `@trpc/*@latest`, so the release workflow calls this once a release is out,
+# and a push to main that changes the examples, which releases nothing, runs
+# it too.
 on:
   workflow_dispatch:
   workflow_call:
     secrets:
       TRPC_DEPLOY_TOKEN:
         required: true
+  push:
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/subtree.yml'
+      - 'examples/**'
+      - 'pnpm-workspace.yaml'
+      - 'tooling/subtree/**'
+      - 'tooling/ui/**'
   pull_request:
     paths:
       - '.github/workflows/subtree.yml'
