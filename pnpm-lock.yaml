@@ -1836,15 +1836,12 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next
-        version: link:../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query
+        version: link:../../packages/tanstack-react-query
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
