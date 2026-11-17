@@ -22,6 +22,7 @@ import {
 import { createRequire } from 'node:module';
 import { join, relative, resolve } from 'node:path';
 import { scanProject } from '../src/lib/ast/scanners';
+import { tscErrors } from './tscErrors';
 
 const repo = resolve(import.meta.dirname, '../../..');
 const require = createRequire(join(repo, 'packages/upgrade/package.json'));
@@ -58,16 +59,7 @@ function typeErrors(dir: string) {
     cwd: dir,
     encoding: 'utf8',
   });
-  if (result.error) {
-    throw result.error;
-  }
-  const output = `${result.stdout}${result.stderr}`;
-  const errors = output.split('\n').filter((line) => /error TS\d+/.test(line));
-  // tsc fails with diagnostics; failing without any means it didn't run
-  if (result.status !== 0 && errors.length === 0) {
-    throw new Error(`tsc failed in ${dir}:\n${output}`);
-  }
-  return errors;
+  return tscErrors(dir, result);
 }
 
 async function tryExample(dir: string) {
