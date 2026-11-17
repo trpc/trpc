@@ -347,7 +347,7 @@ export function uniqueName(
 /**
  * Whether `name` at `path` refers to a binding something between `path` and
  * `scope` declares, e.g. a nested callback's own `utils` parameter, rather
- * than to `declarator`.
+ * than to `declarator`. `scope` is the function or block that declares it.
  */
 export function isShadowed(
   j: JSCodeshift,
@@ -385,6 +385,14 @@ export function isShadowed(
     if (
       j.CatchClause.check(node) &&
       paramBindings(j, [node.param]).has(opts.name)
+    ) {
+      return true;
+    }
+    // `for (const utils of list)`, `for (let utils = …; …)`
+    if (
+      (j.ForStatement.check(node) && declaresName(node.init)) ||
+      ((j.ForInStatement.check(node) || j.ForOfStatement.check(node)) &&
+        declaresName(node.left))
     ) {
       return true;
     }

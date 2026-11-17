@@ -571,7 +571,11 @@ export default function transform(
             (p) =>
               p.node !== declarator.id &&
               isValueReference(j, p) &&
-              !isShadowed(j, p, { scope, name: utilsName, declarator }),
+              !isShadowed(j, p, {
+                scope: declaringBlock,
+                name: utilsName,
+                declarator,
+              }),
           )
           .paths()
           // Innermost and last first, so a call inside another's arguments

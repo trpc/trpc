@@ -50,3 +50,26 @@ export function Component5() {
   const utils = trpc.useUtils();
   return trpc.post.list.useQuery().data;
 }
+
+export function Component6(clients: unknown[], other: unknown) {
+  {
+    // An outer `utils` doesn't hide the inner one
+    const utils = other;
+    {
+      const utils = trpc.useUtils();
+      void utils.post.list.invalidate();
+    }
+    void utils;
+  }
+  return null;
+}
+
+export function Component7(clients: unknown[]) {
+  const utils = trpc.useUtils();
+  // The loop's own `utils` is something else
+  for (const utils of clients) {
+    void utils;
+  }
+  void utils.post.list.invalidate();
+  return null;
+}

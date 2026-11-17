@@ -167,24 +167,31 @@ export default function transform(
   }
 
   /**
-   * Renames `name` in `nodes` to its local import name, e.g. `QueryClient` to
-   * `QC` for `import { QueryClient as QC }`.
+   * Renames each import's `name` in `nodes` to its local import name, e.g.
+   * `QueryClient` to `QC` for `import { QueryClient as QC }`. All at once, so
+   * one alias, e.g. `QueryClient as QueryClientProvider`, isn't renamed again.
    */
-  function localizeImport(
+  function localizeImports(
     nodes: readonly unknown[],
-    opts: {
+    imports: ReadonlyArray<{
       readonly source: string;
       readonly name: string;
       readonly typeOnly: boolean;
-    },
+    }>,
   ) {
-    const local = ensureNamedImport({ j, root }, opts);
-    if (local === opts.name) {
+    const locals = new Map<string, string>();
+    for (const opts of imports) {
+      const local = ensureNamedImport({ j, root }, opts);
+      if (local !== opts.name) {
+        locals.set(opts.name, local);
+      }
+    }
+    if (locals.size === 0) {
       return;
     }
     for (const node of nodes) {
       j(node as never)
-        .find(j.Identifier, { name: opts.name })
+        .find(j.Identifier)
         // Not `x.QueryClient` or `{ QueryClient: x }`
         .filter((p) => {
           const parent = p.parent?.node;
@@ -201,7 +208,7 @@ export default function transform(
           return !isMemberProperty && !isKey;
         })
         .forEach((p) => {
-          p.node.name = local;
+          p.node.name = locals.get(p.node.name) ?? p.node.name;
         });
     }
   }
@@ -366,11 +373,12 @@ export default function transform(
             ? configFunction.body
             : j.blockStatement([j.returnStatement(configFunction.body)]);
           const fn = j.functionDeclaration(j.identifier(configName), [], body);
+          // `config(opts)`, `config({ ctx })` or `config({ ctx } = {})`
+          const typed = j.AssignmentPattern.check(param) ? param.left : param;
           if (
             param &&
-            (j.Identifier.check(param) || j.ObjectPattern.check(param))
+            (j.Identifier.check(typed) || j.ObjectPattern.check(typed))
           ) {
-            const typed = param;
             typed.typeAnnotation = j.tsTypeAnnotation(
               j.tsTypeLiteral([
                 (() => {
@@ -387,9 +395,16 @@ export default function transform(
                 })(),
               ]),
             );
-            fn.params = [typed];
+            fn.params = [param];
             configCall = `${configName}({})`;
             configUsesContext = true;
+          } else if (param) {
+            // Keep it, so its names stay bound, and type it by hand
+            fn.params = [param];
+            configCall = `${configName}({})`;
+            fn.comments = [
+              todoComment('type this parameter: `{ ctx?: NextPageContext }`'),
+            ];
           }
           fn.comments = [
             j.commentBlock(
@@ -397,6 +412,7 @@ export default function transform(
               true,
               false,
             ),
+            ...(fn.comments ?? []),
           ];
           statements.push(fn);
           statements.push(
@@ -529,39 +545,51 @@ export function withTRPC<TInitialProps extends object>(
       ];
       j(statement).replaceWith(() => statements);
 
-      // The generated code calls these by their local names
-      for (const [source, name, typeOnly] of [
-        ['@trpc/client', 'createTRPCClient', false],
-        ['@tanstack/react-query', 'QueryClient', false],
-        ['@tanstack/react-query', 'QueryClientProvider', false],
-        ['@tanstack/react-query', 'HydrationBoundary', false],
-        ['react', 'createElement', false],
-        ['react', 'useState', false],
-        ['next/app', 'AppType', true],
-        ['@tanstack/react-query', 'DehydratedState', true],
-      ] as const) {
-        localizeImport(generated, { source, name, typeOnly });
-      }
-      if (queryClientConfig === 'unknown') {
-        localizeImport(generated, {
-          source: '@tanstack/react-query',
-          name: 'QueryClientConfig',
-          typeOnly: true,
-        });
-      }
-      if (configUsesContext) {
-        localizeImport(generated, {
-          source: 'next',
-          name: 'NextPageContext',
-          typeOnly: true,
-        });
-      }
       moveImport('@trpc/next', 'createTRPCNext');
-      localizeImport(generated, {
-        source: '@trpc/tanstack-react-query',
-        name: 'createTRPCContext',
-        typeOnly: false,
-      });
+      // The generated code calls these by their local names
+      localizeImports(generated, [
+        { source: '@trpc/client', name: 'createTRPCClient', typeOnly: false },
+        {
+          source: '@tanstack/react-query',
+          name: 'QueryClient',
+          typeOnly: false,
+        },
+        {
+          source: '@tanstack/react-query',
+          name: 'QueryClientProvider',
+          typeOnly: false,
+        },
+        {
+          source: '@tanstack/react-query',
+          name: 'HydrationBoundary',
+          typeOnly: false,
+        },
+        { source: 'react', name: 'createElement', typeOnly: false },
+        { source: 'react', name: 'useState', typeOnly: false },
+        { source: 'next/app', name: 'AppType', typeOnly: true },
+        {
+          source: '@tanstack/react-query',
+          name: 'DehydratedState',
+          typeOnly: true,
+        },
+        ...(queryClientConfig === 'unknown'
+          ? [
+              {
+                source: '@tanstack/react-query',
+                name: 'QueryClientConfig',
+                typeOnly: true,
+              },
+            ]
+          : []),
+        ...(configUsesContext
+          ? [{ source: 'next', name: 'NextPageContext', typeOnly: true }]
+          : []),
+        {
+          source: '@trpc/tanstack-react-query',
+          name: 'createTRPCContext',
+          typeOnly: false,
+        },
+      ]);
       // `ssrPrepass` only worked with `ssr: true`
       root
         .find(j.ImportDeclaration, {

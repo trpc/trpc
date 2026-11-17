@@ -53,3 +53,28 @@ export function Component5() {
   const trpc = useTRPC();
   return useQuery(trpc.post.list.queryOptions()).data;
 }
+
+export function Component6(clients: unknown[], other: unknown) {
+  const trpc = useTRPC();
+  {
+    // An outer `utils` doesn't hide the inner one
+    const utils = other;
+    {
+      const queryClient = useQC();
+      void queryClient.invalidateQueries(trpc.post.list.pathFilter());
+    }
+    void utils;
+  }
+  return null;
+}
+
+export function Component7(clients: unknown[]) {
+  const trpc = useTRPC();
+  const queryClient = useQC();
+  // The loop's own `utils` is something else
+  for (const utils of clients) {
+    void utils;
+  }
+  void queryClient.invalidateQueries(trpc.post.list.pathFilter());
+  return null;
+}

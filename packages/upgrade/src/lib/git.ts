@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import { resolve } from 'path';
 import { cancel, log } from '@clack/prompts';
 import { execa } from './execa';
@@ -46,4 +47,35 @@ export async function filterIgnored(files: readonly string[]) {
   }
 
   return filteredSourcePaths;
+}
+
+/**
+ * Every file git tracks under `cwd`, as absolute paths. Reads git's output
+ * as a stream, so no buffer limit stops a big repository.
+ */
+export function trackedFiles(cwd: string): Promise<string[]> {
+  return new Promise((done, fail) => {
+    const child = spawn('git', ['ls-files', '-z'], { cwd });
+    const chunks: Buffer[] = [];
+    let stderr = '';
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('error', fail);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        fail(new Error(`git ls-files failed with code ${code}: ${stderr}`));
+        return;
+      }
+      done(
+        Buffer.concat(chunks)
+          .toString('utf8')
+          // `-z`: paths as they are, not quoted and escaped
+          .split('\0')
+          .filter(Boolean)
+          .map((file) => resolve(cwd, file)),
+      );
+    });
+  });
 }
