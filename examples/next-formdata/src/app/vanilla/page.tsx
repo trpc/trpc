@@ -1,8 +1,10 @@
+'use client';
+
 /**
  * This is a Next.js page.
  */
 import { useMutation } from '@tanstack/react-query';
-import { useTRPC } from '../utils/trpc';
+import { useTRPC } from '~/trpc/client';
 
 export default function IndexPage() {
   const trpc = useTRPC();

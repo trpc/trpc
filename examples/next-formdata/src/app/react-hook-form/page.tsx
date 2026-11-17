@@ -1,3 +1,5 @@
+'use client';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
@@ -5,7 +7,7 @@ import type { FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
-import { useTRPC } from '~/utils/trpc';
+import { useTRPC } from '~/trpc/client';
 
 type ZodFormData<TSchema extends FieldValues> = UseFormReturn<TSchema> & {
   formRef: React.RefObject<HTMLFormElement | null>;
