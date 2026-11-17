@@ -102,13 +102,14 @@ function findRouterType(
   // A setup whose router type we can't follow could be the one a file uses
   let unresolved = false;
   for (const sourceFile of sourceFiles) {
+    const names = factoryNames(sourceFile);
     for (const node of sourceFile.statements) {
       if (!isVariableStatement(node)) {
         continue;
       }
       for (const declaration of node.declarationList.declarations) {
         const init = declaration.initializer;
-        if (!init || !isTRPCFactoryCall(init, sourceFile)) {
+        if (!init || !isTRPCFactoryCall(init, { sourceFile, names })) {
           continue;
         }
         const [typeArgument] = init.typeArguments ?? [];
@@ -134,16 +135,44 @@ function findRouterType(
   return !unresolved && distinct.size === 1 ? (found[0] ?? null) : null;
 }
 
+const FACTORY_NAMES = ['createTRPCReact', 'createTRPCNext'];
+
+/**
+ * The names `sourceFile` calls the setup factories by: their own, or an
+ * alias such as `import { createTRPCReact as createReact }`.
+ */
+function factoryNames(sourceFile: SourceFile): Set<string> {
+  const names = new Set(FACTORY_NAMES);
+  for (const node of sourceFile.statements) {
+    if (
+      !isImportDeclaration(node) ||
+      !isStringLiteral(node.moduleSpecifier) ||
+      !/^@trpc\/(react-query|next)$/.test(node.moduleSpecifier.text) ||
+      !node.importClause?.namedBindings ||
+      !isNamedImports(node.importClause.namedBindings)
+    ) {
+      continue;
+    }
+    for (const element of node.importClause.namedBindings.elements) {
+      const imported = (element.propertyName ?? element.name).getText(
+        sourceFile,
+      );
+      if (FACTORY_NAMES.includes(imported)) {
+        names.add(element.name.text);
+      }
+    }
+  }
+  return names;
+}
+
 function isTRPCFactoryCall(
   node: unknown,
-  sourceFile: SourceFile,
+  opts: { readonly sourceFile: SourceFile; readonly names: Set<string> },
 ): node is CallExpression {
   return (
     isCallExpression(node as never) &&
     isIdentifier((node as CallExpression).expression) &&
-    ['createTRPCReact', 'createTRPCNext'].includes(
-      (node as CallExpression).expression.getText(sourceFile),
-    )
+    opts.names.has((node as CallExpression).expression.getText(opts.sourceFile))
   );
 }
 

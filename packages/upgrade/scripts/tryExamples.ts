@@ -58,9 +58,16 @@ function typeErrors(dir: string) {
     cwd: dir,
     encoding: 'utf8',
   });
-  return `${result.stdout}${result.stderr}`
-    .split('\n')
-    .filter((line) => /error TS\d+/.test(line));
+  if (result.error) {
+    throw result.error;
+  }
+  const output = `${result.stdout}${result.stderr}`;
+  const errors = output.split('\n').filter((line) => /error TS\d+/.test(line));
+  // tsc fails with diagnostics; failing without any means it didn't run
+  if (result.status !== 0 && errors.length === 0) {
+    throw new Error(`tsc failed in ${dir}:\n${output}`);
+  }
+  return errors;
 }
 
 async function tryExample(dir: string) {

@@ -63,7 +63,9 @@ export default function transform(
    * `<AppRouter>`, imported from where the file with `createTRPCReact`
    * imports it, if the CLI found that.
    */
-  function importedRouterType(): TSTypeParameterInstantiation | null {
+  function importedRouterType(
+    at: ASTPath,
+  ): TSTypeParameterInstantiation | null {
     const source = options.routerType;
     if (!source) {
       return null;
@@ -84,7 +86,7 @@ export default function transform(
     }
     const local = ensureNamedImport(
       { j, root },
-      { source: specifier, name: source.name, typeOnly: true },
+      { source: specifier, name: source.name, typeOnly: true, at },
     );
     return j.tsTypeParameterInstantiation([
       j.tsTypeReference(j.identifier(local)),
@@ -159,6 +161,7 @@ export default function transform(
         source: '@trpc/tanstack-react-query',
         name: 'createTRPCContext',
         typeOnly: false,
+        at: null,
       },
     );
   }
@@ -263,9 +266,15 @@ export default function transform(
       // The generated code calls imports by their local names, e.g. `QC` for
       // `import { QueryClient as QC }`. Imported where a template uses them.
       const value = (source: string, name: string) =>
-        ensureNamedImport({ j, root }, { source, name, typeOnly: false });
+        ensureNamedImport(
+          { j, root },
+          { source, name, typeOnly: false, at: null },
+        );
       const type = (source: string, name: string) =>
-        ensureNamedImport({ j, root }, { source, name, typeOnly: true });
+        ensureNamedImport(
+          { j, root },
+          { source, name, typeOnly: true, at: null },
+        );
       const rq = '@tanstack/react-query';
 
       statements.push(
@@ -529,12 +538,13 @@ export function withTRPC<TInitialProps extends object>(
                 source: '@trpc/client',
                 name: 'createTRPCClient',
                 typeOnly: false,
+                at: path,
               },
             ),
           ),
           path.node.arguments,
         );
-        const typeParameters = routerType ?? importedRouterType();
+        const typeParameters = routerType ?? importedRouterType(path);
         if (typeParameters) {
           (next as { typeParameters?: unknown }).typeParameters =
             typeParameters;

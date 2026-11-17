@@ -43,9 +43,18 @@ export function ensureNamedImport(
     readonly source: string;
     readonly name: string;
     readonly typeOnly: boolean;
+    /** Where the code uses it, so a local binding there can't hide it */
+    readonly at: ASTPath | null;
   },
 ): string {
   const { source, name } = opts;
+  const visibleAt = (local: string) =>
+    opts.at === null ||
+    !isShadowed(j, opts.at, {
+      scope: root.paths()[0] as ASTPath,
+      name: local,
+      declarator: null,
+    });
   const declarations = root.find(j.ImportDeclaration, {
     source: { value: source },
   });
@@ -63,9 +72,12 @@ export function ensureNamedImport(
         (opts.typeOnly ||
           !isTypeImport(path.node, specifier as { importKind?: string | null }))
       ) {
-        return j.Identifier.check(specifier.local)
+        const local = j.Identifier.check(specifier.local)
           ? specifier.local.name
           : name;
+        if (visibleAt(local)) {
+          return local;
+        }
       }
     }
   }
@@ -78,10 +90,27 @@ export function ensureNamedImport(
     }
     return opts.typeOnly || (path.node.importKind ?? 'value') === 'value';
   });
-  // `name`, or `name2`… if the file has its own `name` already
+  // `name`, or `name2`… if the file has its own `name` already, or one
+  // where the code uses it. A new alias avoids every name in the file, so no
+  // nested binding can hide it either.
   const taken = topLevelBindings(j, root);
   let local = name;
-  for (let i = 2; taken.has(local); i++) {
+  if (taken.has(local) || !visibleAt(local)) {
+    const used = new Set([
+      ...taken,
+      ...root
+        .find(j.Identifier)
+        .nodes()
+        .map((node) => node.name),
+      ...root
+        .find(j.JSXIdentifier)
+        .nodes()
+        .map((node) => node.name),
+    ]);
+    let i = 2;
+    while (used.has(`${name}${i}`)) {
+      i++;
+    }
     local = `${name}${i}`;
   }
   const specifier = j.importSpecifier(j.identifier(name), j.identifier(local));

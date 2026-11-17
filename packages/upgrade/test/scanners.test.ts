@@ -55,3 +55,19 @@ export const other = createTRPCReact<api.AppRouter>();
   });
   expect(scanProject(root).routerType).toBeNull();
 });
+
+it('finds none when another setup calls the factory by an alias', () => {
+  const root = project({
+    'router.ts': router,
+    'other-router.ts': `export type OtherRouter = { other: true };\n`,
+    'trpc.ts': `import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from './router';
+export const trpc = createTRPCReact<AppRouter>();
+`,
+    'other.ts': `import { createTRPCReact as createReact } from '@trpc/react-query';
+import type { OtherRouter } from './other-router';
+export const other = createReact<OtherRouter>();
+`,
+  });
+  expect(scanProject(root).routerType).toBeNull();
+});

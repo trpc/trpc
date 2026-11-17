@@ -35,6 +35,13 @@ const fixtureOptions: Record<string, Record<string, unknown>> = {
       extension: '',
     },
   },
+  'providerRouterTypeNested.tsx': {
+    routerType: {
+      name: 'AppRouter',
+      file: join(import.meta.dirname, '__fixtures__/provider/server/index.ts'),
+      extension: '',
+    },
+  },
   'providerRouterTypeTaken.tsx': {
     routerType: {
       name: 'AppRouter',

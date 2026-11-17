@@ -131,10 +131,10 @@ export default function transform(
   }
 
   /** Imports `name` from `lib` and returns the local name to call it by. */
-  function importFrom(lib: string, name: string) {
+  function importFrom(lib: string, name: string, at: ASTPath) {
     return ensureNamedImport(
       { j, root },
-      { source: lib, name, typeOnly: false },
+      { source: lib, name, typeOnly: false, at },
     );
   }
 
@@ -287,9 +287,10 @@ export default function transform(
         }
         const { fn, lib } = hookToOptions[hook];
         callee.property = j.identifier(fn);
-        const call = j.callExpression(j.identifier(importFrom(lib, hook)), [
-          path.node,
-        ]);
+        const call = j.callExpression(
+          j.identifier(importFrom(lib, hook, path)),
+          [path.node],
+        );
         if (
           hook === 'useSuspenseQuery' ||
           hook === 'useSuspenseInfiniteQuery'
@@ -487,7 +488,7 @@ export default function transform(
           );
         });
         const replacement = j.callExpression(
-          j.identifier(importFrom('@tanstack/react-query', hook)),
+          j.identifier(importFrom('@tanstack/react-query', hook, path)),
           [
             j.objectExpression([
               j.objectProperty(j.identifier('queries'), body),
@@ -664,6 +665,7 @@ export default function transform(
           const useQueryClient = importFrom(
             '@tanstack/react-query',
             'useQueryClient',
+            path,
           );
           path.replace(j.callExpression(j.identifier(useQueryClient), []));
         }
