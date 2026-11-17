@@ -124,18 +124,30 @@ export default function transform(
 
   function trpcDeclarations(collection: Collection, factory: string) {
     const names = factoryNames(factory);
-    return collection
-      .find(j.VariableDeclarator, {
-        id: { type: 'Identifier', name: trpcName },
-        init: {
-          type: 'CallExpression',
-          callee: {
-            type: 'Identifier',
-            name: (name: string) => names.has(name),
+    return (
+      collection
+        .find(j.VariableDeclarator, {
+          id: { type: 'Identifier', name: trpcName },
+          init: {
+            type: 'CallExpression',
+            callee: {
+              type: 'Identifier',
+              name: (name: string) => names.has(name),
+            },
           },
-        },
-      })
-      .paths();
+        })
+        // A setup is top-level, where nothing can hide the factory's name;
+        // inside a function, `createReact` could be a parameter
+        .filter((p) => {
+          const statement = p.parent?.parent;
+          return (
+            j.Program.check(statement?.node) ||
+            (j.ExportNamedDeclaration.check(statement?.node) &&
+              j.Program.check(statement.parent?.node))
+          );
+        })
+        .paths()
+    );
   }
 
   function contextPattern(names: readonly string[]) {
