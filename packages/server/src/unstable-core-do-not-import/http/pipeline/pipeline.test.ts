@@ -19,6 +19,7 @@ import {
 } from './client';
 import type { PipelinedBatchPlan } from './client';
 import {
+  createPipelineSizeOf,
   parsePipelineReads,
   pipelineCalls,
   pipeOfBody,
@@ -1240,6 +1241,56 @@ describe('what a request fills in', () => {
       data: [{ result: { data: 1 } }, { result: { data: 2 } }],
     });
     expect(echo).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('how long a value is, for what a request fills in', () => {
+  test('is how long it is in JSON', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = { a: ['x\ny', 1, true, null], b: { c: 'z' } };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
+  test('a string longer than the room is too long without being measured', () => {
+    const sizeOf = createPipelineSizeOf();
+    const stringify = vi.spyOn(JSON, 'stringify');
+    try {
+      expect(sizeOf('x'.repeat(100), 50)).toBeGreaterThan(50);
+      expect(stringify).not.toHaveBeenCalled();
+    } finally {
+      stringify.mockRestore();
+    }
+  });
+
+  test('an object is measured until it is longer than the room, and once', () => {
+    let reads = 0;
+    const big = new Proxy(
+      Object.fromEntries(
+        Array.from({ length: 10_000 }, (_it, index) => [`k${index}`, index]),
+      ),
+      {
+        get(target, key, receiver) {
+          reads++;
+          return Reflect.get(target, key, receiver);
+        },
+      },
+    );
+    const sizeOf = createPipelineSizeOf();
+
+    expect(sizeOf(big, 100)).toBeGreaterThan(100);
+    expect(reads).toBeLessThan(100);
+    const first = reads;
+    // It is at least that long: no room as small reads it again
+    expect(sizeOf(big, 100)).toBeGreaterThan(100);
+    expect(reads).toBe(first);
+    // A list too
+    expect(
+      sizeOf(
+        Array.from({ length: 10_000 }, () => 1),
+        100,
+      ),
+    ).toBe(101);
   });
 });
 

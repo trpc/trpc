@@ -220,15 +220,30 @@ function overTheWire(
 export const pipelineFillLimit = 1_000_000;
 
 /**
- * About how long a value is as JSON. It remembers what it measured, so a part
- * of a call's data that many runs read is measured once.
+ * Measures about how long values are as JSON, for the limit on what a batch
+ * fills in. It stops once a value is longer than `room`, and gives a length
+ * over `room` then: what is that long isn't filled in, so its exact length
+ * doesn't matter, and measuring it costs no more than the room there is. It
+ * remembers what it measured, so what many runs or calls read is measured
+ * once.
  */
-function createSizeOf() {
-  const sizes = new WeakMap<object, number>();
-  const sizeOf = (value: unknown): number => {
+export function createPipelineSizeOf() {
+  /** An object's length, or how long it is at least if `exact` is false */
+  const objects = new WeakMap<object, { size: number; exact: boolean }>();
+  const strings = new Map<string, number>();
+  const sizeOf = (value: unknown, room: number): number => {
     if (typeof value === 'string') {
+      // Its length, with its quotes, is as long as it can be at least
+      if (value.length + 2 > room) {
+        return value.length + 2;
+      }
       // With its escapes, which are up to six characters for one
-      return JSON.stringify(value).length;
+      let size = strings.get(value);
+      if (size === undefined) {
+        size = JSON.stringify(value).length;
+        strings.set(value, size);
+      }
+      return size;
     }
     if (
       typeof value === 'number' ||
@@ -240,22 +255,44 @@ function createSizeOf() {
     if (typeof value !== 'object' || value === null) {
       return 4;
     }
-    const known = sizes.get(value);
-    if (known !== undefined) {
-      return known;
+    const known = objects.get(value);
+    if (known && (known.exact || known.size > room)) {
+      return known.size;
     }
     // A value inside itself counts once
-    sizes.set(value, 0);
-    // An array, or what a transformer makes, such as a `Map` or a `Set`
-    const parts: Iterable<unknown> =
-      Symbol.iterator in value
-        ? (value as Iterable<unknown>)
-        : Object.entries(value);
+    objects.set(value, { size: 0, exact: true });
     let size = 2;
-    for (const part of parts) {
-      size += sizeOf(part) + 1;
+    /** Adds a part. Whether the value is longer than the room then */
+    const add = (part: unknown) => {
+      size += sizeOf(part, room - size);
+      return size > room;
+    };
+    let over = false;
+    if (Symbol.iterator in value) {
+      // An array, or what a transformer makes, such as a `Map` or a `Set`
+      let index = 0;
+      for (const part of value as Iterable<unknown>) {
+        // A `,` before each but the first
+        size += index++ === 0 ? 0 : 1;
+        if ((over = add(part))) {
+          break;
+        }
+      }
+    } else {
+      // A property is read once the room is known to have what is before it
+      for (const [index, key] of Object.keys(value).entries()) {
+        // A `,` before each but the first, and a `:` after its key
+        size += (index === 0 ? 0 : 1) + 1;
+        if ((over = add(key) || add((value as Record<string, unknown>)[key]))) {
+          break;
+        }
+      }
     }
-    sizes.set(value, size);
+    if (over) {
+      objects.set(value, { size, exact: false });
+      return size;
+    }
+    objects.set(value, { size, exact: true });
     return size;
   };
   return sizeOf;
@@ -351,7 +388,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     runs = taken;
   }
 
-  const sizeOf = createSizeOf();
+  const sizeOf = createPipelineSizeOf();
   let filledSize = 0;
   /**
    * Counts what a call fills in. It takes it from what the batch may fill in
@@ -364,7 +401,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     return {
       /** Counts a value. Throws if the call fills in more than is left */
       add: (value: unknown) => {
-        size += sizeOf(value);
+        size += sizeOf(value, pipelineFillLimit - filledSize - size);
         if (filledSize + size > pipelineFillLimit) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
