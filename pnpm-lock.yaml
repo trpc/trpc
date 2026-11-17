@@ -825,9 +825,6 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2006
         version: 7.0.2006
-      start-server-and-test:
-        specifier: ^1.12.0
-        version: 1.14.0(supports-color@10.0.0)
       typescript:
         specifier: ^5.9.2
         version: 5.9.3

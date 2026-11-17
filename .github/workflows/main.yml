@@ -145,7 +145,6 @@ jobs:
         dir: [
             .experimental/next-app-dir,
             .test/internal-types-export,
-            bun,
             cloudflare-workers,
             express-server,
             fastify-server,
@@ -160,11 +159,6 @@ jobs:
       - uses: ./.github/setup
         with:
           example: ${{ matrix.dir }}
-
-      - if: matrix.dir == 'bun'
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
 
       # The build job filled turbo's cache, so this restores the packages' builds
       - run: pnpm build
