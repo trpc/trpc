@@ -1139,6 +1139,58 @@ describe('what a request fills in', () => {
     ).toEqual([1, 3]);
   });
 
+  test('a string counts as long as it is in JSON, escapes included', async () => {
+    // Twice as long in JSON: each `\n` is two characters there
+    const lines = '\n'.repeat(Math.ceil(pipelineFillLimit * 0.3));
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      fns: { post: () => ({ lines }), echo },
+    });
+    const post = sent('post', undefined);
+    const reader = call('echo', {}, [
+      { to: ['a'], from: post, path: ['lines'], each: false },
+      { to: ['b'], from: post, path: ['lines'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+    expect(echo).not.toHaveBeenCalled();
+  });
+
+  test('a call whose input can not be written to takes none of it', async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      fns: { post: () => ({ big: 'x'.repeat(pipelineFillLimit * 0.6) }), echo },
+    });
+    const post = sent('post', undefined);
+    const broken = call('echo', { id: 'text' }, [
+      { to: ['id', 'big'], from: post, path: ['big'], each: false },
+    ]);
+    const fits = call('echo', {}, [
+      { to: ['big'], from: post, path: ['big'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [broken, fits],
+    });
+
+    expect(res.of(broken)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+    expect(res.of(fits)).toEqual({ data: null });
+  });
+
   test('every run of a call for every item counts, with its whole input', async () => {
     const echo = vi.fn((input: unknown) =>
       isObject(input) ? input['n'] : null,

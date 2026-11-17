@@ -227,7 +227,8 @@ function createSizeOf() {
   const sizes = new WeakMap<object, number>();
   const sizeOf = (value: unknown): number => {
     if (typeof value === 'string') {
-      return value.length + 2;
+      // With its escapes, which are up to six characters for one
+      return JSON.stringify(value).length;
     }
     if (
       typeof value === 'number' ||
@@ -354,7 +355,9 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   let filledSize = 0;
   /**
    * Counts what a call fills in. It takes it from what the batch may fill in
-   * only if all of it fits: a call that is refused takes none.
+   * only once the call's inputs are made: a call that is refused, or whose
+   * inputs can't be made, takes none. Nothing waits between the last `add`
+   * and `take`, so calls that fill in at the same time can't go over together.
    */
   function fillCounter() {
     let size = 0;
@@ -414,22 +417,23 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         }
         valuesOfRuns.push(values);
       }
+      // Every run has an input of its own, as calls the client sends do
+      const inputs = valuesOfRuns.map((values) =>
+        asSent(
+          reads.reads.reduce(
+            (input, read, at) =>
+              writePipelinePath({ input, to: read.to, value: values[at] }),
+            base,
+          ),
+        ),
+      );
+      counter.take();
+      return inputs;
     } catch (cause) {
       // It runs for no item: it takes none of the runs, not its place either
       runs -= items.length;
       throw cause;
     }
-    counter.take();
-    // Every run has an input of its own, as calls the client sends do
-    return valuesOfRuns.map((values) =>
-      asSent(
-        reads.reads.reduce(
-          (input, read, at) =>
-            writePipelinePath({ input, to: read.to, value: values[at] }),
-          base,
-        ),
-      ),
-    );
   }
 
   /** A call with its input filled in when it is read, or its runs per item */
@@ -462,23 +466,19 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const fill = async () => {
       let input = await call.getRawInput();
       const counter = fillCounter();
-      const values: unknown[] = [];
-      for (const read of reads.reads) {
-        const value = readPipelinePath(await dataOf(read.from), read.path);
-        try {
+      try {
+        for (const read of reads.reads) {
+          const value = readPipelinePath(await dataOf(read.from), read.path);
           counter.add(value);
-        } catch (cause) {
-          // It doesn't run: it takes no place among the runs
-          runs -= 1;
-          throw cause;
+          input = writePipelinePath({ input, to: read.to, value });
         }
-        values.push(value);
+        input = asSent(input);
+      } catch (cause) {
+        // It doesn't run: it takes no place among the runs
+        runs -= 1;
+        throw cause;
       }
       counter.take();
-      for (const [at, read] of reads.reads.entries()) {
-        input = writePipelinePath({ input, to: read.to, value: values[at] });
-      }
-      input = asSent(input);
       read = [input];
       return input;
     };

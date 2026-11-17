@@ -615,7 +615,7 @@ function AuthorName(props: {
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server refuses the call, and each item asks by itself.
-- **A request fills in about 1 MB.** Each run gets its own copy of what it reads, and of the rest of its input. A call for more than that is refused too. See [Is it safe to turn on?](#safe)
+- **A request fills in about a million characters of JSON.** Each run gets its own copy of what it reads, and of the rest of its input. A call for more than that is refused too. See [Is it safe to turn on?](#safe)
 - **One list at a time.** The server runs a call for the items of one list. The items of a list inside a list load in a second request. The pages of an infinite entry are the exception: their items load with the first page.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
@@ -933,7 +933,7 @@ Such a request does what the browser could do in two. Each call validates its in
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
 - **Set the link's `maxItems` to it, or lower.** The calls the server makes count too. A request with more than `maxBatchSize` fails as a whole, the query it belongs to included.
-- **A call reads 64 values at most, and a request fills in about 1 MB.** Each value is copied into every input it goes in. The server counts every copy, and the whole input of every run of a call for every item. A call that would go over that is refused: it fails, or its items each ask by themselves.
+- **A call reads 64 values at most, and a request fills in about a million characters of JSON.** Each value is copied into every input it goes in. The server estimates how long every copy is in JSON, escapes included, and counts the whole input of every run of a call for every item. A call that would go over that is refused: it fails, or its items each ask by themselves. In UTF-8, a character is up to 3 bytes.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
