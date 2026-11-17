@@ -52,11 +52,17 @@ export default function transform(
   const j = api.jscodeshift;
   const root = j(file.source);
   // The setup file declares it; other files may import it under another name
-  const trpcName = localSetupName(
-    { j, root },
-    options.trpcImportName ?? 'trpc',
-  );
+  const setup = localSetupName({ j, root }, options.trpcImportName ?? 'trpc');
+  const trpcName = setup.name;
   let changed = false;
+  for (const path of setup.ambiguous) {
+    addTodo(
+      j,
+      path,
+      `more than one import looks like your tRPC setup \`${trpcName}\`, migrate this file by hand`,
+    );
+    changed = true;
+  }
   let routerType: TSTypeParameterInstantiation | null = null;
 
   migrateCreateTRPCReact(root);

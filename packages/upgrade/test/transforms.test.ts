@@ -30,6 +30,7 @@ type Transformer = Parameters<typeof applyTransform>[0];
 const fixtureOptions: Record<string, Record<string, unknown>> = {
   'importAlias.tsx': { trpcImportName: 'api' },
   'importAliasTwoModules.tsx': { trpcImportName: 'api' },
+  'importAliasAmbiguous.tsx': { trpcImportName: 'api' },
   'providerRouterType.tsx': {
     routerType: {
       name: 'AppRouter',
@@ -215,5 +216,53 @@ describe('printing', () => {
         `}`,
       ].join('\n'),
     );
+  });
+});
+
+// The CLI runs provider, then hooks, on every file
+describe('both transforms on a consumer', () => {
+  const run = (source: string) =>
+    [providerTransform, hooksTransform].reduce(
+      (code, transform) =>
+        applyTransform(
+          transform,
+          { trpcImportName: 'api' },
+          { source: code, path: 'consumer.tsx' },
+          {},
+        ) || code,
+      source,
+    );
+
+  it('follows `import { api as trpc }`', () => {
+    const output = run(
+      [
+        "import { api as trpc } from './utils/api';",
+        'export function Component() {',
+        '  return trpc.post.list.useQuery().data;',
+        '}',
+      ].join('\n'),
+    );
+    expect(output).toContain("import { useTRPC } from './utils/api';");
+    expect(output).toContain('useQuery(trpc.post.list.queryOptions())');
+    expect(output).not.toContain('api as trpc');
+  });
+
+  it('leaves a TODO when two imports look like the setup', () => {
+    const output = run(
+      [
+        "import { api as restApi } from './other';",
+        "import { api as trpc } from './utils/api';",
+        'export function Component() {',
+        '  restApi.useQuery();',
+        '  return trpc.post.list.useQuery().data;',
+        '}',
+      ].join('\n'),
+    );
+    expect(output).toContain(
+      'TODO(@trpc/upgrade): more than one import looks like your tRPC setup `api`',
+    );
+    // Once per import, though both transforms add it
+    expect(output.match(/more than one import/g)).toHaveLength(2);
+    expect(output).toContain('api as trpc');
   });
 });

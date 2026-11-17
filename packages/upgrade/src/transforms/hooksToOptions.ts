@@ -115,10 +115,8 @@ export default function transform(
 ) {
   const j = api.jscodeshift;
   const root = j(file.source);
-  const trpcName = localSetupName(
-    { j, root },
-    options.trpcImportName ?? 'trpc',
-  );
+  const setup = localSetupName({ j, root }, options.trpcImportName ?? 'trpc');
+  const trpcName = setup.name;
   let changed = false;
   /** Functions that now start with `const trpc = useTRPC()` */
   const scopes = new Set<ASTPath<FunctionNode>>();
@@ -166,6 +164,12 @@ export default function transform(
     return j.Identifier.check(node) && node.name === 'undefined';
   }
 
+  for (const path of setup.ambiguous) {
+    todo(
+      path,
+      `more than one import looks like your tRPC setup \`${trpcName}\`, migrate this file by hand`,
+    );
+  }
   migrateGetQueryKey(root);
   migrateUseUtils(root);
   migrateUseQueries(root);

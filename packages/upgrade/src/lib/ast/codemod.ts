@@ -698,7 +698,11 @@ const SETUP_MEMBERS = new Set([
 export function localSetupName(
   { j, root }: Codemod,
   setupName: string,
-): string {
+): {
+  readonly name: string;
+  /** Imports that each look like the setup, when there's more than one */
+  readonly ambiguous: readonly ASTPath[];
+} {
   const usedLikeSetup = (local: string) =>
     [
       ...root.find(j.Identifier, { name: local }).paths(),
@@ -720,16 +724,23 @@ export function localSetupName(
         SETUP_MEMBERS.has(property.name)
       );
     });
-  const aliases = new Set(
-    root
-      .find(j.ImportSpecifier, { imported: { name: setupName } })
-      .nodes()
-      .map((s): string =>
-        j.Identifier.check(s.local) ? s.local.name : setupName,
-      )
-      .filter((local) => local !== setupName && usedLikeSetup(local)),
-  );
-  // None, or more than one that looks like a setup: don't guess
-  const [alias] = aliases;
-  return aliases.size === 1 && alias ? alias : setupName;
+  const candidates = root
+    .find(j.ImportSpecifier, { imported: { name: setupName } })
+    .paths()
+    .map((path) => ({
+      path,
+      local: j.Identifier.check(path.node.local)
+        ? path.node.local.name
+        : setupName,
+    }))
+    .filter(({ local }) => local !== setupName && usedLikeSetup(local));
+  const [only] = candidates;
+  if (candidates.length === 1 && only) {
+    return { name: only.local, ambiguous: [] };
+  }
+  // More than one looks like a setup: don't guess, say so
+  return {
+    name: setupName,
+    ambiguous: candidates.map(({ path }) => path),
+  };
 }
