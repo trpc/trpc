@@ -1,4 +1,5 @@
 import {
+  MutationCache,
   QueryClient,
   type DehydratedState,
   QueryClientProvider,
@@ -34,7 +35,6 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-// TODO(@trpc/upgrade): move `overrides` to your QueryClient, e.g. a `MutationCache` `onSuccess`, see https://trpc.io/docs/client/tanstack-react-query/migrating#migrating-overrides
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<AppRouter>();
 
@@ -71,7 +71,14 @@ export function makeTRPCClient() {
 }
 
 export function makeQueryClient() {
-  return new QueryClient();
+  const queryClient: QueryClient = new QueryClient({
+    // Was `overrides.useMutation.onSuccess` in `createTRPCNext`:
+    // invalidate all queries after every successful mutation
+    mutationCache: new MutationCache({
+      onSuccess: () => queryClient.invalidateQueries(),
+    }),
+  });
+  return queryClient;
 }
 
 /**
