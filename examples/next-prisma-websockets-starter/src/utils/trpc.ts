@@ -64,7 +64,6 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @see https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
-// TODO(@trpc/upgrade): createTRPCNext had `ssr: true`, which has no replacement. Prefetch each page's queries in `getServerSideProps` instead, see https://trpc.io/docs/client/nextjs/pages-router/ssr
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<AppRouter>();
 
@@ -92,10 +91,6 @@ function getTRPCConfig(config: { ctx?: NextPageContext }) {
       }),
       getEndingLink(config.ctx),
     ],
-    /**
-     * @see https://tanstack.com/query/v5/docs/reference/QueryClient
-     */
-    queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
   };
 }
 
@@ -106,7 +101,13 @@ export function makeTRPCClient() {
 }
 
 export function makeQueryClient() {
-  return new QueryClient(getTRPCConfig({}).queryClientConfig);
+  // Not from `getTRPCConfig`, which would open a second, unused WebSocket
+  return new QueryClient({
+    /**
+     * @see https://tanstack.com/query/v5/docs/reference/QueryClient
+     */
+    defaultOptions: { queries: { staleTime: 60 } },
+  });
 }
 
 /**

@@ -32,20 +32,24 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { trpc, useTRPC } from '~/utils/trpc';
+import { makeQueryClient, useTRPC } from '~/utils/trpc';
 import {
+  dehydrate,
   useQueryClient,
   useMutation,
   useInfiniteQuery,
 } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  useSubscription,
+  type TRPCSubscriptionStatus,
+} from '@trpc/tanstack-react-query';
+import type { GetServerSidePropsContext } from 'next';
+import superjson from 'superjson';
+import { getServerAuthSession } from '~/server/auth';
+import { appRouter } from '~/server/routers/_app';
 
-// TODO(@trpc/upgrade): `trpc` is now `const trpc = useTRPC()` inside components and hooks, see https://trpc.io/docs/client/tanstack-react-query/migrating
-type SubscriptionStatus = ReturnType<
-  typeof trpc.post.onAdd.useSubscription
->['status'];
-
-function LiveBadge(props: { status: SubscriptionStatus }) {
+function LiveBadge(props: { status: TRPCSubscriptionStatus }) {
   switch (props.status) {
     case 'idle':
       return <Badge variant="outline">Idle</Badge>;
@@ -498,6 +502,34 @@ export default function IndexPage() {
       </div>
     </>
   );
+}
+
+/**
+ * Was `ssr: true`: puts the first page of messages in the server-rendered HTML.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
+ */
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: { session: await getServerAuthSession(context.req, context.res) },
+    queryClient,
+  });
+
+  await queryClient.prefetchInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      {},
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
+
+  return {
+    props: {
+      trpcState: superjson.serialize(dehydrate(queryClient)),
+    },
+  };
 }
 
 /**
