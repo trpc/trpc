@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
 /**
  * This is a Next.js page.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '../utils/trpc';
 
 export default function IndexPage() {
