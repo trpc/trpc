@@ -1,5 +1,8 @@
-import { httpBatchStreamLink, loggerLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+import {
+  httpBatchStreamLink,
+  loggerLink,
+  createTRPCClient,
+} from '@trpc/client';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
@@ -7,6 +10,15 @@ import type { NextPageContext } from 'next';
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from '~/server/routers/_app';
 import { transformer } from './transformer';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import {
+  QueryClient,
+  type DehydratedState,
+  QueryClientProvider,
+  HydrationBoundary,
+} from '@tanstack/react-query';
+import type { AppType } from 'next/app';
+import { useState, createElement } from 'react';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
@@ -45,64 +57,131 @@ export interface SSRContext extends NextPageContext {
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @see https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
-export const trpc = createTRPCNext<AppRouter, SSRContext>({
-  config(config) {
-    /**
-     * If you want to use SSR, you need to use the server's full URL
-     * @see https://trpc.io/docs/v11/ssr
-     */
-    return {
-      /**
-       * @see https://trpc.io/docs/v11/client/links
-       */
-      links: [
-        // adds pretty logs to your console in development and logs errors in production
-        loggerLink({
-          enabled: (opts) =>
-            process.env.NODE_ENV === 'development' ||
-            (opts.direction === 'down' && opts.result instanceof Error),
-        }),
-        httpBatchStreamLink({
-          url: `${getBaseUrl()}/api/trpc`,
-          /**
-           * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/v11/ssr
-           */
-          headers() {
-            if (!config.ctx?.req?.headers) {
-              return {};
-            }
-            // To use SSR properly, you need to forward the client's headers to the server
-            // This is so you can pass through things like cookies when we're server-side rendering
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<AppRouter>();
 
-            const {
-              // If you're using Node 18 before 18.15.0, omit the "connection" header
-              connection: _connection,
-              ...headers
-            } = config.ctx.req.headers;
-            return headers;
-          },
-          /**
-           * @see https://trpc.io/docs/v11/data-transformers
-           */
-          transformer,
-        }),
-      ],
-      /**
-       * @see https://tanstack.com/query/v5/docs/reference/QueryClient
-       */
-      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
-    };
-  },
+/**
+ * Was `config` in `createTRPCNext`. `withTRPC` calls it once per mount,
+ * on the server and in the browser, without `ctx`.
+ */
+function getConfig(config: { ctx?: NextPageContext }) {
   /**
+   * If you want to use SSR, you need to use the server's full URL
    * @see https://trpc.io/docs/v11/ssr
    */
-  ssr: false,
-  /**
-   * @see https://trpc.io/docs/v11/data-transformers
-   */
-  transformer,
-});
+  return {
+    /**
+     * @see https://trpc.io/docs/v11/client/links
+     */
+    links: [
+      // adds pretty logs to your console in development and logs errors in production
+      loggerLink({
+        enabled: (opts) =>
+          process.env.NODE_ENV === 'development' ||
+          (opts.direction === 'down' && opts.result instanceof Error),
+      }),
+      httpBatchStreamLink({
+        url: `${getBaseUrl()}/api/trpc`,
+        /**
+         * Set custom request headers on every request from tRPC
+         * @see https://trpc.io/docs/v11/ssr
+         */
+        headers() {
+          if (!config.ctx?.req?.headers) {
+            return {};
+          }
+          // To use SSR properly, you need to forward the client's headers to the server
+          // This is so you can pass through things like cookies when we're server-side rendering
+
+          const {
+            // If you're using Node 18 before 18.15.0, omit the "connection" header
+            connection: _connection,
+            ...headers
+          } = config.ctx.req.headers;
+          return headers;
+        },
+        /**
+         * @see https://trpc.io/docs/v11/data-transformers
+         */
+        transformer,
+      }),
+    ],
+    /**
+     * @see https://tanstack.com/query/v5/docs/reference/QueryClient
+     */
+    // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+  };
+}
+
+export function makeTRPCClient() {
+  return createTRPCClient<AppRouter>({
+    links: getConfig({}).links,
+  });
+}
+
+export function makeQueryClient() {
+  return new QueryClient();
+}
+
+/**
+ * Was `trpc.withTRPC`. Provides the tRPC and query clients to the app, and
+ * hydrates the `trpcState` a page's `getStaticProps` or
+ * `getServerSideProps` returns.
+ */
+export function withTRPC<TInitialProps extends object>(
+  App: AppType<TInitialProps>,
+): AppType<TInitialProps> {
+  const WithTRPC: AppType<TInitialProps> = (props) => {
+    const [queryClient] = useState(makeQueryClient);
+    const [trpcClient] = useState(makeTRPCClient);
+
+    const pageProps = props.pageProps as
+      | {
+          trpcState?: unknown;
+        }
+      | undefined;
+
+    const state: DehydratedState | undefined =
+      pageProps?.trpcState === undefined
+        ? undefined
+        : transformer.deserialize(
+            pageProps.trpcState as Parameters<
+              typeof transformer.deserialize
+            >[0],
+          );
+
+    return createElement(QueryClientProvider, {
+      client: queryClient,
+
+      children: createElement(TRPCProvider, {
+        trpcClient,
+        queryClient,
+
+        children: createElement(HydrationBoundary, {
+          state,
+          children: createElement(App, props),
+        }),
+      }),
+    });
+  };
+
+  const appGetInitialProps = App.getInitialProps?.bind(App);
+
+  if (appGetInitialProps) {
+    // Like classic `withTRPC`: Next.js gets `{ pageProps }`, never `undefined`
+    WithTRPC.getInitialProps = async (ctx) => {
+      const initialProps = (await appGetInitialProps(ctx)) as {
+        pageProps?: unknown;
+      };
+
+      return {
+        pageProps: initialProps.pageProps ?? {},
+      } as unknown as TInitialProps;
+    };
+  }
+
+  return WithTRPC;
+}
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;

@@ -28,7 +28,8 @@ import { useRouter } from 'next/router';
 
 import type { NextPageWithLayout } from '~/pages/_app';
 import type { RouterOutput } from '~/utils/trpc';
-import { trpc } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
+import { useQuery } from '@tanstack/react-query';
 
 type PostByIdOutput = RouterOutput['post']['byId'];
 
@@ -97,8 +98,9 @@ function PostItem(props: { post: PostByIdOutput }) {
 }
 
 const PostViewPage: NextPageWithLayout = () => {
+  const trpc = useTRPC();
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id });
+  const postQuery = useQuery(trpc.post.byId.queryOptions({ id }));
 
   switch (postQuery.status) {
     case 'pending':
