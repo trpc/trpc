@@ -1,11 +1,13 @@
+import { useQuery } from '@tanstack/react-query';
 /**
  * This is a Next.js page.
  */
-import { trpc } from '../utils/trpc';
+import { useTRPC } from '../utils/trpc';
 
 export default function IndexPage() {
+  const trpc = useTRPC();
   // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
-  const result = trpc.greeting.useQuery({ name: 'client' });
+  const result = useQuery(trpc.greeting.queryOptions({ name: 'client' }));
 
   if (!result.data) {
     return (
