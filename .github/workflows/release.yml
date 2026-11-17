@@ -137,5 +137,7 @@ jobs:
   sync-examples:
     needs: publish-auto
     uses: ./.github/workflows/subtree.yml
+    with:
+      all: true
     secrets:
       TRPC_DEPLOY_TOKEN: ${{ secrets.TRPC_DEPLOY_TOKEN }}
