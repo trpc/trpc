@@ -70,8 +70,20 @@ export function withTRPC<TInitialProps extends object>(
     });
   };
 
-  // Bound, as Next.js calls it on its own
-  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
+  const appGetInitialProps = App.getInitialProps?.bind(App);
+
+  if (appGetInitialProps) {
+    // Like classic `withTRPC`: Next.js gets `{ pageProps }`, never `undefined`
+    WithTRPC.getInitialProps = async (ctx) => {
+      const initialProps = (await appGetInitialProps(ctx)) as {
+        pageProps?: unknown;
+      };
+
+      return {
+        pageProps: initialProps.pageProps ?? {},
+      } as unknown as TInitialProps;
+    };
+  }
 
   return WithTRPC;
 }
