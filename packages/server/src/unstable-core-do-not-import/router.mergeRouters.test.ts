@@ -149,6 +149,22 @@ test('bad merge: transformer', async () => {
   );
 });
 
+test('mergeRouters keeps the root options of the first router', () => {
+  const t = initTRPC.meta<{ tag: string }>().create({
+    defaultMeta: { tag: 'default' },
+    sse: { ping: { enabled: true, intervalMs: 5 } },
+    jsonl: { contentType: 'application/x-ndjson', pingMs: 5 },
+  });
+  const first = t.router({ a: t.procedure.query(() => 'a') });
+  const other = initTRPC.create().router({});
+
+  for (const merged of [t.mergeRouters(first), t.mergeRouters(first, other)]) {
+    // Every option without a merge rule must come through, including ones
+    // added to `RootConfig` later.
+    expect(merged._def._config).toEqual(first._def._config);
+  }
+});
+
 test.each([
   'direct',
   'nested',
