@@ -113,6 +113,40 @@ export function rootIdentifierName(
   return j.Identifier.check(current) ? current.name : null;
 }
 
+/**
+ * The names a function's parameters bind: `a`, `{ b, c: d }` → d, `[e]`,
+ * `...f`, `g = 1`. Not names inside type annotations.
+ */
+export function paramBindings(
+  j: JSCodeshift,
+  params: readonly unknown[],
+): Set<string> {
+  const names = new Set<string>();
+  const visit = (node: unknown) => {
+    if (j.Identifier.check(node)) {
+      names.add(node.name);
+    } else if (j.ObjectPattern.check(node)) {
+      for (const property of node.properties) {
+        if (j.ObjectProperty.check(property) || j.Property.check(property)) {
+          visit(property.value);
+        } else if (j.RestElement.check(property)) {
+          visit(property.argument);
+        }
+      }
+    } else if (j.ArrayPattern.check(node)) {
+      node.elements.forEach(visit);
+    } else if (j.RestElement.check(node)) {
+      visit(node.argument);
+    } else if (j.AssignmentPattern.check(node)) {
+      visit(node.left);
+    } else if (j.TSParameterProperty.check(node)) {
+      visit(node.parameter);
+    }
+  };
+  params.forEach(visit);
+  return names;
+}
+
 /** `use` + capital letter, as React's rules of hooks spell it. */
 function isHookName(name: string) {
   return /^use[A-Z0-9]/.test(name);
@@ -275,12 +309,39 @@ export function isShadowed(
   path: ASTPath,
   opts: { readonly scope: ASTPath; readonly name: string },
 ): boolean {
+  const scopeBody = (opts.scope.node as { body?: unknown }).body;
+  const declaresName = (statement: unknown) =>
+    j.VariableDeclaration.check(statement) &&
+    statement.declarations.some(
+      (d) =>
+        j.VariableDeclarator.check(d) &&
+        (j.Identifier.check(d.id)
+          ? d.id.name === opts.name
+          : j(d.id as never)
+              .find(j.Identifier, { name: opts.name })
+              .size() > 0),
+    );
   for (
     let current = path.parent;
     current && current.node !== opts.scope.node;
     current = current.parent
   ) {
     const node = current.node;
+    // `{ const utils = other; … }` or `catch (utils)` in between
+    if (
+      j.BlockStatement.check(node) &&
+      node !== scopeBody &&
+      node.body.some(declaresName)
+    ) {
+      return true;
+    }
+    if (
+      j.CatchClause.check(node) &&
+      j.Identifier.check(node.param) &&
+      node.param.name === opts.name
+    ) {
+      return true;
+    }
     if (
       !j.FunctionDeclaration.check(node) &&
       !j.FunctionExpression.check(node) &&
@@ -288,13 +349,7 @@ export function isShadowed(
     ) {
       continue;
     }
-    const params = j(node.params as never)
-      .find(j.Identifier, { name: opts.name })
-      .size();
-    const paramIsName = node.params.some(
-      (p) => j.Identifier.check(p) && p.name === opts.name,
-    );
-    if (paramIsName || params > 0) {
+    if (paramBindings(j, node.params).has(opts.name)) {
       return true;
     }
     if (declaresAtTop(j, current as ASTPath<FunctionNode>, opts.name)) {

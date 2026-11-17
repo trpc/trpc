@@ -117,7 +117,7 @@ export default function transform(
           j(path).remove();
         }
       });
-    ensureNamedImport(
+    return ensureNamedImport(
       { j, root },
       {
         source: '@trpc/tanstack-react-query',
@@ -125,6 +125,31 @@ export default function transform(
         typeOnly: false,
       },
     );
+  }
+
+  /**
+   * Renames `name` in `nodes` to its local import name, e.g. `QueryClient` to
+   * `QC` for `import { QueryClient as QC }`.
+   */
+  function localizeImport(
+    nodes: readonly unknown[],
+    opts: {
+      readonly source: string;
+      readonly name: string;
+      readonly typeOnly: boolean;
+    },
+  ) {
+    const local = ensureNamedImport({ j, root }, opts);
+    if (local === opts.name) {
+      return;
+    }
+    for (const node of nodes) {
+      j(node as never)
+        .find(j.Identifier, { name: opts.name })
+        .forEach((p) => {
+          p.node.name = local;
+        });
+    }
   }
 
   // `export const trpc = createTRPCReact<AppRouter>()`
@@ -137,7 +162,8 @@ export default function transform(
         'useTRPC',
         'useTRPCClient',
       ]);
-      path.node.init = createContextCall(call);
+      const contextCall = createContextCall(call);
+      path.node.init = contextCall;
       if (call.arguments.length > 0) {
         addTodo(
           j,
@@ -145,7 +171,11 @@ export default function transform(
           'createTRPCReact options, such as `overrides` or `abortOnUnmount`, have no direct replacement, see https://trpc.io/docs/client/tanstack-react-query/migrating',
         );
       }
-      moveImport('@trpc/react-query', 'createTRPCReact');
+      const createTRPCContext = moveImport(
+        '@trpc/react-query',
+        'createTRPCReact',
+      );
+      contextCall.callee = j.identifier(createTRPCContext);
       changed = true;
     }
   }
@@ -227,6 +257,7 @@ export default function transform(
       );
 
       let queryClientConfig: 'yes' | 'no' | 'unknown' = 'no';
+      let configUsesContext = false;
       // `getConfig`, unless the file has one, e.g. from `next/config`
       const configName =
         root.find(j.Identifier, { name: 'getConfig' }).size() > 0
@@ -250,7 +281,13 @@ export default function transform(
                 .nodes()
                 .map((node) => node.argument)
             : [configFunction.body];
-          queryClientConfig = returns.every((r) => j.ObjectExpression.check(r))
+          // `{ links, ...shared }` could hold it too
+          const isKnownObject = (r: unknown) =>
+            j.ObjectExpression.check(r) &&
+            !r.properties.some(
+              (p) => j.SpreadElement.check(p) || j.SpreadProperty.check(p),
+            );
+          queryClientConfig = returns.every(isKnownObject)
             ? returns.some(
                 (r) =>
                   j.ObjectExpression.check(r) &&
@@ -290,10 +327,7 @@ export default function transform(
             );
             fn.params = [typed];
             configCall = `${configName}({})`;
-            ensureNamedImport(
-              { j, root },
-              { source: 'next', name: 'NextPageContext', typeOnly: true },
-            );
+            configUsesContext = true;
           }
           fn.comments = [
             j.commentBlock(
@@ -365,16 +399,6 @@ export default function transform(
               : `export function makeQueryClient() {\n  return new QueryClient();\n}`,
         ),
       );
-      if (queryClientConfig === 'unknown') {
-        ensureNamedImport(
-          { j, root },
-          {
-            source: '@tanstack/react-query',
-            name: 'QueryClientConfig',
-            typeOnly: true,
-          },
-        );
-      }
 
       // Classic `withTRPC` ran `trpcState` through the transformer.
       let transformerSource = transformer ? j(transformer).toSource() : null;
@@ -443,32 +467,39 @@ export function withTRPC<TInitialProps extends object>(
       ];
       j(statement).replaceWith(() => statements);
 
-      for (const [source, name] of [
-        ['@trpc/client', 'createTRPCClient'],
-        ['@tanstack/react-query', 'QueryClient'],
-        ['@tanstack/react-query', 'QueryClientProvider'],
-        ['@tanstack/react-query', 'HydrationBoundary'],
-        ['react', 'createElement'],
-        ['react', 'useState'],
+      // The generated code calls these by their local names
+      for (const [source, name, typeOnly] of [
+        ['@trpc/client', 'createTRPCClient', false],
+        ['@tanstack/react-query', 'QueryClient', false],
+        ['@tanstack/react-query', 'QueryClientProvider', false],
+        ['@tanstack/react-query', 'HydrationBoundary', false],
+        ['react', 'createElement', false],
+        ['react', 'useState', false],
+        ['next/app', 'AppType', true],
+        ['@tanstack/react-query', 'DehydratedState', true],
       ] as const) {
-        ensureNamedImport(
-          { j, root },
-          { source: source, name: name, typeOnly: false },
-        );
+        localizeImport(statements, { source, name, typeOnly });
       }
-      ensureNamedImport(
-        { j, root },
-        { source: 'next/app', name: 'AppType', typeOnly: true },
-      );
-      ensureNamedImport(
-        { j, root },
-        {
+      if (queryClientConfig === 'unknown') {
+        localizeImport(statements, {
           source: '@tanstack/react-query',
-          name: 'DehydratedState',
+          name: 'QueryClientConfig',
           typeOnly: true,
-        },
-      );
+        });
+      }
+      if (configUsesContext) {
+        localizeImport(statements, {
+          source: 'next',
+          name: 'NextPageContext',
+          typeOnly: true,
+        });
+      }
       moveImport('@trpc/next', 'createTRPCNext');
+      localizeImport(statements, {
+        source: '@trpc/tanstack-react-query',
+        name: 'createTRPCContext',
+        typeOnly: false,
+      });
       // `ssrPrepass` only worked with `ssr: true`
       root
         .find(j.ImportDeclaration, {
@@ -494,7 +525,16 @@ export function withTRPC<TInitialProps extends object>(
       })
       .forEach((path) => {
         const next = j.callExpression(
-          j.identifier('createTRPCClient'),
+          j.identifier(
+            ensureNamedImport(
+              { j, root },
+              {
+                source: '@trpc/client',
+                name: 'createTRPCClient',
+                typeOnly: false,
+              },
+            ),
+          ),
           path.node.arguments,
         );
         if (routerType) {
@@ -507,10 +547,6 @@ export function withTRPC<TInitialProps extends object>(
           );
         }
         path.replace(next);
-        ensureNamedImport(
-          { j, root },
-          { source: '@trpc/client', name: 'createTRPCClient', typeOnly: false },
-        );
         used = true;
       });
 

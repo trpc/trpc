@@ -17,6 +17,7 @@ import {
   isInside,
   isShadowed,
   isValueReference,
+  paramBindings,
   quoteOf,
   replaceImportedName,
   rootIdentifierName,
@@ -466,9 +467,17 @@ export default function transform(
           return;
         }
         const utilsName = declarator.id.name;
+        // A `queryClient` parameter is something else: pick another name
+        const paramBindsQueryClient = paramBindings(j, scope.node.params).has(
+          'queryClient',
+        );
         const reuseQueryClient =
-          utilsName !== 'queryClient' && declaresAtTop(j, scope, 'queryClient');
-        const queryClientName = 'queryClient';
+          utilsName !== 'queryClient' &&
+          !paramBindsQueryClient &&
+          declaresAtTop(j, scope, 'queryClient');
+        const queryClientName = paramBindsQueryClient
+          ? uniqueName(j, scope, 'queryClient')
+          : 'queryClient';
 
         const references = j(scope)
           .find(j.Identifier, { name: utilsName })
@@ -503,15 +512,18 @@ export default function transform(
             dependencyLists.push(parent);
           }
         }
-        // `[utils]` also changed when the tRPC client did
-        if (usesClient) {
+        // `[utils]` also changed when the tRPC client, and so the proxy, did
+        for (const name of [
+          ...(usesClient ? ['trpcClient'] : []),
+          ...(usesTRPC ? [trpcName] : []),
+        ]) {
           for (const list of dependencyLists) {
             if (
               !list.elements.some(
-                (e) => j.Identifier.check(e) && e.name === 'trpcClient',
+                (e) => j.Identifier.check(e) && e.name === name,
               )
             ) {
-              list.elements.unshift(j.identifier('trpcClient'));
+              list.elements.unshift(j.identifier(name));
             }
           }
         }
@@ -529,8 +541,11 @@ export default function transform(
           }
         } else {
           declarator.id = j.identifier(queryClientName);
-          path.replace(j.callExpression(j.identifier('useQueryClient'), []));
-          importFrom('@tanstack/react-query', 'useQueryClient');
+          const useQueryClient = importFrom(
+            '@tanstack/react-query',
+            'useQueryClient',
+          );
+          path.replace(j.callExpression(j.identifier(useQueryClient), []));
         }
         if (usesTRPC) {
           useTRPCIn(scope);

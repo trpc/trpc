@@ -1,8 +1,9 @@
-import type { QueryClientConfig, DehydratedState } from '@tanstack/react-query';
 import {
   QueryClient,
   QueryClientProvider,
   HydrationBoundary,
+  type DehydratedState,
+  type QueryClientConfig,
 } from '@tanstack/react-query';
 import { httpBatchLink, createTRPCClient } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';

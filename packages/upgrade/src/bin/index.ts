@@ -1,11 +1,11 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { basename, extname, relative, resolve } from 'node:path';
 import { parse } from '@bomb.sh/args';
 import { intro, isCancel, log, multiselect, note, outro } from '@clack/prompts';
 import { version } from '../../package.json';
 import { scanProject } from '../lib/ast/scanners';
-import { execa } from '../lib/execa';
 import { assertCleanGitTree, filterIgnored } from '../lib/git';
 import { installPackage, uninstallPackage } from '../lib/pkgmgr';
 
@@ -126,8 +126,13 @@ for (const name of ordered) {
  * Every tracked source file, not just the ones in the TypeScript program:
  * a test or script outside it can still need a package.
  */
-const trackedSourceFiles = (await execa('git ls-files')).stdout
-  .split('\n')
+const trackedSourceFiles = execFileSync('git', ['ls-files', '-z'], {
+  encoding: 'utf8',
+  // Big repositories list more than the default 1 MiB of paths
+  maxBuffer: 1024 * 1024 * 1024,
+})
+  // `-z`: paths as they are, not quoted and escaped
+  .split('\0')
   .filter((file) => /\.(?:[cm]?[jt]sx?)$/.test(file))
   .map((file) => resolve(file));
 
