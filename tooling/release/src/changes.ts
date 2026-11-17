@@ -1,7 +1,7 @@
 /**
- * Which commits change what `packages/*` publish. Stable releases and
- * canaries on push only go out for these, so a merge that touches only tests,
- * docs, examples or tooling releases nothing.
+ * Which commits change what `packages/*` publish. Releases only go out for
+ * these, so a merge that touches only tests, docs, examples or tooling
+ * releases nothing.
  *
  * A commit counts when it changes, in a public package:
  * - a file its tarball ships: its `files`, minus `!` patterns and Markdown

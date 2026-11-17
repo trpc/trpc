@@ -23,6 +23,13 @@ preferWorkspacePackages: true
 linkWorkspacePackages: true
 nodeOptions: --no-warnings
 
+# Resolve only versions published at least 7 days ago (in minutes). Renovate's
+# minimumReleaseAge in .github/renovate.json matches it.
+minimumReleaseAge: 10080
+# Non-strict: in-range resolution still prefers mature versions, but a version
+# you pin explicitly (e.g. an urgent security fix) installs even if it is newer,
+# and Renovate's `pnpm update --no-save` works (pnpm/pnpm#14835).
+minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
@@ -94,6 +101,7 @@ catalog:
   tslib: ^2.9.1
   dataloader: ^2.2.3
   node-fetch: ^3.3.2
+  npm-run-all2: ^9.0.4
   sury: 11.1.0
   yaml: 2.9.1
 
