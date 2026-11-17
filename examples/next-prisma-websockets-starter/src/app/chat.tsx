@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Alert,
   AlertAction,
@@ -23,7 +25,6 @@ import {
   SendHorizontalIcon,
 } from 'lucide-react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import Head from 'next/head';
 import Link from 'next/link';
 import {
   useCallback,
@@ -32,23 +33,20 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { useTRPC } from '~/utils/trpc';
+import { useTRPC, type TRPC } from '~/trpc/client';
 import {
-  dehydrate,
   useQueryClient,
   useMutation,
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import {
-  createTRPCOptionsProxy,
   useSubscription,
   type TRPCSubscriptionStatus,
 } from '@trpc/tanstack-react-query';
-import type { GetServerSidePropsContext } from 'next';
-import superjson from 'superjson';
-import { createContext } from '~/server/context';
-import { appRouter } from '~/server/routers/_app';
-import { makeQueryClient } from '~/utils/query-client';
+import {
+  fromHandle,
+  type inferInfiniteQueryHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
 
 function LiveBadge(props: { status: TRPCSubscriptionStatus }) {
   switch (props.status) {
@@ -177,15 +175,14 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
 
 const subscribeToNothing = () => () => undefined;
 
-export default function IndexPage() {
+export function Chat(props: {
+  posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+}) {
   const trpc = useTRPC();
   const postsQuery = useInfiniteQuery(
-    trpc.post.infinite.infiniteQueryOptions(
-      {},
-      {
-        getNextPageParam: (d) => d.nextCursor,
-      },
-    ),
+    fromHandle(trpc, props.posts, {
+      getNextPageParam: (d) => d.nextCursor,
+    }),
   );
   const queryClient = useQueryClient();
 
@@ -263,10 +260,6 @@ export default function IndexPage() {
 
   return (
     <>
-      <Head>
-        <title>tRPC WebSocket Starter</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <div className="flex h-svh flex-col bg-muted/40 md:flex-row">
         <aside className="flex w-full shrink-0 flex-col border-b bg-background md:w-80 md:border-r md:border-b-0">
           <div className="flex flex-col items-start gap-3 p-6">
@@ -503,32 +496,4 @@ export default function IndexPage() {
       </div>
     </>
   );
-}
-
-/**
- * Puts the first page of messages in the server-rendered HTML.
- * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
- */
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const queryClient = makeQueryClient();
-  const trpc = createTRPCOptionsProxy({
-    router: appRouter,
-    ctx: await createContext({ req: context.req, res: context.res }),
-    queryClient,
-  });
-
-  await queryClient.prefetchInfiniteQuery(
-    trpc.post.infinite.infiniteQueryOptions(
-      {},
-      {
-        getNextPageParam: (d) => d.nextCursor,
-      },
-    ),
-  );
-
-  return {
-    props: {
-      trpcState: superjson.serialize(dehydrate(queryClient)),
-    },
-  };
 }

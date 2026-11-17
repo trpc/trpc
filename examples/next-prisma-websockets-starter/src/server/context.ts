@@ -1,32 +1,40 @@
-import type { IncomingMessage } from 'node:http';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+import type { Session } from 'next-auth';
 import { ServerResponse } from 'node:http';
-import type { WebSocket } from 'ws';
-import { getServerAuthSession } from './auth';
+import { getRequestAuthSession, getServerAuthSession } from './auth';
 
 /**
- * Creates context for an incoming request: from the API handler, a WebSocket
- * connection, or a page's `getServerSideProps`
  * @see https://trpc.io/docs/v11/context
- * @see https://trpc.io/docs/client/nextjs/pages-router/ssr#build-the-context-from-the-request
  */
-export const createContext = async (opts: {
-  req: IncomingMessage;
-  res: ServerResponse | WebSocket;
-}) => {
+export interface Context {
+  session: Session | null;
+}
+
+function logContext(ctx: Context) {
+  console.log('createContext for', ctx.session?.user?.name ?? 'unknown user');
+  return ctx;
+}
+
+/**
+ * Creates context for a WebSocket connection
+ */
+export const createContext = async (
+  opts: CreateWSSContextFnOptions,
+): Promise<Context> => {
   /**
    * `getServerSession` writes refreshed session cookies to the response, but a
    * WebSocket connection has no HTTP response to write to, so they go to a
    * detached one and are dropped.
    */
-  const res = 'setHeader' in opts.res ? opts.res : new ServerResponse(opts.req);
+  const res = new ServerResponse(opts.req);
 
-  const session = await getServerAuthSession(opts.req, res);
-
-  console.log('createContext for', session?.user?.name ?? 'unknown user');
-
-  return {
-    session,
-  };
+  return logContext({ session: await getServerAuthSession(opts.req, res) });
 };
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+/**
+ * Creates context for the request a server component or route handler is
+ * handling
+ * @see https://trpc.io/docs/client/nextjs/app-router-setup#2-create-a-trpc-router
+ */
+export const createRequestContext = async (): Promise<Context> =>
+  logContext({ session: await getRequestAuthSession() });
