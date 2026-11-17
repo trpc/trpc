@@ -223,9 +223,11 @@ export const pipelineFillLimit = 1_000_000;
  * Measures about how long values are as JSON, for the limit on what a batch
  * fills in. It stops once a value is longer than `room`, and gives a length
  * over `room` then: what is that long isn't filled in, so its exact length
- * doesn't matter, and measuring it costs no more than the room there is. It
- * remembers what it measured, so what many runs or calls read is measured
- * once.
+ * doesn't matter, and it reads no more of it than the room there is. Only
+ * listing an object's keys takes as long as the object. That is once for
+ * each object, or again for a call with more room, and the data calls read is
+ * the server's own, which went over the wire whole already. It remembers what
+ * it measured, so what many runs or calls read is measured once.
  */
 export function createPipelineSizeOf() {
   /** An object's length, or how long it is at least if `exact` is false */
