@@ -91,12 +91,13 @@ function PostsCard() {
   );
 
   // prefetch all posts for instant navigation
+  // const queryClient = useQueryClient();
   // useEffect(() => {
   //   const allPosts = postsQuery.data?.pages.flatMap((page) => page.items) ?? [];
   //   for (const { id } of allPosts) {
-  //     void utils.post.byId.prefetch({ id });
+  //     void queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
   //   }
-  // }, [postsQuery.data, utils]);
+  // }, [postsQuery.data, queryClient, trpc]);
 
   return (
     <Card>
@@ -320,26 +321,29 @@ const IndexPage: NextPageWithLayout = () => {
 export default IndexPage;
 
 /**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
+ * If you want to statically render this page, prefetch its queries and
+ * return them as `trpcState`, which `_app` hydrates
  *
- * @see https://trpc.io/docs/v11/ssg
+ * @see https://trpc.io/docs/v11/client/nextjs/pages-router/ssg
  */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createServerSideHelpers({
+// export const getStaticProps = async () => {
+//   const queryClient = makeQueryClient();
+//   const trpc = createTRPCOptionsProxy({
 //     router: appRouter,
-//     ctx: await createContext(),
+//     ctx: await createContextInner({}),
+//     queryClient,
 //   });
 //
-//   await ssg.post.all.fetch();
+//   await queryClient.prefetchInfiniteQuery(
+//     trpc.post.list.infiniteQueryOptions(
+//       { limit: 5 },
+//       { getNextPageParam: (lastPage) => lastPage.nextCursor },
+//     ),
+//   );
 //
 //   return {
 //     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
+//       trpcState: transformer.serialize(dehydrate(queryClient)),
 //     },
 //     revalidate: 1,
 //   };
