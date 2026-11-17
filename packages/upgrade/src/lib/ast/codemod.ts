@@ -669,3 +669,18 @@ export function staticKeyName(
   if (j.Literal.check(key) && typeof key.value === 'string') return key.value;
   return null;
 }
+
+/**
+ * The name this file calls the setup by: `trpc` for `import { api as trpc }`
+ * when the setup is `api`, else the setup's own name.
+ */
+export function localSetupName(
+  { j, root }: Codemod,
+  setupName: string,
+): string {
+  const aliased = root
+    .find(j.ImportSpecifier, { imported: { name: setupName } })
+    .filter((p) => !!p.node.local && p.node.local.name !== setupName)
+    .paths()[0];
+  return aliased?.node.local?.name ?? setupName;
+}

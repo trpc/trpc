@@ -16,6 +16,7 @@ import {
   insertAfterDeclarator,
   isInside,
   isShadowed,
+  localSetupName,
   isValueReference,
   paramBindings,
   printSource,
@@ -112,9 +113,12 @@ export default function transform(
   api: API,
   options: TransformOptions,
 ) {
-  const trpcName = options.trpcImportName ?? 'trpc';
   const j = api.jscodeshift;
   const root = j(file.source);
+  const trpcName = localSetupName(
+    { j, root },
+    options.trpcImportName ?? 'trpc',
+  );
   let changed = false;
   /** Functions that now start with `const trpc = useTRPC()` */
   const scopes = new Set<ASTPath<FunctionNode>>();

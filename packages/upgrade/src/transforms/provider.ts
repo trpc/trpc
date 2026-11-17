@@ -15,6 +15,7 @@ import {
   ensureNamedImport,
   isShadowed,
   isValueReference,
+  localSetupName,
   printSource,
   replaceImportedName,
   staticKeyName,
@@ -48,9 +49,13 @@ export default function transform(
   api: API,
   options: TransformOptions,
 ) {
-  const trpcName = options.trpcImportName ?? 'trpc';
   const j = api.jscodeshift;
   const root = j(file.source);
+  // The setup file declares it; other files may import it under another name
+  const trpcName = localSetupName(
+    { j, root },
+    options.trpcImportName ?? 'trpc',
+  );
   let changed = false;
   let routerType: TSTypeParameterInstantiation | null = null;
 
