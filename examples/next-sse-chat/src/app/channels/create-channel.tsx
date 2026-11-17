@@ -2,6 +2,9 @@
 
 import * as Headless from '@headlessui/react';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 import { Button } from '~/components/button';
 import {
   Dialog,
@@ -10,22 +13,23 @@ import {
   DialogTitle,
 } from '~/components/dialog';
 import { Input, Label } from '~/components/input';
-import { trpc } from '~/lib/trpc';
-import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { useTRPC } from '~/lib/trpc';
 
 export function CreateChannelDialog() {
+  const trpc = useTRPC();
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
-  const mutation = trpc.channel.create.useMutation({
-    onSuccess: (id) => {
-      router.push(`/channels/${id}`);
-      router.refresh();
-    },
-    onError(err) {
-      alert('Error: ' + err.message);
-    },
-  });
+  const mutation = useMutation(
+    trpc.channel.create.mutationOptions({
+      onSuccess: (id) => {
+        router.push(`/channels/${id}`);
+        router.refresh();
+      },
+      onError(err) {
+        alert('Error: ' + err.message);
+      },
+    }),
+  );
 
   return (
     <>

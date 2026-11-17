@@ -8,11 +8,13 @@ import {
   httpSubscriptionLink,
   loggerLink,
   splitLink,
+  createTRPCClient,
 } from '@trpc/client';
-import { createQueryClient } from '~/lib/query-client';
-import { trpc } from '~/lib/trpc';
 import { useState } from 'react';
 import SuperJSON from 'superjson';
+import { createQueryClient } from '~/lib/query-client';
+import { TRPCProvider } from '~/lib/trpc';
+import type { AppRouter } from '~/server/routers/_app';
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -39,7 +41,7 @@ const getUrl = () => {
 export function TRPCProviders(props: Readonly<{ children: React.ReactNode }>) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
-    trpc.createClient({
+    createTRPCClient<AppRouter>({
       links: [
         // adds pretty logs to your console in development and logs errors in production
         loggerLink(),
@@ -65,9 +67,9 @@ export function TRPCProviders(props: Readonly<{ children: React.ReactNode }>) {
   );
   return (
     <QueryClientProvider client={getQueryClient()}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         {props.children}
-      </trpc.Provider>
+      </TRPCProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
