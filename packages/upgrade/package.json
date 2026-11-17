@@ -21,7 +21,8 @@
     }
   },
   "scripts": {
-    "build": "tsdown"
+    "build": "tsdown",
+    "try-examples": "node scripts/try-examples.ts"
   },
   "files": [
     "dist",

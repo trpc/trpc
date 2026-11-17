@@ -1,6 +1,8 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQueryClient,
+  useSuspenseQuery,
+  useSuspenseInfiniteQuery,
+} from '@tanstack/react-query';
 import { useTRPC } from './suspenseDestructuring.trpc';
 
 export function Component() {

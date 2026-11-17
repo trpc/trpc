@@ -72,7 +72,8 @@ function findSourceAndImportName(sourceFiles: SourceFile[]) {
       (node) =>
         isImportDeclaration(node) &&
         isStringLiteral(node.moduleSpecifier) &&
-        node.moduleSpecifier.text.includes('@trpc/react-query'),
+        (node.moduleSpecifier.text.includes('@trpc/react-query') ||
+          node.moduleSpecifier.text === '@trpc/next'),
     ),
   );
 
@@ -89,8 +90,9 @@ function findSourceAndImportName(sourceFiles: SourceFile[]) {
             declaration.initializer &&
             isCallExpression(declaration.initializer) &&
             isIdentifier(declaration.initializer.expression) &&
-            declaration.initializer.expression.getText(sourceFile) ===
-              'createTRPCReact'
+            ['createTRPCReact', 'createTRPCNext'].includes(
+              declaration.initializer.expression.getText(sourceFile),
+            )
           ) {
             importName = declaration.name.getText(sourceFile);
           }
