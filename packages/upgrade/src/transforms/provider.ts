@@ -146,6 +146,21 @@ export default function transform(
     for (const node of nodes) {
       j(node as never)
         .find(j.Identifier, { name: opts.name })
+        // Not `x.QueryClient` or `{ QueryClient: x }`
+        .filter((p) => {
+          const parent = p.parent?.node;
+          const isMemberProperty =
+            (j.MemberExpression.check(parent) ||
+              j.OptionalMemberExpression.check(parent)) &&
+            parent.property === p.node &&
+            !parent.computed;
+          const isKey =
+            (j.ObjectProperty.check(parent) || j.Property.check(parent)) &&
+            parent.key === p.node &&
+            !parent.computed &&
+            !parent.shorthand;
+          return !isMemberProperty && !isKey;
+        })
         .forEach((p) => {
           p.node.name = local;
         });
@@ -245,10 +260,16 @@ export default function transform(
 
       // The original `config`, as a function `makeTRPCClient` calls
       const statements: Statement[] = [];
-      const exported = (code: string) =>
-        withoutLocations(
+      // Code we write, as opposed to the user's `config` we copy. Only this
+      // refers to imports by the names we chose.
+      const generated: unknown[] = [];
+      const exported = (code: string) => {
+        const nodes = withoutLocations(
           j(code).find(j.Program).get().node.body as Statement[],
         );
+        generated.push(...nodes);
+        return nodes;
+      };
 
       statements.push(
         ...exported(
@@ -314,11 +335,13 @@ export default function transform(
             typed.typeAnnotation = j.tsTypeAnnotation(
               j.tsTypeLiteral([
                 (() => {
+                  const contextType = j.tsTypeReference(
+                    j.identifier('NextPageContext'),
+                  );
+                  generated.push(contextType);
                   const ctx = j.tsPropertySignature(
                     j.identifier('ctx'),
-                    j.tsTypeAnnotation(
-                      j.tsTypeReference(j.identifier('NextPageContext')),
-                    ),
+                    j.tsTypeAnnotation(contextType),
                   );
                   ctx.optional = true;
                   return ctx;
@@ -478,24 +501,24 @@ export function withTRPC<TInitialProps extends object>(
         ['next/app', 'AppType', true],
         ['@tanstack/react-query', 'DehydratedState', true],
       ] as const) {
-        localizeImport(statements, { source, name, typeOnly });
+        localizeImport(generated, { source, name, typeOnly });
       }
       if (queryClientConfig === 'unknown') {
-        localizeImport(statements, {
+        localizeImport(generated, {
           source: '@tanstack/react-query',
           name: 'QueryClientConfig',
           typeOnly: true,
         });
       }
       if (configUsesContext) {
-        localizeImport(statements, {
+        localizeImport(generated, {
           source: 'next',
           name: 'NextPageContext',
           typeOnly: true,
         });
       }
       moveImport('@trpc/next', 'createTRPCNext');
-      localizeImport(statements, {
+      localizeImport(generated, {
         source: '@trpc/tanstack-react-query',
         name: 'createTRPCContext',
         typeOnly: false,
