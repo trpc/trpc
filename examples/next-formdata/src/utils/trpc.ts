@@ -1,12 +1,21 @@
 import {
+  QueryClient,
+  type DehydratedState,
+  QueryClientProvider,
+  HydrationBoundary,
+} from '@tanstack/react-query';
+import {
   httpBatchLink,
   httpLink,
   isNonJsonSerializable,
   loggerLink,
   splitLink,
+  createTRPCClient,
 } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppType } from 'next/app';
+import { useState, createElement } from 'react';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
@@ -25,50 +34,81 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export const trpc = createTRPCNext<AppRouter>({
-  overrides: {
-    useMutation: {
-      /**
-       * This function is called whenever a `.useMutation` succeeds
-       **/
-      async onSuccess(opts) {
-        /**
-         * @note that order here matters:
-         * The order here allows route changes in `onSuccess` without
-         * having a flash of content change whilst redirecting.
-         **/
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<AppRouter>();
 
-        // Calls the `onSuccess` defined in the `useQuery()`-options:
-        await opts.originalFn();
+/**
+ * Was `config` in `createTRPCNext`. It runs in the browser, so `ctx` is
+ * always undefined.
+ */
+function getConfig() {
+  const url = getBaseUrl() + '/api/trpc';
+  return {
+    links: [
+      loggerLink({
+        enabled: (op) =>
+          process.env.NODE_ENV === 'development' ||
+          (op.direction === 'down' && op.result instanceof Error),
+      }),
+      splitLink({
+        condition: (op) => isNonJsonSerializable(op.input),
+        true: httpLink({
+          url,
+        }),
+        false: httpBatchLink({
+          url,
+        }),
+      }),
+    ],
+  };
+}
 
-        // Invalidate all queries in the react-query cache:
-        await opts.queryClient.invalidateQueries();
-      },
-    },
-  },
-  config() {
-    const url = getBaseUrl() + '/api/trpc';
-    return {
-      links: [
-        loggerLink({
-          enabled: (op) =>
-            process.env.NODE_ENV === 'development' ||
-            (op.direction === 'down' && op.result instanceof Error),
+export function makeTRPCClient() {
+  return createTRPCClient<AppRouter>({
+    links: getConfig().links,
+  });
+}
+
+export function makeQueryClient() {
+  return new QueryClient();
+}
+
+/**
+ * Was `trpc.withTRPC`. Provides the tRPC and query clients to the app, and
+ * hydrates the `trpcState` a page's `getStaticProps` or
+ * `getServerSideProps` returns.
+ */
+export function withTRPC<TInitialProps extends object>(
+  App: AppType<TInitialProps>,
+): AppType<TInitialProps> {
+  const WithTRPC: AppType<TInitialProps> = (props) => {
+    const [queryClient] = useState(makeQueryClient);
+    const [trpcClient] = useState(makeTRPCClient);
+
+    const pageProps = props.pageProps as
+      | {
+          trpcState?: unknown;
+        }
+      | undefined;
+
+    return createElement(QueryClientProvider, {
+      client: queryClient,
+
+      children: createElement(TRPCProvider, {
+        trpcClient,
+        queryClient,
+
+        children: createElement(HydrationBoundary, {
+          state: pageProps?.trpcState as DehydratedState | undefined,
+          children: createElement(App, props),
         }),
-        splitLink({
-          condition: (op) => isNonJsonSerializable(op.input),
-          true: httpLink({
-            url,
-          }),
-          false: httpBatchLink({
-            url,
-          }),
-        }),
-      ],
-    };
-  },
-  ssr: false,
-});
+      }),
+    });
+  };
+
+  WithTRPC.getInitialProps = App.getInitialProps;
+  return WithTRPC;
+}
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
