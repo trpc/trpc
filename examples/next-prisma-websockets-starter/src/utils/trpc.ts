@@ -7,7 +7,7 @@ import {
   createTRPCClient,
 } from '@trpc/client';
 import type { inferRouterOutputs } from '@trpc/server';
-import type { NextPageContext } from 'next';
+import type { NextComponentType, NextPageContext } from 'next';
 import getConfig from 'next/config';
 import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
@@ -18,7 +18,7 @@ import {
   QueryClientProvider,
   HydrationBoundary,
 } from '@tanstack/react-query';
-import type { AppType } from 'next/app';
+import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import { useState, createElement } from 'react';
 
 // ℹ️ Type-only import:
@@ -64,7 +64,6 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
  * @see https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
-// TODO(@trpc/upgrade): createTRPCNext had `ssr: true`, which has no replacement. Prefetch each page's queries in `getServerSideProps` instead, see https://trpc.io/docs/client/nextjs/pages-router/ssr
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<AppRouter>();
 
@@ -114,10 +113,14 @@ export function makeQueryClient() {
  * hydrates the `trpcState` a page's `getStaticProps` or
  * `getServerSideProps` returns.
  */
-export function withTRPC<TInitialProps extends object>(
-  App: AppType<TInitialProps>,
-): AppType<TInitialProps> {
-  const WithTRPC: AppType<TInitialProps> = (props) => {
+export function withTRPC<TPageProps extends object>(
+  App: NextComponentType<
+    AppContext,
+    AppInitialProps<TPageProps>,
+    AppProps<TPageProps>
+  >,
+): typeof App {
+  const WithTRPC: typeof App = (props) => {
     const [queryClient] = useState(makeQueryClient);
     const [trpcClient] = useState(makeTRPCClient);
 
@@ -135,20 +138,21 @@ export function withTRPC<TInitialProps extends object>(
         queryClient,
 
         children: createElement(HydrationBoundary, {
-          state: (pageProps?.trpcState === undefined
-            ? undefined
-            : superjson.deserialize(
-                pageProps.trpcState as Parameters<
-                  typeof superjson.deserialize
-                >[0],
-              )) as DehydratedState | undefined,
+          state:
+            pageProps?.trpcState === undefined
+              ? undefined
+              : superjson.deserialize<DehydratedState>(
+                  pageProps.trpcState as Parameters<
+                    typeof superjson.deserialize
+                  >[0],
+                ),
           children: createElement(App, props),
         }),
       }),
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
+  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
   return WithTRPC;
 }
 

@@ -1,13 +1,12 @@
 import '../styles/global.css';
 import type { Session } from 'next-auth';
 import { getSession, SessionProvider } from 'next-auth/react';
-import type { AppType } from 'next/app';
+import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import { withTRPC } from '~/utils/trpc';
 
-const MyApp: AppType<{ session: Session | null }> = ({
-  Component,
-  pageProps,
-}) => {
+type PageProps = { session: Session | null };
+
+const MyApp = ({ Component, pageProps }: AppProps<PageProps>) => {
   return (
     <SessionProvider session={pageProps.session}>
       <Component {...pageProps} />
@@ -15,7 +14,13 @@ const MyApp: AppType<{ session: Session | null }> = ({
   );
 };
 
-MyApp.getInitialProps = async ({ ctx }) => {
+/**
+ * Next.js reads `pageProps` from what this returns, and adds the page's
+ * `getServerSideProps` props to it
+ */
+MyApp.getInitialProps = async ({
+  ctx,
+}: AppContext): Promise<AppInitialProps<PageProps>> => {
   if (ctx.req && ctx.res) {
     /**
      * The import is dynamic so that `[...nextauth].ts` is only evaluated when
@@ -26,12 +31,12 @@ MyApp.getInitialProps = async ({ ctx }) => {
     const { getServerAuthSession } = await import('~/server/auth');
 
     return {
-      session: await getServerAuthSession(ctx.req, ctx.res),
+      pageProps: { session: await getServerAuthSession(ctx.req, ctx.res) },
     };
   }
 
   return {
-    session: await getSession(),
+    pageProps: { session: await getSession() },
   };
 };
 
