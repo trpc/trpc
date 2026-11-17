@@ -142,7 +142,8 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir: [
+        dir:
+          [
             .experimental/next-app-dir,
             .test/internal-types-export,
             cloudflare-workers,
