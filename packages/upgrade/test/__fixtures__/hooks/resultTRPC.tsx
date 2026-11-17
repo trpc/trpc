@@ -16,7 +16,7 @@ export function Component2(flag: boolean) {
   }
   // `trpc` destructured from the result needs a hand
   const { trpc: meta } = trpc.post.list.useQuery();
-  const { 'trpc': meta2 } = trpc.post.list.useQuery();
+  const { trpc: meta2 } = trpc.post.list.useQuery();
   const { ['trpc']: meta3 } = trpc.post.list.useQuery();
   return [mutation.trpc.path, meta, meta2, meta3];
 }
