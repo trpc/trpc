@@ -78,7 +78,7 @@ jobs:
           cache: 'pnpm'
 
       # Copies the `@shared/ui` files the example uses into it, and replaces
-      # `catalog:` versions and `@trpc/*` (with `canary`), which only resolve
+      # `catalog:` versions and `@trpc/*` (with `latest`), which only resolve
       # in the monorepo. See tooling/subtree.
       - name: Make the example standalone
         run: |
@@ -112,7 +112,7 @@ jobs:
               pnpm install --ignore-workspace --config.dangerously-allow-all-builds=true && pnpm build
             fi
           }
-          # The canary @trpc/server's next-app-dir adapter imports
+          # The published @trpc/server's next-app-dir adapter imports
           # `next/navigation` without `.js`, which Node can't resolve. Only that
           # failure is a warning.
           if [ "${{ matrix.path }}" = ".experimental/next-app-dir" ]; then

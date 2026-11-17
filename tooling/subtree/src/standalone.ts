@@ -7,7 +7,7 @@
  * (`shared-ui/` without `src/`), with its `@shared/ui/...` imports and
  * Tailwind `@source`s pointing there. Their npm dependencies move into the
  * package. `catalog:` versions become the catalog's, and `@trpc/*` installs
- * `canary`.
+ * `latest`, which every change to what they publish releases.
  */
 import { Data, Effect, FileSystem, Path, type PlatformError } from 'effect';
 import { parse } from 'yaml';
@@ -103,7 +103,7 @@ export function standaloneVersion(
   catalogs: Catalogs,
 ) {
   if (name.startsWith('@trpc/')) {
-    return 'canary';
+    return 'latest';
   }
   if (version.startsWith('catalog:')) {
     const catalog = version.slice('catalog:'.length) || 'default';
