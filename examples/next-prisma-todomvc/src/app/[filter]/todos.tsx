@@ -1,31 +1,23 @@
+'use client';
+
 import {
-  dehydrate,
   useIsMutating,
-  useQueryClient,
   useMutation,
-  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
 } from '@tanstack/react-query';
 import type { inferProcedureOutput } from '@trpc/server';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import clsx from 'clsx';
-import type {
-  GetStaticPaths,
-  GetStaticPropsContext,
-  InferGetStaticPropsType,
-} from 'next';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import superjson from 'superjson';
-import 'todomvc-app-css/index.css';
-import 'todomvc-common/base.css';
-import { InfoFooter } from '../components/footer';
-import { createInnerTRPCContext } from '../server/context';
-import type { AppRouter } from '../server/routers/_app';
-import { appRouter } from '../server/routers/_app';
-import { makeQueryClient } from '../utils/query-client';
-import { useTRPC } from '../utils/trpc';
-import { useClickOutside } from '../utils/use-click-outside';
+import type { AppRouter } from '../../server/routers/_app';
+import type { TRPC } from '../../trpc/client';
+import { useTRPC } from '../../trpc/client';
+import type { Filter } from '../../utils/filters';
+import { filters } from '../../utils/filters';
+import { useClickOutside } from '../../utils/use-click-outside';
 
 type Task = inferProcedureOutput<AppRouter['todo']['all']>[number];
 
@@ -165,15 +157,17 @@ function ListItem(props: { task: Task }) {
   );
 }
 
-type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
-export default function TodosPage(props: PageProps) {
+export function Todos(props: {
+  tasks: inferQueryHandle<TRPC['todo']['all']>;
+  filter: Filter;
+}) {
   const trpc = useTRPC();
   /*
-   * This data will be hydrated from the `prefetch` in `getStaticProps`. This means that the page
-   * will be rendered with the data from the server and there'll be no client loading state 👍
+   * The page's server component loaded this query, so it renders with the
+   * server's data at once
    */
-  const allTasks = useQuery(
-    trpc.todo.all.queryOptions(undefined, {
+  const allTasks = useSuspenseQuery(
+    fromHandle(trpc, props.tasks, {
       staleTime: 3000,
     }),
   );
@@ -187,7 +181,7 @@ export default function TodosPage(props: PageProps) {
          * with the newly added task
          */
         await queryClient.cancelQueries(trpc.todo.all.pathFilter());
-        const tasks = allTasks.data ?? [];
+        const tasks = allTasks.data;
         queryClient.setQueryData(trpc.todo.all.queryKey(), [
           ...tasks,
           makeOptimisticTask(text),
@@ -200,7 +194,7 @@ export default function TodosPage(props: PageProps) {
     trpc.todo.clearCompleted.mutationOptions({
       async onMutate() {
         await queryClient.cancelQueries(trpc.todo.all.pathFilter());
-        const tasks = allTasks.data ?? [];
+        const tasks = allTasks.data;
         queryClient.setQueryData(
           trpc.todo.all.queryKey(),
           tasks.filter((t) => !t.completed),
@@ -213,7 +207,7 @@ export default function TodosPage(props: PageProps) {
     trpc.todo.toggleAll.mutationOptions({
       async onMutate({ completed }) {
         await queryClient.cancelQueries(trpc.todo.all.pathFilter());
-        const tasks = allTasks.data ?? [];
+        const tasks = allTasks.data;
         queryClient.setQueryData(
           trpc.todo.all.queryKey(),
           tasks.map((t) => ({
@@ -235,128 +229,84 @@ export default function TodosPage(props: PageProps) {
     }
   }, [trpc, number, queryClient]);
 
-  const tasksLeft = allTasks.data?.filter((t) => !t.completed).length ?? 0;
-  const tasksCompleted = allTasks.data?.filter((t) => t.completed).length ?? 0;
+  const tasksLeft = allTasks.data.filter((t) => !t.completed).length;
+  const tasksCompleted = allTasks.data.filter((t) => t.completed).length;
 
   return (
-    <>
-      <Head>
-        <title>Todos</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <section className="todoapp">
+      <header className="header">
+        <h1>todos</h1>
 
-      <section className="todoapp">
-        <header className="header">
-          <h1>todos</h1>
+        <input
+          className="new-todo"
+          placeholder="What needs to be done"
+          autoFocus
+          onKeyDown={(e) => {
+            const text = e.currentTarget.value.trim();
+            if (e.key === 'Enter' && text) {
+              addTask.mutate({ text });
+              e.currentTarget.value = '';
+            }
+          }}
+        />
+      </header>
 
-          <input
-            className="new-todo"
-            placeholder="What needs to be done"
-            autoFocus
-            onKeyDown={(e) => {
-              const text = e.currentTarget.value.trim();
-              if (e.key === 'Enter' && text) {
-                addTask.mutate({ text });
-                e.currentTarget.value = '';
-              }
-            }}
-          />
-        </header>
-
-        <section className="main">
-          <input
-            id="toggle-all"
-            className="toggle-all"
-            type="checkbox"
-            checked={tasksCompleted === allTasks.data?.length}
-            onChange={(e) => {
-              toggleAll.mutate({ completed: e.currentTarget.checked });
-            }}
-          />
-          <label htmlFor="toggle-all">Mark all as complete</label>
-          <ul className="todo-list">
-            {allTasks.data
-              ?.filter(({ completed }) =>
-                props.filter === 'completed'
-                  ? completed
-                  : props.filter === 'active'
-                    ? !completed
-                    : true,
-              )
-              .map((task) => (
-                <ListItem key={task.id} task={task} />
-              ))}
-          </ul>
-        </section>
-
-        <footer className="footer">
-          <span className="todo-count">
-            <strong>{tasksLeft} </strong>
-            {tasksLeft == 1 ? 'task left' : 'tasks left'}
-          </span>
-
-          <ul className="filters">
-            {filters.map((filter) => (
-              <li key={'filter-' + filter}>
-                <Link
-                  href={'/' + filter}
-                  className={filter == props.filter ? 'selected' : ''}
-                >
-                  {filter[0].toUpperCase() + filter.slice(1)}
-                </Link>
-              </li>
+      <section className="main">
+        <input
+          id="toggle-all"
+          className="toggle-all"
+          type="checkbox"
+          checked={tasksCompleted === allTasks.data.length}
+          onChange={(e) => {
+            toggleAll.mutate({ completed: e.currentTarget.checked });
+          }}
+        />
+        <label htmlFor="toggle-all">Mark all as complete</label>
+        <ul className="todo-list">
+          {allTasks.data
+            .filter(({ completed }) =>
+              props.filter === 'completed'
+                ? completed
+                : props.filter === 'active'
+                  ? !completed
+                  : true,
+            )
+            .map((task) => (
+              <ListItem key={task.id} task={task} />
             ))}
-          </ul>
-
-          {tasksCompleted > 0 && (
-            <button
-              className="clear-completed"
-              onClick={() => {
-                clearCompleted.mutate();
-              }}
-            >
-              Clear completed
-            </button>
-          )}
-        </footer>
+        </ul>
       </section>
 
-      <InfoFooter filter={props.filter} />
-    </>
+      <footer className="footer">
+        <span className="todo-count">
+          <strong>{tasksLeft} </strong>
+          {tasksLeft == 1 ? 'task left' : 'tasks left'}
+        </span>
+
+        <ul className="filters">
+          {filters.map((filter) => (
+            <li key={'filter-' + filter}>
+              <Link
+                href={'/' + filter}
+                className={filter == props.filter ? 'selected' : ''}
+              >
+                {filter[0].toUpperCase() + filter.slice(1)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        {tasksCompleted > 0 && (
+          <button
+            className="clear-completed"
+            onClick={() => {
+              clearCompleted.mutate();
+            }}
+          >
+            Clear completed
+          </button>
+        )}
+      </footer>
+    </section>
   );
 }
-
-const filters = ['all', 'active', 'completed'] as const;
-export const getStaticPaths: GetStaticPaths = async () => {
-  const paths = filters.map((filter) => ({
-    params: { filter },
-  }));
-
-  return {
-    paths,
-    fallback: false,
-  };
-};
-
-/**
- * @see https://trpc.io/docs/client/nextjs/pages-router/ssg
- */
-export const getStaticProps = async (context: GetStaticPropsContext) => {
-  const queryClient = makeQueryClient();
-  const trpc = createTRPCOptionsProxy({
-    router: appRouter,
-    // There's no request at build time, so use the inner context
-    ctx: await createInnerTRPCContext({}),
-    queryClient,
-  });
-
-  await queryClient.prefetchQuery(trpc.todo.all.queryOptions());
-
-  return {
-    props: {
-      trpcState: superjson.serialize(dehydrate(queryClient)),
-      filter: (context.params?.filter as string) ?? 'all',
-    },
-    revalidate: 1,
-  };
-};
