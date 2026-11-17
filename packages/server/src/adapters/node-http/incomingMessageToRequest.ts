@@ -24,6 +24,11 @@ function createBody(
       if (typeof req.body === 'string') {
         return req.body;
       }
+      // A raw body parser, such as `express.raw()`, leaves the bytes it read
+      // in a Buffer, which JSON.stringify would turn into `{"type":"Buffer"}`
+      if (Buffer.isBuffer(req.body)) {
+        return new Uint8Array(req.body);
+      }
       // If body exists but isn't a string, stringify it as JSON
       return JSON.stringify(req.body);
     } else if (req.readableEnded) {
