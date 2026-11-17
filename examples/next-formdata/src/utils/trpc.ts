@@ -1,4 +1,5 @@
 import {
+  MutationCache,
   QueryClient,
   type DehydratedState,
   QueryClientProvider,
@@ -70,7 +71,14 @@ export function makeTRPCClient() {
 }
 
 export function makeQueryClient() {
-  return new QueryClient();
+  const queryClient: QueryClient = new QueryClient({
+    // Was `overrides.useMutation.onSuccess` in `createTRPCNext`:
+    // invalidate all queries after every successful mutation
+    mutationCache: new MutationCache({
+      onSuccess: () => queryClient.invalidateQueries(),
+    }),
+  });
+  return queryClient;
 }
 
 /**
@@ -106,7 +114,6 @@ export function withTRPC<TInitialProps extends object>(
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
   return WithTRPC;
 }
 
