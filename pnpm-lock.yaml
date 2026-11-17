@@ -2003,15 +2003,12 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next
-        version: link:../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query
+        version: link:../../packages/tanstack-react-query
       '@vercel/functions':
         specifier: ^3.10.5
         version: 3.11.0(@aws-sdk/credential-provider-web-identity@3.782.0)(ws@8.22.2)
