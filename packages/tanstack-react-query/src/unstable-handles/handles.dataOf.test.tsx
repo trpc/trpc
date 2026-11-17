@@ -47,6 +47,7 @@ import type { TRPCOptionsProxy } from '..';
 const createAppRouter = () => {
   const t = initTRPC.create();
   const calls = vi.fn();
+  let changes = 0;
   const appRouter = t.router({
     post: t.router({
       bySlug: t.procedure
@@ -74,6 +75,11 @@ const createAppRouter = () => {
             nextCursor: page < 2 ? page + 1 : null,
           };
         }),
+      /** Another list with every call: the tag `c0`, then `c1` */
+      changing: t.procedure.query(() => {
+        calls('post.changing', undefined);
+        return { tags: [{ id: `c${changes++}` }] };
+      }),
       /** Its author comes later, as a stream sends it */
       withAuthorLater: t.procedure
         .input(z.object({ slug: z.string() }))
@@ -128,6 +134,7 @@ const createAppRouter = () => {
       sparse: t.procedure.query(() => ({
         groups: [{ members: ['u1'] }, { members: null as unknown as string[] }],
         owners: null as unknown as string[],
+        leads: [{ id: 'u1' }, { id: null as unknown as string }],
       })),
     }),
     big: t.router({
@@ -756,9 +763,15 @@ describe('edges of a load', () => {
         experimental_dataOf(sparse).owners,
         byId,
       ),
+      // A value that `.map()` read is `null`: that looks like a missing list
+      leads: experimental_entryPerItem(
+        experimental_dataOf(sparse).leads.map((lead) => lead.id),
+        byId,
+      ),
     });
     expect(data.members).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
     expect(data.owners).toEqual([]);
+    expect(data.leads).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
   });
 
   test('a query for every item rejects the load when its list fails', async () => {
@@ -1931,6 +1944,54 @@ describe.each([
       ['tag.byIds', { ids: ['t1', 't2'], first: 't1' }],
       ['tag.byIds', { ids: ['t1', 't2'], first: 't2' }],
     ]);
+  });
+
+  test("what an item's input reads besides the item is from the first load, also when the list is fetched again", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const list = ensureEntry(trpc.post.changing);
+    const [handles] = await loadHandles(trpc, {
+      list,
+      tags: experimental_entryPerItem(experimental_dataOf(list).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, {
+          ids: experimental_dataOf(list).tags.map((each) => each.id),
+          first: tag.id,
+        }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.onRequestSpy.mockClear();
+    resource.calls.mockClear();
+
+    // As after an invalidation: the list is now the tag `c1`
+    await resource.queryClient.fetchQuery({
+      ...fromHandle(trpc, handles.list),
+      staleTime: 0,
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.changing', undefined],
+      // The new item, and the list as the handles have it
+      ['tag.byIds', { ids: ['c0'], first: 'c1' }],
+    ]);
+    // Which is the query the new item's handle is for, so its row finds it
+    const handle = experimental_handleOfItem(handles.tags, { id: 'c1' });
+    expect(handle.input).toEqual({ ids: ['c0'], first: 'c1' });
+    expect(
+      resource.queryClient.getQueryData(fromHandle(trpc, handle).queryKey),
+    ).toEqual([{ id: 'c0' }]);
   });
 
   test('when the server refuses a call for every item, each item asks by itself', async () => {

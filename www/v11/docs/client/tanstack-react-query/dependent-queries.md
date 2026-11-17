@@ -610,6 +610,7 @@ function AuthorName(props: {
 - **The load doesn't wait for a list from a prefetch entry.** The items' queries start when the list arrives.
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
+- **A list inside a list that is `null` has no items.** A `null` in a list that `.map()` made looks the same, so it has no query either.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server refuses the call, and each item asks by itself.
@@ -634,6 +635,7 @@ POST /post.list,author.byId?batch=pipeline
 - **The component doesn't change.** `fetchNextPage()` of the query above makes this request, and each new row finds its author in the cache.
 - **It is shown as a POST**, which it is with [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method). As a GET, the same is in the URL, as in [What goes over the wire](#wire).
 - **Read the list through its handle.** A query from `trpc.post.list.infiniteQueryOptions()` fetches the list alone.
+- **Only the item's part of an input is new.** What an item's input reads besides the item, such as the whole list or another entry, stays as it was in the first load. That is the input the items' handles have, so each row still finds its query.
 - **Without one request, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
 
 ## Entries next to components {#groups}
