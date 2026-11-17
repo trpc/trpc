@@ -13,6 +13,7 @@ import type {
 import {
   addTodo,
   ensureNamedImport,
+  isShadowed,
   isValueReference,
   printSource,
   replaceImportedName,
@@ -618,6 +619,27 @@ export function withTRPC<TInitialProps extends object>(
     return inputOf(transformer) ?? transformer;
   }
 
+  /**
+   * Whether `trpc` at `path` is the top-level setup this transform replaces.
+   * A setup inside a function stays as it is, so its uses must too.
+   */
+  function migratable(path: ASTPath): boolean {
+    const local = isShadowed(j, path, {
+      scope: root.paths()[0] as ASTPath,
+      name: trpcName,
+      declarator: null,
+    });
+    if (local) {
+      addTodo(
+        j,
+        path,
+        `migrate by hand: this \`${trpcName}\` is not a top-level setup`,
+      );
+      changed = true;
+    }
+    return !local;
+  }
+
   function migrateProviderUsage(collection: Collection) {
     let used = false;
     collection
@@ -628,6 +650,7 @@ export function withTRPC<TInitialProps extends object>(
           property: { name: 'createClient' },
         },
       })
+      .filter(migratable)
       .forEach((path) => {
         const next = j.callExpression(
           j.identifier(
@@ -668,6 +691,7 @@ export function withTRPC<TInitialProps extends object>(
           },
         },
       })
+      .filter(migratable)
       .forEach((path) => {
         path.node.openingElement.name = j.jsxIdentifier('TRPCProvider');
         if (path.node.closingElement) {
@@ -705,6 +729,7 @@ export function withTRPC<TInitialProps extends object>(
           property: { name: 'withTRPC' },
         },
       })
+      .filter(migratable)
       .forEach((path) => {
         path.node.callee = j.identifier('withTRPC');
         used = true;
