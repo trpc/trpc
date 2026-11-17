@@ -1,8 +1,8 @@
 ---
-id: dependent-queries
-title: Dependent queries in one request
-sidebar_label: Dependent queries
-slug: /client/tanstack-react-query/dependent-queries
+id: chained-queries
+title: Chained queries in one request
+sidebar_label: Chained queries
+slug: /client/tanstack-react-query/chained-queries
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 54
@@ -14,7 +14,7 @@ A page often needs one answer before it can ask the next question.
 - The post has an `authorId`. The page needs the **author**.
 - The author has a `teamId`. The page needs **more posts from the author's team**.
 
-Each query waits for the one before it. That is three round trips, one after another. This is a waterfall, and it makes pages slow.
+Each query waits for the one before it: they form a chain. TanStack Query calls these [dependent queries](https://tanstack.com/query/latest/docs/framework/react/guides/dependent-queries). That is three round trips, one after another. This is a waterfall, and it makes pages slow.
 
 The trips are what cost. The server's work takes the same time on any connection. The trip there and back does not: on a slow connection it is most of the wait, and this page makes three.
 
@@ -26,7 +26,7 @@ With [handles](/docs/client/tanstack-react-query/handles) and the functions on t
 
 An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment. It sits next to its component. A page puts several together. All of it loads in one request. But it is plain TypeScript and plain tRPC procedures: there is no schema, no resolver and no build step.
 
-```demo dependent-queries
+```demo chained-queries
 ```
 
 :::tip See it in an app
@@ -514,7 +514,7 @@ A list often needs a query for every row: the author of every post. Without help
 
 `experimental_entryPerItem(list, (item) => entry)` loads an entry for every item of a list in another entry's data. With [one request](#one-request), the server runs it for every item it finds.
 
-```demo dependent-queries start=list
+```demo chained-queries start=list
 ```
 
 ```ts twoslash title='post-list.entries.ts'

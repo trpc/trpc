@@ -19,7 +19,7 @@ const code = (text: string) => <span className="font-mono">{text}</span>;
  * one request, where the server fills in the ids. `start=list` opens the
  * list, where every row has a query of its own.
  */
-export function DependentQueries(props: DemoProps) {
+export function ChainedQueries(props: DemoProps) {
   const list = props.options['start'] === 'list';
   return (
     <DemoFrame

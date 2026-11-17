@@ -202,7 +202,7 @@ describe('dehydrate and HydrationBoundary from a server loader', () => {
   });
 });
 
-describe('dependent entries in a server component', () => {
+describe('chained entries in a server component', () => {
   /** What `HydrateClient` gives its `HydrationBoundary`, when it renders */
   const hydrateClientState = dehydrateUnsent;
   const day = new Date('2026-01-01');

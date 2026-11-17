@@ -16,7 +16,7 @@ We have prefixed the handle APIs with `unstable_` as they're new, but you're saf
 
 tRPC adds no router integration of its own. Data crosses from the server to the browser through TanStack's [SSR query integration](https://tanstack.com/router/latest/docs/integrations/query), with your tRPC data transformer.
 
-The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat) is a complete TanStack Start app that uses handles in its loaders. Its [blog pages](https://sse.trpc.io/blog) load [dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries).
+The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat) is a complete TanStack Start app that uses handles in its loaders. Its [blog pages](https://sse.trpc.io/blog) load [chained queries in one request](/docs/client/tanstack-react-query/chained-queries).
 
 ## 1. Install deps
 
@@ -653,7 +653,7 @@ If a query can't take its input from the URL, for example because it needs an id
 `beforeLoad` can return handles too, for example to start a query in a parent route and read it in child routes. TanStack Router checks that values returned from `beforeLoad` are serializable, and handles pass that check as they are: their query keys and inputs are typed from the procedure.
 
 <details>
-<summary>Escape hatch: loading a dependent query before render (TanStack Router)</summary>
+<summary>Escape hatch: loading a chained query before render (TanStack Router)</summary>
 
 `beforeLoad` runs before the loader, so it can wait for the post and hand its data to the loader through the route context. The loader then starts more by the post's author from `post.authorId`:
 
@@ -746,7 +746,7 @@ function PostPage() {
 }
 ```
 
-This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or [read the dependent query in the component](/docs/client/tanstack-react-query/handles#waterfall-in-a-component), which fetches it in render instead. Reach for `beforeLoad` only when the dependent data must be in the cache before the page renders.
+This serialises the loads: more by the author can't start until the post has arrived. Prefer one `loadHandles` that starts both from the URL, or [read the chained query in the component](/docs/client/tanstack-react-query/handles#waterfall-in-a-component), which fetches it in render instead. Reach for `beforeLoad` only when the chained query's data must be in the cache before the page renders.
 
 </details>
 

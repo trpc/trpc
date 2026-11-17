@@ -342,7 +342,7 @@ data.comments;
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
 - `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
-- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component on a page without a loader calls [`experimental_useHandles(trpc, entries)`](/docs/client/tanstack-react-query/dependent-queries#use-handles), which starts them once.
+- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component on a page without a loader calls [`experimental_useHandles(trpc, entries)`](/docs/client/tanstack-react-query/chained-queries#use-handles), which starts them once.
 
 #### Using the data in a loader {#loader-data}
 
@@ -350,7 +350,7 @@ data.comments;
 
 #### Waiting for some, streaming others {#combining-both}
 
-List every query in one load, whether the page waits for it or not. They all start together. A second load waits for everything the first one waited for, so use one only for [dependent queries](#dependent-queries).
+List every query in one load, whether the page waits for it or not. They all start together. A second load waits for everything the first one waited for, so use one only for [chained queries](#chained-queries).
 
 Each entry chooses whether the page waits for its query:
 
@@ -417,7 +417,7 @@ export const postRoute = createRoute({
 
 - Its handle is `undefined`, so render the reader only when there's a handle: `{handles.comments && <Comments comments={handles.comments} />}`.
 - It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
-- Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Dependent queries](#dependent-queries).
+- Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Chained queries](#chained-queries).
 
 #### TanStack Query equivalents {#tanstack-equivalents}
 
@@ -673,7 +673,7 @@ Reshaping changes the procedures to fit one page. The other way is to leave them
 - **The server fills in the id**, and runs both in one request. With `httpBatchStreamLink`, each result streams back when it is ready.
 - **`author.byId` stays `author.byId`.** Any page can use it, and a component can say what it needs by itself.
 
-This is experimental. See [Dependent queries in one request](/docs/client/tanstack-react-query/dependent-queries).
+This is experimental. See [Chained queries in one request](/docs/client/tanstack-react-query/chained-queries).
 
 ## Reading a handle {#reading-a-handle}
 
@@ -778,12 +778,14 @@ data.comments.pages;
 - Also pass it to entries in loaders that run in the browser. Refetching stale pages needs it from page two on.
 - Type props with `inferInfiniteQueryHandle`.
 
-## Dependent queries {#dependent-queries}
+<a id="dependent-queries"></a>
+
+## Chained queries {#chained-queries}
 
 A query whose input comes from another query's result is a waterfall. Each step costs a round trip. There are three ways to deal with it.
 
 - **[Reshape the procedure](#reshape-procedures)**, so that it takes what the URL has, or returns the joined data. No extra round trip.
-- **Load both in [one request](/docs/client/tanstack-react-query/dependent-queries)**, with `experimental_dataOf()`. The procedures stay as they are, and the server fills in the input. No extra round trip. Experimental.
+- **Load both in [one request](/docs/client/tanstack-react-query/chained-queries)**, with `experimental_dataOf()`. The procedures stay as they are, and the server fills in the input. No extra round trip. Experimental.
 - **Pay the round trip**, in a loader or in a component, as below.
 
 #### In a loader {#waterfall-in-a-loader}

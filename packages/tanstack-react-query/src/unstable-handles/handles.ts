@@ -169,7 +169,7 @@ declare const entryPerItemDef: unique symbol;
 /**
  * An entry to load for every item of a list in another entry's data, from
  * `experimental_entryPerItem()`. Its handle is a `experimental_TRPCQueryHandlePerItem`.
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#entry-per-item
  */
 export interface experimental_TRPCEntryPerItem<
   TEntry = AnyTRPCEntry,
@@ -186,7 +186,7 @@ declare const entryFromDataDef: unique symbol;
  * `experimental_dataOf(entry, (data) => entry)`. The load doesn't wait for
  * that data. Its handle is unfinished: `experimental_handleOfItem(handle, data)`
  * finishes it in the component that has the data.
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#without-waiting
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#without-waiting
  */
 export interface experimental_TRPCEntryFromData<
   TEntry = AnyTRPCEntry,
@@ -202,7 +202,7 @@ export interface experimental_TRPCEntryFromData<
  * `experimental_entryPerItem()` entry, where the item is an item of the list,
  * or from `experimental_dataOf(entry, (data) => entry)`, where it is that
  * entry's data.
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#entry-per-item
  */
 export interface experimental_TRPCQueryHandlePerItem<
   TDef extends ResolverDef = ResolverDef,
@@ -235,7 +235,7 @@ export interface experimental_TRPCQueryHandlePerItem<
  * entry it was built from to be finished, from
  * `experimental_dataOf(entry, (data) => entry)`.
  * `experimental_handleOfItem(handle, data)` gives the query's handle.
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#without-waiting
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#without-waiting
  */
 export interface experimental_TRPCInfiniteQueryHandlePerItem<
   TDef extends ResolverDef = ResolverDef,
@@ -481,7 +481,7 @@ export type inferInfiniteQueryHandle<
  * });
  * function Post(props: { handles: experimental_inferHandles<typeof postEntries> }) {}
  * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#groups
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#groups
  */
 export type experimental_inferHandles<
   TEntries extends TRPCLoadEntries | ((...args: any[]) => TRPCLoadEntries),
@@ -2126,7 +2126,7 @@ type DataEntry = AnyTRPCEntry | experimental_TRPCEntryFromData<any, any>;
  * // In a component that has the post
  * useSuspenseQuery(fromHandle(trpc, experimental_handleOfItem(handles.author, post)));
  * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#data-of
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#data-of
  */
 export function experimental_dataOf<TEntry extends DataEntry>(
   entry: TEntry,
@@ -2190,7 +2190,7 @@ export function experimental_dataOf(
  * // In a component, for one post
  * useSuspenseQuery(fromHandle(trpc, experimental_handleOfItem(handles.authors, post)));
  * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#entry-per-item
  */
 export function experimental_entryPerItem<
   TItem,
@@ -2266,7 +2266,7 @@ function withInputAt(input: unknown, to: readonly string[], value: unknown) {
  * ```tsx
  * <AuthorName author={experimental_handleOfItem(handles.authors, post)} />
  * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#entry-per-item
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#entry-per-item
  */
 export function experimental_handleOfItem<TDef extends ResolverDef, TItem>(
   handle: experimental_TRPCQueryHandlePerItem<TDef, TItem>,
@@ -2466,7 +2466,7 @@ export function loadHandlesSettled<
  *   );
  * }
  * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#without-a-loader
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#without-a-loader
  */
 export const experimental_useHandles = useHandles;
 

@@ -205,7 +205,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * batch link too.
    *
    * Experimental: it may change in a minor release.
-   * @see https://trpc.io/docs/client/tanstack-react-query/dependent-queries#one-request
+   * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
    * @default false
    */
   experimental_allowPipelining?: boolean;
