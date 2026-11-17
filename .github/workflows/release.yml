@@ -18,19 +18,17 @@ name: Release Packages
 # (tooling/release/src/changes.ts). Neither happens for a release commit. The
 # merge queue already batches pull requests, so there's no wait on top.
 #
-# A run stops building once main has a newer commit, other than a release
-# commit: the run for that commit releases everything this one would, and its
-# canary has this one's changes. It checks before installing and every 30
-# seconds while it packs (.github/scripts/unless-superseded.sh), so commits
-# that land close together build and release once. A run only ever stops
-# itself; nothing uses `cancel-in-progress`, so neither GitHub starting runs
-# out of order nor re-running an old run can stop the run for main's tip.
-# Publishing is never stopped: a stable release whose push main has moved past
-# publishes nothing (`publishStable` in tooling/release/src/release.ts). The
-# workflow has no `paths:` filter, so a push after a run that skipped, failed
-# or was cancelled still releases what that run didn't; so does re-running
-# the run for main's tip. Set the repo variable AUTO_RELEASE to `false` to
-# stop stable releases; canaries keep going out.
+# A newer push cancels a build still in progress: its run releases everything
+# that one would, and its canary has that one's changes. So commits that land
+# close together release once. Publishing is never cancelled; a stable release
+# whose push main has moved past publishes nothing (`publishStable` in
+# tooling/release/src/release.ts). If GitHub starts an older run's build after
+# a newer one's, or an old run is re-run, it cancels the build for main's tip.
+# The workflow has no `paths:` filter, so the next push releases what that
+# run didn't, and so does re-running the run for main's tip. A canary that
+# failed partway through publishing goes out by re-running its failed jobs.
+# Set the repo variable AUTO_RELEASE to `false` to stop stable releases;
+# canaries keep going out.
 #
 # There's no manual run: stable releases are only automatic, and the commits
 # decide the version (tooling/release/src/config.ts). No release publishes a
@@ -54,6 +52,9 @@ jobs:
   # after it (`latestRelease` in tooling/release/src/release.ts).
   build:
     if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
+    concurrency:
+      group: release-build
+      cancel-in-progress: true
     timeout-minutes: 40
     runs-on: ubuntu-latest
     env:
@@ -70,22 +71,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Check main hasn't moved past this commit
-        id: latest
-        run: |
-          if .github/scripts/superseded.sh; then
-            echo "::notice::main moved past ${GITHUB_SHA}; skipping. The run for the newer commit releases it."
-            echo "superseded=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - if: steps.latest.outputs.superseded != 'true'
-        uses: ./.github/setup
+      - uses: ./.github/setup
 
       - name: Pack what changed
         id: stable
-        if: steps.latest.outputs.superseded != 'true' && vars.AUTO_RELEASE != 'false'
+        if: vars.AUTO_RELEASE != 'false'
         run: |
-          .github/scripts/unless-superseded.sh pnpm release auto --pack "$RUNNER_TEMP/release"
+          pnpm release auto --pack "$RUNNER_TEMP/release"
           if [ -f "$RUNNER_TEMP/release/commit" ]; then
             echo "packed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -101,17 +93,17 @@ jobs:
 
       # Even if the stable pack failed, like on a commit marked breaking.
       - name: Undo the stable version bump
-        if: "!cancelled() && steps.latest.outputs.superseded != 'true'"
+        if: "!cancelled()"
         run: git checkout --quiet -- .
 
       # Only if what the packages publish changed since the latest canary,
       # whose version ends in its commit's short sha. Without one, it packs.
       - name: Pack a canary
         id: canary
-        if: "!cancelled() && steps.latest.outputs.superseded != 'true'"
+        if: "!cancelled()"
         run: |
           version=$(npm view @trpc/server@canary version 2>/dev/null) || version=
-          .github/scripts/unless-superseded.sh pnpm release canary --pack "$RUNNER_TEMP/canary" --since "${version##*.g}"
+          pnpm release canary --pack "$RUNNER_TEMP/canary" --since "${version##*.g}"
           if [ -f "$RUNNER_TEMP/canary/commit" ]; then
             echo "packed=true" >> "$GITHUB_OUTPUT"
           fi
