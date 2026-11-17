@@ -86,6 +86,6 @@ export function withTRPC<TInitialProps extends object>(
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
+  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
   return WithTRPC;
 }
