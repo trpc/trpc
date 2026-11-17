@@ -237,6 +237,8 @@ function findSourceAndImportName(sourceFiles: SourceFile[]) {
 
   let importName = 'trpc';
   files.forEach((sourceFile) => {
+    // `createTRPCReact`, or an alias such as `createReact`
+    const names = factoryNames(sourceFile);
     sourceFile.statements.forEach((node) => {
       if (
         isVariableStatement(node) &&
@@ -246,11 +248,7 @@ function findSourceAndImportName(sourceFiles: SourceFile[]) {
           if (
             isVariableDeclaration(declaration) &&
             declaration.initializer &&
-            isCallExpression(declaration.initializer) &&
-            isIdentifier(declaration.initializer.expression) &&
-            ['createTRPCReact', 'createTRPCNext'].includes(
-              declaration.initializer.expression.getText(sourceFile),
-            )
+            isTRPCFactoryCall(declaration.initializer, { sourceFile, names })
           ) {
             importName = declaration.name.getText(sourceFile);
           }

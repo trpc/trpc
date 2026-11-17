@@ -71,3 +71,20 @@ export const other = createReact<OtherRouter>();
   });
   expect(scanProject(root).routerType).toBeNull();
 });
+
+it("finds the setup's name when it calls the factory by an alias", () => {
+  const root = project({
+    'router.ts': router,
+    'trpc.ts': `import { createTRPCReact as createReact } from '@trpc/react-query';
+import type { AppRouter } from './router';
+export const api = createReact<AppRouter>();
+`,
+  });
+  const { references, routerType } = scanProject(root);
+  expect(references.importName).toBe('api');
+  expect(routerType).toEqual({
+    name: 'AppRouter',
+    file: join(root, 'router.ts'),
+    extension: '',
+  });
+});
