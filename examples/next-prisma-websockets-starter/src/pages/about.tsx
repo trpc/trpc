@@ -15,15 +15,19 @@ import { ArrowLeftIcon } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
-import { trpc } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
+import { useSubscription } from '@trpc/tanstack-react-query';
 
 export default function AboutPage() {
+  const trpc = useTRPC();
   const [num, setNumber] = useState<number>();
-  const randomNumber = trpc.randomNumber.useSubscription(undefined, {
-    onData(n) {
-      setNumber(n);
-    },
-  });
+  const randomNumber = useSubscription(
+    trpc.randomNumber.subscriptionOptions(undefined, {
+      onData(n) {
+        setNumber(n);
+      },
+    }),
+  );
 
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted/40 p-6">
