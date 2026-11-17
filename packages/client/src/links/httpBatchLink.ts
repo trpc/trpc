@@ -124,7 +124,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           },
           signal,
         });
-        pipelined?.accepted(res.json);
         const resJSON = Array.isArray(res.json)
           ? res.json
           : sent.map(() => res.json);

@@ -1,10 +1,17 @@
 import type {
-  PipelinePath,
-  PipelineReads,
+  PipelineCallReads,
+  PipelinedBatchPlan,
+  PipelineRead,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
+  groupPipelineReads,
+  isObject,
+  pipelinedBatchBody,
+  pipelinedBatchUrl,
+  pipelinedCallsRan,
   pipelineReadsLimit,
+  planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { Operation, OperationContext } from '../types';
 import type {
@@ -13,6 +20,13 @@ import type {
   ResolvedHTTPLinkOptions,
 } from './httpUtils';
 import { getBody, getUrl } from './httpUtils';
+
+/**
+ * What a batch link does with the protocol in
+ * `@trpc/server/unstable-core-do-not-import/http/pipeline`: when an
+ * operation's request can take more calls, which of them fit in it, and what
+ * each call's result is.
+ */
 
 /**
  * Lets the server make more calls in an operation's request, with parts of
@@ -38,6 +52,9 @@ export interface OperationPipeline {
   toJSON: () => unknown;
 }
 
+/** What a call reads the data of: an operation, or another call */
+type PipelineSource = OperationPipeline | PipelinedCall;
+
 /**
  * A query the server runs in the request of an operation, after the calls
  * whose data it reads.
@@ -47,7 +64,7 @@ export interface PipelinedCall {
   path: string;
   /** The input, with `undefined` in place of what the server fills in */
   input: unknown;
-  reads: PipelinedCallRead[];
+  reads: PipelineCallReads<PipelineSource>;
   /**
    * - `waiting`: the request hasn't gone yet
    * - `sent`: it is in a request
@@ -60,6 +77,7 @@ export interface PipelinedCall {
   result: Promise<PipelinedCallResult>;
   /** The pipeline of the operation whose request it goes in */
   owner: OperationPipeline;
+  /** Only for the link that sends it */
   settle: (result: PipelinedCallResult | Promise<PipelinedCallResult>) => void;
 }
 
@@ -67,20 +85,8 @@ export interface PipelinedCallResult {
   data: unknown;
 }
 
-export interface PipelinedCallRead {
-  /** Where the value goes in the input. Empty for the whole input */
-  to: string[];
-  /** Whose data it comes from: an operation's, or another call's */
-  from: OperationPipeline | PipelinedCall;
-  /** Where the value is in that data. Empty for all of it */
-  path: PipelinePath;
-  /**
-   * Makes the server run the call once for every item of the array at the
-   * first `null` in `path`. Its data is then a list with a `{ result }` or an
-   * `{ error }` for every item.
-   */
-  each: boolean;
-}
+/** A part of a call's input that the server fills in */
+export type PipelinedCallRead = PipelineRead<PipelineSource>;
 
 const contextKey = '~pipeline';
 
@@ -103,38 +109,55 @@ export function pipelineContext(pipeline: OperationPipeline): OperationContext {
   return { [contextKey]: pipeline };
 }
 
-function pipelineOf(
-  op: Pick<Operation, 'context'>,
-): OperationPipeline | undefined {
-  return op.context[contextKey] as OperationPipeline | undefined;
+/** Anything can be in a context: this is one only if it has what a link uses */
+function isOperationPipeline(value: unknown): value is OperationPipeline {
+  return (
+    isObject(value) &&
+    typeof value['open'] === 'boolean' &&
+    Array.isArray(value['calls'])
+  );
 }
 
-function isCall(
-  from: OperationPipeline | PipelinedCall,
-): from is PipelinedCall {
-  return 'owner' in from;
+function pipelineOf(op: Pick<Operation, 'context'>): OperationPipeline | null {
+  const pipeline = op.context[contextKey];
+  return isOperationPipeline(pipeline) ? pipeline : null;
+}
+
+function isCall(source: PipelineSource): source is PipelinedCall {
+  return 'owner' in source;
+}
+
+/** Everything a call reads from */
+function sourcesOf(reads: PipelineCallReads<PipelineSource>) {
+  const whole = reads.reads.flatMap((read) =>
+    read.kind === 'whole' ? [read.from] : [],
+  );
+  return reads.kind === 'each' ? [reads.list.from, ...whole] : whole;
 }
 
 /**
  * Adds a call to the request of the operations it reads. `null` if that
- * request has gone, no link that pipelines took those operations, or it reads
- * more values than a server takes.
+ * request has gone, no link that pipelines took those operations, or the
+ * server would refuse its reads: more than it takes, or items of two lists.
  */
-export function pipeCall(
-  opts: Pick<PipelinedCall, 'path' | 'input' | 'reads'>,
-): PipelinedCall | null {
-  const owners = opts.reads.map((read) =>
-    isCall(read.from) ? read.from.owner : read.from,
+export function pipeCall(opts: {
+  path: string;
+  input: unknown;
+  reads: PipelinedCallRead[];
+}): PipelinedCall | null {
+  const grouped = groupPipelineReads(opts.reads);
+  if (!grouped.ok || opts.reads.length > pipelineReadsLimit) {
+    return null;
+  }
+  const sources = sourcesOf(grouped.reads);
+  const owners = sources.map((source) =>
+    isCall(source) ? source.owner : source,
   );
   const [owner] = owners;
   if (
     !owner ||
-    // The server refuses a request with a call that reads more
-    opts.reads.length > pipelineReadsLimit ||
     !owners.every((pipeline) => pipeline.open) ||
-    !opts.reads.every(
-      (read) => !isCall(read.from) || read.from.status === 'waiting',
-    )
+    !sources.every((source) => !isCall(source) || source.status === 'waiting')
   ) {
     return null;
   }
@@ -145,7 +168,9 @@ export function pipeCall(
   // Read only by what wants the call's result
   result.catch(() => undefined);
   const call: PipelinedCall = {
-    ...opts,
+    path: opts.path,
+    input: opts.input,
+    reads: grouped.reads,
     status: 'waiting',
     result,
     owner,
@@ -155,9 +180,31 @@ export function pipeCall(
   return call;
 }
 
-function unresolve(call: PipelinedCall, message: string) {
-  call.status = 'unresolved';
-  call.settle(Promise.reject(new Error(message)));
+/**
+ * The one place a call's status changes. A call goes from `waiting` to `sent`
+ * or `unresolved`, and from `sent` to `unresolved`.
+ */
+function moveCall(
+  call: PipelinedCall,
+  to:
+    | { kind: 'sent' }
+    /** It didn't run, and its result is this error */
+    | { kind: 'not-run'; error: unknown }
+    /** It didn't run, as its own result says: a call it reads failed */
+    | { kind: 'source-failed' },
+) {
+  switch (to.kind) {
+    case 'sent':
+      call.status = 'sent';
+      return;
+    case 'not-run':
+      call.status = 'unresolved';
+      call.settle(Promise.reject(to.error));
+      return;
+    case 'source-failed':
+      call.status = 'unresolved';
+      return;
+  }
 }
 
 /**
@@ -172,245 +219,15 @@ function closePipeline(op: Pick<Operation, 'context'>) {
   pipeline.open = false;
   for (const call of pipeline.calls) {
     if (call.status === 'waiting') {
-      unresolve(call, 'The operation this call reads was not sent');
+      moveCall(call, {
+        kind: 'not-run',
+        error: new Error('The operation this call reads was not sent'),
+      });
     }
   }
 }
 
 type BatchOp = Pick<Operation, 'context' | 'path' | 'input'>;
-
-interface PipelinedBatchPlan {
-  /** The calls that go in the request, after the operations */
-  calls: PipelinedCall[];
-  /** What the server fills in, by index in the request */
-  reads: PipelineReads;
-  /** The calls that don't go: they don't fit, or read what isn't in the batch */
-  left: PipelinedCall[];
-}
-
-/**
- * The calls that go in the request of a batch of operations. A call goes
- * after everything it reads.
- */
-function planPipelinedBatch(opts: {
-  ops: readonly BatchOp[];
-  /** Whether a request with these calls is within the link's limits */
-  fits: (plan: Pick<PipelinedBatchPlan, 'calls' | 'reads'>) => boolean;
-}): PipelinedBatchPlan {
-  const indexes = new Map<object, number>();
-  for (const [index, op] of opts.ops.entries()) {
-    const pipeline = pipelineOf(op);
-    if (pipeline) {
-      indexes.set(pipeline, index);
-    }
-  }
-  const plan: PipelinedBatchPlan = {
-    calls: [],
-    reads: {},
-    left: [],
-  };
-  let waiting = opts.ops
-    .flatMap((op) => pipelineOf(op)?.calls ?? [])
-    .filter((call) => call.status === 'waiting');
-  let placed = true;
-  while (placed) {
-    placed = false;
-    const later: PipelinedCall[] = [];
-    for (const call of waiting) {
-      const reads = call.reads.flatMap((read) => {
-        const from = indexes.get(read.from);
-        return from === undefined
-          ? []
-          : [
-              {
-                to: read.to,
-                from,
-                path: read.path,
-                ...(read.each ? { each: true as const } : {}),
-              },
-            ];
-      });
-      if (reads.length !== call.reads.length) {
-        // What it reads isn't in the request, or not yet
-        later.push(call);
-        continue;
-      }
-      const index = opts.ops.length + plan.calls.length;
-      const next = {
-        calls: [...plan.calls, call],
-        reads: { ...plan.reads, [index]: reads },
-      };
-      if (!opts.fits(next)) {
-        plan.left.push(call);
-        continue;
-      }
-      plan.calls = next.calls;
-      plan.reads = next.reads;
-      indexes.set(call, index);
-      placed = true;
-    }
-    waiting = later;
-  }
-  plan.left.push(...waiting);
-  return plan;
-}
-
-/**
- * Takes a batch's calls into its request, as it goes: the ones in `plan` are
- * sent, and the rest never run.
- */
-function sendPipelinedBatch(opts: {
-  ops: readonly BatchOp[];
-  plan: PipelinedBatchPlan;
-}) {
-  for (const op of opts.ops) {
-    const pipeline = pipelineOf(op);
-    if (pipeline) {
-      pipeline.open = false;
-    }
-  }
-  for (const call of opts.plan.calls) {
-    call.status = 'sent';
-  }
-  for (const call of opts.plan.left) {
-    unresolve(call, 'The call did not fit in the request of what it reads');
-  }
-}
-
-/**
- * Gives the calls of a batch their results. A call that reads a failed one
- * didn't run, and is marked `unresolved`.
- */
-function settlePipelinedBatch(opts: {
-  ops: readonly BatchOp[];
-  plan: PipelinedBatchPlan;
-  /** The result of every operation, and then of every call, that was sent */
-  results: PipelinedBatch['results'];
-  read: PipeliningLink['read'];
-}) {
-  const ok = new Map<object, Promise<boolean>>();
-  for (const [index, op] of opts.ops.entries()) {
-    const pipeline = pipelineOf(op);
-    if (pipeline) {
-      ok.set(
-        pipeline,
-        Promise.resolve(opts.results[index]).then(
-          (result) => !!result && !('error' in result.json),
-          () => false,
-        ),
-      );
-    }
-  }
-  for (const [index, call] of opts.plan.calls.entries()) {
-    const own = Promise.resolve(opts.results[opts.ops.length + index]).then(
-      (result) => {
-        if (!result) {
-          throw new Error('The server sent no result for a pipelined call');
-        }
-        return opts.read(result);
-      },
-    );
-    own.catch(() => undefined);
-    const settled = Promise.all(
-      // Every call in a plan reads what is in its request
-      call.reads.map(async (read) => (await ok.get(read.from)) === true),
-    ).then((sources) => {
-      if (!sources.every(Boolean)) {
-        call.status = 'unresolved';
-      }
-      return own;
-    });
-    ok.set(
-      call,
-      settled.then(
-        () => true,
-        () => false,
-      ),
-    );
-    call.settle(settled);
-  }
-}
-
-/**
- * Fails the calls of a request that failed as a whole. None of them ran: a
- * link can send the operations again, and what wants a call then asks for it.
- */
-function failPipelinedBatch(plan: PipelinedBatchPlan, error: unknown) {
-  for (const call of plan.calls) {
-    call.status = 'unresolved';
-    call.settle(Promise.reject(error));
-  }
-}
-
-/**
- * The URL and body of a pipelined batch: `?batch=pipeline`, with its `pipe` in the
- * body of a POST, beside the inputs, and in a search param of a GET, which
- * has no body. A server that doesn't accept pipelined batches runs none of it.
- */
-function pipelinedRequest(
-  reads: PipelineReads,
-): Pick<ContentOptions, 'getUrl' | 'getBody'> {
-  return {
-    getUrl: (opts) => {
-      const url = getUrl(opts).replace(
-        /([?&])batch=1(?=&|$)/,
-        '$1batch=pipeline',
-      );
-      return opts.methodOverride === 'POST'
-        ? url
-        : `${url}&pipe=${encodeURIComponent(JSON.stringify(reads))}`;
-    },
-    getBody: (opts) => {
-      const body = getBody(opts);
-      return typeof body === 'string' && opts.methodOverride === 'POST'
-        ? JSON.stringify({ ...JSON.parse(body), pipe: reads })
-        : body;
-    },
-  };
-}
-
-/**
- * What a server that doesn't accept pipelined batches answers one with. It
- * takes the batch for a call to one procedure, named as all of the batch's
- * are together, and finds none.
- */
-function assertPipelinedBatchAccepted(opts: {
-  json: unknown;
-  /** The paths of what was sent, as they are in the URL */
-  path: string;
-  /** The link's transformer for what the server sends */
-  deserialize: (error: unknown) => unknown;
-}) {
-  const { json } = opts;
-  const shape = Array.isArray(json)
-    ? undefined
-    : (json as { error?: unknown } | null)?.error;
-  const error =
-    shape === undefined
-      ? undefined
-      : (opts.deserialize(shape) as {
-          message?: unknown;
-          data?: { code?: unknown; path?: unknown };
-        } | null);
-  // Not any "not found": one for the whole request, such as from a proxy,
-  // isn't for these paths. An error formatter can leave the path out of
-  // `data`: the server's message has it then
-  const forBatch =
-    error?.data?.code === 'NOT_FOUND' &&
-    (error.data.path === opts.path ||
-      (error.data.path === undefined &&
-        String(error.message).includes(`"${opts.path}"`)));
-  if (
-    error &&
-    (forBatch ||
-      String(error.message).includes('Streaming requests must be batched'))
-  ) {
-    throw new Error(
-      'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
-      { cause: error },
-    );
-  }
-}
 
 /** What a batch link tells `experimental_pipelining()` about itself */
 export interface PipeliningLink extends ResolvedHTTPLinkOptions {
@@ -450,8 +267,6 @@ export interface BatchPipelining {
   take: (ops: readonly BatchOp[]) => {
     calls: PipelinedBatch['calls'];
     request: PipelinedBatch['request'];
-    /** Throws if `json`, the response, is of a server that takes no such batch */
-    accepted: (json: unknown) => void;
     /** Gives the calls their results, or what the request failed with */
     settle: (results: Promise<PipelinedBatch['results']>) => void;
   } | null;
@@ -462,6 +277,78 @@ export interface BatchPipelining {
  * `experimental_pipelining()`.
  */
 export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
+
+/**
+ * The URL and body of a pipelined batch: its `pipe` is in the body of a
+ * request that has one, and in the URL of one that has none.
+ */
+function pipelinedRequest(
+  pipe: PipelinedBatchPlan<PipelinedCall>['reads'],
+): PipelinedBatch['request'] {
+  return {
+    getUrl: (opts) =>
+      pipelinedBatchUrl({
+        url: getUrl(opts),
+        pipe: opts.methodOverride === 'POST' ? null : pipe,
+      }),
+    getBody: (opts) =>
+      opts.methodOverride === 'POST' && 'inputs' in opts
+        ? JSON.stringify(
+            pipelinedBatchBody({
+              inputs: opts.inputs.map((input) =>
+                opts.transformer.input.serialize(input),
+              ),
+              pipe,
+            }),
+          )
+        : getBody(opts),
+  };
+}
+
+/**
+ * Gives the calls of a batch their results. A call that reads a failed one
+ * didn't run, and is `unresolved`.
+ */
+function settlePipelinedBatch(opts: {
+  ops: readonly BatchOp[];
+  plan: PipelinedBatchPlan<PipelinedCall>;
+  /** The result of every operation, and then of every call, that was sent */
+  results: PipelinedBatch['results'];
+  read: PipeliningLink['read'];
+}) {
+  const calls = opts.plan.calls.map((call, index) => {
+    const result = Promise.resolve(opts.results[opts.ops.length + index]).then(
+      (sent) => {
+        if (!sent) {
+          throw new Error('The server sent no result for a pipelined call');
+        }
+        return opts.read(sent);
+      },
+    );
+    result.catch(() => undefined);
+    return { call, result };
+  });
+  const settled = pipelinedCallsRan({
+    sent: opts.ops.map((_op, index) =>
+      Promise.resolve(opts.results[index]).then(
+        (result) => !!result && !('error' in result.json),
+        () => false,
+      ),
+    ),
+    reads: opts.plan.reads,
+    calls,
+  });
+  for (const { call: sent, ran } of settled) {
+    sent.call.settle(
+      ran.then((itRan) => {
+        if (!itRan) {
+          moveCall(sent.call, { kind: 'source-failed' });
+        }
+        return sent.result;
+      }),
+    );
+  }
+}
 
 /**
  * Lets `httpBatchLink` or `httpBatchStreamLink` send queries that read parts
@@ -476,9 +363,13 @@ export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
 export function experimental_pipelining(): experimental_Pipelining {
   return (link) => {
     /** The calls that go in the request of a batch, within the link's limits */
-    const plan = (ops: readonly BatchOp[]) =>
-      planPipelinedBatch({
-        ops,
+    const plan = (ops: readonly BatchOp[]) => {
+      const pipelines = ops.map(pipelineOf);
+      return planPipelinedBatch({
+        sent: pipelines,
+        calls: pipelines
+          .flatMap((pipeline) => pipeline?.calls ?? [])
+          .filter((call) => call.status === 'waiting'),
         fits: (next) => {
           const sent = [...ops, ...next.calls];
           return (
@@ -494,6 +385,7 @@ export function experimental_pipelining(): experimental_Pipelining {
           );
         },
       });
+    };
     return {
       open(op) {
         const pipeline = pipelineOf(op);
@@ -518,20 +410,30 @@ export function experimental_pipelining(): experimental_Pipelining {
       },
       take(ops) {
         const planned = plan(ops);
-        sendPipelinedBatch({ ops, plan: planned });
+        // The request goes: the calls in the plan with it, and no more after
+        for (const op of ops) {
+          const pipeline = pipelineOf(op);
+          if (pipeline) {
+            pipeline.open = false;
+          }
+        }
+        for (const call of planned.calls) {
+          moveCall(call, { kind: 'sent' });
+        }
+        for (const call of planned.left) {
+          moveCall(call, {
+            kind: 'not-run',
+            error: new Error(
+              'The call did not fit in the request of what it reads',
+            ),
+          });
+        }
         if (planned.calls.length === 0) {
           return null;
         }
         return {
           calls: planned.calls,
           request: pipelinedRequest(planned.reads),
-          accepted: (json) =>
-            assertPipelinedBatchAccepted({
-              json,
-              path: [...ops, ...planned.calls].map((it) => it.path).join(','),
-              deserialize: (error) =>
-                link.transformer.output.deserialize(error),
-            }),
           settle: (results) => {
             results.then(
               (sent) =>
@@ -541,7 +443,14 @@ export function experimental_pipelining(): experimental_Pipelining {
                   results: sent,
                   read: link.read,
                 }),
-              (error: unknown) => failPipelinedBatch(planned, error),
+              (error: unknown) => {
+                // The request failed as a whole. None of its calls ran: a
+                // link can send the operations again, and what wants a call
+                // then asks for it
+                for (const call of planned.calls) {
+                  moveCall(call, { kind: 'not-run', error });
+                }
+              },
             );
           },
         };

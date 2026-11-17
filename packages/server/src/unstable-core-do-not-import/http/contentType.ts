@@ -3,6 +3,8 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
+import { pipeOfBody, pipeOfSearchParams } from './pipeline/server';
+import { pipelineBatch } from './pipeline/wire';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
@@ -36,7 +38,7 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
-  /** Whether to accept a pipelined batch, `?batch=pipeline`. Without it, that is no batch */
+  /** Whether to accept a pipelined batch, `?batch=pipeline`. Without it, that is a bad request */
   allowPipelining: boolean;
 };
 
@@ -105,7 +107,15 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const { req } = opts;
     const batch = opts.searchParams.get('batch');
     // A batch whose calls read their inputs from each other's data
-    const isPipelined = opts.allowPipelining && batch === 'pipeline';
+    const isPipelined = batch === pipelineBatch;
+    if (isPipelined && !opts.allowPipelining) {
+      // Before anything of it runs: its calls have holes in their inputs
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message:
+          'Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
+      });
+    }
     const isBatchCall = batch === '1' || isPipelined;
     const maxBatchSize = opts.maxBatchSize;
 
@@ -138,8 +148,8 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         if (body) {
           inputs = JSON.parse(body);
         }
-        if (isPipelined && isObject(inputs)) {
-          bodyPipe = inputs['pipe'];
+        if (isPipelined) {
+          bodyPipe = pipeOfBody(inputs);
         }
       }
       if (inputs === undefined) {
@@ -243,7 +253,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           // A GET has it in the URL. Any other request has it in its body,
           // beside the inputs
           if (req.method === 'GET') {
-            return opts.searchParams.get('pipe') ?? undefined;
+            return pipeOfSearchParams(opts.searchParams);
           }
           await getInputs.read();
           return bodyPipe;

@@ -278,6 +278,28 @@
         // Vite's `useEnvironment`, and routes' inline `component`s.
         "react-hooks/rules-of-hooks": "off"
       }
+    },
+    {
+      // A batch link has none of the pipelining code: an app that wants it
+      // passes `experimental_pipelining()`, and only then is it in its bundle.
+      "files": [
+        "packages/client/src/links/httpBatchLink.ts",
+        "packages/client/src/links/httpBatchStreamLink.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/internals/pipeline"],
+                "allowTypeImports": true,
+                "message": "Import only types from the pipelining code here: the link gets the code from its `experimental_pipelining` option"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

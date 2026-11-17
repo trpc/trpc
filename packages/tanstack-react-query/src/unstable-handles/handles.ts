@@ -19,6 +19,7 @@ import {
 import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import {
   bindPipelinePath,
+  readPipelinedItem,
   readPipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -809,16 +810,17 @@ function dataOfCall(call: PipelinedCall) {
 function resultOfItem(results: Promise<unknown>, index: number) {
   let missing = false;
   const result = results.then(
-    (envelopes) => {
-      const envelope = readPipelinePath(envelopes, [String(index)]);
-      if (isPlainObject(envelope) && isPlainObject(envelope['result'])) {
-        return envelope['result']['data'];
+    (data) => {
+      const item = readPipelinedItem(data, index);
+      switch (item.kind) {
+        case 'data':
+          return item.data;
+        case 'error':
+          throw TRPCClientError.from({ error: item.error } as any);
+        case 'missing':
+          missing = true;
+          throw new Error(`The server sent no result for item ${index}`);
       }
-      if (isPlainObject(envelope) && envelope['error']) {
-        throw TRPCClientError.from({ error: envelope['error'] } as any);
-      }
-      missing = true;
-      throw new Error(`The server sent no result for item ${index}`);
     },
     (error: unknown) => {
       // The call failed as a whole, such as for too many items: it ran for none

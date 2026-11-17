@@ -315,22 +315,18 @@ describe.each([
         reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
       });
       assert(author);
+      // The server says so itself: the client doesn't work it out
       const reason = {
         message:
-          'The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
+          'Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
+        data: { code: 'BAD_REQUEST' },
       };
       const results = await Promise.allSettled([postResult, author.result]);
       expect(results).toMatchObject([
         { status: 'rejected', reason },
         { status: 'rejected', reason },
       ]);
-      // What the server answered is its cause
-      assert(results[1].status === 'rejected');
-      expect((results[1].reason as Error).cause).toMatchObject(
-        scenario.link === httpBatchLink
-          ? { data: { code: 'NOT_FOUND', path: 'post,author' } }
-          : { data: { code: 'BAD_REQUEST' } },
-      );
+      expect(author.status).toBe('unresolved');
       // No call ran with a hole in its input
       expect(ctx.calls).not.toHaveBeenCalled();
     },
@@ -561,6 +557,58 @@ describe.each([
       '~pipeline': { calls: [{ path: 'author', status: 'sent' }] },
     });
   });
+
+  test('a call whose reads a server would refuse is not added: the request of what it reads goes without it', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    // Every item of what is no list
+    expect(
+      pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: true }],
+      }),
+    ).toBeNull();
+    // The items of two lists
+    expect(
+      pipeCall({
+        path: 'author',
+        input: {},
+        reads: [
+          { to: ['a'], from: post, path: ['tags', null], each: true },
+          { to: ['b'], from: post, path: ['related', null], each: true },
+        ],
+      }),
+    ).toBeNull();
+    // The server would have refused the whole request for either
+    expect(await postResult).toMatchObject({ authorId: 'u1' });
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.onRequestSpy.mock.calls[0]?.[0].url).toContain('batch=1');
+  });
+
+  test.each([
+    { name: 'no object', value: 'pipeline' },
+    { name: 'an object that is no pipeline', value: { open: 'yes' } },
+    { name: 'a pipeline without a list of calls', value: { open: true } },
+  ])(
+    'a context whose `~pipeline` is $name is not a pipeline: its operation is an ordinary one',
+    async (scenario) => {
+      await using ctx = setup({ allowPipelining: true, pipelining: true });
+      expect(
+        await ctx.untyped.query(
+          'post',
+          { slug: 'hello' },
+          { context: { '~pipeline': scenario.value } },
+        ),
+      ).toMatchObject({ authorId: 'u1' });
+      expect(ctx.onRequestSpy.mock.calls[0]?.[0].url).toContain('batch=1');
+    },
+  );
 
   test.runIf(scenario.link === httpBatchLink)(
     'an answer with no result for a call fails that call',
@@ -802,7 +850,7 @@ describe.each([
   });
 });
 
-describe('a server without `experimental_allowPipelining`, whose error formatter leaves the path out', () => {
+describe('a server without `experimental_allowPipelining`, whose error formatter changes `data`', () => {
   test.each([
     { name: 'httpBatchLink', link: httpBatchLink },
     { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
@@ -840,13 +888,13 @@ describe('a server without `experimental_allowPipelining`, whose error formatter
     });
     assert(author);
     await expect(postResult).rejects.toThrow(
-      'The server did not accept a pipelined batch',
+      'Pipelining is not enabled on the server. Set `experimental_allowPipelining: true`',
     );
   });
 });
 
 describe('a server without `experimental_allowPipelining`', () => {
-  test('answers as it did before: `pipe` means nothing, and `batch=pipeline` is no batch', async () => {
+  test('answers an ordinary batch as it did before: `pipe` means nothing. A pipelined batch is a bad request', async () => {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
       server: { allowMethodOverride: true },
@@ -872,15 +920,24 @@ describe('a server without `experimental_allowPipelining`', () => {
     });
     expect((await ordinaryPost.json())[1].result.data.id).toBe('u9');
 
-    // A pipelined batch: one call to a procedure that doesn't exist
+    // A pipelined batch: nothing of it runs, and the answer says why
     calls.mockClear();
     const pipelined = await fetch(
       `${ctx.httpUrl}/post,author?batch=pipeline&input=${input}&pipe=${pipe}`,
     );
-    expect(pipelined.status).toBe(404);
+    expect(pipelined.status).toBe(400);
     expect((await pipelined.json()).error.message).toBe(
-      'No procedure found on path "post,author"',
+      'Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
     );
+    const pipelinedPost = await fetch(
+      `${ctx.httpUrl}/post,author?batch=pipeline`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ 0: { slug: 'hello' }, 1: {}, pipe: {} }),
+      },
+    );
+    expect(pipelinedPost.status).toBe(400);
     expect(calls).not.toHaveBeenCalled();
   });
 

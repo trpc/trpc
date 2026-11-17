@@ -1,0 +1,1540 @@
+/**
+ * The two halves of a pipelined batch, against each other over HTTP. Nothing
+ * here knows of routers, procedures or links: the server is a map of plain
+ * functions, and the client is `fetch`. The request is the one a link sends:
+ * the paths in the URL, the inputs by index, `?batch=pipeline` and a `pipe`.
+ */
+import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
+import superjson from 'superjson';
+import { TRPCError } from '../../error/TRPCError';
+import type { CombinedDataTransformer } from '../../transformer';
+import { isObject } from '../../utils';
+import {
+  encodePipelineReads,
+  pipelinedBatchBody,
+  pipelinedBatchUrl,
+  pipelinedCallsRan,
+  planPipelinedBatch,
+  readPipelinedItem,
+} from './client';
+import type { PipelinedBatchPlan } from './client';
+import {
+  parsePipelineReads,
+  pipelineCalls,
+  pipeOfBody,
+  pipeOfSearchParams,
+} from './server';
+import type { PipelineCallReads, PipelineRead, PipeRead } from './wire';
+import {
+  bindPipelinePath,
+  groupPipelineReads,
+  pipelineBatch,
+  pipelineReadsLimit,
+  readPipelinePath,
+} from './wire';
+
+// ---------- a server that is a map of functions ----------
+
+type Fn = (input: any) => unknown;
+
+const transformers = {
+  none: {
+    input: { serialize: (it: unknown) => it, deserialize: (it: unknown) => it },
+    output: {
+      serialize: (it: unknown) => it,
+      deserialize: (it: unknown) => it,
+    },
+  },
+  superjson: { input: superjson, output: superjson },
+} satisfies Record<string, CombinedDataTransformer>;
+
+interface WireError {
+  message: string;
+  code: string;
+}
+
+function wireError(cause: unknown): WireError {
+  return {
+    message: cause instanceof Error ? cause.message : String(cause),
+    code: cause instanceof TRPCError ? cause.code : 'INTERNAL_SERVER_ERROR',
+  };
+}
+
+function serve(opts: {
+  fns: Record<string, Fn>;
+  /** Told of every call that failed, with its input as far as it was read */
+  onError: (path: string, input: unknown) => void;
+  transformer: CombinedDataTransformer;
+  /** The most runs of a function a request may have */
+  maxRuns: number | null;
+  /** Sends each call's result as a line of its own, when it is ready */
+  stream: boolean;
+}) {
+  return fetchServerResource(async (request) => {
+    const url = new URL(request.url);
+    const paths = url.pathname.slice(1).split(',');
+    if (url.searchParams.get('batch') !== pipelineBatch) {
+      return Response.json(
+        { error: { message: 'Not a pipelined batch', code: 'BAD_REQUEST' } },
+        { status: 400 },
+      );
+    }
+    const hasBody = request.method !== 'GET';
+    const body: unknown = hasBody ? await request.json() : null;
+    const inputs: unknown = hasBody
+      ? body
+      : JSON.parse(url.searchParams.get('input') ?? '{}');
+    const calls = paths.map((_path, index) => {
+      const read = () => {
+        const input = isObject(inputs) ? inputs[index] : undefined;
+        return input === undefined
+          ? undefined
+          : opts.transformer.input.deserialize(input);
+      };
+      return { getRawInput: async () => read(), result: read };
+    });
+    let pipeline;
+    try {
+      pipeline = pipelineCalls({
+        calls,
+        reads: parsePipelineReads({
+          pipe: hasBody
+            ? pipeOfBody(body)
+            : pipeOfSearchParams(url.searchParams),
+          calls: calls.length,
+        }),
+        transformer: opts.transformer,
+        maxRuns: opts.maxRuns,
+      });
+    } catch (cause) {
+      return Response.json({ error: wireError(cause) }, { status: 400 });
+    }
+    const { each } = pipeline;
+    const results = pipeline.calls.map(async (call, index) => {
+      const path = paths[index] ?? '';
+      try {
+        const fn = opts.fns[path];
+        if (!fn) {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        }
+        const runEach = each(index);
+        return await (runEach
+          ? runEach({ item: async (input) => fn(input), error: wireError })
+          : fn(await call.getRawInput()));
+      } catch (cause) {
+        opts.onError(path, call.result());
+        throw cause;
+      }
+    });
+    pipeline.settle(results);
+    const answers = results.map((result) =>
+      result
+        .then((data) => {
+          const serialized = opts.transformer.output.serialize(data);
+          // What can't go in the response is that call's error
+          JSON.stringify(serialized);
+          return { result: { data: serialized } };
+        })
+        .catch((cause: unknown) => ({ error: wireError(cause) })),
+    );
+    if (!opts.stream) {
+      return Response.json(await Promise.all(answers));
+    }
+    const encoder = new TextEncoder();
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          let left = answers.length;
+          for (const [index, answer] of answers.entries()) {
+            void answer.then((it) => {
+              controller.enqueue(
+                encoder.encode(`${JSON.stringify({ index, ...it })}\n`),
+              );
+              left -= 1;
+              if (left === 0) {
+                controller.close();
+              }
+            });
+          }
+        },
+      }),
+    );
+  });
+}
+
+// ---------- a client that is `fetch` ----------
+
+/** Something a request has: what the client sends itself, or a call it adds */
+interface Sent {
+  path: string;
+  input: unknown;
+}
+
+interface Call extends Sent {
+  reads: PipelineCallReads<Sent>;
+}
+
+function sent(path: string, input: unknown): Sent {
+  return { path, input };
+}
+
+function call(path: string, input: unknown, reads: PipelineRead<Sent>[]): Call {
+  const grouped = groupPipelineReads(reads);
+  if (!grouped.ok) {
+    throw new Error(grouped.problem);
+  }
+  return { path, input, reads: grouped.reads };
+}
+
+type Outcome = { data: unknown } | { error: WireError };
+
+/** Each line of a streamed response, as it arrives */
+async function* linesOf(response: Response) {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return;
+  }
+  const decoder = new TextDecoder();
+  let buffered = '';
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) {
+      return;
+    }
+    buffered += decoder.decode(chunk.value, { stream: true });
+    const lines = buffered.split('\n');
+    buffered = lines.pop() ?? '';
+    yield* lines;
+  }
+}
+
+async function send(opts: {
+  url: string;
+  method: 'GET' | 'POST';
+  transformer: CombinedDataTransformer;
+  sent: Sent[];
+  calls: Call[];
+  fits: (plan: Pick<PipelinedBatchPlan<Call>, 'calls' | 'reads'>) => boolean;
+  stream: boolean;
+}) {
+  const plan = planPipelinedBatch({
+    sent: opts.sent,
+    calls: opts.calls,
+    fits: opts.fits,
+  });
+  const all = [...opts.sent, ...plan.calls];
+  const inputs = all.map((it) =>
+    it.input === undefined
+      ? undefined
+      : opts.transformer.input.serialize(it.input),
+  );
+  // What a link sends for an ordinary batch, pipelined
+  const batch = `${opts.url}/${all.map((it) => it.path).join(',')}?batch=1`;
+  const url =
+    opts.method === 'GET'
+      ? pipelinedBatchUrl({
+          url: `${batch}&input=${encodeURIComponent(
+            JSON.stringify(Object.fromEntries(inputs.entries())),
+          )}`,
+          pipe: plan.reads,
+        })
+      : pipelinedBatchUrl({ url: batch, pipe: null });
+  const body =
+    opts.method === 'GET'
+      ? undefined
+      : JSON.stringify(pipelinedBatchBody({ inputs, pipe: plan.reads }));
+  const response = await fetch(url, {
+    method: opts.method,
+    ...(body === undefined
+      ? {}
+      : { body, headers: { 'content-type': 'application/json' } }),
+  });
+
+  /** The order the results came in */
+  const arrived: number[] = [];
+  const outcomes = all.map(() => {
+    let resolve: (outcome: Outcome) => void = () => undefined;
+    const promise = new Promise<Outcome>((it) => {
+      resolve = it;
+    });
+    return { promise, resolve };
+  });
+  const take = (index: number, answer: unknown) => {
+    arrived.push(index);
+    const result = isObject(answer) ? answer['result'] : undefined;
+    outcomes[index]?.resolve(
+      isObject(result)
+        ? { data: opts.transformer.output.deserialize(result['data']) }
+        : { error: (answer as { error: WireError }).error },
+    );
+  };
+  const reading = (async () => {
+    if (opts.stream && response.ok) {
+      for await (const line of linesOf(response)) {
+        const { index, ...answer } = JSON.parse(line);
+        take(index, answer);
+      }
+      return;
+    }
+    const json: unknown = await response.json();
+    for (const index of all.keys()) {
+      // An answer for the whole request is every call's
+      take(index, Array.isArray(json) ? json[index] : json);
+    }
+  })();
+
+  const succeeded = (index: number) =>
+    Promise.resolve(outcomes[index]?.promise).then(
+      (outcome) => !!outcome && 'data' in outcome,
+    );
+  const ran = pipelinedCallsRan({
+    sent: opts.sent.map((_it, index) => succeeded(index)),
+    reads: plan.reads,
+    calls: plan.calls.map((it, index) => ({
+      it,
+      result: Promise.resolve(outcomes[opts.sent.length + index]?.promise).then(
+        (outcome) => {
+          if (!outcome || 'error' in outcome) {
+            throw new Error('failed');
+          }
+          return outcome;
+        },
+      ),
+    })),
+  });
+  await reading;
+  const outcomeOf = new Map<Sent, Outcome>();
+  for (const [index, it] of all.entries()) {
+    const outcome = await outcomes[index]?.promise;
+    if (outcome) {
+      outcomeOf.set(it, outcome);
+    }
+  }
+  const ranOf = new Map<Sent, boolean>();
+  for (const it of ran) {
+    ranOf.set(it.call.it, await it.ran);
+  }
+  return {
+    status: response.status,
+    /** The request, as it went */
+    wire: {
+      method: opts.method,
+      url: decodeURIComponent(url.slice(opts.url.length)),
+      body: body === undefined ? undefined : JSON.parse(body),
+    },
+    plan,
+    arrived,
+    of: (it: Sent) => outcomeOf.get(it),
+    /** Whether the server ran a call: `false` if one it reads failed */
+    ran: (it: Call) => ranOf.get(it),
+  };
+}
+
+// ---------- a blog ----------
+
+const posts = [
+  { slug: 'hello', authorId: 'ada', tags: [{ id: 't1' }, { id: 't2' }] },
+  { slug: 'again', authorId: 'lin', tags: [] },
+  { slug: 'orphan', authorId: 'nobody', tags: [] },
+];
+const authors = [
+  { id: 'ada', name: 'Ada', teamId: 'infra' },
+  { id: 'lin', name: 'Lin', teamId: 'web' },
+  { id: 'sam', name: 'Sam', teamId: 'infra' },
+];
+
+function notFound(what: string): never {
+  throw new TRPCError({ code: 'NOT_FOUND', message: `No ${what}` });
+}
+
+function blog() {
+  const ran: [path: string, input: unknown][] = [];
+  const logged = (fns: Record<string, Fn>): Record<string, Fn> =>
+    Object.fromEntries(
+      Object.entries(fns).map(([path, fn]) => [
+        path,
+        (input: unknown) => {
+          ran.push([path, input]);
+          return fn(input);
+        },
+      ]),
+    );
+  return {
+    ran,
+    fns: logged({
+      post: (input) =>
+        posts.find((it) => it.slug === input.slug) ?? notFound('post'),
+      author: (input) =>
+        authors.find((it) => it.id === input.id) ?? notFound('author'),
+      teamPosts: (input) =>
+        posts
+          .filter((post) =>
+            authors.some(
+              (it) => it.id === post.authorId && it.teamId === input.teamId,
+            ),
+          )
+          .map((post) => post.slug),
+      posts: () => ({ items: posts }),
+      tags: (input) => input.ids.map((id: string) => ({ id, name: `#${id}` })),
+      echo: (input) => input,
+    }),
+  };
+}
+
+const defaults = {
+  transformer: transformers.none,
+  maxRuns: null,
+  stream: false,
+  fits: () => true,
+  onError: () => undefined,
+} as const;
+
+// ---------- the tests ----------
+
+describe.each(['GET', 'POST'] as const)('over %s', (method) => {
+  test('a call reads a part of its input from the data of another', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const author = call('author', {}, [
+      { to: ['id'], from: post, path: ['authorId'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method,
+      sent: [post],
+      calls: [author],
+    });
+
+    expect(res.of(author)).toEqual({
+      data: { id: 'ada', name: 'Ada', teamId: 'infra' },
+    });
+    // The function got a whole input: the client never knew the id
+    expect(ran).toEqual([
+      ['post', { slug: 'hello' }],
+      ['author', { id: 'ada' }],
+    ]);
+    expect(res.ran(author)).toBe(true);
+  });
+
+  test('a chain: each call reads the one before it, in one request', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const author = call('author', {}, [
+      { to: ['id'], from: post, path: ['authorId'], each: false },
+    ]);
+    const teamPosts = call('teamPosts', {}, [
+      { to: ['teamId'], from: author, path: ['teamId'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method,
+      sent: [post],
+      // Written before what it reads: it still goes after it
+      calls: [teamPosts, author],
+    });
+
+    expect(res.plan.calls).toEqual([author, teamPosts]);
+    expect(res.of(teamPosts)).toEqual({ data: ['hello'] });
+    expect(ran.map(([path]) => path)).toEqual(['post', 'author', 'teamPosts']);
+    expect(res.wire).toEqual({
+      method,
+      url:
+        method === 'GET'
+          ? '/post,author,teamPosts?batch=pipeline&input={"0":{"slug":"hello"},"1":{},"2":{}}&pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}],"2":[{"to":["teamId"],"from":1,"path":["teamId"]}]}'
+          : '/post,author,teamPosts?batch=pipeline',
+      body:
+        method === 'GET'
+          ? undefined
+          : {
+              0: { slug: 'hello' },
+              1: {},
+              2: {},
+              pipe: {
+                1: [{ to: ['id'], from: 0, path: ['authorId'] }],
+                2: [{ to: ['teamId'], from: 1, path: ['teamId'] }],
+              },
+            },
+    });
+  });
+
+  test('`null` in a path reads a value of every item of a list', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const tags = call('tags', {}, [
+      { to: ['ids'], from: post, path: ['tags', null, 'id'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method,
+      sent: [post],
+      calls: [tags],
+    });
+
+    expect(ran[1]).toEqual(['tags', { ids: ['t1', 't2'] }]);
+    expect(res.of(tags)).toEqual({
+      data: [
+        { id: 't1', name: '#t1' },
+        { id: 't2', name: '#t2' },
+      ],
+    });
+  });
+
+  test('a call for every item of a list: each has a result or an error of its own', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const list = sent('posts', undefined);
+    const authorOfEach = call('author', {}, [
+      {
+        to: ['id'],
+        from: list,
+        path: ['items', null, 'authorId'],
+        each: true,
+      },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method,
+      sent: [list],
+      calls: [authorOfEach],
+    });
+
+    expect(ran.slice(1)).toEqual([
+      ['author', { id: 'ada' }],
+      ['author', { id: 'lin' }],
+      ['author', { id: 'nobody' }],
+    ]);
+    const outcome = res.of(authorOfEach);
+    assert(outcome && 'data' in outcome);
+    expect(
+      [0, 1, 2, 3].map((index) => readPipelinedItem(outcome.data, index)),
+    ).toEqual([
+      { kind: 'data', data: { id: 'ada', name: 'Ada', teamId: 'infra' } },
+      { kind: 'data', data: { id: 'lin', name: 'Lin', teamId: 'web' } },
+      { kind: 'error', error: { code: 'NOT_FOUND', message: 'No author' } },
+      // The list has three items
+      { kind: 'missing' },
+    ]);
+    // The call as a whole succeeded: one item's error isn't the call's
+    expect(res.ran(authorOfEach)).toBe(true);
+  });
+
+  test('a call that reads a failed one does not run, and neither does what reads it', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'orphan' });
+    const author = call('author', {}, [
+      { to: ['id'], from: post, path: ['authorId'], each: false },
+    ]);
+    const teamPosts = call('teamPosts', {}, [
+      { to: ['teamId'], from: author, path: ['teamId'], each: false },
+    ]);
+    const other = sent('post', { slug: 'hello' });
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method,
+      sent: [post, other],
+      calls: [author, teamPosts],
+    });
+
+    // The author isn't there. The call for it ran, and failed
+    expect(res.of(author)).toEqual({
+      error: { code: 'NOT_FOUND', message: 'No author' },
+    });
+    expect(res.ran(author)).toBe(true);
+    // What reads it never ran, and the client knows without the error's code
+    expect(res.of(teamPosts)).toEqual({
+      error: {
+        code: 'PRECONDITION_FAILED',
+        message: 'The call this call reads its input from failed',
+      },
+    });
+    expect(res.ran(teamPosts)).toBe(false);
+    expect(ran.map(([path]) => path).sort()).toEqual([
+      'author',
+      'post',
+      'post',
+    ]);
+    // The rest of the request is as it would be without them
+    expect(res.of(other)).toMatchObject({ data: { slug: 'hello' } });
+  });
+});
+
+describe('what a call reads', () => {
+  test('several values, from several calls, anywhere in its input', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const hello = sent('post', { slug: 'hello' });
+    const again = sent('post', { slug: 'again' });
+    const echo = call('echo', { authors: [null, null], nested: { deep: {} } }, [
+      { to: ['authors', '0'], from: hello, path: ['authorId'], each: false },
+      { to: ['authors', '1'], from: again, path: ['authorId'], each: false },
+      { to: ['nested', 'deep', 'post'], from: hello, path: [], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [hello, again],
+      calls: [echo],
+    });
+
+    expect(ran[2]).toEqual([
+      'echo',
+      { authors: ['ada', 'lin'], nested: { deep: { post: posts[0] } } },
+    ]);
+  });
+
+  test('its whole input', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const echo = call('echo', undefined, [
+      { to: [], from: post, path: ['authorId'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [echo],
+    });
+
+    expect(ran[1]).toEqual(['echo', 'ada']);
+  });
+
+  test('what is not there is `undefined`: only own properties of objects and arrays are read', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const echo = call('echo', {}, [
+      { to: ['a'], from: post, path: ['nope'], each: false },
+      { to: ['b'], from: post, path: ['slug', 'length'], each: false },
+      { to: ['c'], from: post, path: ['constructor'], each: false },
+      { to: ['d'], from: post, path: ['tags', 'length'], each: false },
+      { to: ['e'], from: post, path: ['slug', null], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [echo],
+    });
+
+    // An array's length is its own. A string's isn't read: it is no object
+    expect(ran[1]).toEqual(['echo', { d: 2 }]);
+  });
+
+  test('the data as the client gets it, and its input as a client sends it', async () => {
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      transformer: transformers.superjson,
+      fns: {
+        post: () => ({
+          publishedAt: new Date('2026-01-02T03:04:05Z'),
+          // Not in what the client gets
+          secret: () => 'a function',
+          tags: new Set(['a']),
+        }),
+        echo: (input) => {
+          seen.push(input);
+          return input;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const echo = call('echo', {}, [
+      { to: ['at'], from: post, path: ['publishedAt'], each: false },
+      { to: ['secret'], from: post, path: ['secret'], each: false },
+      { to: ['tags'], from: post, path: ['tags'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      transformer: transformers.superjson,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [echo],
+    });
+
+    expect(seen).toEqual([
+      { at: new Date('2026-01-02T03:04:05Z'), tags: new Set(['a']) },
+    ]);
+    expect(res.of(echo)).toEqual({
+      data: { at: new Date('2026-01-02T03:04:05Z'), tags: new Set(['a']) },
+    });
+  });
+
+  test('a copy: a function that changes its input changes nothing another reads', async () => {
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      fns: {
+        post: () => ({ author: { name: 'Ada' } }),
+        rename: (input) => {
+          input.author.name = 'changed';
+          return null;
+        },
+        echo: (input) => {
+          seen.push(structuredClone(input));
+          return input;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const rename = call('rename', {}, [
+      { to: ['author'], from: post, path: ['author'], each: false },
+    ]);
+    const echo = call('echo', {}, [
+      { to: ['author'], from: post, path: ['author'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [rename, echo],
+    });
+
+    expect(seen).toEqual([{ author: { name: 'Ada' } }]);
+    expect(res.of(post)).toEqual({ data: { author: { name: 'Ada' } } });
+  });
+
+  test('data that cannot go over the wire is a failed call to what reads it', async () => {
+    const { fns } = blog();
+    await using server = serve({
+      ...defaults,
+      fns: { ...fns, big: () => ({ id: 1n }) },
+    });
+    const big = sent('big', undefined);
+    const echo = call('echo', {}, [
+      { to: ['id'], from: big, path: ['id'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [big],
+      calls: [echo],
+    });
+
+    expect(res.of(echo)).toMatchObject({
+      error: { code: 'PRECONDITION_FAILED' },
+    });
+  });
+});
+
+describe('a call for every item', () => {
+  test('reads values of the item and values that are the same for every run, in the order they are written', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const list = sent('posts', undefined);
+    const hello = sent('post', { slug: 'hello' });
+    const echo = call('echo', { item: {} }, [
+      { to: ['from'], from: hello, path: ['slug'], each: false },
+      { to: ['item'], from: list, path: ['items', null], each: true },
+      // Written after the item, inside it
+      { to: ['item', 'tags'], from: hello, path: ['authorId'], each: false },
+      {
+        to: ['slug'],
+        from: list,
+        path: ['items', null, 'slug'],
+        each: true,
+      },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list, hello],
+      calls: [echo],
+    });
+
+    expect(ran.slice(2).map(([, input]) => input)).toEqual(
+      posts.map((post) => ({
+        from: 'hello',
+        item: { ...post, tags: 'ada' },
+        slug: post.slug,
+      })),
+    );
+  });
+
+  test.each([
+    { name: 'an empty list', data: { items: [] } },
+    { name: 'what is no list', data: { items: 'text' } },
+    { name: 'nothing', data: null },
+  ])('runs for no item of $name', async (scenario) => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      fns: { list: () => scenario.data, echo },
+    });
+    const list = sent('list', undefined);
+    const each = call('echo', {}, [
+      { to: ['id'], from: list, path: ['items', null, 'id'], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [each],
+    });
+
+    expect(res.of(each)).toEqual({ data: [] });
+    expect(echo).not.toHaveBeenCalled();
+  });
+
+  test('a list of lists: a run for every item of the first, with the list of values of the second', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        list: () => [{ tags: [{ id: 'a' }, { id: 'b' }] }, { tags: [] }],
+        echo,
+      },
+    });
+    const list = sent('list', undefined);
+    const each = call('echo', {}, [
+      { to: ['ids'], from: list, path: [null, 'tags', null, 'id'], each: true },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [each],
+    });
+
+    expect(echo.mock.calls).toEqual([[{ ids: ['a', 'b'] }], [{ ids: [] }]]);
+  });
+
+  test('a call can read the list of results of a call for every item', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const list = sent('posts', undefined);
+    const authorOfEach = call('author', {}, [
+      { to: ['id'], from: list, path: ['items', null, 'authorId'], each: true },
+    ]);
+    const echo = call('echo', {}, [
+      {
+        to: ['names'],
+        from: authorOfEach,
+        path: [null, 'result', 'data', 'name'],
+        each: false,
+      },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [authorOfEach, echo],
+    });
+
+    // The third item failed: it has no result to read a name of. In a list,
+    // that is `null` once it has gone over the wire, as from a client
+    expect(ran.at(-1)).toEqual(['echo', { names: ['Ada', 'Lin', null] }]);
+  });
+
+  test('every run counts towards the most runs a request may have', async () => {
+    const { fns, ran } = blog();
+    // The list, the call for its three items: four runs
+    await using server = serve({ ...defaults, fns, maxRuns: 3 });
+    const list = sent('posts', undefined);
+    const authorOfEach = call('author', {}, [
+      { to: ['id'], from: list, path: ['items', null, 'authorId'], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [authorOfEach],
+    });
+
+    expect(res.of(authorOfEach)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'A call for every item exceeds the maximum batch size',
+      },
+    });
+    // It ran for none of them
+    expect(ran.map(([path]) => path)).toEqual(['posts']);
+  });
+
+  test('a call that is refused takes none of the runs: a later one that fits still runs', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      // Two lists, and two calls for their items
+      maxRuns: 4,
+      fns: { long: () => [1, 2, 3], short: () => [1, 2], echo },
+    });
+    const long = sent('long', undefined);
+    const short = sent('short', undefined);
+    const ofLong = call('echo', {}, [
+      { to: ['n'], from: long, path: [null], each: true },
+    ]);
+    const ofShort = call('echo', {}, [
+      { to: ['n'], from: short, path: [null], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [long, short],
+      calls: [ofLong, ofShort],
+    });
+
+    expect(res.of(ofLong)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+    expect(res.of(ofShort)).toEqual({
+      data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
+    });
+  });
+});
+
+describe('a call that failed', () => {
+  test('is reported with the input it ran with: filled in, if it got that far', async () => {
+    const { fns } = blog();
+    const failed: [path: string, input: unknown][] = [];
+    await using server = serve({
+      ...defaults,
+      fns,
+      onError: (path, input) => failed.push([path, input]),
+    });
+    const post = sent('post', { slug: 'orphan' });
+    const author = call('author', { fields: ['name'] }, [
+      { to: ['id'], from: post, path: ['authorId'], each: false },
+    ]);
+    const teamPosts = call('teamPosts', { limit: 5 }, [
+      { to: ['teamId'], from: author, path: ['teamId'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [author, teamPosts],
+    });
+
+    expect(failed).toEqual([
+      // It ran, with the id the server read from the post
+      ['author', { fields: ['name'], id: 'nobody' }],
+      // It never ran: its input is as the client sent it
+      ['teamPosts', { limit: 5 }],
+    ]);
+  });
+
+  test('a plan that reads a call the batch does not have fails the call that reads it', async () => {
+    const pipeline = pipelineCalls({
+      calls: [{ getRawInput: async () => ({}), result: () => undefined }],
+      // Not from `parsePipelineReads`, which refuses it
+      reads: new Map([
+        [
+          0,
+          {
+            kind: 'once',
+            reads: [{ kind: 'whole', to: ['id'], from: 5, path: [] }],
+          },
+        ],
+      ]),
+      transformer: transformers.none,
+      maxRuns: null,
+    });
+
+    await expect(pipeline.calls[0]?.getRawInput()).rejects.toThrow(
+      'No call at index 5',
+    );
+  });
+});
+
+describe('the order things happen in', () => {
+  test('calls that read nothing of each other run at the same time, and one that reads another runs after it', async () => {
+    const events: string[] = [];
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await using server = serve({
+      ...defaults,
+      fns: {
+        slow: async () => {
+          events.push('slow starts');
+          await held;
+          events.push('slow ends');
+          return { id: 'slow' };
+        },
+        fast: () => {
+          events.push('fast runs');
+          return { id: 'fast' };
+        },
+        echo: (input) => {
+          events.push(`echo of ${input.id} runs`);
+          if (input.id === 'fast') {
+            // What reads the fast one has run: the slow one can end
+            release();
+          }
+          return input;
+        },
+      },
+    });
+    const slow = sent('slow', undefined);
+    const fast = sent('fast', undefined);
+    const ofSlow = call('echo', {}, [
+      { to: ['id'], from: slow, path: ['id'], each: false },
+    ]);
+    const ofFast = call('echo', {}, [
+      { to: ['id'], from: fast, path: ['id'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [slow, fast],
+      calls: [ofSlow, ofFast],
+    });
+
+    expect(events).toEqual([
+      'slow starts',
+      'fast runs',
+      'echo of fast runs',
+      'slow ends',
+      'echo of slow runs',
+    ]);
+  });
+
+  test('with a response that streams, each result arrives when it is ready', async () => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await using server = serve({
+      ...defaults,
+      stream: true,
+      fns: {
+        slow: async () => {
+          await held;
+          return notFound('slow');
+        },
+        fast: () => ({ id: 'fast' }),
+        echo: (input) => {
+          if (input.id === 'fast') {
+            // What reads the fast one has run: the slow one can end
+            release();
+          }
+          return input;
+        },
+      },
+    });
+    const slow = sent('slow', undefined);
+    const fast = sent('fast', undefined);
+    const ofSlow = call('echo', {}, [
+      { to: ['id'], from: slow, path: ['id'], each: false },
+    ]);
+    const ofFast = call('echo', {}, [
+      { to: ['id'], from: fast, path: ['id'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      stream: true,
+      url: server.url,
+      method: 'GET',
+      sent: [slow, fast],
+      calls: [ofSlow, ofFast],
+    });
+
+    // In the request: slow, fast, of slow, of fast
+    expect(res.arrived).toEqual([1, 3, 0, 2]);
+    expect(res.ran(ofFast)).toBe(true);
+    expect(res.ran(ofSlow)).toBe(false);
+    expect(res.of(ofFast)).toEqual({ data: { id: 'fast' } });
+  });
+});
+
+describe('what a client puts in a request', () => {
+  const post = sent('post', { slug: 'hello' });
+  const author = call('author', {}, [
+    { to: ['id'], from: post, path: ['authorId'], each: false },
+  ]);
+  const teamPosts = call('teamPosts', {}, [
+    { to: ['teamId'], from: author, path: ['teamId'], each: false },
+  ]);
+
+  test('a call that does not fit is left out, and so is what reads it', () => {
+    const plan = planPipelinedBatch({
+      sent: [post],
+      calls: [author, teamPosts],
+      fits: (next) => !next.calls.includes(author),
+    });
+
+    expect(plan).toEqual({ calls: [], reads: {}, left: [author, teamPosts] });
+  });
+
+  test('a call that fits goes, also when a later one does not', () => {
+    const plan = planPipelinedBatch({
+      sent: [post],
+      calls: [author, teamPosts],
+      fits: (next) => next.calls.length <= 1,
+    });
+
+    expect(plan).toEqual({
+      calls: [author],
+      reads: { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+      left: [teamPosts],
+    });
+  });
+
+  test('a call that reads what the request does not have is left out', () => {
+    const elsewhere = sent('post', { slug: 'again' });
+    const reader = call('echo', {}, [
+      { to: ['a'], from: post, path: ['slug'], each: false },
+      { to: ['b'], from: elsewhere, path: ['slug'], each: false },
+    ]);
+    const ofEach = call('echo', {}, [
+      { to: ['a'], from: elsewhere, path: [null], each: true },
+    ]);
+
+    const plan = planPipelinedBatch({
+      // `null`: something in the request that no call reads
+      sent: [null, post],
+      calls: [reader, ofEach, author],
+      fits: () => true,
+    });
+
+    expect(plan.calls).toEqual([author]);
+    expect(plan.reads).toEqual({
+      2: [{ to: ['id'], from: 1, path: ['authorId'] }],
+    });
+    expect(plan.left).toEqual([reader, ofEach]);
+  });
+
+  test('a call for every item that also reads what the request does not have is left out', () => {
+    const elsewhere = sent('post', { slug: 'again' });
+    const ofEach = call('echo', {}, [
+      { to: ['a'], from: post, path: ['tags', null], each: true },
+      { to: ['b'], from: elsewhere, path: ['slug'], each: false },
+    ]);
+
+    const plan = planPipelinedBatch({
+      sent: [post],
+      calls: [ofEach],
+      fits: () => true,
+    });
+
+    expect(plan).toEqual({ calls: [], reads: {}, left: [ofEach] });
+  });
+
+  test('a call the `pipe` says nothing of reads nothing, so it ran', async () => {
+    const [first] = pipelinedCallsRan({
+      sent: [Promise.resolve(false)],
+      reads: {},
+      calls: [{ result: Promise.resolve('data') }],
+    });
+
+    await expect(first?.ran).resolves.toBe(true);
+  });
+
+  test('an item the server sent neither a result nor an error for is missing', () => {
+    expect(
+      [0, 1, 2, 3].map((index) =>
+        readPipelinedItem([{}, { result: null }, 'text'], index),
+      ),
+    ).toEqual(Array.from({ length: 4 }, () => ({ kind: 'missing' })));
+    // Data that is no list has no items
+    expect(readPipelinedItem(null, 0)).toEqual({ kind: 'missing' });
+  });
+
+  test('the reads of a call are the same after a trip over the wire', () => {
+    const cases: PipelineRead<number>[][] = [
+      [],
+      [{ to: [], from: 0, path: [], each: false }],
+      [
+        { to: ['a'], from: 0, path: ['x', null, 'y'], each: false },
+        { to: ['b'], from: 1, path: ['items', null, 'id', null], each: true },
+        { to: ['c', '0'], from: 1, path: ['items', null], each: true },
+        { to: ['d'], from: 2, path: ['z'], each: false },
+      ],
+      [{ to: ['a'], from: 0, path: [null], each: true }],
+    ];
+    for (const reads of cases) {
+      const grouped = groupPipelineReads(reads);
+      assert(grouped.ok);
+      const pipe = { 3: encodePipelineReads(grouped.reads) };
+      expect(
+        parsePipelineReads({ pipe: JSON.stringify(pipe), calls: 4 }).get(3),
+      ).toEqual(grouped.reads);
+    }
+  });
+
+  test('reads the server would refuse are no reads to a client either', () => {
+    expect(
+      groupPipelineReads([
+        { to: ['a'], from: post, path: ['tags'], each: true },
+      ]),
+    ).toEqual({ ok: false, problem: 'each-without-list' });
+    for (const other of [
+      { to: ['b'], from: author, path: ['tags', null], each: true },
+      { to: ['b'], from: post, path: ['other', null], each: true },
+      { to: ['b'], from: post, path: ['tags', 'more', null], each: true },
+    ]) {
+      expect(
+        groupPipelineReads([
+          { to: ['a'], from: post, path: ['tags', null], each: true },
+          other,
+        ]),
+      ).toEqual({ ok: false, problem: 'more-than-one-list' });
+    }
+  });
+
+  test('the URL of a batch, pipelined', () => {
+    const pipe = { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] };
+    const encoded = encodeURIComponent(JSON.stringify(pipe));
+    expect(
+      pipelinedBatchUrl({ url: 'http://x/a,b?batch=1&input=%7B%7D', pipe }),
+    ).toBe(`http://x/a,b?batch=pipeline&input=%7B%7D&pipe=${encoded}`);
+    // Its own search params are left alone, also one that looks like it
+    expect(
+      pipelinedBatchUrl({ url: 'http://x/a,b?rebatch=1&batch=1', pipe: null }),
+    ).toBe('http://x/a,b?rebatch=1&batch=pipeline');
+    expect(
+      pipeOfSearchParams(
+        new URL(pipelinedBatchUrl({ url: 'http://x/a,b?batch=1', pipe }))
+          .searchParams,
+      ),
+    ).toBe(JSON.stringify(pipe));
+    expect(pipeOfSearchParams(new URLSearchParams())).toBeUndefined();
+    expect(pipeOfBody('not an object')).toBeUndefined();
+  });
+
+  test('the path of one item, for a client that reads what the server read', () => {
+    expect(bindPipelinePath(['items', null, 'tags', null, 'id'], 2)).toEqual([
+      'items',
+      '2',
+      'tags',
+      null,
+      'id',
+    ]);
+    expect(
+      readPipelinePath(
+        { items: [{}, {}, { tags: [{ id: 'a' }] }] },
+        bindPipelinePath(['items', null, 'tags', null, 'id'], 2),
+      ),
+    ).toEqual(['a']);
+  });
+});
+
+describe('a request the server refuses, before anything of it runs', () => {
+  const read: PipeRead = { to: ['id'], from: 0, path: ['authorId'] };
+
+  test.each<{ name: string; pipe: unknown; message: string }>([
+    { name: 'no JSON', pipe: '{', message: 'not JSON' },
+    { name: 'no object', pipe: '[]', message: 'expected an object' },
+    {
+      name: 'a call that is not there',
+      pipe: { 2: [] },
+      message: 'no call at index 2',
+    },
+    {
+      name: 'a call before the first',
+      pipe: { '-1': [] },
+      message: 'no call at index -1',
+    },
+    // It would be read as `1`, and the last of the two would win
+    {
+      name: 'a second way to write an index',
+      pipe: { '01': [read] },
+      message: 'no call at index 01',
+    },
+    {
+      name: 'a key that is no index',
+      pipe: { a: [] },
+      message: 'no call at index a',
+    },
+    {
+      name: 'reads that are no list',
+      pipe: { 1: {} },
+      message: 'expected an array at 1',
+    },
+    {
+      name: 'a read that is no object',
+      pipe: { 1: ['x'] },
+      message: 'expected "to" and "path" at 1',
+    },
+    {
+      name: 'a `to` that is no list of keys',
+      pipe: { 1: [{ ...read, to: [1] }] },
+      message: 'expected "to" and "path" at 1',
+    },
+    {
+      name: 'a `path` that is no path',
+      pipe: { 1: [{ ...read, path: [1] }] },
+      message: 'expected "to" and "path" at 1',
+    },
+    {
+      name: 'a read from itself',
+      pipe: { 1: [{ ...read, from: 1 }] },
+      message: 'call 1 can only read from an earlier call',
+    },
+    {
+      name: 'a read from no call',
+      pipe: { 1: [{ ...read, from: 0.5 }] },
+      message: 'call 1 can only read from an earlier call',
+    },
+    {
+      name: 'a read from a name',
+      pipe: { 1: [{ ...read, from: '0' }] },
+      message: 'call 1 can only read from an earlier call',
+    },
+    {
+      name: '`each` without a list',
+      pipe: { 1: [{ ...read, each: true }] },
+      message: '"each" at 1 needs a list in its path',
+    },
+    {
+      name: 'the items of two lists',
+      pipe: {
+        1: [
+          { to: ['a'], from: 0, path: ['a', null], each: true },
+          { to: ['b'], from: 0, path: ['b', null], each: true },
+        ],
+      },
+      message: 'call 1 reads each item of more than one list',
+    },
+    {
+      name: `more than ${pipelineReadsLimit} reads`,
+      pipe: { 1: Array.from({ length: pipelineReadsLimit + 1 }, () => read) },
+      message: `call 1 reads more than ${pipelineReadsLimit} values`,
+    },
+  ])('$name', async (scenario) => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const pipe =
+      typeof scenario.pipe === 'string'
+        ? scenario.pipe
+        : JSON.stringify(scenario.pipe);
+
+    const response = await fetch(
+      `${server.url}/post,author?batch=${pipelineBatch}&pipe=${encodeURIComponent(pipe)}`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: `Invalid "pipe": ${scenario.message}`,
+      },
+    });
+    expect(ran).toEqual([]);
+  });
+
+  test(`${pipelineReadsLimit} reads are not too many`, async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const echo = call(
+      'echo',
+      {},
+      Array.from({ length: pipelineReadsLimit }, (_it, index) => ({
+        to: [`k${index}`],
+        from: post,
+        path: ['slug'],
+        each: false,
+      })),
+    );
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [echo],
+    });
+
+    expect(Object.keys(ran[1]?.[1] as object)).toHaveLength(pipelineReadsLimit);
+  });
+});
+
+describe('a place in an input that a read cannot write to', () => {
+  test.each<{ name: string; input: unknown; to: string[] }>([
+    { name: 'inside a string', input: { id: 'text' }, to: ['id', 'x'] },
+    { name: 'inside nothing', input: {}, to: ['filter', 'id'] },
+    { name: 'inside an input that is not there', input: undefined, to: ['id'] },
+    {
+      name: 'an item an array does not have',
+      input: { ids: ['a'] },
+      to: ['ids', '1'],
+    },
+    {
+      name: 'the length of an array',
+      input: { ids: ['a'] },
+      to: ['ids', 'length'],
+    },
+    {
+      name: 'an index written another way',
+      input: { ids: ['a'] },
+      to: ['ids', '00'],
+    },
+  ])('$name', async (scenario) => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const echo = call('echo', scenario.input, [
+      { to: scenario.to, from: post, path: ['authorId'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [echo],
+    });
+
+    expect(res.of(echo)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: `Invalid "pipe": the input has nothing at "${scenario.to.join('.')}"`,
+      },
+    });
+    // Only that call: the rest of the request ran
+    expect(ran).toEqual([['post', { slug: 'hello' }]]);
+  });
+
+  test.each([
+    { name: 'a Map', input: { filter: new Map([['id', 'x']]) } },
+    { name: 'a Date', input: { filter: new Date(0) } },
+    { name: 'a Set', input: { filter: new Set(['id']) } },
+  ])(
+    'inside $name, which keeps what it has out of its properties',
+    async (scenario) => {
+      const echo = vi.fn((input: unknown) => input);
+      await using server = serve({
+        ...defaults,
+        transformer: transformers.superjson,
+        fns: { post: () => ({ authorId: 'ada' }), echo },
+      });
+      const post = sent('post', undefined);
+      const reader = call('echo', scenario.input, [
+        { to: ['filter', 'id'], from: post, path: ['authorId'], each: false },
+      ]);
+
+      const res = await send({
+        ...defaults,
+        transformer: transformers.superjson,
+        url: server.url,
+        method: 'POST',
+        sent: [post],
+        calls: [reader],
+      });
+
+      expect(res.of(reader)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+      expect(echo).not.toHaveBeenCalled();
+    },
+  );
+
+  test('a key named `__proto__` is a property like any other, and changes no prototype', async () => {
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      fns: {
+        post: () => ({ authorId: 'ada', evil: { polluted: true } }),
+        echo: (input) => {
+          seen.push(input);
+          return null;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const reader = call('echo', {}, [
+      { to: ['__proto__'], from: post, path: ['evil'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    const [input] = seen;
+    assert(isObject(input));
+    expect(Object.getPrototypeOf(input)).toBe(Object.prototype);
+    expect(Object.getOwnPropertyDescriptor(input, '__proto__')?.value).toEqual({
+      polluted: true,
+    });
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+  });
+
+  test('an instance of a class keeps its class', async () => {
+    class Range {
+      constructor(
+        public from: number,
+        public to: number,
+      ) {}
+      get length() {
+        return this.to - this.from;
+      }
+    }
+    superjson.registerClass(Range, { identifier: 'pipeline.test.Range' });
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      transformer: transformers.superjson,
+      fns: {
+        post: () => ({ max: 9 }),
+        echo: (input) => {
+          seen.push(input);
+          return null;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const reader = call('echo', new Range(1, 0), [
+      { to: ['to'], from: post, path: ['max'], each: false },
+    ]);
+
+    await send({
+      ...defaults,
+      transformer: transformers.superjson,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    const [input] = seen;
+    assert(input instanceof Range);
+    expect(input.length).toBe(8);
+  });
+});

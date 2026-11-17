@@ -410,13 +410,14 @@ An entry that is sent this way always asks the server, also when the cache has i
 
 ### If the server doesn't allow it {#not-allowed}
 
-A server without `experimental_allowPipelining` runs nothing of such a request. Every query in it fails with this error:
+A server without `experimental_allowPipelining` runs nothing of such a request. It answers with a `BAD_REQUEST`, and every query in the request fails with it:
 
 ```
-The server did not accept a pipelined batch. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
+Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
 ```
 
-- **The server's own answer is the error's `cause`**: a "not found" for the batch's paths. An error formatter that changes both `data.path` and the message hides it: the queries then fail with that answer as it is.
+- **The server says so itself.** The client doesn't guess from the answer, so an error formatter can't hide it, unless it changes the message.
+- **A server older than this option** doesn't know such a request. It looks for one procedure named after all of the batch's paths, and answers "not found".
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
 - **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
 - **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.
