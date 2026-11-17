@@ -108,22 +108,28 @@ export async function createContext() {
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
-export const appRouter = t.router({});
+export const appRouter = t.router({
+  greeting: t.procedure.query(() => 'hello'),
+});
 export type AppRouter = typeof appRouter;
 
 // @filename: helpers.ts
 // ---cut---
 // 3. Prefetching on the server, see /docs/client/tanstack-react-query/server-components
-import { QueryClient } from '@tanstack/react-query';
+import { dehydrate, QueryClient } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createContext } from './context';
 import { appRouter } from './router';
 
+// One query client per request
+const queryClient = new QueryClient();
 const trpc = createTRPCOptionsProxy({
   router: appRouter,
   ctx: await createContext(),
-  queryClient: new QueryClient(),
+  queryClient,
 });
+await queryClient.prefetchQuery(trpc.greeting.queryOptions());
+const dehydratedState = dehydrate(queryClient);
 ```
 
 ## Example code
