@@ -301,25 +301,28 @@ export function uniqueName(
 }
 
 /**
- * Whether `name` at `path` refers to a binding a function between `path`
- * and `scope` declares, e.g. a nested callback's own `utils` parameter.
+ * Whether `name` at `path` refers to a binding something between `path` and
+ * `scope` declares, e.g. a nested callback's own `utils` parameter, rather
+ * than to `declarator`.
  */
 export function isShadowed(
   j: JSCodeshift,
   path: ASTPath,
-  opts: { readonly scope: ASTPath; readonly name: string },
+  opts: {
+    readonly scope: ASTPath;
+    readonly name: string;
+    readonly declarator: unknown;
+  },
 ): boolean {
   const scopeBody = (opts.scope.node as { body?: unknown }).body;
   const declaresName = (statement: unknown) =>
     j.VariableDeclaration.check(statement) &&
     statement.declarations.some(
       (d) =>
+        d !== opts.declarator &&
         j.VariableDeclarator.check(d) &&
-        (j.Identifier.check(d.id)
-          ? d.id.name === opts.name
-          : j(d.id as never)
-              .find(j.Identifier, { name: opts.name })
-              .size() > 0),
+        // Bindings, not keys: `{ utils: other }` binds `other`
+        paramBindings(j, [d.id]).has(opts.name),
     );
   for (
     let current = path.parent;
@@ -337,8 +340,7 @@ export function isShadowed(
     }
     if (
       j.CatchClause.check(node) &&
-      j.Identifier.check(node.param) &&
-      node.param.name === opts.name
+      paramBindings(j, [node.param]).has(opts.name)
     ) {
       return true;
     }

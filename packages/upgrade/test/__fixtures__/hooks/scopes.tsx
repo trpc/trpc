@@ -19,3 +19,28 @@ export function Component2({ queryClient }: { queryClient: unknown }) {
   void utils.post.list.invalidate();
   return queryClient;
 }
+
+export function Component3({ flag }: { flag: boolean }) {
+  {
+    // Declared in a block: its own declaration doesn't shadow it
+    const utils = trpc.useUtils();
+    void utils.post.list.invalidate();
+  }
+  if (flag) {
+    // `utils` is a key here, not a binding
+    const { utils: other } = { utils: 1 };
+    void other;
+  }
+  return null;
+}
+
+export function Component4() {
+  const utils = trpc.useUtils();
+  if (Math.random() > 0.5) {
+    // `utils` is a key here, not a binding
+    const { utils: other } = { utils: 1 };
+    void other;
+    void utils.post.list.invalidate();
+  }
+  return null;
+}

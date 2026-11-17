@@ -479,13 +479,25 @@ export default function transform(
           ? uniqueName(j, scope, 'queryClient')
           : 'queryClient';
 
-        const references = j(scope)
+        // `const` and `let` only reach the end of their block, `var` the
+        // whole function
+        const isVar =
+          j.VariableDeclaration.check(path.parent?.parent?.node) &&
+          path.parent.parent.node.kind === 'var';
+        let declaringBlock: ASTPath = path;
+        while (
+          declaringBlock.node !== scope.node &&
+          (isVar || !j.BlockStatement.check(declaringBlock.node))
+        ) {
+          declaringBlock = declaringBlock.parent;
+        }
+        const references = j(declaringBlock)
           .find(j.Identifier, { name: utilsName })
           .filter(
             (p) =>
               p.node !== declarator.id &&
               isValueReference(j, p) &&
-              !isShadowed(j, p, { scope, name: utilsName }),
+              !isShadowed(j, p, { scope, name: utilsName, declarator }),
           )
           .paths()
           // Innermost and last first, so a call inside another's arguments
