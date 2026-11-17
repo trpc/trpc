@@ -93,14 +93,14 @@ jobs:
 
       # Even if the stable pack failed, like on a commit marked breaking.
       - name: Undo the stable version bump
-        if: "!cancelled()"
+        if: '!cancelled()'
         run: git checkout --quiet -- .
 
       # Only if what the packages publish changed since the latest canary,
       # whose version ends in its commit's short sha. Without one, it packs.
       - name: Pack a canary
         id: canary
-        if: "!cancelled()"
+        if: '!cancelled()'
         run: |
           version=$(npm view @trpc/server@canary version 2>/dev/null) || version=
           pnpm release canary --pack "$RUNNER_TEMP/canary" --since "${version##*.g}"
