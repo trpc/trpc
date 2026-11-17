@@ -191,17 +191,16 @@ export function pipelinedBatchUrl(opts: {
     : url;
 }
 
-/** The body of a pipelined batch: its inputs by index, and its `pipe` beside them */
+/**
+ * The body of a batch, for the same batch pipelined: its inputs by index,
+ * with its `pipe` beside them.
+ */
 export function pipelinedBatchBody(opts: {
-  inputs: readonly unknown[];
+  /** The body of an ordinary batch: the JSON of its inputs by index */
+  body: string;
   pipe: PipelineReads;
 }) {
-  const body: Record<string, unknown> = {};
-  for (const [index, input] of opts.inputs.entries()) {
-    body[index] = input;
-  }
-  body['pipe'] = opts.pipe;
-  return body;
+  return JSON.stringify({ ...JSON.parse(opts.body), pipe: opts.pipe });
 }
 
 /** One item's outcome of a call that the server ran once for every item of a list */

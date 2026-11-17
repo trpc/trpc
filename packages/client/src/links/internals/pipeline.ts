@@ -127,14 +127,6 @@ function isCall(source: PipelineSource): source is PipelinedCall {
   return 'owner' in source;
 }
 
-/** Everything a call reads from */
-function sourcesOf(reads: PipelineCallReads<PipelineSource>) {
-  const whole = reads.reads.flatMap((read) =>
-    read.kind === 'whole' ? [read.from] : [],
-  );
-  return reads.kind === 'each' ? [reads.list.from, ...whole] : whole;
-}
-
 /**
  * Adds a call to the request of the operations it reads. `null` if that
  * request has gone, no link that pipelines took those operations, or the
@@ -149,15 +141,17 @@ export function pipeCall(opts: {
   if (!grouped.ok || opts.reads.length > pipelineReadsLimit) {
     return null;
   }
-  const sources = sourcesOf(grouped.reads);
-  const owners = sources.map((source) =>
-    isCall(source) ? source.owner : source,
+  const owners = opts.reads.map((read) =>
+    isCall(read.from) ? read.from.owner : read.from,
   );
+  // It goes with the operation of its first read
   const [owner] = owners;
   if (
     !owner ||
     !owners.every((pipeline) => pipeline.open) ||
-    !sources.every((source) => !isCall(source) || source.status === 'waiting')
+    !opts.reads.every(
+      (read) => !isCall(read.from) || read.from.status === 'waiting',
+    )
   ) {
     return null;
   }
@@ -291,17 +285,12 @@ function pipelinedRequest(
         url: getUrl(opts),
         pipe: opts.methodOverride === 'POST' ? null : pipe,
       }),
-    getBody: (opts) =>
-      opts.methodOverride === 'POST' && 'inputs' in opts
-        ? JSON.stringify(
-            pipelinedBatchBody({
-              inputs: opts.inputs.map((input) =>
-                opts.transformer.input.serialize(input),
-              ),
-              pipe,
-            }),
-          )
-        : getBody(opts),
+    getBody: (opts) => {
+      const body = getBody(opts);
+      return typeof body === 'string'
+        ? pipelinedBatchBody({ body, pipe })
+        : body;
+    },
   };
 }
 

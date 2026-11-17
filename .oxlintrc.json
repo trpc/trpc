@@ -287,10 +287,42 @@
         "packages/client/src/links/httpBatchStreamLink.ts"
       ],
       "rules": {
+        // Repeats the options above: an override replaces a rule's options.
         "no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "@testing-library/dom",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              },
+              {
+                "name": "@testing-library/react",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              },
+              {
+                // The client's half of the protocol, which `internals/pipeline` uses
+                "name": "@trpc/server/unstable-core-do-not-import",
+                "importNames": [
+                  "encodePipelineReads",
+                  "groupPipelineReads",
+                  "pipelinedBatchBody",
+                  "pipelinedBatchUrl",
+                  "pipelinedCallsRan",
+                  "planPipelinedBatch",
+                  "readPipelinedItem"
+                ],
+                "message": "The link gets the pipelining code from its `experimental_pipelining` option"
+              }
+            ],
             "patterns": [
+              {
+                "group": ["@trpc/*/src", "@trpc/*/src/**"],
+                "message": "Remove the \"`/src`\" part of this import",
+                "allowTypeImports": false
+              },
               {
                 "group": ["**/internals/pipeline"],
                 "allowTypeImports": true,

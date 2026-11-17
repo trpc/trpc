@@ -47,18 +47,20 @@ function isPath(value: unknown): value is PipelinePath {
   );
 }
 
-/** What each call of a batch reads, by the call's index */
-export type PipelinePlan = Map<number, PipelineCallReads<number>>;
-
 /**
- * Validates the `pipe` of a batch request. A string is the search param's
- * JSON. Nothing after this checks it again.
+ * Validates the `pipe` of a batch request: what each call reads, by the
+ * call's index. A string is the search param's JSON. Nothing after this
+ * checks it again.
+ *
+ * A read names its source by index. It comes back as what `sources` has for
+ * that call, so a read from a call that isn't there, or isn't earlier, can't
+ * come out of this.
  */
-export function parsePipelineReads(opts: {
+export function parsePipelineReads<TSource extends object | number>(opts: {
   pipe: unknown;
-  /** The number of calls in the batch */
-  calls: number;
-}): PipelinePlan {
+  /** What stands for each call of the batch, in order */
+  sources: readonly TSource[];
+}): Map<number, PipelineCallReads<TSource>> {
   let parsed = opts.pipe;
   if (typeof parsed === 'string') {
     try {
@@ -76,7 +78,7 @@ export function parsePipelineReads(opts: {
       if (
         !Number.isInteger(index) ||
         index < 0 ||
-        index >= opts.calls ||
+        index >= opts.sources.length ||
         // One key per call: `01` is not another way to write `1`
         String(index) !== key
       ) {
@@ -91,23 +93,22 @@ export function parsePipelineReads(opts: {
         );
       }
       const grouped = groupPipelineReads(
-        reads.map((read: unknown): PipelineRead<number> => {
+        reads.map((read: unknown): PipelineRead<TSource> => {
           if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
             throw invalidPipe(`expected "to" and "path" at ${key}`);
           }
           const from = read['from'];
           // Only earlier calls, so calls can't wait for each other
-          if (
-            typeof from !== 'number' ||
-            !Number.isInteger(from) ||
-            from < 0 ||
-            from >= index
-          ) {
+          const source =
+            typeof from === 'number' && Number.isInteger(from) && from < index
+              ? opts.sources[from]
+              : undefined;
+          if (source === undefined) {
             throw invalidPipe(`call ${key} can only read from an earlier call`);
           }
           return {
             to: read['to'],
-            from,
+            from: source,
             path: read['path'],
             each: read['each'] === true,
           };
@@ -132,7 +133,8 @@ export function parsePipelineReads(opts: {
 /**
  * Whether a value can be copied with one of its properties replaced: an
  * array, a plain object or an instance of a class. Not what keeps its state
- * out of its properties, such as a `Map` or a `Date`.
+ * out of its properties, such as a `Map` or a `Date`, or a class that names
+ * itself with `Symbol.toStringTag`: it can't be told from one of those.
  */
 function isRecordLike(value: object) {
   return (
@@ -158,7 +160,6 @@ function writePipelinePath(opts: {
     if (
       typeof target !== 'object' ||
       target === null ||
-      !isRecordLike(target) ||
       // In an array, only an item it has: not its `length`
       (Array.isArray(target) &&
         !(
@@ -167,6 +168,11 @@ function writePipelinePath(opts: {
         ))
     ) {
       throw invalidPipe(`the input has nothing at "${opts.to.join('.')}"`);
+    }
+    if (!isRecordLike(target)) {
+      throw invalidPipe(
+        `the input has a value on the way to "${opts.to.join('.')}" that can't be written to`,
+      );
     }
     // With its prototype: an input's transformer can make it a class instance
     const copy: object = Array.isArray(target)
@@ -222,11 +228,12 @@ export type PipelineEach = <TError>(run: {
 
 /**
  * Makes the calls of a batch read parts of their input from the data of
- * earlier calls. Give it every call's outcome with `settle`.
+ * earlier calls, as its `pipe` says. Throws if the `pipe` is invalid.
  */
 export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   calls: readonly TCall[];
-  reads: PipelinePlan;
+  /** The request's `pipe`, not yet checked */
+  pipe: unknown;
   transformer: CombinedDataTransformer;
   /**
    * The most runs of a call the batch may have, or `null` for any number. A
@@ -235,29 +242,31 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    */
   maxRuns: number | null;
 }) {
-  const outcomes = opts.calls.map(() => {
-    const deferred = createDeferred<unknown>();
+  /** A call, as the calls that read its data see it */
+  interface Source {
+    /** How the call went: its data, or a rejection if it has none to read */
+    outcome: ReturnType<typeof createDeferred<unknown>>;
+    /** Its data as the client gets it, which is what a path refers to */
+    clientData: Promise<unknown> | null;
+  }
+  const sent = opts.calls.map((call) => {
+    const outcome = createDeferred<unknown>();
     // A failed call that nothing reads from isn't an unhandled rejection
-    deferred.promise.catch(() => undefined);
-    return deferred;
+    outcome.promise.catch(() => undefined);
+    const source: Source = { outcome, clientData: null };
+    return { call, source };
   });
-  /** Each call's data as the client gets it, which is what its paths refer to */
-  const clientData = new Map<number, Promise<unknown>>();
+  const plan = parsePipelineReads({
+    pipe: opts.pipe,
+    sources: sent.map((it) => it.source),
+  });
+
   /** The data of a call that another reads. Rejects if that call failed */
-  function dataOf(from: number) {
-    let promise = clientData.get(from);
-    if (!promise) {
-      const outcome = outcomes[from];
-      if (!outcome) {
-        // `parsePipelineReads` only lets a call read from one of the batch
-        throw new Error(`No call at index ${from}`);
-      }
-      promise = outcome.promise.then((data) =>
-        overTheWire(opts.transformer.output, data),
-      );
-      clientData.set(from, promise);
-    }
-    return promise.catch(() => {
+  function dataOf(source: Source) {
+    source.clientData ??= source.outcome.promise.then((data) =>
+      overTheWire(opts.transformer.output, data),
+    );
+    return source.clientData.catch(() => {
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
         message: `The call this call reads its input from failed`,
@@ -275,7 +284,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   /** `input` with what `read` reads, which is at its path in `data` */
   function filled(
     input: unknown,
-    read: PipelineWholeRead<number> | PipelineItemRead,
+    read: PipelineWholeRead<Source> | PipelineItemRead,
     data: unknown,
   ) {
     return writePipelinePath({
@@ -304,7 +313,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   /** The inputs of a call that runs once per item of a list */
   async function inputsOfEach(
     call: TCall,
-    reads: Extract<PipelineCallReads<number>, { kind: 'each' }>,
+    reads: Extract<PipelineCallReads<Source>, { kind: 'each' }>,
   ) {
     const base = await call.getRawInput();
     const found = readPipelinePath(
@@ -331,27 +340,30 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     return inputs;
   }
 
-  /** The calls that run once per item of a list, by index */
-  const eachOf = new Map<number, PipelineEach>();
-  const calls = opts.calls.map((call, index): TCall => {
-    const reads = opts.reads.get(index);
+  /** A call with its input filled in when it is read, or its runs per item */
+  function pipelined(
+    call: TCall,
+    reads: PipelineCallReads<Source> | undefined,
+  ): { call: TCall; each: PipelineEach | null } {
     if (!reads) {
-      return call;
+      return { call, each: null };
     }
     if (reads.kind === 'each') {
-      eachOf.set(index, async (run) => {
-        const inputs = await inputsOfEach(call, reads);
-        return Promise.all(
-          inputs.map(async (input) => {
-            try {
-              return { result: { data: await run.item(input) } };
-            } catch (cause) {
-              return { error: run.error(cause, input) };
-            }
-          }),
-        );
-      });
-      return call;
+      return {
+        call,
+        each: async (run) => {
+          const inputs = await inputsOfEach(call, reads);
+          return Promise.all(
+            inputs.map(async (input) => {
+              try {
+                return { result: { data: await run.item(input) } };
+              } catch (cause) {
+                return { error: run.error(cause, input) };
+              }
+            }),
+          );
+        },
+      };
     }
     let reading: Promise<unknown> | null = null;
     let read: [input: unknown] | null = null;
@@ -364,28 +376,36 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       return input;
     };
     return {
-      ...call,
-      getRawInput: () => (reading ??= fill()),
-      result: () => (read ? read[0] : call.result()),
+      call: {
+        ...call,
+        getRawInput: () => (reading ??= fill()),
+        result: () => (read ? read[0] : call.result()),
+      },
+      each: null,
     };
-  });
+  }
+  const calls = sent.map((it, index) => ({
+    ...pipelined(it.call, plan.get(index)),
+    outcome: it.source.outcome,
+  }));
 
   return {
     /** The calls, with inputs that are filled in when they are read */
-    calls,
+    calls: calls.map((it) => it.call),
     /**
-     * For a call that runs once per item of a list: runs it. `null` for any
-     * other call.
+     * Runs every call, and tells the calls that read a call's data how it
+     * went. A call that runs once per item of a list gets `each` to run
+     * with.
      */
-    each: (index: number) => eachOf.get(index) ?? null,
-    /**
-     * Tells the calls that read a call's data how each call went: its data,
-     * or a rejection if it has none to read.
-     */
-    settle: (results: readonly Promise<unknown>[]) => {
-      for (const [index, outcome] of outcomes.entries()) {
-        Promise.resolve(results[index]).then(outcome.resolve, outcome.reject);
-      }
-    },
+    run: <TResult>(run: {
+      call: (call: TCall, each: PipelineEach | null) => Promise<TResult>;
+      /** A call's data, from what `call` gave. Throws if it has none to read */
+      data: (result: TResult) => unknown;
+    }): Promise<TResult>[] =>
+      calls.map((it) => {
+        const result = run.call(it.call, it.each);
+        result.then(run.data).then(it.outcome.resolve, it.outcome.reject);
+        return result;
+      }),
   };
 }

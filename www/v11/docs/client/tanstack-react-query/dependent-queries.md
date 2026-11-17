@@ -417,7 +417,7 @@ Pipelining is not enabled on the server. Set `experimental_allowPipelining: true
 ```
 
 - **The server says so itself.** The client doesn't guess from the answer, so an error formatter can't hide it, unless it changes the message.
-- **A server older than this option** doesn't know such a request. It looks for one procedure named after all of the batch's paths, and answers "not found".
+- **A server older than this option** doesn't know such a request, and runs nothing of it either. To `httpBatchLink` it answers "not found", for one procedure named after all of the batch's paths. To `httpBatchStreamLink` it answers that streaming requests must be batched. Update the server.
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
 - **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
 - **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.

@@ -84,49 +84,43 @@ function serve(opts: {
     const inputs: unknown = hasBody
       ? body
       : JSON.parse(url.searchParams.get('input') ?? '{}');
-    const calls = paths.map((_path, index) => {
+    const calls = paths.map((path, index) => {
       const read = () => {
         const input = isObject(inputs) ? inputs[index] : undefined;
         return input === undefined
           ? undefined
           : opts.transformer.input.deserialize(input);
       };
-      return { getRawInput: async () => read(), result: read };
+      return { path, getRawInput: async () => read(), result: read };
     });
     let pipeline;
     try {
       pipeline = pipelineCalls({
         calls,
-        reads: parsePipelineReads({
-          pipe: hasBody
-            ? pipeOfBody(body)
-            : pipeOfSearchParams(url.searchParams),
-          calls: calls.length,
-        }),
+        pipe: hasBody ? pipeOfBody(body) : pipeOfSearchParams(url.searchParams),
         transformer: opts.transformer,
         maxRuns: opts.maxRuns,
       });
     } catch (cause) {
       return Response.json({ error: wireError(cause) }, { status: 400 });
     }
-    const { each } = pipeline;
-    const results = pipeline.calls.map(async (call, index) => {
-      const path = paths[index] ?? '';
-      try {
-        const fn = opts.fns[path];
-        if (!fn) {
-          throw new TRPCError({ code: 'NOT_FOUND' });
+    const results = pipeline.run({
+      call: async (call, each) => {
+        try {
+          const fn = opts.fns[call.path];
+          if (!fn) {
+            throw new TRPCError({ code: 'NOT_FOUND' });
+          }
+          return await (each
+            ? each({ item: async (input) => fn(input), error: wireError })
+            : fn(await call.getRawInput()));
+        } catch (cause) {
+          opts.onError(call.path, call.result());
+          throw cause;
         }
-        const runEach = each(index);
-        return await (runEach
-          ? runEach({ item: async (input) => fn(input), error: wireError })
-          : fn(await call.getRawInput()));
-      } catch (cause) {
-        opts.onError(path, call.result());
-        throw cause;
-      }
+      },
+      data: (data) => data,
     });
-    pipeline.settle(results);
     const answers = results.map((result) =>
       result
         .then((data) => {
@@ -242,7 +236,10 @@ async function send(opts: {
   const body =
     opts.method === 'GET'
       ? undefined
-      : JSON.stringify(pipelinedBatchBody({ inputs, pipe: plan.reads }));
+      : pipelinedBatchBody({
+          body: JSON.stringify(Object.fromEntries(inputs.entries())),
+          pipe: plan.reads,
+        });
   const response = await fetch(url, {
     method: opts.method,
     ...(body === undefined
@@ -627,6 +624,14 @@ describe('what a call reads', () => {
       { to: ['c'], from: post, path: ['constructor'], each: false },
       { to: ['d'], from: post, path: ['tags', 'length'], each: false },
       { to: ['e'], from: post, path: ['slug', null], each: false },
+      // What every object inherits, and has JSON
+      { to: ['f'], from: post, path: ['__proto__'], each: false },
+      {
+        to: ['g'],
+        from: post,
+        path: ['tags', '__proto__', 'length'],
+        each: false,
+      },
     ]);
 
     await send({
@@ -918,6 +923,70 @@ describe('a call for every item', () => {
       data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
     });
   });
+
+  test('a call for the items of an empty list has no run: its place goes to one that needs it', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      // Four calls, and three runs for the items of the long list
+      maxRuns: 5,
+      fns: {
+        empty: () => [],
+        // Its list is ready after the empty one
+        long: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return [1, 2, 3];
+        },
+        echo,
+      },
+    });
+    const empty = sent('empty', undefined);
+    const long = sent('long', undefined);
+    const ofEmpty = call('echo', {}, [
+      { to: ['n'], from: empty, path: [null], each: true },
+    ]);
+    const ofLong = call('echo', {}, [
+      { to: ['n'], from: long, path: [null], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [empty, long],
+      calls: [ofEmpty, ofLong],
+    });
+
+    expect(res.of(ofEmpty)).toEqual({ data: [] });
+    expect(echo.mock.calls).toEqual([[{ n: 1 }], [{ n: 2 }], [{ n: 3 }]]);
+    expect(res.of(ofLong)).toMatchObject({ data: { length: 3 } });
+  });
+
+  test('does not run when the call its list is from failed', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'gone' });
+    const tagOfEach = call('echo', {}, [
+      { to: ['id'], from: post, path: ['tags', null, 'id'], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [tagOfEach],
+    });
+
+    expect(res.of(tagOfEach)).toEqual({
+      error: {
+        code: 'PRECONDITION_FAILED',
+        message: 'The call this call reads its input from failed',
+      },
+    });
+    expect(res.ran(tagOfEach)).toBe(false);
+    expect(ran).toEqual([['post', { slug: 'gone' }]]);
+  });
 });
 
 describe('a call that failed', () => {
@@ -951,28 +1020,6 @@ describe('a call that failed', () => {
       // It never ran: its input is as the client sent it
       ['teamPosts', { limit: 5 }],
     ]);
-  });
-
-  test('a plan that reads a call the batch does not have fails the call that reads it', async () => {
-    const pipeline = pipelineCalls({
-      calls: [{ getRawInput: async () => ({}), result: () => undefined }],
-      // Not from `parsePipelineReads`, which refuses it
-      reads: new Map([
-        [
-          0,
-          {
-            kind: 'once',
-            reads: [{ kind: 'whole', to: ['id'], from: 5, path: [] }],
-          },
-        ],
-      ]),
-      transformer: transformers.none,
-      maxRuns: null,
-    });
-
-    await expect(pipeline.calls[0]?.getRawInput()).rejects.toThrow(
-      'No call at index 5',
-    );
   });
 });
 
@@ -1191,7 +1238,11 @@ describe('what a client puts in a request', () => {
       assert(grouped.ok);
       const pipe = { 3: encodePipelineReads(grouped.reads) };
       expect(
-        parsePipelineReads({ pipe: JSON.stringify(pipe), calls: 4 }).get(3),
+        // A source that is its own index: what comes out is what went in
+        parsePipelineReads({
+          pipe: JSON.stringify(pipe),
+          sources: [0, 1, 2, 3],
+        }).get(3),
       ).toEqual(grouped.reads);
     }
   });
@@ -1276,6 +1327,16 @@ describe('a request the server refuses, before anything of it runs', () => {
       message: 'no call at index 01',
     },
     {
+      name: 'a third way to write an index',
+      pipe: { '1e0': [read] },
+      message: 'no call at index 1e0',
+    },
+    {
+      name: 'a zero with a sign',
+      pipe: { '-0': [] },
+      message: 'no call at index -0',
+    },
+    {
       name: 'a key that is no index',
       pipe: { a: [] },
       message: 'no call at index a',
@@ -1352,6 +1413,23 @@ describe('a request the server refuses, before anything of it runs', () => {
       error: {
         code: 'BAD_REQUEST',
         message: `Invalid "pipe": ${scenario.message}`,
+      },
+    });
+    expect(ran).toEqual([]);
+  });
+
+  test('a pipelined batch that has no `pipe`', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+
+    const response = await fetch(
+      `${server.url}/post,author?batch=${pipelineBatch}`,
+    );
+
+    expect(await response.json()).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'Invalid "pipe": expected an object',
       },
     });
     expect(ran).toEqual([]);
@@ -1457,7 +1535,12 @@ describe('a place in an input that a read cannot write to', () => {
         calls: [reader],
       });
 
-      expect(res.of(reader)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+      expect(res.of(reader)).toEqual({
+        error: {
+          code: 'BAD_REQUEST',
+          message: `Invalid "pipe": the input has a value on the way to "filter.id" that can't be written to`,
+        },
+      });
       expect(echo).not.toHaveBeenCalled();
     },
   );

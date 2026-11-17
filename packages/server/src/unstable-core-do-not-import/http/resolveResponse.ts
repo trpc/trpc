@@ -24,7 +24,8 @@ import {
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
-import { parsePipelineReads, pipelineCalls } from './pipeline/server';
+import { pipelineCalls } from './pipeline/server';
+import type { PipelineEach } from './pipeline/server';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -405,7 +406,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
           return pipelineCalls({
             calls: info.calls,
-            reads: parsePipelineReads({ pipe, calls: info.calls.length }),
+            pipe,
             transformer: config.transformer,
             // Every run of a procedure counts towards `maxBatchSize`
             maxRuns:
@@ -431,7 +432,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       opts.req.signal,
       bodyCancelled.signal,
     ]);
-    const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
+    const runCall = async (
+      call: TRPCRequestInfo['calls'][number],
+      /** For a call of a pipelined batch that runs once per item of a list */
+      each: PipelineEach | null,
+    ): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(callSignal);
       try {
@@ -476,7 +481,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             signal: combinedAbort.signal,
             batchIndex: call.batchIndex,
           });
-        const each = pipeline?.each(call.batchIndex) ?? null;
         const data = each
           ? // Once per item of an earlier call's list. Every run validates its
             // input and has its own result or error
@@ -537,27 +541,28 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
         return [error, undefined];
       }
-    });
-
-    // How each call went, for the calls that read its data. All of them, in
-    // one place, so that none waits for a call that never says
-    pipeline?.settle(
-      rpcCalls.map(async (rpcCall) => {
-        const [error, result] = await rpcCall;
-        if (error) {
-          throw error;
-        }
-        if (!isStreamCall && isDataStream(result.data)) {
-          // The response can't carry it, so the client gets an error for this
-          // call. A call that reads it then doesn't run, as for any failed call
-          throw new TRPCError({
-            code: 'UNSUPPORTED_MEDIA_TYPE',
-            message: 'Cannot read the data of a stream-like response',
-          });
-        }
-        return result.data;
-      }),
-    );
+    };
+    const rpcCalls = pipeline
+      ? pipeline.run({
+          call: runCall,
+          // What the calls that read a call's data get of it
+          data: ([error, result]) => {
+            if (error) {
+              throw error;
+            }
+            if (!isStreamCall && isDataStream(result.data)) {
+              // The response can't carry it, so the client gets an error for
+              // this call. A call that reads it then doesn't run, as for any
+              // failed call
+              throw new TRPCError({
+                code: 'UNSUPPORTED_MEDIA_TYPE',
+                message: 'Cannot read the data of a stream-like response',
+              });
+            }
+            return result.data;
+          },
+        })
+      : info.calls.map((call) => runCall(call, null));
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
