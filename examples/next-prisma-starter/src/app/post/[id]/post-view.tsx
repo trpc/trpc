@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,14 +24,12 @@ import {
   EmptyTitle,
 } from '@shared/ui/components/empty';
 import { Skeleton } from '@shared/ui/components/skeleton';
-import Head from 'next/head';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-
-import type { NextPageWithLayout } from '~/pages/_app';
-import type { RouterOutput } from '~/utils/trpc';
-import { useTRPC } from '~/utils/trpc';
 import { useQuery } from '@tanstack/react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import Link from 'next/link';
+import type { RouterOutput, TRPC } from '~/trpc/client';
+import { useTRPC } from '~/trpc/client';
 
 type PostByIdOutput = RouterOutput['post']['byId'];
 
@@ -53,9 +53,6 @@ function PostItem(props: { post: PostByIdOutput }) {
   const { post } = props;
   return (
     <div className="flex flex-col gap-6">
-      <Head>
-        <title>{`${post.title} · Prisma Starter`}</title>
-      </Head>
       <PostBreadcrumb title={post.title} />
       <Card>
         <CardHeader>
@@ -97,10 +94,12 @@ function PostItem(props: { post: PostByIdOutput }) {
   );
 }
 
-const PostViewPage: NextPageWithLayout = () => {
+export function PostView(props: {
+  post: inferQueryHandle<TRPC['post']['byId']>;
+}) {
   const trpc = useTRPC();
-  const id = useRouter().query.id as string;
-  const postQuery = useQuery(trpc.post.byId.queryOptions({ id }));
+  // `page.tsx` loaded the post on the server, so this renders it at once
+  const postQuery = useQuery(fromHandle(trpc, props.post));
 
   switch (postQuery.status) {
     case 'pending':
@@ -114,9 +113,6 @@ const PostViewPage: NextPageWithLayout = () => {
     case 'error':
       return (
         <Empty className="border bg-background">
-          <Head>
-            <title>{postQuery.error.message}</title>
-          </Head>
           <EmptyHeader>
             <EmptyTitle className="text-4xl font-bold">
               {postQuery.error.data?.httpStatus ?? 500}
@@ -133,6 +129,4 @@ const PostViewPage: NextPageWithLayout = () => {
     case 'success':
       return <PostItem post={postQuery.data} />;
   }
-};
-
-export default PostViewPage;
+}
