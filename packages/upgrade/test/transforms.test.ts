@@ -186,7 +186,11 @@ describe('provider', () => {
 
   // Classic `withTRPC` calls `config` once per mount. A second call opens a
   // second WebSocket when `config` makes a `createWSClient`.
-  it.each(['nextConfigOnce.snap.tsx', 'nextConfigOnceUnknown.snap.tsx'])(
+  it.each([
+    'nextConfigOnce.snap.tsx',
+    'nextConfigOnceUnknown.snap.tsx',
+    'nextConfigNamedLikeWrapper.snap.tsx',
+  ])(
     'the generated `withTRPC` in %s calls `config` once per mount',
     async (file) => {
       const setup = await importFixture<{

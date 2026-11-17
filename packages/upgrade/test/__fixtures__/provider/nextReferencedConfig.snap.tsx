@@ -39,6 +39,15 @@ export function makeQueryClient(config = clientConfig()) {
   );
 }
 
+function makeClients() {
+  const config = clientConfig();
+
+  return {
+    queryClient: makeQueryClient(config),
+    trpcClient: makeTRPCClient(config),
+  };
+}
+
 const hydrationTransformer = getTransformer();
 
 /**
@@ -50,14 +59,7 @@ export function withTRPC<TInitialProps extends object>(
   App: AppType<TInitialProps>,
 ): AppType<TInitialProps> {
   const WithTRPC: AppType<TInitialProps> = (props) => {
-    const [{ queryClient, trpcClient }] = useState(() => {
-      const config = clientConfig();
-
-      return {
-        queryClient: makeQueryClient(config),
-        trpcClient: makeTRPCClient(config),
-      };
-    });
+    const [{ queryClient, trpcClient }] = useState(makeClients);
 
     const pageProps = props.pageProps as
       | {

@@ -513,6 +513,26 @@ export default function transform(
         ),
       );
 
+      // At module scope, so the config call can't hit a `withTRPC` local,
+      // e.g. `config: queryClient`
+      let makeClients = 'makeClients';
+      if (shareConfig) {
+        const used = new Set(
+          root
+            .find(j.Identifier)
+            .nodes()
+            .map((node) => node.name),
+        );
+        for (let i = 2; used.has(makeClients); i++) {
+          makeClients = `makeClients${i}`;
+        }
+        statements.push(
+          ...exported(
+            `function ${makeClients}() {\n  const ${local} = ${configCall};\n  return {\n    queryClient: makeQueryClient(${local}),\n    trpcClient: makeTRPCClient(${local}),\n  };\n}`,
+          ),
+        );
+      }
+
       // Classic `withTRPC` ran `trpcState` through the transformer.
       let transformerSource = transformer ? j(transformer).toSource() : null;
       // `typeof x.deserialize` needs a name, not e.g. `getTransformer()`,
@@ -558,13 +578,7 @@ export default function transform(
           );`
         : `const state = pageProps?.trpcState as ${dehydratedState} | undefined;`;
       const clientsState = shareConfig
-        ? `const [{ queryClient, trpcClient }] = ${useStateName}(() => {
-      const ${local} = ${configCall};
-      return {
-        queryClient: makeQueryClient(${local}),
-        trpcClient: makeTRPCClient(${local}),
-      };
-    });`
+        ? `const [{ queryClient, trpcClient }] = ${useStateName}(${makeClients});`
         : `const [queryClient] = ${useStateName}(makeQueryClient);
     const [trpcClient] = ${useStateName}(makeTRPCClient);`;
       const appTypeName = type('next/app', 'AppType');

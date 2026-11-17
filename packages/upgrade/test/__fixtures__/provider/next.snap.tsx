@@ -46,6 +46,15 @@ export function makeQueryClient(config = getConfig({})) {
   return new QueryClient(config.queryClientConfig);
 }
 
+function makeClients() {
+  const config = getConfig({});
+
+  return {
+    queryClient: makeQueryClient(config),
+    trpcClient: makeTRPCClient(config),
+  };
+}
+
 /**
  * Was `trpc.withTRPC`. Provides the tRPC and query clients to the app, and
  * hydrates the `trpcState` a page's `getStaticProps` or
@@ -55,14 +64,7 @@ export function withTRPC<TInitialProps extends object>(
   App: AppType<TInitialProps>,
 ): AppType<TInitialProps> {
   const WithTRPC: AppType<TInitialProps> = (props) => {
-    const [{ queryClient, trpcClient }] = useState(() => {
-      const config = getConfig({});
-
-      return {
-        queryClient: makeQueryClient(config),
-        trpcClient: makeTRPCClient(config),
-      };
-    });
+    const [{ queryClient, trpcClient }] = useState(makeClients);
 
     const pageProps = props.pageProps as
       | {
