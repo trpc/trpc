@@ -32,7 +32,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { makeQueryClient, useTRPC } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
 import {
   dehydrate,
   useQueryClient,
@@ -46,8 +46,9 @@ import {
 } from '@trpc/tanstack-react-query';
 import type { GetServerSidePropsContext } from 'next';
 import superjson from 'superjson';
-import { getServerAuthSession } from '~/server/auth';
+import { createContext } from '~/server/context';
 import { appRouter } from '~/server/routers/_app';
+import { makeQueryClient } from '~/utils/query-client';
 
 function LiveBadge(props: { status: TRPCSubscriptionStatus }) {
   switch (props.status) {
@@ -505,14 +506,14 @@ export default function IndexPage() {
 }
 
 /**
- * Was `ssr: true`: puts the first page of messages in the server-rendered HTML.
+ * Puts the first page of messages in the server-rendered HTML.
  * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
  */
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const queryClient = makeQueryClient();
   const trpc = createTRPCOptionsProxy({
     router: appRouter,
-    ctx: { session: await getServerAuthSession(context.req, context.res) },
+    ctx: await createContext({ req: context.req, res: context.res }),
     queryClient,
   });
 
@@ -531,29 +532,3 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     },
   };
 }
-
-/**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
- *
- * @see https://trpc.io/docs/v11/ssg
- */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createServerSideHelpers({
-//     router: appRouter,
-//     ctx: await createContext(),
-//   });
-//
-//   await ssg.fetchQuery('post.all');
-//
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
-//     },
-//     revalidate: 1,
-//   };
-// };
