@@ -251,6 +251,9 @@ catalogs:
     node-fetch:
       specifier: ^3.3.2
       version: 3.3.2
+    npm-run-all2:
+      specifier: ^9.0.4
+      version: 9.0.4
     oxfmt:
       specifier: ^0.77.0
       version: 0.77.0
@@ -489,7 +492,7 @@ importers:
         specifier: 'catalog:'
         version: 0.7.0
       npm-run-all2:
-        specifier: ^9.0.4
+        specifier: 'catalog:'
         version: 9.0.4
       oxfmt:
         specifier: 'catalog:'
@@ -1012,9 +1015,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxlint:
         specifier: ^1.92.0
         version: 1.92.0(oxlint-tsgolint@7.0.2006)
@@ -1064,9 +1067,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxlint:
         specifier: ^1.92.0
         version: 1.92.0(oxlint-tsgolint@7.0.2006)
@@ -1122,9 +1125,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxlint:
         specifier: ^1.92.0
         version: 1.92.0(oxlint-tsgolint@7.0.2006)
@@ -1270,9 +1273,9 @@ importers:
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -1304,9 +1307,9 @@ importers:
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -1325,9 +1328,9 @@ importers:
       '@playwright/test':
         specifier: ^1.65.0
         version: 1.65.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -1414,9 +1417,9 @@ importers:
       '@playwright/test':
         specifier: ^1.65.0
         version: 1.65.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -1503,9 +1506,9 @@ importers:
       '@playwright/test':
         specifier: ^1.65.0
         version: 1.65.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -1882,9 +1885,9 @@ importers:
       dotenv:
         specifier: ^16.0.1
         version: 16.4.7
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxfmt:
         specifier: 'catalog:'
         version: 0.77.0(@astrojs/compiler-rs@0.5.2)
@@ -1976,9 +1979,9 @@ importers:
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxlint:
         specifier: ^1.92.0
         version: 1.92.0(oxlint-tsgolint@7.0.2006)
@@ -2082,9 +2085,9 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxfmt:
         specifier: 'catalog:'
         version: 0.77.0(@astrojs/compiler-rs@0.5.2)
@@ -2167,9 +2170,9 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxlint:
         specifier: ^1.92.0
         version: 1.92.0(oxlint-tsgolint@7.0.2006)
@@ -2238,9 +2241,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -2265,9 +2268,9 @@ importers:
       '@types/node':
         specifier: ^24.19.2
         version: 24.19.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0(supports-color@10.0.0)
@@ -2308,9 +2311,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       oxlint:
         specifier: ^1.92.0
         version: 1.92.0(oxlint-tsgolint@7.0.2006)
@@ -2414,9 +2417,9 @@ importers:
       nitro:
         specifier: 3.0.261103-rc
         version: 3.0.261103-rc
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: 'catalog:'
+        version: 9.0.4
       tailwindcss:
         specifier: catalog:www
         version: 4.3.5
@@ -12954,9 +12957,6 @@ packages:
   hookified@2.2.0:
     resolution: {integrity: sha512-p/LgFzRN5FeoD3DLS6bkUapeye6E4SI6yJs6KetENd18S+FBthqYq2amJUWpt5z0EQwwHemidjY5OqJGEKm5uA==}
 
-  hosted-git-info@2.8.9:
-    resolution: {integrity: sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==}
-
   html-encoding-sniffer@6.0.0:
     resolution: {integrity: sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
@@ -13550,9 +13550,6 @@ packages:
     resolution: {integrity: sha512-GOehvd5PO2FeZ5T4c+RxobeT5a1PiGpF4u9/3+UvrMU4bhnVqzJY7hm39wg8PDCqkU91fWGH8qjWR4bn+wgq9w==}
     engines: {node: '>= 4'}
 
-  json-parse-better-errors@1.0.2:
-    resolution: {integrity: sha512-mrqyZKfX5EhL7hvqcV6WG1yYjnjeuYDzDhhcAAUrq8Po85NBQBJP+ZDUT75qZQ98IkUoBqdkExkukOU7Ts2wrw==}
-
   json-parse-even-better-errors@2.3.1:
     resolution: {integrity: sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==}
 
@@ -13768,10 +13765,6 @@ packages:
 
   lit@3.3.3:
     resolution: {integrity: sha512-fycuvZg/hkpozL00lm1pEJH5nN/lr9ZXd6mJI2HSN4+Bzc+LDNdEApJ6HFbPkdFNHLvOplIIuJvxkS4XUxqirw==}
-
-  load-json-file@4.0.0:
-    resolution: {integrity: sha512-Kx8hMakjX03tiGTLAIdJ+lL0htKnXjEZN6hk/tozf/WOuYGdZBJrZ+rCJRbVCugsjB3jMLn9746NsQIf5VjBMw==}
-    engines: {node: '>=4'}
 
   loader-runner@4.3.0:
     resolution: {integrity: sha512-3R/1M+yS3j5ou80Me59j7F9IMs4PXs3VqRrm0TU3AbKPxlmpoY1TNscJV/oGJXo8qCatFGTfDbY6W6ipGOYXfg==}
@@ -14490,9 +14483,6 @@ packages:
     engines: {node: ^18.17.0 || >=20.5.0}
     hasBin: true
 
-  normalize-package-data@2.5.0:
-    resolution: {integrity: sha512-/5CMN3T0R4XTj4DcGaexo+roZSdSFW/0AOOTROrjxzCG1wrWXEsGbRKevjlIL+ZDE4sZlJr5ED4YW0yqmkK+eA==}
-
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
@@ -14518,11 +14508,6 @@ packages:
   npm-run-all2@9.0.4:
     resolution: {integrity: sha512-GuGRF8MddEKavyUzjy0k2z2pA76/N+eT8lHlypx0/AhShLKD2FOerQxHhpFhcqnQmAqCkunUCYlf6Z9RKh/4zg==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0, npm: '>= 10'}
-    hasBin: true
-
-  npm-run-all@4.1.5:
-    resolution: {integrity: sha512-Oo82gJDAVcaMdi3nuoKFavkIHBRVqQ1qvMb+9LHk/cF4P6B2m8aP04hGf7oL6wZ9BuGwX1onlLhpuoofSyoQDQ==}
-    engines: {node: '>= 4'}
     hasBin: true
 
   npm-run-path@4.0.1:
@@ -14847,10 +14832,6 @@ packages:
     engines: {node: '>= 0.10'}
     hasBin: true
 
-  parse-json@4.0.0:
-    resolution: {integrity: sha512-aOIos8bujGN93/8Ox/jPLh7RwVnPEysynVFE+fQZyg6jKELEHwzgKdLRFHUgXJL6kylijVSBC4BvN9OmsB48Rw==}
-    engines: {node: '>=4'}
-
   parse-json@5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
     engines: {node: '>=8'}
@@ -14927,10 +14908,6 @@ packages:
   path-to-regexp@8.4.2:
     resolution: {integrity: sha512-qRcuIdP69NPm4qbACK+aDogI5CBDMi1jKe0ry5rSQJz8JVLsC7jV8XpiJjGRLLol3N+R5ihGYcrPLTno6pAdBA==}
 
-  path-type@3.0.0:
-    resolution: {integrity: sha512-T2ZUsdZFHgA3u4e5PfPbjd7HDDpxPnQb5jN0SrDsjNSuVXHJqtwTnWqG0B1jZrgmJ/7lj1EmVIByWt1gxGkWvg==}
-    engines: {node: '>=4'}
-
   path-type@4.0.0:
     resolution: {integrity: sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==}
     engines: {node: '>=8'}
@@ -14967,11 +14944,6 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
-
-  pidtree@0.3.1:
-    resolution: {integrity: sha512-qQbW94hLHEqCg7nhby4yRC7G2+jYHY4Rguc2bjw7Uug4GIJuu1tvf2uHaZv5Q8zdt+WKJ6qK1FOI6amaWUo5FA==}
-    engines: {node: '>=0.10'}
-    hasBin: true
 
   pidtree@1.0.0:
     resolution: {integrity: sha512-avfAvjB9Dd0wdj3rjJX//yS+G79OO0KrS5pJHFJENjYGX6N4SMgEDBBI/yFy0lloOYSaC6XQxzpOAMPfSYFV/Q==}
@@ -15439,10 +15411,6 @@ packages:
   read-package-json-fast@6.0.0:
     resolution: {integrity: sha512-PNaGjoCnw9DBA2Kl8D+8po957z778q/HOPuY2u3Bkw/JO3eC8MDx7jn/PgMtSgpcBbs+6UOjDbwReGpXmRvs0g==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
-
-  read-pkg@3.0.0:
-    resolution: {integrity: sha512-BLq/cCO9two+lBgiTYNqD6GdtK8s4NpaWrl6/rCO9w0TUS8oJl7cmToOZfRYllKTISY6nt1U7jQ53brmKqY6BA==}
-    engines: {node: '>=4'}
 
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
@@ -15973,9 +15941,6 @@ packages:
     resolution: {integrity: sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==}
     engines: {node: '>= 0.4'}
 
-  shell-quote@1.8.1:
-    resolution: {integrity: sha512-6j1W9l1iAs/4xYBI1SYOVZyFcCis9b4KCLQ8fgAGG07QvzaRLVVRQvAy85yNmmZSjYjg4MWh4gNvlPujU/5LpA==}
-
   shiki@4.5.0:
     resolution: {integrity: sha512-OcRW72ngQvc+MSVWBRIovC/BTW589iUE/Vxav7VeM4RcY9MUjqB+IR6ILG1k9nuW6LiG/nct9uma4/MBtnZbmQ==}
     engines: {node: '>=20'}
@@ -16132,18 +16097,6 @@ packages:
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
 
-  spdx-correct@3.1.1:
-    resolution: {integrity: sha512-cOYcUWwhCuHCXi49RhFRCyJEK3iPj1Ziz9DpViV3tbZOwXD49QzIN3MpOLJNxh2qwq2lJJZaKMVw9qNi4jTC0w==}
-
-  spdx-exceptions@2.3.0:
-    resolution: {integrity: sha512-/tTrYOC7PPI1nUAgx34hUpqXuyJG+DTHJTnIULG4rDygi4xu/tfgmq1e1cIRwRzwZgo4NLySi+ricLkZkw4i5A==}
-
-  spdx-expression-parse@3.0.1:
-    resolution: {integrity: sha512-cbqHunsQWnJNE6KhVSMsMeH5H/L9EpymbzqTQ3uLwNCLZ1Q481oWaofqH7nO6V07xlXwY6PhQdQ2IedWx/ZK4Q==}
-
-  spdx-license-ids@3.0.12:
-    resolution: {integrity: sha512-rr+VVSXtRhO4OHbXUiAF7xW3Bo9DuuF6C5jH+q/x15j2jniycgKbxU09Hr0WqlSLUs4i4ltHGXqTe7VHclYWyA==}
-
   split2@3.2.2:
     resolution: {integrity: sha512-9NThjpgZnifTkJpzTZ7Eue85S49QwpNhZTq6GRJwObb6jnLFNGB7Qm73V5HewTROPyxD0C29xqmaI68bQtV+hg==}
 
@@ -16231,10 +16184,6 @@ packages:
 
   string.prototype.codepointat@0.2.1:
     resolution: {integrity: sha512-2cBVCj6I4IOvEnjgO/hWqXjqBGsY+zwPmHl12Srk9IXSZ56Jwwmy+66XO5Iut/oQVR7t5ihYdLB0GMa4alEUcg==}
-
-  string.prototype.padend@3.1.4:
-    resolution: {integrity: sha512-67otBXoksdjsnXXRUq+KMVTdlVRZ2af422Y0aTyTjVaoQkGr3mxl2Bc5emi7dOQ3OGVVQQskmLEWwFXwommpNw==}
-    engines: {node: '>= 0.4'}
 
   string.prototype.trim@1.2.8:
     resolution: {integrity: sha512-lfjY4HcixfQXOfaqCvcBuOIapyaroTXhbkfJN3gcB1OtyupngWK4sEET9Knd0cXd28kTUqu/kHoV4HKSJdnjiQ==}
@@ -17332,9 +17281,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-
-  validate-npm-package-license@3.0.4:
-    resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
   validate-npm-package-name@3.0.0:
     resolution: {integrity: sha512-M6w37eVCMMouJ9V/sdPGnC5H4uDr73/+xdq0FBLO3TFFX1+7wiUY6Es328NN+y43tmY+doUdN9g9J21vqB7iLw==}
@@ -29873,8 +29819,6 @@ snapshots:
   hookified@2.2.0:
     optional: true
 
-  hosted-git-info@2.8.9: {}
-
   html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
     dependencies:
       '@exodus/bytes': 1.16.0(@noble/hashes@1.8.0)
@@ -30124,7 +30068,7 @@ snapshots:
 
   is-core-module@2.15.1:
     dependencies:
-      hasown: 2.0.2
+      hasown: 2.0.4
 
   is-data-view@1.0.1:
     dependencies:
@@ -30492,8 +30436,6 @@ snapshots:
 
   json-cycle@1.5.0: {}
 
-  json-parse-better-errors@1.0.2: {}
-
   json-parse-even-better-errors@2.3.1: {}
 
   json-parse-even-better-errors@6.0.0: {}
@@ -30715,13 +30657,6 @@ snapshots:
       '@lit/reactive-element': 2.1.2
       lit-element: 4.2.2
       lit-html: 3.3.3
-
-  load-json-file@4.0.0:
-    dependencies:
-      graceful-fs: 4.2.11
-      parse-json: 4.0.0
-      pify: 3.0.0
-      strip-bom: 3.0.0
 
   loader-runner@4.3.0:
     optional: true
@@ -31826,13 +31761,6 @@ snapshots:
     dependencies:
       abbrev: 3.0.0
 
-  normalize-package-data@2.5.0:
-    dependencies:
-      hosted-git-info: 2.8.9
-      resolve: 1.22.8
-      semver: 5.7.2
-      validate-npm-package-license: 3.0.4
-
   normalize-path@3.0.0: {}
 
   normalize-url@6.1.0: {}
@@ -31865,18 +31793,6 @@ snapshots:
       read-package-json-fast: 6.0.0
       shell-quote: 1.12.0
       which: 7.0.0
-
-  npm-run-all@4.1.5:
-    dependencies:
-      ansi-styles: 3.2.1
-      chalk: 2.4.2
-      cross-spawn: 6.0.5
-      memorystream: 0.3.1
-      minimatch: 3.1.2
-      pidtree: 0.3.1
-      read-pkg: 3.0.0
-      shell-quote: 1.8.1
-      string.prototype.padend: 3.1.4
 
   npm-run-path@4.0.1:
     dependencies:
@@ -32404,11 +32320,6 @@ snapshots:
 
   parse-github-url@1.0.4: {}
 
-  parse-json@4.0.0:
-    dependencies:
-      error-ex: 1.3.2
-      json-parse-better-errors: 1.0.2
-
   parse-json@5.2.0:
     dependencies:
       '@babel/code-frame': 7.26.2
@@ -32477,10 +32388,6 @@ snapshots:
 
   path-to-regexp@8.4.2: {}
 
-  path-type@3.0.0:
-    dependencies:
-      pify: 3.0.0
-
   path-type@4.0.0: {}
 
   path2@0.1.0: {}
@@ -32504,8 +32411,6 @@ snapshots:
   picomatch@2.3.1: {}
 
   picomatch@4.0.7: {}
-
-  pidtree@0.3.1: {}
 
   pidtree@1.0.0: {}
 
@@ -32916,12 +32821,6 @@ snapshots:
     dependencies:
       json-parse-even-better-errors: 6.0.0
       npm-normalize-package-bin: 6.0.0
-
-  read-pkg@3.0.0:
-    dependencies:
-      load-json-file: 4.0.0
-      normalize-package-data: 2.5.0
-      path-type: 3.0.0
 
   readable-stream@2.3.8:
     dependencies:
@@ -33954,8 +33853,6 @@ snapshots:
 
   shell-quote@1.12.0: {}
 
-  shell-quote@1.8.1: {}
-
   shiki@4.5.0:
     dependencies:
       '@shikijs/core': 4.5.0
@@ -34129,20 +34026,6 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  spdx-correct@3.1.1:
-    dependencies:
-      spdx-expression-parse: 3.0.1
-      spdx-license-ids: 3.0.12
-
-  spdx-exceptions@2.3.0: {}
-
-  spdx-expression-parse@3.0.1:
-    dependencies:
-      spdx-exceptions: 2.3.0
-      spdx-license-ids: 3.0.12
-
-  spdx-license-ids@3.0.12: {}
-
   split2@3.2.2:
     dependencies:
       readable-stream: 3.6.2
@@ -34233,12 +34116,6 @@ snapshots:
       strip-ansi: 7.2.0
 
   string.prototype.codepointat@0.2.1: {}
-
-  string.prototype.padend@3.1.4:
-    dependencies:
-      call-bind: 1.0.7
-      define-properties: 1.2.1
-      es-abstract: 1.22.3
 
   string.prototype.trim@1.2.8:
     dependencies:
@@ -35428,11 +35305,6 @@ snapshots:
   valibot@1.5.0(typescript@7.1.0-beta):
     optionalDependencies:
       typescript: 7.1.0-beta
-
-  validate-npm-package-license@3.0.4:
-    dependencies:
-      spdx-correct: 3.1.1
-      spdx-expression-parse: 3.0.1
 
   validate-npm-package-name@3.0.0:
     dependencies:
