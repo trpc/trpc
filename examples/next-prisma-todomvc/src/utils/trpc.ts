@@ -110,19 +110,20 @@ export function withTRPC<TInitialProps extends object>(
         queryClient,
 
         children: createElement(HydrationBoundary, {
-          state: (pageProps?.trpcState === undefined
-            ? undefined
-            : superjson.deserialize(
-                pageProps.trpcState as Parameters<
-                  typeof superjson.deserialize
-                >[0],
-              )) as DehydratedState | undefined,
+          state:
+            pageProps?.trpcState === undefined
+              ? undefined
+              : superjson.deserialize<DehydratedState>(
+                  pageProps.trpcState as Parameters<
+                    typeof superjson.deserialize
+                  >[0],
+                ),
           children: createElement(App, props),
         }),
       }),
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
+  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
   return WithTRPC;
 }

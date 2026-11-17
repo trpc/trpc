@@ -24,6 +24,20 @@ import { useClickOutside } from '../utils/use-click-outside';
 
 type Task = inferProcedureOutput<AppRouter['todo']['all']>[number];
 
+/**
+ * A stand-in task, shown until the server sends the real one.
+ * Kept outside the component: `react/purity` flags `Math.random()` and
+ * `new Date()` inside the `mutationOptions()` callbacks.
+ */
+function makeOptimisticTask(text: string): Task {
+  return {
+    id: `${Math.random()}`,
+    completed: false,
+    text,
+    createdAt: new Date(),
+  };
+}
+
 function ListItem(props: { task: Task }) {
   const trpc = useTRPC();
   const { task } = props;
@@ -171,12 +185,7 @@ export default function TodosPage(props: PageProps) {
         const tasks = allTasks.data ?? [];
         queryClient.setQueryData(trpc.todo.all.queryKey(), [
           ...tasks,
-          {
-            id: `${Math.random()}`,
-            completed: false,
-            text,
-            createdAt: new Date(),
-          },
+          makeOptimisticTask(text),
         ]);
       },
     }),
