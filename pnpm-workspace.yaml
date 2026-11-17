@@ -94,6 +94,7 @@ catalog:
   tslib: ^2.9.1
   dataloader: ^2.2.3
   node-fetch: ^3.3.2
+  npm-run-all2: ^9.0.4
   sury: 11.1.0
   yaml: 2.9.1
 
