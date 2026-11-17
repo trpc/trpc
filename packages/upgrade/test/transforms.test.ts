@@ -31,6 +31,7 @@ const fixtureOptions: Record<string, Record<string, unknown>> = {
   'importAlias.tsx': { trpcImportName: 'api' },
   'importAliasTwoModules.tsx': { trpcImportName: 'api' },
   'importAliasAmbiguous.tsx': { trpcImportName: 'api' },
+  'importAliasWithPlain.tsx': { trpcImportName: 'api' },
   'providerRouterType.tsx': {
     routerType: {
       name: 'AppRouter',

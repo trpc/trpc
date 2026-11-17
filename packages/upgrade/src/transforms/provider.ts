@@ -63,6 +63,10 @@ export default function transform(
     );
     changed = true;
   }
+  // Which import to migrate is a guess, so migrate none
+  if (setup.ambiguous.length > 0) {
+    return printSource({ j, root }, file.source);
+  }
   let routerType: TSTypeParameterInstantiation | null = null;
 
   migrateCreateTRPCReact(root);
@@ -509,10 +513,19 @@ export default function transform(
 
       // Classic `withTRPC` ran `trpcState` through the transformer.
       let transformerSource = transformer ? j(transformer).toSource() : null;
-      // `typeof x.deserialize` needs a name, not e.g. `getTransformer()`
+      // `typeof x.deserialize` needs a name, not e.g. `getTransformer()`,
+      // and not one the generated `WithTRPC` declares itself
+      const wrapperLocals = [
+        'props',
+        'queryClient',
+        'trpcClient',
+        'pageProps',
+        'state',
+      ];
       if (
         transformerSource &&
-        !/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(transformerSource)
+        (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(transformerSource) ||
+          wrapperLocals.includes(transformerSource.split('.')[0] ?? ''))
       ) {
         statements.push(
           ...exported(`const hydrationTransformer = ${transformerSource};`),
@@ -524,7 +537,7 @@ export default function transform(
       // from it, and lint flags a cast that changes nothing
       const hydrationState = transformerSource
         ? `const state: ${dehydratedState} | undefined =
-      pageProps?.trpcState === undefined
+      !pageProps?.trpcState
         ? undefined
         : ${transformerSource}.deserialize(
             pageProps.trpcState as Parameters<typeof ${transformerSource}.deserialize>[0],
@@ -671,7 +684,17 @@ export function withTRPC<TInitialProps extends object>(
           )
         : transformer;
     }
-    return inputOf(transformer) ?? transformer;
+    const input = inputOf(transformer);
+    if (!input) return transformer;
+    // `{ input: a, ...overrides }`: a spread may replace `input` at runtime
+    const hasSpread =
+      j.ObjectExpression.check(transformer) &&
+      transformer.properties.some(
+        (p) => j.SpreadElement.check(p) || j.SpreadProperty.check(p),
+      );
+    return hasSpread
+      ? j.memberExpression(transformer as ExpressionKind, j.identifier('input'))
+      : input;
   }
 
   /**
@@ -796,6 +819,11 @@ export function withTRPC<TInitialProps extends object>(
   // `export default trpc.withTRPC(MyApp)` → `export default withTRPC(MyApp)`
   function migrateWithTRPCUsage(collection: Collection) {
     let used = false;
+    // `pages/_app`, or a file typed with `next/app`'s `AppType`
+    const isAppFile =
+      /(^|[\\/])_app\.[cm]?[jt]sx?$/.test(file.path) ||
+      root.find(j.ImportDeclaration, { source: { value: 'next/app' } }).size() >
+        0;
     collection
       .find(j.CallExpression, {
         callee: {
@@ -806,6 +834,16 @@ export function withTRPC<TInitialProps extends object>(
       })
       .filter(migratable)
       .forEach((path) => {
+        // The generated `withTRPC` wraps an App; classic one wrapped pages too
+        if (!isAppFile) {
+          addTodo(
+            j,
+            path,
+            `the new \`withTRPC\` wraps your App: call it in \`pages/_app\`, and drop it here, see ${nextDocs}`,
+          );
+          changed = true;
+          return;
+        }
         path.node.callee = j.identifier('withTRPC');
         used = true;
       });

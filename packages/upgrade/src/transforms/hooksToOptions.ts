@@ -123,8 +123,30 @@ export default function transform(
   /** Names to import from the module `trpc` came from. */
   const fromTRPCModule = new Set<string>();
 
+  // Before any rewrite, which itself adds `const trpc = useTRPC()`: the
+  // references a parameter or local of the same name hides from the setup
+  const shadowedSetupRefs = new Set<unknown>(
+    root
+      .find(j.Identifier, { name: trpcName })
+      .filter((p) =>
+        isShadowed(j, p, {
+          scope: root.paths()[0] as ASTPath,
+          name: trpcName,
+          declarator: null,
+        }),
+      )
+      .nodes(),
+  );
+  /** Whether `node`'s root, as in `trpc.a.b`, is the setup itself */
+  const isSetupRef = (node: unknown) => {
+    let current = node;
+    while (j.MemberExpression.check(current)) current = current.object;
+    return !shadowedSetupRefs.has(current);
+  };
   const isTRPCPath = (node: ExpressionKind) =>
-    j.MemberExpression.check(node) && rootIdentifierName(j, node) === trpcName;
+    j.MemberExpression.check(node) &&
+    rootIdentifierName(j, node) === trpcName &&
+    isSetupRef(node);
 
   function useTRPCIn(scope: ASTPath<FunctionNode>) {
     ensureDeclaredAtTop(j, scope, { name: trpcName, init: 'useTRPC' });
@@ -170,6 +192,10 @@ export default function transform(
       `more than one import looks like your tRPC setup \`${trpcName}\`, migrate this file by hand`,
     );
   }
+  // Which import to migrate is a guess, so migrate none
+  if (setup.ambiguous.length > 0) {
+    return printSource({ j, root }, file.source);
+  }
   migrateGetQueryKey(root);
   migrateUseUtils(root);
   migrateUseQueries(root);
@@ -188,6 +214,7 @@ export default function transform(
       .filter(
         (path) =>
           isValueReference(j, path) &&
+          isSetupRef(path.node) &&
           ![...scopes].some((scope) => isInside(path, scope)),
       );
     leftovers.forEach((path) =>
@@ -437,6 +464,7 @@ export default function transform(
           },
         },
       })
+      .filter((path) => isSetupRef(path.node.callee))
       .forEach((path) => {
         const hook = (
           (path.node.callee as MemberExpression).property as Identifier
@@ -574,6 +602,7 @@ export default function transform(
           },
         },
       })
+      .filter((path) => isSetupRef(path.node.callee))
       .forEach((path) => {
         const declarator = path.parent?.node;
         const scope = findHookScope(j, path);
@@ -686,6 +715,31 @@ export default function transform(
       });
   }
 
+  /**
+   * Whether `path` is a hook's dependency list: the last argument, after the
+   * first, of a `useX(…)` call. Not a returned `[a, utils]` tuple.
+   */
+  function isDependencyList(path: ASTPath | null): boolean {
+    const call = path?.parent?.node;
+    if (
+      !path ||
+      !j.ArrayExpression.check(path.node) ||
+      !j.CallExpression.check(call)
+    ) {
+      return false;
+    }
+    const callee = j.MemberExpression.check(call.callee)
+      ? call.callee.property
+      : call.callee;
+    const args = call.arguments;
+    return (
+      j.Identifier.check(callee) &&
+      /^use[A-Z]/.test(callee.name) &&
+      args.length > 1 &&
+      args[args.length - 1] === path.node
+    );
+  }
+
   function migrateUtilsReference(
     reference: ASTPath<Identifier>,
     scope: ASTPath<FunctionNode>,
@@ -716,9 +770,17 @@ export default function transform(
     }
 
     if (names.length === 0) {
-      // `[utils]` in a dependency list, `doSomething(utils)`
+      const inDependencyList = isDependencyList(reference.parent);
+      // `doSomething(utils)` or `return utils`: what receives it expects the
+      // old utils, and gets the QueryClient now
+      if (!inDependencyList) {
+        todo(
+          reference,
+          `\`${reference.node.name}\` is now the QueryClient; update what receives it, see ${docs}`,
+        );
+      }
       reference.replace(j.identifier(queryClientName));
-      return { ...none, bare: true };
+      return { ...none, bare: inDependencyList };
     }
 
     if (names[0] === 'client') {

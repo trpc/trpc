@@ -55,14 +55,13 @@ export function withTRPC<TInitialProps extends object>(
         }
       | undefined;
 
-    const state: DehydratedState | undefined =
-      pageProps?.trpcState === undefined
-        ? undefined
-        : combined.input.deserialize(
-            pageProps.trpcState as Parameters<
-              typeof combined.input.deserialize
-            >[0],
-          );
+    const state: DehydratedState | undefined = !pageProps?.trpcState
+      ? undefined
+      : combined.input.deserialize(
+          pageProps.trpcState as Parameters<
+            typeof combined.input.deserialize
+          >[0],
+        );
 
     return createElement(QueryClientProvider, {
       client: queryClient,

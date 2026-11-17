@@ -555,6 +555,17 @@ export function isValueReference(j: JSCodeshift, path: ASTPath): boolean {
   if (j.VariableDeclarator.check(parent) && parent.id === path.node) {
     return false;
   }
+  // `{ trpc: Client }` in a type, `class { trpc = … }`: keys, not references
+  if (
+    (j.TSPropertySignature.check(parent) ||
+      j.TSMethodSignature.check(parent) ||
+      j.ClassProperty.check(parent) ||
+      j.ClassMethod.check(parent)) &&
+    parent.key === path.node &&
+    !parent.computed
+  ) {
+    return false;
+  }
   if (j.TSTypeReference.check(parent)) {
     return false;
   }
@@ -733,10 +744,11 @@ export function localSetupName(
         ? path.node.local.name
         : setupName,
     }))
-    .filter(({ local }) => local !== setupName && usedLikeSetup(local));
+    // `import { api }` counts too: beside `api as other`, both can be setups
+    .filter(({ local }) => usedLikeSetup(local));
   const [only] = candidates;
-  if (candidates.length === 1 && only) {
-    return { name: only.local, ambiguous: [] };
+  if (candidates.length <= 1) {
+    return { name: only?.local ?? setupName, ambiguous: [] };
   }
   // More than one looks like a setup: don't guess, say so
   return {

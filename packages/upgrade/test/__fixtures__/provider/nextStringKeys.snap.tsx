@@ -57,12 +57,11 @@ export function withTRPC<TInitialProps extends object>(
         }
       | undefined;
 
-    const state: DehydratedState | undefined =
-      pageProps?.trpcState === undefined
-        ? undefined
-        : superjson.deserialize(
-            pageProps.trpcState as Parameters<typeof superjson.deserialize>[0],
-          );
+    const state: DehydratedState | undefined = !pageProps?.trpcState
+      ? undefined
+      : superjson.deserialize(
+          pageProps.trpcState as Parameters<typeof superjson.deserialize>[0],
+        );
 
     return createElement(QueryClientProvider, {
       client: queryClient,
