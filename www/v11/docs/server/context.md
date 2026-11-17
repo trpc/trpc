@@ -121,15 +121,17 @@ import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-// One query client per request
-const queryClient = new QueryClient();
-const trpc = createTRPCOptionsProxy({
-  router: appRouter,
-  ctx: await createContext(),
-  queryClient,
-});
-await queryClient.prefetchQuery(trpc.greeting.queryOptions());
-const dehydratedState = dehydrate(queryClient);
+// Call once per request, e.g. in `getServerSideProps`
+export async function prefetchGreeting() {
+  const queryClient = new QueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: await createContext(),
+    queryClient,
+  });
+  await queryClient.prefetchQuery(trpc.greeting.queryOptions());
+  return dehydrate(queryClient);
+}
 ```
 
 ## Example code
