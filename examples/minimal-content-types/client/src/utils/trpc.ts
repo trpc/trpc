@@ -1,5 +1,16 @@
-import { createTRPCContext } from '@trpc/tanstack-react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../../../server';
 
-export const { TRPCProvider, useTRPC, useTRPCClient } =
-  createTRPCContext<AppRouter>();
+export const queryClient = new QueryClient();
+
+const trpcClient = createTRPCClient<AppRouter>({
+  // httpLink, not httpBatchLink: batching links can't send FormData or files
+  links: [httpLink({ url: 'http://localhost:2022' })],
+});
+
+export const trpc = createTRPCOptionsProxy<AppRouter>({
+  client: trpcClient,
+  queryClient,
+});
